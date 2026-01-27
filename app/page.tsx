@@ -39,7 +39,7 @@ export default function Home() {
         </p>
 
         {/* Call to action */}
-        <div className="mt-8 flex w-full max-w-sm flex-col items-center gap-3 sm:mt-10 sm:max-w-none sm:flex-row sm:gap-4">
+        <div className="mt-8 flex w-full max-w-sm flex-col items-center justify-center gap-3 sm:mt-10 sm:max-w-none sm:flex-row sm:gap-4">
           <a
             href="https://eatobiotics.substack.com/"
             target="_blank"
