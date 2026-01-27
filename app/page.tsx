@@ -2,7 +2,7 @@ import Image from "next/image"
 
 export default function Home() {
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-green-50 via-white to-amber-50/30">
+    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-white">
       {/* Background graphic - large and centered */}
       <div className="absolute inset-0 flex items-center justify-center opacity-15">
         <Image
@@ -19,7 +19,7 @@ export default function Home() {
       <div className="relative z-10 flex flex-col items-center px-4 py-12 text-center sm:px-6 md:py-16">
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-green-200 bg-green-50/80 px-4 py-2 backdrop-blur-sm">
           <span className="h-2 w-2 rounded-full bg-green-500" />
-          <span className="text-sm font-medium text-green-700">Microbiome Health Guide</span>
+          <span className="text-sm font-medium text-green-700">Launching Soon</span>
         </div>
 
         <h1 className="bg-gradient-to-r from-green-600 via-emerald-500 to-amber-500 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent sm:text-5xl md:text-7xl lg:text-8xl">
@@ -34,7 +34,7 @@ export default function Home() {
           A practical guide to the foods that strengthen your microbiome and improve how you feel day to day — digestion, immunity, energy, mood, and recovery.
         </p>
 
-        <p className="mt-4 max-w-md rounded-lg bg-amber-50/80 px-4 py-3 text-sm italic text-amber-700 backdrop-blur-sm sm:max-w-lg sm:text-base md:text-lg">
+        <p className="mt-4 max-w-md px-4 py-3 text-sm italic text-amber-700 sm:max-w-lg sm:text-base md:text-lg">
           "Build the food system inside you… and help build the food system around you."
         </p>
 
