@@ -27,20 +27,33 @@ export default function Home() {
           EatoBiotics
         </h1>
         <p className="mt-6 text-2xl font-medium text-green-600 md:mt-8 md:text-3xl lg:text-4xl">
-          Launching Soon
+          The Food System Inside You
         </p>
-        <p className="mt-4 max-w-md text-lg text-gray-600 md:max-w-lg md:text-xl">
-          Discover the future of gut health with our revolutionary probiotic solutions
+        <p className="mt-4 max-w-2xl text-lg leading-relaxed text-gray-600 md:text-xl">
+          A practical guide to the foods that strengthen your microbiome and improve how you feel day to day — digestion, immunity, energy, mood, and recovery.
+        </p>
+        <p className="mt-4 max-w-xl text-base italic text-amber-600 md:text-lg">
+          "Build the food system inside you… and help build the food system around you."
         </p>
 
         {/* Call to action */}
         <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
-          <button className="rounded-full bg-gradient-to-r from-green-500 to-lime-500 px-8 py-4 text-lg font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-green-500/25">
-            Get Notified
-          </button>
-          <button className="rounded-full border-2 border-amber-500 px-8 py-4 text-lg font-semibold text-amber-600 transition-all duration-300 hover:bg-amber-500 hover:text-white">
-            Learn More
-          </button>
+          <a
+            href="https://eatobiotics.substack.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full bg-gradient-to-r from-green-500 to-lime-500 px-8 py-4 text-lg font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-green-500/25"
+          >
+            Subscribe on Substack
+          </a>
+          <a
+            href="https://www.eatosystem.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full border-2 border-amber-500 px-8 py-4 text-lg font-semibold text-amber-600 transition-all duration-300 hover:bg-amber-500 hover:text-white"
+          >
+            Explore EatoSystem
+          </a>
         </div>
       </div>
 
