@@ -42,7 +42,7 @@ export function TheThreeBiotics() {
       <div className="mx-auto max-w-[1200px]">
         <ScrollReveal>
           <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
-            The Framework
+            The Biotics
           </p>
           <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground sm:text-5xl md:text-6xl text-pretty">
             Three types of biotics.

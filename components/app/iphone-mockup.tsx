@@ -29,14 +29,8 @@ export function IPhoneMockup() {
 
   return (
     <div className="relative mx-auto w-[260px] sm:w-[280px]">
-      {/* Glow behind phone */}
-      <div
-        className="absolute -inset-8 rounded-[3rem] blur-3xl opacity-20"
-        style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-teal), var(--icon-orange))" }}
-      />
-
       {/* Phone frame */}
-      <div className="relative overflow-hidden rounded-[2.5rem] border-[6px] border-foreground bg-background p-6 shadow-xl">
+      <div className="overflow-hidden rounded-[2.5rem] border-[6px] border-foreground bg-background p-6 shadow-xl">
         {/* Notch */}
         <div className="mx-auto mb-6 h-6 w-24 rounded-full bg-foreground" />
 

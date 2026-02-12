@@ -38,8 +38,8 @@ export function Footer() {
                 Explore
               </p>
               <div className="mt-4 flex flex-col gap-3">
-                <Link href="/framework" className="text-sm text-foreground transition-colors hover:text-icon-green">
-                  The Framework
+                <Link href="/biotics" className="text-sm text-foreground transition-colors hover:text-icon-green">
+                  The Biotics
                 </Link>
                 <Link href="/book" className="text-sm text-foreground transition-colors hover:text-icon-green">
                   The Book

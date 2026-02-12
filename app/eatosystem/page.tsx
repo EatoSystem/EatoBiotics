@@ -3,28 +3,13 @@ import Image from "next/image"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { GradientText } from "@/components/gradient-text"
 import { MapPin, Users, Leaf, ArrowUpRight } from "lucide-react"
+import { CountyTags } from "@/components/eatosystem/county-tags"
 
 export const metadata: Metadata = {
   title: "EatoSystem",
   description:
     "From individual health to community food systems -- the County Model for building local food resilience.",
 }
-
-const counties = [
-  "Carlow", "Cavan", "Clare", "Cork", "Donegal", "Dublin", "Galway", "Kerry",
-  "Kildare", "Kilkenny", "Laois", "Leitrim", "Limerick", "Longford", "Louth",
-  "Mayo", "Meath", "Monaghan", "Offaly", "Roscommon", "Sligo", "Tipperary",
-  "Waterford", "Westmeath", "Wexford", "Wicklow", "Antrim", "Armagh", "Derry",
-  "Down", "Fermanagh", "Tyrone",
-]
-
-const iconColors = [
-  "var(--icon-lime)",
-  "var(--icon-green)",
-  "var(--icon-teal)",
-  "var(--icon-yellow)",
-  "var(--icon-orange)",
-]
 
 const pillars = [
   {
@@ -57,7 +42,7 @@ export default function EatosystemPage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative px-6 pt-32 pb-20 md:pt-40 md:pb-28">
+      <section className="px-6 pt-32 pb-20 md:pt-40 md:pb-28">
         <div className="mx-auto max-w-[680px] text-center">
           <ScrollReveal>
             <Image
@@ -150,25 +135,8 @@ export default function EatosystemPage() {
           </ScrollReveal>
 
           <ScrollReveal delay={200}>
-            <div className="mt-12 flex flex-wrap gap-3">
-              {counties.map((county, i) => (
-                <span
-                  key={county}
-                  className="cursor-default rounded-full border-2 px-4 py-2 text-sm font-medium text-foreground transition-all hover:text-white hover:border-transparent"
-                  style={{
-                    borderColor: iconColors[i % iconColors.length],
-                    backgroundColor: `color-mix(in srgb, ${iconColors[i % iconColors.length]} 8%, transparent)`,
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLSpanElement).style.backgroundColor = iconColors[i % iconColors.length]
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLSpanElement).style.backgroundColor = `color-mix(in srgb, ${iconColors[i % iconColors.length]} 8%, transparent)`
-                  }}
-                >
-                  {county}
-                </span>
-              ))}
+            <div className="mt-12">
+              <CountyTags />
             </div>
           </ScrollReveal>
 
@@ -178,7 +146,7 @@ export default function EatosystemPage() {
                 href="https://www.eatosystem.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
+                className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30"
               >
                 Learn more at EatoSystem.com
                 <ArrowUpRight size={16} />

@@ -6,7 +6,7 @@ import { BioticsPlate } from "@/components/framework/biotics-plate"
 import { ZigZagSection } from "@/components/framework/zig-zag-section"
 
 export const metadata: Metadata = {
-  title: "The Framework",
+  title: "The Biotics",
   description:
     "Prebiotics, Probiotics, and Postbiotics -- the three pillars of the EatoBiotics food system for your microbiome.",
 }
@@ -56,14 +56,14 @@ export default function FrameworkPage() {
               className="mx-auto mb-6 h-16 w-16 md:h-20 md:w-20"
             />
             <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
-              The Framework
+              The Biotics
             </p>
             <h1 className="mt-4 font-serif text-5xl font-semibold text-foreground sm:text-6xl md:text-7xl text-balance">
               Feed. Add.{" "}
               <GradientText>Produce.</GradientText>
             </h1>
             <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-              The EatoBiotics framework is built on three pillars -- the three types of biotics
+              EatoBiotics is built on three pillars -- the three types of biotics
               that work together to build and maintain the food system inside you.
             </p>
             <div className="mx-auto mt-8 h-1 w-48 rounded-full brand-gradient" />

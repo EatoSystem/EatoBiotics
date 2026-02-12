@@ -3,12 +3,6 @@ import Image from "next/image"
 export function BookCover() {
   return (
     <div className="relative mx-auto w-[260px] sm:w-[300px]">
-      {/* Shadow glow using icon colours */}
-      <div
-        className="absolute -inset-6 rounded-3xl opacity-20 blur-3xl"
-        style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-teal), var(--icon-orange))" }}
-      />
-
       {/* Book */}
       <div className="relative flex aspect-[3/4] w-full flex-col items-center justify-center rounded-xl border-2 border-border bg-background p-8 shadow-xl">
         {/* Spine effect */}
