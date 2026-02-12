@@ -6,7 +6,7 @@ import { BookCover } from "@/components/book/book-cover"
 import { ChapterList } from "@/components/book/chapter-list"
 
 export const metadata: Metadata = {
-  title: "The Book",
+  title: "The Book - Coming Soon",
   description:
     "EatoBiotics: The Food System Inside You -- a structured guide through the science and practice of feeding your microbiome.",
 }
