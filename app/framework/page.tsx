@@ -1,0 +1,108 @@
+import type { Metadata } from "next"
+import { ScrollReveal } from "@/components/scroll-reveal"
+import { GradientText } from "@/components/gradient-text"
+import { BioticsPlate } from "@/components/framework/biotics-plate"
+import { ZigZagSection } from "@/components/framework/zig-zag-section"
+
+export const metadata: Metadata = {
+  title: "The Framework",
+  description:
+    "Prebiotics, Probiotics, and Postbiotics — the three pillars of the EatoBiotics food system for your microbiome.",
+}
+
+const deepDives = [
+  {
+    number: "01",
+    label: "Prebiotics",
+    action: "Feed",
+    heading: "Feed your gut bacteria",
+    body: "Prebiotics are the non-digestible fibers and compounds found in everyday plant foods. They pass through your upper digestive tract undigested and reach your colon, where they become fuel for beneficial bacteria. Foods rich in prebiotics include garlic, onions, leeks, asparagus, bananas, oats, and apples. By consistently eating these foods, you provide the raw materials your gut ecosystem needs to thrive.",
+    foods: ["Garlic", "Onions", "Leeks", "Asparagus", "Bananas", "Oats", "Apples", "Chicory Root"],
+  },
+  {
+    number: "02",
+    label: "Probiotics",
+    action: "Add",
+    heading: "Add living microorganisms",
+    body: "Probiotics are live beneficial bacteria and yeasts found primarily in fermented foods. When you eat yogurt, kimchi, sauerkraut, kefir, miso, tempeh, or kombucha, you are introducing new microbial residents to your gut community. These living organisms help maintain a diverse and resilient microbiome, support immune function, and aid in the breakdown of foods your body cannot process alone.",
+    foods: ["Yogurt", "Kimchi", "Sauerkraut", "Kefir", "Miso", "Tempeh", "Kombucha"],
+  },
+  {
+    number: "03",
+    label: "Postbiotics",
+    action: "Produce",
+    heading: "Harvest what your bacteria make",
+    body: "Postbiotics are the beneficial compounds produced by your gut bacteria as they ferment prebiotics. These include short-chain fatty acids (like butyrate), vitamins (B12, K2), amino acids, and even neurotransmitters like serotonin. Postbiotics are the actual 'output' of a healthy microbiome — they reduce inflammation, strengthen your gut lining, regulate your immune system, and directly influence your mood and energy.",
+    foods: ["Butyrate", "Short-chain Fatty Acids", "Vitamin K2", "Vitamin B12", "Serotonin Precursors"],
+  },
+]
+
+export default function FrameworkPage() {
+  return (
+    <>
+      {/* Hero */}
+      <section className="px-6 pt-32 pb-20 md:pt-40 md:pb-28">
+        <div className="mx-auto max-w-[680px] text-center">
+          <ScrollReveal>
+            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
+              The Framework
+            </p>
+            <h1 className="mt-4 font-serif text-5xl text-[var(--foreground)] sm:text-6xl md:text-7xl text-balance">
+              Feed. Add.{" "}
+              <GradientText>Produce.</GradientText>
+            </h1>
+            <p className="mt-6 text-lg leading-relaxed text-[var(--muted-foreground)]">
+              The EatoBiotics framework is built on three pillars — the three types of biotics
+              that work together to build and maintain the food system inside you.
+            </p>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      {/* The Plate Diagram */}
+      <section className="bg-[var(--secondary)] px-6 py-32 md:py-40">
+        <div className="mx-auto max-w-[1200px]">
+          <ScrollReveal>
+            <div className="text-center">
+              <p className="text-xs font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
+                Visual Model
+              </p>
+              <h2 className="mt-4 font-serif text-4xl text-[var(--foreground)] sm:text-5xl">
+                The EatoBiotics Plate
+              </h2>
+              <p className="mx-auto mt-4 max-w-lg text-base text-[var(--muted-foreground)]">
+                A circular system where each biotic type supports the next.
+              </p>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal delay={200}>
+            <div className="mt-16 flex justify-center">
+              <BioticsPlate />
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      {/* Deep Dives - Zig Zag */}
+      <section className="px-6 py-32 md:py-40">
+        <div className="mx-auto max-w-[1200px]">
+          <ScrollReveal>
+            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
+              Deep Dive
+            </p>
+            <h2 className="mt-4 font-serif text-4xl text-[var(--foreground)] sm:text-5xl">
+              Understanding Each Biotic
+            </h2>
+          </ScrollReveal>
+
+          <div className="mt-20 flex flex-col gap-32">
+            {deepDives.map((item, index) => (
+              <ZigZagSection key={item.number} {...item} reverse={index % 2 === 1} />
+            ))}
+          </div>
+        </div>
+      </section>
+    </>
+  )
+}
