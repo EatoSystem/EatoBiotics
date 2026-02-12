@@ -67,7 +67,7 @@ export default function AppPage() {
                   className="mx-auto mb-4 h-12 w-12 md:mx-0"
                 />
                 <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
-                  Coming Soon
+                  The App - Coming Soon
                 </p>
                 <h1 className="mt-4 font-serif text-4xl font-semibold text-foreground sm:text-5xl md:text-6xl text-balance">
                   The <GradientText>EatoBiotics</GradientText> App
