@@ -56,7 +56,7 @@ export default function EatosystemPage() {
               The Bigger Picture
             </p>
             <h1 className="mt-4 font-serif text-5xl font-semibold text-foreground sm:text-6xl md:text-7xl text-balance">
-              The <GradientText>EatoSystem</GradientText>
+              <GradientText>EatoSystem</GradientText>
             </h1>
             <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
               From the food system inside you to the food system around you.
