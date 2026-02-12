@@ -56,10 +56,10 @@ export default function FrameworkPage() {
               height={80}
               className="mx-auto mb-6 h-16 w-16 md:h-20 md:w-20"
             />
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
               The Framework
             </p>
-            <h1 className="mt-4 font-serif text-5xl text-foreground sm:text-6xl md:text-7xl text-balance">
+            <h1 className="mt-4 font-serif text-5xl font-800 text-foreground sm:text-6xl md:text-7xl text-balance">
               Feed. Add.{" "}
               <GradientText>Produce.</GradientText>
             </h1>
@@ -80,14 +80,14 @@ export default function FrameworkPage() {
       </section>
 
       {/* The Plate Diagram */}
-      <section className="bg-secondary px-6 py-32 md:py-40">
+      <section className="bg-green-section px-6 py-32 md:py-40">
         <div className="mx-auto max-w-[1200px]">
           <ScrollReveal>
             <div className="text-center">
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              <p className="text-xs font-semibold uppercase tracking-widest text-icon-teal">
                 Visual Model
               </p>
-              <h2 className="mt-4 font-serif text-4xl text-foreground sm:text-5xl">
+              <h2 className="mt-4 font-serif text-4xl font-800 text-foreground sm:text-5xl">
                 The EatoBiotics Plate
               </h2>
               <p className="mx-auto mt-4 max-w-lg text-base text-muted-foreground">
@@ -105,13 +105,13 @@ export default function FrameworkPage() {
       </section>
 
       {/* Deep Dives - Zig Zag */}
-      <section className="px-6 py-32 md:py-40">
+      <section className="bg-orange-section px-6 py-32 md:py-40">
         <div className="mx-auto max-w-[1200px]">
           <ScrollReveal>
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            <p className="text-xs font-semibold uppercase tracking-widest text-icon-orange">
               Deep Dive
             </p>
-            <h2 className="mt-4 font-serif text-4xl text-foreground sm:text-5xl">
+            <h2 className="mt-4 font-serif text-4xl font-800 text-foreground sm:text-5xl">
               Understanding Each Biotic
             </h2>
           </ScrollReveal>

@@ -79,7 +79,7 @@ export function ChapterList() {
               Part {part.part}
             </p>
           </div>
-          <h3 className="mt-2 font-serif text-2xl text-foreground">
+          <h3 className="mt-2 font-serif text-2xl font-700 text-foreground">
             {part.title}
           </h3>
 

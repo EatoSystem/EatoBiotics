@@ -7,15 +7,15 @@ export async function LatestFromSubstack() {
   const posts = await fetchSubstackPosts(3)
 
   return (
-    <section className="bg-secondary px-6 py-32 md:py-40">
+    <section className="bg-orange-section px-6 py-32 md:py-40">
       <div className="mx-auto max-w-[1200px]">
         <ScrollReveal>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              <p className="text-xs font-semibold uppercase tracking-widest text-icon-orange">
                 Latest Writing
               </p>
-              <h2 className="mt-4 font-serif text-4xl text-foreground sm:text-5xl">
+              <h2 className="mt-4 font-serif text-4xl font-800 text-foreground sm:text-5xl">
                 From the Substack
               </h2>
             </div>

@@ -31,6 +31,7 @@ const pillars = [
     icon: MapPin,
     title: "Local First",
     color: "var(--icon-lime)",
+    bg: "rgba(168,224,99,0.15)",
     description:
       "Each county builds its own food network — local growers, producers, and markets connected through a shared platform.",
   },
@@ -38,6 +39,7 @@ const pillars = [
     icon: Users,
     title: "Community Driven",
     color: "var(--icon-teal)",
+    bg: "rgba(45,170,110,0.12)",
     description:
       "Food hubs, community gardens, and local cooperatives form the backbone of the EatoSystem at the county level.",
   },
@@ -45,6 +47,7 @@ const pillars = [
     icon: Leaf,
     title: "Biotic Awareness",
     color: "var(--icon-orange)",
+    bg: "rgba(245,166,35,0.12)",
     description:
       "Every food in the system is tagged with its prebiotic, probiotic, or postbiotic value — making better choices easier.",
   },
@@ -65,10 +68,10 @@ export default function EatosystemPage() {
               height={80}
               className="mx-auto mb-6 h-16 w-16 md:h-20 md:w-20"
             />
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
               The Bigger Picture
             </p>
-            <h1 className="mt-4 font-serif text-5xl text-foreground sm:text-6xl md:text-7xl text-balance">
+            <h1 className="mt-4 font-serif text-5xl font-800 text-foreground sm:text-6xl md:text-7xl text-balance">
               The <GradientText>EatoSystem</GradientText>
             </h1>
             <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
@@ -88,38 +91,38 @@ export default function EatosystemPage() {
       </section>
 
       {/* Pillars */}
-      <section className="bg-secondary px-6 py-32 md:py-40">
+      <section className="bg-green-section px-6 py-32 md:py-40">
         <div className="mx-auto max-w-[1200px]">
           <ScrollReveal>
-            <p className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            <p className="text-center text-xs font-semibold uppercase tracking-widest text-icon-teal">
               How It Works
             </p>
-            <h2 className="mt-4 text-center font-serif text-4xl text-foreground sm:text-5xl">
+            <h2 className="mt-4 text-center font-serif text-4xl font-800 text-foreground sm:text-5xl">
               The County Model
             </h2>
           </ScrollReveal>
 
-          <div className="mt-16 grid gap-8 md:grid-cols-3 md:gap-12">
+          <div className="mt-16 grid gap-8 md:grid-cols-3 md:gap-10">
             {pillars.map((pillar, index) => (
               <ScrollReveal key={pillar.title} delay={index * 150}>
                 <div
-                  className="flex flex-col items-start rounded-2xl border-t-4 bg-card p-8"
-                  style={{ borderTopColor: pillar.color }}
+                  className="flex flex-col items-start rounded-2xl border-l-4 p-8 shadow-sm"
+                  style={{ borderLeftColor: pillar.color, backgroundColor: pillar.bg }}
                 >
                   <div
-                    className="flex h-12 w-12 items-center justify-center rounded-lg"
+                    className="flex h-12 w-12 items-center justify-center rounded-xl"
                     style={{ backgroundColor: pillar.color }}
                   >
-                    <pillar.icon size={24} className="text-background" />
+                    <pillar.icon size={24} className="text-white" />
                   </div>
-                  <h3 className="mt-6 text-lg font-semibold text-foreground">
+                  <h3 className="mt-6 font-serif text-lg font-700 text-foreground">
                     {pillar.title}
                   </h3>
                   <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                     {pillar.description}
                   </p>
                   <div
-                    className="mt-6 h-1.5 w-12 rounded-full"
+                    className="mt-6 h-2 w-12 rounded-full"
                     style={{ backgroundColor: pillar.color }}
                   />
                 </div>
@@ -130,13 +133,13 @@ export default function EatosystemPage() {
       </section>
 
       {/* 32 Counties */}
-      <section className="px-6 py-32 md:py-40">
+      <section className="bg-orange-section px-6 py-32 md:py-40">
         <div className="mx-auto max-w-[1200px]">
           <ScrollReveal>
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            <p className="text-xs font-semibold uppercase tracking-widest text-icon-orange">
               All 32 Counties
             </p>
-            <h2 className="mt-4 font-serif text-4xl text-foreground sm:text-5xl">
+            <h2 className="mt-4 font-serif text-4xl font-800 text-foreground sm:text-5xl">
               One Island, One System
             </h2>
             <p className="mt-4 max-w-lg text-base text-muted-foreground">
@@ -150,15 +153,16 @@ export default function EatosystemPage() {
               {counties.map((county, i) => (
                 <span
                   key={county}
-                  className="cursor-default rounded-full border border-border bg-background px-4 py-2 text-sm text-foreground transition-all hover:text-background hover:border-transparent"
+                  className="cursor-default rounded-full border-2 px-4 py-2 text-sm font-medium text-foreground transition-all hover:text-white hover:border-transparent"
                   style={{
-                    ["--hover-bg" as string]: iconColors[i % iconColors.length],
+                    borderColor: iconColors[i % iconColors.length],
+                    backgroundColor: `color-mix(in srgb, ${iconColors[i % iconColors.length]} 10%, transparent)`,
                   }}
                   onMouseEnter={(e) => {
                     (e.currentTarget as HTMLSpanElement).style.backgroundColor = iconColors[i % iconColors.length]
                   }}
                   onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLSpanElement).style.backgroundColor = ""
+                    (e.currentTarget as HTMLSpanElement).style.backgroundColor = `color-mix(in srgb, ${iconColors[i % iconColors.length]} 10%, transparent)`
                   }}
                 >
                   {county}
@@ -173,7 +177,7 @@ export default function EatosystemPage() {
                 href="https://www.eatosystem.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-base font-medium text-icon-green transition-colors hover:text-icon-orange"
+                className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-foreground shadow-lg shadow-icon-lime/20 transition-all hover:shadow-xl hover:shadow-icon-lime/30 hover:opacity-90"
               >
                 Learn more at EatoSystem.com
                 <ArrowUpRight size={16} />

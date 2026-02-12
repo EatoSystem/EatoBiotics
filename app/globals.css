@@ -4,25 +4,25 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Core palette derived from the EatoBiotics icon */
-  --background: #FFFFFF;
-  --foreground: #1B2D1B;
+  /* Core palette — organic green & orange derived from the EatoBiotics icon */
+  --background: #FAFDF6;
+  --foreground: #1A2E12;
   --card: #FFFFFF;
-  --card-foreground: #1B2D1B;
+  --card-foreground: #1A2E12;
   --popover: #FFFFFF;
-  --popover-foreground: #1B2D1B;
+  --popover-foreground: #1A2E12;
   --primary: #4CB648;
   --primary-foreground: #FFFFFF;
-  --secondary: #F5F8F0;
-  --secondary-foreground: #1B2D1B;
-  --muted: #F0F4EB;
-  --muted-foreground: #5A6B5A;
+  --secondary: #EEF5E4;
+  --secondary-foreground: #1A2E12;
+  --muted: #E6F0D8;
+  --muted-foreground: #4A6340;
   --accent: #F5A623;
   --accent-foreground: #FFFFFF;
   --destructive: #E53E3E;
   --destructive-foreground: #FFFFFF;
-  --border: #E4EBD8;
-  --input: #E4EBD8;
+  --border: #D4E4C0;
+  --input: #D4E4C0;
   --ring: #4CB648;
   --radius: 0.75rem;
 
@@ -36,7 +36,7 @@
 
 @theme inline {
   --font-sans: 'DM Sans', 'DM Sans Fallback', system-ui, sans-serif;
-  --font-serif: 'Instrument Serif', 'Lora', 'Georgia', serif;
+  --font-serif: 'Sora', 'Sora Fallback', system-ui, sans-serif;
   --font-mono: 'Geist Mono', 'Geist Mono Fallback', monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -96,9 +96,25 @@
 .bg-icon-yellow { background-color: var(--icon-yellow); }
 .bg-icon-orange { background-color: var(--icon-orange); }
 
-/* Subtle radial glow for hero sections */
+/* Organic glow for hero sections */
 .icon-glow {
-  background: radial-gradient(ellipse at center, rgba(168,224,99,0.12) 0%, rgba(76,182,72,0.06) 40%, transparent 70%);
+  background: radial-gradient(ellipse at 30% 40%, rgba(168,224,99,0.18) 0%, transparent 50%),
+              radial-gradient(ellipse at 70% 60%, rgba(245,166,35,0.12) 0%, transparent 50%);
+}
+
+/* Green section background */
+.bg-green-section {
+  background: linear-gradient(180deg, #E6F0D8 0%, #D4E8BF 100%);
+}
+
+/* Orange accent section */
+.bg-orange-section {
+  background: linear-gradient(180deg, #FFF5E6 0%, #FFECD0 100%);
+}
+
+/* Warm green tinted section */
+.bg-warm-green {
+  background: linear-gradient(180deg, #F0F7E6 0%, #E6F0D8 100%);
 }
 
 /* Pill shape decoration — mimics the icon capsule shapes */

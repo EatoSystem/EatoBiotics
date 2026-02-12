@@ -41,17 +41,17 @@ export function BioticsPlate() {
 
       {/* Labels */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 text-center sm:top-6">
-        <p className="text-sm font-semibold text-icon-lime">Prebiotics</p>
+        <p className="text-sm font-bold text-icon-lime">Prebiotics</p>
         <p className="text-xs text-muted-foreground">Feed</p>
       </div>
 
       <div className="absolute bottom-8 right-2 text-center sm:right-4 sm:bottom-10">
-        <p className="text-sm font-semibold text-icon-teal">Probiotics</p>
+        <p className="text-sm font-bold text-icon-teal">Probiotics</p>
         <p className="text-xs text-muted-foreground">Add</p>
       </div>
 
       <div className="absolute bottom-8 left-2 text-center sm:left-4 sm:bottom-10">
-        <p className="text-sm font-semibold text-icon-orange">Postbiotics</p>
+        <p className="text-sm font-bold text-icon-orange">Postbiotics</p>
         <p className="text-xs text-muted-foreground">Produce</p>
       </div>
 

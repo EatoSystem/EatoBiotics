@@ -25,10 +25,10 @@ export function BookCover() {
           />
         </div>
 
-        <h3 className="text-center font-serif text-3xl text-background">
+        <h3 className="text-center font-serif text-3xl font-800 text-white">
           EatoBiotics
         </h3>
-        <p className="mt-2 text-center text-sm font-medium text-background/80">
+        <p className="mt-2 text-center text-sm font-medium text-white/80">
           The Food System Inside You
         </p>
 

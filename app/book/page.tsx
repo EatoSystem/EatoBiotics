@@ -34,13 +34,13 @@ export default function BookPage() {
                   height={48}
                   className="mx-auto mb-4 h-12 w-12 md:mx-0"
                 />
-                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
                   The Book
                 </p>
-                <h1 className="mt-4 font-serif text-5xl text-foreground sm:text-6xl text-balance">
+                <h1 className="mt-4 font-serif text-5xl font-800 text-foreground sm:text-6xl text-balance">
                   <GradientText>EatoBiotics</GradientText>
                 </h1>
-                <p className="mt-2 font-serif text-2xl text-muted-foreground">
+                <p className="mt-2 font-serif text-2xl font-600 text-muted-foreground">
                   The Food System Inside You
                 </p>
                 <p className="mt-6 max-w-lg text-base leading-relaxed text-muted-foreground">
@@ -61,7 +61,7 @@ export default function BookPage() {
                     href="https://eatobiotics.substack.com/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="brand-gradient inline-block rounded-full px-8 py-4 text-base font-semibold text-background transition-opacity hover:opacity-90"
+                    className="brand-gradient inline-block rounded-full px-8 py-4 text-base font-semibold text-foreground shadow-lg shadow-icon-lime/20 transition-all hover:shadow-xl hover:shadow-icon-lime/30 hover:opacity-90"
                   >
                     Read on Substack
                   </a>
@@ -73,13 +73,13 @@ export default function BookPage() {
       </section>
 
       {/* Chapter List */}
-      <section className="bg-secondary px-6 py-32 md:py-40">
+      <section className="bg-warm-green px-6 py-32 md:py-40">
         <div className="mx-auto max-w-[680px]">
           <ScrollReveal>
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            <p className="text-xs font-semibold uppercase tracking-widest text-icon-teal">
               Table of Contents
             </p>
-            <h2 className="mt-4 font-serif text-4xl text-foreground sm:text-5xl">
+            <h2 className="mt-4 font-serif text-4xl font-800 text-foreground sm:text-5xl">
               The Chapters
             </h2>
           </ScrollReveal>

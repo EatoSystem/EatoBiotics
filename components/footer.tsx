@@ -3,7 +3,7 @@ import Image from "next/image"
 
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-secondary">
+    <footer className="border-t border-icon-lime/30 bg-warm-green">
       <div className="mx-auto max-w-[1200px] px-6 py-16">
         <div className="flex flex-col gap-12 md:flex-row md:justify-between">
           <div className="max-w-xs">
@@ -15,7 +15,7 @@ export function Footer() {
                 height={32}
                 className="h-8 w-8"
               />
-              <p className="font-serif text-xl text-foreground">EatoBiotics</p>
+              <p className="font-serif text-xl font-bold text-foreground">EatoBiotics</p>
             </div>
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
               Build the food system inside you... and help build the food system around you.
