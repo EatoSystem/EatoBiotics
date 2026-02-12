@@ -5,7 +5,7 @@
 
 :root {
   /* Core palette — organic green & orange derived from the EatoBiotics icon */
-  --background: #FAFDF6;
+  --background: #FFFFFF;
   --foreground: #1A2E12;
   --card: #FFFFFF;
   --card-foreground: #1A2E12;
@@ -13,16 +13,16 @@
   --popover-foreground: #1A2E12;
   --primary: #4CB648;
   --primary-foreground: #FFFFFF;
-  --secondary: #EEF5E4;
+  --secondary: #F7F7F7;
   --secondary-foreground: #1A2E12;
-  --muted: #E6F0D8;
-  --muted-foreground: #4A6340;
+  --muted: #F3F3F3;
+  --muted-foreground: #5A6E50;
   --accent: #F5A623;
   --accent-foreground: #FFFFFF;
   --destructive: #E53E3E;
   --destructive-foreground: #FFFFFF;
-  --border: #D4E4C0;
-  --input: #D4E4C0;
+  --border: #E5E5E5;
+  --input: #E5E5E5;
   --ring: #4CB648;
   --radius: 0.75rem;
 
@@ -95,19 +95,10 @@
               radial-gradient(ellipse at 70% 60%, rgba(245,166,35,0.12) 0%, transparent 50%);
 }
 
-/* Green section background */
-.bg-green-section {
-  background: linear-gradient(180deg, #E6F0D8 0%, #D4E8BF 100%);
-}
-
-/* Orange accent section */
-.bg-orange-section {
-  background: linear-gradient(180deg, #FFF5E6 0%, #FFECD0 100%);
-}
-
-/* Warm green tinted section */
-.bg-warm-green {
-  background: linear-gradient(180deg, #F0F7E6 0%, #E6F0D8 100%);
+/* Full-width gradient divider between sections */
+.section-divider {
+  height: 4px;
+  background: linear-gradient(90deg, var(--icon-lime) 0%, var(--icon-green) 25%, var(--icon-teal) 50%, var(--icon-yellow) 75%, var(--icon-orange) 100%);
 }
 
 /* Pill shape decoration — mimics the icon capsule shapes */

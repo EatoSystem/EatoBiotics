@@ -20,7 +20,7 @@ export function Nav() {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-icon-lime/30 bg-background/90 backdrop-blur-xl">
+    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/90 backdrop-blur-xl">
       <div className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-3">
         <Link href="/" className="flex items-center gap-2.5">
           <Image
@@ -30,7 +30,7 @@ export function Nav() {
             height={36}
             className="h-9 w-9"
           />
-          <span className="font-serif text-xl font-bold tracking-tight text-foreground">
+          <span className="font-serif text-xl font-semibold tracking-tight text-foreground">
             EatoBiotics
           </span>
         </Link>

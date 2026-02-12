@@ -3,7 +3,10 @@ import Image from "next/image"
 
 export function Footer() {
   return (
-    <footer className="border-t border-icon-lime/30 bg-warm-green">
+    <footer className="bg-background">
+      {/* Gradient divider at top */}
+      <div className="section-divider" />
+
       <div className="mx-auto max-w-[1200px] px-6 py-16">
         <div className="flex flex-col gap-12 md:flex-row md:justify-between">
           <div className="max-w-xs">
@@ -15,12 +18,11 @@ export function Footer() {
                 height={32}
                 className="h-8 w-8"
               />
-              <p className="font-serif text-xl font-bold text-foreground">EatoBiotics</p>
+              <p className="font-serif text-xl font-semibold text-foreground">EatoBiotics</p>
             </div>
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
               Build the food system inside you... and help build the food system around you.
             </p>
-            {/* Decorative icon colour pills */}
             <div className="mt-5 flex items-center gap-1.5">
               <span className="biotic-pill bg-icon-lime" />
               <span className="biotic-pill bg-icon-green" />
@@ -32,7 +34,7 @@ export function Footer() {
 
           <div className="flex flex-wrap gap-16">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
                 Explore
               </p>
               <div className="mt-4 flex flex-col gap-3">
@@ -52,7 +54,7 @@ export function Footer() {
             </div>
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              <p className="text-xs font-semibold uppercase tracking-widest text-icon-orange">
                 Connect
               </p>
               <div className="mt-4 flex flex-col gap-3">
@@ -60,7 +62,7 @@ export function Footer() {
                   href="https://eatobiotics.substack.com/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-foreground transition-colors hover:text-icon-green"
+                  className="text-sm text-foreground transition-colors hover:text-icon-orange"
                 >
                   Substack
                 </a>
@@ -68,7 +70,7 @@ export function Footer() {
                   href="https://www.eatosystem.com/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-foreground transition-colors hover:text-icon-green"
+                  className="text-sm text-foreground transition-colors hover:text-icon-orange"
                 >
                   EatoSystem.com
                 </a>

@@ -25,7 +25,7 @@ export function BookCover() {
           />
         </div>
 
-        <h3 className="text-center font-serif text-3xl font-extrabold text-white">
+        <h3 className="text-center font-serif text-3xl font-semibold text-white">
           EatoBiotics
         </h3>
         <p className="mt-2 text-center text-sm font-medium text-white/80">

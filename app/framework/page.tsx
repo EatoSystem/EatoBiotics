@@ -8,7 +8,7 @@ import { ZigZagSection } from "@/components/framework/zig-zag-section"
 export const metadata: Metadata = {
   title: "The Framework",
   description:
-    "Prebiotics, Probiotics, and Postbiotics — the three pillars of the EatoBiotics food system for your microbiome.",
+    "Prebiotics, Probiotics, and Postbiotics -- the three pillars of the EatoBiotics food system for your microbiome.",
 }
 
 const deepDives = [
@@ -36,7 +36,7 @@ const deepDives = [
     action: "Produce",
     color: "var(--icon-orange)",
     heading: "Harvest what your bacteria make",
-    body: "Postbiotics are the beneficial compounds produced by your gut bacteria as they ferment prebiotics. These include short-chain fatty acids (like butyrate), vitamins (B12, K2), amino acids, and even neurotransmitters like serotonin. Postbiotics are the actual 'output' of a healthy microbiome — they reduce inflammation, strengthen your gut lining, regulate your immune system, and directly influence your mood and energy.",
+    body: "Postbiotics are the beneficial compounds produced by your gut bacteria as they ferment prebiotics. These include short-chain fatty acids (like butyrate), vitamins (B12, K2), amino acids, and even neurotransmitters like serotonin. Postbiotics are the actual output of a healthy microbiome -- they reduce inflammation, strengthen your gut lining, regulate your immune system, and directly influence your mood and energy.",
     foods: ["Butyrate", "Short-chain Fatty Acids", "Vitamin K2", "Vitamin B12", "Serotonin Precursors"],
   },
 ]
@@ -59,35 +59,31 @@ export default function FrameworkPage() {
             <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
               The Framework
             </p>
-            <h1 className="mt-4 font-serif text-5xl font-extrabold text-foreground sm:text-6xl md:text-7xl text-balance">
+            <h1 className="mt-4 font-serif text-5xl font-semibold text-foreground sm:text-6xl md:text-7xl text-balance">
               Feed. Add.{" "}
               <GradientText>Produce.</GradientText>
             </h1>
             <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-              The EatoBiotics framework is built on three pillars — the three types of biotics
+              The EatoBiotics framework is built on three pillars -- the three types of biotics
               that work together to build and maintain the food system inside you.
             </p>
-            {/* Icon colour bar */}
-            <div className="mx-auto mt-8 flex items-center justify-center gap-2">
-              <span className="biotic-pill bg-icon-lime" />
-              <span className="biotic-pill bg-icon-green" />
-              <span className="biotic-pill bg-icon-teal" />
-              <span className="biotic-pill bg-icon-yellow" />
-              <span className="biotic-pill bg-icon-orange" />
-            </div>
+            <div className="mx-auto mt-8 h-1 w-48 rounded-full brand-gradient" />
           </ScrollReveal>
         </div>
       </section>
 
+      {/* Gradient divider */}
+      <div className="section-divider" />
+
       {/* The Plate Diagram */}
-      <section className="bg-green-section px-6 py-32 md:py-40">
+      <section className="px-6 py-32 md:py-40">
         <div className="mx-auto max-w-[1200px]">
           <ScrollReveal>
             <div className="text-center">
               <p className="text-xs font-semibold uppercase tracking-widest text-icon-teal">
                 Visual Model
               </p>
-              <h2 className="mt-4 font-serif text-4xl font-extrabold text-foreground sm:text-5xl">
+              <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground sm:text-5xl">
                 The EatoBiotics Plate
               </h2>
               <p className="mx-auto mt-4 max-w-lg text-base text-muted-foreground">
@@ -104,14 +100,17 @@ export default function FrameworkPage() {
         </div>
       </section>
 
-      {/* Deep Dives - Zig Zag */}
-      <section className="bg-orange-section px-6 py-32 md:py-40">
+      {/* Gradient divider */}
+      <div className="section-divider" />
+
+      {/* Deep Dives */}
+      <section className="px-6 py-32 md:py-40">
         <div className="mx-auto max-w-[1200px]">
           <ScrollReveal>
             <p className="text-xs font-semibold uppercase tracking-widest text-icon-orange">
               Deep Dive
             </p>
-            <h2 className="mt-4 font-serif text-4xl font-extrabold text-foreground sm:text-5xl">
+            <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground sm:text-5xl">
               Understanding Each Biotic
             </h2>
           </ScrollReveal>

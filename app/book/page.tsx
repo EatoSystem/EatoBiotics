@@ -8,7 +8,7 @@ import { ChapterList } from "@/components/book/chapter-list"
 export const metadata: Metadata = {
   title: "The Book",
   description:
-    "EatoBiotics: The Food System Inside You — a structured guide through the science and practice of feeding your microbiome.",
+    "EatoBiotics: The Food System Inside You -- a structured guide through the science and practice of feeding your microbiome.",
 }
 
 export default function BookPage() {
@@ -19,12 +19,10 @@ export default function BookPage() {
         <div className="pointer-events-none absolute inset-0 icon-glow" />
         <div className="relative mx-auto max-w-[1200px]">
           <div className="flex flex-col items-center gap-16 md:flex-row md:gap-20">
-            {/* Book cover visual */}
             <ScrollReveal>
               <BookCover />
             </ScrollReveal>
 
-            {/* Book info */}
             <div className="flex-1 text-center md:text-left">
               <ScrollReveal delay={100}>
                 <Image
@@ -37,18 +35,17 @@ export default function BookPage() {
                 <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
                   The Book
                 </p>
-                <h1 className="mt-4 font-serif text-5xl font-extrabold text-foreground sm:text-6xl text-balance">
+                <h1 className="mt-4 font-serif text-5xl font-semibold text-foreground sm:text-6xl text-balance">
                   <GradientText>EatoBiotics</GradientText>
                 </h1>
-                <p className="mt-2 font-serif text-2xl font-semibold text-muted-foreground">
+                <p className="mt-2 font-serif text-2xl font-medium text-muted-foreground">
                   The Food System Inside You
                 </p>
                 <p className="mt-6 max-w-lg text-base leading-relaxed text-muted-foreground">
                   A structured journey through the science and practice of prebiotics, probiotics,
                   and postbiotics. Written chapter by chapter on Substack, each installment builds
-                  on the last — from foundations to food profiles to real-world application.
+                  on the last -- from foundations to food profiles to real-world application.
                 </p>
-                {/* Icon colour pills */}
                 <div className="mt-6 flex items-center gap-1.5 md:justify-start justify-center">
                   <span className="biotic-pill bg-icon-lime" />
                   <span className="biotic-pill bg-icon-green" />
@@ -61,7 +58,7 @@ export default function BookPage() {
                     href="https://eatobiotics.substack.com/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="brand-gradient inline-block rounded-full px-8 py-4 text-base font-semibold text-foreground shadow-lg shadow-icon-lime/20 transition-all hover:shadow-xl hover:shadow-icon-lime/30 hover:opacity-90"
+                    className="brand-gradient inline-block rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
                   >
                     Read on Substack
                   </a>
@@ -72,14 +69,17 @@ export default function BookPage() {
         </div>
       </section>
 
+      {/* Gradient divider */}
+      <div className="section-divider" />
+
       {/* Chapter List */}
-      <section className="bg-warm-green px-6 py-32 md:py-40">
+      <section className="px-6 py-32 md:py-40">
         <div className="mx-auto max-w-[680px]">
           <ScrollReveal>
             <p className="text-xs font-semibold uppercase tracking-widest text-icon-teal">
               Table of Contents
             </p>
-            <h2 className="mt-4 font-serif text-4xl font-extrabold text-foreground sm:text-5xl">
+            <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground sm:text-5xl">
               The Chapters
             </h2>
           </ScrollReveal>

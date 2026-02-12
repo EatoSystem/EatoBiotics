@@ -87,7 +87,7 @@ export function IPhoneMockup() {
               </defs>
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="font-serif text-4xl font-extrabold text-foreground">{score}</span>
+              <span className="font-serif text-4xl font-semibold text-foreground">{score}</span>
               <span className="text-xs text-muted-foreground">/ 100</span>
             </div>
           </div>
