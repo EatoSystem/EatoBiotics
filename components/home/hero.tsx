@@ -6,10 +6,7 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 export function Hero() {
   return (
     <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-20">
-      {/* Soft radial glow */}
-      <div className="pointer-events-none absolute inset-0 icon-glow" />
-
-      {/* Floating gradient pills — larger, more vivid */}
+      {/* Floating gradient pills */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
           className="absolute -top-2 left-[5%] h-5 w-44 rotate-[-35deg] rounded-full opacity-40"
