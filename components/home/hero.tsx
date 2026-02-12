@@ -9,36 +9,36 @@ export function Hero() {
       {/* Floating gradient pills */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
-          className="absolute -top-2 left-[5%] h-5 w-44 rotate-[-35deg] rounded-full opacity-40"
+          className="absolute -top-2 left-[5%] h-5 w-44 rotate-[-35deg] rounded-full opacity-20"
           style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
         />
         <div
-          className="absolute top-[8%] right-[6%] h-5 w-36 rotate-[25deg] rounded-full opacity-35"
+          className="absolute top-[8%] right-[6%] h-5 w-36 rotate-[25deg] rounded-full opacity-15"
           style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}
         />
         <div
-          className="absolute top-[25%] left-[10%] h-6 w-28 rotate-[55deg] rounded-full opacity-30"
+          className="absolute top-[25%] left-[10%] h-6 w-28 rotate-[55deg] rounded-full opacity-15"
           style={{ background: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" }}
         />
         <div
-          className="absolute bottom-[20%] left-[2%] h-5 w-32 rotate-[40deg] rounded-full opacity-35"
+          className="absolute bottom-[20%] left-[2%] h-5 w-32 rotate-[40deg] rounded-full opacity-15"
           style={{ background: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" }}
         />
         <div
-          className="absolute bottom-[8%] right-[4%] h-5 w-48 rotate-[-20deg] rounded-full opacity-40"
+          className="absolute bottom-[8%] right-[4%] h-5 w-48 rotate-[-20deg] rounded-full opacity-20"
           style={{ background: "linear-gradient(135deg, var(--icon-orange), var(--icon-yellow))" }}
         />
         <div
-          className="absolute top-[55%] right-[15%] h-6 w-24 rotate-[60deg] rounded-full opacity-30"
+          className="absolute top-[55%] right-[15%] h-6 w-24 rotate-[60deg] rounded-full opacity-15"
           style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-teal))" }}
         />
         {/* Circles */}
-        <div className="absolute top-[18%] left-[16%] h-8 w-8 rounded-full bg-icon-lime opacity-30" />
-        <div className="absolute top-[40%] right-[10%] h-6 w-6 rounded-full bg-icon-orange opacity-30" />
-        <div className="absolute bottom-[30%] right-[20%] h-9 w-9 rounded-full bg-icon-yellow opacity-25" />
-        <div className="absolute bottom-[22%] left-[18%] h-5 w-5 rounded-full bg-icon-teal opacity-30" />
-        <div className="absolute top-[65%] left-[8%] h-7 w-7 rounded-full bg-icon-green opacity-25" />
-        <div className="absolute top-[12%] right-[30%] h-4 w-4 rounded-full bg-icon-lime opacity-35" />
+        <div className="absolute top-[18%] left-[16%] h-8 w-8 rounded-full bg-icon-lime opacity-15" />
+        <div className="absolute top-[40%] right-[10%] h-6 w-6 rounded-full bg-icon-orange opacity-15" />
+        <div className="absolute bottom-[30%] right-[20%] h-9 w-9 rounded-full bg-icon-yellow opacity-10" />
+        <div className="absolute bottom-[22%] left-[18%] h-5 w-5 rounded-full bg-icon-teal opacity-15" />
+        <div className="absolute top-[65%] left-[8%] h-7 w-7 rounded-full bg-icon-green opacity-10" />
+        <div className="absolute top-[12%] right-[30%] h-4 w-4 rounded-full bg-icon-lime opacity-15" />
       </div>
 
       <div className="relative z-10 mx-auto flex max-w-[720px] flex-col items-center text-center">
