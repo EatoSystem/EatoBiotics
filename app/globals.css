@@ -89,12 +89,6 @@
   background-clip: text;
 }
 
-/* Organic glow for hero sections */
-.icon-glow {
-  background: radial-gradient(ellipse at 30% 40%, rgba(168,224,99,0.18) 0%, transparent 50%),
-              radial-gradient(ellipse at 70% 60%, rgba(245,166,35,0.12) 0%, transparent 50%);
-}
-
 /* Full-width gradient divider between sections */
 .section-divider {
   height: 4px;

@@ -16,8 +16,7 @@ export default function BookPage() {
     <>
       {/* Hero */}
       <section className="relative px-6 pt-32 pb-20 md:pt-40 md:pb-28">
-        <div className="pointer-events-none absolute inset-0 icon-glow" />
-        <div className="relative mx-auto max-w-[1200px]">
+        <div className="mx-auto max-w-[1200px]">
           <div className="flex flex-col items-center gap-16 md:flex-row md:gap-20">
             <ScrollReveal>
               <BookCover />
