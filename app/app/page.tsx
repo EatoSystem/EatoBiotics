@@ -52,50 +52,52 @@ export default function AppPage() {
       {/* Hero */}
       <section className="relative px-6 pt-32 pb-20 md:pt-40 md:pb-28">
         <div className="mx-auto max-w-[1200px]">
-          <div className="flex flex-col items-center gap-16 md:flex-row md:gap-20">
-            <ScrollReveal>
-              <IPhoneMockup />
-            </ScrollReveal>
-
-            <div className="flex-1 text-center md:text-left">
+          <div className="flex flex-col items-center gap-10 md:flex-row md:gap-20">
+            {/* Text -- shown first on mobile for context */}
+            <div className="flex-1 text-center md:order-2 md:text-left">
               <ScrollReveal delay={100}>
                 <Image
                   src="/eatobiotics-icon.webp"
                   alt=""
                   width={48}
                   height={48}
-                  className="mx-auto mb-4 h-12 w-12 md:mx-0"
+                  className="mx-auto mb-4 h-10 w-10 md:mx-0 md:h-12 md:w-12"
                 />
                 <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
                   Coming Soon
                 </p>
-                <h1 className="mt-4 font-serif text-5xl font-semibold text-foreground sm:text-6xl text-balance">
+                <h1 className="mt-3 font-serif text-3xl font-semibold text-foreground sm:text-5xl md:text-6xl text-balance">
                   The <GradientText>EatoBiotics</GradientText> App
                 </h1>
-                <p className="mt-6 max-w-lg text-lg leading-relaxed text-muted-foreground">
+                <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-muted-foreground sm:mt-6 sm:text-lg md:mx-0">
                   Your companion for tracking the three biotics in your daily diet.
                   Score your meals, discover new foods, and build the habits that
                   strengthen your microbiome.
                 </p>
-                <div className="mt-6 flex items-center gap-1.5 md:justify-start justify-center">
+                <div className="mt-4 flex items-center justify-center gap-1.5 sm:mt-6 md:justify-start">
                   <span className="biotic-pill bg-icon-lime" />
                   <span className="biotic-pill bg-icon-green" />
                   <span className="biotic-pill bg-icon-teal" />
                   <span className="biotic-pill bg-icon-yellow" />
                   <span className="biotic-pill bg-icon-orange" />
                 </div>
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <div className="mt-6 sm:mt-8">
                   <a
                     href="https://eatobiotics.substack.com/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="brand-gradient rounded-full px-8 py-4 text-center text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
+                    className="brand-gradient inline-block rounded-full px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90 sm:px-8 sm:py-4 sm:text-base"
                   >
                     Get Notified at Launch
                   </a>
                 </div>
               </ScrollReveal>
             </div>
+
+            {/* Phone mockup -- below text on mobile, left on desktop */}
+            <ScrollReveal className="md:order-1">
+              <IPhoneMockup />
+            </ScrollReveal>
           </div>
         </div>
       </section>
