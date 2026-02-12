@@ -72,12 +72,12 @@ export default function AppPage() {
                 <h1 className="mt-4 font-serif text-4xl font-semibold text-foreground sm:text-5xl md:text-6xl text-balance">
                   The <GradientText>EatoBiotics</GradientText> App
                 </h1>
-                <p className="mt-6 max-w-lg text-lg leading-relaxed text-muted-foreground">
+                <p className="mx-auto mt-6 max-w-lg text-sm leading-relaxed text-muted-foreground sm:text-base md:mx-0 md:text-lg">
                   Your companion for tracking the three biotics in your daily diet.
                   Score your meals, discover new foods, and build the habits that
                   strengthen your microbiome.
                 </p>
-                <div className="mt-6 flex items-center justify-center gap-1.5 md:justify-start">
+                <div className="mt-6 flex items-center justify-center gap-1 sm:gap-1.5 md:justify-start">
                   <span className="biotic-pill bg-icon-lime" />
                   <span className="biotic-pill bg-icon-green" />
                   <span className="biotic-pill bg-icon-teal" />
