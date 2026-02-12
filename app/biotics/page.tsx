@@ -2,7 +2,6 @@ import type { Metadata } from "next"
 import Image from "next/image"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { GradientText } from "@/components/gradient-text"
-import { BioticsPlate } from "@/components/framework/biotics-plate"
 import { ZigZagSection } from "@/components/framework/zig-zag-section"
 
 export const metadata: Metadata = {
@@ -93,7 +92,14 @@ export default function FrameworkPage() {
 
           <ScrollReveal delay={200}>
             <div className="mt-16 flex justify-center">
-              <BioticsPlate />
+              <Image
+                src="/eatobiotics-plate.png"
+                alt="The EatoBiotics Plate -- divided into four sections: Prebiotic Base with leafy greens and vegetables, Probiotic Side with fermented foods, Postbiotic Builders with berries and dark chocolate, and Protein Balance with salmon, eggs and beans."
+                width={700}
+                height={700}
+                className="w-full max-w-[600px]"
+                priority
+              />
             </div>
           </ScrollReveal>
         </div>
