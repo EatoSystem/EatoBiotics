@@ -11,8 +11,8 @@ const links = [
   { href: "/", label: "Home" },
   { href: "/biotics", label: "The Biotics" },
   { href: "/book", label: "The Book" },
-  { href: "/eatosystem", label: "EatoSystem" },
   { href: "/app", label: "The App" },
+  { href: "/eatosystem", label: "EatoSystem" },
 ]
 
 export function Nav() {
