@@ -20,7 +20,7 @@ export function Nav() {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/90 backdrop-blur-xl">
+    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background">
       <div className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-3">
         <Link href="/" className="flex items-center gap-2.5">
           <Image
