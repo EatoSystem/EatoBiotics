@@ -6,7 +6,7 @@ import { BookCover } from "@/components/book/book-cover"
 import { ChapterList } from "@/components/book/chapter-list"
 
 export const metadata: Metadata = {
-  title: "The Book - Coming Soon",
+  title: "The Book",
   description:
     "EatoBiotics: The Food System Inside You -- a structured guide through the science and practice of feeding your microbiome.",
 }
@@ -32,7 +32,7 @@ export default function BookPage() {
                   className="mx-auto mb-4 h-12 w-12 md:mx-0"
                 />
                 <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
-                  The Book
+                  The Book - Coming Soon
                 </p>
                 <h1 className="mt-4 font-serif text-4xl font-semibold text-foreground sm:text-5xl md:text-6xl text-balance">
                   <GradientText>EatoBiotics</GradientText>
