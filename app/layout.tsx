@@ -1,5 +1,9 @@
 import type { Metadata, Viewport } from 'next'
 import { DM_Sans, Sora, Geist_Mono } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
+import { Nav } from '@/components/nav'
+import { Footer } from '@/components/footer'
+import './globals.css'
 
 const _dmSans = DM_Sans({
   subsets: ['latin'],

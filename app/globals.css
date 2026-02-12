@@ -57,6 +57,11 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-icon-lime: var(--icon-lime);
+  --color-icon-green: var(--icon-green);
+  --color-icon-teal: var(--icon-teal);
+  --color-icon-yellow: var(--icon-yellow);
+  --color-icon-orange: var(--icon-orange);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -83,18 +88,6 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
-
-/* Individual icon colour utilities */
-.text-icon-lime { color: var(--icon-lime); }
-.text-icon-green { color: var(--icon-green); }
-.text-icon-teal { color: var(--icon-teal); }
-.text-icon-yellow { color: var(--icon-yellow); }
-.text-icon-orange { color: var(--icon-orange); }
-.bg-icon-lime { background-color: var(--icon-lime); }
-.bg-icon-green { background-color: var(--icon-green); }
-.bg-icon-teal { background-color: var(--icon-teal); }
-.bg-icon-yellow { background-color: var(--icon-yellow); }
-.bg-icon-orange { background-color: var(--icon-orange); }
 
 /* Organic glow for hero sections */
 .icon-glow {

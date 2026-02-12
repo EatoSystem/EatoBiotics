@@ -25,7 +25,7 @@ export function SubstackCard({ title, description, date, tag, link }: SubstackCa
         <span className="text-xs text-muted-foreground">{date}</span>
       </div>
 
-      <h3 className="mt-4 font-serif text-xl font-700 leading-snug text-foreground text-pretty">
+      <h3 className="mt-4 font-serif text-xl font-bold leading-snug text-foreground text-pretty">
         {title}
       </h3>
 

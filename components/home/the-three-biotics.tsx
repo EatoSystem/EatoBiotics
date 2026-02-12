@@ -41,7 +41,7 @@ export function TheThreeBiotics() {
           <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
             The Framework
           </p>
-          <h2 className="mt-4 font-serif text-4xl font-800 text-foreground sm:text-5xl md:text-6xl text-pretty">
+          <h2 className="mt-4 font-serif text-4xl font-extrabold text-foreground sm:text-5xl md:text-6xl text-pretty">
             Three types of biotics.
             <br />
             <span className="brand-gradient-text">One food system.</span>
@@ -59,12 +59,12 @@ export function TheThreeBiotics() {
                 }}
               >
                 <span
-                  className="font-serif text-6xl font-800 md:text-7xl"
+                  className="font-serif text-6xl font-extrabold md:text-7xl"
                   style={{ color: biotic.color }}
                 >
                   {biotic.number}
                 </span>
-                <h3 className="mt-6 font-serif text-xl font-700 text-foreground">
+                <h3 className="mt-6 font-serif text-xl font-bold text-foreground">
                   {biotic.title}
                 </h3>
                 <p

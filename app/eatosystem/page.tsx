@@ -71,7 +71,7 @@ export default function EatosystemPage() {
             <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
               The Bigger Picture
             </p>
-            <h1 className="mt-4 font-serif text-5xl font-800 text-foreground sm:text-6xl md:text-7xl text-balance">
+            <h1 className="mt-4 font-serif text-5xl font-extrabold text-foreground sm:text-6xl md:text-7xl text-balance">
               The <GradientText>EatoSystem</GradientText>
             </h1>
             <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
@@ -97,7 +97,7 @@ export default function EatosystemPage() {
             <p className="text-center text-xs font-semibold uppercase tracking-widest text-icon-teal">
               How It Works
             </p>
-            <h2 className="mt-4 text-center font-serif text-4xl font-800 text-foreground sm:text-5xl">
+            <h2 className="mt-4 text-center font-serif text-4xl font-extrabold text-foreground sm:text-5xl">
               The County Model
             </h2>
           </ScrollReveal>
@@ -115,7 +115,7 @@ export default function EatosystemPage() {
                   >
                     <pillar.icon size={24} className="text-white" />
                   </div>
-                  <h3 className="mt-6 font-serif text-lg font-700 text-foreground">
+                  <h3 className="mt-6 font-serif text-lg font-bold text-foreground">
                     {pillar.title}
                   </h3>
                   <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
@@ -139,7 +139,7 @@ export default function EatosystemPage() {
             <p className="text-xs font-semibold uppercase tracking-widest text-icon-orange">
               All 32 Counties
             </p>
-            <h2 className="mt-4 font-serif text-4xl font-800 text-foreground sm:text-5xl">
+            <h2 className="mt-4 font-serif text-4xl font-extrabold text-foreground sm:text-5xl">
               One Island, One System
             </h2>
             <p className="mt-4 max-w-lg text-base text-muted-foreground">

@@ -59,7 +59,7 @@ export default function FrameworkPage() {
             <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
               The Framework
             </p>
-            <h1 className="mt-4 font-serif text-5xl font-800 text-foreground sm:text-6xl md:text-7xl text-balance">
+            <h1 className="mt-4 font-serif text-5xl font-extrabold text-foreground sm:text-6xl md:text-7xl text-balance">
               Feed. Add.{" "}
               <GradientText>Produce.</GradientText>
             </h1>
@@ -87,7 +87,7 @@ export default function FrameworkPage() {
               <p className="text-xs font-semibold uppercase tracking-widest text-icon-teal">
                 Visual Model
               </p>
-              <h2 className="mt-4 font-serif text-4xl font-800 text-foreground sm:text-5xl">
+              <h2 className="mt-4 font-serif text-4xl font-extrabold text-foreground sm:text-5xl">
                 The EatoBiotics Plate
               </h2>
               <p className="mx-auto mt-4 max-w-lg text-base text-muted-foreground">
@@ -111,7 +111,7 @@ export default function FrameworkPage() {
             <p className="text-xs font-semibold uppercase tracking-widest text-icon-orange">
               Deep Dive
             </p>
-            <h2 className="mt-4 font-serif text-4xl font-800 text-foreground sm:text-5xl">
+            <h2 className="mt-4 font-serif text-4xl font-extrabold text-foreground sm:text-5xl">
               Understanding Each Biotic
             </h2>
           </ScrollReveal>

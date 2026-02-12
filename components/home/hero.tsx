@@ -51,13 +51,13 @@ export function Hero() {
         </ScrollReveal>
 
         <ScrollReveal delay={100}>
-          <h1 className="mt-8 font-serif text-6xl font-800 tracking-tight sm:text-7xl md:text-8xl lg:text-9xl text-balance">
+          <h1 className="mt-8 font-serif text-6xl font-extrabold tracking-tight sm:text-7xl md:text-8xl lg:text-9xl text-balance">
             <span className="brand-gradient-text">EatoBiotics</span>
           </h1>
         </ScrollReveal>
 
         <ScrollReveal delay={200}>
-          <p className="mt-4 font-serif text-xl font-600 text-foreground sm:text-2xl md:text-3xl">
+          <p className="mt-4 font-serif text-xl font-semibold text-foreground sm:text-2xl md:text-3xl">
             The Food System Inside You
           </p>
         </ScrollReveal>
@@ -70,7 +70,7 @@ export function Hero() {
         </ScrollReveal>
 
         <ScrollReveal delay={400}>
-          <p className="mt-6 max-w-md text-base font-500 italic text-icon-orange md:text-lg">
+          <p className="mt-6 max-w-md text-base font-medium italic text-icon-orange md:text-lg">
             {"\"Build the food system inside you\u2026 and help build the food system around you.\""}
           </p>
         </ScrollReveal>

@@ -72,7 +72,7 @@ export default function AppPage() {
                 <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
                   Coming Soon
                 </p>
-                <h1 className="mt-4 font-serif text-5xl font-800 text-foreground sm:text-6xl text-balance">
+                <h1 className="mt-4 font-serif text-5xl font-extrabold text-foreground sm:text-6xl text-balance">
                   The <GradientText>EatoBiotics</GradientText> App
                 </h1>
                 <p className="mt-6 max-w-lg text-lg leading-relaxed text-muted-foreground">
@@ -111,7 +111,7 @@ export default function AppPage() {
             <p className="text-center text-xs font-semibold uppercase tracking-widest text-icon-teal">
               Features
             </p>
-            <h2 className="mt-4 text-center font-serif text-4xl font-800 text-foreground sm:text-5xl">
+            <h2 className="mt-4 text-center font-serif text-4xl font-extrabold text-foreground sm:text-5xl">
               Built for Your Microbiome
             </h2>
           </ScrollReveal>
@@ -130,7 +130,7 @@ export default function AppPage() {
                     <feature.icon size={24} className="text-white" />
                   </div>
                   <div>
-                    <h3 className="font-serif text-lg font-700 text-foreground">
+                    <h3 className="font-serif text-lg font-bold text-foreground">
                       {feature.title}
                     </h3>
                     <p className="mt-2 text-sm leading-relaxed text-muted-foreground">

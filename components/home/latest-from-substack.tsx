@@ -15,7 +15,7 @@ export async function LatestFromSubstack() {
               <p className="text-xs font-semibold uppercase tracking-widest text-icon-orange">
                 Latest Writing
               </p>
-              <h2 className="mt-4 font-serif text-4xl font-800 text-foreground sm:text-5xl">
+              <h2 className="mt-4 font-serif text-4xl font-extrabold text-foreground sm:text-5xl">
                 From the Substack
               </h2>
             </div>
