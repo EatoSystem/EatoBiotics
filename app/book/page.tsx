@@ -40,12 +40,12 @@ export default function BookPage() {
                 <p className="mt-2 font-serif text-xl font-medium text-muted-foreground sm:text-2xl">
                   The Food System Inside You
                 </p>
-                <p className="mt-6 max-w-lg text-base leading-relaxed text-muted-foreground">
+                <p className="mx-auto mt-6 max-w-lg text-sm leading-relaxed text-muted-foreground sm:text-base md:mx-0">
                   A structured journey through the science and practice of prebiotics, probiotics,
                   and postbiotics. Written chapter by chapter on Substack, each installment builds
                   on the last -- from foundations to food profiles to real-world application.
                 </p>
-                <div className="mt-6 flex items-center justify-center gap-1.5 md:justify-start">
+                <div className="mt-6 flex items-center justify-center gap-1 sm:gap-1.5 md:justify-start">
                   <span className="biotic-pill bg-icon-lime" />
                   <span className="biotic-pill bg-icon-green" />
                   <span className="biotic-pill bg-icon-teal" />

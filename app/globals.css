@@ -100,6 +100,13 @@
 /* Pill shape decoration — mimics the icon capsule shapes */
 .biotic-pill {
   border-radius: 999px;
-  width: 80px;
-  height: 8px;
+  width: 48px;
+  height: 6px;
+}
+
+@media (min-width: 640px) {
+  .biotic-pill {
+    width: 80px;
+    height: 8px;
+  }
 }
