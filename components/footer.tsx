@@ -44,11 +44,11 @@ export function Footer() {
                 <Link href="/book" className="text-sm text-foreground transition-colors hover:text-icon-green">
                   The Book
                 </Link>
-                <Link href="/eatosystem" className="text-sm text-foreground transition-colors hover:text-icon-green">
-                  EatoSystem
-                </Link>
                 <Link href="/app" className="text-sm text-foreground transition-colors hover:text-icon-green">
                   The App
+                </Link>
+                <Link href="/eatosystem" className="text-sm text-foreground transition-colors hover:text-icon-green">
+                  EatoSystem
                 </Link>
               </div>
             </div>
