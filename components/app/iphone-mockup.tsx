@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Image from "next/image"
 
 export function IPhoneMockup() {
   const [score, setScore] = useState(0)
@@ -28,21 +29,34 @@ export function IPhoneMockup() {
 
   return (
     <div className="relative mx-auto w-[260px] sm:w-[280px]">
+      {/* Glow behind phone */}
+      <div
+        className="absolute -inset-8 rounded-[3rem] blur-3xl opacity-20"
+        style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-teal), var(--icon-orange))" }}
+      />
+
       {/* Phone frame */}
-      <div className="relative overflow-hidden rounded-[2.5rem] border-[6px] border-[var(--foreground)] bg-[var(--background)] p-6 shadow-xl">
+      <div className="relative overflow-hidden rounded-[2.5rem] border-[6px] border-foreground bg-background p-6 shadow-xl">
         {/* Notch */}
-        <div className="mx-auto mb-6 h-6 w-24 rounded-full bg-[var(--foreground)]" />
+        <div className="mx-auto mb-6 h-6 w-24 rounded-full bg-foreground" />
 
         {/* Screen content */}
         <div className="flex flex-col items-center py-4">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
+          {/* Small icon */}
+          <Image
+            src="/eatobiotics-icon.webp"
+            alt=""
+            width={28}
+            height={28}
+            className="mb-2 h-7 w-7"
+          />
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             Biotics Score
           </p>
 
           {/* Circular score */}
           <div className="relative mt-6 h-36 w-36">
             <svg className="h-full w-full -rotate-90" viewBox="0 0 128 128">
-              {/* Background circle */}
               <circle
                 cx="64"
                 cy="64"
@@ -51,13 +65,12 @@ export function IPhoneMockup() {
                 stroke="var(--border)"
                 strokeWidth="6"
               />
-              {/* Progress arc */}
               <circle
                 cx="64"
                 cy="64"
                 r="58"
                 fill="none"
-                stroke="url(#scoreGradient)"
+                stroke="url(#scoreGradientIcon)"
                 strokeWidth="6"
                 strokeLinecap="round"
                 strokeDasharray={circumference}
@@ -65,49 +78,50 @@ export function IPhoneMockup() {
                 className="transition-all duration-1000 ease-out"
               />
               <defs>
-                <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#A8E063" />
-                  <stop offset="50%" stopColor="#56C135" />
-                  <stop offset="100%" stopColor="#F0921A" />
+                <linearGradient id="scoreGradientIcon" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="var(--icon-lime)" />
+                  <stop offset="33%" stopColor="var(--icon-teal)" />
+                  <stop offset="66%" stopColor="var(--icon-yellow)" />
+                  <stop offset="100%" stopColor="var(--icon-orange)" />
                 </linearGradient>
               </defs>
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="font-serif text-4xl text-[var(--foreground)]">{score}</span>
-              <span className="text-xs text-[var(--muted-foreground)]">/ 100</span>
+              <span className="font-serif text-4xl text-foreground">{score}</span>
+              <span className="text-xs text-muted-foreground">/ 100</span>
             </div>
           </div>
 
-          <p className="mt-4 text-sm font-medium text-[var(--primary)]">Great progress!</p>
+          <p className="mt-4 text-sm font-medium text-icon-green">Great progress!</p>
 
-          {/* Mini stats */}
+          {/* Mini stats — each biotic gets its icon colour */}
           <div className="mt-6 flex w-full justify-between px-2">
             <div className="text-center">
-              <p className="text-lg font-semibold text-[var(--foreground)]">6</p>
-              <p className="text-[10px] text-[var(--muted-foreground)]">Pre</p>
+              <p className="text-lg font-semibold text-icon-lime">6</p>
+              <p className="text-[10px] text-muted-foreground">Pre</p>
             </div>
-            <div className="h-8 w-px bg-[var(--border)]" />
+            <div className="h-8 w-px bg-border" />
             <div className="text-center">
-              <p className="text-lg font-semibold text-[var(--foreground)]">4</p>
-              <p className="text-[10px] text-[var(--muted-foreground)]">Pro</p>
+              <p className="text-lg font-semibold text-icon-teal">4</p>
+              <p className="text-[10px] text-muted-foreground">Pro</p>
             </div>
-            <div className="h-8 w-px bg-[var(--border)]" />
+            <div className="h-8 w-px bg-border" />
             <div className="text-center">
-              <p className="text-lg font-semibold text-[var(--foreground)]">3</p>
-              <p className="text-[10px] text-[var(--muted-foreground)]">Post</p>
+              <p className="text-lg font-semibold text-icon-orange">3</p>
+              <p className="text-[10px] text-muted-foreground">Post</p>
             </div>
           </div>
 
           {/* CTA button */}
           <div className="mt-6 w-full">
-            <div className="brand-gradient rounded-full py-3 text-center text-sm font-semibold text-[var(--background)]">
+            <div className="brand-gradient rounded-full py-3 text-center text-sm font-semibold text-background">
               Log a Meal
             </div>
           </div>
         </div>
 
         {/* Home indicator */}
-        <div className="mx-auto mt-4 h-1 w-20 rounded-full bg-[var(--foreground)]/20" />
+        <div className="mx-auto mt-4 h-1 w-20 rounded-full bg-foreground/20" />
       </div>
     </div>
   )

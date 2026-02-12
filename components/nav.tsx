@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { useState } from "react"
 import { Menu, X } from "lucide-react"
 import { usePathname } from "next/navigation"
@@ -19,10 +20,19 @@ export function Nav() {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-4">
-        <Link href="/" className="font-serif text-2xl tracking-tight text-[var(--foreground)]">
-          EatoBiotics
+    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-3">
+        <Link href="/" className="flex items-center gap-2.5">
+          <Image
+            src="/eatobiotics-icon.webp"
+            alt="EatoBiotics"
+            width={36}
+            height={36}
+            className="h-9 w-9"
+          />
+          <span className="font-serif text-xl tracking-tight text-foreground">
+            EatoBiotics
+          </span>
         </Link>
 
         {/* Desktop nav */}
@@ -34,8 +44,8 @@ export function Nav() {
               className={cn(
                 "text-sm font-medium transition-colors",
                 pathname === link.href
-                  ? "text-[var(--foreground)]"
-                  : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
               {link.label}
@@ -45,7 +55,7 @@ export function Nav() {
             href="https://eatobiotics.substack.com/"
             target="_blank"
             rel="noopener noreferrer"
-            className="brand-gradient rounded-full px-5 py-2 text-sm font-semibold text-[var(--background)] transition-opacity hover:opacity-90"
+            className="brand-gradient rounded-full px-5 py-2 text-sm font-semibold text-background transition-opacity hover:opacity-90"
           >
             Subscribe
           </a>
@@ -54,7 +64,7 @@ export function Nav() {
         {/* Mobile toggle */}
         <button
           onClick={() => setOpen(!open)}
-          className="md:hidden text-[var(--foreground)]"
+          className="text-foreground md:hidden"
           aria-label={open ? "Close menu" : "Open menu"}
         >
           {open ? <X size={24} /> : <Menu size={24} />}
@@ -63,7 +73,7 @@ export function Nav() {
 
       {/* Mobile menu */}
       {open && (
-        <div className="border-t border-[var(--border)] bg-[var(--background)] px-6 py-6 md:hidden">
+        <div className="border-t border-border bg-background px-6 py-6 md:hidden">
           <div className="flex flex-col gap-4">
             {links.map((link) => (
               <Link
@@ -73,8 +83,8 @@ export function Nav() {
                 className={cn(
                   "text-base font-medium transition-colors",
                   pathname === link.href
-                    ? "text-[var(--foreground)]"
-                    : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 {link.label}
@@ -84,7 +94,7 @@ export function Nav() {
               href="https://eatobiotics.substack.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="brand-gradient mt-2 rounded-full px-5 py-3 text-center text-sm font-semibold text-[var(--background)]"
+              className="brand-gradient mt-2 rounded-full px-5 py-3 text-center text-sm font-semibold text-background"
             >
               Subscribe
             </a>

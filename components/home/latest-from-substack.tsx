@@ -7,15 +7,15 @@ export async function LatestFromSubstack() {
   const posts = await fetchSubstackPosts(3)
 
   return (
-    <section className="bg-[var(--secondary)] px-6 py-32 md:py-40">
+    <section className="bg-secondary px-6 py-32 md:py-40">
       <div className="mx-auto max-w-[1200px]">
         <ScrollReveal>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                 Latest Writing
               </p>
-              <h2 className="mt-4 font-serif text-4xl text-[var(--foreground)] sm:text-5xl">
+              <h2 className="mt-4 font-serif text-4xl text-foreground sm:text-5xl">
                 From the Substack
               </h2>
             </div>
@@ -23,7 +23,7 @@ export async function LatestFromSubstack() {
               href="https://eatobiotics.substack.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-sm font-medium text-[var(--primary)] hover:text-[var(--accent)] transition-colors"
+              className="flex items-center gap-1 text-sm font-medium text-icon-green transition-colors hover:text-icon-orange"
             >
               View all posts
               <ArrowUpRight size={14} />

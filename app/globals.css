@@ -4,32 +4,34 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  /* Core palette derived from the EatoBiotics icon */
   --background: #FFFFFF;
-  --foreground: #1A1A1A;
+  --foreground: #1B2D1B;
   --card: #FFFFFF;
-  --card-foreground: #1A1A1A;
+  --card-foreground: #1B2D1B;
   --popover: #FFFFFF;
-  --popover-foreground: #1A1A1A;
-  --primary: #56C135;
+  --popover-foreground: #1B2D1B;
+  --primary: #4CB648;
   --primary-foreground: #FFFFFF;
-  --secondary: #F7F7F5;
-  --secondary-foreground: #1A1A1A;
-  --muted: #F7F7F5;
-  --muted-foreground: #6B6B6B;
-  --accent: #F0921A;
+  --secondary: #F5F8F0;
+  --secondary-foreground: #1B2D1B;
+  --muted: #F0F4EB;
+  --muted-foreground: #5A6B5A;
+  --accent: #F5A623;
   --accent-foreground: #FFFFFF;
   --destructive: #E53E3E;
   --destructive-foreground: #FFFFFF;
-  --border: rgba(0,0,0,0.07);
-  --input: rgba(0,0,0,0.07);
-  --ring: #56C135;
+  --border: #E4EBD8;
+  --input: #E4EBD8;
+  --ring: #4CB648;
   --radius: 0.75rem;
 
-  --brand-green-light: #A8E063;
-  --brand-green: #56C135;
-  --brand-lime: #C8E620;
-  --brand-yellow: #F5C518;
-  --brand-orange: #F0921A;
+  /* Icon palette — extracted from the biotic shapes */
+  --icon-lime: #A8E063;
+  --icon-green: #4CB648;
+  --icon-teal: #2DAA6E;
+  --icon-yellow: #F5C518;
+  --icon-orange: #F5A623;
 }
 
 @theme inline {
@@ -70,14 +72,38 @@
   }
 }
 
-/* Brand gradient utility */
+/* Brand gradient — matches the icon's lime -> green -> teal -> yellow -> orange */
 .brand-gradient {
-  background: linear-gradient(135deg, #A8E063 0%, #56C135 25%, #C8E620 50%, #F5C518 75%, #F0921A 100%);
+  background: linear-gradient(135deg, var(--icon-lime) 0%, var(--icon-green) 25%, var(--icon-teal) 50%, var(--icon-yellow) 75%, var(--icon-orange) 100%);
 }
 
 .brand-gradient-text {
-  background: linear-gradient(135deg, #A8E063 0%, #56C135 25%, #C8E620 50%, #F5C518 75%, #F0921A 100%);
+  background: linear-gradient(135deg, var(--icon-lime) 0%, var(--icon-green) 25%, var(--icon-teal) 50%, var(--icon-yellow) 75%, var(--icon-orange) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* Individual icon colour utilities */
+.text-icon-lime { color: var(--icon-lime); }
+.text-icon-green { color: var(--icon-green); }
+.text-icon-teal { color: var(--icon-teal); }
+.text-icon-yellow { color: var(--icon-yellow); }
+.text-icon-orange { color: var(--icon-orange); }
+.bg-icon-lime { background-color: var(--icon-lime); }
+.bg-icon-green { background-color: var(--icon-green); }
+.bg-icon-teal { background-color: var(--icon-teal); }
+.bg-icon-yellow { background-color: var(--icon-yellow); }
+.bg-icon-orange { background-color: var(--icon-orange); }
+
+/* Subtle radial glow for hero sections */
+.icon-glow {
+  background: radial-gradient(ellipse at center, rgba(168,224,99,0.12) 0%, rgba(76,182,72,0.06) 40%, transparent 70%);
+}
+
+/* Pill shape decoration — mimics the icon capsule shapes */
+.biotic-pill {
+  border-radius: 999px;
+  width: 80px;
+  height: 8px;
 }

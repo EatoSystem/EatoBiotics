@@ -1,3 +1,11 @@
+const iconColors = [
+  "var(--icon-lime)",
+  "var(--icon-green)",
+  "var(--icon-teal)",
+  "var(--icon-yellow)",
+  "var(--icon-orange)",
+]
+
 const parts = [
   {
     part: "I",
@@ -52,15 +60,26 @@ export function ChapterList() {
     <div className="mt-12 flex flex-col">
       {parts.map((part, partIdx) => (
         <div key={part.part}>
-          {/* Part divider */}
+          {/* Part divider with icon colour */}
           {partIdx > 0 && (
-            <div className="my-8 h-px brand-gradient opacity-30" />
+            <div
+              className="my-8 h-0.5 rounded-full opacity-40"
+              style={{ backgroundColor: iconColors[partIdx % iconColors.length] }}
+            />
           )}
 
-          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
-            Part {part.part}
-          </p>
-          <h3 className="mt-1 font-serif text-2xl text-[var(--foreground)]">
+          <div className="flex items-center gap-3">
+            <span
+              className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-background"
+              style={{ backgroundColor: iconColors[partIdx % iconColors.length] }}
+            >
+              {part.part}
+            </span>
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Part {part.part}
+            </p>
+          </div>
+          <h3 className="mt-2 font-serif text-2xl text-foreground">
             {part.title}
           </h3>
 
@@ -68,12 +87,15 @@ export function ChapterList() {
             {part.chapters.map((chapter) => (
               <div
                 key={chapter.number}
-                className="flex items-baseline gap-4"
+                className="flex items-baseline gap-4 rounded-lg px-3 py-2 transition-colors hover:bg-secondary"
               >
-                <span className="w-8 flex-shrink-0 text-right font-serif text-sm text-[var(--muted-foreground)]">
+                <span
+                  className="w-8 flex-shrink-0 text-right font-serif text-sm font-normal"
+                  style={{ color: iconColors[partIdx % iconColors.length] }}
+                >
                   {chapter.number}
                 </span>
-                <span className="text-base text-[var(--foreground)]">
+                <span className="text-base text-foreground">
                   {chapter.title}
                 </span>
               </div>
