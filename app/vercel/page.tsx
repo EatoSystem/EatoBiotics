@@ -584,6 +584,21 @@ export default function VercelPage() {
             </p>
           </ScrollReveal>
 
+          {/* Globe visualisation video */}
+          <ScrollReveal delay={100}>
+            <div className="mx-auto mt-12 max-w-[900px] overflow-hidden rounded-2xl border border-border">
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="h-auto w-full"
+              >
+                <source src="/videos/global-licensing.mp4" type="video/mp4" />
+              </video>
+            </div>
+          </ScrollReveal>
+
           <div className="mt-16 grid gap-8 sm:grid-cols-2 md:gap-10">
             {[
               {
