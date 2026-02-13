@@ -144,9 +144,7 @@ export default function VercelPage() {
             </p>
           </ScrollReveal>
 
-          <ScrollReveal delay={700}>
-            <div className="mt-10 h-1 w-64 rounded-full brand-gradient" />
-          </ScrollReveal>
+
         </div>
       </section>
 

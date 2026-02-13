@@ -65,7 +65,7 @@ export default function FrameworkPage() {
               EatoBiotics is built on three pillars -- the three types of biotics
               that work together to build and maintain the food system inside you.
             </p>
-            <div className="mx-auto mt-8 h-1 w-48 rounded-full brand-gradient" />
+
           </ScrollReveal>
         </div>
       </section>

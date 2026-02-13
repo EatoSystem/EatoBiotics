@@ -99,10 +99,7 @@ export function Hero() {
           </div>
         </ScrollReveal>
 
-        {/* Gradient divider bar */}
-        <ScrollReveal delay={600}>
-          <div className="mt-14 h-1 w-64 rounded-full brand-gradient" />
-        </ScrollReveal>
+
       </div>
     </section>
   )
