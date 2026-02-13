@@ -98,8 +98,6 @@ export function Hero() {
             </a>
           </div>
         </ScrollReveal>
-
-
       </div>
     </section>
   )

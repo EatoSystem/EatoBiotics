@@ -95,8 +95,6 @@ export default function EatosystemPage() {
               </a>
             </div>
           </ScrollReveal>
-
-
         </div>
       </section>
 

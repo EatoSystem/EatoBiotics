@@ -143,8 +143,6 @@ export default function VercelPage() {
               {"\"Build the food system inside you\u2026 and help build the food system around you.\""}
             </p>
           </ScrollReveal>
-
-
         </div>
       </section>
 
