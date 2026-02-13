@@ -45,7 +45,7 @@ export default function VercelPage() {
   return (
     <div>
       {/* ═══════════════ HERO ═══════════════ */}
-      <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-20">
+      <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-20 pb-20">
         {/* Floating decorative pills */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div

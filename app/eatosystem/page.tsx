@@ -42,7 +42,7 @@ export default function EatosystemPage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-20">
+      <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-20 pb-20">
         <div className="relative z-10 mx-auto flex max-w-[720px] flex-col items-center text-center">
           <ScrollReveal>
             <Image
