@@ -567,8 +567,29 @@ export default function VercelPage() {
 
       {/* ═══════════════ SECTION 8: GLOBAL LICENSING ═══════════════ */}
       <div className="section-divider" />
-      <section className="px-6 py-24 md:py-32">
-        <div className="mx-auto max-w-[1200px]">
+      <section className="relative overflow-hidden px-6 py-24 md:py-32">
+        {/* Background globe video with feathered edges */}
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div
+            className="h-full w-full max-w-[1400px] opacity-15"
+            style={{
+              maskImage: "radial-gradient(ellipse at center, black 20%, transparent 65%)",
+              WebkitMaskImage: "radial-gradient(ellipse at center, black 20%, transparent 65%)",
+            }}
+          >
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="h-full w-full object-cover"
+            >
+              <source src="/videos/global-licensing.mp4" type="video/mp4" />
+            </video>
+          </div>
+        </div>
+
+        <div className="relative z-10 mx-auto max-w-[1200px]">
           <ScrollReveal className="text-center">
             <p className="text-xs font-semibold uppercase tracking-widest text-icon-orange">
               Beyond Ireland
@@ -582,21 +603,6 @@ export default function VercelPage() {
               back into local food system development. The same architecture that maps
               Ireland{"'"}s 32 counties adapts to any region, language, or food culture.
             </p>
-          </ScrollReveal>
-
-          {/* Globe visualisation video */}
-          <ScrollReveal delay={100}>
-            <div className="mx-auto mt-12 max-w-[900px] overflow-hidden rounded-2xl border border-border">
-              <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="h-auto w-full"
-              >
-                <source src="/videos/global-licensing.mp4" type="video/mp4" />
-              </video>
-            </div>
           </ScrollReveal>
 
           <div className="mt-16 grid gap-8 sm:grid-cols-2 md:gap-10">
