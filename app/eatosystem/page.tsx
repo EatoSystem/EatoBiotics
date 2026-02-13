@@ -55,20 +55,20 @@ export default function EatosystemPage() {
             />
           </ScrollReveal>
 
-          <ScrollReveal delay={100}>
-            <h1 className="mt-8 font-serif text-6xl font-semibold tracking-tight sm:text-7xl md:text-8xl lg:text-9xl text-balance">
+          <ScrollReveal delay={100} className="w-full text-center">
+            <h1 className="mt-8 font-serif text-5xl font-semibold tracking-tight sm:text-7xl md:text-8xl lg:text-9xl">
               <span className="brand-gradient-text">EatoSystem</span>
             </h1>
           </ScrollReveal>
 
-          <ScrollReveal delay={200}>
+          <ScrollReveal delay={200} className="w-full text-center">
             <p className="mt-4 font-serif text-xl font-medium text-foreground sm:text-2xl md:text-3xl">
               The Food System
             </p>
           </ScrollReveal>
 
-          <ScrollReveal delay={300}>
-            <p className="mt-6 max-w-lg text-base leading-relaxed text-muted-foreground md:text-lg">
+          <ScrollReveal delay={300} className="w-full text-center">
+            <p className="mx-auto mt-6 max-w-lg text-sm leading-relaxed text-muted-foreground sm:text-base md:text-lg">
               From the food system inside you to the food system around you.
               A county-by-county model for building local food resilience
               across all 32 counties of Ireland.
