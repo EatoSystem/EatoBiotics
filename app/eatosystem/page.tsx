@@ -221,7 +221,7 @@ export default function EatosystemPage() {
                 color: "var(--icon-lime)",
                 gradientTo: "var(--icon-green)",
                 description:
-                  "Each agent gathers hyper-local data -- seasonal availability, soil conditions, producer output, community demand -- building a living map of the county's food landscape.",
+                  "Each agent gathers hyper-local data -- seasonal availability, soil conditions, producer output, community demand, participation levels, and local investment -- building a living map of the county's food landscape.",
               },
               {
                 icon: MessageSquare,
@@ -279,7 +279,7 @@ export default function EatosystemPage() {
                     step: "01",
                     label: "Local Input",
                     color: "#A8E063",
-                    detail: "Growers, markets, and community members interact with their county agent -- reporting harvests, asking questions, sharing availability.",
+                    detail: "Growers, markets, and community members interact with their county agent -- reporting harvests, logging participation, tracking local investment, and sharing availability.",
                   },
                   {
                     step: "02",
@@ -343,9 +343,10 @@ export default function EatosystemPage() {
                 Designed for <GradientText>Global Licensing</GradientText>
               </h2>
               <p className="mt-6 text-base leading-relaxed text-muted-foreground md:text-lg">
-                The EatoSystem agent architecture is county-shaped but country-agnostic.
-                The same model that maps Ireland's 32 counties can be configured for
-                any region, any language, any local food culture.
+                Each Irish county licenses its AI agent model to regions worldwide --
+                creating collaborative partnerships that generate revenue flowing directly
+                back into local food system development. The same architecture that maps
+                Ireland's 32 counties adapts to any region, language, or food culture.
               </p>
             </div>
           </ScrollReveal>
@@ -354,35 +355,35 @@ export default function EatosystemPage() {
             {[
               {
                 icon: Globe,
-                title: "Region-Agnostic Architecture",
+                title: "County-Led Licensing",
                 color: "var(--icon-lime)",
                 gradientTo: "var(--icon-teal)",
                 description:
-                  "Swap 32 Irish counties for 50 US states, 16 German Bundesl\u00E4nder, or 47 Japanese prefectures. The agent framework adapts to any administrative geography.",
-              },
-              {
-                icon: Cpu,
-                title: "White-Label Agent Platform",
-                color: "var(--icon-teal)",
-                gradientTo: "var(--icon-green)",
-                description:
-                  "Governments, NGOs, and food organisations can license the EatoSystem platform -- deploying locally-trained AI agents under their own brand and within their own food context.",
+                  "Each Irish county licenses its proven agent model to equivalent regions globally -- a Kerry agent partners with a Tuscany province, a Galway agent with a Basque comarca. Peer-to-peer, county-to-county.",
               },
               {
                 icon: BarChart3,
-                title: "Cross-Border Intelligence",
+                title: "Revenue Back to Local",
+                color: "var(--icon-teal)",
+                gradientTo: "var(--icon-green)",
+                description:
+                  "Licensing revenue flows directly back to the originating county and is reinvested into local food system development -- funding growers, infrastructure, community programmes, and agent improvements.",
+              },
+              {
+                icon: Cpu,
+                title: "Collaborative Partnerships",
                 color: "var(--icon-yellow)",
                 gradientTo: "var(--icon-orange)",
                 description:
-                  "As the network grows beyond Ireland, anonymised insights can flow between national systems -- creating the world's first global regenerative food intelligence layer.",
+                  "Licensing isn't one-way. Partner regions share their own local intelligence back, creating a two-way exchange that strengthens both food systems and builds a global regenerative knowledge network.",
               },
               {
                 icon: Leaf,
-                title: "Regenerative by Design",
+                title: "Scalable by Design",
                 color: "var(--icon-orange)",
                 gradientTo: "var(--icon-yellow)",
                 description:
-                  "Every licensed instance inherits the core EatoSystem values: local-first sourcing, biotic-aware food categorisation, community empowerment, and measurable environmental outcomes.",
+                  "Swap 32 Irish counties for 50 US states, 16 German Bundesl\u00E4nder, or 47 Japanese prefectures. Every licensed instance inherits biotic-aware food categorisation, community empowerment, and measurable outcomes.",
               },
             ].map((item, index) => (
               <ScrollReveal key={item.title} delay={index * 150}>
@@ -416,7 +417,7 @@ export default function EatosystemPage() {
           <ScrollReveal delay={200}>
             <div className="mt-20 mx-auto max-w-[600px] text-center">
               <p className="font-serif text-xl font-medium leading-relaxed text-foreground sm:text-2xl text-pretty">
-                Ireland builds the proof. The world gets the platform.
+                Ireland builds the proof. Each county owns its model. The world becomes the partner.
               </p>
               <div className="mt-8 flex items-center justify-center gap-1.5">
                 <span className="biotic-pill bg-icon-lime" />
