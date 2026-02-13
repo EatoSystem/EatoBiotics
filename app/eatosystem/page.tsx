@@ -42,28 +42,62 @@ export default function EatosystemPage() {
   return (
     <>
       {/* Hero */}
-      <section className="px-6 pt-32 pb-20 md:pt-40 md:pb-28">
-        <div className="mx-auto max-w-[680px] text-center">
+      <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-20">
+        <div className="relative z-10 mx-auto flex max-w-[720px] flex-col items-center text-center">
           <ScrollReveal>
             <Image
               src="/eatobiotics-icon.webp"
-              alt=""
-              width={80}
-              height={80}
-              className="mx-auto mb-6 h-16 w-16 md:h-20 md:w-20"
+              alt="EatoSystem icon"
+              width={200}
+              height={200}
+              priority
+              className="h-40 w-40 sm:h-48 sm:w-48 md:h-56 md:w-56"
             />
-            <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
-              The Bigger Picture
-            </p>
-            <h1 className="mt-4 font-serif text-5xl font-semibold text-foreground sm:text-6xl md:text-7xl text-balance">
-              <GradientText>EatoSystem</GradientText>
+          </ScrollReveal>
+
+          <ScrollReveal delay={100}>
+            <h1 className="mt-8 font-serif text-6xl font-semibold tracking-tight sm:text-7xl md:text-8xl lg:text-9xl text-balance">
+              <span className="brand-gradient-text">EatoSystem</span>
             </h1>
-            <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
+          </ScrollReveal>
+
+          <ScrollReveal delay={200}>
+            <p className="mt-4 font-serif text-xl font-medium text-foreground sm:text-2xl md:text-3xl">
+              The Food System
+            </p>
+          </ScrollReveal>
+
+          <ScrollReveal delay={300}>
+            <p className="mt-6 max-w-lg text-base leading-relaxed text-muted-foreground md:text-lg">
               From the food system inside you to the food system around you.
-              The EatoSystem is a county-by-county model for building local food resilience
+              A county-by-county model for building local food resilience
               across all 32 counties of Ireland.
             </p>
-            <div className="mx-auto mt-8 h-1 w-48 rounded-full brand-gradient" />
+          </ScrollReveal>
+
+          <ScrollReveal delay={400}>
+            <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
+              <a
+                href="https://www.eatosystem.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="brand-gradient rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
+              >
+                Explore EatoSystem.com
+              </a>
+              <a
+                href="https://eatosystem.substack.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full border-2 border-icon-green px-8 py-4 text-base font-semibold text-foreground transition-colors hover:bg-icon-green hover:text-white"
+              >
+                Read on Substack
+              </a>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal delay={500}>
+            <div className="mt-14 h-1 w-64 rounded-full brand-gradient" />
           </ScrollReveal>
         </div>
       </section>
