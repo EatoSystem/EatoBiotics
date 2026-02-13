@@ -63,7 +63,7 @@ export default function EatosystemPage() {
 
           <ScrollReveal delay={200}>
             <p className="mt-4 font-serif text-xl font-medium text-foreground sm:text-2xl md:text-3xl">
-              The Food System Around You
+              The Food System
             </p>
           </ScrollReveal>
 
@@ -86,7 +86,7 @@ export default function EatosystemPage() {
                 Explore EatoSystem.com
               </a>
               <a
-                href="https://eatobiotics.substack.com/"
+                href="https://eatosystem.substack.com/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="rounded-full border-2 border-icon-green px-8 py-4 text-base font-semibold text-foreground transition-colors hover:bg-icon-green hover:text-white"
