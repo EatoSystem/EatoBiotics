@@ -347,8 +347,29 @@ export default function EatosystemPage() {
       <div className="section-divider" />
 
       {/* Global Licensing */}
-      <section className="px-6 py-32 md:py-40">
-        <div className="mx-auto max-w-[1200px]">
+      <section className="relative overflow-hidden px-6 py-32 md:py-40">
+        {/* Background globe video with feathered edges */}
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div
+            className="h-full w-full max-w-[1400px] opacity-15"
+            style={{
+              maskImage: "radial-gradient(ellipse at center, black 20%, transparent 65%)",
+              WebkitMaskImage: "radial-gradient(ellipse at center, black 20%, transparent 65%)",
+            }}
+          >
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="h-full w-full object-cover"
+            >
+              <source src="/videos/global-licensing.mp4" type="video/mp4" />
+            </video>
+          </div>
+        </div>
+
+        <div className="relative z-10 mx-auto max-w-[1200px]">
           <ScrollReveal>
             <div className="mx-auto max-w-[680px] text-center">
               <p className="text-xs font-semibold uppercase tracking-widest text-icon-orange">
