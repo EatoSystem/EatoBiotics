@@ -435,6 +435,21 @@ export default function VercelPage() {
             </p>
           </ScrollReveal>
 
+          {/* Network visualisation video */}
+          <ScrollReveal delay={100}>
+            <div className="mx-auto mt-12 max-w-[900px] overflow-hidden rounded-2xl border border-border">
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="h-auto w-full"
+              >
+                <source src="/videos/ireland-network.mp4" type="video/mp4" />
+              </video>
+            </div>
+          </ScrollReveal>
+
           <div className="mt-16 grid gap-8 md:grid-cols-3 md:gap-10">
             {[
               {
