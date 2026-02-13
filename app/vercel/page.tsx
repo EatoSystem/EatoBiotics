@@ -437,7 +437,13 @@ export default function VercelPage() {
 
           {/* Network visualisation video */}
           <ScrollReveal delay={100}>
-            <div className="mx-auto mt-12 max-w-[900px] overflow-hidden rounded-2xl border border-border">
+            <div
+              className="mx-auto mt-12 max-w-[900px]"
+              style={{
+                maskImage: "radial-gradient(ellipse at center, black 30%, transparent 70%)",
+                WebkitMaskImage: "radial-gradient(ellipse at center, black 30%, transparent 70%)",
+              }}
+            >
               <video
                 autoPlay
                 loop
