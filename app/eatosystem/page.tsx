@@ -46,7 +46,7 @@ export default function EatosystemPage() {
         <div className="relative z-10 mx-auto flex max-w-[720px] flex-col items-center text-center">
           <ScrollReveal>
             <Image
-              src="/eatobiotics-icon.webp"
+              src="/eatosystem-icon.jpg"
               alt="EatoSystem icon"
               width={200}
               height={200}
