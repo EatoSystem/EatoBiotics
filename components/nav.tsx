@@ -13,6 +13,7 @@ const links = [
   { href: "/book", label: "The Book" },
   { href: "/app", label: "The App" },
   { href: "/eatosystem", label: "EatoSystem" },
+  { href: "/roadmap", label: "Roadmap" },
 ]
 
 export function Nav() {

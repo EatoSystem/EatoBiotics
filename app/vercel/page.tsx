@@ -45,7 +45,7 @@ export default function VercelPage() {
   return (
     <div>
       {/* ═══════════════ HERO ═══════════════ */}
-      <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-20">
+      <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-20 pb-20">
         {/* Floating decorative pills */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div
@@ -142,10 +142,6 @@ export default function VercelPage() {
             <p className="mt-10 max-w-md text-sm font-medium italic text-icon-orange sm:text-base">
               {"\"Build the food system inside you\u2026 and help build the food system around you.\""}
             </p>
-          </ScrollReveal>
-
-          <ScrollReveal delay={700}>
-            <div className="mt-10 h-1 w-64 rounded-full brand-gradient" />
           </ScrollReveal>
         </div>
       </section>

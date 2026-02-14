@@ -42,11 +42,11 @@ export default function EatosystemPage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-20">
+      <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-20 pb-20">
         <div className="relative z-10 mx-auto flex max-w-[720px] flex-col items-center text-center">
           <ScrollReveal>
             <Image
-              src="/eatobiotics-icon.webp"
+              src="/eatosystem-icon.jpg"
               alt="EatoSystem icon"
               width={200}
               height={200}
@@ -94,10 +94,6 @@ export default function EatosystemPage() {
                 Read on Substack
               </a>
             </div>
-          </ScrollReveal>
-
-          <ScrollReveal delay={500}>
-            <div className="mt-14 h-1 w-64 rounded-full brand-gradient" />
           </ScrollReveal>
         </div>
       </section>
