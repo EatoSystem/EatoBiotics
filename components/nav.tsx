@@ -29,6 +29,8 @@ export function Nav() {
             alt="EatoBiotics"
             width={36}
             height={36}
+            priority
+            loading="eager"
             className="h-9 w-9"
           />
           <span className="font-serif text-xl font-semibold tracking-tight text-foreground">

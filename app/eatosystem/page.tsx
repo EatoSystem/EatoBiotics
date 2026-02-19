@@ -51,6 +51,7 @@ export default function EatosystemPage() {
               width={200}
               height={200}
               priority
+              loading="eager"
               className="h-40 w-40 sm:h-48 sm:w-48 md:h-56 md:w-56"
             />
           </ScrollReveal>
