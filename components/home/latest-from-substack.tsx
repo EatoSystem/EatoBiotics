@@ -7,9 +7,7 @@ export async function LatestFromSubstack() {
   const posts = await fetchSubstackPosts(3)
 
   return (
-    <section className="px-6 py-32 md:py-40">
-      {/* Top gradient divider */}
-      <div className="section-divider mb-32 md:mb-40" />
+    <section className="px-6 py-24 md:py-32">
 
       <div className="mx-auto max-w-[1200px]">
         <ScrollReveal>

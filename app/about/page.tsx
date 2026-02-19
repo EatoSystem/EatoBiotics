@@ -219,9 +219,73 @@ export default function AboutPage() {
             </blockquote>
           </ScrollReveal>
 
-          {/* TODO: Add personal photo — Jason in kitchen, on walk, or with food */}
+          {/* Founder graphic — replace with photo when available */}
           <ScrollReveal delay={400}>
-            <div className="mt-12 w-full rounded-2xl border border-border bg-muted" style={{ height: "280px" }} />
+            <div className="relative mt-12 w-full overflow-hidden rounded-2xl border border-border bg-foreground px-8 py-10">
+              {/* Background gradient pills */}
+              <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                <div className="absolute -top-4 -right-4 h-32 w-32 rounded-full opacity-10" style={{ background: "radial-gradient(circle, var(--icon-lime), transparent)" }} />
+                <div className="absolute -bottom-4 -left-4 h-32 w-32 rounded-full opacity-10" style={{ background: "radial-gradient(circle, var(--icon-orange), transparent)" }} />
+              </div>
+
+              <div className="relative z-10">
+                {/* Name + title */}
+                <p className="text-xs font-semibold uppercase tracking-widest text-icon-lime">
+                  The Founder
+                </p>
+                <h3 className="mt-2 font-serif text-3xl font-semibold text-white sm:text-4xl">
+                  Jason Curry
+                </h3>
+                <p className="mt-1 text-sm font-medium text-white/60">
+                  Founder, EatoBiotics &amp; EatoSystem
+                </p>
+
+                {/* Divider */}
+                <div className="my-6 h-px w-full bg-white/10" />
+
+                {/* Stats grid */}
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                  {[
+                    { value: "Nearly 50", label: "Never healthier" },
+                    { value: "10 years", label: "Daily practice" },
+                    { value: "18 hrs", label: "Daily fast" },
+                    { value: "10,000+", label: "Steps every day" },
+                  ].map((stat) => (
+                    <div key={stat.label} className="text-center">
+                      <p className="font-serif text-xl font-bold brand-gradient-text sm:text-2xl">
+                        {stat.value}
+                      </p>
+                      <p className="mt-1 text-xs text-white/50">{stat.label}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Divider */}
+                <div className="my-6 h-px w-full bg-white/10" />
+
+                {/* Five pillars */}
+                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/40">
+                  Five Daily Pillars
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { label: "The Plate", color: "var(--icon-lime)" },
+                    { label: "Varied Dinners", color: "var(--icon-green)" },
+                    { label: "Fasting Window", color: "var(--icon-teal)" },
+                    { label: "Breathwork", color: "var(--icon-yellow)" },
+                    { label: "The Walk", color: "var(--icon-orange)" },
+                  ].map((pillar) => (
+                    <span
+                      key={pillar.label}
+                      className="rounded-full px-3 py-1.5 text-xs font-semibold text-white"
+                      style={{ background: pillar.color + "33", border: `1px solid ${pillar.color}55`, color: pillar.color }}
+                    >
+                      {pillar.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
           </ScrollReveal>
         </div>
       </section>
