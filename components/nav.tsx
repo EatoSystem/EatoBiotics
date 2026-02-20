@@ -11,6 +11,8 @@ const links = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
   { href: "/biotics", label: "The Biotics" },
+  { href: "/food", label: "Food" },
+  { href: "/today", label: "Today" },
   { href: "/book", label: "The Book" },
   { href: "/app", label: "The App" },
   { href: "/eatosystem", label: "EatoSystem" },
@@ -38,14 +40,14 @@ export function Nav() {
         </Link>
 
         {/* Desktop nav */}
-        <div className="hidden items-center gap-8 md:flex">
+        <div className="hidden items-center gap-6 md:flex">
           {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               className={cn(
                 "text-sm font-medium transition-colors",
-                pathname === link.href
+                pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href))
                   ? "text-foreground"
                   : "text-muted-foreground hover:text-foreground"
               )}
