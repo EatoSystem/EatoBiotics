@@ -213,6 +213,7 @@ export default function TodayPage() {
               title={`Today's Food: ${food.name}`}
               text={food.tagline}
               label="Share today's food"
+              ogImagePath="/today/opengraph-image"
             />
           </ScrollReveal>
         </div>

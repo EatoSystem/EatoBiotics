@@ -197,6 +197,7 @@ export default async function FoodPage({
               url={`https://eatobiotics.com/food/${food.slug}`}
               title={food.name}
               text={food.tagline}
+              ogImagePath={`/food/${food.slug}/opengraph-image`}
             />
           </ScrollReveal>
 

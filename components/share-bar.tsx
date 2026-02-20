@@ -1,145 +1,202 @@
 "use client"
 
 import { useState } from "react"
-import { Link2, Check } from "lucide-react"
+import { Link2, Check, Download } from "lucide-react"
 
 interface ShareBarProps {
   url: string        // full canonical URL e.g. https://eatobiotics.com/food/kimchi
   title: string      // e.g. "Kimchi"
   text: string       // e.g. "Korea's gift to your gut."
-  label?: string     // optional section label above the bar
+  label?: string
+  /** Path to the OG image for "Save card" — e.g. /food/kimchi/opengraph-image */
+  ogImagePath?: string
 }
 
-// X (Twitter) SVG icon
+// ─── Platform Icons ───────────────────────────────────────────────────────────
+
 function XIcon({ size = 16 }: { size?: number }) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
-    >
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
     </svg>
   )
 }
 
-// WhatsApp SVG icon
 function WhatsAppIcon({ size = 16 }: { size?: number }) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
-    >
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z" />
     </svg>
   )
 }
 
-// LinkedIn SVG icon
 function LinkedInIcon({ size = 16 }: { size?: number }) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
-    >
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
     </svg>
   )
 }
 
-export function ShareBar({ url, title, text, label = "Share this food" }: ShareBarProps) {
-  const [copied, setCopied] = useState(false)
+function InstagramIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+    </svg>
+  )
+}
 
-  const encodedUrl = encodeURIComponent(url)
-  const tweetText = encodeURIComponent(`${title} — ${text}\n\nvia @eatobiotics`)
-  const whatsappText = encodeURIComponent(`${title} — ${text}\n\n${url}`)
+// ─── Component ────────────────────────────────────────────────────────────────
 
-  const shareLinks = [
-    {
-      id: "x",
-      label: "Share on X",
-      href: `https://x.com/intent/tweet?text=${tweetText}&url=${encodedUrl}`,
-      icon: <XIcon size={15} />,
-      color: "hover:bg-black hover:text-white hover:border-black",
-    },
-    {
-      id: "linkedin",
-      label: "Share on LinkedIn",
-      href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
-      icon: <LinkedInIcon size={15} />,
-      color: "hover:bg-[#0A66C2] hover:text-white hover:border-[#0A66C2]",
-    },
-    {
-      id: "whatsapp",
-      label: "Share on WhatsApp",
-      href: `https://wa.me/?text=${whatsappText}`,
-      icon: <WhatsAppIcon size={15} />,
-      color: "hover:bg-[#25D366] hover:text-white hover:border-[#25D366]",
-    },
-  ]
+export function ShareBar({
+  url,
+  title,
+  text,
+  label = "Share this food",
+  ogImagePath,
+}: ShareBarProps) {
+  const [copiedLink, setCopiedLink] = useState(false)
+  const [copiedCaption, setCopiedCaption] = useState(false)
 
-  async function handleCopy() {
+  // ── Share URLs ──────────────────────────────────────────────────────────────
+  // X: text + url as separate params so the URL isn't embedded inside the tweet text
+  const xText = encodeURIComponent(`${title} — ${text}\n\nvia @eatobiotics`)
+  const xUrl = encodeURIComponent(url)
+  const xHref = `https://twitter.com/intent/tweet?text=${xText}&url=${xUrl}`
+
+  // LinkedIn: share-offsite with encoded URL
+  const linkedInHref = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`
+
+  // WhatsApp
+  const waText = encodeURIComponent(`${title} — ${text}\n\n${url}`)
+  const waHref = `https://wa.me/?text=${waText}`
+
+  // Instagram caption (copy to clipboard, then open IG)
+  const igCaption = `${title} — ${text}\n\n${url}\n\n#EatoBiotics #GutHealth #${title.replace(/\s+/g, "")}`
+
+  // ── Handlers ────────────────────────────────────────────────────────────────
+  async function copyToClipboard(value: string, setter: (v: boolean) => void) {
     try {
-      await navigator.clipboard.writeText(url)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      await navigator.clipboard.writeText(value)
     } catch {
-      // Fallback for older browsers
       const el = document.createElement("textarea")
-      el.value = url
+      el.value = value
       document.body.appendChild(el)
       el.select()
       document.execCommand("copy")
       document.body.removeChild(el)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+    }
+    setter(true)
+    setTimeout(() => setter(false), 2500)
+  }
+
+  function openCardImage() {
+    if (ogImagePath) {
+      window.open(ogImagePath, "_blank", "noopener,noreferrer")
     }
   }
 
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="mt-10 border-t border-border pt-8">
-      <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+      <p className="mb-5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
         {label}
       </p>
-      <div className="flex flex-wrap items-center gap-2">
-        {shareLinks.map((link) => (
-          <a
-            key={link.id}
-            href={link.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={link.label}
-            title={link.label}
-            className={`flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-all ${link.color}`}
-          >
-            {link.icon}
-            <span className="hidden sm:inline">{link.label.replace("Share on ", "")}</span>
-          </a>
-        ))}
 
-        {/* Copy link button */}
+      {/* Main platform buttons */}
+      <div className="flex flex-wrap gap-2">
+
+        {/* X / Twitter */}
+        <a
+          href={xHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Share on X"
+          onClick={(e) => {
+            e.preventDefault()
+            window.open(xHref, "_blank", "noopener,noreferrer,width=600,height=400")
+          }}
+          className="group flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-all hover:border-black hover:bg-black hover:text-white"
+        >
+          <XIcon size={14} />
+          <span>X</span>
+        </a>
+
+        {/* LinkedIn */}
         <button
-          onClick={handleCopy}
+          type="button"
+          aria-label="Share on LinkedIn"
+          onClick={() => window.open(linkedInHref, "_blank", "noopener,noreferrer,width=600,height=600")}
+          className="group flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-all hover:border-[#0A66C2] hover:bg-[#0A66C2] hover:text-white"
+        >
+          <LinkedInIcon size={14} />
+          <span>LinkedIn</span>
+        </button>
+
+        {/* WhatsApp */}
+        <a
+          href={waHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Share on WhatsApp"
+          className="group flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-all hover:border-[#25D366] hover:bg-[#25D366]/10 hover:text-[#1a9e4a]"
+        >
+          <WhatsAppIcon size={14} />
+          <span>WhatsApp</span>
+        </a>
+
+        {/* Copy link */}
+        <button
+          type="button"
+          onClick={() => copyToClipboard(url, setCopiedLink)}
           aria-label="Copy link"
-          title="Copy link"
-          className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-all ${
-            copied
+          className={`flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium transition-all ${
+            copiedLink
               ? "border-icon-green bg-icon-green/10 text-icon-green"
-              : "border-border text-foreground hover:border-icon-green hover:bg-icon-green/10 hover:text-icon-green"
+              : "border-border bg-background text-foreground hover:border-icon-green hover:bg-icon-green/10 hover:text-icon-green"
           }`}
         >
-          {copied ? <Check size={15} /> : <Link2 size={15} />}
-          <span className="hidden sm:inline">{copied ? "Copied!" : "Copy link"}</span>
+          {copiedLink ? <Check size={14} /> : <Link2 size={14} />}
+          <span>{copiedLink ? "Copied!" : "Copy link"}</span>
         </button>
       </div>
+
+      {/* Viral / visual sharing row */}
+      <div className="mt-3 flex flex-wrap gap-2">
+
+        {/* Instagram — copy caption */}
+        <button
+          type="button"
+          onClick={() => copyToClipboard(igCaption, setCopiedCaption)}
+          aria-label="Copy Instagram caption"
+          className={`flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium transition-all ${
+            copiedCaption
+              ? "border-[#E1306C] bg-[#E1306C]/10 text-[#E1306C]"
+              : "border-border bg-background text-foreground hover:border-[#E1306C] hover:bg-[#E1306C]/10 hover:text-[#E1306C]"
+          }`}
+        >
+          {copiedCaption ? <Check size={14} /> : <InstagramIcon size={14} />}
+          <span>{copiedCaption ? "Caption copied!" : "Copy for Instagram"}</span>
+        </button>
+
+        {/* Save share card */}
+        {ogImagePath && (
+          <button
+            type="button"
+            onClick={openCardImage}
+            aria-label="View share card"
+            className="flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-all hover:border-icon-lime hover:bg-icon-lime/10 hover:text-icon-green"
+          >
+            <Download size={14} />
+            <span>Save share card</span>
+          </button>
+        )}
+      </div>
+
+      {/* Helper tip */}
+      <p className="mt-3 text-xs text-muted-foreground/60">
+        Tip: Save the share card → post to Instagram, TikTok or Stories for maximum reach.
+      </p>
     </div>
   )
 }
