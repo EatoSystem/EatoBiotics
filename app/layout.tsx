@@ -18,6 +18,7 @@ const _sora = Sora({
 const _geistMono = Geist_Mono({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://eatobiotics.com'),
   title: {
     default: 'EatoBiotics — The Food System Inside You',
     template: '%s | EatoBiotics',
@@ -27,6 +28,15 @@ export const metadata: Metadata = {
   icons: {
     icon: '/favicon.webp',
     apple: '/apple-icon.png',
+  },
+  openGraph: {
+    siteName: 'EatoBiotics',
+    type: 'website',
+    locale: 'en_IE',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    site: '@eatobiotics',
   },
 }
 
