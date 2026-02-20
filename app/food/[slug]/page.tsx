@@ -4,6 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { GradientText } from "@/components/gradient-text"
+import { ShareBar } from "@/components/share-bar"
 import { getFoodBySlug, foods, bioticLabels } from "@/lib/foods"
 import { ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react"
 
@@ -188,6 +189,15 @@ export default async function FoodPage({
                 ))}
               </div>
             </div>
+          </ScrollReveal>
+
+          {/* Share */}
+          <ScrollReveal delay={280}>
+            <ShareBar
+              url={`https://eatobiotics.com/food/${food.slug}`}
+              title={food.name}
+              text={food.tagline}
+            />
           </ScrollReveal>
 
           {/* Prev / Next navigation */}

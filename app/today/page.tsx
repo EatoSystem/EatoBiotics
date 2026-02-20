@@ -3,6 +3,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { GradientText } from "@/components/gradient-text"
+import { ShareBar } from "@/components/share-bar"
 import { getTodaysFood, bioticLabels, foods } from "@/lib/foods"
 import { ArrowUpRight, ChevronRight } from "lucide-react"
 
@@ -203,6 +204,16 @@ export default function TodayPage() {
                 <ArrowUpRight size={14} />
               </Link>
             </div>
+          </ScrollReveal>
+
+          {/* Share */}
+          <ScrollReveal delay={320}>
+            <ShareBar
+              url="https://eatobiotics.com/today"
+              title={`Today's Food: ${food.name}`}
+              text={food.tagline}
+              label="Share today's food"
+            />
           </ScrollReveal>
         </div>
       </section>
