@@ -166,79 +166,84 @@ export default function FoodLibraryPage() {
       <div className="section-divider" />
 
       {/* Foods by biotic type */}
-      {categories.map((cat, catIndex) => {
-        const categoryFoods = foods.filter((f) => f.biotic === cat.biotic)
-        if (categoryFoods.length === 0) return null
-        return (
-          <section
-            key={cat.biotic}
-            className={`px-6 py-16 md:py-24 ${catIndex % 2 === 1 ? "bg-secondary/40" : ""}`}
-          >
-            <div className="mx-auto max-w-[1200px]">
-              <ScrollReveal>
-                <div className="flex items-center gap-4">
-                  <div
-                    className="h-1 w-12 rounded-full"
-                    style={{ background: cat.gradient }}
-                  />
-                  <p
-                    className="text-xs font-semibold uppercase tracking-widest"
-                    style={{ color: cat.accent }}
-                  >
-                    {cat.label}
-                  </p>
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">{cat.description}</p>
-              </ScrollReveal>
-
-              <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {categoryFoods.map((food, index) => (
-                  <ScrollReveal key={food.slug} delay={index * 80}>
-                    <Link href={`/food/${food.slug}`} className="group block h-full">
-                      <div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-background p-6 transition-all hover:shadow-lg">
-                        <div
-                          className="absolute top-0 left-0 right-0 h-1"
-                          style={{ background: food.gradient }}
-                        />
-                        <span className="text-5xl">{food.emoji}</span>
-                        <div className="mt-4 flex-1">
-                          <p
-                            className="text-xs font-bold uppercase tracking-widest"
-                            style={{ color: food.accentColor }}
-                          >
-                            {food.category}
-                          </p>
-                          <h3 className="mt-1 font-serif text-xl font-semibold text-foreground">
-                            {food.name}
-                          </h3>
-                          <p className="mt-2 text-xs italic leading-relaxed text-muted-foreground">
-                            {food.tagline}
-                          </p>
-                        </div>
-                        <div className="mt-4 flex items-center justify-between">
-                          <div
-                            className="h-0.5 w-8 rounded-full"
-                            style={{ backgroundColor: food.accentColor }}
-                          />
-                          <span
-                            className="flex items-center gap-1 text-xs font-semibold opacity-0 transition-opacity group-hover:opacity-100"
-                            style={{ color: food.accentColor }}
-                          >
-                            Read profile <ArrowUpRight size={11} />
-                          </span>
-                        </div>
-                      </div>
-                    </Link>
-                  </ScrollReveal>
-                ))}
-              </div>
-            </div>
-            {catIndex < categories.length - 1 && (
-              <div className="section-divider mt-16 md:mt-24" />
-            )}
-          </section>
+      {(() => {
+        const renderedCategories = categories.filter(
+          (cat) => foods.filter((f) => f.biotic === cat.biotic).length > 0
         )
-      })}
+        return renderedCategories.map((cat, renderedIndex) => {
+          const categoryFoods = foods.filter((f) => f.biotic === cat.biotic)
+          const isLast = renderedIndex === renderedCategories.length - 1
+          return (
+            <section
+              key={cat.biotic}
+              className={`px-6 py-16 md:py-24 ${renderedIndex % 2 === 1 ? "bg-secondary/40" : ""}`}
+            >
+              <div className="mx-auto max-w-[1200px]">
+                <ScrollReveal>
+                  <div className="flex items-center gap-4">
+                    <div
+                      className="h-1 w-12 rounded-full"
+                      style={{ background: cat.gradient }}
+                    />
+                    <p
+                      className="text-xs font-semibold uppercase tracking-widest"
+                      style={{ color: cat.accent }}
+                    >
+                      {cat.label}
+                    </p>
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">{cat.description}</p>
+                </ScrollReveal>
+
+                <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  {categoryFoods.map((food, index) => (
+                    <ScrollReveal key={food.slug} delay={index * 80}>
+                      <Link href={`/food/${food.slug}`} className="group block h-full">
+                        <div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-background p-6 transition-all hover:shadow-lg">
+                          <div
+                            className="absolute top-0 left-0 right-0 h-1"
+                            style={{ background: food.gradient }}
+                          />
+                          <span className="text-5xl">{food.emoji}</span>
+                          <div className="mt-4 flex-1">
+                            <p
+                              className="text-xs font-bold uppercase tracking-widest"
+                              style={{ color: food.accentColor }}
+                            >
+                              {food.category}
+                            </p>
+                            <h3 className="mt-1 font-serif text-xl font-semibold text-foreground">
+                              {food.name}
+                            </h3>
+                            <p className="mt-2 text-xs italic leading-relaxed text-muted-foreground">
+                              {food.tagline}
+                            </p>
+                          </div>
+                          <div className="mt-4 flex items-center justify-between">
+                            <div
+                              className="h-0.5 w-8 rounded-full"
+                              style={{ backgroundColor: food.accentColor }}
+                            />
+                            <span
+                              className="flex items-center gap-1 text-xs font-semibold opacity-0 transition-opacity group-hover:opacity-100"
+                              style={{ color: food.accentColor }}
+                            >
+                              Read profile <ArrowUpRight size={11} />
+                            </span>
+                          </div>
+                        </div>
+                      </Link>
+                    </ScrollReveal>
+                  ))}
+                </div>
+              </div>
+              {!isLast && (
+                <div className="section-divider mt-16 md:mt-24" />
+              )}
+            </section>
+          )
+        })
+      })()}
 
       {/* Gradient divider */}
       <div className="section-divider" />
