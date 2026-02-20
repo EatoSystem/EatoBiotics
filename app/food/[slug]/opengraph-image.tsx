@@ -6,12 +6,27 @@ export const alt = "EatoBiotics Food Profile"
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 
-// Biotic label → solid background colour for the badge
-const bioticBg: Record<string, string> = {
-  prebiotic: "#7EC832",
-  probiotic: "#2BBFA4",
-  postbiotic: "#F5A623",
-  protein: "#F0C020",
+// Brand palette (matches globals.css)
+const BRAND = {
+  white:      "#FFFFFF",
+  offWhite:   "#F7F8F5",
+  border:     "#E8EDE4",
+  fore:       "#1A2E12",
+  mutedFore:  "#5A6E50",
+  softMuted:  "#8FA882",
+  lime:       "#A8E063",
+  green:      "#4CB648",
+  teal:       "#2DAA6E",
+  yellow:     "#F5C518",
+  orange:     "#F5A623",
+}
+
+// Per-biotic accent colours
+const bioticAccent: Record<string, { badge: string; glow: string; text: string }> = {
+  prebiotic:  { badge: BRAND.green,  glow: BRAND.lime,   text: "#ffffff" },
+  probiotic:  { badge: BRAND.teal,   glow: "#2DAA6E44",  text: "#ffffff" },
+  postbiotic: { badge: BRAND.orange, glow: "#F5A62344",  text: "#ffffff" },
+  protein:    { badge: BRAND.yellow, glow: "#F5C51844",  text: "#1A2E12" },
 }
 
 export default async function FoodOGImage({
@@ -27,23 +42,20 @@ export default async function FoodOGImage({
       (
         <div
           style={{
-            width: 1200,
-            height: 630,
-            background: "#ffffff",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            width: 1200, height: 630,
+            background: BRAND.white,
+            display: "flex", alignItems: "center", justifyContent: "center",
             fontFamily: "sans-serif",
           }}
         >
-          <span style={{ fontSize: 48, color: "#111" }}>EatoBiotics</span>
+          <span style={{ fontSize: 48, color: BRAND.fore }}>EatoBiotics</span>
         </div>
       ),
       { width: 1200, height: 630 }
     )
   }
 
-  const badgeColor = bioticBg[food.biotic] ?? "#7EC832"
+  const accent = bioticAccent[food.biotic] ?? bioticAccent.prebiotic
 
   return new ImageResponse(
     (
@@ -51,71 +63,154 @@ export default async function FoodOGImage({
         style={{
           width: 1200,
           height: 630,
-          background: "#ffffff",
+          background: BRAND.white,
           display: "flex",
-          flexDirection: "column",
+          flexDirection: "row",
           fontFamily: "sans-serif",
           position: "relative",
           overflow: "hidden",
         }}
       >
-        {/* Top gradient bar */}
+        {/* ── Left panel — rich colour block ── */}
         <div
           style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 8,
-            background: "linear-gradient(90deg, #7EC832, #2BBFA4, #F5A623)",
-          }}
-        />
-
-        {/* Bottom-right large emoji watermark */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: -20,
-            right: 40,
-            fontSize: 260,
-            opacity: 0.08,
-            lineHeight: 1,
+            width: 380,
+            height: 630,
+            flexShrink: 0,
+            background: BRAND.offWhite,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            position: "relative",
+            overflow: "hidden",
           }}
         >
-          {food.emoji}
+          {/* Soft radial glow behind emoji */}
+          <div
+            style={{
+              position: "absolute",
+              width: 340,
+              height: 340,
+              borderRadius: "50%",
+              background: accent.badge,
+              opacity: 0.12,
+            }}
+          />
+
+          {/* Decorative ring */}
+          <div
+            style={{
+              position: "absolute",
+              width: 300,
+              height: 300,
+              borderRadius: "50%",
+              border: `2px solid ${accent.badge}`,
+              opacity: 0.18,
+            }}
+          />
+
+          {/* Giant emoji */}
+          <div
+            style={{
+              fontSize: 160,
+              lineHeight: 1,
+              position: "relative",
+              zIndex: 2,
+            }}
+          >
+            {food.emoji}
+          </div>
+
+          {/* Biotic badge below emoji */}
+          <div
+            style={{
+              marginTop: 28,
+              background: accent.badge,
+              color: accent.text,
+              fontSize: 13,
+              fontWeight: 700,
+              letterSpacing: "2px",
+              padding: "8px 20px",
+              borderRadius: 100,
+              textTransform: "uppercase",
+              position: "relative",
+              zIndex: 2,
+            }}
+          >
+            {bioticLabels[food.biotic]}
+          </div>
+
+          {/* Category pill */}
+          <div
+            style={{
+              marginTop: 10,
+              background: BRAND.border,
+              color: BRAND.mutedFore,
+              fontSize: 12,
+              fontWeight: 500,
+              padding: "5px 14px",
+              borderRadius: 100,
+              position: "relative",
+              zIndex: 2,
+            }}
+          >
+            {food.category}
+          </div>
+
+          {/* Top gradient bar on left panel */}
+          <div
+            style={{
+              position: "absolute",
+              top: 0, left: 0, right: 0,
+              height: 5,
+              background: `linear-gradient(90deg, ${accent.badge}, ${BRAND.lime})`,
+            }}
+          />
         </div>
 
-        {/* Main content */}
+        {/* ── Right panel — content ── */}
         <div
           style={{
             flex: 1,
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
-            padding: "56px 72px",
+            padding: "52px 64px 48px 64px",
+            position: "relative",
           }}
         >
-          {/* Top: logo row */}
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          {/* Top bar gradient (full width, behind content) */}
+          <div
+            style={{
+              position: "absolute",
+              top: 0, left: 0, right: 0,
+              height: 5,
+              background: `linear-gradient(90deg, ${accent.badge}, ${BRAND.lime})`,
+            }}
+          />
+
+          {/* Logo row */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div
               style={{
-                width: 44,
-                height: 44,
-                borderRadius: 12,
-                background: "linear-gradient(135deg, #7EC832, #2BBFA4)",
+                width: 40,
+                height: 40,
+                borderRadius: 10,
+                background: `linear-gradient(135deg, ${BRAND.green}, ${BRAND.teal})`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: 22,
+                fontSize: 20,
               }}
             >
               🌿
             </div>
             <span
               style={{
-                fontSize: 22,
+                fontSize: 20,
                 fontWeight: 700,
-                color: "#111111",
+                color: BRAND.fore,
                 letterSpacing: "-0.3px",
               }}
             >
@@ -123,144 +218,111 @@ export default async function FoodOGImage({
             </span>
             <div
               style={{
-                width: 4,
-                height: 4,
+                width: 3, height: 3,
                 borderRadius: "50%",
-                background: "#ccc",
-                marginLeft: 4,
-                marginRight: 4,
+                background: BRAND.border,
+                marginLeft: 6, marginRight: 6,
               }}
             />
-            <span style={{ fontSize: 18, color: "#888888" }}>Food Library</span>
+            <span style={{ fontSize: 16, color: BRAND.softMuted }}>Food Library</span>
           </div>
 
-          {/* Middle: emoji + food name */}
-          <div style={{ display: "flex", alignItems: "center", gap: 48 }}>
-            {/* Emoji in a gradient circle */}
+          {/* Food name + tagline */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div
               style={{
-                width: 180,
-                height: 180,
-                borderRadius: 40,
-                background: "linear-gradient(135deg, #f5f5f5, #eeeeee)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 100,
-                flexShrink: 0,
-                border: "3px solid #eeeeee",
+                fontSize: 82,
+                fontWeight: 800,
+                color: BRAND.fore,
+                lineHeight: 0.95,
+                letterSpacing: "-3px",
               }}
             >
-              {food.emoji}
+              {food.name}
             </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {/* Biotic badge */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
-                <div
-                  style={{
-                    background: badgeColor,
-                    color: "#ffffff",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    letterSpacing: "1.5px",
-                    padding: "6px 14px",
-                    borderRadius: 100,
-                    textTransform: "uppercase",
-                  }}
-                >
-                  {bioticLabels[food.biotic]}
-                </div>
-                <div
-                  style={{
-                    background: "#f5f5f5",
-                    color: "#666666",
-                    fontSize: 13,
-                    fontWeight: 500,
-                    padding: "6px 14px",
-                    borderRadius: 100,
-                  }}
-                >
-                  {food.category}
-                </div>
-              </div>
-
-              {/* Food name */}
-              <div
-                style={{
-                  fontSize: 72,
-                  fontWeight: 800,
-                  color: "#111111",
-                  lineHeight: 1,
-                  letterSpacing: "-2px",
-                }}
-              >
-                {food.name}
-              </div>
-
-              {/* Tagline */}
-              <div
-                style={{
-                  fontSize: 24,
-                  color: "#555555",
-                  fontStyle: "italic",
-                  lineHeight: 1.3,
-                  maxWidth: 560,
-                }}
-              >
-                {food.tagline}
-              </div>
+            <div
+              style={{
+                fontSize: 26,
+                color: accent.badge,
+                fontStyle: "italic",
+                lineHeight: 1.3,
+                fontWeight: 500,
+              }}
+            >
+              {food.tagline}
             </div>
           </div>
 
-          {/* Bottom: domain */}
+          {/* Benefits + domain row */}
           <div
             style={{
               display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
+              flexDirection: "column",
+              gap: 16,
             }}
           >
-            <div style={{ display: "flex", gap: 24 }}>
-              {food.benefits.slice(0, 2).map((b) => (
+            {/* Benefits */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {food.benefits.slice(0, 3).map((b) => (
                 <div
                   key={b.title}
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 8,
+                    gap: 10,
                     fontSize: 15,
-                    color: "#777777",
+                    color: BRAND.mutedFore,
                   }}
                 >
                   <div
                     style={{
-                      width: 6,
-                      height: 6,
+                      width: 6, height: 6,
                       borderRadius: "50%",
-                      background: badgeColor,
+                      background: accent.badge,
+                      flexShrink: 0,
                     }}
                   />
                   {b.title}
                 </div>
               ))}
             </div>
-            <span
+
+            {/* Domain */}
+            <div
               style={{
-                fontSize: 18,
-                fontWeight: 600,
-                color: "#aaaaaa",
-                letterSpacing: "0.5px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingTop: 14,
+                borderTop: `1px solid ${BRAND.border}`,
               }}
             >
-              eatobiotics.com
-            </span>
+              <span style={{ fontSize: 14, color: BRAND.softMuted }}>
+                eatobiotics.com/food/{food.slug}
+              </span>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  background: BRAND.offWhite,
+                  padding: "6px 14px",
+                  borderRadius: 100,
+                  border: `1px solid ${BRAND.border}`,
+                }}
+              >
+                <div
+                  style={{
+                    width: 7, height: 7,
+                    borderRadius: "50%",
+                    background: BRAND.green,
+                  }}
+                />
+                <span style={{ fontSize: 13, color: BRAND.mutedFore, fontWeight: 600 }}>
+                  Free to read
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
