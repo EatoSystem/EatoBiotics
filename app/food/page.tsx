@@ -3,20 +3,26 @@ import Link from "next/link"
 import Image from "next/image"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { GradientText } from "@/components/gradient-text"
-import { foods, bioticLabels, type BioticType } from "@/lib/foods"
-import { ArrowUpRight } from "lucide-react"
+import { foods, getTodaysFood, bioticLabels, type BioticType } from "@/lib/foods"
+import { ArrowUpRight, Calendar } from "lucide-react"
 
 export const metadata: Metadata = {
   title: "Food Library",
   description:
-    "The EatoBiotics food library — every food profiled for its microbiome impact. Prebiotics, probiotics, and postbiotic foods with science-backed explanations and practical eating advice.",
+    "The EatoBiotics food library — every food profiled for its microbiome impact. Prebiotics, probiotics, postbiotic and protein foods with science-backed explanations and practical eating advice.",
   openGraph: {
     title: "Food Library — EatoBiotics",
     description: "Every food profiled for its microbiome impact.",
   },
 }
 
-const categories: { biotic: BioticType; label: string; accent: string; gradient: string; description: string }[] = [
+const categories: {
+  biotic: BioticType
+  label: string
+  accent: string
+  gradient: string
+  description: string
+}[] = [
   {
     biotic: "prebiotic",
     label: "Prebiotic Foods",
@@ -32,6 +38,13 @@ const categories: { biotic: BioticType; label: string; accent: string; gradient:
     description: "Fermented foods that add live cultures to your microbiome.",
   },
   {
+    biotic: "protein",
+    label: "Protein Foods",
+    accent: "var(--icon-yellow)",
+    gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
+    description: "Complete proteins that rebuild the gut lining and support microbiome function.",
+  },
+  {
     biotic: "postbiotic",
     label: "Postbiotic Foods",
     accent: "var(--icon-orange)",
@@ -41,6 +54,14 @@ const categories: { biotic: BioticType; label: string; accent: string; gradient:
 ]
 
 export default function FoodLibraryPage() {
+  const todaysFood = getTodaysFood()
+  const now = new Date()
+  const dateString = now.toLocaleDateString("en-IE", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  })
+
   return (
     <>
       {/* Hero */}
@@ -81,26 +102,62 @@ export default function FoodLibraryPage() {
       <div className="section-divider" />
 
       {/* Today's food highlight */}
-      <section className="bg-secondary/40 px-6 py-12 md:py-16">
+      <section className="bg-secondary/40 px-6 py-10 md:py-14">
         <div className="mx-auto max-w-[1200px]">
           <ScrollReveal>
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-icon-orange">
-                  Updated Daily
-                </p>
-                <h2 className="mt-1 font-serif text-2xl font-semibold text-foreground">
-                  Today&apos;s featured food
-                </h2>
+            <Link
+              href="/today"
+              className="group flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between"
+            >
+              {/* Left: label + food info */}
+              <div className="flex items-center gap-5">
+                {/* Emoji badge */}
+                <div
+                  className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-4xl shadow-md"
+                  style={{ background: todaysFood.gradient }}
+                >
+                  <span>{todaysFood.emoji}</span>
+                </div>
+
+                {/* Text */}
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Calendar size={12} className="text-icon-orange" />
+                    <p className="text-xs font-semibold uppercase tracking-widest text-icon-orange">
+                      Updated Daily — {dateString}
+                    </p>
+                  </div>
+                  <h2 className="mt-0.5 font-serif text-xl font-semibold text-foreground">
+                    Today&apos;s featured food:{" "}
+                    <span
+                      className="transition-colors"
+                      style={{ color: todaysFood.accentColor }}
+                    >
+                      {todaysFood.name}
+                    </span>
+                  </h2>
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <span
+                      className="rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider text-white"
+                      style={{ background: todaysFood.gradient }}
+                    >
+                      {bioticLabels[todaysFood.biotic]}
+                    </span>
+                    <span className="text-xs text-muted-foreground italic">
+                      {todaysFood.tagline}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <Link
-                href="/today"
-                className="brand-gradient inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:opacity-90"
-              >
-                See today&apos;s food
-                <ArrowUpRight size={14} />
-              </Link>
-            </div>
+
+              {/* Right: CTA */}
+              <div className="shrink-0">
+                <span className="brand-gradient inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-icon-green/20 transition-all group-hover:opacity-90">
+                  See today&apos;s profile
+                  <ArrowUpRight size={14} />
+                </span>
+              </div>
+            </Link>
           </ScrollReveal>
         </div>
       </section>
@@ -113,7 +170,10 @@ export default function FoodLibraryPage() {
         const categoryFoods = foods.filter((f) => f.biotic === cat.biotic)
         if (categoryFoods.length === 0) return null
         return (
-          <section key={cat.biotic} className={`px-6 py-16 md:py-24 ${catIndex % 2 === 1 ? "bg-secondary/40" : ""}`}>
+          <section
+            key={cat.biotic}
+            className={`px-6 py-16 md:py-24 ${catIndex % 2 === 1 ? "bg-secondary/40" : ""}`}
+          >
             <div className="mx-auto max-w-[1200px]">
               <ScrollReveal>
                 <div className="flex items-center gap-4">
@@ -121,7 +181,10 @@ export default function FoodLibraryPage() {
                     className="h-1 w-12 rounded-full"
                     style={{ background: cat.gradient }}
                   />
-                  <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: cat.accent }}>
+                  <p
+                    className="text-xs font-semibold uppercase tracking-widest"
+                    style={{ color: cat.accent }}
+                  >
                     {cat.label}
                   </p>
                 </div>
@@ -170,10 +233,40 @@ export default function FoodLibraryPage() {
                 ))}
               </div>
             </div>
-            {catIndex < categories.length - 1 && <div className="section-divider mt-16 md:mt-24" />}
+            {catIndex < categories.length - 1 && (
+              <div className="section-divider mt-16 md:mt-24" />
+            )}
           </section>
         )
       })}
+
+      {/* Gradient divider */}
+      <div className="section-divider" />
+
+      {/* Stats strip */}
+      <section className="bg-secondary/40 px-6 py-12 md:py-16">
+        <div className="mx-auto max-w-[1200px]">
+          <ScrollReveal>
+            <div className="grid gap-6 sm:grid-cols-3 text-center">
+              {[
+                { value: `${foods.length}`, label: "Foods profiled", color: "var(--icon-lime)" },
+                { value: "4", label: "Biotic categories", color: "var(--icon-teal)" },
+                { value: "Growing", label: "New foods weekly", color: "var(--icon-orange)" },
+              ].map((stat) => (
+                <div key={stat.label}>
+                  <p
+                    className="font-serif text-4xl font-semibold"
+                    style={{ color: stat.color }}
+                  >
+                    {stat.value}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">{stat.label}</p>
+                </div>
+              ))}
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
 
       {/* Gradient divider */}
       <div className="section-divider" />
