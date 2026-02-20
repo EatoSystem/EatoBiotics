@@ -524,6 +524,136 @@ export const foods: Food[] = [
     pairsWith: ["Oats", "Kefir", "Blueberries", "Banana"],
     publishedDay: 31,
   },
+
+  // ─── POSTBIOTIC FOODS ──────────────────────────────────────────────────────
+
+  {
+    slug: "cooked-cooled-potato",
+    name: "Cooked & Cooled Potato",
+    emoji: "🥔",
+    category: "Vegetables",
+    biotic: "postbiotic",
+    accentColor: "var(--icon-orange)",
+    gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
+    tagline: "Cooling transforms starch into gut medicine.",
+    description:
+      "Cooking a potato and then cooling it completely triggers a remarkable transformation — the digestible starch crystallises into resistant starch type 3, which escapes digestion in the small intestine and reaches the colon intact. There, gut bacteria ferment it into butyrate — the most important short-chain fatty acid for colon health. Reheating briefly preserves most of this benefit. This makes the humble potato one of the most powerful postbiotic foods available.",
+    howToEat:
+      "Boil or steam potatoes, then refrigerate overnight before eating. Eat cold in salads, or reheat gently — reheating doesn't destroy the resistant starch completely. Potato salad with olive oil and apple cider vinegar is an ideal preparation. New potatoes and waxy varieties (Charlotte, Jersey Royals) retain more resistant starch than floury types. Eat skin-on for additional prebiotic fibre.",
+    science:
+      "Resistant starch type 3 from cooked and cooled potatoes is fermented by gut bacteria into butyrate at significantly higher rates than raw potato starch — butyrate is the primary fuel for colonocytes (colon lining cells) and has anti-cancer properties.",
+    scienceSource: "Baxter et al., Cell Host & Microbe, 2019",
+    county: "Donegal",
+    benefits: [
+      { title: "Butyrate Production", detail: "Resistant starch RS3 is fermented into butyrate — the primary fuel for the cells lining your colon." },
+      { title: "Anti-inflammatory", detail: "Butyrate inhibits NF-κB signalling — one of the key inflammatory pathways in the gut." },
+      { title: "Colon Cancer Protection", detail: "Butyrate induces apoptosis in cancerous colon cells while protecting healthy ones." },
+      { title: "Potassium & Vitamin C", detail: "One of the best whole food sources of potassium and bioavailable Vitamin C." },
+    ],
+    pairsWith: ["Olive Oil", "Sauerkraut", "Garlic", "Leeks"],
+    publishedDay: 33,
+  },
+  {
+    slug: "apple-cider-vinegar",
+    name: "Apple Cider Vinegar",
+    emoji: "🍎",
+    category: "Fermented",
+    biotic: "postbiotic",
+    accentColor: "var(--icon-orange)",
+    gradient: "linear-gradient(135deg, var(--icon-orange), var(--icon-yellow))",
+    tagline: "Acetic acid — the postbiotic hiding in your pantry.",
+    description:
+      "Raw, unfiltered apple cider vinegar with 'the mother' contains acetic acid — the primary postbiotic compound produced when bacteria ferment ethanol. Acetic acid directly inhibits the growth of pathogenic bacteria, lowers post-meal blood glucose, and acts as a mild antimicrobial in the gut. The 'mother' — the cloudy sediment — contains beneficial bacteria, enzymes, and proteins from the fermentation process.",
+    howToEat:
+      "One tablespoon diluted in a large glass of water before meals is the most evidence-backed use — reducing post-meal blood sugar spikes. Drizzle over salads as a dressing. Always dilute — undiluted ACV can erode tooth enamel and irritate the oesophagus. Always choose raw, unfiltered with the mother (Bragg's is the most widely available). Never take it undiluted.",
+    science:
+      "A systematic review found that 15-30ml of apple cider vinegar daily significantly reduced fasting blood glucose, HbA1c, and post-meal glucose responses in people with type 2 diabetes and insulin resistance.",
+    scienceSource: "Shishehbor et al., Journal of Evidence-Based Integrative Medicine, 2017",
+    benefits: [
+      { title: "Acetic Acid Postbiotic", detail: "Directly inhibits pathogenic bacteria including E. coli and Salmonella in the digestive tract." },
+      { title: "Blood Sugar Control", detail: "Slows gastric emptying and starch digestion, significantly reducing post-meal glucose spikes." },
+      { title: "Antimicrobial in the Gut", detail: "Lowers gut pH slightly, creating conditions unfavourable for pathogenic bacteria." },
+      { title: "Contains the Mother", detail: "Raw ACV contains live enzymes, beneficial bacteria, and proteins from fermentation." },
+    ],
+    pairsWith: ["Garlic", "Olive Oil", "Salad Greens", "Cooked & Cooled Potato"],
+    publishedDay: 35,
+  },
+  {
+    slug: "dark-chocolate",
+    name: "Dark Chocolate",
+    emoji: "🍫",
+    category: "Fats & Oils",
+    biotic: "postbiotic",
+    accentColor: "var(--icon-orange)",
+    gradient: "linear-gradient(135deg, var(--icon-orange), var(--icon-teal))",
+    tagline: "The gut food that tastes like a reward.",
+    description:
+      "Dark chocolate (85%+ cacao) is one of the most surprising gut-health foods. Its polyphenols — particularly flavanols — are metabolised by gut bacteria into postbiotic compounds including short-chain fatty acids and phenolic acids with anti-inflammatory and neuroprotective effects. The fermentation of cacao polyphenols in the colon has been shown to selectively increase Lactobacillus and Bifidobacterium while decreasing pathogenic Clostridium.",
+    howToEat:
+      "20-30g of 85%+ dark chocolate daily is the evidence-backed dose. The higher the cacao percentage, the more polyphenols and the less sugar. Eat it slowly — letting it melt rather than chewing preserves more polyphenol activity. Pair with blueberries for a combined polyphenol effect. Avoid milk chocolate — the milk proteins bind to the polyphenols and reduce their bioavailability.",
+    science:
+      "Gut bacteria ferment cacao polyphenols into anti-inflammatory phenolic acids. A 4-week trial showed 85% dark chocolate consumption significantly increased Lactobacillus and Bifidobacterium while reducing Clostridium histolyticum — a marker of gut dysbiosis.",
+    scienceSource: "Tzounis et al., American Journal of Clinical Nutrition, 2011",
+    benefits: [
+      { title: "Postbiotic Phenolic Acids", detail: "Gut fermentation of cocoa flavanols produces anti-inflammatory phenolic metabolites." },
+      { title: "Increases Bifidobacterium", detail: "Selectively feeds beneficial bacteria while reducing pathogenic Clostridium strains." },
+      { title: "Neuroprotective", detail: "Phenolic metabolites cross the blood-brain barrier and reduce neuroinflammation." },
+      { title: "Cardiovascular Protection", detail: "Flavanols improve blood flow, reduce blood pressure, and lower LDL oxidation." },
+    ],
+    pairsWith: ["Blueberries", "Kefir", "Almonds", "Banana"],
+    publishedDay: 37,
+  },
+  {
+    slug: "green-tea",
+    name: "Green Tea",
+    emoji: "🍵",
+    category: "Herbs & Spices",
+    biotic: "postbiotic",
+    accentColor: "var(--icon-teal)",
+    gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
+    tagline: "EGCG — the postbiotic compound in every cup.",
+    description:
+      "Green tea is one of the most researched plants on earth. Its primary polyphenol, EGCG (epigallocatechin gallate), is metabolised by gut bacteria into postbiotic compounds — specifically valerolactones and valeric acids — that have potent anti-inflammatory, anti-cancer, and neuroprotective effects. Regular green tea consumption is one of the strongest dietary correlates of longevity across multiple epidemiological studies in Japan.",
+    howToEat:
+      "Brew at 70-80°C — not boiling, which destroys EGCG and makes it bitter. Steep for 2-3 minutes. Drink 2-3 cups daily between meals for maximum absorption. Matcha (ground whole green tea leaf) provides 10-15x the EGCG of brewed green tea. Avoid adding milk — the proteins bind to the polyphenols and reduce bioavailability.",
+    science:
+      "EGCG metabolites produced by gut bacteria have been shown to selectively increase Akkermansia muciniphila — a species strongly associated with lean body composition, reduced inflammation, and improved gut barrier function.",
+    scienceSource: "Zhao et al., Journal of Nutritional Biochemistry, 2019",
+    benefits: [
+      { title: "EGCG Postbiotic Metabolites", detail: "Gut bacteria convert EGCG into valerolactones — powerful anti-inflammatory postbiotics." },
+      { title: "Increases Akkermansia", detail: "Selectively feeds Akkermansia muciniphila — a keystone species for gut barrier health." },
+      { title: "Anti-cancer Properties", detail: "EGCG metabolites induce apoptosis in cancer cells and inhibit tumour angiogenesis." },
+      { title: "Cognitive Protection", detail: "Regular consumption is linked to reduced risk of Alzheimer's and Parkinson's disease." },
+    ],
+    pairsWith: ["Dark Chocolate", "Blueberries", "Garlic", "Ginger"],
+    publishedDay: 39,
+  },
+  {
+    slug: "bone-broth",
+    name: "Bone Broth",
+    emoji: "🍲",
+    category: "Protein",
+    biotic: "postbiotic",
+    accentColor: "var(--icon-yellow)",
+    gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
+    tagline: "Liquid gut lining — collagen in every cup.",
+    description:
+      "Bone broth is made by simmering animal bones for 12-48 hours — releasing collagen, gelatin, glutamine, glycine, and proline into the liquid. These compounds are direct postbiotic substrates — they bypass the microbiome and act directly on the gut lining, repairing tight junctions, reducing intestinal permeability, and providing the building blocks for mucus layer regeneration. It is one of the oldest healing foods in every food culture on earth.",
+    howToEat:
+      "Drink 250ml warm daily as a morning tonic or use as the base for soups, stews, and sauces. Make your own from chicken carcasses or beef bones — add apple cider vinegar to the cold water before heating to leach minerals from the bones. Skim the fat if desired. Commercial cartons are convenient but check they are made from real bones and not just stock cubes. Irish grass-fed beef bones produce superior broth.",
+    science:
+      "Glutamine from bone broth has been clinically shown to restore tight junction protein expression in the intestinal epithelium — directly reducing intestinal permeability. Glycine supplementation reduces gut inflammation markers in IBD patients.",
+    scienceSource: "Rao & Samak, Journal of Epithelial Biology & Pharmacology, 2012",
+    county: "Tipperary",
+    benefits: [
+      { title: "Gut Lining Repair", detail: "Glutamine directly restores tight junction proteins — the molecular seals between gut cells." },
+      { title: "Collagen & Gelatin", detail: "Provides bioavailable collagen that supports the mucus layer protecting the intestinal wall." },
+      { title: "Glycine", detail: "Reduces gut inflammation and supports bile acid production for fat digestion." },
+      { title: "Mineral Density", detail: "Long simmering releases calcium, magnesium, phosphorus, and potassium from bones." },
+    ],
+    pairsWith: ["Garlic", "Leeks", "Ginger", "Apple Cider Vinegar"],
+    publishedDay: 41,
+  },
 ]
 
 // Get today's food based on the day of the year

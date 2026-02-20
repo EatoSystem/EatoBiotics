@@ -38,18 +38,18 @@ const categories: {
     description: "Fermented foods that add live cultures to your microbiome.",
   },
   {
-    biotic: "protein",
-    label: "Protein Foods",
-    accent: "var(--icon-yellow)",
-    gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
-    description: "Complete proteins that rebuild the gut lining and support microbiome function.",
-  },
-  {
     biotic: "postbiotic",
     label: "Postbiotic Foods",
     accent: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
-    description: "Foods that help your gut produce beneficial compounds.",
+    description: "Foods whose compounds directly repair the gut lining and reduce inflammation.",
+  },
+  {
+    biotic: "protein",
+    label: "Protein Foods",
+    accent: "var(--icon-yellow)",
+    gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-lime))",
+    description: "Complete proteins that rebuild the gut lining and support microbiome function.",
   },
 ]
 
