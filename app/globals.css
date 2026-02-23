@@ -110,3 +110,62 @@
     height: 8px;
   }
 }
+
+/* ── Chapter prose typography ─────────────────────────────────────────────── */
+.chapter-prose h2 {
+  font-family: var(--font-serif);
+  font-size: 1.625rem;       /* 26px */
+  font-weight: 600;
+  color: var(--foreground);
+  margin-top: 2.75rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.25;
+}
+
+.chapter-prose h3 {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;        /* 20px */
+  font-weight: 600;
+  color: var(--foreground);
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.chapter-prose p {
+  font-size: 1.0625rem;      /* 17px */
+  line-height: 1.8;
+  color: var(--foreground);
+  margin-bottom: 1.25rem;
+}
+
+.chapter-prose ul,
+.chapter-prose ol {
+  margin: 1rem 0 1.25rem 1.5rem;
+}
+
+.chapter-prose li {
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: var(--foreground);
+  margin-bottom: 0.35rem;
+}
+
+.chapter-prose ul li { list-style-type: disc; }
+.chapter-prose ol li { list-style-type: decimal; }
+
+.chapter-prose strong {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.chapter-prose em {
+  font-style: italic;
+}
+
+.chapter-prose hr {
+  border: none;
+  height: 2px;
+  background: linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), transparent);
+  margin: 2.5rem 0;
+  border-radius: 999px;
+}
