@@ -29,29 +29,22 @@ export function ChapterKeyTakeaways({ children }: ChapterKeyTakeawaysProps) {
 
   return (
     <div className="my-12 overflow-hidden rounded-2xl bg-foreground">
-      {/* Header — matches dark section pattern across the site */}
-      <div className="px-6 pb-4 pt-6">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1">
-            <span className="h-2 w-6 rounded-full bg-icon-lime" />
-            <span className="h-2 w-4 rounded-full bg-icon-green" />
-            <span className="h-2 w-3 rounded-full bg-icon-teal" />
-          </div>
-          <p className="text-[11px] font-bold uppercase tracking-widest text-white/50">
-            Key Takeaways
-          </p>
-        </div>
-        <p className="mt-2 font-serif text-xl font-semibold text-white">
+      {/* Header */}
+      <div className="px-6 pt-6 pb-4">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-white/50">
+          Key Takeaways
+        </p>
+        <p className="mt-1.5 font-serif text-xl font-semibold text-white">
           What to carry forward from this chapter
         </p>
       </div>
 
-      {/* Gradient rule */}
+      {/* Brand gradient rule */}
       <div
         className="h-px"
         style={{
           background:
-            "linear-gradient(90deg, var(--icon-lime) 0%, var(--icon-green) 30%, var(--icon-teal) 60%, transparent 100%)",
+            "linear-gradient(90deg, var(--icon-lime) 0%, var(--icon-green) 40%, var(--icon-teal) 70%, transparent 100%)",
         }}
       />
 
@@ -60,10 +53,10 @@ export function ChapterKeyTakeaways({ children }: ChapterKeyTakeawaysProps) {
         {items.map((item, i) => (
           <li
             key={i}
-            className="flex items-start gap-4 border-b border-white/5 px-6 py-5 last:border-b-0"
+            className="flex items-start gap-4 border-b border-white/[0.07] px-6 py-4 last:border-b-0"
           >
             <span
-              className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+              className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-foreground"
               style={{ backgroundColor: pillColors[i % pillColors.length] }}
             >
               {i + 1}

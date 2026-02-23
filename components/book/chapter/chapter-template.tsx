@@ -14,40 +14,23 @@ export function ChapterTemplate({ chapter, children }: ChapterTemplateProps) {
   const pIdx = partIndex(chapter.part)
   const color = PART_COLORS[pIdx] ?? "var(--icon-green)"
 
-  // Split title so last word(s) get the gradient
+  // Last 1–2 words of title get the gradient; rest is plain foreground
   const titleWords = chapter.title.split(" ")
-  const splitAt = Math.max(1, Math.floor(titleWords.length * 0.55))
+  const splitAt = titleWords.length <= 3 ? titleWords.length - 1 : titleWords.length - 2
   const plainTitle = titleWords.slice(0, splitAt).join(" ")
   const gradientTitle = titleWords.slice(splitAt).join(" ")
 
   return (
     <>
-      {/* ── Hero ──────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden px-6 pt-32 pb-20 md:pt-40 md:pb-28">
-        {/* Subtle radial glow */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.04]"
-          style={{
-            background: `radial-gradient(ellipse 80% 60% at 50% 0%, ${color}, transparent)`,
-          }}
-        />
-
-        {/* Ghost chapter number — decorative large watermark */}
-        <div
-          className="pointer-events-none absolute -right-4 top-12 select-none font-serif font-bold leading-none opacity-[0.045] md:right-0"
-          style={{ color, fontSize: "clamp(8rem,28vw,18rem)" }}
-          aria-hidden
-        >
-          {String(chapter.number).padStart(2, "0")}
-        </div>
-
-        <div className="relative mx-auto max-w-[720px]">
+      {/* ── Hero ────────────────────────────────────────────────────────── */}
+      <section className="relative px-6 pt-32 pb-20 md:pt-40 md:pb-28">
+        <div className="mx-auto max-w-[720px]">
           {/* Breadcrumb */}
           <nav className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <Link href="/book" className="transition-colors hover:text-foreground">
               The Book
             </Link>
-            <span className="opacity-40">/</span>
+            <span>/</span>
             <span className="font-semibold" style={{ color }}>
               Part {chapter.part} — {chapter.partTitle}
             </span>
@@ -72,13 +55,13 @@ export function ChapterTemplate({ chapter, children }: ChapterTemplateProps) {
           </div>
 
           {/* Title */}
-          <h1 className="mt-5 font-serif text-5xl font-semibold leading-[1.1] text-foreground sm:text-6xl text-balance">
+          <h1 className="mt-6 font-serif text-5xl font-semibold leading-[1.1] text-foreground sm:text-6xl text-balance">
             {plainTitle}{" "}
             <GradientText>{gradientTitle}</GradientText>
           </h1>
 
           {/* Description */}
-          <p className="mt-5 text-xl leading-relaxed text-muted-foreground">
+          <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
             {chapter.description}
           </p>
 
@@ -121,11 +104,11 @@ export function ChapterTemplate({ chapter, children }: ChapterTemplateProps) {
       <div className="section-divider" />
 
       {/* ── Dark context strip ─────────────────────────────────────────── */}
-      <section className="bg-foreground px-6 py-10 md:py-12">
-        <div className="mx-auto flex max-w-[720px] flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+      <section className="bg-foreground px-6 py-10">
+        <div className="mx-auto flex max-w-[720px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
             <div
-              className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl font-serif text-sm font-bold text-white"
+              className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl font-serif text-sm font-bold text-foreground"
               style={{ backgroundColor: color }}
             >
               {chapter.part}
@@ -135,8 +118,7 @@ export function ChapterTemplate({ chapter, children }: ChapterTemplateProps) {
                 {chapter.partTitle}
               </p>
               <p className="mt-1 text-sm leading-relaxed text-white/70">
-                You&apos;re reading Chapter {chapter.number} of 23.{" "}
-                Each chapter builds on the last.
+                Chapter {chapter.number} of 23. Each chapter builds on the last.
               </p>
             </div>
           </div>
@@ -144,10 +126,10 @@ export function ChapterTemplate({ chapter, children }: ChapterTemplateProps) {
             href="https://eatobiotics.substack.com/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/20 px-5 py-2.5 text-xs font-semibold text-white/80 transition-all hover:border-icon-lime hover:text-icon-lime"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-semibold text-white/70 transition-all hover:border-white/40 hover:text-white"
           >
             Follow on Substack
-            <ArrowUpRight size={12} />
+            <ArrowUpRight size={11} />
           </a>
         </div>
       </section>
@@ -167,20 +149,20 @@ export function ChapterTemplate({ chapter, children }: ChapterTemplateProps) {
 
       {/* ── Author strip ───────────────────────────────────────────────── */}
       <section className="px-6 py-10">
-        <div className="mx-auto flex max-w-[720px] items-center gap-5">
+        <div className="mx-auto flex max-w-[720px] items-center gap-4">
           <Image
             src="/eatobiotics-icon.webp"
             alt="EatoBiotics"
-            width={52}
-            height={52}
-            className="h-12 w-12 flex-shrink-0"
+            width={44}
+            height={44}
+            className="h-11 w-11 flex-shrink-0"
           />
           <div className="flex-1">
             <p className="text-sm font-semibold text-foreground">Jason Curry</p>
             <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">
               Author of{" "}
-              <em>EatoBiotics: The Food System Inside You</em>. Writing
-              chapter by chapter on{" "}
+              <em>EatoBiotics: The Food System Inside You</em>.{" "}
+              Writing each chapter live on{" "}
               <a
                 href="https://eatobiotics.substack.com/"
                 target="_blank"

@@ -15,23 +15,21 @@ const colorMap: Record<string, string> = {
 
 export function ChapterStat({ value, label, sublabel, color = "green" }: ChapterStatProps) {
   const c = colorMap[color]
-  const c2 = colorMap[color === "green" ? "teal" : color === "lime" ? "green" : "teal"]
+  const c2 = color === "yellow" || color === "orange" ? colorMap.orange : colorMap.teal
 
   return (
-    <div className="my-10 overflow-hidden rounded-2xl border border-border bg-background">
-      {/* Top accent line */}
+    <div className="relative my-10 overflow-hidden rounded-2xl border border-border bg-background">
+      {/* Thin top gradient accent — same as food page benefit cards */}
       <div
-        className="h-1 w-full"
-        style={{
-          background: `linear-gradient(90deg, ${c}, ${c2}, transparent)`,
-        }}
+        className="h-0.5 w-full"
+        style={{ background: `linear-gradient(90deg, ${c}, ${c2}, transparent)` }}
       />
       <div className="flex flex-col items-center gap-3 px-8 py-10 text-center">
         {/* Big gradient number */}
         <div
           className="font-serif text-7xl font-bold leading-none sm:text-8xl"
           style={{
-            background: `linear-gradient(135deg, ${c} 0%, ${c2} 100%)`,
+            background: `linear-gradient(135deg, ${c}, ${c2})`,
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
             backgroundClip: "text",
