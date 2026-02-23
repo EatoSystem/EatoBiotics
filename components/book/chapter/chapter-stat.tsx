@@ -29,7 +29,7 @@ export function ChapterStat({ value, label, sublabel, color = "green" }: Chapter
         <div
           className="font-serif text-7xl font-bold leading-none sm:text-8xl"
           style={{
-            background: `linear-gradient(135deg, ${c}, ${c2})`,
+            backgroundImage: `linear-gradient(135deg, ${c}, ${c2})`,
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
             backgroundClip: "text",
