@@ -35,19 +35,13 @@ const BRAND_STRIPE = [
 ].join(" ")
 
 const theme: Record<string, {
-  badge: string; badgeText: string
-  panelBg: string; panelBorder: string; accent: string
+  badge: string; badgeText: string; accent: string
+  panelBg: string; panelBorder: string
 }> = {
-  prebiotic:  { badge: B.green,  badgeText: "#fff",  panelBg: "#EBF7E1", panelBorder: "#C4E8A4", accent: B.green  },
-  probiotic:  { badge: B.teal,   badgeText: "#fff",  panelBg: "#E2F5EF", panelBorder: "#9ED9C3", accent: B.teal   },
-  postbiotic: { badge: B.orange, badgeText: "#fff",  panelBg: "#FEF3E2", panelBorder: "#FACB88", accent: B.orange },
-  protein:    { badge: B.yellow, badgeText: B.fore,  panelBg: "#FEF9E2", panelBorder: "#F5E087", accent: "#C49A10"},
-}
-
-function clamp(str: string, max: number): string {
-  if (str.length <= max) return str
-  const cut = str.lastIndexOf(" ", max)
-  return str.slice(0, cut > 0 ? cut : max) + "\u2026"
+  prebiotic:  { badge: B.green,  badgeText: "#fff",  accent: B.green,  panelBg: "#EBF7E1", panelBorder: "#C4E8A4" },
+  probiotic:  { badge: B.teal,   badgeText: "#fff",  accent: B.teal,   panelBg: "#E2F5EF", panelBorder: "#9ED9C3" },
+  postbiotic: { badge: B.orange, badgeText: "#fff",  accent: B.orange, panelBg: "#FEF3E2", panelBorder: "#FACB88" },
+  protein:    { badge: B.yellow, badgeText: B.fore,  accent: "#C49A10", panelBg: "#FEF9E2", panelBorder: "#F5E087" },
 }
 
 export default async function TodayOGImage() {
@@ -61,125 +55,144 @@ export default async function TodayOGImage() {
     month: "long",
   })
 
-  const nameFontSize = food.name.length > 14 ? 56 : food.name.length > 10 ? 70 : 84
-  const categoryLine = food.county
-    ? food.category + "  \u00b7  " + food.county + ", Ireland"
-    : food.category
+  const nameFontSize =
+    food.name.length <= 7  ? 110 :
+    food.name.length <= 12 ? 90  :
+    food.name.length <= 17 ? 72  : 58
 
   return new ImageResponse(
     (
-      <div style={{ width: 1200, height: 630, background: B.white, display: "flex", flexDirection: "row", fontFamily: "'Helvetica Neue', Arial, sans-serif", overflow: "hidden" }}>
+      <div style={{
+        width: 1200, height: 630,
+        background: B.white,
+        display: "flex", flexDirection: "row",
+        fontFamily: "'Helvetica Neue', Arial, sans-serif",
+        overflow: "hidden",
+      }}>
 
-        {/* ─── LEFT CONTENT PANEL (680 px) ─── */}
-        <div style={{ width: 680, height: 630, flexShrink: 0, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "0 48px 28px 48px", position: "relative", background: B.white }}>
+        {/* ─── LEFT CONTENT PANEL (620 px) ─── */}
+        <div style={{
+          width: 620, height: 630, flexShrink: 0,
+          display: "flex", flexDirection: "column",
+          justifyContent: "space-between",
+          padding: "0 56px 32px 56px",
+          position: "relative",
+          background: B.white,
+        }}>
 
           {/* Full-spectrum brand stripe */}
-          <div style={{ position: "absolute", top: 0, left: 0, width: 680, height: 6, background: BRAND_STRIPE }} />
+          <div style={{ position: "absolute", top: 0, left: 0, width: 620, height: 12, background: BRAND_STRIPE }} />
 
-          {/* LOGO ROW */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, paddingTop: 26 }}>
-            <img src={OG_ICON_BASE64} width={36} height={36} style={{ borderRadius: 8, flexShrink: 0 }} />
-            <span style={{ fontSize: 17, fontWeight: 700, color: B.fore, letterSpacing: "-0.3px" }}>EatoBiotics</span>
-            <div style={{ width: 3, height: 3, borderRadius: "50%", background: B.border, marginLeft: 4, marginRight: 4 }} />
-            <span style={{ fontSize: 12, color: B.faint, fontStyle: "italic" }}>The food system inside you.</span>
+          {/* GROUP 1 — Logo + date */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, paddingTop: 30 }}>
+            <img src={OG_ICON_BASE64} width={44} height={44} style={{ borderRadius: 10, flexShrink: 0 }} />
+            <span style={{ fontSize: 20, fontWeight: 700, color: B.fore, letterSpacing: "-0.5px" }}>EatoBiotics</span>
             <div style={{ flex: 1 }} />
             {/* Date pill */}
-            <div style={{ display: "flex", alignItems: "center", gap: 6, background: B.offBg, border: "1px solid " + B.border, borderRadius: 100, padding: "4px 12px" }}>
-              <div style={{ width: 5, height: 5, borderRadius: "50%", background: t.badge }} />
-              <span style={{ fontSize: 11, color: B.muted, fontWeight: 500 }}>{dateString}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, background: B.offBg, border: "1px solid " + B.border, borderRadius: 100, padding: "5px 14px" }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: t.badge }} />
+              <span style={{ fontSize: 12, color: B.muted, fontWeight: 600 }}>{dateString}</span>
             </div>
           </div>
 
-          {/* TODAY LABEL + FOOD NAME BLOCK */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {/* Today label */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ display: "flex", background: t.badge, color: t.badgeText, fontSize: 10, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", padding: "3px 11px", borderRadius: 100 }}>
+          {/* GROUP 2 — Hero content */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+            {/* Today label + biotic badge */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{
+                display: "flex",
+                background: t.badge, color: t.badgeText,
+                fontSize: 12, fontWeight: 700, letterSpacing: "2px",
+                textTransform: "uppercase", padding: "5px 14px", borderRadius: 100,
+              }}>
                 {bioticLabels[food.biotic]}
               </div>
-              <div style={{ display: "flex", fontSize: 11, fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: B.faint }}>
-                {"Today's Food  \u00b7  " + categoryLine}
+              <div style={{
+                display: "flex",
+                fontSize: 13, fontWeight: 600, letterSpacing: "1.5px",
+                textTransform: "uppercase", color: B.faint,
+              }}>
+                {"Today's Food  \u00b7  " + food.category}
               </div>
             </div>
 
-            {/* Big food name */}
-            <div style={{ display: "flex", fontSize: nameFontSize, fontWeight: 800, color: B.fore, lineHeight: 0.9, letterSpacing: "-3px" }}>
+            {/* HUGE food name */}
+            <div style={{
+              display: "flex",
+              fontSize: nameFontSize,
+              fontWeight: 800, color: B.fore,
+              lineHeight: 0.9, letterSpacing: "-4px",
+            }}>
               {food.name}
             </div>
 
             {/* Tagline */}
-            <div style={{ display: "flex", fontSize: 19, fontStyle: "italic", color: t.accent, fontWeight: 500, lineHeight: 1.25 }}>
+            <div style={{
+              display: "flex",
+              fontSize: 26, fontStyle: "italic",
+              color: t.accent, fontWeight: 500, lineHeight: 1.3,
+            }}>
               {food.tagline}
             </div>
           </div>
 
-          {/* DESCRIPTION */}
-          <div style={{ display: "flex", fontSize: 14, color: B.muted, lineHeight: 1.6, borderLeft: "3px solid " + t.badge, paddingLeft: 14 }}>
-            {clamp(food.description, 215)}
-          </div>
-
-          {/* BENEFIT PILLS */}
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {food.benefits.slice(0, 3).map((b) => (
-              <div key={b.title} style={{ display: "flex", alignItems: "center", gap: 5, background: t.panelBg, border: "1px solid " + t.panelBorder, borderRadius: 100, padding: "4px 11px", fontSize: 11, fontWeight: 600, color: t.accent }}>
-                <div style={{ width: 4, height: 4, borderRadius: "50%", background: t.badge }} />
-                {b.title}
-              </div>
+          {/* GROUP 3 — Brand pill decoration */}
+          <div style={{ display: "flex", gap: 5 }}>
+            {BIOTIC_PILLS.map((color, i) => (
+              <div key={i} style={{ display: "flex", width: 44, height: 8, borderRadius: 999, background: color }} />
             ))}
-          </div>
-
-          {/* BOTTOM: Pairs + brand pill decoration */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, borderTop: "1px solid " + B.border, paddingTop: 10 }}>
-            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-              <div style={{ display: "flex", fontSize: 10, color: B.faint, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase" }}>Pairs with</div>
-              {food.pairsWith.slice(0, 4).map((p) => (
-                <div key={p} style={{ display: "flex", background: B.offBg, border: "1px solid " + B.border, borderRadius: 100, padding: "2px 9px", fontSize: 11, color: B.muted, fontWeight: 500 }}>
-                  {p}
-                </div>
-              ))}
-            </div>
-            <div style={{ display: "flex", gap: 4 }}>
-              {BIOTIC_PILLS.map((color, i) => (
-                <div key={i} style={{ display: "flex", width: 38, height: 5, borderRadius: 999, background: color }} />
-              ))}
-            </div>
           </div>
         </div>
 
-        {/* ─── RIGHT VISUAL PANEL (520 px) ─── */}
-        <div style={{ flex: 1, height: 630, background: B.white, borderLeft: "1px solid " + B.border, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden" }}>
+        {/* ─── RIGHT VISUAL PANEL (580 px) ─── */}
+        <div style={{
+          flex: 1, height: 630,
+          background: B.white,
+          borderLeft: "1px solid " + B.border,
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center",
+          position: "relative", overflow: "hidden",
+        }}>
 
           {/* Brand stripe */}
-          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 6, background: BRAND_STRIPE }} />
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 12, background: BRAND_STRIPE }} />
 
           {/* Updated Daily badge */}
-          <div style={{ position: "absolute", top: 22, display: "flex", alignItems: "center", gap: 6, background: B.offBg, border: "1px solid " + B.border, borderRadius: 100, padding: "5px 14px" }}>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: t.badge }} />
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "1.5px", color: t.accent, textTransform: "uppercase" }}>
+          <div style={{
+            position: "absolute", top: 26,
+            display: "flex", alignItems: "center", gap: 7,
+            background: t.panelBg, border: "2px solid " + t.panelBorder,
+            borderRadius: 100, padding: "6px 18px",
+          }}>
+            <div style={{ width: 7, height: 7, borderRadius: "50%", background: t.badge }} />
+            <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "2px", color: t.accent, textTransform: "uppercase" }}>
               Updated Daily
             </span>
           </div>
 
-          {/* Giant emoji — clean, no circles, no shadows */}
-          <div style={{ display: "flex", fontSize: 180, lineHeight: 1 }}>
+          {/* GIANT emoji */}
+          <div style={{ display: "flex", fontSize: 260, lineHeight: 1 }}>
             {food.emoji}
           </div>
 
           {/* Food name */}
-          <div style={{ display: "flex", marginTop: 14, fontSize: 26, fontWeight: 800, color: B.fore, letterSpacing: "-1px" }}>
+          <div style={{
+            display: "flex",
+            marginTop: 16,
+            fontSize: 32, fontWeight: 800, color: B.fore, letterSpacing: "-1px",
+          }}>
             {food.name}
           </div>
 
-          {/* How to eat snippet */}
-          <div style={{ display: "flex", marginTop: 8, maxWidth: 340, fontSize: 12, color: B.muted, textAlign: "center", lineHeight: 1.55, padding: "0 20px" }}>
-            {clamp(food.howToEat, 95)}
-          </div>
-
-          {/* Science citation */}
-          <div style={{ position: "absolute", bottom: 14, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
-            <div style={{ display: "flex", background: B.offBg, border: "1px solid " + B.border, borderRadius: 100, padding: "3px 12px", fontSize: 10, color: B.faint }}>
-              {"\uD83D\uDCD6 " + food.scienceSource}
-            </div>
+          {/* Category */}
+          <div style={{
+            display: "flex",
+            marginTop: 6,
+            fontSize: 13, fontWeight: 600,
+            color: B.faint, letterSpacing: "1.5px", textTransform: "uppercase",
+          }}>
+            {food.category}
           </div>
         </div>
 
