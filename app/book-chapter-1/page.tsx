@@ -40,12 +40,12 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default function BookChapter1Page() {
+export default async function BookChapter1Page() {
   const chapter = getChapterByNumber(CHAPTER_NUMBER)
-  if (!chapter) notFound()
+  if (!chapter) return notFound()
 
   const mdxPath = path.join(process.cwd(), "content", "book", `chapter-${CHAPTER_NUMBER}.mdx`)
-  if (!fs.existsSync(mdxPath)) notFound()
+  if (!fs.existsSync(mdxPath)) return notFound()
 
   const source = fs.readFileSync(mdxPath, "utf-8")
 

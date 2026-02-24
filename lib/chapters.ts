@@ -33,7 +33,7 @@ export const chapters: Chapter[] = [
     description: "What the microbiome is, what it controls, and why your gut is the foundation of health.",
     status: "published",
     publishedAt: "2026-02-23",
-    readingTime: 20,
+    readingTime: 25,
   },
   {
     number: 2,
