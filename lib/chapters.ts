@@ -64,7 +64,9 @@ export const chapters: Chapter[] = [
     partTitle: "The Food System Inside You",
     title: "The EatoBiotics Method",
     description: "Your daily and weekly rules for rebuilding the system with consistency, not perfection.",
-    status: "coming-soon",
+    status: "published",
+    publishedAt: "2026-02-24",
+    readingTime: 32,
   },
 
   // ── PART II ─────────────────────────────────────────────────────────────────
