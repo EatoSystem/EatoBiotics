@@ -67,24 +67,31 @@ export function ChapterNav({ current, prev, next }: ChapterNavProps) {
         )}
       </div>
 
-      {/* Substack CTA — dark section */}
-      <div className="mt-8 overflow-hidden rounded-2xl bg-foreground px-6 py-8 text-center">
-        <p className="font-serif text-xl font-semibold text-white">
-          Get the next chapter in your inbox.
-        </p>
-        <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-white/60">
-          Subscribe on Substack — free, one email per chapter, no noise.
-        </p>
-        <a
-          href="https://eatobiotics.substack.com/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-6 inline-flex items-center gap-2 rounded-full px-7 py-3 text-sm font-semibold text-white shadow-lg shadow-black/20 transition-opacity hover:opacity-90"
-          style={{ background: `linear-gradient(135deg, ${color}, var(--icon-teal))` }}
-        >
-          Subscribe on Substack
-          <ArrowUpRight size={14} />
-        </a>
+      {/* Substack CTA — white card matching site style */}
+      <div className="mt-8 overflow-hidden rounded-2xl border border-border bg-background">
+        {/* Gradient top accent */}
+        <div
+          className="h-0.5 w-full"
+          style={{ background: `linear-gradient(90deg, ${color}, var(--icon-teal))` }}
+        />
+        <div className="px-6 py-8 text-center">
+          <p className="font-serif text-xl font-semibold text-foreground">
+            Get the next chapter in your inbox.
+          </p>
+          <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
+            Subscribe on Substack — free, one email per chapter, no noise.
+          </p>
+          <a
+            href="https://eatobiotics.substack.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-6 inline-flex items-center gap-2 rounded-full px-7 py-3 text-sm font-semibold text-white shadow-md shadow-icon-green/20 transition-opacity hover:opacity-90"
+            style={{ background: `linear-gradient(135deg, ${color}, var(--icon-teal))` }}
+          >
+            Subscribe on Substack
+            <ArrowUpRight size={14} />
+          </a>
+        </div>
       </div>
     </nav>
   )
