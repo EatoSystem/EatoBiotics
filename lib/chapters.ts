@@ -77,7 +77,9 @@ export const chapters: Chapter[] = [
     partTitle: "The EatoBiotics Foods",
     title: "Prebiotic Foods",
     description: "Fiber, resistant starch, legumes, whole grains, vegetables, seeds — the soil your microbiome grows in.",
-    status: "coming-soon",
+    status: "published",
+    publishedAt: "2026-02-24",
+    readingTime: 38,
   },
   {
     number: 6,
