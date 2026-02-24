@@ -53,7 +53,9 @@ export const chapters: Chapter[] = [
     partTitle: "The Food System Inside You",
     title: "The 3 Biotics Framework",
     description: "Prebiotics, probiotics, postbiotics — your core model, simple and scalable.",
-    status: "coming-soon",
+    status: "published",
+    publishedAt: "2026-02-24",
+    readingTime: 26,
   },
   {
     number: 4,
