@@ -42,7 +42,9 @@ export const chapters: Chapter[] = [
     partTitle: "The Food System Inside You",
     title: "Modern Diets Broke the System",
     description: "How ultra-processed food, low fiber, stress, poor sleep, alcohol, and antibiotics disrupt your internal ecosystem.",
-    status: "coming-soon",
+    status: "published",
+    publishedAt: "2026-02-24",
+    readingTime: 28,
   },
   {
     number: 3,
