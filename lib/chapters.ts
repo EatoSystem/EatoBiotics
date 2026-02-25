@@ -110,7 +110,9 @@ export const chapters: Chapter[] = [
     partTitle: "The EatoBiotics Foods",
     title: "The Polyphenol Advantage",
     description: "Berries, herbs, spices, cocoa, olive oil, coffee, tea — the upgrade layer that boosts gut performance.",
-    status: "coming-soon",
+    status: "published",
+    publishedAt: "2026-02-25",
+    readingTime: 45,
   },
   {
     number: 9,
