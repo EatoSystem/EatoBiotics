@@ -156,7 +156,9 @@ export const chapters: Chapter[] = [
     partTitle: "The 5 Outcomes",
     title: "Energy & Metabolism",
     description: "Blood sugar stability, fiber + protein strategy, and the end of crash eating.",
-    status: "coming-soon",
+    status: "published",
+    publishedAt: "2026-02-25",
+    readingTime: 52,
   },
   {
     number: 13,
