@@ -145,7 +145,9 @@ export const chapters: Chapter[] = [
     partTitle: "The 5 Outcomes",
     title: "Immunity",
     description: "The gut-immune connection and how to build resilience through food and daily habits.",
-    status: "coming-soon",
+    status: "published",
+    publishedAt: "2026-02-25",
+    readingTime: 48,
   },
   {
     number: 12,
