@@ -121,7 +121,9 @@ export const chapters: Chapter[] = [
     partTitle: "The EatoBiotics Foods",
     title: "Protein & Fat (The EatoBiotics Way)",
     description: "How to include protein and fats without extremes — supporting digestion, blood sugar, and long-term balance.",
-    status: "coming-soon",
+    status: "published",
+    publishedAt: "2026-02-25",
+    readingTime: 48,
   },
 
   // ── PART III ────────────────────────────────────────────────────────────────
