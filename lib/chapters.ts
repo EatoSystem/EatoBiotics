@@ -99,7 +99,9 @@ export const chapters: Chapter[] = [
     partTitle: "The EatoBiotics Foods",
     title: "Postbiotic Results",
     description: "Short-chain fatty acids, gut lining support, inflammation balance — what your microbiome creates when you feed it well.",
-    status: "coming-soon",
+    status: "published",
+    publishedAt: "2026-02-25",
+    readingTime: 42,
   },
   {
     number: 8,
