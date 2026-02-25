@@ -167,7 +167,9 @@ export const chapters: Chapter[] = [
     partTitle: "The 5 Outcomes",
     title: "Mood & Mind",
     description: "The gut-brain system: emotional steadiness, clarity, and stress resilience.",
-    status: "coming-soon",
+    status: "published",
+    publishedAt: "2026-02-25",
+    readingTime: 50,
   },
   {
     number: 14,
