@@ -134,7 +134,9 @@ export const chapters: Chapter[] = [
     partTitle: "The 5 Outcomes",
     title: "Digestion",
     description: "Bloating, regularity, tolerance, meal timing, chewing, and fast wins.",
-    status: "coming-soon",
+    status: "published",
+    publishedAt: "2026-02-25",
+    readingTime: 45,
   },
   {
     number: 11,
