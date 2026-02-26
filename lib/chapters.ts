@@ -178,7 +178,9 @@ export const chapters: Chapter[] = [
     partTitle: "The 5 Outcomes",
     title: "Recovery",
     description: "Inflammation, sleep, repair, training support, and building a calmer nervous system through nutrition.",
-    status: "coming-soon",
+    status: "published",
+    publishedAt: "2026-02-26",
+    readingTime: 52,
   },
 
   // ── PART IV ─────────────────────────────────────────────────────────────────
