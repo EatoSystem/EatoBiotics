@@ -248,7 +248,9 @@ export const chapters: Chapter[] = [
     partTitle: "Real Life + Long-Term Health",
     title: "The Travel & Busy Life Protocol",
     description: "Airport, hotel, and workday rules to stay consistent anywhere.",
-    status: "coming-soon",
+    status: "published",
+    publishedAt: "2026-02-26",
+    readingTime: 58,
   },
   {
     number: 21,
