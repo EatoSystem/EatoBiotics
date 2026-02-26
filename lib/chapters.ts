@@ -191,7 +191,9 @@ export const chapters: Chapter[] = [
     partTitle: "The Practical System",
     title: "The EatoBiotics Kitchen",
     description: "Your setup, pantry staples, shopping rhythm, and chef shortcuts that make consistency easy.",
-    status: "coming-soon",
+    status: "published",
+    publishedAt: "2026-02-26",
+    readingTime: 55,
   },
   {
     number: 16,
