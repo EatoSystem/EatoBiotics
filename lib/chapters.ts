@@ -235,7 +235,9 @@ export const chapters: Chapter[] = [
     partTitle: "The Practical System",
     title: "The EatoBiotics Index",
     description: "Your scoring system for food quality: microbiome support, nutrients, ease, taste, access.",
-    status: "coming-soon",
+    status: "published",
+    publishedAt: "2026-02-26",
+    readingTime: 50,
   },
 
   // ── PART V ──────────────────────────────────────────────────────────────────
