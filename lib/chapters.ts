@@ -224,7 +224,9 @@ export const chapters: Chapter[] = [
     partTitle: "The Practical System",
     title: "The 21-Day Build",
     description: "A deeper system to lock in routine and feel a noticeable change.",
-    status: "coming-soon",
+    status: "published",
+    publishedAt: "2026-02-26",
+    readingTime: 55,
   },
   {
     number: 19,
