@@ -44,39 +44,33 @@ Let's start with the five dimensions.
 
 ### Dimension 1: Microbiome Support (Scale: 1–5)
 
-This measures how well a food feeds beneficial bacteria and supports gut health.
-
-| Score | Level | Description | Examples |
-|-------|-------|-------------|----------|
-| **5** | Exceptional | High fiber (5g+ per serving), live bacteria, or very rich in polyphenols | Sauerkraut, lentils, kimchi, berries, tempeh |
-| **4** | Excellent | Good fiber (3–5g), good prebiotic content or polyphenols | Broccoli, quinoa, chickpeas, apples, walnuts |
-| **3** | Moderate | Some fiber (1–3g), some beneficial compounds | Brown rice, chicken with vegetables, eggs with spinach |
-| **2** | Minimal | Low fiber, few beneficial compounds, not harmful | White fish, plain chicken breast, white rice |
-| **1** | None/Harmful | No fiber, ultra-processed, high refined sugar | Candy, soda, processed snacks, most fast food |
+<DimensionScoreTable dimension="Microbiome Support" icon="🦠" color="green" description="This measures how well a food feeds beneficial bacteria and supports gut health.">
+  <ScoreLevel score={5} level="Exceptional">High fiber (5g+ per serving), live bacteria, or very rich in polyphenols — Sauerkraut, lentils, kimchi, berries, tempeh</ScoreLevel>
+  <ScoreLevel score={4} level="Excellent">Good fiber (3–5g), good prebiotic content or polyphenols — Broccoli, quinoa, chickpeas, apples, walnuts</ScoreLevel>
+  <ScoreLevel score={3} level="Moderate">Some fiber (1–3g), some beneficial compounds — Brown rice, chicken with vegetables, eggs with spinach</ScoreLevel>
+  <ScoreLevel score={2} level="Minimal">Low fiber, few beneficial compounds, not harmful — White fish, plain chicken breast, white rice</ScoreLevel>
+  <ScoreLevel score={1} level="None/Harmful">No fiber, ultra-processed, high refined sugar — Candy, soda, processed snacks, most fast food</ScoreLevel>
+</DimensionScoreTable>
 
 ### Dimension 2: Nutrient Density (Scale: 1–5)
 
-This measures vitamins, minerals, antioxidants, and other beneficial compounds per calorie.
-
-| Score | Level | Examples |
-|-------|-------|----------|
-| **5** | Extremely nutrient-dense | Leafy greens (kale, spinach), berries, sardines |
-| **4** | Very nutrient-dense | Broccoli, salmon, eggs, legumes, sweet potatoes |
-| **3** | Moderately nutrient-dense | Chicken breast, whole grains, most vegetables |
-| **2** | Low nutrient density | White bread, pasta, white rice, most oils |
-| **1** | Very low nutrient density | Candy, soda, chips, ultra-processed snacks |
+<DimensionScoreTable dimension="Nutrient Density" icon="💊" color="teal" description="This measures vitamins, minerals, antioxidants, and other beneficial compounds per calorie.">
+  <ScoreLevel score={5} level="Extremely nutrient-dense">Leafy greens (kale, spinach), berries, sardines</ScoreLevel>
+  <ScoreLevel score={4} level="Very nutrient-dense">Broccoli, salmon, eggs, legumes, sweet potatoes</ScoreLevel>
+  <ScoreLevel score={3} level="Moderately nutrient-dense">Chicken breast, whole grains, most vegetables</ScoreLevel>
+  <ScoreLevel score={2} level="Low nutrient density">White bread, pasta, white rice, most oils</ScoreLevel>
+  <ScoreLevel score={1} level="Very low nutrient density">Candy, soda, chips, ultra-processed snacks</ScoreLevel>
+</DimensionScoreTable>
 
 ### Dimension 3: Ease (Scale: 1–5)
 
-This measures how practical the food is to prepare, store, and use regularly.
-
-| Score | Level | Examples |
-|-------|-------|----------|
-| **5** | Extremely easy (no prep) | Canned beans, frozen berries, Greek yogurt, eggs |
-| **4** | Very easy (under 10 min) | Fresh vegetables (wash + chop), chicken breast, canned fish |
-| **3** | Moderate (15–30 min) | Dried beans (need soaking), whole grains, roasted vegetables |
-| **2** | Somewhat difficult | Homemade fermented vegetables, tempeh from scratch |
-| **1** | Very difficult | Homemade kimchi from scratch, natto, organ meat prep |
+<DimensionScoreTable dimension="Ease" icon="⏱️" color="lime" description="This measures how practical the food is to prepare, store, and use regularly.">
+  <ScoreLevel score={5} level="Extremely easy (no prep)">Canned beans, frozen berries, Greek yogurt, eggs</ScoreLevel>
+  <ScoreLevel score={4} level="Very easy (under 10 min)">Fresh vegetables (wash + chop), chicken breast, canned fish</ScoreLevel>
+  <ScoreLevel score={3} level="Moderate (15–30 min)">Dried beans (need soaking), whole grains, roasted vegetables</ScoreLevel>
+  <ScoreLevel score={2} level="Somewhat difficult">Homemade fermented vegetables, tempeh from scratch</ScoreLevel>
+  <ScoreLevel score={1} level="Very difficult">Homemade kimchi from scratch, natto, organ meat prep</ScoreLevel>
+</DimensionScoreTable>
 
 <ChapterCallout type="note">
 **A Note on Ease Scores**
@@ -86,15 +80,13 @@ The Ease dimension rates foods based on how most people would experience them, n
 
 ### Dimension 4: Taste (Scale: 1–5)
 
-This measures how appealing the food is to most people.
-
-| Score | Level | Examples |
-|-------|-------|----------|
-| **5** | Universally loved | Berries, avocados, chicken, salmon, dark chocolate |
-| **4** | Widely liked | Most well-prepared vegetables, eggs, yogurt with fruit, legumes |
-| **3** | Neutral or acquired taste | Brussels sprouts, sardines, tempeh, kimchi (for newcomers) |
-| **2** | Challenging for many | Bitter greens, liver, natto, very sour fermented foods |
-| **1** | Widely disliked | Natto (for Westerners), extremely bitter or pungent items |
+<DimensionScoreTable dimension="Taste" icon="😋" color="yellow" description="This measures how appealing the food is to most people.">
+  <ScoreLevel score={5} level="Universally loved">Berries, avocados, chicken, salmon, dark chocolate</ScoreLevel>
+  <ScoreLevel score={4} level="Widely liked">Most well-prepared vegetables, eggs, yogurt with fruit, legumes</ScoreLevel>
+  <ScoreLevel score={3} level="Neutral or acquired taste">Brussels sprouts, sardines, tempeh, kimchi (for newcomers)</ScoreLevel>
+  <ScoreLevel score={2} level="Challenging for many">Bitter greens, liver, natto, very sour fermented foods</ScoreLevel>
+  <ScoreLevel score={1} level="Widely disliked">Natto (for Westerners), extremely bitter or pungent items</ScoreLevel>
+</DimensionScoreTable>
 
 <ChapterCallout type="warning">
 **Taste Is Subjective**
@@ -104,15 +96,13 @@ Taste scores reflect general population preferences, not universal truth. If you
 
 ### Dimension 5: Access (Scale: 1–5)
 
-This measures availability and affordability.
-
-| Score | Level | Examples |
-|-------|-------|----------|
-| **5** | Widely available + affordable | Eggs, carrots, canned beans, frozen veg, oats, chicken |
-| **4** | Widely available, moderate cost | Fresh berries, Greek yogurt, salmon, quinoa |
-| **3** | Somewhat available, moderate-high cost | Organic produce, grass-fed meat, specialty fermented foods |
-| **2** | Limited availability or high cost | Grass-fed organ meats, specialty items, wild-caught salmon |
-| **1** | Very limited or very expensive | Rare specialty items, certain medicinal mushrooms |
+<DimensionScoreTable dimension="Access" icon="🛒" color="orange" description="This measures availability and affordability.">
+  <ScoreLevel score={5} level="Widely available + affordable">Eggs, carrots, canned beans, frozen veg, oats, chicken</ScoreLevel>
+  <ScoreLevel score={4} level="Widely available, moderate cost">Fresh berries, Greek yogurt, salmon, quinoa</ScoreLevel>
+  <ScoreLevel score={3} level="Somewhat available, moderate-high cost">Organic produce, grass-fed meat, specialty fermented foods</ScoreLevel>
+  <ScoreLevel score={2} level="Limited availability or high cost">Grass-fed organ meats, specialty items, wild-caught salmon</ScoreLevel>
+  <ScoreLevel score={1} level="Very limited or very expensive">Rare specialty items, certain medicinal mushrooms</ScoreLevel>
+</DimensionScoreTable>
 
 Access varies by location. Adjust based on your personal situation.
 
@@ -130,82 +120,75 @@ Let's score several foods to show how this works in practice.
 
 ### Example 1: Lentils (Cooked)
 
-| Dimension | Score | Rationale |
-|-----------|-------|-----------|
-| Microbiome Support | **5** | Very high fiber (8g per ½ cup), excellent prebiotic content, rich in resistant starch |
-| Nutrient Density | **4** | High in protein, iron, folate, magnesium |
-| Ease | **4** | Canned: rinse and use. Dried: 20–30 min cook time |
-| Taste | **4** | Versatile, mild flavour, works in many cuisines |
-| Access | **5** | Available everywhere, very affordable (cheapest protein source) |
-| **Total** | **22/25** | **Exceptional — should be a staple, featured multiple times per week** |
+<FoodScoreCard name="Lentils (Cooked)" emoji="🫘" total={22} rating="Exceptional" summary="Should be a staple, featured multiple times per week">
+  <ScoreDimension dimension="Microbiome Support" score={5}>Very high fiber (8g per ½ cup), excellent prebiotic content, rich in resistant starch</ScoreDimension>
+  <ScoreDimension dimension="Nutrient Density" score={4}>High in protein, iron, folate, magnesium</ScoreDimension>
+  <ScoreDimension dimension="Ease" score={4}>Canned: rinse and use. Dried: 20–30 min cook time</ScoreDimension>
+  <ScoreDimension dimension="Taste" score={4}>Versatile, mild flavour, works in many cuisines</ScoreDimension>
+  <ScoreDimension dimension="Access" score={5}>Available everywhere, very affordable (cheapest protein source)</ScoreDimension>
+</FoodScoreCard>
 
 ### Example 2: Blueberries (Frozen)
 
-| Dimension | Score | Rationale |
-|-----------|-------|-----------|
-| Microbiome Support | **5** | High fiber (4g per cup), very high anthocyanins (polyphenols) |
-| Nutrient Density | **5** | Packed with antioxidants, vitamin C, vitamin K |
-| Ease | **5** | Pour from bag and use — no washing, no prep |
-| Taste | **5** | Universally loved, sweet and pleasant |
-| Access | **4** | Frozen are affordable; fresh can be expensive |
-| **Total** | **24/25** | **Exceptional — nearly perfect. Include daily if possible** |
+<FoodScoreCard name="Blueberries (Frozen)" emoji="🫐" total={24} rating="Exceptional" summary="Nearly perfect. Include daily if possible">
+  <ScoreDimension dimension="Microbiome Support" score={5}>High fiber (4g per cup), very high anthocyanins (polyphenols)</ScoreDimension>
+  <ScoreDimension dimension="Nutrient Density" score={5}>Packed with antioxidants, vitamin C, vitamin K</ScoreDimension>
+  <ScoreDimension dimension="Ease" score={5}>Pour from bag and use — no washing, no prep</ScoreDimension>
+  <ScoreDimension dimension="Taste" score={5}>Universally loved, sweet and pleasant</ScoreDimension>
+  <ScoreDimension dimension="Access" score={4}>Frozen are affordable; fresh can be expensive</ScoreDimension>
+</FoodScoreCard>
 
 ### Example 3: Sauerkraut (Unpasteurised)
 
-| Dimension | Score | Rationale |
-|-----------|-------|-----------|
-| Microbiome Support | **5** | Live beneficial bacteria (probiotics), fiber from cabbage |
-| Nutrient Density | **3** | Good vitamin C and K, but not extremely nutrient-dense overall |
-| Ease | **5** | Ready to eat straight from the jar, no prep required |
-| Taste | **3** | Polarising — some love it, some find it too sour |
-| Access | **3** | Must be refrigerated, not in every store, $5–8 per jar |
-| **Total** | **19/25** | **Excellent — if you can access and tolerate the flavour, include regularly** |
+<FoodScoreCard name="Sauerkraut (Unpasteurised)" emoji="🥬" total={19} rating="Excellent" summary="If you can access and tolerate the flavour, include regularly">
+  <ScoreDimension dimension="Microbiome Support" score={5}>Live beneficial bacteria (probiotics), fiber from cabbage</ScoreDimension>
+  <ScoreDimension dimension="Nutrient Density" score={3}>Good vitamin C and K, but not extremely nutrient-dense overall</ScoreDimension>
+  <ScoreDimension dimension="Ease" score={5}>Ready to eat straight from the jar, no prep required</ScoreDimension>
+  <ScoreDimension dimension="Taste" score={3}>Polarising — some love it, some find it too sour</ScoreDimension>
+  <ScoreDimension dimension="Access" score={3}>Must be refrigerated, not in every store, $5–8 per jar</ScoreDimension>
+</FoodScoreCard>
 
 ### Example 4: Wild-Caught Salmon
 
-| Dimension | Score | Rationale |
-|-----------|-------|-----------|
-| Microbiome Support | **2** | No fiber, not fermented, but omega-3s support gut health indirectly |
-| Nutrient Density | **5** | Extremely high omega-3s (EPA/DHA), protein, vitamin D, B vitamins |
-| Ease | **4** | Simple to cook (bake, grill, pan-sear). Frozen fillets very convenient |
-| Taste | **5** | Widely loved, rich satisfying flavour |
-| Access | **3** | Available but expensive ($12–20/lb fresh, $8–12 frozen) |
-| **Total** | **19/25** | **Excellent — pair with high-fiber vegetables to boost meal's microbiome support** |
+<FoodScoreCard name="Wild-Caught Salmon" emoji="🐟" total={19} rating="Excellent" summary="Pair with high-fiber vegetables to boost meal's microbiome support">
+  <ScoreDimension dimension="Microbiome Support" score={2}>No fiber, not fermented, but omega-3s support gut health indirectly</ScoreDimension>
+  <ScoreDimension dimension="Nutrient Density" score={5}>Extremely high omega-3s (EPA/DHA), protein, vitamin D, B vitamins</ScoreDimension>
+  <ScoreDimension dimension="Ease" score={4}>Simple to cook (bake, grill, pan-sear). Frozen fillets very convenient</ScoreDimension>
+  <ScoreDimension dimension="Taste" score={5}>Widely loved, rich satisfying flavour</ScoreDimension>
+  <ScoreDimension dimension="Access" score={3}>Available but expensive ($12–20/lb fresh, $8–12 frozen)</ScoreDimension>
+</FoodScoreCard>
 
 ### Example 5: Greek Yogurt (Plain, Full-Fat)
 
-| Dimension | Score | Rationale |
-|-----------|-------|-----------|
-| Microbiome Support | **4** | Live active cultures (probiotics), but no fiber |
-| Nutrient Density | **5** | High protein, calcium, B vitamins |
-| Ease | **5** | Scoop and eat, lasts 1–2 weeks in fridge |
-| Taste | **4** | Most people like it, especially with fruit |
-| Access | **5** | Available everywhere, $4–7 per tub |
-| **Total** | **23/25** | **Exceptional — probiotics + protein + maximum convenience. Breakfast staple** |
+<FoodScoreCard name="Greek Yogurt (Plain, Full-Fat)" emoji="🥣" total={23} rating="Exceptional" summary="Probiotics + protein + maximum convenience. Breakfast staple">
+  <ScoreDimension dimension="Microbiome Support" score={4}>Live active cultures (probiotics), but no fiber</ScoreDimension>
+  <ScoreDimension dimension="Nutrient Density" score={5}>High protein, calcium, B vitamins</ScoreDimension>
+  <ScoreDimension dimension="Ease" score={5}>Scoop and eat, lasts 1–2 weeks in fridge</ScoreDimension>
+  <ScoreDimension dimension="Taste" score={4}>Most people like it, especially with fruit</ScoreDimension>
+  <ScoreDimension dimension="Access" score={5}>Available everywhere, $4–7 per tub</ScoreDimension>
+</FoodScoreCard>
 
 <ChapterStat value="23/25" label="Greek yogurt" sublabel="one of the highest-scoring foods in the entire Index" color="green" />
 
 ### Example 6: Kale
 
-| Dimension | Score | Rationale |
-|-----------|-------|-----------|
-| Microbiome Support | **4** | Good fiber (2.5g per cup raw), high polyphenols |
-| Nutrient Density | **5** | Vitamins A, C, K, calcium, antioxidants — extremely nutrient-dense |
-| Ease | **4** | Requires washing and chopping, best when massaged or cooked |
-| Taste | **3** | Polarising — some love it, others find it bitter |
-| Access | **5** | Available in every store, affordable |
-| **Total** | **21/25** | **Exceptional — if you enjoy it. If not, spinach (22/25) and arugula (20/25) score similarly** |
+<FoodScoreCard name="Kale" emoji="🥬" total={21} rating="Exceptional" summary="If you enjoy it. If not, spinach (22/25) and arugula (20/25) score similarly">
+  <ScoreDimension dimension="Microbiome Support" score={4}>Good fiber (2.5g per cup raw), high polyphenols</ScoreDimension>
+  <ScoreDimension dimension="Nutrient Density" score={5}>Vitamins A, C, K, calcium, antioxidants — extremely nutrient-dense</ScoreDimension>
+  <ScoreDimension dimension="Ease" score={4}>Requires washing and chopping, best when massaged or cooked</ScoreDimension>
+  <ScoreDimension dimension="Taste" score={3}>Polarising — some love it, others find it bitter</ScoreDimension>
+  <ScoreDimension dimension="Access" score={5}>Available in every store, affordable</ScoreDimension>
+</FoodScoreCard>
 
 ### Example 7: White Bread
 
-| Dimension | Score | Rationale |
-|-----------|-------|-----------|
-| Microbiome Support | **1** | Virtually no fiber, ultra-processed |
-| Nutrient Density | **1** | Fortified but mostly empty calories |
-| Ease | **5** | No prep, long shelf life |
-| Taste | **4** | Most people enjoy it |
-| Access | **5** | Available everywhere, very cheap |
-| **Total** | **16/25** | **"Good"? Yes — because it's easy, tasty, accessible. But fails on health dimensions** |
+<FoodScoreCard name="White Bread" emoji="🍞" total={16} rating="Good" summary="Scores well on convenience but fails on health dimensions">
+  <ScoreDimension dimension="Microbiome Support" score={1}>Virtually no fiber, ultra-processed</ScoreDimension>
+  <ScoreDimension dimension="Nutrient Density" score={1}>Fortified but mostly empty calories</ScoreDimension>
+  <ScoreDimension dimension="Ease" score={5}>No prep, long shelf life</ScoreDimension>
+  <ScoreDimension dimension="Taste" score={4}>Most people enjoy it</ScoreDimension>
+  <ScoreDimension dimension="Access" score={5}>Available everywhere, very cheap</ScoreDimension>
+</FoodScoreCard>
 
 <ChapterCallout type="science">
 **Why White Bread Scores 16/25**
@@ -215,14 +198,13 @@ Wait — white bread is "Good"? Yes, because the Index is honest about *why* the
 
 ### Example 8: Candy / Soda
 
-| Dimension | Score | Rationale |
-|-----------|-------|-----------|
-| Microbiome Support | **1** | Zero fiber, high refined sugar, ultra-processed |
-| Nutrient Density | **1** | No vitamins or minerals, pure empty calories |
-| Ease | **5** | No prep, widely available |
-| Taste | **4** | Designed to be hyper-palatable |
-| Access | **5** | Available everywhere, cheap |
-| **Total** | **16/25** | **Scores well on convenience but fails on health. Have occasionally, not daily** |
+<FoodScoreCard name="Candy / Soda" emoji="🍬" total={16} rating="Good" summary="Scores well on convenience but fails on health. Have occasionally, not daily">
+  <ScoreDimension dimension="Microbiome Support" score={1}>Zero fiber, high refined sugar, ultra-processed</ScoreDimension>
+  <ScoreDimension dimension="Nutrient Density" score={1}>No vitamins or minerals, pure empty calories</ScoreDimension>
+  <ScoreDimension dimension="Ease" score={5}>No prep, widely available</ScoreDimension>
+  <ScoreDimension dimension="Taste" score={4}>Designed to be hyper-palatable</ScoreDimension>
+  <ScoreDimension dimension="Access" score={5}>Available everywhere, cheap</ScoreDimension>
+</FoodScoreCard>
 
 ---
 
@@ -236,28 +218,28 @@ Here are the 20 highest-scoring foods in the general Index:
   aspectRatio="wide"
 />
 
-| Rank | Food | Score |
-|------|------|-------|
-| 1 | Blueberries (frozen) | **24/25** |
-| 2 | Greek Yogurt (plain) | **23/25** |
-| 3 | Lentils | **22/25** |
-| 4 | Chickpeas | **22/25** |
-| 5 | Spinach | **22/25** |
-| 6 | Black Beans | **21/25** |
-| 7 | Kale | **21/25** |
-| 8 | Broccoli | **21/25** |
-| 9 | Eggs | **21/25** |
-| 10 | Quinoa | **20/25** |
-| 11 | Sweet Potatoes | **20/25** |
-| 12 | Avocado | **20/25** |
-| 13 | Walnuts | **20/25** |
-| 14 | Strawberries | **20/25** |
-| 15 | Brussels Sprouts | **19/25** |
-| 16 | Sauerkraut | **19/25** |
-| 17 | Salmon | **19/25** |
-| 18 | Oats | **19/25** |
-| 19 | Carrots | **19/25** |
-| 20 | Kimchi | **19/25** |
+<FoodRankingTable>
+  <RankedFood rank={1} name="Blueberries (frozen)" score={24} />
+  <RankedFood rank={2} name="Greek Yogurt (plain)" score={23} />
+  <RankedFood rank={3} name="Lentils" score={22} />
+  <RankedFood rank={4} name="Chickpeas" score={22} />
+  <RankedFood rank={5} name="Spinach" score={22} />
+  <RankedFood rank={6} name="Black Beans" score={21} />
+  <RankedFood rank={7} name="Kale" score={21} />
+  <RankedFood rank={8} name="Broccoli" score={21} />
+  <RankedFood rank={9} name="Eggs" score={21} />
+  <RankedFood rank={10} name="Quinoa" score={20} />
+  <RankedFood rank={11} name="Sweet Potatoes" score={20} />
+  <RankedFood rank={12} name="Avocado" score={20} />
+  <RankedFood rank={13} name="Walnuts" score={20} />
+  <RankedFood rank={14} name="Strawberries" score={20} />
+  <RankedFood rank={15} name="Brussels Sprouts" score={19} />
+  <RankedFood rank={16} name="Sauerkraut" score={19} />
+  <RankedFood rank={17} name="Salmon" score={19} />
+  <RankedFood rank={18} name="Oats" score={19} />
+  <RankedFood rank={19} name="Carrots" score={19} />
+  <RankedFood rank={20} name="Kimchi" score={19} />
+</FoodRankingTable>
 
 **Notice the pattern:**
 
@@ -466,13 +448,13 @@ You don't need expensive ingredients to score high on the Index. Dried lentils, 
 
 For quick reference:
 
-| Score Range | Rating | Action | Examples |
-|-------------|--------|--------|----------|
-| **20–25** | Exceptional | Eat daily or near-daily. Make them staples | Legumes, berries, leafy greens, yogurt, eggs |
-| **15–19** | Excellent | Eat regularly (3–5 times weekly). Include in rotation | Salmon, sauerkraut, most vegetables, whole grains, nuts |
-| **10–14** | Good | Eat occasionally or in smaller amounts | White bread, pasta, some processed foods |
-| **5–9** | Fair | Eat rarely. Mainly convenience/pleasure | Ultra-processed snacks, sweets |
-| **0–4** | Poor | Minimise or avoid | Soda, candy, highly processed junk food |
+<ScoreCheatSheet>
+  <ScoreBand range="20–25" rating="Exceptional" action="Eat daily or near-daily. Make them staples." examples="Legumes, berries, leafy greens, yogurt, eggs" color="green" />
+  <ScoreBand range="15–19" rating="Excellent" action="Eat regularly (3–5 times weekly). Include in rotation." examples="Salmon, sauerkraut, most vegetables, whole grains, nuts" color="teal" />
+  <ScoreBand range="10–14" rating="Good" action="Eat occasionally or in smaller amounts." examples="White bread, pasta, some processed foods" color="yellow" />
+  <ScoreBand range="5–9" rating="Fair" action="Eat rarely. Mainly convenience/pleasure." examples="Ultra-processed snacks, sweets" color="orange" />
+  <ScoreBand range="0–4" rating="Poor" action="Minimise or avoid." examples="Soda, candy, highly processed junk food" color="orange" />
+</ScoreCheatSheet>
 
 **The goal: 80% of your foods score 15+. The other 20% can be flexible.**
 

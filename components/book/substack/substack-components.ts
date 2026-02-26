@@ -13,6 +13,16 @@ import { SubstackPullQuote }     from "./substack-pull-quote"
 import { SubstackKeyTakeaways, SubstackTakeaway } from "./substack-key-takeaways"
 import { SubstackImagePlaceholder } from "./substack-image-placeholder"
 import { SubstackFoodCard }      from "./substack-food-card"
+import {
+  SubstackDimensionScoreTable,
+  SubstackScoreLevel,
+  SubstackFoodScoreCard,
+  SubstackScoreDimension,
+  SubstackFoodRankingTable,
+  SubstackRankedFood,
+  SubstackScoreCheatSheet,
+  SubstackScoreBand,
+} from "./substack-index-tables"
 
 export const substackComponents = {
   // Maps MDX component names → Substack variants
@@ -23,4 +33,13 @@ export const substackComponents = {
   Takeaway:            SubstackTakeaway,
   ImagePlaceholder:    SubstackImagePlaceholder,
   ChapterFoodCard:     SubstackFoodCard,
+  // Chapter 19 — Index scoring tables
+  DimensionScoreTable: SubstackDimensionScoreTable,
+  ScoreLevel:          SubstackScoreLevel,
+  FoodScoreCard:       SubstackFoodScoreCard,
+  ScoreDimension:      SubstackScoreDimension,
+  FoodRankingTable:    SubstackFoodRankingTable,
+  RankedFood:          SubstackRankedFood,
+  ScoreCheatSheet:     SubstackScoreCheatSheet,
+  ScoreBand:           SubstackScoreBand,
 } as const
