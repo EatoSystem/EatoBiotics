@@ -202,7 +202,9 @@ export const chapters: Chapter[] = [
     partTitle: "The Practical System",
     title: "The EatoBiotics Plate",
     description: "The signature meal formula: 2 plants + protein + fat + ferment + booster.",
-    status: "coming-soon",
+    status: "published",
+    publishedAt: "2026-02-26",
+    readingTime: 58,
   },
   {
     number: 17,
