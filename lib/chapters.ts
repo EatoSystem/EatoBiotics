@@ -270,7 +270,9 @@ export const chapters: Chapter[] = [
     partTitle: "Real Life + Long-Term Health",
     title: "The EatoBiotics Lifestyle",
     description: "How to live this long-term — without obsession, tracking fatigue, or perfection pressure.",
-    status: "coming-soon",
+    status: "published",
+    publishedAt: "2026-02-26",
+    readingTime: 52,
   },
   {
     number: 23,
