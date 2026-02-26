@@ -259,7 +259,9 @@ export const chapters: Chapter[] = [
     partTitle: "Real Life + Long-Term Health",
     title: "Antibiotics: Protect, Support, Rebuild",
     description: "What happens to the microbiome and how to recover food-first.",
-    status: "coming-soon",
+    status: "published",
+    publishedAt: "2026-02-26",
+    readingTime: 52,
   },
   {
     number: 22,
