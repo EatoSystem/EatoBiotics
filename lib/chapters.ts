@@ -213,7 +213,9 @@ export const chapters: Chapter[] = [
     partTitle: "The Practical System",
     title: "The 7-Day Reset",
     description: "A realistic reset you can repeat anytime you drift off track.",
-    status: "coming-soon",
+    status: "published",
+    publishedAt: "2026-02-26",
+    readingTime: 52,
   },
   {
     number: 18,
