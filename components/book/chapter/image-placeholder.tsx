@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { LayoutTemplate, BarChart3, Camera, Sparkles, ImageIcon } from "lucide-react"
 
 type ImageType = "diagram" | "photo" | "illustration" | "chart" | "infographic"
@@ -7,6 +8,10 @@ interface ImagePlaceholderProps {
   idea: string
   caption?: string
   aspectRatio?: "wide" | "square" | "portrait"
+  /** When provided, renders a real image instead of the placeholder UI */
+  src?: string
+  /** Alt text for real images — falls back to `idea` if not provided */
+  alt?: string
 }
 
 const typeConfig: Record<ImageType, {
@@ -32,9 +37,34 @@ export function ImagePlaceholder({
   idea,
   caption,
   aspectRatio = "wide",
+  src,
+  alt,
 }: ImagePlaceholderProps) {
   const { label, Icon, color } = typeConfig[type]
 
+  /* ── Real image mode — when `src` is provided ──────────────────────── */
+  if (src) {
+    return (
+      <figure className="my-10">
+        <div className="overflow-hidden rounded-2xl">
+          <Image
+            src={src}
+            alt={alt ?? idea}
+            width={1280}
+            height={720}
+            className="h-auto w-full"
+          />
+        </div>
+        {caption && (
+          <figcaption className="mt-3 text-center text-xs leading-relaxed text-muted-foreground">
+            {caption}
+          </figcaption>
+        )}
+      </figure>
+    )
+  }
+
+  /* ── Placeholder mode — default ────────────────────────────────────── */
   return (
     <figure className="my-10">
       <div

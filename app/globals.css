@@ -224,4 +224,14 @@
     box-shadow: none !important;
     transition: none !important;
   }
+
+  /* Full-book page breaks */
+  .print-chapter-start {
+    break-before: page;
+    page-break-before: always;
+  }
+  .print-page-break {
+    break-after: page;
+    page-break-after: always;
+  }
 }

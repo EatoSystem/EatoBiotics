@@ -5,6 +5,8 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 import { GradientText } from "@/components/gradient-text"
 import { BookCover } from "@/components/book/book-cover"
 import { ChapterList } from "@/components/book/chapter-list"
+import { JsonLd } from "@/components/json-ld"
+import { generateBookSchema, generateBreadcrumbSchema } from "@/lib/structured-data"
 import { ArrowUpRight, BookOpen, Lock, Star, Bell } from "lucide-react"
 
 export const metadata: Metadata = {
@@ -20,6 +22,9 @@ export const metadata: Metadata = {
 export default function BookPage() {
   return (
     <>
+      <JsonLd data={generateBookSchema()} />
+      <JsonLd data={generateBreadcrumbSchema()} />
+
       {/* Hero */}
       <section className="relative px-6 pt-32 pb-20 md:pt-40 md:pb-28">
         <div className="mx-auto max-w-[1200px]">

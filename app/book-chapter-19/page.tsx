@@ -13,6 +13,8 @@ import { ChapterPullQuote } from "@/components/book/chapter/chapter-pull-quote"
 import { ChapterKeyTakeaways, Takeaway } from "@/components/book/chapter/chapter-key-takeaways"
 import { ImagePlaceholder } from "@/components/book/chapter/image-placeholder"
 import { ChapterFoodCard } from "@/components/book/chapter/chapter-food-card"
+import { JsonLd } from "@/components/json-ld"
+import { generateChapterSchema, generateBreadcrumbSchema } from "@/lib/structured-data"
 import { DimensionScoreTable, ScoreLevel } from "@/components/book/chapter/dimension-score-table"
 import { FoodScoreCard, ScoreDimension } from "@/components/book/chapter/food-score-card"
 import { FoodRankingTable, RankedFood } from "@/components/book/chapter/food-ranking-table"
@@ -65,6 +67,8 @@ export default async function BookChapter19Page() {
 
   return (
     <>
+      <JsonLd data={generateChapterSchema(chapter)} />
+      <JsonLd data={generateBreadcrumbSchema(chapter)} />
       <ChapterTemplate chapter={chapter}>
         <MDXRemote source={source} components={mdxComponents} />
         <ChapterNav current={chapter} prev={prev} next={next} />

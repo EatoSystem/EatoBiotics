@@ -13,6 +13,8 @@ import { ChapterPullQuote } from "@/components/book/chapter/chapter-pull-quote"
 import { ChapterKeyTakeaways, Takeaway } from "@/components/book/chapter/chapter-key-takeaways"
 import { ImagePlaceholder } from "@/components/book/chapter/image-placeholder"
 import { ChapterFoodCard } from "@/components/book/chapter/chapter-food-card"
+import { JsonLd } from "@/components/json-ld"
+import { generateChapterSchema, generateBreadcrumbSchema } from "@/lib/structured-data"
 
 const CHAPTER_NUMBER = 1
 
@@ -54,6 +56,8 @@ export default async function BookChapter1Page() {
 
   return (
     <>
+      <JsonLd data={generateChapterSchema(chapter)} />
+      <JsonLd data={generateBreadcrumbSchema(chapter)} />
       <ChapterTemplate chapter={chapter}>
         <MDXRemote source={source} components={mdxComponents} />
         <ChapterNav current={chapter} prev={prev} next={next} />
