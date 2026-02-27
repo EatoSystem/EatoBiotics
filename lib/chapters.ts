@@ -306,7 +306,9 @@ export const chapters: Chapter[] = [
     partTitle: "The Food System",
     title: "EatoSystem — The Food System",
     description: "The complete picture. How everything connects into one unified approach to food, health, and living well — and where EatoBiotics fits within the broader EatoSystem vision.",
-    status: "coming-soon",
+    status: "published",
+    publishedAt: "2026-02-27",
+    readingTime: 45,
   },
 ]
 
