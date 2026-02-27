@@ -176,3 +176,52 @@
   border-radius: 9999px;
   max-width: 8rem;
 }
+
+/* ── Print / PDF export (7×10 trim) ──────────────────────────────────────── */
+@media print {
+  @page {
+    size: 7in 10in;
+    margin: 0.7in;
+  }
+
+  /* Hide site chrome + UI controls */
+  nav, footer, .print-hide {
+    display: none !important;
+  }
+
+  /* White background, dark text */
+  body {
+    background: white !important;
+    color: #1A2E12 !important;
+  }
+
+  /* Preserve brand colours in print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Page-break controls */
+  h2, h3 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  figure, blockquote, table,
+  .chapter-callout, .chapter-stat,
+  .chapter-food-card, .chapter-key-takeaways {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Remove link underlines for cleaner print */
+  a {
+    text-decoration: none !important;
+    color: inherit !important;
+  }
+
+  /* Remove shadows and transitions */
+  * {
+    box-shadow: none !important;
+    transition: none !important;
+  }
+}

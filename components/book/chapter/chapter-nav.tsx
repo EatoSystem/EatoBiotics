@@ -85,6 +85,12 @@ export function ChapterNav({ current, prev, next }: ChapterNavProps) {
         >
           Copy for Reedsy
         </Link>
+        <Link
+          href={`/book-chapter-${current.number}/print`}
+          className="rounded-full border border-border px-4 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-icon-green hover:text-icon-green"
+        >
+          Print / PDF
+        </Link>
       </div>
 
       {/* Substack CTA — white card matching site style */}
