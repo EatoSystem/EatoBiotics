@@ -5,9 +5,15 @@ import { Copy, Check, AlertCircle } from "lucide-react"
 
 interface CopyButtonProps {
   targetId: string
+  label?: string
+  copiedLabel?: string
 }
 
-export function CopyButton({ targetId }: CopyButtonProps) {
+export function CopyButton({
+  targetId,
+  label = "Copy Chapter",
+  copiedLabel = "Copied! Paste into Substack",
+}: CopyButtonProps) {
   const [state, setState] = useState<"idle" | "copied" | "error">("idle")
 
   const handleCopy = async () => {
@@ -59,7 +65,7 @@ export function CopyButton({ targetId }: CopyButtonProps) {
       {state === "copied" ? (
         <>
           <Check size={14} />
-          Copied! Paste into Substack
+          {copiedLabel}
         </>
       ) : state === "error" ? (
         <>
@@ -69,7 +75,7 @@ export function CopyButton({ targetId }: CopyButtonProps) {
       ) : (
         <>
           <Copy size={14} />
-          Copy Chapter
+          {label}
         </>
       )}
     </button>
