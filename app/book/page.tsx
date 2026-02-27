@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     "EatoBiotics: The Food System Inside You — a structured guide through the science and practice of feeding your microbiome. Pre-order now and lock in your early access price.",
   openGraph: {
     title: "The Book — EatoBiotics",
-    description: "23 chapters. The complete guide to building your microbiome through the 3 Biotics framework. Join the waitlist.",
+    description: "25 chapters. The complete guide to building your microbiome through the 3 Biotics framework. Join the waitlist.",
   },
 }
 
@@ -153,7 +153,7 @@ export default function BookPage() {
               What&apos;s Inside
             </p>
             <h2 className="mt-4 font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
-              23 chapters.{" "}
+              25 chapters.{" "}
               <GradientText>One complete framework.</GradientText>
             </h2>
             <p className="mt-4 text-base leading-relaxed text-muted-foreground">
@@ -166,7 +166,7 @@ export default function BookPage() {
           <ScrollReveal delay={100}>
             <div className="mt-8 grid gap-3 sm:grid-cols-3">
               {[
-                { label: "23", desc: "Chapters" },
+                { label: "25", desc: "Chapters" },
                 { label: "3", desc: "Biotic pillars" },
                 { label: "100+", desc: "Foods profiled" },
               ].map((stat) => (

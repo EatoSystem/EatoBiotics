@@ -20,6 +20,7 @@ export const PART_COLORS = [
   "var(--icon-teal)",
   "var(--icon-yellow)",
   "var(--icon-orange)",
+  "var(--icon-lime)",    // Part VI — full circle
 ]
 
 export const chapters: Chapter[] = [
@@ -279,8 +280,32 @@ export const chapters: Chapter[] = [
     slug: "chapter-23",
     part: "V",
     partTitle: "Real Life + Long-Term Health",
-    title: "EatoSystem",
-    description: "The Food System.",
+    title: "Movement — Walking, Gym, and Sea Swim",
+    description: "How movement supports the microbiome — from daily walks to strength training, outdoor swimming, and the science of why your gut needs you to move.",
+    status: "published",
+    publishedAt: "2026-02-27",
+    readingTime: 42,
+  },
+  {
+    number: 24,
+    slug: "chapter-24",
+    part: "V",
+    partTitle: "Real Life + Long-Term Health",
+    title: "Restore & Ritual — Breathwork, Meditation, Cold Exposure, and Supplements",
+    description: "The recovery layer: how breathwork, meditation, cold exposure, and targeted supplements support your gut ecosystem and complete the EatoBiotics approach.",
+    status: "published",
+    publishedAt: "2026-02-27",
+    readingTime: 45,
+  },
+
+  // ── PART VI ─────────────────────────────────────────────────────────────────
+  {
+    number: 25,
+    slug: "chapter-25",
+    part: "VI",
+    partTitle: "The Food System",
+    title: "EatoSystem — The Food System",
+    description: "The complete picture. How everything connects into one unified approach to food, health, and living well — and where EatoBiotics fits within the broader EatoSystem vision.",
     status: "coming-soon",
   },
 ]
@@ -307,5 +332,5 @@ export function getNextChapter(number: number): Chapter | undefined {
 
 // Map part roman numeral to 0-based index for colour lookup
 export function partIndex(part: string): number {
-  return ["I", "II", "III", "IV", "V"].indexOf(part)
+  return ["I", "II", "III", "IV", "V", "VI"].indexOf(part)
 }

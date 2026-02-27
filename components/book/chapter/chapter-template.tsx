@@ -118,7 +118,7 @@ export function ChapterTemplate({ chapter, children }: ChapterTemplateProps) {
                 {chapter.partTitle}
               </p>
               <p className="mt-1 text-sm leading-relaxed text-white/70">
-                Chapter {chapter.number} of 23. Each chapter builds on the last.
+                Chapter {chapter.number} of 25. Each chapter builds on the last.
               </p>
             </div>
           </div>

@@ -23,7 +23,7 @@ const platforms = [
     accent: "var(--icon-green)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
     description:
-      "EatoBiotics: The Food System Inside You. 23 chapters. The complete guide to building your microbiome through the 3 Biotics framework.",
+      "EatoBiotics: The Food System Inside You. 25 chapters. The complete guide to building your microbiome through the 3 Biotics framework.",
     cta: "Learn more",
     href: "/book",
     external: false,
