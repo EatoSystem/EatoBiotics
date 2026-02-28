@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" fill="none">
+<defs>
+  <linearGradient id="bg-3-2" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#4CB648" stop-opacity="0.05"/>
+    <stop offset="100%" stop-color="#2DAA6E" stop-opacity="0.03"/>
+  </linearGradient>
+</defs>
+  <rect width="1280" height="720" fill="url(#bg-3-2)"/>
+  <path d="M 866.8 137.7 C 884.0 138.0, 903.9 164.4, 917.7 179.9 C 931.5 195.4, 947.2 211.5, 949.5 230.8 C 951.8 250.1, 945.2 277.9, 931.5 295.5 C 917.7 313.1, 887.3 337.2, 866.8 336.1 C 846.3 335.1, 827.4 306.7, 808.4 289.1 C 789.4 271.5, 751.7 249.3, 752.7 230.8 C 753.7 212.3, 795.2 193.8, 814.2 178.2 C 833.2 162.7, 849.5 137.5, 866.8 137.7 Z" fill="#4CB648" opacity="0.05"/>
+  <circle cx="1002.9" cy="398.8" r="2.0" fill="#4CB648" opacity="0.10"/>
+  <circle cx="711.2" cy="164.3" r="3.7" fill="#4CB648" opacity="0.10"/>
+  <circle cx="373.7" cy="155.2" r="3.0" fill="#4CB648" opacity="0.10"/>
+  <circle cx="122.7" cy="213.5" r="1.7" fill="#4CB648" opacity="0.10"/>
+  <circle cx="61.3" cy="392.7" r="2.1" fill="#4CB648" opacity="0.10"/>
+  <circle cx="689.1" cy="236.0" r="3.5" fill="#4CB648" opacity="0.10"/>
+  <circle cx="1091.3" cy="427.9" r="3.7" fill="#4CB648" opacity="0.10"/>
+  <circle cx="423.6" cy="169.1" r="2.2" fill="#4CB648" opacity="0.10"/>
+  <circle cx="430.0" cy="93.7" r="3.6" fill="#4CB648" opacity="0.10"/>
+  <circle cx="931.1" cy="575.3" r="2.3" fill="#4CB648" opacity="0.10"/>
+  <circle cx="288.0" cy="345.7" r="34.4" fill="#4CB648" opacity="0.1"/>
+  <circle cx="288.0" cy="345.7" r="34.4" fill="none" stroke="#4CB648" stroke-width="1.8" opacity="0.3"/>
+  <circle cx="288.0" cy="345.7" r="5.5" fill="#4CB648" opacity="0.2"/>
+  <path d="M 326.4 345.7 Q 405.3 325.9, 484.3 366.0" fill="none" stroke="#4CB648" stroke-width="1.5" opacity="0.25" stroke-linecap="round"/>
+  <circle cx="482.3" cy="366.0" r="3" fill="#4CB648" opacity="0.3"/>
+  <circle cx="522.7" cy="350.4" r="34.4" fill="#2DAA6E" opacity="0.1"/>
+  <circle cx="522.7" cy="350.4" r="34.4" fill="none" stroke="#2DAA6E" stroke-width="1.8" opacity="0.3"/>
+  <circle cx="522.7" cy="350.4" r="6.2" fill="#2DAA6E" opacity="0.2"/>
+  <path d="M 561.0 350.4 Q 640.0 338.7, 719.0 368.5" fill="none" stroke="#4CB648" stroke-width="1.5" opacity="0.25" stroke-linecap="round"/>
+  <circle cx="717.0" cy="368.5" r="3" fill="#4CB648" opacity="0.3"/>
+  <circle cx="757.3" cy="371.4" r="34.4" fill="#4CB648" opacity="0.1"/>
+  <circle cx="757.3" cy="371.4" r="34.4" fill="none" stroke="#4CB648" stroke-width="1.8" opacity="0.3"/>
+  <circle cx="757.3" cy="371.4" r="6.2" fill="#4CB648" opacity="0.2"/>
+  <path d="M 795.7 371.4 Q 874.7 328.9, 953.6 362.3" fill="none" stroke="#4CB648" stroke-width="1.5" opacity="0.25" stroke-linecap="round"/>
+  <circle cx="951.6" cy="362.3" r="3" fill="#4CB648" opacity="0.3"/>
+  <circle cx="992.0" cy="373.2" r="34.4" fill="#2DAA6E" opacity="0.1"/>
+  <circle cx="992.0" cy="373.2" r="34.4" fill="none" stroke="#2DAA6E" stroke-width="1.8" opacity="0.3"/>
+  <circle cx="992.0" cy="373.2" r="8.9" fill="#2DAA6E" opacity="0.2"/>
+
+</svg>

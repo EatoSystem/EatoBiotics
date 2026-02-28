@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" fill="none">
+<defs>
+  <linearGradient id="bg-25-5" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#4CB648" stop-opacity="0.05"/>
+    <stop offset="100%" stop-color="#F5A623" stop-opacity="0.03"/>
+  </linearGradient>
+</defs>
+  <rect width="1280" height="720" fill="url(#bg-25-5)"/>
+  <path d="M 560.8 180.7 C 586.2 178.5, 617.8 178.0, 644.0 194.0 C 670.1 210.1, 717.8 249.8, 717.6 277.3 C 717.3 304.8, 668.7 335.9, 642.6 359.0 C 616.4 382.2, 592.3 412.1, 560.8 416.3 C 529.3 420.6, 469.7 407.7, 453.6 384.5 C 437.4 361.3, 457.5 306.7, 463.8 277.3 C 470.0 247.8, 474.9 223.7, 491.1 207.6 C 507.2 191.5, 535.3 183.0, 560.8 180.7 Z" fill="#4CB648" opacity="0.04"/>
+  <path d="M 913.9 17.0 C 964.4 20.5, 1021.9 61.0, 1055.0 98.1 C 1088.1 135.1, 1118.5 198.3, 1112.4 239.2 C 1106.3 280.1, 1051.5 311.0, 1018.4 343.7 C 985.3 376.4, 959.5 424.5, 913.9 435.3 C 868.2 446.1, 770.3 441.4, 744.3 408.7 C 718.4 376.0, 757.2 294.4, 758.4 239.2 C 759.7 184.0, 726.1 114.4, 752.0 77.4 C 777.9 40.3, 863.4 13.6, 913.9 17.0 Z" fill="#F5A623" opacity="0.04"/>
+  <circle cx="472.5" cy="310.8" r="2.7" fill="#4CB648" opacity="0.09"/>
+  <circle cx="640.8" cy="563.1" r="2.1" fill="#4CB648" opacity="0.09"/>
+  <circle cx="1032.2" cy="477.1" r="2.7" fill="#4CB648" opacity="0.09"/>
+  <circle cx="217.6" cy="329.5" r="3.7" fill="#4CB648" opacity="0.09"/>
+  <circle cx="193.0" cy="180.0" r="2.0" fill="#4CB648" opacity="0.09"/>
+  <circle cx="389.5" cy="173.4" r="3.4" fill="#4CB648" opacity="0.09"/>
+  <circle cx="490.8" cy="363.1" r="2.7" fill="#4CB648" opacity="0.09"/>
+  <circle cx="85.0" cy="493.9" r="3.5" fill="#4CB648" opacity="0.09"/>
+  <circle cx="640.0" cy="360.0" r="201.6" fill="#4CB648" opacity="0.05"/>
+  <circle cx="640.0" cy="360.0" r="201.6" fill="none" stroke="#4CB648" stroke-width="2" opacity="0.25"/>
+  <circle cx="640.0" cy="360.0" r="131.0" fill="none" stroke="#F5A623" stroke-width="1" opacity="0.12"/>
+  <path d="M 640.0 360.0 L 640.0 158.4 A 201.6 201.6 0 0 1 841.6 360.0 Z" fill="#4CB648" opacity="0.050"/>
+  <line x1="640.0" y1="360.0" x2="640.0" y2="158.4" stroke="#4CB648" stroke-width="1" opacity="0.12"/>
+  <path d="M 640.0 360.0 L 841.6 360.0 A 201.6 201.6 0 0 1 640.0 561.6 Z" fill="#F5A623" opacity="0.075"/>
+  <line x1="640.0" y1="360.0" x2="841.6" y2="360.0" stroke="#4CB648" stroke-width="1" opacity="0.12"/>
+  <path d="M 640.0 360.0 L 640.0 561.6 A 201.6 201.6 0 0 1 438.4 360.0 Z" fill="#4CB648" opacity="0.100"/>
+  <line x1="640.0" y1="360.0" x2="640.0" y2="561.6" stroke="#4CB648" stroke-width="1" opacity="0.12"/>
+  <path d="M 640.0 360.0 L 438.4 360.0 A 201.6 201.6 0 0 1 640.0 158.4 Z" fill="#F5A623" opacity="0.125"/>
+  <line x1="640.0" y1="360.0" x2="438.4" y2="360.0" stroke="#4CB648" stroke-width="1" opacity="0.12"/>
+  <circle cx="640.0" cy="360.0" r="4" fill="#4CB648" opacity="0.3"/>
+
+</svg>
