@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" fill="none">
+<defs>
+  <linearGradient id="bg-grad-11" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#A8E063" stop-opacity="0.06"/>
+    <stop offset="100%" stop-color="#4CB648" stop-opacity="0.03"/>
+  </linearGradient>
+</defs>
+  <rect width="1280" height="720" fill="url(#bg-grad-11)"/>
+  <path d="M 361.0 338.1 C 399.5 341.8, 433.8 342.2, 465.3 363.9 C 496.9 385.6, 545.9 429.2, 550.2 468.3 C 554.5 507.4, 522.6 567.7, 491.1 598.4 C 459.5 629.1, 398.2 658.4, 361.0 652.3 C 323.7 646.1, 294.5 592.3, 267.7 561.6 C 240.8 530.9, 205.6 505.0, 200.1 468.3 C 194.5 431.6, 207.5 363.3, 234.3 341.6 C 261.1 319.9, 322.5 334.4, 361.0 338.1 Z" fill="#A8E063" opacity="0.08"/>
+  <path d="M 865.5 146.8 C 888.5 147.9, 906.8 199.2, 931.3 222.9 C 955.9 246.6, 1008.7 262.8, 1012.7 288.7 C 1016.7 314.7, 980.1 359.9, 955.6 378.8 C 931.0 397.8, 891.0 406.8, 865.5 402.3 C 839.9 397.8, 816.4 370.8, 802.3 351.9 C 788.3 333.0, 782.7 311.3, 781.1 288.7 C 779.6 266.2, 779.0 240.0, 793.1 216.4 C 807.2 192.7, 842.4 145.7, 865.5 146.8 Z" fill="#4CB648" opacity="0.09"/>
+  <path d="M 247.1 266.7 C 290.1 254.0, 388.7 280.6, 414.1 316.8 C 439.5 353.0, 404.7 433.3, 399.5 483.8 C 394.3 534.2, 408.4 587.0, 383.1 619.7 C 357.7 652.3, 285.2 686.8, 247.1 679.5 C 209.1 672.3, 186.8 608.7, 154.8 576.1 C 122.8 543.5, 54.8 514.3, 55.1 483.8 C 55.3 453.2, 124.3 429.2, 156.4 393.0 C 188.4 356.8, 204.2 279.4, 247.1 266.7 Z" fill="#A8E063" opacity="0.06"/>
+  <circle cx="946.3" cy="124.6" r="2.3" fill="#A8E063" opacity="0.09"/>
+  <circle cx="777.5" cy="521.3" r="4.9" fill="#A8E063" opacity="0.09"/>
+  <circle cx="310.7" cy="397.0" r="4.2" fill="#A8E063" opacity="0.09"/>
+  <circle cx="83.9" cy="362.8" r="3.7" fill="#A8E063" opacity="0.09"/>
+  <circle cx="1092.5" cy="523.3" r="4.0" fill="#A8E063" opacity="0.09"/>
+  <circle cx="563.6" cy="529.5" r="2.2" fill="#A8E063" opacity="0.09"/>
+  <circle cx="717.4" cy="317.7" r="3.0" fill="#A8E063" opacity="0.09"/>
+  <circle cx="114.8" cy="247.6" r="4.4" fill="#A8E063" opacity="0.09"/>
+  <circle cx="118.1" cy="470.4" r="2.0" fill="#A8E063" opacity="0.09"/>
+  <circle cx="1176.5" cy="447.3" r="3.9" fill="#A8E063" opacity="0.09"/>
+  <circle cx="1018.1" cy="204.0" r="2.1" fill="#A8E063" opacity="0.09"/>
+  <circle cx="752.2" cy="133.1" r="2.5" fill="#A8E063" opacity="0.09"/>
+  <circle cx="1197.9" cy="260.8" r="4.3" fill="#A8E063" opacity="0.09"/>
+  <circle cx="1184.6" cy="609.0" r="2.7" fill="#A8E063" opacity="0.09"/>
+  <circle cx="1114.2" cy="350.8" r="3.7" fill="#A8E063" opacity="0.09"/>
+  <circle cx="688.3" cy="308.1" r="4.8" fill="#A8E063" opacity="0.09"/>
+  <circle cx="578.9" cy="289.7" r="3.5" fill="#A8E063" opacity="0.09"/>
+  <circle cx="673.5" cy="65.2" r="2.0" fill="#A8E063" opacity="0.09"/>
+  <circle cx="479.9" cy="530.3" r="2.5" fill="#A8E063" opacity="0.09"/>
+  <path d="M 80 258.75210743397474 C 311.09752021729946 256.1298571527004, 876.7307510133833 472.5642110221088, 1200 552.0097933709621" fill="none" stroke="#4CB648" stroke-width="2" opacity="0.1" stroke-linecap="round"/>
+
+  <rect x="560" y="270" width="120" height="160" rx="12" fill="#A8E063" opacity="0.12" transform="rotate(-8 620 350)"/>
+  <rect x="600" y="260" width="120" height="160" rx="12" fill="#4CB648" opacity="0.15" transform="rotate(3 660 340)"/>
+  <rect x="580" y="280" width="120" height="160" rx="12" fill="#A8E063" opacity="0.1" transform="rotate(-2 640 360)"/>
+  <rect x="560" y="270" width="120" height="160" rx="12" fill="none" stroke="#A8E063" stroke-width="1.5" opacity="0.3" transform="rotate(-8 620 350)"/>
+  <rect x="600" y="260" width="120" height="160" rx="12" fill="none" stroke="#4CB648" stroke-width="1.5" opacity="0.35" transform="rotate(3 660 340)"/>
+  <line x1="614" y1="300" x2="704" y2="294" stroke="#4CB648" stroke-width="1" opacity="0.2" transform="rotate(3 660 340)"/>
+  <line x1="614" y1="320" x2="690" y2="314" stroke="#4CB648" stroke-width="1" opacity="0.15" transform="rotate(3 660 340)"/>
+  <line x1="614" y1="340" x2="680" y2="334" stroke="#4CB648" stroke-width="1" opacity="0.1" transform="rotate(3 660 340)"/>
+</svg>
