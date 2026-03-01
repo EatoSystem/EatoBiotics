@@ -20,41 +20,25 @@ export function getScoreBand(score: number): ScoreBand {
   return SCORE_BANDS.find((b) => score >= b.min) ?? SCORE_BANDS[SCORE_BANDS.length - 1]
 }
 
-/* ── Diminishing-return point tables ──────────────────────────────────── */
+/* ── Per-food base points (diminishing within each biotic type) ──────── */
 
-const POINTS: Record<BioticType, number[]> = {
-  prebiotic: [5, 4, 4, 3, 2, 2, 2, 2, 2, 2],
-  probiotic: [6, 5, 4, 3, 2, 2, 2, 2, 2, 2],
-  postbiotic: [4, 3, 3, 2, 2, 2, 2, 2, 2, 2],
-  protein: [3, 3, 2, 2, 1, 1, 1, 1, 1, 1],
-  all: [3, 2, 2, 1, 1, 1, 1, 1, 1, 1],
-}
+const BASE_POINTS = [8, 6, 4, 3, 2]
 
-function bioticPoints(type: BioticType, count: number): number {
-  const table = POINTS[type] ?? POINTS.all
+function bioticPoints(count: number): number {
   let total = 0
   for (let i = 0; i < count; i++) {
-    total += table[Math.min(i, table.length - 1)]
+    total += BASE_POINTS[Math.min(i, BASE_POINTS.length - 1)]
   }
   return total
 }
 
-/* ── Plant bonus (scaled to max +20) ──────────────────────────────────── */
+/* ── Balance bonus (covering biotic types — the biggest driver) ──────── */
 
-const PLANT_THRESHOLDS = [
-  { count: 25, bonus: 4 },
-  { count: 20, bonus: 4 },
-  { count: 15, bonus: 3 },
-  { count: 10, bonus: 3 },
-  { count: 5, bonus: 2 },
-]
+//                     0 types  1 type  2 types  3 types  4 types
+const BALANCE_BONUS = [0, 0, 10, 20, 30]
 
-function plantBonus(plantCount: number): number {
-  let total = 0
-  for (const { count, bonus } of PLANT_THRESHOLDS) {
-    if (plantCount >= count) total += bonus
-  }
-  return total
+function balanceBonusForTypes(typesCount: number): number {
+  return BALANCE_BONUS[Math.min(typesCount, BALANCE_BONUS.length - 1)]
 }
 
 /* ── Biotic breakdown ─────────────────────────────────────────────────── */
@@ -72,6 +56,7 @@ export interface ScoreResult {
   score: number
   band: ScoreBand
   breakdown: BioticBreakdown
+  balanceBonus: number
   diversityBonus: number
   plantBonus: number
   basePoints: number
@@ -86,6 +71,9 @@ const PLANT_CATEGORIES = new Set([
   "Herbs & Spices",
   "Sea Vegetables",
 ])
+
+const MAX_CATEGORY_BONUS = 12 // +2 per unique category, max 6 categories counted
+const MAX_PLANT_BONUS = 8 // +2 per unique plant food, max 4 plants counted
 
 export function calculateBioticsScore(foods: Food[]): ScoreResult {
   // Count foods per biotic type
@@ -106,31 +94,42 @@ export function calculateBioticsScore(foods: Food[]): ScoreResult {
     if (PLANT_CATEGORIES.has(food.category)) plantCount++
   }
 
-  // Base points per biotic type
+  // Base points per biotic type (diminishing returns within each type)
   const breakdown: BioticBreakdown = {
-    prebiotic: bioticPoints("prebiotic", counts.prebiotic),
-    probiotic: bioticPoints("probiotic", counts.probiotic),
-    postbiotic: bioticPoints("postbiotic", counts.postbiotic),
-    protein: bioticPoints("protein", counts.protein),
+    prebiotic: bioticPoints(counts.prebiotic),
+    probiotic: bioticPoints(counts.probiotic),
+    postbiotic: bioticPoints(counts.postbiotic),
+    protein: bioticPoints(counts.protein),
   }
 
   const basePoints =
     breakdown.prebiotic + breakdown.probiotic + breakdown.postbiotic + breakdown.protein
 
-  // Diversity bonus: +2 per unique food category (max +16)
-  const divBonus = Math.min(categories.size * 2, 16)
+  // Balance bonus: how many of the 4 biotic types are represented
+  const typesRepresented = [
+    counts.prebiotic,
+    counts.probiotic,
+    counts.postbiotic,
+    counts.protein,
+  ].filter((c) => c > 0).length
 
-  // Plant bonus: scaled up to +20
-  const pBonus = plantBonus(plantCount)
+  const balBonus = balanceBonusForTypes(typesRepresented)
 
-  const score = Math.min(basePoints + divBonus + pBonus, 100)
+  // Category diversity bonus: +2 per unique food category (max +12)
+  const divBonus = Math.min(categories.size * 2, MAX_CATEGORY_BONUS)
+
+  // Plant diversity bonus: +2 per unique plant food (max +8)
+  const pBonus = Math.min(plantCount * 2, MAX_PLANT_BONUS)
+
+  const score = Math.min(basePoints + balBonus + divBonus + pBonus, 100)
   const band = getScoreBand(score)
-  const suggestions = generateSuggestions(counts, categories, plantCount, foods)
+  const suggestions = generateSuggestions(counts, categories, typesRepresented, foods)
 
   return {
     score,
     band,
     breakdown,
+    balanceBonus: balBonus,
     diversityBonus: divBonus,
     plantBonus: pBonus,
     basePoints,
@@ -143,7 +142,7 @@ export function calculateBioticsScore(foods: Food[]): ScoreResult {
 function generateSuggestions(
   counts: Record<string, number>,
   categories: Set<string>,
-  plantCount: number,
+  typesRepresented: number,
   foods: Food[]
 ): string[] {
   const tips: string[] = []
@@ -152,43 +151,51 @@ function generateSuggestions(
     return ["Add some foods to see your Biotics Score!"]
   }
 
-  // Missing biotic types
+  // Priority 1: Nudge toward missing biotic types (balance is the biggest driver)
+  const missingTypes: string[] = []
+
   if (counts.prebiotic === 0) {
+    missingTypes.push("prebiotic")
     tips.push("Add a prebiotic food like garlic, onions, or oats to feed your good bacteria.")
   }
   if (counts.probiotic === 0) {
+    missingTypes.push("probiotic")
     tips.push("Try a fermented food like yoghurt, kimchi, or kombucha for live probiotics.")
   }
   if (counts.postbiotic === 0) {
+    missingTypes.push("postbiotic")
     tips.push(
-      "Include a postbiotic-rich food like extra virgin olive oil, turmeric, or dark chocolate."
+      "Include a postbiotic-rich food like turmeric, dark chocolate, or green tea."
     )
   }
   if (counts.protein === 0) {
+    missingTypes.push("protein")
     tips.push("Add a quality protein source like salmon, eggs, or chickpeas.")
   }
 
-  // Low diversity
-  if (categories.size < 4 && foods.length >= 3) {
+  // Balance education — explain WHY balance matters
+  if (typesRepresented < 4 && missingTypes.length > 0 && tips.length < 3) {
+    const nextBonus =
+      balanceBonusForTypes(typesRepresented + 1) - balanceBonusForTypes(typesRepresented)
+    if (nextBonus > 0) {
+      tips.push(
+        `Adding a ${missingTypes[0]} food would unlock +${nextBonus} balance bonus points.`
+      )
+    }
+  }
+
+  // Priority 2: Category diversity
+  if (categories.size < 4 && foods.length >= 3 && tips.length < 3) {
     tips.push("Try foods from more categories to boost your diversity bonus.")
   }
 
-  // Plant count nudges
-  if (plantCount < 5 && foods.length >= 3) {
-    tips.push("Aim for at least 5 different plants to start earning your plant bonus.")
-  } else if (plantCount >= 5 && plantCount < 15) {
-    tips.push(`You have ${plantCount} plants — aim for 30 different plants each week!`)
-  } else if (plantCount >= 15 && plantCount < 30) {
-    tips.push(
-      `Great progress with ${plantCount} plants! Keep going toward the 30-plant goal.`
-    )
-  }
-
-  // Imbalanced biotics
+  // Priority 3: Imbalanced biotics (heavy on one type, missing others)
   const maxBiotic = Math.max(counts.prebiotic, counts.probiotic, counts.postbiotic)
   const minBiotic = Math.min(counts.prebiotic, counts.probiotic, counts.postbiotic)
-  if (maxBiotic > 0 && minBiotic === 0 && tips.length < 3) {
-    tips.push("Balance all three biotic types for optimal gut support.")
+  if (maxBiotic >= 3 && minBiotic === 0 && tips.length < 3) {
+    tips.push(
+      "Your gut benefits most when all three biotic types work together — try adding variety."
+    )
   }
 
   return tips.slice(0, 3)

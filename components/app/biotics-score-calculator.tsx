@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { type Food } from "@/lib/foods"
 import { calculateBioticsScore, type ScoreResult } from "@/lib/scoring"
 import { FoodSearch } from "./food-search"
-import { X, Lightbulb, Sparkles, Leaf, Zap } from "lucide-react"
+import { X, Lightbulb, Sparkles, Leaf, Zap, Scale } from "lucide-react"
 
 const BIOTIC_LABELS: {
   key: keyof ScoreResult["breakdown"]
@@ -393,28 +393,33 @@ export function BioticsScoreCalculator() {
 
                 {/* Bonus badges */}
                 {result && selectedFoods.length > 0 && (
-                  <div className="mt-6 flex w-full gap-3">
-                    <div className="flex flex-1 items-center gap-2 rounded-xl border border-icon-green/20 bg-icon-green/5 p-3">
-                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-icon-green/15">
+                  <div className="mt-6 grid w-full grid-cols-3 gap-2">
+                    <div className="flex flex-col items-center gap-1.5 rounded-xl border border-icon-lime/20 bg-icon-lime/5 p-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-icon-lime/15">
+                        <Scale size={14} className="text-icon-lime" />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">Balance</p>
+                      <p className="text-sm font-bold text-icon-lime">
+                        +{result.balanceBonus}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-center gap-1.5 rounded-xl border border-icon-green/20 bg-icon-green/5 p-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-icon-green/15">
                         <Sparkles size={14} className="text-icon-green" />
                       </div>
-                      <div>
-                        <p className="text-[10px] text-muted-foreground">Diversity</p>
-                        <p className="text-sm font-bold text-icon-green">
-                          +{result.diversityBonus}
-                        </p>
-                      </div>
+                      <p className="text-[10px] text-muted-foreground">Diversity</p>
+                      <p className="text-sm font-bold text-icon-green">
+                        +{result.diversityBonus}
+                      </p>
                     </div>
-                    <div className="flex flex-1 items-center gap-2 rounded-xl border border-icon-teal/20 bg-icon-teal/5 p-3">
-                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-icon-teal/15">
+                    <div className="flex flex-col items-center gap-1.5 rounded-xl border border-icon-teal/20 bg-icon-teal/5 p-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-icon-teal/15">
                         <Leaf size={14} className="text-icon-teal" />
                       </div>
-                      <div>
-                        <p className="text-[10px] text-muted-foreground">Plants</p>
-                        <p className="text-sm font-bold text-icon-teal">
-                          +{result.plantBonus}
-                        </p>
-                      </div>
+                      <p className="text-[10px] text-muted-foreground">Plants</p>
+                      <p className="text-sm font-bold text-icon-teal">
+                        +{result.plantBonus}
+                      </p>
                     </div>
                   </div>
                 )}
