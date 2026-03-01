@@ -1,20 +1,20 @@
 "use client"
 
-import { useCallback, useEffect, useState, useRef } from "react"
-import useEmblaCarousel from "embla-carousel-react"
-import Autoplay from "embla-carousel-autoplay"
+import { useState, useRef, useEffect } from "react"
 import { chapters, PART_COLORS } from "@/lib/chapters"
 import { ScrollReveal } from "@/components/scroll-reveal"
-import { BookOpen, Clock, ArrowRight } from "lucide-react"
+import { BookOpen, Clock, ArrowRight, ChevronRight } from "lucide-react"
+import Image from "next/image"
 import Link from "next/link"
 
-/* ── Group chapters by part ────────────────────────────────────────── */
+/* ── Part data ────────────────────────────────────────────────────────── */
 
 interface PartData {
   part: string
   partTitle: string
   color: string
   gradient: string
+  hook: string
   chapters: { number: number; title: string; readingTime?: number }[]
   totalMinutes: number
 }
@@ -27,6 +27,15 @@ const PART_GRADIENTS = [
   "linear-gradient(135deg, var(--icon-orange), var(--icon-yellow))",
   "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
 ]
+
+const PART_HOOKS: Record<string, string> = {
+  I: "Discover what your microbiome really is, why modern diets broke it, and the simple framework to rebuild it.",
+  II: "The complete guide to prebiotic, probiotic, and postbiotic foods \u2014 what to eat, why it works, and how to use them daily.",
+  III: "See how feeding your gut transforms digestion, immunity, energy, mood, and recovery \u2014 the five outcomes you\u2019ll feel.",
+  IV: "Your kitchen setup, meal formula, 7-day reset, 21-day build, and scoring system \u2014 everything to make it stick.",
+  V: "Travel protocols, antibiotic recovery, movement, breathwork, and building a sustainable lifestyle without perfection pressure.",
+  VI: "The complete picture \u2014 how everything connects into one unified approach to food, health, and the broader EatoSystem vision.",
+}
 
 function buildParts(): PartData[] {
   const partsMap = new Map<string, PartData>()
@@ -41,6 +50,7 @@ function buildParts(): PartData[] {
         partTitle: ch.partTitle,
         color: PART_COLORS[idx] ?? "var(--icon-green)",
         gradient: PART_GRADIENTS[idx] ?? PART_GRADIENTS[0],
+        hook: PART_HOOKS[ch.part] ?? "",
         chapters: [],
         totalMinutes: 0,
       })
@@ -58,9 +68,17 @@ const TOTAL_CHAPTERS = chapters.length
 const TOTAL_MINUTES = chapters.reduce((a, c) => a + (c.readingTime ?? 0), 0)
 const TOTAL_HOURS = Math.round(TOTAL_MINUTES / 60)
 
-/* ── Animated counter ─────────────────────────────────────────────── */
+/* ── Animated counter ─────────────────────────────────────────────────── */
 
-function AnimatedStat({ target, label }: { target: number; label: string }) {
+function AnimatedStat({
+  target,
+  label,
+  suffix,
+}: {
+  target: number
+  label: string
+  suffix?: string
+}) {
   const [value, setValue] = useState(0)
   const ref = useRef<HTMLDivElement>(null)
   const hasAnimated = useRef(false)
@@ -87,7 +105,7 @@ function AnimatedStat({ target, label }: { target: number; label: string }) {
           }, duration / steps)
         }
       },
-      { threshold: 0.3 }
+      { threshold: 0.3 },
     )
     observer.observe(el)
     return () => observer.disconnect()
@@ -95,39 +113,20 @@ function AnimatedStat({ target, label }: { target: number; label: string }) {
 
   return (
     <div ref={ref} className="text-center">
-      <p className="font-serif text-3xl font-semibold text-foreground sm:text-4xl">
+      <p className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
         {value}
+        {suffix}
       </p>
-      <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{label}</p>
+      <p className="mt-1 text-[11px] text-muted-foreground sm:text-xs">{label}</p>
     </div>
   )
 }
 
-/* ── Main component ───────────────────────────────────────────────── */
+/* ── Main component ───────────────────────────────────────────────────── */
 
 export function BookShowcase() {
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: "center" }, [
-    Autoplay({ delay: 5000, stopOnInteraction: true, stopOnMouseEnter: true }),
-  ])
-  const [selectedIndex, setSelectedIndex] = useState(0)
-
-  const onSelect = useCallback(() => {
-    if (!emblaApi) return
-    setSelectedIndex(emblaApi.selectedScrollSnap())
-  }, [emblaApi])
-
-  useEffect(() => {
-    if (!emblaApi) return
-    emblaApi.on("select", onSelect)
-    onSelect()
-    return () => {
-      emblaApi.off("select", onSelect)
-    }
-  }, [emblaApi, onSelect])
-
-  function scrollTo(index: number) {
-    emblaApi?.scrollTo(index)
-  }
+  const [activePart, setActivePart] = useState(0)
+  const part = PARTS[activePart]
 
   return (
     <section className="relative overflow-hidden px-6 py-24 md:py-32">
@@ -161,7 +160,9 @@ export function BookShowcase() {
           <div className="text-center">
             <div
               className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
-              style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
+              style={{
+                background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
+              }}
             >
               <BookOpen size={26} className="text-white" />
             </div>
@@ -178,131 +179,207 @@ export function BookShowcase() {
           </div>
         </ScrollReveal>
 
-        {/* Carousel */}
-        <ScrollReveal delay={100}>
-          <div className="mt-12">
-            <div ref={emblaRef} className="overflow-hidden">
-              <div className="flex">
-                {PARTS.map((part, i) => (
-                  <div
-                    key={part.part}
-                    className="min-w-0 flex-[0_0_90%] px-3 sm:flex-[0_0_70%] md:flex-[0_0_50%] lg:flex-[0_0_42%]"
-                  >
+        {/* Two-column: Book Cover + Part Explorer */}
+        <div className="mt-16 flex flex-col items-center gap-12 lg:flex-row lg:items-start lg:gap-16">
+          {/* Left: Book Cover + Stats */}
+          <ScrollReveal>
+            <div className="flex flex-col items-center lg:sticky lg:top-32">
+              {/* Book Cover with dynamic glow */}
+              <div className="relative">
+                {/* Glow that changes colour with active part */}
+                <div
+                  className="absolute -inset-6 rounded-3xl opacity-20 blur-3xl transition-all duration-700"
+                  style={{ background: part.gradient }}
+                />
+                <div className="relative w-[200px] sm:w-[240px]">
+                  <div className="relative flex aspect-[3/4] w-full flex-col items-center justify-center rounded-xl border-2 border-border bg-background p-6 shadow-2xl">
+                    {/* Spine — colour follows active part */}
                     <div
-                      className={`relative overflow-hidden rounded-2xl border bg-background p-6 transition-all ${
-                        i === selectedIndex
-                          ? "border-current shadow-lg"
-                          : "border-border"
-                      }`}
-                      style={{
-                        borderColor: i === selectedIndex ? part.color : undefined,
-                      }}
-                    >
-                      {/* Gradient top bar */}
+                      className="absolute bottom-0 left-0 top-0 w-3 rounded-l-xl transition-all duration-500"
+                      style={{ background: part.gradient }}
+                    />
+                    {/* Top accent */}
+                    <div
+                      className="absolute left-3 right-0 top-0 h-1 rounded-tr-xl transition-all duration-500"
+                      style={{ background: part.gradient }}
+                    />
+
+                    <div className="mb-4">
+                      <Image
+                        src="/eatobiotics-icon.webp"
+                        alt="EatoBiotics icon"
+                        width={100}
+                        height={100}
+                        className="h-20 w-20 drop-shadow-lg"
+                      />
+                    </div>
+                    <h3 className="text-center font-serif text-2xl font-semibold text-foreground">
+                      EatoBiotics
+                    </h3>
+                    <p className="mt-1.5 text-center text-xs font-medium text-muted-foreground">
+                      The Food System Inside You
+                    </p>
+                    <div className="absolute bottom-6 left-6 right-6">
                       <div
-                        className="absolute top-0 right-0 left-0 h-1.5"
+                        className="h-px opacity-40 transition-all duration-500"
                         style={{ background: part.gradient }}
                       />
+                      <p className="mt-2 text-center text-[10px] font-medium text-muted-foreground">
+                        Jason Curry
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-                      {/* Part header */}
-                      <div className="flex items-center gap-3">
-                        <span
-                          className="flex h-9 w-9 items-center justify-center rounded-lg text-sm font-bold text-white"
-                          style={{ background: part.gradient }}
-                        >
-                          {part.part}
+              {/* Stats under book */}
+              <div className="mt-8 flex items-center gap-5 sm:gap-7">
+                <AnimatedStat target={TOTAL_CHAPTERS} label="Chapters" />
+                <div className="h-8 w-px bg-border" />
+                <AnimatedStat target={PARTS.length} label="Parts" />
+                <div className="h-8 w-px bg-border" />
+                <AnimatedStat target={TOTAL_HOURS} label="Hours" suffix="+" />
+              </div>
+
+              {/* CTA below stats — mobile only */}
+              <div className="mt-6 lg:mt-8">
+                <Link
+                  href="/book-chapter-1"
+                  className="brand-gradient inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
+                >
+                  Start Reading
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          {/* Right: Part Explorer */}
+          <div className="w-full flex-1">
+            {/* Part selector tabs */}
+            <ScrollReveal delay={100}>
+              <div className="flex flex-wrap gap-2">
+                {PARTS.map((p, i) => {
+                  const isActive = i === activePart
+                  return (
+                    <button
+                      key={p.part}
+                      onClick={() => setActivePart(i)}
+                      className={`relative overflow-hidden rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-300 ${
+                        isActive
+                          ? "text-white shadow-md"
+                          : "border border-border text-muted-foreground hover:border-current/20"
+                      }`}
+                      style={{
+                        background: isActive ? p.gradient : undefined,
+                        color: isActive ? "white" : p.color,
+                      }}
+                    >
+                      <span className="relative z-10">Part {p.part}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </ScrollReveal>
+
+            {/* Active part card */}
+            <ScrollReveal delay={150}>
+              <div
+                className="mt-5 overflow-hidden rounded-2xl border border-border bg-background shadow-sm transition-all"
+                key={part.part}
+              >
+                {/* Gradient top bar */}
+                <div className="h-1.5" style={{ background: part.gradient }} />
+
+                <div className="p-5 sm:p-7">
+                  {/* Part header */}
+                  <div className="flex items-start gap-4">
+                    <span
+                      className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl text-lg font-bold text-white shadow-sm sm:h-14 sm:w-14 sm:text-xl"
+                      style={{ background: part.gradient }}
+                    >
+                      {part.part}
+                    </span>
+                    <div>
+                      <h3 className="font-serif text-lg font-semibold text-foreground sm:text-xl">
+                        {part.partTitle}
+                      </h3>
+                      <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+                        <span>{part.chapters.length} chapters</span>
+                        <span className="opacity-40">|</span>
+                        <span className="flex items-center gap-1">
+                          <Clock size={11} />
+                          {part.totalMinutes} min read
                         </span>
-                        <div>
-                          <p className="font-serif text-lg font-semibold text-foreground">
-                            {part.partTitle}
-                          </p>
-                          <p className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>{part.chapters.length} chapters</span>
-                            <span>·</span>
-                            <Clock size={10} />
-                            <span>{part.totalMinutes} min</span>
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Chapter list */}
-                      <div className="mt-4 space-y-1.5">
-                        {part.chapters.map((ch) => (
-                          <Link
-                            key={ch.number}
-                            href={`/book-chapter-${ch.number}`}
-                            className="group flex items-center justify-between rounded-lg p-2 text-sm transition-colors hover:bg-muted/50"
-                          >
-                            <span className="flex items-center gap-2">
-                              <span
-                                className="flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold text-white"
-                                style={{ background: part.gradient }}
-                              >
-                                {ch.number}
-                              </span>
-                              <span className="text-foreground">{ch.title}</span>
-                            </span>
-                            <ArrowRight
-                              size={12}
-                              className="text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
-                            />
-                          </Link>
-                        ))}
                       </div>
                     </div>
                   </div>
-                ))}
+
+                  {/* Hook / teaser text */}
+                  <p
+                    className="mt-5 border-l-2 pl-4 text-sm leading-relaxed text-muted-foreground italic"
+                    style={{ borderColor: part.color }}
+                  >
+                    {part.hook}
+                  </p>
+
+                  {/* Chapters */}
+                  <div className="mt-5 space-y-0.5">
+                    {part.chapters.map((ch) => (
+                      <Link
+                        key={ch.number}
+                        href={`/book-chapter-${ch.number}`}
+                        className="group flex items-center gap-3 rounded-xl p-2.5 transition-all hover:bg-muted/50 sm:p-3"
+                      >
+                        <span
+                          className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-[11px] font-bold text-white sm:h-8 sm:w-8 sm:text-xs"
+                          style={{ background: part.gradient }}
+                        >
+                          {ch.number}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-foreground sm:text-[15px]">
+                            {ch.title}
+                          </p>
+                          {ch.readingTime && (
+                            <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                              <Clock size={10} />
+                              {ch.readingTime} min
+                            </p>
+                          )}
+                        </div>
+                        <ChevronRight
+                          size={15}
+                          className="flex-shrink-0 text-muted-foreground opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100"
+                          style={{ color: part.color }}
+                        />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
+            </ScrollReveal>
 
-            {/* Part dot navigation */}
-            <div className="mt-6 flex items-center justify-center gap-2">
-              {PARTS.map((part, i) => (
-                <button
-                  key={part.part}
-                  onClick={() => scrollTo(i)}
-                  className="h-2.5 rounded-full transition-all"
-                  style={{
-                    width: i === selectedIndex ? 24 : 10,
-                    backgroundColor:
-                      i === selectedIndex ? part.color : "var(--border)",
-                  }}
-                  aria-label={`Go to Part ${part.part}`}
-                />
-              ))}
-            </div>
+            {/* Bottom CTAs */}
+            <ScrollReveal delay={200}>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/book-chapter-1"
+                  className="brand-gradient inline-flex items-center justify-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
+                >
+                  Start Reading Chapter 1
+                  <ArrowRight size={16} />
+                </Link>
+                <Link
+                  href="/book"
+                  className="inline-flex items-center justify-center rounded-full border border-border px-8 py-4 text-base font-semibold text-foreground transition-all hover:bg-muted"
+                >
+                  View All Chapters
+                </Link>
+              </div>
+            </ScrollReveal>
           </div>
-        </ScrollReveal>
-
-        {/* Stats + CTAs */}
-        <ScrollReveal delay={200}>
-          <div className="mt-12 flex flex-col items-center">
-            {/* Animated stat counters */}
-            <div className="flex items-center gap-8 sm:gap-12">
-              <AnimatedStat target={TOTAL_CHAPTERS} label="Chapters" />
-              <div className="h-8 w-px bg-border" />
-              <AnimatedStat target={PARTS.length} label="Parts" />
-              <div className="h-8 w-px bg-border" />
-              <AnimatedStat target={TOTAL_HOURS} label="Hours" />
-            </div>
-
-            {/* CTAs */}
-            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
-              <Link
-                href="/book-chapter-1"
-                className="brand-gradient inline-block rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
-              >
-                Start Reading Chapter 1
-              </Link>
-              <Link
-                href="/book"
-                className="inline-block rounded-full border border-border px-8 py-4 text-base font-semibold text-foreground transition-all hover:bg-muted"
-              >
-                View All Chapters
-              </Link>
-            </div>
-          </div>
-        </ScrollReveal>
+        </div>
       </div>
     </section>
   )
