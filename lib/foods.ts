@@ -654,6 +654,621 @@ export const foods: Food[] = [
     pairsWith: ["Garlic", "Leeks", "Ginger", "Apple Cider Vinegar"],
     publishedDay: 41,
   },
+
+  // ─── NEW PREBIOTIC FOODS ──────────────────────────────────────────────────
+
+  {
+    slug: "asparagus",
+    name: "Asparagus",
+    emoji: "🌿",
+    category: "Vegetables",
+    biotic: "prebiotic",
+    accentColor: "var(--icon-lime)",
+    gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
+    tagline: "A prebiotic powerhouse hiding in plain sight.",
+    description:
+      "Asparagus is one of the richest natural sources of inulin — the same prebiotic fibre found in garlic and onions. A single serving delivers 2-3 grams of inulin that passes through your upper digestive tract intact, arriving in the colon where Bifidobacteria ferment it into short-chain fatty acids. It also contains glutathione, one of the body's most important antioxidants.",
+    howToEat:
+      "Roast with olive oil and sea salt for 12 minutes at 200°C. Steam lightly and add to grain bowls. Shave raw into salads with lemon and parmesan. Grill alongside salmon for a prebiotic-protein combination.",
+    science:
+      "Asparagus inulin has been shown to significantly increase faecal Bifidobacterium counts within two weeks of regular consumption, with concurrent increases in butyrate production.",
+    scienceSource: "Kleessen et al., British Journal of Nutrition, 1997",
+    benefits: [
+      { title: "Inulin Rich", detail: "2-3g of inulin per serving — a direct fuel source for beneficial Bifidobacteria." },
+      { title: "Glutathione Source", detail: "Contains the body's master antioxidant, supporting liver detoxification and cellular repair." },
+      { title: "Folate Dense", detail: "One of the best vegetable sources of folate, essential for DNA synthesis and cell division." },
+      { title: "Anti-inflammatory", detail: "Contains saponins and flavonoids that reduce systemic inflammation." },
+    ],
+    pairsWith: ["Olive Oil", "Eggs", "Garlic", "Wild Salmon"],
+    publishedDay: 42,
+  },
+  {
+    slug: "jerusalem-artichoke",
+    name: "Jerusalem Artichoke",
+    emoji: "🥔",
+    category: "Vegetables",
+    biotic: "prebiotic",
+    accentColor: "var(--icon-lime)",
+    gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-teal))",
+    tagline: "The highest inulin food on the planet.",
+    description:
+      "Jerusalem artichoke — also called sunchoke — contains up to 76% of its dry weight as inulin, making it the single richest source of prebiotic fibre in the human diet. This knobbly tuber feeds Bifidobacteria and Lactobacillus with remarkable efficiency. Start slowly — the high inulin content can cause gas in those not accustomed to prebiotic-rich foods.",
+    howToEat:
+      "Roast like potatoes with olive oil, rosemary, and garlic. Slice thinly and add raw to salads for a nutty crunch. Make a silky soup blended with leeks. Sauté with butter and thyme as a side dish.",
+    science:
+      "Jerusalem artichoke inulin increases Bifidobacterium populations by 10-fold in controlled feeding studies, with the most dramatic changes occurring in the first week of consumption.",
+    scienceSource: "Kleessen et al., American Journal of Clinical Nutrition, 2007",
+    benefits: [
+      { title: "Highest Inulin Content", detail: "Up to 76% inulin by dry weight — no other food comes close as a Bifidobacterium fuel source." },
+      { title: "Iron Absorption", detail: "Prebiotic fermentation increases mineral absorption, particularly iron and calcium." },
+      { title: "Blood Sugar Stability", detail: "Inulin slows glucose absorption, making this an excellent low-GI carbohydrate source." },
+      { title: "Potassium Rich", detail: "Contains more potassium per gram than bananas, supporting heart and muscle function." },
+    ],
+    pairsWith: ["Garlic", "Leeks", "Olive Oil", "Kefir"],
+    publishedDay: 44,
+  },
+  {
+    slug: "sweet-potato",
+    name: "Sweet Potato",
+    emoji: "🍠",
+    category: "Vegetables",
+    biotic: "prebiotic",
+    accentColor: "var(--icon-orange)",
+    gradient: "linear-gradient(135deg, var(--icon-orange), var(--icon-yellow))",
+    tagline: "Cook it, cool it, and feed your microbiome.",
+    description:
+      "Sweet potato is a prebiotic goldmine — especially when cooked and cooled. The cooling process converts digestible starch into resistant starch, which passes through the small intestine and feeds colonic bacteria. The orange flesh is rich in beta-carotene, a powerful antioxidant that supports gut lining integrity and immune function.",
+    howToEat:
+      "Bake whole, cool, and use in salads for maximum resistant starch. Mash with a little butter and cinnamon. Make sweet potato wedges roasted with cumin and smoked paprika. Dice into grain bowls with tahini dressing.",
+    science:
+      "Cooked-and-cooled sweet potato contains up to 4% resistant starch by weight, which selectively increases butyrate-producing bacteria including Faecalibacterium prausnitzii.",
+    scienceSource: "Birt et al., Advances in Nutrition, 2013",
+    benefits: [
+      { title: "Resistant Starch", detail: "Cooling after cooking creates resistant starch — a powerful fuel for butyrate-producing bacteria." },
+      { title: "Beta-Carotene Rich", detail: "One medium sweet potato provides 400% of daily vitamin A needs via beta-carotene." },
+      { title: "Gut Lining Support", detail: "Beta-carotene strengthens the intestinal mucus layer that protects against inflammation." },
+      { title: "Fibre Dense", detail: "4g of fibre per medium potato, including both soluble and insoluble types." },
+    ],
+    pairsWith: ["Kimchi", "Olive Oil", "Yogurt", "Lentils"],
+    publishedDay: 46,
+  },
+  {
+    slug: "beetroot",
+    name: "Beetroot",
+    emoji: "🫒",
+    category: "Vegetables",
+    biotic: "prebiotic",
+    accentColor: "var(--icon-teal)",
+    gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-lime))",
+    tagline: "Deep colour, deep microbiome benefits.",
+    description:
+      "Beetroot's deep red-purple colour comes from betalains — a class of polyphenol that acts as a potent prebiotic, selectively feeding beneficial gut bacteria. Beets are also rich in dietary nitrates, which the body converts to nitric oxide for improved blood flow and exercise performance. The fibre content supports regular bowel movements and microbiome diversity.",
+    howToEat:
+      "Roast whole in foil for 45 minutes, then peel and slice into salads. Grate raw into slaws with apple and kefir dressing. Blend into smoothies with blueberries and ginger. Pickle with apple cider vinegar for a probiotic-prebiotic combination.",
+    science:
+      "Beetroot betalains have been shown to increase populations of Lactobacillus and Bifidobacterium while simultaneously reducing markers of colonic inflammation.",
+    scienceSource: "Clifford et al., Nutrients, 2015",
+    benefits: [
+      { title: "Betalain Polyphenols", detail: "Unique red-purple pigments that act as selective prebiotic fuel for beneficial bacteria." },
+      { title: "Dietary Nitrates", detail: "Converted to nitric oxide in the body, improving blood flow and exercise performance." },
+      { title: "Liver Support", detail: "Betaine in beetroot supports liver detoxification pathways and fat metabolism." },
+      { title: "Anti-inflammatory", detail: "Betalains reduce oxidative stress and inflammation throughout the digestive tract." },
+    ],
+    pairsWith: ["Kefir", "Yogurt", "Garlic", "Walnuts"],
+    publishedDay: 48,
+  },
+  {
+    slug: "carrots",
+    name: "Carrots",
+    emoji: "🥕",
+    category: "Vegetables",
+    biotic: "prebiotic",
+    accentColor: "var(--icon-orange)",
+    gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
+    tagline: "Simple, accessible, and quietly powerful.",
+    description:
+      "Carrots contain a unique type of soluble fibre called calcium pectate that promotes the growth of beneficial gut bacteria. Cooking breaks down cell walls to release more beta-carotene, while raw carrots provide a satisfying crunch and more intact fibre. They are one of the most accessible and affordable prebiotic vegetables available year-round.",
+    howToEat:
+      "Eat raw with hummus for intact prebiotic fibre. Roast with cumin and honey for sweetness. Add to soups and stews as a base vegetable. Grate into overnight oats with cinnamon and kefir.",
+    science:
+      "Carrot fibre has been shown to increase short-chain fatty acid production in the colon, with particular benefits for propionate — a SCFA that supports liver metabolism and blood sugar regulation.",
+    scienceSource: "Slavin, Nutrients, 2013",
+    benefits: [
+      { title: "Calcium Pectate Fibre", detail: "A unique soluble fibre that promotes beneficial bacterial growth in the large intestine." },
+      { title: "Beta-Carotene", detail: "Converted to vitamin A in the body — essential for immune function and gut lining integrity." },
+      { title: "Affordable & Accessible", detail: "Available year-round, budget-friendly, and easy to incorporate into any meal." },
+      { title: "Versatile Preparation", detail: "Beneficial both raw (more intact fibre) and cooked (more bioavailable beta-carotene)." },
+    ],
+    pairsWith: ["Olive Oil", "Garlic", "Ginger", "Lentils"],
+    publishedDay: 50,
+  },
+  {
+    slug: "mushrooms",
+    name: "Mushrooms",
+    emoji: "🍄",
+    category: "Vegetables",
+    biotic: "prebiotic",
+    accentColor: "var(--icon-teal)",
+    gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))",
+    tagline: "Beta-glucan from the forest floor.",
+    description:
+      "Mushrooms are rich in beta-glucans — the same class of prebiotic fibre found in oats, but with a different molecular structure that activates the immune system through gut-associated lymphoid tissue. They also contain unique polysaccharides that promote the growth of Bifidobacterium and support the gut-immune axis. Shiitake, maitake, and oyster mushrooms are particularly potent.",
+    howToEat:
+      "Sauté with garlic and thyme in olive oil. Add to stir-fries with soy sauce and ginger. Roast until crispy for umami-rich salad toppings. Make a rich mushroom broth as a base for soups.",
+    science:
+      "Mushroom beta-glucans have been shown to modulate the gut immune response by activating macrophages and dendritic cells in Peyer's patches — the immune sensors of the small intestine.",
+    scienceSource: "Jayachandran et al., International Journal of Molecular Sciences, 2017",
+    benefits: [
+      { title: "Immune-Activating Beta-Glucans", detail: "Stimulate gut-associated immune cells through a unique receptor-mediated pathway." },
+      { title: "Vitamin D Source", detail: "One of the only non-animal sources of vitamin D, especially when exposed to sunlight." },
+      { title: "Prebiotic Polysaccharides", detail: "Unique fungal fibres that promote Bifidobacterium growth in the colon." },
+      { title: "Ergothioneine", detail: "A rare antioxidant amino acid that protects cells from oxidative damage." },
+    ],
+    pairsWith: ["Garlic", "Olive Oil", "Miso", "Sourdough"],
+    publishedDay: 52,
+  },
+  {
+    slug: "barley",
+    name: "Barley",
+    emoji: "🌾",
+    category: "Grains & Legumes",
+    biotic: "prebiotic",
+    accentColor: "var(--icon-yellow)",
+    gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-lime))",
+    tagline: "Ancient grain, modern microbiome benefits.",
+    description:
+      "Barley contains the highest beta-glucan content of any grain — even more than oats. This soluble fibre forms a viscous gel in the gut that slows digestion, feeds beneficial bacteria, and produces significant amounts of butyrate. Hulled barley retains the bran layer with the most fibre, while pearl barley is quicker to cook but slightly lower in prebiotic content.",
+    howToEat:
+      "Use pearl barley in soups and stews. Cook hulled barley as a grain bowl base instead of rice. Add to salads with roasted vegetables and feta. Make barley risotto with mushrooms and parmesan.",
+    science:
+      "Barley beta-glucan consumption of 3g per day has been shown to reduce LDL cholesterol by 7% while simultaneously increasing faecal Bifidobacterium counts.",
+    scienceSource: "AbuMweis et al., European Journal of Clinical Nutrition, 2010",
+    benefits: [
+      { title: "Highest Beta-Glucan", detail: "Contains more beta-glucan per serving than any other grain, including oats." },
+      { title: "Butyrate Production", detail: "Beta-glucan fermentation produces significant butyrate — the primary fuel for colon cells." },
+      { title: "Cholesterol Reduction", detail: "3g daily beta-glucan reduces LDL cholesterol by up to 7%." },
+      { title: "Sustained Energy", detail: "Slow digestion provides steady blood sugar levels for hours after eating." },
+    ],
+    pairsWith: ["Mushrooms", "Lentils", "Garlic", "Yogurt"],
+    publishedDay: 54,
+  },
+
+  // ─── NEW PROBIOTIC FOODS ──────────────────────────────────────────────────
+
+  {
+    slug: "kombucha",
+    name: "Kombucha",
+    emoji: "🍵",
+    category: "Fermented",
+    biotic: "probiotic",
+    accentColor: "var(--icon-teal)",
+    gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-lime))",
+    tagline: "Living tea with a billion-year-old recipe.",
+    description:
+      "Kombucha is a fermented tea made by introducing a SCOBY (symbiotic culture of bacteria and yeast) to sweetened tea. The fermentation produces organic acids, B vitamins, and a diverse population of live bacteria and yeasts. The acetic acid content supports digestive function, while the polyphenols from the tea base provide additional prebiotic benefits.",
+    howToEat:
+      "Drink a small glass (150-200ml) with meals to aid digestion. Use as a base for salad dressings with olive oil and herbs. Mix with sparkling water for a lighter, more refreshing drink. Choose unpasteurised varieties and check sugar content — quality kombucha has less than 5g sugar per serving.",
+    science:
+      "Kombucha fermentation produces a complex community of Acetobacter, Gluconobacter, Lactobacillus, and various yeasts, along with organic acids that support gut pH and inhibit pathogenic bacteria.",
+    scienceSource: "Jayabalan et al., Comprehensive Reviews in Food Science, 2014",
+    benefits: [
+      { title: "Diverse Microbe Community", detail: "Contains bacteria and yeasts not found in other fermented foods, increasing microbial diversity." },
+      { title: "Organic Acids", detail: "Acetic and gluconic acids support healthy gut pH and inhibit harmful bacteria." },
+      { title: "B Vitamin Production", detail: "Fermentation synthesises B1, B2, B6, and B12 — essential for energy metabolism." },
+      { title: "Polyphenol Delivery", detail: "Tea polyphenols are partially fermented into more bioavailable forms." },
+    ],
+    pairsWith: ["Kimchi", "Sauerkraut", "Ginger", "Blueberries"],
+    publishedDay: 56,
+  },
+  {
+    slug: "tempeh",
+    name: "Tempeh",
+    emoji: "🫘",
+    category: "Fermented",
+    biotic: "probiotic",
+    accentColor: "var(--icon-green)",
+    gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
+    tagline: "Fermented soy with complete protein.",
+    description:
+      "Tempeh is a traditional Indonesian fermented food made by culturing whole soybeans with Rhizopus oligosporus — a fungus that binds the beans into a dense, nutty cake. Unlike tofu, tempeh retains the whole soybean and its fibre, while fermentation increases protein digestibility by up to 30% and reduces anti-nutritional factors like phytic acid.",
+    howToEat:
+      "Slice and pan-fry in sesame oil until golden and crispy. Marinate in soy sauce, garlic, and ginger before grilling. Crumble into stir-fries as a meat substitute. Steam and add to grain bowls with kimchi and vegetables.",
+    science:
+      "Tempeh fermentation produces significant quantities of vitamin B12 — rare in plant foods — along with bioactive peptides that have demonstrated ACE-inhibitory (blood pressure lowering) effects.",
+    scienceSource: "Nout & Kiers, Journal of Applied Microbiology, 2005",
+    benefits: [
+      { title: "Complete Protein", detail: "All 9 essential amino acids with 20g protein per 100g — more digestible than unfermented soy." },
+      { title: "Vitamin B12 Production", detail: "One of the few plant foods that naturally contains B12, produced during fermentation." },
+      { title: "Reduced Anti-nutrients", detail: "Fermentation breaks down phytic acid, increasing mineral absorption by up to 60%." },
+      { title: "Prebiotic Fibre", detail: "Retains the whole soybean's fibre, providing both probiotic cultures and prebiotic fuel." },
+    ],
+    pairsWith: ["Kimchi", "Miso", "Garlic", "Olive Oil"],
+    publishedDay: 58,
+  },
+  {
+    slug: "pickles",
+    name: "Pickles",
+    emoji: "🥒",
+    category: "Fermented",
+    biotic: "probiotic",
+    accentColor: "var(--icon-green)",
+    gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-lime))",
+    tagline: "Salt, water, time — the oldest probiotic recipe.",
+    description:
+      "Naturally fermented pickles (lacto-fermented, not vinegar-pickled) are among the simplest probiotic foods. Cucumbers submerged in saltwater develop a thriving Lactobacillus culture that produces lactic acid, preserving the vegetable and creating billions of live bacteria per serving. The key is choosing refrigerated pickles with no vinegar in the ingredient list.",
+    howToEat:
+      "Eat a few spears alongside any meal as a probiotic side. Chop into potato salads, grain bowls, or onto sandwiches. Drink a small amount of the brine for a concentrated dose of Lactobacillus. Make your own — cucumbers, salt, water, garlic, and dill in a jar for 3-5 days.",
+    science:
+      "Lacto-fermented pickles contain 1-10 billion CFU of Lactobacillus per serving, with L. plantarum and L. brevis being the dominant strains — both well-studied for their gut health benefits.",
+    scienceSource: "Peres et al., Food Microbiology, 2012",
+    benefits: [
+      { title: "Lactobacillus Rich", detail: "Billions of live L. plantarum and L. brevis per serving — proven gut-supporting strains." },
+      { title: "Electrolyte Source", detail: "The brine provides sodium and potassium for hydration and muscle function." },
+      { title: "Zero Sugar", detail: "Fermentation consumes sugars, leaving a low-calorie, high-probiotic food." },
+      { title: "Easy to Make", detail: "One of the simplest fermented foods to prepare at home with just salt and water." },
+    ],
+    pairsWith: ["Sauerkraut", "Sourdough", "Eggs", "Oats"],
+    publishedDay: 60,
+  },
+  {
+    slug: "aged-cheese",
+    name: "Aged Cheese",
+    emoji: "🧀",
+    category: "Dairy",
+    biotic: "probiotic",
+    accentColor: "var(--icon-teal)",
+    gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-yellow))",
+    tagline: "Time transforms milk into a living probiotic food.",
+    description:
+      "Aged cheeses like cheddar, gouda, parmesan, and gruyère undergo months or years of bacterial fermentation that produces diverse probiotic cultures. The long ageing process also breaks down lactose — making aged cheese tolerable for many lactose-intolerant people. Irish cheddar, made from grass-fed milk, contains higher levels of CLA and fat-soluble vitamins.",
+    howToEat:
+      "Grate aged parmesan over soups, salads, and grain bowls. Slice mature cheddar with apple and walnuts for a snack. Add crumbled gouda to roasted vegetables. Choose cheese aged 6+ months for maximum probiotic diversity and minimal lactose.",
+    science:
+      "Aged cheeses contain diverse Lactobacillus, Lactococcus, and Propionibacterium populations that survive stomach acid and reach the colon alive — contributing to microbial diversity.",
+    scienceSource: "Marco et al., Current Opinion in Biotechnology, 2017",
+    county: "Cork",
+    benefits: [
+      { title: "Diverse Probiotic Cultures", detail: "Months of ageing develops Lactobacillus, Lactococcus, and Propionibacterium communities." },
+      { title: "Low Lactose", detail: "Fermentation breaks down most lactose — tolerable for many lactose-intolerant individuals." },
+      { title: "CLA Content", detail: "Grass-fed cheese contains conjugated linoleic acid — an anti-inflammatory fatty acid." },
+      { title: "Calcium & K2", detail: "Rich in calcium and vitamin K2, which directs calcium into bones rather than arteries." },
+    ],
+    pairsWith: ["Walnuts", "Sourdough", "Apple Cider Vinegar", "Oats"],
+    publishedDay: 62,
+  },
+  {
+    slug: "water-kefir",
+    name: "Water Kefir",
+    emoji: "🥤",
+    category: "Fermented",
+    biotic: "probiotic",
+    accentColor: "var(--icon-lime)",
+    gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-teal))",
+    tagline: "Dairy-free probiotic fizz.",
+    description:
+      "Water kefir is a dairy-free fermented beverage made by culturing sugar water with water kefir grains — translucent, jelly-like granules of bacteria and yeast. It produces a lightly fizzy, tangy drink teeming with diverse probiotic strains. Unlike milk kefir, water kefir is suitable for vegans and those avoiding dairy, while still delivering significant microbial diversity.",
+    howToEat:
+      "Drink 150-200ml daily as a probiotic beverage. Flavour with fresh fruit juice, ginger, or lemon during a second fermentation. Use as a base for smoothies instead of plain water. Keep water kefir grains alive by feeding with sugar water every 24-48 hours.",
+    science:
+      "Water kefir grains harbour up to 56 different bacterial and yeast species, producing a fermented beverage with greater microbial diversity than most commercial probiotic supplements.",
+    scienceSource: "Gulitz et al., International Journal of Food Microbiology, 2011",
+    benefits: [
+      { title: "High Microbial Diversity", detail: "Up to 56 species of bacteria and yeast — broader than most commercial probiotics." },
+      { title: "Dairy-Free", detail: "A vegan-friendly probiotic option with no lactose, casein, or animal products." },
+      { title: "Low Sugar", detail: "Fermentation consumes most of the sugar, leaving 2-3g per serving." },
+      { title: "Refreshing Alternative", detail: "A naturally fizzy replacement for sugar-laden soft drinks." },
+    ],
+    pairsWith: ["Kombucha", "Blueberries", "Ginger", "Oats"],
+    publishedDay: 64,
+  },
+
+  // ─── NEW POSTBIOTIC FOODS ─────────────────────────────────────────────────
+
+  {
+    slug: "turmeric",
+    name: "Turmeric",
+    emoji: "🟡",
+    category: "Herbs & Spices",
+    biotic: "postbiotic",
+    accentColor: "var(--icon-orange)",
+    gradient: "linear-gradient(135deg, var(--icon-orange), var(--icon-yellow))",
+    tagline: "The golden spice that remodels your gut bacteria.",
+    description:
+      "Turmeric contains curcumin — a polyphenol that reaches the colon largely intact, where gut bacteria metabolise it into more potent anti-inflammatory metabolites. This makes turmeric both a prebiotic (feeding specific bacteria) and a postbiotic generator. Curcumin also supports the integrity of the intestinal barrier and modulates the gut immune response.",
+    howToEat:
+      "Always combine with black pepper — piperine increases curcumin absorption by 2000%. Add to scrambled eggs, rice dishes, and soups. Make golden milk with warm milk, turmeric, black pepper, and honey. Use fresh root grated into stir-fries and smoothies.",
+    science:
+      "Curcumin modulates the gut microbiome by increasing Bifidobacterium and Lactobacillus while reducing pro-inflammatory Enterobacteriaceae. Its metabolites produced by gut bacteria show enhanced anti-inflammatory activity compared to curcumin itself.",
+    scienceSource: "Scazzocchio et al., Nutrients, 2020",
+    benefits: [
+      { title: "Curcumin", detail: "A polyphenol that gut bacteria convert into potent anti-inflammatory metabolites." },
+      { title: "Gut Barrier Support", detail: "Strengthens tight junctions between intestinal cells, reducing permeability." },
+      { title: "Immune Modulation", detail: "Balances the gut immune response — reducing overactivation without suppressing defence." },
+      { title: "Enhanced by Bacteria", detail: "Gut microbes convert curcumin into more bioactive compounds than the original spice." },
+    ],
+    pairsWith: ["Ginger", "Olive Oil", "Garlic", "Oats"],
+    publishedDay: 66,
+  },
+  {
+    slug: "ginger",
+    name: "Ginger",
+    emoji: "🫚",
+    category: "Herbs & Spices",
+    biotic: "postbiotic",
+    accentColor: "var(--icon-yellow)",
+    gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
+    tagline: "Ancient root, modern gut science.",
+    description:
+      "Ginger contains gingerols and shogaols — bioactive compounds that stimulate digestive enzyme production, reduce gut inflammation, and accelerate gastric emptying. These compounds are partially metabolised by gut bacteria into anti-inflammatory postbiotic metabolites. Ginger has been used for digestive support for over 5,000 years across Asian and Ayurvedic traditions.",
+    howToEat:
+      "Grate fresh ginger into stir-fries, soups, and curries. Brew ginger tea by steeping sliced root in hot water for 5 minutes. Add to smoothies with banana and turmeric. Pickle in rice vinegar for a probiotic-friendly condiment.",
+    science:
+      "Gingerols increase gastric motility by up to 50%, reduce nausea through serotonin receptor modulation, and have demonstrated significant anti-inflammatory effects in the GI tract.",
+    scienceSource: "Nikkhah Bodagh et al., Food Science & Nutrition, 2019",
+    benefits: [
+      { title: "Digestive Stimulant", detail: "Increases gastric motility by up to 50%, reducing bloating and discomfort." },
+      { title: "Anti-Nausea", detail: "Proven to reduce nausea through serotonin receptor modulation in the gut." },
+      { title: "Anti-inflammatory", detail: "Gingerols reduce gut inflammation via COX-2 and NF-kB pathway inhibition." },
+      { title: "Enzyme Production", detail: "Stimulates production of digestive enzymes for improved nutrient absorption." },
+    ],
+    pairsWith: ["Turmeric", "Garlic", "Kimchi", "Kombucha"],
+    publishedDay: 68,
+  },
+  {
+    slug: "walnuts",
+    name: "Walnuts",
+    emoji: "🥜",
+    category: "Nuts & Seeds",
+    biotic: "postbiotic",
+    accentColor: "var(--icon-orange)",
+    gradient: "linear-gradient(135deg, var(--icon-orange), var(--icon-teal))",
+    tagline: "The nut that reshapes your microbiome.",
+    description:
+      "Walnuts are unique among nuts for their combination of omega-3 fatty acids (ALA), polyphenols (ellagitannins), and prebiotic fibre. Gut bacteria convert walnut ellagitannins into urolithins — powerful postbiotic compounds with anti-inflammatory and anti-ageing properties. Just a handful daily has been shown to significantly shift microbiome composition toward beneficial species.",
+    howToEat:
+      "Eat a small handful (30g) daily as a snack. Crush and sprinkle over yogurt, oats, or salads. Add to pesto with basil and olive oil. Toast lightly to enhance flavour without destroying omega-3s.",
+    science:
+      "A 3-week walnut feeding study showed significant increases in Faecalibacterium, Roseburia, and Clostridium — all butyrate-producing bacteria — along with increased urolithin production.",
+    scienceSource: "Holscher et al., Journal of Nutrition, 2018",
+    benefits: [
+      { title: "Urolithin Production", detail: "Gut bacteria convert walnut ellagitannins into urolithins — potent anti-inflammatory postbiotics." },
+      { title: "Omega-3 ALA", detail: "The richest nut source of plant-based omega-3 fatty acids for reducing inflammation." },
+      { title: "Microbiome Shift", detail: "Just 43g daily significantly increases butyrate-producing bacterial populations." },
+      { title: "Brain-Gut Connection", detail: "The combination of omega-3s and gut-derived urolithins supports cognitive function." },
+    ],
+    pairsWith: ["Yogurt", "Blueberries", "Oats", "Dark Chocolate"],
+    publishedDay: 70,
+  },
+  {
+    slug: "cocoa-powder",
+    name: "Cocoa Powder",
+    emoji: "🍫",
+    category: "Herbs & Spices",
+    biotic: "postbiotic",
+    accentColor: "var(--icon-orange)",
+    gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
+    tagline: "Raw cacao — the original superfood.",
+    description:
+      "Raw cocoa powder is one of the most concentrated sources of polyphenols in the human diet — containing more flavanols per gram than blueberries, green tea, or red wine. These polyphenols reach the colon intact, where gut bacteria ferment them into anti-inflammatory postbiotic metabolites. Cocoa also contains theobromine, a gentle stimulant that supports focus without the jitters of caffeine.",
+    howToEat:
+      "Add 1-2 tablespoons of raw cacao powder to smoothies with banana and kefir. Stir into overnight oats. Make a hot chocolate with warm milk and a touch of honey. Choose raw cacao over Dutch-processed cocoa, which has reduced polyphenol content.",
+    science:
+      "Cocoa flavanols are fermented by Bifidobacterium and Lactobacillus into bioactive metabolites that reduce colonic inflammation and improve endothelial function within 2 hours of consumption.",
+    scienceSource: "Tzounis et al., American Journal of Clinical Nutrition, 2011",
+    benefits: [
+      { title: "Highest Polyphenol Density", detail: "More flavanols per gram than any commonly consumed food — a potent prebiotic fuel." },
+      { title: "Postbiotic Generator", detail: "Gut bacteria convert cocoa flavanols into anti-inflammatory metabolites." },
+      { title: "Cardiovascular Support", detail: "Flavanol metabolites improve blood vessel function within hours of consumption." },
+      { title: "Theobromine", detail: "A gentle stimulant that supports focus and mood without the crash of caffeine." },
+    ],
+    pairsWith: ["Kefir", "Banana", "Oats", "Walnuts"],
+    publishedDay: 72,
+  },
+  {
+    slug: "pomegranate",
+    name: "Pomegranate",
+    emoji: "🍎",
+    category: "Fruit",
+    biotic: "postbiotic",
+    accentColor: "var(--icon-orange)",
+    gradient: "linear-gradient(135deg, var(--icon-orange), var(--icon-yellow))",
+    tagline: "The fruit that makes your gut bacteria work hardest.",
+    description:
+      "Pomegranate is exceptionally rich in ellagitannins — the same class of polyphenol found in walnuts. Gut bacteria convert these into urolithins, which have potent anti-inflammatory and mitophagy-enhancing effects (helping cells clear damaged mitochondria). The juice, seeds, and pith all contain different beneficial compounds, making the whole fruit more valuable than juice alone.",
+    howToEat:
+      "Scatter seeds over yogurt, oats, or salads for a burst of colour and crunch. Drink a small glass (100ml) of pure juice with meals. Add seeds to grain bowls with feta and mint. Use pomegranate molasses as a salad dressing base.",
+    science:
+      "Urolithin A, produced by gut bacteria from pomegranate ellagitannins, has been shown to enhance mitophagy and improve muscle function in older adults — a breakthrough in ageing research.",
+    scienceSource: "Andreux et al., Nature Metabolism, 2019",
+    benefits: [
+      { title: "Urolithin A Production", detail: "Gut bacteria convert ellagitannins into urolithin A — a compound that enhances cellular clean-up." },
+      { title: "Mitophagy Enhancement", detail: "Urolithins help cells clear damaged mitochondria, supporting healthy ageing." },
+      { title: "Anti-inflammatory", detail: "Multiple polyphenol classes work synergistically to reduce systemic inflammation." },
+      { title: "Punicic Acid", detail: "Seed oil contains a unique fatty acid that supports gut barrier function." },
+    ],
+    pairsWith: ["Yogurt", "Walnuts", "Dark Chocolate", "Green Tea"],
+    publishedDay: 74,
+  },
+  {
+    slug: "mixed-berries",
+    name: "Mixed Berries",
+    emoji: "🍓",
+    category: "Fruit",
+    biotic: "postbiotic",
+    accentColor: "var(--icon-teal)",
+    gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-orange))",
+    tagline: "Colour diversity is polyphenol diversity.",
+    description:
+      "Combining different berries — strawberries, raspberries, blackberries, and blueberries — delivers a broader spectrum of polyphenols than any single berry alone. Each colour represents different compounds: red (ellagic acid), blue-purple (anthocyanins), dark (proanthocyanidins). Gut bacteria ferment these into diverse postbiotic metabolites that support different aspects of gut and systemic health.",
+    howToEat:
+      "Buy frozen mixed berries for year-round access at lower cost. Add to overnight oats with kefir. Blend into smoothies with banana and flaxseed. Defrost and serve over yogurt with a drizzle of honey and crushed walnuts.",
+    science:
+      "A diverse berry intake provides complementary polyphenol profiles that gut bacteria ferment into a wider range of anti-inflammatory metabolites than any single berry type alone.",
+    scienceSource: "Nile & Park, Nutrition, 2014",
+    benefits: [
+      { title: "Polyphenol Diversity", detail: "Multiple berry types deliver complementary polyphenol classes for broader microbiome benefits." },
+      { title: "Year-Round Access", detail: "Frozen berries retain polyphenol content and are available and affordable in any season." },
+      { title: "Anthocyanin Spectrum", detail: "Different colours provide different anthocyanins — each feeding different bacterial populations." },
+      { title: "Fibre Boost", detail: "Berries are among the highest-fibre fruits, supporting overall gut transit and microbial feeding." },
+    ],
+    pairsWith: ["Kefir", "Yogurt", "Oats", "Walnuts"],
+    publishedDay: 76,
+  },
+
+  // ─── NEW PROTEIN FOODS ────────────────────────────────────────────────────
+
+  {
+    slug: "sardines",
+    name: "Sardines",
+    emoji: "🐟",
+    category: "Protein",
+    biotic: "protein",
+    accentColor: "var(--icon-yellow)",
+    gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-teal))",
+    tagline: "Small fish, enormous gut and brain benefits.",
+    description:
+      "Sardines are one of the most nutrient-dense foods on the planet — packed with omega-3 EPA and DHA, complete protein, calcium (from edible bones), and vitamin D. The omega-3 fatty acids reduce gut inflammation and support the integrity of the intestinal barrier. Being low on the food chain, sardines accumulate virtually no mercury or heavy metals.",
+    howToEat:
+      "Eat straight from the tin on sourdough toast with lemon and olive oil. Add to pasta with garlic, chilli, and cherry tomatoes. Mash into a spread with avocado and capers. Choose sardines packed in olive oil for additional healthy fats.",
+    science:
+      "Omega-3 fatty acids from oily fish reduce intestinal inflammation by resolving inflammatory cascades via specialised pro-resolving mediators (SPMs), directly supporting gut barrier integrity.",
+    scienceSource: "Costantini et al., International Journal of Molecular Sciences, 2017",
+    county: "Kerry",
+    benefits: [
+      { title: "Omega-3 Rich", detail: "Among the highest sources of EPA and DHA for reducing gut and systemic inflammation." },
+      { title: "Complete Protein", detail: "25g protein per 100g with all essential amino acids." },
+      { title: "Low Mercury", detail: "Small fish at the bottom of the food chain — virtually no heavy metal accumulation." },
+      { title: "Calcium from Bones", detail: "Edible bones provide highly bioavailable calcium — 382mg per 100g." },
+    ],
+    pairsWith: ["Olive Oil", "Garlic", "Sourdough", "Leeks"],
+    publishedDay: 78,
+  },
+  {
+    slug: "mackerel",
+    name: "Mackerel",
+    emoji: "🐠",
+    category: "Protein",
+    biotic: "protein",
+    accentColor: "var(--icon-teal)",
+    gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-yellow))",
+    tagline: "Ireland's most omega-3 rich wild fish.",
+    description:
+      "Atlantic mackerel is one of the richest sources of omega-3 fatty acids — providing up to 2.6g of combined EPA and DHA per 100g serving. These long-chain omega-3s are directly incorporated into cell membranes throughout the body, including gut epithelial cells, where they strengthen the intestinal barrier and reduce inflammatory signalling.",
+    howToEat:
+      "Grill whole mackerel with lemon and herbs for 8-10 minutes per side. Smoke and flake over salads with beetroot and horseradish. Use tinned mackerel in pâté with cream cheese and chives. Bake fillets with a mustard and oat crust.",
+    science:
+      "Regular oily fish consumption (2+ servings per week) is associated with increased microbial diversity, higher Lactobacillus populations, and reduced markers of intestinal permeability.",
+    scienceSource: "Watson et al., Gut Microbes, 2018",
+    county: "Galway",
+    benefits: [
+      { title: "Highest Omega-3 Content", detail: "Up to 2.6g EPA+DHA per 100g — more than any other commonly eaten fish." },
+      { title: "Gut Barrier Integrity", detail: "Omega-3s are incorporated directly into gut cell membranes, strengthening the barrier." },
+      { title: "Anti-inflammatory", detail: "Resolves inflammation via specialised pro-resolving mediators produced from EPA/DHA." },
+      { title: "Vitamin D", detail: "One of the best dietary sources of vitamin D — essential for immune function." },
+    ],
+    pairsWith: ["Beetroot", "Olive Oil", "Garlic", "Sauerkraut"],
+    publishedDay: 80,
+  },
+  {
+    slug: "hemp-seeds",
+    name: "Hemp Seeds",
+    emoji: "🌱",
+    category: "Nuts & Seeds",
+    biotic: "protein",
+    accentColor: "var(--icon-lime)",
+    gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-yellow))",
+    tagline: "Complete plant protein with the perfect omega ratio.",
+    description:
+      "Hemp seeds (hemp hearts) deliver complete protein with all 9 essential amino acids, along with an ideal 3:1 ratio of omega-6 to omega-3 fatty acids. They contain gamma-linolenic acid (GLA) — an anti-inflammatory fatty acid rarely found in foods. The high fibre content of whole hemp seeds feeds beneficial gut bacteria.",
+    howToEat:
+      "Sprinkle 2-3 tablespoons over salads, yogurt, or oats. Blend into smoothies for a protein boost. Add to homemade granola. Use hemp seed butter as an alternative to peanut butter.",
+    science:
+      "Hemp seed protein is 91-98% digestible — higher than most plant proteins — and its GLA content has been shown to modulate the inflammatory response via prostaglandin production.",
+    scienceSource: "House et al., Journal of Agricultural and Food Chemistry, 2010",
+    benefits: [
+      { title: "Complete Plant Protein", detail: "All 9 essential amino acids with 31g protein per 100g — 91-98% digestible." },
+      { title: "Ideal Omega Ratio", detail: "3:1 omega-6 to omega-3 ratio — considered optimal for anti-inflammatory balance." },
+      { title: "GLA Content", detail: "Gamma-linolenic acid modulates inflammation — rarely found in other food sources." },
+      { title: "Mineral Dense", detail: "Rich in magnesium, zinc, and iron — essential cofactors for gut enzyme function." },
+    ],
+    pairsWith: ["Yogurt", "Blueberries", "Oats", "Banana"],
+    publishedDay: 82,
+  },
+  {
+    slug: "quinoa",
+    name: "Quinoa",
+    emoji: "🍚",
+    category: "Grains & Legumes",
+    biotic: "protein",
+    accentColor: "var(--icon-yellow)",
+    gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-lime))",
+    tagline: "A seed disguised as a grain — with complete protein.",
+    description:
+      "Quinoa is technically a seed, not a grain, delivering complete protein with all essential amino acids — unusual for plant foods. It is naturally gluten-free and rich in fibre (5g per cup cooked), saponins with immune-modulating properties, and polyphenols that feed beneficial gut bacteria. Red, black, and white quinoa each offer slightly different polyphenol profiles.",
+    howToEat:
+      "Use as a grain bowl base with roasted vegetables and tahini. Add to salads with herbs, lemon, and olive oil. Cook as a porridge with milk, cinnamon, and blueberries. Use quinoa flour in baking for added protein and fibre.",
+    science:
+      "Quinoa fibre and polyphenols have been shown to increase butyrate production in the colon while its saponins demonstrate immunomodulatory effects on gut-associated lymphoid tissue.",
+    scienceSource: "Li et al., Food Chemistry, 2018",
+    benefits: [
+      { title: "Complete Protein", detail: "All 9 essential amino acids — 8g protein per cup, rare among plant foods." },
+      { title: "Gluten-Free", detail: "Naturally gluten-free seed — suitable for coeliac and gluten-sensitive individuals." },
+      { title: "Diverse Polyphenols", detail: "Red, black, and white varieties offer complementary polyphenol profiles." },
+      { title: "Saponin Immunity", detail: "Natural saponins modulate immune responses via gut-associated immune tissue." },
+    ],
+    pairsWith: ["Olive Oil", "Lentils", "Garlic", "Kimchi"],
+    publishedDay: 84,
+  },
+  {
+    slug: "tofu",
+    name: "Tofu",
+    emoji: "🧊",
+    category: "Protein",
+    biotic: "protein",
+    accentColor: "var(--icon-yellow)",
+    gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-green))",
+    tagline: "Clean protein that your gut bacteria appreciate.",
+    description:
+      "Tofu is a minimally processed soy product that provides high-quality plant protein along with isoflavones — phytoestrogens that gut bacteria convert into equol, a potent antioxidant. Firm tofu contains 17g protein per 100g with very little saturated fat. The soy oligosaccharides in tofu act as mild prebiotics, feeding Bifidobacterium populations.",
+    howToEat:
+      "Press firm tofu and pan-fry until golden. Marinate in soy sauce, ginger, and sesame before grilling. Crumble silken tofu into smoothies for protein. Add cubed tofu to miso soup with seaweed and spring onions.",
+    science:
+      "Soy isoflavones are converted by gut bacteria into equol — a metabolite with antioxidant activity 10 times stronger than the original isoflavone, though only 30-50% of people harbour equol-producing bacteria.",
+    scienceSource: "Setchell et al., American Journal of Clinical Nutrition, 2002",
+    benefits: [
+      { title: "High-Quality Protein", detail: "17g complete protein per 100g with all essential amino acids." },
+      { title: "Isoflavone Conversion", detail: "Gut bacteria convert isoflavones into equol — a potent antioxidant metabolite." },
+      { title: "Prebiotic Oligosaccharides", detail: "Soy oligosaccharides in tofu feed Bifidobacterium populations." },
+      { title: "Low Saturated Fat", detail: "A lean protein source with minimal saturated fat compared to animal proteins." },
+    ],
+    pairsWith: ["Miso", "Kimchi", "Garlic", "Ginger"],
+    publishedDay: 86,
+  },
+  {
+    slug: "chickpeas",
+    name: "Chickpeas",
+    emoji: "🫘",
+    category: "Grains & Legumes",
+    biotic: "protein",
+    accentColor: "var(--icon-yellow)",
+    gradient: "linear-gradient(135deg, var(--icon-orange), var(--icon-yellow))",
+    tagline: "The legume that does everything.",
+    description:
+      "Chickpeas deliver a rare combination of plant protein (19g per 100g dried), resistant starch, and diverse prebiotic fibres including raffinose and stachyose — oligosaccharides that selectively feed Bifidobacterium. They are one of the most versatile legumes, forming the base of hummus, falafel, and countless Mediterranean and Middle Eastern dishes that epitomise gut-healthy eating patterns.",
+    howToEat:
+      "Make hummus with tahini, lemon, garlic, and olive oil. Roast with cumin and smoked paprika for a crunchy snack. Add to curries, soups, and stews for protein and fibre. Toss into salads with feta, cucumber, and herbs.",
+    science:
+      "Chickpea consumption significantly increases Bifidobacterium and Faecalibacterium prausnitzii populations while increasing butyrate and propionate production in controlled feeding studies.",
+    scienceSource: "Fernando et al., British Journal of Nutrition, 2010",
+    benefits: [
+      { title: "Dual Protein + Fibre", detail: "19g protein and 17g fibre per 100g dried — few foods deliver both so effectively." },
+      { title: "Resistant Starch", detail: "Cooked-and-cooled chickpeas develop resistant starch that feeds butyrate-producing bacteria." },
+      { title: "Raffinose Prebiotic", detail: "Contains raffinose and stachyose — oligosaccharides that selectively feed Bifidobacterium." },
+      { title: "Versatile Staple", detail: "Forms the base of hummus, falafel, and countless gut-healthy Mediterranean dishes." },
+    ],
+    pairsWith: ["Garlic", "Olive Oil", "Yogurt", "Turmeric"],
+    publishedDay: 88,
+  },
 ]
 
 // Get today's food based on the day of the year

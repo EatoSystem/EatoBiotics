@@ -2,13 +2,18 @@ import type { Metadata } from "next"
 import Image from "next/image"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { GradientText } from "@/components/gradient-text"
+import { IPhoneCarousel } from "@/components/app/iphone-carousel"
 import { IPhoneMockup } from "@/components/app/iphone-mockup"
-import { Activity, Apple, BarChart3, Utensils } from "lucide-react"
+import { BioticsScoreCalculator } from "@/components/app/biotics-score-calculator"
+import { PlateBuilder } from "@/components/app/plate-builder"
+import { PlantTracker } from "@/components/app/plant-tracker"
+import { FeatureDeepDive } from "@/components/app/feature-deep-dive"
+import { Activity, Apple, BarChart3, Utensils, Leaf, ChefHat } from "lucide-react"
 
 export const metadata: Metadata = {
   title: "The App",
   description:
-    "Track your Biotics Score and build better food habits with the EatoBiotics companion app.",
+    "Track your Biotics Score and build better food habits with the EatoBiotics companion app. Try our free interactive tools today.",
 }
 
 const features = [
@@ -19,6 +24,7 @@ const features = [
     gradientTo: "var(--icon-green)",
     description:
       "A daily 0-100 score that measures how well your food choices support your microbiome across all three biotic types.",
+    anchor: "#score-calculator",
   },
   {
     icon: Utensils,
@@ -27,6 +33,7 @@ const features = [
     gradientTo: "var(--icon-green)",
     description:
       "Log meals with auto-tagging for prebiotic, probiotic, and postbiotic foods. See your biotic balance at a glance.",
+    anchor: "#plate-tracker",
   },
   {
     icon: Activity,
@@ -35,6 +42,7 @@ const features = [
     gradientTo: "var(--icon-yellow)",
     description:
       "Track your progress over weeks and months. See how dietary changes correlate with how you feel.",
+    anchor: "#score-calculator",
   },
   {
     icon: Apple,
@@ -42,19 +50,20 @@ const features = [
     color: "var(--icon-yellow)",
     gradientTo: "var(--icon-orange)",
     description:
-      "Browse a growing library of foods with detailed breakdowns of their prebiotic, probiotic, and postbiotic properties.",
+      "Browse a growing library of 50+ foods with detailed breakdowns of their prebiotic, probiotic, and postbiotic properties.",
+    anchor: "/food",
   },
 ]
 
 export default function AppPage() {
   return (
     <>
-      {/* Hero */}
+      {/* ─── 1. HERO ─────────────────────────────────────────────────── */}
       <section className="relative px-6 pt-32 pb-20 md:pt-40 md:pb-28">
         <div className="mx-auto max-w-[1200px]">
           <div className="flex flex-col items-center gap-12 md:flex-row md:gap-20">
             <ScrollReveal>
-              <IPhoneMockup />
+              <IPhoneCarousel />
             </ScrollReveal>
 
             <div className="flex-1 text-center md:text-left">
@@ -67,7 +76,7 @@ export default function AppPage() {
                   className="mx-auto mb-4 h-12 w-12 md:mx-0"
                 />
                 <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
-                  The App - Coming Soon
+                  The App — Coming Soon
                 </p>
                 <h1 className="mt-4 font-serif text-4xl font-semibold text-foreground sm:text-5xl md:text-6xl text-balance">
                   The <GradientText>EatoBiotics</GradientText> App
@@ -84,7 +93,7 @@ export default function AppPage() {
                   <span className="biotic-pill bg-icon-yellow" />
                   <span className="biotic-pill bg-icon-orange" />
                 </div>
-                <div className="mt-8">
+                <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row md:justify-start">
                   <a
                     href="https://eatobiotics.substack.com/"
                     target="_blank"
@@ -93,6 +102,12 @@ export default function AppPage() {
                   >
                     Get Notified at Launch
                   </a>
+                  <a
+                    href="#score-calculator"
+                    className="inline-block rounded-full border border-border px-8 py-4 text-base font-semibold text-foreground transition-all hover:bg-muted"
+                  >
+                    Try the Tools ↓
+                  </a>
                 </div>
               </ScrollReveal>
             </div>
@@ -100,48 +115,215 @@ export default function AppPage() {
         </div>
       </section>
 
-      {/* Gradient divider */}
+      {/* ─── divider ──────────────────────────────────────────────── */}
       <div className="section-divider" />
 
-      {/* Features */}
-      <section className="px-6 py-32 md:py-40">
+      {/* ─── 2. BIOTICS SCORE CALCULATOR (interactive) ────────────── */}
+      <BioticsScoreCalculator />
+
+      {/* ─── divider ──────────────────────────────────────────────── */}
+      <div className="section-divider" />
+
+      {/* ─── 3. DEEP-DIVE: Biotics Score ─────────────────────────── */}
+      <FeatureDeepDive
+        index={0}
+        icon={BarChart3}
+        iconColor="var(--icon-lime)"
+        label="Biotics Score"
+        title="One Number for Your Gut Health"
+        description="Your Biotics Score distills the complexity of microbiome nutrition into a single, actionable number. It tracks how well your daily food choices cover all three biotic types — prebiotic, probiotic, and postbiotic — with bonuses for diversity and plant variety."
+        bullets={[
+          "Scores from 0-100 with diminishing returns that reward balance over excess",
+          "Diversity bonus rewards eating across different food categories",
+          "Plant bonus scales up to +20 points as you approach 30 weekly plants",
+          "Contextual suggestions guide you toward a higher score each day",
+        ]}
+        mockup={<IPhoneMockup />}
+      />
+
+      {/* ─── 4. DEEP-DIVE: Food Logging ──────────────────────────── */}
+      <FeatureDeepDive
+        index={1}
+        icon={Utensils}
+        iconColor="var(--icon-teal)"
+        label="Food Logging"
+        title="Log Meals, See Your Biotics"
+        description="Every food you log is automatically tagged as prebiotic, probiotic, postbiotic, or protein. At a glance you can see how balanced your day is — and where the gaps are."
+        bullets={[
+          "Auto-tagging for all 50+ foods in the EatoBiotics database",
+          "Meal-by-meal breakdown with per-biotic contribution scores",
+          "Quick-add from your favourites and recently logged foods",
+          "Visual biotic balance indicator updates after every meal",
+        ]}
+        mockup={<IPhoneMockup />}
+      />
+
+      {/* ─── divider ──────────────────────────────────────────────── */}
+      <div className="section-divider" />
+
+      {/* ─── 5. PLATE BUILDER + PLANT TRACKER (interactive) ───────── */}
+      <section className="px-6 py-20 md:py-28" id="plate-tracker">
+        <div className="mx-auto max-w-[1200px]">
+          <ScrollReveal>
+            <p className="text-center text-xs font-semibold uppercase tracking-widest text-icon-teal">
+              Try It Now
+            </p>
+            <h2 className="mt-4 text-center font-serif text-3xl font-semibold text-foreground sm:text-4xl md:text-5xl">
+              Build Your Plate &amp; Track Your Plants
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl text-center text-sm leading-relaxed text-muted-foreground sm:text-base">
+              Fill all four quadrants of the EatoBiotics Plate and aim for 30 different
+              plants each week. Your progress is saved automatically.
+            </p>
+          </ScrollReveal>
+
+          <div className="mt-12 grid gap-10 lg:grid-cols-2">
+            <ScrollReveal delay={0}>
+              <div className="rounded-2xl border border-border bg-background p-6">
+                <PlateBuilder />
+              </div>
+            </ScrollReveal>
+            <ScrollReveal delay={100}>
+              <div className="rounded-2xl border border-border bg-background p-6">
+                <PlantTracker />
+              </div>
+            </ScrollReveal>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── divider ──────────────────────────────────────────────── */}
+      <div className="section-divider" />
+
+      {/* ─── 6. DEEP-DIVE: Gut Health Trends ─────────────────────── */}
+      <FeatureDeepDive
+        index={2}
+        icon={Activity}
+        iconColor="var(--icon-orange)"
+        label="Gut Health Trends"
+        title="See Your Progress Over Time"
+        description="Your daily scores paint a picture over weeks and months. Spot patterns, celebrate streaks, and understand how dietary changes correlate with how you feel."
+        bullets={[
+          "Weekly and monthly trend charts with colour-coded score bands",
+          "Biotic balance breakdown shows your Pre / Pro / Post ratio over time",
+          "Compare week-over-week to see what is working for you",
+          "Gentle nudges when your score trend dips below your average",
+        ]}
+        mockup={<IPhoneMockup />}
+      />
+
+      {/* ─── 7. DEEP-DIVE: Food Profiles ─────────────────────────── */}
+      <FeatureDeepDive
+        index={3}
+        icon={Apple}
+        iconColor="var(--icon-yellow)"
+        label="Food Profiles"
+        title="Discover What Each Food Does"
+        description="Every food in the EatoBiotics library comes with a detailed breakdown of its biotic properties, key benefits, science-backed notes, and pairing suggestions."
+        bullets={[
+          "50+ foods with prebiotic, probiotic, and postbiotic ratings",
+          "Evidence-based science notes with linked source studies",
+          "Pairing suggestions to maximise biotic absorption",
+          "Organised by category — from vegetables and grains to fermented foods",
+        ]}
+        mockup={<IPhoneMockup />}
+      />
+
+      {/* ─── divider ──────────────────────────────────────────────── */}
+      <div className="section-divider" />
+
+      {/* ─── 8. FEATURES GRID ────────────────────────────────────── */}
+      <section className="px-6 py-20 md:py-28">
         <div className="mx-auto max-w-[1200px]">
           <ScrollReveal>
             <p className="text-center text-xs font-semibold uppercase tracking-widest text-icon-teal">
               Features
             </p>
-            <h2 className="mt-4 text-center font-serif text-4xl font-semibold text-foreground sm:text-5xl">
+            <h2 className="mt-4 text-center font-serif text-3xl font-semibold text-foreground sm:text-4xl md:text-5xl">
               Built for Your Microbiome
             </h2>
           </ScrollReveal>
 
-          <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:gap-10">
+          <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:gap-10">
             {features.map((feature, index) => (
               <ScrollReveal key={feature.title} delay={index * 100}>
-                <div className="relative flex gap-5 overflow-hidden rounded-2xl border border-border bg-background p-6 transition-shadow hover:shadow-lg">
-                  {/* Top gradient bar */}
-                  <div
-                    className="absolute top-0 left-0 right-0 h-1"
-                    style={{ background: `linear-gradient(90deg, ${feature.color}, ${feature.gradientTo})` }}
-                  />
-                  <div
-                    className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: feature.color }}
-                  >
-                    <feature.icon size={24} className="text-white" />
+                <a href={feature.anchor} className="group block">
+                  <div className="relative flex gap-5 overflow-hidden rounded-2xl border border-border bg-background p-6 transition-shadow group-hover:shadow-lg">
+                    {/* Top gradient bar */}
+                    <div
+                      className="absolute top-0 right-0 left-0 h-1"
+                      style={{
+                        background: `linear-gradient(90deg, ${feature.color}, ${feature.gradientTo})`,
+                      }}
+                    />
+                    <div
+                      className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl"
+                      style={{ backgroundColor: feature.color }}
+                    >
+                      <feature.icon size={24} className="text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-serif text-lg font-semibold text-foreground">
+                        {feature.title}
+                      </h3>
+                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                        {feature.description}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-serif text-lg font-semibold text-foreground">
-                      {feature.title}
-                    </h3>
-                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                      {feature.description}
-                    </p>
-                  </div>
-                </div>
+                </a>
               </ScrollReveal>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ─── divider ──────────────────────────────────────────────── */}
+      <div className="section-divider" />
+
+      {/* ─── 9. FINAL CTA ────────────────────────────────────────── */}
+      <section className="px-6 py-20 md:py-28">
+        <div className="mx-auto max-w-2xl text-center">
+          <ScrollReveal>
+            <Image
+              src="/eatobiotics-icon.webp"
+              alt=""
+              width={56}
+              height={56}
+              className="mx-auto mb-6 h-14 w-14"
+            />
+            <h2 className="font-serif text-3xl font-semibold text-foreground sm:text-4xl md:text-5xl text-balance">
+              Be the First to Try the{" "}
+              <GradientText>EatoBiotics</GradientText> App
+            </h2>
+            <p className="mx-auto mt-6 max-w-lg text-sm leading-relaxed text-muted-foreground sm:text-base md:text-lg">
+              We&apos;re building the companion app to bring everything from the book
+              into your daily routine. Join the waitlist to get early access.
+            </p>
+            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+              <a
+                href="https://eatobiotics.substack.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="brand-gradient inline-block rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
+              >
+                Get Notified at Launch
+              </a>
+              <a
+                href="/food"
+                className="inline-block rounded-full border border-border px-8 py-4 text-base font-semibold text-foreground transition-all hover:bg-muted"
+              >
+                Explore 50+ Foods
+              </a>
+            </div>
+            <div className="mt-6 flex items-center justify-center gap-1 sm:gap-1.5">
+              <span className="biotic-pill bg-icon-lime" />
+              <span className="biotic-pill bg-icon-green" />
+              <span className="biotic-pill bg-icon-teal" />
+              <span className="biotic-pill bg-icon-yellow" />
+              <span className="biotic-pill bg-icon-orange" />
+            </div>
+          </ScrollReveal>
         </div>
       </section>
     </>
