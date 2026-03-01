@@ -47,6 +47,9 @@ export function Footer() {
                 <Link href="/app" className="text-sm text-foreground transition-colors hover:text-icon-green">
                   The App
                 </Link>
+                <Link href="/podcast" className="text-sm text-foreground transition-colors hover:text-icon-green">
+                  The Podcast
+                </Link>
                 <Link href="/eatosystem" className="text-sm text-foreground transition-colors hover:text-icon-green">
                   EatoSystem
                 </Link>

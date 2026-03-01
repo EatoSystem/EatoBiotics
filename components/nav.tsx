@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useState, useRef, useEffect } from "react"
-import { Menu, X, ChevronDown, BookOpen, Leaf, Smartphone, UtensilsCrossed, Calendar, Info, Globe, Map } from "lucide-react"
+import { Menu, X, ChevronDown, BookOpen, Leaf, Smartphone, UtensilsCrossed, Calendar, Info, Globe, Map, Mic } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 
@@ -33,6 +33,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: "/food", label: "Food Library", description: "Every food profiled for your gut", icon: UtensilsCrossed },
       { href: "/today", label: "Today's Food", description: "A new food spotlight, daily", icon: Calendar },
+      { href: "/podcast", label: "The Podcast", description: "Conversations about food & performance", icon: Mic },
     ],
   },
   {
