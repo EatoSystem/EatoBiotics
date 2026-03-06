@@ -43,31 +43,7 @@ const FEATURES = [
 export function AppShowcase() {
   return (
     <section className="relative overflow-hidden px-6 py-24 md:py-32">
-      {/* Floating decorative elements */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div
-          className="absolute -top-2 left-[5%] h-5 w-36 rotate-[-30deg] rounded-full opacity-12"
-          style={{ background: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" }}
-        />
-        <div
-          className="absolute top-[15%] right-[4%] h-5 w-32 rotate-[25deg] rounded-full opacity-15"
-          style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}
-        />
-        <div
-          className="absolute bottom-[12%] left-[3%] h-5 w-40 rotate-[40deg] rounded-full opacity-12"
-          style={{ background: "linear-gradient(135deg, var(--icon-orange), var(--icon-yellow))" }}
-        />
-        <div
-          className="absolute right-[6%] bottom-[20%] h-5 w-28 rotate-[-20deg] rounded-full opacity-10"
-          style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-teal))" }}
-        />
-        <div className="absolute top-[10%] right-[14%] h-6 w-6 rounded-full bg-icon-teal opacity-10" />
-        <div className="absolute top-[40%] left-[8%] h-5 w-5 rounded-full bg-icon-lime opacity-10" />
-        <div className="absolute bottom-[25%] left-[16%] h-7 w-7 rounded-full bg-icon-orange opacity-8" />
-        <div className="absolute bottom-[10%] right-[12%] h-4 w-4 rounded-full bg-icon-green opacity-10" />
-      </div>
-
-      <div className="relative z-10 mx-auto max-w-[1200px]">
+<div className="relative z-10 mx-auto max-w-[1200px]">
         {/* Header */}
         <ScrollReveal>
           <div className="text-center">

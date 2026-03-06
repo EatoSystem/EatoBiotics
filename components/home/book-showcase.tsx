@@ -130,31 +130,7 @@ export function BookShowcase() {
 
   return (
     <section className="relative overflow-hidden px-6 py-24 md:py-32">
-      {/* Floating decorative elements */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div
-          className="absolute -top-3 right-[4%] h-5 w-36 rotate-[20deg] rounded-full opacity-15"
-          style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
-        />
-        <div
-          className="absolute top-[20%] left-[2%] h-5 w-28 rotate-[-25deg] rounded-full opacity-12"
-          style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}
-        />
-        <div
-          className="absolute bottom-[15%] right-[3%] h-5 w-40 rotate-[-10deg] rounded-full opacity-12"
-          style={{ background: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" }}
-        />
-        <div
-          className="absolute bottom-[8%] left-[6%] h-5 w-24 rotate-[50deg] rounded-full opacity-10"
-          style={{ background: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" }}
-        />
-        <div className="absolute top-[12%] left-[12%] h-6 w-6 rounded-full bg-icon-lime opacity-10" />
-        <div className="absolute top-[35%] right-[10%] h-5 w-5 rounded-full bg-icon-orange opacity-10" />
-        <div className="absolute bottom-[20%] right-[16%] h-7 w-7 rounded-full bg-icon-yellow opacity-8" />
-        <div className="absolute bottom-[30%] left-[8%] h-4 w-4 rounded-full bg-icon-teal opacity-10" />
-      </div>
-
-      <div className="relative z-10 mx-auto max-w-[1200px]">
+<div className="relative z-10 mx-auto max-w-[1200px]">
         {/* Header */}
         <ScrollReveal>
           <div className="text-center">
@@ -184,50 +160,18 @@ export function BookShowcase() {
           {/* Left: Book Cover + Stats */}
           <ScrollReveal>
             <div className="flex flex-col items-center lg:sticky lg:top-32">
-              {/* Book Cover with dynamic glow */}
+              {/* Book Cover */}
               <div className="relative">
-                {/* Glow that changes colour with active part */}
-                <div
-                  className="absolute -inset-6 rounded-3xl opacity-20 blur-3xl transition-all duration-700"
-                  style={{ background: part.gradient }}
-                />
-                <div className="relative w-[200px] sm:w-[240px]">
-                  <div className="relative flex aspect-[3/4] w-full flex-col items-center justify-center rounded-xl border-2 border-border bg-background p-6 shadow-2xl">
-                    {/* Spine — colour follows active part */}
-                    <div
-                      className="absolute bottom-0 left-0 top-0 w-3 rounded-l-xl transition-all duration-500"
-                      style={{ background: part.gradient }}
+                <div className="w-[200px] sm:w-[240px]">
+                  <div className="relative w-full overflow-hidden rounded-xl shadow-2xl">
+                    <Image
+                      src="/book-cover.png"
+                      alt="EatoBiotics: The Food System Inside You by Jason Curry"
+                      width={600}
+                      height={800}
+                      className="w-full h-auto"
+                      priority
                     />
-                    {/* Top accent */}
-                    <div
-                      className="absolute left-3 right-0 top-0 h-1 rounded-tr-xl transition-all duration-500"
-                      style={{ background: part.gradient }}
-                    />
-
-                    <div className="mb-4">
-                      <Image
-                        src="/eatobiotics-icon.webp"
-                        alt="EatoBiotics icon"
-                        width={100}
-                        height={100}
-                        className="h-20 w-20 drop-shadow-lg"
-                      />
-                    </div>
-                    <h3 className="text-center font-serif text-2xl font-semibold text-foreground">
-                      EatoBiotics
-                    </h3>
-                    <p className="mt-1.5 text-center text-xs font-medium text-muted-foreground">
-                      The Food System Inside You
-                    </p>
-                    <div className="absolute bottom-6 left-6 right-6">
-                      <div
-                        className="h-px opacity-40 transition-all duration-500"
-                        style={{ background: part.gradient }}
-                      />
-                      <p className="mt-2 text-center text-[10px] font-medium text-muted-foreground">
-                        Jason Curry
-                      </p>
-                    </div>
                   </div>
                 </div>
               </div>

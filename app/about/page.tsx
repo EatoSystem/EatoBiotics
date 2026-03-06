@@ -85,41 +85,7 @@ export default function AboutPage() {
     <>
       {/* Hero */}
       <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-20 pb-20">
-        {/* Floating background pills — matches homepage hero */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div
-            className="absolute -top-2 left-[5%] h-5 w-44 rotate-[-35deg] rounded-full opacity-20"
-            style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
-          />
-          <div
-            className="absolute top-[8%] right-[6%] h-5 w-36 rotate-[25deg] rounded-full opacity-15"
-            style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}
-          />
-          <div
-            className="absolute top-[25%] left-[10%] h-6 w-28 rotate-[55deg] rounded-full opacity-15"
-            style={{ background: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" }}
-          />
-          <div
-            className="absolute bottom-[20%] left-[2%] h-5 w-32 rotate-[40deg] rounded-full opacity-15"
-            style={{ background: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" }}
-          />
-          <div
-            className="absolute bottom-[8%] right-[4%] h-5 w-48 rotate-[-20deg] rounded-full opacity-20"
-            style={{ background: "linear-gradient(135deg, var(--icon-orange), var(--icon-yellow))" }}
-          />
-          <div
-            className="absolute top-[55%] right-[15%] h-6 w-24 rotate-[60deg] rounded-full opacity-15"
-            style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-teal))" }}
-          />
-          <div className="absolute top-[18%] left-[16%] h-8 w-8 rounded-full bg-icon-lime opacity-15" />
-          <div className="absolute top-[40%] right-[10%] h-6 w-6 rounded-full bg-icon-orange opacity-15" />
-          <div className="absolute bottom-[30%] right-[20%] h-9 w-9 rounded-full bg-icon-yellow opacity-10" />
-          <div className="absolute bottom-[22%] left-[18%] h-5 w-5 rounded-full bg-icon-teal opacity-15" />
-          <div className="absolute top-[65%] left-[8%] h-7 w-7 rounded-full bg-icon-green opacity-10" />
-          <div className="absolute top-[12%] right-[30%] h-4 w-4 rounded-full bg-icon-lime opacity-15" />
-        </div>
-
-        <div className="relative z-10 mx-auto flex max-w-[760px] flex-col items-center text-center">
+<div className="relative z-10 mx-auto flex max-w-[760px] flex-col items-center text-center">
           <ScrollReveal>
             <Image
               src="/eatobiotics-icon.webp"
@@ -222,13 +188,7 @@ export default function AboutPage() {
           {/* Founder graphic — replace with photo when available */}
           <ScrollReveal delay={400}>
             <div className="relative mt-12 w-full overflow-hidden rounded-2xl border border-border bg-foreground px-8 py-10">
-              {/* Background gradient pills */}
-              <div className="pointer-events-none absolute inset-0 overflow-hidden">
-                <div className="absolute -top-4 -right-4 h-32 w-32 rounded-full opacity-10" style={{ background: "radial-gradient(circle, var(--icon-lime), transparent)" }} />
-                <div className="absolute -bottom-4 -left-4 h-32 w-32 rounded-full opacity-10" style={{ background: "radial-gradient(circle, var(--icon-orange), transparent)" }} />
-              </div>
-
-              <div className="relative z-10">
+<div className="relative z-10">
                 {/* Name + title */}
                 <p className="text-xs font-semibold uppercase tracking-widest text-icon-lime">
                   The Founder
