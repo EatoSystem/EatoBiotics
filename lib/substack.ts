@@ -97,7 +97,7 @@ const MOCK_POSTS: SubstackPost[] = [
 export async function fetchSubstackPosts(limit = 3): Promise<SubstackPost[]> {
   try {
     const res = await fetch("https://eatobiotics.substack.com/feed", {
-      next: { revalidate: 3600 },
+      next: { revalidate: 300 },
     })
     if (!res.ok) throw new Error("Feed fetch failed")
     const xml = await res.text()

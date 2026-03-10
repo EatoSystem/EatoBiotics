@@ -185,16 +185,7 @@ export function BookShowcase() {
                 <AnimatedStat target={TOTAL_HOURS} label="Hours" suffix="+" />
               </div>
 
-              {/* CTA below stats — mobile only */}
-              <div className="mt-6 lg:mt-8">
-                <Link
-                  href="/book-chapter-1"
-                  className="brand-gradient inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
-                >
-                  Start Reading
-                  <ArrowRight size={14} />
-                </Link>
-              </div>
+              {/* CTA below stats — hidden while chapters are not linked */}
             </div>
           </ScrollReveal>
 
@@ -270,10 +261,9 @@ export function BookShowcase() {
                   {/* Chapters */}
                   <div className="mt-5 space-y-0.5">
                     {part.chapters.map((ch) => (
-                      <Link
+                      <div
                         key={ch.number}
-                        href={`/book-chapter-${ch.number}`}
-                        className="group flex items-center gap-3 rounded-xl p-2.5 transition-all hover:bg-muted/50 sm:p-3"
+                        className="flex items-center gap-3 rounded-xl p-2.5 sm:p-3"
                       >
                         <span
                           className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-[11px] font-bold text-white sm:h-8 sm:w-8 sm:text-xs"
@@ -292,12 +282,7 @@ export function BookShowcase() {
                             </p>
                           )}
                         </div>
-                        <ChevronRight
-                          size={15}
-                          className="flex-shrink-0 text-muted-foreground opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100"
-                          style={{ color: part.color }}
-                        />
-                      </Link>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -307,13 +292,6 @@ export function BookShowcase() {
             {/* Bottom CTAs */}
             <ScrollReveal delay={200}>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link
-                  href="/book-chapter-1"
-                  className="brand-gradient inline-flex items-center justify-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
-                >
-                  Start Reading Chapter 1
-                  <ArrowRight size={16} />
-                </Link>
                 <Link
                   href="/book"
                   className="inline-flex items-center justify-center rounded-full border border-border px-8 py-4 text-base font-semibold text-foreground transition-all hover:bg-muted"

@@ -64,18 +64,7 @@ export function ChapterList() {
                         <span className="text-base font-medium text-foreground">
                           {chapter.title}
                         </span>
-                        {isPublished && (
-                          <span
-                            className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white"
-                            style={{ backgroundColor: color }}
-                          >
-                            <ArrowRight size={9} />
-                            Read
-                          </span>
-                        )}
-                        {!isPublished && (
-                          <Lock size={12} className="text-muted-foreground/40" />
-                        )}
+                        <Lock size={12} className="text-muted-foreground/40" />
                       </div>
                       <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                         {chapter.description}
@@ -89,15 +78,7 @@ export function ChapterList() {
                   </div>
                 )
 
-                return isPublished ? (
-                  <Link
-                    key={chapter.number}
-                    href={href}
-                    className="group rounded-xl border border-border px-5 py-4 transition-colors hover:border-icon-green hover:bg-secondary"
-                  >
-                    {inner}
-                  </Link>
-                ) : (
+                return (
                   <div
                     key={chapter.number}
                     className="rounded-xl border border-border px-5 py-4 opacity-70"

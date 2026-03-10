@@ -4,6 +4,7 @@ import { ThePlate } from "@/components/home/the-plate"
 import { Manifesto } from "@/components/home/manifesto"
 import { WhatWereBuilding } from "@/components/home/what-were-building"
 import { BookShowcase } from "@/components/home/book-showcase"
+import { PodcastTeaser } from "@/components/home/podcast-teaser"
 import { AppShowcase } from "@/components/home/app-showcase"
 import { EatoSystemTeaser } from "@/components/home/eatosystem-teaser"
 import { LatestFromSubstack } from "@/components/home/latest-from-substack"
@@ -20,12 +21,14 @@ export default function Home() {
       <div className="section-divider" />
       <BookShowcase />
       <div className="section-divider" />
-      <AppShowcase />
+      <PodcastTeaser />
       <div className="section-divider" />
-      <EatoSystemTeaser />
+      <AppShowcase />
       <div className="section-divider" />
       <LatestFromSubstack />
       <NewsletterCta />
+      <div className="section-divider" />
+      <EatoSystemTeaser />
     </>
   )
 }

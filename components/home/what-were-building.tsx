@@ -44,16 +44,16 @@ const platforms = [
   },
   {
     number: "04",
-    title: "EatoSystem",
-    label: "TRANSFORM",
+    title: "The Podcast",
+    label: "LISTEN",
     accent: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-yellow))",
     description:
-      "Ireland's regenerative food transformation. 32 counties. Rebuilding the food system around you so the food system inside you has something worthy to work with.",
-    cta: "Explore",
-    href: "/eatosystem",
+      "The world's greatest minds sitting down to talk about what they eat, how they live, and the food habits behind their extraordinary lives.",
+    cta: "Listen",
+    href: "/podcast",
     external: false,
-    status: "In development",
+    status: "Coming 2026",
   },
 ]
 

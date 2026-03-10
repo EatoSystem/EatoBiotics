@@ -53,14 +53,6 @@ export function Hero() {
             >
               Subscribe on Substack
             </a>
-            <a
-              href="https://www.eatosystem.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-full border-2 border-icon-green px-8 py-4 text-base font-semibold text-foreground transition-colors hover:bg-icon-green hover:text-white"
-            >
-              Explore EatoSystem
-            </a>
           </div>
         </ScrollReveal>
       </div>
