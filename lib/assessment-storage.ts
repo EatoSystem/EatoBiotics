@@ -82,3 +82,32 @@ export function savePrivacyChoice(choice: PrivacyChoice): void {
     /* ignore */
   }
 }
+
+/* ── Lead Data ─────────────────────────────────────────────────────── */
+
+export interface LeadData {
+  name: string
+  email: string
+  ageBracket: string
+}
+
+const LEAD_KEY = "eatobiotics-lead"
+
+export function saveLeadData(lead: LeadData): void {
+  if (typeof window === "undefined") return
+  try {
+    localStorage.setItem(LEAD_KEY, JSON.stringify(lead))
+  } catch {
+    /* ignore */
+  }
+}
+
+export function loadLeadData(): LeadData | null {
+  if (typeof window === "undefined") return null
+  try {
+    const raw = localStorage.getItem(LEAD_KEY)
+    return raw ? (JSON.parse(raw) as LeadData) : null
+  } catch {
+    return null
+  }
+}

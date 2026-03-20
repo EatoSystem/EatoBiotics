@@ -6,7 +6,10 @@ import {
   saveAssessment,
   emptyAssessmentState,
   loadPrivacyChoice,
+  saveLeadData,
+  loadLeadData,
   type AssessmentState,
+  type LeadData,
 } from "@/lib/assessment-storage"
 import { QUESTIONS } from "@/lib/assessment-data"
 import { computeResult } from "@/lib/assessment-scoring"
@@ -19,10 +22,12 @@ import { PrivacyOptIn } from "./privacy-opt-in"
 export function AssessmentClient() {
   const [state, setState] = useState<AssessmentState>(emptyAssessmentState)
   const [hydrated, setHydrated] = useState(false)
+  const [lead, setLead] = useState<LeadData | null>(null)
 
   // Load saved state from localStorage after hydration
   useEffect(() => {
     setState(loadAssessment())
+    setLead(loadLeadData())
     setHydrated(true)
   }, [])
 
@@ -31,7 +36,18 @@ export function AssessmentClient() {
     if (hydrated) saveAssessment(state)
   }, [state, hydrated])
 
-  function startAssessment() {
+  function startAssessment(leadData: LeadData) {
+    // Persist lead
+    saveLeadData(leadData)
+    setLead(leadData)
+
+    // Fire-and-forget: store lead in Supabase
+    fetch("/api/submit-lead", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(leadData),
+    }).catch(() => {/* ignore network errors */})
+
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior })
     setState((s) => ({
       ...s,
@@ -55,12 +71,22 @@ export function AssessmentClient() {
       setState((s) => ({ ...s, currentIndex: s.currentIndex + 1 }))
     } else {
       // Last question — compute results
-      const newAnswers = answers
-      const computed = computeResult(newAnswers)
+      const computed = computeResult(answers)
       const privacyAlreadyChosen = loadPrivacyChoice() !== null
+
+      // Fire-and-forget: send results email
+      const currentLead = lead ?? loadLeadData()
+      if (currentLead) {
+        fetch("/api/send-results-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lead: currentLead, result: computed }),
+        }).catch(() => {/* ignore network errors */})
+      }
+
       setState((s) => ({
         ...s,
-        answers: newAnswers,
+        answers,
         result: computed,
         view: privacyAlreadyChosen ? "results" : "privacy",
       }))
