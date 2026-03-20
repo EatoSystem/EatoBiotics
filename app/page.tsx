@@ -25,8 +25,8 @@ export default function Home() {
       <div className="section-divider" />
       <AppShowcase />
       <div className="section-divider" />
-      <LatestFromSubstack />
       <NewsletterCta />
+      <LatestFromSubstack />
       <div className="section-divider" />
       <EatoSystemTeaser />
     </>

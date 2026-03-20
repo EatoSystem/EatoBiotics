@@ -36,6 +36,17 @@ function parseDate(dateStr: string): string {
   }
 }
 
+function decodeEntities(str: string): string {
+  return str
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, " ")
+}
+
 function parseXml(xml: string): SubstackPost[] {
   const items: SubstackPost[] = []
   const itemRegex = /<item>([\s\S]*?)<\/item>/g
@@ -53,8 +64,13 @@ function parseXml(xml: string): SubstackPost[] {
     const link = content.match(/<link>(.*?)<\/link>/)?.[1] ?? "#"
     const pubDate = content.match(/<pubDate>(.*?)<\/pubDate>/)?.[1] ?? ""
 
-    // Strip HTML tags from description
-    const cleanDescription = description.replace(/<[^>]*>/g, "").trim()
+    // Strip HTML tags, decode entities, remove Substack boilerplate
+    const stripped = description.replace(/<[^>]*>/g, "").trim()
+    const decoded = decodeEntities(stripped)
+    const cleanDescription = decoded
+      .replace(/EatoBiotics is a reader-supported publication\.?/gi, "")
+      .replace(/\s{2,}/g, " ")
+      .trim()
 
     items.push({
       title,

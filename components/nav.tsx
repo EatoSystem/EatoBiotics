@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useState, useRef, useEffect } from "react"
-import { Menu, X, ChevronDown, BookOpen, Leaf, Smartphone, UtensilsCrossed, Calendar, Info, Globe, Map, Mic } from "lucide-react"
+import { Menu, X, ChevronDown, BookOpen, Leaf, Smartphone, UtensilsCrossed, Calendar, Info, Globe, Map, Mic, Activity } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 
@@ -34,6 +34,8 @@ const navGroups: NavGroup[] = [
       { href: "/food", label: "Food Library", description: "Every food profiled for your gut", icon: UtensilsCrossed },
       { href: "/today", label: "Today's Food", description: "A new food spotlight, daily", icon: Calendar },
       { href: "/podcast", label: "The Podcast", description: "Conversations about food & performance", icon: Mic },
+      { href: "/myplate", label: "My Plate", description: "Build your plate and track your plants", icon: Leaf },
+      { href: "/assessment", label: "Assessment", description: "Discover your food system type", icon: Activity },
     ],
   },
   {
@@ -159,6 +161,15 @@ export function Nav() {
           {navGroups.map((group) => (
             <DropdownMenu key={group.label} group={group} pathname={pathname} />
           ))}
+          <Link
+            href="/myplate"
+            className={cn(
+              "text-sm font-medium transition-colors",
+              pathname === "/myplate" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            My Plate
+          </Link>
           <a
             href="https://eatobiotics.substack.com/"
             target="_blank"
