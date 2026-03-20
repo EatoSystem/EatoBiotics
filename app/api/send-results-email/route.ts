@@ -20,8 +20,10 @@ export async function POST(req: NextRequest) {
       overall: result.overall,
       profileType: result.profile.type,
       tagline: result.profile.tagline,
+      profileDescription: result.profile.description,
       subScores: { diversity, feeding, adding, consistency, feeling },
       nextActions: result.nextActions,
+      ageBracket: lead.ageBracket,
     })
 
     // Send email via Resend if configured

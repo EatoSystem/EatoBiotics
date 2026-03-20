@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { ArrowRight, Star, FileText, Layers, Sparkles } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
@@ -139,7 +140,18 @@ const TIERS: {
 ]
 
 export function DemoClient() {
-  const [activeTier, setActiveTier] = useState<DemoTier>("starter")
+  const searchParams = useSearchParams()
+  const [activeTier, setActiveTier] = useState<DemoTier>(() => {
+    // This runs client-side only
+    return "starter"
+  })
+
+  useEffect(() => {
+    const tierParam = searchParams.get("tier") as DemoTier | null
+    if (tierParam && ["starter", "full", "premium"].includes(tierParam)) {
+      setActiveTier(tierParam)
+    }
+  }, [searchParams])
 
   return (
     <div className="min-h-screen bg-background">
@@ -178,7 +190,10 @@ export function DemoClient() {
             return (
               <button
                 key={tier.id}
-                onClick={() => setActiveTier(tier.id)}
+                onClick={() => {
+                  setActiveTier(tier.id)
+                  window.history.replaceState(null, "", `/assessment/demo?tier=${tier.id}`)
+                }}
                 className={cn(
                   "flex flex-col items-start gap-2 rounded-2xl border-2 p-4 text-left transition-all",
                   isActive
@@ -245,7 +260,10 @@ export function DemoClient() {
             {TIERS.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTier(tab.id)}
+                onClick={() => {
+                  setActiveTier(tab.id)
+                  window.history.replaceState(null, "", `/assessment/demo?tier=${tab.id}`)
+                }}
                 className={cn(
                   "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all",
                   activeTier === tab.id

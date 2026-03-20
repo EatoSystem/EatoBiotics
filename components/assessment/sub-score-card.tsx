@@ -38,39 +38,51 @@ export function SubScoreCard({ insight, index }: SubScoreCardProps) {
   const isStrength = insight.score >= 65
 
   return (
-    <div className="rounded-2xl border border-border bg-background p-5">
+    <div
+      className="relative rounded-2xl border bg-background p-5 overflow-hidden"
+      style={{ borderColor: `color-mix(in srgb, ${insight.color} 25%, transparent)` }}
+    >
+      {/* Colored top accent strip */}
+      <div
+        className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl"
+        style={{ background: insight.gradient }}
+      />
+
       {/* Header row */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
             style={{ background: insight.gradient }}
           >
-            <Icon size={15} className="text-white" />
+            <Icon size={18} className="text-white" />
           </div>
           <span className="text-sm font-semibold text-foreground">{insight.label}</span>
         </div>
-        <span
-          className="rounded-full px-2.5 py-0.5 text-xs font-semibold"
-          style={{
-            backgroundColor: `color-mix(in srgb, ${insight.color} 12%, transparent)`,
-            color: insight.color,
-          }}
-        >
-          {insight.score}/100
-        </span>
+        <div className="text-right">
+          <span className="text-2xl font-bold" style={{ color: insight.color }}>
+            {insight.score}
+          </span>
+          <span className="text-xs text-muted-foreground">/100</span>
+        </div>
       </div>
 
       {/* Animated bar */}
-      <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-border/60">
+      <div className="h-3 overflow-hidden rounded-full bg-border/40">
         <div
           className="h-full rounded-full"
           style={{
             width: visible ? `${insight.score}%` : "0%",
             background: insight.gradient,
-            transition: `width 700ms ease-out ${index * 80}ms`,
+            transition: `width 800ms ease-out ${index * 80}ms`,
           }}
         />
+      </div>
+
+      {/* Score label below bar */}
+      <div className="mt-1.5 flex justify-between text-xs text-muted-foreground/50">
+        <span>0</span>
+        <span>100</span>
       </div>
 
       {/* Insight text */}

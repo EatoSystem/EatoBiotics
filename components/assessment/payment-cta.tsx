@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowRight, Check, Star } from "lucide-react"
+import { ArrowRight, Check, Star, FileText, Layers, Sparkles } from "lucide-react"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { MissionNote } from "./mission-note"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
@@ -20,6 +21,14 @@ const TIERS = [
     cents: 2000,
     description: "Your score, profile, and the first steps to take.",
     badge: null,
+    icon: FileText,
+    bannerGradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
+    color: "var(--icon-green)",
+    highlights: [
+      { emoji: "🎯", text: "Your full profile description" },
+      { emoji: "🥦", text: "Top 5 priority foods for your score" },
+      { emoji: "📅", text: "7-day daily starter action plan" },
+    ],
     features: [
       "Score ring + full profile description",
       "Your top 5 priority foods",
@@ -29,8 +38,6 @@ const TIERS = [
       "Printable score card",
     ],
     cta: "Get Starter Report",
-    gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
-    color: "var(--icon-green)",
   },
   {
     id: "full" as Tier,
@@ -39,6 +46,14 @@ const TIERS = [
     cents: 4000,
     description: "Deep-dive into every pillar with a 30-day plan.",
     badge: "Most Popular",
+    icon: Layers,
+    bannerGradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
+    color: "var(--icon-teal)",
+    highlights: [
+      { emoji: "🔬", text: "Pillar-by-pillar deep-dives" },
+      { emoji: "🗓️", text: "30-day rebuilding plan (4 weeks)" },
+      { emoji: "🔄", text: "5 easy food swaps for your weakest pillar" },
+    ],
     features: [
       "Everything in Starter",
       "Pillar-by-pillar deep-dives",
@@ -50,16 +65,22 @@ const TIERS = [
       "Your personalised retest date",
     ],
     cta: "Get Full Report",
-    gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
-    color: "var(--icon-teal)",
   },
   {
     id: "premium" as Tier,
     name: "Premium Report",
     price: "€50",
     cents: 5000,
-    description: "The complete programme — including meal timing, recipes, supplements, and a 90-day tracker.",
+    description: "The complete programme — recipes, supplements, and a 90-day tracker.",
     badge: null,
+    icon: Sparkles,
+    bannerGradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
+    color: "var(--icon-orange)",
+    highlights: [
+      { emoji: "🍽️", text: "Meal timing guide + 3 recipes" },
+      { emoji: "📆", text: "90-day milestone tracker" },
+      { emoji: "🧠", text: "Gut-brain connection insights" },
+    ],
     features: [
       "Everything in Full Report",
       "Personalised meal timing guide",
@@ -72,8 +93,6 @@ const TIERS = [
       "3 Biotic Kitchen starter recipes",
     ],
     cta: "Get Premium Report",
-    gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
-    color: "var(--icon-orange)",
   },
 ]
 
@@ -115,86 +134,115 @@ export function PaymentCTA({ result }: PaymentCTAProps) {
   return (
     <div className="rounded-3xl border border-border bg-gradient-to-br from-secondary/40 to-background p-6 sm:p-8">
       {/* Header */}
-      <div className="mb-6 text-center">
+      <div className="mb-8 text-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-[var(--icon-green)]/30 bg-[var(--icon-green)]/8 px-3 py-1 text-xs font-semibold text-[var(--icon-green)]">
           Choose Your Report
         </div>
         <h3 className="mt-3 font-serif text-2xl font-semibold text-foreground sm:text-3xl">
-          Unlock Your Full EatoBiotics Report
+          Your{" "}
+          <span style={{ color: result.profile.color }}>{result.profile.type}</span>{" "}
+          score of{" "}
+          <span style={{ color: result.profile.color }}>{result.overall}/100</span>{" "}
+          unlocks a personalised plan
         </h3>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground max-w-lg mx-auto">
-          Your free results show where you stand. Your report shows you exactly what to eat, what to add, and a plan to get there.
+          Your free results show where you stand. Your report shows you exactly what to eat,
+          what to add, and a plan to get there.
         </p>
       </div>
 
       {/* Tier cards */}
       <div className="grid gap-4 sm:grid-cols-3">
-        {TIERS.map((tier) => (
-          <div
-            key={tier.id}
-            className={cn(
-              "relative flex flex-col rounded-2xl border-2 bg-background p-5 transition-all",
-              tier.badge
-                ? "border-[var(--icon-teal)] shadow-sm"
-                : "border-border"
-            )}
-          >
-            {/* Popular badge */}
-            {tier.badge && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <div className="flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold text-white" style={{ background: tier.gradient }}>
-                  <Star size={10} className="fill-white" />
-                  {tier.badge}
-                </div>
-              </div>
-            )}
-
-            {/* Tier info */}
-            <div className="mb-4">
-              <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: tier.color }}>
-                {tier.name}
-              </p>
-              <div className="mt-1 flex items-baseline gap-1">
-                <span className="text-3xl font-bold text-foreground">{tier.price}</span>
-                <span className="text-xs text-muted-foreground">one-time</span>
-              </div>
-              <p className="mt-1.5 text-xs leading-snug text-muted-foreground">{tier.description}</p>
-            </div>
-
-            {/* Features */}
-            <ul className="mb-5 flex-1 space-y-2">
-              {tier.features.map((f) => (
-                <li key={f} className="flex items-start gap-2 text-xs text-foreground">
-                  <Check size={12} className="mt-0.5 shrink-0" style={{ color: tier.color }} />
-                  {f}
-                </li>
-              ))}
-            </ul>
-
-            {/* CTA */}
-            <button
-              onClick={() => handlePurchase(tier.id)}
-              disabled={loading !== null}
+        {TIERS.map((tier) => {
+          const Icon = tier.icon
+          return (
+            <div
+              key={tier.id}
               className={cn(
-                "flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed",
-                tier.badge ? "brand-gradient" : ""
+                "relative flex flex-col rounded-2xl border-2 bg-background overflow-hidden transition-all",
+                tier.badge
+                  ? "border-[var(--icon-teal)] shadow-lg shadow-[var(--icon-teal)]/10"
+                  : "border-border hover:border-foreground/20"
               )}
-              style={!tier.badge ? { background: tier.gradient } : undefined}
             >
-              {loading === tier.id ? (
-                <span className="flex items-center gap-2">
-                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  Redirecting…
-                </span>
-              ) : (
-                <>
-                  {tier.cta}
-                  <ArrowRight size={14} />
-                </>
-              )}
-            </button>
-          </div>
-        ))}
+              {/* Gradient top banner */}
+              <div
+                className="flex items-center justify-between px-5 py-4"
+                style={{ background: tier.bannerGradient }}
+              >
+                <div className="flex items-center gap-2">
+                  <Icon size={18} className="text-white" />
+                  <span className="text-sm font-bold text-white">{tier.name}</span>
+                </div>
+                {tier.badge && (
+                  <div className="flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-1 text-[10px] font-bold text-white">
+                    <Star size={9} className="fill-white" />
+                    {tier.badge}
+                  </div>
+                )}
+              </div>
+
+              {/* Card content */}
+              <div className="flex flex-1 flex-col p-5">
+                {/* Price */}
+                <div className="mb-4 flex items-baseline gap-1.5">
+                  <span className="text-4xl font-bold text-foreground">{tier.price}</span>
+                  <span className="text-xs text-muted-foreground">one-time</span>
+                </div>
+
+                <p className="mb-4 text-xs leading-snug text-muted-foreground">{tier.description}</p>
+
+                {/* Visual highlights */}
+                <div className="mb-4 space-y-2 rounded-xl bg-secondary/30 p-3">
+                  {tier.highlights.map((h, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs font-medium text-foreground">
+                      <span className="text-base">{h.emoji}</span>
+                      {h.text}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Full features */}
+                <ul className="mb-5 flex-1 space-y-1.5">
+                  {tier.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-xs text-foreground/80">
+                      <Check size={11} className="mt-0.5 shrink-0" style={{ color: tier.color }} />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+
+                {/* CTA button */}
+                <button
+                  onClick={() => handlePurchase(tier.id)}
+                  disabled={loading !== null}
+                  className="mb-2 flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                  style={{ background: tier.bannerGradient }}
+                >
+                  {loading === tier.id ? (
+                    <span className="flex items-center gap-2">
+                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      Redirecting…
+                    </span>
+                  ) : (
+                    <>
+                      {tier.cta}
+                      <ArrowRight size={14} />
+                    </>
+                  )}
+                </button>
+
+                {/* Preview link */}
+                <Link
+                  href={`/assessment/demo?tier=${tier.id}`}
+                  className="text-center text-[11px] text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                >
+                  Preview this tier →
+                </Link>
+              </div>
+            </div>
+          )
+        })}
       </div>
 
       {error && (

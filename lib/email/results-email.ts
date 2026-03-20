@@ -3,8 +3,10 @@ interface ResultsEmailOpts {
   overall: number
   profileType: string
   tagline: string
+  profileDescription?: string
   subScores: { [key: string]: number }
   nextActions: string[]
+  ageBracket?: string
 }
 
 const PILLAR_LABELS: Record<string, string> = {
@@ -23,34 +25,74 @@ const PILLAR_COLORS: Record<string, string> = {
   feeling: "#e07b4a",
 }
 
-function scoreBar(score: number): string {
-  const filled = Math.round(score / 10)
-  const empty = 10 - filled
-  return "▓".repeat(filled) + "░".repeat(empty)
+const PILLAR_BG: Record<string, string> = {
+  diversity: "#f3faf3",
+  feeding: "#f0faf5",
+  adding: "#f0f9f8",
+  consistency: "#fdf8ee",
+  feeling: "#fdf5f0",
+}
+
+function retestDate(): string {
+  const d = new Date()
+  d.setDate(d.getDate() + 75)
+  return d.toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" })
 }
 
 export function buildResultsEmail(opts: ResultsEmailOpts): {
   subject: string
   html: string
 } {
-  const { name, overall, profileType, tagline, subScores, nextActions } = opts
+  const { name, overall, profileType, tagline, profileDescription, subScores, nextActions, ageBracket } = opts
 
   const subject = `Your EatoBiotics Score: ${overall}/100 — ${profileType}`
 
-  const pillarsHtml = Object.entries(subScores)
-    .sort(([, a], [, b]) => b - a)
+  // Sort pillars: highest first
+  const sortedPillars = Object.entries(subScores).sort(([, a], [, b]) => b - a)
+  const [strongestKey, strongestScore] = sortedPillars[0]
+  const [focusKey, focusScore] = sortedPillars[sortedPillars.length - 1]
+  const strongestLabel = PILLAR_LABELS[strongestKey] ?? strongestKey
+  const focusLabel = PILLAR_LABELS[focusKey] ?? focusKey
+  const strongestColor = PILLAR_COLORS[strongestKey] ?? "#4caf7d"
+  const focusColor = PILLAR_COLORS[focusKey] ?? "#e07b4a"
+
+  // Pillar rows — colored left-border table rows
+  const pillarsHtml = sortedPillars
     .map(([key, score]) => {
       const label = PILLAR_LABELS[key] ?? key
       const color = PILLAR_COLORS[key] ?? "#4caf7d"
-      const bar = scoreBar(score)
+      const bg = PILLAR_BG[key] ?? "#f9f9f9"
+      const pct = Math.round(score)
+      const isStrength = score >= 65
+      const badge = isStrength
+        ? `<span style="font-size: 10px; font-weight: bold; color: #4caf7d; background: #edf8f0; border-radius: 20px; padding: 2px 8px; margin-left: 6px;">Strength</span>`
+        : score < 50
+        ? `<span style="font-size: 10px; font-weight: bold; color: #e07b4a; background: #fdf2ec; border-radius: 20px; padding: 2px 8px; margin-left: 6px;">Focus area</span>`
+        : ""
       return `
         <tr>
-          <td style="padding: 6px 0;">
-            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+          <td style="padding: 5px 0;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background: ${bg}; border-radius: 10px; border-left: 4px solid ${color}; overflow: hidden;">
               <tr>
-                <td style="font-size: 13px; color: #555555; font-family: Arial, sans-serif; width: 140px;">${label}</td>
-                <td style="font-size: 12px; font-family: 'Courier New', monospace; color: ${color}; letter-spacing: 1px;">${bar}</td>
-                <td style="font-size: 13px; font-weight: bold; color: #222222; font-family: Arial, sans-serif; text-align: right; white-space: nowrap;">${score}/100</td>
+                <td style="padding: 10px 14px;">
+                  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="font-size: 13px; font-weight: bold; color: #333333; font-family: Arial, sans-serif;">${label}${badge}</td>
+                      <td style="text-align: right; font-size: 15px; font-weight: bold; color: ${color}; font-family: Arial, sans-serif; white-space: nowrap;">${pct}<span style="font-size: 11px; color: #aaaaaa;">/100</span></td>
+                    </tr>
+                    <tr>
+                      <td colspan="2" style="padding-top: 6px;">
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                          <tr>
+                            <td style="background: #e8e8e8; border-radius: 4px; height: 6px; overflow: hidden;">
+                              <div style="background: ${color}; width: ${pct}%; height: 6px; border-radius: 4px;"></div>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
               </tr>
             </table>
           </td>
@@ -58,6 +100,36 @@ export function buildResultsEmail(opts: ResultsEmailOpts): {
     })
     .join("")
 
+  // Callout boxes
+  const calloutsHtml = `
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td style="padding: 0 0 8px 0; width: 50%; padding-right: 6px; vertical-align: top;">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #f3faf3; border-radius: 10px; border: 1px solid #d4edda;">
+            <tr>
+              <td style="padding: 14px 16px;">
+                <p style="margin: 0 0 4px; font-size: 10px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: ${strongestColor}; font-family: Arial, sans-serif;">⭐ Your Strongest Pillar</p>
+                <p style="margin: 0; font-size: 15px; font-weight: bold; color: #222222; font-family: Arial, sans-serif;">${strongestLabel}</p>
+                <p style="margin: 2px 0 0; font-size: 13px; color: ${strongestColor}; font-family: Arial, sans-serif; font-weight: bold;">${strongestScore}/100</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+        <td style="padding: 0 0 8px 0; width: 50%; padding-left: 6px; vertical-align: top;">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #fdf5f0; border-radius: 10px; border: 1px solid #f5d5c5;">
+            <tr>
+              <td style="padding: 14px 16px;">
+                <p style="margin: 0 0 4px; font-size: 10px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: ${focusColor}; font-family: Arial, sans-serif;">🎯 Your Focus Area</p>
+                <p style="margin: 0; font-size: 15px; font-weight: bold; color: #222222; font-family: Arial, sans-serif;">${focusLabel}</p>
+                <p style="margin: 2px 0 0; font-size: 13px; color: ${focusColor}; font-family: Arial, sans-serif; font-weight: bold;">${focusScore}/100</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>`
+
+  // Actions
   const actionsHtml = nextActions
     .slice(0, 3)
     .map(
@@ -66,16 +138,26 @@ export function buildResultsEmail(opts: ResultsEmailOpts): {
           <td style="padding: 8px 0; vertical-align: top;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
-                <td style="width: 28px; vertical-align: top; padding-top: 1px;">
-                  <span style="display: inline-block; width: 22px; height: 22px; background: linear-gradient(135deg, #7fc47e, #3ab0a0); border-radius: 50%; text-align: center; line-height: 22px; font-size: 12px; font-weight: bold; color: white; font-family: Arial, sans-serif;">${i + 1}</span>
+                <td style="width: 32px; vertical-align: top; padding-top: 1px;">
+                  <span style="display: inline-block; width: 26px; height: 26px; background: linear-gradient(135deg, #7fc47e, #3ab0a0); border-radius: 50%; text-align: center; line-height: 26px; font-size: 13px; font-weight: bold; color: white; font-family: Arial, sans-serif;">${i + 1}</span>
                 </td>
-                <td style="font-size: 14px; color: #333333; font-family: Arial, sans-serif; line-height: 1.5; padding-left: 10px;">${action}</td>
+                <td style="font-size: 14px; color: #333333; font-family: Arial, sans-serif; line-height: 1.6; padding-left: 10px;">${action}</td>
               </tr>
             </table>
           </td>
         </tr>`
     )
     .join("")
+
+  const ageBracketLine = ageBracket
+    ? `<p style="margin: 4px 0 0; font-size: 13px; color: #888888; font-family: Arial, sans-serif;">Age bracket: ${ageBracket}</p>`
+    : ""
+
+  const profileDescHtml = profileDescription
+    ? `<p style="margin: 12px 0 0; font-size: 14px; color: #555555; font-family: Arial, sans-serif; line-height: 1.6; font-style: italic;">${profileDescription}</p>`
+    : ""
+
+  const retestDateStr = retestDate()
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -92,21 +174,23 @@ export function buildResultsEmail(opts: ResultsEmailOpts): {
 
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #7fc47e 0%, #3ab0a0 100%); padding: 32px 40px; text-align: center;">
+            <td style="background: linear-gradient(135deg, #7fc47e 0%, #3ab0a0 100%); padding: 28px 40px; text-align: center;">
               <p style="margin: 0 0 4px 0; font-size: 11px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.8); font-family: Arial, sans-serif;">EatoBiotics</p>
-              <h1 style="margin: 0; font-size: 28px; font-weight: bold; color: #ffffff; font-family: Georgia, serif;">Your Food System Score</h1>
+              <h1 style="margin: 0; font-size: 26px; font-weight: bold; color: #ffffff; font-family: Georgia, serif;">Your Food System Score</h1>
             </td>
           </tr>
 
           <!-- Score hero -->
           <tr>
-            <td style="padding: 40px 40px 0; text-align: center;">
-              <p style="margin: 0 0 8px; font-size: 15px; color: #666666; font-family: Arial, sans-serif;">Hi ${name}, your assessment is ready.</p>
-              <div style="display: inline-block; margin: 16px auto;">
-                <p style="margin: 0; font-size: 72px; font-weight: bold; color: #222222; line-height: 1; font-family: Georgia, serif;">${overall}<span style="font-size: 32px; color: #999999;">/100</span></p>
+            <td style="padding: 36px 40px 0; text-align: center;">
+              <p style="margin: 0 0 4px; font-size: 15px; color: #666666; font-family: Arial, sans-serif;">Hi ${name}, your assessment is ready.</p>
+              ${ageBracketLine}
+              <div style="margin: 20px auto 0;">
+                <p style="margin: 0; font-size: 76px; font-weight: bold; color: #222222; line-height: 1; font-family: Georgia, serif;">${overall}<span style="font-size: 30px; color: #aaaaaa;">/100</span></p>
               </div>
-              <p style="margin: 8px 0 4px; font-size: 18px; font-weight: bold; color: #3ab0a0; font-family: Georgia, serif;">${profileType}</p>
-              <p style="margin: 0 0 8px; font-size: 14px; color: #666666; font-family: Arial, sans-serif; font-style: italic;">${tagline}</p>
+              <p style="margin: 10px 0 4px; font-size: 20px; font-weight: bold; color: #3ab0a0; font-family: Georgia, serif;">${profileType}</p>
+              <p style="margin: 0 0 4px; font-size: 14px; color: #666666; font-family: Arial, sans-serif; font-style: italic;">${tagline}</p>
+              ${profileDescHtml}
             </td>
           </tr>
 
@@ -117,10 +201,24 @@ export function buildResultsEmail(opts: ResultsEmailOpts): {
             </td>
           </tr>
 
+          <!-- Callout boxes -->
+          <tr>
+            <td style="padding: 24px 40px 0;">
+              ${calloutsHtml}
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="padding: 20px 40px 0;">
+              <hr style="border: none; border-top: 1px solid #eeeeee; margin: 0;" />
+            </td>
+          </tr>
+
           <!-- Pillar scores -->
           <tr>
             <td style="padding: 24px 40px 0;">
-              <p style="margin: 0 0 16px; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: #999999; font-family: Arial, sans-serif;">Your 5 Pillars</p>
+              <p style="margin: 0 0 12px; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: #999999; font-family: Arial, sans-serif;">Your 5 Pillars</p>
               <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 ${pillarsHtml}
               </table>
@@ -137,9 +235,24 @@ export function buildResultsEmail(opts: ResultsEmailOpts): {
           <!-- Next actions -->
           <tr>
             <td style="padding: 24px 40px 0;">
-              <p style="margin: 0 0 16px; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: #999999; font-family: Arial, sans-serif;">Your Next 3 Actions</p>
+              <p style="margin: 0 0 12px; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: #999999; font-family: Arial, sans-serif;">Your Top 3 Actions This Week</p>
               <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 ${actionsHtml}
+              </table>
+            </td>
+          </tr>
+
+          <!-- Retest nudge -->
+          <tr>
+            <td style="padding: 20px 40px 0;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #f7f7f7; border-radius: 10px;">
+                <tr>
+                  <td style="padding: 14px 18px;">
+                    <p style="margin: 0; font-size: 13px; color: #666666; font-family: Arial, sans-serif;">
+                      📅 <strong style="color: #333333;">Recommended retest:</strong> ${retestDateStr} — give your habits 75 days to compound, then measure your progress.
+                    </p>
+                  </td>
+                </tr>
               </table>
             </td>
           </tr>
@@ -147,8 +260,8 @@ export function buildResultsEmail(opts: ResultsEmailOpts): {
           <!-- CTA -->
           <tr>
             <td style="padding: 32px 40px; text-align: center;">
-              <p style="margin: 0 0 20px; font-size: 16px; color: #333333; font-family: Georgia, serif; font-style: italic;">Ready to see exactly what to eat, what to add, and a plan to get there?</p>
-              <a href="https://eatobiotics.com/assessment" style="display: inline-block; background: linear-gradient(135deg, #7fc47e 0%, #3ab0a0 100%); color: #ffffff; text-decoration: none; font-size: 15px; font-weight: bold; font-family: Arial, sans-serif; padding: 14px 32px; border-radius: 50px;">Unlock Your Full Report →</a>
+              <p style="margin: 0 0 20px; font-size: 16px; color: #333333; font-family: Georgia, serif; font-style: italic;">Ready to see exactly what to eat, what to add, and a 30-day plan?</p>
+              <a href="https://eatobiotics.com/assessment/demo" style="display: inline-block; background: linear-gradient(135deg, #7fc47e 0%, #3ab0a0 100%); color: #ffffff; text-decoration: none; font-size: 15px; font-weight: bold; font-family: Arial, sans-serif; padding: 14px 32px; border-radius: 50px;">Unlock Your Full Report →</a>
             </td>
           </tr>
 

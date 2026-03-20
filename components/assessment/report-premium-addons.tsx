@@ -306,12 +306,10 @@ export function ReportPremiumAddons({ addons, claudeReport }: ReportPremiumAddon
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             {addons.seasonalFoods.map((food, i) => (
               <ScrollReveal key={food.food} delay={i * 50}>
-                <div className="flex items-start gap-3 rounded-2xl border border-border bg-background p-4">
-                  <span className="text-2xl">{food.emoji}</span>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{food.food}</p>
-                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{food.why}</p>
-                  </div>
+                <div className="flex flex-col rounded-2xl border border-[var(--icon-lime)]/20 bg-[var(--icon-lime)]/5 p-4">
+                  <span className="text-3xl mb-2">{food.emoji}</span>
+                  <p className="text-sm font-bold text-foreground">{food.food}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{food.why}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -379,27 +377,38 @@ export function ReportPremiumAddons({ addons, claudeReport }: ReportPremiumAddon
               </div>
             </div>
           </ScrollReveal>
-          <div className="mt-6 space-y-4 print:space-y-6">
-            {addons.milestones.map((m, i) => (
-              <ScrollReveal key={m.month} delay={i * 60}>
-                <div className="rounded-2xl border border-border bg-background p-5">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full brand-gradient text-xs font-bold text-white">
-                      {m.month}
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            {addons.milestones.map((m, i) => {
+              const MONTH_GRADIENTS = [
+                "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
+                "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
+                "linear-gradient(135deg, var(--icon-teal), var(--icon-green))",
+              ]
+              return (
+                <ScrollReveal key={m.month} delay={i * 60}>
+                  <div className="flex flex-col rounded-2xl border border-border bg-background overflow-hidden">
+                    {/* Month header with gradient */}
+                    <div
+                      className="px-5 py-4 text-white"
+                      style={{ background: MONTH_GRADIENTS[i] ?? MONTH_GRADIENTS[0] }}
+                    >
+                      <p className="text-xs font-bold uppercase tracking-widest opacity-80">Month {m.month}</p>
+                      <p className="mt-1 text-lg font-bold">{m.title}</p>
                     </div>
-                    <p className="font-semibold text-foreground">Month {m.month}: {m.title}</p>
+                    <div className="flex flex-1 flex-col p-4">
+                      <ul className="space-y-2.5">
+                        {m.goals.map((goal) => (
+                          <li key={goal} className="flex items-start gap-2.5">
+                            <div className="mt-0.5 h-4 w-4 shrink-0 rounded border border-border print:border-foreground/30" />
+                            <span className="text-xs leading-relaxed text-muted-foreground">{goal}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
-                  <ul className="space-y-2">
-                    {m.goals.map((goal) => (
-                      <li key={goal} className="flex items-start gap-3">
-                        <div className="mt-0.5 h-4 w-4 shrink-0 rounded border border-border print:border-foreground/30" />
-                        <span className="text-sm leading-relaxed text-muted-foreground">{goal}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </ScrollReveal>
-            ))}
+                </ScrollReveal>
+              )
+            })}
           </div>
         </div>
       </section>

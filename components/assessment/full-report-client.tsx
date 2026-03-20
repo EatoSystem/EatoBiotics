@@ -131,16 +131,18 @@ function DeepDiveCard({ dive }: { dive: PillarDeepDive }) {
           </p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {dive.foods.map((food) => (
-              <div key={food.food} className="rounded-2xl border border-border bg-secondary/20 p-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">{food.emoji}</span>
-                  <p className="text-sm font-semibold text-foreground">{food.food}</p>
+              <div key={food.food} className="rounded-2xl border border-border bg-background p-4 hover:bg-secondary/20 transition-colors">
+                <div className="mb-2 flex items-center gap-3">
+                  <span className="text-3xl">{food.emoji}</span>
+                  <p className="text-sm font-bold text-foreground">{food.food}</p>
                 </div>
-                <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{food.why}</p>
-                <p className="mt-2 text-xs font-medium text-foreground/70">
-                  <span className="text-[var(--icon-green)]">How to use: </span>
-                  {food.howToUse}
-                </p>
+                <p className="text-xs leading-relaxed text-muted-foreground">{food.why}</p>
+                <div className="mt-2.5 rounded-lg bg-[var(--icon-green)]/6 px-3 py-2">
+                  <p className="text-[11px] leading-relaxed text-foreground/70">
+                    <span className="font-semibold text-[var(--icon-green)]">How to use: </span>
+                    {food.howToUse}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
@@ -150,8 +152,8 @@ function DeepDiveCard({ dive }: { dive: PillarDeepDive }) {
           </p>
           <div className="mt-3 space-y-2">
             {dive.reduce.map((item) => (
-              <div key={item.food} className="flex gap-3 rounded-xl border border-border bg-background p-4">
-                <TrendingDown size={15} className="mt-0.5 shrink-0 text-muted-foreground" />
+              <div key={item.food} className="flex gap-3 rounded-xl border border-destructive/10 bg-destructive/4 p-4">
+                <span className="mt-0.5 shrink-0 text-destructive/60 font-bold text-sm">✕</span>
                 <div>
                   <p className="text-sm font-semibold text-foreground">{item.food}</p>
                   <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{item.reason}</p>
@@ -258,29 +260,28 @@ function FullReportSections({
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             {report.top12Foods.map((food, i) => (
               <ScrollReveal key={food.food} delay={i * 40}>
-                <div className="flex items-start gap-3 rounded-2xl border border-border bg-background p-4">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full brand-gradient text-sm font-bold text-white">
+                <div className="relative flex flex-col rounded-2xl border border-border bg-background p-4 overflow-hidden">
+                  {/* Rank badge */}
+                  <div className="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full brand-gradient text-[10px] font-bold text-white">
                     {i + 1}
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{food.emoji}</span>
-                      <p className="text-sm font-semibold text-foreground">{food.food}</p>
-                      {food.priority === "high" && (
-                        <Star size={11} className="text-[var(--icon-yellow)] fill-[var(--icon-yellow)]" />
-                      )}
-                    </div>
-                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{food.impact}</p>
-                    <div className="mt-1.5 flex flex-wrap gap-1">
-                      {food.pillars.map((p) => (
-                        <span
-                          key={p}
-                          className="rounded-full border border-border px-2 py-0.5 text-[10px] font-medium capitalize text-muted-foreground"
-                        >
-                          {p}
-                        </span>
-                      ))}
-                    </div>
+                  <span className="text-4xl mb-2">{food.emoji}</span>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <p className="text-sm font-bold text-foreground">{food.food}</p>
+                    {food.priority === "high" && (
+                      <Star size={11} className="text-[var(--icon-yellow)] fill-[var(--icon-yellow)]" />
+                    )}
+                  </div>
+                  <p className="text-xs leading-relaxed text-muted-foreground flex-1">{food.impact}</p>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {food.pillars.map((p) => (
+                      <span
+                        key={p}
+                        className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium capitalize text-muted-foreground"
+                      >
+                        {p}
+                      </span>
+                    ))}
                   </div>
                 </div>
               </ScrollReveal>
