@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     if (resendKey) {
       const resend = new Resend(resendKey)
       const { error } = await resend.emails.send({
-        from: emailFrom,
+        from: `EatoBiotics <${emailFrom}>`,
         to: lead.email,
         bcc: ownerEmail ? [ownerEmail] : undefined,
         subject,
