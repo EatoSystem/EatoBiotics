@@ -62,3 +62,50 @@ export type ClaudeReportOutput =
   | ClaudeStarterReport
   | ClaudeFullReport
   | ClaudePremiumReport
+
+// ── Deep Report Types (Paid Deep Assessment) ───────────────────────────────
+// These extend the base Claude report types with fields that require
+// the user's deep assessment answers — not just their pillar scores.
+
+export interface DeepStarterReport extends ClaudeStarterReport {
+  /** 2 paragraphs connecting deep answers to their pattern */
+  deepInsight: string
+  /** The single most impactful discovery from their deep answers */
+  topTrigger: string
+  topTriggerExplanation: string
+}
+
+export interface DeepFullReport extends ClaudeFullReport {
+  deepInsight: string
+  /** How sleep / stress / exercise connect to their gut pillar scores */
+  lifestyleConnection: string
+  topTrigger: string
+  topTriggerExplanation: string
+  /** 5 foods chosen specifically for this person based on their deep answers */
+  specificFoodList: Array<{
+    food: string
+    emoji: string
+    /** References their actual answers — e.g. "Since you mentioned eating at your desk..." */
+    whyForThem: string
+    howToUse: string
+  }>
+}
+
+export interface DeepPremiumReport extends ClaudePremiumReport {
+  deepInsight: string
+  lifestyleConnection: string
+  /** Summary of the 3 gut-diagnostic question answers */
+  gutDiagnosticSummary: string
+  /** Cross-references symptom answers with pillar scores */
+  symptomPattern: string
+  topTrigger: string
+  topTriggerExplanation: string
+  specificFoodList: Array<{
+    food: string
+    emoji: string
+    whyForThem: string
+    howToUse: string
+  }>
+}
+
+export type DeepReport = DeepStarterReport | DeepFullReport | DeepPremiumReport

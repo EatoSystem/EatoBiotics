@@ -2,6 +2,9 @@ import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import Stripe from "stripe"
 import { FullReportClient } from "@/components/assessment/full-report-client"
+import { PaidReportClient } from "@/components/assessment/paid-report-client"
+import { getSupabase } from "@/lib/supabase"
+import type { DeepReport } from "@/lib/claude-report"
 
 export const metadata: Metadata = {
   title: "Your EatoBiotics Report",
@@ -36,8 +39,14 @@ export default async function ReportPage({ searchParams }: Props) {
       redirect("/assessment")
     }
 
-    // Extract tier from client_reference_id (base64 encoded JSON)
+    // Extract tier + free scores from client_reference_id (base64 encoded JSON)
     let tier: "starter" | "full" | "premium" = "full"
+    let freeScores: {
+      overall: number
+      subScores: { diversity: number; feeding: number; adding: number; consistency: number; feeling: number }
+      profile: { type: string; tagline: string; description: string; color: string }
+    } | undefined
+
     try {
       if (session.client_reference_id) {
         const decoded = JSON.parse(
@@ -46,11 +55,45 @@ export default async function ReportPage({ searchParams }: Props) {
         if (decoded.tier === "starter" || decoded.tier === "full" || decoded.tier === "premium") {
           tier = decoded.tier
         }
+        if (decoded.overall && decoded.subScores && decoded.profile) {
+          freeScores = {
+            overall: decoded.overall,
+            subScores: decoded.subScores,
+            profile: decoded.profile,
+          }
+        }
       }
     } catch {
       // Fallback to full if decode fails
     }
 
+    // Check if deep assessment is complete in Supabase
+    const supabase = getSupabase()
+    if (supabase) {
+      const { data } = await supabase
+        .from("deep_assessments")
+        .select("status, report_json, pdf_url")
+        .eq("stripe_session_id", session_id)
+        .single()
+
+      if (data?.status === "complete" && data.report_json) {
+        // Deep assessment done — render paid report from saved data (no new Claude call)
+        return (
+          <PaidReportClient
+            tier={tier}
+            sessionId={session_id}
+            reportJson={data.report_json as DeepReport}
+            pdfUrl={data.pdf_url ?? null}
+            freeScores={freeScores}
+          />
+        )
+      }
+
+      // Deep assessment not done yet — redirect to complete it first
+      redirect(`/assessment/deep?session_id=${session_id}`)
+    }
+
+    // Supabase not configured (dev mode without DB) — fall through to existing client
     return <FullReportClient tier={tier} />
   } catch {
     redirect("/assessment")
