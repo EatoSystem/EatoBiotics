@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import {
   CheckCircle2,
   TrendingUp,
@@ -10,6 +11,7 @@ import {
   FlaskConical,
   Clock,
   Heart,
+  Utensils,
 } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { ScoreRing } from "./score-ring"
@@ -19,6 +21,22 @@ import { MissionNote } from "./mission-note"
 import { PillarRadar } from "./pillar-radar"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
+import { getFoodBySlug } from "@/lib/foods"
+
+/* ── Gut Starter Pack config ─────────────────────────────────────────── */
+
+// Profile type → recommended food slugs (ordered by priority)
+const STARTER_PACK: Record<string, string[]> = {
+  "Thriving System":    ["kimchi", "kombucha", "asparagus", "tempeh", "pomegranate", "water-kefir"],
+  "Strong Foundation":  ["kimchi", "kefir", "garlic", "asparagus", "wild-salmon", "almonds"],
+  "Emerging Balance":   ["yogurt", "oats", "garlic", "blueberries", "eggs", "lentils"],
+  "Inconsistent System":["garlic", "oats", "yogurt", "banana", "eggs", "kimchi"],
+  "Underfed System":    ["garlic", "oats", "yogurt", "banana", "lentils", "kimchi"],
+  "Early Builder":      ["garlic", "oats", "yogurt", "banana", "lentils", "eggs"],
+}
+
+// Fallback for any unrecognised profile
+const DEFAULT_STARTER: string[] = ["garlic", "oats", "yogurt", "kefir", "lentils", "blueberries"]
 
 const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
   Leaf,
@@ -306,6 +324,70 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
               </ScrollReveal>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── Gut Starter Pack ─────────────────────────────────────────── */}
+      <section className="border-t border-border px-6 py-16">
+        <div className="mx-auto max-w-2xl">
+          <ScrollReveal>
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              Your personalised picks
+            </p>
+            <h2 className="mt-2 font-serif text-2xl font-semibold text-foreground sm:text-3xl">
+              Your Gut Starter Pack
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Six foods matched to your profile type — add any of them to today&apos;s plate to start improving your score right now.
+            </p>
+          </ScrollReveal>
+
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {(STARTER_PACK[profile.type] ?? DEFAULT_STARTER).map((slug, i) => {
+              const food = getFoodBySlug(slug)
+              if (!food) return null
+              return (
+                <ScrollReveal key={slug} delay={i * 60}>
+                  <div
+                    className="relative overflow-hidden rounded-2xl border border-border bg-background p-4 transition-all hover:shadow-md"
+                    style={{
+                      borderTopColor: food.accentColor,
+                      borderTopWidth: "3px",
+                    }}
+                  >
+                    <span className="text-3xl">{food.emoji}</span>
+                    <p className="mt-2 text-[10px] font-bold uppercase tracking-widest" style={{ color: food.accentColor }}>
+                      {food.biotic === "prebiotic" ? "Prebiotic" :
+                       food.biotic === "probiotic" ? "Probiotic" :
+                       food.biotic === "postbiotic" ? "Postbiotic" :
+                       food.biotic === "protein" ? "Protein" : "Food"}
+                    </p>
+                    <p className="mt-0.5 font-serif text-sm font-semibold text-foreground">{food.name}</p>
+                    <p className="mt-1 text-[11px] leading-snug text-muted-foreground line-clamp-2">{food.tagline}</p>
+                    <Link
+                      href={`/myplate?add=${food.slug}`}
+                      className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                      style={{ background: food.accentColor }}
+                    >
+                      <Utensils size={11} />
+                      Add to Plate
+                    </Link>
+                  </div>
+                </ScrollReveal>
+              )
+            })}
+          </div>
+
+          <ScrollReveal delay={400}>
+            <div className="mt-6 text-center">
+              <Link
+                href="/food"
+                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Browse the full food library →
+              </Link>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 

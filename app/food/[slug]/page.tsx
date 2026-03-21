@@ -6,7 +6,7 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 import { GradientText } from "@/components/gradient-text"
 import { ShareBar } from "@/components/share-bar"
 import { getFoodBySlug, foods, bioticLabels } from "@/lib/foods"
-import { ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react"
+import { ArrowUpRight, ChevronLeft, ChevronRight, Utensils } from "lucide-react"
 
 export async function generateStaticParams() {
   return foods.map((food) => ({ slug: food.slug }))
@@ -43,6 +43,9 @@ export default async function FoodPage({
   const prevFood = currentIndex > 0 ? foods[currentIndex - 1] : null
   const nextFood = currentIndex < foods.length - 1 ? foods[currentIndex + 1] : null
   const relatedFoods = foods.filter((f) => f.slug !== slug && f.biotic === food.biotic).slice(0, 3)
+
+  // Build a name → slug lookup for pairing deep links
+  const nameToSlug = Object.fromEntries(foods.map((f) => [f.name.toLowerCase(), f.slug]))
 
   return (
     <>
@@ -109,6 +112,22 @@ export default async function FoodPage({
             <p className="text-base leading-relaxed text-foreground md:text-lg">
               {food.description}
             </p>
+          </ScrollReveal>
+
+          {/* Add to My Plate CTA */}
+          <ScrollReveal delay={50}>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <Link
+                href={`/myplate?add=${food.slug}`}
+                className="brand-gradient inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow-md shadow-icon-green/20 transition-all hover:opacity-90"
+              >
+                <Utensils size={15} />
+                Add to My Plate
+              </Link>
+              <span className="text-xs text-muted-foreground">
+                Adds {food.name} to today&apos;s gut score
+              </span>
+            </div>
           </ScrollReveal>
 
           {/* Benefits */}
@@ -179,14 +198,25 @@ export default async function FoodPage({
                 Pairs well with
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                {food.pairsWith.map((pair) => (
-                  <span
-                    key={pair}
-                    className="rounded-full border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-icon-green hover:text-icon-green"
-                  >
-                    {pair}
-                  </span>
-                ))}
+                {food.pairsWith.map((pair) => {
+                  const pairedSlug = nameToSlug[pair.toLowerCase()]
+                  return pairedSlug ? (
+                    <Link
+                      key={pair}
+                      href={`/food/${pairedSlug}`}
+                      className="rounded-full border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-icon-green hover:bg-icon-green/5 hover:text-icon-green"
+                    >
+                      {pair}
+                    </Link>
+                  ) : (
+                    <span
+                      key={pair}
+                      className="rounded-full border border-border px-3 py-1.5 text-sm font-medium text-foreground/70"
+                    >
+                      {pair}
+                    </span>
+                  )
+                })}
               </div>
             </div>
           </ScrollReveal>

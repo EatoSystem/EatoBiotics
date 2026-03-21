@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 import { MyPlateClient } from "./myplate-client"
 
 export const metadata: Metadata = {
@@ -13,5 +14,9 @@ export const metadata: Metadata = {
 }
 
 export default function MyPlatePage() {
-  return <MyPlateClient />
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <MyPlateClient />
+    </Suspense>
+  )
 }

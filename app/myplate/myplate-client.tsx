@@ -1,16 +1,33 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Utensils, Leaf, BookHeart } from "lucide-react"
+import { useSearchParams } from "next/navigation"
+import { Utensils, Leaf, BookHeart, Flame, CheckCircle2 } from "lucide-react"
 import { PlateBuilder } from "@/components/app/plate-builder"
 import { PlantTracker } from "@/components/app/plant-tracker"
 import { JournalTracker } from "@/components/app/journal-tracker"
 import { cn } from "@/lib/utils"
-import { loadPlate, loadPlantTracker } from "@/lib/local-storage"
-import { foods } from "@/lib/foods"
-import { calculateBioticsScore, getScoreBand } from "@/lib/scoring"
+import {
+  loadPlate,
+  savePlate,
+  loadPlantTracker,
+  loadJournalEntries,
+  getTodayIso,
+  type JournalEntry,
+} from "@/lib/local-storage"
+import { foods, getFoodBySlug } from "@/lib/foods"
+import { calculateBioticsScore } from "@/lib/scoring"
 
 type Tab = "plate" | "plants" | "journal"
+
+// Maps food biotic type to the PlateState quadrant key
+const BIOTIC_TO_QUADRANT: Record<string, "fiber" | "fermented" | "fats" | "protein"> = {
+  prebiotic: "fiber",
+  probiotic: "fermented",
+  postbiotic: "fats",
+  protein: "protein",
+  all: "fiber",
+}
 
 const TABS: {
   key: Tab
@@ -30,6 +47,33 @@ function getTodayLabel() {
     day: "numeric",
     month: "long",
   })
+}
+
+/* ── Streak calculation ──────────────────────────────────────────────── */
+
+function calculateStreak(entries: JournalEntry[]): number {
+  if (entries.length === 0) return 0
+  const entryDates = new Set(entries.map((e) => e.date))
+  const today = getTodayIso()
+
+  // If today isn't checked in yet, start counting from yesterday (don't break streak pre-check-in)
+  const startDate = new Date(today)
+  if (!entryDates.has(today)) {
+    startDate.setDate(startDate.getDate() - 1)
+  }
+
+  let streak = 0
+  const d = new Date(startDate)
+  while (true) {
+    const dateStr = d.toISOString().slice(0, 10)
+    if (entryDates.has(dateStr)) {
+      streak++
+      d.setDate(d.getDate() - 1)
+    } else {
+      break
+    }
+  }
+  return streak
 }
 
 /* ── Mini score ring for the header ─────────────────────────────────── */
@@ -59,11 +103,15 @@ function MiniScoreRing({ score, color }: { score: number; color: string }) {
 }
 
 export function MyPlateClient() {
+  const searchParams = useSearchParams()
+
   const [activeTab, setActiveTab] = useState<Tab>("plate")
   const [headerScore, setHeaderScore] = useState(0)
   const [headerScoreColor, setHeaderScoreColor] = useState("var(--muted-foreground)")
   const [headerScoreLabel, setHeaderScoreLabel] = useState("Getting Started")
   const [plantCount, setPlantCount] = useState(0)
+  const [streakCount, setStreakCount] = useState(0)
+  const [addedFoodName, setAddedFoodName] = useState<string | null>(null)
 
   // Load summary data for the Today header
   function refreshHeader() {
@@ -82,13 +130,34 @@ export function MyPlateClient() {
     }
     const tracker = loadPlantTracker()
     setPlantCount(tracker.plants.length)
+
+    // Streak from journal
+    const entries = loadJournalEntries()
+    setStreakCount(calculateStreak(entries))
   }
 
+  // Handle ?add=slug — auto-add the food to the plate on mount
   useEffect(() => {
+    const addSlug = searchParams.get("add")
+    if (addSlug) {
+      const food = getFoodBySlug(addSlug)
+      if (food) {
+        const quadrantKey = BIOTIC_TO_QUADRANT[food.biotic] ?? "fiber"
+        const plate = loadPlate()
+        if (!plate[quadrantKey].includes(addSlug) && plate[quadrantKey].length < 3) {
+          savePlate({ ...plate, [quadrantKey]: [...plate[quadrantKey], addSlug] })
+          setAddedFoodName(food.name)
+          setTimeout(() => setAddedFoodName(null), 4000)
+        }
+      }
+      // Clean URL without reload
+      window.history.replaceState({}, "", "/myplate")
+    }
     refreshHeader()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Re-read header data whenever the tab changes (so switching back to Plate shows fresh score)
+  // Re-read header data whenever the tab changes
   function handleTabChange(tab: Tab) {
     setActiveTab(tab)
     refreshHeader()
@@ -139,6 +208,12 @@ export function MyPlateClient() {
                   <Leaf size={10} className="text-icon-green" />
                   {plantCount} plant{plantCount !== 1 ? "s" : ""} this week
                 </p>
+                {streakCount > 0 && (
+                  <p className="mt-0.5 flex items-center gap-1 text-xs font-semibold" style={{ color: "var(--icon-orange)" }}>
+                    <Flame size={10} />
+                    {streakCount} day streak
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -172,6 +247,23 @@ export function MyPlateClient() {
           </div>
         </div>
       </div>
+
+      {/* ── "Added to plate" toast ───────────────────────────────────── */}
+      {addedFoodName && (
+        <div className="mx-auto max-w-2xl px-6 pt-4">
+          <div
+            className="flex items-center gap-2.5 rounded-2xl border px-4 py-3 text-sm font-medium"
+            style={{
+              background: "color-mix(in srgb, var(--icon-green) 8%, var(--background))",
+              borderColor: "color-mix(in srgb, var(--icon-green) 30%, transparent)",
+              color: "var(--icon-green)",
+            }}
+          >
+            <CheckCircle2 size={16} />
+            <span><strong>{addedFoodName}</strong> has been added to your plate</span>
+          </div>
+        </div>
+      )}
 
       {/* ── Tab content ─────────────────────────────────────────────── */}
       <div className="mx-auto max-w-2xl px-6 py-8">
