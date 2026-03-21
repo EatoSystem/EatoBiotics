@@ -1,5 +1,6 @@
 interface ResultsEmailOpts {
   name: string
+  email?: string
   overall: number
   profileType: string
   tagline: string
@@ -43,7 +44,7 @@ export function buildResultsEmail(opts: ResultsEmailOpts): {
   subject: string
   html: string
 } {
-  const { name, overall, profileType, tagline, profileDescription, subScores, nextActions, ageBracket } = opts
+  const { name, email, overall, profileType, tagline, profileDescription, subScores, nextActions, ageBracket } = opts
 
   const subject = `Your EatoBiotics Score: ${overall}/100 — ${profileType}`
 
@@ -262,6 +263,19 @@ export function buildResultsEmail(opts: ResultsEmailOpts): {
             <td style="padding: 32px 40px; text-align: center;">
               <p style="margin: 0 0 20px; font-size: 16px; color: #333333; font-family: Georgia, serif; font-style: italic;">Ready to see exactly what to eat, what to add, and a 30-day plan?</p>
               <a href="https://eatobiotics.com/assessment/demo" style="display: inline-block; background: linear-gradient(135deg, #7fc47e 0%, #3ab0a0 100%); color: #ffffff; text-decoration: none; font-size: 15px; font-weight: bold; font-family: Arial, sans-serif; padding: 14px 32px; border-radius: 50px;">Unlock Your Full Report →</a>
+            </td>
+          </tr>
+
+          <!-- Account save CTA -->
+          <tr>
+            <td style="padding: 0 40px 24px; text-align: center;">
+              <p style="margin: 0 0 10px; font-size: 13px; color: #888888; font-family: Arial, sans-serif;">
+                Want to access your results anytime?
+              </p>
+              <a href="https://eatobiotics.com/account/signin${email ? `?email=${encodeURIComponent(email)}` : ``}"
+                 style="display: inline-block; border: 1.5px solid #4caf7d; color: #4caf7d; text-decoration: none; font-size: 13px; font-weight: bold; font-family: Arial, sans-serif; padding: 10px 24px; border-radius: 50px;">
+                Save to your account →
+              </a>
             </td>
           </tr>
 

@@ -6,6 +6,7 @@ import { useState, useRef, useEffect } from "react"
 import { Menu, X, ChevronDown, BookOpen, Leaf, Smartphone, UtensilsCrossed, Calendar, Info, Globe, Map, Mic, Activity } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { AccountNavItem } from "@/components/account/account-nav-item"
 
 type DropdownItem = {
   href: string
@@ -169,6 +170,7 @@ export function Nav() {
           >
             My Plate
           </Link>
+          <AccountNavItem />
           <a
             href="https://eatobiotics.substack.com/"
             target="_blank"
@@ -250,6 +252,9 @@ export function Nav() {
               )
             })}
 
+            <div className="mt-1 px-3">
+              <AccountNavItem />
+            </div>
             <a
               href="https://eatobiotics.substack.com/"
               target="_blank"

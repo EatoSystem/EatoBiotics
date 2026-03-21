@@ -4,10 +4,11 @@ import { getSupabase } from "@/lib/supabase"
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { name, email, ageBracket } = body as {
+    const { name, email, ageBracket, referralCode } = body as {
       name: string
       email: string
       ageBracket: string
+      referralCode?: string
     }
 
     if (!name || !email || !ageBracket) {
@@ -27,6 +28,18 @@ export async function POST(req: NextRequest) {
       )
       if (error) {
         console.error("[submit-lead] Supabase error:", error.message)
+      }
+
+      // Track referral if a code was provided
+      if (referralCode) {
+        try {
+          await supabase.from("referrals").insert({
+            referrer_code: referralCode,
+            referred_email: email,
+          })
+        } catch (refErr) {
+          console.error("[submit-lead] Referral insert error:", refErr)
+        }
       }
     } else {
       console.log("[submit-lead] New lead (Supabase not configured):", { name, email, ageBracket })

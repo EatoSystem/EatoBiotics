@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import {
   CheckCircle2,
   TrendingUp,
@@ -16,6 +17,7 @@ import { SubScoreCard } from "./sub-score-card"
 import { PremiumTeaser } from "./premium-teaser"
 import { MissionNote } from "./mission-note"
 import { PillarRadar } from "./pillar-radar"
+import { getSupabaseBrowser } from "@/lib/supabase-browser"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
 
 const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
@@ -29,9 +31,61 @@ const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: 
 interface AssessmentResultsProps {
   result: AssessmentResult
   onRetake: () => void
+  leadEmail?: string
 }
 
-export function AssessmentResults({ result, onRetake }: AssessmentResultsProps) {
+function SaveResultsCard({ email }: { email?: string }) {
+  const [sent, setSent] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  async function handleSave() {
+    if (!email || sent) return
+    setLoading(true)
+    try {
+      const supabase = getSupabaseBrowser()
+      await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/api/auth/callback?next=/account`,
+        },
+      })
+      setSent(true)
+    } catch {
+      // fail silently
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!email) return null
+
+  return (
+    <div className="rounded-2xl border bg-card p-6 text-center space-y-3">
+      <div className="w-10 h-10 rounded-full bg-[var(--icon-green)]/10 flex items-center justify-center mx-auto">
+        <span className="text-xl">💾</span>
+      </div>
+      <h3 className="font-semibold text-base">Save your results to your account</h3>
+      <p className="text-sm text-muted-foreground">
+        Access your report anytime, track your progress over time, and unlock early access to new features.
+      </p>
+      {sent ? (
+        <p className="text-sm font-medium text-[var(--icon-green)]">
+          ✓ Check your email for a sign-in link
+        </p>
+      ) : (
+        <button
+          onClick={handleSave}
+          disabled={loading}
+          className="brand-gradient text-white text-sm font-semibold px-6 py-2.5 rounded-full disabled:opacity-60"
+        >
+          {loading ? "Sending link…" : "Create your free account →"}
+        </button>
+      )}
+    </div>
+  )
+}
+
+export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentResultsProps) {
   const { overall, profile, insights, nextActions } = result
   const strengths = insights.filter((i) => i.strength)
   const opportunities = insights.filter((i) => i.opportunity)
@@ -269,6 +323,15 @@ export function AssessmentResults({ result, onRetake }: AssessmentResultsProps) 
         <div className="mx-auto max-w-2xl">
           <ScrollReveal>
             <PremiumTeaser result={result} />
+          </ScrollReveal>
+        </div>
+      </section>
+
+      {/* ── Save Results ─────────────────────────────────────────────── */}
+      <section className="border-t border-border px-6 py-16">
+        <div className="mx-auto max-w-2xl">
+          <ScrollReveal>
+            <SaveResultsCard email={leadEmail} />
           </ScrollReveal>
         </div>
       </section>

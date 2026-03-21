@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
     const { diversity, feeding, adding, consistency, feeling } = result.subScores
     const { subject, html } = buildResultsEmail({
       name: lead.name,
+      email: lead.email,
       overall: result.overall,
       profileType: result.profile.type,
       tagline: result.profile.tagline,

@@ -171,5 +171,5 @@ export function AssessmentClient() {
   // view === "results"
   if (!state.result) return null
 
-  return <AssessmentResults result={state.result} onRetake={handleRetake} />
+  return <AssessmentResults result={state.result} onRetake={handleRetake} leadEmail={lead?.email} />
 }
