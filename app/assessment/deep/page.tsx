@@ -11,12 +11,44 @@ export const metadata: Metadata = {
 }
 
 interface Props {
-  searchParams: Promise<{ session_id?: string }>
+  searchParams: Promise<{ session_id?: string; demo?: string; tier?: string }>
+}
+
+// Mock scores used for demo mode — matches DEMO_RESULT in demo-client.tsx
+const DEMO_FREE_SCORES = {
+  overall: 58,
+  subScores: { diversity: 55, feeding: 68, adding: 38, consistency: 72, feeling: 58 },
+  profile: {
+    type: "Emerging Balance",
+    tagline: "The building blocks are there. Consistency is the next step.",
+    description:
+      "You have awareness and some strong habits, but they haven't fully integrated into a reliable daily pattern yet.",
+    color: "var(--icon-lime)",
+  },
 }
 
 export default async function DeepAssessmentPage({ searchParams }: Props) {
-  const { session_id } = await searchParams
+  const params = await searchParams
+  const { session_id, demo, tier: tierParam } = params
 
+  // ── Demo mode bypass (no Stripe required) ─────────────────────────────
+  if (demo === "true") {
+    const demoTier =
+      tierParam === "starter" || tierParam === "full" || tierParam === "premium"
+        ? tierParam
+        : "full"
+    return (
+      <DeepAssessmentClient
+        sessionId={`demo-${demoTier}`}
+        tier={demoTier}
+        freeScores={DEMO_FREE_SCORES}
+        savedQuestions={null}
+        savedAnswers={null}
+      />
+    )
+  }
+
+  // ── Real flow ──────────────────────────────────────────────────────────
   if (!session_id) {
     redirect("/assessment")
   }
@@ -29,13 +61,7 @@ export default async function DeepAssessmentPage({ searchParams }: Props) {
         tier="full"
         freeScores={{
           overall: 58,
-          subScores: {
-            diversity: 55,
-            feeding: 60,
-            adding: 45,
-            consistency: 65,
-            feeling: 65,
-          },
+          subScores: { diversity: 55, feeding: 60, adding: 45, consistency: 65, feeling: 65 },
           profile: {
             type: "The Aware Optimiser",
             tagline: "You understand the basics but haven't yet built the habits to match.",
@@ -62,13 +88,7 @@ export default async function DeepAssessmentPage({ searchParams }: Props) {
     // Decode client_reference_id — base64 JSON with { overall, subScores, profile, tier }
     let tier: "starter" | "full" | "premium" = "full"
     let overall = 58
-    let subScores = {
-      diversity: 55,
-      feeding: 60,
-      adding: 45,
-      consistency: 65,
-      feeling: 65,
-    }
+    let subScores = { diversity: 55, feeding: 60, adding: 45, consistency: 65, feeling: 65 }
     let profile = {
       type: "The Aware Optimiser",
       tagline: "You understand the basics but haven't yet built the habits to match.",
@@ -101,7 +121,7 @@ export default async function DeepAssessmentPage({ searchParams }: Props) {
       const { data } = await supabase
         .from("deep_assessments")
         .select("status, questions, answers")
-        .eq("session_id", session_id)
+        .eq("stripe_session_id", session_id)
         .single()
 
       if (data) {

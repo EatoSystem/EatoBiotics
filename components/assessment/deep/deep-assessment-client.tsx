@@ -88,15 +88,19 @@ export function DeepAssessmentClient({
     loadQuestions()
   }, [loadQuestions])
 
+  const isDemoMode = sessionId.startsWith("demo-")
+
   function handleAnswer(id: string, value: DeepAnswer) {
     const updated = { ...answers, [id]: value }
     setAnswers(updated)
-    // Auto-save fire and forget
-    fetch("/api/save-deep-progress", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionId, answers: updated }),
-    }).catch(() => {/* ignore */})
+    // Auto-save fire and forget — skip in demo mode to avoid noisy Supabase errors
+    if (!isDemoMode) {
+      fetch("/api/save-deep-progress", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, answers: updated }),
+      }).catch(() => {/* ignore */})
+    }
   }
 
   async function handleSubmit() {
@@ -104,6 +108,25 @@ export function DeepAssessmentClient({
     setSubmitStage(0)
     setTimeout(() => setSubmitStage(1), 3000)
     setTimeout(() => setSubmitStage(2), 8000)
+
+    // Demo mode: skip real submission, redirect to static demo report
+    if (isDemoMode) {
+      const demoTier = sessionId.replace("demo-", "") as "starter" | "full" | "premium"
+      // Still generate real Claude questions/analysis for the demo — just skip Stripe/PDF/email
+      try {
+        const res = await fetch("/api/submit-deep-assessment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId, questions, answers }),
+        })
+        if (!res.ok) throw new Error("failed")
+        router.push(`/assessment/report?session_id=${sessionId}`)
+      } catch {
+        // Fallback: redirect to static demo report
+        router.push(`/assessment/demo?tier=${demoTier}`)
+      }
+      return
+    }
 
     try {
       const res = await fetch("/api/submit-deep-assessment", {
