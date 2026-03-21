@@ -104,9 +104,14 @@ function ScoreDisplay({
   ]
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5">
+    <div
+      className="rounded-2xl p-5 border-2 border-transparent"
+      style={{
+        background: "linear-gradient(var(--background), var(--background)) padding-box, linear-gradient(135deg, var(--icon-lime), var(--icon-green), var(--icon-teal)) border-box",
+      }}
+    >
       {/* Main score */}
-      <div className="flex items-center gap-5 mb-5">
+      <div className="flex items-center gap-6 mb-6">
         <div className="relative flex shrink-0 items-center justify-center">
           <svg width="130" height="130" className="-rotate-90">
             <circle cx="65" cy="65" r={r} fill="none" stroke="currentColor" strokeWidth="9" className="text-border" />
@@ -120,13 +125,13 @@ function ScoreDisplay({
             />
           </svg>
           <div className="absolute text-center">
-            <p className="text-4xl font-bold tabular-nums leading-none" style={{ color }}>{score}</p>
+            <p className="text-5xl font-bold tabular-nums leading-none" style={{ color }}>{score}</p>
             <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Gut Score</p>
           </div>
         </div>
         <div>
-          <p className="text-xl font-bold font-serif tracking-tight" style={{ color }}>{label}</p>
-          <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
+          <p className="text-2xl font-bold font-serif tracking-tight" style={{ color }}>{label}</p>
+          <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
             {score >= 65
               ? "This meal is working well for your gut microbiome."
               : score >= 50
@@ -137,19 +142,19 @@ function ScoreDisplay({
       </div>
 
       {/* Three pillar indicators */}
-      <div className="space-y-2.5">
+      <div className="space-y-3">
         {pillars.map((p) => (
           <div key={p.label} className="flex items-center gap-3">
             <span className="w-5 text-base leading-none">{p.icon}</span>
             <span className="w-20 shrink-0 text-xs font-medium text-foreground/70">{p.label}</span>
-            <div className="flex-1 h-2 rounded-full bg-border/50 overflow-hidden">
+            <div className="flex-1 h-2.5 rounded-full bg-border/50 overflow-hidden">
               <div
-                className="h-2 rounded-full transition-all duration-700"
+                className="h-2.5 rounded-full transition-all duration-700"
                 style={{ width: `${p.strength * 100}%`, background: p.color, opacity: p.present ? 1 : 0.4 }}
               />
             </div>
             <span
-              className="w-24 shrink-0 text-right text-xs font-medium"
+              className="w-24 shrink-0 text-right text-xs font-semibold"
               style={{ color: p.present ? p.color : "var(--muted-foreground)" }}
             >
               {p.status}
@@ -207,10 +212,10 @@ function UploadZone({ onFile }: { onFile: (file: File) => void }) {
       }}
       onClick={() => inputRef.current?.click()}
       className={cn(
-        "relative flex cursor-pointer flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed p-12 text-center transition-all",
+        "relative flex cursor-pointer flex-col items-center justify-center gap-5 rounded-2xl border-2 border-dashed p-14 text-center transition-all",
         dragging
           ? "border-[var(--icon-green)] bg-[var(--icon-green)]/5"
-          : "border-border hover:border-[var(--icon-green)]/50 hover:bg-secondary/30"
+          : "border-border hover:border-[var(--icon-green)]/50 hover:bg-secondary/20"
       )}
     >
       <input
@@ -223,18 +228,37 @@ function UploadZone({ onFile }: { onFile: (file: File) => void }) {
           if (file) handleFile(file)
         }}
       />
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary/50">
-        <Camera size={28} className="text-muted-foreground" />
+
+      {/* Decorative accent dots */}
+      <div className="flex items-center gap-1.5">
+        <div className="h-1.5 w-8 rounded-full" style={{ background: "var(--icon-lime)" }} />
+        <div className="h-1.5 w-5 rounded-full" style={{ background: "var(--icon-green)" }} />
+        <div className="h-1.5 w-3 rounded-full" style={{ background: "var(--icon-teal)" }} />
       </div>
+
+      {/* Icon */}
+      <div
+        className="flex h-16 w-16 items-center justify-center rounded-2xl"
+        style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
+      >
+        <Camera size={28} className="text-white" />
+      </div>
+
       <div>
         <p className="text-base font-semibold text-foreground">Upload a meal photo</p>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1.5 text-sm text-muted-foreground">
           Drag & drop or tap to browse · JPEG, PNG, WebP · up to 5MB
         </p>
       </div>
-      <div className="flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2">
-        <Upload size={14} className="text-muted-foreground" />
-        <span className="text-sm font-medium text-foreground">Choose photo</span>
+
+      <div
+        className="brand-gradient flex items-center gap-2 rounded-full px-5 py-2.5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Upload size={13} className="text-white" />
+        <span className="text-sm font-semibold text-white" onClick={() => inputRef.current?.click()}>
+          Choose photo
+        </span>
       </div>
     </div>
   )
@@ -249,9 +273,9 @@ function LoadingView({ previewUrl }: { previewUrl: string }) {
         <Image src={previewUrl} alt="Your meal" width={600} height={400} className="w-full object-cover max-h-72" unoptimized />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[var(--icon-green)]/20 to-transparent animate-scan" />
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="rounded-2xl bg-background/90 backdrop-blur-sm px-5 py-3 flex items-center gap-3">
+          <div className="rounded-2xl bg-background/90 backdrop-blur-sm px-5 py-3 flex items-center gap-3 shadow-lg">
             <Loader2 size={18} className="animate-spin text-[var(--icon-green)]" />
-            <span className="text-sm font-semibold">Claude is analysing your meal…</span>
+            <span className="text-sm font-semibold">EatoBiotics is analysing your meal…</span>
           </div>
         </div>
       </div>
@@ -285,16 +309,18 @@ function ResultsView({
   }, {} as Record<BioticType, AnalysedFood[]>)
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
 
       {/* Meal photo — full width at top */}
       <div className="relative overflow-hidden rounded-2xl">
         <Image
           src={previewUrl} alt="Your meal"
-          width={600} height={360}
-          className="w-full object-cover max-h-56"
+          width={600} height={400}
+          className="w-full object-cover max-h-72"
           unoptimized
         />
+        {/* Subtle bottom gradient for visual depth */}
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/60 to-transparent" />
       </div>
 
       {/* Score display */}
@@ -307,10 +333,10 @@ function ResultsView({
 
       {/* What this meal does well — lead with positives */}
       {result.whatThisMealDoes && (
-        <div className="rounded-2xl border border-[var(--icon-green)]/30 bg-[var(--icon-green)]/5 p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles size={13} style={{ color: "var(--icon-green)" }} />
-            <p className="text-xs font-bold uppercase tracking-widest text-[var(--icon-green)]">
+        <div className="rounded-2xl border border-[var(--icon-green)]/30 border-l-4 border-l-[var(--icon-green)] bg-[var(--icon-green)]/5 p-5">
+          <div className="flex items-center gap-2 mb-2.5">
+            <Sparkles size={14} style={{ color: "var(--icon-green)" }} />
+            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
               What this meal does well
             </p>
           </div>
@@ -319,8 +345,8 @@ function ResultsView({
       )}
 
       {/* Foods identified */}
-      <div className="rounded-2xl border border-border bg-card p-4">
-        <p className="mb-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+      <div className="rounded-2xl border border-border bg-card p-5">
+        <p className="mb-3 border-b border-border pb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
           Foods identified
         </p>
         {(["prebiotic", "probiotic", "postbiotic", "protein"] as const).map((biotic) => {
@@ -328,20 +354,20 @@ function ResultsView({
           if (!foods?.length) return null
           const cfg = BIOTIC_CONFIG[biotic]
           return (
-            <div key={biotic} className="mb-3 last:mb-0">
-              <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest" style={{ color: cfg.color }}>
+            <div key={biotic} className="mb-4 last:mb-0">
+              <p className="mb-2 text-xs font-bold uppercase tracking-widest" style={{ color: cfg.color }}>
                 {cfg.label}
               </p>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {foods.map((f, i) => (
                   <span
                     key={i}
                     className={cn(
-                      "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium",
+                      "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold",
                       f.confidence === "low" && "opacity-60"
                     )}
                     style={{ background: cfg.bg, color: cfg.color }}
-                    title={f.confidence === "low" ? "Low confidence — Claude wasn't certain" : undefined}
+                    title={f.confidence === "low" ? "Low confidence" : undefined}
                   >
                     {f.emoji} {f.name}
                     {f.confidence === "low" && <span className="opacity-60">?</span>}
@@ -355,14 +381,19 @@ function ResultsView({
 
       {/* Complete your gut trifecta — reframed as opportunity */}
       {result.missingBiotics.length > 0 && (
-        <div className="rounded-2xl border border-[var(--icon-orange)]/30 bg-[var(--icon-orange)]/5 p-4">
-          <p className="mb-2.5 text-xs font-bold uppercase tracking-widest text-[var(--icon-orange)]">
+        <div className="rounded-2xl border border-[var(--icon-orange)]/30 bg-[var(--icon-orange)]/5 p-5">
+          <p className="mb-3 text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-orange)" }}>
             To complete your gut trifecta
           </p>
-          <ul className="space-y-1.5">
+          <ul className="space-y-2.5">
             {result.missingBiotics.map((b) => (
-              <li key={b} className="flex items-start gap-2 text-sm text-foreground/80">
-                <span className="mt-0.5 font-semibold text-[var(--icon-orange)]">+</span>
+              <li key={b} className="flex items-start gap-3 text-sm text-foreground/80">
+                <span
+                  className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                  style={{ background: "var(--icon-orange)" }}
+                >
+                  +
+                </span>
                 <span>{TRIFECTA_LABELS[b]?.add ?? `Add a ${b} source`}</span>
               </li>
             ))}
@@ -372,15 +403,15 @@ function ResultsView({
 
       {/* Suggestions */}
       {result.suggestions.length > 0 && (
-        <div className="rounded-2xl border border-border bg-card p-4">
-          <p className="mb-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <p className="mb-3 border-b border-border pb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
             How to boost this meal
           </p>
-          <ul className="space-y-2.5">
+          <ul className="space-y-3">
             {result.suggestions.map((s, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-sm text-foreground/80">
+              <li key={i} className="flex items-start gap-3 text-sm text-foreground/80 leading-relaxed">
                 <span
-                  className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                  className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
                   style={{ background: "var(--icon-green)" }}
                 >
                   {i + 1}
@@ -393,16 +424,16 @@ function ResultsView({
       )}
 
       {/* CTAs */}
-      <div className="flex flex-col gap-2.5 sm:flex-row">
+      <div className="flex flex-col gap-3 sm:flex-row">
         <Link
           href="/myplate"
-          className="flex flex-1 items-center justify-center gap-2 rounded-xl brand-gradient py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          className="flex flex-1 items-center justify-center gap-2 rounded-2xl brand-gradient py-3.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
         >
           Build it in My Plate <ArrowRight size={14} />
         </Link>
         <button
           onClick={onReset}
-          className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary/40"
+          className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-border py-3.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary/60"
         >
           <RefreshCw size={14} /> Analyse another meal
         </button>
@@ -425,7 +456,7 @@ function ErrorView({ message, previewUrl, onReset }: { message: string; previewU
       </div>
       <button
         onClick={onReset}
-        className="w-full flex items-center justify-center gap-2 rounded-xl border border-border py-3 text-sm font-medium transition-colors hover:bg-secondary/40"
+        className="w-full flex items-center justify-center gap-2 rounded-2xl border border-border py-3 text-sm font-medium transition-colors hover:bg-secondary/40"
       >
         <RefreshCw size={14} /> Try again
       </button>
