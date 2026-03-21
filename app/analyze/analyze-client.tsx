@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Camera, Upload, RefreshCw, ArrowRight, Loader2, AlertCircle, Sparkles } from "lucide-react"
+import { Camera, RefreshCw, ArrowRight, Loader2, AlertCircle, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 /* ── Types ──────────────────────────────────────────────────────────── */
@@ -212,10 +212,10 @@ function UploadZone({ onFile }: { onFile: (file: File) => void }) {
       }}
       onClick={() => inputRef.current?.click()}
       className={cn(
-        "relative flex cursor-pointer flex-col items-center justify-center gap-5 rounded-2xl border-2 border-dashed p-14 text-center transition-all",
+        "relative flex cursor-pointer flex-col items-center justify-center gap-6 rounded-3xl border-2 p-16 text-center transition-all duration-200",
         dragging
-          ? "border-[var(--icon-green)] bg-[var(--icon-green)]/5"
-          : "border-border hover:border-[var(--icon-green)]/50 hover:bg-secondary/20"
+          ? "border-[var(--icon-green)] bg-[var(--icon-green)]/5 scale-[1.01]"
+          : "border-dashed border-border hover:border-[var(--icon-green)]/60 hover:bg-secondary/30"
       )}
     >
       <input
@@ -229,36 +229,40 @@ function UploadZone({ onFile }: { onFile: (file: File) => void }) {
         }}
       />
 
-      {/* Decorative accent dots */}
-      <div className="flex items-center gap-1.5">
-        <div className="h-1.5 w-8 rounded-full" style={{ background: "var(--icon-lime)" }} />
-        <div className="h-1.5 w-5 rounded-full" style={{ background: "var(--icon-green)" }} />
-        <div className="h-1.5 w-3 rounded-full" style={{ background: "var(--icon-teal)" }} />
+      {/* Icon with gradient glow */}
+      <div className="relative">
+        <div
+          className="absolute inset-0 rounded-2xl blur-xl opacity-40"
+          style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
+        />
+        <div
+          className="relative flex h-20 w-20 items-center justify-center rounded-2xl shadow-lg"
+          style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
+        >
+          <Camera size={32} className="text-white" />
+        </div>
       </div>
 
-      {/* Icon */}
-      <div
-        className="flex h-16 w-16 items-center justify-center rounded-2xl"
-        style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
-      >
-        <Camera size={28} className="text-white" />
-      </div>
-
-      <div>
-        <p className="text-base font-semibold text-foreground">Upload a meal photo</p>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          Drag & drop or tap to browse · JPEG, PNG, WebP · up to 5MB
+      <div className="space-y-2">
+        <p className="text-xl font-semibold text-foreground">Drop your meal photo here</p>
+        <p className="text-sm text-muted-foreground">
+          or tap to browse · JPEG, PNG, WebP · up to 5MB
         </p>
       </div>
 
-      <div
-        className="brand-gradient flex items-center gap-2 rounded-full px-5 py-2.5"
-        onClick={(e) => e.stopPropagation()}
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); inputRef.current?.click() }}
+        className="brand-gradient rounded-full px-7 py-3 text-sm font-semibold text-white shadow-md shadow-icon-green/20 transition-all hover:opacity-90 hover:shadow-lg hover:shadow-icon-green/30"
       >
-        <Upload size={13} className="text-white" />
-        <span className="text-sm font-semibold text-white" onClick={() => inputRef.current?.click()}>
-          Choose photo
-        </span>
+        Choose photo
+      </button>
+
+      {/* Biotic pill decorations */}
+      <div className="flex items-center gap-2 opacity-40">
+        <div className="biotic-pill" style={{ background: "var(--icon-lime)" }} />
+        <div className="biotic-pill" style={{ background: "var(--icon-green)" }} />
+        <div className="biotic-pill" style={{ background: "var(--icon-teal)" }} />
       </div>
     </div>
   )

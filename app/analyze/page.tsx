@@ -1,103 +1,119 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
-import { Camera } from "lucide-react"
-import { AnalyzeClient } from "./analyze-client"
+import Image from "next/image"
+import { ScrollReveal } from "@/components/scroll-reveal"
 import { GradientText } from "@/components/gradient-text"
+import { AnalyzeClient } from "./analyze-client"
 
 export const metadata: Metadata = {
   title: "Meal Analysis",
   description: "Upload a photo of your meal and EatoBiotics identifies every food and scores it against the 3 biotics framework.",
 }
 
+const BIOTICS = [
+  {
+    number: "01",
+    label: "Prebiotics",
+    icon: "🌱",
+    text: "Plant fibre that feeds your gut bacteria",
+    color: "var(--icon-lime)",
+  },
+  {
+    number: "02",
+    label: "Probiotics",
+    icon: "🦠",
+    text: "Live cultures from fermented foods",
+    color: "var(--icon-green)",
+  },
+  {
+    number: "03",
+    label: "Postbiotics",
+    icon: "✨",
+    text: "Compounds produced by a healthy microbiome",
+    color: "var(--icon-teal)",
+  },
+]
+
 export default function AnalysePage() {
   return (
     <div className="min-h-screen bg-background">
 
-      {/* Hero section */}
-      <div className="relative overflow-hidden border-b border-border bg-background pt-24 pb-12">
+      {/* ── Hero ──────────────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden px-6 pt-32 pb-16 md:pt-40 md:pb-20">
 
-        {/* Subtle background gradient wash */}
+        {/* Radial glow wash */}
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.04]"
-          style={{ background: "radial-gradient(ellipse 80% 60% at 50% 0%, var(--icon-green), transparent)" }}
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 70% 55% at 50% 0%, color-mix(in srgb, var(--icon-green) 10%, transparent), transparent 70%)",
+          }}
         />
 
-        <div className="relative mx-auto max-w-2xl px-6">
+        <div className="relative mx-auto max-w-[680px] text-center">
+          <ScrollReveal>
+            {/* Icon */}
+            <Image
+              src="/eatobiotics-icon.webp"
+              alt=""
+              width={80}
+              height={80}
+              className="mx-auto mb-6 h-16 w-16 md:h-20 md:w-20"
+            />
 
-          {/* Decorative biotic pill strip */}
-          <div className="mb-6 flex items-center gap-2">
-            <div className="h-1.5 w-10 rounded-full" style={{ background: "var(--icon-lime)" }} />
-            <div className="h-1.5 w-6 rounded-full" style={{ background: "var(--icon-green)" }} />
-            <div className="h-1.5 w-4 rounded-full" style={{ background: "var(--icon-teal)" }} />
-          </div>
-
-          {/* Badge */}
-          <div className="mb-4 flex items-center gap-2">
-            <div
-              className="flex h-8 w-8 items-center justify-center rounded-xl"
-              style={{ background: "color-mix(in srgb, var(--icon-teal) 15%, transparent)" }}
-            >
-              <Camera size={15} style={{ color: "var(--icon-teal)" }} />
-            </div>
-            <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            {/* Label */}
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
               EatoBiotics — Meal Analysis
-            </span>
-          </div>
+            </p>
 
-          {/* Heading */}
-          <h1 className="font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
-            <GradientText>Analyse your meal</GradientText>
-          </h1>
+            {/* Heading */}
+            <h1 className="mt-4 font-serif text-5xl font-semibold tracking-tight text-balance sm:text-6xl md:text-7xl">
+              <GradientText>Analyse your meal</GradientText>
+            </h1>
 
-          {/* Description */}
-          <p className="mt-3 max-w-lg text-base text-muted-foreground leading-relaxed">
-            Upload a photo and EatoBiotics identifies every food on your plate, scores your meal
-            against the 3 biotics framework, and suggests how to boost it.
-          </p>
+            {/* Description */}
+            <p className="mx-auto mt-6 max-w-md text-lg leading-relaxed text-muted-foreground">
+              Upload a photo and EatoBiotics identifies every food on your plate,
+              scores it against the 3 biotics framework, and tells you how to boost it.
+            </p>
+          </ScrollReveal>
 
-          {/* Feature chips */}
-          <div className="mt-5 flex flex-wrap gap-2">
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
-              style={{
-                background: "color-mix(in srgb, var(--icon-lime) 15%, transparent)",
-                color: "var(--icon-lime)",
-              }}
-            >
-              🌱 Identifies every food
-            </span>
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
-              style={{
-                background: "color-mix(in srgb, var(--icon-green) 15%, transparent)",
-                color: "var(--icon-green)",
-              }}
-            >
-              📊 Scores vs the 3 biotics
-            </span>
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
-              style={{
-                background: "color-mix(in srgb, var(--icon-teal) 15%, transparent)",
-                color: "var(--icon-teal)",
-              }}
-            >
-              💡 Suggests improvements
-            </span>
-          </div>
+          {/* Three biotics indicator cards */}
+          <ScrollReveal delay={150}>
+            <div className="mt-10 grid grid-cols-3 gap-3">
+              {BIOTICS.map((b) => (
+                <div
+                  key={b.label}
+                  className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-background/80 px-3 py-4 backdrop-blur-sm"
+                >
+                  <span
+                    className="flex h-9 w-9 items-center justify-center rounded-xl text-lg"
+                    style={{ background: `color-mix(in srgb, ${b.color} 15%, transparent)` }}
+                  >
+                    {b.icon}
+                  </span>
+                  <p className="text-sm font-semibold text-foreground">{b.label}</p>
+                  <p className="text-center text-[11px] leading-tight text-muted-foreground hidden sm:block">
+                    {b.text}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </ScrollReveal>
         </div>
-      </div>
+      </section>
 
-      {/* Section divider */}
-      <div className="section-divider" />
-
-      {/* Main content */}
-      <div className="mx-auto max-w-2xl px-6 py-10">
-        <Suspense fallback={<div className="h-64 rounded-2xl border border-dashed border-border animate-pulse" />}>
+      {/* ── Upload / Results ──────────────────────────────────────────── */}
+      <div className="mx-auto max-w-2xl px-6 pb-20">
+        <Suspense
+          fallback={
+            <div className="h-64 rounded-2xl border border-dashed border-border animate-pulse" />
+          }
+        >
           <AnalyzeClient />
         </Suspense>
 
-        <p className="mt-6 text-center text-xs text-muted-foreground/60">
+        <p className="mt-6 text-center text-xs text-muted-foreground/50">
           Photos are not stored
         </p>
       </div>
