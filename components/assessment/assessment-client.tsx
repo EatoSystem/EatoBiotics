@@ -26,7 +26,15 @@ export function AssessmentClient() {
 
   // Load saved state from localStorage after hydration
   useEffect(() => {
-    setState(loadAssessment())
+    const saved = loadAssessment()
+    // Don't restore terminal states — always show the intro on a fresh page visit.
+    // Results are delivered via email; the page itself resets so new visitors
+    // (or returning users) always see the lead capture form, not stale results.
+    const initialState =
+      saved.view === "results" || saved.view === "privacy"
+        ? emptyAssessmentState()
+        : saved
+    setState(initialState)
     setLead(loadLeadData())
     setHydrated(true)
   }, [])
