@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Camera, Upload, RefreshCw, ArrowRight, Loader2, AlertCircle, X } from "lucide-react"
+import { Camera, Upload, RefreshCw, ArrowRight, Loader2, AlertCircle, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 /* ── Types ──────────────────────────────────────────────────────────── */
@@ -18,8 +18,11 @@ interface AnalysedFood {
 }
 
 interface AnalysisResult {
+  score: number
+  prebioticStrength: "strong" | "moderate" | "low"
   foods: AnalysedFood[]
   missingBiotics: string[]
+  whatThisMealDoes: string
   suggestions: string[]
   overallAssessment: string
 }
@@ -39,10 +42,123 @@ const BIOTIC_CONFIG: Record<BioticType, { label: string; color: string; bg: stri
   protein:    { label: "Protein",    color: "var(--icon-yellow)", bg: "color-mix(in srgb, var(--icon-yellow) 15%, transparent)" },
 }
 
-const MISSING_LABELS: Record<string, string> = {
-  prebiotic: "prebiotic foods (fibre / plant diversity)",
-  probiotic: "probiotic foods (live cultures / fermented)",
-  postbiotic: "postbiotic foods (fermentation by-products / aged)",
+const TRIFECTA_LABELS: Record<string, { add: string }> = {
+  prebiotic:  { add: "Add prebiotic fibre — more plants, wholegrains or legumes" },
+  probiotic:  { add: "Add a probiotic boost — yogurt, kefir, kimchi or sauerkraut" },
+  postbiotic: { add: "Add a postbiotic source — sourdough, aged cheese or ACV dressing" },
+}
+
+/* ── Score band ─────────────────────────────────────────────────────── */
+
+function getScoreBand(score: number): { label: string; color: string } {
+  if (score >= 80) return { label: "Exceptional",       color: "var(--icon-green)" }
+  if (score >= 65) return { label: "Strong Foundation", color: "var(--icon-lime)" }
+  if (score >= 50) return { label: "Good Start",        color: "var(--icon-yellow)" }
+  if (score >= 35) return { label: "Getting There",     color: "var(--icon-orange)" }
+  return              { label: "Starting Out",       color: "#ef4444" }
+}
+
+/* ── Score display ──────────────────────────────────────────────────── */
+
+function ScoreDisplay({
+  score,
+  prebioticStrength,
+  hasProbiotic,
+  hasPostbiotic,
+}: {
+  score: number
+  prebioticStrength: "strong" | "moderate" | "low"
+  hasProbiotic: boolean
+  hasPostbiotic: boolean
+}) {
+  const { label, color } = getScoreBand(score)
+  const r = 52
+  const circ = 2 * Math.PI * r
+  const offset = circ - (score / 100) * circ
+
+  const pillars = [
+    {
+      icon: "🌱",
+      label: "Prebiotics",
+      strength: prebioticStrength === "strong" ? 1 : prebioticStrength === "moderate" ? 0.55 : 0.15,
+      status: prebioticStrength === "strong" ? "Strong" : prebioticStrength === "moderate" ? "Moderate" : "Low",
+      color: "var(--icon-lime)",
+      present: prebioticStrength !== "low",
+    },
+    {
+      icon: "🦠",
+      label: "Probiotics",
+      strength: hasProbiotic ? 0.8 : 0.12,
+      status: hasProbiotic ? "Present" : "Not in meal",
+      color: "var(--icon-green)",
+      present: hasProbiotic,
+    },
+    {
+      icon: "✨",
+      label: "Postbiotics",
+      strength: hasPostbiotic ? 0.7 : 0.12,
+      status: hasPostbiotic ? "Present" : "Not in meal",
+      color: "var(--icon-teal)",
+      present: hasPostbiotic,
+    },
+  ]
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5">
+      {/* Main score */}
+      <div className="flex items-center gap-5 mb-5">
+        <div className="relative flex shrink-0 items-center justify-center">
+          <svg width="130" height="130" className="-rotate-90">
+            <circle cx="65" cy="65" r={r} fill="none" stroke="currentColor" strokeWidth="9" className="text-border" />
+            <circle
+              cx="65" cy="65" r={r} fill="none"
+              stroke={color} strokeWidth="9"
+              strokeLinecap="round"
+              strokeDasharray={circ}
+              strokeDashoffset={offset}
+              className="transition-all duration-700"
+            />
+          </svg>
+          <div className="absolute text-center">
+            <p className="text-4xl font-bold tabular-nums leading-none" style={{ color }}>{score}</p>
+            <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Gut Score</p>
+          </div>
+        </div>
+        <div>
+          <p className="text-xl font-bold font-serif tracking-tight" style={{ color }}>{label}</p>
+          <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
+            {score >= 65
+              ? "This meal is working well for your gut microbiome."
+              : score >= 50
+              ? "A decent foundation — small additions can boost it significantly."
+              : "A starting point — the suggestions below will transform this meal."}
+          </p>
+        </div>
+      </div>
+
+      {/* Three pillar indicators */}
+      <div className="space-y-2.5">
+        {pillars.map((p) => (
+          <div key={p.label} className="flex items-center gap-3">
+            <span className="w-5 text-base leading-none">{p.icon}</span>
+            <span className="w-20 shrink-0 text-xs font-medium text-foreground/70">{p.label}</span>
+            <div className="flex-1 h-2 rounded-full bg-border/50 overflow-hidden">
+              <div
+                className="h-2 rounded-full transition-all duration-700"
+                style={{ width: `${p.strength * 100}%`, background: p.color, opacity: p.present ? 1 : 0.4 }}
+              />
+            </div>
+            <span
+              className="w-24 shrink-0 text-right text-xs font-medium"
+              style={{ color: p.present ? p.color : "var(--muted-foreground)" }}
+            >
+              {p.status}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 /* ── Image compression ──────────────────────────────────────────────── */
@@ -60,60 +176,12 @@ function compressImage(file: File): Promise<{ base64: string; mimeType: "image/j
       canvas.height = Math.round(img.height * scale)
       const ctx = canvas.getContext("2d")!
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-      // Always output JPEG for photos — smaller
       const base64 = canvas.toDataURL("image/jpeg", 0.85).replace(/^data:image\/jpeg;base64,/, "")
       resolve({ base64, mimeType: "image/jpeg" })
     }
     img.onerror = reject
     img.src = url
   })
-}
-
-/* ── Score calculation ──────────────────────────────────────────────── */
-
-function calcScore(foods: AnalysedFood[]): number {
-  const BASE = [8, 6, 4, 3, 2]
-  const countByType: Record<string, number> = {}
-  for (const f of foods) {
-    countByType[f.biotic] = (countByType[f.biotic] ?? 0) + 1
-  }
-  let base = 0
-  for (const count of Object.values(countByType)) {
-    for (let i = 0; i < count; i++) {
-      base += BASE[Math.min(i, BASE.length - 1)]
-    }
-  }
-  const types = Object.keys(countByType).length
-  const balanceBonus = [0, 0, 10, 20, 30][Math.min(types, 4)]
-  return Math.min(base + balanceBonus, 100)
-}
-
-/* ── Score ring SVG ─────────────────────────────────────────────────── */
-
-function ScoreRing({ score }: { score: number }) {
-  const r = 44
-  const circ = 2 * Math.PI * r
-  const offset = circ - (score / 100) * circ
-  const color = score >= 70 ? "var(--icon-green)" : score >= 45 ? "var(--icon-yellow)" : "var(--icon-orange)"
-  return (
-    <div className="relative flex items-center justify-center">
-      <svg width="110" height="110" className="-rotate-90">
-        <circle cx="55" cy="55" r={r} fill="none" stroke="currentColor" strokeWidth="8" className="text-border" />
-        <circle
-          cx="55" cy="55" r={r} fill="none"
-          stroke={color} strokeWidth="8"
-          strokeLinecap="round"
-          strokeDasharray={circ}
-          strokeDashoffset={offset}
-          className="transition-all duration-700"
-        />
-      </svg>
-      <div className="absolute text-center">
-        <p className="text-2xl font-bold tabular-nums" style={{ color }}>{score}</p>
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Score</p>
-      </div>
-    </div>
-  )
 }
 
 /* ── Upload zone ────────────────────────────────────────────────────── */
@@ -159,9 +227,7 @@ function UploadZone({ onFile }: { onFile: (file: File) => void }) {
         <Camera size={28} className="text-muted-foreground" />
       </div>
       <div>
-        <p className="text-base font-semibold text-foreground">
-          Upload a meal photo
-        </p>
+        <p className="text-base font-semibold text-foreground">Upload a meal photo</p>
         <p className="mt-1 text-sm text-muted-foreground">
           Drag & drop or tap to browse · JPEG, PNG, WebP · up to 5MB
         </p>
@@ -181,7 +247,6 @@ function LoadingView({ previewUrl }: { previewUrl: string }) {
     <div className="space-y-5">
       <div className="relative overflow-hidden rounded-2xl">
         <Image src={previewUrl} alt="Your meal" width={600} height={400} className="w-full object-cover max-h-72" unoptimized />
-        {/* Scan line animation */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[var(--icon-green)]/20 to-transparent animate-scan" />
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="rounded-2xl bg-background/90 backdrop-blur-sm px-5 py-3 flex items-center gap-3">
@@ -191,7 +256,7 @@ function LoadingView({ previewUrl }: { previewUrl: string }) {
         </div>
       </div>
       <p className="text-center text-xs text-muted-foreground">
-        Identifying foods and scoring against the 3 biotics framework
+        Identifying every food and scoring against the 3 biotics framework
       </p>
     </div>
   )
@@ -208,9 +273,11 @@ function ResultsView({
   result: AnalysisResult
   onReset: () => void
 }) {
-  const score = calcScore(result.foods)
+  const score = typeof result.score === "number" ? Math.round(result.score) : 50
 
-  // Group foods by biotic
+  const hasProbiotic = result.foods.some((f) => f.biotic === "probiotic")
+  const hasPostbiotic = result.foods.some((f) => f.biotic === "postbiotic")
+
   const byBiotic = result.foods.reduce((acc, f) => {
     if (!acc[f.biotic]) acc[f.biotic] = []
     acc[f.biotic].push(f)
@@ -218,24 +285,40 @@ function ResultsView({
   }, {} as Record<BioticType, AnalysedFood[]>)
 
   return (
-    <div className="space-y-5">
-      {/* Meal preview + score */}
-      <div className="flex gap-4 items-start">
+    <div className="space-y-4">
+
+      {/* Meal photo — full width at top */}
+      <div className="relative overflow-hidden rounded-2xl">
         <Image
           src={previewUrl} alt="Your meal"
-          width={160} height={120}
-          className="h-28 w-36 rounded-xl object-cover shrink-0"
+          width={600} height={360}
+          className="w-full object-cover max-h-56"
           unoptimized
         />
-        <div className="flex flex-col justify-center gap-1">
-          <ScoreRing score={score} />
-        </div>
-        <div className="flex-1">
-          <p className="text-sm text-foreground/80 leading-relaxed">{result.overallAssessment}</p>
-        </div>
       </div>
 
-      {/* Foods by biotic group */}
+      {/* Score display */}
+      <ScoreDisplay
+        score={score}
+        prebioticStrength={result.prebioticStrength ?? "low"}
+        hasProbiotic={hasProbiotic}
+        hasPostbiotic={hasPostbiotic}
+      />
+
+      {/* What this meal does well — lead with positives */}
+      {result.whatThisMealDoes && (
+        <div className="rounded-2xl border border-[var(--icon-green)]/30 bg-[var(--icon-green)]/5 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles size={13} style={{ color: "var(--icon-green)" }} />
+            <p className="text-xs font-bold uppercase tracking-widest text-[var(--icon-green)]">
+              What this meal does well
+            </p>
+          </div>
+          <p className="text-sm text-foreground/80 leading-relaxed">{result.whatThisMealDoes}</p>
+        </div>
+      )}
+
+      {/* Foods identified */}
       <div className="rounded-2xl border border-border bg-card p-4">
         <p className="mb-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">
           Foods identified
@@ -258,10 +341,10 @@ function ResultsView({
                       f.confidence === "low" && "opacity-60"
                     )}
                     style={{ background: cfg.bg, color: cfg.color }}
-                    title={f.confidence === "low" ? "Low confidence identification" : undefined}
+                    title={f.confidence === "low" ? "Low confidence — Claude wasn't certain" : undefined}
                   >
                     {f.emoji} {f.name}
-                    {f.confidence === "low" && <span className="opacity-70">?</span>}
+                    {f.confidence === "low" && <span className="opacity-60">?</span>}
                   </span>
                 ))}
               </div>
@@ -270,17 +353,17 @@ function ResultsView({
         })}
       </div>
 
-      {/* Missing biotics */}
+      {/* Complete your gut trifecta — reframed as opportunity */}
       {result.missingBiotics.length > 0 && (
         <div className="rounded-2xl border border-[var(--icon-orange)]/30 bg-[var(--icon-orange)]/5 p-4">
-          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-[var(--icon-orange)]">
-            Missing from this meal
+          <p className="mb-2.5 text-xs font-bold uppercase tracking-widest text-[var(--icon-orange)]">
+            To complete your gut trifecta
           </p>
-          <ul className="space-y-1">
+          <ul className="space-y-1.5">
             {result.missingBiotics.map((b) => (
               <li key={b} className="flex items-start gap-2 text-sm text-foreground/80">
-                <span className="mt-0.5 text-[var(--icon-orange)]">→</span>
-                <span>No {MISSING_LABELS[b] ?? b}</span>
+                <span className="mt-0.5 font-semibold text-[var(--icon-orange)]">+</span>
+                <span>{TRIFECTA_LABELS[b]?.add ?? `Add a ${b} source`}</span>
               </li>
             ))}
           </ul>
@@ -290,10 +373,10 @@ function ResultsView({
       {/* Suggestions */}
       {result.suggestions.length > 0 && (
         <div className="rounded-2xl border border-border bg-card p-4">
-          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            Suggestions
+          <p className="mb-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            How to boost this meal
           </p>
-          <ul className="space-y-2">
+          <ul className="space-y-2.5">
             {result.suggestions.map((s, i) => (
               <li key={i} className="flex items-start gap-2.5 text-sm text-foreground/80">
                 <span
@@ -315,7 +398,7 @@ function ResultsView({
           href="/myplate"
           className="flex flex-1 items-center justify-center gap-2 rounded-xl brand-gradient py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
         >
-          Add to My Plate <ArrowRight size={14} />
+          Build it in My Plate <ArrowRight size={14} />
         </Link>
         <button
           onClick={onReset}
