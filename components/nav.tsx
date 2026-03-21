@@ -35,7 +35,6 @@ const navGroups: NavGroup[] = [
       { href: "/food", label: "Food Library", description: "Every food profiled for your gut", icon: UtensilsCrossed },
       { href: "/today", label: "Today's Food", description: "A new food spotlight, daily", icon: Calendar },
       { href: "/podcast", label: "The Podcast", description: "Conversations about food & performance", icon: Mic },
-      { href: "/myplate", label: "My Plate", description: "Build your plate and track your plants", icon: Leaf },
     ],
   },
   {
@@ -161,15 +160,6 @@ export function Nav() {
           {navGroups.map((group) => (
             <DropdownMenu key={group.label} group={group} pathname={pathname} />
           ))}
-          <Link
-            href="/myplate"
-            className={cn(
-              "text-sm font-medium transition-colors",
-              pathname === "/myplate" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            My Plate
-          </Link>
           <AccountNavItem />
           <a
             href="https://eatobiotics.substack.com/"

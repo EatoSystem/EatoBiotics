@@ -1,516 +1,422 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import Image from "next/image"
-import { foods, type Food } from "@/lib/foods"
-import { loadPlate, savePlate, clearPlate, type PlateState } from "@/lib/local-storage"
+import { Plus, X, RotateCcw, Lightbulb } from "lucide-react"
+import { foods, type Food, type BioticType } from "@/lib/foods"
+import {
+  loadPlate,
+  savePlate,
+  clearPlate,
+  type PlateState,
+} from "@/lib/local-storage"
+import { calculateBioticsScore, getScoreBand } from "@/lib/scoring"
 import { FoodSearch } from "./food-search"
-import { X, RotateCcw, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-// ── Types & config ──────────────────────────────────────────────────────────
+/* ── Quadrant config ────────────────────────────────────────────────── */
+
+type QuadrantKey = "fiber" | "fermented" | "protein" | "fats"
 
 interface Quadrant {
-  key: keyof Pick<PlateState, "fiber" | "fermented" | "protein" | "fats">
+  key: QuadrantKey
   label: string
   subtitle: string
+  icon: string
   color: string
-  gradient: string
-  accentGradient: string
-  bgClass: string
-  bgActiveClass: string
-  activeBorderColor: string
-  clipPath: string
-  emojiPosition: string
-  emojiJustify: string
-  filterBiotics: ("prebiotic")[] | ("probiotic")[] | ("protein")[] | ("postbiotic")[]
+  biotic: BioticType[]
 }
 
 const QUADRANTS: Quadrant[] = [
   {
     key: "fiber",
-    label: "Fiber Foundation",
-    subtitle: "Prebiotic foods",
+    label: "Prebiotics",
+    subtitle: "Feed your gut bacteria",
+    icon: "🌱",
     color: "var(--icon-lime)",
-    gradient: "from-icon-lime/20 to-icon-green/10",
-    accentGradient: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))",
-    bgClass: "bg-icon-lime/10",
-    bgActiveClass: "bg-icon-lime/25",
-    activeBorderColor: "var(--icon-lime)",
-    clipPath: "polygon(0% 0%, 50% 0%, 50% 50%, 0% 50%)",
-    emojiPosition: "top-2.5 left-2.5",
-    emojiJustify: "",
-    filterBiotics: ["prebiotic"],
+    biotic: ["prebiotic"],
   },
   {
     key: "fermented",
-    label: "Fermented",
-    subtitle: "Probiotic foods",
-    color: "var(--icon-teal)",
-    gradient: "from-icon-teal/20 to-icon-green/10",
-    accentGradient: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))",
-    bgClass: "bg-icon-teal/10",
-    bgActiveClass: "bg-icon-teal/25",
-    activeBorderColor: "var(--icon-teal)",
-    clipPath: "polygon(50% 0%, 100% 0%, 100% 50%, 50% 50%)",
-    emojiPosition: "top-2.5 right-2.5",
-    emojiJustify: "justify-end",
-    filterBiotics: ["probiotic"],
+    label: "Probiotics",
+    subtitle: "Add live cultures",
+    icon: "🦠",
+    color: "var(--icon-green)",
+    biotic: ["probiotic"],
   },
   {
     key: "protein",
-    label: "Quality Protein",
-    subtitle: "Protein sources",
+    label: "Protein",
+    subtitle: "Support gut lining repair",
+    icon: "🍗",
     color: "var(--icon-yellow)",
-    gradient: "from-icon-yellow/20 to-icon-orange/10",
-    accentGradient: "linear-gradient(90deg, var(--icon-yellow), var(--icon-orange))",
-    bgClass: "bg-icon-yellow/10",
-    bgActiveClass: "bg-icon-yellow/25",
-    activeBorderColor: "var(--icon-yellow)",
-    clipPath: "polygon(0% 50%, 50% 50%, 50% 100%, 0% 100%)",
-    emojiPosition: "bottom-2.5 left-2.5",
-    emojiJustify: "",
-    filterBiotics: ["protein"],
+    biotic: ["protein"],
   },
   {
     key: "fats",
-    label: "Healthy Fats",
-    subtitle: "Postbiotic foods",
-    color: "var(--icon-orange)",
-    gradient: "from-icon-orange/20 to-icon-yellow/10",
-    accentGradient: "linear-gradient(90deg, var(--icon-orange), var(--icon-yellow))",
-    bgClass: "bg-icon-orange/10",
-    bgActiveClass: "bg-icon-orange/25",
-    activeBorderColor: "var(--icon-orange)",
-    clipPath: "polygon(50% 50%, 100% 50%, 100% 100%, 50% 100%)",
-    emojiPosition: "bottom-2.5 right-2.5",
-    emojiJustify: "justify-end",
-    filterBiotics: ["postbiotic"],
+    label: "Postbiotics",
+    subtitle: "Harvest what your gut makes",
+    icon: "✨",
+    color: "var(--icon-teal)",
+    biotic: ["postbiotic"],
   },
 ]
+
+const MAX_PER_QUADRANT = 3
 
 function getFoodBySlug(slug: string): Food | undefined {
   return foods.find((f) => f.slug === slug)
 }
 
-// ── Sub-components ──────────────────────────────────────────────────────────
-
-function ProgressRing({ completionPct }: { completionPct: number }) {
-  const r = 88
-  const circumference = 2 * Math.PI * r // ≈ 553
-
-  const ringColor =
-    completionPct >= 100
-      ? "var(--icon-green)"
-      : completionPct >= 67
-        ? "var(--icon-teal)"
-        : completionPct >= 34
-          ? "var(--icon-lime)"
-          : "var(--icon-lime)"
-
-  return (
-    <svg
-      viewBox="0 0 200 200"
-      className="absolute inset-0 h-full w-full pointer-events-none z-40"
-      aria-hidden="true"
-    >
-      {/* Track ring */}
-      <circle
-        cx="100"
-        cy="100"
-        r={r}
-        fill="none"
-        stroke="var(--border)"
-        strokeWidth="5"
-        strokeOpacity="0.6"
-      />
-      {/* Progress ring */}
-      {completionPct > 0 && (
-        <circle
-          cx="100"
-          cy="100"
-          r={r}
-          fill="none"
-          stroke={ringColor}
-          strokeWidth="5"
-          strokeLinecap="round"
-          strokeDasharray={`${circumference} ${circumference}`}
-          strokeDashoffset={circumference * (1 - completionPct / 100)}
-          transform="rotate(-90 100 100)"
-          style={{ transition: "stroke-dashoffset 0.6s ease-out, stroke 0.4s ease-out" }}
-        />
-      )}
-    </svg>
-  )
-}
-
-function PlateCircle({
-  plate,
-  activeQuadrant,
-  completionPct,
-  onQuadrantClick,
-}: {
-  plate: PlateState
-  activeQuadrant: Quadrant["key"] | null
-  completionPct: number
-  onQuadrantClick: (key: Quadrant["key"]) => void
-}) {
-  return (
-    <div className="relative mx-auto w-48 h-48 sm:w-52 sm:h-52">
-
-      {/* Plate circle — clips all quadrant backgrounds */}
-      <div className="absolute inset-0 rounded-full overflow-hidden">
-        {QUADRANTS.map((q) => {
-          const isActive = activeQuadrant === q.key
-          return (
-            <button
-              key={q.key}
-              type="button"
-              onClick={() => onQuadrantClick(q.key)}
-              className={cn(
-                "absolute inset-0 transition-colors duration-200",
-                isActive ? q.bgActiveClass : q.bgClass
-              )}
-              style={{ clipPath: q.clipPath }}
-              aria-label={`Select ${q.label}`}
-            />
-          )
-        })}
-      </div>
-
-      {/* Cross dividers */}
-      <div className="absolute inset-y-0 left-1/2 w-px bg-border/70 z-10 pointer-events-none -translate-x-px" />
-      <div className="absolute inset-x-0 top-1/2 h-px bg-border/70 z-10 pointer-events-none -translate-y-px" />
-
-      {/* Food emojis per quadrant */}
-      {QUADRANTS.map((q) => {
-        const slugs = plate[q.key]
-        const foodItems = slugs.slice(0, 3).map(getFoodBySlug).filter(Boolean) as Food[]
-        return (
-          <div
-            key={q.key}
-            className={cn(
-              "absolute flex flex-wrap gap-0.5 w-[44%] z-20 pointer-events-none",
-              q.emojiPosition,
-              q.emojiJustify
-            )}
-          >
-            {foodItems.length > 0 ? (
-              foodItems.map((food) => (
-                <span
-                  key={food.slug}
-                  className="text-[18px] sm:text-xl leading-none drop-shadow-sm"
-                >
-                  {food.emoji}
-                </span>
-              ))
-            ) : (
-              <span className="h-1.5 w-1.5 rounded-full bg-border/60 block" />
-            )}
-          </div>
-        )
-      })}
-
-      {/* Center hub */}
-      <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
-        <div className="h-10 w-10 rounded-full bg-background border border-border shadow-md flex items-center justify-center">
-          <Image
-            src="/eatobiotics-icon.webp"
-            alt="EatoBiotics"
-            width={24}
-            height={24}
-            className="h-6 w-6"
-          />
-        </div>
-      </div>
-
-      {/* Progress ring — outermost */}
-      <ProgressRing completionPct={completionPct} />
-    </div>
-  )
-}
-
-function FoodRow({ food, onRemove }: { food: Food; onRemove: () => void }) {
-  return (
-    <div className="group flex items-center gap-2.5 px-3 py-2 hover:bg-secondary/40 transition-colors">
-      <span className="text-[22px] leading-none w-7 flex-shrink-0 text-center">
-        {food.emoji}
-      </span>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground leading-tight truncate">
-          {food.name}
-        </p>
-        <p className="text-[10px] text-muted-foreground truncate leading-tight mt-0.5">
-          {food.tagline}
-        </p>
-      </div>
-      <button
-        onClick={onRemove}
-        className={cn(
-          "flex-shrink-0 h-6 w-6 rounded-full flex items-center justify-center",
-          "text-muted-foreground transition-all duration-150",
-          "opacity-100 sm:opacity-0 sm:group-hover:opacity-100",
-          "hover:bg-red-50 hover:text-red-500"
-        )}
-        aria-label={`Remove ${food.name}`}
-      >
-        <X size={11} />
-      </button>
-    </div>
-  )
-}
-
-function EmptySlot() {
-  return (
-    <div className="flex items-center gap-2.5 px-3 py-2">
-      <div className="h-7 w-7 flex-shrink-0 rounded-md border border-dashed border-border flex items-center justify-center">
-        <span className="text-[9px] text-muted-foreground/40 font-bold select-none">+</span>
-      </div>
-      <div className="flex-1 space-y-1">
-        <div className="h-2 w-16 rounded-full bg-border/40" />
-        <div className="h-1.5 w-24 rounded-full bg-border/25" />
-      </div>
-    </div>
-  )
-}
-
-function QuadrantCard({
-  quadrant: q,
-  foodSlugs,
-  isActive,
-  onToggle,
-  onRemove,
-}: {
-  quadrant: Quadrant
-  foodSlugs: string[]
-  isActive: boolean
-  onToggle: () => void
-  onRemove: (slug: string) => void
-}) {
-  const foodItems = foodSlugs.map(getFoodBySlug).filter(Boolean) as Food[]
-  const emptyCount = Math.max(0, 3 - foodSlugs.length)
-  const badgeDark = q.key === "protein" // yellow badge needs dark text
-
-  return (
-    <div
-      className="rounded-xl border bg-background overflow-hidden transition-all duration-200"
-      style={{
-        borderColor: isActive ? q.activeBorderColor : undefined,
-        boxShadow: isActive ? `0 4px 16px -4px ${q.color}33` : undefined,
-      }}
-    >
-      {/* Gradient top bar */}
-      <div className="h-[3px]" style={{ background: q.accentGradient }} />
-
-      {/* Label row */}
-      <div className="flex items-center justify-between px-3 pt-2.5 pb-0.5">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <div
-            className="h-2 w-2 flex-shrink-0 rounded-full"
-            style={{ backgroundColor: q.color }}
-          />
-          <span className="text-[11px] font-semibold text-foreground truncate">
-            {q.label}
-          </span>
-        </div>
-        <span
-          className="flex-shrink-0 ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none"
-          style={{
-            backgroundColor: q.color,
-            color: badgeDark ? "var(--foreground)" : "#ffffff",
-            opacity: foodSlugs.length === 0 ? 0.45 : 1,
-          }}
-        >
-          {foodSlugs.length}/3
-        </span>
-      </div>
-      <p className="px-3 pb-2 text-[10px] text-muted-foreground">{q.subtitle}</p>
-
-      {/* Divider */}
-      <div className="h-px bg-border/40" />
-
-      {/* Food rows */}
-      {foodItems.map((food) => (
-        <FoodRow key={food.slug} food={food} onRemove={() => onRemove(food.slug)} />
-      ))}
-
-      {/* Empty slots */}
-      {Array.from({ length: emptyCount }).map((_, i) => (
-        <EmptySlot key={i} />
-      ))}
-
-      {/* Add / done button */}
-      <div className="h-px bg-border/40" />
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex w-full items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold transition-colors hover:bg-secondary/50 rounded-b-xl"
-        style={{ color: isActive ? "var(--muted-foreground)" : q.color }}
-      >
-        <Plus
-          size={12}
-          className={cn(
-            "transition-transform duration-200",
-            isActive && "rotate-45"
-          )}
-        />
-        {isActive ? "Done adding" : `Add ${q.subtitle.split(" ")[0].toLowerCase()}`}
-      </button>
-    </div>
-  )
-}
-
-// ── Main export ─────────────────────────────────────────────────────────────
-
-export function PlateBuilder() {
-  const [plate, setPlate] = useState<PlateState | null>(null)
-  const [activeQuadrant, setActiveQuadrant] = useState<Quadrant["key"] | null>(null)
-
-  useEffect(() => {
-    setPlate(loadPlate())
-  }, [])
-
-  const updatePlate = useCallback((newPlate: PlateState) => {
-    setPlate(newPlate)
-    savePlate(newPlate)
-  }, [])
-
-  function addToQuadrant(quadrant: Quadrant["key"], food: Food) {
-    if (!plate) return
-    if (plate[quadrant].includes(food.slug)) return
-    const updated = { ...plate, [quadrant]: [...plate[quadrant], food.slug] }
-    updatePlate(updated)
-  }
-
-  function removeFromQuadrant(quadrant: Quadrant["key"], slug: string) {
-    if (!plate) return
-    const updated = {
-      ...plate,
-      [quadrant]: plate[quadrant].filter((s) => s !== slug),
-    }
-    updatePlate(updated)
-  }
-
-  function handleReset() {
-    clearPlate()
-    setPlate(loadPlate())
-    setActiveQuadrant(null)
-  }
-
-  if (!plate) return null // SSR guard
-
-  const totalSlots = 4 * 3
-  const filledSlots =
-    plate.fiber.length + plate.fermented.length + plate.protein.length + plate.fats.length
-  const completionPct = Math.min(Math.round((filledSlots / totalSlots) * 100), 100)
-
-  const allSlugs = [
+function plateToFoods(plate: PlateState): Food[] {
+  return [
     ...plate.fiber,
     ...plate.fermented,
     ...plate.protein,
     ...plate.fats,
   ]
+    .map((s) => getFoodBySlug(s))
+    .filter(Boolean) as Food[]
+}
+
+/* ── Live score panel ───────────────────────────────────────────────── */
+
+function ScorePanel({ plate }: { plate: PlateState }) {
+  const allFoods = plateToFoods(plate)
+  const result = allFoods.length > 0 ? calculateBioticsScore(allFoods) : null
+  const score = result?.score ?? 0
+  const band = result?.band ?? getScoreBand(0)
+  const r = 54
+  const circ = 2 * Math.PI * r
+  const offset = circ - (score / 100) * circ
+  const breakdown = result?.breakdown ?? { prebiotic: 0, probiotic: 0, postbiotic: 0, protein: 0 }
+  const maxBreakdown = Math.max(...Object.values(breakdown), 1)
+
+  const BARS = [
+    { label: "Prebiotics",  key: "prebiotic"  as const, color: "var(--icon-lime)" },
+    { label: "Probiotics",  key: "probiotic"  as const, color: "var(--icon-green)" },
+    { label: "Postbiotics", key: "postbiotic" as const, color: "var(--icon-teal)" },
+    { label: "Protein",     key: "protein"    as const, color: "var(--icon-yellow)" },
+  ]
 
   return (
-    <div className="space-y-6">
-
-      {/* ── Header ──────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h3 className="font-serif text-xl font-semibold text-foreground sm:text-2xl">
-            EatoBiotics Plate
-          </h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Build your ideal plate with all four food groups
-          </p>
+    <div
+      className="mb-6 rounded-2xl border-2 border-transparent p-5"
+      style={{
+        background:
+          "linear-gradient(var(--background), var(--background)) padding-box, linear-gradient(135deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow)) border-box",
+      }}
+    >
+      <div className="flex items-center gap-5">
+        {/* Score ring */}
+        <div className="relative flex shrink-0 items-center justify-center">
+          <svg width="124" height="124" className="-rotate-90">
+            <circle cx="62" cy="62" r={r} fill="none" stroke="currentColor" strokeWidth="8" className="text-border" />
+            <circle
+              cx="62" cy="62" r={r} fill="none"
+              stroke={band.color} strokeWidth="8"
+              strokeLinecap="round"
+              strokeDasharray={circ}
+              strokeDashoffset={offset}
+              className="transition-all duration-700"
+            />
+          </svg>
+          <div className="absolute text-center">
+            <p className="text-4xl font-bold font-serif tabular-nums leading-none" style={{ color: band.color }}>
+              {score}
+            </p>
+            <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+              Gut Score
+            </p>
+          </div>
         </div>
-        {filledSlots > 0 && (
-          <button
-            onClick={handleReset}
-            className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+
+        {/* Label + breakdown */}
+        <div className="flex-1 min-w-0">
+          <p className="text-xl font-bold font-serif tracking-tight" style={{ color: band.color }}>
+            {allFoods.length === 0 ? "Start adding foods" : band.label}
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
+            {allFoods.length === 0
+              ? "Your score updates live as you build your plate"
+              : score >= 65
+              ? "Great work — your gut will thank you."
+              : score >= 40
+              ? "Good start — add more variety to boost your score."
+              : "Keep going — every food counts."}
+          </p>
+          <div className="mt-3 space-y-1.5">
+            {BARS.map((b) => {
+              const pts = breakdown[b.key]
+              const pct = pts > 0 ? Math.max((pts / maxBreakdown) * 100, 8) : 0
+              return (
+                <div key={b.key} className="flex items-center gap-2">
+                  <span className="w-16 shrink-0 text-[10px] font-medium text-muted-foreground">{b.label}</span>
+                  <div className="flex-1 h-1.5 rounded-full bg-border/50 overflow-hidden">
+                    <div
+                      className="h-1.5 rounded-full transition-all duration-500"
+                      style={{ width: `${pct}%`, background: b.color }}
+                    />
+                  </div>
+                  <span className="w-6 shrink-0 text-right text-[10px] font-semibold text-muted-foreground">
+                    {pts > 0 ? `+${pts}` : "—"}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ── Food chip ──────────────────────────────────────────────────────── */
+
+function FoodChip({ food, color, onRemove }: { food: Food; color: string; onRemove: () => void }) {
+  return (
+    <div
+      className="group flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium"
+      style={{ background: `color-mix(in srgb, ${color} 12%, transparent)`, color }}
+    >
+      <span>{food.emoji}</span>
+      <span>{food.name}</span>
+      <button
+        onClick={onRemove}
+        className="ml-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full opacity-0 transition-opacity group-hover:opacity-100"
+        style={{ background: `color-mix(in srgb, ${color} 25%, transparent)` }}
+        aria-label={`Remove ${food.name}`}
+      >
+        <X size={9} />
+      </button>
+    </div>
+  )
+}
+
+/* ── Biotic card ────────────────────────────────────────────────────── */
+
+function BioticCard({
+  quadrant,
+  slugs,
+  isActive,
+  onActivate,
+  onDeactivate,
+  onAdd,
+  onRemove,
+}: {
+  quadrant: Quadrant
+  slugs: string[]
+  isActive: boolean
+  onActivate: () => void
+  onDeactivate: () => void
+  onAdd: (food: Food) => void
+  onRemove: (slug: string) => void
+}) {
+  const foodItems = slugs.map((s) => getFoodBySlug(s)).filter(Boolean) as Food[]
+  const isFull = slugs.length >= MAX_PER_QUADRANT
+  const { color } = quadrant
+
+  return (
+    <div
+      className="rounded-2xl border-2 transition-all duration-200"
+      style={
+        isActive
+          ? {
+              borderColor: `color-mix(in srgb, ${color} 50%, transparent)`,
+              boxShadow: `0 4px 24px color-mix(in srgb, ${color} 12%, transparent)`,
+            }
+          : { borderColor: "var(--border)" }
+      }
+    >
+      {/* Top accent bar */}
+      <div className="h-[3px] w-full rounded-t-xl" style={{ background: color }} />
+
+      <div className="p-4">
+        {/* Header row */}
+        <div className="mb-3 flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2.5">
+            <span
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg"
+              style={{ background: `color-mix(in srgb, ${color} 15%, transparent)` }}
+            >
+              {quadrant.icon}
+            </span>
+            <div>
+              <p className="text-sm font-bold text-foreground">{quadrant.label}</p>
+              <p className="text-xs text-muted-foreground">{quadrant.subtitle}</p>
+            </div>
+          </div>
+          <span
+            className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold"
+            style={{
+              background: `color-mix(in srgb, ${color} 15%, transparent)`,
+              color,
+            }}
           >
-            <RotateCcw size={12} />
-            Reset
-          </button>
+            {slugs.length}/{MAX_PER_QUADRANT}
+          </span>
+        </div>
+
+        {/* Food chips or empty state */}
+        {foodItems.length > 0 ? (
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {foodItems.map((food) => (
+              <FoodChip
+                key={food.slug}
+                food={food}
+                color={color}
+                onRemove={() => onRemove(food.slug)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div
+            className="mb-3 flex h-9 items-center justify-center rounded-xl border border-dashed text-xs text-muted-foreground/60"
+            style={{ borderColor: `color-mix(in srgb, ${color} 25%, transparent)` }}
+          >
+            No foods yet
+          </div>
+        )}
+
+        {/* Add button / inline search */}
+        {!isFull && (
+          isActive ? (
+            <FoodSearch
+              onSelect={(food) => { onAdd(food); onDeactivate() }}
+              excludeSlugs={slugs}
+              filterBiotics={quadrant.biotic}
+              placeholder={`Search ${quadrant.label.toLowerCase()}…`}
+            />
+          ) : (
+            <button
+              onClick={onActivate}
+              className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed py-2 text-xs font-semibold transition-all hover:text-foreground"
+              style={{
+                borderColor: `color-mix(in srgb, ${color} 35%, transparent)`,
+                color: `color-mix(in srgb, ${color} 90%, var(--foreground))`,
+              }}
+            >
+              <Plus size={13} />
+              Add food
+            </button>
+          )
+        )}
+        {isFull && (
+          <p className="mt-1 text-center text-[10px] text-muted-foreground/60">
+            Max {MAX_PER_QUADRANT} reached
+          </p>
         )}
       </div>
+    </div>
+  )
+}
 
-      {/* ── Circular plate visualizer ────────────────────────────── */}
-      <div className="flex flex-col items-center gap-3">
-        <PlateCircle
-          plate={plate}
-          activeQuadrant={activeQuadrant}
-          completionPct={completionPct}
-          onQuadrantClick={(key) =>
-            setActiveQuadrant(activeQuadrant === key ? null : key)
-          }
-        />
+/* ── Suggestions strip ──────────────────────────────────────────────── */
 
-        {/* Completion label */}
-        <div className="text-center">
-          <p className="text-sm font-semibold text-foreground">
-            {completionPct === 100
-              ? "Plate complete! 🎉"
-              : `${completionPct}% complete`}
-          </p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {filledSlots} of {totalSlots} foods added
-          </p>
-        </div>
+function SuggestionsStrip({ plate }: { plate: PlateState }) {
+  const allFoods = plateToFoods(plate)
+  if (allFoods.length === 0) return null
+  const result = calculateBioticsScore(allFoods)
+  if (result.score >= 80 || result.suggestions.length === 0) return null
 
-        {/* Legend pills — shortcut to open each card's search */}
-        <div className="flex items-center gap-3 flex-wrap justify-center">
-          {QUADRANTS.map((q) => (
-            <button
-              key={q.key}
-              onClick={() =>
-                setActiveQuadrant(activeQuadrant === q.key ? null : q.key)
-              }
-              className={cn(
-                "flex items-center gap-1.5 text-[11px] font-medium transition-colors",
-                activeQuadrant === q.key
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
+  return (
+    <div className="mt-5 rounded-2xl border border-[var(--icon-green)]/20 bg-[var(--icon-green)]/5 p-4">
+      <div className="mb-2.5 flex items-center gap-2">
+        <Lightbulb size={13} style={{ color: "var(--icon-green)" }} />
+        <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
+          How to boost this plate
+        </p>
+      </div>
+      <ul className="space-y-2">
+        {result.suggestions.map((s, i) => (
+          <li key={i} className="flex items-start gap-2.5 text-sm text-foreground/80">
+            <span
+              className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+              style={{ background: "var(--icon-green)" }}
             >
-              <div
-                className="h-2 w-2 rounded-full"
-                style={{ backgroundColor: q.color }}
-              />
-              {q.label}
-            </button>
-          ))}
+              {i + 1}
+            </span>
+            {s}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+/* ── Main PlateBuilder ──────────────────────────────────────────────── */
+
+export function PlateBuilder({ onFoodsChange }: { onFoodsChange?: () => void }) {
+  const [plate, setPlate] = useState<PlateState | null>(null)
+  const [activeQuadrant, setActiveQuadrant] = useState<QuadrantKey | null>(null)
+
+  useEffect(() => {
+    setPlate(loadPlate())
+  }, [])
+
+  const updatePlate = useCallback(
+    (newPlate: PlateState) => {
+      setPlate(newPlate)
+      savePlate(newPlate)
+      onFoodsChange?.()
+    },
+    [onFoodsChange]
+  )
+
+  function addFood(key: QuadrantKey, food: Food) {
+    if (!plate) return
+    if (plate[key].includes(food.slug)) return
+    if (plate[key].length >= MAX_PER_QUADRANT) return
+    updatePlate({ ...plate, [key]: [...plate[key], food.slug] })
+  }
+
+  function removeFood(key: QuadrantKey, slug: string) {
+    if (!plate) return
+    updatePlate({ ...plate, [key]: plate[key].filter((s) => s !== slug) })
+  }
+
+  function handleReset() {
+    clearPlate()
+    setPlate(loadPlate())
+    onFoodsChange?.()
+  }
+
+  if (!plate) return null
+
+  const totalFoods =
+    plate.fiber.length + plate.fermented.length + plate.protein.length + plate.fats.length
+
+  return (
+    <div>
+      <ScorePanel plate={plate} />
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {QUADRANTS.map((q) => (
+          <BioticCard
+            key={q.key}
+            quadrant={q}
+            slugs={plate[q.key]}
+            isActive={activeQuadrant === q.key}
+            onActivate={() => setActiveQuadrant(q.key)}
+            onDeactivate={() => setActiveQuadrant(null)}
+            onAdd={(food) => addFood(q.key, food)}
+            onRemove={(slug) => removeFood(q.key, slug)}
+          />
+        ))}
+      </div>
+
+      <SuggestionsStrip plate={plate} />
+
+      {totalFoods > 0 && (
+        <div className="mt-6 flex justify-center">
+          <button
+            onClick={handleReset}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground/50 transition-colors hover:text-muted-foreground"
+          >
+            <RotateCcw size={11} />
+            Clear today&apos;s plate
+          </button>
         </div>
-      </div>
-
-      {/* ── Quadrant cards ───────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-3">
-        {QUADRANTS.map((q) => {
-          const isActive = activeQuadrant === q.key
-          return (
-            <div key={q.key} className="space-y-2">
-              <QuadrantCard
-                quadrant={q}
-                foodSlugs={plate[q.key]}
-                isActive={isActive}
-                onToggle={() => setActiveQuadrant(isActive ? null : q.key)}
-                onRemove={(slug) => removeFromQuadrant(q.key, slug)}
-              />
-              {isActive && (
-                <div className="overflow-hidden rounded-xl border border-border bg-background shadow-lg">
-                  <FoodSearch
-                    onSelect={(food) => addToQuadrant(q.key, food)}
-                    excludeSlugs={allSlugs}
-                    filterBiotics={q.filterBiotics}
-                    placeholder={`Search ${q.subtitle.toLowerCase()}…`}
-                  />
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </div>
-
+      )}
     </div>
   )
 }

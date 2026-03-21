@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { BookHeart, ChevronDown, ChevronUp, Loader2, Check } from "lucide-react"
+import { BookHeart, ChevronDown, ChevronUp, Loader2, Check, Sparkles } from "lucide-react"
 import {
   JournalEntry,
   loadJournalEntries,
@@ -12,11 +12,15 @@ import {
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
 import { cn } from "@/lib/utils"
 
-/* ── Score button helpers ────────────────────────────────────────────── */
+/* ── Score data ──────────────────────────────────────────────────────── */
 
-const ENERGY_LABELS = ["", "Drained", "Low", "Okay", "Good", "Great"]
-const DIGESTION_LABELS = ["", "Uncomfortable", "Sluggish", "Okay", "Good", "Smooth"]
-const MOOD_LABELS = ["", "Low", "Meh", "Neutral", "Good", "Lifted"]
+const ENERGY_EMOJIS    = ["", "😴", "😕", "😐", "🙂", "⚡"]
+const DIGESTION_EMOJIS = ["", "😖", "😕", "😐", "🙂", "🌿"]
+const MOOD_EMOJIS      = ["", "😔", "😕", "😐", "🙂", "😊"]
+
+const ENERGY_LABELS    = ["", "Drained",       "Low",      "Okay",    "Good",  "Great"]
+const DIGESTION_LABELS = ["", "Uncomfortable", "Sluggish", "Okay",    "Good",  "Smooth"]
+const MOOD_LABELS      = ["", "Low",           "Meh",      "Neutral", "Good",  "Lifted"]
 
 const SCORE_COLORS = [
   "",
@@ -27,36 +31,59 @@ const SCORE_COLORS = [
   "var(--icon-green)",
 ]
 
-function ScoreButtons({
+/* ── Large emoji score picker ───────────────────────────────────────── */
+
+function EmojiScorePicker({
+  label,
+  icon,
+  emojis,
+  textLabels,
   value,
   onChange,
-  labels,
 }: {
+  label: string
+  icon: string
+  emojis: string[]
+  textLabels: string[]
   value: number | null
   onChange: (v: 1 | 2 | 3 | 4 | 5) => void
-  labels: string[]
 }) {
   return (
-    <div className="flex gap-2">
-      {([1, 2, 3, 4, 5] as const).map((n) => {
-        const active = value === n
-        return (
-          <button
-            key={n}
-            onClick={() => onChange(n)}
-            title={labels[n]}
-            className={cn(
-              "flex h-10 flex-1 flex-col items-center justify-center rounded-xl border text-xs font-bold transition-all",
-              active
-                ? "border-transparent text-white shadow-sm"
-                : "border-border bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
-            )}
-            style={active ? { background: SCORE_COLORS[n], borderColor: SCORE_COLORS[n] } : {}}
-          >
-            {n}
-          </button>
-        )
-      })}
+    <div>
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-sm font-semibold text-foreground">
+          {icon} {label}
+        </span>
+        {value && (
+          <span className="text-xs font-medium" style={{ color: SCORE_COLORS[value] }}>
+            {textLabels[value]}
+          </span>
+        )}
+      </div>
+      <div className="flex gap-2">
+        {([1, 2, 3, 4, 5] as const).map((n) => {
+          const active = value === n
+          return (
+            <button
+              key={n}
+              onClick={() => onChange(n)}
+              title={textLabels[n]}
+              className={cn(
+                "flex flex-1 flex-col items-center justify-center gap-1 rounded-2xl border-2 py-3 transition-all duration-150",
+                active
+                  ? "border-transparent scale-105 shadow-sm"
+                  : "border-border bg-secondary/20 hover:bg-secondary/50 hover:scale-[1.02]"
+              )}
+              style={active ? { background: `color-mix(in srgb, ${SCORE_COLORS[n]} 15%, var(--background))`, borderColor: SCORE_COLORS[n] } : {}}
+            >
+              <span className="text-xl leading-none">{emojis[n]}</span>
+              <span className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: active ? SCORE_COLORS[n] : undefined }}>
+                {n}
+              </span>
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -79,53 +106,39 @@ function DayStrip({ entries }: { entries: JournalEntry[] }) {
         {days.map((date) => {
           const entry = entries.find((e) => e.date === date)
           const isToday = date === getTodayIso()
-          const avg = entry
-            ? (entry.energy + entry.digestion + entry.mood) / 3
-            : null
+          const avg = entry ? (entry.energy + entry.digestion + entry.mood) / 3 : null
           const colorIdx = avg ? Math.round(avg) : 0
 
           return (
             <div key={date} className="flex flex-1 flex-col items-center gap-1.5">
               <div
                 className={cn(
-                  "h-14 w-full rounded-lg border transition-all",
-                  entry ? "border-transparent" : "border-border/50 bg-secondary/20"
+                  "h-16 w-full rounded-xl border transition-all",
+                  entry ? "border-transparent" : "border-border/40 bg-secondary/20"
                 )}
                 style={
                   entry
                     ? {
-                        background: `color-mix(in srgb, ${SCORE_COLORS[colorIdx]} 25%, transparent)`,
-                        borderColor: `color-mix(in srgb, ${SCORE_COLORS[colorIdx]} 40%, transparent)`,
+                        background: `color-mix(in srgb, ${SCORE_COLORS[colorIdx]} 18%, transparent)`,
+                        borderColor: `color-mix(in srgb, ${SCORE_COLORS[colorIdx]} 35%, transparent)`,
                       }
                     : {}
                 }
               >
                 {entry && (
-                  <div className="flex h-full flex-col items-center justify-center gap-0.5">
+                  <div className="flex h-full flex-col items-center justify-center gap-1">
                     <div className="flex gap-0.5">
                       {[entry.energy, entry.digestion, entry.mood].map((s, i) => (
-                        <div
-                          key={i}
-                          className="h-1 w-1 rounded-full"
-                          style={{ background: SCORE_COLORS[s] }}
-                        />
+                        <div key={i} className="h-1 w-1 rounded-full" style={{ background: SCORE_COLORS[s] }} />
                       ))}
                     </div>
-                    <span
-                      className="text-sm font-bold"
-                      style={{ color: SCORE_COLORS[colorIdx] }}
-                    >
+                    <span className="text-sm font-bold" style={{ color: SCORE_COLORS[colorIdx] }}>
                       {avg!.toFixed(1)}
                     </span>
                   </div>
                 )}
               </div>
-              <span
-                className={cn(
-                  "text-[10px] font-medium",
-                  isToday ? "text-foreground" : "text-muted-foreground"
-                )}
-              >
+              <span className={cn("text-[10px] font-medium", isToday ? "text-foreground" : "text-muted-foreground")}>
                 {isToday
                   ? "Today"
                   : new Date(date + "T12:00:00").toLocaleDateString("en-IE", { weekday: "short" })}
@@ -179,14 +192,20 @@ function computeWeeklyAverages(entries: JournalEntry[]): WeeklyAvg[] {
 function InsightsPanel({ entries }: { entries: JournalEntry[] }) {
   if (entries.length < 14) {
     return (
-      <div className="mt-6 rounded-2xl border border-dashed border-border bg-secondary/10 p-5 text-center">
-        <BookHeart size={20} className="mx-auto mb-2 text-muted-foreground/50" />
-        <p className="text-sm font-medium text-muted-foreground">
-          Insights unlock after 14 days of check-ins
+      <div className="mt-6 rounded-2xl border border-dashed border-border bg-secondary/10 p-6 text-center">
+        <Sparkles size={20} className="mx-auto mb-2 text-muted-foreground/40" />
+        <p className="text-sm font-semibold text-foreground/70">
+          Insights unlock after 14 check-ins
         </p>
-        <p className="mt-1 text-xs text-muted-foreground/70">
-          {14 - entries.length} more entries to go
+        <p className="mt-1 text-xs text-muted-foreground">
+          {14 - entries.length} more {14 - entries.length === 1 ? "entry" : "entries"} to go
         </p>
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-border/40">
+          <div
+            className="h-1.5 rounded-full brand-gradient transition-all duration-500"
+            style={{ width: `${(entries.length / 14) * 100}%` }}
+          />
+        </div>
       </div>
     )
   }
@@ -202,11 +221,9 @@ function InsightsPanel({ entries }: { entries: JournalEntry[] }) {
     return { sign, color, abs: Math.abs(diff).toFixed(1) }
   }
 
-  // Plant correlation: only if we have 28+ entries and plant data
   const highPlantWeeks = weeks.filter((w) => w.count >= 3 && (w.plantsThisWeek ?? 0) >= 8)
   const lowPlantWeeks = weeks.filter((w) => w.count >= 3 && (w.plantsThisWeek ?? 0) < 8 && w.plantsThisWeek !== null)
   const showCorrelation = highPlantWeeks.length >= 2 && lowPlantWeeks.length >= 2
-
   const avgOf = (arr: WeeklyAvg[], key: "energy" | "digestion" | "mood") =>
     arr.reduce((s, w) => s + w[key], 0) / arr.length
 
@@ -216,19 +233,20 @@ function InsightsPanel({ entries }: { entries: JournalEntry[] }) {
         Weekly insights
       </h3>
 
-      {/* This week vs last */}
       {lastWeek && (
         <div className="rounded-2xl border border-border bg-card p-4">
-          <p className="mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            This week vs last
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            This week vs last week
           </p>
           <div className="grid grid-cols-3 gap-3">
             {(["energy", "digestion", "mood"] as const).map((key) => {
               const d = delta(thisWeek[key], lastWeek[key])
               return (
                 <div key={key} className="text-center">
-                  <p className="text-lg font-bold tabular-nums">{thisWeek[key].toFixed(1)}</p>
-                  <p className="text-[10px] font-medium text-muted-foreground capitalize">{key}</p>
+                  <p className="text-2xl font-bold tabular-nums" style={{ color: SCORE_COLORS[Math.round(thisWeek[key])] }}>
+                    {thisWeek[key].toFixed(1)}
+                  </p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground capitalize">{key}</p>
                   <p className="text-xs font-semibold" style={{ color: d.color }}>
                     {d.sign} {d.abs}
                   </p>
@@ -239,21 +257,22 @@ function InsightsPanel({ entries }: { entries: JournalEntry[] }) {
         </div>
       )}
 
-      {/* Plant correlation */}
       {showCorrelation && (
-        <div className="rounded-2xl border border-[var(--icon-green)]/30 bg-[var(--icon-green)]/5 p-4">
-          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-[var(--icon-green)]">
-            Plant diversity effect
+        <div
+          className="rounded-2xl border p-4"
+          style={{
+            borderColor: "color-mix(in srgb, var(--icon-green) 30%, transparent)",
+            background: "color-mix(in srgb, var(--icon-green) 5%, transparent)",
+          }}
+        >
+          <p className="mb-2 text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
+            🌱 Plant diversity effect
           </p>
           <p className="text-sm text-foreground/80">
             On weeks you hit 8+ plants, your energy averaged{" "}
-            <span className="font-bold text-foreground">
-              {avgOf(highPlantWeeks, "energy").toFixed(1)}
-            </span>{" "}
+            <span className="font-bold text-foreground">{avgOf(highPlantWeeks, "energy").toFixed(1)}</span>{" "}
             vs{" "}
-            <span className="font-bold text-foreground">
-              {avgOf(lowPlantWeeks, "energy").toFixed(1)}
-            </span>{" "}
+            <span className="font-bold text-foreground">{avgOf(lowPlantWeeks, "energy").toFixed(1)}</span>{" "}
             on lower plant weeks.
           </p>
           {avgOf(highPlantWeeks, "digestion") > avgOf(lowPlantWeeks, "digestion") && (
@@ -271,7 +290,7 @@ function InsightsPanel({ entries }: { entries: JournalEntry[] }) {
   )
 }
 
-/* ── Main JournalTracker component ───────────────────────────────────── */
+/* ── Main JournalTracker ─────────────────────────────────────────────── */
 
 export function JournalTracker() {
   const today = getTodayIso()
@@ -285,11 +304,9 @@ export function JournalTracker() {
   const [saved, setSaved] = useState(false)
   const [isAuthed, setIsAuthed] = useState(false)
 
-  // Load entries from localStorage on mount
   useEffect(() => {
     const loaded = loadJournalEntries()
     setEntries(loaded)
-    // Pre-fill today's entry if it exists
     const todayEntry = loaded.find((e) => e.date === today)
     if (todayEntry) {
       setEnergy(todayEntry.energy)
@@ -299,21 +316,18 @@ export function JournalTracker() {
     }
   }, [today])
 
-  // Check auth status
   useEffect(() => {
     getSupabaseBrowser().auth.getUser().then(({ data }) => {
       setIsAuthed(!!data.user)
     })
   }, [])
 
-  // Get this week's plant count from plant tracker
   const getPlantsThisWeek = useCallback((): number | undefined => {
     try {
       const raw = localStorage.getItem("eatobiotics-plant-tracker")
       if (!raw) return undefined
       const parsed = JSON.parse(raw)
-      const currentWeek = getCurrentWeekStart()
-      if (parsed.weekStart === currentWeek && Array.isArray(parsed.plants)) {
+      if (parsed.weekStart === getCurrentWeekStart() && Array.isArray(parsed.plants)) {
         return parsed.plants.length
       }
     } catch { /* ignore */ }
@@ -333,12 +347,10 @@ export function JournalTracker() {
       plants_this_week: getPlantsThisWeek(),
     }
 
-    // Save locally always
     saveJournalEntry(entry)
     const updated = loadJournalEntries()
     setEntries(updated)
 
-    // Also save to Supabase if authenticated
     if (isAuthed) {
       try {
         await fetch("/api/journal", {
@@ -357,68 +369,58 @@ export function JournalTracker() {
   const canSave = energy !== null && digestion !== null && mood !== null
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
 
-      {/* ── Today's check-in card ──────────────────────────────────────── */}
+      {/* ── Today's check-in card ────────────────────────────────────── */}
       <div className="rounded-2xl border border-border bg-card p-5">
-        <div className="mb-5 flex items-center gap-2">
-          <BookHeart size={16} style={{ color: "var(--icon-orange)" }} />
-          <h2 className="text-sm font-semibold text-foreground">How do you feel today?</h2>
+        <div className="mb-5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <BookHeart size={16} style={{ color: "var(--icon-orange)" }} />
+            <h2 className="font-serif text-lg font-semibold text-foreground">
+              How are you feeling today?
+            </h2>
+          </div>
           {saved && (
-            <span className="ml-auto flex items-center gap-1 text-xs font-medium text-[var(--icon-green)]">
+            <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: "var(--icon-green)" }}>
               <Check size={12} /> Saved
             </span>
           )}
         </div>
 
-        <div className="space-y-4">
-          {/* Energy */}
-          <div>
-            <div className="mb-1.5 flex items-center justify-between">
-              <span className="text-sm font-medium text-foreground">
-                🔋 Energy
-              </span>
-              {energy && (
-                <span className="text-xs text-muted-foreground">{ENERGY_LABELS[energy]}</span>
-              )}
-            </div>
-            <ScoreButtons value={energy} onChange={setEnergy} labels={ENERGY_LABELS} />
-          </div>
-
-          {/* Digestion */}
-          <div>
-            <div className="mb-1.5 flex items-center justify-between">
-              <span className="text-sm font-medium text-foreground">
-                🌿 Digestion
-              </span>
-              {digestion && (
-                <span className="text-xs text-muted-foreground">{DIGESTION_LABELS[digestion]}</span>
-              )}
-            </div>
-            <ScoreButtons value={digestion} onChange={setDigestion} labels={DIGESTION_LABELS} />
-          </div>
-
-          {/* Mood */}
-          <div>
-            <div className="mb-1.5 flex items-center justify-between">
-              <span className="text-sm font-medium text-foreground">
-                😊 Mood
-              </span>
-              {mood && (
-                <span className="text-xs text-muted-foreground">{MOOD_LABELS[mood]}</span>
-              )}
-            </div>
-            <ScoreButtons value={mood} onChange={setMood} labels={MOOD_LABELS} />
-          </div>
+        <div className="space-y-5">
+          <EmojiScorePicker
+            label="Energy"
+            icon="🔋"
+            emojis={ENERGY_EMOJIS}
+            textLabels={ENERGY_LABELS}
+            value={energy}
+            onChange={setEnergy}
+          />
+          <EmojiScorePicker
+            label="Digestion"
+            icon="🌿"
+            emojis={DIGESTION_EMOJIS}
+            textLabels={DIGESTION_LABELS}
+            value={digestion}
+            onChange={setDigestion}
+          />
+          <EmojiScorePicker
+            label="Mood"
+            icon="😊"
+            emojis={MOOD_EMOJIS}
+            textLabels={MOOD_LABELS}
+            value={mood}
+            onChange={setMood}
+          />
 
           {/* Optional notes */}
           <div>
             <button
               onClick={() => setNotesOpen(!notesOpen)}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               {notesOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-              {notesOpen ? "Hide notes" : "Add a note (optional)"}
+              {notesOpen ? "Hide note" : "Add a note (optional)"}
             </button>
             {notesOpen && (
               <textarea
@@ -426,7 +428,7 @@ export function JournalTracker() {
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Anything notable today? A new food, poor sleep, extra stress…"
                 rows={3}
-                className="mt-2 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-[var(--icon-orange)] focus:outline-none focus:ring-1 focus:ring-[var(--icon-orange)]/40 resize-none"
+                className="mt-2 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-[var(--icon-orange)] focus:outline-none focus:ring-1 focus:ring-[var(--icon-orange)]/30 resize-none"
               />
             )}
           </div>
@@ -436,12 +438,16 @@ export function JournalTracker() {
             onClick={handleSave}
             disabled={!canSave || saving}
             className={cn(
-              "w-full rounded-xl py-3 text-sm font-semibold transition-all",
+              "w-full rounded-2xl py-3.5 text-sm font-semibold transition-all",
               canSave && !saving
                 ? "text-white shadow-sm hover:opacity-90"
                 : "bg-secondary/40 text-muted-foreground cursor-not-allowed"
             )}
-            style={canSave && !saving ? { background: "var(--icon-orange)" } : {}}
+            style={
+              canSave && !saving
+                ? { background: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" }
+                : {}
+            }
           >
             {saving ? (
               <span className="flex items-center justify-center gap-2">
@@ -449,7 +455,7 @@ export function JournalTracker() {
               </span>
             ) : saved ? (
               <span className="flex items-center justify-center gap-2">
-                <Check size={14} /> Saved for today
+                <Check size={14} /> Saved for today ✓
               </span>
             ) : (
               "Save today's check-in →"
@@ -458,10 +464,10 @@ export function JournalTracker() {
         </div>
       </div>
 
-      {/* ── 7-day history strip ──────────────────────────────────────── */}
+      {/* ── 7-day history ────────────────────────────────────────────── */}
       {entries.length > 0 && <DayStrip entries={entries} />}
 
-      {/* ── Insights panel ──────────────────────────────────────────── */}
+      {/* ── Insights ─────────────────────────────────────────────────── */}
       <InsightsPanel entries={entries} />
 
       {/* Auth nudge */}
@@ -469,14 +475,16 @@ export function JournalTracker() {
         <div className="rounded-2xl border border-border bg-secondary/20 p-4 text-center">
           <p className="text-xs text-muted-foreground">
             Your journal is saved locally.{" "}
-            <a href="/account/signin" className="font-medium text-foreground underline underline-offset-2 hover:text-[var(--icon-orange)]">
+            <a
+              href="/account/signin"
+              className="font-semibold text-foreground underline underline-offset-2 hover:text-[var(--icon-orange)]"
+            >
               Create an account
             </a>{" "}
             to back it up and sync across devices.
           </p>
         </div>
       )}
-
     </div>
   )
 }
