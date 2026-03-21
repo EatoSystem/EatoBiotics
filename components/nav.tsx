@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useState, useRef, useEffect } from "react"
-import { Menu, X, ChevronDown, BookOpen, Leaf, Smartphone, UtensilsCrossed, Calendar, Info, Globe, Map, Mic, Activity } from "lucide-react"
+import { Menu, X, ChevronDown, BookOpen, Leaf, Smartphone, UtensilsCrossed, Calendar, Info, Globe, Map, Mic, Activity, Camera } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { AccountNavItem } from "@/components/account/account-nav-item"
@@ -36,6 +36,7 @@ const navGroups: NavGroup[] = [
       { href: "/today", label: "Today's Food", description: "A new food spotlight, daily", icon: Calendar },
       { href: "/podcast", label: "The Podcast", description: "Conversations about food & performance", icon: Mic },
       { href: "/myplate", label: "My Plate", description: "Build your plate and track your plants", icon: Leaf },
+      { href: "/analyze", label: "Meal Analyser", description: "Scan your plate with AI", icon: Camera },
     ],
   },
   {

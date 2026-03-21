@@ -1,13 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { Utensils, Leaf, BarChart3 } from "lucide-react"
+import { Utensils, Leaf, BarChart3, BookHeart } from "lucide-react"
 import { PlateBuilder } from "@/components/app/plate-builder"
 import { PlantTracker } from "@/components/app/plant-tracker"
 import { BioticsScoreCalculator } from "@/components/app/biotics-score-calculator"
+import { JournalTracker } from "@/components/app/journal-tracker"
 import { cn } from "@/lib/utils"
 
-type Tab = "plate" | "plants" | "score"
+type Tab = "plate" | "plants" | "score" | "journal"
 
 const TABS: {
   key: Tab
@@ -40,6 +41,14 @@ const TABS: {
     icon: BarChart3,
     color: "var(--icon-teal)",
     dotColor: "bg-icon-teal",
+  },
+  {
+    key: "journal",
+    label: "Daily Journal",
+    shortLabel: "Journal",
+    icon: BookHeart,
+    color: "var(--icon-orange)",
+    dotColor: "bg-icon-orange",
   },
 ]
 
@@ -125,6 +134,7 @@ export function MyPlateClient() {
         {activeTab === "plate" && <PlateBuilder />}
         {activeTab === "plants" && <PlantTracker />}
         {activeTab === "score" && <BioticsScoreCalculator />}
+        {activeTab === "journal" && <JournalTracker />}
       </div>
 
       {/* ── Footer hint ─────────────────────────────────────────────── */}

@@ -5,6 +5,7 @@ import { Nav } from '@/components/nav'
 import { Footer } from '@/components/footer'
 import { JsonLd } from '@/components/json-ld'
 import { generateOrganizationSchema } from '@/lib/structured-data'
+import { PwaRegister } from '@/components/pwa-register'
 import './globals.css'
 
 const _dmSans = DM_Sans({
@@ -40,6 +41,12 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     site: '@eatobiotics',
   },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'EatoBiotics',
+  },
 }
 
 export const viewport: Viewport = {
@@ -61,6 +68,7 @@ export default function RootLayout({
         <main>{children}</main>
         <Footer />
         <Analytics />
+        <PwaRegister />
       </body>
     </html>
   )

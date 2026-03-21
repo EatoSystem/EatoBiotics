@@ -112,3 +112,65 @@ export function clearPlantTracker(): void {
 function emptyTracker(): PlantTrackerState {
   return { weekStart: getCurrentWeekStart(), plants: [], updatedAt: 0 }
 }
+
+/* ── Journal State ────────────────────────────────────────────────────── */
+
+export interface JournalEntry {
+  date: string             // YYYY-MM-DD
+  energy: 1 | 2 | 3 | 4 | 5
+  digestion: 1 | 2 | 3 | 4 | 5
+  mood: 1 | 2 | 3 | 4 | 5
+  notes?: string
+  plants_this_week?: number
+}
+
+const JOURNAL_KEY = "eatobiotics-journal"
+
+export function loadJournalEntries(): JournalEntry[] {
+  if (typeof window === "undefined") return []
+  try {
+    const raw = localStorage.getItem(JOURNAL_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter(
+      (e: unknown) =>
+        e !== null &&
+        typeof e === "object" &&
+        typeof (e as JournalEntry).date === "string" &&
+        typeof (e as JournalEntry).energy === "number" &&
+        typeof (e as JournalEntry).digestion === "number" &&
+        typeof (e as JournalEntry).mood === "number"
+    ) as JournalEntry[]
+  } catch {
+    return []
+  }
+}
+
+export function saveJournalEntry(entry: JournalEntry): void {
+  if (typeof window === "undefined") return
+  try {
+    const entries = loadJournalEntries()
+    const idx = entries.findIndex((e) => e.date === entry.date)
+    if (idx >= 0) {
+      entries[idx] = entry
+    } else {
+      entries.push(entry)
+    }
+    // Keep last 365 days, sorted newest first
+    entries.sort((a, b) => b.date.localeCompare(a.date))
+    const trimmed = entries.slice(0, 365)
+    localStorage.setItem(JOURNAL_KEY, JSON.stringify(trimmed))
+  } catch {
+    // Storage full or unavailable
+  }
+}
+
+export function clearJournalEntries(): void {
+  if (typeof window === "undefined") return
+  localStorage.removeItem(JOURNAL_KEY)
+}
+
+export function getTodayIso(): string {
+  return new Date().toISOString().slice(0, 10)
+}
