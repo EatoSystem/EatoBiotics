@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 import { DemoClient } from "@/components/assessment/demo-client"
 
 export const metadata: Metadata = {
@@ -8,5 +9,9 @@ export const metadata: Metadata = {
 }
 
 export default function DemoPage() {
-  return <DemoClient />
+  return (
+    <Suspense fallback={<div className="min-h-screen" />}>
+      <DemoClient />
+    </Suspense>
+  )
 }
