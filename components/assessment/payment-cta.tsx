@@ -20,15 +20,11 @@ const TIERS = [
     price: "€20",
     cents: 2000,
     description: "Your score, profile, and the first steps to take.",
-    badge: null,
+    badge: null as string | null,
     icon: FileText,
-    bannerGradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
-    color: "var(--icon-green)",
-    highlights: [
-      { emoji: "🎯", text: "Your full profile description" },
-      { emoji: "🥦", text: "Top 5 priority foods for your score" },
-      { emoji: "📅", text: "7-day daily starter action plan" },
-    ],
+    accentColor: "var(--icon-green)",
+    accentGradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
+    featured: false,
     features: [
       "Score ring + full profile description",
       "Your top 5 priority foods",
@@ -45,15 +41,11 @@ const TIERS = [
     price: "€40",
     cents: 4000,
     description: "Deep-dive into every pillar with a 30-day plan.",
-    badge: "Most Popular",
+    badge: "Most Popular" as string | null,
     icon: Layers,
-    bannerGradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
-    color: "var(--icon-teal)",
-    highlights: [
-      { emoji: "🔬", text: "Pillar-by-pillar deep-dives" },
-      { emoji: "🗓️", text: "30-day rebuilding plan (4 weeks)" },
-      { emoji: "🔄", text: "5 easy food swaps for your weakest pillar" },
-    ],
+    accentColor: "var(--icon-teal)",
+    accentGradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
+    featured: true,
     features: [
       "Everything in Starter",
       "Pillar-by-pillar deep-dives",
@@ -72,15 +64,11 @@ const TIERS = [
     price: "€50",
     cents: 5000,
     description: "The complete programme — recipes, supplements, and a 90-day tracker.",
-    badge: null,
+    badge: null as string | null,
     icon: Sparkles,
-    bannerGradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
-    color: "var(--icon-orange)",
-    highlights: [
-      { emoji: "🍽️", text: "Meal timing guide + 3 recipes" },
-      { emoji: "📆", text: "90-day milestone tracker" },
-      { emoji: "🧠", text: "Gut-brain connection insights" },
-    ],
+    accentColor: "var(--icon-orange)",
+    accentGradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
+    featured: false,
     features: [
       "Everything in Full Report",
       "Personalised meal timing guide",
@@ -132,9 +120,9 @@ export function PaymentCTA({ result }: PaymentCTAProps) {
   }
 
   return (
-    <div className="rounded-3xl border border-border bg-gradient-to-br from-secondary/40 to-background p-6 sm:p-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="mb-8 text-center">
+      <div className="text-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-[var(--icon-green)]/30 bg-[var(--icon-green)]/8 px-3 py-1 text-xs font-semibold text-[var(--icon-green)]">
           Choose Your Report
         </div>
@@ -159,54 +147,60 @@ export function PaymentCTA({ result }: PaymentCTAProps) {
             <div
               key={tier.id}
               className={cn(
-                "relative flex flex-col rounded-2xl border-2 bg-background overflow-hidden transition-all",
-                tier.badge
-                  ? "border-[var(--icon-teal)] shadow-lg shadow-[var(--icon-teal)]/10"
+                "relative flex flex-col rounded-2xl border bg-card overflow-hidden transition-all",
+                tier.featured
+                  ? "border-transparent shadow-xl ring-2 ring-[var(--icon-teal)]/40 scale-[1.02]"
                   : "border-border hover:border-foreground/20"
               )}
             >
-              {/* Gradient top banner */}
+              {/* Left accent bar */}
               <div
-                className="flex items-center justify-between px-5 py-4"
-                style={{ background: tier.bannerGradient }}
-              >
-                <div className="flex items-center gap-2">
-                  <Icon size={18} className="text-white" />
-                  <span className="text-sm font-bold text-white">{tier.name}</span>
+                className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl"
+                style={{ background: tier.accentGradient }}
+              />
+
+              {/* Most Popular badge */}
+              {tier.badge && (
+                <div
+                  className="absolute right-4 top-4 flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold text-white"
+                  style={{ background: tier.accentGradient }}
+                >
+                  <Star size={9} className="fill-white" />
+                  {tier.badge}
                 </div>
-                {tier.badge && (
-                  <div className="flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-1 text-[10px] font-bold text-white">
-                    <Star size={9} className="fill-white" />
-                    {tier.badge}
+              )}
+
+              <div className="flex flex-1 flex-col p-5 pl-6">
+                {/* Icon + name */}
+                <div className="mb-4 flex items-center gap-2">
+                  <div
+                    className="flex h-8 w-8 items-center justify-center rounded-xl"
+                    style={{ background: `color-mix(in srgb, ${tier.accentColor} 15%, transparent)` }}
+                  >
+                    <Icon size={15} style={{ color: tier.accentColor }} />
                   </div>
-                )}
-              </div>
+                  <span className="text-sm font-bold text-foreground">{tier.name}</span>
+                </div>
 
-              {/* Card content */}
-              <div className="flex flex-1 flex-col p-5">
                 {/* Price */}
-                <div className="mb-4 flex items-baseline gap-1.5">
-                  <span className="text-4xl font-bold text-foreground">{tier.price}</span>
-                  <span className="text-xs text-muted-foreground">one-time</span>
+                <div className="mb-1 flex items-baseline gap-1.5">
+                  <span className="text-5xl font-bold" style={{ color: tier.accentColor }}>
+                    {tier.price}
+                  </span>
                 </div>
+                <p className="mb-4 text-xs text-muted-foreground">one-off payment</p>
 
-                <p className="mb-4 text-xs leading-snug text-muted-foreground">{tier.description}</p>
+                <p className="mb-5 text-xs leading-snug text-muted-foreground">{tier.description}</p>
 
-                {/* Visual highlights */}
-                <div className="mb-4 space-y-2 rounded-xl bg-secondary/30 p-3">
-                  {tier.highlights.map((h, i) => (
-                    <div key={i} className="flex items-center gap-2 text-xs font-medium text-foreground">
-                      <span className="text-base">{h.emoji}</span>
-                      {h.text}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Full features */}
-                <ul className="mb-5 flex-1 space-y-1.5">
+                {/* Features */}
+                <ul className="mb-6 flex-1 space-y-2">
                   {tier.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-xs text-foreground/80">
-                      <Check size={11} className="mt-0.5 shrink-0" style={{ color: tier.color }} />
+                    <li key={f} className="flex items-start gap-2.5 text-xs text-foreground/80">
+                      <Check
+                        size={13}
+                        className="mt-0.5 shrink-0"
+                        style={{ color: tier.accentColor }}
+                      />
                       {f}
                     </li>
                   ))}
@@ -216,8 +210,11 @@ export function PaymentCTA({ result }: PaymentCTAProps) {
                 <button
                   onClick={() => handlePurchase(tier.id)}
                   disabled={loading !== null}
-                  className="mb-2 flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                  style={{ background: tier.bannerGradient }}
+                  className={cn(
+                    "mb-2 flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60",
+                    tier.featured ? "brand-gradient" : ""
+                  )}
+                  style={tier.featured ? undefined : { background: tier.accentGradient }}
                 >
                   {loading === tier.id ? (
                     <span className="flex items-center gap-2">
@@ -245,8 +242,21 @@ export function PaymentCTA({ result }: PaymentCTAProps) {
         })}
       </div>
 
+      {/* Bundle nudge */}
+      <p className="text-center text-sm text-muted-foreground">
+        Or get all three for{" "}
+        <span className="font-semibold text-foreground">€97</span>{" "}
+        <button
+          onClick={() => handlePurchase("premium")}
+          className="font-semibold underline decoration-dotted hover:text-foreground transition-colors"
+          style={{ color: "var(--icon-teal)" }}
+        >
+          bundle →
+        </button>
+      </p>
+
       {error && (
-        <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/8 px-4 py-3 text-sm text-destructive">
+        <div className="rounded-xl border border-destructive/30 bg-destructive/8 px-4 py-3 text-sm text-destructive">
           {error}
           {error.includes("not configured") && (
             <p className="mt-1 text-xs opacity-70">Add STRIPE_SECRET_KEY to .env.local to enable payments.</p>
@@ -254,7 +264,7 @@ export function PaymentCTA({ result }: PaymentCTAProps) {
         </div>
       )}
 
-      <div className="mt-5 space-y-2">
+      <div className="space-y-2">
         <MissionNote variant="inline" />
         <p className="text-center text-xs text-muted-foreground/50">
           Instant access · No subscription · Secure payment via Stripe

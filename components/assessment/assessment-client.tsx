@@ -90,6 +90,13 @@ export function AssessmentClient() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ lead: currentLead, result: computed }),
         }).catch(() => {/* ignore network errors */})
+
+        // Fire-and-forget: send branded magic link so user can access /account
+        fetch("/api/auth/send-magic-link", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: currentLead.email, name: currentLead.name }),
+        }).catch(() => {/* ignore network errors */})
       }
 
       setState((s) => ({

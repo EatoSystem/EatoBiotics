@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import {
   CheckCircle2,
@@ -18,14 +18,12 @@ import { ScoreRing } from "./score-ring"
 import { SubScoreCard } from "./sub-score-card"
 import { PremiumTeaser } from "./premium-teaser"
 import { MissionNote } from "./mission-note"
-import { PillarRadar } from "./pillar-radar"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
-import type { AssessmentResult } from "@/lib/assessment-scoring"
+import type { AssessmentResult, PillarInsight } from "@/lib/assessment-scoring"
 import { getFoodBySlug } from "@/lib/foods"
 
 /* ── Gut Starter Pack config ─────────────────────────────────────────── */
 
-// Profile type → recommended food slugs (ordered by priority)
 const STARTER_PACK: Record<string, string[]> = {
   "Thriving System":    ["kimchi", "kombucha", "asparagus", "tempeh", "pomegranate", "water-kefir"],
   "Strong Foundation":  ["kimchi", "kefir", "garlic", "asparagus", "wild-salmon", "almonds"],
@@ -35,7 +33,6 @@ const STARTER_PACK: Record<string, string[]> = {
   "Early Builder":      ["garlic", "oats", "yogurt", "banana", "lentils", "eggs"],
 }
 
-// Fallback for any unrecognised profile
 const DEFAULT_STARTER: string[] = ["garlic", "oats", "yogurt", "kefir", "lentils", "blueberries"]
 
 const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
@@ -52,56 +49,110 @@ interface AssessmentResultsProps {
   leadEmail?: string
 }
 
+/* ── Pillar mini-bar (used in hero) ─────────────────────────────────── */
+
+function PillarMiniBar({ insight, index }: { insight: PillarInsight; index: number }) {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 400 + index * 100)
+    return () => clearTimeout(t)
+  }, [index])
+
+  const Icon = ICON_MAP[insight.icon] ?? Leaf
+
+  return (
+    <div className="flex items-center gap-3">
+      <div
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+        style={{ background: insight.gradient }}
+      >
+        <Icon size={13} className="text-white" />
+      </div>
+      <div className="flex flex-1 flex-col gap-1">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-foreground">{insight.label}</span>
+          <span className="text-xs font-bold" style={{ color: insight.color }}>{insight.score}</span>
+        </div>
+        <div className="h-1.5 overflow-hidden rounded-full bg-border/40">
+          <div
+            className="h-full rounded-full"
+            style={{
+              width: visible ? `${insight.score}%` : "0%",
+              background: insight.gradient,
+              transition: `width 700ms ease-out ${index * 80}ms`,
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ── Save Results Card (auto-sends magic link) ───────────────────────── */
+
 function SaveResultsCard({ email }: { email?: string }) {
   const [sent, setSent] = useState(false)
-  const [loading, setLoading] = useState(false)
 
-  async function handleSave() {
+  useEffect(() => {
     if (!email || sent) return
-    setLoading(true)
-    try {
-      const supabase = getSupabaseBrowser()
-      await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/api/auth/callback?next=/account`,
-        },
-      })
-      setSent(true)
-    } catch {
-      // fail silently
-    } finally {
-      setLoading(false)
-    }
-  }
+    // Auto-send via branded API route (fire-and-forget)
+    fetch("/api/auth/send-magic-link", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    })
+      .then(() => setSent(true))
+      .catch(() => setSent(true)) // show sent state regardless — non-fatal
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [email])
 
   if (!email) return null
 
   return (
     <div className="rounded-2xl border bg-card p-6 text-center space-y-3">
       <div className="w-10 h-10 rounded-full bg-[var(--icon-green)]/10 flex items-center justify-center mx-auto">
-        <span className="text-xl">💾</span>
+        <span className="text-xl">📧</span>
       </div>
-      <h3 className="font-semibold text-base">Save your results to your account</h3>
-      <p className="text-sm text-muted-foreground">
-        Access your report anytime, track your progress over time, and unlock early access to new features.
-      </p>
+      <h3 className="font-semibold text-base">Your sign-in link is on its way</h3>
       {sent ? (
-        <p className="text-sm font-medium text-[var(--icon-green)]">
-          ✓ Check your email for a sign-in link
+        <p className="text-sm text-muted-foreground">
+          We&apos;ve sent a sign-in link to{" "}
+          <span className="font-semibold text-foreground">{email}</span> — check your inbox to save
+          these results and access your account.
         </p>
       ) : (
-        <button
-          onClick={handleSave}
-          disabled={loading}
-          className="brand-gradient text-white text-sm font-semibold px-6 py-2.5 rounded-full disabled:opacity-60"
-        >
-          {loading ? "Sending link…" : "Create your free account →"}
-        </button>
+        <p className="text-sm text-muted-foreground">
+          Sending a sign-in link to <span className="font-semibold text-foreground">{email}</span>…
+        </p>
+      )}
+      {sent && (
+        <p className="text-xs text-muted-foreground/60">
+          Can&apos;t find it? Check your spam folder or{" "}
+          <button
+            onClick={() => {
+              setSent(false)
+              const supabase = getSupabaseBrowser()
+              supabase.auth
+                .signInWithOtp({
+                  email,
+                  options: { emailRedirectTo: `${window.location.origin}/api/auth/callback?next=/account` },
+                })
+                .then(() => setSent(true))
+                .catch(() => setSent(true))
+            }}
+            className="underline hover:text-foreground transition-colors"
+          >
+            resend the link
+          </button>
+          .
+        </p>
       )}
     </div>
   )
 }
+
+/* ── Main component ──────────────────────────────────────────────────── */
 
 export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentResultsProps) {
   const { overall, profile, insights, nextActions } = result
@@ -110,19 +161,19 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
 
   return (
     <div className="min-h-screen bg-background">
-      {/* ── Hero: Score ──────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden px-6 pb-10 pt-28 sm:pt-32">
-        {/* Decorative glow */}
+      {/* ── Hero: Score ring + Pillar bars ────────────────────────────── */}
+      <section className="relative overflow-hidden px-6 pb-12 pt-28 sm:pt-36">
+        {/* Radial glow tinted by profile colour */}
         <div
-          className="pointer-events-none absolute left-1/2 top-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-5"
+          className="pointer-events-none absolute inset-0"
           style={{
-            background: `radial-gradient(circle, ${profile.color}, transparent 70%)`,
+            background: `radial-gradient(ellipse 80% 60% at 50% 0%, color-mix(in srgb, ${profile.color} 12%, transparent), transparent 70%)`,
           }}
         />
 
-        <div className="relative mx-auto max-w-3xl">
+        <div className="relative mx-auto max-w-4xl">
           {/* Overline */}
-          <div className="mb-6 text-center">
+          <div className="mb-8 text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               <span
                 className="h-1.5 w-1.5 rounded-full"
@@ -130,14 +181,15 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
               />
               Your Results
             </div>
-            <h1 className="mt-4 font-serif text-3xl font-semibold text-foreground sm:text-4xl">
+            <h1 className="mt-4 font-serif text-3xl font-semibold text-foreground sm:text-4xl md:text-5xl">
               Your Food System Inside You Score
             </h1>
           </div>
 
-          {/* Score ring + Radar side by side on desktop */}
-          <div className="flex flex-col items-center gap-8 sm:flex-row sm:items-center sm:justify-center sm:gap-12">
-            <div className="flex flex-col items-center">
+          {/* Score ring (left) + pillar bars (right) */}
+          <div className="flex flex-col items-center gap-8 sm:flex-row sm:items-start sm:gap-10 lg:gap-16">
+            {/* Score ring */}
+            <div className="flex shrink-0 flex-col items-center">
               <ScoreRing
                 score={overall}
                 color={profile.color}
@@ -148,11 +200,29 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
                 Overall Score
               </p>
             </div>
-            <div className="flex flex-col items-center">
-              <PillarRadar subScores={result.subScores} size={260} />
-              <p className="mt-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                5-Pillar Breakdown
+
+            {/* Profile + pillar mini-bars */}
+            <div className="w-full max-w-sm flex-1 rounded-2xl border border-border bg-background/80 p-5 backdrop-blur-sm sm:max-w-none">
+              {/* Profile label */}
+              <div className="mb-4 flex items-center gap-2">
+                <div
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: profile.color }}
+                />
+                <span className="text-sm font-bold" style={{ color: profile.color }}>
+                  {profile.type}
+                </span>
+              </div>
+              <p className="mb-5 text-sm leading-relaxed text-muted-foreground line-clamp-2">
+                {profile.tagline}
               </p>
+
+              {/* 5 pillar mini-bars */}
+              <div className="space-y-3">
+                {insights.map((insight, i) => (
+                  <PillarMiniBar key={insight.pillar} insight={insight} index={i} />
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -160,10 +230,9 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
 
       {/* ── Profile description ──────────────────────────────────────── */}
       <section className="px-6 pb-16">
-        <div className="mx-auto max-w-2xl">
+        <div className="mx-auto max-w-3xl">
           <ScrollReveal>
             <div className="rounded-3xl border border-border bg-background overflow-hidden">
-              {/* Gradient top accent */}
               <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${profile.color}, transparent)` }} />
               <div className="p-6 sm:p-8">
                 <div className="flex items-center gap-2">
@@ -171,10 +240,7 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
                     className="h-3 w-3 rounded-full"
                     style={{ backgroundColor: profile.color }}
                   />
-                  <span
-                    className="text-base font-bold"
-                    style={{ color: profile.color }}
-                  >
+                  <span className="text-base font-bold" style={{ color: profile.color }}>
                     {profile.type}
                   </span>
                 </div>
@@ -192,7 +258,7 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
 
       {/* ── 5-Pillar Breakdown ───────────────────────────────────────── */}
       <section className="border-t border-border bg-secondary/10 px-6 py-16">
-        <div className="mx-auto max-w-2xl">
+        <div className="mx-auto max-w-3xl">
           <ScrollReveal>
             <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
               Your 5 Pillars
@@ -202,7 +268,7 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
             </p>
           </ScrollReveal>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          <div className="mt-8 grid gap-4">
             {insights.map((insight, i) => (
               <ScrollReveal key={insight.pillar} delay={i * 60}>
                 <SubScoreCard insight={insight} index={i} />
@@ -215,7 +281,7 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
       {/* ── Strengths ────────────────────────────────────────────────── */}
       {strengths.length > 0 && (
         <section className="px-6 py-16">
-          <div className="mx-auto max-w-2xl">
+          <div className="mx-auto max-w-3xl">
             <ScrollReveal>
               <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
                 What&rsquo;s Working
@@ -258,7 +324,7 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
       {/* ── Opportunities ────────────────────────────────────────────── */}
       {opportunities.length > 0 && (
         <section className="border-t border-border bg-secondary/10 px-6 py-16">
-          <div className="mx-auto max-w-2xl">
+          <div className="mx-auto max-w-3xl">
             <ScrollReveal>
               <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
                 Where to Focus
@@ -300,7 +366,7 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
 
       {/* ── 7-Day Actions ────────────────────────────────────────────── */}
       <section className="px-6 py-16">
-        <div className="mx-auto max-w-2xl">
+        <div className="mx-auto max-w-3xl">
           <ScrollReveal>
             <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
               Your Next 7 Days
@@ -329,7 +395,7 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
 
       {/* ── Gut Starter Pack ─────────────────────────────────────────── */}
       <section className="border-t border-border px-6 py-16">
-        <div className="mx-auto max-w-2xl">
+        <div className="mx-auto max-w-3xl">
           <ScrollReveal>
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
               Your personalised picks
@@ -393,16 +459,16 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
 
       {/* ── Mission Bridge ───────────────────────────────────────────── */}
       <section className="border-t border-border px-6 py-12">
-        <div className="mx-auto max-w-2xl">
+        <div className="mx-auto max-w-3xl">
           <ScrollReveal>
             <MissionNote variant="bridge" />
           </ScrollReveal>
         </div>
       </section>
 
-      {/* ── Premium Teaser ───────────────────────────────────────────── */}
+      {/* ── Premium Teaser (PaymentCTA) ───────────────────────────────── */}
       <section className="border-t border-border bg-secondary/10 px-6 py-16">
-        <div className="mx-auto max-w-2xl">
+        <div className="mx-auto max-w-3xl">
           <ScrollReveal>
             <PremiumTeaser result={result} />
           </ScrollReveal>
@@ -411,7 +477,7 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
 
       {/* ── Save Results ─────────────────────────────────────────────── */}
       <section className="border-t border-border px-6 py-16">
-        <div className="mx-auto max-w-2xl">
+        <div className="mx-auto max-w-3xl">
           <ScrollReveal>
             <SaveResultsCard email={leadEmail} />
           </ScrollReveal>
@@ -420,7 +486,7 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
 
       {/* ── Retake + Disclaimer ──────────────────────────────────────── */}
       <section className="px-6 py-16">
-        <div className="mx-auto max-w-2xl flex flex-col items-center gap-4">
+        <div className="mx-auto max-w-3xl flex flex-col items-center gap-4">
           <ScrollReveal>
             <button
               onClick={onRetake}
