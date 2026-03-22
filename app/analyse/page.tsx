@@ -3,7 +3,7 @@ import { Suspense } from "react"
 import Image from "next/image"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { GradientText } from "@/components/gradient-text"
-import { AnalyzeClient } from "./analyze-client"
+import { AnalyseClient } from "./analyse-client"
 
 export const metadata: Metadata = {
   title: "Meal Analysis",
@@ -110,7 +110,7 @@ export default function AnalysePage() {
             <div className="h-64 rounded-2xl border border-dashed border-border animate-pulse" />
           }
         >
-          <AnalyzeClient />
+          <AnalyseClient />
         </Suspense>
 
         <p className="mt-6 text-center text-xs text-muted-foreground/50">

@@ -50,6 +50,8 @@ Calibration examples:
 
 Set "prebioticStrength" to "strong" (3+ prebiotic foods), "moderate" (1–2 prebiotic foods), or "low" (0 prebiotic foods).
 
+Also estimate the total nutritional content of the ENTIRE meal visible (not per food item). Base estimates on typical portion sizes visible in the photo.
+
 Return ONLY valid JSON with this exact structure, no markdown fences:
 {
   "score": 70,
@@ -60,12 +62,20 @@ Return ONLY valid JSON with this exact structure, no markdown fences:
   "missingBiotics": [],
   "whatThisMealDoes": "1–2 sentences on what this meal does WELL for gut health — lead with the positives",
   "suggestions": ["string", "string", "string"],
-  "overallAssessment": "string (1–2 sentences, warm and practical, reference EatoBiotics framework)"
+  "overallAssessment": "string (1–2 sentences, warm and practical, reference EatoBiotics framework)",
+  "nutrition": {
+    "calories": 520,
+    "protein_g": 38,
+    "carbs_g": 45,
+    "fat_g": 18,
+    "fibre_g": 12
+  }
 }
 
 missingBiotics should list any of ["prebiotic", "probiotic", "postbiotic"] not represented in the foods.
 suggestions should give 3 specific, practical additions or swaps that would naturally complement this meal.
 whatThisMealDoes should always highlight what IS working — never start with a negative.
+nutrition values should be integers representing realistic estimates for the whole meal visible.
 
 If you cannot identify the meal clearly (blurry, non-food image, etc.), return exactly: {"error": "Could not identify foods in this image. Please try a clearer photo of your meal."}`
 
@@ -94,7 +104,7 @@ export async function POST(req: NextRequest) {
 
     const response = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 1024,
+      max_tokens: 1600,
       messages: [
         {
           role: "user",
@@ -130,7 +140,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(parsed)
   } catch (err) {
-    console.error("[analyze-plate] error:", err)
+    console.error("[analyse-plate] error:", err)
     return NextResponse.json({ error: "Analysis failed. Please try again." }, { status: 500 })
   }
 }

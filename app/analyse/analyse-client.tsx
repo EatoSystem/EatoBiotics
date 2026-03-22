@@ -17,6 +17,14 @@ interface AnalysedFood {
   confidence: "high" | "medium" | "low"
 }
 
+interface Nutrition {
+  calories: number
+  protein_g: number
+  carbs_g: number
+  fat_g: number
+  fibre_g: number
+}
+
 interface AnalysisResult {
   score: number
   prebioticStrength: "strong" | "moderate" | "low"
@@ -25,6 +33,7 @@ interface AnalysisResult {
   whatThisMealDoes: string
   suggestions: string[]
   overallAssessment: string
+  nutrition?: Nutrition
 }
 
 type State =
@@ -162,6 +171,44 @@ function ScoreDisplay({
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+/* ── Nutrition panel ────────────────────────────────────────────────── */
+
+function NutritionPanel({ nutrition }: { nutrition: Nutrition }) {
+  const stats = [
+    { label: "Calories", value: nutrition.calories, unit: "kcal", color: "var(--icon-yellow)" },
+    { label: "Protein",  value: nutrition.protein_g, unit: "g",   color: "var(--icon-orange)" },
+    { label: "Carbs",    value: nutrition.carbs_g,   unit: "g",   color: "var(--icon-teal)" },
+    { label: "Fat",      value: nutrition.fat_g,     unit: "g",   color: "var(--icon-lime)" },
+    { label: "Fibre",    value: nutrition.fibre_g,   unit: "g",   color: "var(--icon-green)" },
+  ]
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <p className="mb-4 border-b border-border pb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+        Estimated Nutrition
+      </p>
+      <div className="grid grid-cols-5 gap-2">
+        {stats.map((s) => (
+          <div
+            key={s.label}
+            className="flex flex-col items-center gap-1 rounded-xl py-3 px-1 text-center"
+            style={{ background: `color-mix(in srgb, ${s.color} 10%, transparent)` }}
+          >
+            <p className="text-lg font-bold tabular-nums leading-none" style={{ color: s.color }}>
+              {s.value}
+            </p>
+            <p className="text-[10px] font-semibold text-muted-foreground">{s.unit}</p>
+            <p className="text-[10px] text-muted-foreground/70">{s.label}</p>
+          </div>
+        ))}
+      </div>
+      <p className="mt-3 text-[11px] text-muted-foreground/50">
+        * Visual estimates based on portion size — typical accuracy ±20%
+      </p>
     </div>
   )
 }
@@ -335,6 +382,9 @@ function ResultsView({
         hasPostbiotic={hasPostbiotic}
       />
 
+      {/* Nutritional information */}
+      {result.nutrition && <NutritionPanel nutrition={result.nutrition} />}
+
       {/* What this meal does well — lead with positives */}
       {result.whatThisMealDoes && (
         <div className="rounded-2xl border border-[var(--icon-green)]/30 border-l-4 border-l-[var(--icon-green)] bg-[var(--icon-green)]/5 p-5">
@@ -470,7 +520,7 @@ function ErrorView({ message, previewUrl, onReset }: { message: string; previewU
 
 /* ── Main component ─────────────────────────────────────────────────── */
 
-export function AnalyzeClient() {
+export function AnalyseClient() {
   const [state, setState] = useState<State>({ kind: "idle" })
 
   const handleFile = useCallback(async (file: File) => {
@@ -480,7 +530,7 @@ export function AnalyzeClient() {
     try {
       const { base64, mimeType } = await compressImage(file)
 
-      const res = await fetch("/api/analyze-plate", {
+      const res = await fetch("/api/analyse-plate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ imageBase64: base64, mimeType }),
