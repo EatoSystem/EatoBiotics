@@ -52,7 +52,7 @@ const MOCK_PAID_REPORTS = [
 
 export default function DemoAccountPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-[57px]">
       {/* Demo banner */}
       <div className="border-b border-[var(--icon-yellow)]/20 bg-[var(--icon-yellow)]/8 px-4 py-2.5">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-4">
@@ -68,13 +68,15 @@ export default function DemoAccountPage() {
         </div>
       </div>
 
-      {/* Real dashboard component with mock data */}
+      {/* Real dashboard component with mock data — pt-20 matches real /account page */}
+      <div className="pt-10">
       <DashboardClient
         profile={MOCK_PROFILE}
         assessments={MOCK_ASSESSMENTS}
         paidReports={MOCK_PAID_REPORTS}
         plateData={null}
       />
+      </div>
 
       {/* Back to demo hub */}
       <div className="border-t border-border px-6 py-8 text-center">
