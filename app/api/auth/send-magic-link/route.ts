@@ -18,37 +18,66 @@ function magicLinkEmailHtml({ magicUrl, name }: { magicUrl: string; name?: strin
         <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb;max-width:560px;width:100%;">
           <!-- Header -->
           <tr>
-            <td style="background:linear-gradient(135deg,#7bc67e,#56C135);padding:32px 40px;text-align:center;">
-              <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.5px;">EatoBiotics</h1>
-              <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">The Food System Inside You</p>
+            <td style="background:linear-gradient(135deg,#7bc67e,#56C135);padding:36px 40px;text-align:center;">
+              <div style="font-size:32px;margin-bottom:12px;">🌿</div>
+              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">EatoBiotics</h1>
+              <p style="margin:6px 0 0;color:rgba(255,255,255,0.9);font-size:14px;letter-spacing:0.1px;">The Food System Inside You</p>
             </td>
           </tr>
           <!-- Body -->
           <tr>
             <td style="padding:36px 40px;">
-              <p style="margin:0 0 8px;color:#111827;font-size:15px;">${greeting}</p>
-              <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.6;">
-                Click the button below to sign in and access your account and assessment results. This link expires in 60 minutes and can only be used once.
+              <p style="margin:0 0 6px;color:#111827;font-size:16px;font-weight:600;">${greeting}</p>
+              <p style="margin:0 0 28px;color:#374151;font-size:15px;line-height:1.65;">
+                Here&rsquo;s your sign-in link for EatoBiotics &mdash; your personalised gut health food system. Click below to access your account.
               </p>
-              <table cellpadding="0" cellspacing="0" style="margin:0 auto 24px;">
+              <!-- Context pills -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+                <tr>
+                  <td style="padding:0 4px 0 0;width:33%;">
+                    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 8px;text-align:center;">
+                      <div style="font-size:20px;margin-bottom:5px;">📊</div>
+                      <p style="margin:0;font-size:11px;font-weight:600;color:#15803d;">Your gut score</p>
+                    </div>
+                  </td>
+                  <td style="padding:0 4px;width:33%;">
+                    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 8px;text-align:center;">
+                      <div style="font-size:20px;margin-bottom:5px;">🌱</div>
+                      <p style="margin:0;font-size:11px;font-weight:600;color:#15803d;">Food recommendations</p>
+                    </div>
+                  </td>
+                  <td style="padding:0 0 0 4px;width:33%;">
+                    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 8px;text-align:center;">
+                      <div style="font-size:20px;margin-bottom:5px;">🔬</div>
+                      <p style="margin:0;font-size:11px;font-weight:600;color:#15803d;">Gut health insights</p>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+              <!-- CTA -->
+              <table cellpadding="0" cellspacing="0" style="margin:0 auto 28px;">
                 <tr>
                   <td style="background:linear-gradient(135deg,#7bc67e,#56C135);border-radius:12px;">
-                    <a href="${magicUrl}" style="display:block;padding:14px 32px;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;letter-spacing:-0.1px;">
+                    <a href="${magicUrl}" style="display:block;padding:15px 36px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:-0.1px;">
                       Sign in to EatoBiotics →
                     </a>
                   </td>
                 </tr>
               </table>
-              <p style="margin:0;color:#6b7280;font-size:13px;line-height:1.5;">
-                If you didn't request this link, you can safely ignore this email.
+              <p style="margin:0 0 6px;color:#6b7280;font-size:13px;line-height:1.5;text-align:center;">
+                This link expires in <strong>60 minutes</strong> and can only be used once.
+              </p>
+              <p style="margin:0;color:#9ca3af;font-size:12px;line-height:1.5;text-align:center;">
+                If you didn&rsquo;t request this, you can safely ignore this email.
               </p>
             </td>
           </tr>
           <!-- Footer -->
           <tr>
             <td style="padding:20px 40px;border-top:1px solid #f3f4f6;text-align:center;">
-              <p style="margin:0;color:#9ca3af;font-size:12px;">
-                EatoBiotics · The Food System Inside You
+              <p style="margin:0 0 4px;color:#6b7280;font-size:12px;font-weight:600;">EatoBiotics</p>
+              <p style="margin:0;color:#9ca3af;font-size:11px;">
+                The Food System Inside You &middot; <a href="https://eatobiotics.com" style="color:#9ca3af;text-decoration:none;">eatobiotics.com</a>
               </p>
             </td>
           </tr>
