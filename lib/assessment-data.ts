@@ -134,8 +134,8 @@ export const QUESTIONS: AssessmentQuestion[] = [
     type: "single",
     options: [
       { value: 0, label: "Rarely or never", description: "These foods don't feature in my current eating" },
-      { value: 1, label: "Once or twice a week", description: "I include them occasionally" },
-      { value: 2, label: "Most days", description: "At least one fermented food most days" },
+      { value: 2, label: "Once or twice a week", description: "I include them occasionally" },
+      { value: 3, label: "Most days", description: "At least one fermented food most days" },
       { value: 3, label: "Daily, intentionally", description: "Live or fermented foods are a deliberate daily habit" },
     ],
   },
@@ -148,8 +148,8 @@ export const QUESTIONS: AssessmentQuestion[] = [
     type: "single",
     options: [
       { value: 0, label: "I don't eat them", description: "Fermented foods aren't part of my routine" },
-      { value: 1, label: "Just one type", description: "I tend to stick to one fermented food if I eat any" },
-      { value: 2, label: "Two or three types", description: "I rotate between a small selection" },
+      { value: 2, label: "Just one type", description: "I tend to stick to one fermented food if I eat any" },
+      { value: 3, label: "Two or three types", description: "I rotate between a small selection" },
       { value: 3, label: "I actively rotate", description: "I intentionally vary my fermented food choices across the week" },
     ],
   },

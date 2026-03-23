@@ -15,7 +15,6 @@ import {
 } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { ScoreRing } from "./score-ring"
-import { SubScoreCard } from "./sub-score-card"
 import { PremiumTeaser } from "./premium-teaser"
 import { MissionNote } from "./mission-note"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
@@ -256,7 +255,7 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
         </div>
       </section>
 
-      {/* ── 5-Pillar Breakdown ───────────────────────────────────────── */}
+      {/* ── 5-Pillar Breakdown — grouped by strength/focus ───────────── */}
       <section className="border-t border-border bg-secondary/10 px-6 py-16">
         <div className="mx-auto max-w-3xl">
           <ScrollReveal>
@@ -264,105 +263,113 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
               Your 5 Pillars
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              How your food system scores across each of the five areas.
+              How your food system scores across each of the five areas that matter most for gut health.
             </p>
+
+            {/* Summary pill row */}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {strengths.length > 0 && (
+                <span className="flex items-center gap-1.5 rounded-full bg-[var(--icon-green)]/10 px-3 py-1 text-xs font-semibold text-[var(--icon-green)]">
+                  <CheckCircle2 size={11} />
+                  {strengths.length} {strengths.length === 1 ? "strength" : "strengths"}
+                </span>
+              )}
+              {opportunities.length > 0 && (
+                <span className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
+                  <TrendingUp size={11} />
+                  {opportunities.length} {opportunities.length === 1 ? "area to build" : "areas to build"}
+                </span>
+              )}
+            </div>
           </ScrollReveal>
 
-          <div className="mt-8 grid gap-4">
-            {insights.map((insight, i) => (
-              <ScrollReveal key={insight.pillar} delay={i * 60}>
-                <SubScoreCard insight={insight} index={i} />
-              </ScrollReveal>
-            ))}
-          </div>
+          {/* Strengths group */}
+          {strengths.length > 0 && (
+            <div className="mt-8">
+              <p className="mb-3 text-xs font-bold uppercase tracking-widest text-[var(--icon-green)]">
+                What&rsquo;s working
+              </p>
+              <div className="space-y-3">
+                {strengths.map((insight, i) => {
+                  const Icon = ICON_MAP[insight.icon] ?? Leaf
+                  return (
+                    <ScrollReveal key={insight.pillar} delay={i * 60}>
+                      <div className="flex gap-4 rounded-2xl border border-[var(--icon-green)]/15 bg-[var(--icon-green)]/5 p-5">
+                        <div
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                          style={{ background: insight.gradient }}
+                        >
+                          <Icon size={16} className="text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-semibold text-foreground">{insight.label}</p>
+                              <CheckCircle2 size={13} className="text-[var(--icon-green)]" />
+                            </div>
+                            <span className="text-xs font-bold tabular-nums" style={{ color: insight.color }}>
+                              {insight.score}/100
+                            </span>
+                          </div>
+                          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                            {insight.strength}
+                          </p>
+                          <p className="mt-2 text-xs leading-relaxed text-muted-foreground/70 italic">
+                            Next step: {insight.action}
+                          </p>
+                        </div>
+                      </div>
+                    </ScrollReveal>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Opportunities group */}
+          {opportunities.length > 0 && (
+            <div className={strengths.length > 0 ? "mt-8" : "mt-6"}>
+              <p className="mb-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Where to focus
+              </p>
+              <div className="space-y-3">
+                {opportunities.map((insight, i) => {
+                  const Icon = ICON_MAP[insight.icon] ?? Leaf
+                  return (
+                    <ScrollReveal key={insight.pillar} delay={i * 60}>
+                      <div className="flex gap-4 rounded-2xl border border-border bg-background p-5">
+                        <div
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                          style={{ background: insight.gradient }}
+                        >
+                          <Icon size={16} className="text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-semibold text-foreground">{insight.label}</p>
+                              <TrendingUp size={13} className="text-muted-foreground" />
+                            </div>
+                            <span className="text-xs font-bold tabular-nums text-muted-foreground">
+                              {insight.score}/100
+                            </span>
+                          </div>
+                          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                            {insight.opportunity}
+                          </p>
+                          <p className="mt-2 text-xs leading-relaxed text-muted-foreground/70 italic">
+                            This week: {insight.action}
+                          </p>
+                        </div>
+                      </div>
+                    </ScrollReveal>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </section>
-
-      {/* ── Strengths ────────────────────────────────────────────────── */}
-      {strengths.length > 0 && (
-        <section className="px-6 py-16">
-          <div className="mx-auto max-w-3xl">
-            <ScrollReveal>
-              <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
-                What&rsquo;s Working
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Areas where your food system is already delivering.
-              </p>
-            </ScrollReveal>
-
-            <div className="mt-6 space-y-3">
-              {strengths.map((insight, i) => {
-                const Icon = ICON_MAP[insight.icon] ?? Leaf
-                return (
-                  <ScrollReveal key={insight.pillar} delay={i * 60}>
-                    <div className="flex gap-4 rounded-2xl border border-[var(--icon-green)]/15 bg-[var(--icon-green)]/5 p-5">
-                      <div
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-                        style={{ background: insight.gradient }}
-                      >
-                        <Icon size={16} className="text-white" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-foreground">{insight.label}</p>
-                          <CheckCircle2 size={14} className="text-[var(--icon-green)]" />
-                        </div>
-                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                          {insight.strength}
-                        </p>
-                      </div>
-                    </div>
-                  </ScrollReveal>
-                )
-              })}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ── Opportunities ────────────────────────────────────────────── */}
-      {opportunities.length > 0 && (
-        <section className="border-t border-border bg-secondary/10 px-6 py-16">
-          <div className="mx-auto max-w-3xl">
-            <ScrollReveal>
-              <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
-                Where to Focus
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Areas with the most room for improvement.
-              </p>
-            </ScrollReveal>
-
-            <div className="mt-6 space-y-3">
-              {opportunities.map((insight, i) => {
-                const Icon = ICON_MAP[insight.icon] ?? Leaf
-                return (
-                  <ScrollReveal key={insight.pillar} delay={i * 60}>
-                    <div className="flex gap-4 rounded-2xl border border-border bg-background p-5">
-                      <div
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-                        style={{ background: insight.gradient }}
-                      >
-                        <Icon size={16} className="text-white" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-foreground">{insight.label}</p>
-                          <TrendingUp size={14} className="text-muted-foreground" />
-                        </div>
-                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                          {insight.opportunity}
-                        </p>
-                      </div>
-                    </div>
-                  </ScrollReveal>
-                )
-              })}
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* ── 7-Day Actions ────────────────────────────────────────────── */}
       <section className="px-6 py-16">

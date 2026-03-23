@@ -60,8 +60,12 @@ export function computeSubScores(
 }
 
 export function computeOverall(sub: SubScores): number {
+  // Floor of 25 per pillar: prevents one completely absent habit from
+  // catastrophically dragging the overall (max ~5 point penalty per gap)
+  const floor = (n: number) => Math.max(n, 25)
   return Math.round(
-    (sub.diversity + sub.feeding + sub.adding + sub.consistency + sub.feeling) / 5
+    (floor(sub.diversity) + floor(sub.feeding) + floor(sub.adding) +
+      floor(sub.consistency) + floor(sub.feeling)) / 5
   )
 }
 
@@ -75,7 +79,7 @@ function getWeakestPillar(sub: SubScores): PillarKey {
 export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
   const weakest = getWeakestPillar(sub)
 
-  if (overall >= 80) {
+  if (overall >= 75) {
     return {
       type: "Thriving System",
       tagline: "Your internal food system is working hard in your favour.",
@@ -85,7 +89,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
     }
   }
 
-  if (overall >= 65) {
+  if (overall >= 58) {
     return {
       type: "Strong Foundation",
       tagline: "You've built something real — now it's time to sharpen it.",
@@ -95,7 +99,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
     }
   }
 
-  if (overall >= 50) {
+  if (overall >= 42) {
     return {
       type: "Emerging Balance",
       tagline: "The building blocks are there. Consistency is the next step.",
@@ -105,13 +109,13 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
     }
   }
 
-  if (overall >= 35) {
+  if (overall >= 28) {
     if (weakest === "consistency") {
       return {
         type: "Inconsistent System",
         tagline: "Good intention, interrupted by an unpredictable rhythm.",
         description:
-          "Your gut microbiome thrives on predictability. When eating is erratic — rushed meals, skipped meals, irregular timing — even good food choices deliver less benefit. The opportunity here isn't to eat more perfectly; it's to eat more predictably.",
+          "You have intention around food — it shows in some of your answers. What your microbiome is missing right now is predictability. When eating is erratic — rushed meals, skipped meals, irregular timing — even good food choices deliver less benefit. The fix isn't eating better; it's eating more consistently.",
         color: "var(--icon-yellow)",
       }
     }
@@ -120,7 +124,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
         type: "Underfed System",
         tagline: "Your gut is waiting for the live foods it needs to thrive.",
         description:
-          "You may be eating reasonably well in other areas, but your microbiome is missing the live, fermented inputs that directly seed and sustain it. Adding even one or two fermented foods regularly can shift the balance meaningfully — and quickly.",
+          "Your eating habits have real strengths — fibre, whole foods, and variety are present. What your microbiome is missing is direct microbial input from live and fermented foods. This is the most targeted gap to address, and the fastest one to close. Adding even one fermented food daily can shift things meaningfully within weeks.",
         color: "var(--icon-yellow)",
       }
     }
@@ -133,7 +137,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
     }
   }
 
-  if (overall >= 20) {
+  if (overall >= 15) {
     return {
       type: "Inconsistent System",
       tagline: "Your gut is waiting for a more stable foundation.",
@@ -175,9 +179,9 @@ const PILLAR_META: Record<
     strength:
       "You're regularly exposing your microbiome to a wide variety of plant inputs — one of the strongest predictors of a healthy, resilient gut.",
     opportunity:
-      "Different plants feed different bacterial species. Expanding beyond your current plant range, even by adding 2–3 new foods per week, meaningfully increases microbial richness.",
+      "Variety is already part of your diet — the next step is expanding the range a little further. Adding 2–3 unfamiliar plants each week meaningfully increases your microbial richness without overhauling your meals.",
     actionLow:
-      "This week: introduce one unfamiliar plant food each day — a new bean, a different leafy green, or a vegetable you haven't eaten recently.",
+      "This week: introduce one unfamiliar plant food — a new bean, a different leafy green, or a vegetable you haven't eaten recently. One new plant per week adds up fast.",
     actionHigh:
       "Keep a loose mental note of your weekly plant count. If you dip below 20, add one new plant category — seeds, sea vegetables, or a new legume.",
   },
@@ -189,9 +193,9 @@ const PILLAR_META: Record<
     strength:
       "You're consistently feeding your gut bacteria the fibre-rich whole foods they need — the raw material your microbiome converts into short-chain fatty acids.",
     opportunity:
-      "Fibre from whole plants is the primary fuel for your beneficial gut bacteria. Without regular fibre inputs, the downstream benefits — digestion, immunity, mental clarity — are reduced.",
+      "Fibre from whole plants is the primary fuel for your gut bacteria. A simple anchor at each meal — legumes, wholegrains, or vegetables — creates the consistent supply your microbiome needs to do its best work.",
     actionLow:
-      "This week: anchor every main meal with one fibre source. Lentils, oats, vegetables, wholegrains, or beans all count.",
+      "This week: anchor every main meal with one fibre source. Lentils, oats, vegetables, wholegrains, or beans all count — and even a small portion makes a difference.",
     actionHigh:
       "Diversify your fibre sources. Add resistant starch (cooled potato, green banana) or new legumes to hit different microbial populations.",
   },
@@ -203,11 +207,11 @@ const PILLAR_META: Record<
     strength:
       "You're regularly introducing live, fermented foods that directly seed your microbiome with beneficial bacteria — one of the most targeted dietary inputs available.",
     opportunity:
-      "Fermented and live-culture foods are among the most direct ways to introduce beneficial bacteria into your gut ecosystem. Even one daily serving makes a measurable difference over time.",
+      "Fermented foods are the most direct way to introduce new bacteria to your gut. Even one serving a day — yoghurt, miso, or a tablespoon of sauerkraut — makes a measurable difference within weeks, and it doesn't require big changes to your existing meals.",
     actionLow:
       "This week: add one fermented food to at least one meal each day — natural yoghurt with breakfast, miso broth with lunch, or a tablespoon of sauerkraut with dinner.",
     actionHigh:
-      "Rotate your fermented food sources. Each carries a different bacterial profile — alternate between at least three types across the week.",
+      "Rotate your fermented food sources. Each carries a different bacterial profile — alternate between at least three types across the week for broader microbiome coverage.",
   },
   consistency: {
     label: "Consistency",
@@ -217,7 +221,7 @@ const PILLAR_META: Record<
     strength:
       "Your eating rhythm is one of your biggest assets. Consistent meal timing allows your microbiome to anticipate and prepare — improving digestion, blood sugar stability, and nutrient absorption.",
     opportunity:
-      "Your gut microbiome has its own circadian rhythm. Erratic meal timing, skipped meals, or rushed eating disrupts this rhythm and reduces the effectiveness of even good food choices.",
+      "Your gut microbiome responds well to rhythm. Even rough consistency in meal timing — within a 30-minute window — improves how effectively your gut processes the food you're already eating. The food choices don't need to change; the pattern does.",
     actionLow:
       "This week: set three anchor meal times and protect them. Even rough consistency — within a 30-minute window — signals your gut bacteria to prepare and respond.",
     actionHigh:
@@ -231,9 +235,9 @@ const PILLAR_META: Record<
     strength:
       "Your body is responding well to how you're eating — with stable energy, clear thinking, and good digestive comfort. This is a clear signal that your gut-brain axis is functioning well.",
     opportunity:
-      "How you feel after eating — energy, digestion, and mental clarity — is one of the most direct windows into your gut health. When this score is low, it often reflects an imbalance that dietary changes can address in 2–4 weeks.",
+      "How you feel after eating is a direct signal from your gut. If energy or digestion is variable, tracking one word per meal for a few days often reveals which foods or patterns are at play — and the fix is usually simpler than expected.",
     actionLow:
-      "This week: note how you feel one hour after each meal for three days — just one word. This builds the data you need to identify which foods or patterns are and aren't working.",
+      "This week: note how you feel one hour after each meal for three days — just one word. This builds the pattern awareness you need to identify what's working and what isn't.",
     actionHigh:
       "Pay attention to what disrupts your feeling scores. Identify 2–3 foods or habits that reliably diminish your energy or comfort, and experiment with reducing them one at a time.",
   },
@@ -247,7 +251,7 @@ export function getInsights(sub: SubScores): PillarInsight[] {
     .map((k): PillarInsight => {
       const score = sub[k]
       const meta = PILLAR_META[k]
-      const isStrength = score >= 65
+      const isStrength = score >= 58
       return {
         pillar: k,
         label: meta.label,
