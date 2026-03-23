@@ -24,12 +24,20 @@ export function AccountNavItem() {
   if (!loaded) return null
 
   if (!isSignedIn) return (
-    <Link
-      href="/assessment?signin=1"
-      className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-    >
-      Log in
-    </Link>
+    <>
+      <Link
+        href="/account/signin"
+        className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+      >
+        Log in
+      </Link>
+      <Link
+        href="/assessment"
+        className="rounded-full border border-[var(--icon-green)] px-4 py-1.5 text-sm font-semibold text-[var(--icon-green)] transition-colors hover:bg-[var(--icon-green)]/10"
+      >
+        Sign Up
+      </Link>
+    </>
   )
 
   return (
