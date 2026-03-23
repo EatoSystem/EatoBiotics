@@ -91,20 +91,8 @@ function PillarMiniBar({ insight, index }: { insight: PillarInsight; index: numb
 /* ── Save Results Card (auto-sends magic link) ───────────────────────── */
 
 function SaveResultsCard({ email }: { email?: string }) {
-  const [sent, setSent] = useState(false)
-
-  useEffect(() => {
-    if (!email || sent) return
-    // Auto-send via branded API route (fire-and-forget)
-    fetch("/api/auth/send-magic-link", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    })
-      .then(() => setSent(true))
-      .catch(() => setSent(true)) // show sent state regardless — non-fatal
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [email])
+  // Email already sent by assessment-client.tsx on completion — start in sent state
+  const [sent, setSent] = useState(true)
 
   if (!email) return null
 
