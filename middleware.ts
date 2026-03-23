@@ -7,7 +7,10 @@ export async function middleware(request: NextRequest) {
 
   // Guard: if env vars are missing, never crash the middleware — fail safe
   if (!supabaseUrl || !supabaseAnonKey) {
-    if (request.nextUrl.pathname.startsWith("/account")) {
+    if (
+      request.nextUrl.pathname.startsWith("/account") &&
+      !request.nextUrl.pathname.startsWith("/account/signin")
+    ) {
       const url = request.nextUrl.clone()
       url.pathname = "/assessment"
       url.searchParams.set("signin", "1")
@@ -41,7 +44,11 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   // Protect /account routes — redirect to /assessment if not signed in
-  if (request.nextUrl.pathname.startsWith("/account") && !user) {
+  if (
+    request.nextUrl.pathname.startsWith("/account") &&
+    !request.nextUrl.pathname.startsWith("/account/signin") &&
+    !user
+  ) {
     const url = request.nextUrl.clone()
     url.pathname = "/assessment"
     url.searchParams.set("signin", "1")  // so the page can show a "sign in" message
