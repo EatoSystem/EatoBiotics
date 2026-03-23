@@ -17,7 +17,6 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 import { ScoreRing } from "./score-ring"
 import { PremiumTeaser } from "./premium-teaser"
 import { MissionNote } from "./mission-note"
-import { getSupabaseBrowser } from "@/lib/supabase-browser"
 import type { AssessmentResult, PillarInsight } from "@/lib/assessment-scoring"
 import { getFoodBySlug } from "@/lib/foods"
 
@@ -119,14 +118,11 @@ function SaveResultsCard({ email }: { email?: string }) {
           <button
             onClick={() => {
               setSent(false)
-              const supabase = getSupabaseBrowser()
-              supabase.auth
-                .signInWithOtp({
-                  email,
-                  options: { emailRedirectTo: `${window.location.origin}/api/auth/callback?next=/account` },
-                })
-                .then(() => setSent(true))
-                .catch(() => setSent(true))
+              fetch("/api/auth/send-magic-link", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email }),
+              }).then(() => setSent(true)).catch(() => setSent(true))
             }}
             className="underline hover:text-foreground transition-colors"
           >

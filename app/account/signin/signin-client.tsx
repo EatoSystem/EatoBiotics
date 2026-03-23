@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
-import { getSupabaseBrowser } from "@/lib/supabase-browser"
 
 export function SignInClient() {
   const searchParams = useSearchParams()
@@ -26,14 +25,13 @@ export function SignInClient() {
     setLoading(true)
     setError(null)
     try {
-      const supabase = getSupabaseBrowser()
-      const { error: authError } = await supabase.auth.signInWithOtp({
-        email: target,
-        options: {
-          emailRedirectTo: `${window.location.origin}/api/auth/callback?next=/account`,
-        },
+      const res = await fetch("/api/auth/send-magic-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: target }),
       })
-      if (authError) {
+      const data = await res.json()
+      if (data.error) {
         setError("Something went wrong. Please try again.")
       } else {
         setSent(true)

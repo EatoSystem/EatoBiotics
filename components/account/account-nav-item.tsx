@@ -26,7 +26,7 @@ export function AccountNavItem() {
   if (!isSignedIn) return (
     <>
       <Link
-        href="/account/signin"
+        href="/login"
         className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
       >
         Log in
