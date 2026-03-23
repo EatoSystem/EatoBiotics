@@ -3,8 +3,12 @@
 import { useState, useRef, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Camera, RefreshCw, ArrowRight, Loader2, AlertCircle, Sparkles } from "lucide-react"
+import {
+  Camera, RefreshCw, ArrowRight, Loader2, AlertCircle,
+  Sparkles, BookmarkPlus, Check, TrendingUp,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
+import { saveMealAnalysis } from "@/lib/local-storage"
 
 /* ── Types ──────────────────────────────────────────────────────────── */
 
@@ -27,6 +31,7 @@ interface Nutrition {
 
 interface AnalysisResult {
   score: number
+  boostedScore?: number
   prebioticStrength: "strong" | "moderate" | "low"
   foods: AnalysedFood[]
   missingBiotics: string[]
@@ -51,10 +56,31 @@ const BIOTIC_CONFIG: Record<BioticType, { label: string; color: string; bg: stri
   protein:    { label: "Protein",    color: "var(--icon-yellow)", bg: "color-mix(in srgb, var(--icon-yellow) 15%, transparent)" },
 }
 
-const TRIFECTA_LABELS: Record<string, { add: string }> = {
-  prebiotic:  { add: "Add prebiotic fibre — more plants, wholegrains or legumes" },
-  probiotic:  { add: "Add a probiotic boost — yogurt, kefir, kimchi or sauerkraut" },
-  postbiotic: { add: "Add a postbiotic source — sourdough, aged cheese or ACV dressing" },
+const TRIFECTA_CONFIG: Record<string, { add: string; examples: string[]; icon: string; color: string; bg: string; border: string }> = {
+  prebiotic: {
+    add: "Add prebiotic fibre",
+    examples: ["oats", "garlic", "legumes", "wholegrains"],
+    icon: "🌱",
+    color: "var(--icon-lime)",
+    bg: "color-mix(in srgb, var(--icon-lime) 8%, transparent)",
+    border: "color-mix(in srgb, var(--icon-lime) 30%, transparent)",
+  },
+  probiotic: {
+    add: "Add a probiotic boost",
+    examples: ["yogurt", "kefir", "kimchi", "sauerkraut"],
+    icon: "🦠",
+    color: "var(--icon-green)",
+    bg: "color-mix(in srgb, var(--icon-green) 8%, transparent)",
+    border: "color-mix(in srgb, var(--icon-green) 30%, transparent)",
+  },
+  postbiotic: {
+    add: "Add a postbiotic source",
+    examples: ["sourdough", "aged cheese", "ACV dressing"],
+    icon: "✨",
+    color: "var(--icon-teal)",
+    bg: "color-mix(in srgb, var(--icon-teal) 8%, transparent)",
+    border: "color-mix(in srgb, var(--icon-teal) 30%, transparent)",
+  },
 }
 
 /* ── Score band ─────────────────────────────────────────────────────── */
@@ -170,6 +196,64 @@ function ScoreDisplay({
             </span>
           </div>
         ))}
+      </div>
+    </div>
+  )
+}
+
+/* ── Boosted score card ─────────────────────────────────────────────── */
+
+function BoostedScoreCard({ currentScore, boostedScore }: { currentScore: number; boostedScore: number }) {
+  const current = getScoreBand(currentScore)
+  const boosted = getScoreBand(boostedScore)
+  const gain = boostedScore - currentScore
+
+  return (
+    <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="px-5 pt-4 pb-3 border-b border-border">
+        <div className="flex items-center gap-2">
+          <TrendingUp size={14} style={{ color: "var(--icon-green)" }} />
+          <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
+            Your score potential
+          </p>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Add the suggestions below to reach this score
+        </p>
+      </div>
+
+      <div className="flex items-stretch divide-x divide-border">
+        {/* Current */}
+        <div className="flex-1 flex flex-col items-center justify-center gap-1 px-4 py-5">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Now</p>
+          <p className="text-4xl font-bold tabular-nums" style={{ color: current.color }}>{currentScore}</p>
+          <p className="text-xs font-semibold" style={{ color: current.color }}>{current.label}</p>
+        </div>
+
+        {/* Arrow */}
+        <div className="flex items-center justify-center px-3">
+          <div className="flex flex-col items-center gap-1">
+            <ArrowRight size={18} style={{ color: "var(--icon-green)" }} />
+            <span
+              className="text-[10px] font-bold"
+              style={{ color: "var(--icon-green)" }}
+            >
+              +{gain}
+            </span>
+          </div>
+        </div>
+
+        {/* Boosted */}
+        <div
+          className="flex-1 flex flex-col items-center justify-center gap-1 px-4 py-5"
+          style={{ background: "color-mix(in srgb, var(--icon-green) 6%, transparent)" }}
+        >
+          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
+            With boosts
+          </p>
+          <p className="text-4xl font-bold tabular-nums" style={{ color: boosted.color }}>{boostedScore}</p>
+          <p className="text-xs font-semibold" style={{ color: boosted.color }}>{boosted.label}</p>
+        </div>
       </div>
     </div>
   )
@@ -348,7 +432,11 @@ function ResultsView({
   result: AnalysisResult
   onReset: () => void
 }) {
+  const [saved, setSaved] = useState(false)
+
   const score = typeof result.score === "number" ? Math.round(result.score) : 50
+  const boostedScore = typeof result.boostedScore === "number" ? Math.round(result.boostedScore) : undefined
+  const showBoostCard = boostedScore !== undefined && boostedScore > score + 2
 
   const hasProbiotic = result.foods.some((f) => f.biotic === "probiotic")
   const hasPostbiotic = result.foods.some((f) => f.biotic === "postbiotic")
@@ -358,6 +446,23 @@ function ResultsView({
     acc[f.biotic].push(f)
     return acc
   }, {} as Record<BioticType, AnalysedFood[]>)
+
+  function handleSave() {
+    const today = new Date().toISOString().slice(0, 10)
+    saveMealAnalysis({
+      id: crypto.randomUUID(),
+      date: today,
+      score,
+      boostedScore,
+      scoreBand: getScoreBand(score).label,
+      foods: result.foods.map((f) => ({ name: f.name, emoji: f.emoji, biotic: f.biotic })),
+      missingBiotics: result.missingBiotics,
+      whatThisMealDoes: result.whatThisMealDoes,
+      suggestions: result.suggestions,
+      nutrition: result.nutrition,
+    })
+    setSaved(true)
+  }
 
   return (
     <div className="space-y-5">
@@ -370,7 +475,6 @@ function ResultsView({
           className="w-full object-cover max-h-72"
           unoptimized
         />
-        {/* Subtle bottom gradient for visual depth */}
         <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/60 to-transparent" />
       </div>
 
@@ -381,6 +485,11 @@ function ResultsView({
         hasProbiotic={hasProbiotic}
         hasPostbiotic={hasPostbiotic}
       />
+
+      {/* Boosted score potential */}
+      {showBoostCard && (
+        <BoostedScoreCard currentScore={score} boostedScore={boostedScore!} />
+      )}
 
       {/* Nutritional information */}
       {result.nutrition && <NutritionPanel nutrition={result.nutrition} />}
@@ -433,64 +542,108 @@ function ResultsView({
         })}
       </div>
 
-      {/* Complete your gut trifecta — reframed as opportunity */}
+      {/* To complete your gut trifecta — individual branded cards */}
       {result.missingBiotics.length > 0 && (
-        <div className="rounded-2xl border border-[var(--icon-orange)]/30 bg-[var(--icon-orange)]/5 p-5">
-          <p className="mb-3 text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-orange)" }}>
+        <div className="space-y-3">
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
             To complete your gut trifecta
           </p>
-          <ul className="space-y-2.5">
-            {result.missingBiotics.map((b) => (
-              <li key={b} className="flex items-start gap-3 text-sm text-foreground/80">
-                <span
-                  className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                  style={{ background: "var(--icon-orange)" }}
-                >
-                  +
-                </span>
-                <span>{TRIFECTA_LABELS[b]?.add ?? `Add a ${b} source`}</span>
-              </li>
-            ))}
-          </ul>
+          {result.missingBiotics.map((b) => {
+            const cfg = TRIFECTA_CONFIG[b]
+            if (!cfg) return null
+            return (
+              <div
+                key={b}
+                className="rounded-2xl border p-4"
+                style={{ background: cfg.bg, borderColor: cfg.border }}
+              >
+                <div className="flex items-center gap-2 mb-2.5">
+                  <span className="text-lg leading-none">{cfg.icon}</span>
+                  <p className="text-xs font-bold uppercase tracking-widest" style={{ color: cfg.color }}>
+                    {cfg.add}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {cfg.examples.map((ex) => (
+                    <span
+                      key={ex}
+                      className="rounded-full px-2.5 py-1 text-xs font-semibold"
+                      style={{
+                        background: `color-mix(in srgb, ${cfg.color} 15%, transparent)`,
+                        color: cfg.color,
+                      }}
+                    >
+                      {ex}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
 
-      {/* Suggestions */}
+      {/* How to boost this meal — individual numbered cards */}
       {result.suggestions.length > 0 && (
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <p className="mb-3 border-b border-border pb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+        <div className="space-y-3">
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
             How to boost this meal
           </p>
-          <ul className="space-y-3">
-            {result.suggestions.map((s, i) => (
-              <li key={i} className="flex items-start gap-3 text-sm text-foreground/80 leading-relaxed">
-                <span
-                  className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                  style={{ background: "var(--icon-green)" }}
-                >
-                  {i + 1}
-                </span>
-                {s}
-              </li>
-            ))}
-          </ul>
+          {result.suggestions.map((s, i) => (
+            <div
+              key={i}
+              className="flex gap-4 rounded-2xl border border-border bg-card p-4"
+            >
+              <span
+                className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
+              >
+                {i + 1}
+              </span>
+              <p className="text-sm text-foreground/80 leading-relaxed pt-0.5">{s}</p>
+            </div>
+          ))}
         </div>
       )}
 
       {/* CTAs */}
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <Link
-          href="/myplate"
-          className="flex flex-1 items-center justify-center gap-2 rounded-2xl brand-gradient py-3.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-        >
-          Build it in My Plate <ArrowRight size={14} />
-        </Link>
+      <div className="flex flex-col gap-3">
+        {/* Save to My Meals */}
         <button
-          onClick={onReset}
-          className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-border py-3.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary/60"
+          onClick={handleSave}
+          disabled={saved}
+          className={cn(
+            "flex w-full items-center justify-center gap-2 rounded-2xl border py-3.5 text-sm font-semibold transition-all",
+            saved
+              ? "border-[var(--icon-green)]/40 bg-[var(--icon-green)]/8 text-[var(--icon-green)] cursor-default"
+              : "border-border text-foreground hover:bg-secondary/60"
+          )}
         >
-          <RefreshCw size={14} /> Analyse another meal
+          {saved ? (
+            <>
+              <Check size={15} /> Saved to My Meals
+            </>
+          ) : (
+            <>
+              <BookmarkPlus size={15} /> Save to My Meals
+            </>
+          )}
         </button>
+
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Link
+            href="/myplate"
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl brand-gradient py-3.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          >
+            Build it in My Plate <ArrowRight size={14} />
+          </Link>
+          <button
+            onClick={onReset}
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-border py-3.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary/60"
+          >
+            <RefreshCw size={14} /> Analyse another meal
+          </button>
+        </div>
       </div>
     </div>
   )

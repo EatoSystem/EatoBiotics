@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import {
@@ -19,10 +19,13 @@ import {
   ChevronDown,
   LogOut,
   Settings,
+  Camera,
+  TrendingUp,
 } from "lucide-react"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
 import { ProgressChart } from "./progress-chart"
 import { cn } from "@/lib/utils"
+import { loadMealAnalyses, type SavedMealAnalysis } from "@/lib/local-storage"
 
 /* ── Types ──────────────────────────────────────────────────────────── */
 
@@ -72,6 +75,7 @@ const TABS = [
   { key: "reports", label: "Reports", icon: FileText },
   { key: "membership", label: "Membership", icon: CreditCard },
   { key: "plate", label: "My Plate", icon: Leaf },
+  { key: "meals", label: "My Meals", icon: Camera },
   { key: "refer", label: "Refer Friends", icon: Users },
 ] as const
 
@@ -686,6 +690,133 @@ function ReferTab({ referralCode }: { referralCode: string }) {
   )
 }
 
+/* ── My Meals Tab ───────────────────────────────────────────────────── */
+
+const SCORE_COLORS: Record<string, string> = {
+  "Exceptional":       "var(--icon-green)",
+  "Strong Foundation": "var(--icon-lime)",
+  "Good Start":        "var(--icon-yellow)",
+  "Getting There":     "var(--icon-orange)",
+  "Starting Out":      "#ef4444",
+}
+
+function MealScoreRing({ score, band }: { score: number; band: string }) {
+  const r = 20
+  const circ = 2 * Math.PI * r
+  const offset = circ - (score / 100) * circ
+  const color = SCORE_COLORS[band] ?? "var(--icon-green)"
+  return (
+    <div className="relative flex shrink-0 items-center justify-center">
+      <svg width="52" height="52" className="-rotate-90">
+        <circle cx="26" cy="26" r={r} fill="none" stroke="currentColor" strokeWidth="4" className="text-border" />
+        <circle cx="26" cy="26" r={r} fill="none" stroke={color} strokeWidth="4"
+          strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset} />
+      </svg>
+      <p className="absolute text-xs font-bold tabular-nums" style={{ color }}>{score}</p>
+    </div>
+  )
+}
+
+function MealCard({ meal }: { meal: SavedMealAnalysis }) {
+  const date = new Date(meal.date).toLocaleDateString("en-IE", { day: "numeric", month: "short" })
+  const color = SCORE_COLORS[meal.scoreBand] ?? "var(--icon-green)"
+  const topFoods = meal.foods.slice(0, 5)
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="flex items-start gap-4">
+        <MealScoreRing score={meal.score} band={meal.scoreBand} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <span className="text-xs font-bold" style={{ color }}>{meal.scoreBand}</span>
+            {meal.boostedScore && meal.boostedScore > meal.score + 2 && (
+              <span className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground">
+                <TrendingUp size={10} style={{ color: "var(--icon-green)" }} />
+                up to {meal.boostedScore} with boosts
+              </span>
+            )}
+          </div>
+          <p className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
+            {meal.whatThisMealDoes}
+          </p>
+          <div className="mt-2 flex items-center justify-between">
+            <div className="flex flex-wrap gap-1">
+              {topFoods.map((f, i) => (
+                <span key={i} className="text-sm leading-none" title={f.name}>{f.emoji}</span>
+              ))}
+            </div>
+            <span className="text-[10px] text-muted-foreground/60 shrink-0">{date}</span>
+          </div>
+          {meal.nutrition && (
+            <div className="mt-2 flex gap-3 text-[10px] text-muted-foreground/70">
+              <span>{meal.nutrition.calories} kcal</span>
+              <span>{meal.nutrition.protein_g}g protein</span>
+              <span>{meal.nutrition.fibre_g}g fibre</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MealsTab() {
+  const [meals, setMeals] = useState<SavedMealAnalysis[] | null>(null)
+
+  useEffect(() => {
+    setMeals(loadMealAnalyses())
+  }, [])
+
+  if (meals === null) return null
+
+  if (meals.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-16 text-center">
+        <div
+          className="flex h-14 w-14 items-center justify-center rounded-2xl"
+          style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
+        >
+          <Camera size={24} className="text-white" />
+        </div>
+        <div>
+          <p className="font-semibold text-foreground">No meals saved yet</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Analyse a meal and tap &ldquo;Save to My Meals&rdquo; to track your progress here.
+          </p>
+        </div>
+        <a
+          href="/analyse"
+          className="mt-2 inline-flex items-center gap-2 rounded-full brand-gradient px-6 py-2.5 text-sm font-semibold text-white"
+        >
+          Analyse a meal
+        </a>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="font-semibold text-foreground">{meals.length} meal{meals.length !== 1 ? "s" : ""} saved</p>
+          <p className="text-xs text-muted-foreground">Most recent first · last 20 saved</p>
+        </div>
+        <a
+          href="/analyse"
+          className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-secondary/60 transition-colors"
+        >
+          <Camera size={12} /> Analyse meal
+        </a>
+      </div>
+      <div className="space-y-3">
+        {meals.map((meal) => (
+          <MealCard key={meal.id} meal={meal} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 /* ── Main Component ─────────────────────────────────────────────────── */
 
 export function DashboardClient({
@@ -740,6 +871,7 @@ export function DashboardClient({
         />
       )}
       {activeTab === "plate" && <PlateTab plateData={plateData} />}
+      {activeTab === "meals" && <MealsTab />}
       {activeTab === "refer" && <ReferTab referralCode={profile.referral_code} />}
     </div>
   )

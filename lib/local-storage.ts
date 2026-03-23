@@ -174,3 +174,48 @@ export function clearJournalEntries(): void {
 export function getTodayIso(): string {
   return new Date().toISOString().slice(0, 10)
 }
+
+/* ── Meal Analyses ────────────────────────────────────────────────── */
+
+export interface SavedMealAnalysis {
+  id: string
+  date: string // YYYY-MM-DD
+  score: number
+  boostedScore?: number
+  scoreBand: string
+  foods: Array<{ name: string; emoji: string; biotic: string }>
+  missingBiotics: string[]
+  whatThisMealDoes: string
+  suggestions: string[]
+  nutrition?: {
+    calories: number
+    protein_g: number
+    carbs_g: number
+    fat_g: number
+    fibre_g: number
+  }
+}
+
+const MEALS_KEY = "eatobiotics_meal_analyses"
+const MEALS_MAX = 20
+
+export function loadMealAnalyses(): SavedMealAnalysis[] {
+  if (typeof window === "undefined") return []
+  try {
+    return JSON.parse(localStorage.getItem(MEALS_KEY) ?? "[]")
+  } catch {
+    return []
+  }
+}
+
+export function saveMealAnalysis(meal: SavedMealAnalysis): void {
+  if (typeof window === "undefined") return
+  const existing = loadMealAnalyses()
+  const updated = [meal, ...existing].slice(0, MEALS_MAX)
+  localStorage.setItem(MEALS_KEY, JSON.stringify(updated))
+}
+
+export function clearMealAnalyses(): void {
+  if (typeof window === "undefined") return
+  localStorage.removeItem(MEALS_KEY)
+}

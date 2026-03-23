@@ -50,11 +50,27 @@ Calibration examples:
 
 Set "prebioticStrength" to "strong" (3+ prebiotic foods), "moderate" (1–2 prebiotic foods), or "low" (0 prebiotic foods).
 
-Also estimate the total nutritional content of the ENTIRE meal visible (not per food item). Base estimates on typical portion sizes visible in the photo.
+Nutrition calibration (typical single servings for reference — scale up/down based on visible portion):
+- Grilled chicken breast (palm-sized, ~150g) ≈ 180 kcal, 35g protein, 0g carbs, 4g fat, 0g fibre
+- Salmon fillet (medium, ~150g) ≈ 280 kcal, 34g protein, 0g carbs, 16g fat, 0g fibre
+- Brown rice (1 cup cooked) ≈ 215 kcal, 5g protein, 45g carbs, 2g fat, 4g fibre
+- Pasta (large bowl) ≈ 500 kcal, 14g protein, 80g carbs, 8g fat, 5g fibre
+- Large mixed salad greens (2 cups) ≈ 30 kcal, 2g protein, 5g carbs, 0g fat, 2g fibre
+- Avocado (half) ≈ 160 kcal, 2g protein, 9g carbs, 15g fat, 7g fibre
+- 2 eggs (fried or scrambled) ≈ 180 kcal, 12g protein, 1g carbs, 14g fat, 0g fibre
+- Olive oil drizzle (1 tbsp) ≈ 120 kcal, 0g protein, 0g carbs, 14g fat, 0g fibre
+- Greek yogurt (small pot, 150g) ≈ 130 kcal, 15g protein, 8g carbs, 4g fat, 0g fibre
+- Bread (1 slice sourdough) ≈ 120 kcal, 4g protein, 23g carbs, 1g fat, 2g fibre
+IMPORTANT: Do NOT default to 500–600 kcal for every meal. A light salad should be 200–400 kcal. A full rice/pasta bowl is 500–800 kcal. Estimate based on VISIBLE portion sizes — vary your estimate meaningfully between meals.
+
+Also estimate the total nutritional content of the ENTIRE meal visible (not per food item).
+
+Also calculate a "boostedScore" — what the score would be if the user added ONE item from each category listed in missingBiotics. Apply the same scoring rubric. If nothing is missing, boostedScore equals score.
 
 Return ONLY valid JSON with this exact structure, no markdown fences:
 {
   "score": 70,
+  "boostedScore": 85,
   "prebioticStrength": "strong|moderate|low",
   "foods": [
     { "name": "string", "emoji": "string", "biotic": "prebiotic|probiotic|postbiotic|protein", "confidence": "high|medium|low" }
@@ -104,7 +120,7 @@ export async function POST(req: NextRequest) {
 
     const response = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 1600,
+      max_tokens: 2000,
       messages: [
         {
           role: "user",
