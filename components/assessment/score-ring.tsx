@@ -7,9 +7,11 @@ interface ScoreRingProps {
   color: string // CSS var — profile color
   gradientId: string // unique SVG gradient id
   profileType?: string
+  className?: string // override default sizing
+  textColor?: string // override center text color (e.g. "white" for dark bg)
 }
 
-export function ScoreRing({ score, color, gradientId, profileType }: ScoreRingProps) {
+export function ScoreRing({ score, color, gradientId, profileType, className, textColor }: ScoreRingProps) {
   const [animated, setAnimated] = useState(0)
 
   const r = 88
@@ -35,7 +37,7 @@ export function ScoreRing({ score, color, gradientId, profileType }: ScoreRingPr
   }, [score])
 
   return (
-    <div className="relative mx-auto h-56 w-56 sm:h-64 sm:w-64">
+    <div className={className ?? "relative mx-auto h-56 w-56 sm:h-64 sm:w-64"}>
       {/* Radial glow */}
       <div
         className="absolute inset-0 rounded-full opacity-10"
@@ -60,9 +62,9 @@ export function ScoreRing({ score, color, gradientId, profileType }: ScoreRingPr
           cy="100"
           r={r}
           fill="none"
-          stroke="var(--border)"
-          strokeWidth="8"
-          strokeOpacity="0.6"
+          stroke={textColor === "white" ? "rgba(255,255,255,0.12)" : "var(--border)"}
+          strokeWidth="11"
+          strokeOpacity="1"
         />
         {/* Progress */}
         <circle
@@ -71,7 +73,7 @@ export function ScoreRing({ score, color, gradientId, profileType }: ScoreRingPr
           r={r}
           fill="none"
           stroke={`url(#${gradientId})`}
-          strokeWidth="8"
+          strokeWidth="11"
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={circumference - progress}
@@ -81,14 +83,24 @@ export function ScoreRing({ score, color, gradientId, profileType }: ScoreRingPr
 
       {/* Center content */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-serif text-6xl font-semibold leading-none text-foreground">
-          {animated}
-        </span>
-        <span className="mt-1 text-sm text-muted-foreground">/ 100</span>
+        <div className="flex items-baseline gap-0.5">
+          <span
+            className="font-serif text-5xl font-bold leading-none"
+            style={{ color: textColor ?? "var(--foreground)" }}
+          >
+            {animated}
+          </span>
+          <span
+            className="text-xs font-medium"
+            style={{ color: textColor ? `${textColor === "white" ? "rgba(255,255,255,0.5)" : textColor}` : "var(--muted-foreground)" }}
+          >
+            /100
+          </span>
+        </div>
         {profileType && (
           <span
-            className="mt-2 text-xs font-semibold"
-            style={{ color }}
+            className="mt-1.5 max-w-[80%] text-center text-[10px] font-semibold leading-tight"
+            style={{ color: textColor === "white" ? `color-mix(in srgb, ${color} 90%, white)` : color }}
           >
             {profileType}
           </span>
