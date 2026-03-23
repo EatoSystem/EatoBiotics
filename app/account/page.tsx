@@ -44,7 +44,8 @@ export default async function AccountPage() {
     const { data: leadsData } = await adminSupabase
       .from("leads")
       .select("overall_score, profile_type, sub_scores, created_at, email_sent")
-      .eq("email", user.email!)
+      .or(`email.eq.${user.email!},user_id.eq.${user.id}`)
+      .not("overall_score", "is", null)
       .order("created_at", { ascending: false })
     assessments = leadsData ?? []
 

@@ -4,12 +4,12 @@ import { getSupabase } from "@/lib/supabase"
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { name, email, ageBracket, referralCode } = body as {
+    const { name, ageBracket, referralCode } = body as {
       name: string
-      email: string
       ageBracket: string
       referralCode?: string
     }
+    const email = ((body as { email: string }).email ?? "").toLowerCase().trim()
 
     if (!name || !email || !ageBracket) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })

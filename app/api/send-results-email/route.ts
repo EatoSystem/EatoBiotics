@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
           sub_scores: result.subScores,
           email_sent: !!resendKey,
         })
-        .eq("email", lead.email)
+        .eq("email", lead.email.toLowerCase().trim())
       if (error) {
         console.error("[send-results-email] Supabase update error:", error.message)
       }

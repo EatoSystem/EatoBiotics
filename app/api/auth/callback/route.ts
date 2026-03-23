@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
         const { data: lead } = await adminSupabase
           .from("leads")
           .select("name, age_bracket")
-          .eq("email", user.email!)
+          .eq("email", user.email!.toLowerCase())
           .order("created_at", { ascending: false })
           .limit(1)
           .single()
@@ -77,14 +77,14 @@ export async function GET(request: NextRequest) {
         await adminSupabase
           .from("leads")
           .update({ user_id: user.id })
-          .eq("email", user.email!)
+          .eq("email", user.email!.toLowerCase())
           .is("user_id", null)
 
         // Link existing deep_assessments rows by email
         await adminSupabase
           .from("deep_assessments")
           .update({ user_id: user.id })
-          .eq("email", user.email!)
+          .eq("email", user.email!.toLowerCase())
           .is("user_id", null)
 
         // Record referral if ref code was provided
