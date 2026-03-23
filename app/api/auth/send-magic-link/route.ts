@@ -20,7 +20,7 @@ function magicLinkEmailHtml({ magicUrl, name }: { magicUrl: string; name?: strin
           <tr>
             <td style="background:linear-gradient(135deg,#7bc67e,#56C135);padding:32px 40px;text-align:center;">
               <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.5px;">EatoBiotics</h1>
-              <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">Your gut health food system</p>
+              <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">The Food System Inside You</p>
             </td>
           </tr>
           <!-- Body -->
@@ -28,7 +28,7 @@ function magicLinkEmailHtml({ magicUrl, name }: { magicUrl: string; name?: strin
             <td style="padding:36px 40px;">
               <p style="margin:0 0 8px;color:#111827;font-size:15px;">${greeting}</p>
               <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.6;">
-                Click the button below to sign in and access your assessment results. This link expires in 60 minutes and can only be used once.
+                Click the button below to sign in and access your account and assessment results. This link expires in 60 minutes and can only be used once.
               </p>
               <table cellpadding="0" cellspacing="0" style="margin:0 auto 24px;">
                 <tr>
@@ -48,7 +48,7 @@ function magicLinkEmailHtml({ magicUrl, name }: { magicUrl: string; name?: strin
           <tr>
             <td style="padding:20px 40px;border-top:1px solid #f3f4f6;text-align:center;">
               <p style="margin:0;color:#9ca3af;font-size:12px;">
-                EatoBiotics · Gut health for every body
+                EatoBiotics · The Food System Inside You
               </p>
             </td>
           </tr>
