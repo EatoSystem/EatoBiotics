@@ -36,6 +36,14 @@ interface Profile {
   membership: "free" | "early_access" | "member" | "premium"
   referral_code: string
   referred_by: string | null
+  // Subscription fields (added in membership build)
+  membership_tier: "free" | "grow" | "restore" | "transform"
+  membership_status: "active" | "inactive" | "cancelled" | "past_due"
+  stripe_customer_id: string | null
+  stripe_subscription_id: string | null
+  membership_started_at: string | null
+  membership_expires_at: string | null
+  is_founding_member: boolean
 }
 
 interface AssessmentRow {
@@ -754,7 +762,7 @@ function BioticsBalanceCard({ meals }: { meals: SavedMealAnalysis[] }) {
 
 /* ── Overview Tab ───────────────────────────────────────────────────── */
 
-function OverviewTab({ assessments }: { assessments: AssessmentRow[] }) {
+function OverviewTab({ assessments, membershipTier }: { assessments: AssessmentRow[]; membershipTier: Profile["membership_tier"] }) {
   const latest = assessments[0] ?? null
   const previous = assessments[1] ?? null
   const meals = loadMealAnalyses()
@@ -831,7 +839,16 @@ function OverviewTab({ assessments }: { assessments: AssessmentRow[] }) {
 
       {/* Pillar breakdown chart */}
       {currentScores ? (
-        <ProgressChart current={currentScores} previous={previousScores} />
+        membershipTier === "free" ? (
+          <FeatureGate
+            requiredTier="grow"
+            description="Track how each of your 5 pillars changes over time. Upgrade to Grow for your full score history."
+          >
+            <ProgressChart current={currentScores} previous={previousScores} />
+          </FeatureGate>
+        ) : (
+          <ProgressChart current={currentScores} previous={previousScores} />
+        )
       ) : (
         <div className="rounded-3xl border bg-card p-8 text-center">
           <p className="mb-3 text-4xl leading-none">🌿</p>
@@ -1076,50 +1093,212 @@ function ReportsTab({ paidReports }: { paidReports: PaidReport[] }) {
   )
 }
 
+/* ── Feature Gate Overlay ───────────────────────────────────────────── */
+
+function FeatureGate({
+  requiredTier,
+  description,
+  children,
+}: {
+  requiredTier: "grow" | "restore" | "transform"
+  description: string
+  children: React.ReactNode
+}) {
+  const tierLabel = { grow: "Grow", restore: "Restore", transform: "Transform" }[requiredTier]
+  const tierColor = { grow: "var(--icon-lime)", restore: "var(--icon-teal)", transform: "var(--icon-orange)" }[requiredTier]
+
+  return (
+    <div className="relative overflow-hidden rounded-3xl">
+      {/* Locked content — rendered behind the overlay */}
+      <div className="pointer-events-none select-none" style={{ filter: "blur(3px)", opacity: 0.4 }}>
+        {children}
+      </div>
+      {/* Overlay */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-3xl p-6 text-center"
+        style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(4px)" }}
+      >
+        <span
+          className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest"
+          style={{ background: `color-mix(in srgb, ${tierColor} 15%, transparent)`, color: tierColor }}
+        >
+          {tierLabel} feature
+        </span>
+        <p className="text-sm font-medium text-foreground">{description}</p>
+        <Link
+          href="/pricing"
+          className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ background: `linear-gradient(135deg, var(--icon-lime), var(--icon-green))` }}
+        >
+          Unlock with {tierLabel} <ArrowRight size={12} />
+        </Link>
+      </div>
+    </div>
+  )
+}
+
+/* ── Manage Subscription Button ─────────────────────────────────────── */
+
+function ManageSubscriptionButton() {
+  const [loading, setLoading] = useState(false)
+
+  async function handleClick() {
+    setLoading(true)
+    try {
+      const res = await fetch("/api/stripe/create-portal-session", { method: "POST" })
+      const data = await res.json() as { url?: string; error?: string }
+      if (data.url) window.location.href = data.url
+      else console.error("[portal]", data.error)
+    } catch (err) {
+      console.error("[portal]", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={loading}
+      className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
+      style={{ background: "var(--muted)", color: "var(--foreground)" }}
+    >
+      {loading ? "Loading…" : "Manage Subscription"}
+    </button>
+  )
+}
+
 /* ── Membership Tab ─────────────────────────────────────────────────── */
 
-function MembershipTab({ membership, referralCode }: { membership: Profile["membership"]; referralCode: string }) {
-  const tiers = [
+function MembershipTab({
+  profile,
+}: {
+  profile: Pick<Profile, "membership" | "membership_tier" | "membership_status" | "membership_expires_at" | "is_founding_member" | "referral_code">
+}) {
+  const { membership, membership_tier, membership_status, membership_expires_at, is_founding_member } = profile
+
+  const subTiers: Array<{
+    key: "free" | "grow" | "restore" | "transform"
+    title: string
+    price: string
+    perks: string[]
+  }> = [
     {
-      key: "free" as const,
+      key: "free",
       title: "Free",
-      perks: ["Assessment results saved", "Retest tracking", "Progress history"],
-      cta: membership === "free" ? "Current plan" : null,
-      ctaHref: null,
+      price: "Free",
+      perks: [
+        "Access to purchased report permanently",
+        "1 meal analysis per day",
+        "Biotics Score visible (today only)",
+        "Gut Starter Pack food library",
+        "Weekly Substack delivered to inbox",
+        "30-day reassessment reminder",
+      ],
     },
     {
-      key: "early_access" as const,
-      title: "Early Access",
-      perks: ["Early product access", "Community access", "10% report discount", "Exclusive updates"],
-      cta: membership === "early_access" ? "Current plan" : membership === "free" ? "Refer 3 friends →" : null,
-      ctaHref: membership === "free" ? `/account?tab=refer` : null,
+      key: "grow",
+      title: "Grow",
+      price: "€9.99/mo",
+      perks: [
+        "Everything in Free",
+        "Unlimited daily meal analyses",
+        "Full three-biotic breakdown per analysis",
+        "30-day Biotics Score history and trend line",
+        "Monthly reassessment with score delta",
+        "EatoBiotics Plate builder",
+        "Full food profile library (50+ foods)",
+        "Early access to book chapters",
+        "Email support",
+      ],
     },
     {
-      key: "member" as const,
-      title: "Member",
-      perks: ["All paid reports", "Priority support", "Subscription benefits"],
-      cta: membership === "member" ? "Current plan" : "Coming soon",
-      ctaHref: null,
+      key: "restore",
+      title: "Restore",
+      price: "€49/mo",
+      perks: [
+        "Everything in Grow",
+        "90-day score history with quarterly trend analysis",
+        "Condition-specific calibration (IBS, immunity, energy, mood, weight)",
+        "Monthly personalised gut health plan",
+        "Downloadable PDF reports",
+        "5-pillar deep dive every month",
+        "Priority analysis — faster, more detailed output",
+        "Full pre-launch book access",
+      ],
+    },
+    {
+      key: "transform",
+      title: "Transform",
+      price: "€99/mo",
+      perks: [
+        "Everything in Restore",
+        "Unlimited AI gut health consultations",
+        "Weekly AI check-in",
+        "Personalised weekly meal plans",
+        "Recipe suggestions calibrated to Biotics Score",
+        "Annual Gut Health Profile",
+        is_founding_member ? "✦ Founding Member — permanent recognition" : "Founding member status (if eligible)",
+        "Direct input into EatoBiotics product roadmap",
+      ],
     },
   ]
 
-  const currentTier = tiers.find((t) => t.key === membership)
+  const tierOrder: Record<string, number> = { free: 0, grow: 1, restore: 2, transform: 3 }
+  const currentOrder = tierOrder[membership_tier] ?? 0
+
+  const statusLabel: Record<string, string> = {
+    active:    "Active",
+    inactive:  "Inactive",
+    cancelled: "Cancelled",
+    past_due:  "Payment due",
+  }
+
+  const expiresLabel = membership_expires_at
+    ? new Date(membership_expires_at).toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" })
+    : null
 
   return (
     <div className="space-y-5">
-      {/* Current plan summary card */}
+      {/* Current plan summary */}
       <div className="overflow-hidden rounded-3xl border bg-card">
-        <div className="h-1.5 w-full" style={{ background: "linear-gradient(90deg, #7bc67e, #56C135)" }} />
+        <div className="h-1.5 w-full" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))" }} />
         <div className="p-5">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Current Plan</p>
-          <h2 className="mt-1 font-serif text-2xl font-semibold text-foreground">
-            {currentTier?.title ?? membership}
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {membership === "free" && "Refer 3 friends to unlock Early Access for free."}
-            {membership === "early_access" && "You have early access — enjoy exclusive perks."}
-            {membership === "member" && "Full member benefits active."}
-          </p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Current Plan</p>
+              <h2 className="mt-1 font-serif text-2xl font-semibold text-foreground capitalize">
+                {membership_tier === "free" ? "Free" : `EatoBiotics ${membership_tier.charAt(0).toUpperCase() + membership_tier.slice(1)}`}
+              </h2>
+              {membership_status !== "inactive" && (
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <span
+                    className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                    style={{
+                      background: membership_status === "active"
+                        ? "color-mix(in srgb, var(--icon-green) 15%, transparent)"
+                        : "color-mix(in srgb, var(--icon-orange) 15%, transparent)",
+                      color: membership_status === "active" ? "var(--icon-green)" : "var(--icon-orange)",
+                    }}
+                  >
+                    {statusLabel[membership_status] ?? membership_status}
+                  </span>
+                  {expiresLabel && membership_status === "active" && (
+                    <span className="text-xs text-muted-foreground">
+                      Renews {expiresLabel}
+                    </span>
+                  )}
+                  {expiresLabel && membership_status === "cancelled" && (
+                    <span className="text-xs text-muted-foreground">
+                      Access until {expiresLabel}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+            {membership_tier !== "free" && <ManageSubscriptionButton />}
+          </div>
+
+          {/* Free tier: referral progress */}
           {membership === "free" && (
             <div className="mt-4">
               <div className="mb-1.5 flex items-center justify-between text-xs text-muted-foreground">
@@ -1134,10 +1313,14 @@ function MembershipTab({ membership, referralCode }: { membership: Profile["memb
         </div>
       </div>
 
-      {/* Tier cards */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        {tiers.map((tier) => {
-          const isActive = tier.key === membership
+      {/* Tier comparison cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {subTiers.map((tier) => {
+          const isActive = tier.key === membership_tier && membership_status === "active"
+          const tierNum = tierOrder[tier.key] ?? 0
+          const isUpgrade = tierNum > currentOrder
+          const isDowngrade = tierNum < currentOrder && membership_status === "active"
+
           return (
             <div
               key={tier.key}
@@ -1145,54 +1328,113 @@ function MembershipTab({ membership, referralCode }: { membership: Profile["memb
               style={isActive ? { borderColor: "var(--icon-green)", borderWidth: 2 } : undefined}
             >
               <div
-                className="px-5 py-3"
-                style={
-                  isActive
-                    ? { background: "linear-gradient(135deg, #7bc67e, #56C135)" }
-                    : { background: "var(--muted)" }
-                }
+                className="px-4 py-3"
+                style={isActive
+                  ? { background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }
+                  : { background: "var(--muted)" }}
               >
-                <div className="flex items-center justify-between">
-                  <h3 className={cn("font-serif text-base font-semibold", isActive ? "text-white" : "text-muted-foreground")}>
-                    {tier.title}
-                  </h3>
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <h3 className={cn("font-serif text-sm font-semibold", isActive ? "text-white" : "text-foreground")}>
+                      {tier.title}
+                    </h3>
+                    <p className={cn("text-xs", isActive ? "text-white/70" : "text-muted-foreground")}>
+                      {tier.price}
+                    </p>
+                  </div>
                   {isActive && (
-                    <span className="rounded-full bg-white/25 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                    <span className="shrink-0 rounded-full bg-white/25 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
                       Active
+                    </span>
+                  )}
+                  {tier.key === "transform" && is_founding_member && (
+                    <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white"
+                      style={{ background: "var(--icon-orange)" }}>
+                      Founding
                     </span>
                   )}
                 </div>
               </div>
-              <div className="px-5 py-4">
-                <ul className="mb-4 space-y-2">
-                  {tier.perks.map((perk) => (
+
+              <div className="px-4 py-3">
+                <ul className="mb-4 space-y-1.5">
+                  {tier.perks.slice(0, 5).map((perk) => (
                     <li key={perk} className="flex items-start gap-2 text-xs text-muted-foreground">
-                      <Check size={12} className="mt-0.5 shrink-0" style={isActive ? { color: "var(--icon-green)" } : undefined} />
+                      <Check size={11} className="mt-0.5 shrink-0 text-muted-foreground/50" />
                       {perk}
                     </li>
                   ))}
+                  {tier.perks.length > 5 && (
+                    <li className="text-xs text-muted-foreground/60">+{tier.perks.length - 5} more</li>
+                  )}
                 </ul>
-                {tier.cta && (
-                  tier.ctaHref ? (
-                    <Link
-                      href={tier.ctaHref}
-                      className="inline-flex w-full items-center justify-center rounded-full py-2 text-xs font-semibold transition-opacity hover:opacity-80"
-                      style={{ background: "color-mix(in srgb, var(--icon-lime) 20%, transparent)", color: "var(--icon-green)" }}
-                    >
-                      {tier.cta}
-                    </Link>
-                  ) : (
-                    <div className={cn("w-full rounded-full py-2 text-center text-xs font-semibold", isActive ? "bg-muted/60 text-muted-foreground" : "bg-muted text-muted-foreground/60")}>
-                      {tier.cta}
-                    </div>
-                  )
+
+                {isActive ? (
+                  <div className="w-full rounded-full bg-muted py-1.5 text-center text-xs font-semibold text-muted-foreground">
+                    Current plan
+                  </div>
+                ) : tier.key === "free" ? (
+                  <div className="w-full rounded-full bg-muted py-1.5 text-center text-xs text-muted-foreground/60">
+                    —
+                  </div>
+                ) : isUpgrade ? (
+                  <SubscribeButton priceId={process.env[`NEXT_PUBLIC_STRIPE_${tier.key.toUpperCase()}_PRICE_ID`] ?? ""} label="Upgrade" />
+                ) : isDowngrade ? (
+                  <ManageSubscriptionButton />
+                ) : (
+                  <SubscribeButton priceId={process.env[`NEXT_PUBLIC_STRIPE_${tier.key.toUpperCase()}_PRICE_ID`] ?? ""} label="Get started" />
                 )}
               </div>
             </div>
           )
         })}
       </div>
+
+      {/* Link to full pricing page */}
+      <div className="text-center">
+        <Link href="/pricing" className="text-xs font-semibold text-muted-foreground underline-offset-2 hover:underline">
+          View full feature comparison →
+        </Link>
+      </div>
     </div>
+  )
+}
+
+/* ── Subscribe Button (uses NEXT_PUBLIC price IDs) ──────────────────── */
+
+function SubscribeButton({ priceId, label }: { priceId: string; label: string }) {
+  const [loading, setLoading] = useState(false)
+
+  async function handleClick() {
+    if (!priceId) {
+      window.location.href = "/pricing"
+      return
+    }
+    setLoading(true)
+    try {
+      const res = await fetch("/api/stripe/create-subscription-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ priceId }),
+      })
+      const data = await res.json() as { url?: string; error?: string }
+      if (data.url) window.location.href = data.url
+    } catch (err) {
+      console.error("[subscribe]", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={loading}
+      className="w-full rounded-full py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+      style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
+    >
+      {loading ? "Loading…" : label}
+    </button>
   )
 }
 
@@ -1496,9 +1738,9 @@ export function DashboardClient({ profile, assessments, paidReports, plateData }
 
       {/* Tab content */}
       <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
-        {activeTab === "overview" && <OverviewTab assessments={assessments} />}
+        {activeTab === "overview" && <OverviewTab assessments={assessments} membershipTier={profile.membership_tier ?? "free"} />}
         {activeTab === "reports" && <ReportsTab paidReports={paidReports} />}
-        {activeTab === "membership" && <MembershipTab membership={profile.membership} referralCode={profile.referral_code} />}
+        {activeTab === "membership" && <MembershipTab profile={profile} />}
         {activeTab === "plate" && <PlateTab plateData={plateData} />}
         {activeTab === "meals" && <MealsTab />}
         {activeTab === "refer" && <ReferTab referralCode={profile.referral_code} />}

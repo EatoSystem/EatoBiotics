@@ -4,6 +4,9 @@ import Image from "next/image"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { GradientText } from "@/components/gradient-text"
 import { AnalyseClient } from "./analyse-client"
+import { AnalyseGate } from "@/components/analyse/analyse-gate"
+import { getUser } from "@/lib/supabase-server"
+import { getUserMembershipTier } from "@/lib/membership"
 
 export const metadata: Metadata = {
   title: "Meal Analysis",
@@ -34,7 +37,10 @@ const BIOTICS = [
   },
 ]
 
-export default function AnalysePage() {
+export default async function AnalysePage() {
+  const user = await getUser()
+  const tier = user ? await getUserMembershipTier(user.id) : "free"
+
   return (
     <div className="min-h-screen bg-background">
 
@@ -105,13 +111,15 @@ export default function AnalysePage() {
 
       {/* ── Upload / Results ──────────────────────────────────────────── */}
       <div className="mx-auto max-w-2xl px-6 pb-20">
-        <Suspense
-          fallback={
-            <div className="h-64 rounded-2xl border border-dashed border-border animate-pulse" />
-          }
-        >
-          <AnalyseClient />
-        </Suspense>
+        <AnalyseGate membershipTier={tier}>
+          <Suspense
+            fallback={
+              <div className="h-64 rounded-2xl border border-dashed border-border animate-pulse" />
+            }
+          >
+            <AnalyseClient />
+          </Suspense>
+        </AnalyseGate>
 
         <p className="mt-6 text-center text-xs text-muted-foreground/50">
           Photos are not stored

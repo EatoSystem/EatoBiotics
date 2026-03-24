@@ -36,7 +36,7 @@ export default async function AccountPage() {
   if (adminSupabase) {
     const { data: profileData } = await adminSupabase
       .from("profiles")
-      .select("*")
+      .select("id, email, name, age_bracket, membership, referral_code, referred_by, membership_tier, membership_status, stripe_customer_id, stripe_subscription_id, membership_started_at, membership_expires_at, is_founding_member")
       .eq("id", user.id)
       .single()
     profile = profileData
@@ -75,6 +75,13 @@ export default async function AccountPage() {
       membership: "free" as const,
       referral_code: "??????",
       referred_by: null,
+      membership_tier: "free" as const,
+      membership_status: "inactive" as const,
+      stripe_customer_id: null,
+      stripe_subscription_id: null,
+      membership_started_at: null,
+      membership_expires_at: null,
+      is_founding_member: false,
     }
   }
 

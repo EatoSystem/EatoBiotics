@@ -18,6 +18,14 @@ const MOCK_PROFILE = {
   membership: "early_access" as const,
   referral_code: "SARAHM42",
   referred_by: null,
+  // Subscription fields
+  membership_tier: "free" as const,
+  membership_status: "inactive" as const,
+  stripe_customer_id: null,
+  stripe_subscription_id: null,
+  membership_started_at: null,
+  membership_expires_at: null,
+  is_founding_member: false,
 }
 
 const MOCK_ASSESSMENTS = [
