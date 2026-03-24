@@ -673,7 +673,7 @@ function ErrorView({ message, previewUrl, onReset }: { message: string; previewU
 
 /* ── Main component ─────────────────────────────────────────────────── */
 
-export function AnalyseClient() {
+export function AnalyseClient({ tier }: { tier?: "free" | "grow" | "restore" | "transform" }) {
   const [state, setState] = useState<State>({ kind: "idle" })
 
   const handleFile = useCallback(async (file: File) => {
@@ -683,7 +683,10 @@ export function AnalyseClient() {
     try {
       const { base64, mimeType } = await compressImage(file)
 
-      const res = await fetch("/api/analyse-plate", {
+      // Use tier-differentiated API for paid members; fall back to public route
+      const endpoint = tier && tier !== "free" ? "/api/analyse" : "/api/analyse-plate"
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ imageBase64: base64, mimeType }),

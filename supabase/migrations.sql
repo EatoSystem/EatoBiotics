@@ -148,3 +148,73 @@ BEGIN
       USING (user_id = auth.uid());
   END IF;
 END $$;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 6: health_goals column on profiles
+-- ────────────────────────────────────────────────────────────
+
+ALTER TABLE profiles
+  ADD COLUMN IF NOT EXISTS health_goals text[] DEFAULT '{}';
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 7: extend analyses table with pillar scores + full output
+-- ────────────────────────────────────────────────────────────
+
+ALTER TABLE analyses
+  ADD COLUMN IF NOT EXISTS prebiotic_score  integer,
+  ADD COLUMN IF NOT EXISTS probiotic_score  integer,
+  ADD COLUMN IF NOT EXISTS postbiotic_score integer,
+  ADD COLUMN IF NOT EXISTS analysis_output  jsonb;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 8: extend consultations table for session tracking
+-- ────────────────────────────────────────────────────────────
+
+ALTER TABLE consultations
+  ADD COLUMN IF NOT EXISTS session_id  uuid        DEFAULT gen_random_uuid(),
+  ADD COLUMN IF NOT EXISTS started_at  timestamptz DEFAULT now(),
+  ADD COLUMN IF NOT EXISTS ended_at    timestamptz,
+  ADD COLUMN IF NOT EXISTS turn_count  integer     DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS date        date        DEFAULT current_date,
+  ADD COLUMN IF NOT EXISTS summary     text;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 9: week_starting column on weekly_checkins
+-- ────────────────────────────────────────────────────────────
+
+ALTER TABLE weekly_checkins
+  ADD COLUMN IF NOT EXISTS week_starting date;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 10: monthly_gut_plans table (Restore+ members)
+-- ────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS monthly_gut_plans (
+  id            uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       uuid        REFERENCES auth.users(id) ON DELETE CASCADE,
+  content       text        NOT NULL,
+  month         date        NOT NULL,
+  pillar_scores jsonb,
+  health_goals  text[],
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE monthly_gut_plans ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'monthly_gut_plans'
+      AND policyname = 'users_read_own_plans'
+  ) THEN
+    CREATE POLICY "users_read_own_plans"
+      ON monthly_gut_plans FOR SELECT TO authenticated
+      USING (user_id = auth.uid());
+  END IF;
+END $$;

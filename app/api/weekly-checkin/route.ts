@@ -4,10 +4,37 @@ import { getSupabase } from "@/lib/supabase"
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+/** Returns the date of the most recent Monday (UTC) as YYYY-MM-DD. */
+function getLastMondayDate(): string {
+  const now = new Date()
+  const day = now.getUTCDay() // 0=Sun, 1=Mon, ..., 6=Sat
+  const diffToMonday = day === 0 ? 6 : day - 1
+  const monday = new Date(now)
+  monday.setUTCDate(now.getUTCDate() - diffToMonday)
+  monday.setUTCHours(0, 0, 0, 0)
+  return monday.toISOString().slice(0, 10)
+}
+
 /** Generate and save a weekly check-in for a single Transform member. */
 async function generateWeeklyCheckin(userId: string, userEmail: string): Promise<void> {
   const adminSupabase = getSupabase()
   if (!adminSupabase) return
+
+  const weekStarting = getLastMondayDate()
+
+  // Deduplication: skip if check-in already exists for this week
+  const { data: existing } = await adminSupabase
+    .from("weekly_checkins")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("week_starting", weekStarting)
+    .limit(1)
+    .single()
+
+  if (existing) {
+    console.log(`[weekly-checkin] Skipping user ${userId}: already generated for week ${weekStarting}`)
+    return
+  }
 
   // Fetch last 7 days of analyses
   const sevenDaysAgo = new Date()
@@ -20,6 +47,14 @@ async function generateWeeklyCheckin(userId: string, userEmail: string): Promise
     .gte("created_at", sevenDaysAgo.toISOString())
     .order("created_at", { ascending: true })
 
+  const analysisCount = recentAnalyses?.length ?? 0
+
+  // Minimum analysis check: need at least 3 analyses in the past 7 days
+  if (analysisCount < 3) {
+    console.log(`[weekly-checkin] Skipping user ${userId}: insufficient data (${analysisCount} analyses, need 3)`)
+    return
+  }
+
   // Fetch last 2 assessment scores (start + current of week)
   const { data: assessments } = await adminSupabase
     .from("leads")
@@ -29,14 +64,13 @@ async function generateWeeklyCheckin(userId: string, userEmail: string): Promise
     .order("created_at", { ascending: false })
     .limit(2)
 
-  const latestScore  = (assessments?.[0]?.overall_score as number | null) ?? null
+  const latestScore   = (assessments?.[0]?.overall_score as number | null) ?? null
   const previousScore = (assessments?.[1]?.overall_score as number | null) ?? null
   const subScores     = assessments?.[0]?.sub_scores as Record<string, number> | null
 
-  const analysisCount = recentAnalyses?.length ?? 0
-  const scoreSummary = recentAnalyses?.length
-    ? recentAnalyses.map((a) => `${new Date(a.created_at as string).toLocaleDateString("en-IE")}: ${a.biotics_score ?? "—"}`).join(", ")
-    : "No meal analyses this week"
+  const scoreSummary = recentAnalyses.map((a) =>
+    `${new Date(a.created_at as string).toLocaleDateString("en-IE")}: ${a.biotics_score ?? "—"}`
+  ).join(", ")
 
   const pillarSummary = subScores
     ? Object.entries(subScores).map(([k, v]) => `${k}: ${Math.round(v)}/100`).join(", ")
@@ -51,12 +85,12 @@ Data for this week:
 - Meal analyses this week: ${analysisCount}
 - Meal analysis scores: ${scoreSummary}
 
-Write a 3-paragraph weekly check-in:
-1. What went well this week (based on scores and activity)
-2. What needs attention (based on lowest pillar or score decline)
-3. ONE specific focus for next week — concrete and actionable
+Write a 3-paragraph weekly check-in directly to the member using "you":
+1. This week in your gut health (2-3 sentences summarising what the data shows)
+2. What improved and what needs attention (honest, constructive, specific)
+3. Your focus for next week — one clear priority with a practical action
 
-Tone: warm, direct, personal. Max 150 words total. Do not use bullet points.`
+Tone: warm, direct, personal. Under 200 words total. No bullet points. No headers.`
 
   const response = await anthropic.messages.create({
     model:      "claude-sonnet-4-20250514",
@@ -72,6 +106,7 @@ Tone: warm, direct, personal. Max 150 words total. Do not use bullet points.`
     content,
     biotics_score_start: previousScore,
     biotics_score_end:   latestScore,
+    week_starting:       weekStarting,
   })
 }
 

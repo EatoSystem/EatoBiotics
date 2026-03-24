@@ -111,13 +111,13 @@ export default async function AnalysePage() {
 
       {/* ── Upload / Results ──────────────────────────────────────────── */}
       <div className="mx-auto max-w-2xl px-6 pb-20">
-        <AnalyseGate membershipTier={tier}>
+        <AnalyseGate membershipTier={tier} isLoggedIn={!!user}>
           <Suspense
             fallback={
               <div className="h-64 rounded-2xl border border-dashed border-border animate-pulse" />
             }
           >
-            <AnalyseClient />
+            <AnalyseClient tier={tier} />
           </Suspense>
         </AnalyseGate>
 

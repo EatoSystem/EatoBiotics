@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 import { redirect } from "next/navigation"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
@@ -24,7 +25,9 @@ export default async function ConsultPage() {
   let overallScore: number | null = null
   let subScores: Record<string, number> | null = null
   let memberName: string | null = null
-  let pastConsultations: Array<{ id: string; message_count: number; created_at: string }> = []
+  let pastConsultations: Array<{ id: string; turn_count: number; created_at: string; summary: string | null }> = []
+  let dailyCount = 0
+  let monthlyCount = 0
 
   if (adminSupabase) {
     const { data: profile } = await adminSupabase
@@ -48,24 +51,49 @@ export default async function ConsultPage() {
       subScores    = latestAssessment.sub_scores as Record<string, number> | null
     }
 
+    // Past consultation sessions with summaries
     const { data: consultData } = await adminSupabase
       .from("consultations")
-      .select("id, message_count, created_at")
+      .select("id, turn_count, created_at, summary")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(20)
 
-    pastConsultations = consultData ?? []
+    pastConsultations = (consultData ?? []) as typeof pastConsultations
+
+    // Daily count
+    const today = new Date().toISOString().slice(0, 10)
+    const { count: dc } = await adminSupabase
+      .from("consultations")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("date", today)
+    dailyCount = dc ?? 0
+
+    // Monthly count
+    const firstOfMonth = new Date()
+    firstOfMonth.setUTCDate(1)
+    firstOfMonth.setUTCHours(0, 0, 0, 0)
+    const { count: mc } = await adminSupabase
+      .from("consultations")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("date", firstOfMonth.toISOString().slice(0, 10))
+    monthlyCount = mc ?? 0
   }
 
   return (
     <div className="min-h-screen bg-background pt-20">
-      <ConsultClient
-        memberName={memberName}
-        overallScore={overallScore}
-        subScores={subScores}
-        pastConsultations={pastConsultations}
-      />
+      <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><span className="text-sm text-muted-foreground">Loading advisor…</span></div>}>
+        <ConsultClient
+          memberName={memberName}
+          overallScore={overallScore}
+          subScores={subScores}
+          pastConsultations={pastConsultations}
+          dailyCount={dailyCount}
+          monthlyCount={monthlyCount}
+        />
+      </Suspense>
     </div>
   )
 }

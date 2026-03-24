@@ -1,100 +1,117 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
-import { DashboardClient } from "@/components/account/dashboard-client"
+import { ArrowRight } from "lucide-react"
 
 export const metadata: Metadata = {
   title: "Account Preview — EatoBiotics",
-  description: "Preview what your EatoBiotics account dashboard looks like after completing the assessment.",
+  description: "Preview what your EatoBiotics account dashboard looks like on each membership tier.",
   robots: "noindex",
 }
 
-// Mock data matching DashboardClientProps exactly
-const MOCK_PROFILE = {
-  id: "demo-user",
-  email: "sarah@example.com",
-  name: "Sarah M.",
-  age_bracket: "25–34",
-  membership: "early_access" as const,
-  referral_code: "SARAHM42",
-  referred_by: null,
-  // Subscription fields
-  membership_tier: "free" as const,
-  membership_status: "inactive" as const,
-  stripe_customer_id: null,
-  stripe_subscription_id: null,
-  membership_started_at: null,
-  membership_expires_at: null,
-  is_founding_member: false,
-}
-
-const MOCK_ASSESSMENTS = [
+const TIERS = [
   {
-    overall_score: 62,
-    profile_type: "Emerging Balance",
-    sub_scores: {
-      diversity: 55,
-      feeding: 68,
-      adding: 38,
-      consistency: 72,
-      feeling: 58,
-      overall: 62,
-    },
-    created_at: new Date(Date.now() - 7 * 86_400_000).toISOString(), // 1 week ago
-    email_sent: true,
+    key: "free",
+    label: "Free",
+    price: "Free",
+    tagline: "Your foundation — assessment score, history, and food library.",
+    color: "var(--icon-lime)",
+    gradient: "linear-gradient(135deg, var(--icon-lime), #56C135)",
+    features: ["Purchased report access", "Today's Biotics Score", "Food library"],
   },
-]
-
-const MOCK_PAID_REPORTS = [
   {
-    stripe_session_id: "demo_session_full",
-    tier: "full",
-    pdf_url: null,
-    created_at: new Date(Date.now() - 7 * 86_400_000).toISOString(),
-    free_scores: {
-      overall: 62,
-      profile: { type: "Emerging Balance" },
-    },
+    key: "grow",
+    label: "Grow",
+    price: "€9.99/mo",
+    tagline: "Daily habits and meal tracking with full biotic breakdowns.",
+    color: "var(--icon-green)",
+    gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
+    features: ["2 meal analyses/day", "30-day score history", "Plate builder"],
+  },
+  {
+    key: "restore",
+    label: "Restore",
+    price: "€49/mo",
+    tagline: "Deep insight, condition calibration, and a monthly gut plan.",
+    color: "var(--icon-teal)",
+    gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
+    features: ["5 meal analyses/day + AI context", "Monthly gut health plan", "90-day history"],
+  },
+  {
+    key: "transform",
+    label: "Transform",
+    price: "€99/mo",
+    tagline: "Unlimited AI consultations, weekly check-ins, and full personalisation.",
+    color: "var(--icon-orange)",
+    gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-yellow), var(--icon-orange))",
+    features: ["10 meal analyses/day + full context", "Unlimited AI consultations", "Weekly AI check-in"],
   },
 ]
 
 export default function DemoAccountPage() {
   return (
-    <div className="min-h-screen bg-background pt-[57px]">
-      {/* Demo banner */}
-      <div className="border-b border-[var(--icon-yellow)]/20 bg-[var(--icon-yellow)]/8 px-4 py-2.5">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-4">
-          <p className="text-xs font-semibold text-[var(--icon-yellow)]">
-            ⚡ Demo account — showing sample data for Sarah M.
+    <div className="min-h-screen bg-background pt-24 pb-16">
+      <div className="mx-auto max-w-3xl px-6">
+        {/* Header */}
+        <div className="mb-10 text-center">
+          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            Demo Preview
           </p>
-          <Link
-            href="/assessment"
-            className="flex shrink-0 items-center gap-1 text-xs font-semibold text-[var(--icon-green)] hover:underline"
-          >
-            Get your real account →
-          </Link>
+          <h1 className="font-serif text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+            Account Dashboard
+          </h1>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Select a membership tier to preview what the dashboard looks like with sample data.
+          </p>
         </div>
-      </div>
 
-      {/* Real dashboard component with mock data — pt-20 matches real /account page */}
-      <div className="pt-10">
-      <DashboardClient
-        profile={MOCK_PROFILE}
-        assessments={MOCK_ASSESSMENTS}
-        paidReports={MOCK_PAID_REPORTS}
-        plateData={null}
-      />
-      </div>
+        {/* Tier cards */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          {TIERS.map((t) => (
+            <Link
+              key={t.key}
+              href={`/demo/account/${t.key}`}
+              className="group flex flex-col rounded-2xl border bg-card p-6 transition-all hover:shadow-lg hover:-translate-y-0.5"
+              style={{ borderTop: `3px solid ${t.color}` }}
+            >
+              {/* Header */}
+              <div className="mb-4 flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest" style={{ color: t.color }}>
+                    {t.label}
+                  </p>
+                  <p className="mt-0.5 font-serif text-2xl font-bold text-foreground">{t.price}</p>
+                </div>
+                <div
+                  className="flex h-8 w-8 items-center justify-center rounded-full transition-transform group-hover:translate-x-0.5"
+                  style={{ background: `color-mix(in srgb, ${t.color} 15%, transparent)` }}
+                >
+                  <ArrowRight size={14} style={{ color: t.color }} />
+                </div>
+              </div>
 
-      {/* Back to demo hub */}
-      <div className="border-t border-border px-6 py-8 text-center">
-        <Link
-          href="/demo"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft size={14} />
-          Back to demo hub
-        </Link>
+              <p className="mb-4 text-sm leading-relaxed text-muted-foreground">{t.tagline}</p>
+
+              {/* Feature list */}
+              <ul className="mt-auto space-y-1.5">
+                {t.features.map((f) => (
+                  <li key={f} className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: t.color }} />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </Link>
+          ))}
+        </div>
+
+        {/* Footer note */}
+        <p className="mt-8 text-center text-xs text-muted-foreground">
+          All previews use sample data for Sarah M. —{" "}
+          <Link href="/assessment" className="underline hover:text-foreground transition-colors">
+            take the real assessment
+          </Link>{" "}
+          to see your own scores.
+        </p>
       </div>
     </div>
   )

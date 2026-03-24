@@ -19,6 +19,11 @@ import {
   Settings,
   Camera,
   TrendingUp,
+  Lock,
+  Zap,
+  Star,
+  Sparkles,
+  MessageSquare,
 } from "lucide-react"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
 import { ScoreRing } from "@/components/assessment/score-ring"
@@ -44,6 +49,7 @@ interface Profile {
   membership_started_at: string | null
   membership_expires_at: string | null
   is_founding_member: boolean
+  health_goals?: string[] | null
 }
 
 interface AssessmentRow {
@@ -68,11 +74,24 @@ interface PlateData {
   updated_at: string
 }
 
+interface BioticsProfile {
+  prebiotic: number   // raw score out of 45
+  probiotic: number   // raw score out of 25
+  postbiotic: number  // raw score out of 15
+  analysisCount: number
+}
+
 interface DashboardClientProps {
   profile: Profile
   assessments: AssessmentRow[]
   paidReports: PaidReport[]
   plateData: PlateData | null
+  nextBillingDate?: string | null
+  dailyConsultCount?: number
+  monthlyConsultCount?: number
+  weeklyCheckin?: { content: string; week_starting: string } | null
+  monthlyGutPlan?: { content: string; month: string } | null
+  bioticsProfile?: BioticsProfile | null
 }
 
 /* ── Tabs ───────────────────────────────────────────────────────────── */
@@ -125,6 +144,15 @@ const SCORE_COLORS: Record<string, string> = {
   "Good Start":        "var(--icon-yellow)",
   "Getting There":     "var(--icon-orange)",
   "Starting Out":      "#ef4444",
+}
+
+const DAILY_LIMITS: Record<string, number> = { grow: 2, restore: 5, transform: 10 }
+
+const TIER_ACCENT: Record<string, { bg: string; text: string; label: string }> = {
+  free:      { bg: "rgba(255,255,255,0.1)",  text: "rgba(255,255,255,0.6)",  label: "Free" },
+  grow:      { bg: "rgba(132,204,22,0.22)",  text: "#bef264",                label: "Grow Member" },
+  restore:   { bg: "rgba(20,184,166,0.22)",  text: "#5eead4",                label: "Restore Member" },
+  transform: { bg: "rgba(249,115,22,0.22)",  text: "#fdba74",                label: "Transform Member" },
 }
 
 function formatDate(iso: string) {
@@ -263,13 +291,9 @@ function DashboardHero({
   const subScores = latestAssessment ? extractSubScores(latestAssessment.sub_scores) : null
   const profileInfo = getProfileInfo(profileType)
 
-  const membershipLabels: Record<string, string> = {
-    free: "Free",
-    early_access: "Early Access",
-    member: "Member",
-    premium: "Premium",
-  }
-  const memberLabel = membershipLabels[profile.membership] ?? profile.membership
+  const tierAccent = TIER_ACCENT[profile.membership_tier] ?? TIER_ACCENT.free
+  const isFoundingTransform = profile.membership_tier === "transform" && profile.is_founding_member
+  const heroBadgeLabel = isFoundingTransform ? "Founding Member" : tierAccent.label
 
   return (
     <div
@@ -301,14 +325,15 @@ function DashboardHero({
           </div>
           <div className="flex items-center gap-3">
             <span
-              className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
+              className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
               style={{
-                background: "rgba(255,255,255,0.1)",
-                color: "rgba(255,255,255,0.7)",
-                border: "1px solid rgba(255,255,255,0.12)",
+                background: tierAccent.bg,
+                color: tierAccent.text,
+                border: `1px solid ${tierAccent.bg}`,
               }}
             >
-              {memberLabel}
+              {isFoundingTransform && <Star size={9} fill="currentColor" />}
+              {heroBadgeLabel}
             </span>
             <Link
               href="/account/settings"
@@ -605,152 +630,173 @@ function MealLabCard({ meals }: { meals: SavedMealAnalysis[] }) {
   )
 }
 
-/* ── Biotics Balance Card ────────────────────────────────────────────── */
+/* ── Biotics Balance Card (live scores + improvement tips) ──────────── */
 
-const BIOTICS_CONFIG = [
-  { key: "prebiotic",  label: "Prebiotics",  icon: "🌱", color: "var(--icon-lime)",  desc: "Plant fibre that feeds your gut bacteria" },
-  { key: "probiotic",  label: "Probiotics",  icon: "🦠", color: "var(--icon-green)", desc: "Live cultures from fermented foods" },
-  { key: "postbiotic", label: "Postbiotics", icon: "✨", color: "var(--icon-teal)",  desc: "Compounds produced by a healthy microbiome" },
-]
+function bioticsLabel(pct: number): "Strong" | "Good" | "Building" | "Low" {
+  if (pct >= 80) return "Strong"
+  if (pct >= 60) return "Good"
+  if (pct >= 40) return "Building"
+  return "Low"
+}
 
-function BioticsBalanceBar({
-  icon,
-  label,
-  color,
-  count,
-  max,
-  index,
-}: {
-  icon: string
-  label: string
-  color: string
-  count: number
-  max: number
-  index: number
-}) {
-  const [visible, setVisible] = useState(false)
-  useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 200 + index * 100)
-    return () => clearTimeout(t)
-  }, [index])
+const BIOTICS_TIPS: Record<string, Record<string, string>> = {
+  prebiotic: {
+    Strong:   "Great plant diversity — keep rotating species daily",
+    Good:     "Try adding leeks, asparagus or oats to widen variety",
+    Building: "Add garlic, onion, or banana to each meal",
+    Low:      "Start with one fibre-rich food per meal: oats, garlic, or banana",
+  },
+  probiotic: {
+    Strong:   "Strong live cultures — vary your fermented sources",
+    Good:     "Add a second fermented food alongside your regular one",
+    Building: "Add a daily tablespoon of sauerkraut or kefir",
+    Low:      "Start with natural yogurt or miso once daily",
+  },
+  postbiotic: {
+    Strong:   "Your gut bacteria are producing healthy compounds",
+    Good:     "Sourdough or aged cheese add more postbiotic compounds",
+    Building: "Focus on prebiotics — postbiotics follow from fibre",
+    Low:      "Postbiotics come from fermentation — prioritise prebiotics first",
+  },
+}
 
-  const pct = max > 0 ? Math.round((count / max) * 100) : 0
+const BIOTICS_MEASURED: Record<string, string> = {
+  prebiotic:  "Fibre-rich plant foods across your meals",
+  probiotic:  "Live fermented foods (kefir, yogurt, kimchi)",
+  postbiotic: "Compounds your gut produces when fermenting fibre",
+}
 
+function BioticsRing({ score, color }: { score: number; color: string }) {
+  const r = 26
+  const circ = 2 * Math.PI * r
+  const offset = circ - (score / 100) * circ
   return (
-    <div className="flex items-center gap-3">
-      <span className="w-5 text-center text-base leading-none">{icon}</span>
-      <div className="flex-1">
-        <div className="mb-1 flex items-center justify-between">
-          <span className="text-xs font-semibold" style={{ color: "white" }}>{label}</span>
-          <span className="text-xs font-bold tabular-nums" style={{ color: "rgba(255,255,255,0.9)" }}>
-            {count} food{count !== 1 ? "s" : ""}
-          </span>
-        </div>
-        <div className="h-2 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.2)" }}>
-          <div
-            className="h-full rounded-full"
-            style={{
-              width: visible ? `${Math.max(pct, count > 0 ? 5 : 0)}%` : "0%",
-              background: "rgba(255,255,255,0.85)",
-              transition: `width 700ms cubic-bezier(0.16,1,0.3,1) ${index * 80}ms`,
-            }}
-          />
-        </div>
-      </div>
+    <div className="relative flex items-center justify-center" style={{ width: 64, height: 64 }}>
+      <svg width="64" height="64" className="-rotate-90" style={{ position: "absolute", inset: 0 }}>
+        <circle cx="32" cy="32" r={r} fill="none" stroke="currentColor" strokeWidth="4" className="text-border" />
+        <circle cx="32" cy="32" r={r} fill="none" stroke={color} strokeWidth="4"
+          strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset} />
+      </svg>
+      <p className="absolute text-sm font-bold tabular-nums" style={{ color }}>{score}</p>
     </div>
   )
 }
 
-function BioticsBalanceCard({ meals }: { meals: SavedMealAnalysis[] }) {
-  const allFoods = meals.flatMap((m) => m.foods)
-  const counts = {
-    prebiotic:  allFoods.filter((f) => f.biotic === "prebiotic").length,
-    probiotic:  allFoods.filter((f) => f.biotic === "probiotic").length,
-    postbiotic: allFoods.filter((f) => f.biotic === "postbiotic").length,
+function BioticsBalanceCard({ meals, bioticsProfile }: { meals: SavedMealAnalysis[]; bioticsProfile?: BioticsProfile | null }) {
+  const BIOTICS_CONFIG = [
+    { key: "prebiotic",  icon: "🌱", label: "Prebiotics",  color: "var(--icon-lime)" },
+    { key: "probiotic",  icon: "🦠", label: "Probiotics",  color: "var(--icon-green)" },
+    { key: "postbiotic", icon: "✨", label: "Postbiotics", color: "var(--icon-teal)" },
+  ]
+
+  let prebioticPct = 0, probioticPct = 0, postbioticPct = 0
+  let hasData = false
+
+  if (bioticsProfile) {
+    prebioticPct  = Math.min(100, Math.round((bioticsProfile.prebiotic  / 45) * 100))
+    probioticPct  = Math.min(100, Math.round((bioticsProfile.probiotic  / 25) * 100))
+    postbioticPct = Math.min(100, Math.round((bioticsProfile.postbiotic / 15) * 100))
+    hasData = true
+  } else if (meals.length > 0) {
+    // Fallback: derive from meal foods using the scoring rubric
+    const allFoods = meals.flatMap((m) => m.foods)
+    const preCt  = allFoods.filter((f) => f.biotic === "prebiotic").length
+    const proCt  = allFoods.filter((f) => f.biotic === "probiotic").length
+    const postCt = allFoods.filter((f) => f.biotic === "postbiotic").length
+    const rawPre  = preCt >= 4 ? 45 : preCt === 3 ? 40 : preCt === 2 ? 32 : preCt === 1 ? 20 : 0
+    const rawPro  = proCt >= 2 ? 25 : proCt === 1 ? 20 : 10
+    const rawPost = postCt >= 1 ? 15 : 5
+    prebioticPct  = Math.round((rawPre  / 45) * 100)
+    probioticPct  = Math.round((rawPro  / 25) * 100)
+    postbioticPct = Math.round((rawPost / 15) * 100)
+    hasData = true
   }
-  const maxCount = Math.max(...Object.values(counts), 1)
-  const hasMeals = meals.length > 0
+
+  const biotics = [
+    { ...BIOTICS_CONFIG[0], pct: prebioticPct },
+    { ...BIOTICS_CONFIG[1], pct: probioticPct },
+    { ...BIOTICS_CONFIG[2], pct: postbioticPct },
+  ]
 
   return (
-    <div
-      className="relative overflow-hidden rounded-3xl"
-      style={{ background: "linear-gradient(135deg, var(--icon-lime) 0%, var(--icon-green) 28%, var(--icon-teal) 55%, var(--icon-yellow) 78%, var(--icon-orange) 100%)" }}
-    >
-      {/* Dark scrim for text legibility */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{ background: "rgba(0,0,0,0.22)" }}
-      />
-      <div className="relative p-5 sm:p-6">
+    <div className="overflow-hidden rounded-3xl border bg-card">
+      <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
+      <div className="p-5">
         {/* Header */}
-        <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.6)" }}>
-              The 3 Biotics
-            </p>
-            <h3 className="mt-0.5 font-serif text-lg font-semibold" style={{ color: "white" }}>
-              {hasMeals ? "Your Biotics Balance" : "The EatoBiotics Framework"}
-            </h3>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">The 3 Biotics</p>
+            <h3 className="mt-0.5 font-serif text-lg font-semibold text-foreground">Your Biotics Profile</h3>
           </div>
-          <Link
-            href="/course"
-            className="shrink-0 text-xs font-semibold transition-opacity hover:opacity-70"
-            style={{ color: "rgba(255,255,255,0.75)" }}
-          >
+          <Link href="/course" className="shrink-0 text-xs font-semibold text-muted-foreground transition-opacity hover:opacity-70">
             Learn framework →
           </Link>
         </div>
 
-        {hasMeals ? (
+        {hasData ? (
           <>
-            <div className="space-y-3">
-              {BIOTICS_CONFIG.map((b, i) => (
-                <BioticsBalanceBar
-                  key={b.key}
-                  icon={b.icon}
-                  label={b.label}
-                  color={b.color}
-                  count={counts[b.key as keyof typeof counts]}
-                  max={maxCount}
-                  index={i}
-                />
-              ))}
+            <div className="grid grid-cols-3 gap-3">
+              {biotics.map((b) => {
+                const label = bioticsLabel(b.pct)
+                const tip   = BIOTICS_TIPS[b.key]?.[label] ?? ""
+                const desc  = BIOTICS_MEASURED[b.key] ?? ""
+                return (
+                  <div key={b.key} className="flex flex-col items-center gap-2 rounded-2xl border bg-muted/20 p-3 text-center">
+                    <span className="text-xl leading-none">{b.icon}</span>
+                    <BioticsRing score={b.pct} color={b.color} />
+                    <span
+                      className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+                      style={{
+                        background: `color-mix(in srgb, ${b.color} 15%, transparent)`,
+                        color: b.color,
+                      }}
+                    >
+                      {label}
+                    </span>
+                    <div className="w-full space-y-2 text-left">
+                      <div>
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">How measured</p>
+                        <p className="mt-0.5 text-[10px] leading-snug text-muted-foreground">{desc}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">To improve</p>
+                        <p className="mt-0.5 text-[10px] leading-snug text-foreground">{tip}</p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
-            <p className="mt-3 text-[11px]" style={{ color: "rgba(255,255,255,0.5)" }}>
-              Based on {allFoods.length} food{allFoods.length !== 1 ? "s" : ""} across your last{" "}
-              {meals.length} meal{meals.length !== 1 ? "s" : ""}
-            </p>
+            {bioticsProfile && (
+              <p className="mt-3 text-[10px] text-muted-foreground">
+                Based on {bioticsProfile.analysisCount} recent {bioticsProfile.analysisCount === 1 ? "analysis" : "analyses"}
+              </p>
+            )}
           </>
         ) : (
           <>
-            <div className="grid grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-3 gap-3 mb-4">
               {BIOTICS_CONFIG.map((b) => (
-                <div
-                  key={b.key}
-                  className="flex flex-col items-center gap-2 rounded-2xl p-3 text-center"
-                  style={{ background: "rgba(255,255,255,0.15)" }}
-                >
-                  <span
-                    className="flex h-9 w-9 items-center justify-center rounded-xl text-lg"
-                    style={{ background: "rgba(255,255,255,0.22)" }}
-                  >
-                    {b.icon}
-                  </span>
-                  <p className="text-xs font-bold" style={{ color: "white" }}>{b.label}</p>
-                  <p className="text-[10px] leading-tight" style={{ color: "rgba(255,255,255,0.7)" }}>{b.desc}</p>
+                <div key={b.key} className="flex flex-col items-center gap-2 rounded-2xl border bg-muted/20 p-3 text-center">
+                  <span className="text-xl leading-none">{b.icon}</span>
+                  <div className="relative flex items-center justify-center" style={{ width: 64, height: 64 }}>
+                    <svg width="64" height="64" className="-rotate-90" style={{ position: "absolute", inset: 0 }}>
+                      <circle cx="32" cy="32" r="26" fill="none" stroke="currentColor" strokeWidth="4" className="text-border" />
+                    </svg>
+                    <p className="absolute text-xs text-muted-foreground">—</p>
+                  </div>
+                  <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">{b.label}</p>
                 </div>
               ))}
             </div>
-            <div className="mt-4 flex flex-col items-center gap-2 text-center sm:flex-row sm:justify-between sm:text-left">
-              <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>
-                Analyse meals to track your personal biotics balance
-              </p>
+            <div className="flex flex-col items-center gap-2 text-center">
+              <p className="text-sm text-muted-foreground">Analyse meals to build your Biotics profile</p>
               <Link
                 href="/analyse"
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
-                style={{ background: "rgba(255,255,255,0.22)", border: "1px solid rgba(255,255,255,0.3)" }}
+                className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
               >
-                Track your meals <ArrowRight size={11} />
+                <Camera size={12} /> Analyse a Meal
               </Link>
             </div>
           </>
@@ -760,20 +806,513 @@ function BioticsBalanceCard({ meals }: { meals: SavedMealAnalysis[] }) {
   )
 }
 
+/* ── Today Card (tier-specific daily action hub) ────────────────────── */
+
+function TodayCard({
+  membershipTier,
+  latestScore,
+  dailyAnalysesUsed,
+  weeklyCheckin,
+  monthlyGutPlan,
+}: {
+  membershipTier: Profile["membership_tier"]
+  latestScore: number | null
+  dailyAnalysesUsed: number
+  weeklyCheckin?: { content: string; week_starting: string } | null
+  monthlyGutPlan?: { content: string; month: string } | null
+}) {
+  const limit = DAILY_LIMITS[membershipTier] ?? 0
+  const remaining = Math.max(0, limit - dailyAnalysesUsed)
+  const accent = TIER_ACCENT[membershipTier] ?? TIER_ACCENT.free
+
+  /* Free — onboarding ladder */
+  if (membershipTier === "free") {
+    return (
+      <div className="overflow-hidden rounded-3xl border bg-card">
+        <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))" }} />
+        <div className="p-5">
+          <p className="mb-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">Your Gut Journey</p>
+          <h3 className="mb-4 font-serif text-lg font-semibold text-foreground">Your foundation is set — build on it</h3>
+          <div className="mb-4 space-y-2.5">
+            <div className="flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50 px-4 py-2.5 dark:border-green-900 dark:bg-green-950/30">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--icon-green)" }}>
+                <Check size={13} className="text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground">
+                  Assessment complete{latestScore != null ? ` — score: ${Math.round(latestScore)}` : ""}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-2xl border bg-muted/40 px-4 py-2.5">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted">
+                <Lock size={11} className="text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-muted-foreground">Daily meal tracking</p>
+                <p className="text-[10px] text-muted-foreground/60">Unlock with Grow</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-2xl border bg-muted/40 px-4 py-2.5">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted">
+                <Lock size={11} className="text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-muted-foreground">Build your plate</p>
+                <p className="text-[10px] text-muted-foreground/60">Unlock with Grow</p>
+              </div>
+            </div>
+          </div>
+          <Link
+            href="/pricing"
+            className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
+          >
+            Start Grow for €9.99/mo <ArrowRight size={14} />
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  /* Grow — meal analysis counter */
+  if (membershipTier === "grow") {
+    return (
+      <div className="overflow-hidden rounded-3xl border bg-card">
+        <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, #bef264, var(--icon-lime))" }} />
+        <div className="p-5">
+          <p className="mb-1 text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-lime)" }}>Today&apos;s Habit</p>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h3 className="font-serif text-lg font-semibold text-foreground">Meal analyses</h3>
+              <div className="mt-1 flex items-center gap-2">
+                {Array.from({ length: limit }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-3 w-3 rounded-full border-2"
+                    style={{
+                      background: i < dailyAnalysesUsed ? "var(--icon-lime)" : "transparent",
+                      borderColor: i < dailyAnalysesUsed ? "var(--icon-lime)" : "var(--border)",
+                    }}
+                  />
+                ))}
+                <span className="text-xs text-muted-foreground ml-1">
+                  {remaining > 0 ? `${remaining} of ${limit} remaining` : "Daily limit reached"}
+                </span>
+              </div>
+            </div>
+            <Link
+              href="/analyse"
+              className="shrink-0 inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              style={{ background: remaining > 0 ? "linear-gradient(135deg, #bef264, var(--icon-lime))" : "var(--muted)", color: remaining > 0 ? "white" : "var(--muted-foreground)" }}
+            >
+              <Camera size={14} /> Analyse a Meal
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  /* Restore — monthly plan teaser + meal counter */
+  if (membershipTier === "restore") {
+    return (
+      <div className="overflow-hidden rounded-3xl border bg-card">
+        <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, var(--icon-teal), var(--icon-green))" }} />
+        <div className="p-5">
+          <p className="mb-1 text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-teal)" }}>Today&apos;s Insight</p>
+          {monthlyGutPlan ? (
+            <div className="mb-4">
+              <h3 className="mb-1.5 font-serif text-base font-semibold text-foreground">
+                {new Date(monthlyGutPlan.month).toLocaleDateString("en-IE", { month: "long", year: "numeric" })} Gut Plan
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
+                {monthlyGutPlan.content.slice(0, 150)}{monthlyGutPlan.content.length > 150 ? "…" : ""}
+              </p>
+            </div>
+          ) : (
+            <div className="mb-4">
+              <h3 className="font-serif text-lg font-semibold text-foreground">Your monthly gut plan</h3>
+              <p className="mt-1 text-sm text-muted-foreground">Your AI-generated monthly plan will appear here.</p>
+            </div>
+          )}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              {Array.from({ length: Math.min(limit, 5) }).map((_, i) => (
+                <div key={i} className="h-2.5 w-2.5 rounded-full border-2"
+                  style={{
+                    background: i < dailyAnalysesUsed ? "var(--icon-teal)" : "transparent",
+                    borderColor: i < dailyAnalysesUsed ? "var(--icon-teal)" : "var(--border)",
+                  }}
+                />
+              ))}
+              {limit > 5 && <span className="text-[10px] text-muted-foreground">+{limit - 5}</span>}
+              <span className="text-xs text-muted-foreground">
+                {remaining > 0 ? `${remaining} analyses left today` : "Limit reached"}
+              </span>
+            </div>
+            <Link
+              href="/analyse"
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+              style={{ background: remaining > 0 ? "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" : "var(--muted)", color: remaining > 0 ? "white" : "var(--muted-foreground)" }}
+            >
+              <Camera size={12} /> Analyse a Meal
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  /* Transform — check-in excerpt + meal analyses as primary habit */
+  return (
+    <div className="overflow-hidden rounded-3xl border bg-card">
+      <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, var(--icon-orange), var(--icon-teal))" }} />
+      <div className="p-5">
+        <p className="mb-1 text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-orange)" }}>Today&apos;s Command</p>
+        {weeklyCheckin && (
+          <div className="mb-4 rounded-2xl border bg-muted/30 p-3.5">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Week in Review</p>
+            <p className="text-sm text-foreground leading-relaxed line-clamp-2">{weeklyCheckin.content.slice(0, 120)}…</p>
+          </div>
+        )}
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div className="flex items-center gap-2">
+            {Array.from({ length: Math.min(limit, 5) }).map((_, i) => (
+              <div key={i} className="h-2.5 w-2.5 rounded-full border-2"
+                style={{
+                  background: i < dailyAnalysesUsed ? "var(--icon-orange)" : "transparent",
+                  borderColor: i < dailyAnalysesUsed ? "var(--icon-orange)" : "var(--border)",
+                }}
+              />
+            ))}
+            {limit > 5 && <span className="text-[10px] text-muted-foreground">+{limit - 5}</span>}
+            <span className="text-xs text-muted-foreground">
+              {remaining > 0 ? `${remaining} analyses left today` : "Daily limit reached"}
+            </span>
+          </div>
+        </div>
+        <Link
+          href="/analyse"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ background: remaining > 0 ? "linear-gradient(135deg, var(--icon-orange), var(--icon-teal))" : "var(--muted)", color: remaining > 0 ? "white" : "var(--muted-foreground)" }}
+        >
+          <Camera size={14} /> Analyse a Meal
+        </Link>
+      </div>
+    </div>
+  )
+}
+
+/* ── Feature Preview Card (replaces blur FeatureGate) ───────────────── */
+
+function ScoreHistoryPreview({ score }: { score: number | null }) {
+  /* A simple static SVG spark-line showing an upward trend */
+  const pts = [22, 35, 30, 48, 55, 50, 68]
+  const w = 220, h = 60, pad = 8
+  const minY = Math.min(...pts), maxY = Math.max(...pts)
+  const range = maxY - minY || 1
+  const toX = (i: number) => pad + (i / (pts.length - 1)) * (w - pad * 2)
+  const toY = (v: number) => h - pad - ((v - minY) / range) * (h - pad * 2)
+  const polyline = pts.map((v, i) => `${toX(i)},${toY(v)}`).join(" ")
+  const labels = ["Jan 1", "Jan 8", "Jan 15", "Jan 22", "Jan 29", "Feb 5", "Feb 12"]
+
+  return (
+    <div className="overflow-hidden rounded-3xl border bg-card">
+      <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))" }} />
+      <div className="p-5">
+        <div className="mb-3 flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ background: "color-mix(in srgb, var(--icon-lime) 18%, transparent)" }}>
+            <Zap size={15} style={{ color: "var(--icon-lime)" }} />
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Grow Feature</p>
+            <p className="text-sm font-semibold text-foreground">Your 30-Day Score Trend</p>
+          </div>
+        </div>
+
+        {/* Sample sparkline */}
+        <div className="relative mb-3 overflow-hidden rounded-2xl border bg-muted/30 p-3">
+          <svg width="100%" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="xMidYMid meet" style={{ display: "block" }}>
+            <defs>
+              <linearGradient id="sparkGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="var(--icon-lime)" />
+                <stop offset="100%" stopColor="var(--icon-green)" />
+              </linearGradient>
+            </defs>
+            <polyline fill="none" stroke="url(#sparkGrad)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" points={polyline} />
+            {pts.map((v, i) => (
+              <circle key={i} cx={toX(i)} cy={toY(v)} r="3" fill="var(--icon-green)" />
+            ))}
+          </svg>
+          <div className="mt-1 flex justify-between">
+            {[labels[0], labels[3], labels[6]].map((l) => (
+              <span key={l} className="text-[9px] text-muted-foreground/60">{l}</span>
+            ))}
+          </div>
+          {/* Blur overlay on sample data */}
+          <div className="pointer-events-none absolute inset-0 rounded-2xl" style={{ background: "linear-gradient(to top, var(--card) 0%, transparent 60%)" }} />
+          <div className="absolute inset-0 flex items-center justify-center rounded-2xl">
+            <span className="rounded-full bg-background/80 px-2.5 py-1 text-[10px] font-semibold text-muted-foreground backdrop-blur-sm">Sample data</span>
+          </div>
+        </div>
+
+        <p className="mb-4 text-sm text-muted-foreground leading-relaxed">
+          {score != null
+            ? `You scored ${Math.round(score)} on your last assessment. Grow members typically improve 8–15 points in their first month of daily tracking.`
+            : "Track how each of your 5 pillars changes week to week. Most Grow members improve 8–15 points in their first month."}
+        </p>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/pricing"
+            className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
+          >
+            Unlock with Grow <ArrowRight size={13} />
+          </Link>
+          <span className="text-xs text-muted-foreground">€9.99/mo · cancel any time</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MonthlyPlanPreview({ addingScore }: { addingScore: number | null }) {
+  const sampleText = "Your gut health this month is showing real momentum. Your plant diversity has been one of your stronger pillars, but your Live Foods score is pulling down your overall Biotics number — this month, that's your primary focus. Fermented foods are the fastest lever you have..."
+
+  return (
+    <div className="overflow-hidden rounded-3xl border bg-card">
+      <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, var(--icon-teal), var(--icon-green))" }} />
+      <div className="p-5">
+        <div className="mb-3 flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ background: "color-mix(in srgb, var(--icon-teal) 18%, transparent)" }}>
+            <Sparkles size={15} style={{ color: "var(--icon-teal)" }} />
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Restore Feature</p>
+            <p className="text-sm font-semibold text-foreground">Your Monthly Gut Plan</p>
+          </div>
+        </div>
+
+        {/* Faded sample text */}
+        <div className="relative mb-3 overflow-hidden rounded-2xl border bg-muted/20 px-4 py-3" style={{ maxHeight: 80 }}>
+          <p className="text-sm text-foreground leading-relaxed">{sampleText}</p>
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 rounded-b-2xl"
+            style={{ background: "linear-gradient(to top, var(--card), transparent)" }} />
+        </div>
+
+        <p className="mb-4 text-sm text-muted-foreground leading-relaxed">
+          {addingScore != null
+            ? `Based on your Live Foods score of ${Math.round(addingScore)}, Restore gives you a personalised monthly plan targeting your weakest pillar with specific foods and habits.`
+            : "Get a personalised monthly gut health plan generated from your actual scores and health goals."}
+        </p>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/pricing"
+            className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            style={{ background: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" }}
+          >
+            Unlock with Restore <ArrowRight size={13} />
+          </Link>
+          <span className="text-xs text-muted-foreground">€49/mo · cancel any time</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function TransformPreview() {
+  const starterQuestions = [
+    "Why is my score dropping?",
+    "What should I eat this week?",
+    "I have IBS — help me adapt",
+  ]
+  const sampleCheckin = "This week your gut health data showed a solid upward trend — your average meal score came in at 71, up from 64 the week before. You logged 5 analyses, which is exactly the consistency that drives meaningful change."
+
+  return (
+    <div className="overflow-hidden rounded-3xl border bg-card">
+      <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, var(--icon-orange), var(--icon-teal))" }} />
+      <div className="p-5">
+        <div className="mb-3 flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ background: "color-mix(in srgb, var(--icon-orange) 18%, transparent)" }}>
+            <MessageSquare size={15} style={{ color: "var(--icon-orange)" }} />
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Transform Feature</p>
+            <p className="text-sm font-semibold text-foreground">AI-Powered Gut Health</p>
+          </div>
+        </div>
+
+        <div className="mb-3 grid gap-3 sm:grid-cols-2">
+          {/* Weekly check-in preview */}
+          <div className="rounded-2xl border bg-muted/20 p-3.5">
+            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Weekly Check-in</p>
+            <p className="text-xs text-foreground leading-relaxed italic line-clamp-3">"{sampleCheckin}"</p>
+          </div>
+          {/* AI advisor preview */}
+          <div className="rounded-2xl border bg-muted/20 p-3.5">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Ask the Advisor</p>
+            <div className="space-y-1.5">
+              {starterQuestions.map((q) => (
+                <div key={q} className="rounded-xl px-2.5 py-1.5 text-xs text-muted-foreground" style={{ background: "color-mix(in srgb, var(--icon-orange) 10%, transparent)" }}>
+                  {q}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <p className="mb-4 text-sm text-muted-foreground leading-relaxed">
+          Unlimited AI gut health consultations + weekly check-ins, always on and personalised to your scores. Powered by Claude.
+        </p>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/pricing"
+            className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            style={{ background: "linear-gradient(135deg, var(--icon-orange), var(--icon-teal))" }}
+          >
+            Unlock with Transform <ArrowRight size={13} />
+          </Link>
+          <span className="text-xs text-muted-foreground">€99/mo · cancel any time</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ── Advisor Section (Transform only — live Claude-powered section) ─── */
+
+function AdvisorSection({
+  weeklyCheckin,
+  dailyConsultCount,
+  monthlyConsultCount,
+}: {
+  weeklyCheckin?: { content: string; week_starting: string } | null
+  dailyConsultCount: number
+  monthlyConsultCount: number
+}) {
+  const starterQuestions = [
+    "Why is my score dropping?",
+    "What should I eat this week?",
+    "I have IBS — help me adapt",
+    "Build me a high-score meal",
+  ]
+
+  return (
+    <div className="overflow-hidden rounded-3xl border bg-card">
+      <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, var(--icon-orange), var(--icon-teal))" }} />
+      <div className="p-5">
+        {/* Header */}
+        <div className="mb-3 flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ background: "color-mix(in srgb, var(--icon-orange) 18%, transparent)" }}>
+            <MessageSquare size={15} style={{ color: "var(--icon-orange)" }} />
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Your Advisor</p>
+            <p className="text-sm font-semibold text-foreground">Gut Health AI — powered by Claude</p>
+          </div>
+        </div>
+
+        {/* Weekly check-in excerpt */}
+        {weeklyCheckin ? (
+          <div className="mb-3 rounded-2xl border bg-muted/20 p-3.5">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">This week</p>
+            <p className="text-sm text-foreground leading-relaxed line-clamp-3">{weeklyCheckin.content.slice(0, 200)}</p>
+          </div>
+        ) : (
+          <div className="mb-3 rounded-2xl border bg-muted/20 p-3.5">
+            <p className="text-sm text-muted-foreground">Your first weekly check-in arrives Monday — generated from your meal analyses and scores.</p>
+          </div>
+        )}
+
+        {/* Starter question pills */}
+        <div className="mb-3">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Ask about</p>
+          <div className="flex flex-wrap gap-2">
+            {starterQuestions.map((q) => (
+              <Link
+                key={q}
+                href={`/account/consult?q=${encodeURIComponent(q)}`}
+                className="rounded-full border px-3 py-1.5 text-xs text-foreground transition-colors hover:bg-muted"
+                style={{ borderColor: "color-mix(in srgb, var(--icon-orange) 30%, var(--border))" }}
+              >
+                {q}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Usage stats */}
+        <div className="mb-4 flex items-center gap-4">
+          <p className="text-xs text-muted-foreground">
+            Today: <span className={cn("font-semibold", dailyConsultCount >= 2 ? "text-amber-500" : "text-foreground")}>{dailyConsultCount}/2</span>
+          </p>
+          <p className="text-xs text-muted-foreground">
+            This month: <span className={cn("font-semibold", monthlyConsultCount >= 60 ? "text-amber-500" : "text-foreground")}>{monthlyConsultCount}/60</span>
+          </p>
+        </div>
+
+        {/* CTA */}
+        <Link
+          href="/account/consult"
+          className="flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ background: "linear-gradient(135deg, var(--icon-orange), var(--icon-teal))" }}
+        >
+          <MessageSquare size={14} /> Ask the Advisor
+        </Link>
+      </div>
+    </div>
+  )
+}
+
 /* ── Overview Tab ───────────────────────────────────────────────────── */
 
-function OverviewTab({ assessments, membershipTier }: { assessments: AssessmentRow[]; membershipTier: Profile["membership_tier"] }) {
+function OverviewTab({
+  assessments,
+  membershipTier,
+  weeklyCheckin,
+  monthlyGutPlan,
+  dailyConsultCount = 0,
+  monthlyConsultCount = 0,
+  bioticsProfile,
+}: {
+  assessments: AssessmentRow[]
+  membershipTier: Profile["membership_tier"]
+  weeklyCheckin?: { content: string; week_starting: string } | null
+  monthlyGutPlan?: { content: string; month: string } | null
+  dailyConsultCount?: number
+  monthlyConsultCount?: number
+  bioticsProfile?: BioticsProfile | null
+}) {
   const latest = assessments[0] ?? null
   const previous = assessments[1] ?? null
   const meals = loadMealAnalyses()
+  const [dailyAnalysesUsed, setDailyAnalysesUsed] = useState(0)
 
   const currentScores = latest ? extractSubScores(latest.sub_scores) : null
   const previousScores = previous ? extractSubScores(previous.sub_scores) : null
   const profileInfo = getProfileInfo(latest?.profile_type ?? null)
   const showRetake = latest ? daysAgo(latest.created_at) > 75 : false
 
+  useEffect(() => {
+    if (membershipTier === "free") return
+    fetch("/api/analyses/daily-count")
+      .then((r) => r.json())
+      .then((d: { count?: number }) => { if (typeof d.count === "number") setDailyAnalysesUsed(d.count) })
+      .catch(() => {})
+  }, [membershipTier])
+
   return (
     <div className="space-y-5">
+
+      {/* ── Today Card (daily habit hub) ────────────────────────── */}
+      <TodayCard
+        membershipTier={membershipTier}
+        latestScore={latest?.overall_score ?? null}
+        dailyAnalysesUsed={dailyAnalysesUsed}
+        weeklyCheckin={weeklyCheckin}
+        monthlyGutPlan={monthlyGutPlan}
+      />
 
       {/* Pillar score mini cards */}
       {currentScores && (
@@ -794,7 +1333,6 @@ function OverviewTab({ assessments, membershipTier }: { assessments: AssessmentR
             borderColor: `color-mix(in srgb, ${profileInfo.color} 20%, var(--border))`,
           }}
         >
-          {/* Top accent strip */}
           <div
             className="h-[3px] w-full"
             style={{ background: `linear-gradient(90deg, ${profileInfo.color}, color-mix(in srgb, ${profileInfo.color} 30%, transparent))` }}
@@ -824,7 +1362,6 @@ function OverviewTab({ assessments, membershipTier }: { assessments: AssessmentR
                 View full assessment <ArrowRight size={11} />
               </Link>
             </div>
-            {/* Decorative score watermark */}
             {latest.overall_score != null && (
               <div
                 className="shrink-0 select-none font-serif text-7xl font-black leading-none tabular-nums"
@@ -837,15 +1374,10 @@ function OverviewTab({ assessments, membershipTier }: { assessments: AssessmentR
         </div>
       )}
 
-      {/* Pillar breakdown chart */}
+      {/* ── Score history / Feature preview ─────────────────────── */}
       {currentScores ? (
         membershipTier === "free" ? (
-          <FeatureGate
-            requiredTier="grow"
-            description="Track how each of your 5 pillars changes over time. Upgrade to Grow for your full score history."
-          >
-            <ProgressChart current={currentScores} previous={previousScores} />
-          </FeatureGate>
+          <ScoreHistoryPreview score={latest?.overall_score ?? null} />
         ) : (
           <ProgressChart current={currentScores} previous={previousScores} />
         )
@@ -866,11 +1398,64 @@ function OverviewTab({ assessments, membershipTier }: { assessments: AssessmentR
         </div>
       )}
 
+      {/* ── Monthly Gut Plan (Restore+) or preview ──────────────── */}
+      {membershipTier === "restore" || membershipTier === "transform" ? (
+        <div className="overflow-hidden rounded-3xl border bg-card">
+          <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, var(--icon-teal), var(--icon-green))" }} />
+          <div className="p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-teal)" }}>
+                Monthly Gut Plan
+              </p>
+              {monthlyGutPlan && (
+                <span className="text-[10px] text-muted-foreground">
+                  {new Date(monthlyGutPlan.month).toLocaleDateString("en-IE", { month: "long", year: "numeric" })}
+                </span>
+              )}
+            </div>
+            {monthlyGutPlan ? (
+              <>
+                <p className="text-sm text-foreground leading-relaxed line-clamp-4">
+                  {monthlyGutPlan.content}
+                </p>
+                <Link
+                  href="/api/monthly-plan/generate"
+                  className="mt-3 inline-flex items-center gap-1 text-xs font-semibold transition-opacity hover:opacity-80"
+                  style={{ color: "var(--icon-teal)" }}
+                >
+                  Regenerate plan <ArrowRight size={11} />
+                </Link>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Your AI-generated monthly gut health plan will appear here.
+                </p>
+                <GenerateMonthlyPlanButton />
+              </>
+            )}
+          </div>
+        </div>
+      ) : (
+        <MonthlyPlanPreview addingScore={currentScores?.adding ?? null} />
+      )}
+
+      {/* ── AI Advisor (Transform) or combined preview ───────────── */}
+      {membershipTier === "transform" ? (
+        <AdvisorSection
+          weeklyCheckin={weeklyCheckin}
+          dailyConsultCount={dailyConsultCount}
+          monthlyConsultCount={monthlyConsultCount}
+        />
+      ) : (
+        <TransformPreview />
+      )}
+
       {/* Meal Lab */}
       <MealLabCard meals={meals} />
 
       {/* 3 Biotics Balance */}
-      <BioticsBalanceCard meals={meals} />
+      <BioticsBalanceCard meals={meals} bioticsProfile={bioticsProfile} />
 
       {/* Quick Actions */}
       <div>
@@ -984,6 +1569,47 @@ function OverviewTab({ assessments, membershipTier }: { assessments: AssessmentR
           </Link>
         </div>
       )}
+    </div>
+  )
+}
+
+/* ── Generate Monthly Plan Button ───────────────────────────────────── */
+
+function GenerateMonthlyPlanButton() {
+  const [loading, setLoading] = useState(false)
+  const [done, setDone] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
+
+  async function generate() {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch("/api/monthly-plan/generate", { method: "POST" })
+      const data = await res.json() as { content?: string; error?: string }
+      if (data.error) throw new Error(data.error)
+      setDone(true)
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to generate plan")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (done) return <p className="mt-2 text-xs" style={{ color: "var(--icon-teal)" }}>Plan generated — refreshing…</p>
+
+  return (
+    <div className="mt-3">
+      <button
+        onClick={generate}
+        disabled={loading}
+        className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+        style={{ background: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" }}
+      >
+        {loading ? "Generating…" : "Generate this month's plan"}
+      </button>
+      {error && <p className="mt-1.5 text-xs text-red-400">{error}</p>}
     </div>
   )
 }
@@ -1136,6 +1762,81 @@ function FeatureGate({
   )
 }
 
+/* ── Upgrade Prompt (Membership tab "next level" section) ───────────── */
+
+function UpgradePrompt({
+  currentTier,
+  latestAssessment,
+}: {
+  currentTier: Profile["membership_tier"]
+  latestAssessment: AssessmentRow | null
+}) {
+  const addingScore = latestAssessment ? extractSubScores(latestAssessment.sub_scores)?.adding : null
+
+  if (currentTier === "transform") return null
+
+  const config = {
+    free: {
+      nextTier: "Grow",
+      price: "€9.99/mo",
+      priceId: process.env.NEXT_PUBLIC_STRIPE_GROW_PRICE_ID ?? "",
+      accentColor: "var(--icon-lime)",
+      headline: "Add daily meal tracking to your routine",
+      body: "2 meal analyses per day, a 30-day score trend, and access to the Plate Builder — everything you need to start building daily gut health habits.",
+    },
+    grow: {
+      nextTier: "Restore",
+      price: "€49/mo",
+      priceId: process.env.NEXT_PUBLIC_STRIPE_RESTORE_PRICE_ID ?? "",
+      accentColor: "var(--icon-teal)",
+      headline: "Get a personalised monthly plan for your scores",
+      body: addingScore != null
+        ? `Your Live Foods score is ${Math.round(addingScore)} — the area holding your Biotics number back most. Restore gives you a personalised monthly gut plan, 5 daily analyses with AI context, and condition-specific calibration.`
+        : "Restore adds a personalised monthly gut health plan, 5 daily analyses with AI context, 90-day score history, and condition-specific calibration.",
+    },
+    restore: {
+      nextTier: "Transform",
+      price: "€99/mo",
+      priceId: process.env.NEXT_PUBLIC_STRIPE_TRANSFORM_PRICE_ID ?? "",
+      accentColor: "var(--icon-orange)",
+      headline: "You have the data — now get the conversation",
+      body: "Transform adds unlimited AI gut health consultations, weekly check-ins, a 10/day analysis quota, and personalised weekly meal plans. Always on, powered by Claude.",
+    },
+  } as const
+
+  const c = config[currentTier as keyof typeof config]
+  if (!c) return null
+
+  return (
+    <div
+      className="overflow-hidden rounded-3xl border"
+      style={{
+        background: `color-mix(in srgb, ${c.accentColor} 5%, var(--card))`,
+        borderColor: `color-mix(in srgb, ${c.accentColor} 20%, var(--border))`,
+      }}
+    >
+      <div
+        className="h-1 w-full"
+        style={{ background: `linear-gradient(90deg, ${c.accentColor}, color-mix(in srgb, ${c.accentColor} 40%, transparent))` }}
+      />
+      <div className="p-5">
+        <div className="mb-1 flex items-center gap-2">
+          <Zap size={13} style={{ color: c.accentColor }} />
+          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: c.accentColor }}>
+            Add this to your daily routine
+          </p>
+        </div>
+        <h3 className="mb-2 font-serif text-lg font-semibold text-foreground">{c.headline}</h3>
+        <p className="mb-4 text-sm text-muted-foreground leading-relaxed">{c.body}</p>
+        <div className="flex items-center gap-3">
+          <SubscribeButton priceId={c.priceId} label={`Upgrade to ${c.nextTier}`} />
+          <span className="text-xs text-muted-foreground">{c.price} · cancel any time</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ── Manage Subscription Button ─────────────────────────────────────── */
 
 function ManageSubscriptionButton() {
@@ -1171,8 +1872,16 @@ function ManageSubscriptionButton() {
 
 function MembershipTab({
   profile,
+  nextBillingDate,
+  dailyConsultCount = 0,
+  monthlyConsultCount = 0,
+  latestAssessment,
 }: {
   profile: Pick<Profile, "membership" | "membership_tier" | "membership_status" | "membership_expires_at" | "is_founding_member" | "referral_code">
+  nextBillingDate?: string | null
+  dailyConsultCount?: number
+  monthlyConsultCount?: number
+  latestAssessment?: AssessmentRow | null
 }) {
   const { membership, membership_tier, membership_status, membership_expires_at, is_founding_member } = profile
 
@@ -1188,9 +1897,8 @@ function MembershipTab({
       price: "Free",
       perks: [
         "Access to purchased report permanently",
-        "1 meal analysis per day",
-        "Biotics Score visible (today only)",
-        "Gut Starter Pack food library",
+        "Biotics Score visible (today only, no history)",
+        "Gut Starter Pack food library access",
         "Weekly Substack delivered to inbox",
         "30-day reassessment reminder",
       ],
@@ -1201,7 +1909,7 @@ function MembershipTab({
       price: "€9.99/mo",
       perks: [
         "Everything in Free",
-        "Unlimited daily meal analyses",
+        "2 meal analyses per day",
         "Full three-biotic breakdown per analysis",
         "30-day Biotics Score history and trend line",
         "Monthly reassessment with score delta",
@@ -1217,6 +1925,7 @@ function MembershipTab({
       price: "€49/mo",
       perks: [
         "Everything in Grow",
+        "5 meal analyses per day with AI context",
         "90-day score history with quarterly trend analysis",
         "Condition-specific calibration (IBS, immunity, energy, mood, weight)",
         "Monthly personalised gut health plan",
@@ -1232,6 +1941,7 @@ function MembershipTab({
       price: "€99/mo",
       perks: [
         "Everything in Restore",
+        "10 meal analyses per day with full AI context",
         "Unlimited AI gut health consultations",
         "Weekly AI check-in",
         "Personalised weekly meal plans",
@@ -1282,7 +1992,12 @@ function MembershipTab({
                   >
                     {statusLabel[membership_status] ?? membership_status}
                   </span>
-                  {expiresLabel && membership_status === "active" && (
+                  {nextBillingDate && membership_status === "active" && (
+                    <span className="text-xs text-muted-foreground">
+                      Next billing: {new Date(nextBillingDate).toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" })}
+                    </span>
+                  )}
+                  {!nextBillingDate && expiresLabel && membership_status === "active" && (
                     <span className="text-xs text-muted-foreground">
                       Renews {expiresLabel}
                     </span>
@@ -1292,6 +2007,19 @@ function MembershipTab({
                       Access until {expiresLabel}
                     </span>
                   )}
+                </div>
+              )}
+              {/* Transform consultation usage */}
+              {membership_tier === "transform" && membership_status === "active" && (
+                <div className="mt-3 flex gap-4">
+                  <p className="text-xs text-muted-foreground">
+                    Consultations today:{" "}
+                    <span className="font-semibold text-foreground">{dailyConsultCount}/2</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    This month:{" "}
+                    <span className="font-semibold text-foreground">{monthlyConsultCount}/60</span>
+                  </p>
                 </div>
               )}
             </div>
@@ -1312,6 +2040,9 @@ function MembershipTab({
           )}
         </div>
       </div>
+
+      {/* Upgrade prompt — personalised next-tier pitch */}
+      <UpgradePrompt currentTier={membership_tier} latestAssessment={latestAssessment ?? null} />
 
       {/* Tier comparison cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -1692,7 +2423,7 @@ function MealsTab() {
 
 /* ── Main Component ─────────────────────────────────────────────────── */
 
-export function DashboardClient({ profile, assessments, paidReports, plateData }: DashboardClientProps) {
+export function DashboardClient({ profile, assessments, paidReports, plateData, nextBillingDate, dailyConsultCount = 0, monthlyConsultCount = 0, weeklyCheckin, monthlyGutPlan, bioticsProfile }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("overview")
   const router = useRouter()
   const latest = assessments[0] ?? null
@@ -1738,9 +2469,9 @@ export function DashboardClient({ profile, assessments, paidReports, plateData }
 
       {/* Tab content */}
       <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
-        {activeTab === "overview" && <OverviewTab assessments={assessments} membershipTier={profile.membership_tier ?? "free"} />}
+        {activeTab === "overview" && <OverviewTab assessments={assessments} membershipTier={profile.membership_tier ?? "free"} weeklyCheckin={weeklyCheckin} monthlyGutPlan={monthlyGutPlan} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} bioticsProfile={bioticsProfile} />}
         {activeTab === "reports" && <ReportsTab paidReports={paidReports} />}
-        {activeTab === "membership" && <MembershipTab profile={profile} />}
+        {activeTab === "membership" && <MembershipTab profile={profile} nextBillingDate={nextBillingDate} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} latestAssessment={latest} />}
         {activeTab === "plate" && <PlateTab plateData={plateData} />}
         {activeTab === "meals" && <MealsTab />}
         {activeTab === "refer" && <ReferTab referralCode={profile.referral_code} />}

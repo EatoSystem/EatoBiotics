@@ -37,8 +37,8 @@ const FEATURES = [
       "Upload a photo of any meal. The analyser identifies every food, scores it against the 3 biotics framework, and suggests how to improve your gut score.",
     primaryHref: "/analyse",
     primaryLabel: "Try meal analysis →",
-    secondaryHref: null,
-    secondaryLabel: null,
+    secondaryHref: "/demo/analyse",
+    secondaryLabel: "Try demo (no login needed)",
   },
   {
     icon: Utensils,
