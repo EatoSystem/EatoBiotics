@@ -54,18 +54,21 @@ export async function POST() {
         referral_code: referralCode,
       })
 
-      await adminSupabase
-        .from("leads")
-        .update({ user_id: user.id })
-        .eq("email", user.email!)
-        .is("user_id", null)
-
-      await adminSupabase
-        .from("deep_assessments")
-        .update({ user_id: user.id })
-        .eq("email", user.email!)
-        .is("user_id", null)
     }
+
+    // Always link user_id to any unlinked rows for this email
+    // (runs on every sign-in so new assessments taken after account creation are linked too)
+    await adminSupabase
+      .from("leads")
+      .update({ user_id: user.id })
+      .eq("email", user.email!)
+      .is("user_id", null)
+
+    await adminSupabase
+      .from("deep_assessments")
+      .update({ user_id: user.id })
+      .eq("email", user.email!)
+      .is("user_id", null)
   } catch (err) {
     console.error("[setup-profile] error (non-fatal):", err)
   }

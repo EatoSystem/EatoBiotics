@@ -267,9 +267,11 @@ function DashboardHero({
     <div
       className="relative overflow-hidden"
       style={{
-        background: "linear-gradient(160deg, #081408 0%, #0d1a0b 35%, #152b10 65%, #1e3a17 100%)",
+        background: "linear-gradient(135deg, var(--icon-lime) 0%, var(--icon-green) 28%, var(--icon-teal) 55%, var(--icon-yellow) 78%, var(--icon-orange) 100%)",
       }}
     >
+      {/* Dark scrim for text legibility over bright gradient */}
+      <div className="pointer-events-none absolute inset-0" style={{ background: "rgba(0,0,0,0.32)" }} />
       {/* Profile-color radial bloom behind ring */}
       {score != null && (
         <div
