@@ -193,6 +193,20 @@ export function ConsultClient({
   const searchParams = useSearchParams()
   const autoSentRef  = useRef(false)
 
+  // Compute weakest pillar label for first-time intro
+  const weakestPillarLabel = (() => {
+    if (!subScores) return null
+    const labels: Record<string, string> = {
+      diversity: "Plant Diversity", feeding: "Feeding", adding: "Live Foods",
+      consistency: "Consistency", feeling: "Feeling",
+    }
+    let lowest = Infinity; let key = ""
+    for (const [k, v] of Object.entries(subScores)) {
+      if (labels[k] && v < lowest) { lowest = v; key = k }
+    }
+    return labels[key] ?? null
+  })()
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
@@ -356,7 +370,7 @@ export function ConsultClient({
         <div className="mb-1 flex items-center gap-2">
           <span className="text-xl leading-none">🤖</span>
           <h1 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
-            Gut Health Advisor
+            EatoBiotic
           </h1>
         </div>
         <p className="text-sm text-muted-foreground">
@@ -407,7 +421,7 @@ export function ConsultClient({
             className="mt-3 flex items-center gap-1.5 text-xs font-semibold transition-colors hover:opacity-80"
             style={{ color: "var(--icon-green)" }}
           >
-            <RotateCcw size={12} /> Start New Consultation
+            <RotateCcw size={12} /> New conversation
           </button>
         </div>
       )}
@@ -421,9 +435,31 @@ export function ConsultClient({
         <div className="flex-1 overflow-y-auto p-5 sm:p-6">
           {messages.length === 0 ? (
             <div className="space-y-4">
-              <p className="text-center text-sm text-muted-foreground">
-                Ask me anything about your gut health. Here are some ideas:
-              </p>
+              {/* First-time intro card */}
+              {pastConsultations.length === 0 && (
+                <div
+                  className="rounded-2xl p-4"
+                  style={{
+                    background: "color-mix(in srgb, var(--icon-orange) 8%, var(--card))",
+                    border: "1px solid color-mix(in srgb, var(--icon-orange) 25%, var(--border))",
+                  }}
+                >
+                  <p className="mb-2 text-sm font-semibold text-foreground">
+                    Hi{memberName ? `, ${memberName.split(" ")[0]}` : ""} — I&apos;m EatoBiotic, your personal gut health advisor.
+                  </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    I&apos;ve reviewed your scores and I already know where to start.
+                    {weakestPillarLabel
+                      ? ` Your ${weakestPillarLabel} score is your biggest opportunity right now. Where would you like to begin?`
+                      : " Where would you like to begin?"}
+                  </p>
+                </div>
+              )}
+              {pastConsultations.length > 0 && (
+                <p className="text-center text-sm text-muted-foreground">
+                  Ask me anything about your gut health. Here are some ideas:
+                </p>
+              )}
               <div className="grid gap-2 sm:grid-cols-2">
                 {STARTER_QUESTIONS.map((q) => (
                   <button

@@ -42,6 +42,7 @@ export default async function AccountPage() {
   let weeklyCheckin: { content: string; week_starting: string } | null = null
   let monthlyGutPlan: { content: string; month: string } | null = null
   let bioticsProfile: { prebiotic: number; probiotic: number; postbiotic: number; analysisCount: number } | null = null
+  let streak = 0
 
   if (adminSupabase) {
     const { data: profileData } = await adminSupabase
@@ -171,6 +172,37 @@ export default async function AccountPage() {
       }
     }
 
+  // Streak computation — consecutive days with at least one meal analysis
+  function computeStreak(rows: { created_at: string }[]): number {
+    if (!rows.length) return 0
+    const days = Array.from(
+      new Set(rows.map((r) => (r.created_at as string).slice(0, 10)))
+    ).sort((a, b) => (a > b ? -1 : 1))
+    const todayStr     = new Date().toISOString().slice(0, 10)
+    const yesterdayStr = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10)
+    if (days[0] !== todayStr && days[0] !== yesterdayStr) return 0
+    let count = 0
+    let expected = days[0]
+    for (const day of days) {
+      if (day === expected) {
+        count++
+        const d = new Date(expected + "T00:00:00Z")
+        d.setUTCDate(d.getUTCDate() - 1)
+        expected = d.toISOString().slice(0, 10)
+      } else { break }
+    }
+    return count
+  }
+
+  if (adminSupabase) {
+    const { data: streakRows } = await adminSupabase
+      .from("analyses")
+      .select("created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+    streak = computeStreak(streakRows ?? [])
+  }
+
   // If no profile yet (edge case — callback didn't create it), create a minimal one
   if (!profile) {
     profile = {
@@ -205,6 +237,7 @@ export default async function AccountPage() {
         weeklyCheckin={weeklyCheckin}
         monthlyGutPlan={monthlyGutPlan}
         bioticsProfile={bioticsProfile}
+        streak={streak}
       />
     </div>
   )

@@ -151,6 +151,7 @@ function getMockData(tier: DemoTier) {
       monthlyGutPlan: null,
       dailyConsultCount: 0,
       monthlyConsultCount: 0,
+      streak: 0,
     }
   }
 
@@ -169,6 +170,7 @@ function getMockData(tier: DemoTier) {
       monthlyGutPlan: null,
       dailyConsultCount: 0,
       monthlyConsultCount: 0,
+      streak: 5,
     }
   }
 
@@ -187,6 +189,7 @@ function getMockData(tier: DemoTier) {
       monthlyGutPlan: { content: MOCK_PLAN_CONTENT, month: firstOfMonth() },
       dailyConsultCount: 0,
       monthlyConsultCount: 0,
+      streak: 5,
     }
   }
 
@@ -205,6 +208,7 @@ function getMockData(tier: DemoTier) {
     monthlyGutPlan: { content: MOCK_PLAN_CONTENT, month: firstOfMonth() },
     dailyConsultCount: 1,
     monthlyConsultCount: 8,
+    streak: 5,
   }
 }
 
@@ -223,7 +227,7 @@ export default async function DemoAccountTierPage({
 
   const tier = tierParam as DemoTier
   const meta = TIER_META[tier]
-  const { profile, nextBillingDate, weeklyCheckin, monthlyGutPlan, dailyConsultCount, monthlyConsultCount } =
+  const { profile, nextBillingDate, weeklyCheckin, monthlyGutPlan, dailyConsultCount, monthlyConsultCount, streak } =
     getMockData(tier)
 
   return (
@@ -262,6 +266,7 @@ export default async function DemoAccountTierPage({
           dailyConsultCount={dailyConsultCount}
           monthlyConsultCount={monthlyConsultCount}
           bioticsProfile={tier === "free" ? null : MOCK_BIOTICS_PROFILE}
+          streak={streak}
         />
       </div>
     </div>

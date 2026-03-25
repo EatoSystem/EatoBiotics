@@ -92,6 +92,7 @@ interface DashboardClientProps {
   weeklyCheckin?: { content: string; week_starting: string } | null
   monthlyGutPlan?: { content: string; month: string } | null
   bioticsProfile?: BioticsProfile | null
+  streak?: number
 }
 
 /* ── Tabs ───────────────────────────────────────────────────────────── */
@@ -147,6 +148,69 @@ const SCORE_COLORS: Record<string, string> = {
 }
 
 const DAILY_LIMITS: Record<string, number> = { grow: 2, restore: 5, transform: 10 }
+
+/* ── Daily Habit Prompts (5 pillars × 7 days) ───────────────────────── */
+
+const DAILY_PROMPTS: Record<string, string[]> = {
+  diversity: [
+    "Add one plant you didn't eat yesterday to today's meals",
+    "Try a new grain today — farro, buckwheat, or barley",
+    "Swap your usual lunch vegetable for something different",
+    "Add a handful of seeds to a meal — pumpkin, sunflower, or flax",
+    "Include a colourful vegetable you haven't had this week",
+    "Aim for 5 different plants across today's meals",
+    "Add a fresh herb to one meal — they count as a plant",
+  ],
+  feeding: [
+    "Start your day with a fibre-rich breakfast — oats, fruit, or whole grain toast",
+    "Add a handful of legumes to any meal today",
+    "Choose whole grain over refined for one meal today",
+    "Include a root vegetable in your lunch or dinner",
+    "Add at least 2 different vegetables to your main meal",
+    "Swap white rice or pasta for a fibre-richer alternative",
+    "Make sure your dinner includes at least one dark leafy green",
+  ],
+  adding: [
+    "Add a tablespoon of sauerkraut or kimchi to today's meal",
+    "Try miso soup as your starter or a snack today",
+    "Swap regular yoghurt for a live culture kefir",
+    "Add a slice of sourdough bread with one of your meals",
+    "Include a small serving of natural live yoghurt today",
+    "Try kombucha instead of your usual drink at lunch",
+    "Add a teaspoon of apple cider vinegar to a salad dressing",
+  ],
+  consistency: [
+    "Eat your first meal within 1 hour of waking today",
+    "Set a consistent dinner time and stick to it today",
+    "Aim for 3 meals at regular intervals — no skipping",
+    "Try not to eat within 3 hours of going to sleep tonight",
+    "Eat slowly today — put your fork down between bites",
+    "Drink a glass of water before each meal today",
+    "Plan tomorrow's meals tonight so you stay on track",
+  ],
+  feeling: [
+    "Notice how your energy feels 2 hours after breakfast — write it down",
+    "Check in with your digestion after lunch today",
+    "Rate your bloating on a scale of 1–5 before and after dinner",
+    "Track whether you feel better or worse after eating gluten today",
+    "Pay attention to your mood in the afternoon — note any patterns",
+    "Log your sleep quality last night alongside what you ate yesterday",
+    "Note any foods that seem to trigger discomfort today",
+  ],
+}
+
+function getDailyPrompt(subScores: Record<string, number> | null | undefined): string {
+  if (!subScores) return "Analyse a meal today to start tracking your gut health"
+  const pillars = ["diversity", "feeding", "adding", "consistency", "feeling"]
+  let weakest = "adding"
+  let lowestScore = Infinity
+  for (const p of pillars) {
+    const val = subScores[p] ?? 100
+    if (val < lowestScore) { lowestScore = val; weakest = p }
+  }
+  const dayIndex = new Date().getDay() // 0=Sun, 6=Sat
+  return DAILY_PROMPTS[weakest]?.[dayIndex] ?? "Analyse a meal today to track your gut health"
+}
 
 const TIER_ACCENT: Record<string, { bg: string; text: string; label: string }> = {
   free:      { bg: "rgba(255,255,255,0.1)",  text: "rgba(255,255,255,0.6)",  label: "Free" },
@@ -814,99 +878,113 @@ function TodayCard({
   dailyAnalysesUsed,
   weeklyCheckin,
   monthlyGutPlan,
+  streak = 0,
+  latestSubScores,
 }: {
   membershipTier: Profile["membership_tier"]
   latestScore: number | null
   dailyAnalysesUsed: number
   weeklyCheckin?: { content: string; week_starting: string } | null
   monthlyGutPlan?: { content: string; month: string } | null
+  streak?: number
+  latestSubScores?: Record<string, number> | null
 }) {
   const limit = DAILY_LIMITS[membershipTier] ?? 0
   const remaining = Math.max(0, limit - dailyAnalysesUsed)
-  const accent = TIER_ACCENT[membershipTier] ?? TIER_ACCENT.free
 
-  /* Free — onboarding ladder */
+  /* Free — start journey, no checklist, no "Unlock with X" */
   if (membershipTier === "free") {
+    if (latestScore == null) {
+      return (
+        <div className="overflow-hidden rounded-3xl border bg-card">
+          <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))" }} />
+          <div className="p-5">
+            <p className="mb-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">Start your journey</p>
+            <h3 className="mb-2 font-serif text-lg font-semibold text-foreground">Discover your gut health score</h3>
+            <p className="mb-4 text-sm text-muted-foreground">A free 5-minute assessment reveals your Biotics Score and identifies exactly where your food system needs attention.</p>
+            <Link
+              href="/assessment"
+              className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
+            >
+              Take your free assessment <ArrowRight size={14} />
+            </Link>
+          </div>
+        </div>
+      )
+    }
     return (
       <div className="overflow-hidden rounded-3xl border bg-card">
         <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))" }} />
         <div className="p-5">
-          <p className="mb-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">Your Gut Journey</p>
-          <h3 className="mb-4 font-serif text-lg font-semibold text-foreground">Your foundation is set — build on it</h3>
-          <div className="mb-4 space-y-2.5">
-            <div className="flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50 px-4 py-2.5 dark:border-green-900 dark:bg-green-950/30">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--icon-green)" }}>
-                <Check size={13} className="text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">
-                  Assessment complete{latestScore != null ? ` — score: ${Math.round(latestScore)}` : ""}
-                </p>
-              </div>
+          <p className="mb-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">Start your journey</p>
+          <div className="mb-4 flex items-center gap-4">
+            <div>
+              <p className="font-serif text-4xl font-bold tabular-nums leading-none" style={{ color: "var(--icon-green)" }}>{Math.round(latestScore)}</p>
+              <p className="mt-1 text-xs text-muted-foreground">Your Biotics Score</p>
             </div>
-            <div className="flex items-center gap-3 rounded-2xl border bg-muted/40 px-4 py-2.5">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted">
-                <Lock size={11} className="text-muted-foreground" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-muted-foreground">Daily meal tracking</p>
-                <p className="text-[10px] text-muted-foreground/60">Unlock with Grow</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 rounded-2xl border bg-muted/40 px-4 py-2.5">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted">
-                <Lock size={11} className="text-muted-foreground" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-muted-foreground">Build your plate</p>
-                <p className="text-[10px] text-muted-foreground/60">Unlock with Grow</p>
-              </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-foreground">Your foundation is set.</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">Now see exactly how your meals are moving it.</p>
             </div>
           </div>
           <Link
-            href="/pricing"
+            href="/analyse"
             className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
             style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
           >
-            Start Grow for €9.99/mo <ArrowRight size={14} />
+            Analyse your first meal <ArrowRight size={14} />
           </Link>
         </div>
       </div>
     )
   }
 
-  /* Grow — meal analysis counter */
+  /* Grow — habit tracker with streak + daily nudge */
   if (membershipTier === "grow") {
+    const dailyPrompt = getDailyPrompt(latestSubScores)
     return (
       <div className="overflow-hidden rounded-3xl border bg-card">
         <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, #bef264, var(--icon-lime))" }} />
         <div className="p-5">
-          <p className="mb-1 text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-lime)" }}>Today&apos;s Habit</p>
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h3 className="font-serif text-lg font-semibold text-foreground">Meal analyses</h3>
-              <div className="mt-1 flex items-center gap-2">
-                {Array.from({ length: limit }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-3 w-3 rounded-full border-2"
-                    style={{
-                      background: i < dailyAnalysesUsed ? "var(--icon-lime)" : "transparent",
-                      borderColor: i < dailyAnalysesUsed ? "var(--icon-lime)" : "var(--border)",
-                    }}
-                  />
-                ))}
-                <span className="text-xs text-muted-foreground ml-1">
-                  {remaining > 0 ? `${remaining} of ${limit} remaining` : "Daily limit reached"}
-                </span>
-              </div>
+          <p className="mb-1 text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-lime)" }}>Today&apos;s habit</p>
+          {/* Streak */}
+          <div className="mb-3 flex items-center gap-2">
+            {streak > 0 ? (
+              <>
+                <span className="text-lg leading-none">🔥</span>
+                <span className="font-serif text-xl font-bold tabular-nums text-foreground">{streak} day streak</span>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">Start your streak today</p>
+            )}
+          </div>
+          {/* Daily nudge */}
+          <div className="mb-4 rounded-2xl bg-muted/40 px-4 py-3">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Today&apos;s nudge</p>
+            <p className="text-sm text-foreground">{dailyPrompt}</p>
+          </div>
+          {/* Counter + CTA */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-1.5">
+              {Array.from({ length: limit }).map((_, i) => (
+                <div key={i} className="h-2.5 w-2.5 rounded-full border-2"
+                  style={{
+                    background: i < dailyAnalysesUsed ? "var(--icon-lime)" : "transparent",
+                    borderColor: i < dailyAnalysesUsed ? "var(--icon-lime)" : "var(--border)",
+                  }}
+                />
+              ))}
+              <span className="ml-1 text-xs text-muted-foreground">
+                {remaining > 0 ? `${remaining} of ${limit} left` : "Daily limit reached"}
+              </span>
             </div>
             <Link
               href="/analyse"
-              className="shrink-0 inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
               style={{ background: remaining > 0 ? "linear-gradient(135deg, #bef264, var(--icon-lime))" : "var(--muted)", color: remaining > 0 ? "white" : "var(--muted-foreground)" }}
             >
-              <Camera size={14} /> Analyse a Meal
+              <Camera size={13} /> Analyse a Meal
             </Link>
           </div>
         </div>
@@ -914,30 +992,39 @@ function TodayCard({
     )
   }
 
-  /* Restore — monthly plan teaser + meal counter */
+  /* Restore — this month's focus + weakest pillar + daily nudge */
   if (membershipTier === "restore") {
+    const dailyPrompt = getDailyPrompt(latestSubScores)
+    const pillarLabels: Record<string, string> = {
+      diversity: "Plant Diversity", feeding: "Feeding", adding: "Live Foods",
+      consistency: "Consistency", feeling: "Feeling",
+    }
+    let weakestPillarLabel = "Live Foods"
+    if (latestSubScores) {
+      let lowestVal = Infinity
+      for (const [k, v] of Object.entries(latestSubScores)) {
+        if (v < lowestVal && pillarLabels[k]) { lowestVal = v; weakestPillarLabel = pillarLabels[k] }
+      }
+    }
     return (
       <div className="overflow-hidden rounded-3xl border bg-card">
         <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, var(--icon-teal), var(--icon-green))" }} />
         <div className="p-5">
-          <p className="mb-1 text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-teal)" }}>Today&apos;s Insight</p>
-          {monthlyGutPlan ? (
-            <div className="mb-4">
-              <h3 className="mb-1.5 font-serif text-base font-semibold text-foreground">
-                {new Date(monthlyGutPlan.month).toLocaleDateString("en-IE", { month: "long", year: "numeric" })} Gut Plan
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
-                {monthlyGutPlan.content.slice(0, 150)}{monthlyGutPlan.content.length > 150 ? "…" : ""}
-              </p>
-            </div>
-          ) : (
-            <div className="mb-4">
-              <h3 className="font-serif text-lg font-semibold text-foreground">Your monthly gut plan</h3>
-              <p className="mt-1 text-sm text-muted-foreground">Your AI-generated monthly plan will appear here.</p>
-            </div>
+          <p className="mb-1 text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-teal)" }}>This month&apos;s focus</p>
+          <h3 className="mb-1 font-serif text-base font-semibold text-foreground">Your {weakestPillarLabel} score needs attention</h3>
+          {monthlyGutPlan && (
+            <p className="mb-3 text-sm text-muted-foreground leading-relaxed line-clamp-2">
+              {monthlyGutPlan.content.slice(0, 120)}{monthlyGutPlan.content.length > 120 ? "…" : ""}
+            </p>
           )}
+          {/* Daily nudge */}
+          <div className="mb-4 rounded-2xl bg-muted/40 px-4 py-3">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Today&apos;s nudge</p>
+            <p className="text-sm text-foreground">{dailyPrompt}</p>
+          </div>
+          {/* Counter + CTA */}
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               {Array.from({ length: Math.min(limit, 5) }).map((_, i) => (
                 <div key={i} className="h-2.5 w-2.5 rounded-full border-2"
                   style={{
@@ -946,17 +1033,16 @@ function TodayCard({
                   }}
                 />
               ))}
-              {limit > 5 && <span className="text-[10px] text-muted-foreground">+{limit - 5}</span>}
               <span className="text-xs text-muted-foreground">
-                {remaining > 0 ? `${remaining} analyses left today` : "Limit reached"}
+                {remaining > 0 ? `${remaining} left today` : "Limit reached"}
               </span>
             </div>
             <Link
               href="/analyse"
-              className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
               style={{ background: remaining > 0 ? "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" : "var(--muted)", color: remaining > 0 ? "white" : "var(--muted-foreground)" }}
             >
-              <Camera size={12} /> Analyse a Meal
+              <Camera size={13} /> Analyse a Meal
             </Link>
           </div>
         </div>
@@ -964,41 +1050,37 @@ function TodayCard({
     )
   }
 
-  /* Transform — check-in excerpt + meal analyses as primary habit */
+  /* Transform — EatoBiotic insight as primary, Analyse as secondary */
   return (
     <div className="overflow-hidden rounded-3xl border bg-card">
       <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, var(--icon-orange), var(--icon-teal))" }} />
       <div className="p-5">
-        <p className="mb-1 text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-orange)" }}>Today&apos;s Command</p>
-        {weeklyCheckin && (
+        <p className="mb-1 text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-orange)" }}>EatoBiotic&apos;s latest insight</p>
+        {weeklyCheckin ? (
           <div className="mb-4 rounded-2xl border bg-muted/30 p-3.5">
-            <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Week in Review</p>
-            <p className="text-sm text-foreground leading-relaxed line-clamp-2">{weeklyCheckin.content.slice(0, 120)}…</p>
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">This week</p>
+            <p className="text-sm text-foreground leading-relaxed line-clamp-2">{weeklyCheckin.content.slice(0, 150)}…</p>
+          </div>
+        ) : (
+          <div className="mb-4 rounded-2xl border bg-muted/30 p-3.5">
+            <p className="text-sm text-muted-foreground">Your weekly insight arrives Monday — generated from your meal analyses.</p>
           </div>
         )}
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <div className="flex items-center gap-2">
-            {Array.from({ length: Math.min(limit, 5) }).map((_, i) => (
-              <div key={i} className="h-2.5 w-2.5 rounded-full border-2"
-                style={{
-                  background: i < dailyAnalysesUsed ? "var(--icon-orange)" : "transparent",
-                  borderColor: i < dailyAnalysesUsed ? "var(--icon-orange)" : "var(--border)",
-                }}
-              />
-            ))}
-            {limit > 5 && <span className="text-[10px] text-muted-foreground">+{limit - 5}</span>}
-            <span className="text-xs text-muted-foreground">
-              {remaining > 0 ? `${remaining} analyses left today` : "Daily limit reached"}
-            </span>
-          </div>
-        </div>
+        {/* Primary CTA: Ask EatoBiotic */}
         <Link
-          href="/analyse"
-          className="inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-          style={{ background: remaining > 0 ? "linear-gradient(135deg, var(--icon-orange), var(--icon-teal))" : "var(--muted)", color: remaining > 0 ? "white" : "var(--muted-foreground)" }}
+          href="/account/consult"
+          className="mb-3 flex w-full items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ background: "linear-gradient(135deg, var(--icon-orange), var(--icon-teal))" }}
         >
-          <Camera size={14} /> Analyse a Meal
+          <MessageSquare size={14} /> Ask EatoBiotic
         </Link>
+        {/* Secondary */}
+        <div className="flex items-center justify-between">
+          <Link href="/analyse" className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
+            Analyse a Meal →
+          </Link>
+          <span className="text-xs text-muted-foreground">{remaining} analyses left today</span>
+        </div>
       </div>
     </div>
   )
@@ -1026,7 +1108,7 @@ function ScoreHistoryPreview({ score }: { score: number | null }) {
             <Zap size={15} style={{ color: "var(--icon-lime)" }} />
           </div>
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Grow Feature</p>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Score History</p>
             <p className="text-sm font-semibold text-foreground">Your 30-Day Score Trend</p>
           </div>
         </div>
@@ -1059,19 +1141,16 @@ function ScoreHistoryPreview({ score }: { score: number | null }) {
 
         <p className="mb-4 text-sm text-muted-foreground leading-relaxed">
           {score != null
-            ? `You scored ${Math.round(score)} on your last assessment. Grow members typically improve 8–15 points in their first month of daily tracking.`
-            : "Track how each of your 5 pillars changes week to week. Most Grow members improve 8–15 points in their first month."}
+            ? `Your score is ${Math.round(score)}. With Grow, you'll see exactly which meals are moving it — daily.`
+            : "Track how each of your 5 pillars changes week to week. Most members improve 8–15 points in their first month of daily tracking."}
         </p>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/pricing"
-            className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-            style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
-          >
-            Unlock with Grow <ArrowRight size={13} />
-          </Link>
-          <span className="text-xs text-muted-foreground">€9.99/mo · cancel any time</span>
-        </div>
+        <Link
+          href="/pricing"
+          className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
+        >
+          Build the habit <ArrowRight size={13} />
+        </Link>
       </div>
     </div>
   )
@@ -1089,7 +1168,7 @@ function MonthlyPlanPreview({ addingScore }: { addingScore: number | null }) {
             <Sparkles size={15} style={{ color: "var(--icon-teal)" }} />
           </div>
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Restore Feature</p>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Monthly Plan</p>
             <p className="text-sm font-semibold text-foreground">Your Monthly Gut Plan</p>
           </div>
         </div>
@@ -1103,19 +1182,16 @@ function MonthlyPlanPreview({ addingScore }: { addingScore: number | null }) {
 
         <p className="mb-4 text-sm text-muted-foreground leading-relaxed">
           {addingScore != null
-            ? `Based on your Live Foods score of ${Math.round(addingScore)}, Restore gives you a personalised monthly plan targeting your weakest pillar with specific foods and habits.`
-            : "Get a personalised monthly gut health plan generated from your actual scores and health goals."}
+            ? `EatoBiotic can build your Live Foods recovery plan — month by month, targeting your biggest opportunity.`
+            : "EatoBiotic can build your personalised gut recovery plan — month by month, targeting your weakest pillar."}
         </p>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/pricing"
-            className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-            style={{ background: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" }}
-          >
-            Unlock with Restore <ArrowRight size={13} />
-          </Link>
-          <span className="text-xs text-muted-foreground">€49/mo · cancel any time</span>
-        </div>
+        <Link
+          href="/pricing"
+          className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ background: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" }}
+        >
+          See your plan <ArrowRight size={13} />
+        </Link>
       </div>
     </div>
   )
@@ -1138,8 +1214,8 @@ function TransformPreview() {
             <MessageSquare size={15} style={{ color: "var(--icon-orange)" }} />
           </div>
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Transform Feature</p>
-            <p className="text-sm font-semibold text-foreground">AI-Powered Gut Health</p>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">EatoBiotic</p>
+            <p className="text-sm font-semibold text-foreground">Your personal gut health advisor</p>
           </div>
         </div>
 
@@ -1151,7 +1227,7 @@ function TransformPreview() {
           </div>
           {/* AI advisor preview */}
           <div className="rounded-2xl border bg-muted/20 p-3.5">
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Ask the Advisor</p>
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Ask EatoBiotic</p>
             <div className="space-y-1.5">
               {starterQuestions.map((q) => (
                 <div key={q} className="rounded-xl px-2.5 py-1.5 text-xs text-muted-foreground" style={{ background: "color-mix(in srgb, var(--icon-orange) 10%, transparent)" }}>
@@ -1163,18 +1239,15 @@ function TransformPreview() {
         </div>
 
         <p className="mb-4 text-sm text-muted-foreground leading-relaxed">
-          Unlimited AI gut health consultations + weekly check-ins, always on and personalised to your scores. Powered by Claude.
+          Ask EatoBiotic to analyse your patterns and tell you exactly what to change — always on and personalised to your scores.
         </p>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/pricing"
-            className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-            style={{ background: "linear-gradient(135deg, var(--icon-orange), var(--icon-teal))" }}
-          >
-            Unlock with Transform <ArrowRight size={13} />
-          </Link>
-          <span className="text-xs text-muted-foreground">€99/mo · cancel any time</span>
-        </div>
+        <Link
+          href="/pricing"
+          className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ background: "linear-gradient(135deg, var(--icon-orange), var(--icon-teal))" }}
+        >
+          Talk to EatoBiotic <ArrowRight size={13} />
+        </Link>
       </div>
     </div>
   )
@@ -1208,8 +1281,8 @@ function AdvisorSection({
             <MessageSquare size={15} style={{ color: "var(--icon-orange)" }} />
           </div>
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Your Advisor</p>
-            <p className="text-sm font-semibold text-foreground">Gut Health AI — powered by Claude</p>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">EatoBiotic</p>
+            <p className="text-sm font-semibold text-foreground">Your personal gut health advisor</p>
           </div>
         </div>
 
@@ -1258,7 +1331,7 @@ function AdvisorSection({
           className="flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
           style={{ background: "linear-gradient(135deg, var(--icon-orange), var(--icon-teal))" }}
         >
-          <MessageSquare size={14} /> Ask the Advisor
+          <MessageSquare size={14} /> Ask EatoBiotic
         </Link>
       </div>
     </div>
@@ -1275,6 +1348,7 @@ function OverviewTab({
   dailyConsultCount = 0,
   monthlyConsultCount = 0,
   bioticsProfile,
+  streak = 0,
 }: {
   assessments: AssessmentRow[]
   membershipTier: Profile["membership_tier"]
@@ -1283,6 +1357,7 @@ function OverviewTab({
   dailyConsultCount?: number
   monthlyConsultCount?: number
   bioticsProfile?: BioticsProfile | null
+  streak?: number
 }) {
   const latest = assessments[0] ?? null
   const previous = assessments[1] ?? null
@@ -1312,6 +1387,8 @@ function OverviewTab({
         dailyAnalysesUsed={dailyAnalysesUsed}
         weeklyCheckin={weeklyCheckin}
         monthlyGutPlan={monthlyGutPlan}
+        streak={streak}
+        latestSubScores={currentScores ?? null}
       />
 
       {/* Pillar score mini cards */}
@@ -1398,6 +1475,9 @@ function OverviewTab({
         </div>
       )}
 
+      {/* ── 3 Biotics Balance ────────────────────────────────────── */}
+      <BioticsBalanceCard meals={meals} bioticsProfile={bioticsProfile} />
+
       {/* ── Monthly Gut Plan (Restore+) or preview ──────────────── */}
       {membershipTier === "restore" || membershipTier === "transform" ? (
         <div className="overflow-hidden rounded-3xl border bg-card">
@@ -1453,9 +1533,6 @@ function OverviewTab({
 
       {/* Meal Lab */}
       <MealLabCard meals={meals} />
-
-      {/* 3 Biotics Balance */}
-      <BioticsBalanceCard meals={meals} bioticsProfile={bioticsProfile} />
 
       {/* Quick Actions */}
       <div>
@@ -1566,6 +1643,29 @@ function OverviewTab({
             style={{ background: "var(--icon-green)" }}
           >
             Retake assessment <ArrowRight size={14} />
+          </Link>
+        </div>
+      )}
+
+      {/* ── Single upgrade prompt (FREE only, benefit-led) ──────── */}
+      {membershipTier === "free" && latest?.overall_score != null && (
+        <div
+          className="overflow-hidden rounded-3xl border p-5 text-center"
+          style={{
+            background: "color-mix(in srgb, var(--icon-lime) 5%, var(--card))",
+            borderColor: "color-mix(in srgb, var(--icon-lime) 20%, var(--border))",
+          }}
+        >
+          <p className="mb-1 font-serif text-base font-semibold text-foreground">
+            Your score is {Math.round(latest.overall_score)}. With Grow, you&apos;ll see exactly which meals are moving it — daily.
+          </p>
+          <p className="mb-3 text-xs text-muted-foreground">Build a streak. Track your habit. See the numbers move.</p>
+          <Link
+            href="/pricing"
+            className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
+          >
+            Build the habit <ArrowRight size={14} />
           </Link>
         </div>
       )}
@@ -2423,7 +2523,7 @@ function MealsTab() {
 
 /* ── Main Component ─────────────────────────────────────────────────── */
 
-export function DashboardClient({ profile, assessments, paidReports, plateData, nextBillingDate, dailyConsultCount = 0, monthlyConsultCount = 0, weeklyCheckin, monthlyGutPlan, bioticsProfile }: DashboardClientProps) {
+export function DashboardClient({ profile, assessments, paidReports, plateData, nextBillingDate, dailyConsultCount = 0, monthlyConsultCount = 0, weeklyCheckin, monthlyGutPlan, bioticsProfile, streak = 0 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("overview")
   const router = useRouter()
   const latest = assessments[0] ?? null
@@ -2469,7 +2569,7 @@ export function DashboardClient({ profile, assessments, paidReports, plateData, 
 
       {/* Tab content */}
       <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
-        {activeTab === "overview" && <OverviewTab assessments={assessments} membershipTier={profile.membership_tier ?? "free"} weeklyCheckin={weeklyCheckin} monthlyGutPlan={monthlyGutPlan} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} bioticsProfile={bioticsProfile} />}
+        {activeTab === "overview" && <OverviewTab assessments={assessments} membershipTier={profile.membership_tier ?? "free"} weeklyCheckin={weeklyCheckin} monthlyGutPlan={monthlyGutPlan} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} bioticsProfile={bioticsProfile} streak={streak} />}
         {activeTab === "reports" && <ReportsTab paidReports={paidReports} />}
         {activeTab === "membership" && <MembershipTab profile={profile} nextBillingDate={nextBillingDate} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} latestAssessment={latest} />}
         {activeTab === "plate" && <PlateTab plateData={plateData} />}
