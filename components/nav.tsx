@@ -35,6 +35,7 @@ const navGroups: NavGroup[] = [
       { href: "/food", label: "Food Library", description: "Every food profiled for your gut", icon: UtensilsCrossed },
       { href: "/today", label: "Today's Food", description: "A new food spotlight, daily", icon: Calendar },
       { href: "/podcast", label: "The Podcast", description: "Conversations about food & performance", icon: Mic },
+      { href: "/eatosports", label: "EatoSports", description: "The food system for sport & performance", icon: Activity },
     ],
   },
   {

@@ -224,6 +224,8 @@ export default async function AccountPage() {
     }
   }
 
+  const dailyPromptIndex = new Date().getDay()
+
   return (
     <div className="min-h-screen bg-background pt-20">
       <DashboardClient
@@ -238,6 +240,7 @@ export default async function AccountPage() {
         monthlyGutPlan={monthlyGutPlan}
         bioticsProfile={bioticsProfile}
         streak={streak}
+        dailyPromptIndex={dailyPromptIndex}
       />
     </div>
   )

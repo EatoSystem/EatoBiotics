@@ -93,6 +93,7 @@ interface DashboardClientProps {
   monthlyGutPlan?: { content: string; month: string } | null
   bioticsProfile?: BioticsProfile | null
   streak?: number
+  dailyPromptIndex?: number
 }
 
 /* ── Tabs ───────────────────────────────────────────────────────────── */
@@ -199,7 +200,7 @@ const DAILY_PROMPTS: Record<string, string[]> = {
   ],
 }
 
-function getDailyPrompt(subScores: Record<string, number> | null | undefined): string {
+function getDailyPrompt(subScores: Record<string, number> | null | undefined, dayIndex: number): string {
   if (!subScores) return "Analyse a meal today to start tracking your gut health"
   const pillars = ["diversity", "feeding", "adding", "consistency", "feeling"]
   let weakest = "adding"
@@ -208,7 +209,6 @@ function getDailyPrompt(subScores: Record<string, number> | null | undefined): s
     const val = subScores[p] ?? 100
     if (val < lowestScore) { lowestScore = val; weakest = p }
   }
-  const dayIndex = new Date().getDay() // 0=Sun, 6=Sat
   return DAILY_PROMPTS[weakest]?.[dayIndex] ?? "Analyse a meal today to track your gut health"
 }
 
@@ -870,6 +870,88 @@ function BioticsBalanceCard({ meals, bioticsProfile }: { meals: SavedMealAnalysi
   )
 }
 
+/* ── Analyse Meal Card (primary daily action for paid tiers) ────────── */
+
+function AnalyseMealCard({
+  tier,
+  dailyAnalysesUsed,
+}: {
+  tier: "grow" | "restore" | "transform"
+  dailyAnalysesUsed: number
+}) {
+  const limit = DAILY_LIMITS[tier]
+  const remaining = Math.max(0, limit - dailyAnalysesUsed)
+  const atLimit = remaining === 0
+  const oneLeft = remaining === 1
+
+  const gradients: Record<string, string> = {
+    grow:      "linear-gradient(135deg, #bef264 0%, var(--icon-lime) 40%, var(--icon-green) 100%)",
+    restore:   "linear-gradient(135deg, var(--icon-green) 0%, var(--icon-teal) 60%, #0ea5e9 100%)",
+    transform: "linear-gradient(135deg, var(--icon-teal) 0%, var(--icon-yellow) 50%, var(--icon-orange) 100%)",
+  }
+  const gradient = gradients[tier]
+
+  if (atLimit) {
+    return (
+      <div className="overflow-hidden rounded-3xl border" style={{ background: "var(--muted)" }}>
+        <div className="h-1.5 w-full" style={{ background: gradient, opacity: 0.35 }} />
+        <div className="flex flex-col gap-4 px-6 py-7 sm:flex-row sm:items-center">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-card">
+            <Camera size={20} className="text-muted-foreground" />
+          </div>
+          <div className="flex-1">
+            <p className="font-serif text-2xl font-bold text-muted-foreground">Daily limit reached</p>
+            <p className="mt-1 text-sm text-muted-foreground">Come back tomorrow to analyse your next meal</p>
+          </div>
+          <div className="shrink-0 rounded-full bg-card px-6 py-3 text-sm font-semibold text-muted-foreground">
+            Analyse a Meal
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative overflow-hidden rounded-3xl" style={{ background: gradient }}>
+      {/* Dark scrim for text legibility */}
+      <div className="pointer-events-none absolute inset-0" style={{ background: "rgba(0,0,0,0.18)" }} />
+      <div className="relative flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:p-8">
+        {/* Left */}
+        <div className="flex-1">
+          <div
+            className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl"
+            style={{ background: "rgba(255,255,255,0.18)" }}
+          >
+            <Camera size={22} style={{ color: "white" }} />
+          </div>
+          <p className="font-serif text-3xl font-bold" style={{ color: "white" }}>
+            Analyse a Meal
+          </p>
+          <p className="mt-1.5 text-base" style={{ color: "rgba(255,255,255,0.78)" }}>
+            Log what you ate and see how it scores across your 5 pillars
+          </p>
+          {oneLeft && (
+            <span
+              className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold"
+              style={{ background: "rgba(251,191,36,0.28)", color: "white" }}
+            >
+              ⚠ Last analysis for today
+            </span>
+          )}
+        </div>
+        {/* CTA */}
+        <Link
+          href="/analyse"
+          className="shrink-0 inline-flex items-center justify-center gap-2 rounded-full px-8 py-3.5 text-sm font-bold text-white transition-all hover:scale-[1.02] sm:self-center"
+          style={{ background: "rgba(255,255,255,0.22)", border: "1.5px solid rgba(255,255,255,0.38)" }}
+        >
+          <Camera size={15} /> Analyse a Meal
+        </Link>
+      </div>
+    </div>
+  )
+}
+
 /* ── Today Card (tier-specific daily action hub) ────────────────────── */
 
 function TodayCard({
@@ -880,6 +962,7 @@ function TodayCard({
   monthlyGutPlan,
   streak = 0,
   latestSubScores,
+  dailyPromptIndex = 0,
 }: {
   membershipTier: Profile["membership_tier"]
   latestScore: number | null
@@ -888,6 +971,7 @@ function TodayCard({
   monthlyGutPlan?: { content: string; month: string } | null
   streak?: number
   latestSubScores?: Record<string, number> | null
+  dailyPromptIndex?: number
 }) {
   const limit = DAILY_LIMITS[membershipTier] ?? 0
   const remaining = Math.max(0, limit - dailyAnalysesUsed)
@@ -942,7 +1026,7 @@ function TodayCard({
 
   /* Grow — habit tracker with streak + daily nudge */
   if (membershipTier === "grow") {
-    const dailyPrompt = getDailyPrompt(latestSubScores)
+    const dailyPrompt = getDailyPrompt(latestSubScores, dailyPromptIndex)
     return (
       <div className="overflow-hidden rounded-3xl border bg-card">
         <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, #bef264, var(--icon-lime))" }} />
@@ -960,32 +1044,9 @@ function TodayCard({
             )}
           </div>
           {/* Daily nudge */}
-          <div className="mb-4 rounded-2xl bg-muted/40 px-4 py-3">
+          <div className="rounded-2xl bg-muted/40 px-4 py-3">
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Today&apos;s nudge</p>
             <p className="text-sm text-foreground">{dailyPrompt}</p>
-          </div>
-          {/* Counter + CTA */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-1.5">
-              {Array.from({ length: limit }).map((_, i) => (
-                <div key={i} className="h-2.5 w-2.5 rounded-full border-2"
-                  style={{
-                    background: i < dailyAnalysesUsed ? "var(--icon-lime)" : "transparent",
-                    borderColor: i < dailyAnalysesUsed ? "var(--icon-lime)" : "var(--border)",
-                  }}
-                />
-              ))}
-              <span className="ml-1 text-xs text-muted-foreground">
-                {remaining > 0 ? `${remaining} of ${limit} left` : "Daily limit reached"}
-              </span>
-            </div>
-            <Link
-              href="/analyse"
-              className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-              style={{ background: remaining > 0 ? "linear-gradient(135deg, #bef264, var(--icon-lime))" : "var(--muted)", color: remaining > 0 ? "white" : "var(--muted-foreground)" }}
-            >
-              <Camera size={13} /> Analyse a Meal
-            </Link>
           </div>
         </div>
       </div>
@@ -994,7 +1055,7 @@ function TodayCard({
 
   /* Restore — this month's focus + weakest pillar + daily nudge */
   if (membershipTier === "restore") {
-    const dailyPrompt = getDailyPrompt(latestSubScores)
+    const dailyPrompt = getDailyPrompt(latestSubScores, dailyPromptIndex)
     const pillarLabels: Record<string, string> = {
       diversity: "Plant Diversity", feeding: "Feeding", adding: "Live Foods",
       consistency: "Consistency", feeling: "Feeling",
@@ -1018,32 +1079,9 @@ function TodayCard({
             </p>
           )}
           {/* Daily nudge */}
-          <div className="mb-4 rounded-2xl bg-muted/40 px-4 py-3">
+          <div className="rounded-2xl bg-muted/40 px-4 py-3">
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Today&apos;s nudge</p>
             <p className="text-sm text-foreground">{dailyPrompt}</p>
-          </div>
-          {/* Counter + CTA */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-1.5">
-              {Array.from({ length: Math.min(limit, 5) }).map((_, i) => (
-                <div key={i} className="h-2.5 w-2.5 rounded-full border-2"
-                  style={{
-                    background: i < dailyAnalysesUsed ? "var(--icon-teal)" : "transparent",
-                    borderColor: i < dailyAnalysesUsed ? "var(--icon-teal)" : "var(--border)",
-                  }}
-                />
-              ))}
-              <span className="text-xs text-muted-foreground">
-                {remaining > 0 ? `${remaining} left today` : "Limit reached"}
-              </span>
-            </div>
-            <Link
-              href="/analyse"
-              className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-              style={{ background: remaining > 0 ? "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" : "var(--muted)", color: remaining > 0 ? "white" : "var(--muted-foreground)" }}
-            >
-              <Camera size={13} /> Analyse a Meal
-            </Link>
           </div>
         </div>
       </div>
@@ -1069,18 +1107,11 @@ function TodayCard({
         {/* Primary CTA: Ask EatoBiotic */}
         <Link
           href="/account/consult"
-          className="mb-3 flex w-full items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          className="flex w-full items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
           style={{ background: "linear-gradient(135deg, var(--icon-orange), var(--icon-teal))" }}
         >
           <MessageSquare size={14} /> Ask EatoBiotic
         </Link>
-        {/* Secondary */}
-        <div className="flex items-center justify-between">
-          <Link href="/analyse" className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
-            Analyse a Meal →
-          </Link>
-          <span className="text-xs text-muted-foreground">{remaining} analyses left today</span>
-        </div>
       </div>
     </div>
   )
@@ -1215,7 +1246,7 @@ function TransformPreview() {
           </div>
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">EatoBiotic</p>
-            <p className="text-sm font-semibold text-foreground">Your personal gut health advisor</p>
+            <p className="text-sm font-semibold text-foreground">Your gut health consultant</p>
           </div>
         </div>
 
@@ -1282,7 +1313,7 @@ function AdvisorSection({
           </div>
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">EatoBiotic</p>
-            <p className="text-sm font-semibold text-foreground">Your personal gut health advisor</p>
+            <p className="text-sm font-semibold text-foreground">Your gut health consultant</p>
           </div>
         </div>
 
@@ -1349,6 +1380,7 @@ function OverviewTab({
   monthlyConsultCount = 0,
   bioticsProfile,
   streak = 0,
+  dailyPromptIndex = 0,
 }: {
   assessments: AssessmentRow[]
   membershipTier: Profile["membership_tier"]
@@ -1358,6 +1390,7 @@ function OverviewTab({
   monthlyConsultCount?: number
   bioticsProfile?: BioticsProfile | null
   streak?: number
+  dailyPromptIndex?: number
 }) {
   const latest = assessments[0] ?? null
   const previous = assessments[1] ?? null
@@ -1380,6 +1413,14 @@ function OverviewTab({
   return (
     <div className="space-y-5">
 
+      {/* ── Analyse Meal Card (primary daily action — always first) ── */}
+      {(membershipTier === "grow" || membershipTier === "restore" || membershipTier === "transform") && (
+        <AnalyseMealCard
+          tier={membershipTier}
+          dailyAnalysesUsed={dailyAnalysesUsed}
+        />
+      )}
+
       {/* ── Today Card (daily habit hub) ────────────────────────── */}
       <TodayCard
         membershipTier={membershipTier}
@@ -1389,6 +1430,7 @@ function OverviewTab({
         monthlyGutPlan={monthlyGutPlan}
         streak={streak}
         latestSubScores={currentScores ?? null}
+        dailyPromptIndex={dailyPromptIndex}
       />
 
       {/* Pillar score mini cards */}
@@ -1428,7 +1470,7 @@ function OverviewTab({
               <p className="mt-2 font-serif text-sm font-medium leading-relaxed text-foreground sm:text-base">
                 {profileInfo.tagline}
               </p>
-              <p className="mt-2 text-xs text-muted-foreground">
+              <p className="mt-2 text-xs text-muted-foreground" suppressHydrationWarning>
                 Assessed {formatDate(latest.created_at)} · {relativeTime(latest.created_at)}
               </p>
               <Link
@@ -1488,7 +1530,7 @@ function OverviewTab({
                 Monthly Gut Plan
               </p>
               {monthlyGutPlan && (
-                <span className="text-[10px] text-muted-foreground">
+                <span className="text-[10px] text-muted-foreground" suppressHydrationWarning>
                   {new Date(monthlyGutPlan.month).toLocaleDateString("en-IE", { month: "long", year: "numeric" })}
                 </span>
               )}
@@ -1596,7 +1638,7 @@ function OverviewTab({
                 >
                   <div>
                     <p className="text-sm font-semibold text-foreground">{a.profile_type ?? "Assessment"}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground" suppressHydrationWarning>
                       {formatDate(a.created_at)} · {relativeTime(a.created_at)}
                     </p>
                   </div>
@@ -1776,7 +1818,7 @@ function ReportsTab({ paidReports }: { paidReports: PaidReport[] }) {
             <div className="p-5">
               <div className="mb-3 flex items-start justify-between">
                 <TierBadge tier={r.tier} />
-                <span className="text-xs text-muted-foreground">{formatDate(r.created_at)}</span>
+                <span className="text-xs text-muted-foreground" suppressHydrationWarning>{formatDate(r.created_at)}</span>
               </div>
               <div className="flex items-start gap-4">
                 {overallScore != null && band && (
@@ -2093,17 +2135,17 @@ function MembershipTab({
                     {statusLabel[membership_status] ?? membership_status}
                   </span>
                   {nextBillingDate && membership_status === "active" && (
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground" suppressHydrationWarning>
                       Next billing: {new Date(nextBillingDate).toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" })}
                     </span>
                   )}
                   {!nextBillingDate && expiresLabel && membership_status === "active" && (
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground" suppressHydrationWarning>
                       Renews {expiresLabel}
                     </span>
                   )}
                   {expiresLabel && membership_status === "cancelled" && (
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground" suppressHydrationWarning>
                       Access until {expiresLabel}
                     </span>
                   )}
@@ -2316,7 +2358,7 @@ function PlateTab({ plateData }: { plateData: PlateData | null }) {
                   : `${30 - plantCount} more to reach your 30-plant target`}
               </p>
               {lastSaved && (
-                <p className="mt-1 text-xs text-muted-foreground/60">Last synced {lastSaved}</p>
+                <p className="mt-1 text-xs text-muted-foreground/60" suppressHydrationWarning>Last synced {lastSaved}</p>
               )}
             </div>
           </div>
@@ -2461,7 +2503,7 @@ function MealCard({ meal }: { meal: SavedMealAnalysis }) {
                 <span key={i} className="text-sm leading-none" title={f.name}>{f.emoji}</span>
               ))}
             </div>
-            <span className="shrink-0 text-[10px] text-muted-foreground/60">{date}</span>
+            <span className="shrink-0 text-[10px] text-muted-foreground/60" suppressHydrationWarning>{date}</span>
           </div>
           {meal.nutrition && (
             <div className="mt-2 flex gap-3 text-[10px] text-muted-foreground/70">
@@ -2523,7 +2565,7 @@ function MealsTab() {
 
 /* ── Main Component ─────────────────────────────────────────────────── */
 
-export function DashboardClient({ profile, assessments, paidReports, plateData, nextBillingDate, dailyConsultCount = 0, monthlyConsultCount = 0, weeklyCheckin, monthlyGutPlan, bioticsProfile, streak = 0 }: DashboardClientProps) {
+export function DashboardClient({ profile, assessments, paidReports, plateData, nextBillingDate, dailyConsultCount = 0, monthlyConsultCount = 0, weeklyCheckin, monthlyGutPlan, bioticsProfile, streak = 0, dailyPromptIndex = 0 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("overview")
   const router = useRouter()
   const latest = assessments[0] ?? null
@@ -2569,7 +2611,7 @@ export function DashboardClient({ profile, assessments, paidReports, plateData, 
 
       {/* Tab content */}
       <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
-        {activeTab === "overview" && <OverviewTab assessments={assessments} membershipTier={profile.membership_tier ?? "free"} weeklyCheckin={weeklyCheckin} monthlyGutPlan={monthlyGutPlan} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} bioticsProfile={bioticsProfile} streak={streak} />}
+        {activeTab === "overview" && <OverviewTab assessments={assessments} membershipTier={profile.membership_tier ?? "free"} weeklyCheckin={weeklyCheckin} monthlyGutPlan={monthlyGutPlan} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} bioticsProfile={bioticsProfile} streak={streak} dailyPromptIndex={dailyPromptIndex} />}
         {activeTab === "reports" && <ReportsTab paidReports={paidReports} />}
         {activeTab === "membership" && <MembershipTab profile={profile} nextBillingDate={nextBillingDate} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} latestAssessment={latest} />}
         {activeTab === "plate" && <PlateTab plateData={plateData} />}

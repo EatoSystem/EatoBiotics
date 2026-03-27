@@ -229,6 +229,7 @@ export default async function DemoAccountTierPage({
   const meta = TIER_META[tier]
   const { profile, nextBillingDate, weeklyCheckin, monthlyGutPlan, dailyConsultCount, monthlyConsultCount, streak } =
     getMockData(tier)
+  const dailyPromptIndex = new Date().getDay()
 
   return (
     <div className="min-h-screen bg-background pt-[57px]">
@@ -267,6 +268,7 @@ export default async function DemoAccountTierPage({
           monthlyConsultCount={monthlyConsultCount}
           bioticsProfile={tier === "free" ? null : MOCK_BIOTICS_PROFILE}
           streak={streak}
+          dailyPromptIndex={dailyPromptIndex}
         />
       </div>
     </div>
