@@ -900,166 +900,110 @@ export default function EatoSportsPage() {
       {/* ── 9. THE FOOD SYSTEM ───────────────────────────── */}
       <section className="bg-foreground px-6 py-24 md:py-32">
         <div className="mx-auto max-w-[1200px]">
+
           {/* Header */}
           <ScrollReveal>
-            <p className="text-xs font-bold uppercase tracking-widest text-icon-orange">
-              The Food System
+            <p className="text-xs font-bold uppercase tracking-widest text-icon-lime">
+              The Food System Inside You
             </p>
             <h2 className="mt-4 text-pretty font-serif text-4xl font-semibold text-background sm:text-5xl md:text-6xl">
-              One system.
+              EatoBiotics.
               <br />
-              <span className="brand-gradient-text">Three dimensions.</span>
+              <span className="brand-gradient-text">The foundation EatoSports is built on.</span>
             </h2>
-            <p className="mt-6 max-w-xl text-base leading-relaxed text-background/70">
-              Every food choice exists inside three interconnected layers. Understanding all
-              three is what separates intelligent food thinking from generic nutrition advice.
+            <p className="mt-6 max-w-2xl text-base leading-relaxed text-background/70">
+              EatoSports is not a standalone framework. It is the performance expression of a
+              deeper food system — one grounded in how food actually works inside the human body.
+              That system is EatoBiotics.
+            </p>
+          </ScrollReveal>
+          <ScrollReveal delay={150}>
+            <Link
+              href="/"
+              className="mt-8 inline-flex items-center gap-2 rounded-full border-2 border-icon-lime px-6 py-3 text-sm font-semibold text-background transition-colors hover:bg-icon-lime hover:text-foreground"
+            >
+              Explore EatoBiotics
+              <ArrowUpRight size={14} />
+            </Link>
+          </ScrollReveal>
+
+          {/* 3 Biotics grid */}
+          <div className="mt-16 grid gap-6 sm:grid-cols-3">
+            {[
+              {
+                number: "01",
+                title: "Prebiotics",
+                accent: "var(--icon-lime)",
+                gradient: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))",
+                body: "The fibre and plant compounds that feed your gut bacteria. Without a consistent supply of prebiotics, the rest of the system cannot function. They are the raw material — and in sport, where demand is high, their role is foundational.",
+                examples: ["Oats", "Bananas", "Garlic", "Leeks", "Asparagus"],
+              },
+              {
+                number: "02",
+                title: "Probiotics",
+                accent: "var(--icon-green)",
+                gradient: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))",
+                body: "The live bacteria that populate your gut microbiome. A diverse microbiome responds better to the demands of training, supports immune resilience, and produces the compounds your body relies on for recovery and adaptation.",
+                examples: ["Yogurt", "Kefir", "Kimchi", "Sauerkraut", "Tempeh"],
+              },
+              {
+                number: "03",
+                title: "Postbiotics",
+                accent: "var(--icon-teal)",
+                gradient: "linear-gradient(90deg, var(--icon-teal), var(--icon-yellow))",
+                body: "The beneficial compounds produced when gut bacteria ferment prebiotic fibre. Short-chain fatty acids, vitamins, and signalling molecules — these are the outputs that reduce inflammation, regulate energy, and support recovery at a cellular level.",
+                examples: ["Butyrate", "SCFAs", "B vitamins", "Antioxidants"],
+              },
+            ].map((biotic, index) => (
+              <ScrollReveal key={biotic.title} delay={index * 100}>
+                <div
+                  className="relative flex flex-col overflow-hidden rounded-2xl p-7"
+                  style={{
+                    background: `color-mix(in srgb, ${biotic.accent} 8%, var(--foreground))`,
+                    border: `1px solid color-mix(in srgb, ${biotic.accent} 25%, transparent)`,
+                  }}
+                >
+                  <div
+                    className="absolute top-0 left-0 right-0 h-1"
+                    style={{ background: biotic.gradient }}
+                  />
+                  <span
+                    className="font-serif text-4xl font-semibold"
+                    style={{ color: biotic.accent }}
+                  >
+                    {biotic.number}
+                  </span>
+                  <h3 className="mt-4 font-serif text-xl font-semibold text-background">
+                    {biotic.title}
+                  </h3>
+                  <p className="mt-3 flex-1 text-sm leading-relaxed text-background/70">
+                    {biotic.body}
+                  </p>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {biotic.examples.map((ex) => (
+                      <span
+                        key={ex}
+                        className="rounded-full px-3 py-1 text-xs font-semibold"
+                        style={{
+                          background: `color-mix(in srgb, ${biotic.accent} 18%, transparent)`,
+                          color: biotic.accent,
+                        }}
+                      >
+                        {ex}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+
+          <ScrollReveal delay={200}>
+            <p className="mt-10 text-center text-sm text-background/50">
+              EatoSports applies all three through the 4 Systems of Performance — building a plate that works as hard as you do.
             </p>
           </ScrollReveal>
 
-          {/* 3 dimension cards */}
-          <div className="mt-16 grid gap-6 sm:grid-cols-3">
-            {/* Card 1 — Inside You */}
-            <ScrollReveal delay={100}>
-              <Link href="/" className="group block h-full">
-                <div
-                  className="relative flex h-full flex-col overflow-hidden rounded-2xl p-7 transition-all hover:shadow-xl"
-                  style={{
-                    background: "color-mix(in srgb, var(--icon-lime) 8%, var(--foreground))",
-                    border: "1px solid color-mix(in srgb, var(--icon-lime) 25%, transparent)",
-                  }}
-                >
-                  <div
-                    className="absolute top-0 left-0 right-0 h-1"
-                    style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))" }}
-                  />
-                  {/* Icon */}
-                  <div
-                    className="flex h-12 w-12 items-center justify-center rounded-xl"
-                    style={{ background: "color-mix(in srgb, var(--icon-lime) 18%, transparent)" }}
-                  >
-                    <Leaf size={22} style={{ color: "var(--icon-lime)" }} />
-                  </div>
-                  {/* Label */}
-                  <p className="mt-5 text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-lime)" }}>
-                    EatoBiotics
-                  </p>
-                  {/* Title */}
-                  <h3 className="mt-2 font-serif text-xl font-semibold text-background">
-                    The Food System Inside You
-                  </h3>
-                  {/* Description */}
-                  <p className="mt-3 flex-1 text-sm leading-relaxed text-background/65">
-                    Your microbiome, the 3 Biotics, and how the foods you eat every day shape
-                    how you feel, function, and recover. The foundation everything else is built on.
-                  </p>
-                  {/* CTA */}
-                  <div
-                    className="mt-6 flex items-center gap-1 text-sm font-semibold opacity-60 transition-opacity group-hover:opacity-100"
-                    style={{ color: "var(--icon-lime)" }}
-                  >
-                    Explore EatoBiotics
-                    <ArrowUpRight size={14} />
-                  </div>
-                </div>
-              </Link>
-            </ScrollReveal>
-
-            {/* Card 2 — For Sport (current page — highlighted) */}
-            <ScrollReveal delay={200}>
-              <div
-                className="relative flex h-full flex-col overflow-hidden rounded-2xl p-7"
-                style={{
-                  background: "color-mix(in srgb, var(--icon-orange) 12%, var(--foreground))",
-                  border: "1px solid color-mix(in srgb, var(--icon-orange) 45%, transparent)",
-                  boxShadow: "0 0 40px color-mix(in srgb, var(--icon-orange) 18%, transparent)",
-                }}
-              >
-                <div
-                  className="absolute top-0 left-0 right-0 h-1"
-                  style={{ background: "linear-gradient(90deg, var(--icon-yellow), var(--icon-orange))" }}
-                />
-                {/* You are here badge */}
-                <div className="absolute top-5 right-5">
-                  <span
-                    className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white"
-                    style={{ background: SPORTS_GRADIENT }}
-                  >
-                    You&apos;re here
-                  </span>
-                </div>
-                {/* Icon */}
-                <div
-                  className="flex h-12 w-12 items-center justify-center rounded-xl"
-                  style={{ background: "color-mix(in srgb, var(--icon-orange) 18%, transparent)" }}
-                >
-                  <Activity size={22} style={{ color: "var(--icon-orange)" }} />
-                </div>
-                {/* Label */}
-                <p className="mt-5 text-xs font-bold uppercase tracking-widest text-icon-orange">
-                  EatoSports
-                </p>
-                {/* Title */}
-                <h3 className="mt-2 font-serif text-xl font-semibold text-background">
-                  The Food System for Sport
-                </h3>
-                {/* Description */}
-                <p className="mt-3 flex-1 text-sm leading-relaxed text-background/65">
-                  The 4 Systems of Performance applied to athletic life. How food choices
-                  determine energy, build, recovery, and protection — for every sport, every level.
-                </p>
-                {/* No CTA — current page */}
-                <div className="mt-6 text-sm font-semibold text-background/40">
-                  Currently exploring ↑
-                </div>
-              </div>
-            </ScrollReveal>
-
-            {/* Card 3 — Around You */}
-            <ScrollReveal delay={300}>
-              <Link href="/eatosystem" className="group block h-full">
-                <div
-                  className="relative flex h-full flex-col overflow-hidden rounded-2xl p-7 transition-all hover:shadow-xl"
-                  style={{
-                    background: "color-mix(in srgb, var(--icon-teal) 8%, var(--foreground))",
-                    border: "1px solid color-mix(in srgb, var(--icon-teal) 25%, transparent)",
-                  }}
-                >
-                  <div
-                    className="absolute top-0 left-0 right-0 h-1"
-                    style={{ background: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))" }}
-                  />
-                  {/* Icon */}
-                  <div
-                    className="flex h-12 w-12 items-center justify-center rounded-xl"
-                    style={{ background: "color-mix(in srgb, var(--icon-teal) 18%, transparent)" }}
-                  >
-                    <Globe size={22} style={{ color: "var(--icon-teal)" }} />
-                  </div>
-                  {/* Label */}
-                  <p className="mt-5 text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-teal)" }}>
-                    EatoSystem
-                  </p>
-                  {/* Title */}
-                  <h3 className="mt-2 font-serif text-xl font-semibold text-background">
-                    The Food System Around You
-                  </h3>
-                  {/* Description */}
-                  <p className="mt-3 flex-1 text-sm leading-relaxed text-background/65">
-                    The local food ecosystem — the farms, communities, and food cultures that
-                    shape what is available, accessible, and understood where you live.
-                  </p>
-                  {/* CTA */}
-                  <div
-                    className="mt-6 flex items-center gap-1 text-sm font-semibold opacity-60 transition-opacity group-hover:opacity-100"
-                    style={{ color: "var(--icon-teal)" }}
-                  >
-                    Explore EatoSystem
-                    <ArrowUpRight size={14} />
-                  </div>
-                </div>
-              </Link>
-            </ScrollReveal>
-          </div>
         </div>
       </section>
 
