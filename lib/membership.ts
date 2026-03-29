@@ -22,6 +22,7 @@ export const FEATURES = {
   ai_consultation:      ["transform"],
   weekly_checkin:       ["transform"],
   weekly_meal_plans:    ["transform"],
+  create_my_plate:      ["grow", "restore", "transform"],
   founding_member:      ["transform"],
 } as const
 
