@@ -34,6 +34,7 @@ export default async function AccountPage() {
     pdf_url: string | null
     created_at: string
     free_scores: { overall: number; profile: { type: string } } | null
+    report_json: Record<string, unknown> | null
   }> = []
   let plateData: { plate: unknown; plants: string[] | null; updated_at: string } | null = null
   let nextBillingDate: string | null = null
@@ -62,7 +63,7 @@ export default async function AccountPage() {
 
     const { data: reportsData } = await adminSupabase
       .from("deep_assessments")
-      .select("stripe_session_id, tier, pdf_url, created_at, free_scores")
+      .select("stripe_session_id, tier, pdf_url, created_at, free_scores, report_json")
       .eq("email", user.email!)
       .eq("status", "complete")
       .order("created_at", { ascending: false })

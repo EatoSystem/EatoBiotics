@@ -4,6 +4,8 @@ import Stripe from "stripe"
 import { FullReportClient } from "@/components/assessment/full-report-client"
 import { PaidReportClient } from "@/components/assessment/paid-report-client"
 import { getSupabase } from "@/lib/supabase"
+import { getUser } from "@/lib/supabase-server"
+import { getUserMembershipTier } from "@/lib/membership"
 import type { DeepReport } from "@/lib/claude-report"
 
 export const metadata: Metadata = {
@@ -67,6 +69,10 @@ export default async function ReportPage({ searchParams }: Props) {
       // Fallback to full if decode fails
     }
 
+    // Get user membership tier for the CTA
+    const user = await getUser().catch(() => null)
+    const membershipTier = user ? await getUserMembershipTier(user.id).catch(() => "free") : "free"
+
     // Check if deep assessment is complete in Supabase
     const supabase = getSupabase()
     if (supabase) {
@@ -85,6 +91,7 @@ export default async function ReportPage({ searchParams }: Props) {
             reportJson={data.report_json as DeepReport}
             pdfUrl={data.pdf_url ?? null}
             freeScores={freeScores}
+            membershipTier={membershipTier}
           />
         )
       }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import type { DeepQuestion, DeepAnswer, DeepAnswers } from "@/lib/deep-assessment"
+import type { DeepQuestion, DeepAnswer, DeepAnswers, DeepSection } from "@/lib/deep-assessment"
 import { DeepQuestionView } from "./deep-question"
 
 interface DeepAssessmentClientProps {
@@ -26,6 +26,13 @@ const PILLAR_GRADIENT: Record<string, string> = {
   consistency: "var(--icon-yellow)",
   feeling: "var(--icon-orange)",
   lifestyle: "var(--icon-teal)",
+}
+
+const SECTION_META: Record<DeepSection, { icon: string; label: string; desc: string; color: string }> = {
+  symptoms:  { icon: "🫁", label: "Your Symptoms",    desc: "How your gut is communicating with you right now",  color: "var(--icon-orange)" },
+  history:   { icon: "📋", label: "Your Gut History",  desc: "Events and patterns that shaped your microbiome",   color: "var(--icon-teal)" },
+  lifestyle: { icon: "🌙", label: "Your Lifestyle",    desc: "Daily habits that directly affect your gut",        color: "var(--icon-yellow)" },
+  goals:     { icon: "🎯", label: "Your Goals",        desc: "What success looks like for you in 3 months",       color: "var(--icon-green)" },
 }
 
 const STAGES = [
@@ -230,26 +237,106 @@ export function DeepAssessmentClient({
   const currentQuestion = questions[currentIndex]
   if (!currentQuestion) return null
 
+  // Section progress
+  const uniqueSections = Array.from(
+    new Set(questions.map((q) => q.section).filter((s): s is DeepSection => !!s))
+  )
+  const currentSection = currentQuestion.section
+  const sectionMeta = currentSection ? SECTION_META[currentSection] : null
+  const sectionIndex = currentSection ? uniqueSections.indexOf(currentSection) : -1
+  const totalSections = uniqueSections.length || 1
+
+  // Show section banner on first question of each new section
+  const prevSection = currentIndex > 0 ? questions[currentIndex - 1]?.section : undefined
+  const isNewSection = currentSection && currentSection !== prevSection
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b bg-card/50 backdrop-blur sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-4">
-          <span className="text-sm font-medium text-muted-foreground">Deep Assessment</span>
+          {sectionMeta ? (
+            <span className="text-xs font-bold uppercase tracking-widest shrink-0" style={{ color: sectionMeta.color }}>
+              {sectionMeta.label}
+            </span>
+          ) : (
+            <span className="text-sm font-medium text-muted-foreground shrink-0">Your Consultation</span>
+          )}
           <div className="flex-1 bg-border/40 rounded-full h-2">
             <div
               className="h-2 rounded-full transition-all duration-500"
               style={{
                 width: `${((currentIndex + 1) / questions.length) * 100}%`,
-                background: PILLAR_GRADIENT[currentQuestion.pillar ?? "lifestyle"],
+                background: sectionMeta?.color ?? PILLAR_GRADIENT[currentQuestion.pillar ?? "lifestyle"],
               }}
             />
           </div>
-          <span className="text-sm text-muted-foreground">
+          <span className="text-sm text-muted-foreground shrink-0">
             {currentIndex + 1} / {questions.length}
           </span>
         </div>
+
+        {/* Section step dots */}
+        {totalSections > 1 && (
+          <div className="max-w-2xl mx-auto px-4 pb-2.5 flex items-center gap-1.5 overflow-x-auto">
+            {uniqueSections.map((s, i) => {
+              const meta = SECTION_META[s]
+              const done = i < sectionIndex
+              const active = i === sectionIndex
+              return (
+                <div key={s} className="flex items-center gap-1.5 shrink-0">
+                  <div
+                    className="flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold transition-all duration-300"
+                    style={{
+                      background: active
+                        ? meta.color
+                        : done
+                        ? `color-mix(in srgb, ${meta.color} 30%, transparent)`
+                        : "var(--border)",
+                      color: active ? "white" : done ? meta.color : "var(--muted-foreground)",
+                    }}
+                  >
+                    {done ? "✓" : i + 1}
+                  </div>
+                  <span
+                    className="text-[10px] font-medium hidden sm:inline"
+                    style={{ color: active ? meta.color : "var(--muted-foreground)", opacity: active ? 1 : 0.6 }}
+                  >
+                    {meta.label}
+                  </span>
+                  {i < uniqueSections.length - 1 && (
+                    <div className="h-px w-4 bg-border/60 mx-0.5" />
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
+
+      {/* Section transition banner */}
+      {isNewSection && sectionMeta && (
+        <div
+          className="border-b py-4"
+          style={{ background: `color-mix(in srgb, ${sectionMeta.color} 6%, transparent)` }}
+        >
+          <div className="max-w-2xl mx-auto px-4 flex items-center gap-3">
+            <span
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg"
+              style={{ background: `color-mix(in srgb, ${sectionMeta.color} 15%, transparent)` }}
+            >
+              {sectionMeta.icon}
+            </span>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: sectionMeta.color }}>
+                Section {sectionIndex + 1} of {totalSections}
+              </p>
+              <p className="text-sm font-semibold text-foreground">{sectionMeta.label}</p>
+              <p className="text-xs text-muted-foreground">{sectionMeta.desc}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Profile context strip */}
       <div className="max-w-2xl mx-auto px-4 pt-4">

@@ -5,6 +5,7 @@ import { ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { MissionNote } from "./mission-note"
+import { ReportMembershipCTA } from "./report-membership-cta"
 import type {
   DeepReport,
   DeepStarterReport,
@@ -23,6 +24,7 @@ interface PaidReportClientProps {
     subScores: SubScores
     profile: AssessmentProfile
   }
+  membershipTier?: string
 }
 
 /* ── Sub-components ──────────────────────────────────────────────── */
@@ -67,6 +69,7 @@ export function PaidReportClient({
   reportJson,
   pdfUrl,
   freeScores,
+  membershipTier,
 }: PaidReportClientProps) {
   const [openWeek, setOpenWeek] = useState<number>(1)
 
@@ -547,6 +550,17 @@ export function PaidReportClient({
                 </p>
               </div>
             </div>
+          </ScrollReveal>
+        </section>
+
+        {/* ── Membership CTA ───────────────────────────────────────── */}
+        <section>
+          <ScrollReveal>
+            <ReportMembershipCTA
+              scoreProjection={(reportJson as DeepStarterReport).scoreProjection}
+              membershipBridge={(reportJson as DeepStarterReport).membershipBridge}
+              membershipTier={membershipTier}
+            />
           </ScrollReveal>
         </section>
 

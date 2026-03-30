@@ -66,6 +66,7 @@ interface PaidReport {
   pdf_url: string | null
   created_at: string
   free_scores: { overall: number; profile: { type: string } } | null
+  report_json: Record<string, unknown> | null
 }
 
 interface PlateData {
@@ -1808,34 +1809,80 @@ function ReportsTab({ paidReports }: { paidReports: PaidReport[] }) {
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="space-y-4">
       {paidReports.map((r) => {
         const overallScore = r.free_scores?.overall ?? null
         const band = overallScore != null ? getScoreBand(overallScore) : null
+        const topTrigger = typeof r.report_json?.topTrigger === "string" ? r.report_json.topTrigger : null
+        const projection = r.report_json?.scoreProjection as { low: number; high: number; timeline: string } | undefined
+        const membershipBridge = typeof r.report_json?.membershipBridge === "string" ? r.report_json.membershipBridge : null
+
         return (
           <div key={r.stripe_session_id} className="overflow-hidden rounded-3xl border bg-card">
-            <div className="h-1.5 w-full" style={{ background: "linear-gradient(90deg, #7bc67e, #56C135)" }} />
+            <div className="h-1.5 w-full" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
             <div className="p-5">
-              <div className="mb-3 flex items-start justify-between">
+              {/* Header row */}
+              <div className="mb-4 flex items-start justify-between">
                 <TierBadge tier={r.tier} />
                 <span className="text-xs text-muted-foreground" suppressHydrationWarning>{formatDate(r.created_at)}</span>
               </div>
-              <div className="flex items-start gap-4">
+
+              {/* Score + profile */}
+              <div className="flex items-start gap-4 mb-4">
                 {overallScore != null && band && (
                   <MealScoreRing score={Math.round(overallScore)} band={band} />
                 )}
-                <div>
+                <div className="flex-1">
                   {r.free_scores && (
                     <>
                       <p className="font-serif text-base font-semibold text-foreground">
                         {r.free_scores.profile?.type ?? "Report"}
                       </p>
-                      <p className="text-sm text-muted-foreground">Score: {r.free_scores.overall}</p>
+                      <p className="text-sm text-muted-foreground">Score: {r.free_scores.overall}/100</p>
                     </>
+                  )}
+                  {/* Score projection */}
+                  {projection && (
+                    <p className="mt-1.5 text-xs font-medium" style={{ color: "var(--icon-green)" }}>
+                      Could reach {projection.low}–{projection.high} in {projection.timeline}
+                    </p>
                   )}
                 </div>
               </div>
-              <div className="mt-4">
+
+              {/* Top trigger insight */}
+              {topTrigger && (
+                <div
+                  className="mb-3 rounded-xl border-l-2 py-2 px-3 text-xs leading-relaxed text-foreground/80"
+                  style={{
+                    borderColor: "var(--icon-green)",
+                    background: "color-mix(in srgb, var(--icon-green) 6%, transparent)",
+                  }}
+                >
+                  <span className="font-semibold" style={{ color: "var(--icon-green)" }}>Key insight: </span>
+                  {topTrigger}
+                </div>
+              )}
+
+              {/* Membership bridge */}
+              {membershipBridge && (
+                <p className="mb-4 text-[11px] leading-relaxed text-muted-foreground italic">
+                  {membershipBridge}
+                </p>
+              )}
+
+              {/* Actions */}
+              <div className="flex flex-wrap items-center gap-2">
+                <Link
+                  href={`/assessment/report?session_id=${r.stripe_session_id}`}
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-opacity hover:opacity-80"
+                  style={{
+                    background: "color-mix(in srgb, var(--icon-green) 12%, transparent)",
+                    color: "var(--icon-green)",
+                  }}
+                >
+                  <FileText size={11} /> View report
+                </Link>
                 {r.pdf_url ? (
                   <a
                     href={r.pdf_url}
@@ -1843,14 +1890,14 @@ function ReportsTab({ paidReports }: { paidReports: PaidReport[] }) {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-opacity hover:opacity-80"
                     style={{
-                      background: "color-mix(in srgb, var(--icon-teal) 15%, transparent)",
+                      background: "color-mix(in srgb, var(--icon-teal) 12%, transparent)",
                       color: "var(--icon-teal)",
                     }}
                   >
-                    <Download size={12} /> Download PDF
+                    <Download size={11} /> Download PDF
                   </a>
                 ) : (
-                  <span className="text-xs text-muted-foreground">PDF processing…</span>
+                  <span className="text-[11px] text-muted-foreground">PDF generating…</span>
                 )}
               </div>
             </div>

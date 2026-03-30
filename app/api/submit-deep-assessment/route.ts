@@ -77,7 +77,14 @@ function buildDeepAnalysisPrompt(
   "closing": "warm closing paragraph",
   "deepInsight": "2 paragraphs connecting their deep answers to their gut pattern",
   "topTrigger": "the single most impactful finding from their deep answers (1 sentence)",
-  "topTriggerExplanation": "why this matters specifically for them (2-3 sentences)"
+  "topTriggerExplanation": "why this matters specifically for them (2-3 sentences)",
+  "scoreProjection": {
+    "low": [conservative target score — realistic with basic habit changes, e.g. current + 8],
+    "high": [optimistic target score — achievable with full adherence, e.g. current + 18],
+    "timeline": "[X–Y weeks — be specific, e.g. '8–10 weeks']",
+    "keyDrivers": ["[specific habit change 1]", "[specific habit change 2]", "[specific habit change 3]"]
+  },
+  "membershipBridge": "[One sentence connecting their top finding to what consistent daily tracking enables — make it specific to their biggest gap, not generic]"
 }`
       : tier === "full"
       ? `Return this JSON schema:
@@ -98,7 +105,14 @@ function buildDeepAnalysisPrompt(
   "topTrigger": "the single most impactful finding from their deep answers (1 sentence)",
   "topTriggerExplanation": "why this matters specifically for them (2-3 sentences)",
   "deepInsight": "2 paragraphs connecting their deep answers to their gut pattern",
-  "specificFoodList": [{"food": "...", "emoji": "...", "whyForThem": "references their specific answers", "howToUse": "..."}, {"food": "...", "emoji": "...", "whyForThem": "...", "howToUse": "..."}, {"food": "...", "emoji": "...", "whyForThem": "...", "howToUse": "..."}, {"food": "...", "emoji": "...", "whyForThem": "...", "howToUse": "..."}, {"food": "...", "emoji": "...", "whyForThem": "...", "howToUse": "..."}]
+  "specificFoodList": [{"food": "...", "emoji": "...", "whyForThem": "references their specific answers", "howToUse": "..."}, {"food": "...", "emoji": "...", "whyForThem": "...", "howToUse": "..."}, {"food": "...", "emoji": "...", "whyForThem": "...", "howToUse": "..."}, {"food": "...", "emoji": "...", "whyForThem": "...", "howToUse": "..."}, {"food": "...", "emoji": "...", "whyForThem": "...", "howToUse": "..."}],
+  "scoreProjection": {
+    "low": [conservative target score, e.g. current + 8],
+    "high": [optimistic target score, e.g. current + 18],
+    "timeline": "[X–Y weeks]",
+    "keyDrivers": ["[specific habit change 1]", "[specific habit change 2]", "[specific habit change 3]"]
+  },
+  "membershipBridge": "[One sentence connecting their top finding to what consistent daily tracking enables]"
 }`
       : /* premium */ `Return this JSON schema:
 {
@@ -124,7 +138,14 @@ function buildDeepAnalysisPrompt(
   "topTrigger": "the single most impactful finding from their deep answers (1 sentence)",
   "topTriggerExplanation": "why this matters specifically for them (2-3 sentences)",
   "deepInsight": "2 paragraphs connecting their deep answers to their gut pattern",
-  "specificFoodList": [{"food": "...", "emoji": "...", "whyForThem": "references their specific answers", "howToUse": "..."}, {"food": "...", "emoji": "...", "whyForThem": "...", "howToUse": "..."}, {"food": "...", "emoji": "...", "whyForThem": "...", "howToUse": "..."}, {"food": "...", "emoji": "...", "whyForThem": "...", "howToUse": "..."}, {"food": "...", "emoji": "...", "whyForThem": "...", "howToUse": "..."}]
+  "specificFoodList": [{"food": "...", "emoji": "...", "whyForThem": "references their specific answers", "howToUse": "..."}, {"food": "...", "emoji": "...", "whyForThem": "...", "howToUse": "..."}, {"food": "...", "emoji": "...", "whyForThem": "...", "howToUse": "..."}, {"food": "...", "emoji": "...", "whyForThem": "...", "howToUse": "..."}, {"food": "...", "emoji": "...", "whyForThem": "...", "howToUse": "..."}],
+  "scoreProjection": {
+    "low": [conservative target score, e.g. current + 10],
+    "high": [optimistic target score, e.g. current + 22],
+    "timeline": "[X–Y weeks]",
+    "keyDrivers": ["[specific habit change 1]", "[specific habit change 2]", "[specific habit change 3]"]
+  },
+  "membershipBridge": "[One sentence connecting their top finding to what consistent daily tracking enables]"
 }`
 
   return `You are EatoBiotics — a gut health expert writing a deeply personalised paid report.

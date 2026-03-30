@@ -11,10 +11,14 @@ export type DeepPillar =
   | "feeling"
   | "lifestyle"
 
+export type DeepSection = "symptoms" | "history" | "lifestyle" | "goals"
+
 export interface DeepQuestion {
   id: string // "dq1", "dq2", ...
   type: DeepQuestionType
   pillar: DeepPillar
+  /** Which consultation section this question belongs to — optional for backwards compat */
+  section?: DeepSection
   text: string
   /** 1-sentence why this matters — shown below question text */
   eduContext?: string
@@ -44,38 +48,103 @@ export type DeepAnswers = Record<string, DeepAnswer>
 export const FALLBACK_DEEP_QUESTIONS: DeepQuestion[] = [
   {
     id: "dq1",
-    type: "single",
-    pillar: "diversity",
-    text: "On a typical day, how many different plant foods do you eat across all your meals?",
-    eduContext: "Plant diversity is the single strongest predictor of microbial richness.",
-    options: [
-      { label: "1–2 (same foods most days)", value: "1-2" },
-      { label: "3–5 (moderate variety)", value: "3-5" },
-      { label: "6–9 (quite varied)", value: "6-9" },
-      { label: "10+ (very diverse)", value: "10+" },
-    ],
-    required: true,
-  },
-  {
-    id: "dq2",
     type: "multi",
-    pillar: "adding",
-    text: "Which of these fermented foods do you eat at least once a week? Select all that apply.",
-    eduContext: "Each different fermented food introduces different strains of beneficial bacteria.",
+    pillar: "feeling",
+    section: "symptoms",
+    text: "Which of these do you experience regularly (at least once a week)?",
+    eduContext: "These symptoms are your gut's way of communicating — each one points to a specific imbalance.",
     options: [
-      { label: "Yoghurt (live cultures)", value: "yoghurt" },
-      { label: "Kefir", value: "kefir" },
-      { label: "Kimchi or sauerkraut", value: "kimchi" },
-      { label: "Miso", value: "miso" },
-      { label: "Kombucha", value: "kombucha" },
+      { label: "Bloating or gas after meals", value: "bloating" },
+      { label: "Energy crash in the afternoon", value: "energy-crash" },
+      { label: "Brain fog or poor concentration", value: "brain-fog" },
+      { label: "Irregular digestion (loose or hard stools)", value: "irregular" },
+      { label: "Skin issues (acne, eczema, dullness)", value: "skin" },
       { label: "None of these regularly", value: "none" },
     ],
     required: true,
   },
   {
+    id: "dq2",
+    type: "slider",
+    pillar: "feeling",
+    section: "symptoms",
+    text: "How would you rate your overall energy levels on a typical day?",
+    eduContext: "Gut health is one of the biggest drivers of sustained daily energy.",
+    min: 1,
+    max: 10,
+    minLabel: "Exhausted",
+    maxLabel: "Full of energy",
+    required: true,
+  },
+  {
     id: "dq3",
+    type: "yesno",
+    pillar: "feeling",
+    section: "symptoms",
+    text: "Do you notice your digestion or energy change significantly depending on what you eat?",
+    eduContext: "Food sensitivity patterns are a key indicator of microbiome composition.",
+    followUp: {
+      condition: "yes",
+      question: {
+        id: "dq3a",
+        type: "single",
+        pillar: "feeling",
+        section: "symptoms",
+        text: "What tends to trigger the most noticeable reaction?",
+        options: [
+          { label: "Dairy products", value: "dairy" },
+          { label: "Wheat or gluten-containing foods", value: "gluten" },
+          { label: "High-fat or fried foods", value: "fat" },
+          { label: "High-sugar foods or alcohol", value: "sugar" },
+        ],
+        required: true,
+      },
+    },
+    required: true,
+  },
+  {
+    id: "dq4",
+    type: "yesno",
+    pillar: "lifestyle",
+    section: "history",
+    text: "Have you taken antibiotics at any point in the last two years?",
+    eduContext: "Antibiotics can reduce microbial diversity significantly — rebuilding after a course is one of the highest-impact gut interventions.",
+    required: true,
+  },
+  {
+    id: "dq5",
+    type: "single",
+    pillar: "consistency",
+    section: "history",
+    text: "How would you describe your relationship with food over the past few years?",
+    options: [
+      { label: "Fairly consistent — I eat roughly the same way", value: "consistent" },
+      { label: "Some big changes — diet has shifted a lot", value: "shifting" },
+      { label: "Lots of starts and stops — trying different approaches", value: "sporadic" },
+      { label: "I've been deliberately improving my diet recently", value: "improving" },
+    ],
+    required: true,
+  },
+  {
+    id: "dq6",
+    type: "multi",
+    pillar: "lifestyle",
+    section: "history",
+    text: "Have any of the following affected your gut health in the past? Select all that apply.",
+    options: [
+      { label: "A period of high or chronic stress", value: "stress" },
+      { label: "A gut infection or food poisoning", value: "infection" },
+      { label: "Significant weight change", value: "weight" },
+      { label: "A major change in diet or location", value: "diet-change" },
+      { label: "None of these", value: "none" },
+    ],
+    required: true,
+  },
+  {
+    id: "dq7",
     type: "slider",
     pillar: "lifestyle",
+    section: "lifestyle",
     text: "How would you rate your average stress level on a typical work day?",
     eduContext: "Chronic stress directly suppresses digestive enzyme output and gut motility.",
     min: 1,
@@ -85,9 +154,10 @@ export const FALLBACK_DEEP_QUESTIONS: DeepQuestion[] = [
     required: true,
   },
   {
-    id: "dq4",
+    id: "dq8",
     type: "slider",
     pillar: "lifestyle",
+    section: "lifestyle",
     text: "On average, how many hours of sleep do you get per night?",
     eduContext: "Sleep is when your gut repairs its lining and your microbiome resets its rhythm.",
     min: 4,
@@ -97,82 +167,10 @@ export const FALLBACK_DEEP_QUESTIONS: DeepQuestion[] = [
     required: true,
   },
   {
-    id: "dq5",
-    type: "single",
-    pillar: "feeding",
-    text: "What does your typical breakfast look like?",
-    options: [
-      { label: "I usually skip breakfast", value: "skip" },
-      { label: "Coffee or tea only", value: "coffee-only" },
-      { label: "Something quick — toast, cereal, pastry", value: "quick" },
-      { label: "A proper meal with protein and fibre", value: "proper" },
-    ],
-    required: true,
-  },
-  {
-    id: "dq6",
-    type: "yesno",
-    pillar: "consistency",
-    text: "Does your eating pattern change significantly at weekends compared to weekdays?",
-    eduContext: "Weekend irregularity is one of the most common disruptors of microbiome circadian rhythm.",
-    followUp: {
-      condition: "yes",
-      question: {
-        id: "dq6a",
-        type: "single",
-        pillar: "consistency",
-        text: "What tends to change most at weekends?",
-        options: [
-          { label: "Meal timing (eating much later or earlier)", value: "timing" },
-          { label: "Alcohol consumption increases", value: "alcohol" },
-          { label: "More processed / takeaway food", value: "processed" },
-          { label: "Skipping meals or eating less", value: "skipping" },
-        ],
-        required: true,
-      },
-    },
-    required: true,
-  },
-  {
-    id: "dq7",
-    type: "multi",
-    pillar: "feeling",
-    text: "Which of these do you experience regularly (at least once a week)?",
-    options: [
-      { label: "Bloating or gas after meals", value: "bloating" },
-      { label: "Energy crash in the afternoon", value: "energy-crash" },
-      { label: "Brain fog or poor concentration", value: "brain-fog" },
-      { label: "Irregular digestion (loose or hard stools)", value: "irregular" },
-      { label: "Cravings for sugar or carbs", value: "cravings" },
-      { label: "None of these regularly", value: "none" },
-    ],
-    required: true,
-  },
-  {
-    id: "dq8",
-    type: "textarea",
-    pillar: "feeding",
-    text: "Describe what you typically eat for lunch on a workday. Be as specific as you like.",
-    eduContext: "Lunch is often the most habitual meal — understanding it reveals a lot about your feeding patterns.",
-    required: true,
-  },
-  {
     id: "dq9",
     type: "single",
-    pillar: "diversity",
-    text: "How often do you cook from scratch using whole ingredients (vegetables, legumes, grains)?",
-    options: [
-      { label: "Rarely — mostly ready meals or takeaway", value: "rarely" },
-      { label: "1–2 times a week", value: "1-2x" },
-      { label: "3–4 times a week", value: "3-4x" },
-      { label: "Most days (5+)", value: "most" },
-    ],
-    required: true,
-  },
-  {
-    id: "dq10",
-    type: "single",
     pillar: "lifestyle",
+    section: "lifestyle",
     text: "How often do you do moderate physical activity (walking, cycling, swimming, yoga, etc.)?",
     eduContext: "Regular movement directly increases microbiome diversity by promoting gut motility.",
     options: [
@@ -181,6 +179,29 @@ export const FALLBACK_DEEP_QUESTIONS: DeepQuestion[] = [
       { label: "3–4 times a week", value: "3-4x" },
       { label: "Daily", value: "daily" },
     ],
+    required: true,
+  },
+  {
+    id: "dq10",
+    type: "single",
+    pillar: "feeling",
+    section: "goals",
+    text: "What is your single most important goal for your gut and overall health right now?",
+    options: [
+      { label: "More consistent energy throughout the day", value: "energy" },
+      { label: "Better digestion — less bloating, more regularity", value: "digestion" },
+      { label: "Stronger immunity and fewer infections", value: "immunity" },
+      { label: "Clearer skin or reduced inflammation", value: "skin" },
+    ],
+    required: true,
+  },
+  {
+    id: "dq11",
+    type: "textarea",
+    pillar: "feeding",
+    section: "goals",
+    text: "In your own words, what does success look like for you in 3 months? What would feel different?",
+    eduContext: "Your goal shapes the entire protocol we build for you.",
     required: true,
   },
 ]

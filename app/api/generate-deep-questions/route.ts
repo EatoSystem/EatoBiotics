@@ -100,6 +100,15 @@ CRITICAL RULES:
 - eduContext: 1 sentence max, educational (not evaluative)
 - IDs: "dq1", "dq2", etc. in order
 
+SECTION STRUCTURE — CRITICAL:
+Every question MUST include a "section" field. Distribute questions across these 4 sections naturally based on the user's score profile:
+- "symptoms" — how their gut is communicating with them right now (bloating, energy, skin, brain fog, bowel habits, food reactions)
+- "history" — events that shaped their microbiome (antibiotics, conditions, stress periods, diet changes, family history)
+- "lifestyle" — daily patterns affecting their gut (sleep quality, stress levels, exercise, eating rhythm, meal environment)
+- "goals" — what success looks like for them (what they want to change, 3-month vision, biggest obstacle)
+
+Aim for roughly equal distribution across sections. Every section must have at least 2 questions.
+
 Return ONLY valid JSON, no markdown fences:
 {
   "questions": [
@@ -107,11 +116,12 @@ Return ONLY valid JSON, no markdown fences:
       "id": "dq1",
       "type": "single"|"multi"|"slider"|"textarea"|"yesno",
       "pillar": "diversity"|"feeding"|"adding"|"consistency"|"feeling"|"lifestyle",
+      "section": "symptoms"|"history"|"lifestyle"|"goals",
       "text": "...",
       "eduContext": "...",
       "options": [{"label": "...", "value": "..."}],
       "min": 1, "max": 10, "minLabel": "...", "maxLabel": "...",
-      "followUp": {"condition": "yes"|"no", "question": {...}},
+      "followUp": {"condition": "yes"|"no", "question": {"id": "...", "type": "...", "pillar": "...", "section": "...", "text": "...", "options": [...], "required": true}},
       "required": true
     }
   ]

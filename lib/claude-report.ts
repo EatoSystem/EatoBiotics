@@ -67,12 +67,27 @@ export type ClaudeReportOutput =
 // These extend the base Claude report types with fields that require
 // the user's deep assessment answers — not just their pillar scores.
 
+export interface ScoreProjection {
+  /** Conservative target score — realistic with basic habit changes */
+  low: number
+  /** Optimistic target score — achievable with full protocol adherence */
+  high: number
+  /** e.g. "10–12 weeks" */
+  timeline: string
+  /** 3 specific changes that will drive this improvement */
+  keyDrivers: string[]
+}
+
 export interface DeepStarterReport extends ClaudeStarterReport {
   /** 2 paragraphs connecting deep answers to their pattern */
   deepInsight: string
   /** The single most impactful discovery from their deep answers */
   topTrigger: string
   topTriggerExplanation: string
+  /** Where their score could realistically go with consistent effort */
+  scoreProjection: ScoreProjection
+  /** One sentence connecting their biggest finding to what membership tracking enables */
+  membershipBridge: string
 }
 
 export interface DeepFullReport extends ClaudeFullReport {
@@ -89,6 +104,8 @@ export interface DeepFullReport extends ClaudeFullReport {
     whyForThem: string
     howToUse: string
   }>
+  scoreProjection: ScoreProjection
+  membershipBridge: string
 }
 
 export interface DeepPremiumReport extends ClaudePremiumReport {
@@ -106,6 +123,8 @@ export interface DeepPremiumReport extends ClaudePremiumReport {
     whyForThem: string
     howToUse: string
   }>
+  scoreProjection: ScoreProjection
+  membershipBridge: string
 }
 
 export type DeepReport = DeepStarterReport | DeepFullReport | DeepPremiumReport

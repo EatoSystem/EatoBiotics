@@ -134,9 +134,40 @@ export function PaymentCTA({ result }: PaymentCTAProps) {
           unlocks a personalised plan
         </h3>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground max-w-lg mx-auto">
-          Your free results show where you stand. Your report shows you exactly what to eat,
-          what to add, and a plan to get there.
+          Your free score is the starting point. Choose how deep you want to go.
         </p>
+      </div>
+
+      {/* What happens next */}
+      <div className="rounded-2xl border bg-card/60 px-5 py-4">
+        <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+          What happens next
+        </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-0">
+          {[
+            { n: "1", icon: "🫁", title: "Personal consultation", desc: "15–25 questions tailored to your score — symptoms, history, lifestyle, and goals" },
+            { n: "2", icon: "🔬", title: "Report in ~2 minutes", desc: "Claude analyses your answers and generates your personalised report" },
+            { n: "3", icon: "🗺️", title: "Your 90-day roadmap", desc: "A phased plan built around your specific gut profile and health goals" },
+          ].map((step, i) => (
+            <div key={step.n} className="flex items-start gap-3 sm:flex-1 sm:flex-col sm:items-center sm:text-center sm:px-3">
+              <div className="flex items-center gap-3 sm:flex-col sm:gap-2 sm:items-center">
+                <div
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white sm:h-8 sm:w-8"
+                  style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
+                >
+                  {step.n}
+                </div>
+                {i < 2 && (
+                  <div className="hidden sm:block h-px w-full max-w-[60px] bg-border/60" />
+                )}
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-foreground">{step.title}</p>
+                <p className="text-[11px] leading-snug text-muted-foreground mt-0.5">{step.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Tier cards */}
