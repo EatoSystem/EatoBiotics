@@ -79,12 +79,12 @@ const STEPS = [
     color: "var(--icon-yellow)",
     label: "Account + Membership",
     description:
-      "Create your account to save your reports and track progress over time. Choose a monthly membership — Grow (€9.99), Restore (€49), or Transform (€99) — to unlock daily tracking, AI consultations, and more.",
+      "Preview all four membership tiers — Free, Grow, Restore, and Transform — with real dashboard UI and sample data. Or sign in to your own account to see your actual reports and progress.",
     locked: false,
-    primaryHref: "/account",
-    primaryLabel: "Go to account",
-    secondaryHref: "/pricing",
-    secondaryLabel: "See membership plans",
+    primaryHref: "/demo/account",
+    primaryLabel: "Preview all 4 account tiers",
+    secondaryHref: "/account",
+    secondaryLabel: "Sign in to my account",
   },
 ]
 
