@@ -25,7 +25,7 @@ export default async function ConsultPage() {
   let overallScore: number | null = null
   let subScores: Record<string, number> | null = null
   let memberName: string | null = null
-  let pastConsultations: Array<{ id: string; turn_count: number; created_at: string; summary: string | null }> = []
+  let pastConsultations: Array<{ id: string; turn_count: number; created_at: string; summary: string | null; messages: Array<{role: string; content: string; turn: number}> | null }> = []
   let dailyCount = 0
   let monthlyCount = 0
 
@@ -54,7 +54,7 @@ export default async function ConsultPage() {
     // Past consultation sessions with summaries
     const { data: consultData } = await adminSupabase
       .from("consultations")
-      .select("id, turn_count, created_at, summary")
+      .select("id, turn_count, created_at, summary, messages")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(20)

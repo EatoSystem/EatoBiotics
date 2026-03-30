@@ -7,7 +7,7 @@ import { getUserMembershipTier } from "@/lib/membership"
 
 /* ── Base analysis prompt (same content as /api/analyse-plate) ─────── */
 
-const BASE_PROMPT = `You are a gut health nutrition analyst using the EatoBiotics framework (prebiotics, probiotics, postbiotics).
+const BASE_PROMPT = `You are a food system nutrition analyst using the EatoBiotics framework (prebiotics, probiotics, postbiotics).
 
 Look at this meal photo carefully and identify EVERY distinct food item visible — including garnishes, seeds, dressings, sauces, and side items. Aim to identify 4–8 items typically visible in a meal photo. Don't miss small items like seeds on avocado, dressing, or herbs.
 
@@ -52,7 +52,7 @@ Calibration examples:
 - Grilled chicken + asparagus + avocado + mixed greens: ~70 (strong prebiotics + quality protein, missing fermented)
 - Salmon + kimchi + brown rice + broccoli: ~90 (excellent all-round)
 - Plain chicken breast only: ~27 (minimal gut benefit alone)
-- Full gut health bowl (veg + yogurt + sourdough + chicken): ~95+
+- Full food system bowl (veg + yogurt + sourdough + chicken): ~95+
 
 Set "prebioticStrength" to "strong" (3+ prebiotic foods), "moderate" (1–2 prebiotic foods), or "low" (0 prebiotic foods).
 
@@ -82,7 +82,7 @@ Return ONLY valid JSON with this exact structure, no markdown fences:
     { "name": "string", "emoji": "string", "biotic": "prebiotic|probiotic|postbiotic|protein", "confidence": "high|medium|low" }
   ],
   "missingBiotics": [],
-  "whatThisMealDoes": "1–2 sentences on what this meal does WELL for gut health — lead with the positives",
+  "whatThisMealDoes": "1–2 sentences on what this meal does WELL for your food system — lead with the positives",
   "suggestions": ["string", "string", "string"],
   "overallAssessment": "string (1–2 sentences, warm and practical, reference EatoBiotics framework)",
   "nutrition": {
@@ -203,7 +203,7 @@ async function buildContextSection(
 
   const tierNote = tier === "restore"
     ? "\nUsing this context, calibrate your analysis to this member's patterns and health goals. Reference their trends where relevant."
-    : "\nUsing this full context, provide the richest, most personalised analysis possible — reference their exact patterns, goals, weekly check-in insights, and monthly plan. Respond as a trusted personal nutritionist who knows their full gut health journey."
+    : "\nUsing this full context, provide the richest, most personalised analysis possible — reference their exact patterns, goals, weekly check-in insights, and monthly plan. Respond as a trusted personal nutritionist who knows their full food system journey."
 
   lines.push(tierNote)
   return lines.join("\n")

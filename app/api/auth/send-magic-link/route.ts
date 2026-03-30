@@ -29,7 +29,7 @@ function magicLinkEmailHtml({ magicUrl, name }: { magicUrl: string; name?: strin
             <td style="padding:36px 40px;">
               <p style="margin:0 0 6px;color:#111827;font-size:16px;font-weight:600;">${greeting}</p>
               <p style="margin:0 0 28px;color:#374151;font-size:15px;line-height:1.65;">
-                Here&rsquo;s your sign-in link for EatoBiotics &mdash; your personalised gut health food system. Click below to access your account.
+                Here&rsquo;s your sign-in link for EatoBiotics &mdash; your personalised food system health app. Click below to access your account.
               </p>
               <!-- Context pills -->
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
@@ -49,7 +49,7 @@ function magicLinkEmailHtml({ magicUrl, name }: { magicUrl: string; name?: strin
                   <td style="padding:0 0 0 4px;width:33%;">
                     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 8px;text-align:center;">
                       <div style="font-size:20px;margin-bottom:5px;">🔬</div>
-                      <p style="margin:0;font-size:11px;font-weight:600;color:#15803d;">Gut health insights</p>
+                      <p style="margin:0;font-size:11px;font-weight:600;color:#15803d;">Food system insights</p>
                     </div>
                   </td>
                 </tr>

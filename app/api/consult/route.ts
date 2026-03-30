@@ -1,3 +1,6 @@
+// SQL to run once in Supabase:
+// ALTER TABLE consultations ADD COLUMN IF NOT EXISTS messages jsonb DEFAULT '[]'::jsonb;
+
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import Anthropic from "@anthropic-ai/sdk"
@@ -32,8 +35,9 @@ function buildSystemPrompt(context: {
   recentScores: Array<{ score: number; date: string }>
   healthGoals: string[]
   weeklyCheckinSummary: string | null
+  recentSessionSummaries: Array<{ summary: string; created_at: string }>
 }): string {
-  const { name, overallScore, subScores, recentScores, healthGoals, weeklyCheckinSummary } = context
+  const { name, overallScore, subScores, recentScores, healthGoals, weeklyCheckinSummary, recentSessionSummaries } = context
 
   const scoreHistory = recentScores.length > 0
     ? recentScores.map((s) => `  - ${s.date}: ${s.score}/100`).join("\n")
@@ -51,6 +55,12 @@ function buildSystemPrompt(context: {
 
   const checkinSection = weeklyCheckinSummary
     ? `\n- Most recent weekly check-in: "${weeklyCheckinSummary.slice(0, 400)}"`
+    : ""
+
+  const memorySection = recentSessionSummaries.length > 0
+    ? `\nPREVIOUS CONSULTATION HISTORY (your memory — reference these naturally):\n${recentSessionSummaries.map((s, i) =>
+        `  Session ${i + 1} (${new Date(s.created_at).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}): ${s.summary}`
+      ).join("\n")}\n`
     : ""
 
   // Identify weakest and strongest pillars for personalised guidance
@@ -123,6 +133,9 @@ ${strongestPillar ? `Their strongest pillar is ${strongestPillar} — build on t
 Recent Score History (last 30 days):
 ${scoreHistory}
 Health goals: ${goalsSummary}${checkinSection}
+${memorySection}
+MEMORY PROTOCOL:
+You have access to summaries of this member's previous sessions above. Reference them naturally — "Last time we talked about your Adding score, how has that been?" Build on what you know. Don't repeat advice already given unless asked. Treat this as an ongoing relationship, not a first meeting.
 
 PERSONALISATION RULES:
 • If their Adding (fermented foods) score is low: prioritise fermented food suggestions in every response
@@ -133,7 +146,7 @@ PERSONALISATION RULES:
 • Always reference their actual numbers: "Your Adding score of 38 tells me..." not generic advice
 • Never give advice that ignores their data
 
-YOUR TONE: Knowledgeable but not clinical. Warm but not casual. Precise but never overwhelming. Like a brilliant friend who happens to be a world expert in gut health — they speak plainly, give real answers, and always leave you with something specific you can do.
+YOUR TONE: Knowledgeable but not clinical. Warm but not casual. Precise but never overwhelming. Like a brilliant friend who happens to be a world expert in food system health — they speak plainly, give real answers, and always leave you with something specific you can do.
 
 RESPONSE FORMAT:
 • Be thorough but scannable — use short paragraphs, not walls of text
@@ -287,6 +300,7 @@ export async function POST(req: NextRequest) {
   const recentScores: Array<{ score: number; date: string }> = []
   let healthGoals: string[] = []
   let weeklyCheckinSummary: string | null = null
+  let recentSessionSummaries: Array<{ summary: string; created_at: string }> = []
 
   if (adminSupabase) {
     const { data: profileData } = await adminSupabase
@@ -340,6 +354,16 @@ export async function POST(req: NextRequest) {
       .limit(1)
       .single()
     weeklyCheckinSummary = checkin?.content ?? null
+
+    // Fetch last 3 completed consultation summaries for memory
+    const { data: recentSessions } = await adminSupabase
+      .from("consultations")
+      .select("summary, created_at")
+      .eq("user_id", user.id)
+      .not("summary", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(3)
+    recentSessionSummaries = (recentSessions ?? []) as Array<{ summary: string; created_at: string }>
   }
 
   // 7. Build system prompt
@@ -350,6 +374,7 @@ export async function POST(req: NextRequest) {
     recentScores,
     healthGoals,
     weeklyCheckinSummary,
+    recentSessionSummaries,
   })
 
   // 8. Upsert consultation session row
@@ -376,27 +401,11 @@ export async function POST(req: NextRequest) {
       messages:   body.messages,
     })
 
-    // After stream completes: increment turn_count, log tokens
-    stream.on("message", (msg) => {
-      const totalTokens = (msg.usage?.input_tokens ?? 0) + (msg.usage?.output_tokens ?? 0)
-      if (adminSupabase) {
-        if (existingSessionRow) {
-          void adminSupabase
-            .from("consultations")
-            .update({
-              turn_count:    currentTurnCount + 1,
-              tokens_used:   totalTokens,
-              message_count: body.messages.length + 1,
-            })
-            .eq("id", existingSessionRow.id)
-        }
-        // For new sessions, the insert above will be updated on next turn
-      }
-    })
-
     // Return SSE stream — include sessionId in first event
     const readable = new ReadableStream({
       async start(controller) {
+        let fullAssistantText = ""
+
         // Send session ID first so client can track it
         controller.enqueue(
           new TextEncoder().encode(`data: ${JSON.stringify({ sessionId, turnCount: currentTurnCount + 1 })}\n\n`)
@@ -406,6 +415,7 @@ export async function POST(req: NextRequest) {
             chunk.type === "content_block_delta" &&
             chunk.delta.type === "text_delta"
           ) {
+            fullAssistantText += chunk.delta.text
             controller.enqueue(
               new TextEncoder().encode(`data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`)
             )
@@ -413,6 +423,45 @@ export async function POST(req: NextRequest) {
         }
         controller.enqueue(new TextEncoder().encode("data: [DONE]\n\n"))
         controller.close()
+
+        // After streaming completes, save messages and update stats
+        if (adminSupabase) {
+          const { data: existing } = await adminSupabase
+            .from("consultations")
+            .select("messages, id, tokens_used")
+            .eq("session_id", sessionId)
+            .eq("user_id", user.id)
+            .single()
+
+          const existingMessages: Array<{role: string; content: string; turn: number}> =
+            (existing?.messages as Array<{role: string; content: string; turn: number}>) ?? []
+
+          const userMessage = body.messages[body.messages.length - 1]
+          const updatedMessages = [
+            ...existingMessages,
+            { role: "user", content: userMessage.content, turn: currentTurnCount + 1 },
+            { role: "assistant", content: fullAssistantText, turn: currentTurnCount + 1 },
+          ]
+
+          // Get token usage from finalMessage
+          let totalTokens = 0
+          try {
+            const finalMsg = await stream.finalMessage()
+            totalTokens = (finalMsg.usage?.input_tokens ?? 0) + (finalMsg.usage?.output_tokens ?? 0)
+          } catch { /* ignore */ }
+
+          if (existing?.id) {
+            void adminSupabase
+              .from("consultations")
+              .update({
+                messages:      updatedMessages,
+                turn_count:    currentTurnCount + 1,
+                tokens_used:   totalTokens,
+                message_count: body.messages.length + 1,
+              })
+              .eq("id", existing.id)
+          }
+        }
       },
     })
 

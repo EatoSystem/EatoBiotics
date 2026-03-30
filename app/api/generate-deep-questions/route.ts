@@ -70,7 +70,7 @@ function buildDeepQuestionsPrompt(body: RequestBody): string {
       ? `[Full - 18 total]: 4 on ${weakest1Label}, 3 on ${weakest2Label}, 2 each on remaining 3 pillars, 3 lifestyle, 2 food environment (cooking habits, meal planning)`
       : `[Premium - 25 total]: 5 on ${weakest1Label}, 4 on ${weakest2Label}, 2 each on remaining 3 pillars, 3 lifestyle, 3 gut diagnostic (symptom frequency, energy patterns, food reactions), 2 motivation/barriers (what has failed before, biggest obstacle)`
 
-  return `You are EatoBiotics — a gut health expert personalising a paid deep-dive assessment.
+  return `You are EatoBiotics — a food system health expert personalising a paid deep-dive assessment.
 
 A user completed our 15-question Food System Assessment:
 Overall: ${overall}/100

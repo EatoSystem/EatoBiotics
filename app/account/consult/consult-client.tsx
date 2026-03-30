@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, RotateCcw, Send, AlertTriangle } from "lucide-react"
+import { ArrowLeft, RotateCcw, Send, AlertTriangle, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 /* ── Types ───────────────────────────────────────────────────────────── */
@@ -22,6 +22,7 @@ interface ConsultClientProps {
     turn_count: number
     created_at: string
     summary: string | null
+    messages: Array<{role: string; content: string; turn: number}> | null
   }>
   dailyCount: number
   monthlyCount: number
@@ -44,7 +45,7 @@ const STARTER_QUESTIONS = [
   "Why is my Adding score so low and what's the fastest way to improve it?",
   "What should I eat this week based on my current scores?",
   "I have IBS — how should I adapt the EatoBiotics framework for my situation?",
-  "My energy is low in the afternoons. What does my gut health have to do with it?",
+  "My energy is low in the afternoons. What does my food system health have to do with it?",
 ]
 
 /* ── Score strip component ───────────────────────────────────────────── */
@@ -190,6 +191,7 @@ export function ConsultClient({
   const [sessionSummary, setSessionSummary] = useState<string | null>(null)
   const [limitError, setLimitError] = useState<string | null>(null)
   const [dailyCount, setDailyCount] = useState(initialDailyCount)
+  const [expandedSession, setExpandedSession] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef  = useRef<HTMLTextAreaElement>(null)
   const searchParams = useSearchParams()
@@ -460,7 +462,7 @@ export function ConsultClient({
               )}
               {pastConsultations.length > 0 && (
                 <p className="text-center text-sm text-muted-foreground">
-                  Ask me anything about your gut health. Here are some ideas:
+                  Ask me anything about your food system health. Here are some ideas:
                 </p>
               )}
               <div className="grid gap-2 sm:grid-cols-2">
@@ -552,26 +554,43 @@ export function ConsultClient({
         )}
 
         {pastConsultations.length > 0 && (
-          <div className="text-right">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Past sessions
-            </p>
-            <ul className="space-y-1">
-              {pastConsultations.slice(0, 5).map((c) => (
-                <li key={c.id} className="text-xs text-muted-foreground">
-                  {new Date(c.created_at).toLocaleDateString("en-IE", {
-                    day: "numeric", month: "short", year: "numeric",
-                  })}
-                  {" · "}
-                  {c.turn_count ?? 0} turn{(c.turn_count ?? 0) !== 1 ? "s" : ""}
-                  {c.summary && (
-                    <span className="ml-1 text-muted-foreground/60">
-                      — {c.summary.slice(0, 60)}…
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
+          <div className="mt-4 space-y-2">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Past sessions</p>
+            {pastConsultations.slice(0, 10).map((c) => (
+              <div key={c.id} className="rounded-2xl border bg-card overflow-hidden">
+                <button
+                  className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-muted/30 transition-colors"
+                  onClick={() => setExpandedSession(expandedSession === c.id ? null : c.id)}
+                >
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">
+                      {new Date(c.created_at).toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" })}
+                      {" · "}{c.turn_count ?? 0} turn{c.turn_count !== 1 ? "s" : ""}
+                    </p>
+                    {c.summary && <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{c.summary}</p>}
+                  </div>
+                  <ChevronDown size={14} className={cn("shrink-0 text-muted-foreground transition-transform", expandedSession === c.id && "rotate-180")} />
+                </button>
+                {expandedSession === c.id && c.messages && c.messages.length > 0 && (
+                  <div className="border-t px-4 py-3 space-y-3 max-h-80 overflow-y-auto">
+                    {c.messages.map((msg, i) => (
+                      <div key={i} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
+                        <div className={cn("max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-relaxed",
+                          msg.role === "user" ? "text-white" : "bg-muted/50 border text-foreground"
+                        )} style={msg.role === "user" ? { background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" } : undefined}>
+                          {msg.content}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {expandedSession === c.id && (!c.messages || c.messages.length === 0) && (
+                  <div className="border-t px-4 py-3">
+                    <p className="text-xs text-muted-foreground">No message history saved for this session.</p>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>

@@ -34,7 +34,7 @@ const TIERS = [
     tagline: "Deep insight, condition calibration, and a monthly gut plan.",
     color: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
-    features: ["5 meal analyses/day + AI context", "Monthly gut health plan", "90-day history"],
+    features: ["5 meal analyses/day + AI context", "Monthly food system plan", "90-day history"],
   },
   {
     key: "transform",

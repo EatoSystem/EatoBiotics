@@ -225,7 +225,7 @@ export function PaidReportClient({
           <ScrollReveal>
             <SectionHeader
               title="Your 7-Day Starter Plan"
-              subtitle="One small action each day to shift your gut health trajectory."
+              subtitle="One small action each day to shift your food system health trajectory."
             />
             <div className="space-y-3">
               {r.sevenDayPlan.map((item, i) => (
@@ -478,7 +478,7 @@ export function PaidReportClient({
               <ScrollReveal>
                 <SectionHeader
                   title="Phased Strategy"
-                  subtitle="Three phases to systematically upgrade your gut health."
+                  subtitle="Three phases to systematically upgrade your food system health."
                 />
                 <div className="space-y-4">
                   {rPremium.phasedStrategy.map((phase, i) => (

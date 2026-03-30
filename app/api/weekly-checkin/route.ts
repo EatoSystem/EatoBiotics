@@ -76,7 +76,7 @@ async function generateWeeklyCheckin(userId: string, userEmail: string): Promise
     ? Object.entries(subScores).map(([k, v]) => `${k}: ${Math.round(v)}/100`).join(", ")
     : "No pillar data"
 
-  const prompt = `You are the EatoBiotics Weekly Check-in Generator. Create a concise, personal weekly gut health summary for a Transform member.
+  const prompt = `You are the EatoBiotics Weekly Check-in Generator. Create a concise, personal weekly food system health summary for a Transform member.
 
 Data for this week:
 - Current Biotics Score: ${latestScore ?? "Unknown"}/100
@@ -86,7 +86,7 @@ Data for this week:
 - Meal analysis scores: ${scoreSummary}
 
 Write a 3-paragraph weekly check-in directly to the member using "you":
-1. This week in your gut health (2-3 sentences summarising what the data shows)
+1. This week in your food system health (2-3 sentences summarising what the data shows)
 2. What improved and what needs attention (honest, constructive, specific)
 3. Your focus for next week — one clear priority with a practical action
 

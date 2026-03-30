@@ -103,7 +103,7 @@ const PILLAR_META: Record<PillarKey, {
     icon: Shield,
     color: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-yellow))",
-    strengthCopy: "Your gut health and immune resilience are keeping you available and consistent.",
+    strengthCopy: "Your food system health and immune resilience are keeping you available and consistent.",
     opportunityCopy: "Gaps in gut support are increasing your vulnerability to illness, fatigue, and GI discomfort.",
     actionLow: "Add one fermented food daily — Greek yogurt at breakfast is the easiest start. Your gut microbiome responds quickly to consistent input.",
     actionHigh: "Build variety into your probiotic sources — rotate between yogurt, kefir, kimchi, and sauerkraut across the week.",

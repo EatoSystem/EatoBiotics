@@ -210,7 +210,7 @@ function GrowUpgradePrompt() {
             Want to see how this compares to your last 30 days?
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Upgrade to Restore for your full score history and a personalised monthly gut health plan.
+            Upgrade to Restore for your full score history and a personalised monthly food system plan.
           </p>
           <Link
             href="/pricing"
@@ -252,7 +252,7 @@ function RestoreUpgradePrompt() {
             Have a question about this result?
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Transform members can ask our AI gut health advisor anything, any time.
+            Transform members can ask our AI food system consultant anything, any time.
           </p>
           <Link
             href="/pricing"

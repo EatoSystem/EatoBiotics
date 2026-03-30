@@ -13,7 +13,7 @@ import {
 
 export const metadata: Metadata = {
   title: "Try EatoBiotics — Beta Testing",
-  description: "Explore the EatoBiotics gut health platform — assessment, meal analysis, plate builder, and account.",
+  description: "Explore the EatoBiotics food system health platform — assessment, meal analysis, plate builder, and account.",
   robots: "noindex",
 }
 
@@ -23,7 +23,7 @@ const FEATURES = [
     color: "var(--icon-green)",
     label: "Gut Assessment",
     description:
-      "Answer 15 questions about what you eat and how you feel. Get a personalised gut health score across 5 pillars, a profile type, and a 7-day action plan.",
+      "Answer 15 questions about what you eat and how you feel. Get a personalised food system score across 5 pillars, a profile type, and a 7-day action plan.",
     primaryHref: "/assessment",
     primaryLabel: "Take the real assessment →",
     secondaryHref: "/demo/assessment",

@@ -38,6 +38,13 @@ export default async function AccountPage() {
   }> = []
   let plateData: { plate: unknown; plants: string[] | null; updated_at: string } | null = null
   let nextBillingDate: string | null = null
+  let pastConsultations: Array<{
+    id: string
+    turn_count: number
+    created_at: string
+    summary: string | null
+    messages: Array<{role: string; content: string; turn: number}> | null
+  }> = []
   let dailyConsultCount = 0
   let monthlyConsultCount = 0
   let weeklyCheckin: { content: string; week_starting: string } | null = null
@@ -108,6 +115,15 @@ export default async function AccountPage() {
         .eq("user_id", user.id)
         .gte("date", firstOfMonth.toISOString().slice(0, 10))
       monthlyConsultCount = mc ?? 0
+
+      // Past consultations with messages (for EatoBiotic history tab)
+      const { data: consultData } = await adminSupabase
+        .from("consultations")
+        .select("id, turn_count, created_at, summary, messages")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(20)
+      pastConsultations = (consultData ?? []) as typeof pastConsultations
     }
 
     // Latest weekly check-in (Transform members)
@@ -242,6 +258,7 @@ export default async function AccountPage() {
         bioticsProfile={bioticsProfile}
         streak={streak}
         dailyPromptIndex={dailyPromptIndex}
+        pastConsultations={pastConsultations}
       />
     </div>
   )

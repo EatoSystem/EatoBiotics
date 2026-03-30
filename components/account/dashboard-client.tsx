@@ -24,6 +24,7 @@ import {
   Star,
   Sparkles,
   MessageSquare,
+  ChevronDown,
 } from "lucide-react"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
 import { ScoreRing } from "@/components/assessment/score-ring"
@@ -96,6 +97,13 @@ interface DashboardClientProps {
   streak?: number
   dailyPromptIndex?: number
   consultHref?: string
+  pastConsultations?: Array<{
+    id: string
+    turn_count: number
+    created_at: string
+    summary: string | null
+    messages: Array<{role: string; content: string; turn: number}> | null
+  }>
 }
 
 /* ── Tabs ───────────────────────────────────────────────────────────── */
@@ -107,6 +115,7 @@ const TABS = [
   { key: "plate", label: "My Plate", icon: Leaf },
   { key: "meals", label: "My Meals", icon: Camera },
   { key: "refer", label: "Refer", icon: Users },
+  { key: "consult", label: "EatoBiotic", icon: MessageSquare },
 ] as const
 
 type TabKey = (typeof TABS)[number]["key"]
@@ -114,7 +123,7 @@ type TabKey = (typeof TABS)[number]["key"]
 /* ── Profile lookup ─────────────────────────────────────────────────── */
 
 const PROFILE_INFO: Record<string, { color: string; tagline: string }> = {
-  "Thriving System":     { color: "var(--icon-green)",  tagline: "Your gut health food system is performing at its peak." },
+  "Thriving System":     { color: "var(--icon-green)",  tagline: "Your food system health is performing at its peak." },
   "Strong Foundation":   { color: "var(--icon-teal)",   tagline: "You've built strong foundations — now it's time to layer in more." },
   "Emerging Balance":    { color: "var(--icon-lime)",   tagline: "Your food system is growing in balance and diversity." },
   "Inconsistent System": { color: "var(--icon-yellow)", tagline: "Consistency is your next big unlock — small habits compound." },
@@ -203,7 +212,7 @@ const DAILY_PROMPTS: Record<string, string[]> = {
 }
 
 function getDailyPrompt(subScores: Record<string, number> | null | undefined, dayIndex: number): string {
-  if (!subScores) return "Analyse a meal today to start tracking your gut health"
+  if (!subScores) return "Analyse a meal today to start tracking your food system health"
   const pillars = ["diversity", "feeding", "adding", "consistency", "feeling"]
   let weakest = "adding"
   let lowestScore = Infinity
@@ -211,7 +220,7 @@ function getDailyPrompt(subScores: Record<string, number> | null | undefined, da
     const val = subScores[p] ?? 100
     if (val < lowestScore) { lowestScore = val; weakest = p }
   }
-  return DAILY_PROMPTS[weakest]?.[dayIndex] ?? "Analyse a meal today to track your gut health"
+  return DAILY_PROMPTS[weakest]?.[dayIndex] ?? "Analyse a meal today to track your food system health"
 }
 
 const TIER_ACCENT: Record<string, { bg: string; text: string; label: string }> = {
@@ -505,7 +514,7 @@ function DashboardHero({
                 Hi, {firstName} 👋
               </h1>
               <p className="mt-2 text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>
-                Take the free 5-minute assessment to discover your gut health food system.
+                Take the free 5-minute assessment to discover your food system health.
               </p>
               <Link
                 href="/assessment"
@@ -988,7 +997,7 @@ function TodayCard({
           <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))" }} />
           <div className="p-5">
             <p className="mb-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">Start your journey</p>
-            <h3 className="mb-2 font-serif text-lg font-semibold text-foreground">Discover your gut health score</h3>
+            <h3 className="mb-2 font-serif text-lg font-semibold text-foreground">Discover your food system score</h3>
             <p className="mb-4 text-sm text-muted-foreground">A free 5-minute assessment reveals your Biotics Score and identifies exactly where your food system needs attention.</p>
             <Link
               href="/assessment"
@@ -1192,7 +1201,7 @@ function ScoreHistoryPreview({ score }: { score: number | null }) {
 }
 
 function MonthlyPlanPreview({ addingScore }: { addingScore: number | null }) {
-  const sampleText = "Your gut health this month is showing real momentum. Your plant diversity has been one of your stronger pillars, but your Live Foods score is pulling down your overall Biotics number — this month, that's your primary focus. Fermented foods are the fastest lever you have..."
+  const sampleText = "Your food system this month is showing real momentum. Your plant diversity has been one of your stronger pillars, but your Live Foods score is pulling down your overall Biotics number — this month, that's your primary focus. Fermented foods are the fastest lever you have..."
 
   return (
     <div className="overflow-hidden rounded-3xl border bg-card">
@@ -1238,7 +1247,7 @@ function TransformPreview() {
     "What should I eat this week?",
     "I have IBS — help me adapt",
   ]
-  const sampleCheckin = "This week your gut health data showed a solid upward trend — your average meal score came in at 71, up from 64 the week before. You logged 5 analyses, which is exactly the consistency that drives meaningful change."
+  const sampleCheckin = "This week your food system data showed a solid upward trend — your average meal score came in at 71, up from 64 the week before. You logged 5 analyses, which is exactly the consistency that drives meaningful change."
 
   return (
     <div className="overflow-hidden rounded-3xl border bg-card">
@@ -1514,7 +1523,7 @@ function OverviewTab({
           <p className="mb-3 text-4xl leading-none">🌿</p>
           <p className="mb-1 font-medium text-foreground">No assessment yet</p>
           <p className="mb-4 text-sm text-muted-foreground">
-            Take the free 5-minute assessment to discover your gut health food system.
+            Take the free 5-minute assessment to discover your food system health.
           </p>
           <Link
             href="/assessment"
@@ -1560,7 +1569,7 @@ function OverviewTab({
             ) : (
               <>
                 <p className="text-sm text-muted-foreground">
-                  Your AI-generated monthly gut health plan will appear here.
+                  Your AI-generated monthly food system plan will appear here.
                 </p>
                 <GenerateMonthlyPlanButton />
               </>
@@ -1803,7 +1812,7 @@ function ReportsTab({ paidReports }: { paidReports: PaidReport[] }) {
             Your deep dive awaits
           </h3>
           <p className="mx-auto mb-5 max-w-sm text-sm text-muted-foreground">
-            Complete the assessment to unlock your personalised gut health report — a full breakdown of your food system with actionable steps.
+            Complete the assessment to unlock your personalised food system assessment report — a full breakdown of your food system with actionable steps.
           </p>
           <Link
             href="/assessment"
@@ -1980,7 +1989,7 @@ function UpgradePrompt({
       priceId: process.env.NEXT_PUBLIC_STRIPE_GROW_PRICE_ID ?? "",
       accentColor: "var(--icon-lime)",
       headline: "Add daily meal tracking to your routine",
-      body: "2 meal analyses per day, a 30-day score trend, and access to the Plate Builder — everything you need to start building daily gut health habits.",
+      body: "2 meal analyses per day, a 30-day score trend, and access to the Plate Builder — everything you need to start building daily food system habits.",
     },
     grow: {
       nextTier: "Restore",
@@ -1990,7 +1999,7 @@ function UpgradePrompt({
       headline: "Get a personalised monthly plan for your scores",
       body: addingScore != null
         ? `Your Live Foods score is ${Math.round(addingScore)} — the area holding your Biotics number back most. Restore gives you a personalised monthly gut plan, 5 daily analyses with AI context, and condition-specific calibration.`
-        : "Restore adds a personalised monthly gut health plan, 5 daily analyses with AI context, 90-day score history, and condition-specific calibration.",
+        : "Restore adds a personalised monthly food system plan, 5 daily analyses with AI context, 90-day score history, and condition-specific calibration.",
     },
     restore: {
       nextTier: "Transform",
@@ -1998,7 +2007,7 @@ function UpgradePrompt({
       priceId: process.env.NEXT_PUBLIC_STRIPE_TRANSFORM_PRICE_ID ?? "",
       accentColor: "var(--icon-orange)",
       headline: "You have the data — now get the conversation",
-      body: "Transform adds unlimited AI gut health consultations, weekly check-ins, a 10/day analysis quota, and personalised weekly meal plans. Always on, powered by Claude.",
+      body: "Transform adds unlimited AI food system consultations, weekly check-ins, a 10/day analysis quota, and personalised weekly meal plans. Always on, powered by Claude.",
     },
   } as const
 
@@ -2126,7 +2135,7 @@ function MembershipTab({
         "5 meal analyses per day with AI context",
         "90-day score history with quarterly trend analysis",
         "Condition-specific calibration (IBS, immunity, energy, mood, weight)",
-        "Monthly personalised gut health plan",
+        "Monthly personalised food system plan",
         "Downloadable PDF reports",
         "5-pillar deep dive every month",
         "Priority analysis — faster, more detailed output",
@@ -2140,11 +2149,11 @@ function MembershipTab({
       perks: [
         "Everything in Restore",
         "10 meal analyses per day with full AI context",
-        "Unlimited AI gut health consultations",
+        "Unlimited AI food system consultations",
         "Weekly AI check-in",
         "Personalised weekly meal plans",
         "Recipe suggestions calibrated to Biotics Score",
-        "Annual Gut Health Profile",
+        "Annual Food System Profile",
         is_founding_member ? "✦ Founding Member — permanent recognition" : "Founding member status (if eligible)",
         "Direct input into EatoBiotics product roadmap",
       ],
@@ -2459,7 +2468,7 @@ function ReferTab({ referralCode }: { referralCode: string }) {
   const referralUrl = `eatobiotics.com/assessment?ref=${referralCode}`
   const fullUrl = `https://eatobiotics.com/assessment?ref=${referralCode}`
   const waText = `Take the EatoBiotics Food System Assessment: ${fullUrl}`
-  const emailBody = `Take this free gut health assessment: ${fullUrl}`
+  const emailBody = `Take this free food system assessment: ${fullUrl}`
 
   const handleCopy = () => {
     navigator.clipboard.writeText(fullUrl).then(() => {
@@ -2619,9 +2628,97 @@ function MealsTab() {
   )
 }
 
+/* ── Consult History Tab ─────────────────────────────────────────────── */
+
+function ConsultHistoryTab({
+  pastConsultations,
+}: {
+  pastConsultations: Array<{id: string; turn_count: number; created_at: string; summary: string | null; messages: Array<{role: string; content: string; turn: number}> | null}>
+}) {
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const totalTurns = pastConsultations.reduce((s, c) => s + (c.turn_count ?? 0), 0)
+
+  return (
+    <div className="space-y-6">
+      {/* Stats */}
+      <div className="flex gap-6">
+        <div>
+          <p className="text-2xl font-bold tabular-nums" style={{ color: "var(--icon-orange)" }}>{pastConsultations.length}</p>
+          <p className="text-xs text-muted-foreground">Sessions</p>
+        </div>
+        <div>
+          <p className="text-2xl font-bold tabular-nums" style={{ color: "var(--icon-teal)" }}>{totalTurns}</p>
+          <p className="text-xs text-muted-foreground">Total turns</p>
+        </div>
+      </div>
+
+      {/* New consultation CTA */}
+      <Link
+        href="/account/consult"
+        className="flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+        style={{ background: "linear-gradient(135deg, var(--icon-orange), var(--icon-teal))" }}
+      >
+        <MessageSquare size={14} /> Start new consultation
+      </Link>
+
+      {/* Session list */}
+      {pastConsultations.length === 0 ? (
+        <div className="rounded-2xl border bg-muted/20 p-6 text-center">
+          <p className="text-sm text-muted-foreground">No consultations yet. Start your first conversation with EatoBiotic.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Conversation history</p>
+          {pastConsultations.map((c) => (
+            <div key={c.id} className="overflow-hidden rounded-2xl border bg-card">
+              <button
+                className="flex w-full items-start justify-between gap-3 px-4 py-3.5 text-left transition-colors hover:bg-muted/20"
+                onClick={() => setExpandedId(expandedId === c.id ? null : c.id)}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-foreground">
+                    {new Date(c.created_at).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
+                    <span className="ml-2 font-normal text-muted-foreground">{c.turn_count ?? 0} turns</span>
+                  </p>
+                  {c.summary && (
+                    <p className="mt-1 text-xs text-muted-foreground leading-relaxed line-clamp-2">{c.summary}</p>
+                  )}
+                </div>
+                <ChevronDown size={14} className={cn("mt-0.5 shrink-0 text-muted-foreground transition-transform", expandedId === c.id && "rotate-180")} />
+              </button>
+              {expandedId === c.id && (
+                <div className="border-t">
+                  {c.messages && c.messages.length > 0 ? (
+                    <div className="max-h-96 space-y-2 overflow-y-auto p-4">
+                      {c.messages.map((msg, i) => (
+                        <div key={i} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
+                          <div
+                            className={cn("max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-relaxed",
+                              msg.role === "user" ? "text-white" : "bg-muted/40 border text-foreground"
+                            )}
+                            style={msg.role === "user" ? { background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" } : undefined}
+                          >
+                            {msg.content}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="px-4 py-3 text-xs text-muted-foreground">No message history saved for this session.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ── Main Component ─────────────────────────────────────────────────── */
 
-export function DashboardClient({ profile, assessments, paidReports, plateData, nextBillingDate, dailyConsultCount = 0, monthlyConsultCount = 0, weeklyCheckin, monthlyGutPlan, bioticsProfile, streak = 0, dailyPromptIndex = 0, consultHref }: DashboardClientProps) {
+export function DashboardClient({ profile, assessments, paidReports, plateData, nextBillingDate, dailyConsultCount = 0, monthlyConsultCount = 0, weeklyCheckin, monthlyGutPlan, bioticsProfile, streak = 0, dailyPromptIndex = 0, consultHref, pastConsultations = [] }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("overview")
   const router = useRouter()
   const latest = assessments[0] ?? null
@@ -2641,7 +2738,7 @@ export function DashboardClient({ profile, assessments, paidReports, plateData, 
       <div className="sticky top-[57px] z-10 border-b border-border bg-background/95 backdrop-blur-sm">
         <div className="mx-auto max-w-3xl px-4 sm:px-6">
           <div className="flex items-center gap-1.5 overflow-x-auto py-3" style={{ scrollbarWidth: "none" }}>
-            {TABS.map(({ key, label, icon: Icon }) => (
+            {TABS.filter((t) => t.key !== "consult" || profile.membership_tier === "transform").map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
                 onClick={() => setActiveTab(key)}
@@ -2673,6 +2770,9 @@ export function DashboardClient({ profile, assessments, paidReports, plateData, 
         {activeTab === "plate" && <PlateTab plateData={plateData} />}
         {activeTab === "meals" && <MealsTab />}
         {activeTab === "refer" && <ReferTab referralCode={profile.referral_code} />}
+        {activeTab === "consult" && profile.membership_tier === "transform" && (
+          <ConsultHistoryTab pastConsultations={pastConsultations} />
+        )}
       </div>
     </div>
   )

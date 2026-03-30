@@ -24,7 +24,7 @@ const FEATURES = [
   },
   {
     icon: Activity,
-    title: "Gut Health Trends",
+    title: "Food System Trends",
     description: "Track progress over weeks and months with visual charts.",
     color: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-orange), var(--icon-yellow))",

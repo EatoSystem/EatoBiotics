@@ -31,7 +31,7 @@ const SINGLE_DAY_SCHEMA = `{
       "name": "string — descriptive meal name",
       "foods": ["string array of 3-5 specific food items"],
       "biotics": ["array containing one or more of: prebiotic, probiotic, postbiotic"],
-      "tip": "string — one short gut health tip for this meal",
+      "tip": "string — one short food system tip for this meal",
       "nutrition": { "calories": number, "fibre_g": number, "protein_g": number, "carbs_g": number, "fat_g": number }
     }
   ],
@@ -99,7 +99,7 @@ function buildPrompt(
             : "No dietary restrictions."
 
   if (isFull) {
-    return `Generate a 7-day gut health meal plan for:
+    return `Generate a 7-day food system meal plan for:
 - Goal: ${goal}
 - Dietary preference: ${dietaryPreference}
 - Biotics emphasis: ${bioticsEmphasis}
@@ -113,7 +113,7 @@ Rules:
 - Each meal must have at least one of: prebiotic, probiotic, or postbiotic tag
 - Vary meals across days — do not repeat the same meal twice
 - Include realistic, achievable everyday foods
-- Fibre is the most important nutrient for gut health — target 30–40g total per day
+- Fibre is the most important nutrient for food system health — target 30–40g total per day
 - All 7 days must be included: Monday through Sunday
 
 THE 3 BIOTICS (EatoBiotics framework):
@@ -126,7 +126,7 @@ Return ONLY this exact JSON structure, no markdown fences, no extra text:
 ${FULL_WEEK_SCHEMA}`
   }
 
-  return `Generate a single-day gut health meal plate for:
+  return `Generate a single-day food system meal plate for:
 - Goal: ${goal}
 - Dietary preference: ${dietaryPreference}
 - Biotics emphasis: ${bioticsEmphasis}
@@ -138,7 +138,7 @@ Rules:
 - Include breakfast, lunch, dinner, and optionally one snack
 - Each meal must have at least one of: prebiotic, probiotic, or postbiotic tag
 - Include realistic, achievable everyday foods
-- Fibre is the most important nutrient for gut health — target 30–40g total
+- Fibre is the most important nutrient for food system health — target 30–40g total
 
 THE 3 BIOTICS (EatoBiotics framework):
 - PREBIOTIC foods: garlic, onion, leeks, asparagus, oats, bananas (slightly underripe), chicory, Jerusalem artichoke, flaxseeds, apples, legumes, barley
@@ -219,7 +219,7 @@ export async function POST(req: NextRequest) {
       model: "claude-sonnet-4-20250514",
       max_tokens: isFull ? 8000 : 5000,
       system:
-        "You are a gut health nutrition planner using the EatoBiotics 3-Biotics framework. You return ONLY valid JSON — no markdown code fences, no commentary, no extra text before or after the JSON.",
+        "You are a food system nutrition planner using the EatoBiotics 3-Biotics framework. You return ONLY valid JSON — no markdown code fences, no commentary, no extra text before or after the JSON.",
       messages: [{ role: "user", content: userPrompt }],
     })
   } catch (err) {

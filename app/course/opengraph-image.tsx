@@ -80,7 +80,7 @@ export default async function CourseOGImage() {
               </div>
             </div>
             <div style={{ display: "flex", fontSize: 19, color: B.muted, lineHeight: 1.4 }}>
-              The complete framework for rebuilding your gut health.
+              The complete framework for rebuilding your food system health.
             </div>
           </div>
 

@@ -69,7 +69,7 @@ export const FALLBACK_DEEP_QUESTIONS: DeepQuestion[] = [
     pillar: "feeling",
     section: "symptoms",
     text: "How would you rate your overall energy levels on a typical day?",
-    eduContext: "Gut health is one of the biggest drivers of sustained daily energy.",
+    eduContext: "Food system health is one of the biggest drivers of sustained daily energy.",
     min: 1,
     max: 10,
     minLabel: "Exhausted",
@@ -130,7 +130,7 @@ export const FALLBACK_DEEP_QUESTIONS: DeepQuestion[] = [
     type: "multi",
     pillar: "lifestyle",
     section: "history",
-    text: "Have any of the following affected your gut health in the past? Select all that apply.",
+    text: "Have any of the following affected your food system health in the past? Select all that apply.",
     options: [
       { label: "A period of high or chronic stress", value: "stress" },
       { label: "A gut infection or food poisoning", value: "infection" },

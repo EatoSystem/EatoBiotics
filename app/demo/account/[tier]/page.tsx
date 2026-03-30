@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 /* ── Mock content ─────────────────────────────────────────────────── */
 
-const MOCK_PLAN_CONTENT = `Your gut health this month is showing real momentum. Your plant diversity has been one of your stronger pillars, but your Live Foods score is pulling down your overall Biotics number — this month, that's your primary focus.
+const MOCK_PLAN_CONTENT = `Your food system this month is showing real momentum. Your plant diversity has been one of your stronger pillars, but your Live Foods score is pulling down your overall Biotics number — this month, that's your primary focus.
 
 Fermented foods are the fastest lever you have. Adding kefir to your morning routine, swapping one meal to include kimchi or sauerkraut, or making a simple overnight yoghurt with live cultures will meaningfully shift your probiotic score within two to three weeks. Aim for at least one fermented food every day this month.
 
@@ -19,7 +19,7 @@ On the prebiotic side, you're doing well with oats and garlic, but your week-to-
 
 This month's priority: one fermented food daily and one new plant each week. Track it in your Plate builder and you'll see the numbers move. You're closer to your 70-point target than it might feel right now.`
 
-const MOCK_CHECKIN_CONTENT = `This week your gut health data showed a solid upward trend — your average meal score came in at 71, up from 64 the week before. You logged 5 analyses, which is exactly the consistency that drives meaningful change in your microbiome over time. The improvement was driven mainly by better prebiotic variety across your weekday meals.
+const MOCK_CHECKIN_CONTENT = `This week your food system data showed a solid upward trend — your average meal score came in at 71, up from 64 the week before. You logged 5 analyses, which is exactly the consistency that drives meaningful change in your microbiome over time. The improvement was driven mainly by better prebiotic variety across your weekday meals.
 
 What improved most was your plant diversity — you hit 9 different plants across the week, which is your best showing in a month. What still needs attention is your fermented food frequency: only 2 out of 7 days included a live food source. That probiotic gap is the single biggest thing holding your overall score below 70.
 

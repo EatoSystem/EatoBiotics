@@ -53,7 +53,7 @@ const TIERS = [
       "Your top 12 foods ranked by impact",
       "5 easy food swaps for your weakest pillar",
       "30-day rebuilding plan (4 weeks)",
-      "Gut health habit tracker (print-ready)",
+      "Food system habit tracker (print-ready)",
       "Your personalised retest date",
     ],
     cta: "Get Full Report",

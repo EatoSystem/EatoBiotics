@@ -26,7 +26,7 @@ const TIER_FEATURES: Record<Tier, string[]> = {
   free: [
     "Know your Biotics Score",
     "Understand what it means",
-    "Get your gut health baseline",
+    "Get your food system baseline",
     "Access the full food library",
   ],
   grow: [
@@ -47,7 +47,7 @@ const TIER_FEATURES: Record<Tier, string[]> = {
     "Unlimited EatoBiotic consultations",
     "Weekly AI check-in",
     "Create My Plate — AI daily & weekly meal plans",
-    "Full gut health optimisation",
+    "Full food system optimisation",
     "Founding member status",
   ],
 }
@@ -207,7 +207,7 @@ export function PricingClient({
           <Zap size={12} /> Membership Plans
         </div>
         <h1 className="font-serif text-4xl font-bold text-foreground sm:text-5xl">
-          Your gut health journey,<br />
+          Your food system journey,<br />
           <span style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green), var(--icon-teal))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             your pace
           </span>

@@ -60,7 +60,7 @@ TONE AND STYLE:
 - Be specific, not generic — every sentence should feel earned by their actual numbers`
 
   if (tier === "starter") {
-    return `You are EatoBiotics — an expert in gut health, food systems, and the microbiome. A user has completed the Food System Inside You Assessment.
+    return `You are EatoBiotics — an expert in food system health, food systems, and the microbiome. A user has completed the Food System Inside You Assessment.
 ${scoreBlock}
 ${toneBlock}
 
@@ -87,7 +87,7 @@ Write their Essential Starter Report. Respond with ONLY valid JSON (no markdown,
   }
 
   if (tier === "full") {
-    return `You are EatoBiotics — an expert in gut health, food systems, and the microbiome. A user has completed the Food System Inside You Assessment and purchased the Full Report.
+    return `You are EatoBiotics — an expert in food system health, food systems, and the microbiome. A user has completed the Food System Inside You Assessment and purchased the Full Report.
 ${scoreBlock}
 ${toneBlock}
 
@@ -123,7 +123,7 @@ Write their Full Report. Respond with ONLY valid JSON (no markdown, no preamble)
   }
 
   // premium
-  return `You are EatoBiotics — an expert in gut health, food systems, and the microbiome. A user has completed the Food System Inside You Assessment and purchased the Premium Report.
+  return `You are EatoBiotics — an expert in food system health, food systems, and the microbiome. A user has completed the Food System Inside You Assessment and purchased the Premium Report.
 ${scoreBlock}
 ${toneBlock}
 
@@ -166,7 +166,7 @@ Write their Premium Deep Dive Report. Respond with ONLY valid JSON (no markdown,
     {"phase": "Build", "duration": "Weeks 5–8", "milestone": "What they will achieve", "actions": ["specific action 1", "specific action 2"]},
     {"phase": "Optimise", "duration": "Weeks 9–12", "milestone": "What they will achieve", "actions": ["specific action 1", "specific action 2"]}
   ],
-  "systemInterpretation": "3–4 paragraph deep analysis connecting all five pillars, explaining the overall pattern and what it means for their gut health, energy, and daily experience",
+  "systemInterpretation": "3–4 paragraph deep analysis connecting all five pillars, explaining the overall pattern and what it means for their food system health, energy, and daily experience",
   "systemStory": "3–4 sentences titled in spirit 'Your System, Your Story' — warm, personal, motivating — that frames their food system journey in a way that feels meaningful and forward-looking"
 }`
 }

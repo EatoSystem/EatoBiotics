@@ -203,7 +203,7 @@ export function ReportStarter({ result, isDemo, claudeReport }: ReportStarterPro
               The 3 Biotics Explained
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              The three forces driving your food system score — and your gut health.
+              The three forces driving your food system score — and your food system health.
             </p>
           </ScrollReveal>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">

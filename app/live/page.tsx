@@ -16,7 +16,7 @@ const STEPS = [
     color: "var(--icon-lime)",
     label: "Free Assessment",
     description:
-      "Answer 15 honest questions about what you eat and how you feel. No account needed, takes about 5 minutes. Your score is calculated live across 5 gut health pillars.",
+      "Answer 15 honest questions about what you eat and how you feel. No account needed, takes about 5 minutes. Your score is calculated live across 5 food system pillars.",
     locked: false,
     primaryHref: "/assessment",
     primaryLabel: "Start free assessment",

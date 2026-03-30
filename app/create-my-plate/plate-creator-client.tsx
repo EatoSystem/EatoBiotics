@@ -264,7 +264,7 @@ function GutHealthInsight({ insight }: { insight: string }) {
       <Leaf size={16} className="mt-0.5 shrink-0" style={{ color: "var(--icon-green)" }} />
       <div>
         <p className="mb-1 text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
-          Gut Health Insight
+          Food System Insight
         </p>
         <p className="text-sm leading-relaxed text-foreground">{insight}</p>
       </div>
@@ -548,7 +548,7 @@ export default function PlateCreatorClient({ demoMode = false }: { demoMode?: bo
         {/* Biotics composition bar */}
         {mealsToShow.length > 0 && <BioticsCompositionBar meals={mealsToShow} />}
 
-        {/* Gut health insight */}
+        {/* Food system insight */}
         {singleResult && <GutHealthInsight insight={singleResult.gutHealthInsight} />}
         {fullResult && activeDay === 0 && (
           <GutHealthInsight insight={fullResult.weeklyGutInsight} />

@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
 
   const overallScore = (latestAssessment?.overall_score as number | null) ?? null
 
-  const prompt = `You are the EatoBiotics Monthly Gut Health Plan Generator. Create a personalised, forward-looking monthly gut health plan for a ${tier === "transform" ? "Transform" : "Restore"} member.
+  const prompt = `You are the EatoBiotics Monthly Food System Plan Generator. Create a personalised, forward-looking monthly food system plan for a ${tier === "transform" ? "Transform" : "Restore"} member.
 
 Member data:
 - Name: ${name ?? "Member"}
@@ -128,14 +128,14 @@ Member data:
 - Health goals: ${goalsText}
 - Month: ${new Date(month).toLocaleDateString("en-IE", { month: "long", year: "numeric" })}
 
-Write a personalised monthly gut health plan of approximately 400 words. Structure it as flowing paragraphs (no bullet points, no headers):
+Write a personalised monthly food system plan of approximately 400 words. Structure it as flowing paragraphs (no bullet points, no headers):
 
-1. Opening: A brief, warm summary of where their gut health stands based on the data — honest and direct.
+1. Opening: A brief, warm summary of where their food system health stands based on the data — honest and direct.
 2. Key focus areas: Based on their pillar scores and health goals, identify 2–3 specific areas to focus on this month. Explain why each matters for them.
 3. Practical actions: Give 3–4 specific, actionable steps they can take this month — food choices, habits, or behaviours. Make them concrete and achievable.
 4. Closing: A motivating, forward-looking close that connects this month's plan to their long-term health goals.
 
-Tone: warm, knowledgeable, personal, like a trusted gut health advisor. Use "you" throughout. Under 420 words total.`
+Tone: warm, knowledgeable, personal, like a trusted food system consultant. Use "you" throughout. Under 420 words total.`
 
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",

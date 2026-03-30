@@ -124,7 +124,7 @@ export const foods: Food[] = [
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-yellow))",
     tagline: "The Mediterranean microbiome in a bottle.",
     description:
-      "Extra virgin olive oil is one of the most comprehensively studied foods for gut health. Its polyphenols — particularly oleocanthal and oleuropein — act as prebiotics, feeding beneficial bacteria, while its oleic acid content reduces gut inflammation. The Mediterranean diet's remarkable health outcomes are largely attributed to olive oil as its primary fat source.",
+      "Extra virgin olive oil is one of the most comprehensively studied foods for food system health. Its polyphenols — particularly oleocanthal and oleuropein — act as prebiotics, feeding beneficial bacteria, while its oleic acid content reduces gut inflammation. The Mediterranean diet's remarkable health outcomes are largely attributed to olive oil as its primary fat source.",
     howToEat:
       "Use extra virgin olive oil as your default cooking fat and finishing oil. Drizzle generously over vegetables, salads, soups, and grains. Don't fear the calories — the polyphenols are worth it. Buy cold-pressed, in dark glass bottles, and use within 6 months of opening for maximum polyphenol content.",
     science:
@@ -337,7 +337,7 @@ export const foods: Food[] = [
     benefits: [
       { title: "Live Cultures", detail: "Contains Lactobacillus bulgaricus and Streptococcus thermophilus — beneficial probiotic strains." },
       { title: "High Protein", detail: "Greek yogurt provides 15-20g protein per 200g — ideal for muscle maintenance." },
-      { title: "Calcium Source", detail: "One of the most bioavailable sources of calcium for bone and gut health." },
+      { title: "Calcium Source", detail: "One of the most bioavailable sources of calcium for bone and food system health." },
       { title: "Improves Lactose Digestion", detail: "The live cultures pre-digest lactose — making it tolerable for most sensitive individuals." },
     ],
     pairsWith: ["Blueberries", "Oats", "Flaxseed", "Honey"],
@@ -432,7 +432,7 @@ export const foods: Food[] = [
     gradient: "linear-gradient(135deg, var(--icon-orange), var(--icon-yellow))",
     tagline: "Omega-3 that feeds your gut and your brain.",
     description:
-      "Wild salmon is one of the most important foods for gut health — not for its protein alone, but for its omega-3 fatty acids (EPA and DHA) which directly reduce intestinal inflammation, support the gut-brain axis, and feed the specific bacteria that produce anti-inflammatory compounds. Wild-caught salmon has 3-4x the omega-3 content of farmed salmon and significantly lower inflammatory omega-6 fat. Atlantic salmon farmed in Ireland is among the best quality in Europe.",
+      "Wild salmon is one of the most important foods for food system health — not for its protein alone, but for its omega-3 fatty acids (EPA and DHA) which directly reduce intestinal inflammation, support the gut-brain axis, and feed the specific bacteria that produce anti-inflammatory compounds. Wild-caught salmon has 3-4x the omega-3 content of farmed salmon and significantly lower inflammatory omega-6 fat. Atlantic salmon farmed in Ireland is among the best quality in Europe.",
     howToEat:
       "Aim for 2-3 servings per week. Pan-fry skin-side down in olive oil for 5-6 minutes without flipping — the skin protects the flesh. Pair with prebiotic vegetables and olive oil for maximum gut-health synergy. Smoked salmon on sourdough with kefir cream cheese is an excellent probiotic-protein breakfast. Don't overcook — salmon should be just opaque at the centre.",
     science:
@@ -899,7 +899,7 @@ export const foods: Food[] = [
     howToEat:
       "Eat a few spears alongside any meal as a probiotic side. Chop into potato salads, grain bowls, or onto sandwiches. Drink a small amount of the brine for a concentrated dose of Lactobacillus. Make your own — cucumbers, salt, water, garlic, and dill in a jar for 3-5 days.",
     science:
-      "Lacto-fermented pickles contain 1-10 billion CFU of Lactobacillus per serving, with L. plantarum and L. brevis being the dominant strains — both well-studied for their gut health benefits.",
+      "Lacto-fermented pickles contain 1-10 billion CFU of Lactobacillus per serving, with L. plantarum and L. brevis being the dominant strains — both well-studied for their food system health benefits.",
     scienceSource: "Peres et al., Food Microbiology, 2012",
     benefits: [
       { title: "Lactobacillus Rich", detail: "Billions of live L. plantarum and L. brevis per serving — proven gut-supporting strains." },

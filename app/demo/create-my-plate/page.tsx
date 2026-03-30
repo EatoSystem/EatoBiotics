@@ -3,7 +3,7 @@ import PlateCreatorClient from "@/app/create-my-plate/plate-creator-client"
 
 export const metadata: Metadata = {
   title: "Create My Plate Demo — EatoBiotics",
-  description: "See a demo of EatoBiotics Create My Plate — AI-powered gut health meal planning.",
+  description: "See a demo of EatoBiotics Create My Plate — AI-powered food system meal planning.",
   robots: { index: false },
 }
 
@@ -71,14 +71,14 @@ export default function DemoCreateMyPlatePage() {
         {/* Heading */}
         <h1 className="font-serif text-4xl font-bold leading-tight sm:text-5xl">
           Build your{" "}
-          <span className="brand-gradient-text">gut health plate</span>
+          <span className="brand-gradient-text">food system plate</span>
         </h1>
 
         {/* Subtitle */}
         <p className="mx-auto mt-4 max-w-xl text-base text-muted-foreground">
           Tell us your goal and dietary preferences — our AI generates a personalised
           meal plan using the 3-Biotics framework, complete with nutrition data,
-          a gut health insight, and a shopping list.
+          a food system insight, and a shopping list.
         </p>
 
         {/* 3 Biotics cards */}

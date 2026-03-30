@@ -357,7 +357,7 @@ function ShareCard({ result }: { result: AnalysisResult }) {
   const circ = 2 * Math.PI * r
 
   async function handleShare() {
-    const text = `My meal scored ${score}/100 for gut health 🌿\nFind out yours → eatobiotics.com/share`
+    const text = `My meal scored ${score}/100 for food system health 🌿\nFind out yours → eatobiotics.com/share`
     try {
       if (typeof navigator !== "undefined" && navigator.share) {
         await navigator.share({ text, url: "https://eatobiotics.com/share" })
@@ -395,7 +395,7 @@ function ShareCard({ result }: { result: AnalysisResult }) {
         </div>
       </div>
 
-      <p className="font-serif text-lg font-bold text-white">Gut Health Score</p>
+      <p className="font-serif text-lg font-bold text-white">Food System Score</p>
       <p className="mt-1 text-xs text-white/60">Powered by EatoBiotics</p>
 
       {/* Biotics presence dots */}
@@ -750,7 +750,7 @@ function ResultsView({
               href="/assessment"
               className="flex w-full items-center justify-center gap-2 rounded-2xl brand-gradient py-3.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
             >
-              Discover your full gut health profile <ArrowRight size={14} />
+              Discover your full food system profile <ArrowRight size={14} />
             </Link>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link

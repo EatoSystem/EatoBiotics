@@ -8,11 +8,11 @@ import ShareClient from "./share-client"
 export const metadata: Metadata = {
   title: "Score Your Meal — EatoBiotics",
   description:
-    "Upload a photo of your meal and get your gut health score in seconds. Free, instant analysis powered by the EatoBiotics 3-Biotics framework.",
+    "Upload a photo of your meal and get your food system score in seconds. Free, instant analysis powered by the EatoBiotics 3-Biotics framework.",
   openGraph: {
     title: "What score does your meal get? — EatoBiotics",
     description:
-      "Snap your plate and discover your gut health score instantly. Free analysis powered by the 3-Biotics framework.",
+      "Snap your plate and discover your food system score instantly. Free analysis powered by the 3-Biotics framework.",
     url: "https://eatobiotics.com/share",
     siteName: "EatoBiotics",
   },
@@ -78,7 +78,7 @@ export default function SharePage() {
 
             {/* Description */}
             <p className="mx-auto mt-6 max-w-md text-lg leading-relaxed text-muted-foreground">
-              Upload a photo and EatoBiotics scores it for gut health in seconds
+              Upload a photo and EatoBiotics scores it for your food system in seconds
               using the 3-Biotics framework — free, no sign-up needed.
             </p>
           </ScrollReveal>

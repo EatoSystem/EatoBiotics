@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "About — EatoBiotics | The Food System Inside You",
     description:
-      "The story behind EatoBiotics: how one person's daily practice became a framework for rebuilding your gut health — and eventually a vision for transforming Ireland's food system.",
+      "The story behind EatoBiotics: how one person's daily practice became a framework for rebuilding your food system health — and eventually a vision for transforming Ireland's food system.",
   },
 }
 

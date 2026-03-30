@@ -4,7 +4,7 @@ import { DemoAssessmentClient } from "./demo-assessment-client"
 
 export const metadata: Metadata = {
   title: "Assessment Demo — EatoBiotics",
-  description: "See what your EatoBiotics gut health assessment results look like — with a sample Emerging Balance profile.",
+  description: "See what your EatoBiotics food system assessment results look like — with a sample Emerging Balance profile.",
   robots: "noindex",
 }
 

@@ -182,7 +182,7 @@ export function MyPlateClient() {
                 My Plate
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Your daily gut health toolkit
+                Your daily food system toolkit
               </p>
               {/* Brand pills */}
               <div className="mt-3 flex gap-1.5">

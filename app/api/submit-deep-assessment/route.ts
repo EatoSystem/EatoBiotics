@@ -148,7 +148,7 @@ function buildDeepAnalysisPrompt(
   "membershipBridge": "[One sentence connecting their top finding to what consistent daily tracking enables]"
 }`
 
-  return `You are EatoBiotics — a gut health expert writing a deeply personalised paid report.
+  return `You are EatoBiotics — a food system health expert writing a deeply personalised paid report.
 
 FREE ASSESSMENT RESULTS:
 Overall score: ${overall}/100

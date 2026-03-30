@@ -53,7 +53,7 @@ const TIERS = [
     features: [
       "Unlimited AI consultations",
       "Weekly AI check-in",
-      "Full gut health optimisation",
+      "Full food system optimisation",
       "Founding member status",
     ],
   },

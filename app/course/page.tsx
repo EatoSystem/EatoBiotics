@@ -8,7 +8,7 @@ import { ArrowUpRight, Check } from "lucide-react"
 export const metadata: Metadata = {
   title: "The Course",
   description:
-    "The EatoBiotics Course — five modules, five pillars. The complete framework for rebuilding your gut health, turned into a structured online course with practical weekly actions.",
+    "The EatoBiotics Course — five modules, five pillars. The complete framework for rebuilding your food system health, turned into a structured online course with practical weekly actions.",
   openGraph: {
     title: "The Course — EatoBiotics",
     description: "Five modules. Five pillars. The complete EatoBiotics framework as a structured online course.",
@@ -28,7 +28,7 @@ const modules = [
       "What is the microbiome and why does it matter",
       "The 3 Biotics framework explained",
       "How food becomes medicine in your gut",
-      "Assessing your current gut health baseline",
+      "Assessing your current food system baseline",
     ],
   },
   {
@@ -69,7 +69,7 @@ const modules = [
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     duration: "4 lessons",
     description:
-      "The vagus nerve, the gut-brain axis, and why 20 minutes of breathwork every morning is the single most powerful thing you can do for your gut health — before you eat a thing.",
+      "The vagus nerve, the gut-brain axis, and why 20 minutes of breathwork every morning is the single most powerful thing you can do for your food system health — before you eat a thing.",
     lessons: [
       "The gut-brain axis and the vagus nerve",
       "The waking breathwork protocol — step by step",
@@ -86,7 +86,7 @@ const modules = [
     description:
       "10,000 steps, gut motility, and how movement reinforces everything else. Plus — how to connect your personal food system to the food system around you.",
     lessons: [
-      "Movement and gut health — the evidence",
+      "Movement and food system health — the evidence",
       "Making 10,000 steps a non-negotiable",
       "Connecting your plate to the world around you",
     ],

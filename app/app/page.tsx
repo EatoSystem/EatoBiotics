@@ -37,7 +37,7 @@ const features = [
   },
   {
     icon: Activity,
-    title: "Gut Health Trends",
+    title: "Food System Trends",
     color: "var(--icon-orange)",
     gradientTo: "var(--icon-yellow)",
     description:
@@ -130,7 +130,7 @@ export default function AppPage() {
         icon={BarChart3}
         iconColor="var(--icon-lime)"
         label="Biotics Score"
-        title="One Number for Your Gut Health"
+        title="One Number for Your Food System Health"
         description="Your Biotics Score distills the complexity of microbiome nutrition into a single, actionable number. It tracks how well your daily food choices cover all three biotic types — prebiotic, probiotic, and postbiotic — with bonuses for diversity and plant variety."
         bullets={[
           "Scores from 0-100 with diminishing returns that reward balance over excess",
@@ -195,12 +195,12 @@ export default function AppPage() {
       {/* ─── divider ──────────────────────────────────────────────── */}
       <div className="section-divider" />
 
-      {/* ─── 6. DEEP-DIVE: Gut Health Trends ─────────────────────── */}
+      {/* ─── 6. DEEP-DIVE: Food System Trends ─────────────────────── */}
       <FeatureDeepDive
         index={2}
         icon={Activity}
         iconColor="var(--icon-orange)"
-        label="Gut Health Trends"
+        label="Food System Trends"
         title="See Your Progress Over Time"
         description="Your daily scores paint a picture over weeks and months. Spot patterns, celebrate streaks, and understand how dietary changes correlate with how you feel."
         bullets={[

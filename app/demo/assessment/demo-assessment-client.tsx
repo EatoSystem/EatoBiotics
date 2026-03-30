@@ -52,7 +52,7 @@ const DEMO_RESULT: AssessmentResult = {
       label: "Feeling",
       score: 58,
       opportunity:
-        "How you feel after eating — energy, digestion, and mental clarity — is one of the most direct windows into your gut health.",
+        "How you feel after eating — energy, digestion, and mental clarity — is one of the most direct windows into your food system health.",
       action:
         "This week: note how you feel one hour after each meal for three days — just one word.",
       icon: "Heart",

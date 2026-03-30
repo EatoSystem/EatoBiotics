@@ -12,7 +12,7 @@ const GOALS = [
   "Weight management",
   "Sleep improvement",
   "Skin health",
-  "General gut health maintenance",
+  "General food system health maintenance",
 ] as const
 
 type Goal = (typeof GOALS)[number]

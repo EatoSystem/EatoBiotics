@@ -5,7 +5,7 @@ import { PricingClient } from "./pricing-client"
 
 export const metadata: Metadata = {
   title: "Membership Plans — EatoBiotics",
-  description: "Choose the EatoBiotics membership that fits your gut health journey.",
+  description: "Choose the EatoBiotics membership that fits your food system journey.",
 }
 
 export default async function PricingPage({

@@ -820,7 +820,7 @@ export function ReportPDF({
     <Document
       title={`EatoBiotics Report — ${leadName}`}
       author="EatoBiotics"
-      subject={`Personalised ${tier} gut health report`}
+      subject={`Personalised ${tier} food system assessment report`}
       creator="EatoBiotics"
     >
       {/* ── Page 1: Cover ── */}

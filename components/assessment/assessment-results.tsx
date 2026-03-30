@@ -247,7 +247,7 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
               Your 5 Pillars
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              How your food system scores across each of the five areas that matter most for gut health.
+              How your food system scores across each of the five areas that matter most for food system health.
             </p>
 
             {/* Summary pill row */}

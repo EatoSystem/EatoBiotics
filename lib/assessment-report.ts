@@ -182,7 +182,7 @@ const PILLAR_DEEP_DIVES: Record<
       {
         food: "Kefir",
         emoji: "🍶",
-        why: "The most extensively studied fermented food for gut health — contains 30+ bacterial and yeast strains, and has shown effects on anxiety, inflammation, and lactose tolerance.",
+        why: "The most extensively studied fermented food for food system health — contains 30+ bacterial and yeast strains, and has shown effects on anxiety, inflammation, and lactose tolerance.",
         howToUse: "Drink 150–200ml daily or use as a base for smoothies and overnight oats.",
       },
       {

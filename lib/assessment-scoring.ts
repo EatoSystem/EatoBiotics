@@ -94,7 +94,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
       type: "Strong Foundation",
       tagline: "You've built something real — now it's time to sharpen it.",
       description:
-        "You have solid eating habits and your gut health is benefiting from your effort. There are one or two pillars where a targeted shift would unlock noticeably better results. The good news: you don't need a transformation — just a refinement.",
+        "You have solid eating habits and your food system health is benefiting from your effort. There are one or two pillars where a targeted shift would unlock noticeably better results. The good news: you don't need a transformation — just a refinement.",
       color: "var(--icon-teal)",
     }
   }
@@ -151,7 +151,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
     type: "Early Builder",
     tagline: "You're at the beginning of something important.",
     description:
-      "Your gut health journey is just beginning, and that means every improvement from here creates a meaningful impact. The most effective place to start is building a simple, repeatable base — a handful of whole foods, eaten consistently. Complexity comes later.",
+      "Your food system health journey is just beginning, and that means every improvement from here creates a meaningful impact. The most effective place to start is building a simple, repeatable base — a handful of whole foods, eaten consistently. Complexity comes later.",
     color: "var(--icon-orange)",
   }
 }

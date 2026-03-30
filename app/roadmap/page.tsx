@@ -136,7 +136,7 @@ const appMilestones: Milestone[] = [
     status: "planned",
     color: "#F5A623",
     detail:
-      "Build the Biotics Score (daily 0-100), food logging with auto-tagging for prebiotic, probiotic, and postbiotic foods, gut health trend tracking, and a searchable food profile library.",
+      "Build the Biotics Score (daily 0-100), food logging with auto-tagging for prebiotic, probiotic, and postbiotic foods, food system trend tracking, and a searchable food profile library.",
   },
   {
     step: "03",
