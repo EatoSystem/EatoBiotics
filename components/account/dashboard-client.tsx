@@ -95,6 +95,7 @@ interface DashboardClientProps {
   bioticsProfile?: BioticsProfile | null
   streak?: number
   dailyPromptIndex?: number
+  consultHref?: string
 }
 
 /* ── Tabs ───────────────────────────────────────────────────────────── */
@@ -964,6 +965,7 @@ function TodayCard({
   streak = 0,
   latestSubScores,
   dailyPromptIndex = 0,
+  consultHref,
 }: {
   membershipTier: Profile["membership_tier"]
   latestScore: number | null
@@ -973,6 +975,7 @@ function TodayCard({
   streak?: number
   latestSubScores?: Record<string, number> | null
   dailyPromptIndex?: number
+  consultHref?: string
 }) {
   const limit = DAILY_LIMITS[membershipTier] ?? 0
   const remaining = Math.max(0, limit - dailyAnalysesUsed)
@@ -1107,7 +1110,7 @@ function TodayCard({
         )}
         {/* Primary CTA: Ask EatoBiotic */}
         <Link
-          href="/account/consult"
+          href={consultHref ?? "/account/consult"}
           className="flex w-full items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
           style={{ background: "linear-gradient(135deg, var(--icon-orange), var(--icon-teal))" }}
         >
@@ -1247,7 +1250,7 @@ function TransformPreview() {
           </div>
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">EatoBiotic</p>
-            <p className="text-sm font-semibold text-foreground">Your gut health consultant</p>
+            <p className="text-sm font-semibold text-foreground">Your Food System Consultant</p>
           </div>
         </div>
 
@@ -1291,10 +1294,12 @@ function AdvisorSection({
   weeklyCheckin,
   dailyConsultCount,
   monthlyConsultCount,
+  consultHref = "/account/consult",
 }: {
   weeklyCheckin?: { content: string; week_starting: string } | null
   dailyConsultCount: number
   monthlyConsultCount: number
+  consultHref?: string
 }) {
   const starterQuestions = [
     "Why is my score dropping?",
@@ -1314,7 +1319,7 @@ function AdvisorSection({
           </div>
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">EatoBiotic</p>
-            <p className="text-sm font-semibold text-foreground">Your gut health consultant</p>
+            <p className="text-sm font-semibold text-foreground">Your Food System Consultant</p>
           </div>
         </div>
 
@@ -1337,7 +1342,7 @@ function AdvisorSection({
             {starterQuestions.map((q) => (
               <Link
                 key={q}
-                href={`/account/consult?q=${encodeURIComponent(q)}`}
+                href={`${consultHref}?q=${encodeURIComponent(q)}`}
                 className="rounded-full border px-3 py-1.5 text-xs text-foreground transition-colors hover:bg-muted"
                 style={{ borderColor: "color-mix(in srgb, var(--icon-orange) 30%, var(--border))" }}
               >
@@ -1359,7 +1364,7 @@ function AdvisorSection({
 
         {/* CTA */}
         <Link
-          href="/account/consult"
+          href={consultHref}
           className="flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
           style={{ background: "linear-gradient(135deg, var(--icon-orange), var(--icon-teal))" }}
         >
@@ -1382,6 +1387,7 @@ function OverviewTab({
   bioticsProfile,
   streak = 0,
   dailyPromptIndex = 0,
+  consultHref,
 }: {
   assessments: AssessmentRow[]
   membershipTier: Profile["membership_tier"]
@@ -1392,6 +1398,7 @@ function OverviewTab({
   bioticsProfile?: BioticsProfile | null
   streak?: number
   dailyPromptIndex?: number
+  consultHref?: string
 }) {
   const latest = assessments[0] ?? null
   const previous = assessments[1] ?? null
@@ -1432,6 +1439,7 @@ function OverviewTab({
         streak={streak}
         latestSubScores={currentScores ?? null}
         dailyPromptIndex={dailyPromptIndex}
+        consultHref={consultHref}
       />
 
       {/* Pillar score mini cards */}
@@ -1569,6 +1577,7 @@ function OverviewTab({
           weeklyCheckin={weeklyCheckin}
           dailyConsultCount={dailyConsultCount}
           monthlyConsultCount={monthlyConsultCount}
+          consultHref={consultHref}
         />
       ) : (
         <TransformPreview />
@@ -2612,7 +2621,7 @@ function MealsTab() {
 
 /* ── Main Component ─────────────────────────────────────────────────── */
 
-export function DashboardClient({ profile, assessments, paidReports, plateData, nextBillingDate, dailyConsultCount = 0, monthlyConsultCount = 0, weeklyCheckin, monthlyGutPlan, bioticsProfile, streak = 0, dailyPromptIndex = 0 }: DashboardClientProps) {
+export function DashboardClient({ profile, assessments, paidReports, plateData, nextBillingDate, dailyConsultCount = 0, monthlyConsultCount = 0, weeklyCheckin, monthlyGutPlan, bioticsProfile, streak = 0, dailyPromptIndex = 0, consultHref }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("overview")
   const router = useRouter()
   const latest = assessments[0] ?? null
@@ -2658,7 +2667,7 @@ export function DashboardClient({ profile, assessments, paidReports, plateData, 
 
       {/* Tab content */}
       <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
-        {activeTab === "overview" && <OverviewTab assessments={assessments} membershipTier={profile.membership_tier ?? "free"} weeklyCheckin={weeklyCheckin} monthlyGutPlan={monthlyGutPlan} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} bioticsProfile={bioticsProfile} streak={streak} dailyPromptIndex={dailyPromptIndex} />}
+        {activeTab === "overview" && <OverviewTab assessments={assessments} membershipTier={profile.membership_tier ?? "free"} weeklyCheckin={weeklyCheckin} monthlyGutPlan={monthlyGutPlan} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} bioticsProfile={bioticsProfile} streak={streak} dailyPromptIndex={dailyPromptIndex} consultHref={consultHref} />}
         {activeTab === "reports" && <ReportsTab paidReports={paidReports} />}
         {activeTab === "membership" && <MembershipTab profile={profile} nextBillingDate={nextBillingDate} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} latestAssessment={latest} />}
         {activeTab === "plate" && <PlateTab plateData={plateData} />}

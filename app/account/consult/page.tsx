@@ -7,8 +7,8 @@ import { getUserMembershipTier } from "@/lib/membership"
 import { ConsultClient } from "./consult-client"
 
 export const metadata: Metadata = {
-  title: "AI Gut Health Consultation — EatoBiotics",
-  description: "Your personal EatoBiotics gut health advisor, powered by Claude.",
+  title: "AI Food System Consultation — EatoBiotics",
+  description: "Your personal EatoBiotics food system consultant, powered by Claude.",
 }
 
 export default async function ConsultPage() {

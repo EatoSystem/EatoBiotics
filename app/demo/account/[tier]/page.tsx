@@ -269,6 +269,7 @@ export default async function DemoAccountTierPage({
           bioticsProfile={tier === "free" ? null : MOCK_BIOTICS_PROFILE}
           streak={streak}
           dailyPromptIndex={dailyPromptIndex}
+          consultHref={tier === "transform" ? "/demo/account/consult" : undefined}
         />
       </div>
     </div>

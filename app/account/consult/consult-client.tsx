@@ -25,6 +25,7 @@ interface ConsultClientProps {
   }>
   dailyCount: number
   monthlyCount: number
+  apiEndpoint?: string
 }
 
 /* ── Pillar config ───────────────────────────────────────────────────── */
@@ -178,6 +179,7 @@ export function ConsultClient({
   pastConsultations,
   dailyCount: initialDailyCount,
   monthlyCount: initialMonthlyCount,
+  apiEndpoint = "/api/consult",
 }: ConsultClientProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
@@ -238,7 +240,7 @@ export function ConsultClient({
     setMessages((prev) => [...prev, { role: "assistant", content: "" }])
 
     try {
-      const res = await fetch("/api/consult", {
+      const res = await fetch(apiEndpoint, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({
@@ -445,7 +447,7 @@ export function ConsultClient({
                   }}
                 >
                   <p className="mb-2 text-sm font-semibold text-foreground">
-                    Hi{memberName ? `, ${memberName.split(" ")[0]}` : ""} — I&apos;m EatoBiotic, your personal gut health advisor.
+                    Hi{memberName ? `, ${memberName.split(" ")[0]}` : ""} — I&apos;m EatoBiotic, your personal food system consultant.
                   </p>
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     I&apos;ve reviewed your scores and I already know where to start.
