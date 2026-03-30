@@ -218,3 +218,119 @@ BEGIN
       USING (user_id = auth.uid());
   END IF;
 END $$;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 11: Add messages JSONB to consultations (Part B)
+-- ────────────────────────────────────────────────────────────
+
+ALTER TABLE consultations
+  ADD COLUMN IF NOT EXISTS messages jsonb;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 12: meal_plans table (Part E)
+-- ────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS meal_plans (
+  id                uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id           uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  week_starting     date        NOT NULL,
+  content           text,
+  meals             jsonb,
+  shopping_list     jsonb,
+  biotics_score_avg integer,
+  created_at        timestamptz DEFAULT now(),
+  UNIQUE (user_id, week_starting)
+);
+
+ALTER TABLE meal_plans ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'meal_plans'
+      AND policyname = 'users_manage_own_meal_plans'
+  ) THEN
+    CREATE POLICY "users_manage_own_meal_plans"
+      ON meal_plans FOR ALL TO authenticated
+      USING (user_id = auth.uid())
+      WITH CHECK (user_id = auth.uid());
+  END IF;
+END $$;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 13: food_protocols table (Part F)
+-- ────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS food_protocols (
+  id                  uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id             uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  condition           text        NOT NULL,
+  protocol            text,
+  foods_to_prioritise jsonb,
+  foods_to_reduce     jsonb,
+  phase               text        DEFAULT 'initial',
+  created_at          timestamptz DEFAULT now(),
+  updated_at          timestamptz DEFAULT now(),
+  UNIQUE (user_id, condition)
+);
+
+ALTER TABLE food_protocols ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'food_protocols'
+      AND policyname = 'users_manage_own_food_protocols'
+  ) THEN
+    CREATE POLICY "users_manage_own_food_protocols"
+      ON food_protocols FOR ALL TO authenticated
+      USING (user_id = auth.uid())
+      WITH CHECK (user_id = auth.uid());
+  END IF;
+END $$;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 14: monthly_reviews table (Part G)
+-- ────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS monthly_reviews (
+  id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  month       date        NOT NULL,
+  content     text,
+  score_start integer,
+  score_end   integer,
+  top_wins    jsonb,
+  focus_areas jsonb,
+  created_at  timestamptz DEFAULT now(),
+  UNIQUE (user_id, month)
+);
+
+ALTER TABLE monthly_reviews ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'monthly_reviews'
+      AND policyname = 'users_read_own_monthly_reviews'
+  ) THEN
+    CREATE POLICY "users_read_own_monthly_reviews"
+      ON monthly_reviews FOR SELECT TO authenticated
+      USING (user_id = auth.uid());
+  END IF;
+END $$;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 15: food_system_story JSONB on profiles (Part J)
+-- ────────────────────────────────────────────────────────────
+
+ALTER TABLE profiles
+  ADD COLUMN IF NOT EXISTS food_system_story jsonb;
