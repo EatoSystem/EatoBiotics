@@ -273,19 +273,6 @@ export function PaymentCTA({ result }: PaymentCTAProps) {
         })}
       </div>
 
-      {/* Bundle nudge */}
-      <p className="text-center text-sm text-muted-foreground">
-        Or get all three for{" "}
-        <span className="font-semibold text-foreground">€97</span>{" "}
-        <button
-          onClick={() => handlePurchase("premium")}
-          className="font-semibold underline decoration-dotted hover:text-foreground transition-colors"
-          style={{ color: "var(--icon-teal)" }}
-        >
-          bundle →
-        </button>
-      </p>
-
       {error && (
         <div className="rounded-xl border border-destructive/30 bg-destructive/8 px-4 py-3 text-sm text-destructive">
           {error}
