@@ -370,13 +370,14 @@ export function ConsultClient({
       {/* Header */}
       <div>
         <div className="mb-1 flex items-center gap-2">
-          <span className="text-xl leading-none">🤖</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/eatobiotics-icon.webp" alt="" className="h-7 w-7" />
           <h1 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
             EatoBiotic
           </h1>
         </div>
         <p className="text-sm text-muted-foreground">
-          {memberName ? `Hi ${memberName.split(" ")[0]} — ` : ""}Your personal EatoBiotics food system consultant.
+          {memberName ? `Hi ${memberName.split(" ")[0]} — ` : ""}I&apos;m your personal food system consultant.
         </p>
       </div>
 
