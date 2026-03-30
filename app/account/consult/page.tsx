@@ -8,7 +8,7 @@ import { ConsultClient } from "./consult-client"
 
 export const metadata: Metadata = {
   title: "AI Food System Consultation — EatoBiotics",
-  description: "Your personal EatoBiotics food system consultant, powered by Claude.",
+  description: "Your personal EatoBiotics food system consultant.",
 }
 
 export default async function ConsultPage() {

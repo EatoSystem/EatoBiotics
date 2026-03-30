@@ -1337,7 +1337,7 @@ function AdvisorSection({
 
         {/* Starter question pills */}
         <div className="mb-3">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Ask about</p>
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Ask about the Food System Inside You</p>
           <div className="flex flex-wrap gap-2">
             {starterQuestions.map((q) => (
               <Link

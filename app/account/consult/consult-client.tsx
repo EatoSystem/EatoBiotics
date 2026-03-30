@@ -376,7 +376,7 @@ export function ConsultClient({
           </h1>
         </div>
         <p className="text-sm text-muted-foreground">
-          {memberName ? `Hi ${memberName.split(" ")[0]} — ` : ""}Your personal EatoBiotics advisor, powered by Claude.
+          {memberName ? `Hi ${memberName.split(" ")[0]} — ` : ""}Your personal EatoBiotics food system consultant.
         </p>
       </div>
 
@@ -512,7 +512,7 @@ export function ConsultClient({
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={streaming || sessionEnded}
-              placeholder={sessionEnded ? "Session ended — start a new consultation" : "Ask about your gut health…"}
+              placeholder={sessionEnded ? "Session ended — start a new consultation" : "Ask about the Food System Inside You…"}
               rows={2}
               className="w-full resize-none rounded-2xl border bg-background px-4 py-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[color-mix(in_srgb,var(--icon-green)_50%,var(--border))] disabled:opacity-50"
               style={{ maxHeight: 120 }}
