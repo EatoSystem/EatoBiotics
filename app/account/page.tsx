@@ -51,6 +51,12 @@ export default async function AccountPage() {
   let monthlyGutPlan: { content: string; month: string } | null = null
   let bioticsProfile: { prebiotic: number; probiotic: number; postbiotic: number; analysisCount: number } | null = null
   let streak = 0
+  let patterns: {
+    bestDay: string
+    trendDirection: "up" | "stable" | "down"
+    bestStreak: number
+    analysisCount: number
+  } | null = null
 
   if (adminSupabase) {
     const { data: profileData } = await adminSupabase
@@ -189,6 +195,44 @@ export default async function AccountPage() {
       }
     }
 
+  // Pattern insights — best day, trend direction, best streak (90-day window)
+  if (adminSupabase) {
+    const ninetyDaysAgo = new Date()
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
+    const { data: patternRows } = await adminSupabase
+      .from("analyses")
+      .select("biotics_score, created_at")
+      .eq("user_id", user.id)
+      .gte("created_at", ninetyDaysAgo.toISOString())
+      .not("biotics_score", "is", null)
+      .order("created_at", { ascending: true })
+    if (patternRows && patternRows.length >= 3) {
+      const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+      const dayBuckets: Record<number, number[]> = {}
+      for (const row of patternRows) {
+        const dow = new Date(row.created_at as string).getDay()
+        dayBuckets[dow] = [...(dayBuckets[dow] ?? []), row.biotics_score as number]
+      }
+      const bestDowEntry = Object.entries(dayBuckets)
+        .map(([dow, scores]) => ({ dow: Number(dow), avg: scores.reduce((a, b) => a + b, 0) / scores.length }))
+        .sort((a, b) => b.avg - a.avg)[0]
+      const bestDay = DAY_NAMES[bestDowEntry.dow]
+      const scores = patternRows.map((r) => r.biotics_score as number)
+      const half = Math.min(10, Math.floor(scores.length / 2))
+      const firstAvg = scores.slice(0, half).reduce((a, b) => a + b, 0) / half
+      const lastAvg = scores.slice(-half).reduce((a, b) => a + b, 0) / half
+      const trendDirection: "up" | "stable" | "down" = lastAvg - firstAvg > 3 ? "up" : lastAvg - firstAvg < -3 ? "down" : "stable"
+      const uniqueDays = Array.from(new Set(patternRows.map((r) => (r.created_at as string).slice(0, 10)))).sort()
+      let bestStreak = 1, currentStreak = 1
+      for (let i = 1; i < uniqueDays.length; i++) {
+        const diff = (new Date(uniqueDays[i]).getTime() - new Date(uniqueDays[i - 1]).getTime()) / 86_400_000
+        if (diff === 1) { currentStreak++; bestStreak = Math.max(bestStreak, currentStreak) }
+        else { currentStreak = 1 }
+      }
+      patterns = { bestDay, trendDirection, bestStreak, analysisCount: patternRows.length }
+    }
+  }
+
   // Streak computation — consecutive days with at least one meal analysis
   function computeStreak(rows: { created_at: string }[]): number {
     if (!rows.length) return 0
@@ -259,6 +303,7 @@ export default async function AccountPage() {
         streak={streak}
         dailyPromptIndex={dailyPromptIndex}
         pastConsultations={pastConsultations}
+        patterns={patterns}
       />
     </div>
   )

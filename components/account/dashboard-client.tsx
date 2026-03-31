@@ -25,6 +25,9 @@ import {
   Sparkles,
   MessageSquare,
   ChevronDown,
+  Calendar,
+  BookOpen,
+  Search,
 } from "lucide-react"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
 import { ScoreRing } from "@/components/assessment/score-ring"
@@ -83,6 +86,13 @@ interface BioticsProfile {
   analysisCount: number
 }
 
+interface AnalysisPatterns {
+  bestDay: string
+  trendDirection: "up" | "stable" | "down"
+  bestStreak: number
+  analysisCount: number
+}
+
 interface DashboardClientProps {
   profile: Profile
   assessments: AssessmentRow[]
@@ -104,6 +114,7 @@ interface DashboardClientProps {
     summary: string | null
     messages: Array<{role: string; content: string; turn: number}> | null
   }>
+  patterns?: AnalysisPatterns | null
 }
 
 /* ── Tabs ───────────────────────────────────────────────────────────── */
@@ -1384,6 +1395,150 @@ function AdvisorSection({
   )
 }
 
+/* ── Food System Tools Grid ─────────────────────────────────────────── */
+
+const TIER_ORDER: Record<string, number> = { free: 0, grow: 1, restore: 2, transform: 3 }
+
+const FOOD_SYSTEM_TOOLS = [
+  {
+    key: "meal-plan",
+    title: "Weekly Meal Plan",
+    description: "Your personalised 7-day eating plan",
+    href: "/account/meal-plan",
+    icon: Calendar,
+    requiredTier: "restore",
+    color: "var(--icon-teal)",
+  },
+  {
+    key: "deep-dive",
+    title: "Condition Deep Dive",
+    description: "9 condition profiles built from your data",
+    href: "/account/consult/deep-dive",
+    icon: Search,
+    requiredTier: "transform",
+    color: "var(--icon-orange)",
+  },
+  {
+    key: "story",
+    title: "Your Food System Story",
+    description: "The living narrative of your progress",
+    href: "/account/story",
+    icon: BookOpen,
+    requiredTier: "transform",
+    color: "var(--icon-orange)",
+  },
+  {
+    key: "doctor-report",
+    title: "Doctor Report",
+    description: "Share your food system data with a clinician",
+    href: "/account/doctor-report",
+    icon: ClipboardList,
+    requiredTier: "transform",
+    color: "var(--icon-lime)",
+  },
+] as const
+
+function FoodSystemToolsGrid({
+  membershipTier,
+  setActiveTab,
+}: {
+  membershipTier: string
+  setActiveTab: (tab: TabKey) => void
+}) {
+  const TIER_LABEL: Record<string, string> = { restore: "Restore", transform: "Transform" }
+  return (
+    <div>
+      <p className="mb-2.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        Your Food System Tools
+      </p>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {FOOD_SYSTEM_TOOLS.map((tool) => {
+          const unlocked = TIER_ORDER[membershipTier] >= TIER_ORDER[tool.requiredTier]
+          const Icon = tool.icon
+          if (unlocked) {
+            return (
+              <Link
+                key={tool.key}
+                href={tool.href}
+                className="group flex flex-col rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5"
+              >
+                <span
+                  className="flex h-9 w-9 items-center justify-center rounded-xl"
+                  style={{ background: `color-mix(in srgb, ${tool.color} 15%, transparent)` }}
+                >
+                  <Icon size={16} style={{ color: tool.color }} />
+                </span>
+                <p className="mt-2.5 text-sm font-semibold leading-tight text-foreground">{tool.title}</p>
+                <p className="mt-1 flex-1 text-xs leading-snug text-muted-foreground">{tool.description}</p>
+                <div className="mt-3 flex justify-end">
+                  <ArrowRight size={12} style={{ color: tool.color }} />
+                </div>
+              </Link>
+            )
+          }
+          return (
+            <button
+              key={tool.key}
+              onClick={() => setActiveTab("membership")}
+              className="relative flex flex-col rounded-2xl border border-gray-100 bg-white p-4 shadow-sm text-left opacity-60 transition-opacity hover:opacity-80"
+            >
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted">
+                <Icon size={16} className="text-muted-foreground" />
+              </span>
+              <Lock size={10} className="absolute right-3 top-3 text-muted-foreground" />
+              <p className="mt-2.5 text-sm font-semibold leading-tight text-muted-foreground">{tool.title}</p>
+              <p className="mt-1 flex-1 text-xs leading-snug text-muted-foreground/60">{tool.description}</p>
+              <div className="mt-3">
+                <span
+                  className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase"
+                  style={{
+                    background: `color-mix(in srgb, ${tool.color} 12%, transparent)`,
+                    color: tool.color,
+                  }}
+                >
+                  {TIER_LABEL[tool.requiredTier]}+
+                </span>
+              </div>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/* ── Pattern Insights Strip ─────────────────────────────────────────── */
+
+function PatternInsightsStrip({ patterns }: { patterns: AnalysisPatterns | null }) {
+  if (!patterns) return null
+  const trendConfig = {
+    up:     { icon: <TrendingUp size={12} style={{ color: "var(--icon-green)" }} />,  label: "↑ Trending up" },
+    stable: { icon: <ArrowRight size={12} style={{ color: "var(--icon-yellow)" }} />, label: "→ Holding steady" },
+    down:   { icon: <TrendingUp size={12} className="rotate-180" style={{ color: "#ef4444" }} />, label: "↓ Dipping" },
+  }[patterns.trendDirection]
+  return (
+    <div>
+      <p className="mb-2.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        Your Meal Patterns
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-100 bg-white px-3 py-1.5 text-xs font-medium shadow-sm">
+          <TrendingUp size={12} style={{ color: "var(--icon-lime)" }} />
+          Best day: {patterns.bestDay}
+        </span>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-100 bg-white px-3 py-1.5 text-xs font-medium shadow-sm">
+          {trendConfig.icon}
+          {trendConfig.label}
+        </span>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-100 bg-white px-3 py-1.5 text-xs font-medium shadow-sm">
+          <Zap size={12} style={{ color: "var(--icon-orange)" }} />
+          Best streak: {patterns.bestStreak} day{patterns.bestStreak !== 1 ? "s" : ""}
+        </span>
+      </div>
+    </div>
+  )
+}
+
 /* ── Overview Tab ───────────────────────────────────────────────────── */
 
 function OverviewTab({
@@ -1397,6 +1552,8 @@ function OverviewTab({
   streak = 0,
   dailyPromptIndex = 0,
   consultHref,
+  patterns,
+  setActiveTab,
 }: {
   assessments: AssessmentRow[]
   membershipTier: Profile["membership_tier"]
@@ -1408,6 +1565,8 @@ function OverviewTab({
   streak?: number
   dailyPromptIndex?: number
   consultHref?: string
+  patterns?: AnalysisPatterns | null
+  setActiveTab: (tab: TabKey) => void
 }) {
   const latest = assessments[0] ?? null
   const previous = assessments[1] ?? null
@@ -1592,8 +1751,14 @@ function OverviewTab({
         <TransformPreview />
       )}
 
+      {/* ── Food System Tools ────────────────────────────────────── */}
+      <FoodSystemToolsGrid membershipTier={membershipTier} setActiveTab={setActiveTab} />
+
       {/* Meal Lab */}
       <MealLabCard meals={meals} />
+
+      {/* ── Pattern Insights ─────────────────────────────────────── */}
+      <PatternInsightsStrip patterns={patterns ?? null} />
 
       {/* Quick Actions */}
       <div>
@@ -2718,7 +2883,7 @@ function ConsultHistoryTab({
 
 /* ── Main Component ─────────────────────────────────────────────────── */
 
-export function DashboardClient({ profile, assessments, paidReports, plateData, nextBillingDate, dailyConsultCount = 0, monthlyConsultCount = 0, weeklyCheckin, monthlyGutPlan, bioticsProfile, streak = 0, dailyPromptIndex = 0, consultHref, pastConsultations = [] }: DashboardClientProps) {
+export function DashboardClient({ profile, assessments, paidReports, plateData, nextBillingDate, dailyConsultCount = 0, monthlyConsultCount = 0, weeklyCheckin, monthlyGutPlan, bioticsProfile, streak = 0, dailyPromptIndex = 0, consultHref, pastConsultations = [], patterns }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("overview")
   const router = useRouter()
   const latest = assessments[0] ?? null
@@ -2764,7 +2929,7 @@ export function DashboardClient({ profile, assessments, paidReports, plateData, 
 
       {/* Tab content */}
       <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
-        {activeTab === "overview" && <OverviewTab assessments={assessments} membershipTier={profile.membership_tier ?? "free"} weeklyCheckin={weeklyCheckin} monthlyGutPlan={monthlyGutPlan} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} bioticsProfile={bioticsProfile} streak={streak} dailyPromptIndex={dailyPromptIndex} consultHref={consultHref} />}
+        {activeTab === "overview" && <OverviewTab assessments={assessments} membershipTier={profile.membership_tier ?? "free"} weeklyCheckin={weeklyCheckin} monthlyGutPlan={monthlyGutPlan} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} bioticsProfile={bioticsProfile} streak={streak} dailyPromptIndex={dailyPromptIndex} consultHref={consultHref} patterns={patterns} setActiveTab={setActiveTab} />}
         {activeTab === "reports" && <ReportsTab paidReports={paidReports} />}
         {activeTab === "membership" && <MembershipTab profile={profile} nextBillingDate={nextBillingDate} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} latestAssessment={latest} />}
         {activeTab === "plate" && <PlateTab plateData={plateData} />}
