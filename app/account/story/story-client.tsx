@@ -166,10 +166,10 @@ export function StoryClient({ story, currentScore, memberName, memberSince }: St
           Transform Feature
         </p>
         <h1 className="font-serif text-3xl font-semibold text-foreground mb-2">
-          Your Food System Story
+          Your Food System
         </h1>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          A living narrative of your gut health journey — where you started, what changed, where you&apos;re going.
+          Your progress, patterns, and improvements — where you started, what changed, where you&apos;re going.
         </p>
       </div>
 

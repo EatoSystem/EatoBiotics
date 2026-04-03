@@ -6,9 +6,9 @@ import { getUserMembershipTier } from "@/lib/membership"
 import { StoryClient } from "./story-client"
 
 export const metadata: Metadata = {
-  title: "Your Food System Story — EatoBiotics",
+  title: "Your Food System — EatoBiotics",
   description:
-    "Your living food system health narrative — where you started, how you've grown, where you're going.",
+    "Your food system progress, patterns, and improvements — where you started, how you've grown, where you're going.",
 }
 
 export default async function StoryPage() {

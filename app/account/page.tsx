@@ -61,7 +61,7 @@ export default async function AccountPage() {
   if (adminSupabase) {
     const { data: profileData } = await adminSupabase
       .from("profiles")
-      .select("id, email, name, age_bracket, membership, referral_code, referred_by, membership_tier, membership_status, stripe_customer_id, stripe_subscription_id, membership_started_at, membership_expires_at, is_founding_member, health_goals")
+      .select("id, email, name, age_bracket, membership, referral_code, referred_by, membership_tier, membership_status, stripe_customer_id, stripe_subscription_id, membership_started_at, membership_expires_at, is_founding_member, health_goals, food_system_story")
       .eq("id", user.id)
       .single()
     profile = profileData
@@ -233,6 +233,46 @@ export default async function AccountPage() {
     }
   }
 
+  // Meal plan — check if current week has a plan
+  let hasMealPlan = false
+  if (adminSupabase && (profile?.membership_tier === "restore" || profile?.membership_tier === "transform")) {
+    try {
+      const today = new Date()
+      const dow = today.getDay()
+      const monday = new Date(today)
+      monday.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1))
+      const weekStarting = monday.toISOString().slice(0, 10)
+      const { data: mpData } = await adminSupabase
+        .from("meal_plans")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("week_starting", weekStarting)
+        .limit(1)
+        .single()
+      hasMealPlan = !!mpData
+    } catch { /* no plan yet */ }
+  }
+
+  // Monthly review — latest entry
+  let latestMonthlyReview: { month: string } | null = null
+  if (adminSupabase && profile?.membership_tier === "transform") {
+    try {
+      const { data: mrData } = await adminSupabase
+        .from("monthly_reviews")
+        .select("month")
+        .eq("user_id", user.id)
+        .order("month", { ascending: false })
+        .limit(1)
+        .single()
+      if (mrData) latestMonthlyReview = { month: mrData.month as string }
+    } catch { /* no reviews yet */ }
+  }
+
+  // Food system story — last updated
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const storyJson = (profile as any)?.food_system_story as { lastUpdated?: string } | null
+  const storyLastUpdated: string | null = storyJson?.lastUpdated ?? null
+
   // Streak computation — consecutive days with at least one meal analysis
   function computeStreak(rows: { created_at: string }[]): number {
     if (!rows.length) return 0
@@ -304,6 +344,9 @@ export default async function AccountPage() {
         dailyPromptIndex={dailyPromptIndex}
         pastConsultations={pastConsultations}
         patterns={patterns}
+        hasMealPlan={hasMealPlan}
+        latestMonthlyReview={latestMonthlyReview}
+        storyLastUpdated={storyLastUpdated}
       />
     </div>
   )
