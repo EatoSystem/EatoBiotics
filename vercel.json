@@ -5,6 +5,10 @@
       "schedule": "0 8 * * 1"
     },
     {
+      "path": "/api/weekly-nudge",
+      "schedule": "0 9 * * 3"
+    },
+    {
       "path": "/api/monthly-review/generate",
       "schedule": "0 9 1 * *"
     }
