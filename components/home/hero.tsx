@@ -1,12 +1,14 @@
 "use client"
 
 import Image from "next/image"
+import Link from "next/link"
+import { ArrowRight, ChevronDown } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 
 export function Hero() {
   return (
     <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-20">
-<div className="relative z-10 mx-auto flex max-w-[720px] flex-col items-center text-center">
+      <div className="relative z-10 mx-auto flex max-w-[720px] flex-col items-center text-center">
         <ScrollReveal>
           <Image
             src="/eatobiotics-icon.webp"
@@ -32,28 +34,33 @@ export function Hero() {
 
         <ScrollReveal delay={300}>
           <p className="mt-6 max-w-lg text-base leading-relaxed text-muted-foreground md:text-lg">
-            A practical guide to the foods that strengthen your microbiome and improve how
-            you feel day to day -- digestion, immunity, energy, mood, and recovery.
+            Understand your microbiome. Score your meals. Build better habits — for digestion,
+            energy, mood, immunity, and recovery.
           </p>
         </ScrollReveal>
 
         <ScrollReveal delay={400}>
-          <p className="mt-6 max-w-md text-base font-medium italic text-icon-orange md:text-lg">
-            {"\"Build the food system inside you\u2026 and help build the food system around you.\""}
-          </p>
+          <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row">
+            <Link
+              href="/assessment"
+              className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
+            >
+              Start Free Assessment <ArrowRight size={16} />
+            </Link>
+            <a
+              href="#how-it-works"
+              className="inline-flex items-center gap-2 rounded-full border border-border px-8 py-4 text-base font-semibold text-foreground transition-all hover:bg-muted"
+            >
+              See How It Works <ChevronDown size={16} />
+            </a>
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground">Free to start. No card needed.</p>
         </ScrollReveal>
 
         <ScrollReveal delay={500}>
-          <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
-            <a
-              href="https://eatobiotics.substack.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="brand-gradient rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
-            >
-              Subscribe on Substack
-            </a>
-          </div>
+          <p className="mt-10 max-w-md text-sm font-medium italic text-muted-foreground/70">
+            &ldquo;Build the food system inside you&hellip; and help build the food system around you.&rdquo;
+          </p>
         </ScrollReveal>
       </div>
     </section>

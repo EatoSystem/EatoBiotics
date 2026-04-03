@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Check, ArrowRight, Star, Zap, AlertTriangle } from "lucide-react"
+import { Check, ArrowRight, Star, Zap, AlertTriangle, ClipboardList, BarChart2, Utensils, TrendingUp } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 /* ── Types ───────────────────────────────────────────────────────────── */
@@ -222,6 +222,31 @@ export function PricingClient({
             EatoBiotic consultations are available exclusively on the <strong>Transform</strong> plan.
           </div>
         )}
+      </div>
+
+      {/* Funnel clarity strip */}
+      <div className="mb-12 rounded-3xl border bg-card overflow-hidden">
+        <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-orange))" }} />
+        <div className="grid gap-0 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border">
+          {[
+            { icon: ClipboardList, step: "01", label: "Assess", desc: "Take the free 15-question assessment and get your food system score", color: "var(--icon-lime)" },
+            { icon: BarChart2,     step: "02", label: "Score",  desc: "Understand your Biotics Score across 5 pillars — free, forever",       color: "var(--icon-green)" },
+            { icon: Utensils,      step: "03", label: "Log",    desc: "Upgrade to log meals daily and track your Pre, Pro, Post intake",       color: "var(--icon-teal)" },
+            { icon: TrendingUp,    step: "04", label: "Improve", desc: "Transform members get unlimited AI consultation and monthly reviews",  color: "var(--icon-orange)" },
+          ].map(({ icon: Icon, step, label, desc, color }) => (
+            <div key={step} className="flex gap-3 p-5">
+              <div className="shrink-0 mt-0.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ background: `color-mix(in srgb, ${color} 15%, transparent)` }}>
+                  <Icon size={15} style={{ color }} />
+                </div>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color }}>{step} — {label}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Past due banner */}

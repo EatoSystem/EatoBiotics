@@ -31,16 +31,16 @@ const platforms = [
   },
   {
     number: "03",
-    title: "The App",
+    title: "The Platform",
     label: "TRACK",
     accent: "var(--icon-yellow)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     description:
-      "Your personal Biotics Score. Log your food, track your microbiome diversity, and build your plate — all in one companion app.",
-    cta: "See the app",
-    href: "/app",
+      "Assess your food system, score your meals, build your plate, and get personalised advice from EatoBiotic — your AI food system advisor.",
+    cta: "Start free",
+    href: "/assessment",
     external: false,
-    status: "Coming 2026",
+    status: "Live now",
   },
   {
     number: "04",

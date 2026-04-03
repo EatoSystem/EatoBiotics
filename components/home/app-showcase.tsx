@@ -9,31 +9,31 @@ const FEATURES = [
   {
     icon: BarChart3,
     title: "Biotics Score",
-    description: "A daily 0-100 score measuring your microbiome food balance.",
+    description: "A 0–100 score across Pre, Pro, and Post — see exactly how your meals perform.",
     color: "var(--icon-lime)",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
-    href: "/app#score-calculator",
+    href: "/analyse",
   },
   {
     icon: Utensils,
-    title: "Food Logging",
-    description: "Log meals with auto-tagging for all three biotic types.",
+    title: "Meal Analysis",
+    description: "Photograph or describe any meal — get scored for all three biotic types instantly.",
     color: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
-    href: "/app#plate-tracker",
+    href: "/analyse",
   },
   {
     icon: Activity,
-    title: "Food System Trends",
-    description: "Track progress over weeks and months with visual charts.",
+    title: "Progress Tracking",
+    description: "See your streak, trend direction, and best day — your food system over time.",
     color: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-orange), var(--icon-yellow))",
-    href: "/app#score-calculator",
+    href: "/account",
   },
   {
     icon: Apple,
-    title: "Food Profiles",
-    description: "50+ foods with biotic breakdowns and pairing tips.",
+    title: "Food Library",
+    description: "50+ foods with full Pre, Pro, Post biotic breakdowns and pairing tips.",
     color: "var(--icon-yellow)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     href: "/food",
@@ -54,14 +54,14 @@ export function AppShowcase() {
               <Smartphone size={26} className="text-white" />
             </div>
             <p className="text-xs font-semibold uppercase tracking-widest text-icon-teal">
-              The App — Coming Soon
+              The Platform — Live Now
             </p>
             <h2 className="mt-4 font-serif text-3xl font-semibold text-foreground sm:text-4xl md:text-5xl text-balance">
-              Your Companion for the Three Biotics
+              Your Personal Food System Platform
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Score your meals, build your plate, track your plants, and discover
-              50+ foods — all in one place. Try the interactive tools now.
+              Assess, score, log, and improve — all in one place. EatoBiotics learns from
+              your meals and builds a living picture of your food system over time.
             </p>
           </div>
         </ScrollReveal>
@@ -117,16 +117,16 @@ export function AppShowcase() {
         <ScrollReveal delay={200}>
           <div className="mt-12 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Link
-              href="/app#score-calculator"
-              className="brand-gradient inline-block rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
+              href="/assessment"
+              className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
             >
-              Try the Interactive Tools
+              Start Free Assessment <ArrowRight size={16} />
             </Link>
             <Link
-              href="/app"
+              href="/account"
               className="inline-block rounded-full border border-border px-8 py-4 text-base font-semibold text-foreground transition-all hover:bg-muted"
             >
-              Explore the App
+              Go to Dashboard
             </Link>
           </div>
         </ScrollReveal>
