@@ -13,7 +13,7 @@ export function Hero() {
         {/* ── Left: Text ─────────────────────────────────────── */}
         <div className="flex-1 text-left max-w-[560px]">
           <ScrollReveal>
-            <h1 className="font-serif text-5xl font-bold leading-tight text-foreground sm:text-6xl md:text-7xl text-balance">
+            <h1 className="font-serif text-4xl font-bold leading-tight text-foreground sm:text-5xl lg:text-6xl text-balance">
               The Food System<br />Inside You
             </h1>
           </ScrollReveal>
@@ -65,7 +65,7 @@ export function Hero() {
         <ScrollReveal delay={80} className="flex-1 flex items-center justify-center w-full max-w-[540px]">
           <div className="relative w-full">
             <Image
-              src="/images/hero-gut.png"
+              src="/images/hero-gut.jpg"
               alt="The food system inside you — gut microbiome illustration"
               width={900}
               height={900}
