@@ -13,22 +13,30 @@ export function Hero() {
         {/* ── Left: Text ─────────────────────────────────────── */}
         <div className="flex-1 text-left max-w-[560px]">
           <ScrollReveal>
-            <h1 className="font-serif text-4xl font-bold leading-tight text-foreground sm:text-5xl lg:text-6xl text-balance">
+            <h1
+              className="font-serif text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl text-balance"
+              style={{
+                background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
               The Food System<br />Inside You
             </h1>
           </ScrollReveal>
 
           <ScrollReveal delay={100}>
             <p className="mt-6 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg">
-              A simple system to understand your microbiome and improve how you feel day to day —
-              digestion, immunity, energy, mood, and recovery.
+              An advanced system to understand your Food System and microbiome that improves
+              how you feel every day — digestion, immunity, energy, mood, and recovery.
             </p>
           </ScrollReveal>
 
           <ScrollReveal delay={160}>
             <p className="mt-4 text-base font-semibold" style={{ color: "var(--icon-orange)" }}>
-              Built around{" "}
-              <span className="text-foreground">Pre. Pro. Post.</span>
+              Built around the 3 Biotics —{" "}
+              <span className="text-foreground">Pre, Pro, &amp; PostBiotics</span>
             </p>
           </ScrollReveal>
 
@@ -55,7 +63,10 @@ export function Hero() {
           </ScrollReveal>
 
           <ScrollReveal delay={400}>
-            <p className="mt-12 text-sm font-medium italic text-muted-foreground/60 sm:text-base" style={{ color: "var(--icon-orange)", opacity: 0.85 }}>
+            <p
+              className="mt-12 text-sm font-medium italic sm:text-base"
+              style={{ color: "var(--icon-orange)", opacity: 0.85 }}
+            >
               &ldquo;Build the food system inside you&hellip; and help build the food system around you.&rdquo;
             </p>
           </ScrollReveal>
