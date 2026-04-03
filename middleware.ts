@@ -6,7 +6,8 @@ import { NextResponse, type NextRequest } from "next/server"
    Set DEV_PASSWORD in .env.local (or env vars) to enable.
    Leave it unset to disable the gate in production.
 ──────────────────────────────────────────────────────────────────────── */
-const DEV_PASSWORD = process.env.DEV_PASSWORD ?? ""
+// Gate is always active. Set DEV_PASSWORD="" in env vars to disable when going public.
+const DEV_PASSWORD = process.env.DEV_PASSWORD ?? "Monkstown"
 const DEV_COOKIE   = "eb_dev_auth"
 const ENTER_PATH   = "/enter"
 
@@ -24,7 +25,7 @@ function isDevGateExempt(pathname: string): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // ── Dev gate (only active when DEV_PASSWORD is set) ──────────────────
+  // ── Dev gate (always active unless DEV_PASSWORD is explicitly "") ─────
   if (DEV_PASSWORD) {
     if (!isDevGateExempt(pathname)) {
       const cookie = request.cookies.get(DEV_COOKIE)?.value

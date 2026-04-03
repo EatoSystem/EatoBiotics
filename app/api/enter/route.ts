@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 
-const DEV_PASSWORD = process.env.DEV_PASSWORD ?? ""
+const DEV_PASSWORD = process.env.DEV_PASSWORD ?? "Monkstown"
 const DEV_COOKIE   = "eb_dev_auth"
 
 export async function POST(req: NextRequest) {
