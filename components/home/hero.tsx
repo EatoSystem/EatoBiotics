@@ -76,7 +76,7 @@ export function Hero() {
         <ScrollReveal delay={80} className="flex-1 flex items-center justify-center w-full max-w-[540px]">
           <div className="relative w-full">
             <Image
-              src="/images/hero-gut.jpg"
+              src="/images/hero-gut.png"
               alt="The food system inside you — gut microbiome illustration"
               width={900}
               height={900}
