@@ -1,5 +1,5 @@
-const CACHE_NAME = "eatobiotics-v1"
-const PRECACHE_URLS = ["/", "/myplate", "/assessment", "/food"]
+const CACHE_NAME = "eatobiotics-v2"
+const PRECACHE_URLS = ["/", "/myplate", "/assessment", "/food", "/offline"]
 
 // Install: pre-cache key pages
 self.addEventListener("install", (event) => {
@@ -61,8 +61,8 @@ self.addEventListener("fetch", (event) => {
           return res
         })
         .catch(() => {
-          // Offline fallback — return homepage from cache
-          return caches.match("/") || new Response("Offline", { status: 503 })
+          // Offline fallback — return branded offline page
+          return caches.match("/offline") || new Response("Offline", { status: 503 })
         })
     })
   )

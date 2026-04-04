@@ -10,6 +10,7 @@ const STEPS = [
     description: "Answer 15 questions about what you eat. Get your personalised food system score.",
     color: "var(--icon-lime)",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
+    bgGradient: "linear-gradient(160deg, color-mix(in srgb, var(--icon-lime) 10%, transparent), transparent 60%)",
   },
   {
     number: "02",
@@ -18,6 +19,7 @@ const STEPS = [
     description: "See your Biotics Score across 5 pillars — Diversity, Feeding, Live Foods, Consistency, and Feeling.",
     color: "var(--icon-green)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
+    bgGradient: "linear-gradient(160deg, color-mix(in srgb, var(--icon-green) 10%, transparent), transparent 60%)",
   },
   {
     number: "03",
@@ -26,6 +28,7 @@ const STEPS = [
     description: "Photograph or describe your meals. EatoBiotics scores them for Pre, Pro, and Post biotics in seconds.",
     color: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-yellow))",
+    bgGradient: "linear-gradient(160deg, color-mix(in srgb, var(--icon-teal) 10%, transparent), transparent 60%)",
   },
   {
     number: "04",
@@ -34,6 +37,7 @@ const STEPS = [
     description: "Track your streak, get personalised meal plans, and consult EatoBiotic — your AI food system advisor.",
     color: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
+    bgGradient: "linear-gradient(160deg, color-mix(in srgb, var(--icon-orange) 10%, transparent), transparent 60%)",
   },
 ]
 
@@ -61,7 +65,14 @@ export function HowItWorks() {
             const Icon = step.icon
             return (
               <ScrollReveal key={step.number} delay={i * 80}>
-                <div className="relative flex flex-col rounded-3xl border bg-card p-6 transition-shadow hover:shadow-lg h-full">
+                <div
+                  className="relative flex flex-col rounded-3xl p-6 transition-shadow hover:shadow-lg h-full"
+                  style={{
+                    background: step.bgGradient,
+                    border: `1.5px solid color-mix(in srgb, ${step.color} 30%, transparent)`,
+                    borderLeft: `4px solid ${step.color}`,
+                  }}
+                >
                   {/* Step number */}
                   <p
                     className="text-xs font-bold uppercase tracking-widest mb-4"

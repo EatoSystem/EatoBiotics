@@ -6,6 +6,8 @@ import { Footer } from '@/components/footer'
 import { JsonLd } from '@/components/json-ld'
 import { generateOrganizationSchema } from '@/lib/structured-data'
 import { PwaRegister } from '@/components/pwa-register'
+import { PwaInstallPrompt } from '@/components/pwa-install-prompt'
+import { Toaster } from 'sonner'
 import './globals.css'
 
 const _dmSans = DM_Sans({
@@ -68,7 +70,9 @@ export default function RootLayout({
         <main>{children}</main>
         <Footer />
         <Analytics />
+        <Toaster position="bottom-center" richColors />
         <PwaRegister />
+        <PwaInstallPrompt />
       </body>
     </html>
   )

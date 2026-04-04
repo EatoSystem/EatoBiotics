@@ -1,8 +1,9 @@
 {
+  "id": "/",
   "name": "EatoBiotics",
   "short_name": "EatoBiotics",
   "description": "Your gut health food system — track your plate, plants, and daily wellbeing.",
-  "start_url": "/myplate",
+  "start_url": "/?source=pwa",
   "display": "standalone",
   "background_color": "#FFFFFF",
   "theme_color": "#56C135",
@@ -20,7 +21,7 @@
       "type": "image/png"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "/icons/icon-512-maskable.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

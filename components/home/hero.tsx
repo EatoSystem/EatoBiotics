@@ -48,27 +48,7 @@ export function Hero() {
               >
                 Start Free Assessment <ArrowRight size={16} />
               </Link>
-              <p className="text-sm text-muted-foreground">Takes 2 minutes. Free.</p>
             </div>
-          </ScrollReveal>
-
-          <ScrollReveal delay={300}>
-            <a
-              href="#how-it-works"
-              className="mt-4 inline-flex items-center gap-1.5 text-base font-semibold transition-colors"
-              style={{ color: "var(--icon-green)" }}
-            >
-              See How It Works <ArrowRight size={15} />
-            </a>
-          </ScrollReveal>
-
-          <ScrollReveal delay={400}>
-            <p
-              className="mt-12 text-sm font-medium italic sm:text-base"
-              style={{ color: "var(--icon-orange)", opacity: 0.85 }}
-            >
-              &ldquo;Build the food system inside you&hellip; and help build the food system around you.&rdquo;
-            </p>
           </ScrollReveal>
         </div>
 
