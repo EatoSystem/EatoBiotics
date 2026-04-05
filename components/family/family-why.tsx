@@ -121,7 +121,7 @@ export function FamilyWhy() {
         <ScrollReveal delay={400}>
           <div className="mt-12 text-center">
             <Link
-              href="/assessment"
+              href="/assessment-family"
               className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
             >
               Start Your Family Assessment <ArrowRight size={16} />
