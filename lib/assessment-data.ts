@@ -28,6 +28,7 @@ export const SECTION_COLORS: Record<string, string> = {
   "Live & Fermented Foods": "var(--icon-teal)",
   "Consistency & Rhythm": "var(--icon-yellow)",
   "How Your Body Responds": "var(--icon-orange)",
+  "How Your Family Responds": "var(--icon-orange)",
   // Legacy keys (kept for localStorage backwards compatibility)
   "Your Eating Foundation": "var(--icon-lime)",
   "Plant & Fibre Diversity": "var(--icon-lime)",
