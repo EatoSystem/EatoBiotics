@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useState, useRef, useEffect } from "react"
-import { Menu, X, ChevronDown, BookOpen, Leaf, Smartphone, UtensilsCrossed, Calendar, Info, Globe, Map, Mic, Activity, Users } from "lucide-react"
+import { Menu, X, ChevronDown, BookOpen, Leaf, Smartphone, UtensilsCrossed, Calendar, Info, Globe, Map, Mic, Activity, Users, Brain, ClipboardList } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { AccountNavItem } from "@/components/account/account-nav-item"
@@ -25,6 +25,7 @@ const navGroups: NavGroup[] = [
     label: "Learn",
     items: [
       { href: "/biotics", label: "The Biotics", description: "The 3-part framework for your gut", icon: Leaf },
+      { href: "/gut-brain", label: "Gut-Brain", description: "How your gut shapes your mind", icon: Brain },
       { href: "/book", label: "The Book", description: "EatoBiotics — coming 2026", icon: BookOpen },
       { href: "/app", label: "The App", description: "Your daily plate companion", icon: Smartphone },
     ],
@@ -37,6 +38,7 @@ const navGroups: NavGroup[] = [
       { href: "/podcast", label: "The Podcast", description: "Conversations about food & performance", icon: Mic },
       { href: "/eatosports", label: "EatoSports", description: "The food system for sport & performance", icon: Activity },
       { href: "/family", label: "For Families", description: "The food system for the whole family", icon: Users },
+      { href: "/assessment-mind", label: "Mind Assessment", description: "Score your gut-brain connection", icon: ClipboardList },
     ],
   },
   {

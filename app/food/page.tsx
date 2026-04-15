@@ -3,7 +3,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { GradientText } from "@/components/gradient-text"
-import { foods, getTodaysFood, bioticLabels, type BioticType } from "@/lib/foods"
+import { foods, getTodaysFood, getBrainHealthFoods, bioticLabels, type BioticType } from "@/lib/foods"
 import { ArrowUpRight, Calendar } from "lucide-react"
 
 export const metadata: Metadata = {
@@ -243,6 +243,69 @@ export default function FoodLibraryPage() {
             </section>
           )
         })
+      })()}
+
+      {/* Gradient divider */}
+      <div className="section-divider" />
+
+      {/* Brain Foods section */}
+      {(() => {
+        const brainFoods = getBrainHealthFoods()
+        return (
+          <section className="bg-secondary/40 px-6 py-16 md:py-24">
+            <div className="mx-auto max-w-[1200px]">
+              <ScrollReveal>
+                <div className="flex items-center gap-4">
+                  <div
+                    className="h-1 w-12 rounded-full"
+                    style={{ background: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" }}
+                  />
+                  <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--icon-teal)" }}>
+                    Brain Foods
+                  </p>
+                </div>
+                <h2 className="mt-3 font-serif text-2xl font-semibold text-foreground sm:text-3xl">
+                  Foods that support the gut-brain connection
+                </h2>
+                <p className="mt-2 text-sm text-muted-foreground max-w-xl">
+                  Your gut produces 90–95% of your body&apos;s serotonin. These foods directly nourish the microbiome-brain axis — supporting mood, focus, and mental clarity.{" "}
+                  <Link href="/gut-brain" className="underline underline-offset-2 hover:text-foreground transition-colors">
+                    Learn the science →
+                  </Link>
+                </p>
+              </ScrollReveal>
+
+              <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {brainFoods.map((food, index) => (
+                  <ScrollReveal key={food.slug} delay={index * 60}>
+                    <Link href={`/food/${food.slug}`} className="group block h-full">
+                      <div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-background p-6 transition-all hover:shadow-lg">
+                        <div
+                          className="absolute top-0 left-0 right-0 h-1"
+                          style={{ background: food.gradient }}
+                        />
+                        <span className="text-5xl">{food.emoji}</span>
+                        <div className="mt-4 flex-1">
+                          <p className="text-xs font-bold uppercase tracking-widest" style={{ color: food.accentColor }}>
+                            {food.category}
+                          </p>
+                          <h3 className="mt-1 font-serif text-xl font-semibold text-foreground">{food.name}</h3>
+                          <p className="mt-2 text-xs italic leading-relaxed text-muted-foreground">{food.tagline}</p>
+                        </div>
+                        <div className="mt-4 flex items-center justify-between">
+                          <div className="h-0.5 w-8 rounded-full" style={{ backgroundColor: food.accentColor }} />
+                          <span className="flex items-center gap-1 text-xs font-semibold opacity-0 transition-opacity group-hover:opacity-100" style={{ color: food.accentColor }}>
+                            Read profile <ArrowUpRight size={11} />
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+                  </ScrollReveal>
+                ))}
+              </div>
+            </div>
+          </section>
+        )
       })()}
 
       {/* Gradient divider */}

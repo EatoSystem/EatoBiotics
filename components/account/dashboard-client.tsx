@@ -32,6 +32,7 @@ import {
 } from "lucide-react"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
 import { OnboardingModal } from "./onboarding-modal"
+import { PractitionerReportCard } from "./practitioner-report-card"
 import { ScoreRing } from "@/components/assessment/score-ring"
 import { ProgressChart } from "./progress-chart"
 import { cn } from "@/lib/utils"
@@ -2141,29 +2142,32 @@ function MealScoreRing({ score, band }: { score: number; band: string }) {
 function ReportsTab({ paidReports }: { paidReports: PaidReport[] }) {
   if (paidReports.length === 0) {
     return (
-      <div className="overflow-hidden rounded-3xl border bg-card">
-        <div className="h-1.5 w-full" style={{ background: "linear-gradient(90deg, var(--icon-teal), var(--icon-lime))" }} />
-        <div className="px-6 py-12 text-center">
-          <div
-            className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl"
-            style={{ background: "linear-gradient(135deg, var(--icon-teal), var(--icon-lime))" }}
-          >
-            <FileText size={28} className="text-white" />
+      <div className="space-y-4">
+        <div className="overflow-hidden rounded-3xl border bg-card">
+          <div className="h-1.5 w-full" style={{ background: "linear-gradient(90deg, var(--icon-teal), var(--icon-lime))" }} />
+          <div className="px-6 py-12 text-center">
+            <div
+              className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl"
+              style={{ background: "linear-gradient(135deg, var(--icon-teal), var(--icon-lime))" }}
+            >
+              <FileText size={28} className="text-white" />
+            </div>
+            <h3 className="mb-2 font-serif text-xl font-semibold text-foreground">
+              Your deep dive awaits
+            </h3>
+            <p className="mx-auto mb-5 max-w-sm text-sm text-muted-foreground">
+              Complete the assessment to unlock your personalised food system assessment report — a full breakdown of your food system with actionable steps.
+            </p>
+            <Link
+              href="/assessment"
+              className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              style={{ background: "var(--icon-green)" }}
+            >
+              Take the assessment <ArrowRight size={14} />
+            </Link>
           </div>
-          <h3 className="mb-2 font-serif text-xl font-semibold text-foreground">
-            Your deep dive awaits
-          </h3>
-          <p className="mx-auto mb-5 max-w-sm text-sm text-muted-foreground">
-            Complete the assessment to unlock your personalised food system assessment report — a full breakdown of your food system with actionable steps.
-          </p>
-          <Link
-            href="/assessment"
-            className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-            style={{ background: "var(--icon-green)" }}
-          >
-            Take the assessment <ArrowRight size={14} />
-          </Link>
         </div>
+        <PractitionerReportCard />
       </div>
     )
   }
@@ -2264,6 +2268,9 @@ function ReportsTab({ paidReports }: { paidReports: PaidReport[] }) {
           </div>
         )
       })}
+
+      {/* Practitioner Report */}
+      <PractitionerReportCard />
     </div>
   )
 }

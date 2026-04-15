@@ -34,6 +34,7 @@ export interface Food {
   benefits: FoodBenefit[]
   pairsWith: string[]
   publishedDay: number // 1-365, used to determine which day of the year this food appears
+  brainHealth?: boolean // true = highlighted in gut-brain section
 }
 
 export const foods: Food[] = [
@@ -63,6 +64,7 @@ export const foods: Food[] = [
     ],
     pairsWith: ["Kimchi", "Olive Oil", "Onions", "Ginger"],
     publishedDay: 2,
+    brainHealth: true,
   },
   {
     slug: "oats",
@@ -88,6 +90,7 @@ export const foods: Food[] = [
     ],
     pairsWith: ["Kefir", "Banana", "Blueberries", "Flaxseed"],
     publishedDay: 3,
+    brainHealth: true,
   },
   {
     slug: "blueberries",
@@ -113,6 +116,7 @@ export const foods: Food[] = [
     ],
     pairsWith: ["Kefir", "Oats", "Yogurt", "Flaxseed"],
     publishedDay: 5,
+    brainHealth: true,
   },
   {
     slug: "olive-oil",
@@ -267,6 +271,7 @@ export const foods: Food[] = [
     ],
     pairsWith: ["Garlic", "Oats", "Eggs", "Brown Rice"],
     publishedDay: 1,
+    brainHealth: true,
   },
   {
     slug: "kefir",
@@ -292,6 +297,7 @@ export const foods: Food[] = [
     ],
     pairsWith: ["Oats", "Blueberries", "Banana", "Flaxseed"],
     publishedDay: 4,
+    brainHealth: true,
   },
   {
     slug: "sauerkraut",
@@ -342,6 +348,7 @@ export const foods: Food[] = [
     ],
     pairsWith: ["Blueberries", "Oats", "Flaxseed", "Honey"],
     publishedDay: 17,
+    brainHealth: true,
   },
   {
     slug: "miso",
@@ -421,6 +428,7 @@ export const foods: Food[] = [
     ],
     pairsWith: ["Kimchi", "Sauerkraut", "Sourdough", "Olive Oil"],
     publishedDay: 23,
+    brainHealth: true,
   },
   {
     slug: "wild-salmon",
@@ -447,6 +455,7 @@ export const foods: Food[] = [
     ],
     pairsWith: ["Olive Oil", "Leeks", "Garlic", "Sauerkraut"],
     publishedDay: 25,
+    brainHealth: true,
   },
   {
     slug: "lentils",
@@ -523,6 +532,7 @@ export const foods: Food[] = [
     ],
     pairsWith: ["Oats", "Kefir", "Blueberries", "Banana"],
     publishedDay: 31,
+    brainHealth: true,
   },
 
   // ─── POSTBIOTIC FOODS ──────────────────────────────────────────────────────
@@ -602,6 +612,7 @@ export const foods: Food[] = [
     ],
     pairsWith: ["Blueberries", "Kefir", "Almonds", "Banana"],
     publishedDay: 37,
+    brainHealth: true,
   },
   {
     slug: "green-tea",
@@ -627,6 +638,7 @@ export const foods: Food[] = [
     ],
     pairsWith: ["Dark Chocolate", "Blueberries", "Garlic", "Ginger"],
     publishedDay: 39,
+    brainHealth: true,
   },
   {
     slug: "bone-broth",
@@ -681,6 +693,7 @@ export const foods: Food[] = [
     ],
     pairsWith: ["Olive Oil", "Eggs", "Garlic", "Wild Salmon"],
     publishedDay: 42,
+    brainHealth: true,
   },
   {
     slug: "jerusalem-artichoke",
@@ -988,6 +1001,7 @@ export const foods: Food[] = [
     ],
     pairsWith: ["Ginger", "Olive Oil", "Garlic", "Oats"],
     publishedDay: 66,
+    brainHealth: true,
   },
   {
     slug: "ginger",
@@ -1038,6 +1052,7 @@ export const foods: Food[] = [
     ],
     pairsWith: ["Yogurt", "Blueberries", "Oats", "Dark Chocolate"],
     publishedDay: 70,
+    brainHealth: true,
   },
   {
     slug: "cocoa-powder",
@@ -1088,6 +1103,7 @@ export const foods: Food[] = [
     ],
     pairsWith: ["Yogurt", "Walnuts", "Dark Chocolate", "Green Tea"],
     publishedDay: 74,
+    brainHealth: true,
   },
   {
     slug: "mixed-berries",
@@ -1113,6 +1129,7 @@ export const foods: Food[] = [
     ],
     pairsWith: ["Kefir", "Yogurt", "Oats", "Walnuts"],
     publishedDay: 76,
+    brainHealth: true,
   },
 
   // ─── NEW PROTEIN FOODS ────────────────────────────────────────────────────
@@ -1142,6 +1159,7 @@ export const foods: Food[] = [
     ],
     pairsWith: ["Olive Oil", "Garlic", "Sourdough", "Leeks"],
     publishedDay: 78,
+    brainHealth: true,
   },
   {
     slug: "mackerel",
@@ -1295,6 +1313,10 @@ export function getFoodsByBiotic(biotic: BioticType): Food[] {
 
 export function getFoodsByCategory(category: FoodCategory): Food[] {
   return foods.filter((f) => f.category === category)
+}
+
+export function getBrainHealthFoods(): Food[] {
+  return foods.filter((f) => f.brainHealth)
 }
 
 export const bioticColors: Record<BioticType, string> = {

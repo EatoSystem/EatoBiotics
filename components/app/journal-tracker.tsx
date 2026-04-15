@@ -189,22 +189,88 @@ function computeWeeklyAverages(entries: JournalEntry[]): WeeklyAvg[] {
     .sort((a, b) => b.weekStart.localeCompare(a.weekStart))
 }
 
+/* ── 14-day mood trend strip ─────────────────────────────────────────── */
+
+function MoodTrendStrip({ entries }: { entries: JournalEntry[] }) {
+  const days = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date()
+    d.setDate(d.getDate() - (13 - i))
+    return d.toISOString().slice(0, 10)
+  })
+
+  const filledDays = days.filter((date) => entries.find((e) => e.date === date))
+  if (filledDays.length < 3) return null
+
+  return (
+    <div className="mt-6">
+      <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+        14-day mood trend
+      </h3>
+      <div className="flex gap-1">
+        {days.map((date) => {
+          const entry = entries.find((e) => e.date === date)
+          const isToday = date === getTodayIso()
+          const moodScore = entry?.mood ?? null
+
+          return (
+            <div key={date} className="flex flex-1 flex-col items-center gap-1">
+              <div
+                className={cn(
+                  "h-8 w-full rounded-lg border transition-all",
+                  entry ? "border-transparent" : "border-border/30 bg-secondary/10"
+                )}
+                title={entry ? `Mood: ${moodScore}/5` : undefined}
+                style={
+                  entry && moodScore
+                    ? {
+                        background: `color-mix(in srgb, ${SCORE_COLORS[moodScore]} 22%, transparent)`,
+                        borderColor: `color-mix(in srgb, ${SCORE_COLORS[moodScore]} 40%, transparent)`,
+                      }
+                    : {}
+                }
+              >
+                {entry && moodScore && (
+                  <div className="flex h-full items-center justify-center">
+                    <span className="text-[10px] font-bold" style={{ color: SCORE_COLORS[moodScore] }}>
+                      {moodScore}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <span className={cn("text-[8px] font-medium", isToday ? "text-foreground" : "text-muted-foreground/50")}>
+                {isToday
+                  ? "T"
+                  : new Date(date + "T12:00:00").toLocaleDateString("en-IE", { weekday: "narrow" })}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function InsightsPanel({ entries }: { entries: JournalEntry[] }) {
   if (entries.length < 14) {
     return (
-      <div className="mt-6 rounded-2xl border border-dashed border-border bg-secondary/10 p-6 text-center">
-        <Sparkles size={20} className="mx-auto mb-2 text-muted-foreground/40" />
-        <p className="text-sm font-semibold text-foreground/70">
-          Insights unlock after 14 check-ins
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {14 - entries.length} more {14 - entries.length === 1 ? "entry" : "entries"} to go
-        </p>
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-border/40">
-          <div
-            className="h-1.5 rounded-full brand-gradient transition-all duration-500"
-            style={{ width: `${(entries.length / 14) * 100}%` }}
-          />
+      <div className="mt-6 space-y-4">
+        {/* Mood trend unlocks after 7 entries */}
+        {entries.length >= 7 && <MoodTrendStrip entries={entries} />}
+
+        <div className="rounded-2xl border border-dashed border-border bg-secondary/10 p-6 text-center">
+          <Sparkles size={20} className="mx-auto mb-2 text-muted-foreground/40" />
+          <p className="text-sm font-semibold text-foreground/70">
+            Weekly insights unlock after 14 check-ins
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {14 - entries.length} more {14 - entries.length === 1 ? "entry" : "entries"} to go
+          </p>
+          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-border/40">
+            <div
+              className="h-1.5 rounded-full brand-gradient transition-all duration-500"
+              style={{ width: `${(entries.length / 14) * 100}%` }}
+            />
+          </div>
         </div>
       </div>
     )
@@ -227,8 +293,18 @@ function InsightsPanel({ entries }: { entries: JournalEntry[] }) {
   const avgOf = (arr: WeeklyAvg[], key: "energy" | "digestion" | "mood") =>
     arr.reduce((s, w) => s + w[key], 0) / arr.length
 
+  // Gut-brain correlation: mood avg < 3 AND digestion avg < 3 in the same week
+  const recentWeek = weeks[0]
+  const showGutBrainNote =
+    recentWeek &&
+    recentWeek.count >= 3 &&
+    recentWeek.mood < 3 &&
+    recentWeek.digestion < 3
+
   return (
     <div className="mt-6 space-y-4">
+      <MoodTrendStrip entries={entries} />
+
       <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
         Weekly insights
       </h3>
@@ -284,6 +360,31 @@ function InsightsPanel({ entries }: { entries: JournalEntry[] }) {
               in high-plant weeks.
             </p>
           )}
+        </div>
+      )}
+
+      {showGutBrainNote && (
+        <div
+          className="rounded-2xl border p-4"
+          style={{
+            borderColor: "color-mix(in srgb, var(--icon-teal) 30%, transparent)",
+            background: "color-mix(in srgb, var(--icon-teal) 5%, transparent)",
+          }}
+        >
+          <p className="mb-2 text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-teal)" }}>
+            🧠 Gut-brain connection
+          </p>
+          <p className="text-sm text-foreground/80">
+            Your gut and your mood have been moving together this week. Both your digestion and mood
+            scores are below average — this is a pattern the gut-brain axis commonly drives.
+          </p>
+          <a
+            href="/gut-brain"
+            className="mt-2 block text-xs font-semibold underline underline-offset-2 transition-colors hover:text-foreground"
+            style={{ color: "var(--icon-teal)" }}
+          >
+            Learn why this connection matters →
+          </a>
         </div>
       )}
     </div>

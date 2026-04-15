@@ -1,55 +1,19 @@
-/* ── Assessment Questions ────────────────────────────────────────────── */
+/* ── Mind Assessment Questions ──────────────────────────────────────── */
 // 15 questions: exactly 3 per pillar (5 pillars × 3 = 15).
-// All questions are type "single" (radio/card select).
-// IDs: q1–q15 in pillar order (Diversity → Feeding → Adding → Consistency → Feeling).
+// All questions are type "single". Same pillar keys and IDs as individual
+// assessment so computeSubScores() works unchanged.
+// Section titles differ — registered in assessment-data.ts SECTION_COLORS.
 
-export type PillarKey = "diversity" | "feeding" | "adding" | "consistency" | "feeling"
+import type { AssessmentQuestion } from "./assessment-data"
 
-export interface AnswerOption {
-  label: string
-  description: string
-  value: number // 0–3
-}
-
-export interface AssessmentQuestion {
-  id: string
-  pillar: PillarKey
-  sectionTitle: string
-  index: number
-  text: string
-  type: "single" | "multi"
-  options: AnswerOption[]
-}
-
-export const SECTION_COLORS: Record<string, string> = {
-  // New section titles
-  "Plant Diversity": "var(--icon-lime)",
-  "Feeding Your Microbiome": "var(--icon-green)",
-  "Live & Fermented Foods": "var(--icon-teal)",
-  "Consistency & Rhythm": "var(--icon-yellow)",
-  "How Your Body Responds": "var(--icon-orange)",
-  "How Your Family Responds": "var(--icon-orange)",
-  // Mind assessment section titles
-  "Brain Nutrition": "var(--icon-lime)",
-  "Brain Fuel": "var(--icon-green)",
-  "Live Mind Foods": "var(--icon-teal)",
-  "Mind Rhythm": "var(--icon-yellow)",
-  "How Your Mind Responds": "var(--icon-orange)",
-  // Legacy keys (kept for localStorage backwards compatibility)
-  "Your Eating Foundation": "var(--icon-lime)",
-  "Plant & Fibre Diversity": "var(--icon-lime)",
-  "Balance & Rhythm": "var(--icon-yellow)",
-  "Your Goals": "var(--icon-orange)",
-}
-
-export const QUESTIONS: AssessmentQuestion[] = [
-  // ── Diversity (q1–q3) ─────────────────────────────────────────────
+export const MIND_QUESTIONS: AssessmentQuestion[] = [
+  // ── Brain Nutrition (q1–q3) ───────────────────────────────────────
   {
     id: "q1",
     pillar: "diversity",
-    sectionTitle: "Plant Diversity",
+    sectionTitle: "Brain Nutrition",
     index: 1,
-    text: "How many different plant foods do you eat in a typical week?",
+    text: "How many different plant foods do you eat in a typical week? (Polyphenols from diverse plants are the primary fuel for serotonin-producing gut bacteria.)",
     type: "single",
     options: [
       { value: 0, label: "1–5 plants", description: "A small set of familiar staples I return to each week" },
@@ -61,7 +25,7 @@ export const QUESTIONS: AssessmentQuestion[] = [
   {
     id: "q2",
     pillar: "diversity",
-    sectionTitle: "Plant Diversity",
+    sectionTitle: "Brain Nutrition",
     index: 2,
     text: "How often do your meals include foods from at least three different plant categories — vegetables, fruit, legumes, grains, nuts, or seeds?",
     type: "single",
@@ -75,7 +39,7 @@ export const QUESTIONS: AssessmentQuestion[] = [
   {
     id: "q3",
     pillar: "diversity",
-    sectionTitle: "Plant Diversity",
+    sectionTitle: "Brain Nutrition",
     index: 3,
     text: "How intentionally do you vary your food choices — rotating grains, trying different vegetables, or exploring unfamiliar plants?",
     type: "single",
@@ -87,13 +51,13 @@ export const QUESTIONS: AssessmentQuestion[] = [
     ],
   },
 
-  // ── Feeding (q4–q6) ───────────────────────────────────────────────
+  // ── Brain Fuel (q4–q6) ────────────────────────────────────────────
   {
     id: "q4",
     pillar: "feeding",
-    sectionTitle: "Feeding Your Microbiome",
+    sectionTitle: "Brain Fuel",
     index: 4,
-    text: "How often do your meals include fibre-rich whole foods — vegetables, legumes, wholegrains, nuts, or seeds?",
+    text: "How often do your meals include fibre-rich whole foods — vegetables, legumes, wholegrains, nuts, or seeds? (These feed the BDNF-promoting bacteria in your gut.)",
     type: "single",
     options: [
       { value: 0, label: "Rarely", description: "Most meals are refined or processed foods" },
@@ -105,9 +69,9 @@ export const QUESTIONS: AssessmentQuestion[] = [
   {
     id: "q5",
     pillar: "feeding",
-    sectionTitle: "Feeding Your Microbiome",
+    sectionTitle: "Brain Fuel",
     index: 5,
-    text: "How much of your daily food comes from processed or ultra-processed sources — packaged snacks, ready meals, refined bread, or fast food?",
+    text: "How much of your daily food comes from processed or ultra-processed sources — packaged snacks, ready meals, refined bread, or fast food? (These drive neuroinflammation.)",
     type: "single",
     options: [
       { value: 0, label: "Most meals", description: "Processed foods make up the majority of what I eat" },
@@ -119,9 +83,9 @@ export const QUESTIONS: AssessmentQuestion[] = [
   {
     id: "q6",
     pillar: "feeding",
-    sectionTitle: "Feeding Your Microbiome",
+    sectionTitle: "Brain Fuel",
     index: 6,
-    text: "Do you regularly eat prebiotic-rich foods — oats, garlic, onion, leeks, bananas, or asparagus?",
+    text: "Do you regularly eat prebiotic-rich foods — oats, garlic, onion, leeks, bananas, or asparagus? (These feed gut bacteria that produce serotonin precursors.)",
     type: "single",
     options: [
       { value: 0, label: "Not really", description: "These aren't foods I think about or seek out" },
@@ -131,13 +95,13 @@ export const QUESTIONS: AssessmentQuestion[] = [
     ],
   },
 
-  // ── Adding (q7–q9) ────────────────────────────────────────────────
+  // ── Live Mind Foods (q7–q9) ───────────────────────────────────────
   {
     id: "q7",
     pillar: "adding",
-    sectionTitle: "Live & Fermented Foods",
+    sectionTitle: "Live Mind Foods",
     index: 7,
-    text: "How often do you eat fermented or live-culture foods — yoghurt, kefir, kimchi, sauerkraut, miso, kombucha, or similar?",
+    text: "How often do you eat fermented or live-culture foods — yoghurt, kefir, kimchi, sauerkraut, miso, kombucha, or similar? (These directly increase microbial diversity linked to mood stability.)",
     type: "single",
     options: [
       { value: 0, label: "Rarely or never", description: "These foods don't feature in my current eating" },
@@ -149,7 +113,7 @@ export const QUESTIONS: AssessmentQuestion[] = [
   {
     id: "q8",
     pillar: "adding",
-    sectionTitle: "Live & Fermented Foods",
+    sectionTitle: "Live Mind Foods",
     index: 8,
     text: "When you do eat fermented foods, how varied are your choices — rotating between different types?",
     type: "single",
@@ -163,7 +127,7 @@ export const QUESTIONS: AssessmentQuestion[] = [
   {
     id: "q9",
     pillar: "adding",
-    sectionTitle: "Live & Fermented Foods",
+    sectionTitle: "Live Mind Foods",
     index: 9,
     text: "How intentional is your approach to live and fermented foods — a planned daily habit, or more accidental when it happens?",
     type: "single",
@@ -175,13 +139,13 @@ export const QUESTIONS: AssessmentQuestion[] = [
     ],
   },
 
-  // ── Consistency (q10–q12) ─────────────────────────────────────────
+  // ── Mind Rhythm (q10–q12) ─────────────────────────────────────────
   {
     id: "q10",
     pillar: "consistency",
-    sectionTitle: "Consistency & Rhythm",
+    sectionTitle: "Mind Rhythm",
     index: 10,
-    text: "How would you describe your overall approach to eating?",
+    text: "How would you describe your overall approach to eating? (Consistent eating patterns support circadian rhythm, which regulates mood hormones.)",
     type: "single",
     options: [
       { value: 0, label: "Reactive", description: "I eat whatever is convenient when hunger hits" },
@@ -193,9 +157,9 @@ export const QUESTIONS: AssessmentQuestion[] = [
   {
     id: "q11",
     pillar: "consistency",
-    sectionTitle: "Consistency & Rhythm",
+    sectionTitle: "Mind Rhythm",
     index: 11,
-    text: "How consistent is your eating rhythm across the week — including weekends?",
+    text: "How consistent is your eating rhythm across the week — including weekends? (Irregular eating disrupts cortisol patterns and mood stability.)",
     type: "single",
     options: [
       { value: 0, label: "Very unpredictable", description: "Meal timing and content vary wildly from day to day" },
@@ -207,9 +171,9 @@ export const QUESTIONS: AssessmentQuestion[] = [
   {
     id: "q12",
     pillar: "consistency",
-    sectionTitle: "Consistency & Rhythm",
+    sectionTitle: "Mind Rhythm",
     index: 12,
-    text: "How often do you skip meals, eat very late, or rush through food without paying attention?",
+    text: "How often do you skip meals, eat very late, or rush through food without paying attention? (These patterns spike cortisol and disrupt the gut-brain axis.)",
     type: "single",
     options: [
       { value: 0, label: "Most days", description: "This describes a lot of my eating" },
@@ -219,47 +183,47 @@ export const QUESTIONS: AssessmentQuestion[] = [
     ],
   },
 
-  // ── Feeling (q13–q15) ─────────────────────────────────────────────
+  // ── How Your Mind Responds (q13–q15) ──────────────────────────────
   {
     id: "q13",
     pillar: "feeling",
-    sectionTitle: "How Your Body Responds",
+    sectionTitle: "How Your Mind Responds",
     index: 13,
-    text: "How do you typically feel in the hour or two after eating?",
+    text: "How is your mental clarity and focus in the hour or two after eating?",
     type: "single",
     options: [
-      { value: 0, label: "Sluggish or uncomfortable", description: "Heavy, bloated, or tired after most meals" },
-      { value: 1, label: "Variable", description: "Sometimes fine, sometimes not — hard to predict" },
-      { value: 2, label: "Reasonably good", description: "Generally comfortable, with the occasional exception" },
-      { value: 3, label: "Clear and energised", description: "I typically feel light, stable, and focused after eating" },
+      { value: 0, label: "Foggy and heavy", description: "I regularly feel mentally slow or unfocused after meals" },
+      { value: 1, label: "Variable", description: "Sometimes clear, sometimes foggy — hard to predict" },
+      { value: 2, label: "Reasonably clear", description: "Generally focused, with the occasional exception" },
+      { value: 3, label: "Sharp and energised", description: "I typically feel clear-headed and focused after eating" },
     ],
   },
   {
     id: "q14",
     pillar: "feeling",
-    sectionTitle: "How Your Body Responds",
+    sectionTitle: "How Your Mind Responds",
     index: 14,
-    text: "How often do you experience digestive discomfort — bloating, cramping, irregularity, or sensitivity?",
+    text: "How stable is your mood across the day — not related to external events, but your underlying baseline?",
     type: "single",
     options: [
-      { value: 0, label: "Frequently — most days", description: "Most days involve some level of digestive discomfort" },
-      { value: 1, label: "Sometimes — comes and goes", description: "Certain foods or stress trigger it" },
-      { value: 2, label: "Rarely — minor and occasional", description: "Not something I think about much" },
-      { value: 3, label: "Almost never", description: "My digestion is consistently comfortable" },
+      { value: 0, label: "Very unstable", description: "Frequent lows, irritability, or anxiety that doesn't match circumstances" },
+      { value: 1, label: "Somewhat stable", description: "Noticeable shifts or dips, especially in the afternoon" },
+      { value: 2, label: "Mostly stable", description: "Generally good with occasional unexplained dips" },
+      { value: 3, label: "Consistently steady", description: "My baseline mood is reliably calm and positive most days" },
     ],
   },
   {
     id: "q15",
     pillar: "feeling",
-    sectionTitle: "How Your Body Responds",
+    sectionTitle: "How Your Mind Responds",
     index: 15,
-    text: "How stable is your energy level across the day?",
+    text: "How well does your focus and mental energy hold through the afternoon — roughly 2–4pm?",
     type: "single",
     options: [
-      { value: 0, label: "Very unstable", description: "Significant crashes, reliance on caffeine, or mid-afternoon collapse" },
-      { value: 1, label: "Somewhat stable", description: "Noticeable dips, but I manage through" },
-      { value: 2, label: "Mostly stable", description: "Good energy most of the day, with minor fluctuation" },
-      { value: 3, label: "Consistently steady", description: "I rarely notice energy dips throughout the day" },
+      { value: 0, label: "Major crash", description: "I regularly hit a wall — heavy fatigue, can't concentrate" },
+      { value: 1, label: "Noticeable dip", description: "I manage through but feel a clear drop in sharpness" },
+      { value: 2, label: "Mild fluctuation", description: "A slight dip but I stay reasonably productive" },
+      { value: 3, label: "Stays steady", description: "My focus remains consistent through the afternoon" },
     ],
   },
 ]
