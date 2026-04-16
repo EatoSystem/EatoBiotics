@@ -99,6 +99,7 @@ interface AnalysisPatterns {
 interface DashboardClientProps {
   profile: Profile
   assessments: AssessmentRow[]
+  mindAssessments?: AssessmentRow[]
   paidReports: PaidReport[]
   plateData: PlateData | null
   nextBillingDate?: string | null
@@ -1708,6 +1709,7 @@ function PatternInsightsStrip({ patterns }: { patterns: AnalysisPatterns | null 
 
 function OverviewTab({
   assessments,
+  mindAssessments = [],
   membershipTier,
   weeklyCheckin,
   monthlyGutPlan,
@@ -1724,6 +1726,7 @@ function OverviewTab({
   storyLastUpdated,
 }: {
   assessments: AssessmentRow[]
+  mindAssessments?: AssessmentRow[]
   membershipTier: Profile["membership_tier"]
   weeklyCheckin?: { content: string; week_starting: string } | null
   monthlyGutPlan?: { content: string; month: string } | null
@@ -1741,6 +1744,8 @@ function OverviewTab({
 }) {
   const latest = assessments[0] ?? null
   const previous = assessments[1] ?? null
+  const mindLatest = mindAssessments[0] ?? null
+  const mindSubScores = mindLatest ? extractSubScores(mindLatest.sub_scores) : null
   const meals = loadMealAnalyses()
   const [dailyAnalysesUsed, setDailyAnalysesUsed] = useState(0)
 
@@ -1848,6 +1853,49 @@ function OverviewTab({
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ── Mind Score card ──────────────────────────────────────── */}
+      {mindLatest && (
+        <div className="overflow-hidden rounded-3xl border bg-card">
+          <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, var(--icon-teal), var(--icon-green))" }} />
+          <div className="flex items-start justify-between p-5">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--icon-teal)" }}>
+                Mind Assessment
+              </p>
+              <h2
+                className="mt-1 font-serif text-2xl font-bold leading-tight sm:text-3xl"
+                style={{ color: "var(--icon-teal)" }}
+              >
+                {mindLatest.profile_type ?? "Your Mind Profile"}
+              </h2>
+              <p className="mt-2 text-xs text-muted-foreground" suppressHydrationWarning>
+                Assessed {formatDate(mindLatest.created_at)} · {relativeTime(mindLatest.created_at)}
+              </p>
+              <Link
+                href="/assessment-mind"
+                className="mt-3 inline-flex items-center gap-1 text-xs font-semibold transition-colors hover:opacity-80"
+                style={{ color: "var(--icon-teal)" }}
+              >
+                Retake mind assessment <ArrowRight size={11} />
+              </Link>
+            </div>
+            {mindLatest.overall_score != null && (
+              <div
+                className="shrink-0 select-none font-serif text-7xl font-black leading-none tabular-nums"
+                style={{ color: "var(--icon-teal)", opacity: 0.08 }}
+              >
+                {Math.round(mindLatest.overall_score)}
+              </div>
+            )}
+          </div>
+          {mindSubScores && (
+            <div className="px-5 pb-5">
+              <PillarScoreCards subScores={mindSubScores} />
+            </div>
+          )}
         </div>
       )}
 
@@ -3067,7 +3115,7 @@ function ConsultHistoryTab({
 
 /* ── Main Component ─────────────────────────────────────────────────── */
 
-export function DashboardClient({ profile, assessments, paidReports, plateData, nextBillingDate, dailyConsultCount = 0, monthlyConsultCount = 0, weeklyCheckin, monthlyGutPlan, bioticsProfile, streak = 0, dailyPromptIndex = 0, consultHref, pastConsultations = [], patterns, hasMealPlan, latestMonthlyReview, storyLastUpdated }: DashboardClientProps) {
+export function DashboardClient({ profile, assessments, mindAssessments = [], paidReports, plateData, nextBillingDate, dailyConsultCount = 0, monthlyConsultCount = 0, weeklyCheckin, monthlyGutPlan, bioticsProfile, streak = 0, dailyPromptIndex = 0, consultHref, pastConsultations = [], patterns, hasMealPlan, latestMonthlyReview, storyLastUpdated }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("overview")
   const router = useRouter()
   const latest = assessments[0] ?? null
@@ -3116,7 +3164,7 @@ export function DashboardClient({ profile, assessments, paidReports, plateData, 
 
       {/* Tab content */}
       <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
-        {activeTab === "overview" && <OverviewTab assessments={assessments} membershipTier={profile.membership_tier ?? "free"} weeklyCheckin={weeklyCheckin} monthlyGutPlan={monthlyGutPlan} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} bioticsProfile={bioticsProfile} streak={streak} dailyPromptIndex={dailyPromptIndex} consultHref={consultHref} patterns={patterns} setActiveTab={setActiveTab} hasMealPlan={hasMealPlan} latestMonthlyReview={latestMonthlyReview} storyLastUpdated={storyLastUpdated} />}
+        {activeTab === "overview" && <OverviewTab assessments={assessments} mindAssessments={mindAssessments} membershipTier={profile.membership_tier ?? "free"} weeklyCheckin={weeklyCheckin} monthlyGutPlan={monthlyGutPlan} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} bioticsProfile={bioticsProfile} streak={streak} dailyPromptIndex={dailyPromptIndex} consultHref={consultHref} patterns={patterns} setActiveTab={setActiveTab} hasMealPlan={hasMealPlan} latestMonthlyReview={latestMonthlyReview} storyLastUpdated={storyLastUpdated} />}
         {activeTab === "reports" && <ReportsTab paidReports={paidReports} />}
         {activeTab === "membership" && <MembershipTab profile={profile} nextBillingDate={nextBillingDate} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} latestAssessment={latest} />}
         {activeTab === "plate" && <PlateTab plateData={plateData} />}

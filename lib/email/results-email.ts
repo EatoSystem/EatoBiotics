@@ -8,6 +8,7 @@ interface ResultsEmailOpts {
   subScores: { [key: string]: number }
   nextActions: string[]
   ageBracket?: string
+  assessmentType?: "gut" | "mind"
 }
 
 const PILLAR_LABELS: Record<string, string> = {
@@ -44,9 +45,12 @@ export function buildResultsEmail(opts: ResultsEmailOpts): {
   subject: string
   html: string
 } {
-  const { name, email, overall, profileType, tagline, profileDescription, subScores, nextActions, ageBracket } = opts
+  const { name, email, overall, profileType, tagline, profileDescription, subScores, nextActions, ageBracket, assessmentType } = opts
 
-  const subject = `Your EatoBiotics Score: ${overall}/100 — ${profileType}`
+  const isMind = assessmentType === "mind"
+  const subject = isMind
+    ? `Your EatoBiotics Mind Score: ${overall}/100 — ${profileType}`
+    : `Your EatoBiotics Score: ${overall}/100 — ${profileType}`
 
   // Sort pillars: highest first
   const sortedPillars = Object.entries(subScores).sort(([, a], [, b]) => b - a)
@@ -177,7 +181,7 @@ export function buildResultsEmail(opts: ResultsEmailOpts): {
           <tr>
             <td style="background: linear-gradient(135deg, #7fc47e 0%, #3ab0a0 100%); padding: 28px 40px; text-align: center;">
               <p style="margin: 0 0 4px 0; font-size: 11px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.8); font-family: Arial, sans-serif;">EatoBiotics</p>
-              <h1 style="margin: 0; font-size: 26px; font-weight: bold; color: #ffffff; font-family: Georgia, serif;">Your Food System Score</h1>
+              <h1 style="margin: 0; font-size: 26px; font-weight: bold; color: #ffffff; font-family: Georgia, serif;">${isMind ? "Your Mind Score" : "Your Food System Score"}</h1>
             </td>
           </tr>
 

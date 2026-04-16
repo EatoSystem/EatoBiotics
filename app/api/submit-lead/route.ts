@@ -4,10 +4,11 @@ import { getSupabase } from "@/lib/supabase"
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { name, ageBracket, referralCode } = body as {
+    const { name, ageBracket, referralCode, assessmentType } = body as {
       name: string
       ageBracket: string
       referralCode?: string
+      assessmentType?: "gut" | "mind"
     }
     const email = ((body as { email: string }).email ?? "").toLowerCase().trim()
 
@@ -23,8 +24,9 @@ export async function POST(req: NextRequest) {
           name,
           email,
           age_bracket: ageBracket,
+          assessment_type: assessmentType ?? "gut",
         },
-        { onConflict: "email" }
+        { onConflict: "email,assessment_type" }
       )
       if (error) {
         console.error("[submit-lead] Supabase error:", error.message)

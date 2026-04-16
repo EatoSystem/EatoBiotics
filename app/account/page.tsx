@@ -28,6 +28,7 @@ export default async function AccountPage() {
     created_at: string
     email_sent: boolean | null
   }> = []
+  let mindAssessments: typeof assessments = []
   let paidReports: Array<{
     stripe_session_id: string
     tier: string
@@ -66,13 +67,23 @@ export default async function AccountPage() {
       .single()
     profile = profileData
 
-    const { data: leadsData } = await adminSupabase
+    const { data: gutLeadsData } = await adminSupabase
       .from("leads")
       .select("overall_score, profile_type, sub_scores, created_at, email_sent")
       .or(`email.eq.${user.email!},user_id.eq.${user.id}`)
+      .eq("assessment_type", "gut")
       .not("overall_score", "is", null)
       .order("created_at", { ascending: false })
-    assessments = leadsData ?? []
+    assessments = gutLeadsData ?? []
+
+    const { data: mindLeadsData } = await adminSupabase
+      .from("leads")
+      .select("overall_score, profile_type, sub_scores, created_at, email_sent")
+      .or(`email.eq.${user.email!},user_id.eq.${user.id}`)
+      .eq("assessment_type", "mind")
+      .not("overall_score", "is", null)
+      .order("created_at", { ascending: false })
+    mindAssessments = mindLeadsData ?? []
 
     const { data: reportsData } = await adminSupabase
       .from("deep_assessments")
@@ -332,6 +343,7 @@ export default async function AccountPage() {
       <DashboardClient
         profile={profile}
         assessments={assessments}
+        mindAssessments={mindAssessments}
         paidReports={paidReports}
         plateData={plateData}
         nextBillingDate={nextBillingDate}

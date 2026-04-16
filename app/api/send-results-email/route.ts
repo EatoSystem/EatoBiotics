@@ -8,7 +8,11 @@ import type { LeadData } from "@/lib/assessment-storage"
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { lead, result } = body as { lead: LeadData; result: AssessmentResult }
+    const { lead, result, assessmentType } = body as {
+      lead: LeadData
+      result: AssessmentResult
+      assessmentType?: "gut" | "mind"
+    }
 
     if (!lead?.email || !result?.overall) {
       return NextResponse.json({ error: "Missing lead or result" }, { status: 400 })
@@ -25,6 +29,7 @@ export async function POST(req: NextRequest) {
       subScores: { diversity, feeding, adding, consistency, feeling },
       nextActions: result.nextActions,
       ageBracket: lead.ageBracket,
+      assessmentType: assessmentType ?? "gut",
     })
 
     // Send email via Resend if configured
@@ -49,7 +54,7 @@ export async function POST(req: NextRequest) {
       console.log("[send-results-email] Subject:", subject)
     }
 
-    // Update Supabase lead with scores
+    // Update Supabase lead with scores (filter by assessment_type to avoid overwriting other assessment rows)
     const supabase = getSupabase()
     if (supabase) {
       const { error } = await supabase
@@ -61,6 +66,7 @@ export async function POST(req: NextRequest) {
           email_sent: !!resendKey,
         })
         .eq("email", lead.email.toLowerCase().trim())
+        .eq("assessment_type", assessmentType ?? "gut")
       if (error) {
         console.error("[send-results-email] Supabase update error:", error.message)
       }
