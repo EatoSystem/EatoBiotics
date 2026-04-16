@@ -25,7 +25,7 @@ const navGroups: NavGroup[] = [
     label: "Learn",
     items: [
       { href: "/biotics", label: "The Biotics", description: "The 3-part framework for your gut", icon: Leaf },
-      { href: "/gut-brain", label: "Gut-Brain", description: "How your gut shapes your mind", icon: Brain },
+      { href: "/mind", label: "Mind", description: "The food system inside your mind", icon: Brain },
       { href: "/book", label: "The Book", description: "EatoBiotics — coming 2026", icon: BookOpen },
       { href: "/app", label: "The App", description: "Your daily plate companion", icon: Smartphone },
     ],
