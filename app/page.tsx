@@ -18,6 +18,7 @@ export default function Home() {
     <>
       <Hero />
       <div style={{ height: "2px", background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
+      <Pathways />
       <HowItWorks />
       <TheThreeBiotics />
       <ThePlate />
