@@ -1,9 +1,11 @@
+import Link from "next/link"
+import { ArrowRight } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 
 const CONTRAST = [
-  { no: "Calories", yes: "Your actual food diversity" },
-  { no: "Diets",    yes: "Your daily food habits" },
-  { no: "Macros",   yes: "Your biotics balance" },
+  { no: "Counting calories", yes: "Your actual food diversity" },
+  { no: "Following a diet",  yes: "Building a consistent food system" },
+  { no: "Tracking macros",   yes: "Balancing the three biotics your body needs" },
 ]
 
 export function StartSolution() {
@@ -19,8 +21,7 @@ export function StartSolution() {
             <span className="brand-gradient-text">Food System Score</span>
           </h2>
           <p className="mx-auto mt-5 max-w-md text-center text-base leading-relaxed text-muted-foreground">
-            A simple way to understand how your food is actually supporting
-            your body — not just what you eat, but how it all fits together.
+            You don&apos;t need more food advice. You need a clearer picture of your system.
           </p>
         </ScrollReveal>
 
@@ -62,11 +63,23 @@ export function StartSolution() {
         {/* Description */}
         <ScrollReveal delay={180}>
           <p className="mt-8 text-center text-sm leading-relaxed text-muted-foreground">
-            Your Food System Score measures four pillars —{" "}
+            The Food System Score measures four pillars —{" "}
             <strong className="text-foreground">Diversity, Biotics, Consistency, and Rhythm</strong>
-            {" "}— giving you a clear picture of where your food life is strong and where
-            the gaps are hiding.
+            {" "}— giving you a precise picture of what&apos;s working and exactly where to improve.
           </p>
+        </ScrollReveal>
+
+        {/* Inline CTA */}
+        <ScrollReveal delay={240}>
+          <div className="mt-8 text-center">
+            <Link
+              href="/assessment"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-icon-green transition-colors hover:text-foreground"
+            >
+              Check your Food System Score
+              <ArrowRight size={14} />
+            </Link>
+          </div>
         </ScrollReveal>
 
       </div>

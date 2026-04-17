@@ -1,3 +1,5 @@
+import Link from "next/link"
+import { ArrowRight } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { Leaf, BookOpen, FlaskConical } from "lucide-react"
 
@@ -31,11 +33,15 @@ export function StartTrust() {
       <div className="mx-auto max-w-[640px]">
         <ScrollReveal>
           <p className="mb-3 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Built around real principles
+            Built around real food-system principles
           </p>
           <h2 className="text-center font-serif text-3xl font-semibold text-foreground sm:text-4xl">
-            Not another fad.
+            No supplements. No shortcuts.
           </h2>
+          <p className="mx-auto mt-4 max-w-md text-center text-sm leading-relaxed text-muted-foreground">
+            The Food System Score is built around the gut microbiome research — not trends,
+            not marketing. Everything it measures can be improved with everyday food.
+          </p>
         </ScrollReveal>
 
         <div className="mt-10 space-y-4">
@@ -59,6 +65,19 @@ export function StartTrust() {
             )
           })}
         </div>
+
+        {/* Inline CTA */}
+        <ScrollReveal delay={320}>
+          <div className="mt-10 text-center">
+            <Link
+              href="/assessment"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-icon-green transition-colors hover:text-foreground"
+            >
+              Check your Food System Score
+              <ArrowRight size={14} />
+            </Link>
+          </div>
+        </ScrollReveal>
 
       </div>
     </section>

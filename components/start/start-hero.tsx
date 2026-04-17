@@ -48,41 +48,48 @@ export function StartHero() {
           </h1>
         </ScrollReveal>
 
+        {/* Tension line */}
+        <ScrollReveal delay={100}>
+          <p className="mt-4 text-center text-sm font-semibold" style={{ color: "var(--icon-orange)" }}>
+            Most people are scoring below 60. Where are you?
+          </p>
+        </ScrollReveal>
+
         {/* Subheadline */}
-        <ScrollReveal delay={120}>
-          <p className="mx-auto mt-5 max-w-md text-center text-base leading-relaxed text-muted-foreground sm:text-lg">
+        <ScrollReveal delay={150}>
+          <p className="mx-auto mt-4 max-w-md text-center text-base leading-relaxed text-muted-foreground sm:text-lg">
             Discover how your daily food habits are shaping your health,
             energy, and mind — in under 2 minutes.
           </p>
         </ScrollReveal>
 
         {/* CTA */}
-        <ScrollReveal delay={180}>
+        <ScrollReveal delay={200}>
           <div className="mt-8 flex flex-col items-center gap-3">
             <Link
               href="/assessment"
-              className="brand-gradient w-full max-w-sm inline-flex items-center justify-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/25 transition-all hover:shadow-xl hover:shadow-icon-green/40 hover:opacity-90 animate-pulse-slow"
+              className="brand-gradient w-full max-w-sm inline-flex items-center justify-center gap-2 rounded-full px-8 py-5 text-base font-semibold text-white shadow-xl shadow-icon-green/30 transition-all hover:shadow-2xl hover:shadow-icon-green/40 hover:opacity-90"
             >
               Check your Food System Score
               <ArrowRight size={18} />
             </Link>
             <p className="text-xs text-muted-foreground">
-              Takes 2 minutes &nbsp;·&nbsp; Free report included
+              Free report included &nbsp;·&nbsp; Takes 2 minutes
             </p>
           </div>
         </ScrollReveal>
 
         {/* Score mock */}
-        <ScrollReveal delay={260}>
+        <ScrollReveal delay={280}>
           <div className="mt-12">
             <ScoreMock />
           </div>
         </ScrollReveal>
 
-        {/* Arrow hint */}
-        <ScrollReveal delay={340}>
-          <p className="mt-5 text-center text-xs text-muted-foreground">
-            👆 This could be your score. Check the real one below.
+        {/* Below mock nudge */}
+        <ScrollReveal delay={360}>
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            Sample score above — check yours in 2 minutes
           </p>
         </ScrollReveal>
 

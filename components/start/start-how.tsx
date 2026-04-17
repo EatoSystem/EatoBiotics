@@ -1,3 +1,5 @@
+import Link from "next/link"
+import { ArrowRight } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 
 const STEPS = [
@@ -69,6 +71,22 @@ export function StartHow() {
             </ScrollReveal>
           ))}
         </div>
+
+        {/* CTA after steps */}
+        <ScrollReveal delay={320}>
+          <div className="mt-10 flex flex-col items-center gap-3">
+            <Link
+              href="/assessment"
+              className="brand-gradient inline-flex w-full items-center justify-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/25 transition-all hover:shadow-xl hover:shadow-icon-green/35 hover:opacity-90"
+            >
+              Check your Food System Score
+              <ArrowRight size={18} />
+            </Link>
+            <p className="text-xs text-muted-foreground">
+              Free report included &nbsp;·&nbsp; Takes 2 minutes
+            </p>
+          </div>
+        </ScrollReveal>
 
       </div>
     </section>

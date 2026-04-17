@@ -31,6 +31,11 @@ export function StartPressure() {
         <ScrollReveal delay={80}>
           <p className="mx-auto mt-4 max-w-sm text-base text-white/60">
             Not because they eat badly — but because they don&apos;t have a system.
+          </p>
+        </ScrollReveal>
+
+        <ScrollReveal delay={130}>
+          <p className="mt-3 text-lg font-semibold text-white">
             Where are you?
           </p>
         </ScrollReveal>

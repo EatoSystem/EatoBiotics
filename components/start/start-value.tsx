@@ -3,26 +3,22 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 const DISCOVERIES = [
   {
     title: "Your Food System Score",
-    detail: "A single number (0–100) that captures how well your food habits are working for your body.",
-    color: "var(--icon-lime)",
+    detail: "A single number (0–100) that shows exactly how well your food habits are working for your body right now.",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
   },
   {
-    title: "Where your system is strong",
-    detail: "See which pillars you're already nailing — and feel good about what's working.",
-    color: "var(--icon-green)",
+    title: "Where your system is already strong",
+    detail: "See the pillars you're already getting right — so you know what to protect.",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
   },
   {
-    title: "Where the gaps are hiding",
-    detail: "Pinpoint the exact areas of your food system that are silently dragging your health down.",
-    color: "var(--icon-yellow)",
+    title: "Where the gaps are costing you",
+    detail: "Pinpoint the exact areas that are holding back your energy, focus, and progress.",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
   },
   {
-    title: "Simple steps to improve it",
-    detail: "No overhaul needed. Targeted, specific food changes that move your score — one step at a time.",
-    color: "var(--icon-teal)",
+    title: "Specific steps to move your score",
+    detail: "No overhaul required. Targeted food changes that make a measurable difference — starting this week.",
     gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))",
   },
 ]
@@ -36,7 +32,7 @@ export function StartValue() {
             What you&apos;ll discover
           </p>
           <h2 className="text-center font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
-            Your free report includes
+            What&apos;s in your free report
           </h2>
         </ScrollReveal>
 
@@ -44,7 +40,6 @@ export function StartValue() {
           {DISCOVERIES.map((item, i) => (
             <ScrollReveal key={item.title} delay={i * 70}>
               <div className="flex items-start gap-4">
-                {/* Check icon */}
                 <div
                   className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
                   style={{ background: item.gradient }}

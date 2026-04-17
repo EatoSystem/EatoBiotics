@@ -1,25 +1,30 @@
+import Link from "next/link"
+import { ArrowRight, AlertCircle, TrendingDown, Zap } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
-import { AlertCircle, TrendingDown, Zap } from "lucide-react"
 
 const SYMPTOMS = [
   {
     icon: TrendingDown,
-    text: "Energy stays low — even after a good night's sleep",
+    text: "Energy stays low — even after a full night's sleep",
     color: "var(--icon-orange)",
   },
   {
     icon: Zap,
-    text: "Focus is inconsistent — brain fog that comes and goes",
+    text: "Focus is inconsistent — brain fog that keeps coming back",
     color: "var(--icon-yellow)",
   },
   {
     icon: AlertCircle,
-    text: "Progress doesn't happen — despite eating what feels right",
+    text: "Progress stalls — despite genuinely trying to eat well",
     color: "var(--icon-orange)",
   },
 ]
 
-const GAPS = ["Diversity", "Consistency", "The right balance of biotics"]
+const GAPS = [
+  { label: "Not enough variety in what you eat", sub: "Diversity" },
+  { label: "Inconsistent habits that reset your progress", sub: "Consistency" },
+  { label: "Missing the three food types your gut depends on", sub: "Biotics" },
+]
 
 export function StartProblem() {
   return (
@@ -36,20 +41,22 @@ export function StartProblem() {
 
         <ScrollReveal delay={80}>
           <p className="mt-6 text-center text-base leading-relaxed text-muted-foreground">
-            Most people think they eat well. But without a clear picture of
-            their food system, there are invisible gaps holding them back.
+            You don&apos;t have a discipline problem. You may have a system problem.
+            Most people aren&apos;t improving because they&apos;re not measuring what matters.
           </p>
         </ScrollReveal>
 
         {/* Gaps */}
         <ScrollReveal delay={140}>
-          <div className="mt-8 rounded-2xl border border-border bg-background p-6">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Common gaps most people don&apos;t know they have
-            </p>
-            <div className="space-y-3">
+          <div className="mt-8 overflow-hidden rounded-2xl border border-border bg-background">
+            <div className="border-b border-border bg-secondary/40 px-5 py-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                The gaps most people don&apos;t know they have
+              </p>
+            </div>
+            <div className="divide-y divide-border">
               {GAPS.map((gap, i) => (
-                <div key={gap} className="flex items-center gap-3">
+                <div key={gap.label} className="flex items-center gap-4 px-5 py-4">
                   <div
                     className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
                     style={{
@@ -57,12 +64,17 @@ export function StartProblem() {
                         ? "var(--icon-orange)"
                         : i === 1
                           ? "var(--icon-yellow)"
-                          : "var(--icon-orange)",
+                          : "linear-gradient(135deg, var(--icon-orange), var(--icon-yellow))",
                     }}
                   >
                     {i + 1}
                   </div>
-                  <p className="text-sm font-medium text-foreground">{gap}</p>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">{gap.label}</p>
+                  </div>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    {gap.sub}
+                  </span>
                 </div>
               ))}
             </div>
@@ -72,7 +84,7 @@ export function StartProblem() {
         {/* Consequences */}
         <ScrollReveal delay={200}>
           <p className="mt-8 mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground text-center">
-            That&apos;s why
+            The result
           </p>
           <div className="space-y-3">
             {SYMPTOMS.map((item, i) => {
@@ -91,6 +103,19 @@ export function StartProblem() {
                 </ScrollReveal>
               )
             })}
+          </div>
+        </ScrollReveal>
+
+        {/* Inline CTA */}
+        <ScrollReveal delay={400}>
+          <div className="mt-10 text-center">
+            <Link
+              href="/assessment"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-icon-green transition-colors hover:text-foreground"
+            >
+              Check your Food System Score
+              <ArrowRight size={14} />
+            </Link>
           </div>
         </ScrollReveal>
 
