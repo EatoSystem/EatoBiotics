@@ -1,4 +1,5 @@
 import { Hero } from "@/components/home/hero"
+import { Pathways } from "@/components/home/pathways"
 import { HowItWorks } from "@/components/home/how-it-works"
 import { TheThreeBiotics } from "@/components/home/the-three-biotics"
 import { ThePlate } from "@/components/home/the-plate"
