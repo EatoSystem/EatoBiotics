@@ -9,7 +9,7 @@ const PATHWAYS = [
     title: "The Food System Inside You",
     copy: "Build your personal food system to support your health, energy, and daily performance.",
     cta: "Explore You",
-    href: "/assessment",
+    href: "/you",
     image: "/images/hero-gut.png",
     alt: "The food system inside you — gut microbiome illustration",
     accent: "var(--icon-green)",
