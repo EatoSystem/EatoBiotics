@@ -17,6 +17,9 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 import { ScoreRing } from "./score-ring"
 import { PremiumTeaser } from "./premium-teaser"
 import { MissionNote } from "./mission-note"
+import { PillarInsightCallout } from "./pillar-insight-callout"
+import { ReportReframe } from "./report-reframe"
+import { ShareScoreCard } from "./share-score-card"
 import type { AssessmentResult, PillarInsight } from "@/lib/assessment-scoring"
 import { getFoodBySlug } from "@/lib/foods"
 
@@ -208,6 +211,15 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ── Pillar Insight Callout — "the moment" ────────────────────── */}
+      <section className="px-6 pb-8">
+        <div className="mx-auto max-w-3xl">
+          <ScrollReveal delay={200}>
+            <PillarInsightCallout insights={insights} />
+          </ScrollReveal>
         </div>
       </section>
 
@@ -457,6 +469,15 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
         </div>
       </section>
 
+      {/* ── Report Reframe — free vs paid bridge ─────────────────────── */}
+      <section className="border-t border-border px-6 py-16">
+        <div className="mx-auto max-w-3xl">
+          <ScrollReveal>
+            <ReportReframe result={result} />
+          </ScrollReveal>
+        </div>
+      </section>
+
       {/* ── Premium Teaser (PaymentCTA) ───────────────────────────────── */}
       <section className="border-t border-border bg-secondary/10 px-6 py-16">
         <div className="mx-auto max-w-3xl">
@@ -466,10 +487,13 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
         </div>
       </section>
 
-      {/* ── Save Results ─────────────────────────────────────────────── */}
+      {/* ── Share Score + Save Results ────────────────────────────────── */}
       <section className="border-t border-border px-6 py-16">
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-3xl space-y-4">
           <ScrollReveal>
+            <ShareScoreCard result={result} />
+          </ScrollReveal>
+          <ScrollReveal delay={80}>
             <SaveResultsCard email={leadEmail} />
           </ScrollReveal>
         </div>

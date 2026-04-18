@@ -32,6 +32,9 @@ import {
 } from "lucide-react"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
 import { OnboardingModal } from "./onboarding-modal"
+import { WelcomeScreen, useFirstVisit } from "./welcome-screen"
+import { SevenDayGuide } from "./seven-day-guide"
+import { UpgradeGate } from "./upgrade-gate"
 import { PractitionerReportCard } from "./practitioner-report-card"
 import { ScoreRing } from "@/components/assessment/score-ring"
 import { ProgressChart } from "./progress-chart"
@@ -1724,6 +1727,8 @@ function OverviewTab({
   hasMealPlan,
   latestMonthlyReview,
   storyLastUpdated,
+  userId,
+  signupDate,
 }: {
   assessments: AssessmentRow[]
   mindAssessments?: AssessmentRow[]
@@ -1741,6 +1746,8 @@ function OverviewTab({
   hasMealPlan?: boolean
   latestMonthlyReview?: { month: string } | null
   storyLastUpdated?: string | null
+  userId?: string
+  signupDate?: string | null
 }) {
   const latest = assessments[0] ?? null
   const previous = assessments[1] ?? null
@@ -1770,6 +1777,16 @@ function OverviewTab({
         <AnalyseMealCard
           tier={membershipTier}
           dailyAnalysesUsed={dailyAnalysesUsed}
+        />
+      )}
+
+      {/* ── Seven-Day Guide (shown for new users ≤ 7 days old) ── */}
+      {userId && signupDate && (
+        <SevenDayGuide
+          weakestPillar={currentScores ? Object.entries(currentScores).filter(([k]) => k !== "overall").sort(([, a], [, b]) => (a as number) - (b as number))[0]?.[0] ?? null : null}
+          profileColor={profileInfo.color}
+          signupDate={signupDate}
+          userId={userId}
         />
       )}
 
@@ -3119,6 +3136,16 @@ export function DashboardClient({ profile, assessments, mindAssessments = [], pa
   const [activeTab, setActiveTab] = useState<TabKey>("overview")
   const router = useRouter()
   const latest = assessments[0] ?? null
+  const { show: showWelcome, dismiss: dismissWelcome } = useFirstVisit(profile.id)
+
+  // Derive weakest pillar from latest assessment sub-scores
+  const latestSubScores = latest ? extractSubScores(latest.sub_scores) : null
+  const weakestPillar = latestSubScores
+    ? Object.entries(latestSubScores)
+        .filter(([k]) => k !== "overall")
+        .sort(([, a], [, b]) => (a as number) - (b as number))[0]?.[0] ?? null
+    : null
+  const profileInfo = getProfileInfo(latest?.profile_type ?? null)
 
   const handleSignOut = async () => {
     const supabase = getSupabaseBrowser()
@@ -3130,6 +3157,20 @@ export function DashboardClient({ profile, assessments, mindAssessments = [], pa
     <div className="pb-20">
       {/* Onboarding modal — shown on first visit */}
       <OnboardingModal memberName={profile.name ?? null} consultHref={consultHref} />
+
+      {/* Welcome screen — personalised first-visit modal */}
+      {showWelcome && (
+        <WelcomeScreen
+          firstName={profile.name?.split(" ")[0] ?? "there"}
+          score={latest?.overall_score ?? null}
+          profileType={latest?.profile_type ?? null}
+          profileColor={profileInfo.color}
+          profileTagline={profileInfo.tagline}
+          weakestPillar={weakestPillar}
+          healthGoals={profile.health_goals ?? null}
+          onDismiss={dismissWelcome}
+        />
+      )}
 
       {/* Hero */}
       <DashboardHero profile={profile} latestAssessment={latest} onSignOut={handleSignOut} />
@@ -3164,11 +3205,19 @@ export function DashboardClient({ profile, assessments, mindAssessments = [], pa
 
       {/* Tab content */}
       <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
-        {activeTab === "overview" && <OverviewTab assessments={assessments} mindAssessments={mindAssessments} membershipTier={profile.membership_tier ?? "free"} weeklyCheckin={weeklyCheckin} monthlyGutPlan={monthlyGutPlan} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} bioticsProfile={bioticsProfile} streak={streak} dailyPromptIndex={dailyPromptIndex} consultHref={consultHref} patterns={patterns} setActiveTab={setActiveTab} hasMealPlan={hasMealPlan} latestMonthlyReview={latestMonthlyReview} storyLastUpdated={storyLastUpdated} />}
+        {activeTab === "overview" && <OverviewTab assessments={assessments} mindAssessments={mindAssessments} membershipTier={profile.membership_tier ?? "free"} weeklyCheckin={weeklyCheckin} monthlyGutPlan={monthlyGutPlan} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} bioticsProfile={bioticsProfile} streak={streak} dailyPromptIndex={dailyPromptIndex} consultHref={consultHref} patterns={patterns} setActiveTab={setActiveTab} hasMealPlan={hasMealPlan} latestMonthlyReview={latestMonthlyReview} storyLastUpdated={storyLastUpdated} userId={profile.id} signupDate={latest?.created_at ?? null} />}
         {activeTab === "reports" && <ReportsTab paidReports={paidReports} />}
         {activeTab === "membership" && <MembershipTab profile={profile} nextBillingDate={nextBillingDate} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} latestAssessment={latest} />}
-        {activeTab === "plate" && <PlateTab plateData={plateData} />}
-        {activeTab === "meals" && <MealsTab />}
+        {activeTab === "plate" && (
+          profile.membership_tier === "free"
+            ? <UpgradeGate feature="plate" currentTier={profile.membership_tier} />
+            : <PlateTab plateData={plateData} />
+        )}
+        {activeTab === "meals" && (
+          profile.membership_tier === "free"
+            ? <UpgradeGate feature="meals" currentTier={profile.membership_tier} />
+            : <MealsTab />
+        )}
         {activeTab === "refer" && <ReferTab referralCode={profile.referral_code} />}
         {activeTab === "consult" && profile.membership_tier === "transform" && (
           <ConsultHistoryTab pastConsultations={pastConsultations} />
