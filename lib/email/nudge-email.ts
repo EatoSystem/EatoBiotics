@@ -6,6 +6,8 @@ interface NudgeEmailOpts {
   weeklyCheckinContent: string | null
   membershipTier: string
   baseUrl: string
+  weakestPillar: string | null
+  weakestPillarAction: string | null
 }
 
 function scoreColor(score: number): string {
@@ -37,7 +39,23 @@ function mealsPhrase(count: number): string {
 }
 
 export function buildNudgeEmail(opts: NudgeEmailOpts): { subject: string; html: string } {
-  const { name, mealsLoggedThisWeek, bestScoreThisWeek, currentStreak, weeklyCheckinContent, membershipTier, baseUrl } = opts
+  const { name, mealsLoggedThisWeek, bestScoreThisWeek, currentStreak, weeklyCheckinContent, membershipTier, baseUrl, weakestPillar, weakestPillarAction } = opts
+
+  const PILLAR_DISPLAY_NAMES: Record<string, string> = {
+    adding: "Live Foods", diversity: "Plant Diversity", feeding: "Feeding",
+    consistency: "Consistency", feeling: "Body Awareness",
+  }
+
+  const pillarDisplayName = weakestPillar ? (PILLAR_DISPLAY_NAMES[weakestPillar] ?? weakestPillar) : null
+
+  const focusBlock = (weakestPillar && weakestPillarAction && pillarDisplayName)
+    ? `<tr><td style="padding:0 0 20px;">
+        <div style="border-left:3px solid #4CB648;background:#f0fdf4;border-radius:0 10px 10px 0;padding:14px 16px;">
+          <p style="margin:0 0 5px;font-size:11px;font-weight:700;color:#4CB648;text-transform:uppercase;letter-spacing:1px;">This week&apos;s focus &mdash; ${pillarDisplayName}</p>
+          <p style="margin:0;font-size:14px;color:#1A2E12;line-height:1.6;">${weakestPillarAction}</p>
+        </div>
+      </td></tr>`
+    : ""
 
   const firstName = name?.split(" ")[0] ?? null
   const greeting  = firstName ? `Hi ${firstName},` : "Hi there,"
@@ -174,6 +192,9 @@ export function buildNudgeEmail(opts: NudgeEmailOpts): { subject: string; html: 
 
                 <!-- Weekly check-in (Transform only) -->
                 ${checkinBlock ? `<tr><td style="padding:0 32px 0 32px;"><table width="100%" cellpadding="0" cellspacing="0">${checkinBlock}</table></td></tr>` : ""}
+
+                <!-- Focus pillar block -->
+                ${focusBlock ? `<tr><td style="padding:0 32px 0 32px;"><table width="100%" cellpadding="0" cellspacing="0">${focusBlock}</table></td></tr>` : ""}
 
                 <!-- CTA -->
                 <tr>

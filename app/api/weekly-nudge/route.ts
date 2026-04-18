@@ -79,6 +79,33 @@ async function sendNudge(
     weeklyCheckinContent = (checkin?.content as string | null) ?? null
   }
 
+  // Derive weakest pillar from latest assessment
+  const { data: lead } = await adminSupabase
+    .from("leads")
+    .select("sub_scores")
+    .eq("email", email)
+    .not("overall_score", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single()
+
+  const subScores = lead?.sub_scores as Record<string, number> | null
+  const PILLARS = ["diversity", "feeding", "adding", "consistency", "feeling"]
+  let weakestPillar: string | null = null
+  if (subScores) {
+    weakestPillar = PILLARS.filter(k => typeof subScores[k] === "number")
+      .sort((a, b) => subScores[a] - subScores[b])[0] ?? null
+  }
+
+  const PILLAR_WEEKLY_ACTIONS: Record<string, string> = {
+    adding:      "Add one fermented food to every main meal this week — yogurt, kefir, kimchi, or miso. Consistency compounds.",
+    diversity:   "Aim to add 3 plant species you haven&apos;t eaten this week yet. Each new plant feeds a different microbial family.",
+    feeding:     "Include a legume in at least 3 meals this week — lentils, chickpeas, or beans. They&apos;re your gut bacteria&apos;s best fuel.",
+    consistency: "Protect your meal times this week — eat within the same 1-hour window each day. Your gut clock will start responding.",
+    feeling:     "Write one word after each main meal this week describing how you feel. By Friday, you&apos;ll see your first pattern.",
+  }
+  const weakestPillarAction = weakestPillar ? (PILLAR_WEEKLY_ACTIONS[weakestPillar] ?? null) : null
+
   // Skip email if member has zero activity and no streak — avoid spamming inactive free users
   if (mealsLoggedThisWeek === 0 && currentStreak === 0 && membershipTier === "free") {
     console.log(`[weekly-nudge] Skipping inactive free user ${userId}`)
@@ -93,6 +120,8 @@ async function sendNudge(
     weeklyCheckinContent,
     membershipTier,
     baseUrl: BASE_URL,
+    weakestPillar,
+    weakestPillarAction,
   })
 
   const { error } = await resend.emails.send({

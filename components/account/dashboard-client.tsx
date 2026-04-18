@@ -39,6 +39,9 @@ import { ScoreProgressCard } from "./score-progress-card"
 import { ReportBridgeCard } from "./report-bridge-card"
 import { Day8ChallengeCard } from "./day8-challenge-card"
 import { PractitionerReportCard } from "./practitioner-report-card"
+import { MonthlyProgressCard } from "./monthly-progress-card"
+import { CommunityPulseCard } from "./community-pulse-card"
+import { GoalProgressCard } from "./goal-progress-card"
 import { ScoreRing } from "@/components/assessment/score-ring"
 import { ProgressChart } from "./progress-chart"
 import { cn } from "@/lib/utils"
@@ -1733,6 +1736,7 @@ function OverviewTab({
   userId,
   signupDate,
   latestPaidReport,
+  healthGoals,
 }: {
   assessments: AssessmentRow[]
   mindAssessments?: AssessmentRow[]
@@ -1753,6 +1757,7 @@ function OverviewTab({
   userId?: string
   signupDate?: string | null
   latestPaidReport?: { tier: string; created_at: string } | null
+  healthGoals?: string[] | null
 }) {
   const latest = assessments[0] ?? null
   const previous = assessments[1] ?? null
@@ -1817,12 +1822,34 @@ function OverviewTab({
         />
       )}
 
+      {/* ── Goal Progress ─────────────────────────────────── */}
+      <GoalProgressCard
+        healthGoals={healthGoals ?? null}
+        subScores={currentScores}
+        profileColor={profileInfo.color}
+        membershipTier={membershipTier}
+      />
+
       {/* ── Report Bridge (paid report → subscription prompt) ────── */}
       {latestPaidReport && membershipTier === "free" && (
         <ReportBridgeCard
           reportTier={latestPaidReport.tier}
           reportDate={latestPaidReport.created_at}
           profileType={latest?.profile_type ?? null}
+        />
+      )}
+
+      {/* ── Monthly Progress (paid tiers) ──────────────────── */}
+      {(membershipTier === "grow" || membershipTier === "restore" || membershipTier === "transform") && (
+        <MonthlyProgressCard
+          membershipTier={membershipTier}
+          analysisCount={patterns?.analysisCount ?? 0}
+          trendDirection={patterns?.trendDirection ?? "stable"}
+          bestStreak={patterns?.bestStreak ?? 0}
+          currentScore={latest?.overall_score ?? null}
+          previousScore={previous?.overall_score ?? null}
+          weakestPillar={currentScores ? Object.entries(currentScores).filter(([k]) => k !== "overall").sort(([, a], [, b]) => (a as number) - (b as number))[0]?.[0] ?? null : null}
+          monthlyReviewContent={null}
         />
       )}
 
@@ -1908,6 +1935,9 @@ function OverviewTab({
           </div>
         </div>
       )}
+
+      {/* ── Community Pulse ──────────────────────────────────────── */}
+      <CommunityPulseCard />
 
       {/* ── Mind Score card ──────────────────────────────────────── */}
       {mindLatest && (
@@ -3241,7 +3271,7 @@ export function DashboardClient({ profile, assessments, mindAssessments = [], pa
 
       {/* Tab content */}
       <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
-        {activeTab === "overview" && <OverviewTab assessments={assessments} mindAssessments={mindAssessments} membershipTier={profile.membership_tier ?? "free"} weeklyCheckin={weeklyCheckin} monthlyGutPlan={monthlyGutPlan} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} bioticsProfile={bioticsProfile} streak={streak} dailyPromptIndex={dailyPromptIndex} consultHref={consultHref} patterns={patterns} setActiveTab={setActiveTab} hasMealPlan={hasMealPlan} latestMonthlyReview={latestMonthlyReview} storyLastUpdated={storyLastUpdated} userId={profile.id} signupDate={latest?.created_at ?? null} latestPaidReport={paidReports[0] ? { tier: paidReports[0].tier, created_at: paidReports[0].created_at } : null} />}
+        {activeTab === "overview" && <OverviewTab assessments={assessments} mindAssessments={mindAssessments} membershipTier={profile.membership_tier ?? "free"} weeklyCheckin={weeklyCheckin} monthlyGutPlan={monthlyGutPlan} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} bioticsProfile={bioticsProfile} streak={streak} dailyPromptIndex={dailyPromptIndex} consultHref={consultHref} patterns={patterns} setActiveTab={setActiveTab} hasMealPlan={hasMealPlan} latestMonthlyReview={latestMonthlyReview} storyLastUpdated={storyLastUpdated} userId={profile.id} signupDate={latest?.created_at ?? null} latestPaidReport={paidReports[0] ? { tier: paidReports[0].tier, created_at: paidReports[0].created_at } : null} healthGoals={profile.health_goals ?? null} />}
         {activeTab === "reports" && <ReportsTab paidReports={paidReports} />}
         {activeTab === "membership" && <MembershipTab profile={profile} nextBillingDate={nextBillingDate} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} latestAssessment={latest} />}
         {activeTab === "plate" && (
