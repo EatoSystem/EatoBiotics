@@ -35,6 +35,9 @@ import { OnboardingModal } from "./onboarding-modal"
 import { WelcomeScreen, useFirstVisit } from "./welcome-screen"
 import { SevenDayGuide } from "./seven-day-guide"
 import { UpgradeGate } from "./upgrade-gate"
+import { ScoreProgressCard } from "./score-progress-card"
+import { ReportBridgeCard } from "./report-bridge-card"
+import { Day8ChallengeCard } from "./day8-challenge-card"
 import { PractitionerReportCard } from "./practitioner-report-card"
 import { ScoreRing } from "@/components/assessment/score-ring"
 import { ProgressChart } from "./progress-chart"
@@ -1729,6 +1732,7 @@ function OverviewTab({
   storyLastUpdated,
   userId,
   signupDate,
+  latestPaidReport,
 }: {
   assessments: AssessmentRow[]
   mindAssessments?: AssessmentRow[]
@@ -1748,6 +1752,7 @@ function OverviewTab({
   storyLastUpdated?: string | null
   userId?: string
   signupDate?: string | null
+  latestPaidReport?: { tier: string; created_at: string } | null
 }) {
   const latest = assessments[0] ?? null
   const previous = assessments[1] ?? null
@@ -1787,6 +1792,37 @@ function OverviewTab({
           profileColor={profileInfo.color}
           signupDate={signupDate}
           userId={userId}
+        />
+      )}
+
+      {/* ── Day 8 Challenge (after 7-day guide ends) ─────────────── */}
+      {userId && signupDate && Math.floor((Date.now() - new Date(signupDate).getTime()) / 86_400_000) > 7 && (
+        <Day8ChallengeCard
+          weakestPillar={currentScores ? Object.entries(currentScores).filter(([k]) => k !== "overall").sort(([, a], [, b]) => (a as number) - (b as number))[0]?.[0] ?? null : null}
+          profileColor={profileInfo.color}
+          membershipTier={membershipTier}
+          userId={userId}
+        />
+      )}
+
+      {/* ── Score Progress (shown when 2+ assessments exist) ─────── */}
+      {previous && previousScores && currentScores && (
+        <ScoreProgressCard
+          previousScore={previous.overall_score ?? 0}
+          currentScore={latest?.overall_score ?? 0}
+          previousSubScores={previousScores}
+          currentSubScores={currentScores}
+          previousDate={previous.created_at}
+          currentDate={latest?.created_at ?? ""}
+        />
+      )}
+
+      {/* ── Report Bridge (paid report → subscription prompt) ────── */}
+      {latestPaidReport && membershipTier === "free" && (
+        <ReportBridgeCard
+          reportTier={latestPaidReport.tier}
+          reportDate={latestPaidReport.created_at}
+          profileType={latest?.profile_type ?? null}
         />
       )}
 
@@ -3155,8 +3191,8 @@ export function DashboardClient({ profile, assessments, mindAssessments = [], pa
 
   return (
     <div className="pb-20">
-      {/* Onboarding modal — shown on first visit */}
-      <OnboardingModal memberName={profile.name ?? null} consultHref={consultHref} />
+      {/* Onboarding modal — suppressed when WelcomeScreen is handling first-visit */}
+      <OnboardingModal memberName={profile.name ?? null} consultHref={consultHref} skip={showWelcome} />
 
       {/* Welcome screen — personalised first-visit modal */}
       {showWelcome && (
@@ -3179,7 +3215,7 @@ export function DashboardClient({ profile, assessments, mindAssessments = [], pa
       <div className="sticky top-[57px] z-10 border-b border-border bg-background/95 backdrop-blur-sm">
         <div className="mx-auto max-w-3xl px-4 sm:px-6">
           <div className="flex items-center gap-1.5 overflow-x-auto py-3" style={{ scrollbarWidth: "none" }}>
-            {TABS.filter((t) => t.key !== "consult" || profile.membership_tier === "transform").map(({ key, label, icon: Icon }) => (
+            {TABS.map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
                 onClick={() => setActiveTab(key)}
@@ -3205,7 +3241,7 @@ export function DashboardClient({ profile, assessments, mindAssessments = [], pa
 
       {/* Tab content */}
       <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
-        {activeTab === "overview" && <OverviewTab assessments={assessments} mindAssessments={mindAssessments} membershipTier={profile.membership_tier ?? "free"} weeklyCheckin={weeklyCheckin} monthlyGutPlan={monthlyGutPlan} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} bioticsProfile={bioticsProfile} streak={streak} dailyPromptIndex={dailyPromptIndex} consultHref={consultHref} patterns={patterns} setActiveTab={setActiveTab} hasMealPlan={hasMealPlan} latestMonthlyReview={latestMonthlyReview} storyLastUpdated={storyLastUpdated} userId={profile.id} signupDate={latest?.created_at ?? null} />}
+        {activeTab === "overview" && <OverviewTab assessments={assessments} mindAssessments={mindAssessments} membershipTier={profile.membership_tier ?? "free"} weeklyCheckin={weeklyCheckin} monthlyGutPlan={monthlyGutPlan} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} bioticsProfile={bioticsProfile} streak={streak} dailyPromptIndex={dailyPromptIndex} consultHref={consultHref} patterns={patterns} setActiveTab={setActiveTab} hasMealPlan={hasMealPlan} latestMonthlyReview={latestMonthlyReview} storyLastUpdated={storyLastUpdated} userId={profile.id} signupDate={latest?.created_at ?? null} latestPaidReport={paidReports[0] ? { tier: paidReports[0].tier, created_at: paidReports[0].created_at } : null} />}
         {activeTab === "reports" && <ReportsTab paidReports={paidReports} />}
         {activeTab === "membership" && <MembershipTab profile={profile} nextBillingDate={nextBillingDate} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} latestAssessment={latest} />}
         {activeTab === "plate" && (
@@ -3219,8 +3255,10 @@ export function DashboardClient({ profile, assessments, mindAssessments = [], pa
             : <MealsTab />
         )}
         {activeTab === "refer" && <ReferTab referralCode={profile.referral_code} />}
-        {activeTab === "consult" && profile.membership_tier === "transform" && (
-          <ConsultHistoryTab pastConsultations={pastConsultations} />
+        {activeTab === "consult" && (
+          profile.membership_tier === "transform"
+            ? <ConsultHistoryTab pastConsultations={pastConsultations} />
+            : <UpgradeGate feature="consult" currentTier={profile.membership_tier} />
         )}
       </div>
     </div>

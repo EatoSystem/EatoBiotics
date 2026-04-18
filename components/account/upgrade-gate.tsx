@@ -184,7 +184,7 @@ export function UpgradeGate({ feature, currentTier }: UpgradeGateProps) {
               <span className="ml-1 text-sm text-muted-foreground">· cancel anytime</span>
             </div>
             <Link
-              href={`/pricing?highlight=${config.requiredTier}`}
+              href={`/pricing?feature=${config.requiredTier}`}
               className="brand-gradient inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-icon-green/25 transition-all hover:opacity-90"
             >
               Unlock {config.requiredLabel} <ArrowRight size={14} />

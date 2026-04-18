@@ -18,9 +18,10 @@ const INTENTS = [
 interface OnboardingModalProps {
   memberName: string | null
   consultHref?: string
+  skip?: boolean  // suppresses the modal (e.g. WelcomeScreen is showing instead)
 }
 
-export function OnboardingModal({ memberName, consultHref }: OnboardingModalProps) {
+export function OnboardingModal({ memberName, consultHref, skip }: OnboardingModalProps) {
   const [visible, setVisible] = useState(false)
   const [step, setStep] = useState(0)
   const [selected, setSelected] = useState<string | null>(null)
@@ -29,10 +30,11 @@ export function OnboardingModal({ memberName, consultHref }: OnboardingModalProp
   const firstName = memberName?.split(" ")[0] ?? null
 
   useEffect(() => {
+    if (skip) return  // WelcomeScreen is handling the first-visit experience
     try {
       if (!localStorage.getItem(STORAGE_KEY)) setVisible(true)
     } catch { /* SSR / private browsing */ }
-  }, [])
+  }, [skip])
 
   function dismiss() {
     try { localStorage.setItem(STORAGE_KEY, "1") } catch { /* ignore */ }

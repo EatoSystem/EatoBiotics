@@ -198,6 +198,12 @@ export function PricingClient({
   const cutoff = process.env.NEXT_PUBLIC_FOUNDING_MEMBER_CUTOFF_DATE
   const foundingWindowOpen = cutoff ? new Date() < new Date(cutoff) : false
 
+  // Determine if highlightFeature is a tier name (from upgrade gate CTAs)
+  const TIER_NAMES = ["grow", "restore", "transform"] as const
+  const highlightTier = TIER_NAMES.includes(highlightFeature as typeof TIER_NAMES[number])
+    ? highlightFeature as "grow" | "restore" | "transform"
+    : null
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
       {/* Header */}
@@ -220,6 +226,18 @@ export function PricingClient({
           <div className="mx-auto mt-6 max-w-sm rounded-2xl p-4 text-sm"
             style={{ background: "color-mix(in srgb, var(--icon-orange) 10%, transparent)", border: "1px solid color-mix(in srgb, var(--icon-orange) 30%, transparent)", color: "var(--icon-orange)" }}>
             EatoBiotic consultations are available exclusively on the <strong>Transform</strong> plan.
+          </div>
+        )}
+        {highlightTier && (
+          <div className="mx-auto mt-6 max-w-md rounded-2xl p-4 text-sm"
+            style={{
+              background: `color-mix(in srgb, ${TIER_META[highlightTier].color} 10%, transparent)`,
+              border: `1px solid color-mix(in srgb, ${TIER_META[highlightTier].color} 30%, transparent)`,
+            }}>
+            <p style={{ margin: 0, color: TIER_META[highlightTier].color, fontWeight: 600 }}>
+              You&apos;re one step away from unlocking <strong>{TIER_META[highlightTier].label}</strong> —{" "}
+              {TIER_META[highlightTier].tagline.toLowerCase()}.
+            </p>
           </div>
         )}
       </div>
@@ -280,6 +298,7 @@ export function PricingClient({
           const isLower = tierOrder < currentOrder && isActive
           const isGrow = tier === "grow"
           const isTransform = tier === "transform"
+          const isHighlighted = highlightTier === tier && !isCurrent
 
           let ctaLabel = "Get started"
           if (tier === "free") ctaLabel = "Start with Assessment"
@@ -290,15 +309,18 @@ export function PricingClient({
           return (
             <div
               key={tier}
+              id={`tier-${tier}`}
               className={cn(
                 "relative flex flex-col overflow-hidden rounded-3xl border bg-card transition-shadow hover:shadow-xl",
                 isCurrent && "ring-2 ring-offset-2",
-                isGrow && !isCurrent && "border-2",
-                isTransform && !isCurrent && "shadow-lg scale-[1.02]"
+                isGrow && !isCurrent && !isHighlighted && "border-2",
+                isTransform && !isCurrent && !isHighlighted && "shadow-lg scale-[1.02]",
+                isHighlighted && "ring-2 ring-offset-2 shadow-xl scale-[1.02]"
               )}
               style={{
                 ...(isCurrent ? { "--tw-ring-color": meta.color } as React.CSSProperties : {}),
-                ...(isGrow && !isCurrent ? { borderColor: `color-mix(in srgb, ${meta.color} 40%, var(--border))` } : {}),
+                ...(isGrow && !isCurrent && !isHighlighted ? { borderColor: `color-mix(in srgb, ${meta.color} 40%, var(--border))` } : {}),
+                ...(isHighlighted ? { "--tw-ring-color": meta.color } as React.CSSProperties : {}),
               }}
             >
               {/* "Most Popular" badge on Grow */}
