@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { ArrowRight, Check, Star, FileText, Layers, Sparkles } from "lucide-react"
+import posthog from "posthog-js"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { MissionNote } from "./mission-note"
@@ -91,6 +92,13 @@ export function PaymentCTA({ result }: PaymentCTAProps) {
   async function handlePurchase(tier: Tier) {
     setLoading(tier)
     setError(null)
+
+    // PostHog: report purchase button clicked
+    posthog.capture("report_purchase_clicked", {
+      tier,
+      score: result.overall,
+      profile_type: result.profile.type,
+    })
 
     try {
       const res = await fetch("/api/checkout", {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   loadAssessment,
   saveAssessment,
@@ -18,11 +18,13 @@ import { AssessmentProgress } from "./assessment-progress"
 import { AssessmentQuestionView } from "./assessment-question"
 import { AssessmentResults } from "./assessment-results"
 import { PrivacyOptIn } from "./privacy-opt-in"
+import posthog from "posthog-js"
 
 export function AssessmentClient() {
   const [state, setState] = useState<AssessmentState>(emptyAssessmentState)
   const [hydrated, setHydrated] = useState(false)
   const [lead, setLead] = useState<LeadData | null>(null)
+  const resultsViewedFired = useRef(false)
 
   // Load saved state from localStorage after hydration
   useEffect(() => {
@@ -41,7 +43,24 @@ export function AssessmentClient() {
     if (hydrated) saveAssessment(state)
   }, [state, hydrated])
 
+  // Fire results_viewed once when the results screen becomes visible
+  useEffect(() => {
+    if (state.view === "results" && state.result && !resultsViewedFired.current) {
+      resultsViewedFired.current = true
+      posthog.capture("results_viewed", {
+        overall_score: state.result.overall,
+        profile_type: state.result.profile.type,
+      })
+    }
+  }, [state.view, state.result])
+
   function startAssessment(leadData: LeadData) {
+    // PostHog: assessment started
+    posthog.capture("assessment_started", {
+      name: leadData.name,
+      has_email: !!leadData.email,
+    })
+
     // Persist lead
     saveLeadData(leadData)
     setLead(leadData)
@@ -78,6 +97,21 @@ export function AssessmentClient() {
       // Last question — compute results
       const computed = computeResult(answers)
       const privacyAlreadyChosen = loadPrivacyChoice() !== null
+
+      // PostHog: assessment completed + identify user by email
+      posthog.capture("assessment_completed", {
+        overall_score: computed.overall,
+        profile_type: computed.profile.type,
+        sub_scores: computed.subScores,
+      })
+      const currentLead0 = lead ?? loadLeadData()
+      if (currentLead0?.email) {
+        posthog.identify(currentLead0.email, {
+          email: currentLead0.email,
+          name: currentLead0.name,
+          profile_type: computed.profile.type,
+        })
+      }
 
       // Fire-and-forget: send results email
       const currentLead = lead ?? loadLeadData()

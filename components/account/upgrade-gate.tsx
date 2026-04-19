@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { Lock, ArrowRight, Zap, TrendingUp, Calendar } from "lucide-react"
+import posthog from "posthog-js"
 
 /* ── Upgrade Gate ────────────────────────────────────────────────────────
    Replaces locked tab content with a blurred preview + upgrade prompt.
@@ -185,6 +186,10 @@ export function UpgradeGate({ feature, currentTier }: UpgradeGateProps) {
             </div>
             <Link
               href={`/pricing?feature=${config.requiredTier}`}
+              onClick={() => posthog.capture("upgrade_gate_clicked", {
+                feature,
+                required_tier: config.requiredTier,
+              })}
               className="brand-gradient inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-icon-green/25 transition-all hover:opacity-90"
             >
               Unlock {config.requiredLabel} <ArrowRight size={14} />

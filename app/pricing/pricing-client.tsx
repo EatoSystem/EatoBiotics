@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { Check, ArrowRight, Star, Zap, AlertTriangle, ClipboardList, BarChart2, Utensils, TrendingUp } from "lucide-react"
+import posthog from "posthog-js"
 import { cn } from "@/lib/utils"
 
 /* ── Types ───────────────────────────────────────────────────────────── */
@@ -89,12 +90,14 @@ const TIER_ORDER: Record<Tier, number> = { free: 0, grow: 1, restore: 2, transfo
 
 function SubscribeButton({
   priceId,
+  tier,
   label,
   gradient,
   isLoggedIn,
   disabled,
 }: {
   priceId: string
+  tier: string
   label: string
   gradient: string
   isLoggedIn: boolean
@@ -105,10 +108,12 @@ function SubscribeButton({
   async function handleClick() {
     if (disabled) return
     if (!isLoggedIn) {
+      posthog.capture("subscribe_clicked", { tier, is_logged_in: false })
       window.location.href = `/assessment?signin=1&redirect=/pricing`
       return
     }
     if (!priceId) return
+    posthog.capture("subscribe_clicked", { tier, is_logged_in: true })
     setLoading(true)
     try {
       const res = await fetch("/api/stripe/create-subscription-checkout", {
@@ -392,6 +397,7 @@ export function PricingClient({
                 ) : (
                   <SubscribeButton
                     priceId={priceIds[tier]}
+                    tier={tier}
                     label={ctaLabel}
                     gradient={meta.gradient}
                     isLoggedIn={isLoggedIn}

@@ -31,6 +31,7 @@ import {
   CalendarCheck,
 } from "lucide-react"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
+import posthog from "posthog-js"
 import { OnboardingModal } from "./onboarding-modal"
 import { WelcomeScreen, useFirstVisit } from "./welcome-screen"
 import { SevenDayGuide } from "./seven-day-guide"
@@ -3219,6 +3220,22 @@ export function DashboardClient({ profile, assessments, mindAssessments = [], pa
     router.push("/assessment")
   }
 
+  function handleTabClick(key: TabKey) {
+    setActiveTab(key)
+    posthog.capture("account_tab_viewed", {
+      tab: key,
+      membership_tier: profile.membership_tier ?? "free",
+    })
+  }
+
+  function handleWelcomeDismiss() {
+    posthog.capture("welcome_screen_dismissed", {
+      score: latest?.overall_score ?? null,
+      profile_type: latest?.profile_type ?? null,
+    })
+    dismissWelcome()
+  }
+
   return (
     <div className="pb-20">
       {/* Onboarding modal — suppressed when WelcomeScreen is handling first-visit */}
@@ -3234,7 +3251,7 @@ export function DashboardClient({ profile, assessments, mindAssessments = [], pa
           profileTagline={profileInfo.tagline}
           weakestPillar={weakestPillar}
           healthGoals={profile.health_goals ?? null}
-          onDismiss={dismissWelcome}
+          onDismiss={handleWelcomeDismiss}
         />
       )}
 
@@ -3248,7 +3265,7 @@ export function DashboardClient({ profile, assessments, mindAssessments = [], pa
             {TABS.map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
-                onClick={() => setActiveTab(key)}
+                onClick={() => handleTabClick(key)}
                 className={cn(
                   "flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-all",
                   activeTab === key

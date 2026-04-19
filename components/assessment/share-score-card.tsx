@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Share2, Copy, Check, MessageCircle } from "lucide-react"
+import posthog from "posthog-js"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
 
 /* ── Share Score Card ────────────────────────────────────────────────────
@@ -39,6 +40,7 @@ export function ShareScoreCard({ result }: ShareScoreCardProps) {
       await navigator.clipboard.writeText(`${shareText} ${shareUrl}`)
       setCopied(true)
       setTimeout(() => setCopied(false), 2500)
+      posthog.capture("score_shared", { method: "clipboard", score: overall })
     } catch {
       // fallback — select the text
     }
@@ -52,6 +54,7 @@ export function ShareScoreCard({ result }: ShareScoreCardProps) {
         text: shareText,
         url: shareUrl,
       })
+      posthog.capture("score_shared", { method: "native", score: overall })
     } catch {
       // user dismissed, ignore
     }

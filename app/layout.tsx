@@ -8,6 +8,9 @@ import { generateOrganizationSchema } from '@/lib/structured-data'
 import { PwaRegister } from '@/components/pwa-register'
 import { PwaInstallPrompt } from '@/components/pwa-install-prompt'
 import { Toaster } from 'sonner'
+import { PHProvider } from '@/components/providers/posthog-provider'
+import { PostHogPageview } from '@/components/providers/posthog-pageview'
+import { Suspense } from 'react'
 import './globals.css'
 
 const _dmSans = DM_Sans({
@@ -64,16 +67,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" style={{ backgroundColor: "#FFFFFF" }}>
-      <body className="bg-white font-sans antialiased">
-        <JsonLd data={generateOrganizationSchema()} />
-        <Nav />
-        <main>{children}</main>
-        <Footer />
-        <Analytics />
-        <Toaster position="bottom-center" richColors />
-        <PwaRegister />
-        <PwaInstallPrompt />
-      </body>
+      <PHProvider>
+        <body className="bg-white font-sans antialiased">
+          <Suspense fallback={null}>
+            <PostHogPageview />
+          </Suspense>
+          <JsonLd data={generateOrganizationSchema()} />
+          <Nav />
+          <main>{children}</main>
+          <Footer />
+          <Analytics />
+          <Toaster position="bottom-center" richColors />
+          <PwaRegister />
+          <PwaInstallPrompt />
+        </body>
+      </PHProvider>
     </html>
   )
 }
