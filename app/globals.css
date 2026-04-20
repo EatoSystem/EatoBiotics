@@ -177,6 +177,12 @@
   max-width: 8rem;
 }
 
+/* ── Staggered entrance animation — used by ResultBuilder ─────────────────── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ── Print / PDF export (7×10 trim) ──────────────────────────────────────── */
 @media print {
   @page {
