@@ -44,6 +44,7 @@ interface AnalysisResult {
 type State =
   | { kind: "idle" }
   | { kind: "loading"; previewUrl: string }
+  | { kind: "streaming"; previewUrl: string; thinking: string; thinkingDone: boolean }
   | { kind: "result"; previewUrl: string; result: AnalysisResult }
   | { kind: "error"; previewUrl: string; message: string }
 
@@ -323,7 +324,8 @@ function compressImage(file: File): Promise<{ base64: string; mimeType: "image/j
 /* ── Upload zone ────────────────────────────────────────────────────── */
 
 function UploadZone({ onFile }: { onFile: (file: File) => void }) {
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef    = useRef<HTMLInputElement>(null)
+  const cameraRef   = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
 
   function handleFile(file: File) {
@@ -341,14 +343,14 @@ function UploadZone({ onFile }: { onFile: (file: File) => void }) {
         const file = e.dataTransfer.files[0]
         if (file) handleFile(file)
       }}
-      onClick={() => inputRef.current?.click()}
       className={cn(
-        "relative flex cursor-pointer flex-col items-center justify-center gap-6 rounded-3xl border-2 p-16 text-center transition-all duration-200",
+        "relative flex flex-col items-center justify-center gap-6 rounded-3xl border-2 p-12 sm:p-16 text-center transition-all duration-200",
         dragging
           ? "border-[var(--icon-green)] bg-[var(--icon-green)]/5 scale-[1.01]"
-          : "border-dashed border-border hover:border-[var(--icon-green)]/60 hover:bg-secondary/30"
+          : "border-dashed border-border"
       )}
     >
+      {/* Browse from library (desktop + mobile gallery) */}
       <input
         ref={inputRef}
         type="file"
@@ -360,7 +362,20 @@ function UploadZone({ onFile }: { onFile: (file: File) => void }) {
         }}
       />
 
-      {/* Icon with gradient glow */}
+      {/* Camera capture — opens rear camera directly on mobile */}
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          if (file) handleFile(file)
+        }}
+      />
+
+      {/* Icon */}
       <div className="relative">
         <div
           className="absolute inset-0 rounded-2xl blur-xl opacity-40"
@@ -375,19 +390,29 @@ function UploadZone({ onFile }: { onFile: (file: File) => void }) {
       </div>
 
       <div className="space-y-2">
-        <p className="text-xl font-semibold text-foreground">Drop your meal photo here</p>
+        <p className="text-xl font-semibold text-foreground">Scan your meal</p>
         <p className="text-sm text-muted-foreground">
-          or tap to browse · JPEG, PNG, WebP · up to 5MB
+          Take a photo or upload from your library
         </p>
       </div>
 
-      <button
-        type="button"
-        onClick={(e) => { e.stopPropagation(); inputRef.current?.click() }}
-        className="brand-gradient rounded-full px-7 py-3 text-sm font-semibold text-white shadow-md shadow-icon-green/20 transition-all hover:opacity-90 hover:shadow-lg hover:shadow-icon-green/30"
-      >
-        Choose photo
-      </button>
+      {/* Two CTAs: camera (mobile-first) + browse */}
+      <div className="flex flex-col gap-3 w-full max-w-xs">
+        <button
+          type="button"
+          onClick={() => cameraRef.current?.click()}
+          className="brand-gradient flex items-center justify-center gap-2 rounded-full px-7 py-3 text-sm font-semibold text-white shadow-md shadow-icon-green/20 transition-all hover:opacity-90 hover:shadow-lg hover:shadow-icon-green/30"
+        >
+          <Camera size={16} /> Take photo
+        </button>
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="flex items-center justify-center gap-2 rounded-full border border-border px-7 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary/60"
+        >
+          Choose from library
+        </button>
+      </div>
 
       {/* Biotic pill decorations */}
       <div className="flex items-center gap-2 opacity-40">
@@ -417,6 +442,88 @@ function LoadingView({ previewUrl }: { previewUrl: string }) {
       <p className="text-center text-xs text-muted-foreground">
         Identifying every food and scoring against the 3 biotics framework
       </p>
+    </div>
+  )
+}
+
+/* ── Streaming / thinking state ─────────────────────────────────────── */
+
+function StreamingView({
+  previewUrl,
+  thinking,
+  thinkingDone,
+}: {
+  previewUrl: string
+  thinking: string
+  thinkingDone: boolean
+}) {
+  const [expanded, setExpanded] = useState(true)
+  // Auto-collapse once thinking is done and result is building
+  // (thinkingDone signals Claude finished reasoning, result is incoming)
+
+  return (
+    <div className="space-y-4">
+      {/* Meal image */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <Image
+          src={previewUrl} alt="Your meal"
+          width={600} height={400}
+          className="w-full object-cover max-h-72"
+          unoptimized
+        />
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/60 to-transparent" />
+      </div>
+
+      {/* Status pill */}
+      <div className="flex items-center justify-center gap-2">
+        {thinkingDone ? (
+          <>
+            <Loader2 size={14} className="animate-spin" style={{ color: "var(--icon-teal)" }} />
+            <span className="text-sm font-semibold" style={{ color: "var(--icon-teal)" }}>
+              Building your result…
+            </span>
+          </>
+        ) : (
+          <>
+            <Loader2 size={14} className="animate-spin" style={{ color: "var(--icon-green)" }} />
+            <span className="text-sm font-semibold" style={{ color: "var(--icon-green)" }}>
+              Claude is reasoning through your meal…
+            </span>
+          </>
+        )}
+      </div>
+
+      {/* Live thinking stream */}
+      {thinking && (
+        <div className="rounded-2xl border border-border bg-secondary/30 overflow-hidden">
+          <button
+            onClick={() => setExpanded((e) => !e)}
+            className="flex w-full items-center justify-between px-4 py-3 text-left"
+          >
+            <div className="flex items-center gap-2">
+              <div
+                className="h-2 w-2 rounded-full animate-pulse"
+                style={{ background: thinkingDone ? "var(--icon-teal)" : "var(--icon-green)" }}
+              />
+              <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                {thinkingDone ? "Claude's reasoning" : "Claude is thinking…"}
+              </span>
+            </div>
+            <span className="text-xs text-muted-foreground">{expanded ? "▲ hide" : "▼ show"}</span>
+          </button>
+
+          {expanded && (
+            <div className="px-4 pb-4 max-h-52 overflow-y-auto">
+              <p className="text-xs leading-relaxed text-muted-foreground whitespace-pre-wrap font-mono">
+                {thinking}
+                {!thinkingDone && (
+                  <span className="inline-block w-1.5 h-3.5 bg-muted-foreground/50 animate-pulse ml-0.5 align-middle" />
+                )}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -683,23 +790,79 @@ export function AnalyseClient({ tier }: { tier?: "free" | "grow" | "restore" | "
     try {
       const { base64, mimeType } = await compressImage(file)
 
-      // Use tier-differentiated API for paid members; fall back to public route
-      const endpoint = tier && tier !== "free" ? "/api/analyse" : "/api/analyse-plate"
+      // Paid members → streaming endpoint with extended thinking
+      // Free tier → existing non-streaming public route
+      if (tier && tier !== "free") {
+        setState({ kind: "streaming", previewUrl, thinking: "", thinkingDone: false })
 
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64: base64, mimeType }),
-      })
+        const res = await fetch("/api/analyse/stream", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageBase64: base64, mimeType }),
+        })
 
-      const data = await res.json()
+        if (!res.ok || !res.body) {
+          const err = await res.json().catch(() => ({})) as { error?: string }
+          setState({ kind: "error", previewUrl, message: err.error ?? "Analysis failed. Please try again." })
+          return
+        }
 
-      if (data.error) {
-        setState({ kind: "error", previewUrl, message: data.error })
-        return
+        const reader  = res.body.getReader()
+        const decoder = new TextDecoder()
+        let buffer    = ""
+
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split("\n")
+          buffer = lines.pop() ?? ""
+
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue
+            const payload = line.slice(6).trim()
+            if (payload === "[DONE]") break
+
+            let event: Record<string, unknown>
+            try { event = JSON.parse(payload) as Record<string, unknown> } catch { continue }
+
+            if (event.type === "thinking") {
+              setState((s) =>
+                s.kind === "streaming"
+                  ? { ...s, thinking: s.thinking + (event.text as string) }
+                  : s
+              )
+            } else if (event.type === "complete") {
+              setState({ kind: "result", previewUrl, result: event.result as unknown as AnalysisResult })
+            } else if (event.type === "error") {
+              setState({ kind: "error", previewUrl, message: event.message as string })
+            }
+          }
+        }
+
+        // If we exit the loop without a result (e.g. server closed stream early), flag it
+        setState((s) => {
+          if (s.kind === "streaming") {
+            return { kind: "error", previewUrl, message: "Analysis did not complete. Please try again." }
+          }
+          return s
+        })
+      } else {
+        // Free tier — existing blocking endpoint
+        const res = await fetch("/api/analyse-plate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageBase64: base64, mimeType }),
+        })
+
+        const data = await res.json() as Record<string, unknown>
+        if (data.error) {
+          setState({ kind: "error", previewUrl, message: data.error as string })
+          return
+        }
+        setState({ kind: "result", previewUrl, result: data as unknown as AnalysisResult })
       }
-
-      setState({ kind: "result", previewUrl, result: data as AnalysisResult })
     } catch {
       setState({
         kind: "error",
@@ -707,7 +870,7 @@ export function AnalyseClient({ tier }: { tier?: "free" | "grow" | "restore" | "
         message: "Something went wrong. Please check your connection and try again.",
       })
     }
-  }, [])
+  }, [tier])
 
   function reset() {
     if (state.kind !== "idle" && "previewUrl" in state) {
@@ -720,6 +883,13 @@ export function AnalyseClient({ tier }: { tier?: "free" | "grow" | "restore" | "
     <div>
       {state.kind === "idle" && <UploadZone onFile={handleFile} />}
       {state.kind === "loading" && <LoadingView previewUrl={state.previewUrl} />}
+      {state.kind === "streaming" && (
+        <StreamingView
+          previewUrl={state.previewUrl}
+          thinking={state.thinking}
+          thinkingDone={state.thinkingDone}
+        />
+      )}
       {state.kind === "result" && (
         <ResultsView previewUrl={state.previewUrl} result={state.result} onReset={reset} />
       )}
