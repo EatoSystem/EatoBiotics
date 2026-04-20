@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import Anthropic from "@anthropic-ai/sdk"
+import { anthropic } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { getUserMembershipTier } from "@/lib/membership"
@@ -258,12 +258,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 5. Build prompt
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) {
-    return NextResponse.json({ error: "Analysis not available" }, { status: 503 })
-  }
-
+  // 5. Build context section for Restore/Transform members
   let contextSection = ""
   if (supabase && (tier === "restore" || tier === "transform")) {
     try {
@@ -273,37 +268,28 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const fullPrompt = contextSection
-    ? BASE_PROMPT.replace(
-        'If you cannot identify the meal clearly',
-        contextSection + '\n\nIf you cannot identify the meal clearly'
-      )
-    : BASE_PROMPT
-
-  // 6. Call Claude
-  const anthropic = new Anthropic({ apiKey })
+  // 6. Call Claude — BASE_PROMPT cached in system, context + image in user message
+  //    Prompt caching saves ~90% of the ~750-token BASE_PROMPT on every repeat call.
+  const userContent: import("@anthropic-ai/sdk/resources").ContentBlockParam[] = [
+    {
+      type: "image",
+      source: { type: "base64", media_type: body.mimeType, data: body.imageBase64 },
+    },
+  ]
+  if (contextSection) {
+    userContent.push({ type: "text", text: contextSection })
+  }
 
   let parsed: Record<string, unknown>
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 2000,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: body.mimeType,
-                data: body.imageBase64,
-              },
-            },
-            { type: "text", text: fullPrompt },
-          ],
-        },
+      system: [
+        // Static analysis prompt — cached for 5 min across all users
+        { type: "text", text: BASE_PROMPT, cache_control: { type: "ephemeral" } },
       ],
+      messages: [{ role: "user", content: userContent }],
     })
 
     const raw = response.content[0].type === "text" ? response.content[0].text : ""

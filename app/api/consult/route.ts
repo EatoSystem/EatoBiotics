@@ -3,7 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import Anthropic from "@anthropic-ai/sdk"
+import { anthropic } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { getUserMembershipTier } from "@/lib/membership"
@@ -20,62 +20,16 @@ const bodySchema = z.object({
   sessionId: z.string().uuid().optional(),
 })
 
-/* ── Anthropic client ───────────────────────────────────────────────── */
+/* ── System prompt ───────────────────────────────────────────────────────
+   Split into two parts for prompt caching:
+   1. STATIC_KNOWLEDGE — the EatoBiotic knowledge base (~2,500 tokens).
+      Marked with cache_control so Anthropic caches it for 5 minutes.
+      Saves ~90% of input token cost on every follow-up turn.
+   2. buildMemberProfile() — dynamic per-user context (scores, goals, memory).
+      Never cached — changes each request.
+──────────────────────────────────────────────────────────────────────── */
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
-
-/* ── System prompt (server-side only — never sent to client) ────────── */
-
-function buildSystemPrompt(context: {
-  name: string | null
-  overallScore: number | null
-  subScores: Record<string, number> | null
-  recentScores: Array<{ score: number; date: string }>
-  healthGoals: string[]
-  weeklyCheckinSummary: string | null
-  recentSessionSummaries: Array<{ summary: string; created_at: string }>
-}): string {
-  const { name, overallScore, subScores, recentScores, healthGoals, weeklyCheckinSummary, recentSessionSummaries } = context
-
-  const scoreHistory = recentScores.length > 0
-    ? recentScores.map((s) => `  - ${s.date}: ${s.score}/100`).join("\n")
-    : "  No recent history"
-
-  const pillarSummary = subScores
-    ? Object.entries(subScores)
-        .map(([k, v]) => `  - ${k.charAt(0).toUpperCase() + k.slice(1)}: ${Math.round(v)}/100`)
-        .join("\n")
-    : "  No pillar data available"
-
-  const goalsSummary = healthGoals.length > 0
-    ? healthGoals.join(", ")
-    : "Not yet set"
-
-  const checkinSection = weeklyCheckinSummary
-    ? `\n- Most recent weekly check-in: "${weeklyCheckinSummary.slice(0, 400)}"`
-    : ""
-
-  const memorySection = recentSessionSummaries.length > 0
-    ? `\nPREVIOUS CONSULTATION HISTORY (your memory — reference these naturally):\n${recentSessionSummaries.map((s, i) =>
-        `  Session ${i + 1} (${new Date(s.created_at).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}): ${s.summary}`
-      ).join("\n")}\n`
-    : ""
-
-  // Identify weakest and strongest pillars for personalised guidance
-  let weakestPillar = ""
-  let strongestPillar = ""
-  if (subScores) {
-    const pillarMap = { Feeding: subScores.feeding, Adding: subScores.adding, Diversity: subScores.diversity, Consistency: subScores.consistency, Feeling: subScores.feeling }
-    const entries = Object.entries(pillarMap).filter(([, v]) => v != null) as [string, number][]
-    if (entries.length > 0) {
-      weakestPillar  = entries.reduce((a, b) => (b[1] < a[1] ? b : a))[0]
-      strongestPillar = entries.reduce((a, b) => (b[1] > a[1] ? b : a))[0]
-    }
-  }
-
-  return `You are EatoBiotic — the world's most knowledgeable guide on prebiotics, probiotics, postbiotics, gut microbiome science, and food-based health optimisation. You combine cutting-edge microbiome research, nutritional biochemistry, and deep practical food knowledge to help each member build a genuinely healthier gut through what they eat. You are warm, precise, and always specific. You never give vague advice. You are available exclusively to EatoBiotics Transform members.
+const STATIC_KNOWLEDGE = `You are EatoBiotic — the world's most knowledgeable guide on prebiotics, probiotics, postbiotics, gut microbiome science, and food-based health optimisation. You combine cutting-edge microbiome research, nutritional biochemistry, and deep practical food knowledge to help each member build a genuinely healthier gut through what they eat. You are warm, precise, and always specific. You never give vague advice. You are available exclusively to EatoBiotics Transform members.
 
 THE 3 BIOTICS FRAMEWORK (developed by Jason Curry):
 Prebiotics — plant fibres and compounds that feed beneficial gut bacteria (up to 45 pts in meal scoring):
@@ -123,20 +77,6 @@ When asked to design a meal, recipe, or eating plan:
 • Be specific: exact ingredients, quantities, and preparation methods
 • Example: "1 tablespoon of kimchi" not "some kimchi" — precision matters
 
-THIS MEMBER'S PROFILE:
-Name: ${name ?? "Member"}
-Overall Biotics Score: ${overallScore != null ? `${overallScore}/100` : "Not yet assessed"}
-5-Pillar Scores:
-${pillarSummary}
-${weakestPillar ? `Their weakest pillar is ${weakestPillar} — focus advice here first.` : ""}
-${strongestPillar ? `Their strongest pillar is ${strongestPillar} — build on this strength.` : ""}
-Recent Score History (last 30 days):
-${scoreHistory}
-Health goals: ${goalsSummary}${checkinSection}
-${memorySection}
-MEMORY PROTOCOL:
-You have access to summaries of this member's previous sessions above. Reference them naturally — "Last time we talked about your Adding score, how has that been?" Build on what you know. Don't repeat advice already given unless asked. Treat this as an ongoing relationship, not a first meeting.
-
 PERSONALISATION RULES:
 • If their Adding (fermented foods) score is low: prioritise fermented food suggestions in every response
 • If their Diversity score is low: emphasise plant variety and the "30 plants per week" target
@@ -157,6 +97,64 @@ RESPONSE FORMAT:
 
 Always end every response with one specific, immediately actionable step the member can take today — formatted as:
 Your next step: [one clear, specific, and personalised action]`
+
+function buildMemberProfile(context: {
+  name: string | null
+  overallScore: number | null
+  subScores: Record<string, number> | null
+  recentScores: Array<{ score: number; date: string }>
+  healthGoals: string[]
+  weeklyCheckinSummary: string | null
+  recentSessionSummaries: Array<{ summary: string; created_at: string }>
+}): string {
+  const { name, overallScore, subScores, recentScores, healthGoals, weeklyCheckinSummary, recentSessionSummaries } = context
+
+  const scoreHistory = recentScores.length > 0
+    ? recentScores.map((s) => `  - ${s.date}: ${s.score}/100`).join("\n")
+    : "  No recent history"
+
+  const pillarSummary = subScores
+    ? Object.entries(subScores)
+        .map(([k, v]) => `  - ${k.charAt(0).toUpperCase() + k.slice(1)}: ${Math.round(v)}/100`)
+        .join("\n")
+    : "  No pillar data available"
+
+  const goalsSummary = healthGoals.length > 0 ? healthGoals.join(", ") : "Not yet set"
+
+  const checkinSection = weeklyCheckinSummary
+    ? `\n- Most recent weekly check-in: "${weeklyCheckinSummary.slice(0, 400)}"`
+    : ""
+
+  const memorySection = recentSessionSummaries.length > 0
+    ? `\nPREVIOUS CONSULTATION HISTORY (your memory — reference these naturally):\n${recentSessionSummaries.map((s, i) =>
+        `  Session ${i + 1} (${new Date(s.created_at).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}): ${s.summary}`
+      ).join("\n")}\n`
+    : ""
+
+  let weakestPillar = ""
+  let strongestPillar = ""
+  if (subScores) {
+    const pillarMap = { Feeding: subScores.feeding, Adding: subScores.adding, Diversity: subScores.diversity, Consistency: subScores.consistency, Feeling: subScores.feeling }
+    const entries = Object.entries(pillarMap).filter(([, v]) => v != null) as [string, number][]
+    if (entries.length > 0) {
+      weakestPillar   = entries.reduce((a, b) => (b[1] < a[1] ? b : a))[0]
+      strongestPillar = entries.reduce((a, b) => (b[1] > a[1] ? b : a))[0]
+    }
+  }
+
+  return `THIS MEMBER'S PROFILE:
+Name: ${name ?? "Member"}
+Overall Biotics Score: ${overallScore != null ? `${overallScore}/100` : "Not yet assessed"}
+5-Pillar Scores:
+${pillarSummary}
+${weakestPillar ? `Their weakest pillar is ${weakestPillar} — focus advice here first.` : ""}
+${strongestPillar ? `Their strongest pillar is ${strongestPillar} — build on this strength.` : ""}
+Recent Score History (last 30 days):
+${scoreHistory}
+Health goals: ${goalsSummary}${checkinSection}
+${memorySection}
+MEMORY PROTOCOL:
+You have access to summaries of this member's previous sessions above. Reference them naturally — "Last time we talked about your Adding score, how has that been?" Build on what you know. Don't repeat advice already given unless asked. Treat this as an ongoing relationship, not a first meeting.`
 }
 
 /* ── Route handler ──────────────────────────────────────────────────── */
@@ -366,8 +364,8 @@ export async function POST(req: NextRequest) {
     recentSessionSummaries = (recentSessions ?? []) as Array<{ summary: string; created_at: string }>
   }
 
-  // 7. Build system prompt
-  const systemPrompt = buildSystemPrompt({
+  // 7. Build system prompt blocks (static cached + dynamic member profile)
+  const memberProfile = buildMemberProfile({
     name: memberName,
     overallScore,
     subScores,
@@ -376,6 +374,13 @@ export async function POST(req: NextRequest) {
     weeklyCheckinSummary,
     recentSessionSummaries,
   })
+
+  const systemBlocks: import("@anthropic-ai/sdk/resources").TextBlockParam[] = [
+    // Static knowledge base — cached for 5 min, saves ~90% input token cost on repeat turns
+    { type: "text", text: STATIC_KNOWLEDGE, cache_control: { type: "ephemeral" } },
+    // Dynamic member profile — never cached, changes per user/session
+    { type: "text", text: memberProfile },
+  ]
 
   // 8. Upsert consultation session row
   if (adminSupabase) {
@@ -397,7 +402,7 @@ export async function POST(req: NextRequest) {
     const stream = await anthropic.messages.stream({
       model:      "claude-sonnet-4-20250514",
       max_tokens: 2000,
-      system:     systemPrompt,
+      system:     systemBlocks,
       messages:   body.messages,
     })
 
