@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Lock, ArrowRight, Zap, TrendingUp, Calendar } from "lucide-react"
+import { Lock, ArrowRight, Zap, TrendingUp, Calendar, Brain, BookOpen } from "lucide-react"
 import posthog from "posthog-js"
 
 /* ── Upgrade Gate ────────────────────────────────────────────────────────
@@ -11,7 +11,7 @@ import posthog from "posthog-js"
 ────────────────────────────────────────────────────────────────────── */
 
 interface UpgradeGateProps {
-  feature: "meals" | "plate" | "monthly-plan" | "consult"
+  feature: "meals" | "plate" | "monthly-plan" | "consult" | "intelligence" | "story"
   currentTier: string
 }
 
@@ -88,6 +88,48 @@ const GATE_CONFIGS: Record<string, GateConfig> = {
       { label: "Week 1 priority",    value: "Fermented food daily",   color: "var(--icon-green)" },
       { label: "Week 2 priority",    value: "20+ plant species",      color: "var(--icon-lime)" },
       { label: "Condition guidance", value: "Gut-brain protocol",     color: "var(--icon-yellow)" },
+    ],
+  },
+  story: {
+    icon: <BookOpen size={20} style={{ color: "var(--icon-teal)" }} />,
+    title: "Your personal Gut Health Story",
+    description: "Claude reads your full history — assessment, meals, patterns — and writes a warm, personal narrative of your gut health journey.",
+    requiredTier: "restore",
+    requiredLabel: "Restore",
+    price: "€49/mo",
+    benefits: [
+      "Personal narrative based on your real meal data",
+      "5-section story: where you started, patterns, biotic profile",
+      "Specific foods and numbers woven throughout your story",
+      "Your gut-health journey framed as a forward-looking narrative",
+      "Printable — share with your practitioner",
+    ],
+    previewRows: [
+      { label: "Story title",  value: "A Gut Story Worth Telling", color: "var(--icon-teal)"   },
+      { label: "Based on",     value: "28 meals + assessment",     color: "var(--icon-green)"  },
+      { label: "Key pattern",  value: "Strong plant base",         color: "var(--icon-lime)"   },
+      { label: "Next chapter", value: "Add fermented daily…",      color: "var(--icon-yellow)" },
+    ],
+  },
+  intelligence: {
+    icon: <Brain size={20} style={{ color: "var(--icon-teal)" }} />,
+    title: "Your personal Food Intelligence Report",
+    description: "Claude analyses 90 days of your meal data with extended reasoning to surface the real patterns — what you eat most, your biggest gaps, and your gut-health fingerprint.",
+    requiredTier: "restore",
+    requiredLabel: "Restore",
+    price: "€49/mo",
+    benefits: [
+      "Deep pattern analysis across 90 days of meals",
+      "Food frequency breakdown with biotic classification",
+      "Score trend detection — improving, stable, or declining",
+      "3–5 specific patterns: gaps, strengths, and habits",
+      "Your personal gut-health fingerprint",
+    ],
+    previewRows: [
+      { label: "Average Gut Score",    value: "71/100",             color: "var(--icon-green)" },
+      { label: "Top missing biotic",   value: "Probiotic",          color: "var(--icon-teal)" },
+      { label: "Score trend",          value: "↑ Improving",        color: "var(--icon-lime)" },
+      { label: "Gut fingerprint",      value: "Strong plant base…", color: "var(--icon-yellow)" },
     ],
   },
   consult: {

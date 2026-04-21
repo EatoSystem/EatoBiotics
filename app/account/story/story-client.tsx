@@ -1,338 +1,368 @@
 "use client"
 
-import { useState } from "react"
-import Link from "next/link"
-import { ArrowLeft, BookOpen, RefreshCw, TrendingUp } from "lucide-react"
+import { useState, useCallback } from "react"
+import {
+  BookOpen, RefreshCw, AlertCircle, Printer, Loader2, Sparkles,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
+import { ThinkingStream } from "@/components/analyse/thinking-stream"
 
-/* ── Types ───────────────────────────────────────────────────────────── */
+/* ── Types ──────────────────────────────────────────────────────────── */
 
-interface Chapter {
-  month: string
-  summary: string
-  scoreStart: number | null
-  scoreEnd: number | null
+export interface GutHealthStory {
+  title: string
+  subtitle: string
+  sections: Array<{
+    heading: string
+    content: string   // paragraphs separated by \n\n
+  }>
+  closingThought: string
+  generatedAt: string
+  mealCount: number
 }
 
-interface Story {
-  narrative: string
-  lastUpdated: string
-  chapters: Chapter[]
-}
+type State =
+  | { kind: "idle";      existingStory: GutHealthStory | null }
+  | { kind: "streaming"; thinking: string; thinkingDone: boolean }
+  | { kind: "result";    story: GutHealthStory }
+  | { kind: "error";     message: string }
 
-interface StoryClientProps {
-  story: Story | null
-  currentScore: number | null
-  memberName: string | null
-  memberSince: string | null
-}
+/* ── Story article ──────────────────────────────────────────────────── */
 
-interface UpdateResponse {
-  narrative: string
-  lastUpdated: string
-}
-
-/* ── Score pill ──────────────────────────────────────────────────────── */
-
-function ScorePill({ score, label }: { score: number | null; label: string }) {
-  if (score == null) return null
-  const color =
-    score >= 70 ? "var(--icon-green)" : score >= 50 ? "var(--icon-yellow)" : "var(--icon-orange)"
+function StoryArticle({ story }: { story: GutHealthStory }) {
   return (
-    <div className="flex flex-col items-center gap-0.5">
-      <span
-        className="font-serif text-2xl font-bold tabular-nums"
-        style={{ color }}
-      >
-        {score}
-      </span>
-      <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-        {label}
-      </span>
-    </div>
+    <article className="chapter-prose">
+      {/* Title */}
+      <h1 className="font-serif text-3xl font-bold text-foreground leading-tight">
+        {story.title}
+      </h1>
+      <p className="text-sm text-muted-foreground mt-2 mb-10">{story.subtitle}</p>
+
+      {/* Sections */}
+      {story.sections.map((section) => (
+        <div key={section.heading}>
+          <h2>{section.heading}</h2>
+          {section.content.split("\n\n").map((para, i) => (
+            <p key={i}>{para}</p>
+          ))}
+        </div>
+      ))}
+
+      {/* Closing */}
+      <hr />
+      <p><em>{story.closingThought}</em></p>
+    </article>
   )
 }
 
-/* ── Chapter timeline ────────────────────────────────────────────────── */
+/* ── Idle — no story yet ────────────────────────────────────────────── */
 
-function ChapterDot({
-  chapter,
-  isLast,
-}: {
-  chapter: Chapter
-  isLast: boolean
-}) {
-  const monthLabel = new Date(chapter.month + "-01").toLocaleDateString("en-IE", {
-    month: "short",
-    year: "2-digit",
-  })
-  const scoreChange =
-    chapter.scoreStart != null && chapter.scoreEnd != null
-      ? chapter.scoreEnd - chapter.scoreStart
-      : null
-
+function IdleViewEmpty({ onGenerate }: { onGenerate: () => void }) {
   return (
-    <div className="flex items-start gap-3">
-      <div className="flex flex-col items-center">
-        <div
-          className="h-3 w-3 rounded-full border-2"
-          style={{
-            borderColor: "var(--icon-lime)",
-            background: "var(--background)",
-          }}
-        />
-        {!isLast && (
-          <div className="mt-1 h-8 w-px" style={{ background: "var(--border)" }} />
-        )}
-      </div>
-      <div className="pb-4 min-w-0">
-        <p className="text-xs font-bold text-foreground">{monthLabel}</p>
-        {scoreChange != null && (
-          <p
-            className="text-[10px] font-semibold"
-            style={{ color: scoreChange >= 0 ? "var(--icon-green)" : "var(--icon-orange)" }}
+    <div className="space-y-6">
+      {/* Feature card */}
+      <div className="rounded-2xl border border-border bg-secondary/30 p-6">
+        <div className="flex items-start gap-4 mb-5">
+          <div
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-md"
+            style={{ background: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" }}
           >
-            {scoreChange >= 0 ? "+" : ""}
-            {scoreChange} pts
-          </p>
-        )}
-        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 mt-0.5">
-          {chapter.summary.slice(0, 100)}
+            <BookOpen size={22} className="text-white" />
+          </div>
+          <div>
+            <p className="font-semibold text-foreground">What your story covers</p>
+            <p className="mt-0.5 text-sm text-muted-foreground leading-relaxed">
+              Claude reads your full history and writes a personal narrative — not a report, but a story.
+            </p>
+          </div>
+        </div>
+
+        <ul className="space-y-2.5">
+          {[
+            "Where you started — your assessment score and what it revealed",
+            "How you've been eating — your real food patterns over 90 days",
+            "Your biotic profile — what's strong and what needs attention",
+            "The patterns we found — specific insights from your meal data",
+            "Your next chapter — where your gut health journey goes from here",
+          ].map((item) => (
+            <li key={item} className="flex items-start gap-2.5 text-sm text-foreground">
+              <div
+                className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
+                style={{ background: "var(--icon-teal)" }}
+              />
+              {item}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Biotic pill decorations */}
+      <div className="flex items-center justify-center gap-2 opacity-30">
+        <div className="biotic-pill" style={{ background: "var(--icon-lime)" }} />
+        <div className="biotic-pill" style={{ background: "var(--icon-green)" }} />
+        <div className="biotic-pill" style={{ background: "var(--icon-teal)" }} />
+      </div>
+
+      {/* CTA */}
+      <button
+        onClick={onGenerate}
+        className="brand-gradient w-full flex items-center justify-center gap-2 rounded-full px-7 py-4 text-sm font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:opacity-90"
+      >
+        <Sparkles size={16} /> Write my gut health story
+      </button>
+      <p className="text-center text-xs text-muted-foreground">
+        Takes 30–60 seconds · Requires 3+ meal analyses
+      </p>
+    </div>
+  )
+}
+
+/* ── Idle — story exists ────────────────────────────────────────────── */
+
+function IdleViewWithStory({
+  story,
+  onRegenerate,
+}: {
+  story: GutHealthStory
+  onRegenerate: () => void
+}) {
+  const generatedDate = new Date(story.generatedAt)
+  const daysAgo       = Math.floor((Date.now() - generatedDate.getTime()) / 86_400_000)
+  const dateLabel     =
+    daysAgo === 0 ? "today" : daysAgo === 1 ? "yesterday" : `${daysAgo} days ago`
+
+  return (
+    <div className="space-y-8">
+      <StoryArticle story={story} />
+
+      {/* Footer */}
+      <div className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-secondary/30 px-5 py-3 print-hide">
+        <p className="text-xs text-muted-foreground">
+          Written {dateLabel} · Based on {story.mealCount} meals
         </p>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <Printer size={13} /> Print
+          </button>
+          <button
+            onClick={onRegenerate}
+            className="flex items-center gap-1.5 text-xs font-semibold transition-colors"
+            style={{ color: "var(--icon-teal)" }}
+          >
+            <RefreshCw size={13} /> Rewrite story
+          </button>
+        </div>
       </div>
     </div>
   )
 }
 
-/* ── Main component ──────────────────────────────────────────────────── */
+/* ── Streaming view ─────────────────────────────────────────────────── */
 
-export function StoryClient({ story, currentScore, memberName, memberSince }: StoryClientProps) {
-  const [currentStory, setCurrentStory] = useState<Story | null>(story)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+function StreamingView({
+  thinking,
+  thinkingDone,
+}: {
+  thinking: string
+  thinkingDone: boolean
+}) {
+  return (
+    <div className="space-y-4">
+      {/* Status pill */}
+      <div className="flex items-center justify-center gap-2">
+        {thinkingDone ? (
+          <>
+            <Loader2 size={14} className="animate-spin" style={{ color: "var(--icon-teal)" }} />
+            <span className="text-sm font-semibold" style={{ color: "var(--icon-teal)" }}>
+              Writing your story…
+            </span>
+          </>
+        ) : (
+          <>
+            <Loader2 size={14} className="animate-spin" style={{ color: "var(--icon-green)" }} />
+            <span className="text-sm font-semibold" style={{ color: "var(--icon-green)" }}>
+              Claude is reading your history…
+            </span>
+          </>
+        )}
+      </div>
 
-  const firstScore =
-    currentStory?.chapters && currentStory.chapters.length > 0
-      ? currentStory.chapters[0]?.scoreStart ?? null
-      : null
+      {/* Progress hints */}
+      <div className="rounded-2xl border border-border bg-secondary/30 p-4 space-y-2">
+        {[
+          { label: "Reading your gut assessment",       color: "var(--icon-lime)",   done: true },
+          { label: "Scanning 90 days of meal data",     color: "var(--icon-green)",  done: true },
+          { label: "Identifying your patterns",         color: "var(--icon-teal)",   done: thinkingDone },
+          { label: "Writing your personal story",       color: "var(--icon-yellow)", done: thinkingDone },
+        ].map(({ label, color, done }) => (
+          <div key={label} className="flex items-center gap-2.5">
+            <div
+              className={cn("h-1.5 w-1.5 rounded-full transition-opacity", done ? "opacity-100" : "opacity-25")}
+              style={{ background: color }}
+            />
+            <span className="text-xs text-muted-foreground">{label}</span>
+          </div>
+        ))}
+      </div>
 
-  const memberSinceLabel = memberSince
-    ? new Date(memberSince).toLocaleDateString("en-IE", { month: "long", year: "numeric" })
-    : null
+      <ThinkingStream thinking={thinking} isComplete={thinkingDone} />
+    </div>
+  )
+}
 
-  const lastUpdated = currentStory?.lastUpdated
-    ? new Date(currentStory.lastUpdated).toLocaleDateString("en-IE", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      })
-    : null
+/* ── Result view ────────────────────────────────────────────────────── */
 
-  async function updateStory() {
-    setLoading(true)
-    setError(null)
+function ResultView({
+  story,
+  onRewrite,
+}: {
+  story: GutHealthStory
+  onRewrite: () => void
+}) {
+  return (
+    <div className="space-y-8">
+      <StoryArticle story={story} />
+
+      {/* Actions */}
+      <div className="flex flex-col gap-3 print-hide">
+        <button
+          onClick={() => window.print()}
+          className="flex items-center justify-center gap-2 rounded-full border border-border px-7 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary/60"
+        >
+          <Printer size={15} /> Print your story
+        </button>
+        <button
+          onClick={onRewrite}
+          className="flex items-center justify-center gap-2 rounded-full border border-border px-7 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/40"
+        >
+          <RefreshCw size={14} /> Rewrite story
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/* ── Error view ─────────────────────────────────────────────────────── */
+
+function ErrorView({
+  message,
+  onRetry,
+}: {
+  message: string
+  onRetry: () => void
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4">
+        <AlertCircle size={16} className="text-red-500 mt-0.5 shrink-0" />
+        <p className="text-sm text-red-700">{message}</p>
+      </div>
+      <button
+        onClick={onRetry}
+        className="w-full flex items-center justify-center gap-2 rounded-2xl border border-border py-3 text-sm font-medium transition-colors hover:bg-secondary/40"
+      >
+        <RefreshCw size={14} /> Try again
+      </button>
+    </div>
+  )
+}
+
+/* ── Main component ─────────────────────────────────────────────────── */
+
+export function StoryClient({
+  tier,
+  existingStory,
+}: {
+  tier: "restore" | "transform"
+  existingStory: GutHealthStory | null
+}) {
+  void tier
+  const [state, setState] = useState<State>({ kind: "idle", existingStory })
+
+  const generate = useCallback(async () => {
+    setState({ kind: "streaming", thinking: "", thinkingDone: false })
+
     try {
-      const res = await fetch("/api/food-system-story/update", { method: "POST" })
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({ error: "Request failed" })) as { error?: string }
-        throw new Error(data.error ?? "Failed to generate story")
+      const res = await fetch("/api/gut-health-story", { method: "POST" })
+
+      if (!res.ok || !res.body) {
+        const err = await res.json().catch(() => ({})) as { error?: string }
+        setState({ kind: "error", message: err.error ?? "Story generation failed. Please try again." })
+        return
       }
-      const data = await res.json() as UpdateResponse
-      setCurrentStory((prev) => ({
-        narrative: data.narrative,
-        lastUpdated: data.lastUpdated,
-        chapters: prev?.chapters ?? [],
-      }))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong")
-    } finally {
-      setLoading(false)
+
+      const reader  = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer    = ""
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split("\n")
+        buffer = lines.pop() ?? ""
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue
+          const payload = line.slice(6).trim()
+          if (payload === "[DONE]") break
+
+          let event: Record<string, unknown>
+          try { event = JSON.parse(payload) as Record<string, unknown> } catch { continue }
+
+          if (event.type === "thinking") {
+            setState((s) =>
+              s.kind === "streaming"
+                ? { ...s, thinking: s.thinking + (event.text as string) }
+                : s
+            )
+          } else if (event.type === "thinking_complete") {
+            setState((s) => s.kind === "streaming" ? { ...s, thinkingDone: true } : s)
+          } else if (event.type === "complete") {
+            setState({ kind: "result", story: event.result as unknown as GutHealthStory })
+          } else if (event.type === "error") {
+            setState({ kind: "error", message: event.message as string })
+          }
+        }
+      }
+
+      // If stream closed without a result
+      setState((s) => {
+        if (s.kind === "streaming") {
+          return { kind: "error", message: "Story generation did not complete. Please try again." }
+        }
+        return s
+      })
+    } catch {
+      setState({ kind: "error", message: "Something went wrong. Please check your connection and try again." })
     }
+  }, [])
+
+  function reset() {
+    const storyToKeep = state.kind === "result" ? state.story : existingStory
+    setState({ kind: "idle", existingStory: storyToKeep })
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
-      {/* Back */}
-      <Link
-        href="/account"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6"
-      >
-        <ArrowLeft size={14} /> My Account
-      </Link>
-
-      {/* Header */}
-      <div className="mb-6">
-        <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "var(--icon-orange)" }}>
-          Transform Feature
-        </p>
-        <h1 className="font-serif text-3xl font-semibold text-foreground mb-2">
-          Your Food System
-        </h1>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          Your progress, patterns, and improvements — where you started, what changed, where you&apos;re going.
-        </p>
-      </div>
-
-      {/* Score journey */}
-      {(firstScore != null || currentScore != null) && (
-        <div
-          className="flex items-center gap-6 rounded-2xl p-4 mb-6"
-          style={{
-            background: "color-mix(in srgb, var(--icon-green) 6%, var(--card))",
-            border: "1px solid color-mix(in srgb, var(--icon-green) 18%, var(--border))",
-          }}
-        >
-          <ScorePill score={firstScore} label="Started" />
-          {firstScore != null && currentScore != null && (
-            <>
-              <div className="flex-1 flex items-center gap-1">
-                <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
-                <TrendingUp
-                  size={14}
-                  style={{
-                    color: currentScore >= firstScore ? "var(--icon-green)" : "var(--icon-orange)",
-                  }}
-                />
-                <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
-              </div>
-              <ScorePill score={currentScore} label="Now" />
-            </>
-          )}
-          {firstScore == null && currentScore != null && (
-            <ScorePill score={currentScore} label="Current" />
-          )}
-          {memberSinceLabel && (
-            <div className="ml-auto text-right">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                Member since
-              </p>
-              <p className="text-xs font-medium text-foreground">{memberSinceLabel}</p>
-            </div>
-          )}
-        </div>
+    <div>
+      {state.kind === "idle" && !state.existingStory && (
+        <IdleViewEmpty onGenerate={generate} />
       )}
-
-      {/* Error */}
-      {error && (
-        <div
-          className="mb-4 rounded-2xl p-4 text-sm"
-          style={{
-            background: "color-mix(in srgb, var(--icon-orange) 10%, var(--card))",
-            border: "1px solid color-mix(in srgb, var(--icon-orange) 30%, transparent)",
-            color: "var(--icon-orange)",
-          }}
-        >
-          {error}
-        </div>
+      {state.kind === "idle" && state.existingStory && (
+        <IdleViewWithStory story={state.existingStory} onRegenerate={generate} />
       )}
-
-      {/* No story yet */}
-      {!currentStory && !loading && (
-        <div className="rounded-2xl border bg-card p-8 text-center mb-4">
-          <div
-            className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
-            style={{ background: "color-mix(in srgb, var(--icon-orange) 12%, transparent)" }}
-          >
-            <BookOpen size={24} style={{ color: "var(--icon-orange)" }} />
-          </div>
-          <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
-            Your story hasn&apos;t been written yet
-          </h2>
-          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-            {memberName ? `${memberName.split(" ")[0]}'s` : "Your"} food system journey is ready to be told. Generate your first chapter.
-          </p>
-          <button
-            onClick={updateStory}
-            disabled={loading}
-            className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-            style={{ background: "linear-gradient(135deg, var(--icon-orange), var(--icon-teal))" }}
-          >
-            <BookOpen size={14} /> Generate Your Story
-          </button>
-        </div>
+      {state.kind === "streaming" && (
+        <StreamingView thinking={state.thinking} thinkingDone={state.thinkingDone} />
       )}
-
-      {/* Loading */}
-      {loading && (
-        <div className="rounded-2xl border bg-card p-8 text-center">
-          <div
-            className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-muted border-t-transparent"
-            style={{ borderTopColor: "var(--icon-orange)" }}
-          />
-          <p className="text-sm text-muted-foreground">Writing your story…</p>
-          <p className="text-xs text-muted-foreground/60 mt-1">This takes about 10 seconds</p>
-        </div>
+      {state.kind === "result" && (
+        <ResultView story={state.story} onRewrite={reset} />
       )}
-
-      {/* Story exists */}
-      {currentStory && !loading && (
-        <div className="space-y-4">
-          {/* Narrative */}
-          <div
-            className="rounded-2xl border bg-card p-6"
-            style={{
-              borderTopWidth: "3px",
-              borderTopColor: "var(--icon-orange)",
-            }}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <BookOpen size={15} style={{ color: "var(--icon-orange)" }} />
-                <p className="text-sm font-semibold text-foreground">
-                  {memberName ? `${memberName.split(" ")[0]}'s Story` : "Your Story"}
-                </p>
-              </div>
-              <button
-                onClick={updateStory}
-                disabled={loading}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-muted/30",
-                  loading && "opacity-50 cursor-not-allowed"
-                )}
-                style={{ color: "var(--icon-orange)" }}
-              >
-                <RefreshCw size={11} /> Update
-              </button>
-            </div>
-
-            {/* Narrative paragraphs in serif */}
-            <div className="space-y-4">
-              {currentStory.narrative.split("\n\n").map((para, i) => (
-                <p
-                  key={i}
-                  className="font-serif text-base leading-relaxed text-foreground"
-                  style={{ lineHeight: "1.75" }}
-                >
-                  {para}
-                </p>
-              ))}
-            </div>
-
-            {lastUpdated && (
-              <p className="mt-6 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-                Last updated {lastUpdated}
-              </p>
-            )}
-          </div>
-
-          {/* Chapter timeline */}
-          {currentStory.chapters && currentStory.chapters.length > 1 && (
-            <div className="rounded-2xl border bg-card p-5">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-4">
-                Chapter Timeline
-              </p>
-              <div>
-                {currentStory.chapters.map((chapter, i) => (
-                  <ChapterDot
-                    key={chapter.month}
-                    chapter={chapter}
-                    isLast={i === currentStory.chapters.length - 1}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+      {state.kind === "error" && (
+        <ErrorView message={state.message} onRetry={generate} />
       )}
     </div>
   )

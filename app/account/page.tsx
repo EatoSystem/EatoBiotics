@@ -279,10 +279,17 @@ export default async function AccountPage() {
     } catch { /* no reviews yet */ }
   }
 
-  // Food system story — last updated
+  // Food system story — extract new-format story (has sections) + last updated
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const storyJson = (profile as any)?.food_system_story as { lastUpdated?: string } | null
-  const storyLastUpdated: string | null = storyJson?.lastUpdated ?? null
+  const storyJson = (profile as any)?.food_system_story as {
+    story?: Record<string, unknown>
+    generatedAt?: string
+    lastUpdated?: string   // old-format compat
+  } | null
+  const storyLastUpdated: string | null = storyJson?.generatedAt ?? storyJson?.lastUpdated ?? null
+  // Only pass new-format stories (have sections array) to the dashboard
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const existingStory = (storyJson?.story as any)?.sections ? storyJson!.story : null
 
   // Streak computation — consecutive days with at least one meal analysis
   function computeStreak(rows: { created_at: string }[]): number {
@@ -359,6 +366,7 @@ export default async function AccountPage() {
         hasMealPlan={hasMealPlan}
         latestMonthlyReview={latestMonthlyReview}
         storyLastUpdated={storyLastUpdated}
+        existingStory={existingStory as import("@/app/account/story/story-client").GutHealthStory | null}
       />
     </div>
   )

@@ -446,6 +446,8 @@ export async function POST(req: NextRequest) {
           messages: [{ role: "user", content: userMessage }],
         })
 
+        let thinkingComplete = false
+
         for await (const event of stream) {
           if (
             event.type === "content_block_delta" &&
@@ -458,6 +460,10 @@ export async function POST(req: NextRequest) {
             event.type === "content_block_delta" &&
             event.delta.type === "text_delta"
           ) {
+            if (!thinkingComplete) {
+              emit({ type: "thinking_complete" })
+              thinkingComplete = true
+            }
             fullText += event.delta.text
           }
         }

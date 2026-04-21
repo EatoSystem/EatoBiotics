@@ -1,67 +1,62 @@
-import type { Metadata } from "next"
 import { redirect } from "next/navigation"
+import type { Metadata } from "next"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { getUserMembershipTier } from "@/lib/membership"
-import { StoryClient } from "./story-client"
+import { StoryClient, type GutHealthStory } from "./story-client"
 
 export const metadata: Metadata = {
-  title: "Your Food System — EatoBiotics",
-  description:
-    "Your food system progress, patterns, and improvements — where you started, how you've grown, where you're going.",
+  title: "Your Gut Health Story | EatoBiotics",
+  description: "A personal narrative of your gut health journey — where you started, what the patterns show, and where you're headed.",
 }
 
 export default async function StoryPage() {
   const user = await getUser()
   if (!user) redirect("/assessment?signin=1")
+
   const tier = await getUserMembershipTier(user.id)
-  if (tier !== "transform") redirect("/pricing?feature=story")
+  if (tier === "free" || tier === "grow") {
+    redirect("/pricing?feature=gut-story")
+  }
 
-  const adminSupabase = getSupabase()
-  let storyData: {
-    narrative: string
-    lastUpdated: string
-    chapters: Array<{
-      month: string
-      summary: string
-      scoreStart: number | null
-      scoreEnd: number | null
-    }>
-  } | null = null
-  let currentScore: number | null = null
-  let memberName: string | null = null
-  let memberSince: string | null = null
+  const supabase = getSupabase()
+  let existingStory: GutHealthStory | null = null
 
-  if (adminSupabase) {
-    const { data: p } = await adminSupabase
+  if (supabase) {
+    const { data: profile } = await supabase
       .from("profiles")
-      .select("name, food_system_story, membership_started_at")
+      .select("food_system_story")
       .eq("id", user.id)
       .single()
 
-    storyData = (p?.food_system_story as typeof storyData) ?? null
-    memberName = (p?.name as string | null) ?? null
-    memberSince = (p?.membership_started_at as string | null) ?? null
+    const storyJson = profile?.food_system_story as {
+      story?: Record<string, unknown>
+    } | null
 
-    const { data: la } = await adminSupabase
-      .from("leads")
-      .select("overall_score")
-      .or(`user_id.eq.${user.id}`)
-      .not("overall_score", "is", null)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single()
-    currentScore = (la?.overall_score as number | null) ?? null
+    // Only use new-format stories (have sections array)
+    if (storyJson?.story?.sections) {
+      existingStory = storyJson.story as unknown as GutHealthStory
+    }
   }
 
   return (
-    <div className="min-h-screen bg-background pt-20">
-      <StoryClient
-        story={storyData}
-        currentScore={currentScore}
-        memberName={memberName}
-        memberSince={memberSince}
-      />
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
+        {/* Page header */}
+        <div className="mb-8">
+          <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "var(--icon-teal)" }}>
+            Your Story
+          </p>
+          <h1 className="font-serif text-3xl font-bold text-foreground tracking-tight">
+            Your gut health story
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+            Claude reads your full history — assessment score, 90 days of meals, your biotic patterns — and writes a warm, personal narrative of your gut health journey.
+          </p>
+        </div>
+
+        <StoryClient tier={tier} existingStory={existingStory} />
+      </div>
     </div>
   )
 }

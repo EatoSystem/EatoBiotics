@@ -630,6 +630,8 @@ export function IntelligenceClient({ tier }: { tier: "restore" | "transform" }) 
                 ? { ...s, thinking: s.thinking + (event.text as string) }
                 : s
             )
+          } else if (event.type === "thinking_complete") {
+            setState((s) => s.kind === "streaming" ? { ...s, thinkingDone: true } : s)
           } else if (event.type === "complete") {
             setState({
               kind: "result",
