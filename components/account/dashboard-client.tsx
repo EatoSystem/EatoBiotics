@@ -11,6 +11,7 @@ import {
   Users,
   Download,
   ArrowRight,
+  Share2,
   Copy,
   Check,
   MessageCircle,
@@ -29,6 +30,7 @@ import {
   BookOpen,
   Search,
   CalendarCheck,
+  Brain,
 } from "lucide-react"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
 import posthog from "posthog-js"
@@ -36,6 +38,8 @@ import { OnboardingModal } from "./onboarding-modal"
 import { WelcomeScreen, useFirstVisit } from "./welcome-screen"
 import { SevenDayGuide } from "./seven-day-guide"
 import { UpgradeGate } from "./upgrade-gate"
+import { IntelligenceClient } from "@/app/account/intelligence/intelligence-client"
+import { StoryClient, type GutHealthStory } from "@/app/account/story/story-client"
 import { ScoreProgressCard } from "./score-progress-card"
 import { ReportBridgeCard } from "./report-bridge-card"
 import { Day8ChallengeCard } from "./day8-challenge-card"
@@ -47,6 +51,8 @@ import { ScoreRing } from "@/components/assessment/score-ring"
 import { ProgressChart } from "./progress-chart"
 import { cn } from "@/lib/utils"
 import { loadMealAnalyses, type SavedMealAnalysis } from "@/lib/local-storage"
+import { getPercentile } from "@/lib/percentile"
+import { getIdentityLabel } from "@/lib/identity-labels"
 
 /* ── Types ──────────────────────────────────────────────────────────── */
 
@@ -132,6 +138,7 @@ interface DashboardClientProps {
   hasMealPlan?: boolean
   latestMonthlyReview?: { month: string } | null
   storyLastUpdated?: string | null
+  existingStory?: GutHealthStory | null
 }
 
 /* ── Tabs ───────────────────────────────────────────────────────────── */
@@ -144,6 +151,8 @@ const TABS = [
   { key: "meals", label: "My Meals", icon: Camera },
   { key: "refer", label: "Refer", icon: Users },
   { key: "consult", label: "EatoBiotic", icon: MessageSquare },
+  { key: "intelligence", label: "Intelligence", icon: Brain },
+  { key: "story",        label: "Story",        icon: BookOpen },
 ] as const
 
 type TabKey = (typeof TABS)[number]["key"]
@@ -377,10 +386,14 @@ function DashboardHero({
   profile,
   latestAssessment,
   onSignOut,
+  streak = 0,
+  patterns,
 }: {
   profile: Profile
   latestAssessment: AssessmentRow | null
   onSignOut: () => void
+  streak?: number
+  patterns?: AnalysisPatterns | null
 }) {
   const firstName = profile.name?.split(" ")[0] || profile.email.split("@")[0]
   const initials = (profile.name ?? profile.email)
@@ -512,6 +525,7 @@ function DashboardHero({
                 gradientId="dashboard-hero-ring"
                 className="relative h-48 w-48 sm:h-52 sm:w-52"
                 textColor="white"
+                percentile={getPercentile(Math.round(score))}
               />
               {/* Profile type badge */}
               {profileType && (
@@ -532,6 +546,36 @@ function DashboardHero({
               >
                 Overall Score
               </p>
+              <p
+                className="mt-0.5 text-[10px] text-center"
+                style={{ color: "rgba(255,255,255,0.4)" }}
+              >
+                {getIdentityLabel(Math.round(score)).word} · Top {100 - getPercentile(Math.round(score))}%
+              </p>
+              {/* Share progress — only when meal history exists */}
+              {patterns && (
+                <button
+                  onClick={() => {
+                    const lbl = getIdentityLabel(Math.round(score))
+                    const p   = getPercentile(Math.round(score))
+                    const url =
+                      `/api/og/progress?score=${Math.round(score)}&percentile=${p}` +
+                      `&label=${encodeURIComponent(lbl.word)}&emoji=${encodeURIComponent(lbl.emoji)}` +
+                      `&streak=${streak}&trend=${patterns.trendDirection}&count=${patterns.analysisCount}`
+                    window.open(url, "_blank", "noopener")
+                    posthog.capture("progress_shared", {
+                      score:          Math.round(score),
+                      streak,
+                      trend:          patterns.trendDirection,
+                      identity_label: lbl.word,
+                    })
+                  }}
+                  className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold transition-opacity hover:opacity-70"
+                  style={{ color: "rgba(255,255,255,0.45)" }}
+                >
+                  <Share2 size={10} /> Share progress
+                </button>
+              )}
             </div>
           </div>
         ) : (
@@ -3199,7 +3243,7 @@ function ConsultHistoryTab({
 
 /* ── Main Component ─────────────────────────────────────────────────── */
 
-export function DashboardClient({ profile, assessments, mindAssessments = [], paidReports, plateData, nextBillingDate, dailyConsultCount = 0, monthlyConsultCount = 0, weeklyCheckin, monthlyGutPlan, bioticsProfile, streak = 0, dailyPromptIndex = 0, consultHref, pastConsultations = [], patterns, hasMealPlan, latestMonthlyReview, storyLastUpdated }: DashboardClientProps) {
+export function DashboardClient({ profile, assessments, mindAssessments = [], paidReports, plateData, nextBillingDate, dailyConsultCount = 0, monthlyConsultCount = 0, weeklyCheckin, monthlyGutPlan, bioticsProfile, streak = 0, dailyPromptIndex = 0, consultHref, pastConsultations = [], patterns, hasMealPlan, latestMonthlyReview, storyLastUpdated, existingStory = null }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("overview")
   const router = useRouter()
   const latest = assessments[0] ?? null
@@ -3256,7 +3300,7 @@ export function DashboardClient({ profile, assessments, mindAssessments = [], pa
       )}
 
       {/* Hero */}
-      <DashboardHero profile={profile} latestAssessment={latest} onSignOut={handleSignOut} />
+      <DashboardHero profile={profile} latestAssessment={latest} onSignOut={handleSignOut} streak={streak} patterns={patterns} />
 
       {/* Sticky pill tab nav */}
       <div className="sticky top-[57px] z-10 border-b border-border bg-background/95 backdrop-blur-sm">
@@ -3306,6 +3350,16 @@ export function DashboardClient({ profile, assessments, mindAssessments = [], pa
           profile.membership_tier === "transform"
             ? <ConsultHistoryTab pastConsultations={pastConsultations} />
             : <UpgradeGate feature="consult" currentTier={profile.membership_tier} />
+        )}
+        {activeTab === "intelligence" && (
+          (profile.membership_tier === "restore" || profile.membership_tier === "transform")
+            ? <IntelligenceClient tier={profile.membership_tier} />
+            : <UpgradeGate feature="intelligence" currentTier={profile.membership_tier} />
+        )}
+        {activeTab === "story" && (
+          (profile.membership_tier === "restore" || profile.membership_tier === "transform")
+            ? <StoryClient tier={profile.membership_tier} existingStory={existingStory} />
+            : <UpgradeGate feature="story" currentTier={profile.membership_tier} />
         )}
       </div>
     </div>

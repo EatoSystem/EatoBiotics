@@ -7,6 +7,8 @@ import { ArrowRight, Zap, X } from "lucide-react"
 interface AnalyseGateProps {
   membershipTier: "free" | "grow" | "restore" | "transform"
   isLoggedIn: boolean
+  /** Lifetime scan count for free users — used to allow the first free scan */
+  lifetimeCount?: number
   children: React.ReactNode
 }
 
@@ -14,14 +16,41 @@ interface AnalyseGateProps {
  * Wraps the analyse page content with tier-based gating.
  *
  * - Not logged in: renders children; a modal intercepts submit attempts
- * - Logged in, free tier: full-width hard gate (no upload visible)
+ * - Logged in, free tier, 0 lifetime scans: renders children (free first scan)
+ * - Logged in, free tier, 1+ lifetime scans: upsell gate (no upload shown)
  * - Paid tier (grow/restore/transform): renders children normally
  */
-export function AnalyseGate({ membershipTier, isLoggedIn, children }: AnalyseGateProps) {
+export function AnalyseGate({ membershipTier, isLoggedIn, lifetimeCount = 0, children }: AnalyseGateProps) {
   const [showAuthModal, setShowAuthModal] = useState(false)
 
-  // Logged-in free users: hard gate — no upload shown at all
+  // Logged-in free users: allow first scan; gate subsequent scans
   if (isLoggedIn && membershipTier === "free") {
+    // First-time scan: let them through — show a "free scan" banner above the upload
+    if (lifetimeCount === 0) {
+      return (
+        <>
+          {/* Free first scan banner */}
+          <div
+            className="mb-5 flex items-start gap-3 rounded-2xl px-5 py-4"
+            style={{
+              background: "color-mix(in srgb, var(--icon-lime) 8%, var(--card))",
+              border: "1px solid color-mix(in srgb, var(--icon-lime) 25%, transparent)",
+            }}
+          >
+            <span className="text-xl leading-none mt-0.5">🎁</span>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Your free meal scan</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Scan one meal for free — no subscription needed. Upgrade to track daily.
+              </p>
+            </div>
+          </div>
+          {children}
+        </>
+      )
+    }
+
+    // Already used their free scan — show upsell gate
     return (
       <div
         className="rounded-3xl p-8 text-center sm:p-12"
@@ -37,11 +66,11 @@ export function AnalyseGate({ membershipTier, isLoggedIn, children }: AnalyseGat
           🌿
         </span>
         <h2 className="mt-4 font-serif text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-          Meal analysis is a Grow feature
+          Ready to track daily?
         </h2>
         <p className="mx-auto mt-3 max-w-sm text-base text-muted-foreground">
-          Upgrade to Grow for €9.99/month to get unlimited meal analyses with full
-          three-biotic breakdowns and personalised food recommendations.
+          You&apos;ve used your free scan. Upgrade to Grow for €9.99/month to get daily meal
+          analyses with full biotic breakdowns and personalised food recommendations.
         </p>
         <Link
           href="/pricing"
@@ -116,8 +145,9 @@ export function AnalyseGate({ membershipTier, isLoggedIn, children }: AnalyseGat
   }
 
   // Paid tier: render children + post-analysis upgrade prompts
+  // (free-tier paths both return early above, so membershipTier is paid here)
   return (
-    <AnalyseWrapper membershipTier={membershipTier}>
+    <AnalyseWrapper membershipTier={membershipTier as "grow" | "restore" | "transform"}>
       {children}
     </AnalyseWrapper>
   )

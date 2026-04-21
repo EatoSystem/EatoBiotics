@@ -7,11 +7,12 @@ interface ScoreRingProps {
   color: string // CSS var — profile color
   gradientId: string // unique SVG gradient id
   profileType?: string
+  percentile?: number  // e.g. 63 → "Top 37%"
   className?: string // override default sizing
   textColor?: string // override center text color (e.g. "white" for dark bg)
 }
 
-export function ScoreRing({ score, color, gradientId, profileType, className, textColor }: ScoreRingProps) {
+export function ScoreRing({ score, color, gradientId, profileType, percentile, className, textColor }: ScoreRingProps) {
   const [animated, setAnimated] = useState(0)
 
   const r = 88
@@ -103,6 +104,14 @@ export function ScoreRing({ score, color, gradientId, profileType, className, te
             style={{ color: textColor === "white" ? `color-mix(in srgb, ${color} 90%, white)` : color }}
           >
             {profileType}
+          </span>
+        )}
+        {percentile !== undefined && (
+          <span
+            className="mt-1 text-[9px] font-medium"
+            style={{ color: textColor === "white" ? "rgba(255,255,255,0.45)" : "var(--muted-foreground)" }}
+          >
+            Top {100 - percentile}%
           </span>
         )}
       </div>

@@ -1,14 +1,16 @@
 "use client"
 
 import { useState } from "react"
-import { Share2, Copy, Check, MessageCircle } from "lucide-react"
+import { Share2, Copy, Check, MessageCircle, Image as ImageIcon } from "lucide-react"
 import posthog from "posthog-js"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
+import { getPercentile } from "@/lib/percentile"
+import { getIdentityLabel } from "@/lib/identity-labels"
 
 /* ── Share Score Card ────────────────────────────────────────────────────
    Shown at the top of the results page.
-   Lets the user copy a pre-written social share snippet or the direct link.
-   Drives organic word-of-mouth without requiring any backend.
+   Lets the user copy a pre-written social share snippet, share via native
+   share sheet, or open a branded score card image they can save + post.
 ────────────────────────────────────────────────────────────────────── */
 
 interface ShareScoreCardProps {
@@ -21,26 +23,41 @@ export function ShareScoreCard({ result }: ShareScoreCardProps) {
 
   const { overall, profile, subScores } = result
 
+  // Achievement framing
+  const percentile    = getPercentile(overall)
+  const identityLabel = getIdentityLabel(overall)
+
   const weakestKey = Object.entries(subScores).sort(([, a], [, b]) => a - b)[0][0]
   const weakestLabels: Record<string, string> = {
-    diversity: "Plant Diversity",
-    feeding: "Feeding",
-    adding: "Live Foods",
+    diversity:   "Plant Diversity",
+    feeding:     "Feeding",
+    adding:      "Live Foods",
     consistency: "Consistency",
-    feeling: "Feeling",
+    feeling:     "Feeling",
   }
   const weakestLabel = weakestLabels[weakestKey] ?? weakestKey
 
-  const shareText = `I just checked my Food System Score on EatoBiotics — ${overall}/100 (${profile.type}). My weakest pillar is ${weakestLabel}. Turns out most people score below 60 without knowing it. Check yours:`
+  const shareText = `I scored ${overall}/100 on my gut health check — I'm a ${identityLabel.word} ${identityLabel.emoji} and scored higher than ${percentile}% of people. My weakest pillar is ${weakestLabel}. Check your gut score:`
 
-  const shareUrl = typeof window !== "undefined" ? window.location.origin + "/assessment" : "https://eatobiotics.com/assessment"
+  const shareUrl = typeof window !== "undefined"
+    ? window.location.origin + "/assessment"
+    : "https://eatobiotics.com/assessment"
+
+  const ogCardUrl =
+    `/api/og/score-card?score=${overall}&percentile=${percentile}` +
+    `&label=${encodeURIComponent(identityLabel.word)}&emoji=${encodeURIComponent(identityLabel.emoji)}`
 
   async function handleCopy() {
     try {
       await navigator.clipboard.writeText(`${shareText} ${shareUrl}`)
       setCopied(true)
       setTimeout(() => setCopied(false), 2500)
-      posthog.capture("score_shared", { method: "clipboard", score: overall })
+      posthog.capture("score_shared", {
+        method:         "clipboard",
+        score:          overall,
+        identity_label: identityLabel.word,
+        percentile,
+      })
     } catch {
       // fallback — select the text
     }
@@ -50,14 +67,29 @@ export function ShareScoreCard({ result }: ShareScoreCardProps) {
     if (!navigator.share) return
     try {
       await navigator.share({
-        title: "My Food System Score — EatoBiotics",
-        text: shareText,
-        url: shareUrl,
+        title: `My Gut Health Score — EatoBiotics`,
+        text:  shareText,
+        url:   shareUrl,
       })
-      posthog.capture("score_shared", { method: "native", score: overall })
+      posthog.capture("score_shared", {
+        method:         "native",
+        score:          overall,
+        identity_label: identityLabel.word,
+        percentile,
+      })
     } catch {
       // user dismissed, ignore
     }
+  }
+
+  function handleShareImage() {
+    window.open(ogCardUrl, "_blank", "noopener")
+    posthog.capture("score_shared", {
+      method:         "image",
+      score:          overall,
+      identity_label: identityLabel.word,
+      percentile,
+    })
   }
 
   const canNativeShare = typeof navigator !== "undefined" && !!navigator.share
@@ -78,19 +110,33 @@ export function ShareScoreCard({ result }: ShareScoreCardProps) {
             <p className="text-xs text-muted-foreground">Spread the word — one click copy</p>
           </div>
         </div>
-        <div
-          className="rounded-full px-3 py-1 text-xs font-semibold text-white"
-          style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
-        >
-          {overall}/100
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm">{identityLabel.emoji}</span>
+          <div
+            className="rounded-full px-3 py-1 text-xs font-semibold text-white"
+            style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
+          >
+            {overall}/100 · {identityLabel.word}
+          </div>
         </div>
       </button>
 
       {/* Expanded state */}
       {expanded && (
         <div className="border-t border-border px-5 pb-5 pt-4 space-y-4">
+          {/* Identity + percentile summary */}
+          <div className="flex items-center gap-3 rounded-xl bg-secondary/40 px-4 py-3">
+            <span className="text-2xl">{identityLabel.emoji}</span>
+            <div>
+              <p className="text-sm font-bold text-foreground">{identityLabel.word}</p>
+              <p className="text-xs text-muted-foreground">
+                Higher than <strong>{percentile}%</strong> of people with typical eating habits
+              </p>
+            </div>
+          </div>
+
           {/* Pre-written text */}
-          <div className="rounded-xl bg-secondary/40 p-4">
+          <div className="rounded-xl bg-secondary/20 p-4">
             <p className="text-sm leading-relaxed text-foreground">
               {shareText}{" "}
               <span className="text-muted-foreground">{shareUrl}</span>
@@ -111,9 +157,17 @@ export function ShareScoreCard({ result }: ShareScoreCardProps) {
               ) : (
                 <>
                   <Copy size={13} />
-                  Copy to clipboard
+                  Copy text
                 </>
               )}
+            </button>
+
+            <button
+              onClick={handleShareImage}
+              className="flex items-center gap-2 rounded-full border border-border px-4 py-2 text-xs font-semibold transition-all hover:bg-secondary/60"
+            >
+              <ImageIcon size={13} />
+              Share image
             </button>
 
             {canNativeShare && (

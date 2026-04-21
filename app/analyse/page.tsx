@@ -6,6 +6,7 @@ import { GradientText } from "@/components/gradient-text"
 import { AnalyseClient } from "./analyse-client"
 import { AnalyseGate } from "@/components/analyse/analyse-gate"
 import { getUser } from "@/lib/supabase-server"
+import { getSupabaseServer } from "@/lib/supabase-server"
 import { getUserMembershipTier } from "@/lib/membership"
 
 export const metadata: Metadata = {
@@ -40,6 +41,21 @@ const BIOTICS = [
 export default async function AnalysePage() {
   const user = await getUser()
   const tier = user ? await getUserMembershipTier(user.id) : "free"
+
+  // For free logged-in users, check lifetime scan count to allow first scan
+  let lifetimeCount = 0
+  if (user && tier === "free") {
+    try {
+      const supabase = await getSupabaseServer()
+      const { count } = await supabase
+        .from("analyses")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+      lifetimeCount = count ?? 0
+    } catch {
+      // Non-fatal — default to 0 (allow the scan)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -111,7 +127,7 @@ export default async function AnalysePage() {
 
       {/* ── Upload / Results ──────────────────────────────────────────── */}
       <div className="mx-auto max-w-2xl px-6 pb-20">
-        <AnalyseGate membershipTier={tier} isLoggedIn={!!user}>
+        <AnalyseGate membershipTier={tier} isLoggedIn={!!user} lifetimeCount={lifetimeCount}>
           <Suspense
             fallback={
               <div className="h-64 rounded-2xl border border-dashed border-border animate-pulse" />

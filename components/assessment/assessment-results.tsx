@@ -22,6 +22,8 @@ import { ReportReframe } from "./report-reframe"
 import { ShareScoreCard } from "./share-score-card"
 import type { AssessmentResult, PillarInsight } from "@/lib/assessment-scoring"
 import { getFoodBySlug } from "@/lib/foods"
+import { getPercentile } from "@/lib/percentile"
+import { getIdentityLabel } from "@/lib/identity-labels"
 
 /* ── Gut Starter Pack config ─────────────────────────────────────────── */
 
@@ -145,6 +147,10 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
   const strengths = insights.filter((i) => i.strength)
   const opportunities = insights.filter((i) => i.opportunity)
 
+  // Achievement layer
+  const percentile    = getPercentile(overall)
+  const identityLabel = getIdentityLabel(overall)
+
   return (
     <div className="min-h-screen bg-background">
       {/* ── Hero: Score ring + Pillar bars ────────────────────────────── */}
@@ -181,10 +187,22 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
                 color={profile.color}
                 gradientId="assessment-ring"
                 profileType={profile.type}
+                percentile={percentile}
               />
               <p className="mt-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                 Overall Score
               </p>
+
+              {/* Achievement banner */}
+              <div className="mt-4 flex flex-col items-center gap-1.5">
+                <div className="flex items-center gap-2 rounded-full border border-border bg-secondary/40 px-4 py-1.5">
+                  <span className="text-base">{identityLabel.emoji}</span>
+                  <span className="text-sm font-bold text-foreground">{identityLabel.word}</span>
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  Higher than <strong>{percentile}%</strong> of people with typical eating habits
+                </p>
+              </div>
             </div>
 
             {/* Profile + pillar mini-bars */}

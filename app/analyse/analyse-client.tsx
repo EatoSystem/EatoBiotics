@@ -247,6 +247,8 @@ export function AnalyseClient({ tier }: { tier?: "free" | "grow" | "restore" | "
                   ? { ...s, thinking: s.thinking + (event.text as string) }
                   : s
               )
+            } else if (event.type === "thinking_complete") {
+              setState((s) => s.kind === "streaming" ? { ...s, thinkingDone: true } : s)
             } else if (event.type === "complete") {
               setState({ kind: "result", previewUrl, result: event.result as unknown as AnalysisResult })
             } else if (event.type === "error") {
@@ -334,7 +336,7 @@ export function AnalyseClient({ tier }: { tier?: "free" | "grow" | "restore" | "
         </div>
       )}
       {state.kind === "result" && (
-        <ResultBuilder previewUrl={state.previewUrl} result={state.result} onReset={reset} />
+        <ResultBuilder previewUrl={state.previewUrl} result={state.result} onReset={reset} isFreeUser={tier === "free"} />
       )}
       {state.kind === "error" && (
         <ErrorView message={state.message} previewUrl={state.previewUrl} onReset={reset} />

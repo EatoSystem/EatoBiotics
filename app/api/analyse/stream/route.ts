@@ -206,13 +206,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 })
   }
 
-  // 2. Tier check — Grow and above
+  // 2. Tier check — allow free users only for their lifetime-first scan
   const tier = await getUserMembershipTier(user.id)
   if (tier === "free") {
-    return NextResponse.json(
-      { error: "Meal analysis requires an active Grow membership or above" },
-      { status: 403 }
-    )
+    const supabaseCheck = getSupabase()
+    if (supabaseCheck) {
+      const { count } = await supabaseCheck
+        .from("analyses")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+      if ((count ?? 0) > 0) {
+        return NextResponse.json(
+          { error: "Free scan already used. Upgrade to continue daily meal tracking." },
+          { status: 403 }
+        )
+      }
+      // count === 0: fall through and allow the free first scan
+    } else {
+      // Cannot verify — block to be safe
+      return NextResponse.json(
+        { error: "Meal analysis requires an active Grow membership or above" },
+        { status: 403 }
+      )
+    }
   }
 
   // 3. Validate body
@@ -288,6 +304,8 @@ export async function POST(req: NextRequest) {
           messages: [{ role: "user", content: userContent }],
         })
 
+        let thinkingComplete = false
+
         for await (const event of stream) {
           // Stream thinking deltas in real time
           if (
@@ -302,6 +320,10 @@ export async function POST(req: NextRequest) {
             event.type === "content_block_delta" &&
             event.delta.type === "text_delta"
           ) {
+            if (!thinkingComplete) {
+              emit({ type: "thinking_complete" })
+              thinkingComplete = true
+            }
             fullText += event.delta.text
           }
         }

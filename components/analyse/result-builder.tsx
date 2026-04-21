@@ -8,6 +8,10 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { saveMealAnalysis } from "@/lib/local-storage"
+import { getPercentile } from "@/lib/percentile"
+import { getIdentityLabel } from "@/lib/identity-labels"
+import { ShareMealCard } from "./share-meal-card"
+import { FreeScanUpsell } from "./free-scan-upsell"
 
 /* ── Types ──────────────────────────────────────────────────────────── */
 
@@ -113,6 +117,8 @@ function ScoreDisplay({
   hasPostbiotic: boolean
 }) {
   const { label, color } = getScoreBand(score)
+  const percentile    = getPercentile(score)
+  const identityLabel = getIdentityLabel(score)
   const r = 52
   const circ = 2 * Math.PI * r
   const offset = circ - (score / 100) * circ
@@ -179,6 +185,9 @@ function ScoreDisplay({
               : score >= 50
               ? "A decent foundation — small additions can boost it significantly."
               : "A starting point — the suggestions below will transform this meal."}
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground/70">
+            {identityLabel.emoji} {identityLabel.word} · Top {100 - percentile}%
           </p>
         </div>
       </div>
@@ -305,9 +314,10 @@ interface ResultBuilderProps {
   result: AnalysisResult
   previewUrl: string
   onReset: () => void
+  isFreeUser?: boolean
 }
 
-export function ResultBuilder({ result, previewUrl, onReset }: ResultBuilderProps) {
+export function ResultBuilder({ result, previewUrl, onReset, isFreeUser = false }: ResultBuilderProps) {
   const [saved, setSaved] = useState(false)
 
   const score = typeof result.score === "number" ? Math.round(result.score) : 50
@@ -507,8 +517,20 @@ export function ResultBuilder({ result, previewUrl, onReset }: ResultBuilderProp
           </div>
         )}
 
-        {/* CTAs — 1050 ms */}
-        <div style={animStyle(1050)}>
+        {/* Share — 900 ms */}
+        <div style={animStyle(900)}>
+          <ShareMealCard result={result} />
+        </div>
+
+        {/* Free scan upsell — 1050 ms (only for free users) */}
+        {isFreeUser && (
+          <div style={animStyle(1050)}>
+            <FreeScanUpsell score={result.score} />
+          </div>
+        )}
+
+        {/* CTAs — 1200 ms */}
+        <div style={animStyle(isFreeUser ? 1200 : 1050)}>
           <div className="flex flex-col gap-3">
             {/* Save to My Meals */}
             <button
