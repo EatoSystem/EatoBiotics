@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, Check, FileText, Sparkles, Clock, Shield, Star } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
@@ -28,7 +29,7 @@ const REPORTS = [
       "Plain-English explanation of your results",
       "PDF delivered to your inbox",
     ],
-    ideal:    "Perfect if you want a clear, actionable starting point without the full depth.",
+    ideal: "Perfect if you want a clear, actionable starting point without the full depth.",
   },
   {
     id:       "full",
@@ -46,7 +47,7 @@ const REPORTS = [
       "Weekly focus areas for each biotic",
       "PDF delivered to your inbox",
     ],
-    ideal:    "Best for people who want a complete picture and a structured plan to follow.",
+    ideal: "Best for people who want a complete picture and a structured plan to follow.",
   },
   {
     id:       "premium",
@@ -65,7 +66,7 @@ const REPORTS = [
       "3 Biotic Kitchen recipes for your type",
       "PDF delivered to your inbox",
     ],
-    ideal:    "For those who want every detail — timing, seasons, recipes, and a 90-day roadmap.",
+    ideal: "For those who want every detail — timing, seasons, recipes, and a 90-day roadmap.",
   },
 ]
 
@@ -170,71 +171,84 @@ export default function ReportsPage() {
     <div className="min-h-screen bg-background">
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden px-6 pt-32 pb-16 md:pt-40 md:pb-20">
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse 70% 55% at 50% 0%, color-mix(in srgb, var(--icon-green) 10%, transparent), transparent 70%)",
-          }}
-        />
-        <div className="relative mx-auto max-w-[720px] text-center">
-          <ScrollReveal>
-            <div
-              className="mb-5 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest"
-              style={{
-                background: "color-mix(in srgb, var(--icon-lime) 15%, transparent)",
-                color: "var(--icon-green)",
-              }}
-            >
-              <FileText size={11} /> Deep Assessment Reports
+      <section className="relative overflow-hidden px-6 pt-24 pb-16 md:pt-32 md:pb-20">
+        <div className="relative mx-auto flex max-w-[1200px] min-h-[calc(100vh-200px)] flex-col items-center justify-center gap-12 md:flex-row md:gap-16 lg:gap-20">
+
+          {/* Left: Text */}
+          <div className="flex-1 max-w-[560px] text-left">
+            <ScrollReveal>
+              <div
+                className="mb-5 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest"
+                style={{
+                  background: "color-mix(in srgb, var(--icon-lime) 15%, transparent)",
+                  color: "var(--icon-green)",
+                }}
+              >
+                <FileText size={11} /> Deep Assessment Reports
+              </div>
+              <h1 className="font-serif text-4xl font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">
+                <GradientText>Your gut health,</GradientText>
+                <br />
+                explained in full
+              </h1>
+              <p className="mt-6 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg">
+                Take the free assessment, then unlock a personalised AI-generated report —
+                pillar-by-pillar analysis, your highest-impact foods, and a plan built
+                specifically for you.
+              </p>
+            </ScrollReveal>
+
+            <ScrollReveal delay={120}>
+              <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+                <Link
+                  href="/assessment"
+                  className="inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:opacity-90 hover:shadow-xl"
+                  style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
+                >
+                  Start free assessment <ArrowRight size={16} />
+                </Link>
+                <a
+                  href="#reports"
+                  className="inline-flex items-center gap-2 rounded-full border border-border px-8 py-4 text-base font-semibold text-foreground transition-colors hover:bg-muted"
+                >
+                  See report tiers
+                </a>
+              </div>
+            </ScrollReveal>
+
+            {/* Trust badges */}
+            <ScrollReveal delay={200}>
+              <div className="mt-8 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <Shield size={12} style={{ color: "var(--icon-green)" }} />
+                  One-time payment · no subscription
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Clock size={12} style={{ color: "var(--icon-teal)" }} />
+                  Delivered within minutes
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Sparkles size={12} style={{ color: "var(--icon-lime)" }} />
+                  AI-generated from your data
+                </span>
+              </div>
+            </ScrollReveal>
+          </div>
+
+          {/* Right: Image */}
+          <ScrollReveal delay={80} className="flex-1 flex items-center justify-center w-full max-w-[480px]">
+            <div className="relative w-full">
+              <Image
+                src="/images/couple-hero.png"
+                alt="Two people with glowing gut microbiome connection"
+                width={900}
+                height={900}
+                priority
+                className="w-full h-auto object-contain"
+              />
             </div>
-            <h1 className="font-serif text-5xl font-semibold tracking-tight text-balance sm:text-6xl md:text-7xl">
-              <GradientText>Your gut health,</GradientText>
-              <br />
-              explained in full
-            </h1>
-            <p className="mx-auto mt-6 max-w-lg text-lg leading-relaxed text-muted-foreground">
-              Take the free assessment, then unlock a personalised AI-generated report —
-              pillar-by-pillar analysis, your highest-impact foods, and a plan built specifically for you.
-            </p>
           </ScrollReveal>
 
-          <ScrollReveal delay={120}>
-            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-              <Link
-                href="/assessment"
-                className="inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:opacity-90 hover:shadow-xl"
-                style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
-              >
-                Start free assessment <ArrowRight size={16} />
-              </Link>
-              <a
-                href="#reports"
-                className="inline-flex items-center gap-2 rounded-full border border-border px-8 py-4 text-base font-semibold text-foreground transition-colors hover:bg-muted"
-              >
-                See report tiers
-              </a>
-            </div>
-          </ScrollReveal>
-
-          {/* Trust badges */}
-          <ScrollReveal delay={200}>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <Shield size={12} style={{ color: "var(--icon-green)" }} />
-                One-time payment · no subscription
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Clock size={12} style={{ color: "var(--icon-teal)" }} />
-                Delivered within minutes
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Sparkles size={12} style={{ color: "var(--icon-lime)" }} />
-                AI-generated from your data
-              </span>
-            </div>
-          </ScrollReveal>
         </div>
       </section>
 
@@ -255,9 +269,7 @@ export default function ReportsPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {STEPS.map((step, i) => (
               <ScrollReveal key={step.number} delay={i * 70}>
-                <div
-                  className="relative rounded-2xl border border-border bg-card p-5 h-full"
-                >
+                <div className="relative rounded-2xl border border-border bg-card p-5 h-full">
                   {/* Connector line (desktop only, not on last) */}
                   {i < STEPS.length - 1 && (
                     <div
@@ -284,20 +296,8 @@ export default function ReportsPage() {
       </section>
 
       {/* ── Report tier cards ─────────────────────────────────────────── */}
-      <section
-        id="reports"
-        className="relative overflow-hidden px-6 py-20 md:py-28"
-        style={{ background: "color-mix(in srgb, var(--icon-green) 3%, var(--background))" }}
-      >
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse 80% 50% at 50% 100%, color-mix(in srgb, var(--icon-teal) 5%, transparent), transparent 65%)",
-          }}
-        />
-
-        <div className="relative mx-auto max-w-[1100px]">
+      <section id="reports" className="px-6 py-20 md:py-28">
+        <div className="mx-auto max-w-[1100px]">
           <ScrollReveal>
             <div className="text-center mb-14">
               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
@@ -410,10 +410,7 @@ export default function ReportsPage() {
 
           {/* Comparison note */}
           <ScrollReveal delay={300}>
-            <div
-              className="mt-8 rounded-2xl border border-border px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
-              style={{ background: "var(--card)" }}
-            >
+            <div className="mt-8 rounded-2xl border border-border bg-card px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <p className="text-sm text-muted-foreground">
                 <span className="font-semibold text-foreground">Not sure which to pick?</span>{" "}
                 The Full Report is the most popular — it gives you everything you need to start making meaningful changes.
@@ -466,10 +463,7 @@ export default function ReportsPage() {
       </section>
 
       {/* ── Reports vs Membership ─────────────────────────────────────── */}
-      <section
-        className="px-6 py-20 md:py-28"
-        style={{ background: "color-mix(in srgb, var(--icon-lime) 3%, var(--background))" }}
-      >
+      <section className="px-6 py-20 md:py-28">
         <div className="mx-auto max-w-[800px]">
           <ScrollReveal>
             <div className="text-center mb-10">
@@ -486,11 +480,8 @@ export default function ReportsPage() {
             <div className="grid gap-5 sm:grid-cols-2">
               {/* Reports */}
               <div
-                className="rounded-2xl border p-6"
-                style={{
-                  background: "var(--card)",
-                  borderColor: `color-mix(in srgb, var(--icon-green) 30%, var(--border))`,
-                }}
+                className="rounded-2xl border bg-card p-6"
+                style={{ borderColor: `color-mix(in srgb, var(--icon-green) 30%, var(--border))` }}
               >
                 <div className="flex items-center gap-3 mb-4">
                   <span
@@ -529,11 +520,8 @@ export default function ReportsPage() {
 
               {/* Membership */}
               <div
-                className="rounded-2xl border p-6"
-                style={{
-                  background: "var(--card)",
-                  borderColor: `color-mix(in srgb, var(--icon-teal) 30%, var(--border))`,
-                }}
+                className="rounded-2xl border bg-card p-6"
+                style={{ borderColor: `color-mix(in srgb, var(--icon-teal) 30%, var(--border))` }}
               >
                 <div className="flex items-center gap-3 mb-4">
                   <span
@@ -602,18 +590,8 @@ export default function ReportsPage() {
       </section>
 
       {/* ── Final CTA ─────────────────────────────────────────────────── */}
-      <section
-        className="relative overflow-hidden px-6 py-20 md:py-28"
-        style={{ background: "color-mix(in srgb, var(--icon-green) 5%, var(--background))" }}
-      >
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse 60% 80% at 50% 50%, color-mix(in srgb, var(--icon-green) 8%, transparent), transparent 70%)",
-          }}
-        />
-        <div className="relative mx-auto max-w-[560px] text-center">
+      <section className="px-6 py-20 md:py-28">
+        <div className="mx-auto max-w-[560px] text-center">
           <ScrollReveal>
             <span className="text-4xl">🌿</span>
             <h2 className="mt-5 font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
