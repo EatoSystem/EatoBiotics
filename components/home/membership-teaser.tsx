@@ -295,17 +295,21 @@ export function MembershipTeaser() {
                 </p>
               </div>
               <Link
-                href="/assessment"
+                href="/reports"
                 className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-muted whitespace-nowrap"
               >
-                Take the free assessment first <ArrowRight size={11} />
+                See all reports <ArrowRight size={11} />
               </Link>
             </div>
 
-            {/* Report tiers */}
+            {/* Report tiers — each links to the reports page */}
             <div className="grid sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border">
               {REPORTS.map((report) => (
-                <div key={report.label} className="relative px-6 py-5">
+                <Link
+                  key={report.label}
+                  href="/reports"
+                  className="group relative block px-6 py-5 transition-colors hover:bg-secondary/30"
+                >
                   {report.popular && (
                     <div
                       className="absolute right-4 top-4 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white"
@@ -329,7 +333,13 @@ export function MembershipTeaser() {
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     {report.desc}
                   </p>
-                </div>
+                  <p
+                    className="mt-2 text-[11px] font-semibold opacity-0 transition-opacity group-hover:opacity-100"
+                    style={{ color: report.color }}
+                  >
+                    See full details →
+                  </p>
+                </Link>
               ))}
             </div>
 
@@ -342,11 +352,11 @@ export function MembershipTeaser() {
                 Unlocked after your free assessment · PDF delivered by email
               </p>
               <Link
-                href="/assessment"
+                href="/reports"
                 className="text-xs font-semibold transition-colors hover:opacity-80"
                 style={{ color: "var(--icon-green)" }}
               >
-                Get your score first →
+                View all reports →
               </Link>
             </div>
           </div>
