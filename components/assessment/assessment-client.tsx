@@ -19,6 +19,7 @@ import { AssessmentQuestionView } from "./assessment-question"
 import { AssessmentResults } from "./assessment-results"
 import { PrivacyOptIn } from "./privacy-opt-in"
 import posthog from "posthog-js"
+import { logEvent } from "@/lib/statsig-client"
 
 export function AssessmentClient() {
   const [state, setState] = useState<AssessmentState>(emptyAssessmentState)
@@ -103,6 +104,10 @@ export function AssessmentClient() {
         overall_score: computed.overall,
         profile_type: computed.profile.type,
         sub_scores: computed.subScores,
+      })
+      // Statsig: assessment_completed
+      logEvent("assessment_completed", computed.overall, {
+        profile_type: computed.profile.type,
       })
       const currentLead0 = lead ?? loadLeadData()
       if (currentLead0?.email) {

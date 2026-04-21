@@ -10,6 +10,7 @@ import { PwaInstallPrompt } from '@/components/pwa-install-prompt'
 import { Toaster } from 'sonner'
 import { PHProvider } from '@/components/providers/posthog-provider'
 import { PostHogPageview } from '@/components/providers/posthog-pageview'
+import { StatsigClientProvider } from '@/components/providers/statsig-provider'
 import { Suspense } from 'react'
 import './globals.css'
 
@@ -68,6 +69,7 @@ export default function RootLayout({
   return (
     <html lang="en" style={{ backgroundColor: "#FFFFFF" }}>
       <PHProvider>
+        <StatsigClientProvider>
         <body className="bg-white font-sans antialiased">
           <Suspense fallback={null}>
             <PostHogPageview />
@@ -81,6 +83,7 @@ export default function RootLayout({
           <PwaRegister />
           <PwaInstallPrompt />
         </body>
+        </StatsigClientProvider>
       </PHProvider>
     </html>
   )

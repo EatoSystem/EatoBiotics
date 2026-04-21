@@ -3,6 +3,7 @@ import type Stripe from "stripe"
 import { stripe } from "@/lib/stripe-server"
 import { getSupabase } from "@/lib/supabase"
 import { tierFromPriceId, isFoundingMember } from "@/lib/membership"
+import { logServerEvent } from "@/lib/statsig-server"
 
 // Stripe v20 with the clover API version uses slightly different type shapes.
 // We use a helper to safely access fields that may not be in the TS types.
@@ -104,6 +105,15 @@ export async function POST(req: NextRequest) {
           fromTier:    null,
           toTier:      tier,
           stripeEventId: event.id,
+        })
+
+        // Statsig: subscription_started — fires once when a new subscription is created.
+        // TODO: Replace profile.id with the Supabase user ID linked to a Statsig userID
+        //       once you call client.updateUser({ userID: user.id }) after login.
+        await logServerEvent("subscription_started", profile.id, {
+          tier,
+          is_founding_member: String(founding),
+          stripe_event_id: event.id,
         })
         break
       }

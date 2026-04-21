@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { Share2, Copy, Check, MessageCircle, Image as ImageIcon, Instagram } from "lucide-react"
 import posthog from "posthog-js"
+import { useFeatureGate } from "@statsig/react-bindings"
+import { logEvent } from "@/lib/statsig-client"
 import { getPercentile } from "@/lib/percentile"
 import { getIdentityLabel } from "@/lib/identity-labels"
 import type { AnalysisResult } from "./result-builder"
@@ -41,6 +43,14 @@ export function ShareMealCard({ result }: ShareMealCardProps) {
   const [ugcOptIn,      setUgcOptIn]      = useState(false)
   const [ugcSubmitted,  setUgcSubmitted]  = useState(false)
 
+  // Feature gates
+  // share_card_v2    — when ON, shows the platform share buttons (X/WhatsApp/Instagram).
+  //                    Turn OFF to hide the social platform section for a subset of users.
+  // percentile_copy_v2 — when ON, uses the v2 percentile phrasing in the share text.
+  //                      Create in Statsig and enable to test alternate copy.
+  const { value: shareCardV2 }      = useFeatureGate("share_card_v2")
+  const { value: percentileCopyV2 } = useFeatureGate("percentile_copy_v2")
+
   const score         = Math.round(result.score)
   const percentile    = getPercentile(score)
   const identityLabel = getIdentityLabel(score)
@@ -62,9 +72,16 @@ export function ShareMealCard({ result }: ShareMealCardProps) {
     ? window.location.origin + "/analyse"
     : "https://eatobiotics.com/analyse"
 
+  // percentile_copy_v2: alternate phrasing for the percentile claim in share text.
+  // V1 (default): "better gut than X% of people"
+  // V2 (gate ON) : "top X% for gut diversity"
+  const percentileClaim = percentileCopyV2
+    ? `top ${100 - percentile}% for gut diversity`
+    : `better gut than ${percentile}% of people`
+
   const shareText =
     `I scanned my meal on EatoBiotics and scored ${score}/100 — ` +
-    `I'm a ${identityLabel.word} ${identityLabel.emoji}, better gut than ${percentile}% of people. ` +
+    `I'm a ${identityLabel.word} ${identityLabel.emoji}, ${percentileClaim}. ` +
     (topFoods.length > 0 ? `I tracked: ${foodEmojiStr}. ` : "") +
     `Check yours:`
 
@@ -85,6 +102,8 @@ export function ShareMealCard({ result }: ShareMealCardProps) {
         identity_label: identityLabel.word,
         percentile,
       })
+      // Statsig: share_card_exported
+      logEvent("share_card_exported", undefined, { method: "clipboard", score: String(score) })
     } catch {
       // ignore — clipboard access denied
     }
@@ -98,6 +117,8 @@ export function ShareMealCard({ result }: ShareMealCardProps) {
       identity_label: identityLabel.word,
       percentile,
     })
+    // Statsig: share_card_exported
+    logEvent("share_card_exported", undefined, { method: "image", score: String(score) })
   }
 
   async function handleNativeShare() {
@@ -122,7 +143,7 @@ export function ShareMealCard({ result }: ShareMealCardProps) {
   function handleShareX() {
     const xText =
       `I just scanned my meal on @EatoBiotics and scored ${score}/100 🎯\n` +
-      `I'm a ${identityLabel.word} ${identityLabel.emoji} — better gut than ${percentile}% of people.\n` +
+      `I'm a ${identityLabel.word} ${identityLabel.emoji} — ${percentileClaim}.\n` +
       (foodEmojiStr ? `${foodEmojiStr}\n` : "") +
       `#GutHealth #EatoBiotics`
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(xText)}&url=${encodeURIComponent(shareUrl)}`
@@ -133,6 +154,8 @@ export function ShareMealCard({ result }: ShareMealCardProps) {
       identity_label: identityLabel.word,
       percentile,
     })
+    // Statsig: share_card_exported
+    logEvent("share_card_exported", undefined, { method: "x", score: String(score) })
     maybeSubmitUgc()
   }
 
@@ -146,6 +169,8 @@ export function ShareMealCard({ result }: ShareMealCardProps) {
       identity_label: identityLabel.word,
       percentile,
     })
+    // Statsig: share_card_exported
+    logEvent("share_card_exported", undefined, { method: "whatsapp", score: String(score) })
     maybeSubmitUgc()
   }
 
@@ -165,6 +190,8 @@ export function ShareMealCard({ result }: ShareMealCardProps) {
       identity_label: identityLabel.word,
       percentile,
     })
+    // Statsig: share_card_exported
+    logEvent("share_card_exported", undefined, { method: "instagram", score: String(score) })
     maybeSubmitUgc()
   }
 
@@ -277,8 +304,8 @@ export function ShareMealCard({ result }: ShareMealCardProps) {
             )}
           </div>
 
-          {/* Platform share buttons */}
-          <div>
+          {/* Platform share buttons — shown when share_card_v2 gate is ON */}
+          {shareCardV2 && <div>
             <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
               Share on
             </p>
@@ -324,7 +351,7 @@ export function ShareMealCard({ result }: ShareMealCardProps) {
                 Caption copied — open Instagram and paste it on your story or post.
               </p>
             )}
-          </div>
+          </div>}
 
           {/* UGC opt-in toggle */}
           <label className="flex cursor-pointer items-start gap-3">

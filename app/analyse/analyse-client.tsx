@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { ThinkingStream } from "@/components/analyse/thinking-stream"
 import { ResultBuilder } from "@/components/analyse/result-builder"
 import type { AnalysisResult } from "@/components/analyse/result-builder"
+import { logEvent } from "@/lib/statsig-client"
 
 /* ── Types ──────────────────────────────────────────────────────────── */
 
@@ -201,6 +202,13 @@ export function AnalyseClient({ tier }: { tier?: "free" | "grow" | "restore" | "
     const previewUrl = URL.createObjectURL(file)
     setState({ kind: "loading", previewUrl })
 
+    // Statsig: free_meal_scan_started — fires for every scan attempt.
+    // Use tier metadata to distinguish free vs paid in the dashboard.
+    logEvent("free_meal_scan_started", undefined, {
+      tier: tier ?? "unknown",
+      is_free: String(!tier || tier === "free"),
+    })
+
     try {
       const { base64, mimeType } = await compressImage(file)
 
@@ -250,7 +258,12 @@ export function AnalyseClient({ tier }: { tier?: "free" | "grow" | "restore" | "
             } else if (event.type === "thinking_complete") {
               setState((s) => s.kind === "streaming" ? { ...s, thinkingDone: true } : s)
             } else if (event.type === "complete") {
-              setState({ kind: "result", previewUrl, result: event.result as unknown as AnalysisResult })
+              const streamResult = event.result as unknown as AnalysisResult
+              // Statsig: free_meal_scan_completed (covers all tiers — use tier metadata to segment)
+              logEvent("free_meal_scan_completed", streamResult.score ? Math.round(streamResult.score) : undefined, {
+                tier: tier ?? "unknown",
+              })
+              setState({ kind: "result", previewUrl, result: streamResult })
             } else if (event.type === "error") {
               setState({ kind: "error", previewUrl, message: event.message as string })
             }
@@ -277,7 +290,12 @@ export function AnalyseClient({ tier }: { tier?: "free" | "grow" | "restore" | "
           setState({ kind: "error", previewUrl, message: data.error as string })
           return
         }
-        setState({ kind: "result", previewUrl, result: data as unknown as AnalysisResult })
+        const freeResult = data as unknown as AnalysisResult
+        // Statsig: free_meal_scan_completed
+        logEvent("free_meal_scan_completed", freeResult.score ? Math.round(freeResult.score) : undefined, {
+          tier: "free",
+        })
+        setState({ kind: "result", previewUrl, result: freeResult })
       }
     } catch {
       setState({

@@ -1,8 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { ArrowRight, Zap, X } from "lucide-react"
+import { useFeatureGate } from "@statsig/react-bindings"
+import { logEvent } from "@/lib/statsig-client"
 
 interface AnalyseGateProps {
   membershipTier: "free" | "grow" | "restore" | "transform"
@@ -16,17 +18,27 @@ interface AnalyseGateProps {
  * Wraps the analyse page content with tier-based gating.
  *
  * - Not logged in: renders children; a modal intercepts submit attempts
- * - Logged in, free tier, 0 lifetime scans: renders children (free first scan)
- * - Logged in, free tier, 1+ lifetime scans: upsell gate (no upload shown)
+ * - Logged in, free tier, 0 lifetime scans + gate ON: renders children (free first scan)
+ * - Logged in, free tier, scan used OR gate OFF: upsell gate (no upload shown)
  * - Paid tier (grow/restore/transform): renders children normally
+ *
+ * Statsig gates wired here:
+ *   free_first_meal_scan — kill switch for the free-first-scan feature
  */
 export function AnalyseGate({ membershipTier, isLoggedIn, lifetimeCount = 0, children }: AnalyseGateProps) {
   const [showAuthModal, setShowAuthModal] = useState(false)
 
-  // Logged-in free users: allow first scan; gate subsequent scans
+  // Feature gate: free_first_meal_scan
+  // When ON  → free users get their first scan for free (existing behaviour).
+  // When OFF → all free users see the upsell wall (kill switch).
+  // Default in Statsig (gate not created yet) → false → upsell shown.
+  // Create this gate in Statsig and enable it to activate the free-scan feature.
+  const { value: freeScanGateOn } = useFeatureGate("free_first_meal_scan")
+
+  // ── Logged-in free users ──────────────────────────────────────────────────
   if (isLoggedIn && membershipTier === "free") {
-    // First-time scan: let them through — show a "free scan" banner above the upload
-    if (lifetimeCount === 0) {
+    // First-time scan AND gate enabled: show the scan with a "free scan" banner
+    if (lifetimeCount === 0 && freeScanGateOn) {
       return (
         <>
           {/* Free first scan banner */}
@@ -50,47 +62,14 @@ export function AnalyseGate({ membershipTier, isLoggedIn, lifetimeCount = 0, chi
       )
     }
 
-    // Already used their free scan — show upsell gate
+    // Scan already used, OR gate is OFF — show upsell wall and fire paywall_seen
     return (
-      <div
-        className="rounded-3xl p-8 text-center sm:p-12"
-        style={{
-          background: "color-mix(in srgb, var(--icon-lime) 6%, var(--card))",
-          border: "1px solid color-mix(in srgb, var(--icon-lime) 25%, transparent)",
-        }}
-      >
-        <span
-          className="inline-flex h-14 w-14 items-center justify-center rounded-2xl text-2xl"
-          style={{ background: "color-mix(in srgb, var(--icon-lime) 15%, transparent)" }}
-        >
-          🌿
-        </span>
-        <h2 className="mt-4 font-serif text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-          Ready to track daily?
-        </h2>
-        <p className="mx-auto mt-3 max-w-sm text-base text-muted-foreground">
-          You&apos;ve used your free scan. Upgrade to Grow for €9.99/month to get daily meal
-          analyses with full biotic breakdowns and personalised food recommendations.
-        </p>
-        <Link
-          href="/pricing"
-          className="mt-6 inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-          style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
-        >
-          Upgrade to Grow <ArrowRight size={14} />
-        </Link>
-        <p className="mt-4 text-xs text-muted-foreground/60">
-          Already a member?{" "}
-          <Link href="/account" className="underline hover:text-foreground">
-            Check your account
-          </Link>
-        </p>
-      </div>
+      <PaywallGate reason={lifetimeCount > 0 ? "scan_used" : "gate_disabled"} />
     )
   }
 
-  // Not logged in: render children but provide a way to intercept submit
-  // The modal is shown when they try to submit (triggered via window event)
+  // ── Guest (not logged in) ─────────────────────────────────────────────────
+  // Render children but intercept any submit attempt with an auth modal
   if (!isLoggedIn) {
     return (
       <>
@@ -144,12 +123,58 @@ export function AnalyseGate({ membershipTier, isLoggedIn, lifetimeCount = 0, chi
     )
   }
 
-  // Paid tier: render children + post-analysis upgrade prompts
-  // (free-tier paths both return early above, so membershipTier is paid here)
+  // ── Paid tier ─────────────────────────────────────────────────────────────
+  // Both free-tier branches return early above; membershipTier is paid here.
   return (
     <AnalyseWrapper membershipTier={membershipTier as "grow" | "restore" | "transform"}>
       {children}
     </AnalyseWrapper>
+  )
+}
+
+/* ── Paywall gate — fires paywall_seen on mount ──────────────────────── */
+
+function PaywallGate({ reason }: { reason: string }) {
+  // Fire paywall_seen once when this component mounts
+  useEffect(() => {
+    logEvent("paywall_seen", undefined, { reason, page: "analyse" })
+  }, [reason])
+
+  return (
+    <div
+      className="rounded-3xl p-8 text-center sm:p-12"
+      style={{
+        background: "color-mix(in srgb, var(--icon-lime) 6%, var(--card))",
+        border: "1px solid color-mix(in srgb, var(--icon-lime) 25%, transparent)",
+      }}
+    >
+      <span
+        className="inline-flex h-14 w-14 items-center justify-center rounded-2xl text-2xl"
+        style={{ background: "color-mix(in srgb, var(--icon-lime) 15%, transparent)" }}
+      >
+        🌿
+      </span>
+      <h2 className="mt-4 font-serif text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+        Ready to track daily?
+      </h2>
+      <p className="mx-auto mt-3 max-w-sm text-base text-muted-foreground">
+        You&apos;ve used your free scan. Upgrade to Grow for €9.99/month to get daily meal
+        analyses with full biotic breakdowns and personalised food recommendations.
+      </p>
+      <Link
+        href="/pricing"
+        className="mt-6 inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+        style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
+      >
+        Upgrade to Grow <ArrowRight size={14} />
+      </Link>
+      <p className="mt-4 text-xs text-muted-foreground/60">
+        Already a member?{" "}
+        <Link href="/account" className="underline hover:text-foreground">
+          Check your account
+        </Link>
+      </p>
+    </div>
   )
 }
 
