@@ -1,19 +1,29 @@
-import Link from "next/link"
-import { Lock, ArrowRight } from "lucide-react"
-import { chapters, PART_COLORS, partIndex } from "@/lib/chapters"
+import { Lock } from "lucide-react"
+import { chapters as defaultChapters, PART_COLORS } from "@/lib/chapters"
+import type { Chapter } from "@/lib/chapters"
 
-// Group chapters by part
-const parts = Array.from(
-  chapters.reduce((map, ch) => {
-    if (!map.has(ch.part)) {
-      map.set(ch.part, { part: ch.part, title: ch.partTitle, chapters: [] })
-    }
-    map.get(ch.part)!.chapters.push(ch)
-    return map
-  }, new Map<string, { part: string; title: string; chapters: typeof chapters }>()),
-).map(([, v]) => v)
+// Group an array of chapters into parts, preserving order
+function groupByPart(chs: Chapter[]) {
+  return Array.from(
+    chs.reduce((map, ch) => {
+      if (!map.has(ch.part)) {
+        map.set(ch.part, { part: ch.part, title: ch.partTitle, chapters: [] as Chapter[] })
+      }
+      map.get(ch.part)!.chapters.push(ch)
+      return map
+    }, new Map<string, { part: string; title: string; chapters: Chapter[] }>()),
+  ).map(([, v]) => v)
+}
 
-export function ChapterList() {
+interface ChapterListProps {
+  /** Pass a custom chapter array to render a different book's contents.
+   *  Defaults to the original EatoBiotics book chapters. */
+  chapters?: Chapter[]
+}
+
+export function ChapterList({ chapters = defaultChapters }: ChapterListProps) {
+  const parts = groupByPart(chapters)
+
   return (
     <div className="mt-12 flex flex-col">
       {parts.map((part, partIdx) => {
@@ -47,11 +57,11 @@ export function ChapterList() {
             </h3>
 
             <div className="mt-6 flex flex-col gap-3">
-              {part.chapters.map((chapter) => {
-                const isPublished = chapter.status === "published"
-                const href = `/book-chapter-${chapter.number}`
-
-                const inner = (
+              {part.chapters.map((chapter) => (
+                <div
+                  key={chapter.number}
+                  className="rounded-xl border border-border px-5 py-4 opacity-70"
+                >
                   <div className="flex items-baseline gap-4">
                     <span
                       className="w-8 flex-shrink-0 text-right font-serif text-sm font-semibold"
@@ -69,24 +79,15 @@ export function ChapterList() {
                       <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                         {chapter.description}
                       </p>
-                      {isPublished && chapter.readingTime && (
+                      {chapter.status === "published" && chapter.readingTime && (
                         <p className="mt-1 text-xs text-muted-foreground/60">
                           {chapter.readingTime} min read
                         </p>
                       )}
                     </div>
                   </div>
-                )
-
-                return (
-                  <div
-                    key={chapter.number}
-                    className="rounded-xl border border-border px-5 py-4 opacity-70"
-                  >
-                    {inner}
-                  </div>
-                )
-              })}
+                </div>
+              ))}
             </div>
           </div>
         )
