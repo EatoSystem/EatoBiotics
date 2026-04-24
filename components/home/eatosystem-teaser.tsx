@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { ArrowUpRight } from "lucide-react"
@@ -94,6 +95,17 @@ export function EatoSystemTeaser() {
                   </span>
                 ))}
               </div>
+            </ScrollReveal>
+
+            {/* Food image */}
+            <ScrollReveal delay={150}>
+              <Image
+                src="/food-15.png"
+                alt="Fresh food from local Irish producers"
+                width={700}
+                height={500}
+                className="mt-6 w-full h-auto"
+              />
             </ScrollReveal>
 
             {/* Ireland network video */}

@@ -1,6 +1,7 @@
+import Image from "next/image"
 import Link from "next/link"
 import { ScrollReveal } from "@/components/scroll-reveal"
-import { ArrowUpRight, Mic } from "lucide-react"
+import { ArrowUpRight } from "lucide-react"
 
 export function PodcastTeaser() {
   return (
@@ -56,54 +57,16 @@ export function PodcastTeaser() {
             </ScrollReveal>
           </div>
 
-          {/* Right: The Table visual */}
+          {/* Right: food image */}
           <div className="flex-1">
             <ScrollReveal delay={100}>
-              <div className="rounded-2xl bg-foreground px-8 py-12 sm:px-12 sm:py-16">
-                {/* Host + Guest mics */}
-                <div className="flex items-center justify-center gap-8 sm:gap-16">
-                  <div className="flex flex-col items-center gap-3">
-                    <div
-                      className="flex h-16 w-16 items-center justify-center rounded-2xl shadow-lg sm:h-20 sm:w-20"
-                      style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
-                    >
-                      <Mic size={28} className="text-white" />
-                    </div>
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-background/50 sm:text-xs">
-                      Host
-                    </p>
-                  </div>
-
-                  <div className="max-w-[200px] flex-1">
-                    <div className="h-[2px] rounded-full brand-gradient" />
-                    <div className="mt-3 flex justify-center">
-                      <div className="h-1.5 w-1.5 rounded-full bg-icon-teal opacity-60" />
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col items-center gap-3">
-                    <div
-                      className="flex h-16 w-16 items-center justify-center rounded-2xl shadow-lg sm:h-20 sm:w-20"
-                      style={{ background: "linear-gradient(135deg, var(--icon-orange), var(--icon-yellow))" }}
-                    >
-                      <Mic size={28} className="text-white" />
-                    </div>
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-background/50 sm:text-xs">
-                      Guest
-                    </p>
-                  </div>
-                </div>
-
-                {/* Quote + description */}
-                <blockquote className="mt-10 text-center font-serif text-2xl font-semibold leading-tight text-background sm:text-3xl text-balance">
-                  Every conversation starts{" "}
-                  <span className="brand-gradient-text">at the table.</span>
-                </blockquote>
-                <p className="mx-auto mt-5 max-w-md text-center text-sm leading-relaxed text-background/60">
-                  One host. One guest. One question: what do you eat, and why? The
-                  simplest question reveals the most extraordinary stories.
-                </p>
-              </div>
+              <Image
+                src="/food-11.png"
+                alt="A beautifully prepared meal — every conversation starts at the table"
+                width={700}
+                height={700}
+                className="w-full h-auto"
+              />
             </ScrollReveal>
           </div>
 

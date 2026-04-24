@@ -10,7 +10,7 @@ const perks = [
 
 export function NewsletterCta() {
   return (
-    <section className="bg-secondary/40 px-6 py-24 md:py-32">
+    <section className="px-6 py-24 md:py-32">
       <div className="mx-auto max-w-[900px]">
         <div className="rounded-3xl border border-border bg-background p-10 md:p-16">
           <ScrollReveal className="text-center">

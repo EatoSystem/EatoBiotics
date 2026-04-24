@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { ArrowUpRight } from "lucide-react"
@@ -61,22 +62,33 @@ export function WhatWereBuilding() {
   return (
     <section className="px-6 py-24 md:py-32">
       <div className="mx-auto max-w-[1200px]">
-        <ScrollReveal>
-          <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
-            What We&apos;re Building
-          </p>
-          <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground sm:text-5xl md:text-6xl text-pretty">
-            One framework.
-            <br />
-            <span className="brand-gradient-text">Four expressions.</span>
-          </h2>
-          <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
-            EatoBiotics is more than a website. It&apos;s a growing platform — a book, an app,
-            a weekly Substack, and a systemic food movement. Here&apos;s where it&apos;s going.
-          </p>
-        </ScrollReveal>
+        <div className="flex flex-col gap-10 md:flex-row md:items-center md:gap-16 mb-16">
+          <ScrollReveal className="flex-1">
+            <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
+              What We&apos;re Building
+            </p>
+            <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground sm:text-5xl md:text-6xl text-pretty">
+              One framework.
+              <br />
+              <span className="brand-gradient-text">Four expressions.</span>
+            </h2>
+            <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
+              EatoBiotics is more than a website. It&apos;s a growing platform — a book, an app,
+              a weekly Substack, and a systemic food movement. Here&apos;s where it&apos;s going.
+            </p>
+          </ScrollReveal>
+          <ScrollReveal delay={80} className="w-full md:w-[340px] lg:w-[400px] shrink-0">
+            <Image
+              src="/food-12.png"
+              alt="Fresh ingredients that form the EatoBiotics food system"
+              width={600}
+              height={600}
+              className="w-full h-auto"
+            />
+          </ScrollReveal>
+        </div>
 
-        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {platforms.map((p, index) => {
             const inner = (
               <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-background p-6 transition-all hover:shadow-lg">

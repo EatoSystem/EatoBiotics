@@ -114,18 +114,7 @@ const REPORTS = [
 
 export function MembershipTeaser() {
   return (
-    <section
-      className="relative overflow-hidden px-6 py-24 md:py-32"
-      style={{ background: "color-mix(in srgb, var(--icon-green) 3%, var(--background))" }}
-    >
-      {/* Subtle radial glow */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 80% 60% at 50% 0%, color-mix(in srgb, var(--icon-green) 6%, transparent), transparent 65%)",
-        }}
-      />
+    <section className="relative overflow-hidden px-6 py-24 md:py-32">
 
       <div className="relative mx-auto max-w-[1200px]">
 
