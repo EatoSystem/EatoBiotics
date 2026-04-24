@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { ArrowUpRight } from "lucide-react"
@@ -10,6 +11,7 @@ const biotics = [
     color: "var(--icon-lime)",
     gradientFrom: "var(--icon-lime)",
     gradientTo: "var(--icon-green)",
+    image: "/prebiotics-1.png",
     description:
       "The fibers and compounds in everyday foods that nourish your beneficial gut bacteria. Think garlic, onions, oats, bananas, and asparagus -- the fuel your microbiome runs on.",
   },
@@ -20,6 +22,7 @@ const biotics = [
     color: "var(--icon-teal)",
     gradientFrom: "var(--icon-green)",
     gradientTo: "var(--icon-teal)",
+    image: "/probiotics-1.png",
     description:
       "Living microorganisms found in fermented foods like yogurt, kimchi, sauerkraut, and kefir. They replenish and diversify the bacterial community in your gut.",
   },
@@ -30,6 +33,7 @@ const biotics = [
     color: "var(--icon-orange)",
     gradientFrom: "var(--icon-yellow)",
     gradientTo: "var(--icon-orange)",
+    image: "/postbiotics-1.png",
     description:
       "The beneficial byproducts your gut bacteria create -- short-chain fatty acids, vitamins, and neurotransmitters. The actual output that makes you feel better every day.",
   },
@@ -67,12 +71,23 @@ export function TheThreeBiotics() {
           {biotics.map((biotic, index) => (
             <ScrollReveal key={biotic.number} delay={index * 150}>
               <Link href="/biotics" className="group block h-full">
-                <div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-background p-8 transition-all hover:shadow-lg">
+                <div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-background transition-all hover:shadow-lg">
                   {/* Top gradient bar */}
                   <div
                     className="absolute top-0 left-0 right-0 h-1.5"
                     style={{ background: `linear-gradient(90deg, ${biotic.gradientFrom}, ${biotic.gradientTo})` }}
                   />
+                  {/* Biotics image */}
+                  <div className="w-full overflow-hidden">
+                    <Image
+                      src={biotic.image}
+                      alt={biotic.title}
+                      width={600}
+                      height={360}
+                      className="w-full h-auto"
+                    />
+                  </div>
+                  <div className="flex flex-col flex-1 p-8">
                   <span
                     className="font-serif text-6xl font-semibold md:text-7xl"
                     style={{ color: biotic.color }}
@@ -102,6 +117,7 @@ export function TheThreeBiotics() {
                     >
                       Learn more <ArrowUpRight size={12} />
                     </span>
+                  </div>
                   </div>
                 </div>
               </Link>

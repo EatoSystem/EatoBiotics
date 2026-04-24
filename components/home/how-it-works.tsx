@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, ClipboardList, BarChart2, Utensils, TrendingUp } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
@@ -45,20 +46,29 @@ export function HowItWorks() {
   return (
     <section id="how-it-works" className="px-6 py-24 md:py-32">
       <div className="mx-auto max-w-[1200px]">
-        <ScrollReveal>
-          <div className="text-center mb-16">
+        <div className="flex flex-col gap-10 md:flex-row md:items-center md:gap-16 mb-16">
+          <ScrollReveal className="flex-1">
             <p className="text-xs font-semibold uppercase tracking-widest text-icon-green mb-3">
               How It Works
             </p>
             <h2 className="font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-              Four steps to a stronger<br />
+              Four steps to a stronger{" "}
               <span className="brand-gradient-text">food system</span>
             </h2>
-            <p className="mt-4 mx-auto max-w-lg text-base text-muted-foreground leading-relaxed">
+            <p className="mt-4 max-w-lg text-base text-muted-foreground leading-relaxed">
               From your first free assessment to a fully personalised daily practice — here&apos;s how EatoBiotics works.
             </p>
-          </div>
-        </ScrollReveal>
+          </ScrollReveal>
+          <ScrollReveal delay={80} className="w-full md:w-[340px] lg:w-[400px] shrink-0">
+            <Image
+              src="/food-10.png"
+              alt="Colourful fresh ingredients arranged as a food system"
+              width={600}
+              height={600}
+              className="w-full h-auto"
+            />
+          </ScrollReveal>
+        </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((step, i) => {

@@ -165,7 +165,7 @@ export function BookShowcase() {
                 <div className="w-[200px] sm:w-[240px]">
                   <div className="relative w-full overflow-hidden rounded-xl shadow-2xl">
                     <Image
-                      src="/book-cover.png"
+                      src="/book-cover-you.png"
                       alt="EatoBiotics: The Food System Inside You by Jason Curry"
                       width={600}
                       height={800}
