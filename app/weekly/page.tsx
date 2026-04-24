@@ -237,7 +237,7 @@ export default function WeeklyPage() {
                   width={700}
                   height={700}
                   priority
-                  className="w-full h-auto drop-shadow-sm"
+                  className="w-full h-auto"
                 />
               </div>
             </ScrollReveal>
@@ -283,7 +283,7 @@ export default function WeeklyPage() {
                 alt="A diverse arrangement of EatoBiotics ingredients — the whole food system in one composition"
                 width={600}
                 height={600}
-                className="w-full h-auto drop-shadow-sm"
+                className="w-full h-auto"
               />
             </ScrollReveal>
 
@@ -617,7 +617,7 @@ export default function WeeklyPage() {
                 alt="A complete EatoBiotics plate showing all four parts — prebiotic base, probiotic side, protein balance, and postbiotic builders"
                 width={600}
                 height={600}
-                className="w-full h-auto drop-shadow-sm"
+                className="w-full h-auto"
               />
               <p className="mt-3 text-center text-xs text-muted-foreground/60">
                 The four-part structure in a single plate.
