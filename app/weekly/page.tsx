@@ -29,13 +29,12 @@ const PLATES = [
     question: "What is EatoBiotics?",
     arcWord: "awareness",
     protein: "Trout",
-    image: "/plate-bowl.png",
-    // Subtle, solid: the cleanest and simplest of all four
+    // Food photography — warm, balanced, complete circular composition
+    image: "/food-1.png",
     topBar: "var(--icon-lime)",
     accent: "var(--icon-lime)",
     accentClass: "text-icon-lime",
     borderColor: "border-icon-lime/20",
-    bgColor: "bg-icon-lime/5",
     tagBg: "bg-icon-lime/10",
     emotional: "clear and foundational",
     bioticsLabel: "Prebiotic + Probiotic support",
@@ -52,14 +51,13 @@ const PLATES = [
     supports: ["immunity", "mood", "energy", "recovery"],
     question: "Why does this matter to how I feel?",
     arcWord: "function",
-    protein: "Salmon",
-    image: "/plate-immunity.png",
-    // Brighter gradient: energised and vivid
+    protein: "Chicken",
+    // Editorial scattered — bright, functional, energised
+    image: "/food-2.png",
     topBar: "linear-gradient(90deg, var(--icon-lime), var(--icon-yellow))",
     accent: "var(--icon-yellow)",
     accentClass: "text-icon-yellow",
     borderColor: "border-icon-yellow/20",
-    bgColor: "bg-icon-yellow/5",
     tagBg: "bg-icon-yellow/10",
     emotional: "bright and functional",
     bioticsLabel: "Prebiotic + Probiotic + Postbiotic support",
@@ -76,15 +74,13 @@ const PLATES = [
     supports: ["richness", "diversity", "nourishment", "consistency"],
     question: "What does a thriving internal system need?",
     arcWord: "nourishment",
-    protein: "Tempeh",
-    image: "/plate-living.png",
-    // Full brand gradient: the richest, most colourful treatment
-    topBar:
-      "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow))",
+    protein: "Tofu",
+    // Most plant-diverse of all eight — rainbow carrots, broccoli, edamame
+    image: "/food-7.png",
+    topBar: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow))",
     accent: "var(--icon-teal)",
     accentClass: "text-icon-teal",
     borderColor: "border-icon-teal/20",
-    bgColor: "bg-icon-teal/5",
     tagBg: "bg-icon-teal/10",
     emotional: "abundant and alive",
     bioticsLabel: "Prebiotic + Probiotic + Protein Balance",
@@ -101,14 +97,13 @@ const PLATES = [
     supports: ["rebuilding", "steadiness", "recovery"],
     question: "How do I begin improving and restoring it?",
     arcWord: "rebuilding",
-    protein: "Salmon",
-    image: "/plate-rebuild.png",
-    // Calm teal-to-green: softer and more grounded
+    protein: "Chicken",
+    // Warm sweet potato, earthy grain — grounded and restorative
+    image: "/food-4.png",
     topBar: "linear-gradient(90deg, var(--icon-teal), var(--icon-green))",
     accent: "var(--icon-orange)",
     accentClass: "text-icon-orange",
     borderColor: "border-icon-orange/20",
-    bgColor: "bg-icon-orange/5",
     tagBg: "bg-icon-orange/10",
     emotional: "calm, restorative, and hopeful",
     bioticsLabel: "Prebiotic + Probiotic + Postbiotic support",
@@ -152,82 +147,102 @@ const FRAMEWORK_PARTS = [
 export default function WeeklyPage() {
   return (
     <>
-      {/* ── Hero ─────────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden px-6 pt-32 pb-20 md:pt-40 md:pb-28">
+      {/* ── Hero — split layout ───────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden px-6 pt-28 pb-16 md:pt-36 md:pb-24">
         <div
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse 90% 60% at 50% 0%, color-mix(in srgb, var(--icon-green) 7%, transparent), transparent 70%)",
+              "radial-gradient(ellipse 70% 80% at 100% 50%, color-mix(in srgb, var(--icon-green) 5%, transparent), transparent 65%)",
           }}
         />
 
-        <div className="relative mx-auto max-w-[760px] text-center">
-          <ScrollReveal>
-            <Image
-              src="/eatobiotics-icon.webp"
-              alt=""
-              width={48}
-              height={48}
-              className="mx-auto mb-6 h-12 w-12"
-            />
-            <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
-              The Weekly EatoBiotics Expression
-            </p>
-            <h1 className="mt-5 font-serif text-5xl font-semibold tracking-tight text-foreground sm:text-6xl md:text-7xl text-balance">
-              One week.{" "}
-              <GradientText>Four plates.</GradientText>
-              <br />
-              One food system.
-            </h1>
-            <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-              The Weekly EatoBiotics Expression is a four-part plate system designed to help
-              you build the food system inside you through repeated, balanced,
-              microbiome-conscious meals.
-            </p>
-          </ScrollReveal>
+        <div className="relative mx-auto max-w-[1200px]">
+          <div className="flex flex-col items-center gap-12 md:flex-row md:items-center md:gap-16 lg:gap-20">
 
-          {/* Arc pills */}
-          <ScrollReveal delay={120}>
-            <div className="mt-10 flex items-center justify-center flex-wrap gap-1">
-              {ARC.map((step, i) => (
-                <div key={step.label} className="flex items-center">
-                  <div
-                    className="flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-white"
-                    style={{ background: step.color }}
-                  >
-                    <span className="text-[11px] opacity-70">{step.number}</span>
-                    {step.label}
-                  </div>
-                  {i < ARC.length - 1 && (
-                    <ArrowRight size={13} className="mx-1.5 shrink-0 text-muted-foreground/35" />
-                  )}
+            {/* Left: all text content */}
+            <div className="flex-1 text-center md:text-left">
+              <ScrollReveal>
+                <Image
+                  src="/eatobiotics-icon.webp"
+                  alt=""
+                  width={44}
+                  height={44}
+                  className="mx-auto mb-5 h-11 w-11 md:mx-0"
+                />
+                <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
+                  The Weekly EatoBiotics Expression
+                </p>
+                <h1 className="mt-5 font-serif text-4xl font-semibold tracking-tight text-foreground sm:text-5xl md:text-6xl text-balance">
+                  One week.{" "}
+                  <GradientText>Four plates.</GradientText>
+                  <br />
+                  One food system.
+                </h1>
+                <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-muted-foreground sm:text-lg md:mx-0">
+                  A four-part plate system designed to help you build the food system inside you
+                  through repeated, balanced, microbiome-conscious meals.
+                </p>
+              </ScrollReveal>
+
+              {/* Arc labels — compact row */}
+              <ScrollReveal delay={100}>
+                <div className="mt-8 flex flex-wrap items-center justify-center gap-1 md:justify-start">
+                  {ARC.map((step, i) => (
+                    <div key={step.label} className="flex items-center">
+                      <div
+                        className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold text-white"
+                        style={{ background: step.color }}
+                      >
+                        <span className="text-[10px] opacity-70">{step.number}</span>
+                        {step.label}
+                      </div>
+                      {i < ARC.length - 1 && (
+                        <ArrowRight size={12} className="mx-1 shrink-0 text-muted-foreground/35" />
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <p className="mt-3 text-xs tracking-wide text-muted-foreground/50">
-              awareness → function → nourishment → rebuilding
-            </p>
-          </ScrollReveal>
+                <p className="mt-2.5 text-center text-xs tracking-wide text-muted-foreground/50 md:text-left">
+                  awareness → function → nourishment → rebuilding
+                </p>
+              </ScrollReveal>
 
-          {/* CTAs — assessment is primary throughout the page */}
-          <ScrollReveal delay={180}>
-            <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-              <Link
-                href="/assessment"
-                className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:opacity-90"
-              >
-                Take the free assessment
-                <ArrowUpRight size={16} />
-              </Link>
-              <a
-                href="#plates"
-                className="inline-flex items-center gap-2 rounded-full border-2 border-border px-8 py-4 text-base font-semibold text-foreground transition-colors hover:border-icon-green hover:text-icon-green"
-              >
-                Explore this week&apos;s plates
-              </a>
+              {/* CTAs */}
+              <ScrollReveal delay={160}>
+                <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center md:justify-start">
+                  <Link
+                    href="/assessment"
+                    className="brand-gradient inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:opacity-90"
+                  >
+                    Take the free assessment
+                    <ArrowUpRight size={15} />
+                  </Link>
+                  <a
+                    href="#plates"
+                    className="inline-flex items-center gap-2 rounded-full border-2 border-border px-7 py-3.5 text-base font-semibold text-foreground transition-colors hover:border-icon-green hover:text-icon-green"
+                  >
+                    Explore this week&apos;s plates
+                  </a>
+                </div>
+              </ScrollReveal>
             </div>
-          </ScrollReveal>
+
+            {/* Right: hero food image — Food 8.0, editorial scattered layout */}
+            <ScrollReveal delay={80} className="w-full flex-1 md:max-w-[480px]">
+              <div className="relative mx-auto max-w-[420px] md:max-w-none">
+                <Image
+                  src="/food-8.png"
+                  alt="A composition of EatoBiotics ingredients — seared tuna, asparagus, berries, avocado, lentils, spinach, and fermented foods"
+                  width={700}
+                  height={700}
+                  priority
+                  className="w-full h-auto drop-shadow-sm"
+                />
+              </div>
+            </ScrollReveal>
+
+          </div>
         </div>
       </section>
 
@@ -235,27 +250,48 @@ export default function WeeklyPage() {
 
       {/* ── DNA of the weekly expression ─────────────────────────────────────── */}
       <section className="px-6 py-20 md:py-28">
-        <div className="mx-auto max-w-[680px]">
-          <ScrollReveal>
-            <p className="text-xs font-semibold uppercase tracking-widest text-icon-orange">
-              The philosophy
-            </p>
-            <h2 className="mt-4 font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
-              The DNA of the{" "}
-              <GradientText>weekly expression</GradientText>
-            </h2>
-            <p className="mt-6 text-lg leading-8 text-muted-foreground">
-              These four plates are not just four recipes. They are four expressions of one
-              philosophy:{" "}
-              <span className="font-semibold text-foreground">
-                build the food system inside you through repeated, balanced,
-                microbiome-conscious meals.
-              </span>
-            </p>
-          </ScrollReveal>
+        <div className="mx-auto max-w-[1100px]">
 
-          <ScrollReveal delay={80}>
-            <div className="mt-10 grid gap-3 sm:grid-cols-2">
+          {/* Top: 2-column intro */}
+          <div className="flex flex-col gap-10 md:flex-row md:items-center md:gap-16">
+
+            {/* Left: heading + paragraph */}
+            <div className="flex-1">
+              <ScrollReveal>
+                <p className="text-xs font-semibold uppercase tracking-widest text-icon-orange">
+                  The philosophy
+                </p>
+                <h2 className="mt-4 font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
+                  The DNA of the{" "}
+                  <GradientText>weekly expression</GradientText>
+                </h2>
+                <p className="mt-6 text-lg leading-8 text-muted-foreground">
+                  These four plates are not just four recipes. They are four expressions of one
+                  philosophy:{" "}
+                  <span className="font-semibold text-foreground">
+                    build the food system inside you through repeated, balanced,
+                    microbiome-conscious meals.
+                  </span>
+                </p>
+              </ScrollReveal>
+            </div>
+
+            {/* Right: Food 3.0 — diverse mixed-system composition */}
+            <ScrollReveal delay={80} className="w-full md:w-[340px] lg:w-[400px] shrink-0">
+              <Image
+                src="/food-3.png"
+                alt="A diverse arrangement of EatoBiotics ingredients — the whole food system in one composition"
+                width={600}
+                height={600}
+                className="w-full h-auto drop-shadow-sm"
+              />
+            </ScrollReveal>
+
+          </div>
+
+          {/* Four-step logic cards — full width below */}
+          <ScrollReveal delay={100}>
+            <div className="mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 { num: "1.1", verb: "introduces", desc: "the central idea of the food system inside you", color: "var(--icon-lime)" },
                 { num: "1.2", verb: "expands", desc: "into immunity, mood, and energy", color: "var(--icon-yellow)" },
@@ -274,17 +310,21 @@ export default function WeeklyPage() {
                   </div>
                   <div>
                     <p className="text-[15px] font-semibold text-foreground">
-                      {item.num} <span className="font-normal text-muted-foreground">{item.verb}</span>
+                      {item.num}{" "}
+                      <span className="font-normal text-muted-foreground">{item.verb}</span>
                     </p>
-                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{item.desc}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                      {item.desc}
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
           </ScrollReveal>
 
-          <ScrollReveal delay={120}>
-            <div className="mt-8 rounded-2xl border border-border bg-background px-7 py-6">
+          {/* Arc callout */}
+          <ScrollReveal delay={140}>
+            <div className="mt-5 rounded-2xl border border-border bg-background px-7 py-6">
               <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-icon-green">
                 The weekly arc
               </p>
@@ -297,6 +337,7 @@ export default function WeeklyPage() {
               </p>
             </div>
           </ScrollReveal>
+
         </div>
       </section>
 
@@ -323,26 +364,23 @@ export default function WeeklyPage() {
                 <div
                   className={`overflow-hidden rounded-3xl border ${plate.borderColor} bg-background transition-all hover:shadow-lg`}
                 >
-                  {/* Per-plate top stripe — varies in colour expression per card */}
-                  <div
-                    className="h-[5px] w-full"
-                    style={{ background: plate.topBar }}
-                  />
+                  {/* Per-plate top stripe */}
+                  <div className="h-[5px] w-full" style={{ background: plate.topBar }} />
 
-                  {/* Image */}
-                  <div className="relative w-full overflow-hidden bg-muted/20">
+                  {/* Food photography image — square format, generous crop */}
+                  <div className="relative w-full overflow-hidden bg-white">
                     <Image
                       src={plate.image}
                       alt={plate.name}
-                      width={1200}
-                      height={675}
+                      width={600}
+                      height={600}
                       className="w-full h-auto"
                     />
                   </div>
 
                   {/* Card content */}
                   <div className="p-7">
-                    {/* Header row: number + role + personality badge */}
+                    {/* Header row */}
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <span
@@ -351,16 +389,11 @@ export default function WeeklyPage() {
                         >
                           {plate.number}
                         </span>
-                        <span
-                          className={`text-xs font-semibold uppercase tracking-widest ${plate.accentClass}`}
-                        >
+                        <span className={`text-xs font-semibold uppercase tracking-widest ${plate.accentClass}`}>
                           {plate.role}
                         </span>
                       </div>
-                      {/* Personality badge: each plate's character word at a glance */}
-                      <span
-                        className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${plate.tagBg} ${plate.accentClass}`}
-                      >
+                      <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${plate.tagBg} ${plate.accentClass}`}>
                         {plate.personalityWord}
                       </span>
                     </div>
@@ -369,20 +402,16 @@ export default function WeeklyPage() {
                       {plate.name}
                     </h3>
 
-                    {/* Internal message */}
                     <p className="mt-3 text-base italic leading-relaxed text-muted-foreground/80">
                       &ldquo;{plate.message}&rdquo;
                     </p>
 
-                    {/* Description */}
                     <p className="mt-3 text-[15px] leading-7 text-muted-foreground">
                       {plate.description}
                     </p>
 
-                    {/* Divider */}
                     <div className="my-5 h-px bg-border" />
 
-                    {/* Supports tags + emphasis */}
                     <div className="flex flex-wrap items-center gap-2">
                       {plate.supports.map((s) => (
                         <span
@@ -407,7 +436,7 @@ export default function WeeklyPage() {
 
       <div className="section-divider" />
 
-      {/* ── How the week works ───────────────────────────────────────────────── */}
+      {/* ── How the week works — visual timeline ─────────────────────────────── */}
       <section className="px-6 py-20 md:py-28">
         <div className="mx-auto max-w-[900px]">
           <ScrollReveal>
@@ -425,27 +454,33 @@ export default function WeeklyPage() {
             </div>
           </ScrollReveal>
 
-          {/* Desktop: horizontal timeline */}
+          {/* Desktop: horizontal timeline with food thumbnails */}
           <ScrollReveal delay={80}>
             <div className="mt-14 hidden md:block">
               <div className="relative grid grid-cols-4 gap-6">
-                {/* Connecting line across the top */}
+                {/* Gradient connecting line */}
                 <div
-                  className="absolute top-7 left-[12.5%] right-[12.5%] h-px"
+                  className="absolute top-10 left-[12.5%] right-[12.5%] h-px"
                   style={{
                     background:
                       "linear-gradient(90deg, var(--icon-lime), var(--icon-yellow), var(--icon-teal), var(--icon-orange))",
-                    opacity: 0.3,
+                    opacity: 0.25,
                   }}
                 />
                 {PLATES.map((plate) => (
                   <div key={plate.number} className="flex flex-col items-center text-center">
-                    {/* Number chip */}
+                    {/* Circular food thumbnail — sits above the connecting line */}
                     <div
-                      className="relative z-10 flex h-14 w-14 items-center justify-center rounded-2xl text-sm font-bold text-white shadow-sm"
-                      style={{ background: plate.accent }}
+                      className="relative z-10 h-20 w-20 overflow-hidden rounded-full ring-2 ring-background"
+                      style={{ boxShadow: `0 0 0 3px color-mix(in srgb, ${plate.accent} 30%, transparent)` }}
                     >
-                      {plate.number}
+                      <Image
+                        src={plate.image}
+                        alt={plate.name}
+                        width={160}
+                        height={160}
+                        className="h-full w-full object-cover"
+                      />
                     </div>
                     {/* Role */}
                     <p
@@ -455,11 +490,11 @@ export default function WeeklyPage() {
                       {plate.role}
                     </p>
                     {/* Name */}
-                    <p className="mt-2 text-sm font-semibold text-foreground leading-snug">
+                    <p className="mt-1.5 text-sm font-semibold text-foreground leading-snug">
                       {plate.name}
                     </p>
                     {/* Arc word */}
-                    <p className="mt-2 text-xs italic text-muted-foreground/70">
+                    <p className="mt-1.5 text-xs italic text-muted-foreground/60">
                       {plate.arcWord}
                     </p>
                     {/* Question */}
@@ -472,33 +507,43 @@ export default function WeeklyPage() {
             </div>
           </ScrollReveal>
 
-          {/* Mobile: vertical steps */}
+          {/* Mobile: vertical steps with thumbnails */}
           <ScrollReveal delay={80}>
             <div className="mt-10 space-y-0 md:hidden">
               {PLATES.map((plate, i) => (
                 <div key={plate.number} className="relative flex gap-5">
-                  {/* Left column */}
+                  {/* Left: thumbnail + connector */}
                   <div className="flex flex-col items-center">
                     <div
-                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-sm font-bold text-white shadow-sm"
-                      style={{ background: plate.accent }}
+                      className="h-14 w-14 shrink-0 overflow-hidden rounded-full ring-2 ring-background"
+                      style={{ boxShadow: `0 0 0 3px color-mix(in srgb, ${plate.accent} 30%, transparent)` }}
                     >
-                      {plate.number}
+                      <Image
+                        src={plate.image}
+                        alt={plate.name}
+                        width={112}
+                        height={112}
+                        className="h-full w-full object-cover"
+                      />
                     </div>
                     {i < PLATES.length - 1 && (
-                      <div className="mt-1 flex-1 w-px bg-border" style={{ minHeight: "40px" }} />
+                      <div className="mt-1 w-px flex-1 bg-border" style={{ minHeight: "36px" }} />
                     )}
                   </div>
-                  {/* Right column */}
-                  <div className={`pb-8 pt-3 ${i === PLATES.length - 1 ? "pb-0" : ""}`}>
+                  {/* Right: content */}
+                  <div className={`pb-8 pt-2 ${i === PLATES.length - 1 ? "pb-0" : ""}`}>
                     <p
                       className="text-[11px] font-bold uppercase tracking-widest"
                       style={{ color: plate.accent }}
                     >
                       {plate.role}
                     </p>
-                    <p className="mt-1 text-[15px] font-semibold text-foreground">{plate.name}</p>
-                    <p className="mt-1 text-sm italic text-muted-foreground/70">{plate.arcWord}</p>
+                    <p className="mt-0.5 text-[15px] font-semibold text-foreground">
+                      {plate.name}
+                    </p>
+                    <p className="mt-0.5 text-xs italic text-muted-foreground/60">
+                      {plate.arcWord}
+                    </p>
                     <p className="mt-2 text-sm leading-relaxed italic text-muted-foreground">
                       &ldquo;{plate.question}&rdquo;
                     </p>
@@ -512,51 +557,74 @@ export default function WeeklyPage() {
 
       <div className="section-divider" />
 
-      {/* ── Plate framework ──────────────────────────────────────────────────── */}
+      {/* ── Plate framework — split layout ───────────────────────────────────── */}
       <section className="px-6 py-20 md:py-28">
-        <div className="mx-auto max-w-[760px]">
-          <ScrollReveal>
-            <p className="text-xs font-semibold uppercase tracking-widest text-icon-lime">
-              The framework
-            </p>
-            <h2 className="mt-4 font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
-              One plate. Four parts.{" "}
-              <GradientText>Built once a week.</GradientText>
-            </h2>
-            <p className="mt-5 text-lg leading-8 text-muted-foreground">
-              Every weekly plate changes in expression, but the underlying framework remains the
-              same. That is what makes the system flexible, repeatable, and easy to live with.
-            </p>
-          </ScrollReveal>
+        <div className="mx-auto max-w-[1100px]">
+          <div className="flex flex-col gap-12 md:flex-row md:items-start md:gap-16">
 
-          <ScrollReveal delay={100}>
-            <div className="mt-10 grid gap-4 sm:grid-cols-2">
-              {FRAMEWORK_PARTS.map((part) => (
-                <div
-                  key={part.label}
-                  className="rounded-2xl border border-border bg-background p-6 transition-all hover:shadow-sm"
-                >
-                  <div
-                    className="mb-4 h-1 w-10 rounded-full"
-                    style={{ background: part.color }}
-                  />
-                  <h3 className="text-[15px] font-semibold text-foreground">{part.label}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{part.desc}</p>
-                  <p className="mt-3 text-xs text-muted-foreground/55">{part.examples}</p>
+            {/* Left: heading + paragraph + 2×2 cards */}
+            <div className="flex-1">
+              <ScrollReveal>
+                <p className="text-xs font-semibold uppercase tracking-widest text-icon-lime">
+                  The framework
+                </p>
+                <h2 className="mt-4 font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
+                  One plate. Four parts.{" "}
+                  <GradientText>Built once a week.</GradientText>
+                </h2>
+                <p className="mt-5 text-lg leading-8 text-muted-foreground">
+                  Every weekly plate changes in expression, but the underlying framework remains the
+                  same. That is what makes the system flexible, repeatable, and easy to live with.
+                </p>
+              </ScrollReveal>
+
+              <ScrollReveal delay={80}>
+                <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                  {FRAMEWORK_PARTS.map((part) => (
+                    <div
+                      key={part.label}
+                      className="rounded-2xl border border-border bg-background p-6 transition-all hover:shadow-sm"
+                    >
+                      <div
+                        className="mb-4 h-1 w-10 rounded-full"
+                        style={{ background: part.color }}
+                      />
+                      <h3 className="text-[15px] font-semibold text-foreground">{part.label}</h3>
+                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                        {part.desc}
+                      </p>
+                      <p className="mt-3 text-xs text-muted-foreground/55">{part.examples}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </ScrollReveal>
+              </ScrollReveal>
 
-          <ScrollReveal delay={140}>
-            <div className="mt-5 rounded-2xl border border-border bg-background px-7 py-6">
-              <p className="text-[15px] leading-7 text-muted-foreground">
-                Every weekly plate is built on this same four-part logic — prebiotic, probiotic,
-                protein, and postbiotic. The foods rotate. The season changes. The framework stays
-                constant. That stability is what makes consistency possible.
-              </p>
+              <ScrollReveal delay={120}>
+                <div className="mt-5 rounded-2xl border border-border bg-background px-7 py-6">
+                  <p className="text-[15px] leading-7 text-muted-foreground">
+                    Every weekly plate is built on this same four-part logic. The foods rotate.
+                    The season changes. The framework stays constant. That stability is what
+                    makes consistency possible.
+                  </p>
+                </div>
+              </ScrollReveal>
             </div>
-          </ScrollReveal>
+
+            {/* Right: Food 6.0 — complete bowl showing all four quadrant types */}
+            <ScrollReveal delay={60} className="w-full md:w-[360px] lg:w-[420px] shrink-0 md:pt-14">
+              <Image
+                src="/food-6.png"
+                alt="A complete EatoBiotics plate showing all four parts — prebiotic base, probiotic side, protein balance, and postbiotic builders"
+                width={600}
+                height={600}
+                className="w-full h-auto drop-shadow-sm"
+              />
+              <p className="mt-3 text-center text-xs text-muted-foreground/60">
+                The four-part structure in a single plate.
+              </p>
+            </ScrollReveal>
+
+          </div>
         </div>
       </section>
 
@@ -580,7 +648,6 @@ export default function WeeklyPage() {
 
           <ScrollReveal delay={80}>
             <div className="mt-10 grid gap-5 sm:grid-cols-2">
-              {/* Fixed */}
               <div className="rounded-2xl border border-border bg-background p-7">
                 <div className="mb-5 flex items-center gap-2.5">
                   <div
@@ -608,7 +675,6 @@ export default function WeeklyPage() {
                 </ul>
               </div>
 
-              {/* Evolves */}
               <div className="rounded-2xl border border-border bg-background p-7">
                 <div className="mb-5 flex items-center gap-2.5">
                   <div
@@ -668,15 +734,22 @@ export default function WeeklyPage() {
                   key={plate.number}
                   className={`flex gap-4 rounded-2xl border ${plate.borderColor} bg-background p-6`}
                 >
+                  {/* Small food image crop */}
                   <div
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-bold text-white"
-                    style={{ background: plate.accent }}
+                    className="h-12 w-12 shrink-0 overflow-hidden rounded-xl"
+                    style={{ boxShadow: `0 0 0 2px color-mix(in srgb, ${plate.accent} 20%, transparent)` }}
                   >
-                    {plate.number}
+                    <Image
+                      src={plate.image}
+                      alt={plate.name}
+                      width={96}
+                      height={96}
+                      className="h-full w-full object-cover"
+                    />
                   </div>
                   <div>
                     <p className="text-[15px] font-semibold text-foreground">{plate.name}</p>
-                    <p className="mt-1 text-sm italic leading-relaxed text-muted-foreground">
+                    <p className="mt-0.5 text-sm italic leading-relaxed text-muted-foreground">
                       Feels <em>{plate.emotional}</em>.
                     </p>
                   </div>
@@ -698,7 +771,6 @@ export default function WeeklyPage() {
       <div className="section-divider" />
 
       {/* ── This week's plates ───────────────────────────────────────────────── */}
-      {/* Subtle background wash signals this is the live destination on the page */}
       <section className="bg-muted/20 px-6 py-20 md:py-32">
         <div className="mx-auto max-w-[1100px]">
           <ScrollReveal>
@@ -722,37 +794,30 @@ export default function WeeklyPage() {
                 <div
                   className={`group flex h-full flex-col overflow-hidden rounded-2xl border ${plate.borderColor} bg-background shadow-sm`}
                 >
-                  {/* Per-plate top stripe */}
                   <div className="h-1 w-full" style={{ background: plate.topBar }} />
-
-                  {/* Image */}
-                  <div className="relative overflow-hidden bg-muted/10">
+                  <div className="relative overflow-hidden bg-white">
                     <Image
                       src={plate.image}
                       alt={plate.name}
                       width={600}
-                      height={338}
+                      height={600}
                       className="w-full h-auto transition-transform duration-500 group-hover:scale-[1.02]"
                     />
                     <div
-                      className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold text-white shadow-sm"
+                      className="absolute right-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold text-white shadow-sm"
                       style={{ background: plate.accent }}
                     >
                       {plate.number}
                     </div>
                   </div>
-
-                  {/* Content */}
-                  <div className="flex flex-1 flex-col p-6">
-                    <span
-                      className={`text-[11px] font-bold uppercase tracking-widest ${plate.accentClass}`}
-                    >
+                  <div className="flex flex-1 flex-col p-5">
+                    <span className={`text-[11px] font-bold uppercase tracking-widest ${plate.accentClass}`}>
                       {plate.role}
                     </span>
                     <h3 className="mt-1.5 font-serif text-[15px] font-semibold text-foreground leading-snug">
                       {plate.name}
                     </h3>
-                    <div className="mt-4 space-y-2 text-xs text-muted-foreground">
+                    <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
                       <p>
                         <span className="font-semibold text-foreground">Featured protein:</span>{" "}
                         {plate.protein}
@@ -768,7 +833,6 @@ export default function WeeklyPage() {
             ))}
           </div>
 
-          {/* Single primary CTA — assessment is the right next step for all four plates */}
           <ScrollReveal delay={200}>
             <div className="mt-14 text-center">
               <Link
@@ -850,10 +914,10 @@ export default function WeeklyPage() {
                     {item.step}
                   </div>
                   <div>
-                    <p className={`text-[15px] font-semibold ${item.primary ? "text-foreground" : "text-foreground"}`}>
-                      {item.title}
+                    <p className="text-[15px] font-semibold text-foreground">{item.title}</p>
+                    <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                      {item.desc}
                     </p>
-                    <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{item.desc}</p>
                   </div>
                 </div>
               ))}
@@ -901,7 +965,6 @@ export default function WeeklyPage() {
 
           <ScrollReveal delay={100}>
             <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-              {/* Assessment is always the primary CTA */}
               <Link
                 href="/assessment"
                 className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:opacity-90"
