@@ -5,7 +5,7 @@ export function BookCover() {
     <div className="relative mx-auto w-[260px] sm:w-[300px]">
       <div className="relative w-full overflow-hidden rounded-xl shadow-xl">
         <Image
-          src="/book-cover.png"
+          src="/book-cover-you.png"
           alt="EatoBiotics: The Food System Inside You by Jason Curry"
           width={600}
           height={800}
