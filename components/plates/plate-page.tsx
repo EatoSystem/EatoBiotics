@@ -342,6 +342,104 @@ export function PlatePage({ plate }: PlatePageProps) {
 
       <div className="section-divider" />
 
+      {/* ── The DNA of this plate ────────────────────────────────────────────── */}
+      <section className="px-6 py-20 md:py-28">
+        <div className="mx-auto max-w-[1100px]">
+          <div className="flex flex-col gap-12 md:flex-row md:gap-16">
+
+            {/* Left: heading + DNA paragraph */}
+            <div className="flex-1">
+              <ScrollReveal>
+                <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: plate.accent }}>
+                  The DNA of this plate
+                </p>
+                <h2 className="mt-3 font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
+                  What makes this plate{" "}
+                  <span className="brand-gradient-text">{plate.personalityWord.toLowerCase()}</span>
+                </h2>
+                <p className="mt-5 text-lg leading-8 text-muted-foreground">
+                  {plate.dna}
+                </p>
+              </ScrollReveal>
+            </div>
+
+            {/* Right: DNA points as styled list */}
+            <ScrollReveal delay={80} className="md:w-[420px] lg:w-[460px] shrink-0">
+              <div className="rounded-3xl border border-border bg-background overflow-hidden">
+                <div className="h-1 w-full" style={{ background: plate.topBar }} />
+                <div className="p-6 space-y-0">
+                  {plate.dnaPoints.map((point, i) => (
+                    <div key={i} className="flex items-start gap-4 py-4 border-b border-border last:border-0">
+                      <div
+                        className="mt-1 h-2 w-2 shrink-0 rounded-full"
+                        style={{ background: plate.accent }}
+                      />
+                      <p className="text-[15px] leading-relaxed text-muted-foreground">{point}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </ScrollReveal>
+
+          </div>
+        </div>
+      </section>
+
+      <div className="section-divider" />
+
+      {/* ── Health benefits ──────────────────────────────────────────────────── */}
+      <section className="px-6 py-20 md:py-28">
+        <div className="mx-auto max-w-[1100px]">
+
+          <ScrollReveal>
+            <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
+              Health benefits
+            </p>
+            <h2 className="mt-3 font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
+              What this plate supports
+            </h2>
+            <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground">
+              Every plate in the weekly system delivers specific outcomes — here is what{" "}
+              <span className="font-medium text-foreground">{plate.name}</span> is built to support.
+            </p>
+          </ScrollReveal>
+
+          {/* Benefit cards */}
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {plate.benefits.map((benefit, i) => (
+              <ScrollReveal key={benefit.label} delay={i * 70}>
+                <div className="relative flex flex-col h-full overflow-hidden rounded-2xl border border-border bg-background p-6 hover:shadow-sm transition-shadow">
+                  <div className="h-1 w-10 rounded-full mb-4" style={{ background: plate.accent }} />
+                  <h3 className={`text-base font-semibold ${plate.accentClass}`}>{benefit.label}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground flex-1">{benefit.desc}</p>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+
+          {/* System role callout */}
+          <ScrollReveal delay={160}>
+            <div
+              className="mt-10 rounded-3xl p-8 md:p-10"
+              style={{
+                background: `color-mix(in srgb, ${plate.accent} 6%, var(--background))`,
+                border: `1px solid color-mix(in srgb, ${plate.accent} 20%, var(--border))`,
+              }}
+            >
+              <p className="text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: plate.accent }}>
+                Its role in The Food System Inside You
+              </p>
+              <p className="text-lg leading-8 text-foreground font-serif italic">
+                &ldquo;{plate.systemRole}&rdquo;
+              </p>
+            </div>
+          </ScrollReveal>
+
+        </div>
+      </section>
+
+      <div className="section-divider" />
+
       {/* ── Prev / Next navigation ───────────────────────────────────────────── */}
       <section className="px-6 py-20 md:py-24">
         <div className="mx-auto max-w-[900px]">
