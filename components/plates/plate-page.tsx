@@ -347,7 +347,7 @@ export function PlatePage({ plate }: PlatePageProps) {
         <div className="mx-auto max-w-[1100px]">
           <div className="flex flex-col gap-12 md:flex-row md:gap-16">
 
-            {/* Left: heading + DNA paragraph */}
+            {/* Left: heading + DNA paragraph + food image */}
             <div className="flex-1">
               <ScrollReveal>
                 <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: plate.accent }}>
@@ -360,6 +360,15 @@ export function PlatePage({ plate }: PlatePageProps) {
                 <p className="mt-5 text-lg leading-8 text-muted-foreground">
                   {plate.dna}
                 </p>
+              </ScrollReveal>
+              <ScrollReveal delay={100}>
+                <Image
+                  src={plate.dnaImage}
+                  alt={`${plate.name} — ingredients`}
+                  width={700}
+                  height={460}
+                  className="mt-8 w-full h-auto rounded-2xl"
+                />
               </ScrollReveal>
             </div>
 
@@ -391,18 +400,29 @@ export function PlatePage({ plate }: PlatePageProps) {
       <section className="px-6 py-20 md:py-28">
         <div className="mx-auto max-w-[1100px]">
 
-          <ScrollReveal>
-            <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
-              Health benefits
-            </p>
-            <h2 className="mt-3 font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
-              What this plate supports
-            </h2>
-            <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground">
-              Every plate in the weekly system delivers specific outcomes — here is what{" "}
-              <span className="font-medium text-foreground">{plate.name}</span> is built to support.
-            </p>
-          </ScrollReveal>
+          <div className="flex flex-col gap-10 md:flex-row md:items-center md:gap-16 mb-10">
+            <ScrollReveal className="flex-1">
+              <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
+                Health benefits
+              </p>
+              <h2 className="mt-3 font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
+                What this plate supports
+              </h2>
+              <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground">
+                Every plate in the weekly system delivers specific outcomes — here is what{" "}
+                <span className="font-medium text-foreground">{plate.name}</span> is built to support.
+              </p>
+            </ScrollReveal>
+            <ScrollReveal delay={80} className="flex-1 md:max-w-[460px]">
+              <Image
+                src={plate.benefitsImage}
+                alt={`${plate.name} — health benefits`}
+                width={700}
+                height={460}
+                className="w-full h-auto rounded-2xl"
+              />
+            </ScrollReveal>
+          </div>
 
           {/* Benefit cards */}
           <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">

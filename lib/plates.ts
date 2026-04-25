@@ -22,7 +22,9 @@ export interface Plate {
   bioticsLabel: string
   dna: string            // 2-3 sentence plate DNA description
   dnaPoints: string[]    // 4-5 defining characteristics
+  dnaImage: string       // food photo for the DNA section
   benefits: { label: string; desc: string }[]
+  benefitsImage: string  // food photo for the health benefits section
   systemRole: string     // role in the broader Food System Inside You
 }
 
@@ -58,12 +60,14 @@ export const PLATES: Plate[] = [
       "Avocado, olive oil, or seeds complete the postbiotic builders",
       "Built for balance — every quadrant carries equal weight",
     ],
+    dnaImage: "/food-17.png",
     benefits: [
       { label: "Digestion", desc: "High fibre from multiple plant sources feeds the microbiome and supports regular, healthy digestion." },
       { label: "Sustained Energy", desc: "Balanced macronutrients — fibre, fat, and protein — prevent blood sugar spikes and keep energy stable all day." },
       { label: "Gut Diversity", desc: "Multiple plant varieties in one plate feed different bacterial strains, building a more resilient microbiome over time." },
       { label: "Resilience", desc: "Consistent prebiotic intake builds long-term microbiome resilience against stress, illness, and disruption." },
     ],
+    benefitsImage: "/food-21.png",
     systemRole: "The Food System Bowl is where the journey begins. Without a solid foundation, the rest of the weekly system has nothing to build on. This plate introduces your microbiome to the full EatoBiotics framework — prebiotic, probiotic, protein, and postbiotic — all at once. Come back to this plate whenever you need to reset.",
   },
   {
@@ -97,12 +101,14 @@ export const PLATES: Plate[] = [
       "Healthy fats support brain function and reduce neuroinflammation",
       "Designed around the gut-brain axis — the system inside your mind",
     ],
+    dnaImage: "/food-18.png",
     benefits: [
       { label: "Immunity", desc: "Fermented foods and prebiotic fibre strengthen the gut barrier — your body's first line of immune defence." },
       { label: "Mood", desc: "90% of serotonin is produced in the gut. This plate creates the bacterial environment and precursors for stable, steady mood." },
       { label: "Energy", desc: "High fibre and healthy fats slow glucose absorption, eliminating the energy peaks and crashes of processed food." },
       { label: "Recovery", desc: "Anti-inflammatory polyphenols and omega-3 fats reduce systemic inflammation and support faster physical and mental recovery." },
     ],
+    benefitsImage: "/food-22.png",
     systemRole: "Plate 1.2 is the system's proof of concept. It shows that feeding your gut correctly doesn't just improve digestion — it changes how you feel, think, and recover. This is the plate that makes The Food System Inside You feel real for most people.",
   },
   {
@@ -136,12 +142,14 @@ export const PLATES: Plate[] = [
       "High live fermented food content — the 'living' element of the plate's name",
       "Designed to maximise short-chain fatty acid production through fibre diversity",
     ],
+    dnaImage: "/food-19.png",
     benefits: [
       { label: "Microbiome Diversity", desc: "Different plant species feed different bacterial families. The Living Plate is the fastest way to increase gut species richness." },
       { label: "Postbiotic Production", desc: "Diverse fibre types produce a broader range of short-chain fatty acids — the postbiotics that regulate inflammation, immunity, and mood." },
       { label: "Nourishment", desc: "A wide range of plant foods delivers a comprehensive micronutrient profile — vitamins, minerals, and antioxidants the body cannot produce itself." },
       { label: "Consistency", desc: "Abundance makes consistency easier. The Living Plate never feels like restriction — it feels like exploration and pleasure." },
     ],
+    benefitsImage: "/food-21.png",
     systemRole: "The Living Plate represents the system at its most expressive. It proves that eating for your microbiome is not about eating less — it is about eating more of the right things. In the weekly arc, this plate deepens everything Plates 1.1 and 1.2 introduced. Diversity is the goal. The Living Plate is where that goal becomes a daily practice.",
   },
   {
@@ -175,12 +183,14 @@ export const PLATES: Plate[] = [
       "Anti-inflammatory focus — olive oil, avocado, and turmeric calm systemic inflammation",
       "Lower glycaemic load — stable blood sugar supports steady mood through the weekly reset",
     ],
+    dnaImage: "/food-20.png",
     benefits: [
       { label: "Gut Repair", desc: "Warming foods and glutamine-rich proteins support repair of the intestinal lining — especially important after a high-stress or disrupted week." },
       { label: "Steadiness", desc: "Complex carbohydrates from sweet potato and whole grains provide slow-release energy and help stabilise cortisol levels." },
       { label: "Recovery", desc: "Anti-inflammatory fats and polyphenols reduce soreness and systemic inflammation, and support better sleep quality." },
       { label: "Resilience", desc: "Completing the weekly arc — even imperfectly — builds the long-term microbiome resilience that the whole system depends on." },
     ],
+    benefitsImage: "/food-22.png",
     systemRole: "The Rebuild Plate is the system's answer to imperfection. Not every week goes to plan. This plate closes the loop with intention — reminding you that the goal is not a perfect plate, but a consistent practice. In The Food System Inside You, restoration is as important as nourishment. This plate is where the next week begins.",
   },
 ]
