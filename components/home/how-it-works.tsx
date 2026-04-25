@@ -25,8 +25,8 @@ const STEPS = [
   {
     number: "03",
     icon: Utensils,
-    title: "Log",
-    description: "Photograph or describe your meals. EatoBiotics scores them for Pre, Pro, and Post biotics in seconds.",
+    title: "Understand",
+    description: "See exactly how your plate scores across Pre, Pro, and Post biotics — and what to adjust to improve your system.",
     color: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-yellow))",
     bgGradient: "linear-gradient(160deg, color-mix(in srgb, var(--icon-teal) 10%, transparent), transparent 60%)",
@@ -134,7 +134,7 @@ export function HowItWorks() {
               href="/assessment"
               className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
             >
-              Start Free Assessment <ArrowRight size={16} />
+              Get My Free Biotics Score <ArrowRight size={16} />
             </Link>
             <p className="mt-3 text-xs text-muted-foreground">
               Free to start. No card needed. Takes about 3 minutes.

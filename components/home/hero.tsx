@@ -28,25 +28,24 @@ export function Hero() {
 
           <ScrollReveal delay={100}>
             <p className="mt-6 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg">
-              An advanced system to understand your Food System and microbiome that improves
-              how you feel every day — digestion, immunity, energy, mood, and recovery.
+              Understand your microbiome. Build your personal food system. Improve your plate
+              through the 3 Biotics — Pre, Pro, and Post.
             </p>
           </ScrollReveal>
 
-          <ScrollReveal delay={160}>
-            <p className="mt-4 text-base font-semibold" style={{ color: "var(--icon-orange)" }}>
-              Built around the 3 Biotics —{" "}
-              <span className="text-foreground">Pre, Pro, &amp; PostBiotics</span>
-            </p>
-          </ScrollReveal>
-
-          <ScrollReveal delay={220}>
+          <ScrollReveal delay={200}>
             <div className="mt-8 flex flex-col items-start gap-3">
               <Link
                 href="/assessment"
                 className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
               >
-                Start Free Assessment <ArrowRight size={16} />
+                Get My Free Biotics Score <ArrowRight size={16} />
+              </Link>
+              <Link
+                href="/biotics"
+                className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Learn the 3 Biotics <ArrowRight size={14} />
               </Link>
             </div>
           </ScrollReveal>

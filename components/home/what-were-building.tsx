@@ -68,13 +68,13 @@ export function WhatWereBuilding() {
               What We&apos;re Building
             </p>
             <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground sm:text-5xl md:text-6xl text-pretty">
-              One framework.
+              Go deeper.
               <br />
-              <span className="brand-gradient-text">Four expressions.</span>
+              <span className="brand-gradient-text">Four ways to engage.</span>
             </h2>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
-              EatoBiotics is more than a website. It&apos;s a growing platform — a book, an app,
-              a weekly Substack, and a systemic food movement. Here&apos;s where it&apos;s going.
+              Beyond the platform — a book, a podcast, a weekly newsletter, and a national food
+              system movement. Here&apos;s where to go next.
             </p>
           </ScrollReveal>
           <ScrollReveal delay={80} className="w-full md:w-[340px] lg:w-[400px] shrink-0">

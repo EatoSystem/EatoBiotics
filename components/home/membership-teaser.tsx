@@ -128,7 +128,7 @@ export function MembershipTeaser() {
               <Zap size={11} /> Membership
             </div>
             <h2 className="font-serif text-4xl font-semibold tracking-tight text-foreground sm:text-5xl text-balance">
-              Start free.{" "}
+              Start with your score.{" "}
               <span
                 style={{
                   background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green), var(--icon-teal))",
@@ -136,12 +136,12 @@ export function MembershipTeaser() {
                   WebkitTextFillColor: "transparent",
                 }}
               >
-                Grow with your system.
+                Build your system.
               </span>
             </h2>
             <p className="mt-4 mx-auto max-w-lg text-base text-muted-foreground leading-relaxed">
-              Every tier builds on the last — start with a free assessment, upgrade when
-              you&apos;re ready. Cancel any time.
+              Your free Biotics Score is the starting point. Every tier builds on that baseline —
+              upgrade when you&apos;re ready, cancel any time.
             </p>
           </div>
         </ScrollReveal>
