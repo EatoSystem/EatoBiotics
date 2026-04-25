@@ -4,53 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { ArrowUpRight, ArrowRight } from "lucide-react"
-
-const WEEKLY_PLATES = [
-  {
-    number: "1.1",
-    name: "The Food System Bowl",
-    role: "Foundation",
-    image: "/plate-bowl.png",
-    accent: "var(--icon-lime)",
-    accentClass: "text-icon-lime",
-    borderColor: "border-icon-lime/20",
-    topBar: "var(--icon-lime)",
-    href: "/food-system-bowl",
-  },
-  {
-    number: "1.2",
-    name: "The Immunity, Mood & Energy Plate",
-    role: "Function",
-    image: "/plate-immunity.png",
-    accent: "var(--icon-yellow)",
-    accentClass: "text-icon-yellow",
-    borderColor: "border-icon-yellow/20",
-    topBar: "linear-gradient(90deg, var(--icon-lime), var(--icon-yellow))",
-    href: "/energy-plate",
-  },
-  {
-    number: "1.3",
-    name: "The Living Plate",
-    role: "Richness",
-    image: "/plate-living.png",
-    accent: "var(--icon-teal)",
-    accentClass: "text-icon-teal",
-    borderColor: "border-icon-teal/20",
-    topBar: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow))",
-    href: "/living-plate",
-  },
-  {
-    number: "1.4",
-    name: "The Rebuild Plate",
-    role: "Restoration",
-    image: "/plate-rebuild.png",
-    accent: "var(--icon-orange)",
-    accentClass: "text-icon-orange",
-    borderColor: "border-icon-orange/20",
-    topBar: "linear-gradient(90deg, var(--icon-teal), var(--icon-green))",
-    href: "/build-plate",
-  },
-]
+import { PLATES } from "@/lib/plates"
 
 const quadrants = [
   {
@@ -186,7 +140,6 @@ export function ThePlate() {
 
         <div className="mt-16">
           <ScrollReveal>
-            {/* Bridge copy — connects the framework above to its weekly expressions */}
             <p className="text-center text-sm leading-relaxed text-muted-foreground max-w-xl mx-auto">
               Every week, the framework expresses itself through four distinct plates — each with
               its own role, emphasis, and character.
@@ -214,50 +167,78 @@ export function ThePlate() {
             </div>
           </ScrollReveal>
 
-          {/* Four plate cards */}
-          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {WEEKLY_PLATES.map((plate, i) => (
-              <ScrollReveal key={plate.number} delay={i * 70}>
-                <Link href={plate.href} className="group block h-full">
+          {/* Four plate cards — rich version matching /weekly */}
+          <div className="mt-10 grid gap-8 lg:grid-cols-2">
+            {PLATES.map((plate, i) => (
+              <ScrollReveal key={plate.number} delay={i * 60}>
+                <Link href={`/${plate.slug}`} className="group block">
                   <div
-                    className={`flex h-full flex-col overflow-hidden rounded-2xl border ${plate.borderColor} bg-background transition-all hover:shadow-lg`}
+                    className={`overflow-hidden rounded-3xl border ${plate.borderColor} bg-background transition-all hover:shadow-lg`}
                   >
-                    {/* Per-plate coloured top stripe */}
-                    <div className="h-[5px] w-full shrink-0" style={{ background: plate.topBar }} />
+                    {/* Per-plate top stripe */}
+                    <div className="h-[5px] w-full" style={{ background: plate.topBar }} />
 
-                    {/* Plate image */}
-                    <div className="relative overflow-hidden bg-muted/10">
+                    {/* Food photography */}
+                    <div className="relative w-full overflow-hidden bg-white">
                       <Image
                         src={plate.image}
                         alt={plate.name}
                         width={600}
-                        height={338}
-                        className="w-full h-auto transition-transform duration-500 group-hover:scale-[1.02]"
+                        height={600}
+                        className="w-full h-auto"
                       />
-                      {/* Number badge */}
-                      <div
-                        className="absolute right-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold text-white shadow-sm"
-                        style={{ background: plate.accent }}
-                      >
-                        {plate.number}
-                      </div>
                     </div>
 
-                    {/* Card text — kept intentionally lean */}
-                    <div className="flex flex-1 flex-col p-4">
-                      <span className={`text-[11px] font-bold uppercase tracking-widest ${plate.accentClass}`}>
-                        {plate.role}
-                      </span>
-                      <h3 className="mt-1.5 font-serif text-sm font-semibold text-foreground leading-snug">
-                        {plate.name}
-                      </h3>
-                      <div className="mt-auto pt-4">
-                        <span
-                          className={`inline-flex items-center gap-1 text-xs font-semibold ${plate.accentClass} opacity-0 transition-opacity group-hover:opacity-100`}
-                        >
-                          View plate <ArrowRight size={11} />
+                    {/* Card content */}
+                    <div className="p-7">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="rounded-full px-2.5 py-0.5 text-xs font-bold text-white"
+                            style={{ background: plate.accent }}
+                          >
+                            {plate.number}
+                          </span>
+                          <span className={`text-xs font-semibold uppercase tracking-widest ${plate.accentClass}`}>
+                            {plate.role}
+                          </span>
+                        </div>
+                        <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${plate.tagBg} ${plate.accentClass}`}>
+                          {plate.personalityWord}
                         </span>
                       </div>
+
+                      <h3 className="mt-3 font-serif text-xl font-semibold text-foreground leading-tight">
+                        {plate.name}
+                      </h3>
+
+                      <p className="mt-3 text-base italic leading-relaxed text-muted-foreground/80">
+                        &ldquo;{plate.message}&rdquo;
+                      </p>
+
+                      <p className="mt-3 text-[15px] leading-7 text-muted-foreground">
+                        {plate.description}
+                      </p>
+
+                      <div className="my-5 h-px bg-border" />
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        {plate.supports.map((s) => (
+                          <span
+                            key={s}
+                            className={`rounded-full px-3 py-1 text-xs font-medium ${plate.tagBg} ${plate.accentClass}`}
+                          >
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="mt-3 text-xs text-muted-foreground/60">
+                        <span className="font-semibold text-foreground/60">Emphasis:</span>{" "}
+                        {plate.emphasis}
+                      </p>
+                      <p className={`mt-4 text-xs font-semibold ${plate.accentClass} opacity-0 transition-opacity group-hover:opacity-100`}>
+                        Explore this plate →
+                      </p>
                     </div>
                   </div>
                 </Link>

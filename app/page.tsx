@@ -22,12 +22,6 @@ export default function Home() {
       <Pathways />
       <HowItWorks />
       <TheThreeBiotics />
-      {/* Food strip — three editorial food images */}
-      <div className="grid grid-cols-3 gap-0 overflow-hidden">
-        <Image src="/food-9.png" alt="" width={600} height={400} className="w-full h-auto" />
-        <Image src="/food-14.png" alt="" width={600} height={400} className="w-full h-auto" />
-        <Image src="/food-16.png" alt="" width={600} height={400} className="w-full h-auto" />
-      </div>
       <ThePlate />
       <div className="section-divider" />
       <AppShowcase />
