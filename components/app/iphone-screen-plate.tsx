@@ -16,10 +16,10 @@ export function IPhoneScreenPlate() {
       </p>
 
       {/* Plate photo — circular crop */}
-      <div className="relative mt-4 h-36 w-36 overflow-hidden rounded-full border-2 border-border shadow-md">
+      <div className="relative mt-4 h-36 w-36 overflow-hidden rounded-full border-2 border-border shadow-lg">
         <Image
-          src="/eatobiotics-plate.png"
-          alt="EatoBiotics plate"
+          src="/food-6.png"
+          alt="This week's plate"
           fill
           className="object-cover"
         />

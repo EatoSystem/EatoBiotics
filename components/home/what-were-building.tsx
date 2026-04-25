@@ -171,7 +171,7 @@ export function WhatWereBuilding() {
 
                   {/* Right: stacked post preview cards */}
                   <div className="hidden lg:flex lg:w-72 lg:shrink-0 lg:items-center lg:justify-center lg:p-8">
-                    <div className="relative w-full" style={{ height: "160px" }}>
+                    <div className="relative w-full" style={{ height: "170px" }}>
 
                       {/* Card 3 — back */}
                       <div
@@ -207,26 +207,30 @@ export function WhatWereBuilding() {
                         <p className="mt-1 text-[10px] text-muted-foreground">4 min read</p>
                       </div>
 
-                      {/* Card 1 — front */}
-                      <div className="relative rounded-xl border border-border bg-background p-4 shadow-md">
-                        <span
-                          className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
-                          style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
-                        >
-                          PLATE BUILD
-                        </span>
-                        <p className="mt-2 text-xs font-semibold text-foreground leading-snug">
-                          Plate 1.1 — The Food System Bowl, built step by step
-                        </p>
-                        <p className="mt-1 text-[10px] text-muted-foreground">5 min read</p>
-                        <div className="mt-3 flex items-center gap-2">
-                          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-border">
-                            <div
-                              className="h-full w-3/4 rounded-full"
-                              style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))" }}
-                            />
-                          </div>
-                          <span className="text-[9px] text-muted-foreground">Latest</span>
+                      {/* Card 1 — front (food image) */}
+                      <div className="relative overflow-hidden rounded-xl shadow-md" style={{ height: "130px" }}>
+                        <Image
+                          src="/food-2.png"
+                          alt="Latest from the Substack"
+                          fill
+                          className="object-cover"
+                        />
+                        {/* Gradient scrim */}
+                        <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%)" }} />
+                        {/* Badges */}
+                        <div className="absolute top-2.5 left-2.5">
+                          <span
+                            className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
+                            style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
+                          >
+                            PLATE BUILD
+                          </span>
+                        </div>
+                        <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between">
+                          <p className="text-[11px] font-semibold text-white leading-tight">
+                            Plate 1.1 — The Food System Bowl
+                          </p>
+                          <span className="ml-2 shrink-0 text-[9px] font-semibold text-white/70">Latest</span>
                         </div>
                       </div>
 
