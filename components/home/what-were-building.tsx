@@ -169,20 +169,68 @@ export function WhatWereBuilding() {
                     </div>
                   </div>
 
-                  {/* Right: decorative block */}
-                  <div
-                    className="hidden lg:flex lg:w-64 lg:shrink-0 lg:flex-col lg:items-center lg:justify-center lg:p-10"
-                    style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${p.accent} 8%, var(--background)), var(--background))` }}
-                  >
-                    <p
-                      className="font-serif text-[7rem] font-bold leading-none select-none"
-                      style={{ color: p.accent, opacity: 0.12 }}
-                    >
-                      &ldquo;
-                    </p>
-                    <p className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
-                      Free · Weekly · Always
-                    </p>
+                  {/* Right: stacked post preview cards */}
+                  <div className="hidden lg:flex lg:w-72 lg:shrink-0 lg:items-center lg:justify-center lg:p-8">
+                    <div className="relative w-full" style={{ height: "160px" }}>
+
+                      {/* Card 3 — back */}
+                      <div
+                        className="absolute inset-x-0 top-0 rounded-xl border border-border bg-background p-4 shadow-sm"
+                        style={{ transform: "rotate(3deg) translateY(6px)" }}
+                      >
+                        <span
+                          className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
+                          style={{ background: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" }}
+                        >
+                          SCIENCE
+                        </span>
+                        <p className="mt-2 text-xs font-semibold text-foreground leading-snug">
+                          Short-chain fatty acids — what they are and why they matter
+                        </p>
+                        <p className="mt-1 text-[10px] text-muted-foreground">3 min read</p>
+                      </div>
+
+                      {/* Card 2 — middle */}
+                      <div
+                        className="absolute inset-x-0 top-0 rounded-xl border border-border bg-background p-4 shadow-sm"
+                        style={{ transform: "rotate(-1.5deg) translateY(3px)" }}
+                      >
+                        <span
+                          className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
+                          style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}
+                        >
+                          FOOD PROFILE
+                        </span>
+                        <p className="mt-2 text-xs font-semibold text-foreground leading-snug">
+                          Kimchi — why it&apos;s the most powerful probiotic on your plate
+                        </p>
+                        <p className="mt-1 text-[10px] text-muted-foreground">4 min read</p>
+                      </div>
+
+                      {/* Card 1 — front */}
+                      <div className="relative rounded-xl border border-border bg-background p-4 shadow-md">
+                        <span
+                          className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
+                          style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
+                        >
+                          PLATE BUILD
+                        </span>
+                        <p className="mt-2 text-xs font-semibold text-foreground leading-snug">
+                          Plate 1.1 — The Food System Bowl, built step by step
+                        </p>
+                        <p className="mt-1 text-[10px] text-muted-foreground">5 min read</p>
+                        <div className="mt-3 flex items-center gap-2">
+                          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-border">
+                            <div
+                              className="h-full w-3/4 rounded-full"
+                              style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))" }}
+                            />
+                          </div>
+                          <span className="text-[9px] text-muted-foreground">Latest</span>
+                        </div>
+                      </div>
+
+                    </div>
                   </div>
                 </div>
               </div>

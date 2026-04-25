@@ -15,36 +15,14 @@ export function IPhoneScreenPlate() {
         My Plate
       </p>
 
-      {/* Plate circle */}
-      <div className="relative mt-4 h-32 w-32">
-        {/* Plate background */}
-        <div className="absolute inset-0 rounded-full border-2 border-border" />
-
-        {/* Quadrant lines */}
-        <div className="absolute top-0 bottom-0 left-1/2 w-px bg-border" />
-        <div className="absolute top-1/2 right-0 left-0 h-px bg-border" />
-
-        {/* Quadrant emojis */}
-        <div className="absolute top-2 left-2 flex gap-0.5 text-sm">
-          {quadrants[0].items.map((e, i) => (
-            <span key={i}>{e}</span>
-          ))}
-        </div>
-        <div className="absolute top-2 right-2 flex gap-0.5 text-sm">
-          {quadrants[1].items.map((e, i) => (
-            <span key={i}>{e}</span>
-          ))}
-        </div>
-        <div className="absolute bottom-2 left-2 flex gap-0.5 text-sm">
-          {quadrants[2].items.map((e, i) => (
-            <span key={i}>{e}</span>
-          ))}
-        </div>
-        <div className="absolute right-2 bottom-2 flex gap-0.5 text-sm">
-          {quadrants[3].items.map((e, i) => (
-            <span key={i}>{e}</span>
-          ))}
-        </div>
+      {/* Plate photo — circular crop */}
+      <div className="relative mt-4 h-36 w-36 overflow-hidden rounded-full border-2 border-border shadow-md">
+        <Image
+          src="/eatobiotics-plate.png"
+          alt="EatoBiotics plate"
+          fill
+          className="object-cover"
+        />
       </div>
 
       {/* Quadrant labels */}
