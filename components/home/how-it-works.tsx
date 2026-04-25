@@ -61,7 +61,7 @@ export function HowItWorks() {
           </ScrollReveal>
           <ScrollReveal delay={80} className="w-full md:w-[340px] lg:w-[400px] shrink-0">
             <Image
-              src="/food-10.png"
+              src="/food-5.png"
               alt="Colourful fresh ingredients arranged as a food system"
               width={600}
               height={600}

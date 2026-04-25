@@ -232,8 +232,8 @@ export default function WeeklyPage() {
             <ScrollReveal delay={80} className="w-full flex-1 md:max-w-[480px]">
               <div className="relative mx-auto max-w-[420px] md:max-w-none">
                 <Image
-                  src="/food-8.png"
-                  alt="A composition of EatoBiotics ingredients — seared tuna, asparagus, berries, avocado, lentils, spinach, and fermented foods"
+                  src="/food-9.png"
+                  alt="A vibrant composition of EatoBiotics ingredients — vegetables, fermented foods, grains, and healthy fats"
                   width={700}
                   height={700}
                   priority
@@ -279,7 +279,7 @@ export default function WeeklyPage() {
             {/* Right: Food 3.0 — diverse mixed-system composition */}
             <ScrollReveal delay={80} className="w-full md:w-[340px] lg:w-[400px] shrink-0">
               <Image
-                src="/food-3.png"
+                src="/food-14.png"
                 alt="A diverse arrangement of EatoBiotics ingredients — the whole food system in one composition"
                 width={600}
                 height={600}

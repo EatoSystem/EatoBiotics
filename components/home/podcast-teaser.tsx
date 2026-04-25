@@ -61,7 +61,7 @@ export function PodcastTeaser() {
           <div className="flex-1">
             <ScrollReveal delay={100}>
               <Image
-                src="/food-11.png"
+                src="/food-7.png"
                 alt="A beautifully prepared meal — every conversation starts at the table"
                 width={700}
                 height={700}
