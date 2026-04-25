@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { ArrowRight, Check, Star, Zap } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 
@@ -119,8 +120,8 @@ export function MembershipTeaser() {
       <div className="relative mx-auto max-w-[1200px]">
 
         {/* ── Header ── */}
-        <ScrollReveal>
-          <div className="text-center mb-14">
+        <div className="flex flex-col gap-10 md:flex-row md:items-center md:gap-16 mb-14">
+          <ScrollReveal className="flex-1">
             <div
               className="mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest"
               style={{ background: "color-mix(in srgb, var(--icon-lime) 15%, transparent)", color: "var(--icon-green)" }}
@@ -139,12 +140,21 @@ export function MembershipTeaser() {
                 Grow with your system.
               </span>
             </h2>
-            <p className="mt-4 mx-auto max-w-lg text-base text-muted-foreground leading-relaxed">
+            <p className="mt-4 max-w-lg text-base text-muted-foreground leading-relaxed">
               Every tier builds on the last — start with a free assessment, upgrade when
               you&apos;re ready. Cancel any time.
             </p>
-          </div>
-        </ScrollReveal>
+          </ScrollReveal>
+          <ScrollReveal delay={80} className="flex-1 md:max-w-[500px]">
+            <Image
+              src="/food-17.png"
+              alt="EatoBiotics membership — nourish your system"
+              width={700}
+              height={500}
+              className="w-full h-auto rounded-2xl"
+            />
+          </ScrollReveal>
+        </div>
 
         {/* ── Tier cards ── */}
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
