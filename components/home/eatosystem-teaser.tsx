@@ -1,4 +1,3 @@
-import Image from "next/image"
 import Link from "next/link"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { ArrowUpRight } from "lucide-react"
@@ -76,41 +75,11 @@ export function EatoSystemTeaser() {
             </ScrollReveal>
           </div>
 
-          {/* Right: county tags + video */}
+          {/* Right: video + county tags */}
           <div className="flex-1">
+            {/* Ireland network map — the centrepiece */}
             <ScrollReveal delay={100}>
-              <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                All 32 Counties
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {counties.map((county, index) => (
-                  <span
-                    key={county}
-                    className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-icon-green hover:text-icon-green"
-                    style={{
-                      animationDelay: `${index * 30}ms`,
-                    }}
-                  >
-                    {county}
-                  </span>
-                ))}
-              </div>
-            </ScrollReveal>
-
-            {/* Food image */}
-            <ScrollReveal delay={150}>
-              <Image
-                src="/food-15.png"
-                alt="Fresh food from local Irish producers"
-                width={700}
-                height={500}
-                className="mt-6 w-full h-auto"
-              />
-            </ScrollReveal>
-
-            {/* Ireland network video */}
-            <ScrollReveal delay={200}>
-              <div className="mt-8 overflow-hidden rounded-2xl bg-white">
+              <div className="overflow-hidden rounded-2xl bg-white">
                 <video
                   autoPlay
                   loop
@@ -120,6 +89,23 @@ export function EatoSystemTeaser() {
                 >
                   <source src="/videos/ireland-network.mp4" type="video/mp4" />
                 </video>
+              </div>
+            </ScrollReveal>
+
+            {/* County tags — the map's legend */}
+            <ScrollReveal delay={180}>
+              <p className="mt-8 mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                All 32 Counties
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {counties.map((county) => (
+                  <span
+                    key={county}
+                    className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-icon-green hover:text-icon-green"
+                  >
+                    {county}
+                  </span>
+                ))}
               </div>
             </ScrollReveal>
           </div>
