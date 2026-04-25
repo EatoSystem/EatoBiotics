@@ -3,6 +3,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { ArrowRight, ArrowDown, Zap } from "lucide-react"
+import { ReadingProgress } from "@/components/reading-progress"
 
 export const metadata: Metadata = {
   title: "The 3 Biotics | EatoBiotics",
@@ -73,6 +74,7 @@ const CYCLE = [
 export default function BioticsPage() {
   return (
     <>
+      <ReadingProgress />
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       <section className="relative px-6 pt-28 pb-20 md:pt-36 md:pb-28">
@@ -223,6 +225,18 @@ export default function BioticsPage() {
 
       {/* ── The Cycle ────────────────────────────────────────────────── */}
       <section className="bg-foreground px-6 py-24 md:py-32">
+        <style>{`
+          @keyframes badge-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.15); transform: scale(1); }
+            50% { box-shadow: 0 0 0 8px rgba(255,255,255,0); transform: scale(1.06); }
+          }
+          .cycle-badge { animation: badge-pulse 3s ease-in-out infinite; }
+          @keyframes arrow-flow {
+            0%, 100% { opacity: 0.25; }
+            50% { opacity: 0.7; }
+          }
+          .cycle-arrow { animation: arrow-flow 2s ease-in-out infinite; }
+        `}</style>
         <div className="mx-auto max-w-[1100px]">
 
           <ScrollReveal className="text-center mb-16">
@@ -247,17 +261,17 @@ export default function BioticsPage() {
                   {/* Arrow — desktop */}
                   {i < CYCLE.length - 1 && (
                     <div
-                      className="absolute right-0 top-1/2 hidden -translate-y-1/2 translate-x-1/2 z-10 lg:block"
-                      style={{ color: s.color }}
+                      className="cycle-arrow absolute right-0 top-1/2 hidden -translate-y-1/2 translate-x-1/2 z-10 lg:block"
+                      style={{ color: s.color, animationDelay: `${i * 0.4}s` }}
                     >
-                      <ArrowRight size={14} className="opacity-40" />
+                      <ArrowRight size={14} />
                     </div>
                   )}
 
                   {/* Number bubble */}
                   <div
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white shadow-lg"
-                    style={{ background: s.color }}
+                    className="cycle-badge flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white shadow-lg"
+                    style={{ background: s.color, animationDelay: `${i * 0.6}s` }}
                   >
                     {s.step}
                   </div>

@@ -1,5 +1,6 @@
 "use client"
 
+import { useRef } from "react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { IPhoneCarousel } from "@/components/app/iphone-carousel"
 import { BarChart3, Utensils, Activity, Apple, ArrowRight, Zap } from "lucide-react"
@@ -48,8 +49,32 @@ const STATS = [
 ]
 
 export function AppShowcase() {
+  const sectionRef = useRef<HTMLElement>(null)
+
+  function handleMouseMove(e: React.MouseEvent) {
+    const rect = sectionRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const x = ((e.clientX - rect.left) / rect.width) * 100
+    const y = ((e.clientY - rect.top) / rect.height) * 100
+    sectionRef.current?.style.setProperty("--mouse-x", `${x}%`)
+    sectionRef.current?.style.setProperty("--mouse-y", `${y}%`)
+  }
+
   return (
-    <section className="relative overflow-hidden bg-foreground px-6 py-24 md:py-32">
+    <section
+      ref={sectionRef}
+      onMouseMove={handleMouseMove}
+      className="group/glow relative overflow-hidden bg-foreground px-6 py-24 md:py-32"
+    >
+
+      {/* Cursor-follow glow */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover/glow:opacity-100"
+        style={{
+          background:
+            "radial-gradient(700px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(86,193,53,0.07), transparent 60%)",
+        }}
+      />
 
       {/* Ambient gradient blobs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">

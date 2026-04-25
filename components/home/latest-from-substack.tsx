@@ -84,19 +84,28 @@ export async function LatestFromSubstack() {
               </div>
             </div>
 
-            {/* Right: decorative accent */}
+            {/* Right: subscribe CTA */}
             <div
-              className="hidden lg:flex lg:w-72 lg:shrink-0 lg:flex-col lg:items-center lg:justify-center lg:p-12"
-              style={{ background: `linear-gradient(135deg, var(--icon-lime)15, var(--icon-orange)10)` }}
+              className="hidden lg:flex lg:w-72 lg:shrink-0 lg:flex-col lg:items-center lg:justify-center lg:gap-4 lg:p-10"
+              style={{ background: `linear-gradient(135deg, color-mix(in srgb, var(--icon-lime) 8%, var(--background)), var(--background))` }}
             >
-              <p
-                className="font-serif text-[8rem] font-bold leading-none select-none"
-                style={{ color: tagColor, opacity: 0.15 }}
-              >
-                &ldquo;
+              <p className="font-serif text-4xl font-bold text-center" style={{ color: tagColor }}>
+                Weekly.
               </p>
-              <p className="mt-2 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                Latest Post
+              <p className="text-center text-sm leading-relaxed text-muted-foreground">
+                New writing every week — food profiles, plate builds, and the science behind your microbiome.
+              </p>
+              <a
+                href="https://eatobiotics.substack.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full rounded-full py-3 text-center text-sm font-semibold text-white transition-all hover:opacity-90"
+                style={{ background: `linear-gradient(135deg, var(--icon-lime), var(--icon-green))` }}
+              >
+                Subscribe free
+              </a>
+              <p className="text-[10px] text-muted-foreground text-center">
+                Free · No spam · Unsubscribe any time
               </p>
             </div>
           </a>

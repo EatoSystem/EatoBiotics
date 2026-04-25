@@ -277,7 +277,7 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
                 type="submit"
                 className="brand-gradient mt-1 flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
               >
-                Start My Free Assessment
+                Get My Free Biotics Score
                 <ArrowRight size={16} />
               </button>
             </form>
@@ -455,7 +455,7 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
               onClick={scrollToForm}
               className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-3.5 text-base font-semibold text-white transition-opacity hover:opacity-90"
             >
-              Start My Free Assessment
+              Get My Free Biotics Score
               <ArrowRight size={18} />
             </button>
           </div>

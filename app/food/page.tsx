@@ -339,6 +339,52 @@ export default function FoodLibraryPage() {
       {/* Gradient divider */}
       <div className="section-divider" />
 
+      {/* Best For section */}
+      <section className="px-6 py-16 md:py-24">
+        <div className="mx-auto max-w-[1200px]">
+          <ScrollReveal>
+            <p className="text-xs font-semibold uppercase tracking-widest text-icon-green mb-3">
+              Best Foods For…
+            </p>
+            <h2 className="font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
+              Find foods by goal.
+            </h2>
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
+              Not sure where to start? Browse foods filtered by what you want to improve.
+            </p>
+          </ScrollReveal>
+          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { goal: "digestion",  label: "Digestion",  emoji: "🌿", color: "var(--icon-lime)",   gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",   desc: "Prebiotic + probiotic foods to improve gut function" },
+              { goal: "energy",     label: "Energy",     emoji: "⚡",  color: "var(--icon-yellow)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))", desc: "Protein + postbiotic foods that power your metabolism" },
+              { goal: "immunity",   label: "Immunity",   emoji: "🛡️", color: "var(--icon-teal)",   gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",   desc: "Prebiotic + postbiotic foods that strengthen your defences" },
+              { goal: "mood",       label: "Mood",       emoji: "🧠", color: "var(--icon-green)",  gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",   desc: "Gut-brain foods linked to serotonin and cognitive health" },
+              { goal: "recovery",   label: "Recovery",   emoji: "💪", color: "var(--icon-orange)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))", desc: "Protein + postbiotic foods for repair and inflammation" },
+              { goal: "sleep",      label: "Sleep",      emoji: "🌙", color: "var(--icon-teal)",   gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))",   desc: "Prebiotic-rich foods that support the gut-sleep axis" },
+            ].map((g, i) => (
+              <ScrollReveal key={g.goal} delay={i * 60}>
+                <Link href={`/food/for/${g.goal}`} className="group flex items-center gap-4 rounded-2xl border border-border bg-background p-5 transition-all hover:shadow-md">
+                  <div
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl"
+                    style={{ background: `color-mix(in srgb, ${g.color} 12%, var(--background))` }}
+                  >
+                    {g.emoji}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-foreground">{g.label}</p>
+                    <p className="text-xs text-muted-foreground leading-snug mt-0.5">{g.desc}</p>
+                  </div>
+                  <ArrowUpRight size={14} className="shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+                </Link>
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Gradient divider */}
+      <div className="section-divider" />
+
       {/* CTA */}
       <section className="px-6 py-16 md:py-24">
         <div className="mx-auto max-w-[720px] text-center">

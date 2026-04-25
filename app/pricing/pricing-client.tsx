@@ -1,6 +1,12 @@
 "use client"
 
 import { useState } from "react"
+
+const ANNUAL_PRICES: Partial<Record<Tier, { display: string; saving: string }>> = {
+  grow:      { display: "€99/yr",  saving: "Save €20" },
+  restore:   { display: "€490/yr", saving: "Save €98" },
+  transform: { display: "€990/yr", saving: "Save €198" },
+}
 import Link from "next/link"
 import { Check, ArrowRight, Star, Zap, AlertTriangle, ClipboardList, BarChart2, Utensils, TrendingUp } from "lucide-react"
 import posthog from "posthog-js"
@@ -196,6 +202,8 @@ export function PricingClient({
     transform: transformPriceId,
   }
 
+  const [billing, setBilling] = useState<"monthly" | "annual">("monthly")
+
   const isActive = currentStatus === "active"
   const currentOrder = TIER_ORDER[currentTier]
 
@@ -226,6 +234,55 @@ export function PricingClient({
         <p className="mt-4 text-base text-muted-foreground sm:text-lg">
           Start free. Upgrade when you're ready. Cancel any time.
         </p>
+
+        {/* Social proof strip */}
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+          {[
+            { num: "Free", label: "To start — no card needed" },
+            { num: "3 min", label: "To get your Biotics Score" },
+            { num: "Cancel", label: "Any time — no lock-in" },
+          ].map((s, i) => (
+            <div key={s.label} className="flex items-center gap-3">
+              {i > 0 && <div className="h-5 w-px bg-border hidden sm:block" />}
+              <div className="text-center">
+                <p className="font-serif text-xl font-bold text-foreground">{s.num}</p>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{s.label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Annual / monthly toggle */}
+        <div className="mt-8 flex items-center justify-center gap-3">
+          <span className={cn("text-sm font-medium transition-colors", billing === "monthly" ? "text-foreground" : "text-muted-foreground")}>
+            Monthly
+          </span>
+          <button
+            onClick={() => setBilling(b => b === "monthly" ? "annual" : "monthly")}
+            className={cn(
+              "relative h-7 w-12 rounded-full transition-colors duration-200",
+              billing === "annual" ? "bg-icon-green" : "bg-muted"
+            )}
+            aria-label="Toggle billing period"
+          >
+            <span className={cn(
+              "absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200",
+              billing === "annual" ? "translate-x-6" : "translate-x-1"
+            )} />
+          </button>
+          <span className={cn("flex items-center gap-1.5 text-sm font-medium transition-colors", billing === "annual" ? "text-foreground" : "text-muted-foreground")}>
+            Annual
+            <span
+              className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white transition-opacity"
+              style={{
+                background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
+                opacity: billing === "annual" ? 1 : 0.5,
+              }}
+            >
+              Save 2 months
+            </span>
+          </span>
+        </div>
 
         {highlightFeature === "ai-consultation" && (
           <div className="mx-auto mt-6 max-w-sm rounded-2xl p-4 text-sm"
@@ -356,9 +413,18 @@ export function PricingClient({
                 <p className={cn("text-xs font-bold uppercase tracking-widest", isCurrent ? "text-white/70" : "text-muted-foreground")}>
                   {meta.label}
                 </p>
-                <p className={cn("mt-1 font-serif text-3xl font-bold", isCurrent ? "text-white" : "text-foreground")}>
-                  {meta.price}
-                </p>
+                <div className="flex items-baseline gap-2">
+                  <p className={cn("mt-1 font-serif text-3xl font-bold", isCurrent ? "text-white" : "text-foreground")}>
+                    {billing === "annual" && ANNUAL_PRICES[tier]
+                      ? ANNUAL_PRICES[tier]!.display
+                      : meta.price}
+                  </p>
+                  {billing === "annual" && ANNUAL_PRICES[tier] && (
+                    <span className={cn("text-xs font-semibold", isCurrent ? "text-white/70" : "text-icon-green")}>
+                      {ANNUAL_PRICES[tier]!.saving}
+                    </span>
+                  )}
+                </div>
                 <p className={cn("mt-1 text-xs leading-snug", isCurrent ? "text-white/75" : "text-muted-foreground")}>
                   {meta.tagline}
                 </p>
