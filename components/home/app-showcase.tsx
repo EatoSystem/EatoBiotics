@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { IPhoneCarousel } from "@/components/app/iphone-carousel"
 import { Smartphone, BarChart3, Utensils, Activity, Apple, ArrowRight } from "lucide-react"
@@ -64,19 +63,6 @@ export function AppShowcase() {
               Assess, score, log, and improve — all in one place. EatoBiotics learns from
               your meals and builds a living picture of your food system over time.
             </p>
-          </div>
-        </ScrollReveal>
-
-        {/* Food image banner */}
-        <ScrollReveal delay={80}>
-          <div className="mt-12 overflow-hidden rounded-2xl">
-            <Image
-              src="/food-18.png"
-              alt="EatoBiotics — the platform starts with what you eat"
-              width={1200}
-              height={500}
-              className="w-full h-[260px] md:h-[340px] object-cover"
-            />
           </div>
         </ScrollReveal>
 

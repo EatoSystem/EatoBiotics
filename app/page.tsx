@@ -35,15 +35,6 @@ export default function Home() {
       <MembershipTeaser />
       <div className="section-divider" />
       <Manifesto />
-      <div className="overflow-hidden">
-        <Image
-          src="/food-21.png"
-          alt=""
-          width={1600}
-          height={600}
-          className="w-full h-[280px] md:h-[400px] object-cover"
-        />
-      </div>
       <WhatWereBuilding />
       <div className="section-divider" />
       <BookShowcase />

@@ -132,10 +132,10 @@ export function BookShowcase() {
     <section className="relative overflow-hidden px-6 py-24 md:py-32">
 <div className="relative z-10 mx-auto max-w-[1200px]">
         {/* Header */}
-        <div className="flex flex-col gap-10 md:flex-row md:items-center md:gap-16 mb-14">
-          <ScrollReveal className="flex-1">
+        <ScrollReveal>
+          <div className="text-center">
             <div
-              className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
+              className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
               style={{
                 background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
               }}
@@ -148,21 +148,12 @@ export function BookShowcase() {
             <h2 className="mt-4 font-serif text-3xl font-semibold text-foreground sm:text-4xl md:text-5xl text-balance">
               The Food System Inside You
             </h2>
-            <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+            <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
               25 chapters across 6 parts — from understanding your microbiome to building
               the practical food system that supports it every day.
             </p>
-          </ScrollReveal>
-          <ScrollReveal delay={80} className="flex-1 md:max-w-[460px]">
-            <Image
-              src="/food-19.png"
-              alt="The Food System Inside You"
-              width={700}
-              height={500}
-              className="w-full h-auto rounded-2xl"
-            />
-          </ScrollReveal>
-        </div>
+          </div>
+        </ScrollReveal>
 
         {/* Two-column: Book Cover + Part Explorer */}
         <div className="mt-16 flex flex-col items-center gap-12 lg:flex-row lg:items-start lg:gap-16">

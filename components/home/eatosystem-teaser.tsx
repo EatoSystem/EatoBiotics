@@ -1,4 +1,3 @@
-import Image from "next/image"
 import Link from "next/link"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { ArrowUpRight } from "lucide-react"
@@ -37,16 +36,6 @@ export function EatoSystemTeaser() {
                 32 counties. 32 local food networks. One national transformation.
                 Seeded in Ireland. Licensed globally.
               </p>
-            </ScrollReveal>
-
-            <ScrollReveal delay={80}>
-              <Image
-                src="/food-22.png"
-                alt="EatoSystem — local food in Ireland"
-                width={600}
-                height={380}
-                className="mt-8 w-full h-auto rounded-2xl"
-              />
             </ScrollReveal>
 
             <ScrollReveal delay={150}>
