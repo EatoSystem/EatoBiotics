@@ -8,7 +8,7 @@ import { AppShowcase } from "@/components/home/app-showcase"
 import { MembershipTeaser } from "@/components/home/membership-teaser"
 import { Manifesto } from "@/components/home/manifesto"
 import { WhatWereBuilding } from "@/components/home/what-were-building"
-import { GoDeeper } from "@/components/home/go-deeper"
+import { LatestFromSubstack } from "@/components/home/latest-from-substack"
 import { TrustDisclaimer } from "@/components/home/trust-disclaimer"
 import { FAQ } from "@/components/home/faq"
 
@@ -29,7 +29,7 @@ export default function Home() {
       <Manifesto />
       <WhatWereBuilding />
       <div className="section-divider" />
-      <GoDeeper />
+      <LatestFromSubstack />
       <div className="section-divider" />
       <TrustDisclaimer />
       <FAQ />

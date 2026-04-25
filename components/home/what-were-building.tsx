@@ -1,7 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { ScrollReveal } from "@/components/scroll-reveal"
-import { ArrowUpRight } from "lucide-react"
+import { ArrowUpRight, Check } from "lucide-react"
 
 const platforms = [
   {
@@ -12,10 +12,16 @@ const platforms = [
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
     description:
       "Weekly writing on the foods, science, and habits that build a stronger microbiome. Free to subscribe. Published every week.",
-    cta: "Subscribe",
+    features: [
+      "Food profiles — one ingredient, its full biotic story",
+      "Plate builds — a complete weekly plate with commentary",
+      "Science made practical — what the research means for your plate",
+    ],
+    cta: "Subscribe free",
     href: "https://eatobiotics.substack.com/",
     external: true,
     status: "Live now",
+    featured: true,
   },
   {
     number: "02",
@@ -25,36 +31,54 @@ const platforms = [
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
     description:
       "EatoBiotics: The Food System Inside You. 25 chapters. The complete guide to building your microbiome through the 3 Biotics framework.",
-    cta: "Learn more",
+    features: [
+      "6 parts — from microbiome basics to a full 21-day rebuild",
+      "Pre, Pro, and Postbiotic food guides with practical daily use",
+      "The complete EatoBiotics plate system, explained in full",
+    ],
+    cta: "Explore the book",
     href: "/book",
     external: false,
     status: "Coming 2026",
+    featured: false,
   },
   {
     number: "03",
-    title: "The Platform",
-    label: "TRACK",
-    accent: "var(--icon-yellow)",
-    gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
-    description:
-      "Assess your food system, score your meals, build your plate, and get personalised advice from EatoBiotic — your AI food system advisor.",
-    cta: "Start free",
-    href: "/assessment",
-    external: false,
-    status: "Live now",
-  },
-  {
-    number: "04",
     title: "The Podcast",
     label: "LISTEN",
     accent: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-yellow))",
     description:
-      "The world's greatest minds sitting down to talk about what they eat, how they live, and the food habits behind their extraordinary lives.",
-    cta: "Listen",
+      "Jason Curry sits down with the world's greatest minds in business, sport, and entertainment to ask the question no one else asks — what do you eat?",
+    features: [
+      "Long-form conversations about food, habits, and performance",
+      "Guests from sport, science, business, and culture",
+      "Coming to YouTube, Spotify, Apple Podcasts, and Substack",
+    ],
+    cta: "Learn more",
     href: "/podcast",
     external: false,
     status: "Coming 2026",
+    featured: false,
+  },
+  {
+    number: "04",
+    title: "EatoSystem",
+    label: "CHANGE",
+    accent: "var(--icon-yellow)",
+    gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
+    description:
+      "Personal health only goes so far if the food system around you produces the wrong food. EatoSystem is Ireland's regenerative food transformation — county by county.",
+    features: [
+      "32 counties — one local food network per county",
+      "Connecting growers, producers, and communities directly",
+      "Seeded in Ireland. Licensed globally.",
+    ],
+    cta: "Explore EatoSystem",
+    href: "/eatosystem",
+    external: false,
+    status: "In progress",
+    featured: false,
   },
 ]
 
@@ -62,6 +86,8 @@ export function WhatWereBuilding() {
   return (
     <section className="px-6 py-24 md:py-32">
       <div className="mx-auto max-w-[1200px]">
+
+        {/* ── Header ── */}
         <div className="flex flex-col gap-10 md:flex-row md:items-center md:gap-16 mb-16">
           <ScrollReveal className="flex-1">
             <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
@@ -88,40 +114,126 @@ export function WhatWereBuilding() {
           </ScrollReveal>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {platforms.map((p, index) => {
+        {/* ── Featured card: Substack ── */}
+        <ScrollReveal>
+          {(() => {
+            const p = platforms[0]
             const inner = (
-              <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-background p-6 transition-all hover:shadow-lg">
-                <div
-                  className="absolute top-0 left-0 right-0 h-1"
-                  style={{ background: p.gradient }}
-                />
-                <div className="flex items-start justify-between">
-                  <span
-                    className="font-serif text-5xl font-bold"
-                    style={{ color: p.accent }}
+              <div className="group relative overflow-hidden rounded-3xl border border-border bg-background transition-all hover:shadow-xl">
+                <div className="absolute top-0 left-0 right-0 h-1" style={{ background: p.gradient }} />
+                <div className="flex flex-col lg:flex-row">
+                  {/* Left: content */}
+                  <div className="flex-1 p-8 md:p-10">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span
+                        className="font-serif text-5xl font-bold"
+                        style={{ color: p.accent }}
+                      >
+                        {p.number}
+                      </span>
+                      <div>
+                        <span
+                          className="block rounded-full px-2.5 py-1 text-xs font-semibold text-white w-fit"
+                          style={{ background: p.gradient }}
+                        >
+                          {p.status}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: p.accent }}>
+                      {p.label}
+                    </p>
+                    <h3 className="font-serif text-2xl font-semibold text-foreground md:text-3xl">
+                      {p.title}
+                    </h3>
+                    <p className="mt-3 text-base leading-relaxed text-muted-foreground max-w-lg">
+                      {p.description}
+                    </p>
+
+                    {/* Feature bullets */}
+                    <ul className="mt-5 space-y-2">
+                      {p.features.map((f) => (
+                        <li key={f} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                          <Check size={14} className="mt-0.5 shrink-0" style={{ color: p.accent }} />
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+
+                    <div
+                      className="mt-8 inline-flex items-center gap-1.5 text-sm font-semibold transition-opacity group-hover:opacity-70"
+                      style={{ color: p.accent }}
+                    >
+                      {p.cta}
+                      <ArrowUpRight size={15} />
+                    </div>
+                  </div>
+
+                  {/* Right: decorative block */}
+                  <div
+                    className="hidden lg:flex lg:w-64 lg:shrink-0 lg:flex-col lg:items-center lg:justify-center lg:p-10"
+                    style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${p.accent} 8%, var(--background)), var(--background))` }}
                   >
+                    <p
+                      className="font-serif text-[7rem] font-bold leading-none select-none"
+                      style={{ color: p.accent, opacity: 0.12 }}
+                    >
+                      &ldquo;
+                    </p>
+                    <p className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
+                      Free · Weekly · Always
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )
+            return (
+              <a href={p.href} target="_blank" rel="noopener noreferrer" className="block">
+                {inner}
+              </a>
+            )
+          })()}
+        </ScrollReveal>
+
+        {/* ── Remaining 3 cards ── */}
+        <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {platforms.slice(1).map((p, index) => {
+            const inner = (
+              <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-background p-7 transition-all hover:shadow-lg">
+                <div className="absolute top-0 left-0 right-0 h-1" style={{ background: p.gradient }} />
+
+                <div className="flex items-start justify-between mb-4">
+                  <span className="font-serif text-5xl font-bold" style={{ color: p.accent }}>
                     {p.number}
                   </span>
                   <span
-                    className="mt-1 rounded-full px-2.5 py-1 text-xs font-semibold text-white"
+                    className="mt-2 rounded-full px-2.5 py-1 text-xs font-semibold text-white"
                     style={{ background: p.gradient }}
                   >
                     {p.status}
                   </span>
                 </div>
-                <p
-                  className="mt-3 text-xs font-bold uppercase tracking-widest"
-                  style={{ color: p.accent }}
-                >
+
+                <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: p.accent }}>
                   {p.label}
                 </p>
-                <h3 className="mt-1 font-serif text-xl font-semibold text-foreground">
+                <h3 className="font-serif text-xl font-semibold text-foreground">
                   {p.title}
                 </h3>
-                <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground flex-1">
                   {p.description}
                 </p>
+
+                {/* Feature bullets */}
+                <ul className="mt-4 space-y-1.5">
+                  {p.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-xs text-muted-foreground">
+                      <Check size={12} className="mt-0.5 shrink-0" style={{ color: p.accent }} />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+
                 <div
                   className="mt-5 flex items-center gap-1 text-sm font-semibold transition-opacity group-hover:opacity-70"
                   style={{ color: p.accent }}
@@ -147,6 +259,7 @@ export function WhatWereBuilding() {
             )
           })}
         </div>
+
       </div>
     </section>
   )
