@@ -14,8 +14,8 @@ const WEEKLY_PLATES = [
     accent: "var(--icon-lime)",
     accentClass: "text-icon-lime",
     borderColor: "border-icon-lime/20",
-    // Solid — the simplest, clearest treatment
     topBar: "var(--icon-lime)",
+    href: "/food-system-bowl",
   },
   {
     number: "1.2",
@@ -25,8 +25,8 @@ const WEEKLY_PLATES = [
     accent: "var(--icon-yellow)",
     accentClass: "text-icon-yellow",
     borderColor: "border-icon-yellow/20",
-    // Brighter gradient — energised and vivid
     topBar: "linear-gradient(90deg, var(--icon-lime), var(--icon-yellow))",
+    href: "/energy-plate",
   },
   {
     number: "1.3",
@@ -36,8 +36,8 @@ const WEEKLY_PLATES = [
     accent: "var(--icon-teal)",
     accentClass: "text-icon-teal",
     borderColor: "border-icon-teal/20",
-    // Full brand gradient — richest, most colourful
     topBar: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow))",
+    href: "/living-plate",
   },
   {
     number: "1.4",
@@ -47,8 +47,8 @@ const WEEKLY_PLATES = [
     accent: "var(--icon-orange)",
     accentClass: "text-icon-orange",
     borderColor: "border-icon-orange/20",
-    // Calm teal-to-green — grounded and restorative
     topBar: "linear-gradient(90deg, var(--icon-teal), var(--icon-green))",
+    href: "/build-plate",
   },
 ]
 
@@ -218,7 +218,7 @@ export function ThePlate() {
           <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {WEEKLY_PLATES.map((plate, i) => (
               <ScrollReveal key={plate.number} delay={i * 70}>
-                <Link href="/weekly" className="group block h-full">
+                <Link href={plate.href} className="group block h-full">
                   <div
                     className={`flex h-full flex-col overflow-hidden rounded-2xl border ${plate.borderColor} bg-background transition-all hover:shadow-lg`}
                   >

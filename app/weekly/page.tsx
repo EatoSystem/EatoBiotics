@@ -4,6 +4,7 @@ import Link from "next/link"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { GradientText } from "@/components/gradient-text"
 import { ArrowRight, ArrowUpRight, CheckCircle2 } from "lucide-react"
+import { PLATES, FRAMEWORK_PARTS } from "@/lib/plates"
 
 export const metadata: Metadata = {
   title: "Weekly Expression",
@@ -15,133 +16,11 @@ export const metadata: Metadata = {
   },
 }
 
-const PLATES = [
-  {
-    number: "1.1",
-    name: "The Food System Bowl",
-    role: "Foundation",
-    personalityWord: "Balanced",
-    message: "This is how EatoBiotics begins.",
-    description:
-      "The entry point. The clearest, most balanced, most welcoming plate in the system. Built to introduce the central idea of EatoBiotics: not only feeding you, but feeding the ecosystem inside you.",
-    emphasis: "Balance",
-    supports: ["digestion", "energy", "resilience"],
-    question: "What is EatoBiotics?",
-    arcWord: "awareness",
-    protein: "Trout",
-    // Food photography — warm, balanced, complete circular composition
-    image: "/food-1.png",
-    topBar: "var(--icon-lime)",
-    accent: "var(--icon-lime)",
-    accentClass: "text-icon-lime",
-    borderColor: "border-icon-lime/20",
-    tagBg: "bg-icon-lime/10",
-    emotional: "clear and foundational",
-    bioticsLabel: "Prebiotic + Probiotic support",
-  },
-  {
-    number: "1.2",
-    name: "The Immunity, Mood & Energy Plate",
-    role: "Function",
-    personalityWord: "Functional",
-    message: "Support the system, and the system supports more of you.",
-    description:
-      "Shows that the microbiome affects far more than digestion. A vibrant plate designed to support immunity, steadier energy, emotional resilience, and recovery through the EatoBiotics framework.",
-    emphasis: "Function and support",
-    supports: ["immunity", "mood", "energy", "recovery"],
-    question: "Why does this matter to how I feel?",
-    arcWord: "function",
-    protein: "Chicken",
-    // Editorial scattered — bright, functional, energised
-    image: "/food-2.png",
-    topBar: "linear-gradient(90deg, var(--icon-lime), var(--icon-yellow))",
-    accent: "var(--icon-yellow)",
-    accentClass: "text-icon-yellow",
-    borderColor: "border-icon-yellow/20",
-    tagBg: "bg-icon-yellow/10",
-    emotional: "bright and functional",
-    bioticsLabel: "Prebiotic + Probiotic + Postbiotic support",
-  },
-  {
-    number: "1.3",
-    name: "The Living Plate",
-    role: "Richness",
-    personalityWord: "Abundant",
-    message: "The system thrives when it is fed with richness and variety.",
-    description:
-      "A fibre-rich, plant-diverse plate built to express the full range of what a thriving microbiome needs — colour, abundance, variety, and nourishment. Diversity is the goal.",
-    emphasis: "Diversity and abundance",
-    supports: ["richness", "diversity", "nourishment", "consistency"],
-    question: "What does a thriving internal system need?",
-    arcWord: "nourishment",
-    protein: "Tofu",
-    // Most plant-diverse of all eight — rainbow carrots, broccoli, edamame
-    image: "/food-7.png",
-    topBar: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow))",
-    accent: "var(--icon-teal)",
-    accentClass: "text-icon-teal",
-    borderColor: "border-icon-teal/20",
-    tagBg: "bg-icon-teal/10",
-    emotional: "abundant and alive",
-    bioticsLabel: "Prebiotic + Probiotic + Protein Balance",
-  },
-  {
-    number: "1.4",
-    name: "The Rebuild Plate",
-    role: "Restoration",
-    personalityWord: "Restorative",
-    message: "Not perfection. Rebuilding.",
-    description:
-      "Closes the weekly sequence with resilience, recovery, and restoration. Designed to support rebuilding through better daily inputs and weekly consistency — calm, purposeful, and hopeful.",
-    emphasis: "Restoration and resilience",
-    supports: ["rebuilding", "steadiness", "recovery"],
-    question: "How do I begin improving and restoring it?",
-    arcWord: "rebuilding",
-    protein: "Chicken",
-    // Warm sweet potato, earthy grain — grounded and restorative
-    image: "/food-4.png",
-    topBar: "linear-gradient(90deg, var(--icon-teal), var(--icon-green))",
-    accent: "var(--icon-orange)",
-    accentClass: "text-icon-orange",
-    borderColor: "border-icon-orange/20",
-    tagBg: "bg-icon-orange/10",
-    emotional: "calm, restorative, and hopeful",
-    bioticsLabel: "Prebiotic + Probiotic + Postbiotic support",
-  },
-]
-
 const ARC = [
   { number: "1.1", label: "Foundation", color: "var(--icon-lime)" },
   { number: "1.2", label: "Function", color: "var(--icon-yellow)" },
   { number: "1.3", label: "Richness", color: "var(--icon-teal)" },
   { number: "1.4", label: "Rebuild", color: "var(--icon-orange)" },
-]
-
-const FRAMEWORK_PARTS = [
-  {
-    label: "Prebiotic Base",
-    desc: "Fibres and plant foods that feed beneficial bacteria",
-    color: "var(--icon-lime)",
-    examples: "Garlic · Oats · Onions · Asparagus · Legumes",
-  },
-  {
-    label: "Probiotic Side",
-    desc: "Fermented foods that help strengthen microbial diversity",
-    color: "var(--icon-teal)",
-    examples: "Kimchi · Sauerkraut · Yogurt · Kefir · Miso",
-  },
-  {
-    label: "Protein Balance",
-    desc: "A rotating protein source that anchors the meal",
-    color: "var(--icon-green)",
-    examples: "Salmon · Trout · Eggs · Tempeh · Beans",
-  },
-  {
-    label: "Postbiotic Builders",
-    desc: "Healthy fats, herbs, polyphenols, and supportive extras",
-    color: "var(--icon-orange)",
-    examples: "Avocado · Olive oil · Seeds · Berries · Walnuts",
-  },
 ]
 
 export default function WeeklyPage() {
@@ -361,6 +240,7 @@ export default function WeeklyPage() {
           <div className="mt-12 grid gap-8 lg:grid-cols-2">
             {PLATES.map((plate, i) => (
               <ScrollReveal key={plate.number} delay={i * 60}>
+                <Link href={`/${plate.slug}`} className="group block">
                 <div
                   className={`overflow-hidden rounded-3xl border ${plate.borderColor} bg-background transition-all hover:shadow-lg`}
                 >
@@ -426,8 +306,12 @@ export default function WeeklyPage() {
                       <span className="font-semibold text-foreground/60">Emphasis:</span>{" "}
                       {plate.emphasis}
                     </p>
+                    <p className={`mt-4 text-xs font-semibold ${plate.accentClass} opacity-0 transition-opacity group-hover:opacity-100`}>
+                      Explore this plate →
+                    </p>
                   </div>
                 </div>
+                </Link>
               </ScrollReveal>
             ))}
           </div>
