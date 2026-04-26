@@ -1,4 +1,4 @@
-import Image from "next/image"
+import { Suspense } from "react"
 import { Hero } from "@/components/home/hero"
 import { Pathways } from "@/components/home/pathways"
 import { HowItWorks } from "@/components/home/how-it-works"
@@ -19,7 +19,7 @@ import { StickyCta } from "@/components/start/sticky-cta"
 export default function Home() {
   return (
     <>
-      <Hero />
+      <Suspense fallback={null}><Hero /></Suspense>
       <div style={{ height: "2px", background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
       <Pathways />
       <HowItWorks />
