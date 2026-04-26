@@ -4,7 +4,7 @@ import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import {
-  ArrowRight, Sparkles, BookmarkPlus, Check, TrendingUp, RefreshCw,
+  ArrowRight, Sparkles, BookmarkPlus, Check, TrendingUp, RefreshCw, Share2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { saveMealAnalysis } from "@/lib/local-storage"
@@ -42,6 +42,20 @@ export interface AnalysisResult {
   suggestions: string[]
   overallAssessment: string
   nutrition?: Nutrition
+  // New extended fields
+  mealName?: string
+  prebioticScore?: number
+  probioticScore?: number
+  postbioticScore?: number
+  plantDiversityCount?: number
+  inflammationIndex?: "anti-inflammatory" | "neutral" | "inflammatory"
+  processingLevel?: "whole_food" | "minimally_processed" | "ultra_processed"
+  fermentationLevel?: "none" | "low" | "medium" | "high"
+  gutLiningSupport?: "strong" | "moderate" | "weak"
+  scfaPotential?: "high" | "medium" | "low"
+  plateQuadrants?: { fiber: number; fermented: number; protein: number; fats: number }
+  keyNutrients?: { magnesium: string; omega3: string; zinc: string; vitaminC: string; b12: string }
+  shareHash?: string
 }
 
 /* ── Config objects ─────────────────────────────────────────────────── */
@@ -92,10 +106,6 @@ function getScoreBand(score: number): { label: string; color: string } {
 
 /* ── Animation helper ───────────────────────────────────────────────── */
 
-/**
- * Returns an inline style that applies the fadeSlideUp animation
- * with the given delay. The keyframe is defined in globals.css.
- */
 function animStyle(delayMs: number): React.CSSProperties {
   return {
     animation: `fadeSlideUp 500ms ease-out both`,
@@ -110,11 +120,17 @@ function ScoreDisplay({
   prebioticStrength,
   hasProbiotic,
   hasPostbiotic,
+  prebioticScore,
+  probioticScore,
+  postbioticScore,
 }: {
   score: number
   prebioticStrength: "strong" | "moderate" | "low"
   hasProbiotic: boolean
   hasPostbiotic: boolean
+  prebioticScore?: number
+  probioticScore?: number
+  postbioticScore?: number
 }) {
   const { label, color } = getScoreBand(score)
   const percentile    = getPercentile(score)
@@ -131,6 +147,7 @@ function ScoreDisplay({
       status: prebioticStrength === "strong" ? "Strong" : prebioticStrength === "moderate" ? "Moderate" : "Low",
       color: "var(--icon-lime)",
       present: prebioticStrength !== "low",
+      numericScore: prebioticScore,
     },
     {
       icon: "🦠",
@@ -139,6 +156,7 @@ function ScoreDisplay({
       status: hasProbiotic ? "Present" : "Not in meal",
       color: "var(--icon-green)",
       present: hasProbiotic,
+      numericScore: probioticScore,
     },
     {
       icon: "✨",
@@ -147,6 +165,7 @@ function ScoreDisplay({
       status: hasPostbiotic ? "Present" : "Not in meal",
       color: "var(--icon-teal)",
       present: hasPostbiotic,
+      numericScore: postbioticScore,
     },
   ]
 
@@ -205,11 +224,19 @@ function ScoreDisplay({
               />
             </div>
             <span
-              className="w-24 shrink-0 text-right text-xs font-semibold"
+              className="w-16 shrink-0 text-right text-xs font-semibold"
               style={{ color: p.present ? p.color : "var(--muted-foreground)" }}
             >
               {p.status}
             </span>
+            {p.numericScore !== undefined && (
+              <span
+                className="w-7 shrink-0 text-right text-xs font-bold tabular-nums"
+                style={{ color: p.present ? p.color : "var(--muted-foreground)", opacity: 0.8 }}
+              >
+                {p.numericScore}
+              </span>
+            )}
           </div>
         ))}
       </div>
@@ -308,16 +335,306 @@ function NutritionPanel({ nutrition }: { nutrition: Nutrition }) {
   )
 }
 
+/* ── Gut Metrics Panel ──────────────────────────────────────────────── */
+
+function GutMetricsPanel({ result }: { result: AnalysisResult }) {
+  const { plantDiversityCount, inflammationIndex, processingLevel, fermentationLevel } = result
+
+  const inflammationConfig = {
+    "anti-inflammatory": { label: "Anti-inflammatory", color: "var(--icon-green)", bg: "color-mix(in srgb, var(--icon-green) 10%, transparent)", icon: "🛡️" },
+    "neutral":           { label: "Neutral",            color: "var(--icon-yellow)", bg: "color-mix(in srgb, var(--icon-yellow) 10%, transparent)", icon: "⚖️" },
+    "inflammatory":      { label: "Inflammatory",       color: "#ef4444", bg: "color-mix(in srgb, #ef4444 10%, transparent)", icon: "🔥" },
+  }
+
+  const processingConfig = {
+    "whole_food":         { label: "Whole Food",          icon: "✅", color: "var(--icon-green)" },
+    "minimally_processed":{ label: "Minimally Processed", icon: "⚠️",  color: "var(--icon-yellow)" },
+    "ultra_processed":    { label: "Ultra-processed",     icon: "🔴", color: "#ef4444" },
+  }
+
+  const fermentationPct = {
+    "none": 0, "low": 25, "medium": 60, "high": 100,
+  } as const
+
+  const inflamm = inflammationIndex ? inflammationConfig[inflammationIndex] : null
+  const processing = processingLevel ? processingConfig[processingLevel] : null
+  const fermPct = fermentationLevel ? fermentationPct[fermentationLevel] : 0
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <p className="mb-4 border-b border-border pb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+        Gut Health Metrics
+      </p>
+      <div className="grid grid-cols-2 gap-3">
+
+        {/* Plant Diversity */}
+        <div className="rounded-xl p-4" style={{ background: "color-mix(in srgb, var(--icon-lime) 8%, transparent)" }}>
+          <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "var(--icon-lime)" }}>
+            Plant Diversity
+          </p>
+          <div className="flex items-end gap-1.5">
+            <span className="text-3xl font-bold tabular-nums leading-none" style={{ color: "var(--icon-lime)" }}>
+              {plantDiversityCount ?? "—"}
+            </span>
+            <span className="text-xs text-muted-foreground pb-0.5">plants</span>
+          </div>
+          <p className="mt-1.5 text-[10px] text-muted-foreground">Target: 5–7 per meal</p>
+        </div>
+
+        {/* Inflammation */}
+        {inflamm && (
+          <div className="rounded-xl p-4" style={{ background: inflamm.bg }}>
+            <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: inflamm.color }}>
+              Inflammation
+            </p>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xl leading-none">{inflamm.icon}</span>
+              <span className="text-xs font-semibold" style={{ color: inflamm.color }}>{inflamm.label}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Processing Level */}
+        {processing && (
+          <div className="rounded-xl p-4" style={{ background: "color-mix(in srgb, var(--icon-teal) 8%, transparent)" }}>
+            <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "var(--icon-teal)" }}>
+              Processing
+            </p>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xl leading-none">{processing.icon}</span>
+              <span className="text-xs font-semibold" style={{ color: processing.color }}>{processing.label}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Fermentation Level */}
+        <div className="rounded-xl p-4" style={{ background: "color-mix(in srgb, var(--icon-green) 8%, transparent)" }}>
+          <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "var(--icon-green)" }}>
+            Fermentation
+          </p>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs font-semibold capitalize" style={{ color: "var(--icon-green)" }}>
+              {fermentationLevel ?? "None"}
+            </span>
+          </div>
+          <div className="h-2 rounded-full bg-border/50 overflow-hidden">
+            <div
+              className="h-2 rounded-full transition-all duration-700"
+              style={{ width: `${fermPct}%`, background: "var(--icon-green)" }}
+            />
+          </div>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
+/* ── Plate Quadrant Map ─────────────────────────────────────────────── */
+
+function PlateQuadrantMap({ plateQuadrants }: { plateQuadrants: { fiber: number; fermented: number; protein: number; fats: number } }) {
+  const quadrants = [
+    { key: "fiber" as const,    label: "Fibre",     color: "var(--icon-lime)",   emoji: "🌱" },
+    { key: "fermented" as const, label: "Fermented", color: "var(--icon-teal)",   emoji: "🦠" },
+    { key: "protein" as const,  label: "Protein",   color: "var(--icon-yellow)", emoji: "💪" },
+    { key: "fats" as const,     label: "Fats",      color: "var(--icon-orange)", emoji: "🫒" },
+  ]
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <p className="mb-4 border-b border-border pb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+        Plate Composition
+      </p>
+      <div className="flex flex-col sm:flex-row items-center gap-6">
+        {/* Visual plate */}
+        <div className="relative w-32 h-32 shrink-0">
+          <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+            {(() => {
+              const total = quadrants.reduce((s, q) => s + (plateQuadrants[q.key] || 0), 0) || 100
+              let cumulativeAngle = 0
+              return quadrants.map((q) => {
+                const pct = (plateQuadrants[q.key] || 0) / total
+                const angle = pct * 360
+                const startAngle = cumulativeAngle
+                cumulativeAngle += angle
+                const r = 45
+                const cx = 50, cy = 50
+                const startRad = (startAngle * Math.PI) / 180
+                const endRad = ((startAngle + angle) * Math.PI) / 180
+                const x1 = cx + r * Math.cos(startRad)
+                const y1 = cy + r * Math.sin(startRad)
+                const x2 = cx + r * Math.cos(endRad)
+                const y2 = cy + r * Math.sin(endRad)
+                const largeArc = angle > 180 ? 1 : 0
+                const d = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`
+                return <path key={q.key} d={d} fill={q.color} opacity={0.85} />
+              })
+            })()}
+            <circle cx="50" cy="50" r="18" fill="var(--background)" />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-lg">🍽️</span>
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div className="flex-1 grid grid-cols-2 gap-2 w-full">
+          {quadrants.map((q) => (
+            <div key={q.key} className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: q.color }} />
+              <span className="text-xs text-muted-foreground">{q.emoji} {q.label}</span>
+              <span className="ml-auto text-xs font-bold tabular-nums" style={{ color: q.color }}>
+                {plateQuadrants[q.key]}%
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ── Key Nutrients Panel ────────────────────────────────────────────── */
+
+function KeyNutrientsPanel({ keyNutrients }: { keyNutrients: AnalysisResult["keyNutrients"] }) {
+  if (!keyNutrients) return null
+
+  const nutrients = [
+    { key: "magnesium" as const, label: "Magnesium", emoji: "🦴" },
+    { key: "omega3" as const,    label: "Omega-3",   emoji: "🐟" },
+    { key: "zinc" as const,      label: "Zinc",      emoji: "⚡" },
+    { key: "vitaminC" as const,  label: "Vitamin C", emoji: "🍊" },
+    { key: "b12" as const,       label: "B12",       emoji: "🔋" },
+  ]
+
+  const levelConfig = {
+    high:     { color: "var(--icon-green)",  bg: "color-mix(in srgb, var(--icon-green) 12%, transparent)",  label: "High" },
+    moderate: { color: "var(--icon-yellow)", bg: "color-mix(in srgb, var(--icon-yellow) 12%, transparent)", label: "Moderate" },
+    low:      { color: "var(--muted-foreground)", bg: "color-mix(in srgb, currentColor 5%, transparent)", label: "Low" },
+  } as Record<string, { color: string; bg: string; label: string }>
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <p className="mb-4 border-b border-border pb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+        Key Nutrients
+      </p>
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {nutrients.map((n) => {
+          const level = keyNutrients[n.key]?.toLowerCase() ?? "low"
+          const cfg = levelConfig[level] ?? levelConfig.low
+          return (
+            <div
+              key={n.key}
+              className="flex-shrink-0 flex flex-col items-center gap-1.5 rounded-xl px-3 py-3 min-w-[70px]"
+              style={{ background: cfg.bg }}
+            >
+              <span className="text-xl leading-none">{n.emoji}</span>
+              <span className="text-[10px] font-semibold text-muted-foreground text-center">{n.label}</span>
+              <span
+                className="text-[10px] font-bold uppercase tracking-wide"
+                style={{ color: cfg.color }}
+              >
+                {cfg.label}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/* ── Assessment Bridge CTA ──────────────────────────────────────────── */
+
+function AssessmentBridgeCTA({
+  score,
+  mealName,
+  shareHash,
+  isGuest,
+  isFreeUser,
+}: {
+  score: number
+  mealName?: string
+  shareHash?: string
+  isGuest: boolean
+  isFreeUser: boolean
+}) {
+  function handleShare() {
+    const name = mealName ?? "this meal"
+    const url = shareHash
+      ? `https://eatobiotics.com/analyse/result/${shareHash}`
+      : "https://eatobiotics.com/analyse"
+    const text = `My ${name} scored ${score}/100 on EatoBiotics — what does yours score? ${url}`
+
+    if (navigator.share) {
+      navigator.share({ title: "My EatoBiotics Meal Score", text, url })
+    } else {
+      navigator.clipboard.writeText(text)
+    }
+  }
+
+  if (!isGuest && !isFreeUser) {
+    // Paid user — share only
+    return (
+      <button
+        onClick={handleShare}
+        className="w-full flex items-center justify-center gap-2 rounded-2xl border border-border py-3.5 text-sm font-semibold text-foreground hover:bg-secondary/60 transition-all"
+      >
+        <Share2 size={15} /> Share this result
+      </button>
+    )
+  }
+
+  return (
+    <div
+      className="rounded-2xl p-6 text-center"
+      style={{
+        background: "linear-gradient(var(--background), var(--background)) padding-box, linear-gradient(135deg, var(--icon-lime), var(--icon-green), var(--icon-teal)) border-box",
+        border: "2px solid transparent",
+      }}
+    >
+      <span className="text-3xl">🌿</span>
+      <h3 className="mt-3 font-serif text-xl font-semibold text-foreground">
+        You scored <span style={{ color: "var(--icon-green)" }}>{score}</span> on this meal.
+      </h3>
+      <p className="mt-1.5 text-sm text-muted-foreground">
+        How does your full food system score?
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground/70">
+        15 questions · Free · Takes 3 minutes
+      </p>
+      <div className="mt-5 flex flex-col gap-3">
+        <Link
+          href="/assessment"
+          className="flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
+        >
+          Get My Full Biotics Score <ArrowRight size={14} />
+        </Link>
+        {shareHash && (
+          <button
+            onClick={handleShare}
+            className="flex items-center justify-center gap-2 rounded-full border border-border py-3 text-sm font-semibold text-foreground hover:bg-secondary/60 transition-all"
+          >
+            <Share2 size={14} /> Share this result
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 /* ── ResultBuilder ──────────────────────────────────────────────────── */
 
 interface ResultBuilderProps {
   result: AnalysisResult
-  previewUrl: string
-  onReset: () => void
+  previewUrl?: string
+  onReset?: () => void
   isFreeUser?: boolean
+  isGuest?: boolean
 }
 
-export function ResultBuilder({ result, previewUrl, onReset, isFreeUser = false }: ResultBuilderProps) {
+export function ResultBuilder({ result, previewUrl, onReset, isFreeUser = false, isGuest = false }: ResultBuilderProps) {
   const [saved, setSaved] = useState(false)
 
   const score = typeof result.score === "number" ? Math.round(result.score) : 50
@@ -362,16 +679,27 @@ export function ResultBuilder({ result, previewUrl, onReset, isFreeUser = false 
 
       <div className="space-y-5">
 
+        {/* Meal name header (if available) */}
+        {result.mealName && (
+          <div style={animStyle(0)}>
+            <p className="text-center text-sm font-semibold text-muted-foreground">
+              📸 <span className="text-foreground">{result.mealName}</span>
+            </p>
+          </div>
+        )}
+
         {/* Meal photo — no delay, instant */}
-        <div className="relative overflow-hidden rounded-2xl" style={animStyle(0)}>
-          <Image
-            src={previewUrl} alt="Your meal"
-            width={600} height={400}
-            className="w-full object-cover max-h-72"
-            unoptimized
-          />
-          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/60 to-transparent" />
-        </div>
+        {previewUrl && (
+          <div className="relative overflow-hidden rounded-2xl" style={animStyle(0)}>
+            <Image
+              src={previewUrl} alt="Your meal"
+              width={600} height={400}
+              className="w-full object-cover max-h-72"
+              unoptimized
+            />
+            <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/60 to-transparent" />
+          </div>
+        )}
 
         {/* Score ring + pillars — 0 ms */}
         <div style={animStyle(0)}>
@@ -380,6 +708,9 @@ export function ResultBuilder({ result, previewUrl, onReset, isFreeUser = false 
             prebioticStrength={result.prebioticStrength ?? "low"}
             hasProbiotic={hasProbiotic}
             hasPostbiotic={hasPostbiotic}
+            prebioticScore={result.prebioticScore}
+            probioticScore={result.probioticScore}
+            postbioticScore={result.postbioticScore}
           />
         </div>
 
@@ -409,6 +740,27 @@ export function ResultBuilder({ result, previewUrl, onReset, isFreeUser = false 
               </div>
               <p className="text-sm text-foreground/80 leading-relaxed">{result.whatThisMealDoes}</p>
             </div>
+          </div>
+        )}
+
+        {/* Gut Metrics Panel — 500 ms */}
+        {(result.plantDiversityCount !== undefined || result.inflammationIndex || result.processingLevel || result.fermentationLevel) && (
+          <div style={animStyle(500)}>
+            <GutMetricsPanel result={result} />
+          </div>
+        )}
+
+        {/* Plate Quadrant Map — 650 ms */}
+        {result.plateQuadrants && (
+          <div style={animStyle(650)}>
+            <PlateQuadrantMap plateQuadrants={result.plateQuadrants} />
+          </div>
+        )}
+
+        {/* Key Nutrients Panel — 800 ms */}
+        {result.keyNutrients && (
+          <div style={animStyle(800)}>
+            <KeyNutrientsPanel keyNutrients={result.keyNutrients} />
           </div>
         )}
 
@@ -517,55 +869,70 @@ export function ResultBuilder({ result, previewUrl, onReset, isFreeUser = false 
           </div>
         )}
 
-        {/* Share — 900 ms */}
-        <div style={animStyle(900)}>
-          <ShareMealCard result={result} />
+        {/* Assessment bridge / share CTA — 950 ms */}
+        <div style={animStyle(950)}>
+          <AssessmentBridgeCTA
+            score={score}
+            mealName={result.mealName}
+            shareHash={result.shareHash}
+            isGuest={isGuest}
+            isFreeUser={isFreeUser}
+          />
         </div>
 
-        {/* Free scan upsell — 1050 ms (only for free users) */}
-        {isFreeUser && (
+        {/* Share meal card — 1000 ms (non-guest) */}
+        {!isGuest && (
+          <div style={animStyle(1000)}>
+            <ShareMealCard result={result} />
+          </div>
+        )}
+
+        {/* Free scan upsell — 1050 ms (only for free logged-in users) */}
+        {isFreeUser && !isGuest && (
           <div style={animStyle(1050)}>
             <FreeScanUpsell score={result.score} />
           </div>
         )}
 
-        {/* CTAs — 1200 ms */}
-        <div style={animStyle(isFreeUser ? 1200 : 1050)}>
-          <div className="flex flex-col gap-3">
-            {/* Save to My Meals */}
-            <button
-              onClick={handleSave}
-              disabled={saved}
-              className={cn(
-                "flex w-full items-center justify-center gap-2 rounded-2xl border py-3.5 text-sm font-semibold transition-all",
-                saved
-                  ? "border-[var(--icon-green)]/40 bg-[var(--icon-green)]/8 text-[var(--icon-green)] cursor-default"
-                  : "border-border text-foreground hover:bg-secondary/60"
-              )}
-            >
-              {saved ? (
-                <><Check size={15} /> Saved to My Meals</>
-              ) : (
-                <><BookmarkPlus size={15} /> Save to My Meals</>
-              )}
-            </button>
-
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/myplate"
-                className="flex flex-1 items-center justify-center gap-2 rounded-2xl brand-gradient py-3.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-              >
-                Build it in My Plate <ArrowRight size={14} />
-              </Link>
+        {/* CTAs — only show for logged-in users with reset capability */}
+        {onReset && (
+          <div style={animStyle(isFreeUser ? 1200 : 1100)}>
+            <div className="flex flex-col gap-3">
+              {/* Save to My Meals */}
               <button
-                onClick={onReset}
-                className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-border py-3.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary/60"
+                onClick={handleSave}
+                disabled={saved}
+                className={cn(
+                  "flex w-full items-center justify-center gap-2 rounded-2xl border py-3.5 text-sm font-semibold transition-all",
+                  saved
+                    ? "border-[var(--icon-green)]/40 bg-[var(--icon-green)]/8 text-[var(--icon-green)] cursor-default"
+                    : "border-border text-foreground hover:bg-secondary/60"
+                )}
               >
-                <RefreshCw size={14} /> Analyse another meal
+                {saved ? (
+                  <><Check size={15} /> Saved to My Meals</>
+                ) : (
+                  <><BookmarkPlus size={15} /> Save to My Meals</>
+                )}
               </button>
+
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/myplate"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-2xl brand-gradient py-3.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                >
+                  Build it in My Plate <ArrowRight size={14} />
+                </Link>
+                <button
+                  onClick={onReset}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-border py-3.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary/60"
+                >
+                  <RefreshCw size={14} /> Analyse another meal
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
       </div>
     </>

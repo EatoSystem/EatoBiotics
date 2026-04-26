@@ -5,6 +5,7 @@ import Link from "next/link"
 import { ArrowRight, Zap, X } from "lucide-react"
 import { useFeatureGate } from "@statsig/react-bindings"
 import { logEvent } from "@/lib/statsig-client"
+import { GuestScanFlow } from "./guest-scan-flow"
 
 interface AnalyseGateProps {
   membershipTier: "free" | "grow" | "restore" | "transform"
@@ -26,8 +27,6 @@ interface AnalyseGateProps {
  *   free_first_meal_scan — kill switch for the free-first-scan feature
  */
 export function AnalyseGate({ membershipTier, isLoggedIn, lifetimeCount = 0, children }: AnalyseGateProps) {
-  const [showAuthModal, setShowAuthModal] = useState(false)
-
   // Feature gate: free_first_meal_scan
   // When ON  → free users get their first scan for free (existing behaviour).
   // When OFF → all free users see the upsell wall (kill switch).
@@ -69,58 +68,9 @@ export function AnalyseGate({ membershipTier, isLoggedIn, lifetimeCount = 0, chi
   }
 
   // ── Guest (not logged in) ─────────────────────────────────────────────────
-  // Render children but intercept any submit attempt with an auth modal
+  // Show the full guest scan flow — one free scan with email capture
   if (!isLoggedIn) {
-    return (
-      <>
-        {/* Auth-required modal */}
-        {showAuthModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-              onClick={() => setShowAuthModal(false)}
-            />
-            <div className="relative w-full max-w-sm rounded-3xl bg-card p-8 shadow-2xl">
-              <button
-                onClick={() => setShowAuthModal(false)}
-                className="absolute right-4 top-4 rounded-full p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                <X size={16} />
-              </button>
-              <span className="text-3xl">🌿</span>
-              <h3 className="mt-3 font-serif text-xl font-semibold text-foreground">
-                Create a free account to analyse your meals
-              </h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Meal analysis is available from the{" "}
-                <span className="font-semibold text-foreground">Grow plan — €9.99/month</span>.
-                Start with a free assessment to get your Biotics Score first.
-              </p>
-              <div className="mt-6 flex flex-col gap-3">
-                <Link
-                  href="/assessment"
-                  className="flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white"
-                  style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
-                >
-                  Sign Up — it&apos;s free
-                </Link>
-                <Link
-                  href="/pricing"
-                  className="flex items-center justify-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted"
-                >
-                  See Plans
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Render children with an intercepting wrapper */}
-        <GuestInterceptor onAuthRequired={() => setShowAuthModal(true)}>
-          {children}
-        </GuestInterceptor>
-      </>
-    )
+    return <GuestScanFlow />
   }
 
   // ── Paid tier ─────────────────────────────────────────────────────────────

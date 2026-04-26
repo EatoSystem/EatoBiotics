@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
+import type { MessageParam } from "@anthropic-ai/sdk/resources/messages"
 
 const ANALYSIS_PROMPT = `You are a food system nutrition analyst using the EatoBiotics framework (prebiotics, probiotics, postbiotics).
 
-Look at this meal photo carefully and identify EVERY distinct food item visible — including garnishes, seeds, dressings, sauces, and side items. Aim to identify 4–8 items typically visible in a meal photo. Don't miss small items like seeds on avocado, dressing, or herbs.
+Look at this meal carefully and identify EVERY distinct food item visible — including garnishes, seeds, dressings, sauces, and side items. Aim to identify 4–8 items typically visible in a meal photo. Don't miss small items like seeds on avocado, dressing, or herbs.
 
 For each food, classify it as ONE of:
 - prebiotic: fibrous plant foods that feed good gut bacteria (ALL vegetables, fruits, wholegrains, legumes, garlic, onion, leeks, asparagus, peas, oats, bananas, seeds like hemp/flax/chia, avocado, etc.)
@@ -67,11 +68,50 @@ Also estimate the total nutritional content of the ENTIRE meal visible (not per 
 
 Also calculate a "boostedScore" — what the score would be if the user added ONE item from each category listed in missingBiotics. Apply the same scoring rubric. If nothing is missing, boostedScore equals score.
 
+Also return these additional fields in the same JSON object:
+
+mealName: A short descriptive name for this meal (e.g. "Salmon + Kimchi Bowl", "Greek Yogurt Breakfast", "Cheeseburger & Fries"). Max 4 words.
+
+prebioticScore: 0–100 numeric score for prebiotics specifically (not the overall score)
+probioticScore: 0–100 numeric score for probiotics specifically
+postbioticScore: 0–100 numeric score for postbiotics specifically
+
+plantDiversityCount: Count of distinct plant foods visible (each vegetable, fruit, grain, legume, herb, seed counts as 1)
+
+inflammationIndex: "anti-inflammatory" if the meal is rich in polyphenols/omega-3/fibre with minimal refined sugar/seed oils; "inflammatory" if high in refined carbs, seed oils, processed meat; "neutral" otherwise
+
+processingLevel: "whole_food" if >80% of ingredients are whole/minimally processed; "ultra_processed" if dominated by packaged/fast food; "minimally_processed" otherwise
+
+fermentationLevel: "none" if no fermented foods; "low" if trace amounts (e.g. small dressing with ACV); "medium" if one clear fermented item; "high" if 2+ fermented items
+
+gutLiningSupport: "strong" if meal contains collagen-rich proteins, zinc sources, vitamin C, or butyrate-producing foods; "weak" if primarily refined carbs/processed foods; "moderate" otherwise
+
+scfaPotential: "high" if the prebiotic fibre content will produce significant short-chain fatty acids (butyrate, propionate, acetate) during fermentation — typically 4+ prebiotic foods or beta-glucan sources; "medium" if 2–3 prebiotic foods; "low" otherwise
+
+plateQuadrants: Estimate what % of the plate each quadrant represents as integers summing to 100:
+  { "fiber": X, "fermented": X, "protein": X, "fats": X }
+  fiber = all plant/fibre foods, fermented = all fermented foods, protein = all protein sources, fats = all fat sources (note: a food can span multiple but assign to primary role)
+
+keyNutrients: Estimate presence of these key nutrients as "high"/"moderate"/"low":
+  { "magnesium": "...", "omega3": "...", "zinc": "...", "vitaminC": "...", "b12": "..." }
+
 Return ONLY valid JSON with this exact structure, no markdown fences:
 {
   "score": 70,
+  "mealName": "string",
+  "prebioticScore": 75,
+  "probioticScore": 20,
+  "postbioticScore": 45,
   "boostedScore": 85,
   "prebioticStrength": "strong|moderate|low",
+  "plantDiversityCount": 4,
+  "inflammationIndex": "anti-inflammatory|neutral|inflammatory",
+  "processingLevel": "whole_food|minimally_processed|ultra_processed",
+  "fermentationLevel": "none|low|medium|high",
+  "gutLiningSupport": "strong|moderate|weak",
+  "scfaPotential": "high|medium|low",
+  "plateQuadrants": { "fiber": 40, "fermented": 20, "protein": 25, "fats": 15 },
+  "keyNutrients": { "magnesium": "high", "omega3": "high", "zinc": "moderate", "vitaminC": "moderate", "b12": "high" },
   "foods": [
     { "name": "string", "emoji": "string", "biotic": "prebiotic|probiotic|postbiotic|protein", "confidence": "high|medium|low" }
   ],
@@ -102,42 +142,62 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Analysis not available" }, { status: 503 })
     }
 
-    const { imageBase64, mimeType } = await req.json() as {
-      imageBase64: string
-      mimeType: "image/jpeg" | "image/png" | "image/webp"
+    const body = await req.json() as {
+      imageBase64?: string
+      mimeType?: "image/jpeg" | "image/png" | "image/webp"
+      description?: string
     }
 
-    if (!imageBase64 || !mimeType) {
-      return NextResponse.json({ error: "Missing image data" }, { status: 400 })
+    const { imageBase64, mimeType, description } = body
+
+    // Must have either an image or a text description
+    if (!imageBase64 && !description) {
+      return NextResponse.json({ error: "Missing image or description" }, { status: 400 })
     }
 
     // Validate size: base64 of 5MB = ~6.8MB string
-    if (imageBase64.length > 7_000_000) {
+    if (imageBase64 && imageBase64.length > 7_000_000) {
       return NextResponse.json({ error: "Image too large. Please use an image under 5MB." }, { status: 400 })
     }
 
     const anthropic = new Anthropic({ apiKey })
 
+    // Build message content — image path or text-only path
+    type MsgContent = MessageParam["content"]
+    let messageContent: MsgContent
+
+    if (imageBase64 && mimeType) {
+      messageContent = [
+        {
+          type: "image",
+          source: {
+            type: "base64",
+            media_type: mimeType,
+            data: imageBase64,
+          },
+        },
+        {
+          type: "text",
+          text: ANALYSIS_PROMPT,
+        },
+      ]
+    } else {
+      // Text-only description path
+      messageContent = [
+        {
+          type: "text",
+          text: `${ANALYSIS_PROMPT}\n\nMeal description: ${description}`,
+        },
+      ]
+    }
+
     const response = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 2000,
+      max_tokens: 2500,
       messages: [
         {
           role: "user",
-          content: [
-            {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: mimeType,
-                data: imageBase64,
-              },
-            },
-            {
-              type: "text",
-              text: ANALYSIS_PROMPT,
-            },
-          ],
+          content: messageContent,
         },
       ],
     })
