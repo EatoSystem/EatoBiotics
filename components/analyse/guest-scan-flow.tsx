@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useRef, useCallback, useEffect } from "react"
-import { Camera, FileText, X, ArrowRight, Loader2 } from "lucide-react"
+import { Camera, FileText, X, ArrowRight, Loader2, ImageIcon } from "lucide-react"
+import Image from "next/image"
 import { ResultBuilder, type AnalysisResult } from "./result-builder"
 
 /* ── Types ──────────────────────────────────────────────────────────── */
@@ -19,31 +20,22 @@ function generateHash(): string {
 /* ── Image compression ──────────────────────────────────────────────── */
 
 async function compressImage(file: File): Promise<{ base64: string; mimeType: "image/jpeg" | "image/png" | "image/webp" }> {
-  return new Promise((resolve) => {
-    const img = new window.Image()
+  return new Promise((resolve, reject) => {
+    const img = document.createElement("img")
     const url = URL.createObjectURL(file)
     img.onload = () => {
       URL.revokeObjectURL(url)
       const MAX = 1200
-      let { width, height } = img
-      if (width > MAX || height > MAX) {
-        if (width > height) {
-          height = Math.round((height / width) * MAX)
-          width = MAX
-        } else {
-          width = Math.round((width / height) * MAX)
-          height = MAX
-        }
-      }
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height))
       const canvas = document.createElement("canvas")
-      canvas.width = width
-      canvas.height = height
+      canvas.width = Math.round(img.width * scale)
+      canvas.height = Math.round(img.height * scale)
       const ctx = canvas.getContext("2d")!
-      ctx.drawImage(img, 0, 0, width, height)
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.85)
-      const base64 = dataUrl.replace(/^data:image\/jpeg;base64,/, "")
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+      const base64 = canvas.toDataURL("image/jpeg", 0.85).replace(/^data:image\/jpeg;base64,/, "")
       resolve({ base64, mimeType: "image/jpeg" })
     }
+    img.onerror = reject
     img.src = url
   })
 }
@@ -58,7 +50,7 @@ const LOADING_MESSAGES = [
   "Building your results...",
 ]
 
-function LoadingState() {
+function LoadingState({ previewUrl }: { previewUrl?: string }) {
   const [msgIndex, setMsgIndex] = useState(0)
 
   useEffect(() => {
@@ -69,46 +61,59 @@ function LoadingState() {
   }, [])
 
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="relative mb-8">
+    <div className="space-y-5">
+      {previewUrl && (
+        <div className="relative overflow-hidden rounded-2xl">
+          <Image
+            src={previewUrl}
+            alt="Your meal"
+            width={600} height={400}
+            className="w-full object-cover max-h-64"
+            unoptimized
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[var(--icon-green)]/20 to-transparent" />
+        </div>
+      )}
+      <div className="flex flex-col items-center justify-center py-10 text-center gap-4">
         <div
-          className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl animate-pulse"
+          className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl animate-pulse"
           style={{ background: "color-mix(in srgb, var(--icon-green) 12%, var(--card))" }}
         >
           🌿
         </div>
-      </div>
-      <div className="flex gap-3 mb-6">
-        {["🌱", "🦠", "✨"].map((icon, i) => (
-          <span
-            key={icon}
-            className="text-2xl"
-            style={{
-              animation: "bounce 1.4s ease-in-out infinite",
-              animationDelay: `${i * 0.2}s`,
-            }}
+        <div className="flex gap-2">
+          {["🌱", "🦠", "✨"].map((icon, i) => (
+            <span
+              key={icon}
+              className="text-xl"
+              style={{
+                display: "inline-block",
+                animation: "guestBounce 1.4s ease-in-out infinite",
+                animationDelay: `${i * 0.2}s`,
+              }}
+            >
+              {icon}
+            </span>
+          ))}
+        </div>
+        <div>
+          <p
+            className="text-base font-semibold text-foreground"
+            key={msgIndex}
+            style={{ animation: "guestFadeUp 400ms ease-out both" }}
           >
-            {icon}
-          </span>
-        ))}
+            {LOADING_MESSAGES[msgIndex]}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">Analysing with AI…</p>
+        </div>
       </div>
-      <p
-        className="text-base font-semibold text-foreground transition-all duration-500"
-        key={msgIndex}
-        style={{ animation: "fadeSlideUp 400ms ease-out both" }}
-      >
-        {LOADING_MESSAGES[msgIndex]}
-      </p>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Analysing your meal with AI…
-      </p>
       <style>{`
-        @keyframes bounce {
+        @keyframes guestBounce {
           0%, 80%, 100% { transform: translateY(0); }
-          40% { transform: translateY(-10px); }
+          40% { transform: translateY(-8px); }
         }
-        @keyframes fadeSlideUp {
-          from { opacity: 0; transform: translateY(8px); }
+        @keyframes guestFadeUp {
+          from { opacity: 0; transform: translateY(6px); }
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
@@ -142,20 +147,15 @@ function EmailCapture({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Blurred backdrop showing score */}
-      <div className="absolute inset-0 backdrop-blur-sm bg-background/70" />
+      <div className="absolute inset-0 backdrop-blur-sm bg-background/75" />
 
-      {/* Modal */}
       <div
         className="relative w-full max-w-sm rounded-3xl p-8 shadow-2xl"
-        style={{
-          background: "var(--card)",
-          border: "1px solid var(--border)",
-        }}
+        style={{ background: "var(--card)", border: "1px solid var(--border)" }}
       >
         <div className="text-center mb-6">
           <div
-            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl text-3xl mb-4"
+            className="inline-flex items-center justify-center w-14 h-14 rounded-2xl text-2xl mb-3"
             style={{ background: "color-mix(in srgb, var(--icon-green) 12%, transparent)" }}
           >
             🌿
@@ -164,12 +164,12 @@ function EmailCapture({
             Your result is ready
           </h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Your meal scored{" "}
+            Meal scored{" "}
             <span className="font-bold" style={{ color: "var(--icon-green)" }}>
               {score}/100
             </span>
           </p>
-          <p className="mt-2 text-xs text-muted-foreground/70">
+          <p className="mt-1.5 text-xs text-muted-foreground/70">
             Enter your email to unlock your full score and share it
           </p>
         </div>
@@ -208,9 +208,105 @@ function EmailCapture({
           onClick={onSkip}
           className="mt-4 w-full text-center text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
         >
-          Skip →
+          Skip — show me my result
         </button>
       </div>
+    </div>
+  )
+}
+
+/* ── Upload zone ────────────────────────────────────────────────────── */
+
+function UploadZone({
+  onFile,
+  error,
+}: {
+  onFile: (file: File) => void
+  error: string | null
+}) {
+  const galleryRef = useRef<HTMLInputElement>(null)
+  const cameraRef  = useRef<HTMLInputElement>(null)
+  const [isDragging, setIsDragging] = useState(false)
+
+  function handleFile(file: File) {
+    if (!file.type.startsWith("image/")) return
+    onFile(file)
+  }
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    const file = e.dataTransfer.files[0]
+    if (file) handleFile(file)
+  }, [])
+
+  return (
+    <div className="space-y-4">
+      {/* Hidden file inputs */}
+      <input
+        ref={galleryRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
+      />
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
+      />
+
+      {/* Primary CTA buttons */}
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <button
+          type="button"
+          onClick={() => cameraRef.current?.click()}
+          className="flex-1 flex items-center justify-center gap-2 rounded-full py-3.5 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98]"
+          style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
+        >
+          <Camera size={16} /> Take a Photo
+        </button>
+        <button
+          type="button"
+          onClick={() => galleryRef.current?.click()}
+          className="flex-1 flex items-center justify-center gap-2 rounded-full border border-border py-3.5 text-sm font-semibold text-foreground transition-all hover:bg-secondary/60 active:scale-[0.98]"
+        >
+          <ImageIcon size={16} /> Choose from Library
+        </button>
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/10 dark:border-red-800 p-3">
+          <X size={14} className="mt-0.5 shrink-0 text-red-500" />
+          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        </div>
+      )}
+
+      {/* Drop zone */}
+      <div
+        className={`flex items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-6 text-center cursor-pointer transition-all ${
+          isDragging
+            ? "border-[var(--icon-green)] bg-[var(--icon-green)]/5"
+            : "border-border hover:border-[var(--icon-green)]/40 hover:bg-secondary/30"
+        }`}
+        onClick={() => galleryRef.current?.click()}
+        onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={handleDrop}
+      >
+        <span className="text-2xl">📸</span>
+        <p className="text-sm text-muted-foreground">
+          Or <span className="font-semibold text-foreground">drag and drop</span> a photo here
+        </p>
+      </div>
+
+      <p className="text-center text-xs text-muted-foreground/60">
+        🔒 Free · No account needed · Takes ~20 seconds
+      </p>
     </div>
   )
 }
@@ -225,9 +321,7 @@ export function GuestScanFlow() {
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [hash, setHash] = useState<string>("")
   const [emailCaptured, setEmailCaptured] = useState(false)
-  const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const imageDataRef = useRef<{ base64: string; mimeType: "image/jpeg" | "image/png" | "image/webp" } | null>(null)
 
   async function runAnalysis(imageData?: typeof imageDataRef.current, desc?: string) {
@@ -262,11 +356,7 @@ export function GuestScanFlow() {
     }
   }
 
-  async function handleFileSelect(file: File) {
-    if (!file.type.startsWith("image/")) {
-      setError("Please select an image file.")
-      return
-    }
+  async function handleFile(file: File) {
     const url = URL.createObjectURL(file)
     setPreviewUrl(url)
     const imageData = await compressImage(file)
@@ -280,22 +370,6 @@ export function GuestScanFlow() {
     await runAnalysis(undefined, description.trim())
   }
 
-  const handleDrop = useCallback(async (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-    const file = e.dataTransfer.files[0]
-    if (file) await handleFileSelect(file)
-  }, [])
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }, [])
-
-  const handleDragLeave = useCallback(() => {
-    setIsDragging(false)
-  }, [])
-
   async function handleEmailSubmit(email: string, name: string) {
     try {
       await fetch("/api/guest-scan", {
@@ -304,12 +378,10 @@ export function GuestScanFlow() {
         body: JSON.stringify({ email, name, result, hash }),
       })
     } catch {
-      // Non-fatal — proceed regardless
+      // Non-fatal
     }
     setEmailCaptured(true)
-    if (result) {
-      setResult({ ...result, shareHash: hash })
-    }
+    if (result) setResult({ ...result, shareHash: hash })
     setStage("result")
   }
 
@@ -331,111 +403,67 @@ export function GuestScanFlow() {
   // ── Idle stage ──
   if (stage === "idle") {
     return (
-      <div className="space-y-6">
+      <div className="space-y-5">
         {/* Mode toggle */}
-        <div className="flex gap-2">
+        <div className="flex rounded-xl border border-border overflow-hidden">
           <button
             onClick={() => setMode("photo")}
-            className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition-all ${
               mode === "photo"
                 ? "text-white"
-                : "border border-border text-muted-foreground hover:bg-secondary/60"
+                : "text-muted-foreground hover:bg-secondary/40"
             }`}
             style={mode === "photo" ? { background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" } : {}}
           >
-            <Camera size={15} /> Take a Photo
+            <Camera size={14} /> Photo
           </button>
           <button
             onClick={() => setMode("text")}
-            className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition-all ${
               mode === "text"
                 ? "text-white"
-                : "border border-border text-muted-foreground hover:bg-secondary/60"
+                : "text-muted-foreground hover:bg-secondary/40"
             }`}
             style={mode === "text" ? { background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" } : {}}
           >
-            <FileText size={15} /> Describe Instead
+            <FileText size={14} /> Describe
           </button>
         </div>
 
-        {/* Error */}
-        {error && (
-          <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/10 dark:border-red-800 p-4">
-            <X size={15} className="mt-0.5 shrink-0 text-red-500" />
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-          </div>
-        )}
-
         {/* Photo upload */}
         {mode === "photo" && (
-          <>
-            <div
-              className={`relative flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed p-12 text-center transition-all cursor-pointer ${
-                isDragging
-                  ? "border-[var(--icon-green)] bg-[var(--icon-green)]/5"
-                  : "border-border hover:border-[var(--icon-green)]/50 hover:bg-secondary/30"
-              }`}
-              onClick={() => fileInputRef.current?.click()}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-            >
-              <div
-                className="flex h-14 w-14 items-center justify-center rounded-2xl text-2xl"
-                style={{ background: "color-mix(in srgb, var(--icon-green) 12%, var(--card))" }}
-              >
-                📸
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">
-                  Drop your meal photo here
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  or click to select · JPG, PNG, WebP · Max 5MB
-                </p>
-              </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) handleFileSelect(file)
-                }}
-              />
-            </div>
-            <p className="text-center text-xs text-muted-foreground">
-              🔒 Free scan · No account needed · Takes ~20 seconds
-            </p>
-          </>
+          <UploadZone onFile={handleFile} error={error} />
         )}
 
         {/* Text description */}
         {mode === "text" && (
           <form onSubmit={handleTextSubmit} className="space-y-3">
-            <div>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe your meal in detail… e.g. 'Grilled salmon with steamed broccoli, brown rice, and a side of kimchi'"
-                rows={5}
-                className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--icon-green)]/30 resize-none"
-              />
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                Be specific — include cooking method, sauces, and sides for the best results.
-              </p>
-            </div>
+            {error && (
+              <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/10 p-3">
+                <X size={14} className="mt-0.5 shrink-0 text-red-500" />
+                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              </div>
+            )}
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe your meal… e.g. 'Grilled salmon with steamed broccoli, brown rice, and a side of kimchi'"
+              rows={5}
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--icon-green)]/30 resize-none"
+            />
+            <p className="text-xs text-muted-foreground">
+              Be specific — include cooking method, sauces, and sides for best results.
+            </p>
             <button
               type="submit"
               disabled={!description.trim()}
-              className="w-full flex items-center justify-center gap-2 rounded-full py-3.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+              className="w-full flex items-center justify-center gap-2 rounded-full py-3.5 text-sm font-semibold text-white transition-all hover:opacity-90 disabled:opacity-40"
               style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
             >
               Analyse My Meal <ArrowRight size={14} />
             </button>
-            <p className="text-center text-xs text-muted-foreground">
-              🔒 Free scan · No account needed · Takes ~20 seconds
+            <p className="text-center text-xs text-muted-foreground/60">
+              🔒 Free · No account needed · Takes ~20 seconds
             </p>
           </form>
         )}
@@ -445,19 +473,16 @@ export function GuestScanFlow() {
 
   // ── Loading stage ──
   if (stage === "loading") {
-    return <LoadingState />
+    return <LoadingState previewUrl={previewUrl ?? undefined} />
   }
 
-  // ── Capture stage (email gate) ──
+  // ── Capture stage (email gate over blurred preview) ──
   if (stage === "capture" && result) {
     return (
       <>
-        {/* Blurred preview of result */}
         <div className="pointer-events-none select-none blur-sm opacity-40 overflow-hidden max-h-80">
           <ResultBuilder result={result} previewUrl={previewUrl ?? undefined} isGuest />
         </div>
-
-        {/* Email capture modal */}
         <EmailCapture
           result={result}
           onSubmit={handleEmailSubmit}
@@ -471,22 +496,20 @@ export function GuestScanFlow() {
   if (stage === "result" && result) {
     return (
       <div className="space-y-5">
-        {/* Nudge banner for skipped email */}
         {!emailCaptured && (
           <div
-            className="flex items-start gap-3 rounded-xl px-4 py-3 text-sm"
+            className="flex items-start gap-3 rounded-xl px-4 py-3"
             style={{
               background: "color-mix(in srgb, var(--icon-lime) 8%, var(--card))",
               border: "1px solid color-mix(in srgb, var(--icon-lime) 25%, transparent)",
             }}
           >
-            <span className="text-lg leading-none">💡</span>
+            <span className="text-base leading-none mt-0.5">💡</span>
             <p className="text-sm text-muted-foreground">
               <span className="font-semibold text-foreground">Save your result next time</span> — enter your email to track and share your scores.
             </p>
           </div>
         )}
-
         <ResultBuilder
           result={result}
           previewUrl={previewUrl ?? undefined}
