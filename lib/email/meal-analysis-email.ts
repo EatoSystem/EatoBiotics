@@ -62,7 +62,6 @@ export function buildMealAnalysisEmail(opts: MealAnalysisEmailOpts): { subject: 
   } = opts
 
   const greeting = name ? name : "there"
-  const displayMeal = mealName ?? "your meal"
   const band = scoreBand(score)
 
   const subject = `EatoBiotics - Your Meal Analysis`
@@ -139,8 +138,7 @@ export function buildMealAnalysisEmail(opts: MealAnalysisEmailOpts): { subject: 
           <!-- Score hero -->
           <tr>
             <td style="padding: 36px 40px 0; text-align: center;">
-              <p style="margin: 0 0 4px; font-size: 15px; color: #666666; font-family: Arial, sans-serif;">Hi ${greeting}, here are your results for</p>
-              <p style="margin: 4px 0 0; font-size: 17px; font-weight: bold; color: #222222; font-family: Georgia, serif;">${displayMeal}</p>
+              <p style="margin: 0 0 4px; font-size: 15px; color: #666666; font-family: Arial, sans-serif;">Hi ${greeting}, here are your meal analysis results.</p>
               <div style="margin: 20px auto 0;">
                 <p style="margin: 0; font-size: 80px; font-weight: bold; color: ${band.color}; line-height: 1; font-family: Georgia, serif;">${score}<span style="font-size: 30px; color: #aaaaaa;">/100</span></p>
               </div>

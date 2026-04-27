@@ -664,14 +664,6 @@ export function ResultBuilder({ result, previewUrl, onReset, isFreeUser = false,
 
       <div className="space-y-5">
 
-        {/* Meal name header (if available) */}
-        {result.mealName && (
-          <div style={animStyle(0)}>
-            <p className="text-center text-sm font-semibold text-muted-foreground">
-              📸 <span className="text-foreground">{result.mealName}</span>
-            </p>
-          </div>
-        )}
 
         {/* Meal photo — no delay, instant */}
         {previewUrl && (

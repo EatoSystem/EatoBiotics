@@ -68,7 +68,9 @@ export async function POST(req: NextRequest) {
     if (email) {
       try {
         const resendKey = process.env.RESEND_API_KEY
-        const emailFrom = process.env.EMAIL_FROM ?? "results@eatobiotics.com"
+        const rawFrom = process.env.EMAIL_FROM ?? "results@eatobiotics.com"
+        // Ensure sender shows as "EatoBiotics" not the raw address or Resend default
+        const emailFrom = rawFrom.includes("<") ? rawFrom : `EatoBiotics <${rawFrom}>`
 
         if (resendKey) {
           const resend = new Resend(resendKey)
