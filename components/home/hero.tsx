@@ -40,7 +40,21 @@ export function Hero() {
     <section className="relative min-h-screen overflow-hidden px-6 pt-20">
       <div className="relative z-10 mx-auto flex max-w-[1200px] min-h-[calc(100vh-80px)] flex-col items-center justify-center gap-12 md:flex-row md:gap-16 lg:gap-20">
 
-        {/* ── Left: Text ─────────────────────────────────────── */}
+        {/* ── Left: Image (desktop) / Top: Image (mobile) ──── */}
+        <ScrollReveal delay={60} className="flex-1 flex items-center justify-center w-full max-w-[540px]">
+          <div className="relative w-full">
+            <Image
+              src="/images/hero-gut.png"
+              alt="The food system inside you — gut microbiome illustration"
+              width={900}
+              height={900}
+              priority
+              className="w-full h-auto max-h-[70vw] object-contain md:max-h-none"
+            />
+          </div>
+        </ScrollReveal>
+
+        {/* ── Right: Text (desktop) / Bottom: Text (mobile) ── */}
         <div className="flex-1 text-left max-w-[560px]">
           <ScrollReveal>
             <h1
@@ -79,20 +93,6 @@ export function Hero() {
             </div>
           </ScrollReveal>
         </div>
-
-        {/* ── Right: Image ─────────────────────────────────── */}
-        <ScrollReveal delay={80} className="flex-1 flex items-center justify-center w-full max-w-[540px]">
-          <div className="relative w-full">
-            <Image
-              src="/images/hero-gut.png"
-              alt="The food system inside you — gut microbiome illustration"
-              width={900}
-              height={900}
-              priority
-              className="w-full h-auto object-contain"
-            />
-          </div>
-        </ScrollReveal>
 
       </div>
     </section>

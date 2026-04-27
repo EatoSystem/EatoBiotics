@@ -81,7 +81,39 @@ export default function BioticsPage() {
         <div className="mx-auto max-w-[1200px]">
           <div className="flex flex-col gap-12 lg:flex-row lg:items-center lg:gap-20">
 
-            {/* Left: text */}
+            {/* Left (desktop) / Top (mobile): plate with floating labels */}
+            <ScrollReveal delay={60} className="lg:w-[480px] lg:shrink-0 w-full max-w-[540px] mx-auto lg:mx-0">
+              <div className="relative">
+                <Image
+                  src="/eatobiotics-plate.png"
+                  alt="The EatoBiotics Plate — the four-quadrant food system"
+                  width={700}
+                  height={700}
+                  priority
+                  className="w-full h-auto max-h-[70vw] object-contain lg:max-h-none drop-shadow-xl"
+                />
+                <div
+                  className="absolute top-4 left-2 rounded-full border border-border bg-background/90 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm"
+                  style={{ color: "var(--icon-lime)" }}
+                >
+                  Prebiotics — Feed
+                </div>
+                <div
+                  className="absolute top-4 right-2 rounded-full border border-border bg-background/90 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm"
+                  style={{ color: "var(--icon-teal)" }}
+                >
+                  Probiotics — Add
+                </div>
+                <div
+                  className="absolute bottom-10 left-2 rounded-full border border-border bg-background/90 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm"
+                  style={{ color: "var(--icon-orange)" }}
+                >
+                  Postbiotics — Produce
+                </div>
+              </div>
+            </ScrollReveal>
+
+            {/* Right (desktop) / Bottom (mobile): text */}
             <div className="flex-1">
               <ScrollReveal>
                 <p className="text-xs font-semibold uppercase tracking-widest text-icon-green mb-4">
@@ -133,38 +165,6 @@ export default function BioticsPage() {
                 </div>
               </ScrollReveal>
             </div>
-
-            {/* Right: plate with floating labels */}
-            <ScrollReveal delay={80} className="lg:w-[480px] lg:shrink-0">
-              <div className="relative">
-                <Image
-                  src="/eatobiotics-plate.png"
-                  alt="The EatoBiotics Plate — the four-quadrant food system"
-                  width={700}
-                  height={700}
-                  priority
-                  className="w-full h-auto drop-shadow-xl"
-                />
-                <div
-                  className="absolute top-4 left-2 rounded-full border border-border bg-background/90 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm"
-                  style={{ color: "var(--icon-lime)" }}
-                >
-                  Prebiotics — Feed
-                </div>
-                <div
-                  className="absolute top-4 right-2 rounded-full border border-border bg-background/90 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm"
-                  style={{ color: "var(--icon-teal)" }}
-                >
-                  Probiotics — Add
-                </div>
-                <div
-                  className="absolute bottom-10 left-2 rounded-full border border-border bg-background/90 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm"
-                  style={{ color: "var(--icon-orange)" }}
-                >
-                  Postbiotics — Produce
-                </div>
-              </div>
-            </ScrollReveal>
 
           </div>
         </div>
