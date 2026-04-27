@@ -41,7 +41,7 @@ export default function AnalyseDemoPage() {
       </div>
 
       {/* ── Hero ──────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden px-6 pt-24 pb-16 md:pt-32 md:pb-20 bg-white dark:bg-background">
+      <section className="relative overflow-hidden px-6 pt-24 pb-16 md:pt-32 md:pb-20" style={{ backgroundColor: "#ffffff" }}>
         <div
           className="pointer-events-none absolute inset-0"
           style={{
