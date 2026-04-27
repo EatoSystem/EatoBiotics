@@ -63,14 +63,6 @@ export default async function AnalysePage() {
       {/* ── Hero ──────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden px-6 pt-32 pb-16 md:pt-40 md:pb-20" style={{ backgroundColor: "#ffffff" }}>
 
-        {/* Radial glow wash */}
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse 70% 55% at 50% 0%, color-mix(in srgb, var(--icon-green) 10%, transparent), transparent 70%)",
-          }}
-        />
 
         <div className="relative mx-auto max-w-[680px] text-center">
           <ScrollReveal>

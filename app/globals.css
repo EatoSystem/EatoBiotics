@@ -79,6 +79,11 @@
   }
 }
 
+/* Force true white across all primary surfaces — overrides any CSS variable drift */
+html, body, main {
+  background-color: #ffffff !important;
+}
+
 /* Brand gradient — matches the icon's lime -> green -> teal -> yellow -> orange */
 .brand-gradient {
   background: linear-gradient(135deg, var(--icon-lime) 0%, var(--icon-green) 25%, var(--icon-teal) 50%, var(--icon-yellow) 75%, var(--icon-orange) 100%);
