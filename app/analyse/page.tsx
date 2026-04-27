@@ -61,7 +61,7 @@ export default async function AnalysePage() {
     <div className="min-h-screen bg-background">
 
       {/* ── Hero ──────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden px-6 pt-32 pb-16 md:pt-40 md:pb-20">
+      <section className="relative overflow-hidden px-6 pt-32 pb-16 md:pt-40 md:pb-20 bg-white dark:bg-background">
 
         {/* Radial glow wash */}
         <div

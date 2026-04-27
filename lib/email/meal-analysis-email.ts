@@ -65,7 +65,7 @@ export function buildMealAnalysisEmail(opts: MealAnalysisEmailOpts): { subject: 
   const displayMeal = mealName ?? "your meal"
   const band = scoreBand(score)
 
-  const subject = `Your meal scored ${score}/100 on EatoBiotics 🌿`
+  const subject = `EatoBiotics - Your Meal Analysis`
 
   const bioticBarsHtml = [
     bioticBar("Prebiotics",  "🌱", prebioticScore,  "#7fc47e", "#f3faf3"),
