@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
+import { Resend } from "resend"
 import { getSupabase } from "@/lib/supabase"
+import { buildMealAnalysisEmail } from "@/lib/email/meal-analysis-email"
 
 export const dynamic = "force-dynamic"
 
@@ -59,6 +61,40 @@ export async function POST(req: NextRequest) {
       if (leadError) {
         console.error("[guest-scan] leads upsert error:", leadError.message)
         // Non-fatal
+      }
+    }
+
+    // 3. Send results email if email provided
+    if (email) {
+      try {
+        const resendKey = process.env.RESEND_API_KEY
+        const emailFrom = process.env.EMAIL_FROM ?? "results@eatobiotics.com"
+
+        if (resendKey) {
+          const resend = new Resend(resendKey)
+          const { subject, html } = buildMealAnalysisEmail({
+            name: name || undefined,
+            email,
+            mealName:       typeof result.mealName       === "string" ? result.mealName       : undefined,
+            score:          typeof result.score          === "number" ? Math.round(result.score) : 50,
+            prebioticScore: typeof result.prebioticScore === "number" ? result.prebioticScore  : undefined,
+            probioticScore: typeof result.probioticScore === "number" ? result.probioticScore  : undefined,
+            postbioticScore:typeof result.postbioticScore=== "number" ? result.postbioticScore : undefined,
+            whatThisMealDoes: typeof result.whatThisMealDoes === "string" ? result.whatThisMealDoes : undefined,
+            suggestions:    Array.isArray(result.suggestions) ? result.suggestions as string[] : [],
+            shareHash: hash,
+          })
+
+          await resend.emails.send({
+            from: emailFrom,
+            to: email,
+            subject,
+            html,
+          })
+        }
+      } catch (emailErr) {
+        console.error("[guest-scan] email send error:", emailErr)
+        // Non-fatal — result is already saved
       }
     }
 

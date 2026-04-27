@@ -344,7 +344,7 @@ function AlreadyUsedWall() {
 
 /* ── Main Guest Scan Flow ───────────────────────────────────────────── */
 
-export function GuestScanFlow() {
+export function GuestScanFlow({ demoMode = false }: { demoMode?: boolean }) {
   const [stage, setStage] = useState<Stage>("idle")
   const [mode, setMode] = useState<"photo" | "text">("photo")
   const [description, setDescription] = useState("")
@@ -355,14 +355,15 @@ export function GuestScanFlow() {
   const [error, setError] = useState<string | null>(null)
   const imageDataRef = useRef<{ base64: string; mimeType: "image/jpeg" | "image/png" | "image/webp" } | null>(null)
 
-  // Check localStorage on mount
+  // Check localStorage on mount — skip in demo mode
   useEffect(() => {
+    if (demoMode) return
     try {
       if (localStorage.getItem(SCAN_USED_KEY)) setAlreadyUsed(true)
     } catch {
       // Private browsing — ignore
     }
-  }, [])
+  }, [demoMode])
 
   async function runAnalysis(imageData?: typeof imageDataRef.current, desc?: string) {
     setStage("loading")
@@ -420,8 +421,10 @@ export function GuestScanFlow() {
     } catch {
       // Non-fatal
     }
-    // Mark as used so the gate shows on next visit
-    try { localStorage.setItem(SCAN_USED_KEY, "1") } catch { /* ignore */ }
+    // Mark as used so the gate shows on next visit (skip in demo mode)
+    if (!demoMode) {
+      try { localStorage.setItem(SCAN_USED_KEY, "1") } catch { /* ignore */ }
+    }
     if (result) setResult({ ...result, shareHash: hash })
     setStage("result")
   }
