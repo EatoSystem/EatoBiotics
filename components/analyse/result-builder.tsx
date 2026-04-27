@@ -1,13 +1,11 @@
 "use client"
 
-import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import {
-  ArrowRight, Sparkles, BookmarkPlus, Check, TrendingUp, RefreshCw, Share2,
+  ArrowRight, Sparkles, TrendingUp, RefreshCw, Share2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { saveMealAnalysis } from "@/lib/local-storage"
 import { getPercentile } from "@/lib/percentile"
 import { getIdentityLabel } from "@/lib/identity-labels"
 import { ShareMealCard } from "./share-meal-card"
@@ -161,10 +159,16 @@ function ScoreDisplay({
     {
       icon: "✨",
       label: "Postbiotics",
-      strength: hasPostbiotic ? 0.7 : 0.12,
-      status: hasPostbiotic ? "Present" : "Not in meal",
+      strength: postbioticScore !== undefined ? postbioticScore / 100
+               : hasPostbiotic ? 0.7 : 0.12,
+      status: postbioticScore !== undefined
+        ? postbioticScore >= 70 ? "Strong"
+          : postbioticScore >= 50 ? "Moderate"
+          : postbioticScore >= 30 ? "Building"
+          : "Low"
+        : hasPostbiotic ? "Present" : "Not in meal",
       color: "var(--icon-teal)",
-      present: hasPostbiotic,
+      present: postbioticScore !== undefined ? postbioticScore > 15 : hasPostbiotic,
       numericScore: postbioticScore,
     },
   ]
@@ -635,8 +639,6 @@ interface ResultBuilderProps {
 }
 
 export function ResultBuilder({ result, previewUrl, onReset, isFreeUser = false, isGuest = false }: ResultBuilderProps) {
-  const [saved, setSaved] = useState(false)
-
   const score = typeof result.score === "number" ? Math.round(result.score) : 50
   const boostedScore = typeof result.boostedScore === "number" ? Math.round(result.boostedScore) : undefined
   const showBoostCard = boostedScore !== undefined && boostedScore > score + 2
@@ -649,23 +651,6 @@ export function ResultBuilder({ result, previewUrl, onReset, isFreeUser = false,
     acc[f.biotic].push(f)
     return acc
   }, {} as Record<BioticType, AnalysedFood[]>)
-
-  function handleSave() {
-    const today = new Date().toISOString().slice(0, 10)
-    saveMealAnalysis({
-      id: crypto.randomUUID(),
-      date: today,
-      score,
-      boostedScore,
-      scoreBand: getScoreBand(score).label,
-      foods: result.foods.map((f) => ({ name: f.name, emoji: f.emoji, biotic: f.biotic })),
-      missingBiotics: result.missingBiotics,
-      whatThisMealDoes: result.whatThisMealDoes,
-      suggestions: result.suggestions,
-      nutrition: result.nutrition,
-    })
-    setSaved(true)
-  }
 
   return (
     <>
@@ -713,13 +698,6 @@ export function ResultBuilder({ result, previewUrl, onReset, isFreeUser = false,
             postbioticScore={result.postbioticScore}
           />
         </div>
-
-        {/* Boosted score card — 150 ms */}
-        {showBoostCard && (
-          <div style={animStyle(150)}>
-            <BoostedScoreCard currentScore={score} boostedScore={boostedScore!} />
-          </div>
-        )}
 
         {/* Nutrition panel — 300 ms */}
         {result.nutrition && (
@@ -869,8 +847,15 @@ export function ResultBuilder({ result, previewUrl, onReset, isFreeUser = false,
           </div>
         )}
 
-        {/* Assessment bridge / share CTA — 950 ms */}
-        <div style={animStyle(950)}>
+        {/* Score Potential — 950 ms (near end, after suggestions) */}
+        {showBoostCard && (
+          <div style={animStyle(950)}>
+            <BoostedScoreCard currentScore={score} boostedScore={boostedScore!} />
+          </div>
+        )}
+
+        {/* Assessment bridge / share CTA — 1000 ms */}
+        <div style={animStyle(1000)}>
           <AssessmentBridgeCTA
             score={score}
             mealName={result.mealName}
@@ -880,57 +865,29 @@ export function ResultBuilder({ result, previewUrl, onReset, isFreeUser = false,
           />
         </div>
 
-        {/* Share meal card — 1000 ms (non-guest) */}
+        {/* Share meal card — 1050 ms (non-guest) */}
         {!isGuest && (
-          <div style={animStyle(1000)}>
+          <div style={animStyle(1050)}>
             <ShareMealCard result={result} />
           </div>
         )}
 
-        {/* Free scan upsell — 1050 ms (only for free logged-in users) */}
+        {/* Free scan upsell — 1100 ms (only for free logged-in users) */}
         {isFreeUser && !isGuest && (
-          <div style={animStyle(1050)}>
+          <div style={animStyle(1100)}>
             <FreeScanUpsell score={result.score} />
           </div>
         )}
 
-        {/* CTAs — only show for logged-in users with reset capability */}
+        {/* Analyse another meal — minimal reset link */}
         {onReset && (
-          <div style={animStyle(isFreeUser ? 1200 : 1100)}>
-            <div className="flex flex-col gap-3">
-              {/* Save to My Meals */}
-              <button
-                onClick={handleSave}
-                disabled={saved}
-                className={cn(
-                  "flex w-full items-center justify-center gap-2 rounded-2xl border py-3.5 text-sm font-semibold transition-all",
-                  saved
-                    ? "border-[var(--icon-green)]/40 bg-[var(--icon-green)]/8 text-[var(--icon-green)] cursor-default"
-                    : "border-border text-foreground hover:bg-secondary/60"
-                )}
-              >
-                {saved ? (
-                  <><Check size={15} /> Saved to My Meals</>
-                ) : (
-                  <><BookmarkPlus size={15} /> Save to My Meals</>
-                )}
-              </button>
-
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Link
-                  href="/myplate"
-                  className="flex flex-1 items-center justify-center gap-2 rounded-2xl brand-gradient py-3.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                >
-                  Build it in My Plate <ArrowRight size={14} />
-                </Link>
-                <button
-                  onClick={onReset}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-border py-3.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary/60"
-                >
-                  <RefreshCw size={14} /> Analyse another meal
-                </button>
-              </div>
-            </div>
+          <div style={animStyle(1150)}>
+            <button
+              onClick={onReset}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-border py-3.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary/60"
+            >
+              <RefreshCw size={14} /> Analyse another meal
+            </button>
           </div>
         )}
 

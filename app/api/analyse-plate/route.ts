@@ -59,7 +59,16 @@ Calibration examples:
 Set "prebioticStrength" to "strong" (3+ prebiotic foods), "moderate" (1–2 prebiotic foods), or "low" (0 prebiotic foods).
 
 NUTRITION ACCURACY — CRITICAL:
-Before returning nutrition totals, mentally estimate each visible food item's calories individually based on actual portion size, then sum them. Every meal should produce a different total — never default to the same range.
+You must estimate nutrition by working bottom-up: go through each identified food item, estimate its calories based on what is ACTUALLY VISIBLE on the plate (not a standard serving), then sum. Do this mentally before writing the JSON.
+
+Common over-estimation mistakes to avoid:
+- Do NOT assume a full chicken breast when only a small piece is visible
+- Do NOT assume a full cup of rice when only a modest scoop is visible
+- Do NOT assume a large portion when the meal looks light or modest
+- A meal with mostly salad greens + a small protein should be 250–400 kcal total
+- Protein grams must match the actual protein source — a single egg is 6g, not 25g
+
+Every meal should produce meaningfully different numbers — never default to the same range.
 
 Meal-level calorie benchmarks (use these to sense-check your per-item sum):
 - Side salad or light snack: 150–300 kcal
