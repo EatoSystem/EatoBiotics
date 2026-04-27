@@ -270,12 +270,6 @@ export function TryAMealTeaser() {
             >
               <Camera size={16} /> Score My Meal — Free
             </Link>
-            <Link
-              href="/how-it-works"
-              className="inline-flex items-center gap-2 rounded-full border border-border px-8 py-4 text-base font-semibold text-foreground transition-all hover:bg-muted"
-            >
-              See how it works →
-            </Link>
           </div>
           <p className="mt-2.5 text-xs text-muted-foreground/60">
             No account needed · Results in ~20 seconds · Free forever

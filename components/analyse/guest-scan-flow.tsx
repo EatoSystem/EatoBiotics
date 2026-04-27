@@ -126,11 +126,9 @@ function LoadingState({ previewUrl }: { previewUrl?: string }) {
 function EmailCapture({
   result,
   onSubmit,
-  onSkip,
 }: {
   result: AnalysisResult
   onSubmit: (email: string, name: string) => Promise<void>
-  onSkip: () => void
 }) {
   const [email, setEmail] = useState("")
   const [name, setName] = useState("")
@@ -170,7 +168,7 @@ function EmailCapture({
             </span>
           </p>
           <p className="mt-1.5 text-xs text-muted-foreground/70">
-            Enter your email to unlock your full score and share it
+            Enter your email to unlock your full score and save your result
           </p>
         </div>
 
@@ -188,6 +186,7 @@ function EmailCapture({
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Your email address"
             required
+            autoFocus
             className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--icon-green)]/30"
           />
           <button
@@ -204,12 +203,9 @@ function EmailCapture({
           </button>
         </form>
 
-        <button
-          onClick={onSkip}
-          className="mt-4 w-full text-center text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-        >
-          Skip — show me my result
-        </button>
+        <p className="mt-4 text-center text-xs text-muted-foreground/50">
+          One free scan per person · No spam, ever
+        </p>
       </div>
     </div>
   )
@@ -311,6 +307,41 @@ function UploadZone({
   )
 }
 
+const SCAN_USED_KEY = "eatobiotics_guest_scanned"
+
+/* ── Already-used wall ──────────────────────────────────────────────── */
+
+function AlreadyUsedWall() {
+  return (
+    <div className="flex flex-col items-center gap-5 rounded-2xl border border-border bg-card p-8 text-center">
+      <div
+        className="inline-flex h-14 w-14 items-center justify-center rounded-2xl text-2xl"
+        style={{ background: "color-mix(in srgb, var(--icon-green) 12%, transparent)" }}
+      >
+        🌿
+      </div>
+      <div>
+        <h3 className="font-serif text-xl font-semibold text-foreground">
+          You&apos;ve used your free scan
+        </h3>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground max-w-xs mx-auto">
+          Create a free account to score unlimited meals, track your progress, and build your personal food system.
+        </p>
+      </div>
+      <div className="flex flex-col gap-2 w-full max-w-xs">
+        <a
+          href="/assessment"
+          className="inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
+        >
+          Get My Full Biotics Score <ArrowRight size={14} />
+        </a>
+        <p className="text-xs text-muted-foreground/60">Free · Takes 3 minutes</p>
+      </div>
+    </div>
+  )
+}
+
 /* ── Main Guest Scan Flow ───────────────────────────────────────────── */
 
 export function GuestScanFlow() {
@@ -320,9 +351,18 @@ export function GuestScanFlow() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [hash, setHash] = useState<string>("")
-  const [emailCaptured, setEmailCaptured] = useState(false)
+  const [alreadyUsed, setAlreadyUsed] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const imageDataRef = useRef<{ base64: string; mimeType: "image/jpeg" | "image/png" | "image/webp" } | null>(null)
+
+  // Check localStorage on mount
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(SCAN_USED_KEY)) setAlreadyUsed(true)
+    } catch {
+      // Private browsing — ignore
+    }
+  }, [])
 
   async function runAnalysis(imageData?: typeof imageDataRef.current, desc?: string) {
     setStage("loading")
@@ -380,12 +420,9 @@ export function GuestScanFlow() {
     } catch {
       // Non-fatal
     }
-    setEmailCaptured(true)
+    // Mark as used so the gate shows on next visit
+    try { localStorage.setItem(SCAN_USED_KEY, "1") } catch { /* ignore */ }
     if (result) setResult({ ...result, shareHash: hash })
-    setStage("result")
-  }
-
-  function handleSkip() {
     setStage("result")
   }
 
@@ -395,9 +432,13 @@ export function GuestScanFlow() {
     setPreviewUrl(null)
     setDescription("")
     setHash("")
-    setEmailCaptured(false)
     setError(null)
     imageDataRef.current = null
+  }
+
+  // ── Already used gate ──
+  if (alreadyUsed && stage === "idle") {
+    return <AlreadyUsedWall />
   }
 
   // ── Idle stage ──
@@ -486,7 +527,6 @@ export function GuestScanFlow() {
         <EmailCapture
           result={result}
           onSubmit={handleEmailSubmit}
-          onSkip={handleSkip}
         />
       </>
     )
@@ -495,28 +535,12 @@ export function GuestScanFlow() {
   // ── Result stage ──
   if (stage === "result" && result) {
     return (
-      <div className="space-y-5">
-        {!emailCaptured && (
-          <div
-            className="flex items-start gap-3 rounded-xl px-4 py-3"
-            style={{
-              background: "color-mix(in srgb, var(--icon-lime) 8%, var(--card))",
-              border: "1px solid color-mix(in srgb, var(--icon-lime) 25%, transparent)",
-            }}
-          >
-            <span className="text-base leading-none mt-0.5">💡</span>
-            <p className="text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">Save your result next time</span> — enter your email to track and share your scores.
-            </p>
-          </div>
-        )}
-        <ResultBuilder
-          result={result}
-          previewUrl={previewUrl ?? undefined}
-          onReset={handleReset}
-          isGuest
-        />
-      </div>
+      <ResultBuilder
+        result={result}
+        previewUrl={previewUrl ?? undefined}
+        onReset={handleReset}
+        isGuest
+      />
     )
   }
 
