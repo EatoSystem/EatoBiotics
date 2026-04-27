@@ -179,9 +179,10 @@ export function TryAMealTeaser() {
               Every meal has a score. <span className="text-2xl">🌿</span>
             </h2>
             <p className="mt-4 text-base leading-relaxed text-muted-foreground max-w-lg">
-              Photograph or describe any meal and get an instant{" "}
-              <strong>Prebiotic, Probiotic,</strong> and <strong>Postbiotic</strong> breakdown
-              plus calories, inflammation index, and gut lining support.
+              Photograph or describe any meal and get an instant gut score across all three biotics.
+            </p>
+            <p className="mt-2 text-base leading-relaxed text-muted-foreground max-w-lg">
+              No account needed. Results in under 30 seconds.
             </p>
           </ScrollReveal>
         </div>
@@ -199,25 +200,6 @@ export function TryAMealTeaser() {
                 className="object-cover transition-transform duration-700 group-hover:scale-105"
                 unoptimized
               />
-              {/* Bottom overlay with meal name */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-5">
-                <div className="flex items-end justify-between">
-                  <div>
-                    <p className="text-xs font-semibold text-white/60 uppercase tracking-widest mb-1">
-                      Sample meal
-                    </p>
-                    <p className="text-lg font-bold text-white">{SAMPLE.mealName}</p>
-                  </div>
-                  {/* Score pill on photo */}
-                  <div
-                    className="flex items-center gap-2 rounded-full px-4 py-1.5 backdrop-blur-sm bg-black/30 border border-white/20"
-                  >
-                    <span className="text-sm font-bold text-white tabular-nums">{SAMPLE.score}</span>
-                    <span className="text-xs text-white/60">/100</span>
-                  </div>
-                </div>
-              </div>
             </div>
           </ScrollReveal>
 
@@ -227,6 +209,57 @@ export function TryAMealTeaser() {
           </ScrollReveal>
 
         </div>
+
+        {/* What you get strip */}
+        <ScrollReveal delay={120}>
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              {
+                icon: "🌱",
+                label: "Biotic Score",
+                desc: "Pre, Pro & Postbiotic breakdown — 0 to 100",
+                color: "var(--icon-lime)",
+                bg: "color-mix(in srgb, var(--icon-lime) 10%, transparent)",
+              },
+              {
+                icon: "🔥",
+                label: "Inflammation Index",
+                desc: "Anti-inflammatory, neutral, or inflammatory",
+                color: "var(--icon-orange)",
+                bg: "color-mix(in srgb, var(--icon-orange) 10%, transparent)",
+              },
+              {
+                icon: "🧬",
+                label: "Gut Metrics",
+                desc: "Fermentation level, SCFA potential & gut lining",
+                color: "var(--icon-teal)",
+                bg: "color-mix(in srgb, var(--icon-teal) 10%, transparent)",
+              },
+              {
+                icon: "💡",
+                label: "Improvement Tips",
+                desc: "3 specific swaps or additions to boost your score",
+                color: "var(--icon-yellow)",
+                bg: "color-mix(in srgb, var(--icon-yellow) 10%, transparent)",
+              },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className="flex flex-col gap-2 rounded-2xl border border-border p-4"
+                style={{ background: item.bg }}
+              >
+                <span
+                  className="flex h-9 w-9 items-center justify-center rounded-xl text-lg shrink-0"
+                  style={{ background: "color-mix(in srgb, currentColor 8%, transparent)", color: item.color }}
+                >
+                  {item.icon}
+                </span>
+                <p className="text-sm font-semibold text-foreground leading-snug">{item.label}</p>
+                <p className="text-xs leading-relaxed text-muted-foreground">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </ScrollReveal>
 
         {/* CTA buttons */}
         <ScrollReveal delay={150}>
