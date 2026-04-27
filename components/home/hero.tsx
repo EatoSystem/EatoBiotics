@@ -84,12 +84,6 @@ export function Hero() {
               >
                 Get My Free Biotics Score <ArrowRight size={16} />
               </Link>
-              <Link
-                href="/biotics"
-                className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Learn the 3 Biotics <ArrowRight size={14} />
-              </Link>
             </div>
           </ScrollReveal>
         </div>
