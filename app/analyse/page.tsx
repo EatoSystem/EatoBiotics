@@ -58,7 +58,7 @@ export default async function AnalysePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen" style={{ backgroundColor: "#ffffff" }}>
 
       {/* ── Hero ──────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden px-6 pt-32 pb-16 md:pt-40 md:pb-20" style={{ backgroundColor: "#ffffff" }}>

@@ -33,7 +33,7 @@ const BIOTICS = [
 
 export default function AnalyseDemoPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen" style={{ backgroundColor: "#ffffff" }}>
 
       {/* Demo banner */}
       <div className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-amber-500/90 backdrop-blur-sm px-4 py-2 text-xs font-bold text-white">
