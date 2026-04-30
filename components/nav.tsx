@@ -34,10 +34,8 @@ const navGroups: NavGroup[] = [
     label: "Explore",
     items: [
       { href: "/food", label: "Food Library", description: "Every food profiled for your gut", icon: UtensilsCrossed },
-      { href: "/weekly-recipes", label: "Weekly Recipes", description: "100 flexible protein recipe ideas", icon: UtensilsCrossed },
       { href: "/today", label: "Today's Food", description: "A new food spotlight, daily", icon: Calendar },
       { href: "/podcast", label: "The Podcast", description: "Conversations about food & performance", icon: Mic },
-      { href: "/eatosports", label: "EatoSports", description: "The food system for sport & performance", icon: Activity },
       { href: "/family", label: "For Families", description: "The food system for the whole family", icon: Users },
       { href: "/assessment-mind", label: "Mind Assessment", description: "Score your gut-brain connection", icon: ClipboardList },
     ],
