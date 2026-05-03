@@ -27,8 +27,19 @@ export function ShareScoreCard({ result }: ShareScoreCardProps) {
   const percentile    = getPercentile(overall)
   const identityLabel = getIdentityLabel(overall)
 
-  const weakestKey = Object.entries(subScores).sort(([, a], [, b]) => a - b)[0][0]
+  const weakestKey = Object.entries(subScores)
+    .filter(([k]) => ["prebiotics", "probiotics", "postbiotics", "feed", "seed", "heal"].includes(k))
+    .sort(([, a], [, b]) => a - b)[0]?.[0] ?? "prebiotics"
   const weakestLabels: Record<string, string> = {
+    // Current pillar keys
+    prebiotics:  "Prebiotics",
+    probiotics:  "Probiotics",
+    postbiotics: "Postbiotics",
+    // Feed/Seed/Heal aliases
+    feed:        "Prebiotics",
+    seed:        "Probiotics",
+    heal:        "Postbiotics",
+    // Legacy pillar keys (backward compat)
     diversity:   "Plant Diversity",
     feeding:     "Feeding",
     adding:      "Live Foods",

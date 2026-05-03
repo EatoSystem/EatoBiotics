@@ -17,7 +17,7 @@ interface Props {
 // Mock scores used for demo mode — matches DEMO_RESULT in demo-client.tsx
 const DEMO_FREE_SCORES = {
   overall: 58,
-  subScores: { diversity: 55, feeding: 68, adding: 38, consistency: 72, feeling: 58 },
+  subScores: { prebiotics: 62, probiotics: 38, postbiotics: 67, feed: 62, seed: 38, heal: 67 },
   profile: {
     type: "Emerging Balance",
     tagline: "The building blocks are there. Consistency is the next step.",
@@ -61,7 +61,7 @@ export default async function DeepAssessmentPage({ searchParams }: Props) {
         tier="full"
         freeScores={{
           overall: 58,
-          subScores: { diversity: 55, feeding: 60, adding: 45, consistency: 65, feeling: 65 },
+          subScores: { prebiotics: 58, probiotics: 45, postbiotics: 65, feed: 58, seed: 45, heal: 65 },
           profile: {
             type: "The Aware Optimiser",
             tagline: "You understand the basics but haven't yet built the habits to match.",
@@ -86,9 +86,9 @@ export default async function DeepAssessmentPage({ searchParams }: Props) {
     }
 
     // Decode client_reference_id — base64 JSON with { overall, subScores, profile, tier }
-    let tier: "starter" | "full" | "premium" = "full"
+    let tier: "personal" | "starter" | "full" | "premium" = "full"
     let overall = 58
-    let subScores = { diversity: 55, feeding: 60, adding: 45, consistency: 65, feeling: 65 }
+    let subScores = { prebiotics: 58, probiotics: 45, postbiotics: 65, feed: 58, seed: 45, heal: 65 }
     let profile = {
       type: "The Aware Optimiser",
       tagline: "You understand the basics but haven't yet built the habits to match.",
@@ -101,7 +101,7 @@ export default async function DeepAssessmentPage({ searchParams }: Props) {
         const decoded = JSON.parse(
           Buffer.from(session.client_reference_id, "base64").toString("utf-8")
         )
-        if (decoded.tier === "starter" || decoded.tier === "full" || decoded.tier === "premium") {
+        if (decoded.tier === "personal" || decoded.tier === "starter" || decoded.tier === "full" || decoded.tier === "premium") {
           tier = decoded.tier
         }
         if (typeof decoded.overall === "number") overall = decoded.overall

@@ -11,7 +11,7 @@ import type { AssessmentResult } from "@/lib/assessment-scoring"
 
 const FREE_ITEMS = [
   "Your overall Food System Score",
-  "All 5 pillar scores with what they mean",
+  "All 3 Biotics scores with what they mean",
   "Your personalised profile type",
   "Your key insight — the gap that matters most",
   "3 next actions from your weakest pillar",

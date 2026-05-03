@@ -17,9 +17,9 @@ export interface SequenceEmailOpts {
 /* ── Pillar helpers ─────────────────────────────────────────────────── */
 
 const PILLAR_LABELS: Record<string, string> = {
-  feed: "Feed",
-  seed: "Seed",
-  heal: "Heal",
+  feed: "Prebiotics",
+  seed: "Probiotics",
+  heal: "Postbiotics",
 }
 
 const PILLAR_COLORS: Record<string, string> = {
@@ -35,9 +35,9 @@ const PILLAR_ACTIONS: Record<string, string> = {
 }
 
 const PILLAR_INSIGHT: Record<string, string> = {
-  feed: "Your Feed score reflects how much fibre and plant diversity you're giving your gut bacteria. These are the raw materials your microbiome uses to produce short-chain fatty acids — the molecules that protect your gut lining and regulate inflammation.",
-  seed: "Your Seed score reflects how regularly you introduce live, fermented foods. These foods directly seed your gut with beneficial bacteria — the fastest dietary route to improving microbial diversity and mood stability.",
-  heal: "Your Heal score reflects your meal rhythm and polyphenol intake. Consistent meal timing synchronises your circadian clock, regulates cortisol, and lets your gut prepare digestive enzymes in advance — delivering more benefit from the food you're already eating.",
+  feed: "Your Prebiotics score reflects how much fibre and plant diversity you're giving your gut bacteria. These are the raw materials your microbiome uses to produce short-chain fatty acids — the molecules that protect your gut lining and regulate inflammation.",
+  seed: "Your Probiotics score reflects how regularly you introduce live, fermented foods. These foods directly seed your gut with beneficial bacteria — the fastest dietary route to improving microbial diversity and mood stability.",
+  heal: "Your Postbiotics score reflects your meal rhythm and polyphenol intake. Consistent meal timing synchronises your circadian clock, regulates cortisol, and lets your gut prepare digestive enzymes in advance — delivering more benefit from the food you're already eating.",
 }
 
 /* ── Day-specific email content ─────────────────────────────────────── */
@@ -62,7 +62,7 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
       return {
         subject: `Your EatoBiotics Score is ${score}/100`,
         headline: `${firstName}, your EatoBiotics Score is ${score}/100`,
-        body: `You've completed the EatoBiotics Assessment and your score reflects something real about how your food system is working right now. Your profile is <strong>${profileType}</strong> — and below you'll see exactly how your three pillars compare.<br /><br />Feed, Seed, and Heal each measure a different dimension of your food system. The one with the lowest score is where you'll see the fastest improvement with a small, consistent change.`,
+        body: `You've completed the EatoBiotics Assessment and your score reflects something real about how your food system is working right now. Your profile is <strong>${profileType}</strong> — and below you'll see exactly how your three Biotics compare.<br /><br />Prebiotics, Probiotics, and Postbiotics each measure a different dimension of your food system. The one with the lowest score is where you'll see the fastest improvement with a small, consistent change.`,
         cta: "See My Score Breakdown",
         ctaUrl: `${baseUrl}/assessment`,
         showScores: true,
@@ -132,7 +132,7 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
       return {
         subject: "What happens to your gut after 14 days of change",
         headline: "14 days of consistent input — what's happening inside",
-        body: `At the 14-day mark, your gut microbiome has had enough consistent input to start shifting its bacterial composition. The species you're feeding are multiplying. The species you're not feeding are declining.<br /><br />This is the window where people start noticing: clearer energy in the afternoon, less bloating, more stable mood. Not dramatic — just less friction.<br /><br />Your Personal Report maps this process specifically for your Feed, Seed, and Heal scores — so you know exactly what's happening and what to do next.`,
+        body: `At the 14-day mark, your gut microbiome has had enough consistent input to start shifting its bacterial composition. The species you're feeding are multiplying. The species you're not feeding are declining.<br /><br />This is the window where people start noticing: clearer energy in the afternoon, less bloating, more stable mood. Not dramatic — just less friction.<br /><br />Your Personal Report maps this process specifically for your Prebiotics, Probiotics, and Postbiotics scores — so you know exactly what's happening and what to do next.`,
         cta: "Get My Personal Report — €49",
         ctaUrl: `${baseUrl}/pricing`,
         showScores: false,

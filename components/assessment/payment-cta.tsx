@@ -29,7 +29,7 @@ const TIERS = [
     features: [
       "Score ring + full profile description",
       "Your top 5 priority foods",
-      "All 5 pillar scores in one view",
+      "All 3 Biotics scores in one view",
       "7-day daily starter action plan",
       "The 3 biotics explained: your quick reference",
       "Printable score card",

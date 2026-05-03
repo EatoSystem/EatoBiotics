@@ -14,15 +14,15 @@ interface ScoreCardProps {
 export function ScoreCard({ score, feed, seed, heal, profile }: ScoreCardProps) {
   const [copied, setCopied] = useState(false)
 
-  const shareUrl = `https://eatobiotics.com/score?score=${score}&feed=${feed}&seed=${seed}&heal=${heal}&profile=${encodeURIComponent(profile)}`
-  const ogImageUrl = `https://eatobiotics.com/api/score-card?score=${score}&feed=${feed}&seed=${seed}&heal=${heal}&profile=${encodeURIComponent(profile)}`
+  const shareUrl = `https://eatobiotics.com/score?score=${score}&prebiotics=${feed}&probiotics=${seed}&postbiotics=${heal}&profile=${encodeURIComponent(profile)}`
+  const ogImageUrl = `https://eatobiotics.com/api/score-card?score=${score}&prebiotics=${feed}&probiotics=${seed}&postbiotics=${heal}&profile=${encodeURIComponent(profile)}`
 
   async function handleShare() {
     try {
       if (navigator.share) {
         await navigator.share({
           title: `My EatoBiotics Score: ${score}/100`,
-          text: `My Feed · Seed · Heal scores are ${feed}, ${seed}, and ${heal}. Take the free EatoBiotics Assessment to get yours.`,
+          text: `My Prebiotics, Probiotics, and Postbiotics scores are ${feed}, ${seed}, and ${heal}. Take the free EatoBiotics Assessment to get yours.`,
           url: shareUrl,
         })
       } else {
@@ -43,9 +43,9 @@ export function ScoreCard({ score, feed, seed, heal, profile }: ScoreCardProps) 
   }
 
   const pillars = [
-    { label: "Feed", score: feed, color: "var(--icon-lime)", gradient: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))" },
-    { label: "Seed", score: seed, color: "var(--icon-teal)", gradient: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))" },
-    { label: "Heal", score: heal, color: "var(--icon-yellow)", gradient: "linear-gradient(90deg, var(--icon-yellow), var(--icon-orange))" },
+    { label: "Prebiotics", score: feed, color: "var(--icon-lime)", gradient: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))" },
+    { label: "Probiotics", score: seed, color: "var(--icon-teal)", gradient: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))" },
+    { label: "Postbiotics", score: heal, color: "var(--icon-yellow)", gradient: "linear-gradient(90deg, var(--icon-yellow), var(--icon-orange))" },
   ]
 
   const scoreColor =
@@ -73,7 +73,7 @@ export function ScoreCard({ score, feed, seed, heal, profile }: ScoreCardProps) 
           <div className="mb-4 flex items-center justify-between">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[3px] text-white/40">EatoBiotics</p>
-              <p className="text-sm font-semibold text-white/70">Feed · Seed · Heal</p>
+              <p className="text-sm font-semibold text-white/70">3 Biotics</p>
             </div>
             <span
               className="rounded-full px-3 py-1 text-[11px] font-semibold"

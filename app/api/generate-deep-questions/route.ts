@@ -12,22 +12,34 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
 })
 
 type SubScores = {
-  diversity: number
-  feeding: number
-  adding: number
-  consistency: number
-  feeling: number
+  prebiotics?: number
+  probiotics?: number
+  postbiotics?: number
+  feed?: number
+  seed?: number
+  heal?: number
+  diversity?: number
+  feeding?: number
+  adding?: number
+  consistency?: number
+  feeling?: number
 }
 
 type RequestBody = {
   sessionId: string
-  tier: "starter" | "full" | "premium"
+  tier: "personal" | "starter" | "full" | "premium"
   overall: number
   subScores: SubScores
   profile: { type: string; tagline: string; description: string }
 }
 
 const PILLAR_LABELS: Record<string, string> = {
+  prebiotics: "Prebiotics",
+  probiotics: "Probiotics",
+  postbiotics: "Postbiotics",
+  feed: "Prebiotics",
+  seed: "Probiotics",
+  heal: "Postbiotics",
   diversity: "Plant Diversity",
   feeding: "Feeding (Fibre & Whole Foods)",
   adding: "Live & Fermented Foods",
@@ -36,18 +48,31 @@ const PILLAR_LABELS: Record<string, string> = {
 }
 
 const TIER_LABELS: Record<string, string> = {
+  personal: "Personal",
   starter: "Starter",
   full: "Full",
   premium: "Premium",
 }
 
+function getBioticScores(sub: SubScores): Record<"prebiotics" | "probiotics" | "postbiotics", number> {
+  return {
+    prebiotics:
+      sub.prebiotics ?? sub.feed ?? Math.round(((sub.diversity ?? 0) + (sub.feeding ?? 0)) / 2),
+    probiotics: sub.probiotics ?? sub.seed ?? sub.adding ?? 0,
+    postbiotics:
+      sub.postbiotics ?? sub.heal ?? Math.round(((sub.consistency ?? 0) + (sub.feeling ?? 0)) / 2),
+  }
+}
+
 function getSortedPillars(sub: SubScores): Array<[string, number]> {
-  return (Object.entries(sub) as [string, number][]).sort((a, b) => a[1] - b[1])
+  return Object.entries(getBioticScores(sub)).sort((a, b) => a[1] - b[1])
 }
 
 function buildDeepQuestionsPrompt(body: RequestBody): string {
   const { tier, overall, subScores, profile } = body
   const sorted = getSortedPillars(subScores)
+  const effectiveTier = tier === "personal" ? "full" : tier
+  const bioticScores = getBioticScores(subScores)
 
   const weakest1 = sorted[0][0]
   const score1 = sorted[0][1]
@@ -61,12 +86,12 @@ function buildDeepQuestionsPrompt(body: RequestBody): string {
   const strongestLabel = PILLAR_LABELS[strongest] ?? strongest
   const tierLabel = TIER_LABELS[tier] ?? tier
 
-  const questionCount = tier === "starter" ? 10 : tier === "full" ? 18 : 25
+  const questionCount = effectiveTier === "starter" ? 10 : effectiveTier === "full" ? 18 : 25
 
   const distributionBlock =
-    tier === "starter"
+    effectiveTier === "starter"
       ? `[Starter - 10 total]: 4 on ${weakest1Label}, 3 on ${weakest2Label}, 2 lifestyle (sleep, stress, exercise), 1 gut feeling/symptoms`
-      : tier === "full"
+      : effectiveTier === "full"
       ? `[Full - 18 total]: 4 on ${weakest1Label}, 3 on ${weakest2Label}, 2 each on remaining 3 pillars, 3 lifestyle, 2 food environment (cooking habits, meal planning)`
       : `[Premium - 25 total]: 5 on ${weakest1Label}, 4 on ${weakest2Label}, 2 each on remaining 3 pillars, 3 lifestyle, 3 gut diagnostic (symptom frequency, energy patterns, food reactions), 2 motivation/barriers (what has failed before, biggest obstacle)`
 
@@ -75,11 +100,9 @@ function buildDeepQuestionsPrompt(body: RequestBody): string {
 A user completed our 15-question Food System Assessment:
 Overall: ${overall}/100
 Profile: "${profile.type}" — "${profile.tagline}"
-Plant Diversity: ${subScores.diversity}/100
-Feeding (Fibre & Whole Foods): ${subScores.feeding}/100
-Live & Fermented Foods: ${subScores.adding}/100
-Consistency: ${subScores.consistency}/100
-Feeling (Symptoms & Energy): ${subScores.feeling}/100
+Prebiotics: ${bioticScores.prebiotics}/100
+Probiotics: ${bioticScores.probiotics}/100
+Postbiotics: ${bioticScores.postbiotics}/100
 
 Their two weakest pillars are: ${weakest1Label} (${score1}/100) and ${weakest2Label} (${score2}/100).
 Their strongest pillar is: ${strongestLabel} (${scoreS}/100).
@@ -115,7 +138,7 @@ Return ONLY valid JSON, no markdown fences:
     {
       "id": "dq1",
       "type": "single"|"multi"|"slider"|"textarea"|"yesno",
-      "pillar": "diversity"|"feeding"|"adding"|"consistency"|"feeling"|"lifestyle",
+      "pillar": "prebiotics"|"probiotics"|"postbiotics"|"lifestyle",
       "section": "symptoms"|"history"|"lifestyle"|"goals",
       "text": "...",
       "eduContext": "...",
@@ -141,7 +164,7 @@ export async function POST(req: NextRequest) {
   if (!sessionId) {
     return NextResponse.json({ error: "Missing sessionId" }, { status: 400 })
   }
-  if (!["starter", "full", "premium"].includes(tier)) {
+  if (!["personal", "starter", "full", "premium"].includes(tier)) {
     return NextResponse.json({ error: "Invalid tier" }, { status: 400 })
   }
 
@@ -193,7 +216,8 @@ export async function POST(req: NextRequest) {
 
   try {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-    const maxTokens = tier === "premium" ? 4096 : tier === "full" ? 3072 : 2048
+    const effectiveTier = tier === "personal" ? "full" : tier
+    const maxTokens = effectiveTier === "premium" ? 4096 : effectiveTier === "full" ? 3072 : 2048
 
     const message = await client.messages.create({
       model: "claude-sonnet-4-20250514",

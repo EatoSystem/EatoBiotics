@@ -1,4 +1,4 @@
-/* ── Full Report Generation — Feed / Seed / Heal ─────────────────────── */
+/* ── Full Report Generation — Prebiotics / Probiotics / Postbiotics ───── */
 
 import type { AssessmentResult, PillarInsight } from "./assessment-scoring"
 import type { PillarKey } from "./assessment-data"
@@ -45,14 +45,22 @@ export interface FullReport {
   thirtyDayPlan: WeekPlan[]
 }
 
+function reportPillarKey(pillar: string): "feed" | "seed" | "heal" {
+  if (pillar === "prebiotics") return "feed"
+  if (pillar === "probiotics") return "seed"
+  if (pillar === "postbiotics") return "heal"
+  if (pillar === "seed" || pillar === "heal") return pillar
+  return "feed"
+}
+
 /* ── Per-pillar food data ───────────────────────────────────────────── */
 
 const PILLAR_DEEP_DIVES: Record<
-  PillarKey,
+  string,
   Omit<PillarDeepDive, "score" | "pillar" | "summary">
 > = {
   feed: {
-    label: "Feed",
+    label: "Prebiotics",
     color: "var(--icon-lime)",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
     icon: "Leaf",
@@ -107,7 +115,7 @@ const PILLAR_DEEP_DIVES: Record<
   },
 
   seed: {
-    label: "Seed",
+    label: "Probiotics",
     color: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
     icon: "Droplets",
@@ -162,7 +170,7 @@ const PILLAR_DEEP_DIVES: Record<
   },
 
   heal: {
-    label: "Heal",
+    label: "Postbiotics",
     color: "var(--icon-yellow)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     icon: "Zap",
@@ -244,10 +252,10 @@ function buildWeeklyHabits(
   week: number,
   sortedInsights: PillarInsight[]
 ): { habit: string; detail: string }[] {
-  const weakest = sortedInsights[0]?.pillar ?? "feed"
-  const second = sortedInsights[1]?.pillar ?? "seed"
+  const weakest = reportPillarKey(sortedInsights[0]?.pillar ?? "feed")
+  const second = reportPillarKey(sortedInsights[1]?.pillar ?? "seed")
 
-  const HABIT_POOLS: Record<PillarKey, string[][]> = {
+  const HABIT_POOLS: Record<string, string[][]> = {
     feed: [
       ["Add one new plant per day", "Choose a vegetable, legume, seed, or grain you haven't eaten this week. Even a tablespoon of a new seed counts."],
       ["Anchor every main meal with a fibre source", "Legumes, whole grains, or 2+ vegetables. Make fibre-first the default, not the afterthought."],
@@ -302,10 +310,12 @@ export function generateFullReport(result: AssessmentResult): FullReport {
 
   // Build personalised food list — prioritise foods that hit weakest pillars
   const sortedInsights = [...insights].sort((a, b) => a.score - b.score)
-  const weakPillars = sortedInsights.slice(0, 3).map((i) => i.pillar)
+  const weakPillars: Array<"feed" | "seed" | "heal"> = sortedInsights
+    .slice(0, 3)
+    .map((i) => reportPillarKey(i.pillar))
 
   const scored = ALL_FOODS.map((f) => {
-    const pillarHits = f.pillars.filter((p) => weakPillars.includes(p)).length
+    const pillarHits = f.pillars.filter((p) => weakPillars.includes(reportPillarKey(p))).length
     const priorityScore = f.priority === "high" ? 2 : 1
     return { ...f, _score: pillarHits * 2 + priorityScore }
   })
@@ -329,7 +339,7 @@ export function generateFullReport(result: AssessmentResult): FullReport {
     {
       week: 3,
       title: "Deepen",
-      focus: "Push your Feed score up and fine-tune how your body responds after meals.",
+      focus: "Push your Prebiotics score up and fine-tune how your body responds after meals.",
       habits: buildWeeklyHabits(3, sortedInsights),
     },
     {
@@ -377,7 +387,7 @@ export function generateStarterReport(result: AssessmentResult): StarterReport {
 
   // 7-day starter plan — one action per day cycling through weakest pillars
   const DAY_LABELS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-  const STARTER_HABITS: Record<PillarKey, string[]> = {
+  const STARTER_HABITS: Record<string, string[]> = {
     feed: [
       "Add one new plant food you haven't eaten this week — a different legume, vegetable, or seed.",
       "Start every meal today with a fibre source — legumes, vegetables, or whole grains before anything else.",
@@ -396,12 +406,12 @@ export function generateStarterReport(result: AssessmentResult): StarterReport {
   }
 
   const pillarOrder: PillarKey[] = [
-    (sortedInsights[0]?.pillar ?? "seed") as PillarKey,
-    (sortedInsights[1]?.pillar ?? "feed") as PillarKey,
-    (sortedInsights[2]?.pillar ?? "heal") as PillarKey,
+    reportPillarKey(sortedInsights[0]?.pillar ?? "seed") as PillarKey,
+    reportPillarKey(sortedInsights[1]?.pillar ?? "feed") as PillarKey,
+    reportPillarKey(sortedInsights[2]?.pillar ?? "heal") as PillarKey,
     "heal",
-    (sortedInsights[0]?.pillar ?? "seed") as PillarKey,
-    (sortedInsights[1]?.pillar ?? "feed") as PillarKey,
+    reportPillarKey(sortedInsights[0]?.pillar ?? "seed") as PillarKey,
+    reportPillarKey(sortedInsights[1]?.pillar ?? "feed") as PillarKey,
     "heal",
   ]
 
@@ -458,7 +468,7 @@ export interface PremiumAddons {
 export function generatePremiumAddons(result: AssessmentResult): PremiumAddons {
   const { overall, insights } = result
   const sortedInsights = [...insights].sort((a, b) => a.score - b.score)
-  const weakest: PillarKey = (sortedInsights[0]?.pillar ?? "feed") as PillarKey
+  const weakest: PillarKey = reportPillarKey(sortedInsights[0]?.pillar ?? "feed") as PillarKey
 
   // Meal timing — varies by overall score range
   const mealTiming: MealTimingRule[] = overall >= 65
@@ -585,7 +595,7 @@ function buildPremiumAddons(
     },
   ]
 
-  const RECIPE_POOL: Record<PillarKey, BioticRecipe> = {
+  const RECIPE_POOL: Record<string, BioticRecipe> = {
     feed: {
       name: "30-Plant Grain Bowl",
       pillar: "feed",

@@ -4,6 +4,10 @@
 export type DeepQuestionType = "single" | "multi" | "slider" | "textarea" | "yesno"
 
 export type DeepPillar =
+  | "prebiotics"
+  | "probiotics"
+  | "postbiotics"
+  // Legacy fields kept for existing saved questions.
   | "diversity"
   | "feeding"
   | "adding"

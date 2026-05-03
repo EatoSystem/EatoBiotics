@@ -1,9 +1,15 @@
 /* ── Assessment Questions ────────────────────────────────────────────── */
-// 15 questions: exactly 3 per pillar (5 pillars × 3 = 15).
+// 15 questions across the 3 Biotics: Prebiotics, Probiotics, and Postbiotics.
 // All questions are type "single" (radio/card select).
-// IDs: q1–q15 in pillar order (Diversity → Feeding → Adding → Consistency → Feeling).
+// IDs: q1–q15 in 3 Biotics order (Prebiotics → Probiotics → Postbiotics).
 
-export type PillarKey = "feed" | "seed" | "heal"
+export type PillarKey =
+  | "prebiotics"
+  | "probiotics"
+  | "postbiotics"
+  | "feed"
+  | "seed"
+  | "heal"
 
 export interface AnswerOption {
   label: string
@@ -22,7 +28,13 @@ export interface AssessmentQuestion {
 }
 
 export const SECTION_COLORS: Record<string, string> = {
-  // Feed/Seed/Heal section titles
+  // 3 Biotics section titles
+  "Prebiotics — Plant Diversity": "var(--icon-lime)",
+  "Prebiotics — Fibre & Whole Foods": "var(--icon-green)",
+  "Probiotics — Fermented & Live Foods": "var(--icon-teal)",
+  "Postbiotics — Consistency & Rhythm": "var(--icon-yellow)",
+  "Postbiotics — Recovery & Resilience": "var(--icon-orange)",
+  // Feed/Seed/Heal titles kept for localStorage backward compatibility
   "Feed — Plant Diversity": "var(--icon-lime)",
   "Feed — Fibre & Whole Foods": "var(--icon-green)",
   "Seed — Fermented & Live Foods": "var(--icon-teal)",
@@ -49,11 +61,11 @@ export const SECTION_COLORS: Record<string, string> = {
 }
 
 export const QUESTIONS: AssessmentQuestion[] = [
-  // ── Feed — Plant Diversity (q1–q3) ────────────────────────────────
+  // ── Prebiotics — Plant Diversity (q1–q3) ──────────────────────────
   {
     id: "q1",
-    pillar: "feed",
-    sectionTitle: "Feed — Plant Diversity",
+    pillar: "prebiotics",
+    sectionTitle: "Prebiotics — Plant Diversity",
     index: 1,
     text: "How many different plant foods do you eat in a typical week?",
     type: "single",
@@ -66,8 +78,8 @@ export const QUESTIONS: AssessmentQuestion[] = [
   },
   {
     id: "q2",
-    pillar: "feed",
-    sectionTitle: "Feed — Plant Diversity",
+    pillar: "prebiotics",
+    sectionTitle: "Prebiotics — Plant Diversity",
     index: 2,
     text: "How often do your meals include foods from at least three different plant categories — vegetables, fruit, legumes, grains, nuts, or seeds?",
     type: "single",
@@ -80,8 +92,8 @@ export const QUESTIONS: AssessmentQuestion[] = [
   },
   {
     id: "q3",
-    pillar: "feed",
-    sectionTitle: "Feed — Plant Diversity",
+    pillar: "prebiotics",
+    sectionTitle: "Prebiotics — Plant Diversity",
     index: 3,
     text: "How intentionally do you vary your food choices — rotating grains, trying different vegetables, or exploring unfamiliar plants?",
     type: "single",
@@ -93,11 +105,11 @@ export const QUESTIONS: AssessmentQuestion[] = [
     ],
   },
 
-  // ── Feed — Fibre & Whole Foods (q4–q6) ───────────────────────────
+  // ── Prebiotics — Fibre & Whole Foods (q4–q6) ─────────────────────
   {
     id: "q4",
-    pillar: "feed",
-    sectionTitle: "Feed — Fibre & Whole Foods",
+    pillar: "prebiotics",
+    sectionTitle: "Prebiotics — Fibre & Whole Foods",
     index: 4,
     text: "How often do your meals include fibre-rich whole foods — vegetables, legumes, wholegrains, nuts, or seeds?",
     type: "single",
@@ -110,8 +122,8 @@ export const QUESTIONS: AssessmentQuestion[] = [
   },
   {
     id: "q5",
-    pillar: "feed",
-    sectionTitle: "Feed — Fibre & Whole Foods",
+    pillar: "prebiotics",
+    sectionTitle: "Prebiotics — Fibre & Whole Foods",
     index: 5,
     text: "How much of your daily food comes from processed or ultra-processed sources — packaged snacks, ready meals, refined bread, or fast food?",
     type: "single",
@@ -124,8 +136,8 @@ export const QUESTIONS: AssessmentQuestion[] = [
   },
   {
     id: "q6",
-    pillar: "feed",
-    sectionTitle: "Feed — Fibre & Whole Foods",
+    pillar: "prebiotics",
+    sectionTitle: "Prebiotics — Fibre & Whole Foods",
     index: 6,
     text: "Do you regularly eat prebiotic-rich foods — oats, garlic, onion, leeks, bananas, or asparagus?",
     type: "single",
@@ -137,11 +149,11 @@ export const QUESTIONS: AssessmentQuestion[] = [
     ],
   },
 
-  // ── Seed — Fermented & Live Foods (q7–q9) ────────────────────────
+  // ── Probiotics — Fermented & Live Foods (q7–q9) ──────────────────
   {
     id: "q7",
-    pillar: "seed",
-    sectionTitle: "Seed — Fermented & Live Foods",
+    pillar: "probiotics",
+    sectionTitle: "Probiotics — Fermented & Live Foods",
     index: 7,
     text: "How often do you eat fermented or live-culture foods — yoghurt, kefir, kimchi, sauerkraut, miso, kombucha, or similar?",
     type: "single",
@@ -154,8 +166,8 @@ export const QUESTIONS: AssessmentQuestion[] = [
   },
   {
     id: "q8",
-    pillar: "seed",
-    sectionTitle: "Seed — Fermented & Live Foods",
+    pillar: "probiotics",
+    sectionTitle: "Probiotics — Fermented & Live Foods",
     index: 8,
     text: "When you do eat fermented foods, how varied are your choices — rotating between different types?",
     type: "single",
@@ -168,8 +180,8 @@ export const QUESTIONS: AssessmentQuestion[] = [
   },
   {
     id: "q9",
-    pillar: "seed",
-    sectionTitle: "Seed — Fermented & Live Foods",
+    pillar: "probiotics",
+    sectionTitle: "Probiotics — Fermented & Live Foods",
     index: 9,
     text: "How intentional is your approach to live and fermented foods — a planned daily habit, or more accidental when it happens?",
     type: "single",
@@ -181,11 +193,11 @@ export const QUESTIONS: AssessmentQuestion[] = [
     ],
   },
 
-  // ── Heal — Consistency & Rhythm (q10–q12) ────────────────────────
+  // ── Postbiotics — Consistency & Rhythm (q10–q12) ─────────────────
   {
     id: "q10",
-    pillar: "heal",
-    sectionTitle: "Heal — Consistency & Rhythm",
+    pillar: "postbiotics",
+    sectionTitle: "Postbiotics — Consistency & Rhythm",
     index: 10,
     text: "How would you describe your overall approach to eating?",
     type: "single",
@@ -198,8 +210,8 @@ export const QUESTIONS: AssessmentQuestion[] = [
   },
   {
     id: "q11",
-    pillar: "heal",
-    sectionTitle: "Heal — Consistency & Rhythm",
+    pillar: "postbiotics",
+    sectionTitle: "Postbiotics — Consistency & Rhythm",
     index: 11,
     text: "How consistent is your eating rhythm across the week — including weekends?",
     type: "single",
@@ -212,8 +224,8 @@ export const QUESTIONS: AssessmentQuestion[] = [
   },
   {
     id: "q12",
-    pillar: "heal",
-    sectionTitle: "Heal — Consistency & Rhythm",
+    pillar: "postbiotics",
+    sectionTitle: "Postbiotics — Consistency & Rhythm",
     index: 12,
     text: "How often do you skip meals, eat very late, or rush through food without paying attention?",
     type: "single",
@@ -225,11 +237,11 @@ export const QUESTIONS: AssessmentQuestion[] = [
     ],
   },
 
-  // ── Heal — Recovery & Resilience (q13–q15) ───────────────────────
+  // ── Postbiotics — Recovery & Resilience (q13–q15) ────────────────
   {
     id: "q13",
-    pillar: "heal",
-    sectionTitle: "Heal — Recovery & Resilience",
+    pillar: "postbiotics",
+    sectionTitle: "Postbiotics — Recovery & Resilience",
     index: 13,
     text: "How do you typically feel in the hour or two after eating?",
     type: "single",
@@ -242,8 +254,8 @@ export const QUESTIONS: AssessmentQuestion[] = [
   },
   {
     id: "q14",
-    pillar: "heal",
-    sectionTitle: "Heal — Recovery & Resilience",
+    pillar: "postbiotics",
+    sectionTitle: "Postbiotics — Recovery & Resilience",
     index: 14,
     text: "How often do you experience digestive discomfort — bloating, cramping, irregularity, or sensitivity?",
     type: "single",
@@ -256,8 +268,8 @@ export const QUESTIONS: AssessmentQuestion[] = [
   },
   {
     id: "q15",
-    pillar: "heal",
-    sectionTitle: "Heal — Recovery & Resilience",
+    pillar: "postbiotics",
+    sectionTitle: "Postbiotics — Recovery & Resilience",
     index: 15,
     text: "How stable is your energy level across the day?",
     type: "single",

@@ -48,30 +48,30 @@ const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: 
 
 /* ── Interpretation copy (in-component, no API call) ─────────────────── */
 
-const INTERPRETATIONS: Record<PillarKey, Record<"low" | "mid" | "high", string>> = {
-  feed: {
-    low: "Your gut bacteria are hungry. Your Feed score suggests you may not be eating enough plant diversity and fibre to support a thriving microbiome — this is your biggest lever right now.",
-    mid: "Your Feed score shows a reasonable fibre foundation. With a few targeted additions to your weekly plant variety, you could significantly improve your gut ecosystem.",
-    high: "Your Feed score is strong — you're consistently nourishing your gut bacteria with the plant diversity and fibre they need to thrive.",
+const INTERPRETATIONS: Record<string, Record<"low" | "mid" | "high", string>> = {
+  prebiotics: {
+    low: "Your gut bacteria are hungry. Your Prebiotics score suggests you may not be eating enough plant diversity and fibre to support a thriving microbiome — this is your biggest lever right now.",
+    mid: "Your Prebiotics score shows a reasonable fibre foundation. With a few targeted additions to your weekly plant variety, you could significantly improve your gut ecosystem.",
+    high: "Your Prebiotics score is strong — you're consistently nourishing your gut bacteria with the plant diversity and fibre they need to thrive.",
   },
-  seed: {
-    low: "Your Seed score is your biggest opportunity. Adding even one fermented food daily — yoghurt, kefir, or miso — can transform your microbial diversity within weeks.",
-    mid: "You're introducing some live foods, but your Seed score suggests there's room to build a more consistent fermented food habit and broaden the variety.",
-    high: "Your Seed score shows you're actively supporting your gut microbiome with fermented and live foods — one of the most targeted dietary inputs available.",
+  probiotics: {
+    low: "Your Probiotics score is your biggest opportunity. Adding even one fermented food daily — yoghurt, kefir, or miso — can transform your microbial diversity within weeks.",
+    mid: "You're introducing some live foods, but your Probiotics score suggests there's room to build a more consistent fermented food habit and broaden the variety.",
+    high: "Your Probiotics score shows you're actively supporting your gut microbiome with fermented and live foods — one of the most targeted dietary inputs available.",
   },
-  heal: {
-    low: "Your Heal score suggests your food habits and meal rhythm may be working against your gut's recovery and energy systems. Small consistency wins here compound quickly.",
-    mid: "Your Heal score shows some consistency, but your gut's recovery system could benefit from more regular meal patterns and colourful, polyphenol-rich foods.",
-    high: "Your Heal score is excellent — your food habits and meal timing are supporting your gut's natural recovery and resilience processes.",
+  postbiotics: {
+    low: "Your Postbiotics score suggests your food habits and meal rhythm may be working against your gut's recovery and energy systems. Small consistency wins here compound quickly.",
+    mid: "Your Postbiotics score shows some consistency, but your gut's recovery system could benefit from more regular meal patterns and colourful, polyphenol-rich foods.",
+    high: "Your Postbiotics score is excellent — your food habits and meal timing are supporting your gut's natural recovery and resilience processes.",
   },
 }
 
 /* ── Weakest pillar free food recommendation ─────────────────────────── */
 
-const WEAKEST_FOOD_REC: Record<PillarKey, string> = {
-  feed: "Adding oats, garlic, and lentils to just three meals this week could meaningfully move your Feed score.",
-  seed: "One tablespoon of live yoghurt or kefir daily is one of the fastest ways to improve your Seed score — it takes seconds.",
-  heal: "Eating your main meal before 7pm and adding two colourful plant foods per day can improve your Heal score within weeks.",
+const WEAKEST_FOOD_REC: Record<string, string> = {
+  prebiotics: "Adding oats, garlic, and lentils to just three meals this week could meaningfully move your Prebiotics score.",
+  probiotics: "One tablespoon of live yoghurt or kefir daily is one of the fastest ways to improve your Probiotics score — it takes seconds.",
+  postbiotics: "Eating your main meal before 7pm and adding two colourful plant foods per day can improve your Postbiotics score within weeks.",
 }
 
 /* ── Animated score counter ─────────────────────────────────────────── */
@@ -390,13 +390,13 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
       <section className="px-6 pb-12">
         <div className="mx-auto max-w-3xl">
           <ScrollReveal>
-            <ScoreCard
-              score={result.overall}
-              feed={result.subScores.feed ?? 0}
-              seed={result.subScores.seed ?? 0}
-              heal={result.subScores.heal ?? 0}
-              profile={result.profile.type}
-            />
+              <ScoreCard
+                score={result.overall}
+                feed={result.subScores.prebiotics ?? result.subScores.feed ?? 0}
+                seed={result.subScores.probiotics ?? result.subScores.seed ?? 0}
+                heal={result.subScores.postbiotics ?? result.subScores.heal ?? 0}
+                profile={result.profile.type}
+              />
           </ScrollReveal>
         </div>
       </section>
@@ -430,7 +430,7 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
                 {/* What&apos;s included */}
                 <ul className="mb-8 grid gap-2.5 sm:grid-cols-2">
                   {[
-                    "Full Feed / Seed / Heal score analysis",
+                    "Full Prebiotics / Probiotics / Postbiotics score analysis",
                     "Your personalised 30-day gut reset plan",
                     "Top 10 food recommendations",
                     "Weekly shopping framework",
@@ -496,7 +496,7 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
                 icon: Calendar,
                 gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
                 title: "Your 30-Day Plan",
-                desc: "Four weeks of specific, week-by-week actions tailored to your Feed, Seed, and Heal scores.",
+                desc: "Four weeks of specific, week-by-week actions tailored to your Prebiotics, Probiotics, and Postbiotics scores.",
               },
               {
                 icon: ShoppingCart,
@@ -528,7 +528,7 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
         </div>
       </section>
 
-      {/* ── E. Feed / Seed / Heal Breakdown ────────────────────────────── */}
+      {/* ── E. 3 Biotics Breakdown ─────────────────────────────────────── */}
       <section className="border-t border-border bg-secondary/10 px-6 py-16">
         <div className="mx-auto max-w-3xl">
           <ScrollReveal>
@@ -536,7 +536,7 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
               Your Three Pillars
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              How your food system performs across Feed, Seed, and Heal — the three areas that shape your gut health.
+              How your food system performs across Prebiotics, Probiotics, and Postbiotics — the three areas that shape your gut health.
             </p>
 
             <div className="mt-4 flex flex-wrap gap-2">

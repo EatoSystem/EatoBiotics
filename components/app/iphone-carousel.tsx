@@ -24,7 +24,7 @@ const SCREENS: Screen[] = [
 
 export function IPhoneCarousel() {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [
-    Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true }),
+    Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true }) as never,
   ])
   const [selectedIndex, setSelectedIndex] = useState(0)
 

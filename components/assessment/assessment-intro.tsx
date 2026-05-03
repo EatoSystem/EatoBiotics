@@ -6,8 +6,6 @@ import {
   Leaf,
   Wheat,
   FlaskConical,
-  Timer,
-  Heart,
   Mail,
   BarChart2,
   MessageSquare,
@@ -25,37 +23,23 @@ interface AssessmentIntroProps {
 const PILLARS = [
   {
     icon: Leaf,
-    label: "Diversity",
-    description: "How varied your plant intake is each week",
+    label: "Prebiotics",
+    description: "Plant variety, fibre, and foods that feed your microbiome",
     color: "var(--icon-lime)",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
   },
   {
-    icon: Wheat,
-    label: "Feeding",
-    description: "How often you eat fibre-rich whole foods",
-    color: "var(--icon-green)",
-    gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
-  },
-  {
     icon: FlaskConical,
-    label: "Live Foods",
-    description: "How regularly you include fermented foods",
+    label: "Probiotics",
+    description: "How regularly you include live and fermented foods",
     color: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
   },
   {
-    icon: Timer,
-    label: "Consistency",
-    description: "How stable and repeatable your eating habits are",
+    icon: Wheat,
+    label: "Postbiotics",
+    description: "Rhythm, colour, and the compounds your gut produces",
     color: "var(--icon-yellow)",
-    gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
-  },
-  {
-    icon: Heart,
-    label: "Feeling",
-    description: "How your body responds — energy, comfort, clarity",
-    color: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
   },
 ]
@@ -187,8 +171,8 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
           </h1>
 
           <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-muted-foreground sm:text-lg">
-            A 15-question assessment revealing how well you&rsquo;re feeding your gut microbiome
-            — scored across five pillars with a personalised 7-day action plan sent to your inbox.
+            A 15-question assessment revealing how well you&rsquo;re supporting your gut microbiome
+            — scored across Prebiotics, Probiotics, and Postbiotics with a personalised 7-day action plan sent to your inbox.
           </p>
 
           {/* Scroll cue */}
@@ -306,10 +290,10 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
               What you&rsquo;ll discover
             </p>
             <h2 className="mt-3 font-serif text-2xl font-semibold text-foreground sm:text-3xl">
-              You&rsquo;ll score 0–100 across 5 pillars
+              You&rsquo;ll score 0-100 across the 3 Biotics
             </h2>
             <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-              Each pillar measures a different dimension of your internal food system. Together,
+              Each Biotic score measures a different dimension of your internal food system. Together,
               they reveal the full picture.
             </p>
           </div>
@@ -362,7 +346,7 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
               Which one describes you today?
             </h2>
             <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
-              The assessment places you in one of six profiles based on your 5 pillar scores.
+              The assessment places you in one of six profiles based on your 3 Biotics scores.
               Take the assessment to find yours.
             </p>
           </div>

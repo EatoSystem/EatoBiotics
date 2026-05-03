@@ -1,12 +1,15 @@
-/* ── Assessment Scoring — Feed / Seed / Heal ─────────────────────────── */
+/* ── Assessment Scoring — 3 Biotics ──────────────────────────────────── */
 
 import type { PillarKey } from "./assessment-data"
 
 export interface SubScores {
-  feed: number   // Prebiotic & Fibre (q1–q6)
-  seed: number   // Fermented & Live (q7–q9)
-  heal: number   // Recovery & Resilience (q10–q15)
-  // Legacy fields — kept for backward compatibility with stored records
+  prebiotics: number   // Plant diversity, fibre, and whole foods (q1–q6)
+  probiotics: number   // Fermented and live foods (q7–q9)
+  postbiotics: number  // Recovery, rhythm, and resilience (q10–q15)
+  // Feed/Seed/Heal aliases and older 5-pillar fields are kept for stored records.
+  feed?: number
+  seed?: number
+  heal?: number
   diversity?: number
   feeding?: number
   adding?: number
@@ -52,30 +55,38 @@ export function computeSubScores(
     return typeof v === "number" ? v : 0
   }
 
-  // Feed: q1–q6 (max 18 points across 6 questions × 3 max each)
-  const feedRaw = n("q1") + n("q2") + n("q3") + n("q4") + n("q5") + n("q6")
-  const feed = Math.round((feedRaw / 18) * 100)
+  // Prebiotics: q1–q6 (max 18 points across 6 questions × 3 max each)
+  const prebioticRaw = n("q1") + n("q2") + n("q3") + n("q4") + n("q5") + n("q6")
+  const prebiotics = Math.round((prebioticRaw / 18) * 100)
 
-  // Seed: q7–q9 (max 9 points)
-  const seedRaw = n("q7") + n("q8") + n("q9")
-  const seed = Math.round((seedRaw / 9) * 100)
+  // Probiotics: q7–q9 (max 9 points)
+  const probioticRaw = n("q7") + n("q8") + n("q9")
+  const probiotics = Math.round((probioticRaw / 9) * 100)
 
-  // Heal: q10–q15 (max 18 points)
-  const healRaw = n("q10") + n("q11") + n("q12") + n("q13") + n("q14") + n("q15")
-  const heal = Math.round((healRaw / 18) * 100)
+  // Postbiotics: q10–q15 (max 18 points)
+  const postbioticRaw = n("q10") + n("q11") + n("q12") + n("q13") + n("q14") + n("q15")
+  const postbiotics = Math.round((postbioticRaw / 18) * 100)
 
-  return { feed, seed, heal }
+  return {
+    prebiotics,
+    probiotics,
+    postbiotics,
+    feed: prebiotics,
+    seed: probiotics,
+    heal: postbiotics,
+  }
 }
 
 export function computeOverall(sub: SubScores): number {
   // Floor of 20 per pillar: prevents one absent habit from catastrophically
   // dragging the overall score
   const floor = (n: number) => Math.max(n, 20)
-  const f = floor(sub.feed)
-  const s = floor(sub.seed)
-  const h = floor(sub.heal)
+  const f = floor(sub.prebiotics ?? sub.feed ?? 0)
+  const s = floor(sub.probiotics ?? sub.seed ?? 0)
+  const h = floor(sub.postbiotics ?? sub.heal ?? 0)
 
-  // Weighted: Feed 40% (6 questions), Seed 20% (3 questions), Heal 40% (6 questions)
+  // Weighted: Prebiotics 40% (6 questions), Probiotics 20% (3 questions),
+  // Postbiotics 40% (6 questions)
   return Math.round(f * 0.4 + s * 0.2 + h * 0.4)
 }
 
@@ -83,9 +94,9 @@ export function computeOverall(sub: SubScores): number {
 
 function getWeakestPillar(sub: SubScores): PillarKey {
   const pillars: [PillarKey, number][] = [
-    ["feed", sub.feed],
-    ["seed", sub.seed],
-    ["heal", sub.heal],
+    ["prebiotics", sub.prebiotics ?? sub.feed ?? 0],
+    ["probiotics", sub.probiotics ?? sub.seed ?? 0],
+    ["postbiotics", sub.postbiotics ?? sub.heal ?? 0],
   ]
   return pillars.reduce((min, cur) => (cur[1] < min[1] ? cur : min), pillars[0])[0]
 }
@@ -98,7 +109,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
       type: "Thriving Food System",
       tagline: "Your inner food system is working hard in your favour.",
       description:
-        "You're doing something genuinely rare — feeding, seeding, and healing your gut with intention and consistency. Your scores reflect an inner food system that is well-nourished, diverse, and resilient. The opportunity now is to refine the edges and deepen what's already working.",
+        "You're doing something genuinely rare — supporting your prebiotic, probiotic, and postbiotic systems with intention and consistency. Your scores reflect an inner food system that is well-nourished, diverse, and resilient. The opportunity now is to refine the edges and deepen what's already working.",
       color: "var(--icon-green)",
     }
   }
@@ -108,7 +119,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
       type: "Strong Foundation",
       tagline: "You've built something real — now it's time to sharpen it.",
       description:
-        "You have solid food habits and your gut health is benefiting from your effort. One or two pillars — likely Seed or Heal — are where a targeted shift would unlock noticeably better results. The good news: you don't need a transformation, just a refinement.",
+        "You have solid food habits and your gut health is benefiting from your effort. One or two biotic scores — often Probiotics or Postbiotics — are where a targeted shift would unlock noticeably better results. The good news: you don't need a transformation, just a refinement.",
       color: "var(--icon-teal)",
     }
   }
@@ -118,27 +129,27 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
       type: "Emerging Balance",
       tagline: "The building blocks are there. Consistency is the next step.",
       description:
-        "You have awareness and some strong habits, but they haven't fully integrated into a reliable daily rhythm yet. Your gut responds to consistency — even small, repeatable improvements in your Feed, Seed, or Heal scores compound quickly from here.",
+        "You have awareness and some strong habits, but they haven't fully integrated into a reliable daily rhythm yet. Your gut responds to consistency — even small, repeatable improvements in your Prebiotics, Probiotics, or Postbiotics scores compound quickly from here.",
       color: "var(--icon-lime)",
     }
   }
 
   if (overall >= 35) {
-    if (weakest === "seed") {
+    if (weakest === "probiotics") {
       return {
         type: "Developing System",
         tagline: "Your gut is waiting for the live foods it needs to thrive.",
         description:
-          "Your eating habits have real strengths in fibre and food rhythm. What your microbiome is missing is direct microbial input from fermented and live foods — your Seed score. This is the most targeted gap to close, and the fastest one to act on. Adding even one fermented food daily can shift things meaningfully within weeks.",
+          "Your eating habits have real strengths in fibre and food rhythm. What your microbiome is missing is direct microbial input from fermented and live foods — your Probiotics score. This is the most targeted gap to close, and the fastest one to act on. Adding even one fermented food daily can shift things meaningfully within weeks.",
         color: "var(--icon-yellow)",
       }
     }
-    if (weakest === "heal") {
+    if (weakest === "postbiotics") {
       return {
         type: "Developing System",
         tagline: "Your food rhythm and recovery need more attention.",
         description:
-          "You have intention around food — it shows in your Feed and Seed scores. What your gut is missing right now is consistency and recovery support. When meal timing is unpredictable and colourful, polyphenol-rich foods are absent, even good food choices deliver less benefit.",
+          "You have intention around food — it shows in your Prebiotics and Probiotics scores. What your gut is missing right now is consistency and recovery support. When meal timing is unpredictable and colourful, polyphenol-rich foods are absent, even good food choices deliver less benefit.",
         color: "var(--icon-yellow)",
       }
     }
@@ -163,7 +174,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
 /* ── Per-pillar insight copy ────────────────────────────────────────── */
 
 const PILLAR_META: Record<
-  PillarKey,
+  string,
   {
     label: string
     icon: string
@@ -175,8 +186,8 @@ const PILLAR_META: Record<
     actionHigh: string
   }
 > = {
-  feed: {
-    label: "Feed",
+  prebiotics: {
+    label: "Prebiotics",
     icon: "Leaf",
     color: "var(--icon-lime)",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
@@ -187,10 +198,10 @@ const PILLAR_META: Record<
     actionLow:
       "This week: anchor every main meal with one fibre source. Lentils, oats, vegetables, wholegrains, or beans all count — even a small portion makes a difference.",
     actionHigh:
-      "Diversify your fibre sources. Add resistant starch (cooled potato, green banana) or new legumes to feed different microbial populations and push your Feed score higher.",
+      "Diversify your fibre sources. Add resistant starch (cooled potato, green banana) or new legumes to feed different microbial populations and push your Prebiotics score higher.",
   },
-  seed: {
-    label: "Seed",
+  probiotics: {
+    label: "Probiotics",
     icon: "Droplets",
     color: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
@@ -203,29 +214,29 @@ const PILLAR_META: Record<
     actionHigh:
       "Rotate your fermented food sources. Each carries a different bacterial profile — alternate between at least three types across the week for broader microbiome coverage.",
   },
-  heal: {
-    label: "Heal",
+  postbiotics: {
+    label: "Postbiotics",
     icon: "Zap",
     color: "var(--icon-yellow)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     strength:
       "Your food rhythm and recovery support are excellent — your gut has the consistency and polyphenol-rich foods it needs to produce beneficial compounds and maintain resilience.",
     opportunity:
-      "Your gut's recovery system needs more consistent rhythm and colourful, polyphenol-rich foods. Even rough consistency in meal timing — within a 30-minute window — combined with two to three colourful plants per day can significantly improve your Heal score.",
+      "Your gut's postbiotic system needs more consistent rhythm and colourful, polyphenol-rich foods. Even rough consistency in meal timing — within a 30-minute window — combined with two to three colourful plants per day can significantly improve your Postbiotics score.",
     actionLow:
       "This week: set three anchor meal times and protect them. Then add one colourful plant food per meal — berries, tomatoes, dark greens, or herbs. Small and consistent beats sporadic and perfect.",
     actionHigh:
-      "Identify conditions that break your rhythm and pre-plan simple solutions. Add one polyphenol-rich food you don't currently eat — dark chocolate, walnuts, or extra-virgin olive oil — to push your Heal score further.",
+      "Identify conditions that break your rhythm and pre-plan simple solutions. Add one polyphenol-rich food you don't currently eat — dark chocolate, walnuts, or extra-virgin olive oil — to push your Postbiotics score further.",
   },
 }
 
 /* ── Insights generation ────────────────────────────────────────────── */
 
 export function getInsights(sub: SubScores): PillarInsight[] {
-  const keys: PillarKey[] = ["feed", "seed", "heal"]
+  const keys: PillarKey[] = ["prebiotics", "probiotics", "postbiotics"]
   return keys
     .map((k): PillarInsight => {
-      const score = sub[k as keyof Pick<SubScores, "feed" | "seed" | "heal">] ?? 0
+      const score = sub[k] ?? 0
       const meta = PILLAR_META[k]
       const isStrength = score >= 65
       return {
@@ -266,15 +277,39 @@ export function computeResult(
 
 /* ── Legacy score normaliser ────────────────────────────────────────── */
 // Handles old sub_scores format {diversity, feeding, adding, consistency, feeling}
-// stored in the database before the Feed/Seed/Heal rebuild.
+// stored in the database before the 3 Biotics rebuild.
 
 export function normaliseSubScores(raw: Record<string, number>): SubScores {
+  if ("prebiotics" in raw) {
+    return {
+      prebiotics: raw.prebiotics,
+      probiotics: raw.probiotics,
+      postbiotics: raw.postbiotics,
+      feed: raw.prebiotics,
+      seed: raw.probiotics,
+      heal: raw.postbiotics,
+    }
+  }
   if ("feed" in raw) {
-    return { feed: raw.feed, seed: raw.seed, heal: raw.heal }
+    return {
+      prebiotics: raw.feed,
+      probiotics: raw.seed,
+      postbiotics: raw.heal,
+      feed: raw.feed,
+      seed: raw.seed,
+      heal: raw.heal,
+    }
   }
   // Convert legacy format using same pillar groupings
-  const feed = Math.round(((raw.diversity ?? 0) + (raw.feeding ?? 0)) / 2)
-  const seed = raw.adding ?? 0
-  const heal = Math.round(((raw.consistency ?? 0) + (raw.feeling ?? 0)) / 2)
-  return { feed, seed, heal }
+  const prebiotics = Math.round(((raw.diversity ?? 0) + (raw.feeding ?? 0)) / 2)
+  const probiotics = raw.adding ?? 0
+  const postbiotics = Math.round(((raw.consistency ?? 0) + (raw.feeling ?? 0)) / 2)
+  return {
+    prebiotics,
+    probiotics,
+    postbiotics,
+    feed: prebiotics,
+    seed: probiotics,
+    heal: postbiotics,
+  }
 }

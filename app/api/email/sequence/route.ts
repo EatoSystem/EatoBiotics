@@ -26,10 +26,15 @@ function getSequenceDayForLead(createdAt: string): number | null {
 
 function getWeakestPillar(subScores: Record<string, number> | null): "feed" | "seed" | "heal" {
   if (!subScores) return "seed"
+  const scores = {
+    feed: subScores.prebiotics ?? subScores.feed,
+    seed: subScores.probiotics ?? subScores.seed,
+    heal: subScores.postbiotics ?? subScores.heal,
+  }
   const pillars: Array<"feed" | "seed" | "heal"> = ["feed", "seed", "heal"]
-  const available = pillars.filter((p) => typeof subScores[p] === "number")
+  const available = pillars.filter((p) => typeof scores[p] === "number")
   if (!available.length) return "seed"
-  return available.sort((a, b) => (subScores[a] ?? 100) - (subScores[b] ?? 100))[0]
+  return available.sort((a, b) => (scores[a] ?? 100) - (scores[b] ?? 100))[0]
 }
 
 // ── Route handler ──────────────────────────────────────────────────────────
@@ -96,9 +101,9 @@ export async function GET(req: NextRequest) {
       score:          (lead.overall_score as number) ?? 0,
       profileType:    (lead.profile_type as string | null) ?? "Emerging Balance",
       weakestPillar,
-      feedScore:      subScores.feed  ?? 0,
-      seedScore:      subScores.seed  ?? 0,
-      healScore:      subScores.heal  ?? 0,
+      feedScore:      subScores.prebiotics  ?? subScores.feed  ?? 0,
+      seedScore:      subScores.probiotics  ?? subScores.seed  ?? 0,
+      healScore:      subScores.postbiotics ?? subScores.heal  ?? 0,
       dayOffset,
     }
 

@@ -325,13 +325,13 @@ export default function AboutPage() {
               The Framework
             </p>
             <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-              Feed. Add.{" "}
-              <GradientText>Produce.</GradientText>
+              Prebiotics. Probiotics.{" "}
+              <GradientText>Postbiotics.</GradientText>
             </h2>
           </ScrollReveal>
           <ScrollReveal delay={100}>
             <p className="mt-8 text-base leading-relaxed text-foreground md:text-lg">
-              Prebiotics feed your beneficial bacteria. Probiotics add living cultures to diversify them. And when you get those two right, your microbiome produces the things that actually make you feel better — short-chain fatty acids, vitamins, neurotransmitters. That&apos;s the 3 Biotics framework. Feed. Add. Produce.
+              Prebiotics feed your beneficial bacteria. Probiotics add living cultures to diversify them. Postbiotics are the beneficial compounds your microbiome produces when the first two are working well — short-chain fatty acids, vitamins, neurotransmitters. That&apos;s the 3 Biotics framework. Prebiotics. Probiotics. Postbiotics.
             </p>
           </ScrollReveal>
           <ScrollReveal delay={200}>

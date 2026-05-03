@@ -18,7 +18,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing lead or result" }, { status: 400 })
     }
 
-    const { diversity, feeding, adding, consistency, feeling } = result.subScores
+    const subScores: Record<string, number> =
+      assessmentType === "mind"
+        ? { ...result.subScores }
+        : {
+            prebiotics: result.subScores.prebiotics ?? result.subScores.feed ?? 0,
+            probiotics: result.subScores.probiotics ?? result.subScores.seed ?? 0,
+            postbiotics: result.subScores.postbiotics ?? result.subScores.heal ?? 0,
+          }
     const { subject, html } = buildResultsEmail({
       name: lead.name,
       email: lead.email,
@@ -26,7 +33,7 @@ export async function POST(req: NextRequest) {
       profileType: result.profile.type,
       tagline: result.profile.tagline,
       profileDescription: result.profile.description,
-      subScores: { diversity, feeding, adding, consistency, feeling },
+      subScores,
       nextActions: result.nextActions,
       ageBracket: lead.ageBracket,
       assessmentType: assessmentType ?? "gut",

@@ -7,10 +7,10 @@ import { DeepQuestionView } from "./deep-question"
 
 interface DeepAssessmentClientProps {
   sessionId: string
-  tier: "starter" | "full" | "premium"
+  tier: "personal" | "starter" | "full" | "premium"
   freeScores: {
     overall: number
-    subScores: { diversity: number; feeding: number; adding: number; consistency: number; feeling: number }
+    subScores: Record<string, number>
     profile: { type: string; tagline: string; description: string; color: string }
   }
   savedQuestions?: DeepQuestion[] | null
@@ -118,7 +118,7 @@ export function DeepAssessmentClient({
 
     // Demo mode: skip real submission, redirect to static demo report
     if (isDemoMode) {
-      const demoTier = sessionId.replace("demo-", "") as "starter" | "full" | "premium"
+      const demoTier = sessionId.replace("demo-", "") as "personal" | "starter" | "full" | "premium"
       // Still generate real Claude questions/analysis for the demo — just skip Stripe/PDF/email
       try {
         const res = await fetch("/api/submit-deep-assessment", {

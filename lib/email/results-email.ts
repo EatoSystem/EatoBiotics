@@ -12,10 +12,14 @@ interface ResultsEmailOpts {
 }
 
 const PILLAR_LABELS: Record<string, string> = {
-  // Current Feed/Seed/Heal keys
-  feed: "Feed",
-  seed: "Seed",
-  heal: "Heal",
+  // Current 3 Biotics keys
+  prebiotics: "Prebiotics",
+  probiotics: "Probiotics",
+  postbiotics: "Postbiotics",
+  // Feed/Seed/Heal aliases
+  feed: "Prebiotics",
+  seed: "Probiotics",
+  heal: "Postbiotics",
   // Legacy keys (backward compat)
   diversity: "Plant Diversity",
   feeding: "Feeding",
@@ -25,6 +29,9 @@ const PILLAR_LABELS: Record<string, string> = {
 }
 
 const PILLAR_COLORS: Record<string, string> = {
+  prebiotics: "#7fc47e",
+  probiotics: "#3ab0a0",
+  postbiotics: "#e6b84a",
   feed: "#7fc47e",
   seed: "#3ab0a0",
   heal: "#e6b84a",
@@ -36,6 +43,9 @@ const PILLAR_COLORS: Record<string, string> = {
 }
 
 const PILLAR_BG: Record<string, string> = {
+  prebiotics: "#f3faf3",
+  probiotics: "#f0f9f8",
+  postbiotics: "#fdf8ee",
   feed: "#f3faf3",
   seed: "#f0f9f8",
   heal: "#fdf8ee",
@@ -234,7 +244,7 @@ export function buildResultsEmail(opts: ResultsEmailOpts): {
           <!-- Pillar scores -->
           <tr>
             <td style="padding: 24px 40px 0;">
-              <p style="margin: 0 0 12px; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: #999999; font-family: Arial, sans-serif;">Feed · Seed · Heal</p>
+              <p style="margin: 0 0 12px; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: #999999; font-family: Arial, sans-serif;">Prebiotics · Probiotics · Postbiotics</p>
               <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 ${pillarsHtml}
               </table>

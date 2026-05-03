@@ -15,6 +15,24 @@ function getLastMondayDate(): string {
   return monday.toISOString().slice(0, 10)
 }
 
+function formatBioticScores(subScores: Record<string, number> | null): string {
+  if (!subScores) return "No 3 Biotics data"
+
+  const scoreFor = (canonical: string, alias: string) => subScores[canonical] ?? subScores[alias]
+  const bioticScores: Array<[string, number | undefined]> = [
+    ["Prebiotics", scoreFor("prebiotics", "feed")],
+    ["Probiotics", scoreFor("probiotics", "seed")],
+    ["Postbiotics", scoreFor("postbiotics", "heal")],
+  ]
+
+  const available = bioticScores.filter((entry): entry is [string, number] => typeof entry[1] === "number")
+  if (available.length > 0) {
+    return available.map(([label, value]) => `${label}: ${Math.round(value)}/100`).join(", ")
+  }
+
+  return Object.entries(subScores).map(([k, v]) => `${k}: ${Math.round(v)}/100`).join(", ")
+}
+
 /** Generate and save a weekly check-in for a single Transform member. */
 async function generateWeeklyCheckin(userId: string, userEmail: string): Promise<void> {
   const adminSupabase = getSupabase()
@@ -47,7 +65,8 @@ async function generateWeeklyCheckin(userId: string, userEmail: string): Promise
     .gte("created_at", sevenDaysAgo.toISOString())
     .order("created_at", { ascending: true })
 
-  const analysisCount = recentAnalyses?.length ?? 0
+  const analyses = recentAnalyses ?? []
+  const analysisCount = analyses.length
 
   // Minimum analysis check: need at least 3 analyses in the past 7 days
   if (analysisCount < 3) {
@@ -68,20 +87,18 @@ async function generateWeeklyCheckin(userId: string, userEmail: string): Promise
   const previousScore = (assessments?.[1]?.overall_score as number | null) ?? null
   const subScores     = assessments?.[0]?.sub_scores as Record<string, number> | null
 
-  const scoreSummary = recentAnalyses.map((a) =>
+  const scoreSummary = analyses.map((a) =>
     `${new Date(a.created_at as string).toLocaleDateString("en-IE")}: ${a.biotics_score ?? "—"}`
   ).join(", ")
 
-  const pillarSummary = subScores
-    ? Object.entries(subScores).map(([k, v]) => `${k}: ${Math.round(v)}/100`).join(", ")
-    : "No pillar data"
+  const pillarSummary = formatBioticScores(subScores)
 
   const prompt = `You are the EatoBiotics Weekly Check-in Generator. Create a concise, personal weekly food system health summary for a Transform member.
 
 Data for this week:
 - Current Biotics Score: ${latestScore ?? "Unknown"}/100
 - Previous Biotics Score: ${previousScore ?? "Unknown"}/100
-- 5-Pillar Scores: ${pillarSummary}
+- 3 Biotics scores: ${pillarSummary}
 - Meal analyses this week: ${analysisCount}
 - Meal analysis scores: ${scoreSummary}
 

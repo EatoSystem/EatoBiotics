@@ -5,89 +5,66 @@ import { ArrowRight } from "lucide-react"
 import { AssessmentResults } from "@/components/assessment/assessment-results"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
 
-// Same demo data as /assessment/demo — Emerging Balance, 58/100
+// Demo data — "Emerging Balance" profile, overall 62
 const DEMO_RESULT: AssessmentResult = {
   overall: 62,
   subScores: {
-    diversity: 55,
-    feeding: 68,
-    adding: 38,
-    consistency: 72,
-    feeling: 58,
+    prebiotics: 66,
+    probiotics: 38,
+    postbiotics: 72,
+    feed: 66,
+    seed: 38,
+    heal: 72,
   },
   profile: {
     type: "Emerging Balance",
     tagline: "The building blocks are there. Consistency is the next step.",
     description:
-      "You have awareness and some strong habits, but they haven't fully integrated into a reliable daily pattern yet. Your gut system responds to consistency — even small, repeatable improvements compound quickly. You're closer to a strong foundation than you might think.",
+      "You have awareness and some strong habits, but they haven't fully integrated into a reliable daily rhythm yet. Your gut system responds to consistency — even small, repeatable improvements in your Prebiotics, Probiotics, or Postbiotics scores compound quickly from here.",
     color: "var(--icon-lime)",
   },
   insights: [
     {
-      pillar: "adding",
-      label: "Adding",
+      pillar: "probiotics",
+      label: "Probiotics",
       score: 38,
       opportunity:
-        "Fermented and live-culture foods are among the most direct ways to introduce beneficial bacteria into your gut ecosystem. Even one daily serving makes a measurable difference over time.",
+        "Fermented and live foods are the most direct way to introduce new bacteria to your gut. Even one serving a day — yoghurt, miso, or a tablespoon of sauerkraut — makes a measurable difference within weeks.",
       action:
-        "This week: add one fermented food to at least one meal each day — natural yoghurt with breakfast, miso broth with lunch, or a tablespoon of sauerkraut with dinner.",
-      icon: "FlaskConical",
+        "This week: add one fermented food to at least one meal each day — live yoghurt with breakfast, miso broth with lunch, or a tablespoon of sauerkraut with dinner.",
+      icon: "Droplets",
       color: "var(--icon-teal)",
       gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
     },
     {
-      pillar: "diversity",
-      label: "Diversity",
-      score: 55,
+      pillar: "prebiotics",
+      label: "Prebiotics",
+      score: 66,
       opportunity:
-        "Different plants feed different bacterial species. Expanding beyond your current plant range, even by adding 2–3 new foods per week, meaningfully increases microbial richness.",
+        "Your gut bacteria are hungry for more plant variety and fibre. A simple anchor at each meal — legumes, wholegrains, or vegetables — creates the consistent fuel your microbiome needs to do its best work.",
       action:
-        "This week: introduce one unfamiliar plant food each day — a new bean, a different leafy green, or a vegetable you haven't eaten recently.",
+        "This week: anchor every main meal with one fibre source. Lentils, oats, vegetables, wholegrains, or beans all count — even a small portion makes a difference.",
       icon: "Leaf",
       color: "var(--icon-lime)",
       gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
     },
     {
-      pillar: "feeling",
-      label: "Feeling",
-      score: 58,
-      opportunity:
-        "How you feel after eating — energy, digestion, and mental clarity — is one of the most direct windows into your food system health.",
-      action:
-        "This week: note how you feel one hour after each meal for three days — just one word.",
-      icon: "Heart",
-      color: "var(--icon-orange)",
-      gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
-    },
-    {
-      pillar: "feeding",
-      label: "Feeding",
-      score: 68,
-      strength:
-        "You're consistently feeding your gut bacteria the fibre-rich whole foods they need — the raw material your microbiome converts into short-chain fatty acids.",
-      action:
-        "Diversify your fibre sources. Add resistant starch (cooled potato, green banana) or new legumes to hit different microbial populations.",
-      icon: "Wheat",
-      color: "var(--icon-green)",
-      gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
-    },
-    {
-      pillar: "consistency",
-      label: "Consistency",
+      pillar: "postbiotics",
+      label: "Postbiotics",
       score: 72,
       strength:
-        "Your eating rhythm is one of your biggest assets. Consistent meal timing allows your microbiome to anticipate and prepare — improving digestion and nutrient absorption.",
+        "Your food rhythm and recovery support are solid — your gut has the consistency and polyphenol-rich foods it needs to produce beneficial compounds and maintain resilience.",
       action:
-        "Identify the conditions that break your rhythm (travel, late meetings, social eating) and pre-plan one simple solution for each scenario.",
-      icon: "Clock",
+        "Identify conditions that break your rhythm and pre-plan simple solutions. Add one polyphenol-rich food — dark chocolate, walnuts, or extra-virgin olive oil.",
+      icon: "Zap",
       color: "var(--icon-yellow)",
       gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     },
   ],
   nextActions: [
-    "This week: add one fermented food to at least one meal each day — natural yoghurt with breakfast, miso broth with lunch, or a tablespoon of sauerkraut with dinner.",
-    "This week: introduce one unfamiliar plant food each day — a new bean, a different leafy green, or a vegetable you haven't eaten recently.",
-    "This week: note how you feel one hour after each meal for three days — just one word.",
+    "This week: add one fermented food to at least one meal each day — live yoghurt with breakfast, miso broth with lunch, or a tablespoon of sauerkraut with dinner.",
+    "This week: anchor every main meal with one fibre source. Lentils, oats, vegetables, wholegrains, or beans all count — even a small portion makes a difference.",
+    "Identify conditions that break your rhythm and pre-plan simple solutions. Add one polyphenol-rich food — dark chocolate, walnuts, or extra-virgin olive oil.",
   ],
   completedAt: Date.now(),
 }

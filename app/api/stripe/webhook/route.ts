@@ -11,7 +11,6 @@ import { logServerEvent } from "@/lib/statsig-server"
 function field<T>(obj: unknown, key: string): T | undefined { return (obj as any)?.[key] as T | undefined }
 
 // Next.js must NOT parse the body — we need the raw bytes for signature verification
-export const config = { api: { bodyParser: false } }
 
 /** Look up a profile by Stripe customer ID */
 async function getProfileByCustomerId(customerId: string) {

@@ -169,7 +169,7 @@ async function buildContextSection(
     lines.push(`Overall Biotics Score: ${latestAssessment.overall_score}/100`)
     if (latestAssessment.sub_scores) {
       const s = latestAssessment.sub_scores as Record<string, number>
-      lines.push(`5-Pillar scores: Feeding ${s.feeding ?? "?"}, Adding ${s.adding ?? "?"}, Diversity ${s.diversity ?? "?"}, Feeling ${s.feeling ?? "?"}, Consistency ${s.consistency ?? "?"}`)
+      lines.push(`3 Biotics scores: Prebiotics ${s.prebiotics ?? s.feed ?? "?"}, Probiotics ${s.probiotics ?? s.seed ?? "?"}, Postbiotics ${s.postbiotics ?? s.heal ?? "?"}`)
     }
   }
 

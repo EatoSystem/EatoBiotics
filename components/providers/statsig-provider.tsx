@@ -39,6 +39,20 @@ export function StatsigClientProvider({
 }) {
   const sdkKey = process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY ?? ""
 
+  if (!sdkKey) {
+    return <>{children}</>
+  }
+
+  return <StatsigEnabledProvider sdkKey={sdkKey}>{children}</StatsigEnabledProvider>
+}
+
+function StatsigEnabledProvider({
+  children,
+  sdkKey,
+}: {
+  children: React.ReactNode
+  sdkKey: string
+}) {
   const { client } = useClientAsyncInit(
     sdkKey,
     {
@@ -63,11 +77,6 @@ export function StatsigClientProvider({
     })
   }, [client])
 
-  // If the key is not set (e.g. local dev without env var), render children
   // normally — gates default to OFF / false, which is safe.
-  if (!sdkKey) {
-    return <>{children}</>
-  }
-
   return <StatsigProvider client={client}>{children}</StatsigProvider>
 }
