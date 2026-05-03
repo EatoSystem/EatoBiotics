@@ -58,6 +58,7 @@ const MOCK_PAID_REPORTS = [
     stripe_session_id: "demo_session_full",
     tier: "full",
     pdf_url: null,
+    report_json: null,
     created_at: new Date(Date.now() - 7 * 86_400_000).toISOString(),
     free_scores: { overall: 62, profile: { type: "Emerging Balance" } },
   },
@@ -134,6 +135,7 @@ function getMockData(tier: DemoTier) {
     stripe_customer_id: null,
     stripe_subscription_id: null,
     membership_expires_at: null,
+    trial_expires_at: null,
   }
 
   if (tier === "free") {

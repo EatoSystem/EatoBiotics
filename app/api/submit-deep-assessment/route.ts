@@ -12,18 +12,23 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
 // ── Types ──────────────────────────────────────────────────────────────────
 
 type SubScores = {
-  diversity: number
-  feeding: number
-  adding: number
-  consistency: number
-  feeling: number
+  // New Feed/Seed/Heal format (personal tier)
+  feed?: number
+  seed?: number
+  heal?: number
+  // Legacy format (starter/full/premium)
+  diversity?: number
+  feeding?: number
+  adding?: number
+  consistency?: number
+  feeling?: number
 }
 
 type FreeScores = {
   overall: number
   subScores: SubScores
   profile: { type: string; tagline: string; description: string }
-  tier: "starter" | "full" | "premium"
+  tier: "personal" | "starter" | "full" | "premium"
 }
 
 type RequestBody = {
@@ -64,7 +69,50 @@ function buildDeepAnalysisPrompt(
   const qaBlock = buildQABlock(questions, answers)
 
   const tierSchemaInstructions =
-    tier === "starter"
+    tier === "personal"
+      ? `Return this JSON schema:
+{
+  "opening": "2 paragraphs — personalised to their score, referencing their lowest pillar",
+  "feedAnalysis": "2 paragraphs on their Feed score — fibre, plant diversity, whole foods",
+  "seedAnalysis": "2 paragraphs on their Seed score — fermented and live foods",
+  "healAnalysis": "2 paragraphs on their Heal score — meal rhythm, polyphenols, recovery",
+  "topOpportunity": "2 paragraphs on their single biggest opportunity pillar, explained personally",
+  "thirtyDayPlan": {
+    "week1": { "focus": "...", "goal": "...", "actions": ["...", "...", "..."] },
+    "week2": { "focus": "...", "goal": "...", "actions": ["...", "...", "..."] },
+    "week3": { "focus": "...", "goal": "...", "actions": ["...", "...", "..."] },
+    "week4": { "focus": "...", "goal": "...", "actions": ["...", "...", "..."] }
+  },
+  "topFoods": [
+    { "food": "...", "pillar": "feed|seed|heal", "why": "...", "howToAdd": "..." },
+    { "food": "...", "pillar": "feed|seed|heal", "why": "...", "howToAdd": "..." },
+    { "food": "...", "pillar": "feed|seed|heal", "why": "...", "howToAdd": "..." },
+    { "food": "...", "pillar": "feed|seed|heal", "why": "...", "howToAdd": "..." },
+    { "food": "...", "pillar": "feed|seed|heal", "why": "...", "howToAdd": "..." },
+    { "food": "...", "pillar": "feed|seed|heal", "why": "...", "howToAdd": "..." },
+    { "food": "...", "pillar": "feed|seed|heal", "why": "...", "howToAdd": "..." },
+    { "food": "...", "pillar": "feed|seed|heal", "why": "...", "howToAdd": "..." },
+    { "food": "...", "pillar": "feed|seed|heal", "why": "...", "howToAdd": "..." },
+    { "food": "...", "pillar": "feed|seed|heal", "why": "...", "howToAdd": "..." }
+  ],
+  "shoppingFramework": "2 paragraphs — practical weekly shopping guidance for their profile",
+  "mealTiming": "2 paragraphs — meal rhythm recommendations tailored to their Heal score",
+  "avoidReduce": ["...", "...", "...", "...", "..."],
+  "foodSwaps": [
+    { "from": "...", "to": "...", "benefit": "..." },
+    { "from": "...", "to": "...", "benefit": "..." },
+    { "from": "...", "to": "...", "benefit": "..." }
+  ],
+  "sevenDayKickstart": ["day 1 action", "day 2 action", "day 3 action", "day 4 action", "day 5 action", "day 6 action", "day 7 action"],
+  "scoreProjection": {
+    "low": [conservative overall + 8 to 12],
+    "high": [optimistic overall + 16 to 22],
+    "timeline": "30 days",
+    "keyDriver": "single most impactful change for this person"
+  },
+  "closing": "1 warm, personal, motivating paragraph"
+}`
+      : tier === "starter"
       ? `Return this JSON schema:
 {
   "opening": "2-3 sentence personalised intro",
@@ -156,12 +204,19 @@ Profile: "${profile.type}"
 Tagline: "${profile.tagline}"
 Description: "${profile.description}"
 
-Pillar scores:
-- Plant Diversity: ${subScores.diversity}/100
-- Feeding (Fibre & Whole Foods): ${subScores.feeding}/100
-- Live & Fermented Foods: ${subScores.adding}/100
-- Consistency: ${subScores.consistency}/100
-- Feeling (Symptoms & Energy): ${subScores.feeling}/100
+${
+    tier === "personal"
+      ? `Pillar scores (Feed · Seed · Heal):
+- Feed (Prebiotic & Fibre): ${subScores.feed ?? 0}/100
+- Seed (Fermented & Live): ${subScores.seed ?? 0}/100
+- Heal (Recovery & Resilience): ${subScores.heal ?? 0}/100`
+      : `Pillar scores:
+- Plant Diversity: ${subScores.diversity ?? 0}/100
+- Feeding (Fibre & Whole Foods): ${subScores.feeding ?? 0}/100
+- Live & Fermented Foods: ${subScores.adding ?? 0}/100
+- Consistency: ${subScores.consistency ?? 0}/100
+- Feeling (Symptoms & Energy): ${subScores.feeling ?? 0}/100`
+  }
 
 DEEP ASSESSMENT RESPONSES:
 ${qaBlock}
@@ -227,6 +282,10 @@ export async function POST(req: NextRequest) {
     freeScores = {
       overall: 58,
       subScores: {
+        feed: 62,
+        seed: 38,
+        heal: 67,
+        // legacy fields
         diversity: 55,
         feeding: 68,
         adding: 38,
@@ -239,7 +298,7 @@ export async function POST(req: NextRequest) {
         description:
           "You have awareness and some strong habits...",
       },
-      tier: "full",
+      tier: "personal",
     }
   } else {
     try {
@@ -321,7 +380,7 @@ export async function POST(req: NextRequest) {
   let report: DeepReport
   try {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-    const maxTokens = tier === "premium" ? 6144 : tier === "full" ? 4096 : 3072
+    const maxTokens = tier === "premium" ? 6144 : tier === "full" || tier === "personal" ? 4096 : 3072
 
     const message = await client.messages.create({
       model: "claude-sonnet-4-20250514",
@@ -369,8 +428,9 @@ export async function POST(req: NextRequest) {
   let pdfBuffer: Buffer | null = null
   try {
     const { generatePDF } = await import("@/lib/pdf/generate-pdf")
+    const pdfTier = tier === "personal" ? "full" : tier
     pdfBuffer = await generatePDF({
-      tier,
+      tier: pdfTier,
       leadName,
       generatedAt: new Date().toLocaleDateString("en-IE", {
         day: "numeric",
@@ -378,7 +438,7 @@ export async function POST(req: NextRequest) {
         year: "numeric",
       }),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      freeScores: { overall, subScores, profile: profile as any },
+      freeScores: { overall, subScores: subScores as any, profile: profile as any },
       report,
     })
   } catch (err) {

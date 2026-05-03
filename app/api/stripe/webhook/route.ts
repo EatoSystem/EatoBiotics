@@ -74,6 +74,45 @@ export async function POST(req: NextRequest) {
   try {
     switch (event.type) {
 
+      // ── One-time report purchase (personal / starter / full / premium) ──
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session
+        if (session.payment_status !== "paid") break
+        if (session.mode !== "payment") break  // skip subscription checkouts
+
+        // Identify the user via customer_email or user_id from metadata
+        const email = session.customer_details?.email ?? null
+        if (!email) break
+
+        // Find user profile by email
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("id, membership_tier")
+          .eq("email", email)
+          .maybeSingle()
+
+        if (!profile) break  // user hasn't signed up yet — trial will be granted on auth
+
+        // Activate 30-day trial for the personal report purchase
+        // Only if user is currently free (don't downgrade an existing subscriber)
+        const currentTier = (profile.membership_tier as string) ?? "free"
+        const trialTiers = ["free", "trial"]
+        if (trialTiers.includes(currentTier)) {
+          const trialExpiresAt = new Date()
+          trialExpiresAt.setDate(trialExpiresAt.getDate() + 30)
+
+          await supabase
+            .from("profiles")
+            .update({
+              membership_tier:   "trial",
+              membership_status: "active",
+              trial_expires_at:  trialExpiresAt.toISOString(),
+            })
+            .eq("id", profile.id)
+        }
+        break
+      }
+
       // ── Subscription created ──────────────────────────────────────────
       case "customer.subscription.created": {
         const sub = event.data.object as Stripe.Subscription
@@ -96,6 +135,7 @@ export async function POST(req: NextRequest) {
             membership_started_at:    new Date(sub.created * 1000).toISOString(),
             membership_expires_at:    (() => { const pe = field<number>(sub, "current_period_end"); return pe ? new Date(pe * 1000).toISOString() : null })(),
             is_founding_member:       founding,
+            trial_expires_at:         null,  // clear any pending trial
           })
           .eq("id", profile.id)
 

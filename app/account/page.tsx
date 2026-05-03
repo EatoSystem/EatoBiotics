@@ -62,7 +62,7 @@ export default async function AccountPage() {
   if (adminSupabase) {
     const { data: profileData } = await adminSupabase
       .from("profiles")
-      .select("id, email, name, age_bracket, membership, referral_code, referred_by, membership_tier, membership_status, stripe_customer_id, stripe_subscription_id, membership_started_at, membership_expires_at, is_founding_member, health_goals, food_system_story")
+      .select("id, email, name, age_bracket, membership, referral_code, referred_by, membership_tier, membership_status, stripe_customer_id, stripe_subscription_id, membership_started_at, membership_expires_at, trial_expires_at, is_founding_member, health_goals, food_system_story")
       .eq("id", user.id)
       .single()
     profile = profileData
@@ -338,6 +338,7 @@ export default async function AccountPage() {
       stripe_subscription_id:  null,
       membership_started_at:   null,
       membership_expires_at:   null,
+      trial_expires_at:        null,
       is_founding_member:      false,
       health_goals:            [] as string[],
     }

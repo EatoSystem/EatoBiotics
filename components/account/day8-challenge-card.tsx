@@ -63,7 +63,7 @@ const PILLAR_CHALLENGES: Record<string, {
 interface Day8ChallengeCardProps {
   weakestPillar: string | null
   profileColor: string
-  membershipTier: "free" | "grow" | "restore" | "transform"
+  membershipTier: "free" | "trial" | "member" | "grow" | "restore" | "transform"
   userId: string
 }
 

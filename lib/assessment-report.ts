@@ -1,4 +1,4 @@
-/* ── Full Report Generation ──────────────────────────────────────────── */
+/* ── Full Report Generation — Feed / Seed / Heal ─────────────────────── */
 
 import type { AssessmentResult, PillarInsight } from "./assessment-scoring"
 import type { PillarKey } from "./assessment-data"
@@ -51,8 +51,8 @@ const PILLAR_DEEP_DIVES: Record<
   PillarKey,
   Omit<PillarDeepDive, "score" | "pillar" | "summary">
 > = {
-  diversity: {
-    label: "Diversity",
+  feed: {
+    label: "Feed",
     color: "var(--icon-lime)",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
     icon: "Leaf",
@@ -63,55 +63,6 @@ const PILLAR_DEEP_DIVES: Record<
         why: "Rich in inulin-type fructans that selectively feed Bifidobacterium — one of the most researched beneficial gut bacteria.",
         howToUse: "Add to soups, stir-fries, or roast alongside other vegetables.",
       },
-      {
-        food: "Purple cabbage",
-        emoji: "🫐",
-        why: "Anthocyanins give it deep colour and act as prebiotic compounds that support microbial diversity while reducing gut inflammation.",
-        howToUse: "Shred raw into salads, lightly pickle, or ferment as kraut.",
-      },
-      {
-        food: "Jerusalem artichoke",
-        emoji: "🌻",
-        why: "One of the highest natural sources of inulin — a fibre your gut bacteria ferment into beneficial short-chain fatty acids.",
-        howToUse: "Roast or steam. Introduce gradually — it's potent at first.",
-      },
-      {
-        food: "Flaxseeds",
-        emoji: "🌾",
-        why: "Contain both soluble and insoluble fibre, plus lignans that support hormonal balance and gut barrier integrity.",
-        howToUse: "Ground and added to porridge, smoothies, or baked goods. Whole seeds pass undigested.",
-      },
-      {
-        food: "Edamame",
-        emoji: "🫘",
-        why: "A complete plant protein with fibre and isoflavones that feed specific microbial strains linked to metabolic health.",
-        howToUse: "Snack on steamed, add to rice bowls, or blend into dips.",
-      },
-      {
-        food: "Dandelion greens",
-        emoji: "🌱",
-        why: "Among the richest dietary sources of inulin per gram. Also bitter compounds that stimulate digestive enzymes.",
-        howToUse: "Use in salads, sauté with garlic, or blend into green smoothies.",
-      },
-    ],
-    reduce: [
-      {
-        food: "Ultra-processed snacks",
-        reason: "Typically high in refined carbohydrates and emulsifiers (e.g. carboxymethylcellulose) that disrupt the gut mucosal layer and reduce microbial richness over time.",
-      },
-      {
-        food: "Juice in place of whole fruit",
-        reason: "Removes the fibre matrix — the part that feeds your microbiome. The sugar arrives quickly without the buffering effect of whole fruit.",
-      },
-    ],
-  },
-
-  feeding: {
-    label: "Feeding",
-    color: "var(--icon-green)",
-    gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
-    icon: "Wheat",
-    foods: [
       {
         food: "Black beans",
         emoji: "🫘",
@@ -125,22 +76,16 @@ const PILLAR_DEEP_DIVES: Record<
         howToUse: "Overnight oats, warm porridge, or blended into smoothies. Cook, then cool for extra resistant starch.",
       },
       {
-        food: "Green banana or plantain",
-        emoji: "🍌",
-        why: "Unripe bananas contain resistant starch type 2 — survives digestion intact and becomes fuel for butyrate-producing bacteria in the colon.",
-        howToUse: "Slice into smoothies, or boil green plantain as a starchy side.",
-      },
-      {
         food: "Lentils",
         emoji: "🍲",
-        why: "High protein, high fibre, low glycaemic — and one of the best studied legumes for increasing Faecalibacterium prausnitzii, a butyrate producer linked to reduced inflammation.",
+        why: "High protein, high fibre, low glycaemic — one of the best-studied legumes for increasing Faecalibacterium prausnitzii, a butyrate producer linked to reduced inflammation.",
         howToUse: "Red lentil soup, dal, lentil bolognese, or cold in salads.",
       },
       {
-        food: "Whole grain rye bread",
-        emoji: "🍞",
-        why: "Arabinoxylans in rye are among the most potent prebiotic fibres, outperforming wheat in studies measuring microbial diversity.",
-        howToUse: "Replace standard bread with dense rye for your main meals.",
+        food: "Jerusalem artichoke",
+        emoji: "🌻",
+        why: "One of the highest natural sources of inulin — a fibre your gut bacteria ferment into beneficial short-chain fatty acids.",
+        howToUse: "Roast or steam. Introduce gradually — it's potent at first.",
       },
       {
         food: "Sweet potato",
@@ -151,21 +96,21 @@ const PILLAR_DEEP_DIVES: Record<
     ],
     reduce: [
       {
-        food: "White bread and pasta as staples",
-        reason: "Rapidly digested, leaving little substrate for gut bacteria. Not harmful occasionally, but when they replace whole grains, the microbiome misses the fibre it depends on.",
+        food: "Ultra-processed snacks",
+        reason: "Typically high in refined carbohydrates and emulsifiers that disrupt the gut mucosal layer and reduce microbial richness over time.",
       },
       {
-        food: "Frequent alcohol",
-        reason: "Disrupts the gut barrier and reduces populations of Akkermansia muciniphila — a keystone species that maintains gut lining integrity.",
+        food: "White bread and pasta as staples",
+        reason: "Rapidly digested, leaving little substrate for gut bacteria. When they replace whole grains, the microbiome misses the fibre it depends on.",
       },
     ],
   },
 
-  adding: {
-    label: "Adding",
+  seed: {
+    label: "Seed",
     color: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
-    icon: "FlaskConical",
+    icon: "Droplets",
     foods: [
       {
         food: "Live natural yoghurt",
@@ -174,16 +119,16 @@ const PILLAR_DEEP_DIVES: Record<
         howToUse: "Breakfast with fruit and seeds, as a sauce base, or with spices as a dip.",
       },
       {
+        food: "Kefir",
+        emoji: "🍶",
+        why: "The most extensively studied fermented food for gut health — contains 30+ bacterial and yeast strains, with evidence for effects on anxiety, inflammation, and lactose tolerance.",
+        howToUse: "Drink 150–200ml daily or use as a base for smoothies and overnight oats.",
+      },
+      {
         food: "Sauerkraut (unpasteurised)",
         emoji: "🥬",
         why: "Naturally fermented cabbage contains hundreds of millions of live bacteria per gram — including Lactobacillus plantarum, linked to immune modulation.",
         howToUse: "1–2 tablespoons alongside meals. Refrigerated, unpasteurised versions only.",
-      },
-      {
-        food: "Kefir",
-        emoji: "🍶",
-        why: "The most extensively studied fermented food for food system health — contains 30+ bacterial and yeast strains, and has shown effects on anxiety, inflammation, and lactose tolerance.",
-        howToUse: "Drink 150–200ml daily or use as a base for smoothies and overnight oats.",
       },
       {
         food: "Kimchi",
@@ -210,90 +155,29 @@ const PILLAR_DEEP_DIVES: Record<
         reason: "Pasteurisation kills the live cultures that give fermented foods their gut benefit. Yoghurts and krauts labelled 'heat-treated' after fermentation provide no live bacteria.",
       },
       {
-        food: "Antibiotic use without probiotic follow-up",
-        reason: "Antibiotics significantly disrupt microbial communities. If antibiotics are necessary, adding fermented foods daily during and after the course helps speed recovery of microbial diversity.",
+        food: "Frequent alcohol",
+        reason: "Disrupts the gut barrier and reduces populations of Akkermansia muciniphila — a keystone species that maintains gut lining integrity.",
       },
     ],
   },
 
-  consistency: {
-    label: "Consistency",
+  heal: {
+    label: "Heal",
     color: "var(--icon-yellow)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
-    icon: "Clock",
+    icon: "Zap",
     foods: [
       {
         food: "Porridge oats (morning anchor)",
         emoji: "🥣",
-        why: "A reliable breakfast that feeds the morning microbial peak — gut bacteria are most active in the first few hours after waking. Oats also stabilise blood sugar, reducing cravings that break later meal patterns.",
+        why: "A reliable breakfast that feeds the morning microbial peak and stabilises blood sugar — reducing cravings that break later meal patterns.",
         howToUse: "Make the same way each morning to build an automatic habit.",
       },
-      {
-        food: "Eggs",
-        emoji: "🥚",
-        why: "Versatile, fast to prepare, and nutritionally dense — making them ideal for the meals most likely to be skipped or replaced by something processed.",
-        howToUse: "Use as the protein anchor of your most skipped meal.",
-      },
-      {
-        food: "Frozen vegetables",
-        emoji: "🥦",
-        why: "Flash-frozen within hours of harvest — often nutritionally superior to 'fresh' produce that's been in transit. Removes the planning barrier that leads to skipped vegetables.",
-        howToUse: "Keep a variety in the freezer for instant additions to any meal.",
-      },
-      {
-        food: "Canned legumes",
-        emoji: "🥫",
-        why: "No prep time, long shelf life, and nutritionally equivalent to cooked from dry. Remove the friction that stops legumes from becoming a consistent habit.",
-        howToUse: "Keep 3–4 varieties in the cupboard for instant protein-fibre additions.",
-      },
-      {
-        food: "Nuts (mixed)",
-        emoji: "🥜",
-        why: "Pre-portioned, shelf-stable snack that stabilises blood sugar between meals — reducing the erratic hunger spikes that lead to poor food choices.",
-        howToUse: "30g as a mid-morning or afternoon snack. Pre-portion into small containers.",
-      },
-      {
-        food: "Herbal tea (chamomile or ginger)",
-        emoji: "🫖",
-        why: "Building a post-meal tea ritual creates a consistent wind-down signal after eating — supporting parasympathetic activation that aids digestion.",
-        howToUse: "Brew after your evening meal as a consistent closing ritual.",
-      },
-    ],
-    reduce: [
-      {
-        food: "Meal skipping",
-        reason: "Each skipped meal disrupts the microbial circadian rhythm. Your gut bacteria anticipate feeding patterns — irregular inputs reduce the efficiency of digestion and nutrient absorption even when you do eat.",
-      },
-      {
-        food: "Late-night eating as a habit",
-        reason: "The gut microbiome operates on a circadian schedule. Consistent late eating shifts microbial composition toward strains associated with weight gain and metabolic disruption.",
-      },
-    ],
-  },
-
-  feeling: {
-    label: "Feeling",
-    color: "var(--icon-orange)",
-    gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
-    icon: "Heart",
-    foods: [
       {
         food: "Ginger root",
         emoji: "🫚",
         why: "Gingerols have well-documented effects on gastric motility — helping food move through the digestive tract more efficiently and reducing bloating and discomfort.",
         howToUse: "Fresh in hot water, grated into stir-fries, or blended into smoothies.",
-      },
-      {
-        food: "Bone broth",
-        emoji: "🍖",
-        why: "Glycine and glutamine in bone broth are the primary building blocks of the intestinal lining — directly supporting gut barrier integrity and reducing permeability.",
-        howToUse: "Drink as a warm broth, use as a soup base, or add to cooking liquids.",
-      },
-      {
-        food: "Turmeric (with black pepper)",
-        emoji: "🌿",
-        why: "Curcumin has strong evidence for reducing gut inflammation markers. Black pepper increases bioavailability by 2,000%. The combination targets the gut-immune interface.",
-        howToUse: "Golden milk, curries, or a pinch in any warm dish. Always with pepper.",
       },
       {
         food: "Walnuts",
@@ -308,20 +192,26 @@ const PILLAR_DEEP_DIVES: Record<
         howToUse: "2–3 squares after a meal. Focus on 85%+ to maximise polyphenol content.",
       },
       {
-        food: "Fennel",
+        food: "Turmeric (with black pepper)",
         emoji: "🌿",
-        why: "Anethole in fennel has antispasmodic properties — relaxing smooth muscle in the gut wall, which reduces cramping, bloating, and post-meal discomfort.",
-        howToUse: "Raw in salads, roasted as a side, or fennel seed tea after meals.",
+        why: "Curcumin has strong evidence for reducing gut inflammation markers. Black pepper increases bioavailability by 2,000%. The combination targets the gut-immune interface.",
+        howToUse: "Golden milk, curries, or a pinch in any warm dish. Always with pepper.",
+      },
+      {
+        food: "Frozen vegetables",
+        emoji: "🥦",
+        why: "Flash-frozen within hours of harvest — often nutritionally superior to fresh produce in transit. Removes the planning barrier that leads to skipped vegetables.",
+        howToUse: "Keep a variety in the freezer for instant additions to any meal.",
       },
     ],
     reduce: [
       {
-        food: "FODMAPs during flares (onion, garlic, wheat)",
-        reason: "High-FODMAP foods ferment rapidly in the gut. If bloating and discomfort are consistent, a short-term low-FODMAP trial can identify specific triggers — then gradually reintroduce to find your threshold.",
+        food: "Meal skipping",
+        reason: "Each skipped meal disrupts the microbial circadian rhythm. Your gut bacteria anticipate feeding patterns — irregular inputs reduce the efficiency of digestion even when you do eat.",
       },
       {
-        food: "Eating while distracted or stressed",
-        reason: "The gut and brain share a direct bidirectional connection. Eating in an activated, rushed state reduces digestive enzyme output and slows gastric motility — worsening bloating and discomfort regardless of what you eat.",
+        food: "Late-night eating as a habit",
+        reason: "The gut microbiome operates on a circadian schedule. Consistent late eating shifts microbial composition toward strains associated with metabolic disruption.",
       },
     ],
   },
@@ -330,22 +220,22 @@ const PILLAR_DEEP_DIVES: Record<
 /* ── Top food pool (all foods with pillar tags) ─────────────────────── */
 
 const ALL_FOODS: PersonalisedFood[] = [
-  { food: "Kefir", emoji: "🍶", pillars: ["adding", "feeling"], impact: "Most studied fermented food for gut microbiome diversity and gut-brain axis benefits.", priority: "high" },
-  { food: "Black beans", emoji: "🫘", pillars: ["feeding", "diversity"], impact: "Top fibre and resistant starch source — maximises short-chain fatty acid production.", priority: "high" },
-  { food: "Sauerkraut", emoji: "🥬", pillars: ["adding"], impact: "Hundreds of millions of live bacteria per gram; direct seeding of the microbiome.", priority: "high" },
-  { food: "Oats", emoji: "🌾", pillars: ["feeding", "consistency"], impact: "Beta-glucan fibre with the strongest evidence for Bifidobacterium growth.", priority: "high" },
-  { food: "Leeks", emoji: "🌿", pillars: ["diversity", "feeding"], impact: "Inulin-rich prebiotic that selectively feeds the most beneficial gut bacteria.", priority: "high" },
-  { food: "Walnuts", emoji: "🥜", pillars: ["feeling", "diversity"], impact: "Polyphenols that feed beneficial bacteria and support gut-brain axis function.", priority: "high" },
-  { food: "Live yoghurt", emoji: "🥛", pillars: ["adding", "consistency"], impact: "Easy daily fermented food with well-studied strains and high palatability.", priority: "high" },
-  { food: "Lentils", emoji: "🍲", pillars: ["feeding", "diversity"], impact: "Best-studied legume for increasing butyrate-producing bacteria.", priority: "high" },
-  { food: "Ginger", emoji: "🫚", pillars: ["feeling"], impact: "Clinically supported effects on gastric motility and gut comfort.", priority: "medium" },
-  { food: "Sweet potato", emoji: "🍠", pillars: ["feeding", "consistency"], impact: "Feeds multiple microbial populations simultaneously with diverse fibre types.", priority: "medium" },
-  { food: "Kimchi", emoji: "🌶️", pillars: ["adding", "diversity"], impact: "Diverse bacterial profile; emerging evidence for metabolic and immune benefits.", priority: "medium" },
-  { food: "Dandelion greens", emoji: "🌱", pillars: ["diversity", "feeling"], impact: "Highest natural inulin concentration of any common food; also supports digestion.", priority: "medium" },
-  { food: "Miso", emoji: "🍜", pillars: ["adding", "feeling"], impact: "Fermented with diverse organisms; glutamate supports gut barrier directly.", priority: "medium" },
-  { food: "Flaxseeds", emoji: "🌾", pillars: ["diversity", "feeling"], impact: "Dual soluble/insoluble fibre plus lignans for gut barrier integrity.", priority: "medium" },
-  { food: "Whole grain rye", emoji: "🍞", pillars: ["feeding", "consistency"], impact: "Arabinoxylans outperform wheat fibre for measurable microbial diversity gains.", priority: "medium" },
-  { food: "Dark chocolate (85%+)", emoji: "🍫", pillars: ["feeling", "diversity"], impact: "Flavanols feed Lactobacillus and Bifidobacterium; also enjoyable to eat.", priority: "medium" },
+  { food: "Kefir",              emoji: "🍶", pillars: ["seed", "heal"], impact: "Most studied fermented food for gut microbiome diversity and gut-brain axis benefits.", priority: "high" },
+  { food: "Black beans",        emoji: "🫘", pillars: ["feed"],         impact: "Top fibre and resistant starch source — maximises short-chain fatty acid production.", priority: "high" },
+  { food: "Sauerkraut",         emoji: "🥬", pillars: ["seed"],         impact: "Hundreds of millions of live bacteria per gram; direct seeding of the microbiome.", priority: "high" },
+  { food: "Oats",               emoji: "🌾", pillars: ["feed", "heal"], impact: "Beta-glucan fibre with the strongest evidence for Bifidobacterium growth.", priority: "high" },
+  { food: "Leeks",              emoji: "🌿", pillars: ["feed"],         impact: "Inulin-rich prebiotic that selectively feeds the most beneficial gut bacteria.", priority: "high" },
+  { food: "Walnuts",            emoji: "🥜", pillars: ["heal", "feed"], impact: "Polyphenols that feed beneficial bacteria and support gut-brain axis function.", priority: "high" },
+  { food: "Live yoghurt",       emoji: "🥛", pillars: ["seed", "heal"], impact: "Easy daily fermented food with well-studied strains and high palatability.", priority: "high" },
+  { food: "Lentils",            emoji: "🍲", pillars: ["feed"],         impact: "Best-studied legume for increasing butyrate-producing bacteria.", priority: "high" },
+  { food: "Ginger",             emoji: "🫚", pillars: ["heal"],         impact: "Clinically supported effects on gastric motility and gut comfort.", priority: "medium" },
+  { food: "Sweet potato",       emoji: "🍠", pillars: ["feed", "heal"], impact: "Feeds multiple microbial populations simultaneously with diverse fibre types.", priority: "medium" },
+  { food: "Kimchi",             emoji: "🌶️", pillars: ["seed", "feed"], impact: "Diverse bacterial profile; emerging evidence for metabolic and immune benefits.", priority: "medium" },
+  { food: "Miso",               emoji: "🍜", pillars: ["seed", "heal"], impact: "Fermented with diverse organisms; glutamate supports gut barrier directly.", priority: "medium" },
+  { food: "Dark chocolate 85%+",emoji: "🍫", pillars: ["heal", "feed"], impact: "Flavanols feed Lactobacillus and Bifidobacterium; also enjoyable to eat.", priority: "medium" },
+  { food: "Flaxseeds",          emoji: "🌾", pillars: ["feed", "heal"], impact: "Dual soluble/insoluble fibre plus lignans for gut barrier integrity.", priority: "medium" },
+  { food: "Whole grain rye",    emoji: "🍞", pillars: ["feed"],         impact: "Arabinoxylans outperform wheat fibre for measurable microbial diversity gains.", priority: "medium" },
+  { food: "Fennel",             emoji: "🌿", pillars: ["heal"],         impact: "Antispasmodic properties — reduces cramping, bloating, and post-meal discomfort.", priority: "medium" },
 ]
 
 /* ── 30-day plan template (pillar-aware) ────────────────────────────── */
@@ -354,41 +244,30 @@ function buildWeeklyHabits(
   week: number,
   sortedInsights: PillarInsight[]
 ): { habit: string; detail: string }[] {
-  const weakest = sortedInsights[0]?.pillar ?? "feeding"
-  const second = sortedInsights[1]?.pillar ?? "diversity"
+  const weakest = sortedInsights[0]?.pillar ?? "feed"
+  const second = sortedInsights[1]?.pillar ?? "seed"
 
   const HABIT_POOLS: Record<PillarKey, string[][]> = {
-    diversity: [
+    feed: [
       ["Add one new plant per day", "Choose a vegetable, legume, seed, or grain you haven't eaten this week. Even a tablespoon of a new seed counts."],
-      ["Count your weekly plants on Sunday", "Aim for 20+ different plant foods per week. Herbs, spices, and teas count. Most people are at 8–12 when they start."],
-      ["Replace one familiar food with a new one", "Swap your usual grain or vegetable for something different. Keep a running list of plants you've tried."],
-    ],
-    feeding: [
       ["Anchor every main meal with a fibre source", "Legumes, whole grains, or 2+ vegetables. Make fibre-first the default, not the afterthought."],
-      ["Prepare a batch of legumes for the week", "Cook or open a can of lentils, chickpeas, or black beans. Having them ready removes the biggest barrier to eating them."],
-      ["Replace one refined-grain meal with whole grain", "Swap white rice for brown, white pasta for wholewheat, or white bread for rye. Do one at a time."],
+      ["Count your weekly plants on Sunday", "Aim for 20+ different plant foods per week. Herbs, spices, and teas count. Most people are at 8–12 when they start."],
     ],
-    adding: [
+    seed: [
       ["Add one fermented food to one meal daily", "Natural yoghurt at breakfast, sauerkraut with lunch, miso broth at dinner. Rotate them across the week."],
       ["Buy three fermented foods you haven't tried", "Kefir, kimchi, and kombucha are good starting points. Introduce one new one each week."],
       ["Make miso broth your daily snack or side", "Dissolve a teaspoon of miso paste in warm water. Takes 60 seconds and delivers live cultures."],
     ],
-    consistency: [
+    heal: [
       ["Set three fixed meal times and protect them", "Choose your usual breakfast, lunch, and dinner window. Within 30 minutes is close enough to stabilise your gut rhythm."],
-      ["Prepare tomorrow's lunch tonight", "Reduce the friction on your most-skipped meal. A packed lunch removes the decision entirely."],
-      ["Eat without screens for one meal per day", "Distraction-free eating activates the parasympathetic system — improving digestion of everything you eat that day."],
-    ],
-    feeling: [
       ["Add ginger or turmeric to one meal daily", "Both have direct effects on gut motility and inflammation. Add to soups, stir-fries, or warm water with lemon."],
-      ["Sit for 5 minutes after your main meal", "Your gut works best when you're not immediately active after eating. Build in a brief digestive window."],
-      ["Keep a one-word food journal for 3 days", "After each meal, note one word for how you feel an hour later. Patterns will emerge quickly."],
+      ["Eat without screens for one meal per day", "Distraction-free eating activates the parasympathetic system — improving digestion of everything you eat that day."],
     ],
   }
 
-  // Build 3 habits based on week and pillar priority
-  const h1 = HABIT_POOLS[weakest][(week - 1) % 3]
-  const h2 = HABIT_POOLS[second][(week - 1) % 3]
-  const h3 = HABIT_POOLS["consistency"][(week - 1) % 3]
+  const h1 = (HABIT_POOLS as Record<string, string[][]>)[weakest]?.[(week - 1) % 3] ?? HABIT_POOLS.heal[(week - 1) % 3]
+  const h2 = (HABIT_POOLS as Record<string, string[][]>)[second]?.[(week - 1) % 3] ?? HABIT_POOLS.feed[(week - 1) % 3]
+  const h3 = HABIT_POOLS["heal"][(week - 1) % 3]
 
   return [
     { habit: h1[0], detail: h1[1] },
@@ -406,7 +285,7 @@ export function generateFullReport(result: AssessmentResult): FullReport {
   const deepDives: PillarDeepDive[] = (
     Object.keys(PILLAR_DEEP_DIVES) as PillarKey[]
   ).map((key) => {
-    const score = subScores[key]
+    const score = subScores[key as keyof typeof subScores] ?? 0
     const meta = PILLAR_DEEP_DIVES[key]
     const insight = insights.find((i) => i.pillar === key)
 
@@ -450,7 +329,7 @@ export function generateFullReport(result: AssessmentResult): FullReport {
     {
       week: 3,
       title: "Deepen",
-      focus: "Push your diversity score up and fine-tune how your body feels after meals.",
+      focus: "Push your Feed score up and fine-tune how your body responds after meals.",
       habits: buildWeeklyHabits(3, sortedInsights),
     },
     {
@@ -464,7 +343,7 @@ export function generateFullReport(result: AssessmentResult): FullReport {
   return { deepDives, top12Foods, thirtyDayPlan }
 }
 
-/* ── Starter Report (€20) ───────────────────────────────────────────── */
+/* ── Starter Report (€19) ───────────────────────────────────────────── */
 
 export interface StarterFood {
   food: string
@@ -488,7 +367,6 @@ export function generateStarterReport(result: AssessmentResult): StarterReport {
   const sortedInsights = [...insights].sort((a, b) => a.score - b.score)
   const weakPillars = sortedInsights.slice(0, 3).map((i) => i.pillar)
 
-  // Rank ALL_FOODS same as generateFullReport, take top 5
   const scored = ALL_FOODS.map((f) => {
     const pillarHits = f.pillars.filter((p) => weakPillars.includes(p)).length
     const priorityScore = f.priority === "high" ? 2 : 1
@@ -499,47 +377,37 @@ export function generateStarterReport(result: AssessmentResult): StarterReport {
 
   // 7-day starter plan — one action per day cycling through weakest pillars
   const DAY_LABELS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-  const STARTER_HABITS: Record<string, string[]> = {
-    diversity: [
+  const STARTER_HABITS: Record<PillarKey, string[]> = {
+    feed: [
       "Add one new plant food you haven't eaten this week — a different legume, vegetable, or seed.",
-      "Count how many different plants you've eaten today. Herbs and spices count.",
+      "Start every meal today with a fibre source — legumes, vegetables, or whole grains before anything else.",
       "Swap your usual grain for something different — rye, quinoa, or barley instead.",
     ],
-    feeding: [
-      "Start every meal today with a fibre source — legumes, vegetables, or whole grains before anything else.",
-      "Add a handful of canned legumes to one of your meals. Rinse, drain, done.",
-      "Replace one refined-grain food with its whole-grain equivalent today.",
-    ],
-    adding: [
+    seed: [
       "Add one fermented food to a meal today — yoghurt, sauerkraut, kefir, or miso.",
       "Make a miso broth in 60 seconds: one teaspoon miso paste dissolved in warm water.",
       "Try a new fermented food you haven't had before this week.",
     ],
-    consistency: [
+    heal: [
       "Eat three meals today at roughly the same times as yesterday. No skipping.",
-      "Prepare your lunch or dinner components the night before to remove the decision.",
-      "Eat one meal today without a screen — phone away, present with your food.",
-    ],
-    feeling: [
       "Add ginger or turmeric to one meal or drink today.",
       "Sit for 5 minutes after your main meal before doing anything active.",
-      "Note one word for how you feel one hour after each meal today.",
     ],
   }
 
-  const pillarOrder = [
-    sortedInsights[0]?.pillar ?? "feeding",
-    sortedInsights[1]?.pillar ?? "diversity",
-    sortedInsights[2]?.pillar ?? "adding",
-    "consistency",
-    sortedInsights[3]?.pillar ?? "feeling",
-    sortedInsights[4]?.pillar ?? "feeding",
-    "feeling",
+  const pillarOrder: PillarKey[] = [
+    (sortedInsights[0]?.pillar ?? "seed") as PillarKey,
+    (sortedInsights[1]?.pillar ?? "feed") as PillarKey,
+    (sortedInsights[2]?.pillar ?? "heal") as PillarKey,
+    "heal",
+    (sortedInsights[0]?.pillar ?? "seed") as PillarKey,
+    (sortedInsights[1]?.pillar ?? "feed") as PillarKey,
+    "heal",
   ]
 
   const sevenDayPlan: StarterDayPlan[] = DAY_LABELS.map((label, i) => {
-    const pillar = pillarOrder[i] as string
-    const habitPool = STARTER_HABITS[pillar] ?? STARTER_HABITS.consistency
+    const pillar = pillarOrder[i]
+    const habitPool = STARTER_HABITS[pillar] ?? STARTER_HABITS.heal
     const habit = habitPool[i % habitPool.length]
     return { day: i + 1, label, habit: habit ?? "" }
   })
@@ -590,7 +458,7 @@ export interface PremiumAddons {
 export function generatePremiumAddons(result: AssessmentResult): PremiumAddons {
   const { overall, insights } = result
   const sortedInsights = [...insights].sort((a, b) => a.score - b.score)
-  const weakest = sortedInsights[0]?.pillar ?? "feeding"
+  const weakest: PillarKey = (sortedInsights[0]?.pillar ?? "feed") as PillarKey
 
   // Meal timing — varies by overall score range
   const mealTiming: MealTimingRule[] = overall >= 65
@@ -620,7 +488,7 @@ export function generatePremiumAddons(result: AssessmentResult): PremiumAddons {
         },
         {
           title: "Eat your largest meal mid-day, not at night",
-          detail: "Digestive enzyme output and gut motility peak in the middle of the day. A lighter evening meal with your bigger fibre and protein load at lunch or mid-afternoon works with, not against, your gut's natural rhythm.",
+          detail: "Digestive enzyme output and gut motility peak in the middle of the day. A lighter evening meal with your bigger fibre and protein load at lunch works with, not against, your gut's natural rhythm.",
         },
       ]
     : [
@@ -638,7 +506,7 @@ export function generatePremiumAddons(result: AssessmentResult): PremiumAddons {
         },
       ]
 
-  // Seasonal foods — March/spring focus (project date is 2026-03-19)
+  // Seasonal foods
   const seasonalFoods: SeasonalFood[] = [
     { food: "Purple sprouting broccoli", emoji: "🥦", why: "Peak season in late winter/early spring. Cruciferous vegetables contain glucosinolates that fuel sulphur-metabolising gut bacteria — a distinct microbial population often overlooked." },
     { food: "Wild garlic (ramsons)", emoji: "🌿", why: "Foraged spring green, available March–May. Contains allicin compounds that have prebiotic and antimicrobial properties — supporting beneficial bacteria while keeping pathogens in check." },
@@ -648,7 +516,7 @@ export function generatePremiumAddons(result: AssessmentResult): PremiumAddons {
     { food: "Radishes", emoji: "🌸", why: "Spring radishes contain sulphoraphane precursors and raffinose — a prebiotic oligosaccharide that specifically increases Bifidobacterium. Eat raw for maximum benefit." },
   ]
 
-  // Shopping list — 30 items across 4 categories, tailored to weakest pillar
+  // Shopping list — 30 items across 4 categories
   const baseList: ShoppingCategory[] = [
     {
       category: "Fermented & Live",
@@ -660,22 +528,21 @@ export function generatePremiumAddons(result: AssessmentResult): PremiumAddons {
     },
     {
       category: "Fresh Produce",
-      items: ["Leeks", "Purple cabbage", "Dandelion greens or chicory", "Watercress", "Fennel", "Ginger root (fresh)", "Spring onions"],
+      items: ["Leeks", "Purple cabbage", "Watercress", "Fennel", "Ginger root (fresh)", "Spring onions", "Dandelion greens or chicory"],
     },
     {
       category: "Pantry & Essentials",
-      items: ["Flaxseeds (ground)", "Walnuts", "Mixed nuts (unsalted)", "Dark chocolate 85%+ (2–3 bars)", "Turmeric (ground)", "Black pepper (ground)", "Herbal teas (ginger, chamomile, fennel)", "Canned sardines or mackerel", "Extra virgin olive oil"],
+      items: ["Flaxseeds (ground)", "Walnuts", "Mixed nuts (unsalted)", "Dark chocolate 85%+ (2–3 bars)", "Turmeric (ground)", "Black pepper (ground)", "Herbal teas (ginger, chamomile, fennel)", "Extra virgin olive oil"],
     },
   ]
 
-  // If weakest pillar is diversity, put diversity-boosting items first
-  if (weakest === "diversity" || weakest === "adding") {
-    // Reorder: fermented first, then fresh
+  // If seed is weakest, lead with fermented foods
+  if (weakest === "seed") {
     const reordered = [baseList[0], baseList[2], baseList[1], baseList[3]]
-    return buildPremiumAddons(mealTiming, seasonalFoods, reordered, sortedInsights, weakest)
+    return buildPremiumAddons(mealTiming, seasonalFoods, reordered, sortedInsights as { pillar: PillarKey; score: number }[], weakest)
   }
 
-  return buildPremiumAddons(mealTiming, seasonalFoods, baseList, sortedInsights, weakest)
+  return buildPremiumAddons(mealTiming, seasonalFoods, baseList, sortedInsights as { pillar: PillarKey; score: number }[], weakest)
 }
 
 function buildPremiumAddons(
@@ -718,11 +585,10 @@ function buildPremiumAddons(
     },
   ]
 
-  // Recipes — 3 biotic starter recipes, tailored to weakest pillar
   const RECIPE_POOL: Record<PillarKey, BioticRecipe> = {
-    diversity: {
+    feed: {
       name: "30-Plant Grain Bowl",
-      pillar: "diversity",
+      pillar: "feed",
       prepTime: "15 minutes",
       ingredients: [
         "½ cup cooked farro or barley",
@@ -737,24 +603,9 @@ function buildPremiumAddons(
       ],
       method: "Layer grains in a bowl. Add beans, greens, and seeds. Drizzle with olive oil and lemon. Toss lightly. Each ingredient is a different plant — this bowl can hit 8+ plant varieties in one meal.",
     },
-    feeding: {
-      name: "Overnight Oats with Resistant Starch",
-      pillar: "feeding",
-      prepTime: "5 minutes (night before)",
-      ingredients: [
-        "80g rolled oats",
-        "200ml kefir or live yoghurt",
-        "1 tbsp chia seeds",
-        "1 tbsp ground flaxseeds",
-        "½ green (unripe) banana, sliced",
-        "Handful of mixed berries",
-        "1 tsp honey (optional)",
-      ],
-      method: "Mix oats, kefir, chia, and flaxseeds in a jar. Refrigerate overnight. In the morning, top with green banana and berries. Eating cold oats maximises resistant starch — the form that best feeds your colon bacteria.",
-    },
-    adding: {
+    seed: {
       name: "Miso Ginger Broth Bowl",
-      pillar: "adding",
+      pillar: "seed",
       prepTime: "10 minutes",
       ingredients: [
         "1 tbsp white miso paste",
@@ -766,54 +617,39 @@ function buildPremiumAddons(
         "Drizzle of sesame oil",
         "Optional: 1 soft-boiled egg",
       ],
-      method: "Dissolve miso in warm (not boiling) water to preserve live cultures. Add ginger, greens, and nori. Top with spring onion and sesame oil. Drink immediately. Use this as a quick lunch or afternoon snack — it delivers live cultures, prebiotic fibre, and minerals in under 10 minutes.",
+      method: "Dissolve miso in warm (not boiling) water to preserve live cultures. Add ginger, greens, and nori. Top with spring onion and sesame oil. Drink immediately. This quick lunch delivers live cultures, prebiotic fibre, and minerals in under 10 minutes.",
     },
-    consistency: {
-      name: "5-Minute Lentil Lunch",
-      pillar: "consistency",
-      prepTime: "5 minutes",
+    heal: {
+      name: "Golden Gut Overnight Oats",
+      pillar: "heal",
+      prepTime: "5 minutes (night before)",
       ingredients: [
-        "1 can red lentils or green lentils (drained)",
-        "2 tbsp live natural yoghurt",
-        "½ tsp cumin",
+        "80g rolled oats",
+        "200ml kefir or live yoghurt",
+        "1 tbsp chia seeds",
+        "1 tbsp ground flaxseeds",
         "½ tsp turmeric",
         "Pinch of black pepper",
-        "Handful of baby spinach",
-        "Drizzle of olive oil",
-        "Squeeze of lemon",
+        "½ green (unripe) banana, sliced",
+        "Handful of mixed berries",
       ],
-      method: "Drain and rinse lentils. Mix with cumin, turmeric, and pepper. Stir in yoghurt. Plate on spinach. Drizzle olive oil and lemon. This is a 5-minute, no-cook lunch that delivers fibre, live cultures, and anti-inflammatory spices — designed to be your default 'no-plan' meal.",
-    },
-    feeling: {
-      name: "Golden Gut Tonic",
-      pillar: "feeling",
-      prepTime: "5 minutes",
-      ingredients: [
-        "250ml warm oat milk or whole milk",
-        "½ tsp turmeric (ground)",
-        "¼ tsp ginger (ground or fresh grated)",
-        "Pinch of black pepper (essential — increases curcumin absorption by 2,000%)",
-        "½ tsp raw honey",
-        "Pinch of cinnamon",
-      ],
-      method: "Warm the milk gently — don't boil. Whisk in turmeric, ginger, pepper, and cinnamon. Sweeten with honey. Drink warm before bed or after dinner. The black pepper is non-negotiable — without it, the curcumin in turmeric is barely absorbed.",
+      method: "Mix oats, kefir, chia, flaxseeds, turmeric, and pepper in a jar. Refrigerate overnight. In the morning, top with green banana and berries. Eating cold oats maximises resistant starch — the form that best feeds your colon bacteria.",
     },
   }
 
-  const pillarOrder: PillarKey[] = ["adding", "diversity", "feeding", "consistency", "feeling"]
-  const recipeKeys = [
-    weakest,
-    pillarOrder.find((p) => p !== weakest) ?? "feeding",
-    "adding",
-  ] as PillarKey[]
+  const pillarOrder: PillarKey[] = ["seed", "feed", "heal"]
+  const recipeKeys: PillarKey[] = [
+    weakest as PillarKey,
+    (pillarOrder.find((p) => p !== weakest) ?? "feed") as PillarKey,
+    "heal",
+  ]
 
   const recipes = recipeKeys
-    .filter((k, i, arr) => arr.indexOf(k) === i) // dedupe
+    .filter((k, i, arr) => arr.indexOf(k) === i)
     .slice(0, 3)
     .map((k) => RECIPE_POOL[k])
     .filter(Boolean) as BioticRecipe[]
 
-  // Ensure we always have 3
   while (recipes.length < 3) {
     const fallback = pillarOrder.find((p) => !recipes.find((r) => r.pillar === p))
     if (fallback) recipes.push(RECIPE_POOL[fallback])

@@ -15,7 +15,8 @@ export default async function IntelligencePage() {
 
   const tier = await getUserMembershipTier(user.id)
 
-  if (tier === "free" || tier === "grow") {
+  const hasAccess = ["member", "restore", "transform"].includes(tier)
+  if (!hasAccess) {
     redirect("/pricing?feature=food-intelligence")
   }
 
@@ -35,7 +36,7 @@ export default async function IntelligencePage() {
           </p>
         </div>
 
-        <IntelligenceClient tier={tier} />
+        <IntelligenceClient tier={tier as "member" | "restore" | "transform"} />
       </div>
     </div>
   )

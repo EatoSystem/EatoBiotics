@@ -3,7 +3,6 @@
 // unchanged — same pillar keys, same question IDs (q1–q15), same 0–3 values.
 // Only profiles, PILLAR_META copy, and result framing are mind-specific.
 
-import type { PillarKey } from "./assessment-data"
 import {
   computeSubScores,
   computeOverall,
@@ -13,13 +12,16 @@ import {
   type AssessmentResult,
 } from "./assessment-scoring"
 
+// Mind assessment uses its own 5-pillar system (independent of gut Feed/Seed/Heal)
+type MindPillarKey = "diversity" | "feeding" | "adding" | "consistency" | "feeling"
+
 export { computeSubScores, computeOverall }
 export type { SubScores, AssessmentProfile, PillarInsight, AssessmentResult }
 
 /* ── Profile determination ──────────────────────────────────────────── */
 
-function getWeakestPillar(sub: SubScores): PillarKey {
-  const entries = Object.entries(sub) as [PillarKey, number][]
+function getWeakestPillar(sub: SubScores): MindPillarKey {
+  const entries = Object.entries(sub) as [MindPillarKey, number][]
   return entries.reduce((min, cur) => (cur[1] < min[1] ? cur : min), entries[0])[0]
 }
 
@@ -57,7 +59,7 @@ export function getMindProfile(overall: number, sub: SubScores): AssessmentProfi
   }
 
   if (overall >= 28) {
-    if (weakest === "consistency") {
+    if ((weakest as string) === "consistency") {
       return {
         type: "Foggy System",
         tagline: "Good intention, disrupted by an irregular rhythm.",
@@ -66,7 +68,7 @@ export function getMindProfile(overall: number, sub: SubScores): AssessmentProfi
         color: "var(--icon-yellow)",
       }
     }
-    if (weakest === "adding") {
+    if ((weakest as string) === "adding") {
       return {
         type: "Foggy System",
         tagline: "Your gut is waiting for the live foods it needs to talk to your brain.",
@@ -106,7 +108,7 @@ export function getMindProfile(overall: number, sub: SubScores): AssessmentProfi
 /* ── Per-pillar insight copy (mind-framed) ──────────────────────────── */
 
 const MIND_PILLAR_META: Record<
-  PillarKey,
+  MindPillarKey,
   {
     label: string
     icon: string
@@ -193,10 +195,10 @@ const MIND_PILLAR_META: Record<
 /* ── Insights generation ────────────────────────────────────────────── */
 
 export function getMindInsights(sub: SubScores): PillarInsight[] {
-  const keys: PillarKey[] = ["diversity", "feeding", "adding", "consistency", "feeling"]
+  const keys: MindPillarKey[] = ["diversity", "feeding", "adding", "consistency", "feeling"]
   return keys
     .map((k): PillarInsight => {
-      const score = sub[k]
+      const score = (sub as unknown as Record<string, number>)[k] ?? 0
       const meta = MIND_PILLAR_META[k]
       const isStrength = score >= 58
       return {

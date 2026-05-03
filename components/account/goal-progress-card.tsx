@@ -39,7 +39,7 @@ interface GoalProgressCardProps {
   healthGoals: string[] | null
   subScores: Record<string, number> | null
   profileColor: string
-  membershipTier: "free" | "grow" | "restore" | "transform"
+  membershipTier: "free" | "trial" | "member" | "grow" | "restore" | "transform"
 }
 
 export function GoalProgressCard({ healthGoals, subScores, profileColor }: GoalProgressCardProps) {

@@ -4,8 +4,9 @@ import { getSupabase } from "@/lib/supabase"
 import { PricingClient } from "./pricing-client"
 
 export const metadata: Metadata = {
-  title: "Membership Plans — EatoBiotics",
-  description: "Choose the EatoBiotics membership that fits your food system journey.",
+  title: "EatoBiotics Personal Report — €49",
+  description:
+    "Get your personalised EatoBiotics Report — a full Feed · Seed · Heal analysis, your 30-day gut reset plan, and a free 30-day account. One-time €49.",
 }
 
 export default async function PricingPage({

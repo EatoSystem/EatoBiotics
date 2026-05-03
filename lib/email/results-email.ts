@@ -12,6 +12,11 @@ interface ResultsEmailOpts {
 }
 
 const PILLAR_LABELS: Record<string, string> = {
+  // Current Feed/Seed/Heal keys
+  feed: "Feed",
+  seed: "Seed",
+  heal: "Heal",
+  // Legacy keys (backward compat)
   diversity: "Plant Diversity",
   feeding: "Feeding",
   adding: "Live Foods",
@@ -20,6 +25,9 @@ const PILLAR_LABELS: Record<string, string> = {
 }
 
 const PILLAR_COLORS: Record<string, string> = {
+  feed: "#7fc47e",
+  seed: "#3ab0a0",
+  heal: "#e6b84a",
   diversity: "#7fc47e",
   feeding: "#4caf7d",
   adding: "#3ab0a0",
@@ -28,6 +36,9 @@ const PILLAR_COLORS: Record<string, string> = {
 }
 
 const PILLAR_BG: Record<string, string> = {
+  feed: "#f3faf3",
+  seed: "#f0f9f8",
+  heal: "#fdf8ee",
   diversity: "#f3faf3",
   feeding: "#f0faf5",
   adding: "#f0f9f8",
@@ -223,7 +234,7 @@ export function buildResultsEmail(opts: ResultsEmailOpts): {
           <!-- Pillar scores -->
           <tr>
             <td style="padding: 24px 40px 0;">
-              <p style="margin: 0 0 12px; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: #999999; font-family: Arial, sans-serif;">Your 5 Pillars</p>
+              <p style="margin: 0 0 12px; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: #999999; font-family: Arial, sans-serif;">Feed · Seed · Heal</p>
               <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 ${pillarsHtml}
               </table>

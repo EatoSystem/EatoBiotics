@@ -2,7 +2,6 @@
 // Same math as lib/assessment-scoring.ts.
 // Only profiles and pillar insight copy are reframed for family context.
 
-import type { PillarKey } from "./assessment-data"
 import {
   computeSubScores,
   computeOverall,
@@ -14,13 +13,16 @@ import type {
   AssessmentResult,
 } from "./assessment-scoring"
 
+// Family assessment uses its own 5-pillar system (independent of gut Feed/Seed/Heal)
+type FamilyPillarKey = "diversity" | "feeding" | "adding" | "consistency" | "feeling"
+
 export { computeSubScores, computeOverall }
 export type { SubScores, AssessmentProfile, PillarInsight, AssessmentResult }
 
 /* ── Profile determination ──────────────────────────────────────────── */
 
-function getWeakestPillar(sub: SubScores): PillarKey {
-  const entries = Object.entries(sub) as [PillarKey, number][]
+function getWeakestPillar(sub: SubScores): FamilyPillarKey {
+  const entries = Object.entries(sub) as [FamilyPillarKey, number][]
   return entries.reduce((min, cur) => (cur[1] < min[1] ? cur : min), entries[0])[0]
 }
 
@@ -58,7 +60,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
   }
 
   if (overall >= 28) {
-    if (weakest === "consistency") {
+    if ((weakest as string) === "consistency") {
       return {
         type: "Inconsistent System",
         tagline: "Good intention, interrupted by an unpredictable family rhythm.",
@@ -67,7 +69,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
         color: "var(--icon-yellow)",
       }
     }
-    if (weakest === "adding") {
+    if ((weakest as string) === "adding") {
       return {
         type: "Underfed System",
         tagline: "Your family's gut is waiting for the live foods it needs to thrive.",
@@ -107,7 +109,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
 /* ── Per-pillar insight copy (family-framed) ────────────────────────── */
 
 const FAMILY_PILLAR_META: Record<
-  PillarKey,
+  FamilyPillarKey,
   {
     label: string
     icon: string
@@ -192,10 +194,10 @@ const FAMILY_PILLAR_META: Record<
 }
 
 export function getInsights(sub: SubScores): PillarInsight[] {
-  const keys: PillarKey[] = ["diversity", "feeding", "adding", "consistency", "feeling"]
+  const keys: FamilyPillarKey[] = ["diversity", "feeding", "adding", "consistency", "feeling"]
   return keys
     .map((k): PillarInsight => {
-      const score = sub[k]
+      const score = (sub as unknown as Record<string, number>)[k] ?? 0
       const meta = FAMILY_PILLAR_META[k]
       const isStrength = score >= 58
       return {

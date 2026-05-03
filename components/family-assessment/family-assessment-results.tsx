@@ -16,7 +16,7 @@ import {
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { ScoreRing } from "@/components/assessment/score-ring"
 import { MissionNote } from "@/components/assessment/mission-note"
-import { PremiumTeaser } from "@/components/assessment/premium-teaser"
+import { PersonalReportCta } from "@/components/assessment/personal-report-cta"
 import type { AssessmentResult, PillarInsight } from "@/lib/assessment-scoring"
 import { getFoodBySlug } from "@/lib/foods"
 
@@ -446,11 +446,11 @@ export function FamilyAssessmentResults({ result, onRetake, leadEmail }: FamilyA
         </div>
       </section>
 
-      {/* ── Premium Teaser ────────────────────────────────────────────── */}
+      {/* ── Personal Report CTA ───────────────────────────────────────── */}
       <section className="border-t border-border bg-secondary/10 px-6 py-16">
         <div className="mx-auto max-w-3xl">
           <ScrollReveal>
-            <PremiumTeaser result={result} />
+            <PersonalReportCta result={result} />
           </ScrollReveal>
         </div>
       </section>

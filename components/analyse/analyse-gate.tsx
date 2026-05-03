@@ -8,7 +8,7 @@ import { logEvent } from "@/lib/statsig-client"
 import { GuestScanFlow } from "./guest-scan-flow"
 
 interface AnalyseGateProps {
-  membershipTier: "free" | "grow" | "restore" | "transform"
+  membershipTier: "free" | "trial" | "member" | "grow" | "restore" | "transform"
   isLoggedIn: boolean
   /** Lifetime scan count for free users — used to allow the first free scan */
   lifetimeCount?: number

@@ -8,7 +8,7 @@ const STEPS = [
     number: "01",
     icon: ClipboardList,
     title: "Assess",
-    description: "Answer 15 questions about what you eat. Get your personalised food system score.",
+    description: "Answer 15 questions about what you eat. Free, takes about 3 minutes. No account needed.",
     color: "var(--icon-lime)",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
     bgGradient: "linear-gradient(160deg, color-mix(in srgb, var(--icon-lime) 10%, transparent), transparent 60%)",
@@ -17,7 +17,7 @@ const STEPS = [
     number: "02",
     icon: BarChart2,
     title: "Score",
-    description: "See your Biotics Score across 5 pillars — Diversity, Feeding, Live Foods, Consistency, and Feeling.",
+    description: "Get your EatoBiotics Score — a breakdown of your key eating habits and exactly where your gut health stands today.",
     color: "var(--icon-green)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
     bgGradient: "linear-gradient(160deg, color-mix(in srgb, var(--icon-green) 10%, transparent), transparent 60%)",
@@ -25,8 +25,8 @@ const STEPS = [
   {
     number: "03",
     icon: Utensils,
-    title: "Understand",
-    description: "See exactly how your plate scores across Pre, Pro, and Post biotics — and what to adjust to improve your system.",
+    title: "Report",
+    description: "Unlock your Personal Report for €49 — a 30-day plan, your top food recommendations, and meal timing guidance.",
     color: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-yellow))",
     bgGradient: "linear-gradient(160deg, color-mix(in srgb, var(--icon-teal) 10%, transparent), transparent 60%)",
@@ -34,8 +34,8 @@ const STEPS = [
   {
     number: "04",
     icon: TrendingUp,
-    title: "Improve",
-    description: "Track your streak, get personalised meal plans, and consult EatoBiotic — your AI food system advisor.",
+    title: "30 Days",
+    description: "Follow your plan with a free 30-day EatoBiotics account — daily actions, progress tracking, and weekly check-ins.",
     color: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     bgGradient: "linear-gradient(160deg, color-mix(in srgb, var(--icon-orange) 10%, transparent), transparent 60%)",
@@ -52,11 +52,11 @@ export function HowItWorks() {
               How It Works
             </p>
             <h2 className="font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-              Four steps to a stronger{" "}
-              <span className="brand-gradient-text">food system</span>
+              From score to plan{" "}
+              <span className="brand-gradient-text">in four steps</span>
             </h2>
             <p className="mt-4 max-w-lg text-base text-muted-foreground leading-relaxed">
-              From your first free assessment to a fully personalised daily practice — here&apos;s how EatoBiotics works.
+              Free assessment → EatoBiotics Score → Personal Report → 30-day account. Here&apos;s how it works.
             </p>
           </ScrollReveal>
           <ScrollReveal delay={80} className="w-full md:w-[340px] lg:w-[400px] shrink-0">
@@ -134,7 +134,7 @@ export function HowItWorks() {
               href="/assessment"
               className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
             >
-              Get My Free Biotics Score <ArrowRight size={16} />
+              Take the free assessment <ArrowRight size={16} />
             </Link>
             <p className="mt-3 text-xs text-muted-foreground">
               Free to start. No card needed. Takes about 3 minutes.

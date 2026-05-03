@@ -1,13 +1,17 @@
-/* ── Assessment Scoring — Sub-scores, Profile, Insights ────────────── */
+/* ── Assessment Scoring — Feed / Seed / Heal ─────────────────────────── */
 
 import type { PillarKey } from "./assessment-data"
 
 export interface SubScores {
-  diversity: number
-  feeding: number
-  adding: number
-  consistency: number
-  feeling: number
+  feed: number   // Prebiotic & Fibre (q1–q6)
+  seed: number   // Fermented & Live (q7–q9)
+  heal: number   // Recovery & Resilience (q10–q15)
+  // Legacy fields — kept for backward compatibility with stored records
+  diversity?: number
+  feeding?: number
+  adding?: number
+  consistency?: number
+  feeling?: number
 }
 
 export interface AssessmentProfile {
@@ -18,7 +22,7 @@ export interface AssessmentProfile {
 }
 
 export interface PillarInsight {
-  pillar: PillarKey
+  pillar: string // PillarKey for gut; family/mind assessments use their own keys
   label: string
   score: number
   strength?: string
@@ -47,103 +51,103 @@ export function computeSubScores(
     const v = answers[id]
     return typeof v === "number" ? v : 0
   }
-  const pct = (a: number, b: number, c: number) =>
-    Math.round(((a + b + c) / 9) * 100)
 
-  return {
-    diversity:   pct(n("q1"),  n("q2"),  n("q3")),
-    feeding:     pct(n("q4"),  n("q5"),  n("q6")),
-    adding:      pct(n("q7"),  n("q8"),  n("q9")),
-    consistency: pct(n("q10"), n("q11"), n("q12")),
-    feeling:     pct(n("q13"), n("q14"), n("q15")),
-  }
+  // Feed: q1–q6 (max 18 points across 6 questions × 3 max each)
+  const feedRaw = n("q1") + n("q2") + n("q3") + n("q4") + n("q5") + n("q6")
+  const feed = Math.round((feedRaw / 18) * 100)
+
+  // Seed: q7–q9 (max 9 points)
+  const seedRaw = n("q7") + n("q8") + n("q9")
+  const seed = Math.round((seedRaw / 9) * 100)
+
+  // Heal: q10–q15 (max 18 points)
+  const healRaw = n("q10") + n("q11") + n("q12") + n("q13") + n("q14") + n("q15")
+  const heal = Math.round((healRaw / 18) * 100)
+
+  return { feed, seed, heal }
 }
 
 export function computeOverall(sub: SubScores): number {
-  // Floor of 25 per pillar: prevents one completely absent habit from
-  // catastrophically dragging the overall (max ~5 point penalty per gap)
-  const floor = (n: number) => Math.max(n, 25)
-  return Math.round(
-    (floor(sub.diversity) + floor(sub.feeding) + floor(sub.adding) +
-      floor(sub.consistency) + floor(sub.feeling)) / 5
-  )
+  // Floor of 20 per pillar: prevents one absent habit from catastrophically
+  // dragging the overall score
+  const floor = (n: number) => Math.max(n, 20)
+  const f = floor(sub.feed)
+  const s = floor(sub.seed)
+  const h = floor(sub.heal)
+
+  // Weighted: Feed 40% (6 questions), Seed 20% (3 questions), Heal 40% (6 questions)
+  return Math.round(f * 0.4 + s * 0.2 + h * 0.4)
 }
 
 /* ── Profile determination ──────────────────────────────────────────── */
 
 function getWeakestPillar(sub: SubScores): PillarKey {
-  const entries = Object.entries(sub) as [PillarKey, number][]
-  return entries.reduce((min, cur) => (cur[1] < min[1] ? cur : min), entries[0])[0]
+  const pillars: [PillarKey, number][] = [
+    ["feed", sub.feed],
+    ["seed", sub.seed],
+    ["heal", sub.heal],
+  ]
+  return pillars.reduce((min, cur) => (cur[1] < min[1] ? cur : min), pillars[0])[0]
 }
 
 export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
   const weakest = getWeakestPillar(sub)
 
-  if (overall >= 75) {
+  if (overall >= 80) {
     return {
-      type: "Thriving System",
-      tagline: "Your internal food system is working hard in your favour.",
+      type: "Thriving Food System",
+      tagline: "Your inner food system is working hard in your favour.",
       description:
-        "You're doing something genuinely rare — eating with intention, variety, and consistency in a way that meaningfully supports your gut microbiome. Your scores reflect a system that is well-fed, well-timed, and well-balanced. The opportunity now is to refine the edges, explore new foods, and deepen what's already working.",
+        "You're doing something genuinely rare — feeding, seeding, and healing your gut with intention and consistency. Your scores reflect an inner food system that is well-nourished, diverse, and resilient. The opportunity now is to refine the edges and deepen what's already working.",
       color: "var(--icon-green)",
     }
   }
 
-  if (overall >= 58) {
+  if (overall >= 65) {
     return {
       type: "Strong Foundation",
       tagline: "You've built something real — now it's time to sharpen it.",
       description:
-        "You have solid eating habits and your food system health is benefiting from your effort. There are one or two pillars where a targeted shift would unlock noticeably better results. The good news: you don't need a transformation — just a refinement.",
+        "You have solid food habits and your gut health is benefiting from your effort. One or two pillars — likely Seed or Heal — are where a targeted shift would unlock noticeably better results. The good news: you don't need a transformation, just a refinement.",
       color: "var(--icon-teal)",
     }
   }
 
-  if (overall >= 42) {
+  if (overall >= 50) {
     return {
       type: "Emerging Balance",
       tagline: "The building blocks are there. Consistency is the next step.",
       description:
-        "You have awareness and some strong habits, but they haven't fully integrated into a reliable daily pattern yet. Your gut system responds to consistency — even small, repeatable improvements compound quickly. You're closer to a strong foundation than you might think.",
+        "You have awareness and some strong habits, but they haven't fully integrated into a reliable daily rhythm yet. Your gut responds to consistency — even small, repeatable improvements in your Feed, Seed, or Heal scores compound quickly from here.",
       color: "var(--icon-lime)",
     }
   }
 
-  if (overall >= 28) {
-    if (weakest === "consistency") {
+  if (overall >= 35) {
+    if (weakest === "seed") {
       return {
-        type: "Inconsistent System",
-        tagline: "Good intention, interrupted by an unpredictable rhythm.",
-        description:
-          "You have intention around food — it shows in some of your answers. What your microbiome is missing right now is predictability. When eating is erratic — rushed meals, skipped meals, irregular timing — even good food choices deliver less benefit. The fix isn't eating better; it's eating more consistently.",
-        color: "var(--icon-yellow)",
-      }
-    }
-    if (weakest === "adding") {
-      return {
-        type: "Underfed System",
+        type: "Developing System",
         tagline: "Your gut is waiting for the live foods it needs to thrive.",
         description:
-          "Your eating habits have real strengths — fibre, whole foods, and variety are present. What your microbiome is missing is direct microbial input from live and fermented foods. This is the most targeted gap to address, and the fastest one to close. Adding even one fermented food daily can shift things meaningfully within weeks.",
+          "Your eating habits have real strengths in fibre and food rhythm. What your microbiome is missing is direct microbial input from fermented and live foods — your Seed score. This is the most targeted gap to close, and the fastest one to act on. Adding even one fermented food daily can shift things meaningfully within weeks.",
+        color: "var(--icon-yellow)",
+      }
+    }
+    if (weakest === "heal") {
+      return {
+        type: "Developing System",
+        tagline: "Your food rhythm and recovery need more attention.",
+        description:
+          "You have intention around food — it shows in your Feed and Seed scores. What your gut is missing right now is consistency and recovery support. When meal timing is unpredictable and colourful, polyphenol-rich foods are absent, even good food choices deliver less benefit.",
         color: "var(--icon-yellow)",
       }
     }
     return {
-      type: "Emerging Balance",
+      type: "Developing System",
       tagline: "Progress is underway — targeted effort will accelerate it.",
       description:
-        "You have some good habits in place, but there are clear gaps where your food system isn't yet consistently supporting your gut. Focusing on your weakest areas first will create the fastest momentum.",
-      color: "var(--icon-lime)",
-    }
-  }
-
-  if (overall >= 15) {
-    return {
-      type: "Inconsistent System",
-      tagline: "Your gut is waiting for a more stable foundation.",
-      description:
-        "Across most pillars, your current eating patterns aren't yet giving your microbiome what it needs to function well. This isn't a judgment — it's a starting point. Small, specific changes to your daily food rhythm will compound faster than you expect.",
-      color: "var(--icon-orange)",
+        "You have some good habits in place, but there are clear gaps where your food system isn't yet consistently supporting your gut. Focusing on your weakest pillar first will create the fastest momentum. Small changes, consistently applied, compound quickly.",
+      color: "var(--icon-yellow)",
     }
   }
 
@@ -151,7 +155,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
     type: "Early Builder",
     tagline: "You're at the beginning of something important.",
     description:
-      "Your food system health journey is just beginning, and that means every improvement from here creates a meaningful impact. The most effective place to start is building a simple, repeatable base — a handful of whole foods, eaten consistently. Complexity comes later.",
+      "Your food system health journey is just beginning, and that means every improvement from here creates a meaningful impact. The most effective place to start is building a simple, repeatable base — whole plants, one fermented food, and a steady meal rhythm. Complexity comes later.",
     color: "var(--icon-orange)",
   }
 }
@@ -171,87 +175,59 @@ const PILLAR_META: Record<
     actionHigh: string
   }
 > = {
-  diversity: {
-    label: "Diversity",
+  feed: {
+    label: "Feed",
     icon: "Leaf",
     color: "var(--icon-lime)",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
     strength:
-      "You're regularly exposing your microbiome to a wide variety of plant inputs — one of the strongest predictors of a healthy, resilient gut.",
+      "You're consistently nourishing your gut bacteria with the plant diversity and fibre they need — one of the strongest predictors of a healthy, resilient microbiome.",
     opportunity:
-      "Variety is already part of your diet — the next step is expanding the range a little further. Adding 2–3 unfamiliar plants each week meaningfully increases your microbial richness without overhauling your meals.",
+      "Your gut bacteria are hungry for more plant variety and fibre. A simple anchor at each meal — legumes, wholegrains, or vegetables — creates the consistent fuel your microbiome needs to do its best work.",
     actionLow:
-      "This week: introduce one unfamiliar plant food — a new bean, a different leafy green, or a vegetable you haven't eaten recently. One new plant per week adds up fast.",
+      "This week: anchor every main meal with one fibre source. Lentils, oats, vegetables, wholegrains, or beans all count — even a small portion makes a difference.",
     actionHigh:
-      "Keep a loose mental note of your weekly plant count. If you dip below 20, add one new plant category — seeds, sea vegetables, or a new legume.",
+      "Diversify your fibre sources. Add resistant starch (cooled potato, green banana) or new legumes to feed different microbial populations and push your Feed score higher.",
   },
-  feeding: {
-    label: "Feeding",
-    icon: "Wheat",
-    color: "var(--icon-green)",
-    gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
-    strength:
-      "You're consistently feeding your gut bacteria the fibre-rich whole foods they need — the raw material your microbiome converts into short-chain fatty acids.",
-    opportunity:
-      "Fibre from whole plants is the primary fuel for your gut bacteria. A simple anchor at each meal — legumes, wholegrains, or vegetables — creates the consistent supply your microbiome needs to do its best work.",
-    actionLow:
-      "This week: anchor every main meal with one fibre source. Lentils, oats, vegetables, wholegrains, or beans all count — and even a small portion makes a difference.",
-    actionHigh:
-      "Diversify your fibre sources. Add resistant starch (cooled potato, green banana) or new legumes to hit different microbial populations.",
-  },
-  adding: {
-    label: "Adding",
-    icon: "FlaskConical",
+  seed: {
+    label: "Seed",
+    icon: "Droplets",
     color: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
     strength:
-      "You're regularly introducing live, fermented foods that directly seed your microbiome with beneficial bacteria — one of the most targeted dietary inputs available.",
+      "You're regularly introducing live, fermented foods that directly seed your microbiome with beneficial bacteria — one of the most targeted and powerful dietary inputs available.",
     opportunity:
-      "Fermented foods are the most direct way to introduce new bacteria to your gut. Even one serving a day — yoghurt, miso, or a tablespoon of sauerkraut — makes a measurable difference within weeks, and it doesn't require big changes to your existing meals.",
+      "Fermented and live foods are the most direct way to introduce new bacteria to your gut. Even one serving a day — yoghurt, miso, or a tablespoon of sauerkraut — makes a measurable difference within weeks and doesn't require big changes to your existing meals.",
     actionLow:
-      "This week: add one fermented food to at least one meal each day — natural yoghurt with breakfast, miso broth with lunch, or a tablespoon of sauerkraut with dinner.",
+      "This week: add one fermented food to at least one meal each day — live yoghurt with breakfast, miso broth with lunch, or a tablespoon of sauerkraut with dinner.",
     actionHigh:
       "Rotate your fermented food sources. Each carries a different bacterial profile — alternate between at least three types across the week for broader microbiome coverage.",
   },
-  consistency: {
-    label: "Consistency",
-    icon: "Clock",
+  heal: {
+    label: "Heal",
+    icon: "Zap",
     color: "var(--icon-yellow)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     strength:
-      "Your eating rhythm is one of your biggest assets. Consistent meal timing allows your microbiome to anticipate and prepare — improving digestion, blood sugar stability, and nutrient absorption.",
+      "Your food rhythm and recovery support are excellent — your gut has the consistency and polyphenol-rich foods it needs to produce beneficial compounds and maintain resilience.",
     opportunity:
-      "Your gut microbiome responds well to rhythm. Even rough consistency in meal timing — within a 30-minute window — improves how effectively your gut processes the food you're already eating. The food choices don't need to change; the pattern does.",
+      "Your gut's recovery system needs more consistent rhythm and colourful, polyphenol-rich foods. Even rough consistency in meal timing — within a 30-minute window — combined with two to three colourful plants per day can significantly improve your Heal score.",
     actionLow:
-      "This week: set three anchor meal times and protect them. Even rough consistency — within a 30-minute window — signals your gut bacteria to prepare and respond.",
+      "This week: set three anchor meal times and protect them. Then add one colourful plant food per meal — berries, tomatoes, dark greens, or herbs. Small and consistent beats sporadic and perfect.",
     actionHigh:
-      "Identify the conditions that break your rhythm (travel, late meetings, social eating) and pre-plan one simple solution for each scenario.",
-  },
-  feeling: {
-    label: "Feeling",
-    icon: "Heart",
-    color: "var(--icon-orange)",
-    gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
-    strength:
-      "Your body is responding well to how you're eating — with stable energy, clear thinking, and good digestive comfort. This is a clear signal that your gut-brain axis is functioning well.",
-    opportunity:
-      "How you feel after eating is a direct signal from your gut. If energy or digestion is variable, tracking one word per meal for a few days often reveals which foods or patterns are at play — and the fix is usually simpler than expected.",
-    actionLow:
-      "This week: note how you feel one hour after each meal for three days — just one word. This builds the pattern awareness you need to identify what's working and what isn't.",
-    actionHigh:
-      "Pay attention to what disrupts your feeling scores. Identify 2–3 foods or habits that reliably diminish your energy or comfort, and experiment with reducing them one at a time.",
+      "Identify conditions that break your rhythm and pre-plan simple solutions. Add one polyphenol-rich food you don't currently eat — dark chocolate, walnuts, or extra-virgin olive oil — to push your Heal score further.",
   },
 }
 
 /* ── Insights generation ────────────────────────────────────────────── */
 
 export function getInsights(sub: SubScores): PillarInsight[] {
-  const keys: PillarKey[] = ["diversity", "feeding", "adding", "consistency", "feeling"]
+  const keys: PillarKey[] = ["feed", "seed", "heal"]
   return keys
     .map((k): PillarInsight => {
-      const score = sub[k]
+      const score = sub[k as keyof Pick<SubScores, "feed" | "seed" | "heal">] ?? 0
       const meta = PILLAR_META[k]
-      const isStrength = score >= 58
+      const isStrength = score >= 65
       return {
         pillar: k,
         label: meta.label,
@@ -286,4 +262,19 @@ export function computeResult(
     nextActions,
     completedAt: Date.now(),
   }
+}
+
+/* ── Legacy score normaliser ────────────────────────────────────────── */
+// Handles old sub_scores format {diversity, feeding, adding, consistency, feeling}
+// stored in the database before the Feed/Seed/Heal rebuild.
+
+export function normaliseSubScores(raw: Record<string, number>): SubScores {
+  if ("feed" in raw) {
+    return { feed: raw.feed, seed: raw.seed, heal: raw.heal }
+  }
+  // Convert legacy format using same pillar groupings
+  const feed = Math.round(((raw.diversity ?? 0) + (raw.feeding ?? 0)) / 2)
+  const seed = raw.adding ?? 0
+  const heal = Math.round(((raw.consistency ?? 0) + (raw.feeling ?? 0)) / 2)
+  return { feed, seed, heal }
 }

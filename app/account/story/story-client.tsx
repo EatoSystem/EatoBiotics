@@ -276,7 +276,7 @@ export function StoryClient({
   tier,
   existingStory,
 }: {
-  tier: "restore" | "transform"
+  tier: "member" | "restore" | "transform"
   existingStory: GutHealthStory | null
 }) {
   void tier

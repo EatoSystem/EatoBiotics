@@ -12,6 +12,7 @@ const VALID_PRICE_IDS = new Set([
   process.env.STRIPE_GROW_PRICE_ID,
   process.env.STRIPE_RESTORE_PRICE_ID,
   process.env.STRIPE_TRANSFORM_PRICE_ID,
+  process.env.STRIPE_MEMBER_PRICE_ID,
 ].filter(Boolean))
 
 export async function POST(req: NextRequest) {

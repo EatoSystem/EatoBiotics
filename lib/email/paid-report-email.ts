@@ -4,7 +4,7 @@
 
 interface PaidReportEmailOpts {
   name: string
-  tier: "starter" | "full" | "premium"
+  tier: "personal" | "starter" | "full" | "premium"
   overall: number
   profileType: string
   tagline: string
@@ -20,6 +20,11 @@ interface PaidReportEmailOpts {
 /* ── Constants ──────────────────────────────────────────────────────── */
 
 const PILLAR_LABELS: Record<string, string> = {
+  // New Feed/Seed/Heal pillars
+  feed: "Feed",
+  seed: "Seed",
+  heal: "Heal",
+  // Legacy pillars
   diversity: "Plant Diversity",
   feeding: "Feeding",
   adding: "Live Foods",
@@ -28,6 +33,9 @@ const PILLAR_LABELS: Record<string, string> = {
 }
 
 const PILLAR_COLORS: Record<string, string> = {
+  feed: "#7fc47e",
+  seed: "#3ab0a0",
+  heal: "#e6b84a",
   diversity: "#7fc47e",
   feeding: "#4caf7d",
   adding: "#3ab0a0",
@@ -36,6 +44,9 @@ const PILLAR_COLORS: Record<string, string> = {
 }
 
 const PILLAR_BG: Record<string, string> = {
+  feed: "#f3faf3",
+  seed: "#f0f9f8",
+  heal: "#fdf8ee",
   diversity: "#f3faf3",
   feeding: "#f0faf5",
   adding: "#f0f9f8",
@@ -44,12 +55,23 @@ const PILLAR_BG: Record<string, string> = {
 }
 
 const TIER_LABELS: Record<string, string> = {
+  personal: "Personal Report",
   starter: "Starter Insights",
   full: "Full Report",
   premium: "Premium Report",
 }
 
 const TIER_HIGHLIGHTS: Record<string, string[]> = {
+  personal: [
+    "Full Feed · Seed · Heal analysis",
+    "Your 30-day gut reset plan",
+    "Top 10 food recommendations",
+    "Weekly shopping framework",
+    "Meal timing guidance",
+    "Food swaps and avoid/reduce list",
+    "7-day kickstart actions",
+    "Free 30-day account included",
+  ],
   starter: [
     "7-day personalised starter plan",
     "Your top 5 priority foods",
@@ -115,7 +137,13 @@ export function buildPaidReportEmail(opts: PaidReportEmailOpts): {
   /* ── Pillar rows ─────────────────────────────────────────────────── */
   const sortedPillars = Object.entries(subScores).sort(([, a], [, b]) => b - a)
 
-  const pillarsHtml = sortedPillars
+  // For personal tier, only show feed/seed/heal; for legacy tiers, show old 5 pillars
+  const relevantPillars =
+    tier === "personal"
+      ? sortedPillars.filter(([key]) => ["feed", "seed", "heal"].includes(key))
+      : sortedPillars.filter(([key]) => ["diversity", "feeding", "adding", "consistency", "feeling"].includes(key))
+
+  const pillarsHtml = relevantPillars
     .map(([key, score]) => {
       const label = PILLAR_LABELS[key] ?? key
       const color = PILLAR_COLORS[key] ?? "#4caf7d"
@@ -263,10 +291,10 @@ export function buildPaidReportEmail(opts: PaidReportEmailOpts): {
             </td>
           </tr>
 
-          <!-- Your 5 Pillars -->
+          <!-- Your Pillar Scores -->
           <tr>
             <td style="padding: 24px 40px 0;">
-              <p style="margin: 0 0 12px; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: #999999; font-family: Arial, sans-serif;">Your 5 Pillars</p>
+              <p style="margin: 0 0 12px; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: #999999; font-family: Arial, sans-serif;">${tier === "personal" ? "Feed · Seed · Heal" : "Your 5 Pillars"}</p>
               <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 ${pillarsHtml}
               </table>

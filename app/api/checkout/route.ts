@@ -6,6 +6,14 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
 })
 
 const TIER_CONFIG = {
+  // ── New primary tier ──────────────────────────────────────────────────
+  personal: {
+    amount: 4900,
+    name: "EatoBiotics Personal Report",
+    description:
+      "Your full Feed · Seed · Heal analysis, 30-day gut reset plan, top 10 food recommendations, and a free 30-day EatoBiotics account.",
+  },
+  // ── Legacy tiers (kept for backward compatibility) ─────────────────────
   starter: {
     amount: 2000,
     name: "Starter Insights Report — EatoBiotics",

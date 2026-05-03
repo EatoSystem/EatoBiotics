@@ -65,12 +65,13 @@ interface Profile {
   referral_code: string
   referred_by: string | null
   // Subscription fields (added in membership build)
-  membership_tier: "free" | "grow" | "restore" | "transform"
+  membership_tier: "free" | "trial" | "member" | "grow" | "restore" | "transform"
   membership_status: "active" | "inactive" | "cancelled" | "past_due"
   stripe_customer_id: string | null
   stripe_subscription_id: string | null
   membership_started_at: string | null
   membership_expires_at: string | null
+  trial_expires_at: string | null
   is_founding_member: boolean
   health_goals?: string[] | null
 }
@@ -144,6 +145,7 @@ interface DashboardClientProps {
 /* ── Tabs ───────────────────────────────────────────────────────────── */
 
 const TABS = [
+  { key: "today",    label: "Today",    icon: Calendar },
   { key: "overview", label: "Overview", icon: ClipboardList },
   { key: "reports", label: "Reports", icon: FileText },
   { key: "membership", label: "Membership", icon: CreditCard },
@@ -160,12 +162,16 @@ type TabKey = (typeof TABS)[number]["key"]
 /* ── Profile lookup ─────────────────────────────────────────────────── */
 
 const PROFILE_INFO: Record<string, { color: string; tagline: string }> = {
+  // New Feed/Seed/Heal profiles
+  "Thriving Food System": { color: "var(--icon-green)",  tagline: "Your inner food system is working hard in your favour." },
+  "Strong Foundation":    { color: "var(--icon-teal)",   tagline: "You've built something real — now it's time to sharpen it." },
+  "Emerging Balance":     { color: "var(--icon-lime)",   tagline: "The building blocks are there. Consistency is the next step." },
+  "Developing System":    { color: "var(--icon-yellow)", tagline: "Progress is underway — targeted effort will accelerate it." },
+  "Early Builder":        { color: "var(--icon-orange)", tagline: "You're at the beginning of something important." },
+  // Legacy profiles
   "Thriving System":     { color: "var(--icon-green)",  tagline: "Your food system health is performing at its peak." },
-  "Strong Foundation":   { color: "var(--icon-teal)",   tagline: "You've built strong foundations — now it's time to layer in more." },
-  "Emerging Balance":    { color: "var(--icon-lime)",   tagline: "Your food system is growing in balance and diversity." },
   "Inconsistent System": { color: "var(--icon-yellow)", tagline: "Consistency is your next big unlock — small habits compound." },
   "Underfed System":     { color: "var(--icon-orange)", tagline: "Your gut is ready for more — more variety, more plants, more life." },
-  "Early Builder":       { color: "var(--icon-orange)", tagline: "Every great food system starts somewhere — you're building yours." },
 }
 const DEFAULT_PROFILE_INFO = { color: "var(--icon-green)", tagline: "The food system inside you." }
 
@@ -177,12 +183,14 @@ function getProfileInfo(profileType: string | null) {
 /* ── Helpers ────────────────────────────────────────────────────────── */
 
 const TIER_LABELS: Record<string, string> = {
+  personal: "Personal",
   starter: "Starter",
   full: "Full",
   premium: "Premium",
 }
 
 const TIER_COLORS: Record<string, string> = {
+  personal: "var(--icon-green)",
   starter: "var(--icon-lime)",
   full: "var(--icon-teal)",
   premium: "var(--icon-orange)",
@@ -262,6 +270,8 @@ function getDailyPrompt(subScores: Record<string, number> | null | undefined, da
 
 const TIER_ACCENT: Record<string, { bg: string; text: string; label: string }> = {
   free:      { bg: "rgba(255,255,255,0.1)",  text: "rgba(255,255,255,0.6)",  label: "Free" },
+  trial:     { bg: "rgba(132,204,22,0.22)",  text: "#bef264",                label: "30-Day Trial" },
+  member:    { bg: "rgba(20,184,166,0.22)",  text: "#5eead4",                label: "Member" },
   grow:      { bg: "rgba(132,204,22,0.22)",  text: "#bef264",                label: "Grow Member" },
   restore:   { bg: "rgba(20,184,166,0.22)",  text: "#5eead4",                label: "Restore Member" },
   transform: { bg: "rgba(249,115,22,0.22)",  text: "#fdba74",                label: "Transform Member" },
@@ -323,6 +333,208 @@ function TierBadge({ tier }: { tier: string }) {
     >
       {label}
     </span>
+  )
+}
+
+/* ── Today Tab ──────────────────────────────────────────────────────── */
+
+function TodayTab({
+  profile,
+  paidReports,
+  latestAssessment,
+}: {
+  profile: Profile
+  paidReports: PaidReport[]
+  latestAssessment: AssessmentRow | null
+}) {
+  const firstName = profile.name?.split(" ")[0] || "there"
+  const latestReport = paidReports[0] ?? null
+  const reportJson = latestReport?.report_json as Record<string, unknown> | null
+  const thirtyDayPlan = reportJson?.thirtyDayPlan as Record<string, { focus: string; goal: string; actions: string[] }> | null
+
+  // Calculate day in plan based on trial_expires_at (trial started 30 days before expiry)
+  const trialExpires = profile.trial_expires_at ? new Date(profile.trial_expires_at) : null
+  const trialStart = trialExpires ? new Date(trialExpires.getTime() - 30 * 86400000) : null
+  const dayInPlan = trialStart
+    ? Math.max(1, Math.min(30, Math.floor((Date.now() - trialStart.getTime()) / 86400000) + 1))
+    : 1
+  const weekInPlan = Math.min(4, Math.ceil(dayInPlan / 7)) as 1 | 2 | 3 | 4
+  const daysRemaining = trialExpires
+    ? Math.max(0, Math.ceil((trialExpires.getTime() - Date.now()) / 86400000))
+    : 30
+
+  const weekKey = `week${weekInPlan}` as "week1" | "week2" | "week3" | "week4"
+  const currentWeek = thirtyDayPlan?.[weekKey]
+
+  // Determine focus pillar from sub_scores
+  const sub = latestAssessment?.sub_scores ?? {}
+  const feedSeekHeal = ["feed", "seed", "heal"]
+  const pillarEntries = Object.entries(sub).filter(([k]) => feedSeekHeal.includes(k))
+  const weakestPillar = pillarEntries.length
+    ? pillarEntries.sort(([, a], [, b]) => (a as number) - (b as number))[0][0]
+    : "seed"
+
+  const PILLAR_META: Record<string, { label: string; color: string; foods: string[]; icon: string }> = {
+    feed: { label: "Feed — Prebiotic & Fibre", color: "var(--icon-lime)", icon: "🌿", foods: ["Oats", "Lentils", "Garlic", "Asparagus", "Leeks"] },
+    seed: { label: "Seed — Fermented & Live", color: "var(--icon-teal)", icon: "🧬", foods: ["Kefir", "Kimchi", "Miso", "Sauerkraut", "Kombucha"] },
+    heal: { label: "Heal — Recovery & Rhythm", color: "var(--icon-yellow)", icon: "⚡", foods: ["Blueberries", "Dark Chocolate", "Turmeric", "Walnuts", "Olive Oil"] },
+  }
+  const focus = PILLAR_META[weakestPillar] ?? PILLAR_META.seed
+
+  const overall = latestAssessment?.overall_score ?? null
+  const feedScore = (sub.feed as number) ?? null
+  const seedScore = (sub.seed as number) ?? null
+  const healScore = (sub.heal as number) ?? null
+
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening"
+
+  if (!latestReport) {
+    return (
+      <div className="py-12 text-center">
+        <p className="mb-2 text-2xl">📋</p>
+        <p className="font-semibold text-foreground">No report yet</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Your personalised 30-day plan will appear here once your report is ready.
+        </p>
+        <Link
+          href="/assessment"
+          className="mt-4 inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white"
+          style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-teal))" }}
+        >
+          Get My Report <ArrowRight size={14} />
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+
+      {/* Greeting */}
+      <div>
+        <p className="text-sm text-muted-foreground">{greeting}, <span className="font-semibold text-foreground">{firstName}</span>.</p>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          {overall !== null && (
+            <span className="rounded-full border px-3 py-1 text-sm font-semibold" style={{ color: "var(--icon-green)" }}>
+              Score: {overall}
+            </span>
+          )}
+          {feedScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Feed: {feedScore}</span>}
+          {seedScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Seed: {seedScore}</span>}
+          {healScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Heal: {healScore}</span>}
+          <span className="rounded-full border px-3 py-1 text-xs text-muted-foreground">Day {dayInPlan} of 30</span>
+        </div>
+      </div>
+
+      {/* This week's focus */}
+      <div
+        className="rounded-2xl border p-5"
+        style={{ borderColor: `color-mix(in srgb, ${focus.color} 40%, transparent)`, background: `color-mix(in srgb, ${focus.color} 6%, var(--card))` }}
+      >
+        <p className="mb-1 text-xs font-bold uppercase tracking-widest" style={{ color: focus.color }}>
+          {focus.icon} Week {weekInPlan} Focus
+        </p>
+        <p className="font-serif text-lg font-bold text-foreground">{focus.label}</p>
+        {currentWeek && (
+          <>
+            <p className="mt-1 text-sm text-muted-foreground">{currentWeek.goal}</p>
+            {currentWeek.focus && (
+              <p className="mt-2 text-sm font-medium text-foreground">{currentWeek.focus}</p>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Today's action */}
+      {currentWeek?.actions?.length ? (
+        <div className="rounded-2xl border bg-card p-5">
+          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Today&apos;s Action</p>
+          <p className="font-semibold text-foreground">{currentWeek.actions[(dayInPlan - 1) % Math.max(1, currentWeek.actions.length)]}</p>
+        </div>
+      ) : null}
+
+      {/* Foods to try this week */}
+      <div className="rounded-2xl border bg-card p-5">
+        <p className="mb-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">This week&apos;s foods to try</p>
+        <div className="flex flex-wrap gap-2">
+          {focus.foods.map((food) => (
+            <span
+              key={food}
+              className="rounded-full px-3 py-1.5 text-sm font-medium"
+              style={{ background: `color-mix(in srgb, ${focus.color} 12%, transparent)`, color: focus.color }}
+            >
+              {food}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* 30-day progress */}
+      <div className="rounded-2xl border bg-card p-5">
+        <p className="mb-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">Your 30-day plan progress</p>
+        <div className="flex gap-2">
+          {([1, 2, 3, 4] as const).map((w) => (
+            <div
+              key={w}
+              className="flex flex-1 flex-col items-center gap-1 rounded-xl border py-3 text-sm"
+              style={
+                w < weekInPlan
+                  ? { background: "color-mix(in srgb, var(--icon-green) 12%, transparent)", borderColor: "color-mix(in srgb, var(--icon-green) 40%, transparent)" }
+                  : w === weekInPlan
+                  ? { background: `color-mix(in srgb, ${focus.color} 12%, transparent)`, borderColor: `color-mix(in srgb, ${focus.color} 40%, transparent)` }
+                  : {}
+              }
+            >
+              <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Wk {w}</span>
+              {w < weekInPlan && <Check size={12} style={{ color: "var(--icon-green)" }} />}
+              {w === weekInPlan && <span className="text-[10px] font-semibold" style={{ color: focus.color }}>Now</span>}
+              {w > weekInPlan && <span className="text-[10px] text-muted-foreground">Ahead</span>}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Trial expiry / continuation CTA */}
+      {profile.membership_tier === "trial" && daysRemaining <= 30 && (
+        <div
+          className="rounded-2xl p-5"
+          style={{
+            background: daysRemaining <= 5
+              ? "color-mix(in srgb, var(--icon-orange) 8%, var(--card))"
+              : "color-mix(in srgb, var(--icon-lime) 6%, var(--card))",
+            border: `1px solid ${daysRemaining <= 5 ? "color-mix(in srgb, var(--icon-orange) 30%, transparent)" : "color-mix(in srgb, var(--icon-lime) 30%, transparent)"}`,
+          }}
+        >
+          <p className="text-sm font-semibold text-foreground">
+            {daysRemaining === 0
+              ? "Your free account has ended."
+              : `${daysRemaining} day${daysRemaining === 1 ? "" : "s"} remaining in your free account.`}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Continue your journey with an EatoBiotics Member plan — €24.99/month.
+          </p>
+          <Link
+            href="/pricing"
+            className="mt-3 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white"
+            style={{ background: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" }}
+          >
+            Continue my journey <ArrowRight size={14} />
+          </Link>
+        </div>
+      )}
+
+      {/* Link to full report */}
+      {latestReport && (
+        <Link
+          href={`/assessment/report?session_id=${latestReport.stripe_session_id}`}
+          className="flex items-center justify-between rounded-2xl border bg-card px-5 py-4 text-sm transition-colors hover:bg-muted"
+        >
+          <span className="font-medium text-foreground">View your full Personal Report</span>
+          <ArrowRight size={14} className="text-muted-foreground" />
+        </Link>
+      )}
+    </div>
   )
 }
 
@@ -2618,7 +2830,7 @@ function MembershipTab({
   const { membership, membership_tier, membership_status, membership_expires_at, is_founding_member } = profile
 
   const subTiers: Array<{
-    key: "free" | "grow" | "restore" | "transform"
+    key: "free" | "trial" | "member" | "grow" | "restore" | "transform"
     title: string
     price: string
     perks: string[]
@@ -3244,7 +3456,10 @@ function ConsultHistoryTab({
 /* ── Main Component ─────────────────────────────────────────────────── */
 
 export function DashboardClient({ profile, assessments, mindAssessments = [], paidReports, plateData, nextBillingDate, dailyConsultCount = 0, monthlyConsultCount = 0, weeklyCheckin, monthlyGutPlan, bioticsProfile, streak = 0, dailyPromptIndex = 0, consultHref, pastConsultations = [], patterns, hasMealPlan, latestMonthlyReview, storyLastUpdated, existingStory = null }: DashboardClientProps) {
-  const [activeTab, setActiveTab] = useState<TabKey>("overview")
+  const isTrial  = profile.membership_tier === "trial"
+  const isMember = profile.membership_tier === "member"
+  const defaultTab: TabKey = (isTrial || isMember) ? "today" : "overview"
+  const [activeTab, setActiveTab] = useState<TabKey>(defaultTab)
   const router = useRouter()
   const latest = assessments[0] ?? null
   const { show: showWelcome, dismiss: dismissWelcome } = useFirstVisit(profile.id)
@@ -3332,6 +3547,7 @@ export function DashboardClient({ profile, assessments, mindAssessments = [], pa
 
       {/* Tab content */}
       <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
+        {activeTab === "today" && <TodayTab profile={profile} paidReports={paidReports} latestAssessment={latest} />}
         {activeTab === "overview" && <OverviewTab assessments={assessments} mindAssessments={mindAssessments} membershipTier={profile.membership_tier ?? "free"} weeklyCheckin={weeklyCheckin} monthlyGutPlan={monthlyGutPlan} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} bioticsProfile={bioticsProfile} streak={streak} dailyPromptIndex={dailyPromptIndex} consultHref={consultHref} patterns={patterns} setActiveTab={setActiveTab} hasMealPlan={hasMealPlan} latestMonthlyReview={latestMonthlyReview} storyLastUpdated={storyLastUpdated} userId={profile.id} signupDate={latest?.created_at ?? null} latestPaidReport={paidReports[0] ? { tier: paidReports[0].tier, created_at: paidReports[0].created_at } : null} healthGoals={profile.health_goals ?? null} />}
         {activeTab === "reports" && <ReportsTab paidReports={paidReports} />}
         {activeTab === "membership" && <MembershipTab profile={profile} nextBillingDate={nextBillingDate} dailyConsultCount={dailyConsultCount} monthlyConsultCount={monthlyConsultCount} latestAssessment={latest} />}

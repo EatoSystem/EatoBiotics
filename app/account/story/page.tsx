@@ -55,7 +55,7 @@ export default async function StoryPage() {
           </p>
         </div>
 
-        <StoryClient tier={tier} existingStory={existingStory} />
+        <StoryClient tier={tier as "member" | "restore" | "transform"} existingStory={existingStory} />
       </div>
     </div>
   )

@@ -195,7 +195,7 @@ function ErrorView({ message, previewUrl, onReset }: { message: string; previewU
 
 /* ── Main component ─────────────────────────────────────────────────── */
 
-export function AnalyseClient({ tier }: { tier?: "free" | "grow" | "restore" | "transform" }) {
+export function AnalyseClient({ tier }: { tier?: "free" | "trial" | "member" | "grow" | "restore" | "transform" }) {
   const [state, setState] = useState<State>({ kind: "idle" })
 
   const handleFile = useCallback(async (file: File) => {

@@ -586,7 +586,7 @@ function ReportView({ report, onReset }: { report: FoodIntelligenceReport; onRes
 
 /* ── Main component ─────────────────────────────────────────────────── */
 
-export function IntelligenceClient({ tier }: { tier: "restore" | "transform" }) {
+export function IntelligenceClient({ tier }: { tier: "member" | "restore" | "transform" }) {
   const [state, setState] = useState<State>({ kind: "idle" })
 
   const generate = useCallback(async () => {

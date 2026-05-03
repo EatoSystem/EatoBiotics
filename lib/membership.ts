@@ -6,24 +6,29 @@ import { getSupabase } from "@/lib/supabase"
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 
-export type MembershipTier = "free" | "grow" | "restore" | "transform"
+/** Full set of tiers. trial / member are the new model; grow/restore/transform are legacy. */
+export type MembershipTier = "free" | "trial" | "member" | "grow" | "restore" | "transform"
 export type MembershipStatus = "active" | "inactive" | "cancelled" | "past_due"
 
 /* ── Feature flags ──────────────────────────────────────────────────────── */
 
+// trial  → same base access as grow
+// member → same access as restore
+
 export const FEATURES = {
-  unlimited_analyses:   ["grow", "restore", "transform"],
-  score_history_30:     ["grow", "restore", "transform"],
-  score_history_90:     ["restore", "transform"],
-  plate_builder:        ["grow", "restore", "transform"],
-  condition_calibration:["restore", "transform"],
-  monthly_gut_plan:     ["restore", "transform"],
-  pdf_reports:          ["restore", "transform"],
-  ai_consultation:      ["transform"],
-  weekly_checkin:       ["transform"],
-  weekly_meal_plans:    ["transform"],
-  create_my_plate:      ["grow", "restore", "transform"],
-  founding_member:      ["transform"],
+  unlimited_analyses:    ["trial", "member", "grow", "restore", "transform"],
+  score_history_30:      ["trial", "member", "grow", "restore", "transform"],
+  score_history_90:      ["member", "restore", "transform"],
+  plate_builder:         ["trial", "member", "grow", "restore", "transform"],
+  condition_calibration: ["member", "restore", "transform"],
+  monthly_gut_plan:      ["member", "restore", "transform"],
+  pdf_reports:           ["member", "restore", "transform"],
+  ai_consultation:       ["transform"],
+  weekly_checkin:        ["transform"],
+  weekly_meal_plans:     ["transform"],
+  create_my_plate:       ["trial", "member", "grow", "restore", "transform"],
+  founding_member:       ["transform"],
+  thirty_day_plan:       ["trial", "member", "grow", "restore", "transform"],
 } as const
 
 export type Feature = keyof typeof FEATURES
@@ -35,13 +40,16 @@ export function canAccess(tier: MembershipTier, feature: Feature): boolean {
 /* ── Tier ↔ Stripe price mapping ────────────────────────────────────────── */
 
 export const TIER_PRICES: Record<string, MembershipTier> = {
-  [process.env.STRIPE_GROW_PRICE_ID ?? ""]:      "grow",
-  [process.env.STRIPE_RESTORE_PRICE_ID ?? ""]:   "restore",
+  [process.env.STRIPE_GROW_PRICE_ID      ?? ""]: "grow",
+  [process.env.STRIPE_RESTORE_PRICE_ID   ?? ""]: "restore",
   [process.env.STRIPE_TRANSFORM_PRICE_ID ?? ""]: "transform",
+  [process.env.STRIPE_MEMBER_PRICE_ID    ?? ""]: "member",
 }
 
 export const PRICE_IDS: Record<MembershipTier, string | undefined> = {
   free:      undefined,
+  trial:     undefined,                               // trial is set by one-time purchase, not subscription
+  member:    process.env.STRIPE_MEMBER_PRICE_ID,
   grow:      process.env.STRIPE_GROW_PRICE_ID,
   restore:   process.env.STRIPE_RESTORE_PRICE_ID,
   transform: process.env.STRIPE_TRANSFORM_PRICE_ID,
@@ -62,10 +70,12 @@ export function tierFromPriceIdOrThrow(priceId: string): MembershipTier {
 /* ── Tier metadata ───────────────────────────────────────────────────────── */
 
 export const TIER_META: Record<MembershipTier, { label: string; price: string; priceMonthly: number }> = {
-  free:      { label: "Free",      price: "Free",       priceMonthly: 0 },
-  grow:      { label: "Grow",      price: "€9.99/mo",   priceMonthly: 9.99 },
-  restore:   { label: "Restore",   price: "€49/mo",     priceMonthly: 49 },
-  transform: { label: "Transform", price: "€99/mo",     priceMonthly: 99 },
+  free:      { label: "Free",      price: "Free",        priceMonthly: 0 },
+  trial:     { label: "Trial",     price: "30-day free", priceMonthly: 0 },
+  member:    { label: "Member",    price: "€24.99/mo",   priceMonthly: 24.99 },
+  grow:      { label: "Grow",      price: "€9.99/mo",    priceMonthly: 9.99 },
+  restore:   { label: "Restore",   price: "€49/mo",      priceMonthly: 49 },
+  transform: { label: "Transform", price: "€99/mo",      priceMonthly: 99 },
 }
 
 /* ── Server-side tier lookup ────────────────────────────────────────────── */
@@ -73,12 +83,11 @@ export const TIER_META: Record<MembershipTier, { label: string; price: string; p
 /**
  * Fetches the effective membership tier for a user.
  *
- * Returns the tier only when:
- * - status is 'active', OR
- * - status is 'past_due' and membership_expires_at is still in the future
- *   (grace period — keep access until subscription truly lapses)
- *
- * Falls back to 'free' in all other cases.
+ * Handles:
+ * - 'active' status → return stored tier
+ * - 'trial' tier   → return 'trial' only if trial_expires_at is in the future
+ * - 'past_due'     → grace period while membership_expires_at is in the future
+ * - everything else → 'free'
  */
 export async function getUserMembershipTier(userId: string): Promise<MembershipTier> {
   const supabase = getSupabase()
@@ -86,7 +95,7 @@ export async function getUserMembershipTier(userId: string): Promise<MembershipT
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("membership_tier, membership_status, membership_expires_at")
+    .select("membership_tier, membership_status, membership_expires_at, trial_expires_at")
     .eq("id", userId)
     .single()
 
@@ -95,11 +104,20 @@ export async function getUserMembershipTier(userId: string): Promise<MembershipT
   const tier   = (data.membership_tier   as MembershipTier)   ?? "free"
   const status = (data.membership_status as MembershipStatus) ?? "inactive"
 
+  // Trial: set by one-time purchase webhook, uses trial_expires_at column
+  if (tier === "trial") {
+    if (data.trial_expires_at) {
+      const trialExpires = new Date(data.trial_expires_at as string)
+      return trialExpires > new Date() ? "trial" : "free"
+    }
+    return "free"
+  }
+
   if (status === "active") return tier
 
   // Grace period: past_due but not yet expired
   if (status === "past_due" && data.membership_expires_at) {
-    const expires = new Date(data.membership_expires_at)
+    const expires = new Date(data.membership_expires_at as string)
     if (expires > new Date()) return tier
   }
 
