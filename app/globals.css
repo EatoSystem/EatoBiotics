@@ -196,7 +196,7 @@ html, body, main {
   }
 
   /* Hide site chrome + UI controls */
-  nav, footer, .print-hide {
+  nav, footer, .print-hide, .report-actions {
     display: none !important;
   }
 
