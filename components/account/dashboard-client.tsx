@@ -2527,32 +2527,116 @@ function MealScoreRing({ score, band }: { score: number; band: string }) {
 
 /* ── Reports Tab ────────────────────────────────────────────────────── */
 
+// Derive approximate Pre/Pro/Post pillar scores from raw sub_scores
+function deriveReportPillars(sub: Record<string, number> | null) {
+  if (!sub) return null
+  const has = (k: string) => typeof sub[k] === "number"
+  if (!has("diversity") || !has("feeding") || !has("adding") || !has("consistency") || !has("feeling")) return null
+  return [
+    { name: "Prebiotics", score: Math.round((sub.diversity + sub.feeding) / 2), color: "var(--icon-green)" },
+    { name: "Probiotics", score: Math.round(sub.adding), color: "var(--icon-orange)" },
+    { name: "Postbiotics", score: Math.round((sub.consistency + sub.feeling) / 2), color: "var(--icon-teal)" },
+  ]
+}
+
+// Mini sample score ring for empty state
+function SampleScoreRing({ score }: { score: number }) {
+  const r = 40
+  const circ = 2 * Math.PI * r
+  const offset = circ * (1 - score / 100)
+  return (
+    <div className="relative flex h-24 w-24 items-center justify-center">
+      <svg className="absolute inset-0" viewBox="0 0 96 96" fill="none">
+        <circle cx="48" cy="48" r={r} stroke="var(--muted)" strokeWidth="7" fill="none" />
+        <circle
+          cx="48" cy="48" r={r}
+          stroke="url(#sampleRingGrad)"
+          strokeWidth="7" fill="none"
+          strokeLinecap="round"
+          strokeDasharray={circ}
+          strokeDashoffset={offset}
+          transform="rotate(-90 48 48)"
+        />
+        <defs>
+          <linearGradient id="sampleRingGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="var(--icon-lime)" />
+            <stop offset="50%" stopColor="var(--icon-green)" />
+            <stop offset="100%" stopColor="var(--icon-teal)" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div className="relative text-center">
+        <div className="font-serif text-2xl font-bold text-foreground">{score}</div>
+        <div className="text-[10px] text-muted-foreground">/100</div>
+      </div>
+    </div>
+  )
+}
+
 function ReportsTab({ paidReports }: { paidReports: PaidReport[] }) {
   if (paidReports.length === 0) {
+    const samplePillars = [
+      { name: "Prebiotics", score: 72, color: "var(--icon-green)" },
+      { name: "Probiotics", score: 45, color: "var(--icon-orange)" },
+      { name: "Postbiotics", score: 78, color: "var(--icon-teal)" },
+    ]
     return (
       <div className="space-y-4">
         <div className="overflow-hidden rounded-3xl border bg-card">
-          <div className="h-1.5 w-full" style={{ background: "linear-gradient(90deg, var(--icon-teal), var(--icon-lime))" }} />
-          <div className="px-6 py-12 text-center">
-            <div
-              className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl"
-              style={{ background: "linear-gradient(135deg, var(--icon-teal), var(--icon-lime))" }}
-            >
-              <FileText size={28} className="text-white" />
+          <div className="h-1.5 w-full" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
+          <div className="p-6">
+            {/* Sample preview */}
+            <div className="mb-5 flex items-center gap-5 rounded-2xl border border-border bg-background p-4">
+              <SampleScoreRing score={68} />
+              <div className="flex-1 min-w-0">
+                <span
+                  className="mb-2 inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest"
+                  style={{
+                    background: "color-mix(in srgb, var(--icon-green) 12%, transparent)",
+                    color: "var(--icon-green)",
+                  }}
+                >
+                  Sample preview
+                </span>
+                <p className="font-serif text-sm font-semibold text-foreground">Emerging Balance</p>
+                <div className="mt-2 space-y-1.5">
+                  {samplePillars.map((p) => (
+                    <div key={p.name} className="flex items-center gap-2">
+                      <span className="w-14 text-right text-[10px] text-muted-foreground">{p.name.slice(0, 3)}</span>
+                      <div className="flex-1 overflow-hidden rounded-full bg-muted h-1">
+                        <div className="h-full rounded-full" style={{ width: `${p.score}%`, background: p.color }} />
+                      </div>
+                      <span className="w-5 text-[10px] text-muted-foreground">{p.score}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
+
+            {/* Heading + copy */}
             <h3 className="mb-2 font-serif text-xl font-semibold text-foreground">
               Your deep dive awaits
             </h3>
-            <p className="mx-auto mb-5 max-w-sm text-sm text-muted-foreground">
-              Complete the assessment to unlock your personalised food system assessment report — a full breakdown of your food system with actionable steps.
+            <p className="mb-5 text-sm text-muted-foreground">
+              Complete the assessment to unlock your personalised report — a full breakdown of your food system with scores, key insights, and a 30-day action plan.
             </p>
-            <Link
-              href="/assessment"
-              className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-              style={{ background: "var(--icon-green)" }}
-            >
-              Take the assessment <ArrowRight size={14} />
-            </Link>
+
+            {/* Dual CTAs */}
+            <div className="flex flex-wrap items-center gap-3">
+              <Link
+                href="/assessment"
+                className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 brand-gradient"
+              >
+                Take the assessment <ArrowRight size={14} />
+              </Link>
+              <Link
+                href="/report-you"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-75"
+                style={{ color: "var(--icon-teal)" }}
+              >
+                View sample report <ArrowRight size={13} />
+              </Link>
+            </div>
           </div>
         </div>
         <PractitionerReportCard />
@@ -2568,6 +2652,9 @@ function ReportsTab({ paidReports }: { paidReports: PaidReport[] }) {
         const topTrigger = typeof r.report_json?.topTrigger === "string" ? r.report_json.topTrigger : null
         const projection = r.report_json?.scoreProjection as { low: number; high: number; timeline: string } | undefined
         const membershipBridge = typeof r.report_json?.membershipBridge === "string" ? r.report_json.membershipBridge : null
+        // Gracefully derive pillar bars if sub_scores are embedded in free_scores JSON
+        const freeScoresRaw = r.free_scores as (typeof r.free_scores & { sub_scores?: Record<string, number> }) | null
+        const pillars = deriveReportPillars(freeScoresRaw?.sub_scores ?? null)
 
         return (
           <div key={r.stripe_session_id} className="overflow-hidden rounded-3xl border bg-card">
@@ -2576,7 +2663,10 @@ function ReportsTab({ paidReports }: { paidReports: PaidReport[] }) {
               {/* Header row */}
               <div className="mb-4 flex items-start justify-between">
                 <TierBadge tier={r.tier} />
-                <span className="text-xs text-muted-foreground" suppressHydrationWarning>{formatDate(r.created_at)}</span>
+                <span className="flex items-center gap-1.5 text-xs text-muted-foreground" suppressHydrationWarning>
+                  <Calendar size={11} />
+                  {formatDate(r.created_at)}
+                </span>
               </div>
 
               {/* Score + profile */}
@@ -2602,6 +2692,21 @@ function ReportsTab({ paidReports }: { paidReports: PaidReport[] }) {
                 </div>
               </div>
 
+              {/* Pillar bars (if derivable) */}
+              {pillars && (
+                <div className="mb-4 space-y-2">
+                  {pillars.map((p) => (
+                    <div key={p.name} className="flex items-center gap-2">
+                      <span className="w-16 text-right text-xs text-muted-foreground">{p.name.slice(0, 3)}</span>
+                      <div className="flex-1 overflow-hidden rounded-full bg-muted h-1.5">
+                        <div className="h-full rounded-full" style={{ width: `${p.score}%`, background: p.color }} />
+                      </div>
+                      <span className="w-6 text-xs text-muted-foreground">{p.score}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Top trigger insight */}
               {topTrigger && (
                 <div
@@ -2624,33 +2729,39 @@ function ReportsTab({ paidReports }: { paidReports: PaidReport[] }) {
               )}
 
               {/* Actions */}
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-3 mt-4">
                 <Link
                   href={`/assessment/report?session_id=${r.stripe_session_id}`}
-                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-opacity hover:opacity-80"
+                  className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-80"
                   style={{
                     background: "color-mix(in srgb, var(--icon-green) 12%, transparent)",
                     color: "var(--icon-green)",
                   }}
                 >
-                  <FileText size={11} /> View report
+                  <FileText size={13} /> View report
                 </Link>
                 {r.pdf_url ? (
                   <a
                     href={r.pdf_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-opacity hover:opacity-80"
+                    className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-80"
                     style={{
                       background: "color-mix(in srgb, var(--icon-teal) 12%, transparent)",
                       color: "var(--icon-teal)",
                     }}
                   >
-                    <Download size={11} /> Download PDF
+                    <Download size={13} /> Download PDF
                   </a>
                 ) : (
                   <span className="text-[11px] text-muted-foreground">PDF generating…</span>
                 )}
+                <Link
+                  href="/assessment"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Retake assessment <ArrowRight size={12} />
+                </Link>
               </div>
             </div>
           </div>

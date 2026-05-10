@@ -10,6 +10,7 @@ const PATHWAYS = [
     copy: "Build your personal food system to support your health, energy, and daily performance.",
     cta: "Explore You",
     href: "/you",
+    sampleHref: "/report-you",
     image: "/images/hero-gut.png",
     alt: "The food system inside you — gut microbiome illustration",
     accent: "var(--icon-green)",
@@ -23,6 +24,7 @@ const PATHWAYS = [
     copy: "The habits you build at home shape how your family eats, grows, and lives — today and for generations.",
     cta: "Explore Family",
     href: "/family",
+    sampleHref: "/report-family",
     image: "/images/family-hero.png",
     alt: "The food system inside your family — shared food culture illustration",
     accent: "var(--icon-yellow)",
@@ -36,6 +38,7 @@ const PATHWAYS = [
     copy: "Explore how the gut-brain connection may influence mood, focus, and mental clarity — and support common conditions.",
     cta: "Explore Mind",
     href: "/mind",
+    sampleHref: "/report-mind",
     image: "/images/mind-hero.png",
     alt: "The food system inside your mind — gut-brain connection illustration",
     accent: "var(--icon-teal)",
@@ -73,7 +76,7 @@ export function Pathways() {
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {PATHWAYS.map((pathway, i) => (
             <ScrollReveal key={pathway.href} delay={i * 100}>
-              <Link href={pathway.href} className="group block h-full">
+              <div className="group block h-full">
                 <div
                   className="relative flex h-full flex-col overflow-hidden rounded-3xl border bg-background transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl"
                   style={{
@@ -89,8 +92,8 @@ export function Pathways() {
                     style={{ background: pathway.gradient }}
                   />
 
-                  {/* Image */}
-                  <div className="relative w-full overflow-hidden bg-secondary/20 p-5">
+                  {/* Image — links to sample report */}
+                  <Link href={pathway.sampleHref} className="relative w-full overflow-hidden bg-secondary/20 p-5 block">
                     <div className="relative aspect-square w-full">
                       <Image
                         src={pathway.image}
@@ -100,7 +103,7 @@ export function Pathways() {
                         sizes="(max-width: 768px) 100vw, 33vw"
                       />
                     </div>
-                  </div>
+                  </Link>
 
                   {/* Content */}
                   <div className="flex flex-1 flex-col p-6">
@@ -110,25 +113,40 @@ export function Pathways() {
                     >
                       {pathway.label}
                     </p>
-                    <h3 className="mt-2 font-serif text-xl font-semibold leading-snug text-foreground">
-                      {pathway.title}
-                    </h3>
+                    {/* Title links to sample report */}
+                    <Link href={pathway.sampleHref}>
+                      <h3 className="mt-2 font-serif text-xl font-semibold leading-snug text-foreground hover:underline decoration-1 underline-offset-2">
+                        {pathway.title}
+                      </h3>
+                    </Link>
                     <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">
                       {pathway.copy}
                     </p>
-                    <div
-                      className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold"
-                      style={{ color: pathway.accent }}
-                    >
-                      {pathway.cta}
-                      <ArrowRight
-                        size={14}
-                        className="transition-transform duration-200 group-hover:translate-x-1"
-                      />
+
+                    {/* CTA area */}
+                    <div className="mt-5 space-y-3">
+                      {/* Secondary: view sample */}
+                      <Link
+                        href={pathway.sampleHref}
+                        className="inline-flex items-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-75"
+                        style={{ color: pathway.accent }}
+                      >
+                        View sample report
+                        <ArrowRight size={13} />
+                      </Link>
+
+                      {/* Primary: start assessment */}
+                      <Link
+                        href="/assessment"
+                        className="flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 brand-gradient"
+                      >
+                        Start free assessment
+                        <ArrowRight size={14} />
+                      </Link>
                     </div>
                   </div>
                 </div>
-              </Link>
+              </div>
             </ScrollReveal>
           ))}
         </div>
