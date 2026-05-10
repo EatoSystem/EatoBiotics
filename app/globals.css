@@ -190,61 +190,242 @@ html, body, main {
 
 /* ── Print / PDF export (7×10 trim) ──────────────────────────────────────── */
 @media print {
+
+  /* ── Page setup ── */
   @page {
-    size: 7in 10in;
-    margin: 0.7in;
+    size: A4 portrait;
+    margin: 1.5cm 1.8cm 2cm;
   }
 
-  /* Hide site chrome + UI controls */
-  nav, footer, .print-hide, .report-actions {
-    display: none !important;
-  }
-
-  /* White background, dark text */
-  body {
-    background: white !important;
-    color: #1A2E12 !important;
-  }
-
-  /* Preserve brand colours in print */
+  /* ── Preserve exact brand colours ── */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    box-shadow: none !important;
+    transition: none !important;
+    animation: none !important;
   }
 
-  /* Page-break controls */
-  h2, h3 {
-    break-after: avoid;
-    page-break-after: avoid;
+  /* ── Base ── */
+  html {
+    font-size: 9.5pt;
   }
-  figure, blockquote, table,
-  .chapter-callout, .chapter-stat,
-  .chapter-food-card, .chapter-key-takeaways {
-    break-inside: avoid;
-    page-break-inside: avoid;
+  body {
+    background: #ffffff !important;
+    color: #1a2e12 !important;
   }
 
-  /* Remove link underlines for cleaner print */
+  /* ── Hide chrome ── */
+  nav,
+  footer,
+  .report-actions,
+  .print-hide,
+  .rpt-banner,
+  .section-divider,
+  form,
+  button,
+  input {
+    display: none !important;
+  }
+
+  /* ── Remove link styles ── */
   a {
     text-decoration: none !important;
     color: inherit !important;
   }
 
-  /* Remove shadows and transitions */
-  * {
-    box-shadow: none !important;
-    transition: none !important;
+  /* ── Remove sticky/fixed positioning ── */
+  .sticky,
+  .fixed,
+  [class*="sticky"],
+  [class*="fixed"] {
+    position: static !important;
   }
 
-  /* Full-book page breaks */
+  /* ── Remove blur/filter effects (print-unfriendly) ── */
+  [style*="filter: blur"],
+  [style*="blur("] {
+    filter: none !important;
+    opacity: 0 !important;
+  }
+
+  /* ══════════════════════════════════════════════
+     HERO — full cover page, dark background
+  ══════════════════════════════════════════════ */
+  .rpt-hero {
+    break-after: page !important;
+    padding: 2.5cm 2cm !important;
+    background: #1a2e12 !important;
+    min-height: 0 !important;
+  }
+  /* Preserve white text inside dark hero */
+  .rpt-hero * {
+    color: inherit !important;
+  }
+  /* Score ring container — keep together */
+  .rpt-hero svg {
+    break-inside: avoid !important;
+  }
+  /* Hero cover card — constrain image */
+  .rpt-hero .aspect-square {
+    max-height: 8cm !important;
+    max-width: 8cm !important;
+  }
+  /* Scale hero heading appropriately */
+  .rpt-hero h1 {
+    font-size: 32pt !important;
+    line-height: 1.2 !important;
+  }
+  /* Identity bar at top of hero */
+  .rpt-hero > div:first-child {
+    padding-bottom: 0.5cm !important;
+    margin-bottom: 0.8cm !important;
+  }
+
+  /* ══════════════════════════════════════════════
+     DARK SECTIONS (quote band)
+  ══════════════════════════════════════════════ */
+  .rpt-quote {
+    background: #1a2e12 !important;
+    padding: 1.5cm 2cm !important;
+    break-inside: avoid !important;
+  }
+  .rpt-quote * {
+    color: inherit !important;
+  }
+
+  /* ══════════════════════════════════════════════
+     SECTION PAGE BREAKS
+  ══════════════════════════════════════════════ */
+  .rpt-foods,
+  .rpt-roadmap,
+  .rpt-final {
+    break-before: page !important;
+  }
+
+  /* ══════════════════════════════════════════════
+     SECTION PADDING — tighten for print
+  ══════════════════════════════════════════════ */
+  section {
+    padding-top: 1.2cm !important;
+    padding-bottom: 1.2cm !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* ══════════════════════════════════════════════
+     HEADINGS — don't orphan
+  ══════════════════════════════════════════════ */
+  h1, h2, h3, h4 {
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
+  h2 { font-size: 18pt !important; }
+  h3 { font-size: 13pt !important; }
+
+  /* ══════════════════════════════════════════════
+     FOOD CARDS — each card stays intact
+  ══════════════════════════════════════════════ */
+  .rpt-food-card {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    margin-bottom: 0.6cm !important;
+  }
+  /* Food card: always show as 2-col side-by-side */
+  .rpt-food-card .grid {
+    grid-template-columns: 160px 1fr !important;
+  }
+  /* Identity panel left side */
+  .rpt-food-card .grid > div:first-child {
+    border-right: 1px solid #e5e7eb !important;
+    border-bottom: none !important;
+  }
+
+  /* ══════════════════════════════════════════════
+     WEEK CARDS — keep compact, 2-col in print
+  ══════════════════════════════════════════════ */
+  .rpt-roadmap .grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .rpt-week-card {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* ══════════════════════════════════════════════
+     THREE BIOTICS — prevent pillar splitting
+  ══════════════════════════════════════════════ */
+  .rpt-biotics .grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5cm !important;
+  }
+
+  /* ══════════════════════════════════════════════
+     GENERAL CARD PROTECTION
+  ══════════════════════════════════════════════ */
+  [class*="rounded-3xl"],
+  [class*="rounded-2xl"],
+  figure,
+  blockquote,
+  table {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* ══════════════════════════════════════════════
+     IMAGES
+  ══════════════════════════════════════════════ */
+  img {
+    max-width: 100% !important;
+    break-inside: avoid !important;
+  }
+
+  /* ══════════════════════════════════════════════
+     SVG (score rings, charts)
+  ══════════════════════════════════════════════ */
+  svg {
+    break-inside: avoid !important;
+    max-height: 6cm !important;
+  }
+
+  /* ══════════════════════════════════════════════
+     SHOPPING LIST
+  ══════════════════════════════════════════════ */
+  .rpt-foods [class*="space-y"] > div {
+    break-inside: avoid !important;
+  }
+
+  /* ══════════════════════════════════════════════
+     FINAL THOUGHTS — commitments + retest
+  ══════════════════════════════════════════════ */
+  .rpt-final .space-y-3 > div {
+    break-inside: avoid !important;
+  }
+  /* CTA strip: hide in print (sample report only) */
+  .brand-gradient.overflow-hidden.rounded-3xl {
+    display: none !important;
+  }
+
+  /* ══════════════════════════════════════════════
+     SCORE PROJECTION CARD
+  ══════════════════════════════════════════════ */
+  [class*="score-projection"],
+  .rpt-projection {
+    break-inside: avoid !important;
+  }
+
+  /* ══════════════════════════════════════════════
+     PRINT UTILITIES
+  ══════════════════════════════════════════════ */
   .print-chapter-start {
-    break-before: page;
-    page-break-before: always;
+    break-before: page !important;
+    page-break-before: always !important;
   }
   .print-page-break {
-    break-after: page;
-    page-break-after: always;
+    break-after: page !important;
+    page-break-after: always !important;
   }
+
 }
 
 /* ── Page transitions ──────────────────────────────────────────────── */

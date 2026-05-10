@@ -1,5 +1,5 @@
 "use client"
-// v6
+// v7
 import Link from "next/link"
 import Image from "next/image"
 import { Check, ArrowRight, TrendingUp, Download, Mail, Loader2, CheckCircle2 } from "lucide-react"
@@ -413,7 +413,7 @@ export function DemoReport({ data }: { data: DemoReportData }) {
 
       {/* ── DEMO BANNER ── */}
       <div
-        className="sticky top-0 z-40 px-6 py-3 text-center text-sm font-medium text-white"
+        className="rpt-banner sticky top-0 z-40 px-6 py-3 text-center text-sm font-medium text-white"
         style={{ background: "var(--icon-teal)" }}
       >
         📋 This is a sample report.{" "}
@@ -428,7 +428,7 @@ export function DemoReport({ data }: { data: DemoReportData }) {
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* ── HERO — premium dark cover ── */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <section style={{ background: "var(--foreground)" }}>
+      <section className="rpt-hero" style={{ background: "var(--foreground)" }}>
 
         {/* Report identity bar */}
         <div
@@ -765,7 +765,7 @@ export function DemoReport({ data }: { data: DemoReportData }) {
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* ── PILLAR SCORES + RADAR CHART ── */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <section className="bg-background px-6 py-16 md:py-20">
+      <section className="rpt-biotics bg-background px-6 py-16 md:py-20">
         <div className="mx-auto max-w-[1000px]">
           <div className="mb-12 text-center">
             <SectionLabel label="Your Three Biotics" accent={data.theme.accent} centered />
@@ -1190,7 +1190,7 @@ export function DemoReport({ data }: { data: DemoReportData }) {
       </div>
 
       {/* ── PULL QUOTE — dark band ── */}
-      <section className="px-6 py-16" style={{ background: "var(--foreground)" }}>
+      <section className="rpt-quote px-6 py-16" style={{ background: "var(--foreground)" }}>
         <div className="mx-auto max-w-[860px] text-center">
           <div className="mx-auto mb-6 font-serif text-6xl leading-none text-white opacity-20">
             &ldquo;
@@ -1431,7 +1431,7 @@ export function DemoReport({ data }: { data: DemoReportData }) {
       <div className="section-divider" />
 
       {/* ── 7-DAY PLAN ── */}
-      <section className="bg-background px-6 py-16">
+      <section className="rpt-plan bg-background px-6 py-16">
         <div className="mx-auto max-w-[860px]">
           <SectionLabel label="Your Starter Plan" accent={data.theme.accent} />
           <h2 className="mb-2 font-serif text-2xl font-bold text-foreground sm:text-3xl">
@@ -1477,10 +1477,10 @@ export function DemoReport({ data }: { data: DemoReportData }) {
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* ── 30-DAY ROADMAP — 4-column visual grid ── */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <section className="bg-background px-6 py-16">
+      <section className="rpt-roadmap bg-background px-6 py-16">
         <div className="mx-auto max-w-[1000px]">
           <SectionLabel label="30-Day Roadmap" accent={data.theme.accent} />
-          <h2 className="mb-2 font-serif text-2xl font-bold text-foreground sm:text-3xl">
+          <h2 className="mb-2 font-serif text-2xl font-bold text-foreground sm:text-3xl rpt-roadmap-heading">
             Your month of change
           </h2>
           <p className="mb-10 text-base text-muted-foreground">
@@ -1491,7 +1491,7 @@ export function DemoReport({ data }: { data: DemoReportData }) {
             {data.roadmap.map((week, i) => (
               <div
                 key={week.week}
-                className="overflow-hidden rounded-3xl border bg-background shadow-sm"
+                className="rpt-week-card overflow-hidden rounded-3xl border bg-background shadow-sm"
               >
                 {/* Week header */}
                 <div
@@ -1544,10 +1544,10 @@ export function DemoReport({ data }: { data: DemoReportData }) {
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* ── FOOD PRESCRIPTION — enhanced magazine layout ── */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <section className="bg-background px-6 py-16">
+      <section className="rpt-foods bg-background px-6 py-16">
         <div className="mx-auto max-w-[900px]">
           <SectionLabel label="Food Prescription" accent={data.theme.accent} />
-          <h2 className="mb-2 font-serif text-2xl font-bold text-foreground sm:text-3xl">
+          <h2 className="mb-2 font-serif text-2xl font-bold text-foreground sm:text-3xl rpt-foods-heading">
             5 foods chosen specifically for you
           </h2>
           <p className="mb-8 text-base text-muted-foreground">
@@ -1584,7 +1584,7 @@ export function DemoReport({ data }: { data: DemoReportData }) {
               return (
                 <div
                   key={food.food}
-                  className="overflow-hidden rounded-2xl border bg-background shadow-sm"
+                  className="rpt-food-card overflow-hidden rounded-2xl border bg-background shadow-sm"
                 >
                   <div className="grid grid-cols-1 md:grid-cols-[200px_1fr]">
                     {/* Left — identity panel */}
@@ -1917,7 +1917,7 @@ export function DemoReport({ data }: { data: DemoReportData }) {
       <div className="section-divider" />
 
       {/* ── CLOSING + CTA ── */}
-      <section className="bg-background px-6 py-16">
+      <section className="rpt-final bg-background px-6 py-16">
         <div className="mx-auto max-w-[900px]">
 
           <SectionLabel label="Final Thoughts" accent={data.theme.accent} centered />
