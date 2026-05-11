@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css">
+<style>body{margin:0;padding:24px;background:#fff;font-family:var(--font-sans)}
+.row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.c{text-align:center}
+.card{background:#fff;width:100%;height:80px;border-radius:16px;border:1px solid var(--border)}
+.lbl{margin-top:8px;font-family:var(--font-mono);font-size:10px;color:var(--muted-foreground)}
+.nm{font-size:11px;font-weight:600}
+.title{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-foreground);margin-bottom:14px}
+</style></head><body>
+<div class="title">Shadow Elevation System</div>
+<div class="row">
+  <div class="c"><div class="card" style="box-shadow:var(--shadow-sm)"></div><div class="nm">sm</div><div class="lbl">inputs</div></div>
+  <div class="c"><div class="card" style="box-shadow:var(--shadow)"></div><div class="nm">base</div><div class="lbl">card rest</div></div>
+  <div class="c"><div class="card" style="box-shadow:var(--shadow-md)"></div><div class="nm">md</div><div class="lbl">card hover</div></div>
+  <div class="c"><div class="card" style="box-shadow:var(--shadow-lg)"></div><div class="nm">lg</div><div class="lbl">raised</div></div>
+  <div class="c"><div class="card" style="box-shadow:var(--shadow-green-glow)"></div><div class="nm">green-glow</div><div class="lbl">on CTAs</div></div>
+</div>
+</body></html>

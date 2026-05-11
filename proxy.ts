@@ -1,6 +1,20 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
+// Paths that start with /account but are public (no auth required)
+const PUBLIC_ACCOUNT_PREFIXES = [
+  "/account/signin",
+  "/account-you",   // public demo dashboard
+]
+
+function isProtectedAccountRoute(pathname: string): boolean {
+  if (!pathname.startsWith("/account")) return false
+  for (const prefix of PUBLIC_ACCOUNT_PREFIXES) {
+    if (pathname === prefix || pathname.startsWith(prefix + "/")) return false
+  }
+  return true
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -8,10 +22,7 @@ export async function proxy(request: NextRequest) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    if (
-      pathname.startsWith("/account") &&
-      !pathname.startsWith("/account/signin")
-    ) {
+    if (isProtectedAccountRoute(pathname)) {
       const url = request.nextUrl.clone()
       url.pathname = "/assessment"
       url.searchParams.set("signin", "1")
@@ -39,11 +50,7 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (
-    pathname.startsWith("/account") &&
-    !pathname.startsWith("/account/signin") &&
-    !user
-  ) {
+  if (isProtectedAccountRoute(pathname) && !user) {
     const url = request.nextUrl.clone()
     url.pathname = "/assessment"
     url.searchParams.set("signin", "1")

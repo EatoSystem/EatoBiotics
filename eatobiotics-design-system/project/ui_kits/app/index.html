@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EatoBiotics — App UI Kit</title>
+<link rel="stylesheet" href="../../colors_and_type.css">
+<style>
+body{margin:0;font-family:var(--font-sans);color:var(--foreground);background:linear-gradient(180deg,#F7FAF5,#fff);min-height:100vh}
+.label{text-align:center;padding:28px 0 0;font-size:12px;color:#737373;font-weight:700;letter-spacing:.15em;text-transform:uppercase}
+.label b{color:#0A0A0A;font-family:Lora,serif;font-weight:600;font-size:18px;display:block;margin-top:4px;letter-spacing:0;text-transform:none}
+.toolbar{position:fixed;top:16px;right:16px;background:#fff;border:1px solid #E5E5E5;border-radius:12px;padding:6px;display:flex;gap:4px;box-shadow:0 6px 18px -8px rgba(0,0,0,.12);z-index:50}
+.toolbar button{padding:6px 10px;border:none;background:transparent;font-size:11px;font-weight:600;color:#737373;border-radius:8px;cursor:pointer;font-family:inherit}
+.toolbar button.active{background:#0A0A0A;color:#fff}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="Components.jsx"></script>
+<script type="text/babel">
+const { useState } = React;
+function App() {
+  const [screen, setScreen] = useState('home');
+  return (
+    <div>
+      <div className="toolbar">
+        {['home','log','score'].map(s =>
+          <button key={s} className={screen===s?'active':''} onClick={()=>setScreen(s)}>{s}</button>)}
+      </div>
+      <div className="label">EatoBiotics iOS<b>Your food system, in your pocket</b></div>
+      <div data-screen-label={`0${screen==='home'?1:screen==='log'?2:3} ${screen}`}>
+        <Phone>
+          {screen === 'home' && <HomeScreen onTab={setScreen}/>}
+          {screen === 'log' && <LogMealScreen onBack={()=>setScreen('home')} onScore={()=>setScreen('score')}/>}
+          {screen === 'score' && <ScoreScreen onBack={()=>setScreen('home')}/>}
+          <TabBar tab={screen} onTab={setScreen}/>
+        </Phone>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

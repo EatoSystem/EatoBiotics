@@ -1,0 +1,1790 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>EatoBiotics — Gut Intelligence Report</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="stylesheet" href="report.css" />
+</head>
+<body>
+
+<!-- Shared SVG defs for brand gradient strokes -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#A8E063"/>
+      <stop offset="25%"  stop-color="#4CB648"/>
+      <stop offset="50%"  stop-color="#2DAA6E"/>
+      <stop offset="75%"  stop-color="#F5C518"/>
+      <stop offset="100%" stop-color="#F5A623"/>
+    </linearGradient>
+    <linearGradient id="brandGradH" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#A8E063"/>
+      <stop offset="25%"  stop-color="#4CB648"/>
+      <stop offset="50%"  stop-color="#2DAA6E"/>
+      <stop offset="75%"  stop-color="#F5C518"/>
+      <stop offset="100%" stop-color="#F5A623"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<main class="report">
+
+  <!-- ════════════════════════════════════════════════════════════
+       PAGE 1 — COVER
+       ════════════════════════════════════════════════════════════ -->
+  <section class="page" data-screen-label="01 Cover">
+    <div class="gradient-bar thick"></div>
+
+    <div style="padding: 18mm 20mm 0; display:flex; justify-content:space-between; align-items:center;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:22px; height:22px; border-radius:50%; background:var(--brand-gradient);"></div>
+        <div style="font-family:var(--font-sans); font-weight:700; font-size:13px; letter-spacing:0.02em; color:var(--foreground);">EatoBiotics</div>
+      </div>
+      <div class="mono" style="font-size:10px; letter-spacing:0.18em; color:var(--muted-foreground); text-transform:uppercase;">Sample · v1.0</div>
+    </div>
+
+    <div style="flex:1; padding: 14mm 20mm 20mm; display:flex; flex-direction:column; justify-content:space-between;">
+
+      <div class="stack-4">
+        <div class="eyebrow">Gut Intelligence Report</div>
+        <h1 class="display" style="max-width: 16ch;">The Food System<br/>Inside <span class="gradient-text">You.</span></h1>
+        <p class="lead" style="max-width: 56ch; font-size:15px;">A personalised reading of your gut food system across three biological pillars — Prebiotics, Probiotics, Postbiotics — with a focused 30-day plan to close your single biggest gap.</p>
+      </div>
+
+      <!-- Big score block -->
+      <div style="display:grid; grid-template-columns: 240px 1fr; gap: 28px; align-items:center; padding: 20px 0;">
+        <div class="score-arc">
+          <svg viewBox="0 0 220 220">
+            <circle class="ring-bg" cx="110" cy="110" r="92"/>
+            <circle class="ring-fg" cx="110" cy="110" r="92"
+              stroke-dasharray="578"
+              stroke-dashoffset="185"
+              style="stroke:url(#brandGrad)"/>
+          </svg>
+          <div class="score-readout">
+            <div class="num">68</div>
+            <div class="denom">/ 100</div>
+            <div class="label">Emerging Balance</div>
+          </div>
+        </div>
+
+        <div class="stack-3">
+          <div class="badge solid" style="align-self:flex-start;">Top third of respondents</div>
+          <h3 class="subtitle" style="font-size:20px; margin-top:14px;">Your food system is further along than most.</h3>
+          <p class="body">A score of 68 places you in the top third of people who take this assessment. Your <span class="semi">Prebiotics</span> and <span class="semi">Postbiotics</span> are particularly strong. The opportunity ahead is focused and specific: closing the <span class="semi">Probiotics</span> gap will lift everything else.</p>
+
+          <div class="stack-2" style="margin-top:6px;">
+            <div class="pillar-row">
+              <div class="name"><span class="biotic-pill lime"></span> Prebiotics</div>
+              <div class="track"><div class="fill pre-fill" style="width:72%"></div></div>
+              <div class="val">72</div>
+            </div>
+            <div class="pillar-row">
+              <div class="name"><span class="biotic-pill teal"></span> Probiotics</div>
+              <div class="track"><div class="fill pro-fill" style="width:45%"></div></div>
+              <div class="val">45</div>
+            </div>
+            <div class="pillar-row">
+              <div class="name"><span class="biotic-pill orange"></span> Postbiotics</div>
+              <div class="track"><div class="fill pos-fill" style="width:78%"></div></div>
+              <div class="val">78</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Identity strip -->
+      <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+        <div style="padding:14px 14px 14px 0;">
+          <div class="eyebrow muted" style="font-size:9px;">Prepared for</div>
+          <div class="semi" style="font-size:13px; margin-top:4px;">Sample Reader</div>
+        </div>
+        <div style="padding:14px; border-left:1px solid var(--border);">
+          <div class="eyebrow muted" style="font-size:9px;">Report date</div>
+          <div class="semi" style="font-size:13px; margin-top:4px;">May 2026</div>
+        </div>
+        <div style="padding:14px; border-left:1px solid var(--border);">
+          <div class="eyebrow muted" style="font-size:9px;">Assessment</div>
+          <div class="semi" style="font-size:13px; margin-top:4px;">15-question · deep</div>
+        </div>
+        <div style="padding:14px; border-left:1px solid var(--border);">
+          <div class="eyebrow muted" style="font-size:9px;">Profile</div>
+          <div class="semi" style="font-size:13px; margin-top:4px;">Emerging Balance</div>
+        </div>
+      </div>
+
+      <div class="mono" style="font-size:10px; letter-spacing:0.18em; color:var(--muted-foreground); text-transform:uppercase;">
+        eatobiotics.com&nbsp;&nbsp;·&nbsp;&nbsp;Build the food system inside you — and help build the food system around you
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════
+       PAGE 2 — CONTENTS
+       ════════════════════════════════════════════════════════════ -->
+  <section class="page" data-screen-label="02 Contents">
+    <div class="page-header">
+      <div class="left"><div class="brand-dot"></div><span>EatoBiotics · Gut Intelligence</span></div>
+      <div>Contents</div>
+    </div>
+    <div class="page-pad">
+      <div class="eyebrow">Inside this report</div>
+      <h2 class="title" style="margin-top:8px;">A guided read of your<br/>gut food system.</h2>
+      <p class="lead" style="margin-top:14px; max-width: 60ch;">Eighteen pages, three biotics, one focused 30-day plan. Read it once front-to-back, then keep it on hand as your weekly reference.</p>
+
+      <div style="margin-top:28px; display:grid; grid-template-columns: 1fr 1fr; gap: 0 32px;">
+        <ol style="list-style:none; padding:0; margin:0;" class="contents-col"></ol>
+        <ol style="list-style:none; padding:0; margin:0;" class="contents-col"></ol>
+      </div>
+
+      <div style="margin-top:auto; display:grid; grid-template-columns: repeat(3, 1fr); gap:14px;">
+        <div class="card soft">
+          <div class="eyebrow" style="color:var(--icon-green);">01 · Where you are</div>
+          <div class="body-sm" style="margin-top:6px; color:var(--foreground);">Your score, your three pillars, and what they reveal about how you feel day-to-day.</div>
+        </div>
+        <div class="card soft">
+          <div class="eyebrow" style="color:var(--icon-teal);">02 · Why it matters</div>
+          <div class="body-sm" style="margin-top:6px; color:var(--foreground);">The biology behind the numbers — and the symptoms most likely linked to your profile.</div>
+        </div>
+        <div class="card soft">
+          <div class="eyebrow" style="color:var(--icon-orange);">03 · What to do</div>
+          <div class="body-sm" style="margin-top:6px; color:var(--foreground);">A 7-day starter, a 30-day roadmap, 5 priority foods and a complete weekly shop.</div>
+        </div>
+      </div>
+    </div>
+    <div class="page-footer">
+      <span>EatoBiotics · Sample report</span>
+      <span class="page-num">02</span>
+    </div>
+
+    <script>
+      // Build contents list programmatically so numbers are correct
+      const toc = [
+        ['01', 'Your score at a glance',         '01'],
+        ['02', 'Contents',                       '02'],
+        ['03', 'Your gut profile',               '03'],
+        ['04', 'Your three biotics',             '04'],
+        ['05', 'What your score means',          '05'],
+        ['06', 'Daily life — energy, digestion, sleep', '06'],
+        ['07', 'Symptom map',                    '07'],
+        ['08', 'Your 30-day projection',         '08'],
+        ['09', 'Strengths & opportunities',      '09'],
+        ['10', 'Your key insight',               '10'],
+        ['11', 'Your food system in full',       '11'],
+        ['12', 'Your change timeline',           '12'],
+        ['13', 'Your 7-day starter plan',        '13'],
+        ['14', 'Your 30-day roadmap',            '14'],
+        ['15', 'Your 5 priority foods',          '15'],
+        ['16', 'Weekly gut-health shop',         '16'],
+        ['17', 'Power combinations',             '17'],
+        ['18', 'Where you go from here',         '18'],
+      ];
+      const cols = document.querySelectorAll('.contents-col');
+      const half = Math.ceil(toc.length / 2);
+      toc.forEach((row, i) => {
+        const col = cols[i < half ? 0 : 1];
+        const li = document.createElement('li');
+        li.style.cssText = 'display:grid; grid-template-columns: 28px 1fr auto; gap:10px; align-items:baseline; padding: 11px 0; border-bottom:1px solid var(--border);';
+        li.innerHTML = `
+          <span class="mono" style="font-size:10px; color:var(--muted-foreground); letter-spacing:0.06em;">${row[0]}</span>
+          <span style="font-family:var(--font-serif); font-weight:600; font-size:14px; color:var(--foreground);">${row[1]}</span>
+          <span class="mono" style="font-size:10px; color:var(--muted-foreground);">p.${row[2]}</span>
+        `;
+        col.appendChild(li);
+      });
+    </script>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════
+       PAGE 3 — YOUR GUT PROFILE
+       ════════════════════════════════════════════════════════════ -->
+  <section class="page" data-screen-label="03 Your gut profile">
+    <div class="page-header">
+      <div class="left"><div class="brand-dot"></div><span>Section 01 · Where you are</span></div>
+      <div>Your gut profile</div>
+    </div>
+    <div class="page-pad">
+      <div class="eyebrow">Your profile</div>
+      <h2 class="title" style="margin-top:8px;">Emerging Balance.</h2>
+      <p class="lead" style="margin-top:10px; max-width: 60ch;">Genuine positive habits are forming, but key biological inputs are still inconsistent. The foundation exists — it just needs specific additions.</p>
+
+      <!-- Tier ladder -->
+      <div style="margin-top:24px;">
+        <div class="eyebrow muted" style="font-size:9px;">Your trajectory</div>
+        <div style="margin-top:10px; position:relative; padding: 8px 0 24px;">
+          <div style="height:8px; background:rgba(26,46,18,0.06); border-radius:999px; position:relative; overflow:hidden;">
+            <div style="position:absolute; inset:0; width:68%; background:var(--brand-gradient-h); border-radius:999px;"></div>
+          </div>
+          <!-- Tick marks -->
+          <div style="position:relative; margin-top:12px;">
+            <div style="display:grid; grid-template-columns: repeat(5, 1fr); position:relative;">
+              <div><div class="mono" style="font-size:10px; color:var(--muted-foreground);">0</div><div class="body-sm" style="margin-top:2px;">Start</div></div>
+              <div><div class="mono" style="font-size:10px; color:var(--muted-foreground);">25</div><div class="body-sm" style="margin-top:2px;">Building</div></div>
+              <div><div class="mono" style="font-size:10px; color:var(--muted-foreground);">50</div><div class="body-sm" style="margin-top:2px;">Emerging</div></div>
+              <div><div class="mono" style="font-size:10px; color:var(--muted-foreground);">75</div><div class="body-sm" style="margin-top:2px;">Strong</div></div>
+              <div><div class="mono" style="font-size:10px; color:var(--muted-foreground);">100</div><div class="body-sm" style="margin-top:2px;">Optimal</div></div>
+            </div>
+            <!-- "You" marker -->
+            <div style="position:absolute; left:68%; transform:translateX(-50%); top:-46px; display:flex; flex-direction:column; align-items:center;">
+              <div class="badge solid" style="white-space:nowrap;">You · 68</div>
+              <div style="width:2px; height:14px; background:var(--foreground); margin-top:4px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Current state grid -->
+      <div style="margin-top:22px;">
+        <div class="eyebrow muted" style="font-size:9px;">What's working — and what isn't</div>
+        <div class="grid-2" style="margin-top:10px;">
+          <div class="card">
+            <div class="badge lime">Working</div>
+            <h4 class="minor" style="margin-top:10px;">Some plant food variety</h4>
+            <p class="body-sm" style="margin-top:6px; color:var(--foreground); opacity:0.78;">A reasonable range of vegetables, legumes, and whole grains across your week.</p>
+          </div>
+          <div class="card">
+            <div class="badge orange">Inconsistent</div>
+            <h4 class="minor" style="margin-top:10px;">Irregular fermented food intake</h4>
+            <p class="body-sm" style="margin-top:6px; color:var(--foreground); opacity:0.78;">Living foods appear occasionally — not as a daily, deliberate habit.</p>
+          </div>
+          <div class="card">
+            <div class="badge lime">Working</div>
+            <h4 class="minor" style="margin-top:10px;">Partial gut rhythm established</h4>
+            <p class="body-sm" style="margin-top:6px; color:var(--foreground); opacity:0.78;">Meal timing follows a workable pattern most days — circadian biology is being supported.</p>
+          </div>
+          <div class="card">
+            <div class="badge orange">Inconsistent</div>
+            <h4 class="minor" style="margin-top:10px;">Specific gaps to close</h4>
+            <p class="body-sm" style="margin-top:6px; color:var(--foreground); opacity:0.78;">Probiotic variety, post-meal rest, and ultra-processed food frequency all need attention.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Next tier teaser -->
+      <div style="margin-top:auto;">
+        <div class="card lifted" style="padding:18px 20px; border-left:4px solid var(--icon-green);">
+          <div class="row-between" style="gap:20px;">
+            <div>
+              <div class="eyebrow" style="font-size:9px;">Next level</div>
+              <h4 class="minor" style="margin-top:6px; font-size:18px;">Strong Foundation.</h4>
+            </div>
+            <div class="mono" style="font-size:11px; color:var(--muted-foreground); letter-spacing:0.06em;">68 → 83 in 30 days</div>
+          </div>
+          <p class="body-sm" style="margin-top:8px; color:var(--foreground); opacity:0.82;">A well-functioning gut with real momentum. The structural habits are in place and the microbiome is being actively supported. Your 30-day plan is designed to close the gap between where you are now and this next tier.</p>
+        </div>
+      </div>
+    </div>
+    <div class="page-footer">
+      <span>Section 01 · Where you are</span>
+      <span class="page-num">03</span>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════
+       PAGE 4 — THE THREE BIOTICS
+       ════════════════════════════════════════════════════════════ -->
+  <section class="page" data-screen-label="04 Three biotics">
+    <div class="page-header">
+      <div class="left"><div class="brand-dot"></div><span>Section 01 · Where you are</span></div>
+      <div>Your three biotics</div>
+    </div>
+    <div class="page-pad">
+      <div class="eyebrow">Your three biotics</div>
+      <h2 class="title" style="margin-top:8px;">Prebiotics · Probiotics · <span class="gradient-text">Postbiotics.</span></h2>
+      <p class="lead" style="margin-top:10px; max-width: 60ch;">The three biological pillars of your gut food system — each scored independently from your assessment answers.</p>
+
+      <!-- Three big pillar cards -->
+      <div class="grid-3" style="margin-top:24px;">
+        <!-- Prebiotic -->
+        <div class="card lifted" style="padding:0; overflow:hidden;">
+          <div style="height:6px; background: linear-gradient(90deg, var(--icon-lime), var(--icon-green));"></div>
+          <div style="padding:18px;">
+            <div class="row-between">
+              <div class="eyebrow" style="color:#4A7E1A; font-size:9px;">Prebiotic · Feed</div>
+              <div class="badge lime" style="padding:2px 8px;">Strong</div>
+            </div>
+            <div style="display:flex; align-items:baseline; gap:8px; margin-top:10px;">
+              <div style="font-family:var(--font-serif); font-weight:700; font-size:54px; line-height:1; letter-spacing:-0.04em;">72</div>
+              <div class="mono" style="font-size:10px; color:var(--muted-foreground);">/100</div>
+            </div>
+            <p class="body-sm" style="margin-top:10px; color:var(--foreground); opacity:0.82;">Your plant diversity and fibre intake are solid — a good range of vegetables, legumes, and whole grains. This is the foundation your microbiome feeds on.</p>
+            <div class="divider-thin"></div>
+            <div class="row-between">
+              <div class="body-sm">Role</div>
+              <div class="semi" style="font-size:11px;">Feeds the bacteria</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Probiotic -->
+        <div class="card lifted" style="padding:0; overflow:hidden; position:relative;">
+          <div style="height:6px; background: linear-gradient(90deg, var(--icon-green), var(--icon-teal));"></div>
+          <div style="position:absolute; top:14px; right:14px;">
+            <div class="badge orange" style="padding:2px 8px;">Your gap</div>
+          </div>
+          <div style="padding:18px;">
+            <div class="row-between">
+              <div class="eyebrow" style="color:#0F7345; font-size:9px;">Probiotic · Add</div>
+            </div>
+            <div style="display:flex; align-items:baseline; gap:8px; margin-top:10px;">
+              <div style="font-family:var(--font-serif); font-weight:700; font-size:54px; line-height:1; letter-spacing:-0.04em;">45</div>
+              <div class="mono" style="font-size:10px; color:var(--muted-foreground);">/100</div>
+            </div>
+            <p class="body-sm" style="margin-top:10px; color:var(--foreground); opacity:0.82;">Your intake of fermented and probiotic-rich foods is your biggest gap. Kefir, yoghurt, kimchi, and miso appear rarely — the living foods that introduce bacterial diversity.</p>
+            <div class="divider-thin"></div>
+            <div class="row-between">
+              <div class="body-sm">Role</div>
+              <div class="semi" style="font-size:11px;">Adds bacterial diversity</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Postbiotic -->
+        <div class="card lifted" style="padding:0; overflow:hidden;">
+          <div style="height:6px; background: linear-gradient(90deg, var(--icon-yellow), var(--icon-orange));"></div>
+          <div style="padding:18px;">
+            <div class="row-between">
+              <div class="eyebrow" style="color:#C57712; font-size:9px;">Postbiotic · Produce</div>
+              <div class="badge amber" style="padding:2px 8px;">Strong</div>
+            </div>
+            <div style="display:flex; align-items:baseline; gap:8px; margin-top:10px;">
+              <div style="font-family:var(--font-serif); font-weight:700; font-size:54px; line-height:1; letter-spacing:-0.04em;">78</div>
+              <div class="mono" style="font-size:10px; color:var(--muted-foreground);">/100</div>
+            </div>
+            <p class="body-sm" style="margin-top:10px; color:var(--foreground); opacity:0.82;">Your gut shows good recovery patterns. Meal timing is relatively consistent and you don't report significant digestive discomfort — signs of a healthy lining and rhythm.</p>
+            <div class="divider-thin"></div>
+            <div class="row-between">
+              <div class="body-sm">Role</div>
+              <div class="semi" style="font-size:11px;">Produces compounds</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mini explainer band -->
+      <div style="margin-top:24px;" class="card soft">
+        <div class="row" style="gap:20px;">
+          <div style="flex:1;">
+            <div class="eyebrow muted" style="font-size:9px;">How they fit together</div>
+            <h4 class="minor" style="margin-top:6px;">Feed. Add. Produce.</h4>
+          </div>
+          <div style="flex:2;">
+            <p class="body-sm" style="color:var(--foreground);">Prebiotics feed the bacteria already living in your gut. Probiotics add new strains. Postbiotics are the beneficial compounds — short-chain fatty acids, vitamins, peptides — those bacteria then produce. A balanced system needs all three.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pattern paragraph -->
+      <div style="margin-top:18px;">
+        <div class="eyebrow muted" style="font-size:9px;">Your pattern in one line</div>
+        <h3 class="subtitle" style="margin-top:8px; max-width: 50ch;">A well-fed garden — but the seeds haven't been planted yet.</h3>
+      </div>
+    </div>
+    <div class="page-footer">
+      <span>Section 01 · Where you are</span>
+      <span class="page-num">04</span>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════
+       PAGE 5 — WHAT YOUR SCORE MEANS
+       ════════════════════════════════════════════════════════════ -->
+  <section class="page" data-screen-label="05 Your pattern">
+    <div class="page-header">
+      <div class="left"><div class="brand-dot"></div><span>Section 01 · Where you are</span></div>
+      <div>Your pattern</div>
+    </div>
+    <div class="page-pad">
+      <div class="eyebrow">Your pattern</div>
+      <h2 class="title" style="margin-top:8px;">What your score means.</h2>
+
+      <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap: 24px; margin-top:22px;">
+        <div class="stack-4">
+          <p class="body" style="font-size:13px; line-height:1.7;">A score of <span class="semi">68</span> reflects a gut system that functions reasonably well day-to-day but is operating below its potential. You eat a good variety of plant foods <span class="mono">(Pre 72)</span> and your body shows signs of recovery and rhythm <span class="mono">(Pos 78)</span>, but your intake of fermented and probiotic-rich foods is noticeably low <span class="mono">(Pro 45)</span>.</p>
+
+          <p class="body" style="font-size:13px; line-height:1.7;">This creates a <span class="semi">one-sided system</span> — you're feeding the microbiome but not actively seeding it with the bacterial diversity it needs to thrive. The good news is that Probiotics is the most responsive pillar to targeted dietary change. Small, consistent additions can produce measurable shifts within <span class="semi">2–4 weeks</span>.</p>
+
+          <div class="card soft" style="border-left:3px solid var(--icon-green);">
+            <div class="eyebrow" style="font-size:9px;">The garden analogy</div>
+            <p class="body" style="margin-top:6px; font-size:12.5px;">Think of your gut like a garden: you're watering regularly and the soil is in good condition (Prebiotics + Postbiotics), but you haven't been planting seeds (Probiotics). The structure is there — the flora just needs to be populated.</p>
+          </div>
+        </div>
+
+        <!-- Sidebar with system diagram -->
+        <div class="stack-3">
+          <div class="eyebrow muted" style="font-size:9px;">Your system, visualised</div>
+
+          <div class="card" style="padding:18px;">
+            <div style="display:flex; flex-direction:column; gap:14px;">
+
+              <div style="display:grid; grid-template-columns: 60px 1fr; gap:12px; align-items:center;">
+                <div style="height:60px; border-radius:10px; background:linear-gradient(135deg, var(--icon-lime), var(--icon-green)); display:flex; align-items:center; justify-content:center; color:#fff; font-family:var(--font-serif); font-weight:700; font-size:24px;">72</div>
+                <div>
+                  <div class="semi" style="font-size:12px;">Prebiotics</div>
+                  <div class="body-sm" style="font-size:10.5px;">Feeds the bacteria</div>
+                </div>
+              </div>
+
+              <!-- Arrow down -->
+              <div style="display:flex; justify-content:center; opacity:0.5;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+              </div>
+
+              <div style="display:grid; grid-template-columns: 60px 1fr; gap:12px; align-items:center;">
+                <div style="height:60px; border-radius:10px; background:linear-gradient(135deg, var(--icon-green), var(--icon-teal)); display:flex; align-items:center; justify-content:center; color:#fff; font-family:var(--font-serif); font-weight:700; font-size:24px; position:relative;">45
+                  <div style="position:absolute; top:-6px; right:-6px; width:16px; height:16px; border-radius:50%; background:var(--icon-orange); border:2px solid #fff;"></div>
+                </div>
+                <div>
+                  <div class="semi" style="font-size:12px;">Probiotics</div>
+                  <div class="body-sm" style="font-size:10.5px;">Adds diversity — <span style="color:var(--icon-orange); font-weight:600;">your gap</span></div>
+                </div>
+              </div>
+
+              <div style="display:flex; justify-content:center; opacity:0.5;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+              </div>
+
+              <div style="display:grid; grid-template-columns: 60px 1fr; gap:12px; align-items:center;">
+                <div style="height:60px; border-radius:10px; background:linear-gradient(135deg, var(--icon-yellow), var(--icon-orange)); display:flex; align-items:center; justify-content:center; color:#fff; font-family:var(--font-serif); font-weight:700; font-size:24px;">78</div>
+                <div>
+                  <div class="semi" style="font-size:12px;">Postbiotics</div>
+                  <div class="body-sm" style="font-size:10.5px;">Produces compounds</div>
+                </div>
+              </div>
+
+            </div>
+            <div class="divider-thin"></div>
+            <div class="body-sm" style="font-size:10.5px;">A bottleneck at any one pillar limits the output of all three.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Key callout -->
+      <div style="margin-top:auto; padding-top:18px;" class="card dark">
+        <div style="display:grid; grid-template-columns: 90px 1fr; gap:18px; align-items:center;">
+          <div style="font-family:var(--font-serif); font-weight:700; font-size:64px; line-height:1; letter-spacing:-0.04em;" class="gradient-text">2–4</div>
+          <div>
+            <div class="eyebrow white" style="font-size:9px;">Weeks to a measurable shift</div>
+            <div style="font-family:var(--font-serif); font-weight:600; font-size:18px; margin-top:4px; line-height:1.3;">Probiotics is the most responsive pillar to targeted change — the fastest dial to move on your whole food system.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-footer">
+      <span>Section 01 · Where you are</span>
+      <span class="page-num">05</span>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════
+       PAGE 6 — DAILY LIFE
+       ════════════════════════════════════════════════════════════ -->
+  <section class="page" data-screen-label="06 Daily life">
+    <div class="page-header">
+      <div class="left"><div class="brand-dot"></div><span>Section 02 · Why it matters</span></div>
+      <div>Daily life</div>
+    </div>
+    <div class="page-pad">
+      <div class="eyebrow">Daily life</div>
+      <h2 class="title" style="margin-top:8px;">What this means for you, every day.</h2>
+      <p class="lead" style="margin-top:10px; max-width: 60ch;">Your scores translate directly into how you feel, function, and recover — day to day.</p>
+
+      <div class="grid-3" style="margin-top:24px;">
+        <!-- Energy -->
+        <div class="card lifted" style="padding:20px; min-height: 230px; display:flex; flex-direction:column;">
+          <div style="width:42px; height:42px; border-radius:10px; background: rgba(245, 197, 24, 0.14); display:flex; align-items:center; justify-content:center; color:#B0890A;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <h4 class="minor" style="margin-top:14px;">Energy levels.</h4>
+          <p class="body-sm" style="margin-top:8px; color:var(--foreground);">Your mid-afternoon energy dip is directly linked to your Probiotics gap. A low-diversity microbiome produces less butyrate — the short-chain fatty acid that stabilises blood sugar between meals.</p>
+          <div class="divider-thin" style="margin-top:auto;"></div>
+          <div class="row" style="gap:8px;">
+            <span class="badge teal" style="font-size:8.5px;">Pro 45</span>
+            <span class="badge lime" style="font-size:8.5px;">Pre 72</span>
+          </div>
+        </div>
+
+        <!-- Digestion -->
+        <div class="card lifted" style="padding:20px; min-height: 230px; display:flex; flex-direction:column;">
+          <div style="width:42px; height:42px; border-radius:10px; background: rgba(45, 170, 110, 0.12); display:flex; align-items:center; justify-content:center; color:#0F7345;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3c0 2 2 3 2 5s-2 3-2 5 2 3 2 5a3 3 0 0 0 6 0c0-2-2-3-2-5s2-3 2-5-2-3-2-5a3 3 0 0 0-3-3z"/></svg>
+          </div>
+          <h4 class="minor" style="margin-top:14px;">Digestive comfort.</h4>
+          <p class="body-sm" style="margin-top:8px; color:var(--foreground);">Occasional bloating or sluggish digestion after meals is a common signal of an under-seeded gut. Adding fermented foods reduces this noticeably within 2–3 weeks for most people.</p>
+          <div class="divider-thin" style="margin-top:auto;"></div>
+          <div class="row" style="gap:8px;">
+            <span class="badge teal" style="font-size:8.5px;">Pro 45</span>
+            <span class="badge orange" style="font-size:8.5px;">Pos 78</span>
+          </div>
+        </div>
+
+        <!-- Sleep -->
+        <div class="card lifted" style="padding:20px; min-height: 230px; display:flex; flex-direction:column;">
+          <div style="width:42px; height:42px; border-radius:10px; background: rgba(76, 182, 72, 0.12); display:flex; align-items:center; justify-content:center; color:var(--icon-green);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </div>
+          <h4 class="minor" style="margin-top:14px;">Sleep quality.</h4>
+          <p class="body-sm" style="margin-top:8px; color:var(--foreground);">Your gut produces 90% of your body's serotonin — the precursor to melatonin. A stronger Probiotics score means better serotonin production, better melatonin, and deeper sleep.</p>
+          <div class="divider-thin" style="margin-top:auto;"></div>
+          <div class="row" style="gap:8px;">
+            <span class="badge teal" style="font-size:8.5px;">Pro 45</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Big stat callout -->
+      <div style="margin-top:24px;" class="card lifted">
+        <div style="display:grid; grid-template-columns: 1.1fr 2fr; gap: 28px; align-items:center; padding: 10px 12px;">
+          <div>
+            <div style="font-family:var(--font-serif); font-weight:700; font-size:96px; line-height:1; letter-spacing:-0.04em;" class="gradient-text">90%</div>
+            <div class="eyebrow" style="font-size:9px; margin-top:6px;">Of your serotonin is made in your gut</div>
+          </div>
+          <div>
+            <h3 class="subtitle" style="font-size:20px;">Your gut writes more of your mood than your brain does.</h3>
+            <p class="body-sm" style="margin-top:8px; font-size:11.5px; color:var(--foreground);">The bacteria in your gut synthesise the neurotransmitters that regulate mood, sleep, and mental clarity. Your Probiotics score is the single strongest dietary lever for this production — which is why it shows up in three different parts of your daily experience.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-footer">
+      <span>Section 02 · Why it matters</span>
+      <span class="page-num">06</span>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════
+       PAGE 7 — SYMPTOM MAP
+       ════════════════════════════════════════════════════════════ -->
+  <section class="page" data-screen-label="07 Symptom map">
+    <div class="page-header">
+      <div class="left"><div class="brand-dot"></div><span>Section 02 · Why it matters</span></div>
+      <div>Symptom map</div>
+    </div>
+    <div class="page-pad">
+      <div class="eyebrow">Symptom map</div>
+      <h2 class="title" style="margin-top:8px;">How your scores connect to how you feel.</h2>
+      <p class="lead" style="margin-top:10px; max-width: 62ch;">Each symptom below is directly linked to one or more of your pillar scores. Highlighted symptoms are most likely affecting you based on your results.</p>
+
+      <div class="grid-2" style="margin-top:20px; gap:12px;">
+        <!-- Symptom card template -->
+        <!-- Brain fog -->
+        <div class="card" style="padding:14px 16px; border-left:3px solid var(--icon-teal);">
+          <div class="row-between">
+            <div class="semi" style="font-size:13px;">Brain fog &amp; poor focus</div>
+            <div class="badge teal" style="font-size:8.5px;">Likely affecting you</div>
+          </div>
+          <p class="body-sm" style="margin-top:6px; font-size:10.5px; color:var(--foreground);">Low microbial diversity reduces butyrate production, which crosses the blood-brain barrier and impairs cognitive clarity and recall speed.</p>
+          <div class="row" style="gap:6px; margin-top:8px;">
+            <span class="mono" style="font-size:9px; color:var(--muted-foreground); letter-spacing:0.1em;">VIA</span>
+            <span class="badge teal" style="font-size:8.5px; padding:2px 7px;">Pro 45</span>
+            <span class="badge orange" style="font-size:8.5px; padding:2px 7px;">Pos 78</span>
+          </div>
+        </div>
+
+        <!-- Afternoon energy crash -->
+        <div class="card" style="padding:14px 16px; border-left:3px solid var(--icon-yellow);">
+          <div class="row-between">
+            <div class="semi" style="font-size:13px;">Afternoon energy crash</div>
+            <div class="badge amber" style="font-size:8.5px;">Likely affecting you</div>
+          </div>
+          <p class="body-sm" style="margin-top:6px; font-size:10.5px; color:var(--foreground);">An under-seeded gut destabilises blood sugar between meals. Less butyrate means less stable energy — the 3pm dip is a gut signal.</p>
+          <div class="row" style="gap:6px; margin-top:8px;">
+            <span class="mono" style="font-size:9px; color:var(--muted-foreground); letter-spacing:0.1em;">VIA</span>
+            <span class="badge teal" style="font-size:8.5px; padding:2px 7px;">Pro 45</span>
+            <span class="badge lime" style="font-size:8.5px; padding:2px 7px;">Pre 72</span>
+          </div>
+        </div>
+
+        <!-- Poor sleep -->
+        <div class="card" style="padding:14px 16px; border-left:3px solid var(--icon-teal);">
+          <div class="row-between">
+            <div class="semi" style="font-size:13px;">Poor sleep quality</div>
+            <div class="badge teal" style="font-size:8.5px;">Likely affecting you</div>
+          </div>
+          <p class="body-sm" style="margin-top:6px; font-size:10.5px; color:var(--foreground);">90% of serotonin — the direct precursor to melatonin — is produced in the gut. Low Probiotics directly reduces sleep onset speed and deep-sleep duration.</p>
+          <div class="row" style="gap:6px; margin-top:8px;">
+            <span class="mono" style="font-size:9px; color:var(--muted-foreground); letter-spacing:0.1em;">VIA</span>
+            <span class="badge teal" style="font-size:8.5px; padding:2px 7px;">Pro 45</span>
+          </div>
+        </div>
+
+        <!-- Mood instability -->
+        <div class="card" style="padding:14px 16px; border-left:3px solid var(--icon-teal);">
+          <div class="row-between">
+            <div class="semi" style="font-size:13px;">Mood instability</div>
+            <div class="badge teal" style="font-size:8.5px;">Likely affecting you</div>
+          </div>
+          <p class="body-sm" style="margin-top:6px; font-size:10.5px; color:var(--foreground);">The vagus nerve carries gut signals to the brain. A disrupted microbiome generates inflammatory signals that destabilise mood baseline.</p>
+          <div class="row" style="gap:6px; margin-top:8px;">
+            <span class="mono" style="font-size:9px; color:var(--muted-foreground); letter-spacing:0.1em;">VIA</span>
+            <span class="badge teal" style="font-size:8.5px; padding:2px 7px;">Pro 45</span>
+            <span class="badge orange" style="font-size:8.5px; padding:2px 7px;">Pos 78</span>
+          </div>
+        </div>
+
+        <!-- Frequent illness -->
+        <div class="card" style="padding:14px 16px; border-left:3px solid var(--icon-teal);">
+          <div class="row-between">
+            <div class="semi" style="font-size:13px;">Frequent illness</div>
+            <div class="badge teal" style="font-size:8.5px;">Likely affecting you</div>
+          </div>
+          <p class="body-sm" style="margin-top:6px; font-size:10.5px; color:var(--foreground);">70% of immune cells reside in the gut lining. Low prebiotic and probiotic intake weakens the mucosal barrier that keeps pathogens out.</p>
+          <div class="row" style="gap:6px; margin-top:8px;">
+            <span class="mono" style="font-size:9px; color:var(--muted-foreground); letter-spacing:0.1em;">VIA</span>
+            <span class="badge lime" style="font-size:8.5px; padding:2px 7px;">Pre 72</span>
+            <span class="badge teal" style="font-size:8.5px; padding:2px 7px;">Pro 45</span>
+          </div>
+        </div>
+
+        <!-- Cravings -->
+        <div class="card" style="padding:14px 16px; border-left:3px solid var(--icon-teal);">
+          <div class="row-between">
+            <div class="semi" style="font-size:13px;">Sugar &amp; junk cravings</div>
+            <div class="badge teal" style="font-size:8.5px;">Likely affecting you</div>
+          </div>
+          <p class="body-sm" style="margin-top:6px; font-size:10.5px; color:var(--foreground);">Opportunistic bacteria that thrive on sugar send signals via the vagus nerve, creating cravings for the ultra-processed foods that sustain them.</p>
+          <div class="row" style="gap:6px; margin-top:8px;">
+            <span class="mono" style="font-size:9px; color:var(--muted-foreground); letter-spacing:0.1em;">VIA</span>
+            <span class="badge lime" style="font-size:8.5px; padding:2px 7px;">Pre 72</span>
+            <span class="badge teal" style="font-size:8.5px; padding:2px 7px;">Pro 45</span>
+          </div>
+        </div>
+
+        <!-- Bloating -->
+        <div class="card soft" style="padding:14px 16px; opacity:0.78;">
+          <div class="row-between">
+            <div class="semi" style="font-size:13px;">Bloating after meals</div>
+            <div class="badge dark" style="font-size:8.5px;">Low risk</div>
+          </div>
+          <p class="body-sm" style="margin-top:6px; font-size:10.5px;">Insufficient fibre variety creates imbalanced fermentation. Your Prebiotics score suggests this is unlikely.</p>
+          <div class="row" style="gap:6px; margin-top:8px;">
+            <span class="mono" style="font-size:9px; color:var(--muted-foreground); letter-spacing:0.1em;">VIA</span>
+            <span class="badge lime" style="font-size:8.5px; padding:2px 7px;">Pre 72</span>
+            <span class="badge orange" style="font-size:8.5px; padding:2px 7px;">Pos 78</span>
+          </div>
+        </div>
+
+        <!-- Slow recovery -->
+        <div class="card soft" style="padding:14px 16px; opacity:0.78;">
+          <div class="row-between">
+            <div class="semi" style="font-size:13px;">Slow recovery</div>
+            <div class="badge dark" style="font-size:8.5px;">Low risk</div>
+          </div>
+          <p class="body-sm" style="margin-top:6px; font-size:10.5px;">Short-chain fatty acids produced by the gut reduce systemic inflammation. Your Postbiotics score suggests this system is intact.</p>
+          <div class="row" style="gap:6px; margin-top:8px;">
+            <span class="mono" style="font-size:9px; color:var(--muted-foreground); letter-spacing:0.1em;">VIA</span>
+            <span class="badge orange" style="font-size:8.5px; padding:2px 7px;">Pos 78</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:auto; display:flex; gap:18px; align-items:center; padding-top:14px;">
+        <div class="row" style="gap:6px;"><span style="width:10px; height:10px; border-radius:3px; background:var(--icon-teal);"></span><span class="body-sm" style="font-size:10px;">Likely affecting you</span></div>
+        <div class="row" style="gap:6px;"><span style="width:10px; height:10px; border-radius:3px; background:rgba(26,46,18,0.15);"></span><span class="body-sm" style="font-size:10px;">Low risk based on your scores</span></div>
+      </div>
+    </div>
+    <div class="page-footer">
+      <span>Section 02 · Why it matters</span>
+      <span class="page-num">07</span>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════
+       PAGE 8 — PROJECTION
+       ════════════════════════════════════════════════════════════ -->
+  <section class="page tinted-green" data-screen-label="08 Projection">
+    <div class="page-header">
+      <div class="left"><div class="brand-dot"></div><span>Section 02 · Why it matters</span></div>
+      <div>Your 30-day projection</div>
+    </div>
+    <div class="page-pad">
+      <div class="eyebrow">Your projection</div>
+      <h2 class="title" style="margin-top:8px;">Where you could be in 30 days.</h2>
+
+      <!-- Chart -->
+      <div style="margin-top:24px;" class="card lifted">
+        <div class="row-between">
+          <div>
+            <div class="eyebrow muted" style="font-size:9px;">Score projection · today to day 30</div>
+            <h4 class="minor" style="margin-top:4px;">68 → 83 · a 15-point gain</h4>
+          </div>
+          <div class="row" style="gap:14px;">
+            <div class="row" style="gap:6px;"><span style="width:10px; height:10px; border-radius:2px; background:rgba(26,46,18,0.15);"></span><span class="body-sm" style="font-size:10px;">Today</span></div>
+            <div class="row" style="gap:6px;"><span style="width:10px; height:10px; border-radius:2px; background:var(--icon-green);"></span><span class="body-sm" style="font-size:10px;">Projected</span></div>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; position:relative;">
+          <svg viewBox="0 0 600 240" width="100%" height="220" style="overflow:visible;">
+            <!-- gridlines -->
+            <g stroke="rgba(26,46,18,0.06)" stroke-width="1">
+              <line x1="40" y1="20"  x2="600" y2="20"/>
+              <line x1="40" y1="70"  x2="600" y2="70"/>
+              <line x1="40" y1="120" x2="600" y2="120"/>
+              <line x1="40" y1="170" x2="600" y2="170"/>
+              <line x1="40" y1="220" x2="600" y2="220"/>
+            </g>
+            <!-- y labels -->
+            <g font-family="Geist Mono, monospace" font-size="10" fill="#5A6E50">
+              <text x="32" y="24" text-anchor="end">100</text>
+              <text x="32" y="74" text-anchor="end">75</text>
+              <text x="32" y="124" text-anchor="end">50</text>
+              <text x="32" y="174" text-anchor="end">25</text>
+              <text x="32" y="224" text-anchor="end">0</text>
+            </g>
+            <!-- target band -->
+            <rect x="40" y="34" width="560" height="20" fill="rgba(76,182,72,0.10)" />
+            <text x="595" y="48" text-anchor="end" font-family="DM Sans" font-size="10" font-weight="600" fill="#4A7E1A">Strong Foundation tier</text>
+
+            <!-- baseline (today) trajectory: flat dashed -->
+            <line x1="40" y1="84" x2="600" y2="84" stroke="rgba(26,46,18,0.30)" stroke-width="2" stroke-dasharray="4,5"/>
+            <circle cx="40" cy="84" r="5" fill="#fff" stroke="#1A2E12" stroke-width="2"/>
+            <text x="48" y="78" font-family="Lora" font-weight="600" font-size="13" fill="#1A2E12">68</text>
+            <text x="48" y="100" font-family="DM Sans" font-size="9" fill="#5A6E50" letter-spacing="1">TODAY</text>
+
+            <!-- projection curve -->
+            <path d="M40 84 C 180 84, 280 70, 380 56 S 560 38, 600 36"
+                  stroke="url(#brandGradH)" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <!-- area under curve -->
+            <path d="M40 84 C 180 84, 280 70, 380 56 S 560 38, 600 36 L 600 220 L 40 220 Z"
+                  fill="url(#brandGradH)" opacity="0.07"/>
+            <!-- end marker -->
+            <circle cx="600" cy="36" r="6" fill="#4CB648" stroke="#fff" stroke-width="2"/>
+            <text x="592" y="28" text-anchor="end" font-family="Lora" font-weight="700" font-size="14" fill="#1A2E12">83</text>
+            <text x="592" y="56" text-anchor="end" font-family="DM Sans" font-size="9" fill="#0F7345" letter-spacing="1">DAY 30</text>
+
+            <!-- x axis -->
+            <g font-family="Geist Mono, monospace" font-size="10" fill="#5A6E50">
+              <text x="40"  y="238" text-anchor="middle">Day 1</text>
+              <text x="180" y="238" text-anchor="middle">Day 7</text>
+              <text x="320" y="238" text-anchor="middle">Day 14</text>
+              <text x="460" y="238" text-anchor="middle">Day 21</text>
+              <text x="600" y="238" text-anchor="middle">Day 30</text>
+            </g>
+          </svg>
+        </div>
+
+        <div class="body-sm" style="margin-top:14px; font-size:10.5px;">This projection is based on your current pattern. Scores are recalculated from your actual assessment answers — this is an estimate based on typical improvement rates for your profile type.</div>
+      </div>
+
+      <!-- The three habits powering the projection -->
+      <div style="margin-top:22px;">
+        <div class="eyebrow muted" style="font-size:9px;">The three habits powering this projection</div>
+        <div class="grid-3" style="margin-top:10px;">
+          <div class="card soft" style="padding:16px;">
+            <div class="row" style="gap:10px;">
+              <div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, var(--icon-lime), var(--icon-green)); color:#fff; display:flex; align-items:center; justify-content:center; font-family:var(--font-serif); font-weight:700; font-size:14px;">01</div>
+              <div class="semi" style="font-size:13px;">Daily fermented food habit</div>
+            </div>
+            <p class="body-sm" style="margin-top:8px; font-size:10.5px; color:var(--foreground);">One serving per day, every day. The Probiotics dial moves first — and it pulls the others with it.</p>
+          </div>
+          <div class="card soft" style="padding:16px;">
+            <div class="row" style="gap:10px;">
+              <div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, var(--icon-green), var(--icon-teal)); color:#fff; display:flex; align-items:center; justify-content:center; font-family:var(--font-serif); font-weight:700; font-size:14px;">02</div>
+              <div class="semi" style="font-size:13px;">Prebiotic vegetable at every meal</div>
+            </div>
+            <p class="body-sm" style="margin-top:8px; font-size:10.5px; color:var(--foreground);">Garlic, onion, leek, asparagus, artichoke — whatever's seasonal. Diversity beats quantity.</p>
+          </div>
+          <div class="card soft" style="padding:16px;">
+            <div class="row" style="gap:10px;">
+              <div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, var(--icon-yellow), var(--icon-orange)); color:#fff; display:flex; align-items:center; justify-content:center; font-family:var(--font-serif); font-weight:700; font-size:14px;">03</div>
+              <div class="semi" style="font-size:13px;">Consistent meal timing</div>
+            </div>
+            <p class="body-sm" style="margin-top:8px; font-size:10.5px; color:var(--foreground);">An 8am–7pm eating window aligns with your gut's circadian biology and protects Postbiotics.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-footer">
+      <span>Section 02 · Why it matters</span>
+      <span class="page-num">08</span>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════
+       PAGE 9 — STRENGTHS & OPPORTUNITIES
+       ════════════════════════════════════════════════════════════ -->
+  <section class="page" data-screen-label="09 Strengths & opportunities">
+    <div class="page-header">
+      <div class="left"><div class="brand-dot"></div><span>Section 02 · Why it matters</span></div>
+      <div>Strengths &amp; opportunities</div>
+    </div>
+    <div class="page-pad">
+      <div class="eyebrow">Where you stand</div>
+      <h2 class="title" style="margin-top:8px;">Strengths &amp; opportunities.</h2>
+      <p class="lead" style="margin-top:10px; max-width:60ch;">Your three biggest strengths, and the three areas with the most growth potential.</p>
+
+      <div style="margin-top:22px; display:grid; grid-template-columns: 1fr 1fr; gap:18px;">
+        <!-- Strengths column -->
+        <div>
+          <div class="row" style="gap:8px; padding-bottom:10px; border-bottom:1px solid var(--border);">
+            <span class="biotic-pill lime" style="height:8px; width:8px; border-radius:50%;"></span>
+            <div class="eyebrow" style="color:#4A7E1A; font-size:10px;">Three strengths</div>
+          </div>
+          <div class="stack-3" style="margin-top:14px;">
+            <div class="card" style="border-left:3px solid var(--icon-lime); padding:14px 16px;">
+              <h4 class="minor" style="font-size:14px;">Strong plant variety.</h4>
+              <p class="body-sm" style="margin-top:6px; font-size:10.5px;">You consistently eat a wide range of plant foods across the week. Diversity is the single most important driver of a healthy microbiome — and you're already doing this well.</p>
+            </div>
+            <div class="card" style="border-left:3px solid var(--icon-green); padding:14px 16px;">
+              <h4 class="minor" style="font-size:14px;">Consistent meal timing.</h4>
+              <p class="body-sm" style="margin-top:6px; font-size:10.5px;">Your meals follow a relatively predictable daily rhythm. This supports your gut's circadian biology and reduces the inflammatory stress caused by irregular eating patterns.</p>
+            </div>
+            <div class="card" style="border-left:3px solid var(--icon-teal); padding:14px 16px;">
+              <h4 class="minor" style="font-size:14px;">Fibre awareness.</h4>
+              <p class="body-sm" style="margin-top:6px; font-size:10.5px;">You're already eating fibre-rich foods as a regular part of your diet. This feeds the beneficial bacteria in your colon and supports short-chain fatty acid production — key for gut lining health.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Opportunities column -->
+        <div>
+          <div class="row" style="gap:8px; padding-bottom:10px; border-bottom:1px solid var(--border);">
+            <span class="biotic-pill orange" style="height:8px; width:8px; border-radius:50%;"></span>
+            <div class="eyebrow" style="color:#C57712; font-size:10px;">Three opportunities</div>
+          </div>
+          <div class="stack-3" style="margin-top:14px;">
+            <div class="card" style="border-left:3px solid var(--icon-orange); padding:14px 16px;">
+              <h4 class="minor" style="font-size:14px;">Fermented food frequency.</h4>
+              <p class="body-sm" style="margin-top:6px; font-size:10.5px;">You rarely or never include fermented foods in your diet. Even one serving of kefir, kimchi, or live yoghurt daily can shift your Probiotics score significantly.</p>
+            </div>
+            <div class="card" style="border-left:3px solid var(--icon-yellow); padding:14px 16px;">
+              <h4 class="minor" style="font-size:14px;">Probiotic variety.</h4>
+              <p class="body-sm" style="margin-top:6px; font-size:10.5px;">When you do eat fermented foods, you tend to rely on one type. Different ferments contain different bacterial strains — variety matters as much as consistency.</p>
+            </div>
+            <div class="card" style="border-left:3px solid var(--icon-orange); padding:14px 16px;">
+              <h4 class="minor" style="font-size:14px;">Post-meal rest habits.</h4>
+              <p class="body-sm" style="margin-top:6px; font-size:10.5px;">You often move quickly after eating or eat in high-stress situations. The gut needs a brief period of parasympathetic activity after meals to optimise digestion.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- footer note -->
+      <div style="margin-top:auto; padding-top:18px;" class="card soft">
+        <div class="row" style="gap:14px;">
+          <div style="font-family:var(--font-serif); font-weight:700; font-size:32px; line-height:1; color:var(--icon-green);">→</div>
+          <div class="body-sm" style="font-size:11px; color:var(--foreground);">The fastest path forward is to <span class="semi">protect the strengths</span> with low maintenance, and direct all new effort at <span class="semi">fermented food frequency &amp; variety</span> — your highest-leverage opportunity.</div>
+        </div>
+      </div>
+    </div>
+    <div class="page-footer">
+      <span>Section 02 · Why it matters</span>
+      <span class="page-num">09</span>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════
+       PAGE 10 — KEY INSIGHT (dark page)
+       ════════════════════════════════════════════════════════════ -->
+  <section class="page" data-screen-label="10 Key insight" style="background:var(--foreground); color:#fff;">
+    <div class="page-header" style="color:rgba(255,255,255,0.55);">
+      <div class="left"><div class="brand-dot"></div><span style="color:rgba(255,255,255,0.7);">Section 02 · Why it matters</span></div>
+      <div>Your key insight</div>
+    </div>
+    <div class="page-pad" style="color:#fff;">
+      <div class="eyebrow" style="color:var(--icon-lime);">Your key insight</div>
+      <h2 class="title" style="margin-top:8px; color:#fff;">The single biggest discovery.</h2>
+
+      <!-- Big pullquote -->
+      <div style="margin-top:32px; max-width: 90%;">
+        <div style="font-family:var(--font-serif); font-weight:600; font-size:48px; line-height:1.15; letter-spacing:-0.02em; color:#fff;">
+          <span class="gradient-text" style="font-style:italic;">“Your plant diversity is a genuine foundation —</span> fermented foods are your single biggest lever.”
+        </div>
+      </div>
+
+      <div style="margin-top:32px; display:grid; grid-template-columns: 1fr 1fr; gap:32px;">
+        <p class="body" style="font-size:13px; color:rgba(255,255,255,0.82); line-height:1.7;">Most people with a Probiotics score below 50 also score low on Prebiotics — which makes the fix harder and slower. You don't have that problem. You already eat the plant foods that create the environment for beneficial bacteria to thrive — you just need to start introducing them.</p>
+        <p class="body" style="font-size:13px; color:rgba(255,255,255,0.82); line-height:1.7;">The effect of adding fermented foods to an already fibre-rich diet is <span style="color:#fff; font-weight:600;">amplified</span> compared to someone starting from zero. You're in a particularly strong position to see rapid improvement.</p>
+      </div>
+
+      <!-- Quote attribution / brand mark area -->
+      <div style="margin-top:auto; padding-top:40px; display:grid; grid-template-columns: 1.5fr 1fr; gap:32px; align-items:end;">
+        <div>
+          <div style="font-family:var(--font-serif); font-style:italic; font-weight:500; font-size:20px; line-height:1.45; color:rgba(255,255,255,0.92);">
+            “Your gut system is more responsive to change than most people realise. The right inputs, consistently applied, produce results that are both measurable and felt.”
+          </div>
+          <div style="margin-top:14px; display:flex; align-items:center; gap:10px;">
+            <div style="width:24px; height:24px; border-radius:50%; background:var(--brand-gradient);"></div>
+            <div class="mono" style="font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:rgba(255,255,255,0.7);">EatoBiotics Research</div>
+          </div>
+        </div>
+
+        <div style="text-align:right;">
+          <div style="font-family:var(--font-serif); font-weight:700; font-size:110px; line-height:1; letter-spacing:-0.05em;" class="gradient-text">+15</div>
+          <div class="eyebrow" style="color:rgba(255,255,255,0.7);">Projected score gain · 30 days</div>
+        </div>
+      </div>
+    </div>
+    <div class="page-footer" style="color:rgba(255,255,255,0.55);">
+      <span>Section 02 · Why it matters</span>
+      <span class="page-num">10</span>
+    </div>
+  </section>
+
+
+
+  <!-- ════════════════════════════════════════════════════════════
+       PAGE 11 — DEEP INSIGHT / FOOD SYSTEM IN FULL
+       ════════════════════════════════════════════════════════════ -->
+  <section class="page" data-screen-label="11 Food system in full">
+    <div class="page-header">
+      <div class="left"><div class="brand-dot"></div><span>Section 02 · Why it matters</span></div>
+      <div>Your food system in full</div>
+    </div>
+    <div class="page-pad">
+      <div class="eyebrow">Deep insight</div>
+      <h2 class="title" style="margin-top:8px;">Your food system in full.</h2>
+      <p class="lead" style="margin-top:10px; max-width:60ch;">A complete picture of how your three scores interact — and what that means for your biology.</p>
+
+      <!-- How the three connect (sankey-ish horizontal) -->
+      <div style="margin-top:24px;" class="card lifted">
+        <div class="eyebrow muted" style="font-size:9px;">How your three systems connect</div>
+        <div style="margin-top:14px; display:grid; grid-template-columns: 1fr 36px 1fr 36px 1fr; gap:0; align-items:stretch;">
+          <div style="padding:18px; border-radius:12px; background: linear-gradient(135deg, rgba(168,224,99,0.22), rgba(76,182,72,0.18));">
+            <div class="eyebrow" style="color:#4A7E1A; font-size:9px;">🌿 Prebiotics</div>
+            <div style="font-family:var(--font-serif); font-weight:700; font-size:42px; line-height:1; margin-top:8px;">72</div>
+            <div class="semi" style="margin-top:6px; font-size:12px;">Strong</div>
+            <div class="body-sm" style="margin-top:6px; font-size:10.5px;">Feeds the bacteria</div>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:center;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#5A6E50" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </div>
+          <div style="padding:18px; border-radius:12px; background: linear-gradient(135deg, rgba(76,182,72,0.18), rgba(45,170,110,0.16)); border:2px solid var(--icon-teal); position:relative;">
+            <div style="position:absolute; top:-10px; right:-10px;" class="badge orange">Your gap</div>
+            <div class="eyebrow" style="color:#0F7345; font-size:9px;">🦠 Probiotics</div>
+            <div style="font-family:var(--font-serif); font-weight:700; font-size:42px; line-height:1; margin-top:8px;">45</div>
+            <div class="semi" style="margin-top:6px; font-size:12px;">Your gap</div>
+            <div class="body-sm" style="margin-top:6px; font-size:10.5px;">Produces compounds</div>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:center;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#5A6E50" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </div>
+          <div style="padding:18px; border-radius:12px; background: linear-gradient(135deg, rgba(245,197,24,0.18), rgba(245,166,35,0.18));">
+            <div class="eyebrow" style="color:#C57712; font-size:9px;">✨ Postbiotics</div>
+            <div style="font-family:var(--font-serif); font-weight:700; font-size:42px; line-height:1; margin-top:8px;">78</div>
+            <div class="semi" style="margin-top:6px; font-size:12px;">Strong</div>
+            <div class="body-sm" style="margin-top:6px; font-size:10.5px;">Protects the lining</div>
+          </div>
+        </div>
+      </div>
+
+      <p class="body" style="margin-top:18px; font-size:12px;">What your scores reveal is a food system that's doing the right things structurally but missing a key biological input. This pattern is more common than you might think, especially in people who eat healthily but have grown up in cultures or households where fermented foods aren't a staple. It's not a sign of poor habits overall — it's a specific blind spot. The encouraging truth is that this is the easiest gap to close.</p>
+
+      <!-- biology behind your scores -->
+      <div style="margin-top:18px;">
+        <div class="eyebrow muted" style="font-size:9px;">The biology behind your scores</div>
+        <div class="grid-3" style="margin-top:10px;">
+          <div class="card" style="padding:14px;">
+            <div class="row" style="gap:8px;"><span style="width:24px; height:24px; border-radius:6px; background:rgba(45,170,110,0.12); display:flex; align-items:center; justify-content:center; color:#0F7345;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg></span><div class="semi" style="font-size:12px;">The gut–brain highway</div></div>
+            <p class="body-sm" style="margin-top:8px; font-size:10.5px; color:var(--foreground);">The vagus nerve carries 80% of signals upward — from gut to brain, not the other way. The quality of your microbiome determines the quality of those signals.</p>
+          </div>
+          <div class="card" style="padding:14px;">
+            <div class="row" style="gap:8px;"><span style="width:24px; height:24px; border-radius:6px; background:rgba(76,182,72,0.12); display:flex; align-items:center; justify-content:center; color:var(--icon-green);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg></span><div class="semi" style="font-size:12px;">Microbiome by numbers</div></div>
+            <p class="body-sm" style="margin-top:8px; font-size:10.5px; color:var(--foreground);">100 trillion bacteria live in your gut — more than the cells in your entire body. Diversity is the single most important metric for long-term health.</p>
+          </div>
+          <div class="card" style="padding:14px;">
+            <div class="row" style="gap:8px;"><span style="width:24px; height:24px; border-radius:6px; background:rgba(245,166,35,0.12); display:flex; align-items:center; justify-content:center; color:#C57712;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg></span><div class="semi" style="font-size:12px;">Why your Probiotics gap matters</div></div>
+            <p class="body-sm" style="margin-top:8px; font-size:10.5px; color:var(--foreground);">At 45, this is your most correctable score — and the one that creates a bottleneck for everything else. Targeted change here produces the highest return across all three pillars.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-footer">
+      <span>Section 02 · Why it matters</span>
+      <span class="page-num">11</span>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════
+       PAGE 12 — CHANGE TIMELINE
+       ════════════════════════════════════════════════════════════ -->
+  <section class="page tinted-warm" data-screen-label="12 Change timeline">
+    <div class="page-header">
+      <div class="left"><div class="brand-dot"></div><span>Section 03 · What to do</span></div>
+      <div>Your change timeline</div>
+    </div>
+    <div class="page-pad">
+      <div class="eyebrow">What you'll notice — and when</div>
+      <h2 class="title" style="margin-top:8px;">Your change timeline.</h2>
+      <p class="lead" style="margin-top:10px; max-width:60ch;">What changes when, based on typical response rates for your profile. Real results in three stages.</p>
+
+      <!-- Timeline track -->
+      <div style="margin-top:30px; position:relative;">
+        <div style="position:absolute; top:36px; left:0; right:0; height:3px; background:var(--brand-gradient-h); border-radius:999px;"></div>
+
+        <div class="grid-3" style="gap:24px;">
+          <!-- Stage 1 -->
+          <div>
+            <div style="position:relative; display:flex; justify-content:center;">
+              <div style="width:72px; height:72px; border-radius:50%; background:#fff; border:3px solid var(--icon-lime); display:flex; align-items:center; justify-content:center; color:#4A7E1A; box-shadow: var(--shadow-md);">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              </div>
+            </div>
+            <div style="text-align:center; margin-top:14px;">
+              <div class="eyebrow" style="color:#4A7E1A; font-size:9px;">Days 1–7</div>
+              <h4 class="minor" style="margin-top:6px;">First effects</h4>
+            </div>
+            <ul style="list-style:none; padding:0; margin:14px 0 0;" class="body-sm">
+              <li class="row" style="gap:8px; padding:6px 0; font-size:11px;"><span style="width:5px; height:5px; border-radius:50%; background:var(--icon-lime); flex-shrink:0;"></span><span>Digestive rhythm begins to improve</span></li>
+              <li class="row" style="gap:8px; padding:6px 0; font-size:11px;"><span style="width:5px; height:5px; border-radius:50%; background:var(--icon-lime); flex-shrink:0;"></span><span>Reduced bloating after meals</span></li>
+              <li class="row" style="gap:8px; padding:6px 0; font-size:11px;"><span style="width:5px; height:5px; border-radius:50%; background:var(--icon-lime); flex-shrink:0;"></span><span>Slightly better energy on waking</span></li>
+            </ul>
+          </div>
+
+          <!-- Stage 2 -->
+          <div>
+            <div style="position:relative; display:flex; justify-content:center;">
+              <div style="width:72px; height:72px; border-radius:50%; background:#fff; border:3px solid var(--icon-teal); display:flex; align-items:center; justify-content:center; color:#0F7345; box-shadow: var(--shadow-md);">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L8 7l4 3 4-3-4-5zM12 22c4-5 6-9 6-12a6 6 0 0 0-12 0c0 3 2 7 6 12z"/></svg>
+              </div>
+            </div>
+            <div style="text-align:center; margin-top:14px;">
+              <div class="eyebrow" style="color:#0F7345; font-size:9px;">Weeks 2–4</div>
+              <h4 class="minor" style="margin-top:6px;">Microbiome shift</h4>
+            </div>
+            <ul style="list-style:none; padding:0; margin:14px 0 0;" class="body-sm">
+              <li class="row" style="gap:8px; padding:6px 0; font-size:11px;"><span style="width:5px; height:5px; border-radius:50%; background:var(--icon-teal); flex-shrink:0;"></span><span>Measurable bacterial diversity increase</span></li>
+              <li class="row" style="gap:8px; padding:6px 0; font-size:11px;"><span style="width:5px; height:5px; border-radius:50%; background:var(--icon-teal); flex-shrink:0;"></span><span>Energy levels stabilise across the day</span></li>
+              <li class="row" style="gap:8px; padding:6px 0; font-size:11px;"><span style="width:5px; height:5px; border-radius:50%; background:var(--icon-teal); flex-shrink:0;"></span><span>Fewer cravings for ultra-processed foods</span></li>
+            </ul>
+          </div>
+
+          <!-- Stage 3 -->
+          <div>
+            <div style="position:relative; display:flex; justify-content:center;">
+              <div style="width:72px; height:72px; border-radius:50%; background:#fff; border:3px solid var(--icon-orange); display:flex; align-items:center; justify-content:center; color:#C57712; box-shadow: var(--shadow-md);">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.5 2a3.5 3.5 0 0 0-3 5.5A3.5 3.5 0 0 0 9 14a3.5 3.5 0 0 0 3 2 3.5 3.5 0 0 0 3-2 3.5 3.5 0 0 0 2.5-6.5A3.5 3.5 0 0 0 14.5 2 3.5 3.5 0 0 0 12 4a3.5 3.5 0 0 0-2.5-2zM12 16v6"/></svg>
+              </div>
+            </div>
+            <div style="text-align:center; margin-top:14px;">
+              <div class="eyebrow" style="color:#C57712; font-size:9px;">Month 2+</div>
+              <h4 class="minor" style="margin-top:6px;">Brain–gut recalibration</h4>
+            </div>
+            <ul style="list-style:none; padding:0; margin:14px 0 0;" class="body-sm">
+              <li class="row" style="gap:8px; padding:6px 0; font-size:11px;"><span style="width:5px; height:5px; border-radius:50%; background:var(--icon-orange); flex-shrink:0;"></span><span>Mood baseline shifts noticeably</span></li>
+              <li class="row" style="gap:8px; padding:6px 0; font-size:11px;"><span style="width:5px; height:5px; border-radius:50%; background:var(--icon-orange); flex-shrink:0;"></span><span>Sleep depth and onset improves</span></li>
+              <li class="row" style="gap:8px; padding:6px 0; font-size:11px;"><span style="width:5px; height:5px; border-radius:50%; background:var(--icon-orange); flex-shrink:0;"></span><span>Sharper focus and mental clarity</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Big number callout -->
+      <div style="margin-top:auto; padding-top:18px;" class="card lifted">
+        <div style="display:grid; grid-template-columns: 0.8fr 2fr; gap:24px; align-items:center; padding:8px;">
+          <div style="text-align:center;">
+            <div style="font-family:var(--font-serif); font-weight:700; font-size:80px; line-height:1; letter-spacing:-0.04em;" class="gradient-text">30</div>
+            <div class="eyebrow muted" style="font-size:9px; margin-top:6px;">Days to a measurable shift</div>
+          </div>
+          <div>
+            <h4 class="minor" style="font-size:18px;">Targeted dietary change works on a 30-day clock.</h4>
+            <p class="body-sm" style="margin-top:8px; font-size:11px; color:var(--foreground);">Clinical research consistently shows measurable changes in gut bacterial diversity within 3–4 weeks of applying targeted dietary changes. Your plan ahead is built precisely around this window.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-footer">
+      <span>Section 03 · What to do</span>
+      <span class="page-num">12</span>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════
+       PAGE 13 — 7-DAY STARTER PLAN
+       ════════════════════════════════════════════════════════════ -->
+  <section class="page" data-screen-label="13 7-day plan">
+    <div class="page-header">
+      <div class="left"><div class="brand-dot"></div><span>Section 03 · What to do</span></div>
+      <div>Your 7-day starter plan</div>
+    </div>
+    <div class="page-pad">
+      <div class="eyebrow">Your starter plan</div>
+      <h2 class="title" style="margin-top:8px;">Your first 7 days.</h2>
+      <p class="lead" style="margin-top:10px; max-width:60ch;">One focused action for each day of your first week. Simple, specific, achievable.</p>
+
+      <div style="margin-top:22px; display:grid; grid-template-columns: repeat(7, 1fr); gap:8px;">
+        <!-- Mon -->
+        <div class="card" style="padding:14px 10px; min-height:200px; display:flex; flex-direction:column;">
+          <div style="font-family:var(--font-serif); font-weight:700; font-size:36px; line-height:1; letter-spacing:-0.04em; color:var(--icon-green);">01</div>
+          <div class="eyebrow muted" style="font-size:8.5px; margin-top:4px;">Monday</div>
+          <p class="body-sm" style="margin-top:10px; font-size:10px; color:var(--foreground); line-height:1.45;">Add 150ml of plain kefir or live-culture yoghurt to your breakfast.</p>
+          <div style="margin-top:auto; padding-top:10px;"><span class="badge teal" style="font-size:8px; padding:2px 6px;">Pro</span></div>
+        </div>
+        <div class="card" style="padding:14px 10px; min-height:200px; display:flex; flex-direction:column;">
+          <div style="font-family:var(--font-serif); font-weight:700; font-size:36px; line-height:1; letter-spacing:-0.04em; color:var(--icon-green);">02</div>
+          <div class="eyebrow muted" style="font-size:8.5px; margin-top:4px;">Tuesday</div>
+          <p class="body-sm" style="margin-top:10px; font-size:10px; color:var(--foreground); line-height:1.45;">Include a prebiotic vegetable at lunch — garlic, onion, leek, or asparagus.</p>
+          <div style="margin-top:auto; padding-top:10px;"><span class="badge lime" style="font-size:8px; padding:2px 6px;">Pre</span></div>
+        </div>
+        <div class="card" style="padding:14px 10px; min-height:200px; display:flex; flex-direction:column;">
+          <div style="font-family:var(--font-serif); font-weight:700; font-size:36px; line-height:1; letter-spacing:-0.04em; color:var(--icon-green);">03</div>
+          <div class="eyebrow muted" style="font-size:8.5px; margin-top:4px;">Wednesday</div>
+          <p class="body-sm" style="margin-top:10px; font-size:10px; color:var(--foreground); line-height:1.45;">Try a tablespoon of kimchi or sauerkraut alongside your evening meal.</p>
+          <div style="margin-top:auto; padding-top:10px;"><span class="badge teal" style="font-size:8px; padding:2px 6px;">Pro</span></div>
+        </div>
+        <div class="card" style="padding:14px 10px; min-height:200px; display:flex; flex-direction:column;">
+          <div style="font-family:var(--font-serif); font-weight:700; font-size:36px; line-height:1; letter-spacing:-0.04em; color:var(--icon-green);">04</div>
+          <div class="eyebrow muted" style="font-size:8.5px; margin-top:4px;">Thursday</div>
+          <p class="body-sm" style="margin-top:10px; font-size:10px; color:var(--foreground); line-height:1.45;">Eat a mixed legume dish — lentil soup, chickpea salad, or similar.</p>
+          <div style="margin-top:auto; padding-top:10px;"><span class="badge lime" style="font-size:8px; padding:2px 6px;">Pre</span></div>
+        </div>
+        <div class="card" style="padding:14px 10px; min-height:200px; display:flex; flex-direction:column;">
+          <div style="font-family:var(--font-serif); font-weight:700; font-size:36px; line-height:1; letter-spacing:-0.04em; color:var(--icon-green);">05</div>
+          <div class="eyebrow muted" style="font-size:8.5px; margin-top:4px;">Friday</div>
+          <p class="body-sm" style="margin-top:10px; font-size:10px; color:var(--foreground); line-height:1.45;">Replace one processed snack with a handful of mixed nuts and seeds.</p>
+          <div style="margin-top:auto; padding-top:10px;"><span class="badge orange" style="font-size:8px; padding:2px 6px;">Pos</span></div>
+        </div>
+        <div class="card" style="padding:14px 10px; min-height:200px; display:flex; flex-direction:column;">
+          <div style="font-family:var(--font-serif); font-weight:700; font-size:36px; line-height:1; letter-spacing:-0.04em; color:var(--icon-green);">06</div>
+          <div class="eyebrow muted" style="font-size:8.5px; margin-top:4px;">Saturday</div>
+          <p class="body-sm" style="margin-top:10px; font-size:10px; color:var(--foreground); line-height:1.45;">Cook a meal using miso paste — miso soup, miso-glazed salmon, or a dressing.</p>
+          <div style="margin-top:auto; padding-top:10px;"><span class="badge teal" style="font-size:8px; padding:2px 6px;">Pro</span></div>
+        </div>
+        <div class="card lifted" style="padding:14px 10px; min-height:200px; display:flex; flex-direction:column; background:var(--foreground); color:#fff; border-color:var(--foreground);">
+          <div style="font-family:var(--font-serif); font-weight:700; font-size:36px; line-height:1; letter-spacing:-0.04em;" class="gradient-text">07</div>
+          <div class="eyebrow" style="font-size:8.5px; margin-top:4px; color:rgba(255,255,255,0.6);">Sunday · rest day</div>
+          <p class="body-sm" style="margin-top:10px; font-size:10px; color:rgba(255,255,255,0.85); line-height:1.45;">Sit down for your meals without screens. Give your gut 10 quiet minutes to digest.</p>
+          <div style="margin-top:auto; padding-top:10px;"><span class="badge" style="font-size:8px; padding:2px 6px; background:rgba(255,255,255,0.1); color:#fff; border-color:rgba(255,255,255,0.2);">Reset</span></div>
+        </div>
+      </div>
+
+      <!-- Tracking strip -->
+      <div style="margin-top:24px;" class="card soft">
+        <div class="row-between">
+          <div>
+            <div class="eyebrow muted" style="font-size:9px;">Daily tracker · what to notice</div>
+            <h4 class="minor" style="margin-top:6px; font-size:14px;">Energy · Sleep · Digestion · Mood · Focus</h4>
+            <p class="body-sm" style="margin-top:6px; font-size:11px;">Track these five each evening — even a one-line note is enough. By Day 7 you'll start to see your own pattern.</p>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <div style="width:36px; height:36px; border:1.5px solid var(--icon-yellow); border-radius:10px; display:flex; align-items:center; justify-content:center;" title="Energy"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B0890A" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+            <div style="width:36px; height:36px; border:1.5px solid var(--icon-green); border-radius:10px; display:flex; align-items:center; justify-content:center;" title="Sleep"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4CB648" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div>
+            <div style="width:36px; height:36px; border:1.5px solid var(--icon-teal); border-radius:10px; display:flex; align-items:center; justify-content:center;" title="Digestion"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F7345" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg></div>
+            <div style="width:36px; height:36px; border:1.5px solid var(--icon-orange); border-radius:10px; display:flex; align-items:center; justify-content:center;" title="Mood"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C57712" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg></div>
+            <div style="width:36px; height:36px; border:1.5px solid var(--icon-lime); border-radius:10px; display:flex; align-items:center; justify-content:center;" title="Focus"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4A7E1A" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9"/></svg></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-footer">
+      <span>Section 03 · What to do</span>
+      <span class="page-num">13</span>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════
+       PAGE 14 — 30-DAY ROADMAP
+       ════════════════════════════════════════════════════════════ -->
+  <section class="page" data-screen-label="14 30-day roadmap">
+    <div class="page-header">
+      <div class="left"><div class="brand-dot"></div><span>Section 03 · What to do</span></div>
+      <div>Your 30-day roadmap</div>
+    </div>
+    <div class="page-pad">
+      <div class="eyebrow">30-day roadmap</div>
+      <h2 class="title" style="margin-top:8px;">Your month of change.</h2>
+      <p class="lead" style="margin-top:10px; max-width:60ch;">Four themed weeks, each building on the last. Every action is specific and achievable.</p>
+
+      <div class="grid-2" style="margin-top:22px;">
+        <!-- Week 1 -->
+        <div class="card lifted" style="padding:0; overflow:hidden;">
+          <div style="height:6px; background:linear-gradient(90deg, var(--icon-lime), var(--icon-green));"></div>
+          <div style="padding:18px;">
+            <div class="row-between">
+              <div class="eyebrow" style="color:#4A7E1A; font-size:9px;">Week 01</div>
+              <div class="badge lime" style="font-size:8.5px;">Foundation</div>
+            </div>
+            <h4 class="minor" style="margin-top:8px; font-size:18px;">Probiotic Foundation.</h4>
+            <p class="body-sm" style="margin-top:4px; font-size:11px;">Introduce your first two fermented foods consistently.</p>
+            <ol style="list-style:none; padding:0; margin:14px 0 0; counter-reset:wk;" class="stack-2">
+              <li class="row" style="gap:10px; align-items:flex-start;"><span class="mono" style="font-size:11px; color:var(--icon-green); font-weight:700; min-width:14px;">1.</span><span class="body" style="font-size:11.5px;">Add kefir or live yoghurt to breakfast every day.</span></li>
+              <li class="row" style="gap:10px; align-items:flex-start;"><span class="mono" style="font-size:11px; color:var(--icon-green); font-weight:700; min-width:14px;">2.</span><span class="body" style="font-size:11.5px;">Include sauerkraut or kimchi alongside one meal per day.</span></li>
+              <li class="row" style="gap:10px; align-items:flex-start;"><span class="mono" style="font-size:11px; color:var(--icon-green); font-weight:700; min-width:14px;">3.</span><span class="body" style="font-size:11.5px;">Eat a prebiotic vegetable (garlic, onion, leek, asparagus) every day.</span></li>
+              <li class="row" style="gap:10px; align-items:flex-start;"><span class="mono" style="font-size:11px; color:var(--icon-green); font-weight:700; min-width:14px;">4.</span><span class="body" style="font-size:11.5px;">Log how you feel — energy, digestion, mood — in a simple note.</span></li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- Week 2 -->
+        <div class="card lifted" style="padding:0; overflow:hidden;">
+          <div style="height:6px; background:linear-gradient(90deg, var(--icon-green), var(--icon-teal));"></div>
+          <div style="padding:18px;">
+            <div class="row-between">
+              <div class="eyebrow" style="color:#0F7345; font-size:9px;">Week 02</div>
+              <div class="badge teal" style="font-size:8.5px;">Variety</div>
+            </div>
+            <h4 class="minor" style="margin-top:8px; font-size:18px;">Deepen the variety.</h4>
+            <p class="body-sm" style="margin-top:4px; font-size:11px;">Add more fermented food types and expand your prebiotic range.</p>
+            <ol style="list-style:none; padding:0; margin:14px 0 0;" class="stack-2">
+              <li class="row" style="gap:10px; align-items:flex-start;"><span class="mono" style="font-size:11px; color:#0F7345; font-weight:700; min-width:14px;">1.</span><span class="body" style="font-size:11.5px;">Try a new fermented food (tempeh, miso, kombucha).</span></li>
+              <li class="row" style="gap:10px; align-items:flex-start;"><span class="mono" style="font-size:11px; color:#0F7345; font-weight:700; min-width:14px;">2.</span><span class="body" style="font-size:11.5px;">Increase your legume intake to 4+ servings this week.</span></li>
+              <li class="row" style="gap:10px; align-items:flex-start;"><span class="mono" style="font-size:11px; color:#0F7345; font-weight:700; min-width:14px;">3.</span><span class="body" style="font-size:11.5px;">Add Jerusalem artichoke or chicory root to two meals.</span></li>
+              <li class="row" style="gap:10px; align-items:flex-start;"><span class="mono" style="font-size:11px; color:#0F7345; font-weight:700; min-width:14px;">4.</span><span class="body" style="font-size:11.5px;">Start sitting down for meals without screens at least once a day.</span></li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- Week 3 -->
+        <div class="card lifted" style="padding:0; overflow:hidden;">
+          <div style="height:6px; background:linear-gradient(90deg, var(--icon-teal), var(--icon-yellow));"></div>
+          <div style="padding:18px;">
+            <div class="row-between">
+              <div class="eyebrow" style="color:#B0890A; font-size:9px;">Week 03</div>
+              <div class="badge amber" style="font-size:8.5px;">Rhythm</div>
+            </div>
+            <h4 class="minor" style="margin-top:8px; font-size:18px;">Build the rhythm.</h4>
+            <p class="body-sm" style="margin-top:4px; font-size:11px;">Establish consistent daily habits and support your Postbiotics pillar.</p>
+            <ol style="list-style:none; padding:0; margin:14px 0 0;" class="stack-2">
+              <li class="row" style="gap:10px; align-items:flex-start;"><span class="mono" style="font-size:11px; color:#B0890A; font-weight:700; min-width:14px;">1.</span><span class="body" style="font-size:11.5px;">Set a consistent daily eating window — try 8am–7pm.</span></li>
+              <li class="row" style="gap:10px; align-items:flex-start;"><span class="mono" style="font-size:11px; color:#B0890A; font-weight:700; min-width:14px;">2.</span><span class="body" style="font-size:11.5px;">Add a 10-minute walk after your largest meal every day.</span></li>
+              <li class="row" style="gap:10px; align-items:flex-start;"><span class="mono" style="font-size:11px; color:#B0890A; font-weight:700; min-width:14px;">3.</span><span class="body" style="font-size:11.5px;">Eat fermented foods at breakfast and dinner to cover the full day.</span></li>
+              <li class="row" style="gap:10px; align-items:flex-start;"><span class="mono" style="font-size:11px; color:#B0890A; font-weight:700; min-width:14px;">4.</span><span class="body" style="font-size:11.5px;">Reduce ultra-processed foods to fewer than 3 servings this week.</span></li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- Week 4 -->
+        <div class="card lifted" style="padding:0; overflow:hidden;">
+          <div style="height:6px; background:linear-gradient(90deg, var(--icon-yellow), var(--icon-orange));"></div>
+          <div style="padding:18px;">
+            <div class="row-between">
+              <div class="eyebrow" style="color:#C57712; font-size:9px;">Week 04</div>
+              <div class="badge orange" style="font-size:8.5px;">Retest</div>
+            </div>
+            <h4 class="minor" style="margin-top:8px; font-size:18px;">Optimise &amp; reflect.</h4>
+            <p class="body-sm" style="margin-top:4px; font-size:11px;">Consolidate the changes and prepare to retest.</p>
+            <ol style="list-style:none; padding:0; margin:14px 0 0;" class="stack-2">
+              <li class="row" style="gap:10px; align-items:flex-start;"><span class="mono" style="font-size:11px; color:#C57712; font-weight:700; min-width:14px;">1.</span><span class="body" style="font-size:11.5px;">Maintain all habits from weeks 1–3.</span></li>
+              <li class="row" style="gap:10px; align-items:flex-start;"><span class="mono" style="font-size:11px; color:#C57712; font-weight:700; min-width:14px;">2.</span><span class="body" style="font-size:11.5px;">Add one entirely new plant food you've never eaten before.</span></li>
+              <li class="row" style="gap:10px; align-items:flex-start;"><span class="mono" style="font-size:11px; color:#C57712; font-weight:700; min-width:14px;">3.</span><span class="body" style="font-size:11.5px;">Review your notes from week 1 — track changes in energy or digestion.</span></li>
+              <li class="row" style="gap:10px; align-items:flex-start;"><span class="mono" style="font-size:11px; color:#C57712; font-weight:700; min-width:14px;">4.</span><span class="body" style="font-size:11.5px;">Take the EatoBiotics assessment again to see how your score has shifted.</span></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-footer">
+      <span>Section 03 · What to do</span>
+      <span class="page-num">14</span>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════
+       PAGE 15 — FOOD PRESCRIPTION
+       ════════════════════════════════════════════════════════════ -->
+  <section class="page" data-screen-label="15 Food prescription">
+    <div class="page-header">
+      <div class="left"><div class="brand-dot"></div><span>Section 03 · What to do</span></div>
+      <div>Your 5 priority foods</div>
+    </div>
+    <div class="page-pad">
+      <div class="eyebrow">Food prescription</div>
+      <h2 class="title" style="margin-top:8px;">Five foods chosen for you.</h2>
+      <p class="lead" style="margin-top:10px; max-width:62ch;">Based on your pillar scores, these five foods will have the highest impact on your gut system. Each is chosen for a specific biological reason — not general health advice.</p>
+
+      <!-- At a glance row -->
+      <div style="margin-top:14px; padding:10px 14px; border-radius:10px; background:#FAFAF7; border:1px solid rgba(26,46,18,0.06); display:grid; grid-template-columns: repeat(5, 1fr); gap:8px; align-items:center;">
+        <div style="text-align:center;"><span style="font-size:22px;">🥛</span> <span class="semi" style="font-size:11px;">Kefir</span> <span class="mono" style="font-size:9.5px; color:var(--muted-foreground);">· 7×/wk</span></div>
+        <div style="text-align:center;"><span style="font-size:22px;">🫙</span> <span class="semi" style="font-size:11px;">Sauerkraut</span> <span class="mono" style="font-size:9.5px; color:var(--muted-foreground);">· 4×/wk</span></div>
+        <div style="text-align:center;"><span style="font-size:22px;">🌱</span> <span class="semi" style="font-size:11px;">Artichoke</span> <span class="mono" style="font-size:9.5px; color:var(--muted-foreground);">· 3×/wk</span></div>
+        <div style="text-align:center;"><span style="font-size:22px;">🫘</span> <span class="semi" style="font-size:11px;">Chickpeas</span> <span class="mono" style="font-size:9.5px; color:var(--muted-foreground);">· 4×/wk</span></div>
+        <div style="text-align:center;"><span style="font-size:22px;">🍜</span> <span class="semi" style="font-size:11px;">Miso</span> <span class="mono" style="font-size:9.5px; color:var(--muted-foreground);">· 5×/wk</span></div>
+      </div>
+
+      <!-- Food detail cards -->
+      <div style="margin-top:12px;" class="stack-2">
+        <!-- 1. Kefir -->
+        <div class="card lifted" style="padding:0; overflow:hidden;">
+          <div style="display:grid; grid-template-columns: 76px 1fr 130px; align-items:stretch;">
+            <div style="background:linear-gradient(135deg, var(--icon-green), var(--icon-teal)); display:flex; align-items:center; justify-content:center; color:#fff;">
+              <div style="text-align:center;">
+                <div style="font-size:26px;">🥛</div>
+                <div class="mono" style="font-size:9px; letter-spacing:0.1em; margin-top:2px;">#01</div>
+              </div>
+            </div>
+            <div style="padding:10px 14px;">
+              <div class="row-between">
+                <h4 class="minor" style="font-size:15px;">Kefir <span class="body-sm" style="font-weight:400;">· #1 priority</span></h4>
+                <div class="row" style="gap:4px;"><span class="badge teal" style="font-size:8px; padding:1px 6px;">Pro</span><span class="badge lime" style="font-size:8px; padding:1px 6px;">Pre</span><span class="badge orange" style="font-size:8px; padding:1px 6px;">Pos</span></div>
+              </div>
+              <div class="body-sm" style="margin-top:2px; font-size:10px;"><span class="mono" style="color:var(--icon-green); font-weight:600; letter-spacing:0.1em;">KEY COMPOUND</span> &nbsp;30–50 bacterial strains + yeasts. Far more than standard supplements — your highest-impact starting food.</div>
+              <p class="body-sm" style="margin-top:4px; font-size:10px; color:var(--foreground);"><span class="semi">How to use —</span> 150–200ml plain unsweetened kefir at breakfast or mid-morning. Goat's milk kefir is gentler if you're new to it.</p>
+            </div>
+            <div style="background:#FAFAF7; padding:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; border-left:1px solid var(--border);">
+              <div class="eyebrow muted" style="font-size:8.5px;">Weekly target</div>
+              <div style="font-family:var(--font-serif); font-weight:700; font-size:32px; line-height:1; margin-top:4px;">7×</div>
+              <div class="body-sm" style="font-size:10px;">per week</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Sauerkraut -->
+        <div class="card lifted" style="padding:0; overflow:hidden;">
+          <div style="display:grid; grid-template-columns: 76px 1fr 130px;">
+            <div style="background:linear-gradient(135deg, var(--icon-lime), var(--icon-green)); display:flex; align-items:center; justify-content:center; color:#fff;">
+              <div style="text-align:center;">
+                <div style="font-size:26px;">🫙</div>
+                <div class="mono" style="font-size:9px; letter-spacing:0.1em; margin-top:2px;">#02</div>
+              </div>
+            </div>
+            <div style="padding:10px 14px;">
+              <div class="row-between">
+                <h4 class="minor" style="font-size:15px;">Sauerkraut <span class="body-sm" style="font-weight:400;">· #2 priority</span></h4>
+                <div class="row" style="gap:4px;"><span class="badge lime" style="font-size:8px; padding:1px 6px;">Pre</span><span class="badge teal" style="font-size:8px; padding:1px 6px;">Pro</span><span class="badge orange" style="font-size:8px; padding:1px 6px;">Pos</span></div>
+              </div>
+              <div class="body-sm" style="margin-top:2px; font-size:10px;"><span class="mono" style="color:var(--icon-green); font-weight:600; letter-spacing:0.1em;">KEY COMPOUND</span> &nbsp;Lactobacillus plantarum. Live, unpasteurised sauerkraut is among the richest natural sources.</div>
+              <p class="body-sm" style="margin-top:4px; font-size:10px; color:var(--foreground);"><span class="semi">How to use —</span> 1 tablespoon alongside meals, 3–4× per week. Look for refrigerated, unpasteurised — shelf-stable jarred versions are heat-treated.</p>
+            </div>
+            <div style="background:#FAFAF7; padding:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; border-left:1px solid var(--border);">
+              <div class="eyebrow muted" style="font-size:8.5px;">Weekly target</div>
+              <div style="font-family:var(--font-serif); font-weight:700; font-size:32px; line-height:1; margin-top:4px;">4×</div>
+              <div class="body-sm" style="font-size:10px;">per week</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Jerusalem artichoke -->
+        <div class="card lifted" style="padding:0; overflow:hidden;">
+          <div style="display:grid; grid-template-columns: 76px 1fr 130px;">
+            <div style="background:linear-gradient(135deg, var(--icon-lime), var(--icon-teal)); display:flex; align-items:center; justify-content:center; color:#fff;">
+              <div style="text-align:center;">
+                <div style="font-size:26px;">🌱</div>
+                <div class="mono" style="font-size:9px; letter-spacing:0.1em; margin-top:2px;">#03</div>
+              </div>
+            </div>
+            <div style="padding:10px 14px;">
+              <div class="row-between">
+                <h4 class="minor" style="font-size:15px;">Jerusalem artichoke <span class="body-sm" style="font-weight:400;">· #3 priority</span></h4>
+                <div class="row" style="gap:4px;"><span class="badge lime" style="font-size:8px; padding:1px 6px;">Pre</span></div>
+              </div>
+              <div class="body-sm" style="margin-top:2px; font-size:10px;"><span class="mono" style="color:var(--icon-green); font-weight:600; letter-spacing:0.1em;">KEY COMPOUND</span> &nbsp;Inulin (high-FOS). Specifically feeds Bifidobacterium — most strongly associated with gut health and mood.</div>
+              <p class="body-sm" style="margin-top:4px; font-size:10px; color:var(--foreground);"><span class="semi">How to use —</span> Roast or steam, add to salads or grain bowls. Start with 50g — inulin can cause bloating until your gut adapts. Increase gradually over 2–3 weeks.</p>
+            </div>
+            <div style="background:#FAFAF7; padding:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; border-left:1px solid var(--border);">
+              <div class="eyebrow muted" style="font-size:8.5px;">Weekly target</div>
+              <div style="font-family:var(--font-serif); font-weight:700; font-size:32px; line-height:1; margin-top:4px;">3×</div>
+              <div class="body-sm" style="font-size:10px;">per week</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Chickpeas -->
+        <div class="card lifted" style="padding:0; overflow:hidden;">
+          <div style="display:grid; grid-template-columns: 76px 1fr 130px;">
+            <div style="background:linear-gradient(135deg, var(--icon-yellow), var(--icon-lime)); display:flex; align-items:center; justify-content:center; color:#fff;">
+              <div style="text-align:center;">
+                <div style="font-size:26px;">🫘</div>
+                <div class="mono" style="font-size:9px; letter-spacing:0.1em; margin-top:2px;">#04</div>
+              </div>
+            </div>
+            <div style="padding:10px 14px;">
+              <div class="row-between">
+                <h4 class="minor" style="font-size:15px;">Chickpeas <span class="body-sm" style="font-weight:400;">· #4 priority</span></h4>
+                <div class="row" style="gap:4px;"><span class="badge lime" style="font-size:8px; padding:1px 6px;">Pre</span><span class="badge orange" style="font-size:8px; padding:1px 6px;">Pos</span></div>
+              </div>
+              <div class="body-sm" style="margin-top:2px; font-size:10px;"><span class="mono" style="color:var(--icon-green); font-weight:600; letter-spacing:0.1em;">KEY COMPOUND</span> &nbsp;Resistant starch + fermentable fibre. Feeds the butyrate-producing bacteria your gut lining depends on.</div>
+              <p class="body-sm" style="margin-top:4px; font-size:10px; color:var(--foreground);"><span class="semi">How to use —</span> Salads, curries, roasted as a snack. Canned is fine — rinse well. Aim for 3–4 servings per week.</p>
+            </div>
+            <div style="background:#FAFAF7; padding:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; border-left:1px solid var(--border);">
+              <div class="eyebrow muted" style="font-size:8.5px;">Weekly target</div>
+              <div style="font-family:var(--font-serif); font-weight:700; font-size:32px; line-height:1; margin-top:4px;">4×</div>
+              <div class="body-sm" style="font-size:10px;">per week</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Miso -->
+        <div class="card lifted" style="padding:0; overflow:hidden;">
+          <div style="display:grid; grid-template-columns: 76px 1fr 130px;">
+            <div style="background:linear-gradient(135deg, var(--icon-orange), var(--icon-yellow)); display:flex; align-items:center; justify-content:center; color:#fff;">
+              <div style="text-align:center;">
+                <div style="font-size:26px;">🍜</div>
+                <div class="mono" style="font-size:9px; letter-spacing:0.1em; margin-top:2px;">#05</div>
+              </div>
+            </div>
+            <div style="padding:10px 14px;">
+              <div class="row-between">
+                <h4 class="minor" style="font-size:15px;">Miso <span class="body-sm" style="font-weight:400;">· #5 priority</span></h4>
+                <div class="row" style="gap:4px;"><span class="badge teal" style="font-size:8px; padding:1px 6px;">Pro</span><span class="badge orange" style="font-size:8px; padding:1px 6px;">Pos</span></div>
+              </div>
+              <div class="body-sm" style="margin-top:2px; font-size:10px;"><span class="mono" style="color:var(--icon-green); font-weight:600; letter-spacing:0.1em;">KEY COMPOUND</span> &nbsp;Aspergillus oryzae + lactic acid bacteria. Also provides glutamate, which supports the gut lining.</div>
+              <p class="body-sm" style="margin-top:4px; font-size:10px; color:var(--foreground);"><span class="semi">How to use —</span> Dissolve a teaspoon in warm (not boiling) water for a quick broth, or use as a marinade or dressing. Don't boil — heat destroys the live cultures.</p>
+            </div>
+            <div style="background:#FAFAF7; padding:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; border-left:1px solid var(--border);">
+              <div class="eyebrow muted" style="font-size:8.5px;">Weekly target</div>
+              <div style="font-family:var(--font-serif); font-weight:700; font-size:32px; line-height:1; margin-top:4px;">5×</div>
+              <div class="body-sm" style="font-size:10px;">per week</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="page-footer">
+      <span>Section 03 · What to do</span>
+      <span class="page-num">15</span>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════
+       PAGE 16 — WEEKLY SHOPPING LIST
+       ════════════════════════════════════════════════════════════ -->
+  <section class="page" data-screen-label="16 Shopping list">
+    <div class="page-header">
+      <div class="left"><div class="brand-dot"></div><span>Section 03 · What to do</span></div>
+      <div>Weekly gut-health shop</div>
+    </div>
+    <div class="page-pad">
+      <div class="eyebrow">Weekly shopping list</div>
+      <h2 class="title" style="margin-top:8px;">Your standing weekly shop.</h2>
+      <p class="lead" style="margin-top:10px; max-width:62ch;">31 items across 5 categories — your 5 priority picks are highlighted within. Built around all three biotics, designed to be your standing weekly list.</p>
+
+      <!-- Priority strip -->
+      <div style="margin-top:18px; padding:10px 14px; border-radius:10px; background: linear-gradient(135deg, rgba(76,182,72,0.08), rgba(245,166,35,0.08)); border:1px solid rgba(76,182,72,0.2); display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+        <div class="eyebrow" style="font-size:9px; color:var(--icon-green);">★ Priority picks</div>
+        <div class="row" style="gap:12px; flex-wrap:wrap;">
+          <span class="semi" style="font-size:11px;">🥛 Kefir</span>
+          <span class="semi" style="font-size:11px;">🫙 Sauerkraut</span>
+          <span class="semi" style="font-size:11px;">🌱 Jerusalem artichoke</span>
+          <span class="semi" style="font-size:11px;">🫘 Chickpeas</span>
+          <span class="semi" style="font-size:11px;">🍜 Miso</span>
+        </div>
+      </div>
+
+      <!-- 5 categories -->
+      <div style="margin-top:18px; display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
+
+        <!-- Fermented -->
+        <div class="card" style="padding:14px;">
+          <div class="row-between" style="padding-bottom:10px; border-bottom:1px solid var(--border);">
+            <div class="semi" style="font-size:13px;">🧫 Fermented &amp; live cultures</div>
+            <div class="badge teal" style="font-size:8px;">Probiotics</div>
+          </div>
+          <ul style="list-style:none; padding:0; margin:8px 0 0;">
+            <li class="shop-item"><span>Plain live-culture yoghurt <span class="body-sm" style="font-size:10px;">— check 'live active cultures'</span></span></li>
+            <li class="shop-item priority"><span>🥛 Kefir <span class="body-sm" style="font-size:10px;">— dairy or goat's, plain unsweetened</span></span><span class="badge solid" style="font-size:7.5px; padding:1px 6px;">★</span></li>
+            <li class="shop-item priority"><span>🫙 Sauerkraut <span class="body-sm" style="font-size:10px;">— refrigerated, unpasteurised only</span></span><span class="badge solid" style="font-size:7.5px; padding:1px 6px;">★</span></li>
+            <li class="shop-item"><span>Kimchi <span class="body-sm" style="font-size:10px;">— refrigerated, traditional ferment</span></span></li>
+            <li class="shop-item priority"><span>🍜 Miso paste <span class="body-sm" style="font-size:10px;">— add after cooking, never boil</span></span><span class="badge solid" style="font-size:7.5px; padding:1px 6px;">★</span></li>
+            <li class="shop-item"><span>Tempeh <span class="body-sm" style="font-size:10px;">— firm fermented soy</span></span></li>
+            <li class="shop-item"><span>Kombucha <span class="body-sm" style="font-size:10px;">— under 5g sugar / 100ml</span></span></li>
+          </ul>
+        </div>
+
+        <!-- Prebiotic produce -->
+        <div class="card" style="padding:14px;">
+          <div class="row-between" style="padding-bottom:10px; border-bottom:1px solid var(--border);">
+            <div class="semi" style="font-size:13px;">🌿 Prebiotic produce</div>
+            <div class="badge lime" style="font-size:8px;">Prebiotics</div>
+          </div>
+          <ul style="list-style:none; padding:0; margin:8px 0 0;">
+            <li class="shop-item"><span>Garlic <span class="body-sm" style="font-size:10px;">— 2 cloves per dish, base for everything</span></span></li>
+            <li class="shop-item"><span>Onions &amp; shallots <span class="body-sm" style="font-size:10px;">— raw is most prebiotic</span></span></li>
+            <li class="shop-item"><span>Leeks <span class="body-sm" style="font-size:10px;">— high in inulin, mild flavour</span></span></li>
+            <li class="shop-item"><span>Asparagus <span class="body-sm" style="font-size:10px;">— in season spring, peak prebiotic</span></span></li>
+            <li class="shop-item priority"><span>🌱 Jerusalem artichoke <span class="body-sm" style="font-size:10px;">— highest inulin of any veg</span></span><span class="badge solid" style="font-size:7.5px; padding:1px 6px;">★</span></li>
+            <li class="shop-item"><span>Banana <span class="body-sm" style="font-size:10px;">— slightly underripe for resistant starch</span></span></li>
+            <li class="shop-item"><span>Chicory / endive <span class="body-sm" style="font-size:10px;">— most concentrated inulin</span></span></li>
+          </ul>
+        </div>
+
+        <!-- Polyphenol -->
+        <div class="card" style="padding:14px;">
+          <div class="row-between" style="padding-bottom:10px; border-bottom:1px solid var(--border);">
+            <div class="semi" style="font-size:13px;">🫐 Polyphenol-rich produce</div>
+            <div class="badge lime" style="font-size:8px;">Prebiotics</div>
+          </div>
+          <ul style="list-style:none; padding:0; margin:8px 0 0;">
+            <li class="shop-item"><span>Blueberries <span class="body-sm" style="font-size:10px;">— frozen is nutritionally equivalent</span></span></li>
+            <li class="shop-item"><span>Spinach <span class="body-sm" style="font-size:10px;">— 60–80g fresh, wilts when cooked</span></span></li>
+            <li class="shop-item"><span>Broccoli <span class="body-sm" style="font-size:10px;">— lightly steamed preserves sulforaphane</span></span></li>
+            <li class="shop-item"><span>Red cabbage <span class="body-sm" style="font-size:10px;">— raw in slaws, anthocyanin-rich</span></span></li>
+            <li class="shop-item"><span>Walnuts <span class="body-sm" style="font-size:10px;">— raw, not roasted</span></span></li>
+            <li class="shop-item"><span>Dark chocolate 70%+ <span class="body-sm" style="font-size:10px;">— 20–30g, highest polyphenol density</span></span></li>
+            <li class="shop-item"><span>Pomegranate seeds <span class="body-sm" style="font-size:10px;">— urolithin precursors</span></span></li>
+          </ul>
+        </div>
+
+        <!-- Wholegrains & legumes -->
+        <div class="card" style="padding:14px;">
+          <div class="row-between" style="padding-bottom:10px; border-bottom:1px solid var(--border);">
+            <div class="semi" style="font-size:13px;">🌾 Wholegrains &amp; legumes</div>
+            <div class="badge lime" style="font-size:8px;">Prebiotics</div>
+          </div>
+          <ul style="list-style:none; padding:0; margin:8px 0 0;">
+            <li class="shop-item"><span>Rolled oats <span class="body-sm" style="font-size:10px;">— slow-cooked over instant</span></span></li>
+            <li class="shop-item"><span>Lentils <span class="body-sm" style="font-size:10px;">— red dissolves, green/black hold shape</span></span></li>
+            <li class="shop-item priority"><span>🫘 Chickpeas <span class="body-sm" style="font-size:10px;">— canned is fine, rinse thoroughly</span></span><span class="badge solid" style="font-size:7.5px; padding:1px 6px;">★</span></li>
+            <li class="shop-item"><span>Black beans <span class="body-sm" style="font-size:10px;">— highest resistant starch of common legumes</span></span></li>
+            <li class="shop-item"><span>Barley <span class="body-sm" style="font-size:10px;">— pearl or pot, outstanding beta-glucan</span></span></li>
+            <li class="shop-item"><span>Quinoa <span class="body-sm" style="font-size:10px;">— complete protein + prebiotic fibre</span></span></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Proteins row full-width -->
+      <div style="margin-top:14px;" class="card">
+        <div class="row-between" style="padding:0 14px 10px 14px; border-bottom:1px solid var(--border);">
+          <div class="semi" style="font-size:13px;">🥚 Proteins &amp; healthy fats</div>
+          <div class="badge orange" style="font-size:8px;">Postbiotics</div>
+        </div>
+        <ul style="list-style:none; padding:0; margin:0; display:grid; grid-template-columns: 1fr 1fr 1fr 1fr;">
+          <li class="shop-item" style="margin:0; padding:8px 14px;"><span>Eggs <span class="body-sm" style="font-size:10px;">— poached / soft-boiled</span></span></li>
+          <li class="shop-item" style="margin:0; padding:8px 14px;"><span>Oily fish 3×/wk <span class="body-sm" style="font-size:10px;">— DHA for brain &amp; gut</span></span></li>
+          <li class="shop-item" style="margin:0; padding:8px 14px;"><span>Mixed seeds <span class="body-sm" style="font-size:10px;">— flax, chia, pumpkin</span></span></li>
+          <li class="shop-item" style="margin:0; padding:8px 14px;"><span>EVOO <span class="body-sm" style="font-size:10px;">— polyphenols feed bacteria</span></span></li>
+        </ul>
+      </div>
+
+      <!-- footer note -->
+      <div style="margin-top:auto; padding-top:10px;">
+        <div class="body-sm" style="font-size:10.5px; text-align:center;"><span class="semi" style="color:var(--foreground);">This list evolves in your EatoBiotics account</span> — rotating with seasons, adapting as your score improves.</div>
+      </div>
+    </div>
+
+    <style>
+      .shop-item {
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:8px;
+        padding:5px 0;
+        border-bottom: 1px dashed rgba(26,46,18,0.08);
+        font-family: var(--font-sans);
+        font-size: 11px;
+        color: var(--foreground);
+      }
+      .shop-item:last-child { border-bottom: none; }
+      .shop-item.priority { background: rgba(76,182,72,0.04); margin: 0 -8px; padding: 5px 8px; border-radius: 6px; border-bottom-color: transparent; }
+    </style>
+
+    <div class="page-footer">
+      <span>Section 03 · What to do</span>
+      <span class="page-num">16</span>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════
+       PAGE 17 — POWER COMBINATIONS
+       ════════════════════════════════════════════════════════════ -->
+  <section class="page" data-screen-label="17 Power combinations">
+    <div class="page-header">
+      <div class="left"><div class="brand-dot"></div><span>Section 03 · What to do</span></div>
+      <div>Power combinations</div>
+    </div>
+    <div class="page-pad">
+      <div class="eyebrow">Power combinations</div>
+      <h2 class="title" style="margin-top:8px;">Synbiotic pairings.</h2>
+      <p class="lead" style="margin-top:10px; max-width:60ch;">These food pairings produce significantly greater benefits than each food alone — a concept known as synbiotics. Prebiotic feeds probiotic; multiplication follows.</p>
+
+      <div class="grid-2" style="margin-top:24px;">
+        <!-- Combo 1 -->
+        <div class="card lifted" style="padding:0; overflow:hidden;">
+          <div style="padding:18px;">
+            <div class="row-between">
+              <div class="eyebrow" style="font-size:9px;">Pairing 01 · Probiotic + Prebiotic</div>
+              <div class="badge solid">Synbiotic</div>
+            </div>
+            <div style="margin-top:18px; display:flex; align-items:center; gap:14px;">
+              <div style="text-align:center;"><div style="font-size:48px;">🥛</div><div class="semi" style="font-size:11px;">Kefir</div></div>
+              <div style="font-family:var(--font-serif); font-weight:700; font-size:32px; color:var(--icon-green);">+</div>
+              <div style="text-align:center;"><div style="font-size:48px;">🌱</div><div class="semi" style="font-size:11px;">Artichoke</div></div>
+            </div>
+            <h4 class="minor" style="margin-top:18px; font-size:18px;">Kefir + Jerusalem artichoke.</h4>
+            <p class="body" style="margin-top:8px; font-size:12px;">The bacteria in kefir feed on the inulin in artichoke, multiplying and diversifying your microbiome far beyond what either food achieves alone. A clinically-recognised synbiotic pairing.</p>
+          </div>
+          <div style="padding:14px 18px; background:#FAFAF7; border-top:1px solid var(--border);">
+            <div class="row-between">
+              <div class="body-sm" style="font-size:10.5px;">Try it</div>
+              <div class="semi" style="font-size:11px;">Blend kefir + roasted artichoke into a savoury breakfast bowl</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Combo 2 -->
+        <div class="card lifted" style="padding:0; overflow:hidden;">
+          <div style="padding:18px;">
+            <div class="row-between">
+              <div class="eyebrow" style="font-size:9px;">Pairing 02 · Probiotic + Prebiotic</div>
+              <div class="badge solid">Synbiotic</div>
+            </div>
+            <div style="margin-top:18px; display:flex; align-items:center; gap:14px;">
+              <div style="text-align:center;"><div style="font-size:48px;">🫘</div><div class="semi" style="font-size:11px;">Chickpeas</div></div>
+              <div style="font-family:var(--font-serif); font-weight:700; font-size:32px; color:var(--icon-green);">+</div>
+              <div style="text-align:center;"><div style="font-size:48px;">🫙</div><div class="semi" style="font-size:11px;">Sauerkraut</div></div>
+            </div>
+            <h4 class="minor" style="margin-top:18px; font-size:18px;">Chickpeas + sauerkraut.</h4>
+            <p class="body" style="margin-top:8px; font-size:12px;">Resistant starch + live cultures — chickpeas provide the fermentable fuel; sauerkraut supplies the bacteria to ferment it. Together they maximise butyrate production for gut lining repair.</p>
+          </div>
+          <div style="padding:14px 18px; background:#FAFAF7; border-top:1px solid var(--border);">
+            <div class="row-between">
+              <div class="body-sm" style="font-size:10.5px;">Try it</div>
+              <div class="semi" style="font-size:11px;">Chickpea salad bowl with 1 tbsp sauerkraut on top</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mechanism explainer -->
+      <div style="margin-top:24px;" class="card">
+        <div class="eyebrow muted" style="font-size:9px;">How synbiotics work</div>
+        <div style="margin-top:14px; display:grid; grid-template-columns: 1fr 1fr 1fr; gap:14px;">
+          <div class="row" style="gap:10px; align-items:flex-start;">
+            <div style="width:28px; height:28px; border-radius:8px; background:rgba(168,224,99,0.2); display:flex; align-items:center; justify-content:center; font-family:var(--font-serif); font-weight:700; font-size:12px; color:#4A7E1A; flex-shrink:0;">01</div>
+            <div><div class="semi" style="font-size:12px;">Prebiotic arrives first</div><div class="body-sm" style="font-size:10.5px; margin-top:2px;">Fibre passes intact into the colon — the bacterial pantry.</div></div>
+          </div>
+          <div class="row" style="gap:10px; align-items:flex-start;">
+            <div style="width:28px; height:28px; border-radius:8px; background:rgba(45,170,110,0.16); display:flex; align-items:center; justify-content:center; font-family:var(--font-serif); font-weight:700; font-size:12px; color:#0F7345; flex-shrink:0;">02</div>
+            <div><div class="semi" style="font-size:12px;">Probiotic feeds on it</div><div class="body-sm" style="font-size:10.5px; margin-top:2px;">Live bacteria from the paired food multiply rapidly on the fuel source.</div></div>
+          </div>
+          <div class="row" style="gap:10px; align-items:flex-start;">
+            <div style="width:28px; height:28px; border-radius:8px; background:rgba(245,166,35,0.16); display:flex; align-items:center; justify-content:center; font-family:var(--font-serif); font-weight:700; font-size:12px; color:#C57712; flex-shrink:0;">03</div>
+            <div><div class="semi" style="font-size:12px;">Postbiotic compounds form</div><div class="body-sm" style="font-size:10.5px; margin-top:2px;">Short-chain fatty acids (especially butyrate) are produced in larger quantities.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-footer">
+      <span>Section 03 · What to do</span>
+      <span class="page-num">17</span>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════
+       PAGE 18 — WHERE YOU GO FROM HERE
+       ════════════════════════════════════════════════════════════ -->
+  <section class="page dark-page" data-screen-label="18 Where you go from here">
+    <div class="page-header" style="color:rgba(255,255,255,0.55);">
+      <div class="left"><div class="brand-dot"></div><span style="color:rgba(255,255,255,0.7);">Final thoughts</span></div>
+      <div>Where you go from here</div>
+    </div>
+    <div class="page-pad">
+      <div class="eyebrow">Final thoughts</div>
+      <h2 class="title" style="margin-top:8px;">Where you go from here.</h2>
+
+      <!-- Report at a glance -->
+      <div style="margin-top:22px;" class="card lifted">
+        <div class="eyebrow muted" style="font-size:9px;">Your report at a glance</div>
+        <div style="margin-top:14px; display:grid; grid-template-columns: 1fr 2fr 1fr; gap:24px; align-items:center;">
+          <div style="text-align:center;">
+            <div class="eyebrow muted" style="font-size:9px;">Starting score</div>
+            <div style="font-family:var(--font-serif); font-weight:700; font-size:62px; line-height:1; letter-spacing:-0.04em; margin-top:6px;">68</div>
+            <div class="eyebrow" style="font-size:9px; margin-top:4px;">Emerging Balance</div>
+          </div>
+
+          <div style="position:relative;">
+            <svg viewBox="0 0 280 100" width="100%" height="80">
+              <path d="M10 70 L 270 24" stroke="url(#brandGradH)" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <circle cx="10" cy="70" r="6" fill="#fff" stroke="#1A2E12" stroke-width="2"/>
+              <circle cx="270" cy="24" r="7" fill="#4CB648" stroke="#fff" stroke-width="2"/>
+              <text x="10" y="92" font-family="Geist Mono, monospace" font-size="9" fill="#5A6E50">NOW · 68</text>
+              <text x="270" y="92" text-anchor="end" font-family="Geist Mono, monospace" font-size="9" fill="#5A6E50">DAY 30 · 83</text>
+            </svg>
+            <div style="text-align:center; margin-top:6px;" class="badge solid">+15 point potential gain</div>
+          </div>
+
+          <div style="text-align:center;">
+            <div class="eyebrow muted" style="font-size:9px;">Projected score</div>
+            <div style="font-family:var(--font-serif); font-weight:700; font-size:62px; line-height:1; letter-spacing:-0.04em; margin-top:6px;" class="gradient-text">83</div>
+            <div class="eyebrow" style="font-size:9px; margin-top:4px;">Strong Foundation</div>
+          </div>
+        </div>
+
+        <div class="divider-thin"></div>
+
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:14px;">
+          <div>
+            <div class="row" style="gap:8px;"><span class="biotic-pill lime"></span><span class="eyebrow" style="font-size:9px; color:#4A7E1A;">Prebiotics</span></div>
+            <div style="display:flex; align-items:baseline; gap:6px; margin-top:4px;"><span style="font-family:var(--font-serif); font-weight:700; font-size:24px;">72</span><span class="body-sm" style="font-size:10.5px;">Strong — protect &amp; build on.</span></div>
+          </div>
+          <div>
+            <div class="row" style="gap:8px;"><span class="biotic-pill teal"></span><span class="eyebrow" style="font-size:9px; color:#0F7345;">Probiotics</span></div>
+            <div style="display:flex; align-items:baseline; gap:6px; margin-top:4px;"><span style="font-family:var(--font-serif); font-weight:700; font-size:24px;">45</span><span class="body-sm" style="font-size:10.5px;">Priority gap — focus here first.</span></div>
+          </div>
+          <div>
+            <div class="row" style="gap:8px;"><span class="biotic-pill orange"></span><span class="eyebrow" style="font-size:9px; color:#C57712;">Postbiotics</span></div>
+            <div style="display:flex; align-items:baseline; gap:6px; margin-top:4px;"><span style="font-family:var(--font-serif); font-weight:700; font-size:24px;">78</span><span class="body-sm" style="font-size:10.5px;">Strong — protect &amp; build on.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Three commitments -->
+      <div style="margin-top:22px;">
+        <div class="eyebrow muted" style="font-size:9px;">Your three commitments starting today</div>
+        <div class="grid-3" style="margin-top:12px;">
+          <div class="card soft" style="padding:16px;">
+            <div style="font-family:var(--font-serif); font-weight:700; font-size:32px; line-height:1; color:var(--icon-green);">01</div>
+            <h4 class="minor" style="margin-top:8px; font-size:14px;">Start with one change.</h4>
+            <p class="body-sm" style="margin-top:6px; font-size:10.5px; color:var(--foreground);">Pick the single highest-impact action from your 7-day plan and do it today. Don't wait for the perfect moment — one action builds the habit loop that makes the rest easier.</p>
+          </div>
+          <div class="card soft" style="padding:16px;">
+            <div style="font-family:var(--font-serif); font-weight:700; font-size:32px; line-height:1; color:#0F7345;">02</div>
+            <h4 class="minor" style="margin-top:8px; font-size:14px;">Stay consistent for 30 days.</h4>
+            <p class="body-sm" style="margin-top:6px; font-size:10.5px; color:var(--foreground);">The gut microbiome doesn't respond to occasional efforts. Consistency across 30 days is what produces the measurable shift your projection is based on.</p>
+          </div>
+          <div class="card soft" style="padding:16px;">
+            <div style="font-family:var(--font-serif); font-weight:700; font-size:32px; line-height:1; color:#C57712;">03</div>
+            <h4 class="minor" style="margin-top:8px; font-size:14px;">Retest after 30 days.</h4>
+            <p class="body-sm" style="margin-top:6px; font-size:10.5px; color:var(--foreground);">Your score is a baseline, not a verdict. Retaking the assessment after applying this plan gives you a real measurement of what changed — and a new starting point to build from.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Closing sign-off -->
+      <div style="margin-top:auto; padding-top:18px;">
+        <div style="padding:28px 32px; border-radius:14px; background:var(--brand-gradient-h); position:relative; overflow:hidden;">
+          <div class="row-between" style="gap:32px; align-items:flex-start;">
+            <div style="flex:1.4;">
+              <div class="eyebrow" style="color:rgba(26,46,18,0.7);">A note to close on</div>
+              <p style="font-family:var(--font-serif); font-style:italic; font-weight:500; font-size:20px; line-height:1.35; color:#1A2E12; margin:10px 0 0; letter-spacing:-0.01em;">“Your gut system is more responsive to change than most people realise. The right inputs, consistently applied, produce results that are both measurable and felt.”</p>
+              <div style="margin-top:14px; display:flex; align-items:center; gap:10px;">
+                <div style="width:32px; height:1px; background:rgba(26,46,18,0.35);"></div>
+                <div class="mono" style="font-size:10px; letter-spacing:0.16em; color:rgba(26,46,18,0.7); text-transform:uppercase;">EatoBiotics Research</div>
+              </div>
+            </div>
+            <div style="flex:1; border-left:1px solid rgba(26,46,18,0.15); padding-left:28px;">
+              <div class="eyebrow" style="color:rgba(26,46,18,0.7);">Mark your Day 30</div>
+              <div style="margin-top:10px; padding:14px 16px; background:rgba(255,255,255,0.55); border-radius:10px; border:1px dashed rgba(26,46,18,0.25);">
+                <div class="body-sm" style="font-size:10px; color:rgba(26,46,18,0.7); letter-spacing:0.04em;">Retest date</div>
+                <div style="font-family:var(--font-serif); font-weight:600; font-size:22px; color:#1A2E12; margin-top:4px; letter-spacing:-0.01em;">______ / ______ / ______</div>
+              </div>
+              <p class="body-sm" style="margin-top:10px; font-size:10.5px; color:rgba(26,46,18,0.78);">Write your retest date above. Gut composition shifts measurably in 3–4 weeks of consistent change — retake the assessment then to see what moved.</p>
+            </div>
+          </div>
+
+          <div style="height:1px; background:rgba(26,46,18,0.15); margin:18px 0 14px;"></div>
+
+          <div class="row-between">
+            <div class="mono" style="font-size:9px; letter-spacing:0.18em; color:rgba(26,46,18,0.7); text-transform:uppercase;">Sample Report · v1.0 · Prepared for You</div>
+            <div class="mono" style="font-size:9px; letter-spacing:0.18em; color:rgba(26,46,18,0.7); text-transform:uppercase;">eatobiotics.com</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-footer">
+      <span>Final thoughts · End of report</span>
+      <span class="page-num">18</span>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>

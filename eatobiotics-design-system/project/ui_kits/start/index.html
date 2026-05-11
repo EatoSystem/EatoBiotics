@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EatoBiotics — Start Landing Page Kit</title>
+<link rel="stylesheet" href="../../colors_and_type.css">
+<style>
+body{margin:0;font-family:'DM Sans',sans-serif;color:#1A2E12;background:#fff}
+.toolbar{position:fixed;top:16px;right:16px;background:#fff;border:1px solid #E5E5E5;border-radius:12px;padding:6px;display:flex;gap:4px;box-shadow:0 6px 18px -8px rgba(0,0,0,.12);z-index:50}
+.toolbar button{padding:8px 14px;border:none;background:transparent;font-size:12px;font-weight:600;color:#5A6E50;border-radius:8px;cursor:pointer;font-family:inherit}
+.toolbar button.active{background:#1A2E12;color:#fff}
+.toolbar .dot{display:inline-block;width:8px;height:8px;border-radius:9999px;margin-right:6px;vertical-align:middle}
+.section-divider{height:4px;background:linear-gradient(90deg,#A8E063 0%,#4CB648 25%,#2DAA6E 50%,#F5C518 75%,#F5A623 100%)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="Components.jsx"></script>
+<script type="text/babel">
+const { useState } = React;
+
+const ROUTES = {
+  core: {
+    accent: '#4CB648',
+    badge: 'You Pathway · Free · 2 minutes',
+    headline: "What's your",
+    headlineAccent: 'Food System Score?',
+    tension: 'Most people are scoring below 60 — without knowing it.',
+    subhead: "Discover how your daily food habits are shaping your digestion, energy, and mood — in under 2 minutes.",
+    cta: 'Check your Food System Score',
+    score: { score: 68, gradientStops:['#A8E063','#4CB648','#2DAA6E'], pillars:[
+      {name:'Diversity', value:74, color:'#A8E063'},
+      {name:'Feeding', value:62, color:'#4CB648'},
+      {name:'Live Foods', value:55, color:'#2DAA6E'},
+      {name:'Rhythm', value:48, color:'#F5A623'},
+    ], label:'YOUR FOOD SYSTEM SCORE' },
+    problemH2: "You're eating well. So why don't you feel like it's working?",
+    problemOpening: "You don't have a discipline problem. You have a system problem.",
+    gaps: [
+      { label:'Not enough plant diversity week to week', tag:'DIVERSITY' },
+      { label:'Missing the fermented foods your gut needs', tag:'LIVE FOODS' },
+      { label:'Inconsistent rhythm — eating resets every day', tag:'RHYTHM' },
+    ],
+    symptoms: [
+      'Energy crashes in the afternoon you can\'t outwork',
+      'Digestion that\'s "fine" but never quite right',
+      'No clear system — every meal is a fresh decision',
+    ],
+    solutionH2: 'The Food System Score',
+    solutionSub: "You don't need another diet. You need a clearer picture of how your food is actually working.",
+    table: [
+      { not:'Tracking calories', is:'Tracking how your food feeds your system' },
+      { not:'Willpower and restriction', is:'A rhythm that holds itself' },
+      { not:'Guessing what\'s working', is:'A clear score across 4 pillars' },
+    ],
+    pillars: [
+      {name:'Diversity', desc:'How many plants you eat in a week'},
+      {name:'Feeding', desc:'Fiber and prebiotics across meals'},
+      {name:'Live Foods', desc:'Fermented foods your gut depends on'},
+      {name:'Rhythm', desc:'Consistency of your eating pattern'},
+    ],
+    pressureH2: 'Most people are scoring below 60.',
+    pressureBody: 'Not because they don\'t try — but because nobody taught them their food as a system.',
+    pressureEmph: 'Where are you?',
+    finalH2: 'Check your Food System Score',
+    finalSub: 'Free report included · Takes 2 minutes · Instant results',
+  },
+  family: {
+    accent: '#F5C518',
+    badge: 'Family Pathway · Free · 2 minutes',
+    headline: "What's your",
+    headlineAccent: 'Family Food System Score?',
+    tension: 'Most families are scoring below 60 — without knowing it.',
+    subhead: "Discover how your household's food habits are shaping every family member's health — in under 2 minutes.",
+    cta: 'Check your Family Food System Score',
+    score: { score: 62, gradientStops:['#A8E063','#4CB648','#F5C518','#F5A623'], pillars:[
+      {name:'Variety', value:68, color:'#A8E063'},
+      {name:'Fermented Foods', value:49, color:'#F5C518'},
+      {name:'Routine', value:57, color:'#4CB648'},
+      {name:'Together', value:44, color:'#F5A623'},
+    ], label:'FAMILY FOOD SYSTEM' },
+    problemH2: "You feed your family every day. But is it actually building their health?",
+    problemOpening: "You don't have a discipline problem. Your family may have a system problem.",
+    gaps: [
+      { label:'Not enough variety across the whole family', tag:'VARIETY' },
+      { label:'Inconsistent eating habits that reset each week', tag:'ROUTINE' },
+      { label:'Missing the fermented foods every gut depends on', tag:'BIOTICS' },
+    ],
+    symptoms: [
+      "Kids' energy crashes and mood swings that seem food-related",
+      'Adults running on empty — despite eating what feels balanced',
+      'No clear system — so every meal is a decision from scratch',
+    ],
+    solutionH2: 'The Family Food System Score',
+    solutionSub: "You don't need a new recipe. You need a clearer picture of how your family's food is actually working.",
+    table: [
+      { not:'Picky eater battles', is:'A shared plate every family member can eat from' },
+      { not:'Meal planning from scratch', is:'One weekly framework that covers everyone' },
+      { not:'Separate meals for adults and kids', is:'One food system that grows with them' },
+    ],
+    pillars: [
+      {name:'Variety', desc:'Plant diversity across the whole household'},
+      {name:'Routine', desc:'Consistent eating rhythm through the week'},
+      {name:'Biotics', desc:'Fermented foods every gut depends on'},
+      {name:'Together', desc:'Shared meals that build habits together'},
+    ],
+    pressureH2: 'Most families are scoring below 60.',
+    pressureBody: "Not because they don't try — but because they don't have a shared system.",
+    pressureEmph: 'Where is your family?',
+    finalH2: 'Check your Family Food System Score',
+    finalSub: 'Free report included · Takes 2 minutes · Instant results',
+  },
+  mind: {
+    accent: '#2DAA6E',
+    badge: 'Gut-Brain Pathway · Free · 2 minutes',
+    headline: "What's your",
+    headlineAccent: 'Gut-Brain Score?',
+    tension: '95% of your serotonin is made in your gut. Most people\'s gut isn\'t fed for it.',
+    subhead: 'Discover how your daily food habits are shaping your mood, focus, and mental clarity — in under 2 minutes.',
+    cta: 'Check your Gut-Brain Score',
+    score: { score: 59, gradientStops:['#2DAA6E','#4CB648','#A8E063'], pillars:[
+      {name:'Gut Diversity', value:62, color:'#2DAA6E'},
+      {name:'Serotonin Foods', value:48, color:'#4CB648'},
+      {name:'Anti-Inflammatory', value:65, color:'#A8E063'},
+      {name:'Brain Biotics', value:53, color:'#F5C518'},
+    ], label:'GUT-BRAIN SCORE' },
+    problemH2: "You're treating a gut problem like a brain problem.",
+    problemOpening: 'Most people dealing with brain fog, low mood, or inconsistent focus are looking in the wrong place.',
+    gaps: [
+      { label:'Not enough diversity to feed serotonin production', tag:'DIVERSITY' },
+      { label:'Missing the fermented foods that feed your mood', tag:'SEROTONIN' },
+      { label:'Chronic low-level inflammation affecting clarity', tag:'INFLAMMATION' },
+    ],
+    symptoms: [
+      "Brain fog that arrives mid-morning and won't leave",
+      'Mood dips that feel random but follow your meals',
+      'Focus that works one day and disappears the next',
+    ],
+    solutionH2: 'The Gut-Brain Score',
+    solutionSub: "You don't need a new supplement. You need to understand what your gut is — or isn't — feeding your brain.",
+    table: [
+      { not:'Mood as a brain problem', is:'Mood as a gut-feeding problem' },
+      { not:'Supplements and stimulants', is:'Food that produces what you need' },
+      { not:"Guessing what affects your focus", is:'A clear score with specific gaps' },
+    ],
+    pillars: [
+      {name:'Gut Diversity', desc:'Plant variety that feeds the microbiome'},
+      {name:'Serotonin Foods', desc:'Fermented and fiber foods for mood'},
+      {name:'Anti-Inflammatory', desc:'Foods that calm systemic inflammation'},
+      {name:'Brain Biotics', desc:'Postbiotics that cross the gut-brain axis'},
+    ],
+    pressureH2: "Most people's Gut-Brain Score is below 60.",
+    pressureBody: 'Not because of bad intentions — but because nobody taught them their gut runs their mind.',
+    pressureEmph: "What's yours?",
+    finalH2: 'Check your Gut-Brain Score',
+    finalSub: 'Free report included · Takes 2 minutes · Instant results',
+  },
+};
+
+function App() {
+  const [route, setRoute] = useState('family');
+  const cfg = ROUTES[route];
+  const ctaLabel = cfg.cta + ' →';
+
+  return (
+    <div>
+      <div className="toolbar">
+        {['core','family','mind'].map(r =>
+          <button key={r} className={route===r?'active':''} onClick={()=>setRoute(r)}>
+            <span className="dot" style={{background:ROUTES[r].accent}}/>/start{r==='core'?'':'-'+r}
+          </button>)}
+      </div>
+
+      <div data-screen-label={`0${route==='core'?1:route==='family'?2:3} /start-${route}`}>
+        <StartHero accent={cfg.accent} badge={cfg.badge}
+          headline={cfg.headline} headlineAccent={cfg.headlineAccent}
+          tension={cfg.tension} subhead={cfg.subhead} cta={cfg.cta+' →'}
+          score={<ScoreMock {...cfg.score} accent={cfg.accent}/>}/>
+        <div className="section-divider"/>
+        <StartProblem accent={cfg.accent} h2={cfg.problemH2} opening={cfg.problemOpening}
+          gaps={cfg.gaps} symptoms={cfg.symptoms} ctaLabel={ctaLabel}/>
+        <StartSolution accent={cfg.accent} overline="THE SOLUTION" h2={cfg.solutionH2}
+          sub={cfg.solutionSub} table={cfg.table} pillars={cfg.pillars} ctaLabel={ctaLabel}/>
+        <StartPressure accent={cfg.accent} h2={cfg.pressureH2} body={cfg.pressureBody}
+          emphasis={cfg.pressureEmph} cta={ctaLabel}/>
+        <StartFinal accent={cfg.accent} h2={cfg.finalH2} sub={cfg.finalSub} cta={ctaLabel}/>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

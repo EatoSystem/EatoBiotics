@@ -1,0 +1,220 @@
+/* ══════════════════════════════════════════════════════════════════
+   EatoBiotics Design System — Colors & Typography Tokens
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── FONT IMPORTS (Google Fonts — same as production app) ─────── */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Lora:wght@500;600;700&family=Geist+Mono&display=swap');
+
+:root {
+  /* ─── CORE PALETTE (neutrals + UI) ──────────────────────────── */
+  --background: #FFFFFF;
+  --foreground: #1A2E12;           /* deep organic green-black */
+  --card: #FFFFFF;
+  --card-foreground: #1A2E12;
+  --popover: #FFFFFF;
+  --popover-foreground: #1A2E12;
+  --secondary: #F7F7F7;
+  --secondary-foreground: #1A2E12;
+  --muted: #F3F3F3;
+  --muted-foreground: #5A6E50;     /* muted olive */
+  --border: #E5E5E5;
+  --input: #E5E5E5;
+  --destructive: #E53E3E;
+  --destructive-foreground: #FFFFFF;
+
+  /* ─── BRAND PRIMARY & ACCENT ────────────────────────────────── */
+  --primary: #4CB648;              /* EatoBiotics green */
+  --primary-foreground: #FFFFFF;
+  --accent: #F5A623;               /* EatoBiotics orange */
+  --accent-foreground: #FFFFFF;
+  --ring: #4CB648;
+
+  /* ─── ICON / BRAND GRADIENT PALETTE ─────────────────────────── */
+  /* The 5-stop gradient that defines the EatoBiotics identity.
+     Extracted from the icon's biotic capsules. */
+  --icon-lime:    #A8E063;
+  --icon-green:   #4CB648;
+  --icon-teal:    #2DAA6E;
+  --icon-yellow:  #F5C518;
+  --icon-orange:  #F5A623;
+
+  /* ─── SEMANTIC BIOTIC TOKENS ────────────────────────────────── */
+  /* Each biotic type maps to an icon color. */
+  --prebiotic:   var(--icon-lime);     /* Feed   — fiber, plants */
+  --probiotic:   var(--icon-teal);     /* Add    — fermented foods */
+  --postbiotic:  var(--icon-orange);   /* Produce — byproducts */
+
+  /* ─── TYPOGRAPHY ────────────────────────────────────────────── */
+  --font-sans:   'DM Sans', system-ui, sans-serif;     /* body */
+  --font-serif:  'Lora', Georgia, serif;               /* display / headings — warm editorial serif */
+  --font-mono:   'Geist Mono', ui-monospace, monospace;
+
+  /* ─── PATHWAY ACCENTS (landing page routes) ─────────────────── */
+  --pathway-core:   var(--icon-green);    /* /start — individual */
+  --pathway-family: var(--icon-yellow);   /* /start-family */
+  --pathway-mind:   var(--icon-teal);     /* /start-mind  — gut-brain */
+
+  /* ─── RADIUS SCALE ──────────────────────────────────────────── */
+  --radius:      0.75rem;  /* 12px — base */
+  --radius-sm:   0.5rem;   /* 8px  — pills, small buttons */
+  --radius-md:   0.625rem; /* 10px — inputs */
+  --radius-lg:   0.75rem;  /* 12px — cards */
+  --radius-xl:   1rem;     /* 16px — large cards */
+  --radius-2xl:  1.5rem;   /* 24px — hero cards */
+  --radius-3xl:  1.75rem;  /* 28px — phone frame, big hero cards */
+  --radius-full: 9999px;   /* pills, buttons, avatars */
+
+  /* ─── SPACING SCALE (4px base) ─────────────────────────────── */
+  --space-1:  0.25rem;   --space-2:  0.5rem;
+  --space-3:  0.75rem;   --space-4:  1rem;
+  --space-5:  1.25rem;   --space-6:  1.5rem;
+  --space-8:  2rem;      --space-10: 2.5rem;
+  --space-12: 3rem;      --space-16: 4rem;
+  --space-20: 5rem;      --space-24: 6rem;
+  --space-32: 8rem;
+
+  /* ─── SHADOWS ───────────────────────────────────────────────── */
+  --shadow-sm:  0 1px 2px rgba(26, 46, 18, 0.04);
+  --shadow:     0 2px 6px rgba(26, 46, 18, 0.06), 0 1px 2px rgba(26, 46, 18, 0.04);
+  --shadow-md:  0 6px 16px rgba(26, 46, 18, 0.08);
+  --shadow-lg:  0 12px 32px rgba(26, 46, 18, 0.10);
+  --shadow-xl:  0 20px 48px rgba(26, 46, 18, 0.14);
+  --shadow-green-glow: 0 10px 30px rgba(76, 182, 72, 0.20);
+
+  /* ─── BRAND GRADIENTS ──────────────────────────────────────── */
+  --brand-gradient: linear-gradient(135deg,
+                      var(--icon-lime)   0%,
+                      var(--icon-green)  25%,
+                      var(--icon-teal)   50%,
+                      var(--icon-yellow) 75%,
+                      var(--icon-orange) 100%);
+  --brand-gradient-h: linear-gradient(90deg,
+                      var(--icon-lime)   0%,
+                      var(--icon-green)  25%,
+                      var(--icon-teal)   50%,
+                      var(--icon-yellow) 75%,
+                      var(--icon-orange) 100%);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   BASE STYLES
+   ══════════════════════════════════════════════════════════════════ */
+html, body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   SEMANTIC TYPE STYLES
+   ══════════════════════════════════════════════════════════════════ */
+.eb-display {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: clamp(2.5rem, 5vw, 4rem);   /* 40–64px */
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.eb-h1 {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: clamp(2rem, 4vw, 3rem);     /* 32–48px */
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+
+.eb-h2 {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: clamp(1.5rem, 3vw, 2.25rem); /* 24–36px */
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.eb-h3 {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 1.25rem;                     /* 20px */
+  line-height: 1.3;
+}
+
+.eb-eyebrow {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.75rem;                     /* 12px */
+  line-height: 1.4;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--icon-green);
+}
+
+.eb-lead {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 1.125rem;                    /* 18px */
+  line-height: 1.65;
+  color: var(--muted-foreground);
+}
+
+.eb-body {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 1rem;                        /* 16px */
+  line-height: 1.6;
+  color: var(--foreground);
+}
+
+.eb-body-sm {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 0.875rem;                    /* 14px */
+  line-height: 1.55;
+  color: var(--muted-foreground);
+}
+
+.eb-caption {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.75rem;                     /* 12px */
+  line-height: 1.4;
+  color: var(--muted-foreground);
+}
+
+.eb-mono {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  letter-spacing: -0.01em;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   BRAND UTILITIES
+   ══════════════════════════════════════════════════════════════════ */
+.eb-brand-gradient       { background: var(--brand-gradient); }
+.eb-brand-gradient-h     { background: var(--brand-gradient-h); }
+
+.eb-brand-gradient-text {
+  background: var(--brand-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Full-width 4px gradient divider — used between major sections */
+.eb-section-divider {
+  height: 4px;
+  background: var(--brand-gradient-h);
+}
+
+/* Small biotic capsule — mimics the icon shapes */
+.eb-biotic-pill {
+  display: inline-block;
+  border-radius: 9999px;
+  width: 64px;
+  height: 7px;
+}

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EatoBiotics — Web UI Kit</title>
+<link rel="stylesheet" href="../../colors_and_type.css">
+<style>
+body{margin:0;font-family:var(--font-sans);color:var(--foreground);background:#fff}
+*{box-sizing:border-box}
+.kit-toolbar{position:fixed;top:16px;right:16px;z-index:100;background:#fff;border:1px solid var(--border);border-radius:12px;padding:6px;display:flex;gap:4px;box-shadow:0 6px 18px -8px rgba(0,0,0,.12)}
+.kit-toolbar button{padding:6px 12px;border:none;background:transparent;font-size:12px;font-weight:600;color:var(--muted-foreground);border-radius:8px;cursor:pointer;font-family:inherit}
+.kit-toolbar button.active{background:#0A0A0A;color:#fff}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="Components.jsx"></script>
+<script type="text/babel" src="Assessment.jsx"></script>
+
+<script type="text/babel">
+const { useState } = React;
+const QUESTIONS = [
+  { q: 'How often do you eat fermented foods?', o:['Daily','A few times a week','Rarely','Never'] },
+  { q: 'How many different plants do you eat per week?', o:['30+','15–29','5–14','Under 5'] },
+  { q: 'How would you describe your digestion?', o:['Regular & comfortable','Mostly okay','Often off','Inconsistent daily'] },
+  { q: 'What fiber sources do you prioritize?', o:['Whole grains, legumes, veg','Mostly veg','Some','Very few'] },
+];
+
+function App() {
+  const [view, setView] = useState('home');
+  const [qi, setQi] = useState(0);
+
+  const go = (v) => {
+    if (v === 'assessment') { setQi(0); setView('assessment'); }
+    else if (v === 'home') setView('home');
+    else setView(v);
+  };
+
+  const answer = () => {
+    if (qi < QUESTIONS.length - 1) setQi(qi + 1);
+    else setView('result');
+  };
+
+  return (
+    <div>
+      <div className="kit-toolbar">
+        {['home','assessment','result'].map(v =>
+          <button key={v} className={view===v?'active':''} onClick={()=>{if(v==='assessment')setQi(0);setView(v)}}>{v}</button>)}
+      </div>
+
+      {view === 'home' && (
+        <div data-screen-label="01 Home">
+          <Header onNav={go}/>
+          <Hero onStart={()=>go('assessment')}/>
+          <SectionDivider/>
+          <BioticTrio/>
+          <SectionDivider/>
+          <Pathways onNav={go}/>
+          <Manifesto/>
+          <Tiers/>
+          <Footer/>
+        </div>
+      )}
+      {view === 'assessment' && (
+        <div data-screen-label="02 Assessment">
+          <Header onNav={go}/>
+          {qi === 0 ? <AssessmentIntro onStart={()=>setQi(1)}/> :
+            <AssessmentQuestion qIndex={qi-1} total={QUESTIONS.length}
+              question={QUESTIONS[qi-1].q} options={QUESTIONS[qi-1].o} onAnswer={answer}/>}
+        </div>
+      )}
+      {view === 'result' && (
+        <div data-screen-label="03 Result">
+          <Header onNav={go}/>
+          <AssessmentResult score={78} onRestart={()=>{setQi(0);setView('assessment')}}/>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

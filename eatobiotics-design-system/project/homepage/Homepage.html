@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EatoBiotics — The Food System Inside You</title>
+<link rel="icon" href="assets/eatobiotics-icon.webp" />
+<link rel="stylesheet" href="colors_and_type.css" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: #fff; color: #1A2E12; font-family: 'DM Sans', system-ui, sans-serif; }
+  ::selection { background: rgba(76,182,72,0.25); color: #1A2E12; }
+  a { -webkit-tap-highlight-color: transparent; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="Header.jsx"></script>
+<script type="text/babel" src="Hero.jsx"></script>
+<script type="text/babel" src="BioticTrio.jsx"></script>
+<script type="text/babel" src="ThePlate.jsx"></script>
+<script type="text/babel" src="Pathways.jsx"></script>
+<script type="text/babel" src="AppShowcase.jsx"></script>
+<script type="text/babel" src="Lower.jsx"></script>
+
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "showStats": true,
+  "showPathways": true,
+  "showPlate": true,
+  "showBook": true,
+  "showTiers": true,
+  "manifestoPlacement": "after-app"
+}/*EDITMODE-END*/;
+
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+  const Manif = <Manifesto />;
+  const placement = tweaks.manifestoPlacement;
+
+  return (
+    <div data-screen-label="01 Homepage">
+      <Header tweaks={tweaks} />
+      <Hero tweaks={tweaks} />
+      <SectionDivider />
+      <BioticTrio />
+      {tweaks.showPlate && <><SectionDivider /><ThePlate /></>}
+      {tweaks.showPathways && <><SectionDivider /><Pathways /></>}
+      {placement === 'before-app' && Manif}
+      <AppShowcase />
+      {placement === 'after-app' && Manif}
+      {tweaks.showBook && <><SectionDivider /><BookFeature /></>}
+      {tweaks.showTiers && <Tiers />}
+      <Footer />
+
+      <TweaksPanel title="Tweaks">
+        <TweakSection title="Sections">
+          <TweakToggle label="The Plate" value={tweaks.showPlate} onChange={v => setTweak('showPlate', v)} />
+          <TweakToggle label="Pathways (You / Family / Mind)" value={tweaks.showPathways} onChange={v => setTweak('showPathways', v)} />
+          <TweakToggle label="Book feature" value={tweaks.showBook} onChange={v => setTweak('showBook', v)} />
+          <TweakToggle label="Membership tiers" value={tweaks.showTiers} onChange={v => setTweak('showTiers', v)} />
+        </TweakSection>
+        <TweakSection title="Layout">
+          <TweakRadio label="Manifesto placement"
+            value={tweaks.manifestoPlacement}
+            onChange={v => setTweak('manifestoPlacement', v)}
+            options={[
+              { value: 'before-app', label: 'Before app' },
+              { value: 'after-app', label: 'After app' }
+            ]} />
+        </TweakSection>
+      </TweaksPanel>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

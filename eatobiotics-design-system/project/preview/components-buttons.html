@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css">
+<style>body{margin:0;padding:24px;background:#fff;font-family:var(--font-sans);display:flex;flex-direction:column;gap:14px;align-items:flex-start}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:9999px;font-weight:600;font-size:15px;border:none;cursor:pointer;text-decoration:none}
+.primary{background:var(--brand-gradient);color:#fff;box-shadow:var(--shadow-green-glow)}
+.outline{background:#fff;border:2px solid var(--icon-green);color:var(--foreground)}
+.ghost{background:transparent;color:var(--muted-foreground);font-weight:500}
+.ghost:hover{color:var(--foreground)}
+.dark{background:var(--foreground);color:#fff}
+.sm{padding:10px 20px;font-size:13px}
+.lbl{font-size:11px;color:var(--muted-foreground);font-family:var(--font-mono)}
+</style></head><body>
+<div>
+  <button class="btn primary">Start Free Assessment →</button>
+  <span class="lbl" style="margin-left:10px">primary / brand-gradient</span>
+</div>
+<div>
+  <button class="btn outline">Learn the framework ↗</button>
+  <span class="lbl" style="margin-left:10px">outline / icon-green border</span>
+</div>
+<div>
+  <button class="btn dark sm">Subscribe</button>
+  <button class="btn primary sm">See Plan →</button>
+  <button class="btn ghost sm">Explore Framework ↗</button>
+</div>
+</body></html>
