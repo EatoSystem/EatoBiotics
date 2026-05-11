@@ -25,14 +25,38 @@ export interface LiveDashboardProps {
    Static mock content
    ──────────────────────────────────────────────────────────────────────── */
 
-const TODAY_PLAN = {
+const DAILY_TRIO = {
   day: 7,
   totalDays: 30,
-  action: "Add a portion of kimchi or sauerkraut with your dinner tonight",
-  why: "Fermented foods introduce live bacterial cultures that directly lift your Seed score — the single pillar holding your Biotics number below 70.",
-  foods: ["Kimchi", "Sauerkraut", "Kefir"],
-  pillarColor: "var(--icon-teal)",
-  pillarLabel: "Seed · Probiotics",
+  streak: 7,
+  predictedBoost: 3,
+
+  prebiotic: {
+    food: "Garlic",
+    emoji: "🧅",
+    instruction: "Add 1–2 cloves to your dinner tonight",
+    anchor: "Crush into pasta, stir-fry, or roasted veg",
+    color: "var(--icon-lime)",
+    science: "Garlic contains inulin — a prebiotic fibre your Lactobacillus bacteria use as fuel.",
+  },
+  probiotic: {
+    food: "Kimchi",
+    emoji: "🫙",
+    instruction: "2 tablespoons with your main meal",
+    anchor: "Keep it in the fridge door — always visible",
+    color: "var(--icon-teal)",
+    science: "Kimchi delivers live Lactobacillus cultures that colonise your gut and crowd out harmful bacteria.",
+  },
+  postbiotic: {
+    outcome: "Butyrate Production",
+    emoji: "⚡",
+    shortDesc: "Gut lining repair + energy lift",
+    fullDesc: "Butyrate is a short-chain fatty acid produced when your gut bacteria ferment prebiotic fibre. It strengthens your gut barrier, reduces inflammation, and fuels your colon cells — you feel the difference as clearer thinking and steadier energy.",
+    timing: "Effects build over 24–48 hours",
+    color: "var(--icon-yellow)",
+  },
+  connectorStory: "When you Feed your bacteria with garlic, then Seed with kimchi, they produce butyrate — repairing your gut lining and lifting your energy.",
+  scienceExpanded: "Your gut is a fermentation system. Prebiotic fibres are the raw ingredient; probiotic bacteria are the workers; postbiotics are the finished product. Each trio you complete runs one full cycle of your microbiome.",
 }
 
 const WEEK_DATA = [
@@ -103,7 +127,11 @@ export function LiveDashboard({
   memberStartedAt,
 }: LiveDashboardProps) {
   // Interactive state
-  const [todayDone, setTodayDone]           = useState(false)
+  const [prebioticDone, setPrebioticDone]   = useState(false)
+  const [probioticDone, setProbioticDone]   = useState(false)
+  const [showScience, setShowScience]       = useState(false)
+  const [healed, setHealed]                 = useState(false)
+  const [healCelebrated, setHealCelebrated] = useState(false)
   const [mealInput, setMealInput]           = useState("")
   const [mealStatus, setMealStatus]         = useState<"idle" | "loading" | "result">("idle")
   const [planExpanded, setPlanExpanded]     = useState(false)
@@ -119,6 +147,16 @@ export function LiveDashboard({
     const t2 = setTimeout(() => setBarsReady(true), 300)
     return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [score])
+
+  // Auto-unlock postbiotic when both Feed + Seed are done
+  useEffect(() => {
+    if (prebioticDone && probioticDone && !healed) {
+      setHealed(true)
+      setHealCelebrated(true)
+      const t = setTimeout(() => setHealCelebrated(false), 1400)
+      return () => clearTimeout(t)
+    }
+  }, [prebioticDone, probioticDone, healed])
 
   async function handleAnalyse() {
     if (!mealInput.trim() || mealStatus === "loading") return
@@ -172,15 +210,20 @@ export function LiveDashboard({
               className="rounded-full px-2.5 py-0.5 text-[11px] font-bold"
               style={{ background: "color-mix(in srgb, var(--icon-green) 12%, transparent)", color: "var(--icon-green)" }}
             >
-              Day {TODAY_PLAN.day} · 30-Day Plan
+              Day {DAILY_TRIO.day} · 30-Day Plan
             </span>
             <span className="hidden text-xs text-muted-foreground sm:block">{dateStr}</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="font-mono text-sm font-bold text-foreground">{score}</span>
-            {scoreDelta > 0 && (
-              <span className="text-xs font-semibold" style={{ color: "var(--icon-green)" }}>↑ +{scoreDelta}</span>
-            )}
+          <div className="flex items-center gap-3">
+            <span className="text-sm" title={`${healed ? DAILY_TRIO.streak + 1 : DAILY_TRIO.streak}-day streak`}>
+              🔥 <span className="text-xs font-bold text-foreground">{healed ? DAILY_TRIO.streak + 1 : DAILY_TRIO.streak}</span>
+            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="font-mono text-sm font-bold text-foreground">{score}</span>
+              {scoreDelta > 0 && (
+                <span className="text-xs font-semibold" style={{ color: "var(--icon-green)" }}>↑ +{scoreDelta}</span>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -292,99 +335,260 @@ export function LiveDashboard({
       </section>
 
       {/* ══════════════════════════════════════════════════════════════ */}
-      {/* TODAY'S FOCUS                                                   */}
+      {/* DAILY BIOTICS TRIO                                             */}
       {/* ══════════════════════════════════════════════════════════════ */}
       <section className="px-6 py-10">
-        <div className="mx-auto max-w-[860px]">
-          <div
-            className="overflow-hidden rounded-3xl border bg-card"
-            style={{
-              borderLeftWidth: "4px",
-              borderLeftColor: TODAY_PLAN.pillarColor,
-              borderColor: `color-mix(in srgb, ${TODAY_PLAN.pillarColor} 25%, var(--border))`,
-            }}
-          >
-            <div className="p-7">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="mb-3 flex flex-wrap items-center gap-2">
-                    <span
-                      className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest"
-                      style={{ background: `color-mix(in srgb, ${TODAY_PLAN.pillarColor} 12%, transparent)`, color: TODAY_PLAN.pillarColor }}
-                    >
-                      Today · Day {TODAY_PLAN.day}
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                      {TODAY_PLAN.pillarLabel}
-                    </span>
-                  </div>
-                  <h2 className="font-serif text-xl font-semibold leading-snug text-foreground sm:text-2xl">
-                    {TODAY_PLAN.action}
-                  </h2>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                    {TODAY_PLAN.why}
-                  </p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {TODAY_PLAN.foods.map((f) => (
-                      <span
-                        key={f}
-                        className="rounded-full px-3 py-1 text-xs font-semibold"
-                        style={{ background: `color-mix(in srgb, ${TODAY_PLAN.pillarColor} 10%, transparent)`, color: TODAY_PLAN.pillarColor }}
-                      >
-                        {f}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+        <div className="mx-auto max-w-[1000px]">
 
-                {/* Mark as done */}
-                <button
-                  onClick={() => setTodayDone(d => !d)}
-                  className="mt-1 flex shrink-0 flex-col items-center gap-1.5 rounded-2xl px-4 py-3 transition-all active:scale-95"
-                  style={todayDone
-                    ? { background: "color-mix(in srgb, var(--icon-green) 12%, transparent)" }
-                    : { background: "var(--muted)" }
-                  }
-                >
-                  <div
-                    className="flex h-9 w-9 items-center justify-center rounded-full transition-all"
-                    style={todayDone
-                      ? { background: "var(--icon-green)" }
+          {/* Section header + meta row */}
+          <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Daily Habit</p>
+              <h2 className="mt-1 font-serif text-2xl font-semibold text-foreground">Your Daily Biotics Trio</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Three micro-actions. One complete gut cycle. Every day.</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Streak pill */}
+              <div
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5"
+                style={{ background: "color-mix(in srgb, var(--icon-orange) 12%, transparent)" }}
+              >
+                <span className="text-base leading-none">🔥</span>
+                <span className="text-sm font-bold" style={{ color: "var(--icon-orange)" }}>
+                  {healed ? DAILY_TRIO.streak + 1 : DAILY_TRIO.streak}
+                </span>
+                <span className="text-xs text-muted-foreground">day streak</span>
+              </div>
+              {/* Day pill */}
+              <span
+                className="rounded-full px-2.5 py-1 text-[11px] font-bold"
+                style={{ background: "color-mix(in srgb, var(--icon-green) 12%, transparent)", color: "var(--icon-green)" }}
+              >
+                Day {DAILY_TRIO.day} of {DAILY_TRIO.totalDays}
+              </span>
+              {/* Score boost */}
+              <span
+                className="rounded-full px-2.5 py-1 text-[11px] font-bold transition-all duration-500"
+                style={healed
+                  ? { background: "color-mix(in srgb, var(--icon-green) 15%, transparent)", color: "var(--icon-green)" }
+                  : { background: "var(--muted)", color: "var(--muted-foreground)" }
+                }
+              >
+                {healed ? `+${DAILY_TRIO.predictedBoost} pts ✓` : `+${DAILY_TRIO.predictedBoost} pts predicted`}
+              </span>
+            </div>
+          </div>
+
+          {/* Three pillar cards */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+
+            {/* FEED — Prebiotic */}
+            <div
+              className="relative overflow-hidden rounded-3xl border bg-card transition-all duration-500"
+              style={{
+                borderTopWidth: "3px",
+                borderTopColor: prebioticDone ? DAILY_TRIO.prebiotic.color : "var(--border)",
+                boxShadow: prebioticDone
+                  ? `0 0 0 1px color-mix(in srgb, ${DAILY_TRIO.prebiotic.color} 20%, transparent)`
+                  : undefined,
+              }}
+            >
+              <div className="p-5">
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: DAILY_TRIO.prebiotic.color }}>
+                    Feed · Prebiotic
+                  </p>
+                  <button
+                    onClick={() => setPrebioticDone(d => !d)}
+                    className="flex h-7 w-7 items-center justify-center rounded-full transition-all duration-300 active:scale-90"
+                    style={prebioticDone
+                      ? { background: DAILY_TRIO.prebiotic.color }
                       : { border: "2px solid var(--border)" }
                     }
                   >
-                    {todayDone && <Check size={16} color="white" />}
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: todayDone ? "var(--icon-green)" : "var(--muted-foreground)" }}>
-                    {todayDone ? "Done ✓" : "Mark done"}
-                  </span>
-                </button>
-              </div>
-
-              {/* 30-day progress dots */}
-              <div className="mt-6 border-t border-border pt-5">
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted-foreground">30-Day Progress</span>
-                  <span className="text-xs text-muted-foreground">{TODAY_PLAN.day} of {TODAY_PLAN.totalDays} days</span>
+                    {prebioticDone && <Check size={13} color="white" strokeWidth={3} />}
+                  </button>
                 </div>
-                <div className="flex flex-wrap gap-1">
-                  {Array.from({ length: TODAY_PLAN.totalDays }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="h-2 w-2 rounded-full"
-                      style={{
-                        background: i < TODAY_PLAN.day - 1
-                          ? "var(--icon-green)"
-                          : i === TODAY_PLAN.day - 1
-                          ? todayDone ? "var(--icon-green)" : TODAY_PLAN.pillarColor
-                          : "var(--border)",
-                      }}
-                    />
-                  ))}
-                </div>
+                <div className="mb-1 text-4xl">{DAILY_TRIO.prebiotic.emoji}</div>
+                <h3 className="font-serif text-xl font-semibold text-foreground">{DAILY_TRIO.prebiotic.food}</h3>
+                <p className="mt-1.5 text-sm text-muted-foreground">{DAILY_TRIO.prebiotic.instruction}</p>
+                <p className="mt-2 text-xs italic opacity-60 text-muted-foreground">{DAILY_TRIO.prebiotic.anchor}</p>
               </div>
             </div>
+
+            {/* SEED — Probiotic */}
+            <div
+              className="relative overflow-hidden rounded-3xl border bg-card transition-all duration-500"
+              style={{
+                borderTopWidth: "3px",
+                borderTopColor: probioticDone ? DAILY_TRIO.probiotic.color : "var(--border)",
+                boxShadow: probioticDone
+                  ? `0 0 0 1px color-mix(in srgb, ${DAILY_TRIO.probiotic.color} 20%, transparent)`
+                  : undefined,
+              }}
+            >
+              <div className="p-5">
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: DAILY_TRIO.probiotic.color }}>
+                    Seed · Probiotic
+                  </p>
+                  <button
+                    onClick={() => setProbioticDone(d => !d)}
+                    className="flex h-7 w-7 items-center justify-center rounded-full transition-all duration-300 active:scale-90"
+                    style={probioticDone
+                      ? { background: DAILY_TRIO.probiotic.color }
+                      : { border: "2px solid var(--border)" }
+                    }
+                  >
+                    {probioticDone && <Check size={13} color="white" strokeWidth={3} />}
+                  </button>
+                </div>
+                <div className="mb-1 text-4xl">{DAILY_TRIO.probiotic.emoji}</div>
+                <h3 className="font-serif text-xl font-semibold text-foreground">{DAILY_TRIO.probiotic.food}</h3>
+                <p className="mt-1.5 text-sm text-muted-foreground">{DAILY_TRIO.probiotic.instruction}</p>
+                <p className="mt-2 text-xs italic opacity-60 text-muted-foreground">{DAILY_TRIO.probiotic.anchor}</p>
+              </div>
+            </div>
+
+            {/* HEAL — Postbiotic (locked until both done) */}
+            <div
+              className="relative overflow-hidden rounded-3xl border bg-card transition-all duration-700"
+              style={{
+                borderTopWidth: "3px",
+                borderTopColor: healed ? DAILY_TRIO.postbiotic.color : "var(--border)",
+                opacity: healed ? 1 : 0.5,
+                boxShadow: healCelebrated
+                  ? `0 0 0 3px color-mix(in srgb, ${DAILY_TRIO.postbiotic.color} 40%, transparent), 0 0 32px color-mix(in srgb, ${DAILY_TRIO.postbiotic.color} 25%, transparent)`
+                  : healed
+                  ? `0 0 0 1px color-mix(in srgb, ${DAILY_TRIO.postbiotic.color} 20%, transparent)`
+                  : undefined,
+              }}
+            >
+              <div className="p-5">
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: DAILY_TRIO.postbiotic.color }}>
+                    Heal · Postbiotic
+                  </p>
+                  <div
+                    className="flex h-7 w-7 items-center justify-center rounded-full transition-all duration-500"
+                    style={healed
+                      ? { background: DAILY_TRIO.postbiotic.color }
+                      : { border: "2px solid var(--border)", background: "var(--muted)" }
+                    }
+                  >
+                    {healed
+                      ? <Check size={13} color="white" strokeWidth={3} />
+                      : <span style={{ fontSize: "11px" }}>🔒</span>
+                    }
+                  </div>
+                </div>
+
+                {healed ? (
+                  <>
+                    <div className="mb-1 text-4xl">{DAILY_TRIO.postbiotic.emoji}</div>
+                    <h3 className="font-serif text-xl font-semibold text-foreground">{DAILY_TRIO.postbiotic.outcome}</h3>
+                    <p className="mt-1.5 text-sm text-muted-foreground">{DAILY_TRIO.postbiotic.shortDesc}</p>
+                    <p className="mt-2 text-xs italic opacity-60 text-muted-foreground">{DAILY_TRIO.postbiotic.timing}</p>
+                  </>
+                ) : (
+                  <>
+                    <div className="mb-1 text-4xl opacity-25">⚡</div>
+                    <h3 className="font-serif text-xl font-semibold text-muted-foreground">Unlock Outcome</h3>
+                    <p className="mt-1.5 text-sm text-muted-foreground">Complete Feed + Seed to reveal today&apos;s postbiotic outcome.</p>
+                  </>
+                )}
+              </div>
+            </div>
+
           </div>
+
+          {/* Connector story + science panel */}
+          <div
+            className="mt-5 overflow-hidden rounded-2xl border bg-card transition-all duration-500"
+            style={healed ? { borderColor: `color-mix(in srgb, ${DAILY_TRIO.postbiotic.color} 30%, var(--border))` } : {}}
+          >
+            <div className="px-5 py-4">
+              <p className="text-sm italic leading-relaxed text-muted-foreground">
+                &ldquo;{DAILY_TRIO.connectorStory}&rdquo;
+              </p>
+              <button
+                onClick={() => setShowScience(s => !s)}
+                className="mt-2 flex items-center gap-1 text-xs font-semibold transition-colors"
+                style={{ color: "var(--icon-green)" }}
+              >
+                {showScience ? <><ChevronUp size={12} /> Hide science</> : <><ChevronDown size={12} /> Why this works</>}
+              </button>
+              {showScience && (
+                <div
+                  className="mt-3 rounded-xl px-4 py-3 text-xs leading-relaxed"
+                  style={{ background: "color-mix(in srgb, var(--icon-green) 6%, var(--muted))" }}
+                >
+                  <p className="mb-2 font-semibold text-foreground">The science</p>
+                  <p className="mb-2 text-muted-foreground">{DAILY_TRIO.prebiotic.science}</p>
+                  <p className="mb-2 text-muted-foreground">{DAILY_TRIO.probiotic.science}</p>
+                  <p className="text-muted-foreground">{DAILY_TRIO.postbiotic.fullDesc}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Habit anchor cues */}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">📍 With dinner tonight</span>
+            <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">⏱ Takes under 30 seconds to add</span>
+            <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">📚 New trio revealed tomorrow</span>
+          </div>
+
+          {/* 30-day progress dots — enhanced */}
+          <div className="mt-6 rounded-2xl border border-border bg-card p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-xs font-semibold text-muted-foreground">30-Day Progress</span>
+              <span className="text-xs text-muted-foreground">{DAILY_TRIO.day} of {DAILY_TRIO.totalDays} days</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5 pb-5">
+              {Array.from({ length: DAILY_TRIO.totalDays }).map((_, i) => {
+                const isMilestone = (i + 1) % 7 === 0
+                const isPast      = i < DAILY_TRIO.day - 1
+                const isToday     = i === DAILY_TRIO.day - 1
+                return (
+                  <div key={i} className="relative flex flex-col items-center">
+                    <div
+                      className="h-2.5 w-2.5 rounded-full transition-all duration-300"
+                      style={{
+                        background: isPast
+                          ? "var(--icon-green)"
+                          : isToday
+                          ? healed ? "var(--icon-green)" : "var(--icon-teal)"
+                          : "var(--border)",
+                        transform: isToday && !healed ? "scale(1.4)" : "scale(1)",
+                      }}
+                    />
+                    {isMilestone && (
+                      <span
+                        className="absolute top-4 text-[9px]"
+                        style={{ color: "var(--muted-foreground)" }}
+                      >
+                        {i + 1 === 30 ? "🏆" : "🏅"}
+                      </span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+            <div className="flex items-center gap-1.5 border-t border-border pt-3">
+              <span className="text-xs text-muted-foreground">
+                🔥 {healed ? DAILY_TRIO.streak + 1 : DAILY_TRIO.streak}-day streak
+              </span>
+              <span className="text-xs text-muted-foreground">·</span>
+              <span className="text-xs text-muted-foreground">
+                {healed
+                  ? "Complete trio logged ✓ — great work"
+                  : `${DAILY_TRIO.totalDays - DAILY_TRIO.day} days remaining`
+                }
+              </span>
+            </div>
+          </div>
+
         </div>
       </section>
 
