@@ -1,10 +1,27 @@
 // No "use client" — server-side only (used in API route via renderToBuffer)
+import path from "path"
 import {
   Document, Page, View, Text, Svg, Defs,
   LinearGradient, Stop, Rect, Circle, Path, Line,
-  StyleSheet,
+  StyleSheet, Font,
 } from "@react-pdf/renderer"
 import type { DemoReportData } from "./demo-report"
+
+/* ─── Custom Font Registration ───────────────────────────────── */
+// Variable TTF files from Google Fonts — each compound family name mirrors
+// the built-in pattern (e.g. "DM-Sans-Bold") so a simple global find-replace
+// upgrades the whole file without touching every fontWeight prop.
+const FONTS_DIR = path.join(process.cwd(), "public", "fonts")
+
+// Lora (serif) — replaces Times-Bold / Times-Italic
+Font.register({ family: "Lora-Bold",   src: path.join(FONTS_DIR, "Lora.ttf"),        fontWeight: 700 })
+Font.register({ family: "Lora-Italic", src: path.join(FONTS_DIR, "Lora-Italic.ttf"), fontWeight: 600 })
+
+// DM Sans (sans-serif) — replaces Helvetica / Helvetica-Bold
+Font.register({ family: "DM-Sans",         src: path.join(FONTS_DIR, "DMSans.ttf"), fontWeight: 400 })
+Font.register({ family: "DM-Sans-Medium",  src: path.join(FONTS_DIR, "DMSans.ttf"), fontWeight: 500 })
+Font.register({ family: "DM-Sans-SemiBold",src: path.join(FONTS_DIR, "DMSans.ttf"), fontWeight: 600 })
+Font.register({ family: "DM-Sans-Bold",    src: path.join(FONTS_DIR, "DMSans.ttf"), fontWeight: 700 })
 
 /* ─── Brand Palette ─────────────────────────────────────────── */
 const C = {
@@ -57,29 +74,29 @@ function pillarGrad(t: "pre"|"pro"|"pos") {
 /* ─── StyleSheet ─────────────────────────────────────────────── */
 const s = StyleSheet.create({
   // Pages
-  page:      { backgroundColor: C.bg, paddingHorizontal: MX, paddingTop: 58, paddingBottom: 40, fontFamily: "Helvetica", fontSize: 10, color: C.dark },
-  darkPage:  { backgroundColor: C.dark, paddingHorizontal: MX, paddingTop: 58, paddingBottom: 40, fontFamily: "Helvetica", fontSize: 10, color: "#FFFFFF" },
-  greenPage: { backgroundColor: C.tintedGreen, paddingHorizontal: MX, paddingTop: 58, paddingBottom: 40, fontFamily: "Helvetica", fontSize: 10, color: C.dark },
-  warmPage:  { backgroundColor: C.tintedWarm, paddingHorizontal: MX, paddingTop: 58, paddingBottom: 40, fontFamily: "Helvetica", fontSize: 10, color: C.dark },
+  page:      { backgroundColor: C.bg, paddingHorizontal: MX, paddingTop: 58, paddingBottom: 40, fontFamily: "DM-Sans", fontSize: 10, color: C.dark },
+  darkPage:  { backgroundColor: C.dark, paddingHorizontal: MX, paddingTop: 58, paddingBottom: 40, fontFamily: "DM-Sans", fontSize: 10, color: "#FFFFFF" },
+  greenPage: { backgroundColor: C.tintedGreen, paddingHorizontal: MX, paddingTop: 58, paddingBottom: 40, fontFamily: "DM-Sans", fontSize: 10, color: C.dark },
+  warmPage:  { backgroundColor: C.tintedWarm, paddingHorizontal: MX, paddingTop: 58, paddingBottom: 40, fontFamily: "DM-Sans", fontSize: 10, color: C.dark },
   // Headers / footers
   pageHeader: { position: "absolute", top: 28, left: MX, right: MX, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   pageFooter: { position: "absolute", bottom: 24, left: MX, right: MX, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   headerLeft: { flexDirection: "row", alignItems: "center", gap: 6 },
   headerDot:  { width: 10, height: 10, borderRadius: 5, backgroundColor: C.green },
-  headerText: { fontSize: 7.5, fontFamily: "Helvetica-Bold", letterSpacing: 1.4, textTransform: "uppercase", color: C.muted },
-  footerText: { fontSize: 7.5, fontFamily: "Helvetica", color: C.muted, letterSpacing: 0.5 },
+  headerText: { fontSize: 7.5, fontFamily: "DM-Sans-Bold", letterSpacing: 1.4, textTransform: "uppercase", color: C.muted },
+  footerText: { fontSize: 7.5, fontFamily: "DM-Sans", color: C.muted, letterSpacing: 0.5 },
   // Typography
-  eyebrow:    { fontSize: 8.5, fontFamily: "Helvetica-Bold", letterSpacing: 2, textTransform: "uppercase", color: C.green, marginBottom: 6 },
-  eyebrowMuted:{ fontSize: 8.5, fontFamily: "Helvetica-Bold", letterSpacing: 2, textTransform: "uppercase", color: C.muted },
-  display:    { fontFamily: "Times-Bold", fontSize: 44, lineHeight: 1.05, letterSpacing: -1, color: C.dark, margin: 0 },
-  h1:         { fontFamily: "Times-Bold", fontSize: 32, lineHeight: 1.1, color: C.dark, margin: 0 },
-  h2:         { fontFamily: "Times-Bold", fontSize: 24, lineHeight: 1.1, color: C.dark, margin: 0 },
-  h3:         { fontFamily: "Times-Bold", fontSize: 18, lineHeight: 1.15, color: C.dark, margin: 0 },
-  h4:         { fontFamily: "Times-Bold", fontSize: 14, lineHeight: 1.2, color: C.dark, margin: 0 },
-  h5:         { fontFamily: "Helvetica-Bold", fontSize: 12, lineHeight: 1.2, color: C.dark, margin: 0 },
-  lead:       { fontFamily: "Helvetica", fontSize: 12, lineHeight: 1.55, color: C.muted, margin: 0 },
-  body:       { fontFamily: "Helvetica", fontSize: 10, lineHeight: 1.6, color: C.dark, margin: 0 },
-  bodySm:     { fontFamily: "Helvetica", fontSize: 9, lineHeight: 1.55, color: C.muted, margin: 0 },
+  eyebrow:    { fontSize: 10, fontFamily: "DM-Sans-Bold", letterSpacing: 2, textTransform: "uppercase", color: C.green, marginBottom: 6 },
+  eyebrowMuted:{ fontSize: 10, fontFamily: "DM-Sans-Bold", letterSpacing: 2, textTransform: "uppercase", color: C.muted },
+  display:    { fontFamily: "Lora-Bold", fontSize: 48, lineHeight: 1.05, letterSpacing: -1, color: C.dark, margin: 0 },
+  h1:         { fontFamily: "Lora-Bold", fontSize: 32, lineHeight: 1.1, color: C.dark, margin: 0 },
+  h2:         { fontFamily: "Lora-Bold", fontSize: 24, lineHeight: 1.1, color: C.dark, margin: 0 },
+  h3:         { fontFamily: "Lora-Bold", fontSize: 18, lineHeight: 1.15, color: C.dark, margin: 0 },
+  h4:         { fontFamily: "Lora-Bold", fontSize: 14, lineHeight: 1.2, color: C.dark, margin: 0 },
+  h5:         { fontFamily: "DM-Sans-Bold", fontSize: 12, lineHeight: 1.2, color: C.dark, margin: 0 },
+  lead:       { fontFamily: "DM-Sans", fontSize: 14, lineHeight: 1.6, color: C.muted, margin: 0 },
+  body:       { fontFamily: "DM-Sans", fontSize: 11.5, lineHeight: 1.6, color: C.dark, margin: 0 },
+  bodySm:     { fontFamily: "DM-Sans", fontSize: 10.5, lineHeight: 1.55, color: C.muted, margin: 0 },
   mono:       { fontFamily: "Courier", fontSize: 9, color: C.dark },
   // Layout
   row:        { flexDirection: "row" },
@@ -168,7 +185,7 @@ function PillarBar({ label, score, type }: { label: string; score: number; type:
   const color = PILLAR_COLOR[type]
   return (
     <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 9 }}>
-      <Text style={{ width: 80, fontSize: 10, fontFamily: "Helvetica-Bold", color: C.dark }}>{label}</Text>
+      <Text style={{ width: 80, fontSize: 10, fontFamily: "DM-Sans-Bold", color: C.dark }}>{label}</Text>
       <View style={{ flex: 1, height: 7, backgroundColor: C.darkAlpha06, borderRadius: 4, flexDirection: "row" }}>
         <View style={{ flex: score, backgroundColor: color, borderRadius: 4 }}/>
         <View style={{ flex: 100 - score }}/>
@@ -181,7 +198,7 @@ function PillarBar({ label, score, type }: { label: string; score: number; type:
 function Badge({ text, color, bg }: { text: string; color: string; bg: string }) {
   return (
     <View style={{ borderRadius: 99, paddingHorizontal: 8, paddingVertical: 2, backgroundColor: bg, borderWidth: 1, borderColor: color, borderStyle: "solid" }}>
-      <Text style={{ fontSize: 7.5, fontFamily: "Helvetica-Bold", color, letterSpacing: 1 }}>{text}</Text>
+      <Text style={{ fontSize: 7.5, fontFamily: "DM-Sans-Bold", color, letterSpacing: 1 }}>{text}</Text>
     </View>
   )
 }
@@ -204,7 +221,7 @@ function CoverPage({ data }: { data: DemoReportData }) {
   const ringSize = 220
 
   return (
-    <Page size="A4" style={{ backgroundColor: C.bg, fontFamily: "Helvetica", fontSize: 10, color: C.dark, paddingBottom: 0 }}>
+    <Page size="A4" style={{ backgroundColor: C.bg, fontFamily: "DM-Sans", fontSize: 10, color: C.dark, paddingBottom: 0 }}>
       {/* Top gradient bar */}
       <View style={{ position: "absolute", top: 0, left: 0, right: 0 }}>
         <GradBar h={4} w={PW}/>
@@ -220,7 +237,7 @@ function CoverPage({ data }: { data: DemoReportData }) {
           <View style={{ width: 22, height: 22, borderRadius: 11, overflow: "hidden" }}>
             <GradBar h={22} w={22}/>
           </View>
-          <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 13, letterSpacing: 0.4, color: C.dark }}>EatoBiotics</Text>
+          <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 13, letterSpacing: 0.4, color: C.dark }}>EatoBiotics</Text>
         </View>
         <Text style={{ fontFamily: "Courier", fontSize: 8, letterSpacing: 2.5, textTransform: "uppercase", color: C.muted }}>Sample · v1.0</Text>
       </View>
@@ -228,11 +245,11 @@ function CoverPage({ data }: { data: DemoReportData }) {
       {/* Title block */}
       <View style={{ paddingHorizontal: MX, paddingTop: 18, paddingBottom: 10 }}>
         <Text style={[s.eyebrow, { marginBottom: 8 }]}>Gut Intelligence Report</Text>
-        <Text style={{ fontFamily: "Times-Bold", fontSize: 48, lineHeight: 1.05, letterSpacing: -1.5, color: C.dark, marginBottom: 10 }}>
+        <Text style={{ fontFamily: "Lora-Bold", fontSize: 48, lineHeight: 1.05, letterSpacing: -1.5, color: C.dark, marginBottom: 10 }}>
           The Food System{"\n"}Inside{" "}
           <Text style={{ color: C.green }}>You.</Text>
         </Text>
-        <Text style={{ fontFamily: "Helvetica", fontSize: 14, lineHeight: 1.6, color: C.muted, maxWidth: 400 }}>
+        <Text style={{ fontFamily: "DM-Sans", fontSize: 14, lineHeight: 1.6, color: C.muted, maxWidth: 400 }}>
           A personalised reading of your gut food system across three biological pillars — Prebiotics, Probiotics, Postbiotics — with a focused 30-day plan to close your single biggest gap.
         </Text>
       </View>
@@ -243,9 +260,9 @@ function CoverPage({ data }: { data: DemoReportData }) {
         <View style={{ width: ringSize, height: ringSize, alignItems: "center", justifyContent: "center" }}>
           <ScoreRingSvg score={data.score} size={ringSize}/>
           <View style={{ position: "absolute", top: 0, left: 0, width: ringSize, height: ringSize, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontFamily: "Times-Bold", fontSize: 58, color: C.dark, lineHeight: 1, letterSpacing: -2 }}>{data.score}</Text>
-            <Text style={{ fontFamily: "Helvetica", fontSize: 11, color: C.muted, marginTop: 2 }}>/100</Text>
-            <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 8, color: C.green, letterSpacing: 2, textTransform: "uppercase", marginTop: 6 }}>
+            <Text style={{ fontFamily: "Lora-Bold", fontSize: 58, color: C.dark, lineHeight: 1, letterSpacing: -2 }}>{data.score}</Text>
+            <Text style={{ fontFamily: "DM-Sans", fontSize: 11, color: C.muted, marginTop: 2 }}>/100</Text>
+            <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 8, color: C.green, letterSpacing: 2, textTransform: "uppercase", marginTop: 6 }}>
               {data.profile}
             </Text>
           </View>
@@ -260,18 +277,18 @@ function CoverPage({ data }: { data: DemoReportData }) {
           }}>
             <GradBar h={26} w={180}/>
             <View style={{ position: "absolute", top: 0, left: 0, width: 180, height: 26, alignItems: "center", justifyContent: "center" }}>
-              <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 9, color: "#fff", letterSpacing: 0.5 }}>Top third of respondents</Text>
+              <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 9, color: "#fff", letterSpacing: 0.5 }}>Top third of respondents</Text>
             </View>
           </View>
 
-          <Text style={{ fontFamily: "Times-Bold", fontSize: 19, lineHeight: 1.25, color: C.dark, marginBottom: 8 }}>
+          <Text style={{ fontFamily: "Lora-Bold", fontSize: 19, lineHeight: 1.25, color: C.dark, marginBottom: 8 }}>
             Your food system is further along than most.
           </Text>
-          <Text style={{ fontFamily: "Helvetica", fontSize: 10.5, lineHeight: 1.6, color: C.dark, marginBottom: 14 }}>
+          <Text style={{ fontFamily: "DM-Sans", fontSize: 10.5, lineHeight: 1.6, color: C.dark, marginBottom: 14 }}>
             A score of {data.score} places you in the top third. Your{" "}
-            <Text style={{ fontFamily: "Helvetica-Bold" }}>Prebiotics</Text> and{" "}
-            <Text style={{ fontFamily: "Helvetica-Bold" }}>Postbiotics</Text> are particularly strong. The opportunity ahead is focused: closing the{" "}
-            <Text style={{ fontFamily: "Helvetica-Bold" }}>Probiotics</Text> gap will lift everything else.
+            <Text style={{ fontFamily: "DM-Sans-Bold" }}>Prebiotics</Text> and{" "}
+            <Text style={{ fontFamily: "DM-Sans-Bold" }}>Postbiotics</Text> are particularly strong. The opportunity ahead is focused: closing the{" "}
+            <Text style={{ fontFamily: "DM-Sans-Bold" }}>Probiotics</Text> gap will lift everything else.
           </Text>
 
           {/* Pillar bars */}
@@ -295,8 +312,8 @@ function CoverPage({ data }: { data: DemoReportData }) {
           { label: "Profile",      value: data.profile },
         ].map((item, i) => (
           <View key={i} style={{ flex: 1, borderLeftWidth: i > 0 ? 1 : 0, borderLeftColor: C.border, borderLeftStyle: "solid", padding: 12, paddingLeft: i > 0 ? 12 : 0 }}>
-            <Text style={{ fontSize: 7.5, fontFamily: "Helvetica-Bold", color: C.muted, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 4 }}>{item.label}</Text>
-            <Text style={{ fontSize: 11, fontFamily: "Helvetica-Bold", color: C.dark }}>{item.value}</Text>
+            <Text style={{ fontSize: 7.5, fontFamily: "DM-Sans-Bold", color: C.muted, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 4 }}>{item.label}</Text>
+            <Text style={{ fontSize: 11, fontFamily: "DM-Sans-Bold", color: C.dark }}>{item.value}</Text>
           </View>
         ))}
       </View>
@@ -362,7 +379,7 @@ function ContentsPage() {
                 paddingVertical: 8,
               }}>
                 <Text style={{ fontFamily: "Courier", fontSize: 9, color: C.muted, width: 20, letterSpacing: 0.5 }}>{num}</Text>
-                <Text style={{ flex: 1, fontFamily: "Times-Bold", fontSize: 12, color: C.dark }}>{title}</Text>
+                <Text style={{ flex: 1, fontFamily: "Lora-Bold", fontSize: 12, color: C.dark }}>{title}</Text>
                 <Text style={{ fontFamily: "Courier", fontSize: 9, color: C.muted }}>p.{page}</Text>
               </View>
             ))}
@@ -424,7 +441,7 @@ function GutProfilePage({ data }: { data: DemoReportData }) {
             <View style={{ borderRadius: 99, overflow: "hidden", alignSelf: "center" }}>
               <GradBar h={20} w={56}/>
               <View style={{ position: "absolute", top: 0, left: 0, width: 56, height: 20, alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 8, color: "#fff" }}>You · {data.score}</Text>
+                <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 8, color: "#fff" }}>You · {data.score}</Text>
               </View>
             </View>
             {/* Stem line */}
@@ -450,7 +467,7 @@ function GutProfilePage({ data }: { data: DemoReportData }) {
           ].map((t, i) => (
             <View key={t.val} style={{ flex: 1, alignItems: i === 4 ? "flex-end" : i === 0 ? "flex-start" : "center" }}>
               <Text style={{ fontFamily: "Courier", fontSize: 8, color: C.muted }}>{t.val}</Text>
-              <Text style={{ fontFamily: "Helvetica", fontSize: 8.5, color: C.muted, marginTop: 1 }}>{t.label}</Text>
+              <Text style={{ fontFamily: "DM-Sans", fontSize: 8.5, color: C.muted, marginTop: 1 }}>{t.label}</Text>
             </View>
           ))}
         </View>
@@ -479,10 +496,10 @@ function GutProfilePage({ data }: { data: DemoReportData }) {
               borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3, alignSelf: "flex-start",
               backgroundColor: card.badgeBg, borderWidth: 1, borderColor: card.badgeBorder, borderStyle: "solid", marginBottom: 8,
             }}>
-              <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: card.badgeColor, letterSpacing: 0.5 }}>{card.badge}</Text>
+              <Text style={{ fontSize: 8, fontFamily: "DM-Sans-Bold", color: card.badgeColor, letterSpacing: 0.5 }}>{card.badge}</Text>
             </View>
-            <Text style={{ fontFamily: "Times-Bold", fontSize: 14, color: C.dark, lineHeight: 1.2, marginBottom: 6 }}>{card.title}</Text>
-            <Text style={{ fontFamily: "Helvetica", fontSize: 9.5, color: C.dark, lineHeight: 1.55, opacity: 0.78 }}>{card.body}</Text>
+            <Text style={{ fontFamily: "Lora-Bold", fontSize: 14, color: C.dark, lineHeight: 1.2, marginBottom: 6 }}>{card.title}</Text>
+            <Text style={{ fontFamily: "DM-Sans", fontSize: 9.5, color: C.dark, lineHeight: 1.55, opacity: 0.78 }}>{card.body}</Text>
           </View>
         ))}
       </View>
@@ -493,8 +510,8 @@ function GutProfilePage({ data }: { data: DemoReportData }) {
       <View style={{ borderRadius: 10, backgroundColor: C.soft, borderWidth: 1, borderColor: C.darkAlpha06, borderStyle: "solid", borderLeftWidth: 4, borderLeftColor: C.green, padding: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 14 }}>
         <View style={{ flex: 1 }}>
           <Text style={[s.eyebrow, { marginBottom: 5 }]}>Next level</Text>
-          <Text style={{ fontFamily: "Times-Bold", fontSize: 17, color: C.dark, lineHeight: 1.2, marginBottom: 6 }}>Strong Foundation.</Text>
-          <Text style={{ fontFamily: "Helvetica", fontSize: 9.5, color: C.dark, lineHeight: 1.55, opacity: 0.82 }}>
+          <Text style={{ fontFamily: "Lora-Bold", fontSize: 17, color: C.dark, lineHeight: 1.2, marginBottom: 6 }}>Strong Foundation.</Text>
+          <Text style={{ fontFamily: "DM-Sans", fontSize: 9.5, color: C.dark, lineHeight: 1.55, opacity: 0.82 }}>
             A well-functioning gut with real momentum. The structural habits are in place and the microbiome is being actively supported. Your 30-day plan is designed to close this gap.
           </Text>
         </View>
@@ -541,19 +558,19 @@ function ThreeBioticsPage({ data }: { data: DemoReportData }) {
               </View>
               <View style={{ padding: 16 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-                  <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: c1, letterSpacing: 1.5, textTransform: "uppercase" }}>{meta.eyebrow}</Text>
+                  <Text style={{ fontSize: 8, fontFamily: "DM-Sans-Bold", color: c1, letterSpacing: 1.5, textTransform: "uppercase" }}>{meta.eyebrow}</Text>
                   <Badge text={meta.badge} color={c1} bg={c1 + "18"}/>
                 </View>
                 {/* Big score */}
                 <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
-                  <Text style={{ fontFamily: "Times-Bold", fontSize: 48, lineHeight: 1, letterSpacing: -2, color: C.dark }}>{p.score}</Text>
+                  <Text style={{ fontFamily: "Lora-Bold", fontSize: 48, lineHeight: 1, letterSpacing: -2, color: C.dark }}>{p.score}</Text>
                   <Text style={{ fontFamily: "Courier", fontSize: 9, color: C.muted }}>/100</Text>
                 </View>
                 <Text style={[s.bodySm, { color: C.dark, lineHeight: 1.55, marginBottom: 10 }]}>{p.description}</Text>
                 <View style={s.divider}/>
                 <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                   <Text style={s.bodySm}>Role</Text>
-                  <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 9, color: C.dark }}>{meta.role}</Text>
+                  <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 9, color: C.dark }}>{meta.role}</Text>
                 </View>
               </View>
             </View>
@@ -610,10 +627,10 @@ function ScoreMeaningPage({ data }: { data: DemoReportData }) {
         {/* Left column — text */}
         <View style={{ width: colL }}>
           <Text style={[s.body, { lineHeight: 1.7, marginBottom: 12 }]}>
-            A score of <Text style={{ fontFamily: "Helvetica-Bold" }}>{data.score}</Text> reflects a gut system that functions reasonably well day-to-day but is operating below its potential. Your plant variety <Text style={{ fontFamily: "Courier" }}>(Pre {pre})</Text> and recovery rhythm <Text style={{ fontFamily: "Courier" }}>(Pos {pos})</Text> are strong, but your intake of fermented and probiotic-rich foods is noticeably low <Text style={{ fontFamily: "Courier" }}>(Pro {pro})</Text>.
+            A score of <Text style={{ fontFamily: "DM-Sans-Bold" }}>{data.score}</Text> reflects a gut system that functions reasonably well day-to-day but is operating below its potential. Your plant variety <Text style={{ fontFamily: "Courier" }}>(Pre {pre})</Text> and recovery rhythm <Text style={{ fontFamily: "Courier" }}>(Pos {pos})</Text> are strong, but your intake of fermented and probiotic-rich foods is noticeably low <Text style={{ fontFamily: "Courier" }}>(Pro {pro})</Text>.
           </Text>
           <Text style={[s.body, { lineHeight: 1.7, marginBottom: 12 }]}>
-            This creates a <Text style={{ fontFamily: "Helvetica-Bold" }}>one-sided system</Text> — you're feeding the microbiome but not actively seeding it with the bacterial diversity it needs to thrive. Probiotics is the most responsive pillar to targeted dietary change. Small, consistent additions can produce measurable shifts within <Text style={{ fontFamily: "Helvetica-Bold" }}>2–4 weeks</Text>.
+            This creates a <Text style={{ fontFamily: "DM-Sans-Bold" }}>one-sided system</Text> — you're feeding the microbiome but not actively seeding it with the bacterial diversity it needs to thrive. Probiotics is the most responsive pillar to targeted dietary change. Small, consistent additions can produce measurable shifts within <Text style={{ fontFamily: "DM-Sans-Bold" }}>2–4 weeks</Text>.
           </Text>
           {/* Garden analogy */}
           <View style={[s.cardSoft, { borderLeftWidth: 3, borderLeftColor: C.green, borderLeftStyle: "solid" }]}>
@@ -652,10 +669,10 @@ function ScoreMeaningPage({ data }: { data: DemoReportData }) {
                     backgroundColor: item.c1,
                     alignItems: "center", justifyContent: "center",
                   }}>
-                    <Text style={{ fontFamily: "Times-Bold", fontSize: 20, color: "#fff" }}>{item.score}</Text>
+                    <Text style={{ fontFamily: "Lora-Bold", fontSize: 20, color: "#fff" }}>{item.score}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10, color: C.dark }}>{item.label}</Text>
+                    <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 10, color: C.dark }}>{item.label}</Text>
                     <Text style={{ fontSize: 8.5, color: item.isGap ? C.orange : C.muted }}>{item.sub}</Text>
                   </View>
                 </View>
@@ -671,10 +688,10 @@ function ScoreMeaningPage({ data }: { data: DemoReportData }) {
 
       {/* Dark callout */}
       <View style={[s.cardDark, { flexDirection: "row", alignItems: "center", gap: 18, marginTop: 14 }]}>
-        <Text style={{ fontFamily: "Times-Bold", fontSize: 52, color: C.green, lineHeight: 1, letterSpacing: -2 }}>2–4</Text>
+        <Text style={{ fontFamily: "Lora-Bold", fontSize: 52, color: C.green, lineHeight: 1, letterSpacing: -2 }}>2–4</Text>
         <View style={{ flex: 1 }}>
           <Eyebrow text="Weeks to a measurable shift" color="rgba(255,255,255,0.5)" mb={4}/>
-          <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 13, color: "#fff", lineHeight: 1.35 }}>
+          <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 13, color: "#fff", lineHeight: 1.35 }}>
             Probiotics is the most responsive pillar to targeted change — the fastest dial to move on your whole food system.
           </Text>
         </View>
@@ -734,7 +751,7 @@ function DailyLifePage({ data }: { data: DemoReportData }) {
       <View style={[s.card, { padding: 0 }]}>
         <View style={{ flexDirection: "row", alignItems: "center", padding: 18, gap: 24 }}>
           <View>
-            <Text style={{ fontFamily: "Times-Bold", fontSize: 72, lineHeight: 1, letterSpacing: -3, color: C.green }}>90%</Text>
+            <Text style={{ fontFamily: "Lora-Bold", fontSize: 72, lineHeight: 1, letterSpacing: -3, color: C.green }}>90%</Text>
             <Eyebrow text="Of your serotonin made in your gut" mb={0}/>
           </View>
           <View style={{ flex: 1 }}>
@@ -792,7 +809,7 @@ function SymptomMapPage({ data }: { data: DemoReportData }) {
           {SYMPTOMS.slice(0, 4).map(sym => (
             <View key={sym.name} style={[s.card, { marginBottom: 8, padding: 11, borderLeftWidth: 3, borderLeftColor: sym.border, borderLeftStyle: "solid" }]}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
-                <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10, color: C.dark, flex: 1 }}>{sym.name}</Text>
+                <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 10, color: C.dark, flex: 1 }}>{sym.name}</Text>
                 <Badge text={sym.badge} color={sym.likely ? C.teal : C.muted} bg={sym.likely ? C.teal + "14" : C.border}/>
               </View>
               <Text style={[s.bodySm, { color: C.dark, fontSize: 8.5, lineHeight: 1.5, marginBottom: 6 }]}>{sym.body}</Text>
@@ -807,7 +824,7 @@ function SymptomMapPage({ data }: { data: DemoReportData }) {
           {SYMPTOMS.slice(4).map(sym => (
             <View key={sym.name} style={[s.card, { marginBottom: 8, padding: 11, borderLeftWidth: 3, borderLeftColor: sym.border, borderLeftStyle: "solid", opacity: sym.likely ? 1 : 0.72 }]}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
-                <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10, color: C.dark, flex: 1 }}>{sym.name}</Text>
+                <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 10, color: C.dark, flex: 1 }}>{sym.name}</Text>
                 <Badge text={sym.badge} color={sym.likely ? C.teal : C.muted} bg={sym.likely ? C.teal + "14" : C.border}/>
               </View>
               <Text style={[s.bodySm, { color: C.dark, fontSize: 8.5, lineHeight: 1.5, marginBottom: 6 }]}>{sym.body}</Text>
@@ -916,9 +933,9 @@ function ProjectionPage({ data }: { data: DemoReportData }) {
           return (
             <View key={driver} style={[s.cardSoft, { flex: 1, gap: 8 }]}>
               <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: c1, alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ fontFamily: "Times-Bold", fontSize: 12, color: "#fff" }}>0{i + 1}</Text>
+                <Text style={{ fontFamily: "Lora-Bold", fontSize: 12, color: "#fff" }}>0{i + 1}</Text>
               </View>
-              <Text style={[s.body, { fontFamily: "Helvetica-Bold", fontSize: 10 }]}>{driver}</Text>
+              <Text style={[s.body, { fontFamily: "DM-Sans-Bold", fontSize: 10 }]}>{driver}</Text>
             </View>
           )
         })}
@@ -975,9 +992,9 @@ function StrengthsPage({ data }: { data: DemoReportData }) {
 
       {/* Footer note */}
       <View style={[s.cardSoft, { flexDirection: "row", alignItems: "center", gap: 14 }]}>
-        <Text style={{ fontFamily: "Times-Bold", fontSize: 28, color: C.green, lineHeight: 1 }}>→</Text>
+        <Text style={{ fontFamily: "Lora-Bold", fontSize: 28, color: C.green, lineHeight: 1 }}>→</Text>
         <Text style={[s.body, { flex: 1, fontSize: 10 }]}>
-          The fastest path forward is to <Text style={{ fontFamily: "Helvetica-Bold" }}>protect the strengths</Text> with low maintenance, and direct all new effort at <Text style={{ fontFamily: "Helvetica-Bold" }}>{data.opportunities[0]?.title ?? "fermented food frequency"}</Text> — your highest-leverage opportunity.
+          The fastest path forward is to <Text style={{ fontFamily: "DM-Sans-Bold" }}>protect the strengths</Text> with low maintenance, and direct all new effort at <Text style={{ fontFamily: "DM-Sans-Bold" }}>{data.opportunities[0]?.title ?? "fermented food frequency"}</Text> — your highest-leverage opportunity.
         </Text>
       </View>
     </Page>
@@ -1001,16 +1018,16 @@ function KeyInsightPage({ data }: { data: DemoReportData }) {
 
       {/* Big pull quote */}
       <View style={{ maxWidth: CW * 0.92, marginBottom: 28 }}>
-        <Text style={{ fontFamily: "Times-Italic", fontSize: 30, lineHeight: 1.25, letterSpacing: -0.5, color: C.green }}>
+        <Text style={{ fontFamily: "Lora-Italic", fontSize: 30, lineHeight: 1.25, letterSpacing: -0.5, color: C.green }}>
           &ldquo;{data.keyInsight.trigger}&rdquo;
         </Text>
       </View>
 
       <View style={{ flexDirection: "row", gap: 28, marginBottom: "auto" }}>
-        <Text style={{ flex: 1, fontFamily: "Helvetica", fontSize: 11, color: "rgba(255,255,255,0.75)", lineHeight: 1.7 }}>
+        <Text style={{ flex: 1, fontFamily: "DM-Sans", fontSize: 11, color: "rgba(255,255,255,0.75)", lineHeight: 1.7 }}>
           {data.keyInsight.explanation}
         </Text>
-        <Text style={{ flex: 1, fontFamily: "Helvetica", fontSize: 11, color: "rgba(255,255,255,0.75)", lineHeight: 1.7 }}>
+        <Text style={{ flex: 1, fontFamily: "DM-Sans", fontSize: 11, color: "rgba(255,255,255,0.75)", lineHeight: 1.7 }}>
           {data.deepInsight.slice(0, 320)}
         </Text>
       </View>
@@ -1020,7 +1037,7 @@ function KeyInsightPage({ data }: { data: DemoReportData }) {
       {/* Bottom — quote + big number */}
       <View style={{ flexDirection: "row", gap: 28, alignItems: "flex-end", marginTop: 24 }}>
         <View style={{ flex: 1.5 }}>
-          <Text style={{ fontFamily: "Times-Italic", fontSize: 17, lineHeight: 1.45, color: "rgba(255,255,255,0.85)" }}>
+          <Text style={{ fontFamily: "Lora-Italic", fontSize: 17, lineHeight: 1.45, color: "rgba(255,255,255,0.85)" }}>
             &ldquo;Your gut system is more responsive to change than most people realise. The right inputs, consistently applied, produce results that are both measurable and felt.&rdquo;
           </Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12 }}>
@@ -1031,7 +1048,7 @@ function KeyInsightPage({ data }: { data: DemoReportData }) {
           </View>
         </View>
         <View style={{ flex: 1, alignItems: "flex-end" }}>
-          <Text style={{ fontFamily: "Times-Bold", fontSize: 80, lineHeight: 1, letterSpacing: -4, color: C.green }}>+{gain}</Text>
+          <Text style={{ fontFamily: "Lora-Bold", fontSize: 80, lineHeight: 1, letterSpacing: -4, color: C.green }}>+{gain}</Text>
           <Eyebrow text="Projected score gain · 30 days" color="rgba(255,255,255,0.5)" mb={0}/>
         </View>
       </View>
@@ -1074,9 +1091,9 @@ function DeepInsightPage({ data }: { data: DemoReportData }) {
                 borderColor: sys.isGap ? C.teal : C.border,
                 borderStyle: "solid",
               }}>
-                <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: sys.c1, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6 }}>{sys.label}</Text>
-                <Text style={{ fontFamily: "Times-Bold", fontSize: 36, lineHeight: 1, color: C.dark, letterSpacing: -1, marginBottom: 4 }}>{sys.score}</Text>
-                <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 9, color: C.dark, marginBottom: 3 }}>{sys.isGap ? "Your gap" : "Strong"}</Text>
+                <Text style={{ fontSize: 8, fontFamily: "DM-Sans-Bold", color: sys.c1, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6 }}>{sys.label}</Text>
+                <Text style={{ fontFamily: "Lora-Bold", fontSize: 36, lineHeight: 1, color: C.dark, letterSpacing: -1, marginBottom: 4 }}>{sys.score}</Text>
+                <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 9, color: C.dark, marginBottom: 3 }}>{sys.isGap ? "Your gap" : "Strong"}</Text>
                 <Text style={s.bodySm}>{sys.sub}</Text>
               </View>
               {i < 2 && (
@@ -1148,7 +1165,7 @@ function ChangeTimelinePage() {
               }}>
                 <Text style={{ fontSize: 22, lineHeight: 1 }}>{["⚡","🌱","🌟"][i]}</Text>
               </View>
-              <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: stage.color, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 4, textAlign: "center" }}>{stage.period}</Text>
+              <Text style={{ fontSize: 8, fontFamily: "DM-Sans-Bold", color: stage.color, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 4, textAlign: "center" }}>{stage.period}</Text>
               <Text style={[s.h4, { textAlign: "center", marginBottom: 10 }]}>{stage.title}</Text>
               {stage.items.map(item => (
                 <View key={item} style={{ flexDirection: "row", gap: 7, paddingVertical: 5, alignItems: "flex-start" }}>
@@ -1167,7 +1184,7 @@ function ChangeTimelinePage() {
       <View style={[s.card, { padding: 0 }]}>
         <View style={{ flexDirection: "row", alignItems: "center", padding: 16, gap: 20 }}>
           <View style={{ alignItems: "center", width: 100 }}>
-            <Text style={{ fontFamily: "Times-Bold", fontSize: 64, lineHeight: 1, color: C.green, letterSpacing: -3 }}>30</Text>
+            <Text style={{ fontFamily: "Lora-Bold", fontSize: 64, lineHeight: 1, color: C.green, letterSpacing: -3 }}>30</Text>
             <Text style={s.eyebrowMuted}>Days to a measurable shift</Text>
           </View>
           <View style={{ flex: 1 }}>
@@ -1222,13 +1239,13 @@ function SevenDayPlanPage({ data }: { data: DemoReportData }) {
               padding: 10, minHeight: 190,
             }}>
               {/* ALL day numbers use same C.green — only day 7 card background differs */}
-              <Text style={{ fontFamily: "Times-Bold", fontSize: 32, lineHeight: 1, color: C.green, letterSpacing: -1, marginBottom: 3 }}>
+              <Text style={{ fontFamily: "Lora-Bold", fontSize: 32, lineHeight: 1, color: C.green, letterSpacing: -1, marginBottom: 3 }}>
                 {String(i + 1).padStart(2, "0")}
               </Text>
-              <Text style={{ fontSize: 7.5, fontFamily: "Helvetica-Bold", letterSpacing: 1.2, textTransform: "uppercase", color: isDark ? "rgba(255,255,255,0.45)" : C.muted, marginBottom: 8 }}>
+              <Text style={{ fontSize: 7.5, fontFamily: "DM-Sans-Bold", letterSpacing: 1.2, textTransform: "uppercase", color: isDark ? "rgba(255,255,255,0.45)" : C.muted, marginBottom: 8 }}>
                 {dayName}
               </Text>
-              <Text style={{ fontFamily: "Helvetica", fontSize: 9, lineHeight: 1.45, color: isDark ? "rgba(255,255,255,0.85)" : C.dark, flex: 1 }}>
+              <Text style={{ fontFamily: "DM-Sans", fontSize: 9, lineHeight: 1.45, color: isDark ? "rgba(255,255,255,0.85)" : C.dark, flex: 1 }}>
                 {item.action}
               </Text>
               <View style={{ marginTop: 8 }}>
@@ -1237,7 +1254,7 @@ function SevenDayPlanPage({ data }: { data: DemoReportData }) {
                   backgroundColor: bb,
                   borderWidth: 1, borderColor: bc + "55", borderStyle: "solid",
                 }}>
-                  <Text style={{ fontSize: 7.5, fontFamily: "Helvetica-Bold", color: bc, letterSpacing: 0.5 }}>{tag}</Text>
+                  <Text style={{ fontSize: 7.5, fontFamily: "DM-Sans-Bold", color: bc, letterSpacing: 0.5 }}>{tag}</Text>
                 </View>
               </View>
             </View>
@@ -1298,7 +1315,7 @@ function RoadmapPage({ data }: { data: DemoReportData }) {
               </View>
               <View style={{ padding: 14 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                  <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: meta.color, letterSpacing: 1.5, textTransform: "uppercase" }}>Week {meta.num}</Text>
+                  <Text style={{ fontSize: 8, fontFamily: "DM-Sans-Bold", color: meta.color, letterSpacing: 1.5, textTransform: "uppercase" }}>Week {meta.num}</Text>
                   <Badge text={meta.badge} color={meta.gradient[0]} bg={meta.gradient[0] + "18"}/>
                 </View>
                 <Text style={[s.h3, { fontSize: 16, marginBottom: 3 }]}>{week.theme}</Text>
@@ -1306,7 +1323,7 @@ function RoadmapPage({ data }: { data: DemoReportData }) {
                 {week.actions.slice(0, 4).map((action, j) => (
                   <View key={j} style={{ flexDirection: "row", gap: 8, marginBottom: 7, alignItems: "flex-start" }}>
                     <Text style={{ fontFamily: "Courier", fontSize: 9, color: meta.color, fontWeight: 700, minWidth: 14 }}>{j + 1}.</Text>
-                    <Text style={{ fontFamily: "Helvetica", fontSize: 9.5, color: C.dark, flex: 1, lineHeight: 1.45 }}>{action}</Text>
+                    <Text style={{ fontFamily: "DM-Sans", fontSize: 9.5, color: C.dark, flex: 1, lineHeight: 1.45 }}>{action}</Text>
                   </View>
                 ))}
               </View>
@@ -1345,7 +1362,7 @@ function FoodPrescriptionPage({ data }: { data: DemoReportData }) {
         {data.foods.slice(0, 5).map((f) => (
           <View key={f.food} style={{ alignItems: "center" }}>
             <Text style={{ fontSize: 18, marginBottom: 3 }}>{f.emoji}</Text>
-            <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 8.5, color: C.dark, textAlign: "center" }}>{f.food.split(" ")[0]}</Text>
+            <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 8.5, color: C.dark, textAlign: "center" }}>{f.food.split(" ")[0]}</Text>
             <Text style={{ fontFamily: "Courier", fontSize: 7.5, color: C.muted }}>{f.servingsPerWeek}×/wk</Text>
           </View>
         ))}
@@ -1365,7 +1382,7 @@ function FoodPrescriptionPage({ data }: { data: DemoReportData }) {
             {/* Center: content */}
             <View style={{ width: centerW, padding: 10 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 3 }}>
-                <Text style={[s.h5, { flex: 1, fontSize: 11 }]}>{food.food} <Text style={{ fontFamily: "Helvetica", fontWeight: 400, fontSize: 9, color: C.muted }}>· #{i + 1} priority</Text></Text>
+                <Text style={[s.h5, { flex: 1, fontSize: 11 }]}>{food.food} <Text style={{ fontFamily: "DM-Sans", fontWeight: 400, fontSize: 9, color: C.muted }}>· #{i + 1} priority</Text></Text>
                 <View style={{ flexDirection: "row", gap: 3 }}>
                   {food.pillars.slice(0, 3).map(p => {
                     const pt = pillarType(p)
@@ -1373,14 +1390,14 @@ function FoodPrescriptionPage({ data }: { data: DemoReportData }) {
                   })}
                 </View>
               </View>
-              <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 7.5, color: C.green, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 2 }}>KEY COMPOUND</Text>
+              <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 7.5, color: C.green, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 2 }}>KEY COMPOUND</Text>
               <Text style={[s.bodySm, { fontSize: 8.5, color: C.dark, marginBottom: 3 }]}>{food.why.slice(0, 100)}</Text>
-              <Text style={[s.bodySm, { fontSize: 8.5, color: C.dark }]}><Text style={{ fontFamily: "Helvetica-Bold" }}>How to use — </Text>{food.howTo.slice(0, 110)}</Text>
+              <Text style={[s.bodySm, { fontSize: 8.5, color: C.dark }]}><Text style={{ fontFamily: "DM-Sans-Bold" }}>How to use — </Text>{food.howTo.slice(0, 110)}</Text>
             </View>
             {/* Right: weekly target */}
             <View style={{ width: rightW, backgroundColor: C.soft, borderLeftWidth: 1, borderLeftColor: C.border, borderLeftStyle: "solid", alignItems: "center", justifyContent: "center", padding: 10 }}>
               <Text style={s.eyebrowMuted}>Weekly target</Text>
-              <Text style={{ fontFamily: "Times-Bold", fontSize: 28, lineHeight: 1, color: C.dark, marginTop: 4 }}>{food.servingsPerWeek}×</Text>
+              <Text style={{ fontFamily: "Lora-Bold", fontSize: 28, lineHeight: 1, color: C.dark, marginTop: 4 }}>{food.servingsPerWeek}×</Text>
               <Text style={s.bodySm}>per week</Text>
             </View>
           </View>
@@ -1420,9 +1437,9 @@ function ShoppingListPage({ data }: { data: DemoReportData }) {
 
       {/* Priority strip */}
       <View style={{ borderRadius: 8, padding: 10, backgroundColor: C.green + "0C", borderWidth: 1, borderColor: C.green + "33", borderStyle: "solid", flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
-        <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 8, color: C.green, letterSpacing: 1.5, textTransform: "uppercase" }}>★ Priority picks</Text>
+        <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 8, color: C.green, letterSpacing: 1.5, textTransform: "uppercase" }}>★ Priority picks</Text>
         {data.foods.slice(0, 5).map(f => (
-          <Text key={f.food} style={{ fontFamily: "Helvetica-Bold", fontSize: 9.5, color: C.dark }}>{f.emoji} {f.food.split(" ")[0]}</Text>
+          <Text key={f.food} style={{ fontFamily: "DM-Sans-Bold", fontSize: 9.5, color: C.dark }}>{f.emoji} {f.food.split(" ")[0]}</Text>
         ))}
       </View>
 
@@ -1432,15 +1449,15 @@ function ShoppingListPage({ data }: { data: DemoReportData }) {
           return (
             <View key={cat.title} style={{ width: colW2, borderRadius: 8, borderWidth: 1, borderColor: C.border, borderStyle: "solid", padding: 12 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderBottomWidth: 1, borderBottomColor: C.border, borderBottomStyle: "solid", paddingBottom: 8, marginBottom: 8 }}>
-                <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10.5, color: C.dark }}>{cat.title}</Text>
+                <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 10.5, color: C.dark }}>{cat.title}</Text>
                 <Badge text={cat.pillar.slice(0, 3)} color={PILLAR_COLOR[t]} bg={PILLAR_COLOR[t] + "18"}/>
               </View>
               {cat.items.map(item => {
                 const isPriority = topFoods.some(tf => item.toLowerCase().includes(tf) || tf.includes(item.toLowerCase().split(" ")[0]))
                 return (
                   <View key={item} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: C.darkAlpha06, borderBottomStyle: "solid", backgroundColor: isPriority ? C.green + "06" : "transparent", paddingHorizontal: isPriority ? 4 : 0, ...(isPriority ? { borderRadius: 4 } : {}) }}>
-                    <Text style={{ fontFamily: isPriority ? "Helvetica-Bold" : "Helvetica", fontSize: 8.5, color: C.dark, flex: 1 }}>{item}</Text>
-                    {isPriority && <Text style={{ fontSize: 8, color: C.green, fontFamily: "Helvetica-Bold" }}>★</Text>}
+                    <Text style={{ fontFamily: isPriority ? "DM-Sans-Bold" : "DM-Sans", fontSize: 8.5, color: C.dark, flex: 1 }}>{item}</Text>
+                    {isPriority && <Text style={{ fontSize: 8, color: C.green, fontFamily: "DM-Sans-Bold" }}>★</Text>}
                   </View>
                 )
               })}
@@ -1452,12 +1469,12 @@ function ShoppingListPage({ data }: { data: DemoReportData }) {
       {/* Proteins row */}
       <View style={[s.card, { marginTop: 10, padding: 10 }]}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: C.border, borderBottomStyle: "solid", paddingBottom: 8, marginBottom: 8 }}>
-          <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10.5 }}>🥚 Proteins & healthy fats</Text>
+          <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 10.5 }}>🥚 Proteins & healthy fats</Text>
           <Badge text="Pos" color={C.orange} bg={C.orange + "18"}/>
         </View>
         <View style={{ flexDirection: "row" }}>
           {["Eggs — poached / soft-boiled", "Oily fish 3×/wk — DHA for gut", "Mixed seeds — flax, chia, pumpkin", "EVOO — polyphenols feed bacteria"].map(item => (
-            <Text key={item} style={{ flex: 1, fontFamily: "Helvetica", fontSize: 8.5, color: C.dark, paddingHorizontal: 6 }}>{item}</Text>
+            <Text key={item} style={{ flex: 1, fontFamily: "DM-Sans", fontSize: 8.5, color: C.dark, paddingHorizontal: 6 }}>{item}</Text>
           ))}
         </View>
       </View>
@@ -1489,19 +1506,19 @@ function PowerCombinationsPage({ data }: { data: DemoReportData }) {
           <View key={i} style={[s.card, { flex: 1, padding: 0, overflow: "hidden" }]}>
             <View style={{ padding: 16 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
-                <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: C.muted, letterSpacing: 1.5, textTransform: "uppercase" }}>Pairing 0{i + 1} · Synbiotic</Text>
+                <Text style={{ fontSize: 8, fontFamily: "DM-Sans-Bold", color: C.muted, letterSpacing: 1.5, textTransform: "uppercase" }}>Pairing 0{i + 1} · Synbiotic</Text>
                 <Badge text="Synbiotic" color={C.green} bg={C.green + "18"}/>
               </View>
               {/* Food pair display */}
               <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 16 }}>
                 <View style={{ alignItems: "center" }}>
                   <Text style={{ fontSize: 40, marginBottom: 4 }}>{pair.emoji1}</Text>
-                  <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 9, color: C.dark }}>{pair.food1}</Text>
+                  <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 9, color: C.dark }}>{pair.food1}</Text>
                 </View>
-                <Text style={{ fontFamily: "Times-Bold", fontSize: 28, color: C.green }}>+</Text>
+                <Text style={{ fontFamily: "Lora-Bold", fontSize: 28, color: C.green }}>+</Text>
                 <View style={{ alignItems: "center" }}>
                   <Text style={{ fontSize: 40, marginBottom: 4 }}>{pair.emoji2}</Text>
-                  <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 9, color: C.dark }}>{pair.food2}</Text>
+                  <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 9, color: C.dark }}>{pair.food2}</Text>
                 </View>
               </View>
               <Text style={[s.h4, { marginBottom: 8 }]}>{pair.food1} + {pair.food2}.</Text>
@@ -1509,7 +1526,7 @@ function PowerCombinationsPage({ data }: { data: DemoReportData }) {
             </View>
             <View style={{ borderTopWidth: 1, borderTopColor: C.border, borderTopStyle: "solid", padding: 12, backgroundColor: C.soft, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <Text style={s.bodySm}>Try it</Text>
-              <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 9.5, color: C.dark, flex: 1, textAlign: "right" }}>
+              <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 9.5, color: C.dark, flex: 1, textAlign: "right" }}>
                 {i === 0 ? "Kefir + roasted artichoke breakfast bowl" : "Chickpea salad with 1 tbsp sauerkraut"}
               </Text>
             </View>
@@ -1530,10 +1547,10 @@ function PowerCombinationsPage({ data }: { data: DemoReportData }) {
           ].map((step) => (
             <View key={step.num} style={{ flex: 1, flexDirection: "row", gap: 10, alignItems: "flex-start" }}>
               <View style={{ width: 26, height: 26, borderRadius: 7, backgroundColor: step.color + "22", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <Text style={{ fontFamily: "Times-Bold", fontSize: 11, color: step.color }}>{step.num}</Text>
+                <Text style={{ fontFamily: "Lora-Bold", fontSize: 11, color: step.color }}>{step.num}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10, color: C.dark, marginBottom: 3 }}>{step.title}</Text>
+                <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 10, color: C.dark, marginBottom: 3 }}>{step.title}</Text>
                 <Text style={s.bodySm}>{step.body}</Text>
               </View>
             </View>
@@ -1568,8 +1585,8 @@ function FinalThoughtsPage({ data }: { data: DemoReportData }) {
         <View style={{ flexDirection: "row", alignItems: "center", gap: 20, marginTop: 12 }}>
           <View style={{ alignItems: "center" }}>
             <Text style={s.eyebrowMuted}>Starting score</Text>
-            <Text style={{ fontFamily: "Times-Bold", fontSize: 48, lineHeight: 1, color: C.dark, letterSpacing: -2, marginTop: 4 }}>{data.score}</Text>
-            <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 8, color: C.green, letterSpacing: 1.5, textTransform: "uppercase", marginTop: 3 }}>{data.profile}</Text>
+            <Text style={{ fontFamily: "Lora-Bold", fontSize: 48, lineHeight: 1, color: C.dark, letterSpacing: -2, marginTop: 4 }}>{data.score}</Text>
+            <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 8, color: C.green, letterSpacing: 1.5, textTransform: "uppercase", marginTop: 3 }}>{data.profile}</Text>
           </View>
 
           {/* Mini chart */}
@@ -1590,15 +1607,15 @@ function FinalThoughtsPage({ data }: { data: DemoReportData }) {
             <View style={{ borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4, marginTop: 6 }}>
               <GradBar h={18} w={140}/>
               <View style={{ position: "absolute", top: 0, left: 0, width: 140, height: 18, alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 9, color: "#fff" }}>+{proj - data.score} point potential gain</Text>
+                <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 9, color: "#fff" }}>+{proj - data.score} point potential gain</Text>
               </View>
             </View>
           </View>
 
           <View style={{ alignItems: "center" }}>
             <Text style={s.eyebrowMuted}>Projected score</Text>
-            <Text style={{ fontFamily: "Times-Bold", fontSize: 48, lineHeight: 1, color: C.green, letterSpacing: -2, marginTop: 4 }}>{proj}</Text>
-            <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 8, color: C.teal, letterSpacing: 1.5, textTransform: "uppercase", marginTop: 3 }}>Strong Foundation</Text>
+            <Text style={{ fontFamily: "Lora-Bold", fontSize: 48, lineHeight: 1, color: C.green, letterSpacing: -2, marginTop: 4 }}>{proj}</Text>
+            <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 8, color: C.teal, letterSpacing: 1.5, textTransform: "uppercase", marginTop: 3 }}>Strong Foundation</Text>
           </View>
         </View>
         <View style={s.divider}/>
@@ -1611,10 +1628,10 @@ function FinalThoughtsPage({ data }: { data: DemoReportData }) {
             <View key={p.label} style={{ flex: 1 }}>
               <View style={{ flexDirection: "row", gap: 6, alignItems: "center", marginBottom: 3 }}>
                 <View style={{ width: 24, height: 4, borderRadius: 2, backgroundColor: PILLAR_COLOR[p.t] }}/>
-                <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 8.5, color: C.muted, letterSpacing: 1.2, textTransform: "uppercase" }}>{p.label}</Text>
+                <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 8.5, color: C.muted, letterSpacing: 1.2, textTransform: "uppercase" }}>{p.label}</Text>
               </View>
               <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
-                <Text style={{ fontFamily: "Times-Bold", fontSize: 22, color: C.dark, lineHeight: 1 }}>{p.score}</Text>
+                <Text style={{ fontFamily: "Lora-Bold", fontSize: 22, color: C.dark, lineHeight: 1 }}>{p.score}</Text>
                 <Text style={[s.bodySm, { fontSize: 8.5 }]}>
                   {p.t === "pre" || p.t === "pos" ? "Strong — protect & build on." : "Priority gap — focus here first."}
                 </Text>
@@ -1625,7 +1642,7 @@ function FinalThoughtsPage({ data }: { data: DemoReportData }) {
       </View>
 
       {/* Three commitments — use soft cards (light bg on dark page, matching HTML .card.soft) */}
-      <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>Your three commitments starting today</Text>
+      <Text style={{ fontSize: 8, fontFamily: "DM-Sans-Bold", letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>Your three commitments starting today</Text>
       <View style={{ flexDirection: "row", gap: 10, marginBottom: 18 }}>
         {[
           { num: "01", color: C.green,   title: "Start with one change.",        body: "Pick the single highest-impact action from your 7-day plan and do it today. One action builds the habit loop that makes the rest easier." },
@@ -1633,9 +1650,9 @@ function FinalThoughtsPage({ data }: { data: DemoReportData }) {
           { num: "03", color: "#C57712", title: "Retest after 30 days.",          body: "Your score is a baseline, not a verdict. Retaking the assessment after applying this plan gives you a real measurement of what changed — and a new starting point." },
         ].map(c => (
           <View key={c.num} style={{ flex: 1, borderRadius: 10, backgroundColor: C.soft, borderWidth: 1, borderColor: "rgba(26,46,18,0.06)", borderStyle: "solid", padding: 14 }}>
-            <Text style={{ fontFamily: "Times-Bold", fontSize: 28, lineHeight: 1, color: c.color, marginBottom: 7 }}>{c.num}</Text>
-            <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 12, color: C.dark, marginBottom: 5 }}>{c.title}</Text>
-            <Text style={{ fontFamily: "Helvetica", fontSize: 9.5, color: C.dark, lineHeight: 1.55, opacity: 0.78 }}>{c.body}</Text>
+            <Text style={{ fontFamily: "Lora-Bold", fontSize: 28, lineHeight: 1, color: c.color, marginBottom: 7 }}>{c.num}</Text>
+            <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 12, color: C.dark, marginBottom: 5 }}>{c.title}</Text>
+            <Text style={{ fontFamily: "DM-Sans", fontSize: 9.5, color: C.dark, lineHeight: 1.55, opacity: 0.78 }}>{c.body}</Text>
           </View>
         ))}
       </View>
@@ -1645,16 +1662,16 @@ function FinalThoughtsPage({ data }: { data: DemoReportData }) {
         <GradBar h={110} w={CW}/>
         <View style={{ position: "absolute", top: 0, left: 0, width: CW, height: 110, padding: 20, flexDirection: "row", gap: 28, alignItems: "flex-start" }}>
           <View style={{ flex: 1.4 }}>
-            <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 7.5, color: "rgba(26,46,18,0.6)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8 }}>A note to close on</Text>
-            <Text style={{ fontFamily: "Times-Italic", fontSize: 16, lineHeight: 1.35, color: "#1A2E12" }}>
+            <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 7.5, color: "rgba(26,46,18,0.6)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8 }}>A note to close on</Text>
+            <Text style={{ fontFamily: "Lora-Italic", fontSize: 16, lineHeight: 1.35, color: "#1A2E12" }}>
               &ldquo;Your gut system is more responsive to change than most people realise. The right inputs, consistently applied, produce results that are both measurable and felt.&rdquo;
             </Text>
           </View>
           <View style={{ flex: 1, borderLeftWidth: 1, borderLeftColor: "rgba(26,46,18,0.15)", borderLeftStyle: "solid", paddingLeft: 20 }}>
-            <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 7.5, color: "rgba(26,46,18,0.6)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8 }}>Mark your Day 30</Text>
+            <Text style={{ fontFamily: "DM-Sans-Bold", fontSize: 7.5, color: "rgba(26,46,18,0.6)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8 }}>Mark your Day 30</Text>
             <View style={{ borderRadius: 8, padding: 10, borderWidth: 1, borderColor: "rgba(26,46,18,0.2)", borderStyle: "dashed", backgroundColor: "rgba(255,255,255,0.45)" }}>
               <Text style={{ fontSize: 8, color: "rgba(26,46,18,0.6)", marginBottom: 4 }}>Retest date</Text>
-              <Text style={{ fontFamily: "Times-Bold", fontSize: 18, color: "#1A2E12" }}>______ / ______ / ______</Text>
+              <Text style={{ fontFamily: "Lora-Bold", fontSize: 18, color: "#1A2E12" }}>______ / ______ / ______</Text>
             </View>
           </View>
         </View>
