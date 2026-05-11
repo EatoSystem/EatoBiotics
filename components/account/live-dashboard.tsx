@@ -189,9 +189,27 @@ export function LiveDashboard({
   const planFirstPara = monthlyPlan.split("\n\n")[0]
 
   const PILLARS = [
-    { label: "Feed",      sub: "Prebiotics",  value: biotics.prebiotic,  max: 45, color: "var(--icon-lime)",   insight: "Oats & garlic giving you a solid base" },
-    { label: "Seed",      sub: "Probiotics",  value: biotics.probiotic,  max: 25, color: "var(--icon-teal)",   insight: "Low — fermented foods needed daily" },
-    { label: "Heal",      sub: "Postbiotics", value: biotics.postbiotic, max: 15, color: "var(--icon-yellow)", insight: "Building — consistency will lift this" },
+    {
+      label: "Feed",  sub: "Prebiotics",  value: biotics.prebiotic,  max: 45,
+      color: "var(--icon-lime)",
+      insight: "Oats & garlic are feeding your gut bacteria well",
+      action:  "Add leeks or asparagus to push further",
+      delta: 3,
+    },
+    {
+      label: "Seed",  sub: "Probiotics",  value: biotics.probiotic,  max: 25,
+      color: "var(--icon-teal)",
+      insight: "Low — fermented foods are the fastest lever here",
+      action:  "Daily kimchi or kefir will shift this quickly",
+      delta: -2,
+    },
+    {
+      label: "Heal",  sub: "Postbiotics", value: biotics.postbiotic, max: 15,
+      color: "var(--icon-yellow)",
+      insight: "Building steadily — consistency compounds over time",
+      action:  "Keep your Feed + Seed streak going to lift this",
+      delta: 1,
+    },
   ]
 
   return (
@@ -304,29 +322,35 @@ export function LiveDashboard({
 
             {/* Right — pillar bars */}
             <div className="space-y-5">
-              {PILLARS.map((p) => (
-                <div key={p.label}>
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.5)" }}>
-                      {p.label} · {p.sub}
-                    </span>
-                    <span className="font-mono text-sm font-bold" style={{ color: p.color }}>
-                      {p.value}<span style={{ color: "rgba(255,255,255,0.25)", fontWeight: 400 }}>/{p.max}</span>
-                    </span>
+              {PILLARS.map((p) => {
+                const pct = pillarPercent(p.value, p.max)
+                return (
+                  <div key={p.label}>
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.5)" }}>
+                        {p.label} · {p.sub}
+                      </span>
+                      <span className="font-mono text-sm font-bold" style={{ color: p.color }}>
+                        {pct}<span style={{ color: "rgba(255,255,255,0.3)", fontWeight: 400 }}>%</span>
+                      </span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.07)" }}>
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: barsReady ? `${pct}%` : "0%",
+                          background: p.color,
+                          transition: "width 1.5s cubic-bezier(0.4,0,0.2,1)",
+                        }}
+                      />
+                    </div>
+                    <p className="mt-1 text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{p.insight}</p>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.07)" }}>
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: barsReady ? `${pillarPercent(p.value, p.max)}%` : "0%",
-                        background: p.color,
-                        transition: "width 1.5s cubic-bezier(0.4,0,0.2,1)",
-                      }}
-                    />
-                  </div>
-                  <p className="mt-1 text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{p.insight}</p>
-                </div>
-              ))}
+                )
+              })}
+              <p className="pt-1 text-[10px] leading-relaxed" style={{ color: "rgba(255,255,255,0.2)" }}>
+                % of each pillar&apos;s daily potential · Your 62/100 score reflects all 5 assessment dimensions
+              </p>
             </div>
 
           </div>
@@ -337,7 +361,7 @@ export function LiveDashboard({
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* DAILY BIOTICS TRIO                                             */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <section className="px-6 py-10">
+      <section className="px-6 py-10" style={{ background: "color-mix(in srgb, var(--icon-green) 3%, var(--background))" }}>
         <div className="mx-auto max-w-[1000px]">
 
           {/* Section header + meta row */}
@@ -595,72 +619,119 @@ export function LiveDashboard({
       <div className="section-divider" />
 
       {/* ══════════════════════════════════════════════════════════════ */}
-      {/* BIOTICS BREAKDOWN                                              */}
+      {/* BIOTICS BREAKDOWN — dark section with animated mini-rings    */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <section className="px-6 py-12">
-        <div className="mx-auto max-w-[1000px]">
-          <div className="mb-6 text-center">
-            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Your Three Pillars</p>
-            <h2 className="mt-1 font-serif text-2xl font-semibold text-foreground">Biotics Breakdown</h2>
+      <section style={{ background: "var(--foreground)" }}>
+        <div className="mx-auto max-w-[1000px] px-6 py-16">
+
+          <div className="mb-10 text-center">
+            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-lime)" }}>Your Three Pillars</p>
+            <h2 className="mt-2 font-serif text-3xl font-bold text-white">Biotics Activity Profile</h2>
+            <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.4)" }}>
+              These scores track your daily food choices across all three biotic pillars. Your 62/100 overall score incorporates all five assessment dimensions — diversity, feeding patterns, new additions, consistency and wellbeing.
+            </p>
           </div>
+
           <div className="grid gap-5 sm:grid-cols-3">
             {PILLARS.map((p, i) => {
               const pct = pillarPercent(p.value, p.max)
-              const deltas = [3, -2, 1]
-              const delta = deltas[i]
+              const ringR = 32
+              const ringC = 2 * Math.PI * ringR
               return (
-                <div key={p.label} className="overflow-hidden rounded-3xl border bg-card" style={{ borderTopWidth: "3px", borderTopColor: p.color }}>
-                  <div className="p-6">
-                    <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: p.color }}>
-                      {p.label} · {p.sub}
-                    </p>
-                    <div className="my-3 font-serif text-4xl font-bold text-foreground">
-                      {p.value}
-                      <span className="ml-1 text-xl font-normal text-muted-foreground">/ {p.max}</span>
-                    </div>
-                    <div className="mb-3 h-2 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full"
-                        style={{
-                          width: barsReady ? `${pct}%` : "0%",
-                          background: p.color,
-                          transition: "width 1.5s cubic-bezier(0.4,0,0.2,1)",
-                        }}
+                <div
+                  key={p.label}
+                  className="rounded-3xl p-6"
+                  style={{
+                    background: `color-mix(in srgb, ${p.color} 5%, rgba(255,255,255,0.03))`,
+                    border: `1px solid color-mix(in srgb, ${p.color} 20%, rgba(255,255,255,0.06))`,
+                  }}
+                >
+                  <p className="mb-5 text-[10px] font-bold uppercase tracking-widest" style={{ color: p.color }}>
+                    {p.label} · {p.sub}
+                  </p>
+
+                  {/* Mini animated ring + score */}
+                  <div className="mb-5 flex items-center gap-4">
+                    <svg width="80" height="80" viewBox="0 0 80 80" className="shrink-0 overflow-visible">
+                      <defs>
+                        <linearGradient id={`miniRingGrad${i}`} x1="0" y1="0" x2="1" y2="1">
+                          <stop offset="0%" stopColor={p.color} stopOpacity="0.6" />
+                          <stop offset="100%" stopColor={p.color} />
+                        </linearGradient>
+                        <filter id={`miniGlow${i}`}>
+                          <feGaussianBlur stdDeviation="2" result="blur" />
+                          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                        </filter>
+                      </defs>
+                      {/* Track */}
+                      <circle cx="40" cy="40" r={ringR} stroke="rgba(255,255,255,0.06)" strokeWidth="7" fill="none" />
+                      {/* Progress */}
+                      <circle
+                        cx="40" cy="40" r={ringR}
+                        stroke={`url(#miniRingGrad${i})`}
+                        strokeWidth="7"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeDasharray={`${ringC}`}
+                        strokeDashoffset={barsReady ? ringC * (1 - pct / 100) : ringC}
+                        transform="rotate(-90 40 40)"
+                        style={{ transition: "stroke-dashoffset 1.6s cubic-bezier(0.4,0,0.2,1)" }}
+                        filter={`url(#miniGlow${i})`}
                       />
-                    </div>
-                    <p className="text-xs leading-relaxed text-muted-foreground">{p.insight}</p>
-                    <div className="mt-4 flex items-center gap-1.5">
+                      <text x="40" y="37" textAnchor="middle" fontSize="15" fontWeight="700" fill="white" fontFamily="Georgia,serif">{pct}%</text>
+                      <text x="40" y="50" textAnchor="middle" fontSize="8" fill="rgba(255,255,255,0.3)" fontFamily="system-ui">potential</text>
+                    </svg>
+                    <div>
+                      <p className="font-serif text-3xl font-bold text-white">{p.value}</p>
+                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>of {p.max} pts</p>
                       <span
-                        className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                        className="mt-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold"
                         style={{
-                          background: delta > 0
-                            ? "color-mix(in srgb, var(--icon-green) 12%, transparent)"
-                            : "color-mix(in srgb, var(--icon-orange) 12%, transparent)",
-                          color: delta > 0 ? "var(--icon-green)" : "var(--icon-orange)",
+                          background: p.delta > 0
+                            ? "color-mix(in srgb, var(--icon-green) 15%, transparent)"
+                            : "color-mix(in srgb, var(--icon-orange) 15%, transparent)",
+                          color: p.delta > 0 ? "var(--icon-green)" : "var(--icon-orange)",
                         }}
                       >
-                        {delta > 0 ? `+${delta}` : delta} pts this week
+                        {p.delta > 0 ? `+${p.delta}` : p.delta} pts this week
                       </span>
                     </div>
+                  </div>
+
+                  <p className="mb-3 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
+                    {p.insight}
+                  </p>
+
+                  <div
+                    className="rounded-xl px-3 py-2.5 text-xs font-medium leading-relaxed"
+                    style={{
+                      background: `color-mix(in srgb, ${p.color} 10%, transparent)`,
+                      color: p.color,
+                    }}
+                  >
+                    → {p.action}
                   </div>
                 </div>
               )
             })}
           </div>
-        </div>
-      </section>
 
-      <div className="section-divider" />
+          <p className="mt-8 text-center text-[11px]" style={{ color: "rgba(255,255,255,0.2)" }}>
+            Activity scores update as you log meals · Biotics profile is separate from your 62/100 assessment score
+          </p>
+        </div>
+        <div className="section-divider" />
+      </section>
 
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* MEAL ANALYSIS                                                   */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <section className="px-6 py-12">
+      <section className="px-6 py-14">
         <div className="mx-auto max-w-[860px]">
-          <div className="mb-6 text-center">
-            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Daily Habit</p>
-            <h2 className="mt-1 font-serif text-2xl font-semibold text-foreground">Analyse a Meal</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Log what you eat to track your Biotics Score in real time.</p>
+          <div className="mb-8 text-center">
+            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Nutrition Tracking</p>
+            <h2 className="mt-2 font-serif text-3xl font-bold text-foreground">Analyse a Meal</h2>
+            <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">Describe what you ate — get an instant Biotics Score and pillar breakdown.</p>
           </div>
 
           <div
@@ -787,14 +858,19 @@ export function LiveDashboard({
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* THIS WEEK                                                       */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <section className="px-6 py-12">
+      <section className="px-6 py-14">
         <div className="mx-auto max-w-[860px]">
-          <div className="mb-6 flex items-center justify-between">
+          <div className="mb-8 flex items-end justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Accountability</p>
-              <h2 className="mt-1 font-serif text-2xl font-semibold text-foreground">This Week</h2>
+              <h2 className="mt-2 font-serif text-3xl font-bold text-foreground">This Week</h2>
             </div>
-            <span className="text-sm text-muted-foreground">5 / 7 days logged</span>
+            <span
+              className="rounded-full px-3 py-1 text-xs font-semibold"
+              style={{ background: "color-mix(in srgb, var(--icon-green) 10%, transparent)", color: "var(--icon-green)" }}
+            >
+              5 / 7 days logged
+            </span>
           </div>
 
           {/* Day pills */}
@@ -869,25 +945,45 @@ export function LiveDashboard({
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* MONTHLY PLAN                                                    */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <section className="px-6 py-12">
+      <section className="px-6 py-14">
         <div className="mx-auto max-w-[860px]">
+          <div className="mb-2 flex items-center gap-3">
+            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
+              {monthName}
+            </p>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+          <h2 className="mb-8 font-serif text-3xl font-bold text-foreground">Your Monthly Focus</h2>
+
           <div
-            className="overflow-hidden rounded-3xl border bg-card"
-            style={{ borderTopWidth: "3px", borderTopColor: "var(--icon-green)" }}
+            className="relative overflow-hidden rounded-3xl"
+            style={{
+              background: "var(--card)",
+              border: "1px solid var(--border)",
+              boxShadow: "0 4px 32px rgba(0,0,0,0.06)",
+            }}
           >
-            <div className="p-7">
-              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
-                {monthName} · Your Monthly Focus
-              </p>
-              <h2 className="mt-2 font-serif text-xl font-semibold text-foreground">
-                This month: fix your fermented food gap
-              </h2>
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            {/* Green left accent bar */}
+            <div
+              className="absolute inset-y-0 left-0 w-1 rounded-l-3xl"
+              style={{ background: "linear-gradient(to bottom, var(--icon-lime), var(--icon-green), var(--icon-teal))" }}
+            />
+
+            <div className="p-8 pl-10">
+              {/* Pull quote */}
+              <blockquote
+                className="mb-6 font-serif text-xl font-semibold leading-snug text-foreground sm:text-2xl"
+                style={{ borderLeft: "none" }}
+              >
+                &ldquo;This month: fix your fermented food gap.&rdquo;
+              </blockquote>
+
+              <p className="text-base leading-relaxed text-muted-foreground">
                 {planFirstPara}
               </p>
 
               {planExpanded && (
-                <div className="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground">
+                <div className="mt-5 space-y-4 border-t border-border pt-5 text-sm leading-relaxed text-muted-foreground">
                   {monthlyPlan.split("\n\n").slice(1).map((para, i) => (
                     <p key={i}>{para}</p>
                   ))}
@@ -896,10 +992,10 @@ export function LiveDashboard({
 
               <button
                 onClick={() => setPlanExpanded(e => !e)}
-                className="mt-4 flex items-center gap-1.5 text-xs font-semibold transition-colors"
+                className="mt-5 flex items-center gap-1.5 text-sm font-semibold transition-colors"
                 style={{ color: "var(--icon-green)" }}
               >
-                {planExpanded ? <><ChevronUp size={13} /> Show less</> : <><ChevronDown size={13} /> Read full plan</>}
+                {planExpanded ? <><ChevronUp size={14} /> Show less</> : <><ChevronDown size={14} /> Read your full plan</>}
               </button>
             </div>
           </div>
@@ -908,30 +1004,39 @@ export function LiveDashboard({
 
       {/* Weekly check-in (if available) */}
       {weeklyCheckin && (
-        <section className="px-6 pb-12">
+        <section className="px-6 pb-14">
           <div className="mx-auto max-w-[860px]">
             <div
-              className="overflow-hidden rounded-3xl border bg-card"
-              style={{ borderTopWidth: "3px", borderTopColor: "var(--icon-teal)" }}
+              className="relative overflow-hidden rounded-3xl"
+              style={{
+                background: "var(--card)",
+                border: "1px solid var(--border)",
+                boxShadow: "0 4px 32px rgba(0,0,0,0.06)",
+              }}
             >
-              <div className="p-7">
-                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-teal)" }}>
+              <div
+                className="absolute inset-y-0 left-0 w-1 rounded-l-3xl"
+                style={{ background: "linear-gradient(to bottom, var(--icon-teal), var(--icon-green))" }}
+              />
+              <div className="p-8 pl-10">
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-teal)" }}>
                   This Week · AI Check-in
                 </p>
-                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                <p className="mb-4 font-serif text-lg font-semibold text-foreground">What your data said this week</p>
+                <p className="text-base leading-relaxed text-muted-foreground">
                   {weeklyCheckin.split("\n\n")[0]}
                 </p>
                 {checkinExpanded && (
-                  <div className="mt-3 space-y-3 text-sm leading-relaxed text-muted-foreground">
+                  <div className="mt-4 space-y-4 border-t border-border pt-4 text-sm leading-relaxed text-muted-foreground">
                     {weeklyCheckin.split("\n\n").slice(1).map((p, i) => <p key={i}>{p}</p>)}
                   </div>
                 )}
                 <button
                   onClick={() => setCheckinExpanded(e => !e)}
-                  className="mt-3 flex items-center gap-1.5 text-xs font-semibold"
+                  className="mt-4 flex items-center gap-1.5 text-sm font-semibold"
                   style={{ color: "var(--icon-teal)" }}
                 >
-                  {checkinExpanded ? <><ChevronUp size={13} /> Less</> : <><ChevronDown size={13} /> Read full check-in</>}
+                  {checkinExpanded ? <><ChevronUp size={14} /> Show less</> : <><ChevronDown size={14} /> Read your full check-in</>}
                 </button>
               </div>
             </div>
@@ -944,50 +1049,88 @@ export function LiveDashboard({
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* SCORE HISTORY                                                   */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <section className="px-6 py-12">
+      <section
+        className="px-6 py-14"
+        style={{ background: "color-mix(in srgb, var(--icon-teal) 3%, var(--background))" }}
+      >
         <div className="mx-auto max-w-[860px]">
-          <div className="mb-4">
-            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Your Progress</p>
-            <h2 className="mt-1 font-serif text-2xl font-semibold text-foreground">Score History</h2>
+          <div className="mb-8 flex items-end justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Your Progress</p>
+              <h2 className="mt-2 font-serif text-3xl font-bold text-foreground">Score History</h2>
+            </div>
+            <div className="flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: "color-mix(in srgb, var(--icon-green) 10%, transparent)" }}>
+              <TrendingUp size={13} style={{ color: "var(--icon-green)" }} />
+              <span className="text-sm font-bold" style={{ color: "var(--icon-green)" }}>+{scoreDelta} pts</span>
+              <span className="text-xs text-muted-foreground">in 6 weeks</span>
+            </div>
           </div>
 
-          <div className="overflow-hidden rounded-3xl border bg-card p-6">
-            {/* Simple SVG line chart */}
-            <svg viewBox="0 0 400 120" className="w-full" style={{ height: "120px" }}>
+          <div
+            className="overflow-hidden rounded-3xl border bg-card p-6"
+            style={{ boxShadow: "0 4px 32px rgba(0,0,0,0.06)" }}
+          >
+            <svg viewBox="0 0 440 160" className="w-full" style={{ height: "160px" }}>
               <defs>
                 <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
                   <stop offset="0%" stopColor="var(--icon-lime)" />
                   <stop offset="100%" stopColor="var(--icon-green)" />
                 </linearGradient>
+                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--icon-green)" stopOpacity="0.18" />
+                  <stop offset="100%" stopColor="var(--icon-green)" stopOpacity="0" />
+                </linearGradient>
               </defs>
-              {/* Grid lines */}
+
+              {/* Subtle grid */}
               {[25, 50, 75, 100].map(y => (
-                <line key={y} x1="40" y1={100 - y} x2="380" y2={100 - y} stroke="var(--border)" strokeWidth="0.5" />
+                <line key={y} x1="50" y1={130 - y * 1.2} x2="420" y2={130 - y * 1.2} stroke="var(--border)" strokeWidth="0.5" strokeDasharray="4 4" />
               ))}
               {/* Y axis labels */}
               {[25, 50, 75, 100].map(y => (
-                <text key={y} x="32" y={104 - y} textAnchor="end" fontSize="9" fill="var(--muted-foreground)">{y}</text>
+                <text key={y} x="40" y={134 - y * 1.2} textAnchor="end" fontSize="9" fill="var(--muted-foreground)">{y}</text>
               ))}
+
+              {/* Gradient area fill */}
+              <path
+                d={`M 100 ${130 - previousScore * 1.2} L 360 ${130 - score * 1.2} L 360 130 L 100 130 Z`}
+                fill="url(#areaGrad)"
+              />
+
               {/* Line */}
-              <line x1="80" y1={100 - previousScore} x2="320" y2={100 - score} stroke="url(#lineGrad)" strokeWidth="2.5" strokeLinecap="round" />
-              {/* Points */}
-              <circle cx="80"  cy={100 - previousScore} r="5" fill="var(--icon-lime)" />
-              <circle cx="320" cy={100 - score}         r="5" fill="var(--icon-green)" />
-              {/* Labels */}
-              <text x="80"  y={100 - previousScore - 10} textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--icon-lime)">{previousScore}</text>
-              <text x="320" y={100 - score - 10}         textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--icon-green)">{score}</text>
-              <text x="80"  y="115" textAnchor="middle" fontSize="9" fill="var(--muted-foreground)">6 wks ago</text>
-              <text x="320" y="115" textAnchor="middle" fontSize="9" fill="var(--muted-foreground)">Today</text>
+              <line
+                x1="100" y1={130 - previousScore * 1.2}
+                x2="360" y2={130 - score * 1.2}
+                stroke="url(#lineGrad)" strokeWidth="3" strokeLinecap="round"
+              />
+
+              {/* Glow points */}
+              <circle cx="100" cy={130 - previousScore * 1.2} r="7" fill="var(--icon-lime)" opacity="0.2" />
+              <circle cx="100" cy={130 - previousScore * 1.2} r="4.5" fill="var(--icon-lime)" />
+              <circle cx="360" cy={130 - score * 1.2}         r="8" fill="var(--icon-green)" opacity="0.2" />
+              <circle cx="360" cy={130 - score * 1.2}         r="5" fill="var(--icon-green)" />
+
+              {/* Score labels */}
+              <text x="100" y={130 - previousScore * 1.2 - 13} textAnchor="middle" fontSize="13" fontWeight="700" fill="var(--icon-lime)" fontFamily="Georgia,serif">{previousScore}</text>
+              <text x="360" y={130 - score * 1.2 - 13}         textAnchor="middle" fontSize="14" fontWeight="700" fill="var(--icon-green)" fontFamily="Georgia,serif">{score}</text>
+
+              {/* Date labels */}
+              <text x="100" y="150" textAnchor="middle" fontSize="9" fill="var(--muted-foreground)">6 weeks ago</text>
+              <text x="360" y="150" textAnchor="middle" fontSize="9" fill="var(--muted-foreground)">Today</text>
+
+              {/* Profile type label under today dot */}
+              <text x="360" y={130 - score * 1.2 + 20} textAnchor="middle" fontSize="8" fill="var(--icon-green)" opacity="0.6">Emerging Balance</text>
             </svg>
 
-            <div className="mt-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <TrendingUp size={14} style={{ color: "var(--icon-green)" }} />
-                <span className="text-sm font-semibold" style={{ color: "var(--icon-green)" }}>
-                  +{scoreDelta} pts in 6 weeks — trending up
-                </span>
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-5">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Trending upward — keep the consistency going</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">Your next assessment will capture the full picture of your progress.</p>
               </div>
-              <Link href="/assessment" className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors">
+              <Link
+                href="/assessment"
+                className="shrink-0 rounded-full border border-border px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+              >
                 Retake assessment →
               </Link>
             </div>
@@ -1000,25 +1143,30 @@ export function LiveDashboard({
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* MY PLATE                                                        */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <section className="px-6 py-12">
+      <section className="px-6 py-14" style={{ background: "color-mix(in srgb, var(--icon-lime) 3%, var(--background))" }}>
         <div className="mx-auto max-w-[860px]">
-          <div className="mb-6 flex items-center justify-between">
+          <div className="mb-8 flex items-end justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Weekly Target</p>
-              <h2 className="mt-1 font-serif text-2xl font-semibold text-foreground">My Plant Plate</h2>
+              <h2 className="mt-2 font-serif text-3xl font-bold text-foreground">My Plant Plate</h2>
+              <p className="mt-1 text-sm text-muted-foreground">30 diverse plants per week feeds maximum gut diversity.</p>
             </div>
             <div className="text-right">
-              <p className="font-serif text-3xl font-bold brand-gradient-text">{activePlants.length}</p>
-              <p className="text-xs text-muted-foreground">of 30 plants this week</p>
+              <p className="font-serif text-5xl font-bold brand-gradient-text">{activePlants.length}</p>
+              <p className="text-xs text-muted-foreground">of 30 this week</p>
             </div>
           </div>
 
           {/* Progress bar */}
-          <div className="mb-6 h-3 overflow-hidden rounded-full bg-muted">
+          <div className="mb-2 h-3 overflow-hidden rounded-full bg-muted" style={{ boxShadow: "inset 0 1px 3px rgba(0,0,0,0.06)" }}>
             <div
               className="h-full rounded-full brand-gradient"
               style={{ width: `${(activePlants.length / 30) * 100}%`, transition: "width 0.4s ease" }}
             />
+          </div>
+          <div className="mb-7 flex items-center justify-between text-xs text-muted-foreground">
+            <span>{activePlants.length} plants logged</span>
+            <span>{30 - activePlants.length} to go</span>
           </div>
 
           {/* Plant chips */}
@@ -1060,48 +1208,73 @@ export function LiveDashboard({
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* YOUR PERSONAL REPORT                                           */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <section className="px-6 py-12">
+      <section className="px-6 py-14" style={{ background: "color-mix(in srgb, var(--icon-lime) 3%, var(--background))" }}>
         <div className="mx-auto max-w-[860px]">
-          <div
-            className="overflow-hidden rounded-3xl"
-            style={{ background: "var(--foreground)" }}
-          >
-            {/* Decorative gradient line */}
-            <div className="section-divider" />
-            <div className="grid grid-cols-1 gap-8 p-8 md:grid-cols-[1fr_auto] md:items-center">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
-                  Your Personal Report
-                </p>
-                <h2 className="mt-2 font-serif text-2xl font-bold text-white">
-                  The full picture of your food system
-                </h2>
-                <p className="mt-2 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.5)" }}>
-                  Your 18-page report — 30-day plan, top 10 foods, pillar deep-dive, food pairings and your full score breakdown.
-                </p>
-                <div className="mt-4 flex flex-wrap items-center gap-3">
-                  <Link
-                    href="/report-you"
-                    className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 brand-gradient"
-                  >
-                    View your full report <ArrowRight size={14} />
-                  </Link>
-                  <span
-                    className="rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                    style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)" }}
-                  >
-                    {profileType} · {score}/100
-                  </span>
-                </div>
-              </div>
+          <div className="mb-2 flex items-center gap-3">
+            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Personal Report</p>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+          <h2 className="mb-8 font-serif text-3xl font-bold text-foreground">Your Full Food System Picture</h2>
 
-              {/* Decorative score block */}
-              <div
-                className="hidden md:flex h-24 w-24 flex-col items-center justify-center rounded-2xl"
-                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
-              >
-                <span className="font-serif text-3xl font-bold text-white">{score}</span>
-                <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.3)" }}>/100</span>
+          {/* Gradient border wrapper */}
+          <div
+            className="rounded-3xl p-[2px]"
+            style={{
+              background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green) 40%, var(--icon-teal) 70%, var(--icon-green))",
+            }}
+          >
+            <div
+              className="overflow-hidden rounded-[22px]"
+              style={{ background: "var(--foreground)" }}
+            >
+              <div className="grid grid-cols-1 gap-8 p-8 md:grid-cols-[1fr_auto] md:items-center">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-lime)" }}>
+                    18-page personal report
+                  </p>
+                  <h3 className="mt-3 font-serif text-2xl font-bold leading-snug text-white">
+                    The full picture of your gut food system
+                  </h3>
+                  <p className="mt-3 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.5)" }}>
+                    Your 30-day personalised plan, top 10 priority foods, pillar deep-dive, food pairings, meal timing and your complete score breakdown — all in one place.
+                  </p>
+                  <div className="mt-5 flex flex-wrap items-center gap-3">
+                    <Link
+                      href="/report-you"
+                      className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 brand-gradient"
+                    >
+                      View your full report <ArrowRight size={14} />
+                    </Link>
+                    <span
+                      className="rounded-full px-3 py-1 text-xs font-semibold"
+                      style={{ background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.45)" }}
+                    >
+                      {profileType} · {score}/100
+                    </span>
+                  </div>
+                </div>
+
+                {/* Abstract report visual */}
+                <div className="hidden md:block">
+                  <svg width="100" height="130" viewBox="0 0 100 130">
+                    <rect x="10" y="0"  width="80" height="105" rx="8" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+                    <rect x="18" y="14" width="50" height="4"   rx="2" fill="rgba(255,255,255,0.15)" />
+                    <rect x="18" y="24" width="35" height="3"   rx="1.5" fill="rgba(255,255,255,0.08)" />
+                    <rect x="18" y="38" width="64" height="2.5" rx="1.25" fill="rgba(255,255,255,0.06)" />
+                    <rect x="18" y="45" width="57" height="2.5" rx="1.25" fill="rgba(255,255,255,0.06)" />
+                    <rect x="18" y="52" width="60" height="2.5" rx="1.25" fill="rgba(255,255,255,0.06)" />
+                    <rect x="18" y="63" width="20" height="20"  rx="4"   fill="color-mix(in srgb, var(--icon-lime) 20%, transparent)" />
+                    <rect x="43" y="63" width="20" height="20"  rx="4"   fill="color-mix(in srgb, var(--icon-teal) 20%, transparent)" />
+                    <rect x="18" y="88" width="55" height="2.5" rx="1.25" fill="rgba(255,255,255,0.06)" />
+                    <rect x="18" y="95" width="40" height="2.5" rx="1.25" fill="rgba(255,255,255,0.06)" />
+                    {/* Score badge */}
+                    <circle cx="80" cy="20" r="16" fill="color-mix(in srgb, var(--icon-green) 25%, transparent)" />
+                    <text x="80" y="18" textAnchor="middle" fontSize="11" fontWeight="700" fill="white" fontFamily="Georgia,serif">{score}</text>
+                    <text x="80" y="28" textAnchor="middle" fontSize="6" fill="rgba(255,255,255,0.4)" fontFamily="system-ui">/100</text>
+                    {/* Page shadow */}
+                    <rect x="16" y="108" width="80" height="105" rx="8" fill="rgba(255,255,255,0.02)" transform="rotate(-3 16 108)" />
+                  </svg>
+                </div>
               </div>
             </div>
           </div>
@@ -1113,52 +1286,88 @@ export function LiveDashboard({
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* MEMBERSHIP FOOTER                                               */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <section className="px-6 py-12">
+      <section className="px-6 py-14" style={{ background: "color-mix(in srgb, var(--foreground) 3%, var(--background))" }}>
         <div className="mx-auto max-w-[860px]">
+          <div className="mb-2 flex items-center gap-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Your Account</p>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+          <h2 className="mb-8 font-serif text-3xl font-bold text-foreground">Membership</h2>
+
           <div className="grid gap-5 sm:grid-cols-2">
 
             {/* Membership card */}
-            <div className="overflow-hidden rounded-3xl border bg-card" style={{ borderTopWidth: "3px", borderTopColor: "var(--icon-green)" }}>
-              <div className="p-6">
-                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Membership</p>
-                <h3 className="mt-2 font-serif text-lg font-semibold text-foreground">EatoBiotics Member</h3>
-                <div className="mt-2 flex items-center gap-2">
+            <div
+              className="overflow-hidden rounded-3xl"
+              style={{
+                background: "var(--card)",
+                border: "1px solid var(--border)",
+                boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
+              }}
+            >
+              <div
+                className="h-1 w-full"
+                style={{ background: "linear-gradient(to right, var(--icon-lime), var(--icon-green), var(--icon-teal))" }}
+              />
+              <div className="p-7">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Membership</p>
+                    <h3 className="mt-2 font-serif text-xl font-bold text-foreground">EatoBiotics Member</h3>
+                  </div>
                   <span
-                    className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase"
+                    className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide"
                     style={{ background: "color-mix(in srgb, var(--icon-green) 12%, transparent)", color: "var(--icon-green)" }}
                   >
                     Active
                   </span>
+                </div>
+                <div className="mt-4 space-y-1.5">
+                  <p className="text-sm text-muted-foreground">€24.99/mo · cancel any time</p>
                   {nextBillingDate && (
-                    <span className="text-xs text-muted-foreground" suppressHydrationWarning>
-                      Next billing: {new Date(nextBillingDate).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}
-                    </span>
+                    <p className="text-xs text-muted-foreground" suppressHydrationWarning>
+                      Next billing: {new Date(nextBillingDate).toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" })}
+                    </p>
                   )}
                 </div>
-                <p className="mt-4 text-xs text-muted-foreground">€24.99/mo · cancel any time</p>
-                <Link href="/pricing" className="mt-3 inline-block text-xs font-semibold text-muted-foreground underline-offset-2 hover:underline">
-                  Manage subscription →
+                <Link
+                  href="/pricing"
+                  className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Manage subscription <ArrowRight size={13} />
                 </Link>
               </div>
             </div>
 
             {/* Referral card */}
-            <div className="overflow-hidden rounded-3xl border bg-card" style={{ borderTopWidth: "3px", borderTopColor: "var(--icon-lime)" }}>
-              <div className="p-6">
+            <div
+              className="overflow-hidden rounded-3xl"
+              style={{
+                background: "var(--card)",
+                border: "1px solid var(--border)",
+                boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
+              }}
+            >
+              <div
+                className="h-1 w-full"
+                style={{ background: "linear-gradient(to right, var(--icon-lime), var(--icon-yellow))" }}
+              />
+              <div className="p-7">
                 <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-lime)" }}>Refer a Friend</p>
-                <h3 className="mt-2 font-serif text-lg font-semibold text-foreground">Share EatoBiotics</h3>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  Share your code and help someone start their gut health journey.
+                <h3 className="mt-2 font-serif text-xl font-bold text-foreground">Share EatoBiotics</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  Share your code and help someone discover their gut health score.
                 </p>
-                <div className="mt-4 flex items-center gap-2">
+                <div className="mt-5 flex items-center gap-2">
                   <code
-                    className="flex-1 rounded-xl border bg-background px-3 py-2 text-center text-sm font-bold tracking-widest text-foreground"
+                    className="flex-1 rounded-xl border bg-background px-4 py-2.5 text-center text-sm font-bold tracking-widest text-foreground"
+                    style={{ letterSpacing: "0.15em" }}
                   >
                     {referralCode}
                   </code>
                   <button
                     onClick={() => navigator.clipboard?.writeText(`https://eatobiotics.com?ref=${referralCode}`)}
-                    className="rounded-xl border bg-background px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                    className="shrink-0 rounded-xl border bg-background px-4 py-2.5 text-xs font-bold text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
                   >
                     Copy
                   </button>
