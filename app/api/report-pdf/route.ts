@@ -13,16 +13,15 @@ export async function POST(req: NextRequest) {
     }
 
     // Render to buffer server-side
-    const buffer = await renderToBuffer(
-      createElement(ReportPDF, { data })
-    )
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const buffer = await renderToBuffer(createElement(ReportPDF, { data }) as any)
 
     const slug = data.theme.title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "")
 
-    return new Response(buffer, {
+    return new Response(buffer as unknown as BodyInit, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
