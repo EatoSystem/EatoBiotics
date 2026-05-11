@@ -4,7 +4,8 @@ import { NextResponse, type NextRequest } from "next/server"
 // Paths that start with /account but are public (no auth required)
 const PUBLIC_ACCOUNT_PREFIXES = [
   "/account/signin",
-  "/account-you",   // public demo dashboard
+  "/account-you",      // public demo dashboard
+  "/account-you-live", // live dev/testing sandbox
 ]
 
 function isProtectedAccountRoute(pathname: string): boolean {

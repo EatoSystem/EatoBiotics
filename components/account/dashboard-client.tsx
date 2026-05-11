@@ -2821,71 +2821,42 @@ function FeatureGate({
 
 function UpgradePrompt({
   currentTier,
-  latestAssessment,
 }: {
   currentTier: Profile["membership_tier"]
   latestAssessment: AssessmentRow | null
 }) {
-  const addingScore = latestAssessment ? extractSubScores(latestAssessment.sub_scores)?.adding : null
-
-  if (currentTier === "transform") return null
-
-  const config = {
-    free: {
-      nextTier: "Grow",
-      price: "€9.99/mo",
-      priceId: process.env.NEXT_PUBLIC_STRIPE_GROW_PRICE_ID ?? "",
-      accentColor: "var(--icon-lime)",
-      headline: "Add daily meal tracking to your routine",
-      body: "2 meal analyses per day, a 30-day score trend, and access to the Plate Builder — everything you need to start building daily food system habits.",
-    },
-    grow: {
-      nextTier: "Restore",
-      price: "€49/mo",
-      priceId: process.env.NEXT_PUBLIC_STRIPE_RESTORE_PRICE_ID ?? "",
-      accentColor: "var(--icon-teal)",
-      headline: "Get a personalised monthly plan for your scores",
-      body: addingScore != null
-        ? `Your Live Foods score is ${Math.round(addingScore)} — the area holding your Biotics number back most. Restore gives you a personalised monthly gut plan, 5 daily analyses with AI context, and condition-specific calibration.`
-        : "Restore adds a personalised monthly food system plan, 5 daily analyses with AI context, 90-day score history, and condition-specific calibration.",
-    },
-    restore: {
-      nextTier: "Transform",
-      price: "€99/mo",
-      priceId: process.env.NEXT_PUBLIC_STRIPE_TRANSFORM_PRICE_ID ?? "",
-      accentColor: "var(--icon-orange)",
-      headline: "You have the data — now get the conversation",
-      body: "Transform adds unlimited AI food system consultations, weekly check-ins, a 10/day analysis quota, and personalised weekly meal plans. Always on, powered by Claude.",
-    },
-  } as const
-
-  const c = config[currentTier as keyof typeof config]
-  if (!c) return null
+  // Only show upgrade prompt to free users
+  if (currentTier !== "free") return null
 
   return (
     <div
       className="overflow-hidden rounded-3xl border"
       style={{
-        background: `color-mix(in srgb, ${c.accentColor} 5%, var(--card))`,
-        borderColor: `color-mix(in srgb, ${c.accentColor} 20%, var(--border))`,
+        background: "color-mix(in srgb, var(--icon-green) 5%, var(--card))",
+        borderColor: "color-mix(in srgb, var(--icon-green) 20%, var(--border))",
       }}
     >
-      <div
-        className="h-1 w-full"
-        style={{ background: `linear-gradient(90deg, ${c.accentColor}, color-mix(in srgb, ${c.accentColor} 40%, transparent))` }}
-      />
+      <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))" }} />
       <div className="p-5">
         <div className="mb-1 flex items-center gap-2">
-          <Zap size={13} style={{ color: c.accentColor }} />
-          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: c.accentColor }}>
-            Add this to your daily routine
+          <Zap size={13} style={{ color: "var(--icon-green)" }} />
+          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
+            Continue your journey
           </p>
         </div>
-        <h3 className="mb-2 font-serif text-lg font-semibold text-foreground">{c.headline}</h3>
-        <p className="mb-4 text-sm text-muted-foreground leading-relaxed">{c.body}</p>
+        <h3 className="mb-2 font-serif text-lg font-semibold text-foreground">Keep the momentum going</h3>
+        <p className="mb-4 text-sm text-muted-foreground leading-relaxed">
+          Your free 30-day account gives you a great start. Upgrading to a monthly membership keeps your plan updated, adds meal tracking, and gives you a new 30-day focus plan every month.
+        </p>
         <div className="flex items-center gap-3">
-          <SubscribeButton priceId={c.priceId} label={`Upgrade to ${c.nextTier}`} />
-          <span className="text-xs text-muted-foreground">{c.price} · cancel any time</span>
+          <Link
+            href="/pricing"
+            className="inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))" }}
+          >
+            See membership options
+          </Link>
+          <span className="text-xs text-muted-foreground">€24.99/mo · cancel any time</span>
         </div>
       </div>
     </div>
@@ -2941,74 +2912,41 @@ function MembershipTab({
   const { membership, membership_tier, membership_status, membership_expires_at, is_founding_member } = profile
 
   const subTiers: Array<{
-    key: "free" | "trial" | "member" | "grow" | "restore" | "transform"
+    key: "free" | "member"
     title: string
     price: string
     perks: string[]
   }> = [
     {
       key: "free",
-      title: "Free",
-      price: "Free",
+      title: "Free Account",
+      price: "Included with report",
       perks: [
-        "Access to purchased report permanently",
-        "Biotics Score visible (today only, no history)",
-        "Gut Starter Pack food library access",
-        "Weekly Substack delivered to inbox",
-        "30-day reassessment reminder",
+        "Permanent access to your Personal Report",
+        "EatoBiotics Biotics Score (today)",
+        "7-day food system guide",
+        "Food library access",
+        "Weekly guidance emails",
       ],
     },
     {
-      key: "grow",
-      title: "Grow",
-      price: "€9.99/mo",
+      key: "member",
+      title: "Member",
+      price: "€24.99/mo",
       perks: [
-        "Everything in Free",
-        "2 meal analyses per day",
-        "Full three-biotic breakdown per analysis",
-        "30-day Biotics Score history and trend line",
-        "Monthly reassessment with score delta",
-        "EatoBiotics Plate builder",
-        "Full food profile library (50+ foods)",
-        "Early access to book chapters",
-        "Email support",
-      ],
-    },
-    {
-      key: "restore",
-      title: "Restore",
-      price: "€49/mo",
-      perks: [
-        "Everything in Grow",
-        "5 meal analyses per day with AI context",
-        "90-day score history with quarterly trend analysis",
-        "Condition-specific calibration (IBS, immunity, energy, mood, weight)",
-        "Monthly personalised food system plan",
-        "Downloadable PDF reports",
-        "5-pillar deep dive every month",
-        "Priority analysis — faster, more detailed output",
-        "Full pre-launch book access",
-      ],
-    },
-    {
-      key: "transform",
-      title: "Transform",
-      price: "€99/mo",
-      perks: [
-        "Everything in Restore",
-        "10 meal analyses per day with full AI context",
-        "Unlimited AI food system consultations",
-        "Weekly AI check-in",
-        "Personalised weekly meal plans",
-        "Recipe suggestions calibrated to Biotics Score",
-        "Annual Food System Profile",
-        is_founding_member ? "✦ Founding Member — permanent recognition" : "Founding member status (if eligible)",
-        "Direct input into EatoBiotics product roadmap",
+        "Monthly updated Biotics Score",
+        "New 30-day focus plan each month",
+        "Weekly personalised food guidance",
+        "Monthly progress report",
+        "Ongoing food recommendations",
+        "Priority access to new features",
       ],
     },
   ]
 
-  const tierOrder: Record<string, number> = { free: 0, grow: 1, restore: 2, transform: 3 }
+  // Legacy tiers (grow/restore/transform) map to "member" level for display
+  const PAID_TIERS = ["member", "trial", "grow", "restore", "transform"]
+  const tierOrder: Record<string, number> = { free: 0, trial: 1, member: 1, grow: 1, restore: 1, transform: 1 }
   const currentOrder = tierOrder[membership_tier] ?? 0
 
   const statusLabel: Record<string, string> = {
@@ -3099,13 +3037,13 @@ function MembershipTab({
       {/* Upgrade prompt — personalised next-tier pitch */}
       <UpgradePrompt currentTier={membership_tier} latestAssessment={latestAssessment ?? null} />
 
-      {/* Tier comparison cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Plan comparison cards — Free vs Member */}
+      <div className="grid gap-4 sm:grid-cols-2">
         {subTiers.map((tier) => {
-          const isActive = tier.key === membership_tier && membership_status === "active"
-          const tierNum = tierOrder[tier.key] ?? 0
-          const isUpgrade = tierNum > currentOrder
-          const isDowngrade = tierNum < currentOrder && membership_status === "active"
+          // "member" card is active for any paid tier (member, trial, grow, restore, transform)
+          const isActive = tier.key === "free"
+            ? membership_tier === "free"
+            : PAID_TIERS.includes(membership_tier) && membership_status === "active"
 
           return (
             <div
@@ -3133,26 +3071,17 @@ function MembershipTab({
                       Active
                     </span>
                   )}
-                  {tier.key === "transform" && is_founding_member && (
-                    <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white"
-                      style={{ background: "var(--icon-orange)" }}>
-                      Founding
-                    </span>
-                  )}
                 </div>
               </div>
 
               <div className="px-4 py-3">
                 <ul className="mb-4 space-y-1.5">
-                  {tier.perks.slice(0, 5).map((perk) => (
+                  {tier.perks.map((perk) => (
                     <li key={perk} className="flex items-start gap-2 text-xs text-muted-foreground">
                       <Check size={11} className="mt-0.5 shrink-0 text-muted-foreground/50" />
                       {perk}
                     </li>
                   ))}
-                  {tier.perks.length > 5 && (
-                    <li className="text-xs text-muted-foreground/60">+{tier.perks.length - 5} more</li>
-                  )}
                 </ul>
 
                 {isActive ? (
@@ -3163,12 +3092,14 @@ function MembershipTab({
                   <div className="w-full rounded-full bg-muted py-1.5 text-center text-xs text-muted-foreground/60">
                     —
                   </div>
-                ) : isUpgrade ? (
-                  <SubscribeButton priceId={process.env[`NEXT_PUBLIC_STRIPE_${tier.key.toUpperCase()}_PRICE_ID`] ?? ""} label="Upgrade" />
-                ) : isDowngrade ? (
-                  <ManageSubscriptionButton />
                 ) : (
-                  <SubscribeButton priceId={process.env[`NEXT_PUBLIC_STRIPE_${tier.key.toUpperCase()}_PRICE_ID`] ?? ""} label="Get started" />
+                  <Link
+                    href="/pricing"
+                    className="flex w-full items-center justify-center rounded-full py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                    style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))" }}
+                  >
+                    Upgrade to Member
+                  </Link>
                 )}
               </div>
             </div>
