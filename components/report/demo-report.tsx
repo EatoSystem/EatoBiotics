@@ -1,5 +1,5 @@
 "use client"
-// v7
+// v8
 import Link from "next/link"
 import Image from "next/image"
 import { Check, ArrowRight, TrendingUp, Download, Mail, Loader2, CheckCircle2 } from "lucide-react"
@@ -2162,7 +2162,7 @@ export function DemoReport({ data }: { data: DemoReportData }) {
       </section>
 
       {/* ── Download & Email ── */}
-      <ReportActions accent={data.theme.accent} title={data.theme.title} />
+      <ReportActions data={data} />
 
       {/* ── CTA ── */}
       <div className="px-6 pb-16">
@@ -2210,23 +2210,51 @@ export function DemoReport({ data }: { data: DemoReportData }) {
 }
 
 /* ─── Report Actions (Download PDF + Email) ─────────────────────────── */
-function ReportActions({ accent, title }: { accent: string; title: string }) {
+function ReportActions({ data }: { data: DemoReportData }) {
+  const accent = data.theme.accent
+  const title  = data.theme.title
+
   const [email, setEmail] = useState("")
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle")
+  const [emailStatus, setEmailStatus]       = useState<"idle" | "sending" | "sent" | "error">("idle")
+  const [downloadStatus, setDownloadStatus] = useState<"idle" | "loading" | "done" | "error">("idle")
 
   async function handleEmail(e: React.FormEvent) {
     e.preventDefault()
     if (!email) return
-    setStatus("sending")
+    setEmailStatus("sending")
     try {
       const res = await fetch("/api/email-sample-report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, reportTitle: title }),
       })
-      setStatus(res.ok ? "sent" : "error")
+      setEmailStatus(res.ok ? "sent" : "error")
     } catch {
-      setStatus("error")
+      setEmailStatus("error")
+    }
+  }
+
+  async function handleDownload() {
+    setDownloadStatus("loading")
+    try {
+      const res = await fetch("/api/report-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) throw new Error("PDF generation failed")
+      const blob = await res.blob()
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement("a")
+      a.href     = url
+      a.download = `eatobiotics-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+      setDownloadStatus("done")
+      setTimeout(() => setDownloadStatus("idle"), 3000)
+    } catch {
+      setDownloadStatus("error")
+      setTimeout(() => setDownloadStatus("idle"), 3000)
     }
   }
 
@@ -2253,16 +2281,24 @@ function ReportActions({ accent, title }: { accent: string; title: string }) {
               </p>
             </div>
             <button
-              onClick={() => window.print()}
-              className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full border px-6 py-3 text-sm font-semibold transition-all hover:shadow-md active:scale-[0.98]"
+              onClick={handleDownload}
+              disabled={downloadStatus === "loading"}
+              className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full border px-6 py-3 text-sm font-semibold transition-all hover:shadow-md active:scale-[0.98] disabled:opacity-60"
               style={{
                 borderColor: `color-mix(in srgb, ${accent} 40%, transparent)`,
-                color: accent,
+                color: downloadStatus === "done" ? "var(--icon-green)" : accent,
                 background: `color-mix(in srgb, ${accent} 6%, transparent)`,
               }}
             >
-              <Download size={15} />
-              Save as PDF
+              {downloadStatus === "loading" ? (
+                <><Loader2 size={15} className="animate-spin" /> Generating PDF…</>
+              ) : downloadStatus === "done" ? (
+                <><CheckCircle2 size={15} /> Downloaded!</>
+              ) : downloadStatus === "error" ? (
+                <><Download size={15} /> Try again</>
+              ) : (
+                <><Download size={15} /> Download PDF</>
+              )}
             </button>
           </div>
 
@@ -2284,7 +2320,7 @@ function ReportActions({ accent, title }: { accent: string; title: string }) {
               </p>
             </div>
 
-            {status === "sent" ? (
+            {emailStatus === "sent" ? (
               <div
                 className="mt-auto flex items-center gap-3 rounded-2xl px-5 py-4"
                 style={{ background: "color-mix(in srgb, var(--icon-teal) 10%, transparent)" }}
@@ -2305,17 +2341,17 @@ function ReportActions({ accent, title }: { accent: string; title: string }) {
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full rounded-full border border-border bg-background px-5 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-[var(--icon-teal)] focus:ring-2"
                   style={{ "--tw-ring-color": "color-mix(in srgb, var(--icon-teal) 20%, transparent)" } as React.CSSProperties}
-                  disabled={status === "sending"}
+                  disabled={emailStatus === "sending"}
                 />
-                {status === "error" && (
+                {emailStatus === "error" && (
                   <p className="text-xs text-red-500 px-1">Something went wrong — please try again.</p>
                 )}
                 <button
                   type="submit"
-                  disabled={status === "sending"}
+                  disabled={emailStatus === "sending"}
                   className="inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60 brand-gradient"
                 >
-                  {status === "sending" ? (
+                  {emailStatus === "sending" ? (
                     <><Loader2 size={15} className="animate-spin" /> Sending…</>
                   ) : (
                     <><Mail size={15} /> Send to my inbox</>
