@@ -95,7 +95,6 @@ export default async function ReportPage({ searchParams }: Props) {
             tier={displayTier}
             sessionId={session_id}
             reportJson={data.report_json as DeepReport}
-            pdfUrl={data.pdf_url ?? null}
             freeScores={freeScores as Parameters<typeof PaidReportClient>[0]["freeScores"]}
             membershipTier={membershipTier}
           />

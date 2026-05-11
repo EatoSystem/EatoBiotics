@@ -7,7 +7,6 @@ import {
   FlaskConical,
   Clock,
   Heart,
-  Printer,
   RotateCcw,
   ChevronDown,
   TrendingDown,
@@ -474,13 +473,6 @@ function FullReportSections({
           <div className="mx-auto max-w-2xl flex flex-col items-center gap-4">
             <ScrollReveal>
               <div className="flex flex-wrap justify-center gap-3">
-                <button
-                  onClick={() => window.print()}
-                  className="flex items-center gap-2 rounded-full border border-border px-6 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground print:hidden"
-                >
-                  <Printer size={14} />
-                  Print / Save PDF
-                </button>
                 <Link
                   href="/assessment"
                   className="flex items-center gap-2 rounded-full border border-border px-6 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground print:hidden"
@@ -602,13 +594,6 @@ export function FullReportClient({ tier = "full", demoResult }: FullReportClient
           <div className="mx-auto max-w-2xl flex flex-col items-center gap-4">
             <ScrollReveal>
               <div className="flex flex-wrap justify-center gap-3">
-                <button
-                  onClick={() => window.print()}
-                  className="flex items-center gap-2 rounded-full border border-border px-6 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground print:hidden"
-                >
-                  <Printer size={14} />
-                  Print / Save PDF
-                </button>
                 <Link
                   href="/assessment"
                   className="flex items-center gap-2 rounded-full border border-border px-6 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground print:hidden"

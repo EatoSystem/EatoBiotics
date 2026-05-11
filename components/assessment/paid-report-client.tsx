@@ -18,7 +18,6 @@ interface PaidReportClientProps {
   tier: "starter" | "full" | "premium"
   sessionId: string
   reportJson: DeepReport
-  pdfUrl: string | null
   freeScores?: {
     overall: number
     subScores: SubScores
@@ -67,7 +66,6 @@ const DAY_COLORS = [
 export function PaidReportClient({
   tier,
   reportJson,
-  pdfUrl,
   freeScores,
   membershipTier,
 }: PaidReportClientProps) {
@@ -117,20 +115,6 @@ export function PaidReportClient({
               {r.opening.split(".")[0]}.
             </h1>
 
-            {pdfUrl ? (
-              <a
-                href={pdfUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-medium text-[var(--icon-green)] hover:underline"
-              >
-                ↓ Download Your PDF Report
-              </a>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                PDF generating — we'll email it shortly
-              </p>
-            )}
           </div>
         </section>
 

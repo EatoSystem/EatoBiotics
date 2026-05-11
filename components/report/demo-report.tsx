@@ -2,7 +2,7 @@
 // v8
 import Link from "next/link"
 import Image from "next/image"
-import { Check, ArrowRight, TrendingUp, Download, Mail, Loader2, CheckCircle2 } from "lucide-react"
+import { Check, ArrowRight, TrendingUp, Mail, Loader2, CheckCircle2 } from "lucide-react"
 import { useState } from "react"
 
 const DAY_COLORS = [
@@ -409,7 +409,7 @@ export function DemoReport({ data }: { data: DemoReportData }) {
   const circumference = 2 * Math.PI * ringR
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen overflow-x-hidden bg-background">
 
       {/* ── DEMO BANNER ── */}
       <div
@@ -2161,7 +2161,7 @@ export function DemoReport({ data }: { data: DemoReportData }) {
         </div>
       </section>
 
-      {/* ── Download & Email ── */}
+      {/* ── Email Report ── */}
       <ReportActions data={data} />
 
       {/* ── CTA ── */}
@@ -2209,14 +2209,12 @@ export function DemoReport({ data }: { data: DemoReportData }) {
   )
 }
 
-/* ─── Report Actions (Download PDF + Email) ─────────────────────────── */
+/* ─── Report Actions (Email only) ───────────────────────────────────── */
 function ReportActions({ data }: { data: DemoReportData }) {
-  const accent = data.theme.accent
-  const title  = data.theme.title
+  const title = data.theme.title
 
   const [email, setEmail] = useState("")
-  const [emailStatus, setEmailStatus]       = useState<"idle" | "sending" | "sent" | "error">("idle")
-  const [downloadStatus, setDownloadStatus] = useState<"idle" | "loading" | "done" | "error">("idle")
+  const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "sent" | "error">("idle")
 
   async function handleEmail(e: React.FormEvent) {
     e.preventDefault()
@@ -2234,134 +2232,69 @@ function ReportActions({ data }: { data: DemoReportData }) {
     }
   }
 
-  async function handleDownload() {
-    setDownloadStatus("loading")
-    try {
-      const res = await fetch("/api/report-pdf", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      })
-      if (!res.ok) throw new Error("PDF generation failed")
-      const blob = await res.blob()
-      const url  = URL.createObjectURL(blob)
-      const a    = document.createElement("a")
-      a.href     = url
-      a.download = `eatobiotics-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.pdf`
-      a.click()
-      URL.revokeObjectURL(url)
-      setDownloadStatus("done")
-      setTimeout(() => setDownloadStatus("idle"), 3000)
-    } catch {
-      setDownloadStatus("error")
-      setTimeout(() => setDownloadStatus("idle"), 3000)
-    }
-  }
-
   return (
     <div className="report-actions px-6 pb-12">
-      <div className="mx-auto max-w-[900px]">
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+      <div className="mx-auto max-w-[560px]">
 
-          {/* Download as PDF */}
+        {/* Email My Report */}
+        <div
+          className="flex flex-col gap-5 rounded-3xl border bg-background p-7"
+          style={{ borderTopWidth: "3px", borderTopColor: "var(--icon-teal)" }}
+        >
           <div
-            className="flex flex-col gap-5 rounded-3xl border bg-background p-7"
-            style={{ borderTopWidth: "3px", borderTopColor: accent }}
+            className="flex h-11 w-11 items-center justify-center rounded-xl"
+            style={{ background: "color-mix(in srgb, var(--icon-teal) 12%, transparent)" }}
           >
-            <div
-              className="flex h-11 w-11 items-center justify-center rounded-xl"
-              style={{ background: `color-mix(in srgb, ${accent} 12%, transparent)` }}
-            >
-              <Download size={20} style={{ color: accent }} />
-            </div>
-            <div>
-              <p className="font-serif text-lg font-semibold text-foreground">Download as PDF</p>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                Save this sample report as a PDF for offline reading, sharing, or reference alongside your plan.
-              </p>
-            </div>
-            <button
-              onClick={handleDownload}
-              disabled={downloadStatus === "loading"}
-              className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full border px-6 py-3 text-sm font-semibold transition-all hover:shadow-md active:scale-[0.98] disabled:opacity-60"
-              style={{
-                borderColor: `color-mix(in srgb, ${accent} 40%, transparent)`,
-                color: downloadStatus === "done" ? "var(--icon-green)" : accent,
-                background: `color-mix(in srgb, ${accent} 6%, transparent)`,
-              }}
-            >
-              {downloadStatus === "loading" ? (
-                <><Loader2 size={15} className="animate-spin" /> Generating PDF…</>
-              ) : downloadStatus === "done" ? (
-                <><CheckCircle2 size={15} /> Downloaded!</>
-              ) : downloadStatus === "error" ? (
-                <><Download size={15} /> Try again</>
-              ) : (
-                <><Download size={15} /> Download PDF</>
-              )}
-            </button>
+            <Mail size={20} style={{ color: "var(--icon-teal)" }} />
+          </div>
+          <div>
+            <p className="font-serif text-lg font-semibold text-foreground">Email My Report</p>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+              Get a copy of this sample report delivered to your inbox — and find out how to unlock your own personalised version.
+            </p>
           </div>
 
-          {/* Email My Report */}
-          <div
-            className="flex flex-col gap-5 rounded-3xl border bg-background p-7"
-            style={{ borderTopWidth: "3px", borderTopColor: "var(--icon-teal)" }}
-          >
+          {emailStatus === "sent" ? (
             <div
-              className="flex h-11 w-11 items-center justify-center rounded-xl"
-              style={{ background: "color-mix(in srgb, var(--icon-teal) 12%, transparent)" }}
+              className="mt-auto flex items-center gap-3 rounded-2xl px-5 py-4"
+              style={{ background: "color-mix(in srgb, var(--icon-teal) 10%, transparent)" }}
             >
-              <Mail size={20} style={{ color: "var(--icon-teal)" }} />
-            </div>
-            <div>
-              <p className="font-serif text-lg font-semibold text-foreground">Email My Report</p>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                Get a copy of this sample report delivered to your inbox — and find out how to unlock your own personalised version.
-              </p>
-            </div>
-
-            {emailStatus === "sent" ? (
-              <div
-                className="mt-auto flex items-center gap-3 rounded-2xl px-5 py-4"
-                style={{ background: "color-mix(in srgb, var(--icon-teal) 10%, transparent)" }}
-              >
-                <CheckCircle2 size={20} style={{ color: "var(--icon-teal)" }} className="shrink-0" />
-                <div>
-                  <p className="text-sm font-semibold" style={{ color: "var(--icon-teal)" }}>Report sent!</p>
-                  <p className="text-xs text-muted-foreground">Check your inbox — we've also included a link to start your own assessment.</p>
-                </div>
+              <CheckCircle2 size={20} style={{ color: "var(--icon-teal)" }} className="shrink-0" />
+              <div>
+                <p className="text-sm font-semibold" style={{ color: "var(--icon-teal)" }}>Report sent!</p>
+                <p className="text-xs text-muted-foreground">Check your inbox — we've also included a link to start your own assessment.</p>
               </div>
-            ) : (
-              <form onSubmit={handleEmail} className="mt-auto space-y-3">
-                <input
-                  type="email"
-                  required
-                  placeholder="your@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-full border border-border bg-background px-5 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-[var(--icon-teal)] focus:ring-2"
-                  style={{ "--tw-ring-color": "color-mix(in srgb, var(--icon-teal) 20%, transparent)" } as React.CSSProperties}
-                  disabled={emailStatus === "sending"}
-                />
-                {emailStatus === "error" && (
-                  <p className="text-xs text-red-500 px-1">Something went wrong — please try again.</p>
+            </div>
+          ) : (
+            <form onSubmit={handleEmail} className="mt-auto space-y-3">
+              <input
+                type="email"
+                required
+                placeholder="your@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-full border border-border bg-background px-5 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-[var(--icon-teal)] focus:ring-2"
+                style={{ "--tw-ring-color": "color-mix(in srgb, var(--icon-teal) 20%, transparent)" } as React.CSSProperties}
+                disabled={emailStatus === "sending"}
+              />
+              {emailStatus === "error" && (
+                <p className="text-xs text-red-500 px-1">Something went wrong — please try again.</p>
+              )}
+              <button
+                type="submit"
+                disabled={emailStatus === "sending"}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60 brand-gradient"
+              >
+                {emailStatus === "sending" ? (
+                  <><Loader2 size={15} className="animate-spin" /> Sending…</>
+                ) : (
+                  <><Mail size={15} /> Send to my inbox</>
                 )}
-                <button
-                  type="submit"
-                  disabled={emailStatus === "sending"}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60 brand-gradient"
-                >
-                  {emailStatus === "sending" ? (
-                    <><Loader2 size={15} className="animate-spin" /> Sending…</>
-                  ) : (
-                    <><Mail size={15} /> Send to my inbox</>
-                  )}
-                </button>
-              </form>
-            )}
-          </div>
-
+              </button>
+            </form>
+          )}
         </div>
+
       </div>
     </div>
   )
