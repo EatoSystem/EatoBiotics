@@ -1396,7 +1396,7 @@ function ShoppingListPage({ data }: { data: DemoReportData }) {
               {cat.items.map(item => {
                 const isPriority = topFoods.some(tf => item.toLowerCase().includes(tf) || tf.includes(item.toLowerCase().split(" ")[0]))
                 return (
-                  <View key={item} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: C.darkAlpha06, borderBottomStyle: "solid", backgroundColor: isPriority ? C.green + "06" : "transparent", paddingHorizontal: isPriority ? 4 : 0, borderRadius: isPriority ? 4 : 0 }}>
+                  <View key={item} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: C.darkAlpha06, borderBottomStyle: "solid", backgroundColor: isPriority ? C.green + "06" : "transparent", paddingHorizontal: isPriority ? 4 : 0, ...(isPriority ? { borderRadius: 4 } : {}) }}>
                     <Text style={{ fontFamily: isPriority ? "Helvetica-Bold" : "Helvetica", fontSize: 8.5, color: C.dark, flex: 1 }}>{item}</Text>
                     {isPriority && <Text style={{ fontSize: 8, color: C.green, fontFamily: "Helvetica-Bold" }}>★</Text>}
                   </View>
