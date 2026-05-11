@@ -195,103 +195,117 @@ function Eyebrow({ text, color = C.green, mb = 6 }: { text: string; color?: stri
 function ST(props: Record<string, any>) { return <Text {...(props as any)} /> }
 
 /* ═══════════════════════════════════════════════════
-   PAGE 01 — COVER (dark)
+   PAGE 01 — COVER (white)
 ═══════════════════════════════════════════════════ */
 function CoverPage({ data }: { data: DemoReportData }) {
   const pre = data.pillarScores.find(p => p.name === "Prebiotics")?.score ?? 72
   const pro = data.pillarScores.find(p => p.name === "Probiotics")?.score ?? 45
   const pos = data.pillarScores.find(p => p.name === "Postbiotics")?.score ?? 78
+  const ringSize = 220
 
   return (
-    <Page size="A4" style={{ backgroundColor: C.dark, fontFamily: "Helvetica", fontSize: 10, color: "#fff" }}>
+    <Page size="A4" style={{ backgroundColor: C.bg, fontFamily: "Helvetica", fontSize: 10, color: C.dark, paddingBottom: 0 }}>
       {/* Top gradient bar */}
       <View style={{ position: "absolute", top: 0, left: 0, right: 0 }}>
-        <GradBar h={5} w={PW}/>
+        <GradBar h={4} w={PW}/>
       </View>
 
-      {/* Identity bar */}
+      {/* Logo row */}
       <View style={{
-        position: "absolute", top: 12, left: MX, right: MX,
+        paddingHorizontal: MX, paddingTop: 22,
         flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-        borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.08)", borderBottomStyle: "solid",
-        paddingBottom: 10,
       }}>
-        <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", letterSpacing: 2.5, textTransform: "uppercase", color: "rgba(255,255,255,0.35)" }}>
-          EatoBiotics
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+          {/* Gradient circle */}
+          <View style={{ width: 22, height: 22, borderRadius: 11, overflow: "hidden" }}>
+            <GradBar h={22} w={22}/>
+          </View>
+          <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 13, letterSpacing: 0.4, color: C.dark }}>EatoBiotics</Text>
+        </View>
+        <Text style={{ fontFamily: "Courier", fontSize: 8, letterSpacing: 2.5, textTransform: "uppercase", color: C.muted }}>Sample · v1.0</Text>
+      </View>
+
+      {/* Title block */}
+      <View style={{ paddingHorizontal: MX, paddingTop: 18, paddingBottom: 10 }}>
+        <Text style={[s.eyebrow, { marginBottom: 8 }]}>Gut Intelligence Report</Text>
+        <Text style={{ fontFamily: "Times-Bold", fontSize: 48, lineHeight: 1.05, letterSpacing: -1.5, color: C.dark, marginBottom: 10 }}>
+          The Food System{"\n"}Inside{" "}
+          <Text style={{ color: C.green }}>You.</Text>
         </Text>
-        <Text style={{ fontSize: 8, letterSpacing: 1.5, textTransform: "uppercase", color: "rgba(255,255,255,0.25)" }}>
-          {data.theme.label}
+        <Text style={{ fontFamily: "Helvetica", fontSize: 14, lineHeight: 1.6, color: C.muted, maxWidth: 400 }}>
+          A personalised reading of your gut food system across three biological pillars — Prebiotics, Probiotics, Postbiotics — with a focused 30-day plan to close your single biggest gap.
         </Text>
       </View>
 
-      {/* Main content — centered */}
-      <View style={{ flex: 1, paddingHorizontal: MX, paddingTop: 50, paddingBottom: 40, justifyContent: "center", alignItems: "center" }}>
-
-        {/* Score ring */}
-        <View style={{ alignItems: "center", marginBottom: 0 }}>
-          <ScoreRingSvg score={data.score} size={200} dark/>
-          {/* Score overlay */}
-          <View style={{ position: "absolute", top: 0, left: 0, width: 200, height: 200, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontFamily: "Times-Bold", fontSize: 58, color: "#fff", lineHeight: 1, letterSpacing: -2 }}>{data.score}</Text>
-            <Text style={{ fontFamily: "Helvetica", fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 3 }}>/100</Text>
-            <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 7.5, color: C.green, letterSpacing: 2, textTransform: "uppercase", marginTop: 5 }}>
-              GUT SCORE
+      {/* Two-column: score ring | description + pillar bars */}
+      <View style={{ paddingHorizontal: MX, flexDirection: "row", gap: 24, alignItems: "center", paddingVertical: 12 }}>
+        {/* Score ring with overlay */}
+        <View style={{ width: ringSize, height: ringSize, alignItems: "center", justifyContent: "center" }}>
+          <ScoreRingSvg score={data.score} size={ringSize}/>
+          <View style={{ position: "absolute", top: 0, left: 0, width: ringSize, height: ringSize, alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ fontFamily: "Times-Bold", fontSize: 58, color: C.dark, lineHeight: 1, letterSpacing: -2 }}>{data.score}</Text>
+            <Text style={{ fontFamily: "Helvetica", fontSize: 11, color: C.muted, marginTop: 2 }}>/100</Text>
+            <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 8, color: C.green, letterSpacing: 2, textTransform: "uppercase", marginTop: 6 }}>
+              {data.profile}
             </Text>
           </View>
         </View>
 
-        <View style={{ height: 20 }}/>
+        {/* Right col */}
+        <View style={{ flex: 1 }}>
+          {/* Solid badge */}
+          <View style={{
+            borderRadius: 99, paddingHorizontal: 12, paddingVertical: 5, alignSelf: "flex-start", marginBottom: 12,
+            overflow: "hidden",
+          }}>
+            <GradBar h={26} w={180}/>
+            <View style={{ position: "absolute", top: 0, left: 0, width: 180, height: 26, alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 9, color: "#fff", letterSpacing: 0.5 }}>Top third of respondents</Text>
+            </View>
+          </View>
 
-        {/* Divider pill */}
-        <View style={{ marginBottom: 16 }}>
-          <GradBar h={3} w={56}/>
-        </View>
+          <Text style={{ fontFamily: "Times-Bold", fontSize: 19, lineHeight: 1.25, color: C.dark, marginBottom: 8 }}>
+            Your food system is further along than most.
+          </Text>
+          <Text style={{ fontFamily: "Helvetica", fontSize: 10.5, lineHeight: 1.6, color: C.dark, marginBottom: 14 }}>
+            A score of {data.score} places you in the top third. Your{" "}
+            <Text style={{ fontFamily: "Helvetica-Bold" }}>Prebiotics</Text> and{" "}
+            <Text style={{ fontFamily: "Helvetica-Bold" }}>Postbiotics</Text> are particularly strong. The opportunity ahead is focused: closing the{" "}
+            <Text style={{ fontFamily: "Helvetica-Bold" }}>Probiotics</Text> gap will lift everything else.
+          </Text>
 
-        {/* Title */}
-        <Text style={{ fontFamily: "Times-Bold", fontSize: 28, color: "#fff", textAlign: "center", lineHeight: 1.2, marginBottom: 10, maxWidth: 380 }}>
-          {data.theme.title}
-        </Text>
-
-        {/* Profile badge */}
-        <View style={{
-          borderRadius: 99, paddingHorizontal: 16, paddingVertical: 6,
-          backgroundColor: "rgba(76,182,72,0.18)",
-          borderWidth: 1, borderColor: "rgba(76,182,72,0.4)", borderStyle: "solid",
-          marginBottom: 12,
-        }}>
-          <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 9, color: C.green, letterSpacing: 1 }}>{data.profile}</Text>
-        </View>
-
-        {/* Tagline */}
-        <Text style={{ fontFamily: "Helvetica", fontSize: 10.5, color: "rgba(255,255,255,0.5)", textAlign: "center", lineHeight: 1.55, maxWidth: 340, marginBottom: 28 }}>
-          {data.tagline}
-        </Text>
-
-        {/* Pillar bars */}
-        <View style={{ width: 340 }}>
+          {/* Pillar bars */}
           <PillarBar label="Prebiotics"  score={pre} type="pre"/>
           <PillarBar label="Probiotics"  score={pro} type="pro"/>
           <PillarBar label="Postbiotics" score={pos} type="pos"/>
         </View>
       </View>
 
-      {/* Bottom identity strip */}
+      {/* Identity strip */}
       <View style={{
-        borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.08)", borderTopStyle: "solid",
-        paddingHorizontal: MX, paddingVertical: 14,
+        marginHorizontal: MX,
+        borderTopWidth: 1, borderTopColor: C.border, borderTopStyle: "solid",
+        borderBottomWidth: 1, borderBottomColor: C.border, borderBottomStyle: "solid",
         flexDirection: "row",
       }}>
         {[
-          { label: "Prepared for", value: (data as any).name ?? "You" },
-          { label: "Report date",  value: new Date().toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" }) },
-          { label: "Assessment",   value: data.theme.label },
+          { label: "Prepared for", value: (data as any).name ?? "Sample Reader" },
+          { label: "Report date",  value: new Date().toLocaleDateString("en-GB", { month:"long", year:"numeric" }) },
+          { label: "Assessment",   value: "15-question · deep" },
           { label: "Profile",      value: data.profile },
         ].map((item, i) => (
-          <View key={i} style={{ flex: 1, borderRightWidth: i < 3 ? 1 : 0, borderRightColor: "rgba(255,255,255,0.1)", borderRightStyle: "solid", paddingRight: 14, paddingLeft: i > 0 ? 14 : 0 }}>
-            <Text style={{ fontSize: 7.5, color: "rgba(255,255,255,0.35)", marginBottom: 3, letterSpacing: 1, textTransform: "uppercase", fontFamily: "Helvetica-Bold" }}>{item.label}</Text>
-            <Text style={{ fontSize: 9, color: "rgba(255,255,255,0.75)", fontFamily: "Helvetica-Bold" }}>{item.value}</Text>
+          <View key={i} style={{ flex: 1, borderLeftWidth: i > 0 ? 1 : 0, borderLeftColor: C.border, borderLeftStyle: "solid", padding: 12, paddingLeft: i > 0 ? 12 : 0 }}>
+            <Text style={{ fontSize: 7.5, fontFamily: "Helvetica-Bold", color: C.muted, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 4 }}>{item.label}</Text>
+            <Text style={{ fontSize: 11, fontFamily: "Helvetica-Bold", color: C.dark }}>{item.value}</Text>
           </View>
         ))}
+      </View>
+
+      {/* Footer tagline */}
+      <View style={{ paddingHorizontal: MX, paddingTop: 14, paddingBottom: 18 }}>
+        <Text style={{ fontFamily: "Courier", fontSize: 8, letterSpacing: 2.5, textTransform: "uppercase", color: C.muted }}>
+          eatobiotics.com  ·  Build the food system inside you — and help build the food system around you
+        </Text>
       </View>
     </Page>
   )
@@ -300,69 +314,74 @@ function CoverPage({ data }: { data: DemoReportData }) {
 /* ═══════════════════════════════════════════════════
    PAGE 02 — CONTENTS
 ═══════════════════════════════════════════════════ */
-function ContentsPage({ data }: { data: DemoReportData }) {
-  const SECTIONS = [
-    { num: "01", title: "Where you are",    pages: "03–05", desc: "Your gut profile, three biotics breakdown, and what your score means for your biology." },
-    { num: "02", title: "Why it matters",   pages: "06–11", desc: "Daily life impact, symptom map, 30-day projection, and your key insight." },
-    { num: "03", title: "What to do",       pages: "12–17", desc: "Change timeline, 7-day plan, 30-day roadmap, food prescription, and shopping list." },
+function ContentsPage() {
+  const TOC = [
+    ["01", "Your score at a glance",          "01"],
+    ["02", "Contents",                         "02"],
+    ["03", "Your gut profile",                 "03"],
+    ["04", "Your three biotics",               "04"],
+    ["05", "What your score means",            "05"],
+    ["06", "Daily life — energy, digestion, sleep", "06"],
+    ["07", "Symptom map",                      "07"],
+    ["08", "Your 30-day projection",           "08"],
+    ["09", "Strengths & opportunities",        "09"],
+    ["10", "Your key insight",                 "10"],
+    ["11", "Your food system in full",         "11"],
+    ["12", "Your change timeline",             "12"],
+    ["13", "Your 7-day starter plan",          "13"],
+    ["14", "Your 30-day roadmap",              "14"],
+    ["15", "Your 5 priority foods",            "15"],
+    ["16", "Weekly gut-health shop",           "16"],
+    ["17", "Power combinations",               "17"],
+    ["18", "Where you go from here",           "18"],
   ]
+  const half = Math.ceil(TOC.length / 2)
+  const colA = TOC.slice(0, half)
+  const colB = TOC.slice(half)
+
   return (
     <Page size="A4" style={s.page}>
-      {/* Top bar */}
       <View style={{ position: "absolute", top: 0, left: 0 }}><GradBar h={4} w={PW}/></View>
       <PageHeader section="Contents" title="Your report" />
       <PageFooter section="Introduction" num={2}/>
 
       <Eyebrow text="Inside this report"/>
-      <Text style={[s.h1, { marginBottom: 6 }]}>Your Gut Intelligence Report.</Text>
-      <Text style={[s.lead, { marginBottom: 28, maxWidth: 380 }]}>
-        18 pages of personalised analysis, science-backed insights, and a clear plan built around your exact scores.
+      <Text style={[s.h1, { marginBottom: 6 }]}>A guided read of your{"\n"}gut food system.</Text>
+      <Text style={[s.lead, { marginBottom: 20, maxWidth: 420 }]}>
+        Eighteen pages, three biotics, one focused 30-day plan. Read it once front-to-back, then keep it on hand as your weekly reference.
       </Text>
 
-      <View style={{ flexDirection: "row", gap: 10 }}>
-        {SECTIONS.map((sec) => (
-          <View key={sec.num} style={[s.card, { flex: 1, padding: 0, overflow: "hidden" }]}>
-            <View style={{ height: 5 }}>
-              <GradBar h={5} w={C3}/>
-            </View>
-            <View style={{ padding: 14 }}>
-              <Text style={{ fontFamily: "Courier", fontSize: 22, color: C.green, lineHeight: 1, marginBottom: 4 }}>{sec.num}</Text>
-              <Text style={[s.h4, { marginBottom: 6 }]}>{sec.title}</Text>
-              <Text style={[s.bodySm, { color: C.dark, lineHeight: 1.5, marginBottom: 10 }]}>{sec.desc}</Text>
-              <Text style={[s.eyebrowMuted, { fontSize: 7.5 }]}>Pages {sec.pages}</Text>
-            </View>
+      {/* TOC two-column */}
+      <View style={{ flexDirection: "row", gap: 28, marginBottom: 24 }}>
+        {[colA, colB].map((col, ci) => (
+          <View key={ci} style={{ flex: 1 }}>
+            {col.map(([num, title, page]) => (
+              <View key={num} style={{
+                flexDirection: "row", alignItems: "baseline", gap: 8,
+                borderBottomWidth: 1, borderBottomColor: C.border, borderBottomStyle: "solid",
+                paddingVertical: 8,
+              }}>
+                <Text style={{ fontFamily: "Courier", fontSize: 9, color: C.muted, width: 20, letterSpacing: 0.5 }}>{num}</Text>
+                <Text style={{ flex: 1, fontFamily: "Times-Bold", fontSize: 12, color: C.dark }}>{title}</Text>
+                <Text style={{ fontFamily: "Courier", fontSize: 9, color: C.muted }}>p.{page}</Text>
+              </View>
+            ))}
           </View>
         ))}
       </View>
 
-      <View style={s.spacer}/>
-
-      {/* Score summary */}
-      <View style={[s.cardDark, { flexDirection: "row", alignItems: "center", gap: 20 }]}>
-        <View>
-          <Text style={{ fontFamily: "Times-Bold", fontSize: 52, color: "#fff", lineHeight: 1, letterSpacing: -2 }}>{data.score}</Text>
-          <Text style={{ fontSize: 7.5, fontFamily: "Helvetica-Bold", color: C.green, letterSpacing: 2, textTransform: "uppercase", marginTop: 4 }}>YOUR SCORE</Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 8, color: C.green, letterSpacing: 2, textTransform: "uppercase", marginBottom: 6 }}>{data.profile}</Text>
-          <Text style={{ fontFamily: "Helvetica", fontSize: 10.5, color: "rgba(255,255,255,0.75)", lineHeight: 1.55 }}>
-            {data.scoreInterpretation.slice(0, 200)}
-          </Text>
-        </View>
-        <View style={{ width: 120, gap: 6 }}>
-          {data.pillarScores.map(p => {
-            const t = pillarType(p.name)
-            return (
-              <View key={p.name} style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <Text style={{ width: 26, fontFamily: "Courier", fontSize: 13, fontWeight: 700, color: PILLAR_COLOR[t] }}>{p.score}</Text>
-                <View style={{ flex: 1, height: 5, backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 3, flexDirection: "row" }}>
-                  <View style={{ flex: p.score, backgroundColor: PILLAR_COLOR[t], borderRadius: 3 }}/>
-                  <View style={{ flex: 100 - p.score }}/>
-                </View>
-              </View>
-            )
-          })}
-        </View>
+      {/* Three summary cards */}
+      <View style={{ flexDirection: "row", gap: 10 }}>
+        {[
+          { eyebrow: "01 · Where you are",    eyeColor: C.green,  body: "Your score, your three pillars, and what they reveal about how you feel day-to-day." },
+          { eyebrow: "02 · Why it matters",   eyeColor: C.teal,   body: "The biology behind the numbers — and the symptoms most likely linked to your profile." },
+          { eyebrow: "03 · What to do",       eyeColor: C.orange, body: "A 7-day starter, a 30-day roadmap, 5 priority foods and a complete weekly shop." },
+        ].map((card) => (
+          <View key={card.eyebrow} style={[s.cardSoft, { flex: 1 }]}>
+            <Text style={[s.eyebrow, { color: card.eyeColor, marginBottom: 6 }]}>{card.eyebrow}</Text>
+            <Text style={[s.bodySm, { color: C.dark, lineHeight: 1.55 }]}>{card.body}</Text>
+          </View>
+        ))}
       </View>
     </Page>
   )
@@ -372,102 +391,117 @@ function ContentsPage({ data }: { data: DemoReportData }) {
    PAGE 03 — GUT PROFILE
 ═══════════════════════════════════════════════════ */
 function GutProfilePage({ data }: { data: DemoReportData }) {
-  const TIERS = [
-    { range: "80–100", label: "Gut Optimised",    color: C.green },
-    { range: "70–79",  label: "Strong Foundation", color: C.teal },
-    { range: "60–69",  label: "Emerging Balance",  color: C.lime },
-    { range: "50–59",  label: "Building",          color: C.yellow },
-    { range: "0–49",   label: "Starting Out",      color: C.orange },
-  ]
-  const currentTier = TIERS.find(t => {
-    const [lo] = t.range.split("–").map(Number)
-    return data.score >= lo
-  }) ?? TIERS[4]
-  const nextTier = TIERS[TIERS.findIndex(t => t.label === currentTier.label) - 1]
+  // Horizontal progress bar width as percentage of content width
+  const scorePct = data.score  // 0–100
 
   return (
     <Page size="A4" style={s.page}>
       <View style={{ position: "absolute", top: 0, left: 0 }}><GradBar h={4} w={PW}/></View>
-      <PageHeader section="Section 01 · Where you are" title="Gut profile"/>
+      <PageHeader section="Section 01 · Where you are" title="Your gut profile"/>
       <PageFooter section="Section 01 · Where you are" num={3}/>
 
-      <Eyebrow text="Gut profile"/>
-      <Text style={[s.h1, { marginBottom: 6 }]}>Where you stand.</Text>
-      <Text style={[s.lead, { marginBottom: 22, maxWidth: 400 }]}>Your score of {data.score} places you in the <Text style={{ fontFamily: "Helvetica-Bold", color: C.dark }}>{currentTier.label}</Text> tier.</Text>
+      <Eyebrow text="Your profile"/>
+      <Text style={[s.h1, { marginBottom: 6 }]}>{data.profile}.</Text>
+      <Text style={[s.lead, { marginBottom: 18, maxWidth: 420 }]}>
+        Genuine positive habits are forming, but key biological inputs are still inconsistent. The foundation exists — it just needs specific additions.
+      </Text>
 
-      {/* Tier ladder + description */}
-      <View style={{ flexDirection: "row", gap: 14 }}>
-        <View style={{ width: 220 }}>
-          {TIERS.map((t) => {
-            const isActive = t.label === currentTier.label
-            return (
-              <View key={t.label} style={{
-                flexDirection: "row", alignItems: "center", gap: 10,
-                padding: 10, borderRadius: 8, marginBottom: 6,
-                backgroundColor: isActive ? t.color + "18" : "transparent",
-                borderWidth: isActive ? 1 : 1,
-                borderColor: isActive ? t.color : C.border,
-                borderStyle: "solid",
-              }}>
-                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: t.color }}/>
-                <Text style={{ flex: 1, fontFamily: "Helvetica-Bold", fontSize: 10, color: isActive ? C.dark : C.muted }}>{t.label}</Text>
-                <Text style={{ fontFamily: "Courier", fontSize: 8, color: isActive ? t.color : C.muted }}>{t.range}</Text>
+      {/* Horizontal progress bar with "You" marker */}
+      <View style={{ marginBottom: 22 }}>
+        <Text style={[s.eyebrowMuted, { marginBottom: 10 }]}>Your trajectory</Text>
+
+        {/* "You" badge marker — positioned above the bar at scorePct% */}
+        <View style={{ position: "relative", height: 36, marginBottom: 0 }}>
+          <View style={{
+            position: "absolute",
+            left: `${scorePct}%` as any,
+            marginLeft: -30,
+            top: 0,
+            alignItems: "center",
+            width: 60,
+          }}>
+            {/* Solid badge */}
+            <View style={{ borderRadius: 99, overflow: "hidden", alignSelf: "center" }}>
+              <GradBar h={20} w={56}/>
+              <View style={{ position: "absolute", top: 0, left: 0, width: 56, height: 20, alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 8, color: "#fff" }}>You · {data.score}</Text>
               </View>
-            )
-          })}
+            </View>
+            {/* Stem line */}
+            <View style={{ width: 2, height: 12, backgroundColor: C.dark, marginTop: 2 }}/>
+          </View>
         </View>
 
-        <View style={{ flex: 1 }}>
-          {/* Working well */}
-          <View style={[s.card, { marginBottom: 10, borderLeftWidth: 3, borderLeftColor: C.lime, borderLeftStyle: "solid", padding: 12 }]}>
-            <Eyebrow text="Working well" color={C.green} mb={4}/>
-            {data.strengths.slice(0, 2).map((item, i) => (
-              <View key={i} style={{ flexDirection: "row", gap: 8, marginBottom: 6, alignItems: "flex-start" }}>
-                <Text style={{ color: C.green, fontSize: 9, fontFamily: "Helvetica-Bold", marginTop: 1 }}>✓</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10, color: C.dark, marginBottom: 2 }}>{item.title}</Text>
-                  <Text style={[s.bodySm, { color: C.dark, fontSize: 8.5 }]}>{item.explanation.slice(0, 100)}</Text>
-                </View>
-              </View>
-            ))}
+        {/* Progress track */}
+        <View style={{ height: 8, backgroundColor: "rgba(26,46,18,0.06)", borderRadius: 999, overflow: "hidden" }}>
+          <View style={{ width: `${scorePct}%` as any, height: 8, borderRadius: 999, overflow: "hidden" }}>
+            <GradBar h={8} w={CW * scorePct / 100}/>
           </View>
-          {/* Gaps */}
-          <View style={[s.card, { borderLeftWidth: 3, borderLeftColor: C.orange, borderLeftStyle: "solid", padding: 12 }]}>
-            <Eyebrow text="Key gaps" color={C.orange} mb={4}/>
-            {data.opportunities.slice(0, 2).map((item, i) => (
-              <View key={i} style={{ flexDirection: "row", gap: 8, marginBottom: 6, alignItems: "flex-start" }}>
-                <Text style={{ color: C.orange, fontSize: 9, fontFamily: "Helvetica-Bold", marginTop: 1 }}>→</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10, color: C.dark, marginBottom: 2 }}>{item.title}</Text>
-                  <Text style={[s.bodySm, { color: C.dark, fontSize: 8.5 }]}>{item.explanation.slice(0, 100)}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
+        </View>
+
+        {/* Tick labels */}
+        <View style={{ flexDirection: "row", marginTop: 8 }}>
+          {[
+            { val: "0",   label: "Start" },
+            { val: "25",  label: "Building" },
+            { val: "50",  label: "Emerging" },
+            { val: "75",  label: "Strong" },
+            { val: "100", label: "Optimal" },
+          ].map((t, i) => (
+            <View key={t.val} style={{ flex: 1, alignItems: i === 4 ? "flex-end" : i === 0 ? "flex-start" : "center" }}>
+              <Text style={{ fontFamily: "Courier", fontSize: 8, color: C.muted }}>{t.val}</Text>
+              <Text style={{ fontFamily: "Helvetica", fontSize: 8.5, color: C.muted, marginTop: 1 }}>{t.label}</Text>
+            </View>
+          ))}
         </View>
       </View>
 
-      <View style={s.spacer}/>
+      {/* 2×2 grid — Working / Inconsistent */}
+      <Text style={[s.eyebrowMuted, { marginBottom: 10 }]}>What's working — and what isn't</Text>
+      <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
+        {[
+          { badge: "Working",      badgeColor: "#4A7E1A", badgeBg: "rgba(168,224,99,0.18)", badgeBorder: "rgba(168,224,99,0.35)",
+            title: data.strengths[0]?.title ?? "Some plant food variety",
+            body:  data.strengths[0]?.explanation?.slice(0, 110) ?? "A reasonable range of vegetables, legumes, and whole grains across your week." },
+          { badge: "Inconsistent", badgeColor: "#C57712", badgeBg: "rgba(245,166,35,0.12)", badgeBorder: "rgba(245,166,35,0.25)",
+            title: data.opportunities[0]?.title ?? "Irregular fermented food intake",
+            body:  data.opportunities[0]?.explanation?.slice(0, 110) ?? "Living foods appear occasionally — not as a daily, deliberate habit." },
+          { badge: "Working",      badgeColor: "#4A7E1A", badgeBg: "rgba(168,224,99,0.18)", badgeBorder: "rgba(168,224,99,0.35)",
+            title: data.strengths[1]?.title ?? "Partial gut rhythm established",
+            body:  data.strengths[1]?.explanation?.slice(0, 110) ?? "Meal timing follows a workable pattern most days." },
+          { badge: "Inconsistent", badgeColor: "#C57712", badgeBg: "rgba(245,166,35,0.12)", badgeBorder: "rgba(245,166,35,0.25)",
+            title: data.opportunities[1]?.title ?? "Specific gaps to close",
+            body:  data.opportunities[1]?.explanation?.slice(0, 110) ?? "Probiotic variety and ultra-processed food frequency both need attention." },
+        ].map((card, i) => (
+          <View key={i} style={{ width: C2, borderRadius: 10, borderWidth: 1, borderColor: C.border, borderStyle: "solid", backgroundColor: C.bg, padding: 14, marginBottom: 0 }}>
+            {/* Badge */}
+            <View style={{
+              borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3, alignSelf: "flex-start",
+              backgroundColor: card.badgeBg, borderWidth: 1, borderColor: card.badgeBorder, borderStyle: "solid", marginBottom: 8,
+            }}>
+              <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: card.badgeColor, letterSpacing: 0.5 }}>{card.badge}</Text>
+            </View>
+            <Text style={{ fontFamily: "Times-Bold", fontSize: 14, color: C.dark, lineHeight: 1.2, marginBottom: 6 }}>{card.title}</Text>
+            <Text style={{ fontFamily: "Helvetica", fontSize: 9.5, color: C.dark, lineHeight: 1.55, opacity: 0.78 }}>{card.body}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={{ flex: 1 }}/>
 
       {/* Next level card */}
-      {nextTier && (
-        <View style={[s.cardSoft, { flexDirection: "row", alignItems: "center", gap: 16 }]}>
-          <View>
-            <Text style={{ fontFamily: "Times-Bold", fontSize: 36, color: nextTier.color, lineHeight: 1 }}>→</Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Eyebrow text="Your next level" color={nextTier.color} mb={4}/>
-            <Text style={[s.h4, { marginBottom: 5 }]}>{nextTier.label} · {nextTier.range}</Text>
-            <Text style={[s.body, { fontSize: 9.5 }]}>
-              {data.scoreProjection.projected - data.score} points separates you from the next tier. Your 30-day plan is built precisely to close this gap.
-            </Text>
-          </View>
-          <View style={{ alignItems: "center" }}>
-            <Text style={{ fontFamily: "Times-Bold", fontSize: 40, color: nextTier.color, lineHeight: 1 }}>+{data.scoreProjection.projected - data.score}</Text>
-            <Text style={{ fontSize: 7.5, color: C.muted, textAlign: "center" }}>projected{"\n"}gain</Text>
-          </View>
+      <View style={{ borderRadius: 10, backgroundColor: C.soft, borderWidth: 1, borderColor: C.darkAlpha06, borderStyle: "solid", borderLeftWidth: 4, borderLeftColor: C.green, padding: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 14 }}>
+        <View style={{ flex: 1 }}>
+          <Text style={[s.eyebrow, { marginBottom: 5 }]}>Next level</Text>
+          <Text style={{ fontFamily: "Times-Bold", fontSize: 17, color: C.dark, lineHeight: 1.2, marginBottom: 6 }}>Strong Foundation.</Text>
+          <Text style={{ fontFamily: "Helvetica", fontSize: 9.5, color: C.dark, lineHeight: 1.55, opacity: 0.82 }}>
+            A well-functioning gut with real momentum. The structural habits are in place and the microbiome is being actively supported. Your 30-day plan is designed to close this gap.
+          </Text>
         </View>
-      )}
+        <Text style={{ fontFamily: "Courier", fontSize: 10, color: C.muted, marginLeft: 16, letterSpacing: 0.5 }}>
+          {data.score} → {data.scoreProjection.projected} in 30 days
+        </Text>
+      </View>
     </Page>
   )
 }
@@ -1153,13 +1187,14 @@ function ChangeTimelinePage() {
 ═══════════════════════════════════════════════════ */
 function SevenDayPlanPage({ data }: { data: DemoReportData }) {
   const BADGE_COLORS: Record<string, [string, string]> = {
-    Pro:   [C.teal,   C.teal + "18"],
-    Pre:   [C.lime,   C.lime + "18"],
-    Pos:   [C.orange, C.orange + "18"],
-    Reset: ["rgba(255,255,255,0.6)", "rgba(255,255,255,0.1)"],
+    Pro:   [C.teal,   "rgba(45,170,110,0.10)"],
+    Pre:   ["#4A7E1A", "rgba(168,224,99,0.18)"],
+    Pos:   [C.orange, "rgba(245,166,35,0.12)"],
+    Reset: ["rgba(255,255,255,0.7)", "rgba(255,255,255,0.12)"],
   }
-  const CARD_COLORS = [C.lime, C.green, C.teal, C.teal, C.yellow, C.orange, C.dark]
+  // All day numbers use same green (#4CB648) per design; day 7 card is dark
   const PILLAR_TAGS = ["Pro", "Pre", "Pro", "Pre", "Pos", "Pro", "Reset"]
+  const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday · rest day"]
 
   return (
     <Page size="A4" style={s.page}>
@@ -1174,29 +1209,36 @@ function SevenDayPlanPage({ data }: { data: DemoReportData }) {
       <View style={{ flexDirection: "row", gap: 6 }}>
         {data.sevenDayPlan.slice(0, 7).map((item, i) => {
           const isDark = i === 6
-          const cardColor = CARD_COLORS[i]
           const tag = PILLAR_TAGS[i] ?? "Pro"
           const [bc, bb] = BADGE_COLORS[tag] ?? BADGE_COLORS.Pro
           const cardW = Math.floor(C7)
+          const dayName = DAY_NAMES[i] ?? item.day
 
           return (
             <View key={item.day} style={{
-              width: cardW, borderRadius: 8, overflow: "hidden",
+              width: cardW, borderRadius: 8,
               borderWidth: 1, borderColor: isDark ? C.dark : C.border, borderStyle: "solid",
               backgroundColor: isDark ? C.dark : C.bg,
               padding: 10, minHeight: 190,
             }}>
-              <Text style={{ fontFamily: "Times-Bold", fontSize: 28, lineHeight: 1, color: isDark ? C.green : cardColor, letterSpacing: -1, marginBottom: 2 }}>
+              {/* ALL day numbers use same C.green — only day 7 card background differs */}
+              <Text style={{ fontFamily: "Times-Bold", fontSize: 32, lineHeight: 1, color: C.green, letterSpacing: -1, marginBottom: 3 }}>
                 {String(i + 1).padStart(2, "0")}
               </Text>
-              <Text style={{ fontSize: 7.5, fontFamily: "Helvetica-Bold", letterSpacing: 1.5, textTransform: "uppercase", color: isDark ? "rgba(255,255,255,0.45)" : C.muted, marginBottom: 8 }}>
-                {item.day.slice(0, 3)}
+              <Text style={{ fontSize: 7.5, fontFamily: "Helvetica-Bold", letterSpacing: 1.2, textTransform: "uppercase", color: isDark ? "rgba(255,255,255,0.45)" : C.muted, marginBottom: 8 }}>
+                {dayName}
               </Text>
-              <Text style={{ fontFamily: "Helvetica", fontSize: 8.5, lineHeight: 1.45, color: isDark ? "rgba(255,255,255,0.82)" : C.dark, flex: 1 }}>
+              <Text style={{ fontFamily: "Helvetica", fontSize: 9, lineHeight: 1.45, color: isDark ? "rgba(255,255,255,0.85)" : C.dark, flex: 1 }}>
                 {item.action}
               </Text>
               <View style={{ marginTop: 8 }}>
-                <Badge text={tag} color={bc} bg={bb}/>
+                <View style={{
+                  borderRadius: 99, paddingHorizontal: 7, paddingVertical: 3, alignSelf: "flex-start",
+                  backgroundColor: bb,
+                  borderWidth: 1, borderColor: bc + "55", borderStyle: "solid",
+                }}>
+                  <Text style={{ fontSize: 7.5, fontFamily: "Helvetica-Bold", color: bc, letterSpacing: 0.5 }}>{tag}</Text>
+                </View>
               </View>
             </View>
           )
@@ -1582,18 +1624,18 @@ function FinalThoughtsPage({ data }: { data: DemoReportData }) {
         </View>
       </View>
 
-      {/* Three commitments */}
+      {/* Three commitments — use soft cards (light bg on dark page, matching HTML .card.soft) */}
       <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>Your three commitments starting today</Text>
       <View style={{ flexDirection: "row", gap: 10, marginBottom: 18 }}>
         {[
-          { num: "01", color: C.green,  title: "Start with one change.",        body: "Pick the single highest-impact action from your 7-day plan and do it today. One action builds the habit loop that makes the rest easier." },
-          { num: "02", color: "#0F7345", title: "Stay consistent for 30 days.",  body: "The gut microbiome doesn't respond to occasional efforts. Consistency across 30 days produces the measurable shift your projection is based on." },
-          { num: "03", color: C.orange, title: "Retest after 30 days.",          body: "Your score is a baseline, not a verdict. Retaking the assessment after applying this plan gives you a real measurement of what changed." },
+          { num: "01", color: C.green,   title: "Start with one change.",        body: "Pick the single highest-impact action from your 7-day plan and do it today. One action builds the habit loop that makes the rest easier." },
+          { num: "02", color: "#0F7345", title: "Stay consistent for 30 days.",  body: "The gut microbiome doesn't respond to occasional efforts. Consistency across 30 days is what produces the measurable shift your projection is based on." },
+          { num: "03", color: "#C57712", title: "Retest after 30 days.",          body: "Your score is a baseline, not a verdict. Retaking the assessment after applying this plan gives you a real measurement of what changed — and a new starting point." },
         ].map(c => (
-          <View key={c.num} style={{ flex: 1, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.06)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", borderStyle: "solid", padding: 14 }}>
+          <View key={c.num} style={{ flex: 1, borderRadius: 10, backgroundColor: C.soft, borderWidth: 1, borderColor: "rgba(26,46,18,0.06)", borderStyle: "solid", padding: 14 }}>
             <Text style={{ fontFamily: "Times-Bold", fontSize: 28, lineHeight: 1, color: c.color, marginBottom: 7 }}>{c.num}</Text>
-            <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 11, color: "#fff", marginBottom: 5 }}>{c.title}</Text>
-            <Text style={{ fontFamily: "Helvetica", fontSize: 9, color: "rgba(255,255,255,0.65)", lineHeight: 1.55 }}>{c.body}</Text>
+            <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 12, color: C.dark, marginBottom: 5 }}>{c.title}</Text>
+            <Text style={{ fontFamily: "Helvetica", fontSize: 9.5, color: C.dark, lineHeight: 1.55, opacity: 0.78 }}>{c.body}</Text>
           </View>
         ))}
       </View>
@@ -1628,7 +1670,7 @@ export function ReportPDF({ data }: { data: DemoReportData }) {
   return (
     <Document title={data.theme.title} author="EatoBiotics" subject="Gut Intelligence Report" creator="EatoBiotics">
       <CoverPage         data={data}/>
-      <ContentsPage      data={data}/>
+      <ContentsPage/>
       <GutProfilePage    data={data}/>
       <ThreeBioticsPage  data={data}/>
       <ScoreMeaningPage  data={data}/>
