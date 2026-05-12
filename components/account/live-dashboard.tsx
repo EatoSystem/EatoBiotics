@@ -441,12 +441,57 @@ export function LiveDashboard(_props: LiveDashboardProps = {}) {
                     </div>
                   </div>
 
-                  <div className="space-y-3 px-5 py-4">
-                    <ScoreBar label="Prebiotic fibre"   score={72} />
-                    <ScoreBar label="Probiotic load"    score={18} />
-                    <ScoreBar label="Diversity"         score={55} />
-                    <ScoreBar label="Anti-inflammatory" score={80} />
+                  {/* ── BIOTICS ── */}
+                  <div className="px-5 pb-3 pt-4">
+                    <p className="mb-2.5 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
+                      Biotics
+                    </p>
+                    <div className="space-y-2.5">
+                      <ScoreBar label="Prebiotic"  score={72} />
+                      <ScoreBar label="Probiotic"  score={18} />
+                      <ScoreBar label="Postbiotic" score={41} />
+                    </div>
                   </div>
+
+                  <div className="mx-5 h-px" style={{ background: "#f0f0f0" }} />
+
+                  {/* ── MEAL QUALITY ── */}
+                  <div className="px-5 pb-3 pt-3">
+                    <p className="mb-2.5 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-teal)" }}>
+                      Meal Quality
+                    </p>
+                    <div className="space-y-2.5">
+                      <ScoreBar label="Diversity"         score={55} />
+                      <ScoreBar label="Anti-inflammatory" score={80} />
+                    </div>
+                  </div>
+
+                  <div className="mx-5 h-px" style={{ background: "#f0f0f0" }} />
+
+                  {/* ── NUTRITION STRIP ── */}
+                  <div className="pb-1 pt-3">
+                    <p className="mb-1 px-5 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-orange)" }}>
+                      Nutrition
+                    </p>
+                    <div className="grid grid-cols-5">
+                      {([
+                        { label: "Calories", value: "385", unit: "kcal", color: "var(--icon-orange)" },
+                        { label: "Protein",  value: "12",  unit: "g",    color: "var(--icon-teal)" },
+                        { label: "Carbs",    value: "68",  unit: "g",    color: "var(--icon-yellow)" },
+                        { label: "Fat",      value: "8",   unit: "g",    color: "var(--icon-green)" },
+                        { label: "Fibre",    value: "6",   unit: "g",    color: "var(--icon-lime)" },
+                      ] as { label: string; value: string; unit: string; color: string }[]).map(({ label, value, unit, color }, i) => (
+                        <div key={label} className="flex flex-col items-center py-3"
+                          style={{ borderRight: i < 4 ? "1px solid #f0f0f0" : undefined }}>
+                          <span className="font-mono text-base font-bold leading-none" style={{ color }}>{value}</span>
+                          <span className="mt-0.5 text-[9px] font-medium" style={{ color: "var(--muted-foreground)" }}>{unit}</span>
+                          <span className="mt-0.5 text-[9px]" style={{ color: "var(--muted-foreground)" }}>{label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mx-5 h-px" style={{ background: "#f0f0f0" }} />
 
                   {/* Insight panel — white with gradient left border */}
                   <div className="mx-5 mb-3 flex overflow-hidden rounded-xl" style={{ border: "1px solid #e8e8e8" }}>
