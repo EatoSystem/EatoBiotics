@@ -1,6 +1,19 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
+// ── Site-wide password gate ───────────────────────────────────────────────
+const DEV_COOKIE   = "eb_dev_auth"
+const DEV_PASSWORD = process.env.DEV_PASSWORD ?? "Monkstown"
+
+function hasSiteAccess(request: NextRequest): boolean {
+  return request.cookies.get(DEV_COOKIE)?.value === DEV_PASSWORD
+}
+
+function isEnterRoute(pathname: string): boolean {
+  return pathname === "/enter" || pathname.startsWith("/api/enter")
+}
+// ─────────────────────────────────────────────────────────────────────────
+
 // Paths that start with /account but are public (no auth required)
 const PUBLIC_ACCOUNT_PREFIXES = [
   "/account/signin",
@@ -18,6 +31,15 @@ function isProtectedAccountRoute(pathname: string): boolean {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // ── Site password check (runs before everything else) ──────────────────
+  if (!isEnterRoute(pathname) && !hasSiteAccess(request)) {
+    const url = request.nextUrl.clone()
+    url.pathname = "/enter"
+    url.searchParams.set("from", pathname)
+    return NextResponse.redirect(url)
+  }
+  // ────────────────────────────────────────────────────────────────────────
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL ?? ""
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
