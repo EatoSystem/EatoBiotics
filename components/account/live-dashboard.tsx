@@ -1,11 +1,13 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { getSupabaseBrowser } from "@/lib/supabase-browser"
 import {
   Camera, ArrowRight, Check, ChevronRight, TrendingUp,
   FileText, UtensilsCrossed, MessageSquare, Download, ExternalLink, Flame,
-  Calendar, Target, Activity,
+  Calendar, Target, Activity, User, Trash2, AlertTriangle,
 } from "lucide-react"
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -405,20 +407,24 @@ export interface RealWeeklyReport {
    Component props — all optional, mock data used as fallback
    ───────────────────────────────────────────────────────────────────────── */
 export interface LiveDashboardProps {
-  name?:            string | null
-  streak?:          number
-  score?:           number | null
-  previousScore?:   number | null
-  profileType?:     string | null
-  biotics?:         { prebiotic: number; probiotic: number; postbiotic: number }
-  recentAnalyses?:  RealAnalysis[]
-  weeklyReport?:    RealWeeklyReport | null
-  weeklyReports?:   RealWeeklyReport[]          // for Consultations tab
-  monthlyPlan?:     string | null
-  weeklyCheckin?:   string | null
-  memberStartedAt?: string | null
-  nextBillingDate?: string | null
-  referralCode?:    string | null
+  name?:             string | null
+  email?:            string | null
+  ageBracket?:       string | null
+  membershipTier?:   string | null
+  membershipStatus?: string | null
+  streak?:           number
+  score?:            number | null
+  previousScore?:    number | null
+  profileType?:      string | null
+  biotics?:          { prebiotic: number; probiotic: number; postbiotic: number }
+  recentAnalyses?:   RealAnalysis[]
+  weeklyReport?:     RealWeeklyReport | null
+  weeklyReports?:    RealWeeklyReport[]          // for Consultations tab
+  monthlyPlan?:      string | null
+  weeklyCheckin?:    string | null
+  memberStartedAt?:  string | null
+  nextBillingDate?:  string | null
+  referralCode?:     string | null
   // Sandbox pass-through
   [key: string]: unknown
 }
@@ -471,14 +477,18 @@ function realToMealEntry(a: RealAnalysis): Parameters<typeof MealCard>[0]["meal"
 /* ─────────────────────────────────────────────────────────────────────────
    Tab config
    ───────────────────────────────────────────────────────────────────────── */
-type Tab = "overview" | "meals" | "reports" | "consultations"
+type Tab = "overview" | "meals" | "reports" | "consultations" | "account"
 type LoggerState = "empty" | "analysing" | "result"
+type DeleteStage = "closed" | "warning" | "confirm" | "deleting" | "done"
+
+const AGE_BRACKETS = ["Under 20", "20–29", "30–39", "40–49", "50–59", "60+"]
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: "overview",      label: "Overview",      icon: <TrendingUp size={13} /> },
-  { id: "meals",         label: "My Meals",       icon: <UtensilsCrossed size={13} /> },
-  { id: "reports",       label: "My Reports",     icon: <FileText size={13} /> },
-  { id: "consultations", label: "Consultations",  icon: <MessageSquare size={13} /> },
+  { id: "overview",      label: "Overview",      icon: <TrendingUp size={14} /> },
+  { id: "meals",         label: "My Meals",       icon: <UtensilsCrossed size={14} /> },
+  { id: "reports",       label: "My Reports",     icon: <FileText size={14} /> },
+  { id: "consultations", label: "Consultations",  icon: <MessageSquare size={14} /> },
+  { id: "account",       label: "My Account",     icon: <User size={14} /> },
 ]
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -486,17 +496,22 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
    ───────────────────────────────────────────────────────────────────────── */
 export function LiveDashboard(props: LiveDashboardProps = {}) {
   const {
-    name            = null,
-    streak:         propStreak = 0,
-    score:          propScore  = null,
-    previousScore:  propPrev   = null,
-    profileType     = null,
-    biotics:        propBiotics = null,
-    recentAnalyses  = [],
-    weeklyReport    = null,
-    weeklyReports   = [],
-    monthlyPlan     = null,
-    memberStartedAt = null,
+    name               = null,
+    email:             propEmail         = null,
+    ageBracket:        propAgeBracket    = null,
+    membershipTier:    propMemberTier    = null,
+    membershipStatus:  propMemberStatus  = null,
+    streak:            propStreak = 0,
+    score:             propScore  = null,
+    previousScore:     propPrev   = null,
+    profileType        = null,
+    biotics:           propBiotics = null,
+    recentAnalyses     = [],
+    weeklyReport       = null,
+    weeklyReports      = [],
+    monthlyPlan        = null,
+    memberStartedAt    = null,
+    nextBillingDate    = null,
   } = props
 
   const [tab, setTab] = useState<Tab>("overview")
@@ -504,6 +519,89 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
   const [liveResult, setLiveResult]   = useState<LiveResult | null>(null)
   const [mealInput, setMealInput]     = useState("")
   const [analyseError, setAnalyseError] = useState<string | null>(null)
+
+  /* My Account tab state */
+  const [acctName,       setAcctName]       = useState(name ?? "")
+  const [acctAgeBracket, setAcctAgeBracket] = useState(propAgeBracket ?? "")
+  const [acctSaving,     setAcctSaving]     = useState(false)
+  const [acctSaved,      setAcctSaved]      = useState(false)
+  const [acctError,      setAcctError]      = useState<string | null>(null)
+  const [exportState,    setExportState]    = useState<"idle" | "downloading" | "done">("idle")
+  const [deleteStage,    setDeleteStage]    = useState<DeleteStage>("closed")
+  const [deleteInput,    setDeleteInput]    = useState("")
+  const [deleteError,    setDeleteError]    = useState<string | null>(null)
+
+  type CancelStage = "idle" | "confirm" | "cancelling" | "done"
+  const [cancelStage,    setCancelStage]    = useState<CancelStage>("idle")
+  const [cancelUntil,    setCancelUntil]    = useState<string | null>(null)
+  const [cancelError,    setCancelError]    = useState<string | null>(null)
+
+  const router = useRouter()
+
+  async function handleSaveProfile() {
+    setAcctSaving(true); setAcctError(null); setAcctSaved(false)
+    try {
+      const res = await fetch("/api/account/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: acctName || null, age_bracket: acctAgeBracket || null }),
+      })
+      if (!res.ok) throw new Error("Save failed")
+      setAcctSaved(true)
+      setTimeout(() => setAcctSaved(false), 3000)
+    } catch {
+      setAcctError("Save failed — please try again")
+    } finally {
+      setAcctSaving(false)
+    }
+  }
+
+  async function handleExport() {
+    setExportState("downloading")
+    try {
+      const res = await fetch("/api/account/export")
+      if (!res.ok) throw new Error("Export failed")
+      const blob = await res.blob()
+      const today = new Date().toISOString().slice(0, 10)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url; a.download = `eatobiotics-data-${today}.json`
+      document.body.appendChild(a); a.click()
+      document.body.removeChild(a); URL.revokeObjectURL(url)
+      setExportState("done")
+      setTimeout(() => setExportState("idle"), 4000)
+    } catch {
+      setExportState("idle")
+    }
+  }
+
+  async function handleCancelSubscription() {
+    setCancelStage("cancelling"); setCancelError(null)
+    try {
+      const res = await fetch("/api/stripe/cancel-subscription", { method: "POST" })
+      const data = await res.json() as { ok?: boolean; accessUntil?: string; error?: string }
+      if (!res.ok || data.error) throw new Error(data.error ?? "Cancellation failed")
+      setCancelUntil(data.accessUntil ?? null)
+      setCancelStage("done")
+    } catch (err) {
+      setCancelError(err instanceof Error ? err.message : "Cancellation failed — please try again.")
+      setCancelStage("confirm")
+    }
+  }
+
+  async function handleDeleteAccount() {
+    setDeleteStage("deleting"); setDeleteError(null)
+    try {
+      const res = await fetch("/api/account/delete", { method: "DELETE" })
+      if (!res.ok) throw new Error("Delete failed")
+      const supabase = getSupabaseBrowser()
+      if (supabase) await supabase.auth.signOut()
+      router.push("/")
+    } catch {
+      setDeleteError("Deletion failed — please try again or contact support.")
+      setDeleteStage("confirm")
+    }
+  }
 
   /* Compute real values with mock fallbacks */
   const displayName    = name ?? "Jason"
@@ -671,13 +769,13 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       ══════════════════════════════════════════════════════════════════ */}
       <div className="sticky top-[57px] z-10 border-b" style={{ background: "white", borderColor: "#ebebeb" }}>
         <div className="mx-auto max-w-5xl px-4 md:px-8">
-          <div className="flex gap-1 overflow-x-auto py-2">
+          <div className="flex gap-1.5 overflow-x-auto py-2">
             {TABS.map(({ id, label, icon }) => (
-              <button key={id} onClick={() => setTab(id)}
-                className="flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition-all"
+              <button key={id} onClick={() => setTab(id as Tab)}
+                className="flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold transition-all"
                 style={tab === id
                   ? { background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", color: "white", boxShadow: "0 3px 10px rgba(45,170,110,0.28)" }
-                  : { color: "var(--muted-foreground)", opacity: 0.65 }
+                  : { background: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))", color: "white", boxShadow: "0 2px 8px rgba(245,166,35,0.20)" }
                 }>
                 {icon}{label}
               </button>
@@ -1518,6 +1616,324 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
               </>
             )
           })()}
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════
+          MY ACCOUNT TAB
+      ══════════════════════════════════════════════════════════════════ */}
+      {tab === "account" && (
+        <div className="mx-auto max-w-2xl px-4 pt-6 pb-16 md:px-8 md:pt-8 space-y-6">
+
+          {/* ── Section 1: Personal Details ── */}
+          <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid #ebebeb", boxShadow: "0 4px 20px rgba(26,46,18,0.06)" }}>
+            <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
+            <div className="px-5 py-4 border-b" style={{ borderColor: "#f0f0f0" }}>
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}>
+                  <User size={14} color="white" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm" style={{ color: "var(--foreground)" }}>Personal Details</p>
+                  <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>Your account information</p>
+                </div>
+              </div>
+            </div>
+            <div className="px-5 py-5 space-y-4">
+              {/* Email — read only */}
+              <div>
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>Email</label>
+                <div className="w-full rounded-xl border px-4 py-2.5 text-sm" style={{ borderColor: "#e5e7eb", background: "#f9fafb", color: "var(--muted-foreground)" }}>
+                  {(propEmail as string | null) ?? "—"}
+                </div>
+                <p className="mt-1 text-xs" style={{ color: "var(--muted-foreground)" }}>Email cannot be changed</p>
+              </div>
+              {/* Name */}
+              <div>
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>Name</label>
+                <input
+                  type="text"
+                  value={acctName}
+                  onChange={(e) => setAcctName(e.target.value)}
+                  placeholder="Your name"
+                  className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition"
+                  style={{ borderColor: "#e5e7eb", background: "white", color: "var(--foreground)" }}
+                />
+              </div>
+              {/* Age bracket */}
+              <div>
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>Age Range</label>
+                <select
+                  value={acctAgeBracket}
+                  onChange={(e) => setAcctAgeBracket(e.target.value)}
+                  className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition"
+                  style={{ borderColor: "#e5e7eb", background: "white", color: "var(--foreground)" }}
+                >
+                  <option value="">Select your age range</option>
+                  {AGE_BRACKETS.map((b) => (
+                    <option key={b} value={b}>{b}</option>
+                  ))}
+                </select>
+              </div>
+              {/* Member since */}
+              {memberStartedAt && (
+                <div className="flex items-center gap-2 rounded-xl px-4 py-2.5" style={{ background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+                  <Calendar size={13} style={{ color: "var(--icon-green)", flexShrink: 0 }} />
+                  <p className="text-xs font-medium" style={{ color: "#15803d" }}>
+                    Member since {new Date(memberStartedAt).toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" })}
+                  </p>
+                </div>
+              )}
+              {/* Save button */}
+              {acctError && <p className="text-xs text-red-500">{acctError}</p>}
+              <button
+                onClick={handleSaveProfile}
+                disabled={acctSaving}
+                className="w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", boxShadow: "0 3px 10px rgba(45,170,110,0.25)" }}
+              >
+                {acctSaving ? "Saving…" : acctSaved ? "✓ Saved" : "Save changes"}
+              </button>
+            </div>
+          </div>
+
+          {/* ── Section 1b: Cancel Subscription (only shown when active) ── */}
+          {propMemberTier && propMemberTier !== "free" && propMemberStatus !== "cancelled" && (
+            <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: cancelStage === "confirm" ? "1.5px solid #fed7aa" : "1px solid #ebebeb", boxShadow: "0 4px 20px rgba(26,46,18,0.06)" }}>
+              <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-yellow), var(--icon-orange))" }} />
+
+              {/* Idle */}
+              {cancelStage === "idle" && (
+                <div className="flex items-center justify-between gap-4 px-5 py-5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: "#fff7ed" }}>
+                      <span style={{ fontSize: 16 }}>📋</span>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm capitalize" style={{ color: "var(--foreground)" }}>
+                        {propMemberTier} Subscription
+                      </p>
+                      <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+                        {nextBillingDate
+                          ? `Next billing ${new Date(nextBillingDate as string).toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" })}`
+                          : "Active subscription"}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setCancelStage("confirm")}
+                    className="shrink-0 rounded-xl px-4 py-2 text-sm font-semibold transition-all hover:opacity-90"
+                    style={{ background: "#fff7ed", color: "#c2410c", border: "1px solid #fed7aa" }}
+                  >
+                    Cancel plan
+                  </button>
+                </div>
+              )}
+
+              {/* Confirm */}
+              {cancelStage === "confirm" && (
+                <div className="px-5 py-5 space-y-4">
+                  <div>
+                    <p className="font-semibold text-sm mb-2" style={{ color: "var(--foreground)" }}>
+                      Cancel your <span className="capitalize">{propMemberTier}</span> plan?
+                    </p>
+                    <ul className="space-y-1.5 text-sm" style={{ color: "var(--muted-foreground)" }}>
+                      <li>• Your meal analysis and biotics scoring will stop</li>
+                      <li>• Weekly reports will no longer be generated</li>
+                      {(propMemberTier === "restore" || propMemberTier === "transform") && (
+                        <li>• Your personalised monthly gut plan will end</li>
+                      )}
+                      {propMemberTier === "transform" && (
+                        <li>• AI consultation access will be removed</li>
+                      )}
+                    </ul>
+                    {nextBillingDate && (
+                      <p className="mt-3 text-sm font-medium rounded-lg px-3 py-2 inline-block" style={{ background: "#fff7ed", color: "#c2410c" }}>
+                        You keep full access until {new Date(nextBillingDate as string).toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" })}
+                      </p>
+                    )}
+                  </div>
+                  {cancelError && <p className="text-xs text-red-500">{cancelError}</p>}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => { setCancelStage("idle"); setCancelError(null) }}
+                      className="flex-1 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all hover:bg-gray-50"
+                      style={{ borderColor: "#e5e7eb", color: "var(--muted-foreground)" }}
+                    >
+                      Keep my plan
+                    </button>
+                    <button
+                      onClick={handleCancelSubscription}
+                      className="flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90"
+                      style={{ background: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))", boxShadow: "0 2px 8px rgba(245,166,35,0.30)" }}
+                    >
+                      Yes, cancel plan
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Cancelling */}
+              {cancelStage === "cancelling" && (
+                <div className="flex items-center justify-center gap-3 px-5 py-6">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-orange-200 border-t-orange-500" />
+                  <p className="text-sm font-medium" style={{ color: "var(--muted-foreground)" }}>Cancelling subscription…</p>
+                </div>
+              )}
+
+              {/* Done */}
+              {cancelStage === "done" && (
+                <div className="px-5 py-5 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full" style={{ background: "#f0fdf4" }}>
+                      <Check size={13} style={{ color: "var(--icon-green)" }} />
+                    </div>
+                    <p className="font-semibold text-sm" style={{ color: "var(--foreground)" }}>Subscription cancelled</p>
+                  </div>
+                  {cancelUntil ? (
+                    <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+                      Your access continues until <strong>{new Date(cancelUntil).toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" })}</strong>. No further charges will be made.
+                    </p>
+                  ) : (
+                    <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>No further charges will be made.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Section 2: Export My Data ── */}
+          <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid #ebebeb", boxShadow: "0 4px 20px rgba(26,46,18,0.06)" }}>
+            <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-teal), var(--icon-lime))" }} />
+            <div className="px-5 py-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: "linear-gradient(135deg, var(--icon-teal), var(--icon-lime))" }}>
+                      <Download size={14} color="white" />
+                    </div>
+                    <p className="font-semibold text-sm" style={{ color: "var(--foreground)" }}>Export My Data</p>
+                  </div>
+                  <p className="text-sm leading-relaxed mt-1" style={{ color: "var(--muted-foreground)" }}>
+                    Download everything EatoBiotics holds about you — assessments, meals, and weekly reports — as a single JSON file.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleExport}
+                disabled={exportState === "downloading"}
+                className="mt-4 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                style={{ background: "linear-gradient(135deg, var(--icon-teal), var(--icon-lime))", boxShadow: "0 3px 10px rgba(45,170,110,0.20)" }}
+              >
+                <Download size={14} />
+                {exportState === "downloading" ? "Preparing download…" : exportState === "done" ? "✓ Downloaded" : "Download my data"}
+              </button>
+            </div>
+          </div>
+
+          {/* ── Section 3: Delete My Account ── */}
+          <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: deleteStage !== "closed" ? "1.5px solid #fca5a5" : "1px solid #ebebeb", boxShadow: "0 4px 20px rgba(26,46,18,0.06)" }}>
+            <div className="h-[3px]" style={{ background: "linear-gradient(90deg, #f87171, #ef4444)" }} />
+
+            {/* Stage 0 — closed trigger */}
+            {deleteStage === "closed" && (
+              <div className="flex items-center justify-between gap-4 px-5 py-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: "#fee2e2" }}>
+                    <Trash2 size={14} style={{ color: "#ef4444" }} />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm" style={{ color: "var(--foreground)" }}>Delete My Account</p>
+                    <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>Permanently remove all your data</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setDeleteStage("warning")}
+                  className="shrink-0 rounded-xl px-4 py-2 text-sm font-semibold transition-all hover:opacity-90"
+                  style={{ background: "#fee2e2", color: "#ef4444", border: "1px solid #fca5a5" }}
+                >
+                  Delete account
+                </button>
+              </div>
+            )}
+
+            {/* Stage 1 — warning */}
+            {deleteStage === "warning" && (
+              <div className="px-5 py-5 space-y-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle size={18} style={{ color: "#ef4444", flexShrink: 0, marginTop: 1 }} />
+                  <div>
+                    <p className="font-semibold text-sm mb-2" style={{ color: "#dc2626" }}>This will permanently delete:</p>
+                    <ul className="space-y-1 text-sm" style={{ color: "var(--foreground)" }}>
+                      <li>• Your profile and all personal data</li>
+                      <li>• All meal analyses ({recentAnalyses.length > 0 ? `${recentAnalyses.length}+ meals` : "all meals"})</li>
+                      <li>• All weekly reports</li>
+                      <li>• Your assessment history</li>
+                    </ul>
+                    <p className="mt-3 text-sm font-semibold" style={{ color: "#dc2626" }}>This cannot be undone.</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setDeleteStage("closed")}
+                    className="flex-1 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all hover:bg-gray-50"
+                    style={{ borderColor: "#e5e7eb", color: "var(--muted-foreground)" }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => setDeleteStage("confirm")}
+                    className="flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90"
+                    style={{ background: "linear-gradient(135deg, #f87171, #ef4444)", boxShadow: "0 2px 8px rgba(239,68,68,0.30)" }}
+                  >
+                    I understand, continue →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Stage 2 — confirm input */}
+            {deleteStage === "confirm" && (
+              <div className="px-5 py-5 space-y-4">
+                <p className="text-sm font-semibold" style={{ color: "#dc2626" }}>Type DELETE to confirm:</p>
+                <input
+                  type="text"
+                  value={deleteInput}
+                  onChange={(e) => setDeleteInput(e.target.value)}
+                  placeholder="DELETE"
+                  className="w-full rounded-xl border px-4 py-2.5 text-sm font-mono outline-none"
+                  style={{ borderColor: "#fca5a5", background: "#fff5f5", color: "var(--foreground)" }}
+                />
+                {deleteError && <p className="text-xs text-red-500">{deleteError}</p>}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => { setDeleteStage("closed"); setDeleteInput(""); setDeleteError(null) }}
+                    className="flex-1 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all hover:bg-gray-50"
+                    style={{ borderColor: "#e5e7eb", color: "var(--muted-foreground)" }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDeleteAccount}
+                    disabled={deleteInput !== "DELETE"}
+                    className="flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{ background: "linear-gradient(135deg, #f87171, #ef4444)", boxShadow: deleteInput === "DELETE" ? "0 2px 8px rgba(239,68,68,0.30)" : "none" }}
+                  >
+                    Permanently delete my account
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Stage 3 — deleting */}
+            {deleteStage === "deleting" && (
+              <div className="flex items-center justify-center gap-3 px-5 py-8">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-red-200 border-t-red-500" />
+                <p className="text-sm font-medium" style={{ color: "#dc2626" }}>Deleting your account…</p>
+              </div>
+            )}
+          </div>
+
         </div>
       )}
 

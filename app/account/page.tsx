@@ -200,6 +200,10 @@ export default async function AccountPage() {
     <div className="min-h-screen bg-background pt-[57px]">
       <LiveDashboard
         name={(profile.name as string | null) ?? null}
+        email={user.email ?? null}
+        ageBracket={(profile.age_bracket as string | null) ?? null}
+        membershipTier={(profile.membership_tier as string | null) ?? null}
+        membershipStatus={(profile.membership_status as string | null) ?? null}
         streak={streak}
         score={(assessments[0]?.overall_score as number | null) ?? null}
         previousScore={(assessments[1]?.overall_score as number | null) ?? null}
