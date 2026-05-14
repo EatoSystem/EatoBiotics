@@ -364,9 +364,30 @@ const MOCK_REPORTS = [
 ]
 
 const MOCK_CONSULTATIONS = [
-  { id: 1, date: "Sunday, 11 May 2025", week: "Week 8 of 30", avgScore: 73, delta: "+5", preview: "Your food system showed real momentum this week. Plant diversity was your strongest area — hitting 9 different plants, your best showing in a month. Your fermented food frequency still needs attention: only 2 out of 7 days included a live food source." },
-  { id: 2, date: "Sunday, 4 May 2025",  week: "Week 7 of 30", avgScore: 68, delta: "+4", preview: "A consistent week with clear patterns emerging. Your prebiotic score held steady and your fermented food frequency improved to 4 out of 7 days. The habit is forming — keep the weekend routine tighter." },
-  { id: 3, date: "Sunday, 27 Apr 2025", week: "Week 6 of 30", avgScore: 64, delta: "+2", preview: "Mixed week with a clear gap at the weekend. Monday–Friday averaged 71 but Saturday dropped to 48. Weekend meal planning is the lever to pull this month." },
+  {
+    id: 1, date: "Sunday, 11 May 2025", week: "Week 8 of 30", avgScore: 73, delta: 5,
+    weekSummaryTitle: "Your Best Week for Plant Diversity",
+    pillars: { prebiotic: 71, probiotic: 23, postbiotic: 48 },
+    pullQuote: "Your food system showed real momentum this week. Plant diversity was your strongest area — 9 different plants, your best showing in a month.",
+    focusAction: "Add a fermented food to 4 out of 7 dinners this week — kefir, kimchi, or live yoghurt all count.",
+    mealCount: 9,
+  },
+  {
+    id: 2, date: "Sunday, 4 May 2025", week: "Week 7 of 30", avgScore: 68, delta: 4,
+    weekSummaryTitle: "Consistency Building — Momentum Is Growing",
+    pillars: { prebiotic: 65, probiotic: 28, postbiotic: 42 },
+    pullQuote: "Your prebiotic score held steady and your fermented food frequency improved to 4 out of 7 days. The habit is forming — keep the weekend routine tighter.",
+    focusAction: "Tighten your weekend routine — aim for the same meal quality Saturday and Sunday as you do during the week.",
+    mealCount: 11,
+  },
+  {
+    id: 3, date: "Sunday, 27 Apr 2025", week: "Week 6 of 30", avgScore: 64, delta: 2,
+    weekSummaryTitle: "Mid-Week Strong — Weekends Need Attention",
+    pillars: { prebiotic: 60, probiotic: 19, postbiotic: 38 },
+    pullQuote: "Monday–Friday averaged 71 but Saturday dropped to 48. You have the pattern — now extend it to the full week.",
+    focusAction: "Plan two gut-friendly meals for the weekend before Saturday arrives — preparation is the key lever here.",
+    mealCount: 8,
+  },
 ]
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -472,6 +493,145 @@ function realToMealEntry(a: RealAnalysis): Parameters<typeof MealCard>[0]["meal"
     nutrition: a.nutrition_json ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fibre: 0 },
     tags: a.tags ?? [],
   }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   ReportCard — unified rich card for real + mock weekly reports
+   ───────────────────────────────────────────────────────────────────────── */
+interface ReportCardData {
+  id: string | number
+  dateStr: string
+  weekLabel: string
+  avgScore: number | null
+  delta: number | null
+  weekSummaryTitle: string | null
+  pillars: { prebiotic: number; probiotic: number; postbiotic: number } | null
+  pullQuote: string | null
+  focusAction: string | null
+  mealCount: number | null
+  reportHref: string | null
+  chatHref: string | null
+}
+
+function ReportCard({ card }: { card: ReportCardData }) {
+  const pos = card.delta !== null && card.delta > 0
+  return (
+    <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid #ebebeb", boxShadow: "0 4px 20px rgba(26,46,18,0.07)" }}>
+      {/* Gradient top bar */}
+      <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
+
+      {/* Header */}
+      <div className="border-b px-5 pt-4 pb-3" style={{ borderColor: "#f0f0f0" }}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--muted-foreground)" }}>
+              {card.weekLabel}
+            </p>
+            <p className="mt-0.5 font-serif text-base font-bold leading-snug" style={{ color: "var(--foreground)" }}>
+              {card.dateStr}
+            </p>
+            {card.weekSummaryTitle && (
+              <p className="mt-1 text-sm font-medium" style={{ color: "var(--icon-green)" }}>
+                {card.weekSummaryTitle}
+              </p>
+            )}
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
+            {card.avgScore != null && (
+              <span className="rounded-full px-3 py-1 text-sm font-bold tabular-nums text-white"
+                style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", boxShadow: "0 2px 8px rgba(45,170,110,0.25)" }}>
+                {card.avgScore}
+              </span>
+            )}
+            {card.delta != null && (
+              <span className="rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums"
+                style={pos
+                  ? { background: "rgba(168,224,99,0.18)", color: "#2d7a24", border: "1px solid rgba(76,182,72,0.25)" }
+                  : { background: "rgba(245,166,35,0.12)", color: "#a05a0a", border: "1px solid rgba(245,166,35,0.30)" }
+                }>
+                {pos ? `+${card.delta}` : card.delta} pts
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Biotics pillars */}
+      {card.pillars && (
+        <div className="border-b px-5 py-4" style={{ borderColor: "#f0f0f0" }}>
+          <p className="mb-2.5 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
+            Biotics this week
+          </p>
+          <div className="space-y-2">
+            <ScoreBar label="Prebiotic"  score={card.pillars.prebiotic} />
+            <ScoreBar label="Probiotic"  score={card.pillars.probiotic} />
+            <ScoreBar label="Postbiotic" score={card.pillars.postbiotic} />
+          </div>
+        </div>
+      )}
+
+      {/* Pull quote */}
+      {card.pullQuote && (
+        <div className="mx-5 mt-4 flex overflow-hidden rounded-xl" style={{ border: "1px solid #e8e8e8" }}>
+          <div className="w-[3px] shrink-0" style={{ background: "linear-gradient(to bottom, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
+          <div className="px-4 py-3">
+            <p className="text-sm italic leading-relaxed" style={{ color: "var(--foreground)" }}>
+              &ldquo;{card.pullQuote}&rdquo;
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Focus action */}
+      {card.focusAction && (
+        <div className="mx-5 mt-3 flex items-start gap-3 rounded-xl px-4 py-3"
+          style={{ background: "linear-gradient(135deg, rgba(245,197,24,0.10), rgba(245,166,35,0.08))", border: "1px solid rgba(245,166,35,0.25)" }}>
+          <Target size={14} style={{ color: "var(--icon-orange)", flexShrink: 0, marginTop: 2 }} />
+          <div>
+            <p className="mb-0.5 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-orange)" }}>
+              This week&apos;s focus
+            </p>
+            <p className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>{card.focusAction}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Meal count + CTAs */}
+      <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+        {card.mealCount != null && (
+          <div className="flex items-center gap-1.5">
+            <UtensilsCrossed size={12} style={{ color: "var(--muted-foreground)" }} />
+            <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+              {card.mealCount} meals tracked
+            </span>
+          </div>
+        )}
+        <div className="ml-auto flex flex-wrap gap-2">
+          {card.reportHref ? (
+            <>
+              <Link href={card.reportHref}
+                className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", boxShadow: "0 2px 8px rgba(45,170,110,0.25)" }}>
+                View full report <ExternalLink size={11} />
+              </Link>
+              {card.chatHref && (
+                <Link href={card.chatHref}
+                  className="inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-semibold transition-opacity hover:opacity-75"
+                  style={{ borderColor: "var(--icon-green)", color: "var(--icon-green)" }}>
+                  <MessageSquare size={11} /> Chat with EatoBiotics
+                </Link>
+              )}
+            </>
+          ) : (
+            <span className="inline-flex cursor-default items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold text-white opacity-40"
+              style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
+              View full report <ExternalLink size={11} />
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -1486,138 +1646,155 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       {/* ══════════════════════════════════════════════════════════════════
           CONSULTATIONS TAB
       ══════════════════════════════════════════════════════════════════ */}
-      {tab === "consultations" && (
-        <div className="mx-auto max-w-5xl px-4 pt-6 pb-16 md:px-8 md:pt-8">
-          {/* Use real weekly reports if available, else fall back to mock */}
-          {(() => {
-            const reports = weeklyReports.length > 0 ? weeklyReports : null
-            const count   = reports?.length ?? MOCK_CONSULTATIONS.length
+      {tab === "consultations" && (() => {
+        const reports   = weeklyReports.length > 0 ? weeklyReports : null
+        const count     = reports?.length ?? MOCK_CONSULTATIONS.length
 
-            return (
-              <>
-                <div className="mb-5">
-                  <h2 className="font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>My Weekly Reports</h2>
-                  <p className="mt-0.5 text-sm" style={{ color: "var(--muted-foreground)" }}>
-                    {count > 0
-                      ? `${count} report${count !== 1 ? "s" : ""} generated · new report every Sunday`
-                      : "Your first report will appear here after your first week of logging meals"}
+        /* Normalise real reports → ReportCardData */
+        const realCards: ReportCardData[] = (reports ?? []).map((r) => {
+          const rj = r.report_json
+          return {
+            id:               r.id,
+            dateStr:          new Date(r.week_starting).toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long", year: "numeric" }),
+            weekLabel:        rj?.weekNumber ? `Week ${rj.weekNumber} of 30` : `w/c ${r.week_starting}`,
+            avgScore:         rj?.averageScore ?? null,
+            delta:            rj?.previousWeekAverage != null && rj?.averageScore != null
+                                ? Math.round(rj.averageScore - rj.previousWeekAverage)
+                                : null,
+            weekSummaryTitle: rj?.weekSummaryTitle ?? null,
+            pillars:          rj?.pillars ?? null,
+            pullQuote:        rj?.pullQuote ?? null,
+            focusAction:      rj?.focusAction ?? null,
+            mealCount:        rj?.mealCount ?? null,
+            reportHref:       `/account/report/${r.id}`,
+            chatHref:         `/account/report/${r.id}#chat`,
+          }
+        })
+
+        /* Normalise mock → ReportCardData */
+        const mockCards: ReportCardData[] = MOCK_CONSULTATIONS.map((c) => ({
+          id:               c.id,
+          dateStr:          c.date,
+          weekLabel:        c.week,
+          avgScore:         c.avgScore,
+          delta:            c.delta,
+          weekSummaryTitle: c.weekSummaryTitle,
+          pillars:          c.pillars,
+          pullQuote:        c.pullQuote,
+          focusAction:      c.focusAction,
+          mealCount:        c.mealCount,
+          reportHref:       null,
+          chatHref:         null,
+        }))
+
+        const cards = reports ? realCards : mockCards
+
+        /* Score progression strip — scores oldest→newest */
+        const scoreSequence = cards.map(c => c.avgScore).filter((s): s is number => s != null).reverse()
+
+        /* Week progress dots — which days of this week have analyses */
+        const weekDots = (() => {
+          const now = new Date()
+          const dow = now.getDay()
+          const mondayOffset = dow === 0 ? -6 : 1 - dow
+          const monday = new Date(now)
+          monday.setDate(now.getDate() + mondayOffset)
+          monday.setHours(0, 0, 0, 0)
+          const todayStr = now.toISOString().slice(0, 10)
+          return ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((label, i) => {
+            const d = new Date(monday)
+            d.setDate(monday.getDate() + i)
+            const dayStr = d.toISOString().slice(0, 10)
+            const hasLog = recentAnalyses.some(a => a.created_at.startsWith(dayStr))
+            const isToday = dayStr === todayStr
+            const isFuture = d > now
+            return { label, hasLog, isToday, isFuture }
+          })
+        })()
+
+        const daysLogged = weekDots.filter(d => d.hasLog).length
+
+        return (
+          <div className="mx-auto max-w-5xl px-4 pt-6 pb-16 md:px-8 md:pt-8">
+
+            {/* ── Header: title + score progression ── */}
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>My Weekly Reports</h2>
+                <p className="mt-0.5 text-sm" style={{ color: "var(--muted-foreground)" }}>
+                  {count > 0
+                    ? `${count} report${count !== 1 ? "s" : ""} generated · new report every Sunday`
+                    : "Your first report will appear after your first week of logging meals"}
+                </p>
+              </div>
+              {/* Score progression strip */}
+              {scoreSequence.length > 1 && (
+                <div className="shrink-0 flex items-center gap-1.5 flex-wrap justify-end">
+                  {scoreSequence.map((s, i) => (
+                    <div key={i} className="flex items-center gap-1.5">
+                      <span className="rounded-full px-2.5 py-1 text-xs font-bold tabular-nums text-white"
+                        style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", boxShadow: "0 1px 6px rgba(45,170,110,0.25)" }}>
+                        {s}
+                      </span>
+                      {i < scoreSequence.length - 1 && (
+                        <ChevronRight size={11} style={{ color: "var(--muted-foreground)" }} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ── Next report banner with week progress dots ── */}
+            <div className="mb-5 overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid #ebebeb", boxShadow: "0 4px 16px rgba(26,46,18,0.07)" }}>
+              <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
+              <div className="flex items-center gap-4 p-5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+                  style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
+                  <Calendar size={16} color="white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
+                    Next report · Sunday
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>
+                    {daysLogged > 0
+                      ? `${daysLogged} of 7 days logged this week — keep going`
+                      : "Log your first meal this week to start your report"}
                   </p>
                 </div>
-
-                {/* Next report banner */}
-                <div className="mb-5 overflow-hidden rounded-2xl" style={{
-                  background: "linear-gradient(135deg, #6aab28 0%, #2e8c2a 40%, #c49610 75%, #c47010 100%)",
-                  boxShadow: "0 4px 16px rgba(26,46,18,0.16)",
-                }}>
-                  <div className="flex items-center gap-4 p-5">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
-                      style={{ background: "rgba(255,255,255,0.15)" }}>
-                      <MessageSquare size={18} color="white" />
+                {/* 7-dot progress */}
+                <div className="flex shrink-0 items-center gap-1">
+                  {weekDots.map(({ label, hasLog, isToday, isFuture }) => (
+                    <div key={label} className="flex flex-col items-center gap-1">
+                      <div className="h-3 w-3 rounded-full transition-all"
+                        style={hasLog
+                          ? { background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))", boxShadow: "0 1px 4px rgba(76,182,72,0.40)" }
+                          : isToday
+                          ? { border: "2px solid var(--icon-green)", background: "white" }
+                          : isFuture
+                          ? { background: "#ebebeb" }
+                          : { background: "#d1d5db" }
+                        }
+                      />
+                      <span className="text-[8px] font-semibold"
+                        style={{ color: isToday ? "var(--icon-green)" : "var(--muted-foreground)" }}>
+                        {label[0]}
+                      </span>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-white">Next report</p>
-                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
-                        Generated every Sunday · based on your week&apos;s meals
-                      </p>
-                    </div>
-                  </div>
+                  ))}
                 </div>
+              </div>
+            </div>
 
-                {/* Real weekly report cards */}
-                {reports ? (
-                  <div className="space-y-4">
-                    {reports.map((r) => {
-                      const rj      = r.report_json
-                      const date    = new Date(r.week_starting)
-                      const dateStr = date.toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
-                      const weekLabel = rj?.weekNumber ? `Week ${rj.weekNumber} of 30` : `w/c ${r.week_starting}`
-                      const avgScore  = rj?.averageScore ?? null
-                      const preview   = rj?.narrative
-                        ? rj.narrative.slice(0, 160) + (rj.narrative.length > 160 ? "…" : "")
-                        : r.content.slice(0, 160) + "…"
+            {/* ── Report cards ── */}
+            <div className="space-y-5">
+              {cards.map(card => <ReportCard key={card.id} card={card} />)}
+            </div>
 
-                      return (
-                        <div key={r.id} className="overflow-hidden rounded-2xl" style={{
-                          background: "white", border: "1px solid #ebebeb", boxShadow: "0 2px 12px rgba(26,46,18,0.05)",
-                        }}>
-                          <div className="h-[2px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
-                          <div className="border-b px-5 py-4" style={{ borderColor: "#f0f0f0" }}>
-                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--muted-foreground)" }}>{weekLabel}</p>
-                                <p className="mt-0.5 font-serif text-base font-bold" style={{ color: "var(--foreground)" }}>{dateStr}</p>
-                                {rj?.weekSummaryTitle && (
-                                  <p className="mt-0.5 text-sm" style={{ color: "var(--muted-foreground)" }}>{rj.weekSummaryTitle}</p>
-                                )}
-                              </div>
-                              {avgScore != null && (
-                                <span className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold text-white"
-                                  style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
-                                  Avg {avgScore}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="px-5 py-4">
-                            <p className="text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{preview}</p>
-                            <div className="mt-4 flex flex-wrap gap-2">
-                              <Link href={`/account/report/${r.id}`}
-                                className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
-                                style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", boxShadow: "0 2px 8px rgba(45,170,110,0.25)" }}>
-                                View full report <ExternalLink size={11} />
-                              </Link>
-                              <Link href={`/account/report/${r.id}#chat`}
-                                className="inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-semibold transition-opacity hover:opacity-75"
-                                style={{ borderColor: "var(--icon-green)", color: "var(--icon-green)" }}>
-                                <MessageSquare size={11} /> Chat with EatoBiotic
-                              </Link>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                ) : (
-                  /* Mock fallback (sandbox only) */
-                  <div className="space-y-4">
-                    {MOCK_CONSULTATIONS.map((c) => (
-                      <div key={c.id} className="overflow-hidden rounded-2xl" style={{
-                        background: "white", border: "1px solid #ebebeb", boxShadow: "0 2px 12px rgba(26,46,18,0.05)",
-                      }}>
-                        <div className="h-[2px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
-                        <div className="border-b px-5 py-4" style={{ borderColor: "#f0f0f0" }}>
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--muted-foreground)" }}>{c.week}</p>
-                              <p className="mt-0.5 font-serif text-base font-bold" style={{ color: "var(--foreground)" }}>{c.date}</p>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              <span className="rounded-full px-2.5 py-0.5 text-xs font-semibold text-white"
-                                style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
-                                Avg {c.avgScore}
-                              </span>
-                              <span className="rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                                style={{ background: "linear-gradient(135deg, rgba(168,224,99,0.2), rgba(76,182,72,0.12))", color: "#2d7a24", border: "1px solid rgba(76,182,72,0.25)" }}>
-                                {c.delta} pts
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="px-5 py-4">
-                          <p className="text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{c.preview}</p>
-                          <div className="mt-4">
-                            <GradientButton small>Open full report <ExternalLink size={11} /></GradientButton>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            )
-          })()}
-        </div>
-      )}
+          </div>
+        )
+      })()}
 
       {/* ══════════════════════════════════════════════════════════════════
           MY ACCOUNT TAB
