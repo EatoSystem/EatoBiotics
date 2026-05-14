@@ -1697,110 +1697,150 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             </div>
           </div>
 
-          {/* ── Section 1b: Cancel Subscription (only shown when active) ── */}
-          {propMemberTier && propMemberTier !== "free" && propMemberStatus !== "cancelled" && (
-            <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: cancelStage === "confirm" ? "1.5px solid #fed7aa" : "1px solid #ebebeb", boxShadow: "0 4px 20px rgba(26,46,18,0.06)" }}>
-              <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-yellow), var(--icon-orange))" }} />
+          {/* ── Section 1b: Subscription ── always visible ── */}
+          <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: cancelStage === "confirm" ? "1.5px solid #fed7aa" : "1px solid #ebebeb", boxShadow: "0 4px 20px rgba(26,46,18,0.06)" }}>
+            <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-yellow), var(--icon-orange))" }} />
 
-              {/* Idle */}
-              {cancelStage === "idle" && (
-                <div className="flex items-center justify-between gap-4 px-5 py-5">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: "#fff7ed" }}>
-                      <span style={{ fontSize: 16 }}>📋</span>
+            {/* ── Active paid plan: cancel flow ── */}
+            {propMemberTier && propMemberTier !== "free" && propMemberStatus !== "cancelled" ? (
+              <>
+                {/* Idle */}
+                {cancelStage === "idle" && (
+                  <div className="flex items-center justify-between gap-4 px-5 py-5">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: "#fff7ed" }}>
+                        <span style={{ fontSize: 16 }}>📋</span>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm capitalize" style={{ color: "var(--foreground)" }}>
+                          {propMemberTier} Subscription
+                        </p>
+                        <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+                          {nextBillingDate
+                            ? `Next billing ${new Date(nextBillingDate as string).toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" })}`
+                            : "Active subscription"}
+                        </p>
+                      </div>
                     </div>
+                    <button
+                      onClick={() => setCancelStage("confirm")}
+                      className="shrink-0 rounded-xl px-4 py-2 text-sm font-semibold transition-all hover:opacity-90"
+                      style={{ background: "#fff7ed", color: "#c2410c", border: "1px solid #fed7aa" }}
+                    >
+                      Cancel plan
+                    </button>
+                  </div>
+                )}
+
+                {/* Confirm */}
+                {cancelStage === "confirm" && (
+                  <div className="px-5 py-5 space-y-4">
                     <div>
-                      <p className="font-semibold text-sm capitalize" style={{ color: "var(--foreground)" }}>
-                        {propMemberTier} Subscription
+                      <p className="font-semibold text-sm mb-2" style={{ color: "var(--foreground)" }}>
+                        Cancel your <span className="capitalize">{propMemberTier}</span> plan?
                       </p>
-                      <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
-                        {nextBillingDate
-                          ? `Next billing ${new Date(nextBillingDate as string).toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" })}`
-                          : "Active subscription"}
-                      </p>
+                      <ul className="space-y-1.5 text-sm" style={{ color: "var(--muted-foreground)" }}>
+                        <li>• Your meal analysis and biotics scoring will stop</li>
+                        <li>• Weekly reports will no longer be generated</li>
+                        {(propMemberTier === "restore" || propMemberTier === "transform") && (
+                          <li>• Your personalised monthly gut plan will end</li>
+                        )}
+                        {propMemberTier === "transform" && (
+                          <li>• AI consultation access will be removed</li>
+                        )}
+                      </ul>
+                      {nextBillingDate && (
+                        <p className="mt-3 text-sm font-medium rounded-lg px-3 py-2 inline-block" style={{ background: "#fff7ed", color: "#c2410c" }}>
+                          You keep full access until {new Date(nextBillingDate as string).toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" })}
+                        </p>
+                      )}
+                    </div>
+                    {cancelError && <p className="text-xs text-red-500">{cancelError}</p>}
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => { setCancelStage("idle"); setCancelError(null) }}
+                        className="flex-1 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all hover:bg-gray-50"
+                        style={{ borderColor: "#e5e7eb", color: "var(--muted-foreground)" }}
+                      >
+                        Keep my plan
+                      </button>
+                      <button
+                        onClick={handleCancelSubscription}
+                        className="flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90"
+                        style={{ background: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))", boxShadow: "0 2px 8px rgba(245,166,35,0.30)" }}
+                      >
+                        Yes, cancel plan
+                      </button>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setCancelStage("confirm")}
-                    className="shrink-0 rounded-xl px-4 py-2 text-sm font-semibold transition-all hover:opacity-90"
-                    style={{ background: "#fff7ed", color: "#c2410c", border: "1px solid #fed7aa" }}
-                  >
-                    Cancel plan
-                  </button>
-                </div>
-              )}
+                )}
 
-              {/* Confirm */}
-              {cancelStage === "confirm" && (
-                <div className="px-5 py-5 space-y-4">
-                  <div>
-                    <p className="font-semibold text-sm mb-2" style={{ color: "var(--foreground)" }}>
-                      Cancel your <span className="capitalize">{propMemberTier}</span> plan?
-                    </p>
-                    <ul className="space-y-1.5 text-sm" style={{ color: "var(--muted-foreground)" }}>
-                      <li>• Your meal analysis and biotics scoring will stop</li>
-                      <li>• Weekly reports will no longer be generated</li>
-                      {(propMemberTier === "restore" || propMemberTier === "transform") && (
-                        <li>• Your personalised monthly gut plan will end</li>
-                      )}
-                      {propMemberTier === "transform" && (
-                        <li>• AI consultation access will be removed</li>
-                      )}
-                    </ul>
-                    {nextBillingDate && (
-                      <p className="mt-3 text-sm font-medium rounded-lg px-3 py-2 inline-block" style={{ background: "#fff7ed", color: "#c2410c" }}>
-                        You keep full access until {new Date(nextBillingDate as string).toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" })}
+                {/* Cancelling */}
+                {cancelStage === "cancelling" && (
+                  <div className="flex items-center justify-center gap-3 px-5 py-6">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-orange-200 border-t-orange-500" />
+                    <p className="text-sm font-medium" style={{ color: "var(--muted-foreground)" }}>Cancelling subscription…</p>
+                  </div>
+                )}
+
+                {/* Done */}
+                {cancelStage === "done" && (
+                  <div className="px-5 py-5 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full" style={{ background: "#f0fdf4" }}>
+                        <Check size={13} style={{ color: "var(--icon-green)" }} />
+                      </div>
+                      <p className="font-semibold text-sm" style={{ color: "var(--foreground)" }}>Subscription cancelled</p>
+                    </div>
+                    {cancelUntil ? (
+                      <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+                        Your access continues until <strong>{new Date(cancelUntil).toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" })}</strong>. No further charges will be made.
                       </p>
+                    ) : (
+                      <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>No further charges will be made.</p>
                     )}
                   </div>
-                  {cancelError && <p className="text-xs text-red-500">{cancelError}</p>}
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => { setCancelStage("idle"); setCancelError(null) }}
-                      className="flex-1 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all hover:bg-gray-50"
-                      style={{ borderColor: "#e5e7eb", color: "var(--muted-foreground)" }}
-                    >
-                      Keep my plan
-                    </button>
-                    <button
-                      onClick={handleCancelSubscription}
-                      className="flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90"
-                      style={{ background: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))", boxShadow: "0 2px 8px rgba(245,166,35,0.30)" }}
-                    >
-                      Yes, cancel plan
-                    </button>
+                )}
+              </>
+            ) : propMemberStatus === "cancelled" || cancelStage === "done" ? (
+              /* ── Already cancelled ── */
+              <div className="px-5 py-5 space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full" style={{ background: "#f0fdf4" }}>
+                    <Check size={13} style={{ color: "var(--icon-green)" }} />
+                  </div>
+                  <p className="font-semibold text-sm" style={{ color: "var(--foreground)" }}>Subscription cancelled</p>
+                </div>
+                {(cancelUntil ?? nextBillingDate) ? (
+                  <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+                    Your access continues until <strong>{new Date((cancelUntil ?? nextBillingDate) as string).toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" })}</strong>. No further charges will be made.
+                  </p>
+                ) : (
+                  <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>No further charges will be made.</p>
+                )}
+              </div>
+            ) : (
+              /* ── Free / no subscription ── */
+              <div className="flex items-center justify-between gap-4 px-5 py-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: "#f3f4f6" }}>
+                    <span style={{ fontSize: 16 }}>📋</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm" style={{ color: "var(--foreground)" }}>No active subscription</p>
+                    <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>Upgrade to unlock meal analysis and weekly reports</p>
                   </div>
                 </div>
-              )}
-
-              {/* Cancelling */}
-              {cancelStage === "cancelling" && (
-                <div className="flex items-center justify-center gap-3 px-5 py-6">
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-orange-200 border-t-orange-500" />
-                  <p className="text-sm font-medium" style={{ color: "var(--muted-foreground)" }}>Cancelling subscription…</p>
-                </div>
-              )}
-
-              {/* Done */}
-              {cancelStage === "done" && (
-                <div className="px-5 py-5 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full" style={{ background: "#f0fdf4" }}>
-                      <Check size={13} style={{ color: "var(--icon-green)" }} />
-                    </div>
-                    <p className="font-semibold text-sm" style={{ color: "var(--foreground)" }}>Subscription cancelled</p>
-                  </div>
-                  {cancelUntil ? (
-                    <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
-                      Your access continues until <strong>{new Date(cancelUntil).toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" })}</strong>. No further charges will be made.
-                    </p>
-                  ) : (
-                    <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>No further charges will be made.</p>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+                <Link
+                  href="/pricing"
+                  className="shrink-0 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-all hover:opacity-90"
+                  style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", boxShadow: "0 2px 8px rgba(45,170,110,0.25)" }}
+                >
+                  View plans →
+                </Link>
+              </div>
+            )}
+          </div>
 
           {/* ── Section 2: Export My Data ── */}
           <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid #ebebeb", boxShadow: "0 4px 20px rgba(26,46,18,0.06)" }}>
