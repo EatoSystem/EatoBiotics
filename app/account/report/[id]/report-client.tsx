@@ -233,41 +233,75 @@ export function ReportClient({ reportId, weekStarting, reportJson, memberName, d
         boxShadow: "0 8px 32px rgba(26,46,18,0.22)",
       }}>
         <div className="p-6 md:p-8">
-          <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.55)" }}>
-            The Food System Inside You
-          </p>
-          <h1 className="mt-2 font-serif text-2xl font-bold text-white md:text-3xl">
-            {rj?.weekSummaryTitle ?? "Your Weekly Report"}
-          </h1>
-          <p className="mt-1 text-sm" style={{ color: "rgba(255,255,255,0.65)" }}>
-            {formatDate(weekStarting)}{rj?.weekNumber ? ` · Week ${rj.weekNumber}` : ""}
-            {memberName ? ` · ${memberName}` : ""}
-          </p>
+          {/* Title row — text left, score ring right */}
+          <div className="flex items-start justify-between gap-6">
+            <div className="flex-1 min-w-0">
+              <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.55)" }}>
+                The Food System Inside You
+              </p>
+              <h1 className="mt-2 font-serif text-2xl font-bold text-white md:text-3xl">
+                {rj?.weekSummaryTitle ?? "Your Weekly Report"}
+              </h1>
+              <p className="mt-1 text-sm" style={{ color: "rgba(255,255,255,0.65)" }}>
+                {formatDate(weekStarting)}{rj?.weekNumber ? ` · Week ${rj.weekNumber}` : ""}
+                {memberName ? ` · ${memberName}` : ""}
+              </p>
 
-          {/* Score row */}
-          {rj && (
-            <div className="mt-5 flex flex-wrap gap-3">
-              <div className="rounded-xl px-4 py-3 text-center" style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.20)", minWidth: 90 }}>
-                <p className="font-mono text-3xl font-bold text-white">{rj.averageScore}</p>
-                <p className="mt-0.5 text-[10px]" style={{ color: "rgba(255,255,255,0.60)" }}>avg score</p>
-              </div>
-              {rj.previousWeekAverage != null && (
-                <div className="flex items-center gap-1.5 rounded-xl px-4 py-3" style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.18)" }}>
-                  <span style={{ color: trendColor }}>{trendIcon}</span>
-                  <div>
-                    <p className="text-sm font-bold text-white">
-                      {rj.averageScore - rj.previousWeekAverage > 0 ? "+" : ""}{rj.averageScore - rj.previousWeekAverage} pts
-                    </p>
-                    <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.55)" }}>vs last week ({rj.previousWeekAverage})</p>
+              {/* Stats pills — delta + meals (score is now in the ring) */}
+              {rj && (
+                <div className="mt-4 flex flex-wrap gap-2.5">
+                  {rj.previousWeekAverage != null && (
+                    <div className="flex items-center gap-1.5 rounded-xl px-3.5 py-2.5" style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.18)" }}>
+                      <span style={{ color: trendColor }}>{trendIcon}</span>
+                      <div>
+                        <p className="text-sm font-bold text-white leading-none">
+                          {rj.averageScore - rj.previousWeekAverage > 0 ? "+" : ""}{rj.averageScore - rj.previousWeekAverage} pts
+                        </p>
+                        <p className="text-[10px] mt-0.5" style={{ color: "rgba(255,255,255,0.55)" }}>vs last week ({rj.previousWeekAverage})</p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1.5 rounded-xl px-3.5 py-2.5" style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.18)" }}>
+                    <p className="text-sm font-bold text-white leading-none">{rj.mealCount} {rj.mealCount === 1 ? "meal" : "meals"}</p>
+                    <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.55)" }}>logged</p>
                   </div>
                 </div>
               )}
-              <div className="flex items-center gap-2 rounded-xl px-4 py-3" style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.18)" }}>
-                <p className="text-sm font-bold text-white">{rj.mealCount} {rj.mealCount === 1 ? "meal" : "meals"}</p>
-                <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.55)" }}>logged</p>
-              </div>
             </div>
-          )}
+
+            {/* Score ring */}
+            {rj && (() => {
+              const size = 110; const sw = 8
+              const r2 = (size - sw * 2) / 2
+              const circ = 2 * Math.PI * r2
+              const offset = circ - (rj.averageScore / 100) * circ
+              return (
+                <div className="relative shrink-0 flex items-center justify-center" style={{ width: size, height: size }}>
+                  <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: "rotate(-90deg)" }}>
+                    <defs>
+                      <linearGradient id="rpt-ring-track" x1="0" y1="0" x2={size} y2={size} gradientUnits="userSpaceOnUse">
+                        <stop offset="0%"   stopColor="rgba(255,255,255,0.18)" />
+                        <stop offset="100%" stopColor="rgba(255,255,255,0.10)" />
+                      </linearGradient>
+                      <linearGradient id="rpt-ring-fill" x1="0" y1="0" x2={size} y2={size} gradientUnits="userSpaceOnUse">
+                        <stop offset="0%"   stopColor="rgba(255,255,255,0.95)" />
+                        <stop offset="100%" stopColor="rgba(255,255,255,0.65)" />
+                      </linearGradient>
+                    </defs>
+                    <circle cx={size/2} cy={size/2} r={r2} fill="none" stroke="url(#rpt-ring-track)" strokeWidth={sw} />
+                    <circle cx={size/2} cy={size/2} r={r2} fill="none" stroke="url(#rpt-ring-fill)"
+                      strokeWidth={sw} strokeLinecap="round"
+                      strokeDasharray={circ} strokeDashoffset={offset}
+                      style={{ transition: "stroke-dashoffset 1s ease" }} />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="font-mono font-bold leading-none text-white" style={{ fontSize: 30 }}>{rj.averageScore}</span>
+                    <span className="mt-1 text-[9px] font-semibold uppercase tracking-wide" style={{ color: "rgba(255,255,255,0.60)" }}>score</span>
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
 
           {/* Pull quote */}
           {rj?.pullQuote && (
