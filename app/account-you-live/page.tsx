@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { LiveDashboard } from "@/components/account/live-dashboard"
+import type { RealWeeklyReport } from "@/components/account/live-dashboard"
 
 export const metadata: Metadata = {
   title: "Account Dev Sandbox — EatoBiotics",
@@ -59,6 +60,78 @@ const MOCK_BIOTICS_PROFILE = {
 }
 
 /* ────────────────────────────────────────────────────────────────────────
+   Mock weekly reports — links to the /account/report/demo static page
+   ──────────────────────────────────────────────────────────────────────── */
+const MOCK_WEEKLY_REPORTS: RealWeeklyReport[] = [
+  {
+    id: "demo",
+    week_starting: "2025-05-05",
+    content: "",
+    report_json: {
+      weekStarting: "2025-05-05",
+      weekNumber: 8,
+      mealCount: 9,
+      averageScore: 73,
+      previousWeekAverage: 68,
+      pillars: { prebiotic: 71, probiotic: 23, postbiotic: 48 },
+      pullQuote: "Your food system showed real momentum this week. Plant diversity was your strongest area — 9 different plants, your best showing in a month.",
+      narrative: "Week 8 was your strongest week for plant variety since you started. Your prebiotic score of 71 reflects that directly. Your probiotic score of 23 is still the area with the most room to grow — you included a live fermented food on only 2 of 7 days.",
+      focusAction: "Add a fermented food to 4 out of 7 dinners this week — kefir, kimchi, live yoghurt, or sauerkraut all count.",
+      weekSummaryTitle: "Your Best Week for Plant Diversity",
+      mealsThisWeek: [
+        { id: "d1", name: "Porridge with berries & walnuts",    type: "Breakfast", score: 74, date: "2025-05-05" },
+        { id: "d7", name: "Mackerel on rye with mixed leaves",  type: "Lunch",     score: 76, date: "2025-05-10" },
+        { id: "d9", name: "Chicken, roasted veg & kefir",       type: "Dinner",    score: 81, date: "2025-05-11" },
+      ],
+    },
+  },
+  {
+    id: "demo-2",
+    week_starting: "2025-04-28",
+    content: "",
+    report_json: {
+      weekStarting: "2025-04-28",
+      weekNumber: 7,
+      mealCount: 11,
+      averageScore: 68,
+      previousWeekAverage: 64,
+      pillars: { prebiotic: 65, probiotic: 28, postbiotic: 42 },
+      pullQuote: "Your prebiotic score held steady and your fermented food frequency improved to 4 out of 7 days. The habit is forming.",
+      narrative: "A consistent week with clear patterns emerging. Your prebiotic score held steady and your fermented food frequency improved to 4 out of 7 days. The habit is forming — keep the weekend routine tighter.",
+      focusAction: "Tighten your weekend routine — aim for the same meal quality Saturday and Sunday as you do during the week.",
+      weekSummaryTitle: "Consistency Building — Momentum Is Growing",
+      mealsThisWeek: [
+        { id: "w2d1", name: "Overnight oats with chia & berries", type: "Breakfast", score: 72, date: "2025-04-28" },
+        { id: "w2d2", name: "Salmon salad with kimchi",            type: "Lunch",     score: 78, date: "2025-04-30" },
+        { id: "w2d3", name: "Lentil dahl with brown rice",         type: "Dinner",    score: 71, date: "2025-05-01" },
+      ],
+    },
+  },
+  {
+    id: "demo-3",
+    week_starting: "2025-04-21",
+    content: "",
+    report_json: {
+      weekStarting: "2025-04-21",
+      weekNumber: 6,
+      mealCount: 8,
+      averageScore: 64,
+      previousWeekAverage: 62,
+      pillars: { prebiotic: 60, probiotic: 19, postbiotic: 38 },
+      pullQuote: "Monday–Friday averaged 71 but Saturday dropped to 48. You have the pattern — now extend it to the full week.",
+      narrative: "Mixed week with a clear gap at the weekend. Monday–Friday averaged 71 but Saturday dropped to 48. Weekend meal planning is the lever to pull this month.",
+      focusAction: "Plan two gut-friendly meals for the weekend before Saturday arrives — preparation is the key lever here.",
+      weekSummaryTitle: "Mid-Week Strong — Weekends Need Attention",
+      mealsThisWeek: [
+        { id: "w3d1", name: "Eggs, sourdough & avocado",       type: "Breakfast", score: 65, date: "2025-04-21" },
+        { id: "w3d2", name: "Greek yoghurt with granola",       type: "Breakfast", score: 62, date: "2025-04-23" },
+        { id: "w3d3", name: "Pasta, garlic & roasted veg",      type: "Dinner",    score: 70, date: "2025-04-24" },
+      ],
+    },
+  },
+]
+
+/* ────────────────────────────────────────────────────────────────────────
    Page
    ──────────────────────────────────────────────────────────────────────── */
 
@@ -107,6 +180,7 @@ export default function AccountYouLivePage() {
         monthlyPlan={MOCK_PLAN_CONTENT}
         weeklyCheckin={`This week your food system data showed a solid upward trend — your average meal score came in at 71, up from 64 the week before. You logged 5 analyses, which is exactly the consistency that drives meaningful change in your microbiome over time.\n\nWhat improved most was your plant diversity — you hit 9 different plants across the week, your best showing in a month. What still needs attention is your fermented food frequency: only 2 out of 7 days included a live food source.\n\nYour focus for next week: make fermented foods non-negotiable. Pick one — kefir in the morning, yoghurt as a snack, or kimchi with dinner — and lock it in before adding anything else.`}
         memberStartedAt={MOCK_PROFILE.membership_started_at}
+        weeklyReports={MOCK_WEEKLY_REPORTS}
       />
 
     </div>

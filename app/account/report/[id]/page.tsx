@@ -18,6 +18,9 @@ interface Props {
 export default async function WeeklyReportPage({ params }: Props) {
   const { id } = await params
 
+  // Redirect demo IDs to the static demo report page (no auth required)
+  if (id.startsWith("demo")) redirect("/account/report/demo")
+
   const user = await getUser()
   if (!user) redirect("/assessment?signin=1")
 

@@ -18,6 +18,7 @@ interface Props {
   content:      string
   reportJson:   WeeklyReportJson | null
   memberName:   string | null
+  demoMode?:    boolean
 }
 
 /* ── Helpers ─────────────────────────────────────────────────────────── */
@@ -193,7 +194,7 @@ function ReportChat({ reportId }: { reportId: string }) {
 
 /* ── Main report page ─────────────────────────────────────────────────── */
 
-export function ReportClient({ reportId, weekStarting, reportJson, memberName }: Props) {
+export function ReportClient({ reportId, weekStarting, reportJson, memberName, demoMode = false }: Props) {
   const rj = reportJson
 
   const trendIcon = rj?.previousWeekAverage != null
@@ -212,10 +213,19 @@ export function ReportClient({ reportId, weekStarting, reportJson, memberName }:
     <div className="mx-auto max-w-3xl px-4 pb-20 pt-8 md:px-8">
 
       {/* Back link */}
-      <Link href="/account" className="inline-flex items-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-70 mb-6"
-        style={{ color: "var(--muted-foreground)" }}>
-        <ArrowLeft size={14} /> Back to dashboard
-      </Link>
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <Link href={demoMode ? "/account-you-live" : "/account"}
+          className="inline-flex items-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-70"
+          style={{ color: "var(--muted-foreground)" }}>
+          <ArrowLeft size={14} /> {demoMode ? "Back to demo" : "Back to dashboard"}
+        </Link>
+        {demoMode && (
+          <span className="rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider text-white"
+            style={{ background: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" }}>
+            Sample report
+          </span>
+        )}
+      </div>
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       <div className="mb-8 overflow-hidden rounded-2xl" style={{
@@ -394,7 +404,31 @@ export function ReportClient({ reportId, weekStarting, reportJson, memberName }:
       )}
 
       {/* ── Chat ─────────────────────────────────────────────────────── */}
-      <ReportChat reportId={reportId} />
+      {demoMode ? (
+        <div id="chat" className="overflow-hidden rounded-2xl" style={{ border: "1.5px dashed var(--icon-green)", background: "#f0fdf4" }}>
+          <div className="px-6 py-8 text-center space-y-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full mx-auto"
+              style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
+              <MessageSquare size={20} color="white" />
+            </div>
+            <p className="font-serif text-lg font-bold" style={{ color: "var(--foreground)" }}>
+              AI consultation included with paid plans
+            </p>
+            <p className="text-sm leading-relaxed max-w-sm mx-auto" style={{ color: "var(--muted-foreground)" }}>
+              Ask questions about your report, get personalised food recommendations, and track your progress week by week with your own AI gut health coach.
+            </p>
+            <div className="pt-1">
+              <Link href="/pricing"
+                className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", boxShadow: "0 4px 14px rgba(45,170,110,0.30)" }}>
+                View plans →
+              </Link>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <ReportChat reportId={reportId} />
+      )}
 
       {/* ── Back to dashboard ─────────────────────────────────────────── */}
       <div className="mt-8 text-center">
