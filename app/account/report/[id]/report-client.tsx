@@ -271,7 +271,7 @@ export function ReportClient({ reportId, weekStarting, reportJson, memberName, d
 
             {/* Score ring */}
             {rj && (() => {
-              const size = 110; const sw = 8
+              const size = 148; const sw = 12
               const r2 = (size - sw * 2) / 2
               const circ = 2 * Math.PI * r2
               const offset = circ - (rj.averageScore / 100) * circ
@@ -280,23 +280,28 @@ export function ReportClient({ reportId, weekStarting, reportJson, memberName, d
                   <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: "rotate(-90deg)" }}>
                     <defs>
                       <linearGradient id="rpt-ring-track" x1="0" y1="0" x2={size} y2={size} gradientUnits="userSpaceOnUse">
-                        <stop offset="0%"   stopColor="rgba(255,255,255,0.18)" />
-                        <stop offset="100%" stopColor="rgba(255,255,255,0.10)" />
+                        <stop offset="0%"   stopColor="rgba(255,255,255,0.22)" />
+                        <stop offset="100%" stopColor="rgba(255,255,255,0.12)" />
                       </linearGradient>
                       <linearGradient id="rpt-ring-fill" x1="0" y1="0" x2={size} y2={size} gradientUnits="userSpaceOnUse">
-                        <stop offset="0%"   stopColor="rgba(255,255,255,0.95)" />
-                        <stop offset="100%" stopColor="rgba(255,255,255,0.65)" />
+                        <stop offset="0%"   stopColor="#e2f96b" />
+                        <stop offset="45%"  stopColor="#A8E063" />
+                        <stop offset="100%" stopColor="#F5C518" />
                       </linearGradient>
+                      <filter id="rpt-ring-glow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor="#d4f56a" floodOpacity="0.75" />
+                      </filter>
                     </defs>
                     <circle cx={size/2} cy={size/2} r={r2} fill="none" stroke="url(#rpt-ring-track)" strokeWidth={sw} />
                     <circle cx={size/2} cy={size/2} r={r2} fill="none" stroke="url(#rpt-ring-fill)"
                       strokeWidth={sw} strokeLinecap="round"
                       strokeDasharray={circ} strokeDashoffset={offset}
+                      filter="url(#rpt-ring-glow)"
                       style={{ transition: "stroke-dashoffset 1s ease" }} />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="font-mono font-bold leading-none text-white" style={{ fontSize: 30 }}>{rj.averageScore}</span>
-                    <span className="mt-1 text-[9px] font-semibold uppercase tracking-wide" style={{ color: "rgba(255,255,255,0.60)" }}>score</span>
+                    <span className="font-mono font-bold leading-none text-white" style={{ fontSize: 36, textShadow: "0 0 20px rgba(212,245,106,0.40)" }}>{rj.averageScore}</span>
+                    <span className="mt-1 text-[9px] font-semibold uppercase tracking-wide" style={{ color: "rgba(255,255,255,0.65)" }}>score</span>
                   </div>
                 </div>
               )
