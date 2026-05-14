@@ -68,9 +68,9 @@ async function generateWeeklyCheckin(userId: string, userEmail: string): Promise
   const analyses = recentAnalyses ?? []
   const analysisCount = analyses.length
 
-  // Minimum analysis check: need at least 3 analyses in the past 7 days
-  if (analysisCount < 3) {
-    console.log(`[weekly-checkin] Skipping user ${userId}: insufficient data (${analysisCount} analyses, need 3)`)
+  // Require at least 1 analysis (report writes itself from whatever data exists)
+  if (analysisCount < 1) {
+    console.log(`[weekly-checkin] Skipping user ${userId}: no analyses this week`)
     return
   }
 
@@ -87,24 +87,32 @@ async function generateWeeklyCheckin(userId: string, userEmail: string): Promise
   const previousScore = (assessments?.[1]?.overall_score as number | null) ?? null
   const subScores     = assessments?.[0]?.sub_scores as Record<string, number> | null
 
-  const scoreSummary = analyses.map((a) =>
-    `${new Date(a.created_at as string).toLocaleDateString("en-IE")}: ${a.biotics_score ?? "—"}`
-  ).join(", ")
+  // Include meal names in the summary for richer context
+  const scoreSummary = (recentAnalyses as Array<{ created_at: unknown; biotics_score: unknown; meal_name?: unknown }>).map((a) => {
+    const date = new Date(a.created_at as string).toLocaleDateString("en-IE")
+    const name = (a.meal_name as string | null) ?? "meal"
+    return `${date}: ${name} — ${a.biotics_score ?? "?"}/100`
+  }).join("; ")
 
   const pillarSummary = formatBioticScores(subScores)
 
-  const prompt = `You are the EatoBiotics Weekly Check-in Generator. Create a concise, personal weekly food system health summary for a Transform member.
+  const dataNote = analysisCount === 1
+    ? `Only 1 meal has been logged this week. Extract as much insight as possible from this single data point.`
+    : `${analysisCount} meals logged this week.`
+
+  const prompt = `You are the EatoBiotics Weekly Check-in Generator. Create a personal weekly food system health summary.
+
+${dataNote}
 
 Data for this week:
 - Current Biotics Score: ${latestScore ?? "Unknown"}/100
 - Previous Biotics Score: ${previousScore ?? "Unknown"}/100
-- 3 Biotics scores: ${pillarSummary}
-- Meal analyses this week: ${analysisCount}
-- Meal analysis scores: ${scoreSummary}
+- 3 Biotics pillar scores: ${pillarSummary}
+- Meal analyses this week: ${scoreSummary}
 
 Write a 3-paragraph weekly check-in directly to the member using "you":
-1. This week in your food system health (2-3 sentences summarising what the data shows)
-2. What improved and what needs attention (honest, constructive, specific)
+1. This week in your food system health (what the data shows — be honest if data is limited but still insightful)
+2. What's working and what needs attention (constructive, specific)
 3. Your focus for next week — one clear priority with a practical action
 
 Tone: warm, direct, personal. Under 200 words total. No bullet points. No headers.`

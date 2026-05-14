@@ -4,7 +4,8 @@ import { useState } from "react"
 import Link from "next/link"
 import {
   Camera, ArrowRight, Check, ChevronRight, TrendingUp,
-  Mail, FileText, UtensilsCrossed, MessageSquare, Download, ExternalLink, Flame,
+  FileText, UtensilsCrossed, MessageSquare, Download, ExternalLink, Flame,
+  Calendar, Target, Activity,
 } from "lucide-react"
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -19,11 +20,16 @@ function ScoreRing({ score, size = 96, strokeWidth = 7 }: { score: number; size?
       <defs>
         <linearGradient id="hero-ring-grad" x1="0" y1="0" x2={size} y2={size} gradientUnits="userSpaceOnUse">
           <stop offset="0%"   stopColor="#A8E063" />
-          <stop offset="50%"  stopColor="#4CB648" />
-          <stop offset="100%" stopColor="#2DAA6E" />
+          <stop offset="30%"  stopColor="#4CB648" />
+          <stop offset="60%"  stopColor="#F5C518" />
+          <stop offset="100%" stopColor="#F5A623" />
+        </linearGradient>
+        <linearGradient id="hero-ring-track" x1="0" y1="0" x2={size} y2={size} gradientUnits="userSpaceOnUse">
+          <stop offset="0%"   stopColor="#d4f0b8" />
+          <stop offset="100%" stopColor="#fde5b8" />
         </linearGradient>
       </defs>
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={strokeWidth} />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="url(#hero-ring-track)" strokeWidth={strokeWidth} />
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="url(#hero-ring-grad)"
         strokeWidth={strokeWidth} strokeLinecap="round"
         strokeDasharray={circ} strokeDashoffset={offset}
@@ -140,39 +146,212 @@ function GradientButton({ children, onClick, fullWidth, small }: {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
-   Next Sunday
+   Meal card — full rich analysis, used in My Meals tab
    ───────────────────────────────────────────────────────────────────────── */
-function nextSunday(): string {
-  const d = new Date()
-  const days = (7 - d.getDay()) % 7 || 7
-  d.setDate(d.getDate() + days)
-  return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })
+function ringColors(s: number): [string, string, string] {
+  if (s >= 60) return ["#A8E063", "#4CB648", "#2DAA6E"]   // lime → green → teal
+  if (s >= 30) return ["#F5C518", "#F5A623", "#e8830a"]   // yellow → orange
+  return ["#F5A623", "#E53E3E", "#c41a1a"]                // orange → red
+}
+
+function MealCard({ meal }: { meal: { image: string; name: string; time: string; type: string; score: number; insight: string; biotics: { prebiotic: number; probiotic: number; postbiotic: number }; quality: { diversity: number; antiInflammatory: number }; nutrition: { calories: number; protein: number; carbs: number; fat: number; fibre: number }; tags: string[] } }) {
+  const circ = 2 * Math.PI * 36
+  const [rc0, rc1, rc2] = ringColors(meal.score)
+  const ringId = `mc-ring-${meal.name.replace(/\s+/g, "").slice(0, 8)}`
+  return (
+    <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid #ebebeb", boxShadow: "0 4px 20px rgba(26,46,18,0.07)" }}>
+      {/* Gradient top accent */}
+      <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
+
+      {/* Identity row */}
+      <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: "#f0f0f0" }}>
+        <div>
+          <p className="font-semibold text-sm leading-snug" style={{ color: "var(--foreground)" }}>{meal.name}</p>
+          <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>{meal.time} · {meal.type}</p>
+        </div>
+        <span className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white"
+          style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))" }}>
+          {meal.type}
+        </span>
+      </div>
+
+      {/* Photo + score ring */}
+      <div className="relative flex items-center justify-center" style={{ background: "white", minHeight: 180 }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={meal.image} alt={meal.name} style={{ width: "100%", maxHeight: 200, objectFit: "contain", objectPosition: "center", display: "block" }} />
+        <div className="absolute top-3 right-3 flex flex-col items-center"
+          style={{ background: "white", borderRadius: "50%", padding: 2, boxShadow: `0 2px 10px ${rc0}44` }}>
+          <svg width="76" height="76" viewBox="0 0 88 88">
+            <defs>
+              <linearGradient id={ringId} x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%"   stopColor={rc0} />
+                <stop offset="50%"  stopColor={rc1} />
+                <stop offset="100%" stopColor={rc2} />
+              </linearGradient>
+            </defs>
+            <circle cx="44" cy="44" r="36" fill="none" stroke="#e8e8e8" strokeWidth="7" />
+            <circle cx="44" cy="44" r="36" fill="none"
+              stroke={`url(#${ringId})`} strokeWidth="7" strokeLinecap="round"
+              strokeDasharray={`${circ * meal.score / 100} ${circ}`} transform="rotate(-90 44 44)" />
+            <text x="44" y="40" textAnchor="middle" dominantBaseline="middle"
+              style={{ fontFamily: "var(--font-mono, monospace)", fontSize: 20, fontWeight: 700, fill: "var(--foreground)" }}>
+              {meal.score}
+            </text>
+            <text x="44" y="56" textAnchor="middle" dominantBaseline="middle"
+              style={{ fontFamily: "var(--font-sans, sans-serif)", fontSize: 9, fill: "var(--muted-foreground)" }}>
+              /100
+            </text>
+          </svg>
+        </div>
+      </div>
+
+      {/* Biotics */}
+      <div className="px-4 pb-3 pt-3">
+        <p className="mb-2 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Biotics</p>
+        <div className="space-y-2">
+          <ScoreBar label="Prebiotic"  score={meal.biotics.prebiotic} />
+          <ScoreBar label="Probiotic"  score={meal.biotics.probiotic} />
+          <ScoreBar label="Postbiotic" score={meal.biotics.postbiotic} />
+        </div>
+      </div>
+
+      <div className="mx-4 h-px" style={{ background: "#f0f0f0" }} />
+
+      {/* Meal Quality */}
+      <div className="px-4 pb-3 pt-3">
+        <p className="mb-2 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-teal)" }}>Meal Quality</p>
+        <div className="space-y-2">
+          <ScoreBar label="Diversity"          score={meal.quality.diversity} />
+          <ScoreBar label="Anti-inflammatory"  score={meal.quality.antiInflammatory} />
+        </div>
+      </div>
+
+      <div className="mx-4 h-px" style={{ background: "#f0f0f0" }} />
+
+      {/* Nutrition Context */}
+      <div className="pt-3 pb-1">
+        <p className="mb-1 px-4 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--muted-foreground)" }}>Nutrition Context</p>
+        <div className="grid grid-cols-5">
+          {([
+            { label: "Calories", value: String(meal.nutrition.calories), unit: "kcal", color: "var(--icon-orange)" },
+            { label: "Protein",  value: String(meal.nutrition.protein),  unit: "g",    color: "var(--icon-teal)" },
+            { label: "Carbs",    value: String(meal.nutrition.carbs),    unit: "g",    color: "var(--icon-yellow)" },
+            { label: "Fat",      value: String(meal.nutrition.fat),      unit: "g",    color: "var(--icon-green)" },
+            { label: "Fibre",    value: String(meal.nutrition.fibre),    unit: "g",    color: "var(--icon-lime)" },
+          ] as { label: string; value: string; unit: string; color: string }[]).map(({ label, value, unit, color }, i) => (
+            <div key={label} className="flex flex-col items-center py-2.5"
+              style={{ borderRight: i < 4 ? "1px solid #f0f0f0" : undefined }}>
+              <span className="font-mono text-sm font-semibold leading-none" style={{ color }}>{value}</span>
+              <span className="mt-0.5 text-[9px]" style={{ color: "var(--muted-foreground)" }}>{unit}</span>
+              <span className="mt-0.5 text-[9px]" style={{ color: "var(--muted-foreground)" }}>{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mx-4 h-px" style={{ background: "#f0f0f0" }} />
+
+      {/* Insight */}
+      <div className="mx-4 my-3 flex overflow-hidden rounded-xl" style={{ border: "1px solid #e8e8e8" }}>
+        <div className="w-[3px] shrink-0"
+          style={{ background: "linear-gradient(to bottom, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
+        <div className="px-3 py-3">
+          <p className="mb-1 text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
+            What EatoBiotics noticed
+          </p>
+          <p className="text-xs leading-relaxed" style={{ color: "var(--foreground)" }}>{meal.insight}</p>
+        </div>
+      </div>
+
+      {/* Tags */}
+      <div className="flex flex-wrap gap-1.5 px-4 pb-4">
+        {meal.tags.map(t => <Tag key={t}>{t}</Tag>)}
+      </div>
+    </div>
+  )
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
    Mock data
    ───────────────────────────────────────────────────────────────────────── */
-const MOCK_MEALS = [
+type MealEntry = {
+  image: string; name: string; time: string; type: string; score: number; insight: string
+  biotics:   { prebiotic: number; probiotic: number; postbiotic: number }
+  quality:   { diversity: number; antiInflammatory: number }
+  nutrition: { calories: number; protein: number; carbs: number; fat: number; fibre: number }
+  tags: string[]
+}
+
+const MOCK_MEALS: { date: string; meals: MealEntry[] }[] = [
   {
     date: "Today — Tue 13 May",
     meals: [
-      { emoji: "🥣", name: "Overnight oats with banana", time: "7:42am", score: 71, insight: "Strong prebiotic base. Add kefir to push probiotic score from 18 → ~55." },
+      {
+        image: "/food-1.png", name: "Mackerel, kimchi & asparagus", time: "19:25", type: "Dinner", score: 71,
+        insight: "Your mackerel is delivering omega-3s that reduce gut inflammation, while the kimchi seeds live Lactobacillus cultures. The asparagus adds inulin — a prebiotic fibre that feeds those bacteria directly. Adding a handful of walnuts would push your diversity score from 55 to ~72.",
+        biotics:   { prebiotic: 72, probiotic: 18, postbiotic: 41 },
+        quality:   { diversity: 55, antiInflammatory: 80 },
+        nutrition: { calories: 385, protein: 38, carbs: 12, fat: 18, fibre: 7 },
+        tags: ["Omega-3s", "Probiotics", "Prebiotics", "Anti-inflammatory"],
+      },
     ],
   },
   {
     date: "Yesterday — Mon 12 May",
     meals: [
-      { emoji: "🍳", name: "Eggs, sourdough & avocado",     time: "8:20am", score: 65, insight: "Good healthy fats and fibre. Low plant diversity — swap bread for wholegrain." },
-      { emoji: "🥗", name: "Salmon salad with kimchi",       time: "1:15pm", score: 78, insight: "Excellent. Kimchi lifted your probiotic score. Repeat this pattern." },
-      { emoji: "🍝", name: "Pasta, garlic & roasted veg",    time: "7:30pm", score: 72, insight: "Garlic's inulin feeds Lactobacillus. Solid prebiotic meal." },
+      {
+        image: "/food-2.png", name: "Eggs, sourdough & avocado", time: "8:20am", type: "Breakfast", score: 65,
+        insight: "Good healthy fats from the avocado and protein from the eggs. Sourdough's fermentation gives a mild probiotic lift. Swap white sourdough for wholegrain rye to double the prebiotic fibre content.",
+        biotics:   { prebiotic: 45, probiotic: 22, postbiotic: 31 },
+        quality:   { diversity: 40, antiInflammatory: 65 },
+        nutrition: { calories: 420, protein: 18, carbs: 32, fat: 22, fibre: 4 },
+        tags: ["Healthy fats", "Protein", "Fermented bread"],
+      },
+      {
+        image: "/food-3.png", name: "Salmon salad with kimchi", time: "1:15pm", type: "Lunch", score: 78,
+        insight: "Excellent combination. The kimchi lifts your probiotic score significantly. Salmon's omega-3s are anti-inflammatory and the mixed leaves add polyphenol diversity. This is the pattern to repeat.",
+        biotics:   { prebiotic: 61, probiotic: 48, postbiotic: 52 },
+        quality:   { diversity: 72, antiInflammatory: 85 },
+        nutrition: { calories: 340, protein: 32, carbs: 12, fat: 16, fibre: 5 },
+        tags: ["Omega-3s", "Probiotics", "Diversity"],
+      },
+      {
+        image: "/food-4.png", name: "Pasta, garlic & roasted veg", time: "7:30pm", type: "Dinner", score: 72,
+        insight: "Garlic's inulin is feeding your Lactobacillus bacteria directly. The roasted veg variety is building your diversity score. Consider adding a spoonful of olive tapenade — the polyphenols would push anti-inflammatory from 58 to ~70.",
+        biotics:   { prebiotic: 68, probiotic: 12, postbiotic: 38 },
+        quality:   { diversity: 62, antiInflammatory: 58 },
+        nutrition: { calories: 510, protein: 14, carbs: 82, fat: 9, fibre: 8 },
+        tags: ["Prebiotics", "Plant diversity", "Garlic"],
+      },
     ],
   },
   {
     date: "Sun 11 May",
     meals: [
-      { emoji: "🥣", name: "Greek yoghurt, berries & oats", time: "9:00am", score: 69, insight: "Yoghurt delivers live cultures. Berries add polyphenol diversity." },
-      { emoji: "🌯", name: "Lentil wrap with mixed greens",  time: "1:00pm", score: 74, insight: "High fibre. Lentils are excellent prebiotic food." },
-      { emoji: "🥘", name: "Chicken, roasted veg & kefir",  time: "7:45pm", score: 81, insight: "Best meal this week. Kefir + diverse veg = the gold standard pattern." },
+      {
+        image: "/food-5.png", name: "Greek yoghurt, berries & oats", time: "9:00am", type: "Breakfast", score: 69,
+        insight: "Yoghurt delivers live cultures and the berries add polyphenol diversity that feeds beneficial bacteria. Oats are a strong prebiotic source. Your best breakfast pattern — the berry variety is key.",
+        biotics:   { prebiotic: 55, probiotic: 58, postbiotic: 44 },
+        quality:   { diversity: 60, antiInflammatory: 70 },
+        nutrition: { calories: 295, protein: 14, carbs: 44, fat: 8, fibre: 6 },
+        tags: ["Probiotics", "Polyphenols", "Prebiotics"],
+      },
+      {
+        image: "/food-6.png", name: "Lentil wrap with mixed greens", time: "1:00pm", type: "Lunch", score: 74,
+        insight: "High-fibre and plant-diverse. Lentils are one of the best prebiotic foods — resistant starch that survives digestion and feeds Bifidobacterium directly. The mixed greens add polyphenol variety.",
+        biotics:   { prebiotic: 72, probiotic: 8,  postbiotic: 42 },
+        quality:   { diversity: 65, antiInflammatory: 62 },
+        nutrition: { calories: 380, protein: 18, carbs: 58, fat: 7, fibre: 12 },
+        tags: ["High fibre", "Prebiotics", "Plant protein"],
+      },
+      {
+        image: "/food-7.png", name: "Chicken, roasted veg & kefir", time: "7:45pm", type: "Dinner", score: 81,
+        insight: "Best meal this week. Kefir delivers live cultures across multiple strains, the diverse roasted veg builds your prebiotic base, and the chicken provides the protein your gut lining needs for repair. This is the gold standard pattern.",
+        biotics:   { prebiotic: 75, probiotic: 65, postbiotic: 58 },
+        quality:   { diversity: 78, antiInflammatory: 72 },
+        nutrition: { calories: 445, protein: 38, carbs: 28, fat: 14, fibre: 7 },
+        tags: ["Probiotics", "Diversity", "High protein"],
+      },
     ],
   },
 ]
@@ -189,7 +368,108 @@ const MOCK_CONSULTATIONS = [
 ]
 
 /* ─────────────────────────────────────────────────────────────────────────
-   Types
+   Real-data types
+   ───────────────────────────────────────────────────────────────────────── */
+export interface RealAnalysis {
+  id: string
+  meal_name:    string | null
+  meal_type:    string | null
+  image_url:    string | null
+  biotics_score:             number | null
+  prebiotic_score:           number | null
+  probiotic_score:           number | null
+  postbiotic_score:          number | null
+  quality_diversity:         number | null
+  quality_anti_inflammatory: number | null
+  nutrition_json: { calories: number; protein: number; carbs: number; fat: number; fibre: number } | null
+  insight: string | null
+  tags:    string[] | null
+  created_at: string
+}
+
+export interface RealWeeklyReport {
+  id: string
+  week_starting: string
+  content: string
+  report_json: {
+    weekStarting: string; weekNumber: number; mealCount: number
+    averageScore: number; previousWeekAverage: number | null
+    pillars: { prebiotic: number; probiotic: number; postbiotic: number }
+    pullQuote: string; narrative: string; focusAction: string
+    weekSummaryTitle: string
+    mealsThisWeek: Array<{ id: string; name: string; type: string; score: number; date: string }>
+  } | null
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Component props — all optional, mock data used as fallback
+   ───────────────────────────────────────────────────────────────────────── */
+export interface LiveDashboardProps {
+  name?:            string | null
+  streak?:          number
+  score?:           number | null
+  previousScore?:   number | null
+  profileType?:     string | null
+  biotics?:         { prebiotic: number; probiotic: number; postbiotic: number }
+  recentAnalyses?:  RealAnalysis[]
+  weeklyReport?:    RealWeeklyReport | null
+  weeklyReports?:   RealWeeklyReport[]          // for Consultations tab
+  monthlyPlan?:     string | null
+  weeklyCheckin?:   string | null
+  memberStartedAt?: string | null
+  nextBillingDate?: string | null
+  referralCode?:    string | null
+  // Sandbox pass-through
+  [key: string]: unknown
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Live analysis result type (returned from /api/analyse-meal)
+   ───────────────────────────────────────────────────────────────────────── */
+interface LiveResult {
+  id:           string | null
+  meal_name:    string
+  meal_type:    string
+  biotics_score:             number
+  prebiotic_score:           number
+  probiotic_score:           number
+  postbiotic_score:          number
+  quality_diversity:         number
+  quality_anti_inflammatory: number
+  nutrition: { calories: number; protein: number; carbs: number; fat: number; fibre: number }
+  insight: string
+  tags:    string[]
+  created_at?: string
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Convert RealAnalysis → MealEntry shape used by MealCard
+   ───────────────────────────────────────────────────────────────────────── */
+function realToMealEntry(a: RealAnalysis): Parameters<typeof MealCard>[0]["meal"] {
+  const d = new Date(a.created_at)
+  return {
+    image:   a.image_url ?? "/food-1.png",
+    name:    a.meal_name ?? "Analysed meal",
+    time:    d.toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" }),
+    type:    a.meal_type ?? "Meal",
+    score:   a.biotics_score ?? 0,
+    insight: a.insight ?? "No insight available.",
+    biotics: {
+      prebiotic:  a.prebiotic_score  ?? 0,
+      probiotic:  a.probiotic_score  ?? 0,
+      postbiotic: a.postbiotic_score ?? 0,
+    },
+    quality: {
+      diversity:        a.quality_diversity         ?? 0,
+      antiInflammatory: a.quality_anti_inflammatory ?? 0,
+    },
+    nutrition: a.nutrition_json ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fibre: 0 },
+    tags: a.tags ?? [],
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Tab config
    ───────────────────────────────────────────────────────────────────────── */
 type Tab = "overview" | "meals" | "reports" | "consultations"
 type LoggerState = "empty" | "analysing" | "result"
@@ -204,15 +484,90 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
 /* ─────────────────────────────────────────────────────────────────────────
    Component
    ───────────────────────────────────────────────────────────────────────── */
-export interface LiveDashboardProps { [key: string]: unknown }
+export function LiveDashboard(props: LiveDashboardProps = {}) {
+  const {
+    name            = null,
+    streak:         propStreak = 0,
+    score:          propScore  = null,
+    previousScore:  propPrev   = null,
+    profileType     = null,
+    biotics:        propBiotics = null,
+    recentAnalyses  = [],
+    weeklyReport    = null,
+    weeklyReports   = [],
+    monthlyPlan     = null,
+    memberStartedAt = null,
+  } = props
 
-export function LiveDashboard(_props: LiveDashboardProps = {}) {
   const [tab, setTab] = useState<Tab>("overview")
-  const [loggerState, setLoggerState] = useState<LoggerState>("result")
+  const [loggerState, setLoggerState] = useState<LoggerState>("empty")
+  const [liveResult, setLiveResult]   = useState<LiveResult | null>(null)
+  const [mealInput, setMealInput]     = useState("")
+  const [analyseError, setAnalyseError] = useState<string | null>(null)
+
+  /* Compute real values with mock fallbacks */
+  const displayName    = name ?? "Jason"
+  const displayScore   = propScore   ?? 62
+  const displayPrev    = propPrev    ?? 54
+  const displayStreak  = propStreak  || 0
+  const displayProfile = profileType ?? "Emerging Balance"
+
+  const displayBiotics = propBiotics ?? { prebiotic: 71, probiotic: 23, postbiotic: 48 }
+
+  /* Today's real meals */
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const todayMeals = recentAnalyses.filter((a) => a.created_at.startsWith(todayStr))
+  const todayAvg   = todayMeals.length
+    ? Math.round(todayMeals.reduce((s, m) => s + (m.biotics_score ?? 0), 0) / todayMeals.length)
+    : null
+
+  /* Latest analysis for "Your Last Analysis" */
+  const latestAnalysis = recentAnalyses[0] ?? null
+
+  /* Group analyses by date for My Meals tab */
+  const analysesByDate = recentAnalyses.reduce<{ date: string; meals: RealAnalysis[] }[]>((acc, a) => {
+    const d = new Date(a.created_at)
+    const label = (() => {
+      const diff = Math.round((Date.now() - d.getTime()) / 86_400_000)
+      if (diff === 0) return `Today — ${d.toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })}`
+      if (diff === 1) return `Yesterday — ${d.toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })}`
+      return d.toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })
+    })()
+    const existing = acc.find((g) => g.date === label)
+    if (existing) { existing.meals.push(a) } else { acc.push({ date: label, meals: [a] }) }
+    return acc
+  }, [])
+
+  /* Membership week number */
+  const weekNumber = memberStartedAt
+    ? Math.max(1, Math.ceil((Date.now() - new Date(memberStartedAt).getTime()) / (7 * 86_400_000)))
+    : 8
+
+  /* Submit meal for analysis */
+  async function handleAnalyse() {
+    if (!mealInput.trim()) return
+    setLoggerState("analysing")
+    setAnalyseError(null)
+    try {
+      const res = await fetch("/api/analyse-meal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: mealInput.trim() }),
+      })
+      if (!res.ok) throw new Error("Analysis failed")
+      const data = await res.json() as LiveResult
+      setLiveResult(data)
+      setLoggerState("result")
+      setMealInput("")
+    } catch (err) {
+      console.error("[analyse-meal]", err)
+      setAnalyseError("Analysis failed — please try again")
+      setLoggerState("empty")
+    }
+  }
 
   const hour = new Date().getHours()
   const timeOfDay = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening"
-  const deliveryDate = nextSunday()
 
   return (
     <div className="min-h-screen" style={{ background: "white" }}>
@@ -220,35 +575,44 @@ export function LiveDashboard(_props: LiveDashboardProps = {}) {
       {/* ══════════════════════════════════════════════════════════════════
           HERO — gradient band
       ══════════════════════════════════════════════════════════════════ */}
-      <div style={{ background: "linear-gradient(135deg, #1a4a14 0%, #0a5c44 100%)" }}>
+      <div style={{ background: "white" }}>
         <div className="mx-auto max-w-5xl px-5 pb-7 pt-6 md:px-8 md:pb-9 md:pt-8">
           <div className="flex items-center justify-between gap-6">
             <div className="flex-1">
-              <p className="font-serif text-2xl font-bold leading-tight text-white md:text-3xl">
-                Good {timeOfDay},<br />Jason.
+              <p className="font-serif text-3xl font-bold leading-tight md:text-4xl" style={{
+                background: "linear-gradient(to right, #4CB648 0%, #2DAA6E 30%, #F5C518 65%, #F5A623 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                display: "inline-block",
+              }}>
+                Good {timeOfDay},<br />{displayName}.
               </p>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                {/* Streak badge */}
-                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold"
-                  style={{ background: "rgba(245,166,35,0.22)", color: "var(--icon-yellow)" }}>
-                  <Flame size={11} /> 7-day streak
-                </span>
-                {/* Score trend badge */}
-                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
-                  style={{ background: "rgba(168,224,99,0.20)", color: "var(--icon-lime)" }}>
-                  <TrendingUp size={11} /> +8 pts this month
-                </span>
-                <span className="text-xs" style={{ color: "rgba(255,255,255,0.38)" }}>
-                  Emerging Balance
+              <div className="mt-4 flex flex-wrap items-center gap-2.5">
+                {displayStreak > 0 && (
+                  <span className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold text-white"
+                    style={{ background: "linear-gradient(135deg, #F5C518, #F5A623)", boxShadow: "0 2px 10px rgba(245,166,35,0.35)" }}>
+                    <Flame size={13} /> {displayStreak}-day streak
+                  </span>
+                )}
+                {displayPrev != null && displayScore != null && (
+                  <span className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold text-white"
+                    style={{ background: "linear-gradient(135deg, #4CB648, #2DAA6E)", boxShadow: "0 2px 10px rgba(76,182,72,0.35)" }}>
+                    <TrendingUp size={13} /> {displayScore - displayPrev > 0 ? "+" : ""}{displayScore - displayPrev} pts
+                  </span>
+                )}
+                <span className="inline-flex items-center rounded-full px-4 py-1.5 text-sm font-semibold"
+                  style={{ background: "#f3f3f3", color: "var(--muted-foreground)" }}>
+                  {displayProfile}
                 </span>
               </div>
             </div>
             {/* Score ring */}
-            <div className="relative shrink-0 flex items-center justify-center">
-              <ScoreRing score={62} size={96} strokeWidth={7} />
-              <div className="absolute flex flex-col items-center">
-                <span className="font-mono text-2xl font-bold leading-none" style={{ color: "var(--icon-lime)" }}>62</span>
-                <span className="mt-0.5 text-[9px] uppercase tracking-wide" style={{ color: "rgba(255,255,255,0.35)" }}>score</span>
+            <div className="relative shrink-0 flex items-center justify-center" style={{ width: 120, height: 120 }}>
+              <ScoreRing score={displayScore ?? 62} size={120} strokeWidth={9} />
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="font-mono font-bold leading-none" style={{ fontSize: 32, color: "var(--foreground)" }}>{displayScore ?? "—"}</span>
+                <span className="mt-1 text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>score</span>
               </div>
             </div>
           </div>
@@ -313,7 +677,7 @@ export function LiveDashboard(_props: LiveDashboardProps = {}) {
                 className="flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition-all"
                 style={tab === id
                   ? { background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", color: "white", boxShadow: "0 3px 10px rgba(45,170,110,0.28)" }
-                  : { color: "var(--muted-foreground)" }
+                  : { color: "var(--muted-foreground)", opacity: 0.65 }
                 }>
                 {icon}{label}
               </button>
@@ -331,55 +695,98 @@ export function LiveDashboard(_props: LiveDashboardProps = {}) {
           {/* ── LEFT: Logger + Today's Meals ── */}
           <div className="space-y-5">
 
-            {/* Logger state toggle */}
+            {/* Returning user context hook */}
+            <p className="text-center text-xs" style={{ color: "var(--muted-foreground)" }}>
+              Your last meal was logged yesterday. Ready to start today?
+            </p>
+
+            {/* Logger */}
             <div>
-              <div className="mb-3 flex gap-1.5">
-                {(["empty", "analysing", "result"] as LoggerState[]).map((s) => (
-                  <button key={s} onClick={() => setLoggerState(s)}
-                    className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-all"
-                    style={loggerState === s
-                      ? { background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", color: "white" }
-                      : { background: "#f0f0f0", color: "var(--muted-foreground)" }
-                    }>
-                    {s}
-                  </button>
-                ))}
-              </div>
 
               {/* Empty state */}
               {loggerState === "empty" && (
-                <div className="rounded-2xl p-6" style={{
-                  border: "1.5px dashed var(--icon-green)",
-                  background: "white",
-                  boxShadow: "0 2px 16px rgba(26,46,18,0.05)",
+                <div className="overflow-hidden rounded-2xl" style={{
+                  background: "linear-gradient(135deg, #6aab28 0%, #2e8c2a 40%, #c49610 75%, #c47010 100%)",
+                  boxShadow: "0 8px 32px rgba(26,46,18,0.22)",
                 }}>
-                  <div className="flex flex-col items-center text-center">
+                  {/* Top brand gradient strip */}
+                  <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
+
+                  {/* Decorative food image strip — context row, subordinate */}
+                  <div className="flex items-center px-5 pt-5 pb-3" style={{ opacity: 0.85 }}>
+                    {["/food-3.png", "/food-5.png", "/food-7.png", "/food-2.png"].map((src, i) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img key={i} src={src} alt=""
+                        className="rounded-full object-cover"
+                        style={{
+                          width: 32, height: 32, flexShrink: 0,
+                          border: "2px solid rgba(255,255,255,0.22)",
+                          marginLeft: i > 0 ? -8 : 0,
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.22)",
+                        }} />
+                    ))}
+                    <span className="ml-3 text-xs font-semibold" style={{ color: "rgba(255,255,255,0.70)" }}>
+                      7 meals analysed this week
+                    </span>
+                  </div>
+
+                  {/* Main content */}
+                  <div className="flex flex-col items-center px-6 pb-6 text-center">
+                    {/* Camera icon — orange ring */}
                     <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full"
-                      style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}>
+                      style={{
+                        background: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
+                        boxShadow: "0 4px 20px rgba(245,166,35,0.45)",
+                      }}>
                       <Camera size={26} color="white" />
                     </div>
-                    <h2 className="font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>
-                      What are you eating?
+
+                    <h2 className="font-serif text-xl font-bold text-white">
+                      Analyse your Meal
                     </h2>
-                    <p className="mt-2 max-w-xs text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
+                    <p className="mt-2 max-w-xs text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.75)" }}>
                       Take or upload a photo of your meal. EatoBiotics will analyse its biotics profile and teach you what&apos;s happening inside.
                     </p>
-                    <div className="mt-5 flex gap-2.5">
-                      <GradientButton>📷 Take photo</GradientButton>
-                      <button className="flex items-center gap-2 rounded-xl border px-5 py-3 text-sm font-semibold"
-                        style={{ borderColor: "var(--icon-green)", color: "var(--icon-green)" }}>
-                        ↑ Upload
-                      </button>
-                    </div>
-                    <div className="mt-4 flex w-full items-center gap-2">
-                      <input type="text" placeholder="Or describe your meal in a few words…" readOnly
-                        className="flex-1 rounded-xl border px-4 py-2.5 text-sm outline-none"
-                        style={{ borderColor: "#e0e0e0", color: "var(--foreground)" }} />
-                      <button className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                        style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", boxShadow: "0 3px 10px rgba(45,170,110,0.30)" }}>
+
+                    {/* Primary CTA — Take photo, centred */}
+                    <button
+                      className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold transition-opacity hover:opacity-90"
+                      style={{ background: "white", color: "var(--icon-green)", boxShadow: "0 4px 16px rgba(0,0,0,0.15)" }}>
+                      <Camera size={16} /> Take photo
+                    </button>
+
+                    {/* Secondary — Upload, equal sibling to Take photo */}
+                    <button
+                      className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-opacity hover:opacity-90"
+                      style={{ background: "white", color: "var(--icon-green)", boxShadow: "0 4px 16px rgba(0,0,0,0.15)" }}>
+                      ↑ Upload image
+                    </button>
+
+                    {/* Tertiary — describe, real API */}
+                    <div className="mt-2.5 flex w-full items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="Or describe your meal…"
+                        value={mealInput}
+                        onChange={(e) => setMealInput(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") void handleAnalyse() }}
+                        className="flex-1 rounded-xl px-4 py-2.5 text-sm outline-none placeholder:text-white/45"
+                        style={{
+                          background: "rgba(255,255,255,0.10)",
+                          border: "1px solid rgba(255,255,255,0.18)",
+                          color: "white",
+                        }} />
+                      <button
+                        onClick={() => void handleAnalyse()}
+                        disabled={!mealInput.trim()}
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl disabled:opacity-40"
+                        style={{ background: "rgba(255,255,255,0.20)" }}>
                         <ArrowRight size={16} color="white" />
                       </button>
                     </div>
+                    {analyseError && (
+                      <p className="mt-2 text-center text-xs" style={{ color: "rgba(255,100,100,0.90)" }}>{analyseError}</p>
+                    )}
                   </div>
                 </div>
               )}
@@ -390,13 +797,11 @@ export function LiveDashboard(_props: LiveDashboardProps = {}) {
                   background: "white", border: "1px solid #ebebeb", boxShadow: "0 2px 16px rgba(26,46,18,0.06)",
                 }}>
                   <div className="mb-5 flex items-center gap-3">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl"
-                      style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}>
-                      🥣
-                    </div>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/food-1.png" alt="Meal" className="h-12 w-12 shrink-0 rounded-xl object-cover" />
                     <div>
-                      <p className="font-semibold" style={{ color: "var(--foreground)" }}>Overnight oats with banana</p>
-                      <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>7:42am · Breakfast</p>
+                      <p className="font-semibold" style={{ color: "var(--foreground)" }}>Mackerel, kimchi & asparagus</p>
+                      <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>19:25 · Dinner</p>
                     </div>
                   </div>
                   <div className="space-y-3.5">
@@ -418,26 +823,75 @@ export function LiveDashboard(_props: LiveDashboardProps = {}) {
                 </div>
               )}
 
-              {/* Result state */}
-              {loggerState === "result" && (
+              {/* Result state — use liveResult if available, else mock */}
+              {loggerState === "result" && (() => {
+                const r = liveResult ?? {
+                  id: null, meal_name: "Mackerel, kimchi & asparagus", meal_type: "Dinner",
+                  biotics_score: 71, prebiotic_score: 72, probiotic_score: 18, postbiotic_score: 41,
+                  quality_diversity: 55, quality_anti_inflammatory: 80,
+                  nutrition: { calories: 385, protein: 38, carbs: 12, fat: 18, fibre: 7 },
+                  insight: "Your mackerel is delivering omega-3s that reduce gut inflammation, while the kimchi seeds live Lactobacillus cultures. The asparagus adds inulin — a prebiotic fibre that feeds those bacteria directly. Adding a handful of walnuts would push your diversity score from 55 to ~72.",
+                  tags: ["Omega-3s", "Probiotics", "Prebiotics", "Anti-inflammatory"],
+                }
+                const logTime = r.created_at ? new Date(r.created_at).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" }) : "just now"
+                return (
                 <div className="overflow-hidden rounded-2xl" style={{
                   background: "white", border: "1px solid #ebebeb", boxShadow: "0 4px 24px rgba(26,46,18,0.07)",
                 }}>
                   {/* Gradient top accent */}
                   <div className="h-[3px] w-full" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
 
-                  <div className="flex items-center gap-3 border-b px-5 py-4" style={{ borderColor: "#ebebeb" }}>
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl"
-                      style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}>
-                      🥣
+                  {/* Meal identity row */}
+                  <div className="flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: "#f0f0f0" }}>
+                    <div>
+                      <p className="font-semibold text-sm leading-snug" style={{ color: "var(--foreground)" }}>{r.meal_name}</p>
+                      <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>{logTime} · {r.meal_type}</p>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold leading-snug" style={{ color: "var(--foreground)" }}>Overnight oats with banana</p>
-                      <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>7:42am · Breakfast</p>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <p className="font-mono text-2xl font-bold leading-none" style={{ color: "var(--icon-green)" }}>71</p>
-                      <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>/100</p>
+                    <span className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white"
+                      style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))" }}>
+                      {r.meal_type}
+                    </span>
+                  </div>
+
+                  {/* Meal photo + score ring */}
+                  <div className="relative flex items-center justify-center" style={{ background: "white", minHeight: 220 }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/food-1.png"
+                      alt="Mackerel, kimchi &amp; asparagus"
+                      style={{ width: "100%", maxHeight: 240, objectFit: "contain", objectPosition: "center", display: "block" }}
+                    />
+                    {/* Gradient score ring — top-right, white bg blends into image */}
+                    <div className="absolute top-3 right-3 flex flex-col items-center"
+                      style={{ background: "white", borderRadius: "50%", padding: 3, boxShadow: "0 2px 12px rgba(76,182,72,0.22)" }}>
+                      <svg width="88" height="88" viewBox="0 0 88 88">
+                        <defs>
+                          <linearGradient id="result-ring-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%"   stopColor="var(--icon-lime)" />
+                            <stop offset="50%"  stopColor="var(--icon-green)" />
+                            <stop offset="100%" stopColor="var(--icon-teal)" />
+                          </linearGradient>
+                        </defs>
+                        {/* Track */}
+                        <circle cx="44" cy="44" r="36" fill="none" stroke="#e8e8e8" strokeWidth="7" />
+                        {/* Arc */}
+                        <circle
+                          cx="44" cy="44" r="36" fill="none"
+                          stroke="url(#result-ring-grad)" strokeWidth="7"
+                          strokeLinecap="round"
+                          strokeDasharray={`${2 * Math.PI * 36 * (r.biotics_score ?? 0) / 100} ${2 * Math.PI * 36}`}
+                          transform="rotate(-90 44 44)"
+                        />
+                        {/* Score label */}
+                        <text x="44" y="40" textAnchor="middle" dominantBaseline="middle"
+                          style={{ fontFamily: "var(--font-mono, monospace)", fontSize: 22, fontWeight: 700, fill: "var(--foreground)" }}>
+                          {r.biotics_score ?? 0}
+                        </text>
+                        <text x="44" y="57" textAnchor="middle" dominantBaseline="middle"
+                          style={{ fontFamily: "var(--font-sans, sans-serif)", fontSize: 10, fill: "var(--muted-foreground)" }}>
+                          /100
+                        </text>
+                      </svg>
                     </div>
                   </div>
 
@@ -447,9 +901,9 @@ export function LiveDashboard(_props: LiveDashboardProps = {}) {
                       Biotics
                     </p>
                     <div className="space-y-2.5">
-                      <ScoreBar label="Prebiotic"  score={72} />
-                      <ScoreBar label="Probiotic"  score={18} />
-                      <ScoreBar label="Postbiotic" score={41} />
+                      <ScoreBar label="Prebiotic"  score={r.prebiotic_score  ?? 0} />
+                      <ScoreBar label="Probiotic"  score={r.probiotic_score  ?? 0} />
+                      <ScoreBar label="Postbiotic" score={r.postbiotic_score ?? 0} />
                     </div>
                   </div>
 
@@ -461,30 +915,30 @@ export function LiveDashboard(_props: LiveDashboardProps = {}) {
                       Meal Quality
                     </p>
                     <div className="space-y-2.5">
-                      <ScoreBar label="Diversity"         score={55} />
-                      <ScoreBar label="Anti-inflammatory" score={80} />
+                      <ScoreBar label="Diversity"         score={r.quality_diversity         ?? 0} />
+                      <ScoreBar label="Anti-inflammatory" score={r.quality_anti_inflammatory ?? 0} />
                     </div>
                   </div>
 
                   <div className="mx-5 h-px" style={{ background: "#f0f0f0" }} />
 
-                  {/* ── NUTRITION STRIP ── */}
+                  {/* ── NUTRITION CONTEXT ── */}
                   <div className="pb-1 pt-3">
-                    <p className="mb-1 px-5 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-orange)" }}>
-                      Nutrition
+                    <p className="mb-1 px-5 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--muted-foreground)" }}>
+                      Nutrition Context
                     </p>
                     <div className="grid grid-cols-5">
                       {([
-                        { label: "Calories", value: "385", unit: "kcal", color: "var(--icon-orange)" },
-                        { label: "Protein",  value: "12",  unit: "g",    color: "var(--icon-teal)" },
-                        { label: "Carbs",    value: "68",  unit: "g",    color: "var(--icon-yellow)" },
-                        { label: "Fat",      value: "8",   unit: "g",    color: "var(--icon-green)" },
-                        { label: "Fibre",    value: "6",   unit: "g",    color: "var(--icon-lime)" },
+                        { label: "Calories", value: String(r.nutrition.calories), unit: "kcal", color: "var(--icon-orange)" },
+                        { label: "Protein",  value: String(r.nutrition.protein),  unit: "g",    color: "var(--icon-teal)" },
+                        { label: "Carbs",    value: String(r.nutrition.carbs),    unit: "g",    color: "var(--icon-yellow)" },
+                        { label: "Fat",      value: String(r.nutrition.fat),      unit: "g",    color: "var(--icon-green)" },
+                        { label: "Fibre",    value: String(r.nutrition.fibre),    unit: "g",    color: "var(--icon-lime)" },
                       ] as { label: string; value: string; unit: string; color: string }[]).map(({ label, value, unit, color }, i) => (
-                        <div key={label} className="flex flex-col items-center py-3"
+                        <div key={label} className="flex flex-col items-center py-2.5"
                           style={{ borderRight: i < 4 ? "1px solid #f0f0f0" : undefined }}>
-                          <span className="font-mono text-base font-bold leading-none" style={{ color }}>{value}</span>
-                          <span className="mt-0.5 text-[9px] font-medium" style={{ color: "var(--muted-foreground)" }}>{unit}</span>
+                          <span className="font-mono text-sm font-semibold leading-none" style={{ color }}>{value}</span>
+                          <span className="mt-0.5 text-[9px]" style={{ color: "var(--muted-foreground)" }}>{unit}</span>
                           <span className="mt-0.5 text-[9px]" style={{ color: "var(--muted-foreground)" }}>{label}</span>
                         </div>
                       ))}
@@ -502,60 +956,124 @@ export function LiveDashboard(_props: LiveDashboardProps = {}) {
                         What EatoBiotics noticed
                       </p>
                       <p className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
-                        Your oats are feeding <em>Bifidobacterium</em> — linked to better mood and less bloating.
-                        Missing: a fermented element. Kefir or yoghurt would push your probiotic score from{" "}
-                        <strong style={{ color: "var(--icon-orange)" }}>18</strong> to{" "}
-                        <strong style={{ color: "var(--icon-green)" }}>~55</strong>.
+                        {r.insight}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex flex-wrap gap-1.5 px-5 pb-3">
-                    {["Prebiotics", "Gut-brain axis", "Satiety"].map(t => <Tag key={t}>{t}</Tag>)}
+                    {(r.tags ?? []).map(t => <Tag key={t}>{t}</Tag>)}
                   </div>
 
                   <div className="px-5 pb-5 pt-2">
-                    <GradientButton fullWidth>✓ Log this meal</GradientButton>
+                    <div className="flex items-center gap-2 rounded-xl px-4 py-3" style={{ background: "linear-gradient(90deg, color-mix(in srgb, var(--icon-lime) 12%, white), color-mix(in srgb, var(--icon-green) 10%, white))", border: "1px solid color-mix(in srgb, var(--icon-green) 20%, transparent)" }}>
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full" style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}>
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-semibold" style={{ color: "var(--icon-green)" }}>Saved to My Meals</p>
+                        <p className="text-[10px]" style={{ color: "var(--muted-foreground)" }}>Added to {new Date().toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })}</p>
+                      </div>
+                      <button
+                        className="text-xs font-semibold underline underline-offset-2"
+                        style={{ color: "var(--muted-foreground)" }}
+                        onClick={() => setTab("meals")}
+                      >
+                        View
+                      </button>
+                    </div>
                   </div>
                 </div>
-              )}
+              )
+              })()}
+            </div>
+
+            {/* Last analysis — flows from logger above */}
+            <div style={{ marginTop: 12 }}>
+              <p className="mb-3 text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--muted-foreground)" }}>
+                Your Last Analysis
+              </p>
+              {latestAnalysis
+                ? <MealCard meal={realToMealEntry(latestAnalysis)} />
+                : <MealCard meal={MOCK_MEALS[0].meals[0]} />
+              }
             </div>
 
             {/* Today's Meals */}
             <div>
               <SectionLabel>Today&apos;s Meals</SectionLabel>
               <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid #ebebeb", boxShadow: "0 2px 12px rgba(26,46,18,0.05)" }}>
-                {/* Gradient top strip */}
                 <div className="h-[2px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
-                <div className="flex items-center gap-3 border-b px-4 py-3.5" style={{ borderColor: "#ebebeb" }}>
-                  <div className="h-2 w-2 shrink-0 rounded-full" style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }} />
-                  <p className="flex-1 text-sm font-medium" style={{ color: "var(--foreground)" }}>Overnight oats with banana</p>
-                  <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>7:42am</span>
-                  <span className="w-7 text-right font-mono text-sm font-bold" style={{ color: "var(--icon-green)" }}>71</span>
-                </div>
-                {["Lunch not logged yet", "Dinner not logged yet"].map((label, i) => (
-                  <div key={label} className="flex items-center gap-3 px-4 py-3.5 opacity-35"
-                    style={{ borderTop: i === 0 ? undefined : "1px solid #ebebeb" }}>
-                    <div className="h-2 w-2 shrink-0 rounded-full" style={{ border: "1.5px solid #d0d0d0" }} />
-                    <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>{label}</p>
+
+                {/* Real today's meals — or mock fallback */}
+                {(todayMeals.length > 0 ? todayMeals : MOCK_MEALS[0].meals).map((meal, i) => {
+                  const isMock = todayMeals.length === 0
+                  const name   = isMock ? (meal as typeof MOCK_MEALS[0]["meals"][0]).name : ((meal as RealAnalysis).meal_name ?? "Meal")
+                  const time   = isMock
+                    ? (meal as typeof MOCK_MEALS[0]["meals"][0]).time
+                    : new Date((meal as RealAnalysis).created_at).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" })
+                  const type   = isMock ? (meal as typeof MOCK_MEALS[0]["meals"][0]).type : ((meal as RealAnalysis).meal_type ?? "Meal")
+                  const score  = isMock ? (meal as typeof MOCK_MEALS[0]["meals"][0]).score : ((meal as RealAnalysis).biotics_score ?? 0)
+                  const img    = isMock ? (meal as typeof MOCK_MEALS[0]["meals"][0]).image : ((meal as RealAnalysis).image_url ?? "/food-1.png")
+                  return (
+                    <div key={i} className="flex items-center gap-3 px-4 py-3.5"
+                      style={{ borderTop: i > 0 ? "1px solid #f0f0f0" : undefined }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={img} alt="" className="h-9 w-9 shrink-0 rounded-lg object-cover" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium leading-snug" style={{ color: "var(--foreground)" }}>{name}</p>
+                        <p className="text-[11px]" style={{ color: "var(--muted-foreground)" }}>{time} · {type}</p>
+                      </div>
+                      <span className="font-mono text-sm font-bold" style={{ color: "var(--icon-green)" }}>{score}</span>
+                    </div>
+                  )
+                })}
+
+                {/* + Log prompt when fewer than 3 meals logged today */}
+                {todayMeals.length < 3 && (
+                  <div className="flex items-center gap-3 px-4 py-3" style={{ borderTop: "1px solid #f0f0f0", opacity: 0.55 }}>
+                    <div className="h-2 w-2 shrink-0 rounded-full" style={{ border: "1.5px solid #c8c8c8" }} />
+                    <p className="flex-1 text-sm" style={{ color: "var(--muted-foreground)" }}>
+                      {todayMeals.length === 0 ? "No meals logged today" : "Log another meal"}
+                    </p>
+                    <button
+                      className="text-xs font-semibold transition-opacity hover:opacity-80"
+                      style={{ color: "var(--icon-green)", opacity: 1 }}
+                      onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); setLoggerState("empty") }}
+                    >
+                      + Log
+                    </button>
                   </div>
-                ))}
+                )}
+
+                {/* Daily average */}
+                {(todayMeals.length > 0 || true) && (
+                  <div className="border-t px-4 py-2.5" style={{ borderColor: "#f0f0f0" }}>
+                    <p className="text-right text-[11px]" style={{ color: "var(--muted-foreground)" }}>
+                      Today&apos;s average:{" "}
+                      <strong style={{ color: "var(--icon-green)" }}>
+                        {todayAvg ?? MOCK_MEALS[0].meals[0].score}
+                      </strong>
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
+
           </div>{/* end left */}
 
           {/* ── RIGHT: Biotics + Consultation + Monthly Focus ── */}
-          <div className="mt-5 space-y-5 md:mt-0">
+          <div className="mt-5 space-y-4 md:mt-0">
 
             {/* Biotics Profile */}
             <div>
               <SectionLabel>Your Biotics Profile</SectionLabel>
               <div className="grid grid-cols-3 gap-3">
-                {[
-                  { label: "Prebiotic",  score: 71, delta: "↑ +4",     c0: "#A8E063", c1: "#4CB648", textColor: "#2d7a24", borderColor: "var(--icon-lime)" },
-                  { label: "Probiotic",  score: 23, delta: "Needs work", c0: "#F5C518", c1: "#F5A623", textColor: "#a05a0a", borderColor: "var(--icon-orange)" },
-                  { label: "Postbiotic", score: 48, delta: "Stable",    c0: "#4CB648", c1: "#2DAA6E", textColor: "#0a6644", borderColor: "var(--icon-teal)" },
-                ].map(({ label, score, delta, c0, c1, textColor, borderColor }) => (
+                {([
+                  { label: "Prebiotic",  score: displayBiotics.prebiotic,  delta: displayBiotics.prebiotic  >= 60 ? "On track"    : displayBiotics.prebiotic  >= 30 ? "Building"    : "Needs work", c0: "#A8E063", c1: "#4CB648", textColor: "#2d7a24", borderColor: "var(--icon-lime)" },
+                  { label: "Probiotic",  score: displayBiotics.probiotic,  delta: displayBiotics.probiotic  >= 60 ? "On track"    : displayBiotics.probiotic  >= 30 ? "Building"    : "Needs work", c0: "#F5C518", c1: "#F5A623", textColor: "#a05a0a", borderColor: "var(--icon-orange)" },
+                  { label: "Postbiotic", score: displayBiotics.postbiotic, delta: displayBiotics.postbiotic >= 60 ? "Strong"      : displayBiotics.postbiotic >= 30 ? "Stable"      : "Needs work", c0: "#4CB648", c1: "#2DAA6E", textColor: "#0a6644", borderColor: "var(--icon-teal)" },
+                ] as { label: string; score: number; delta: string; c0: string; c1: string; textColor: string; borderColor: string }[]).map(({ label, score, delta, c0, c1, textColor, borderColor }) => (
                   <div key={label} className="flex flex-col items-center overflow-hidden rounded-2xl"
                     style={{ background: "white", border: "1px solid #ebebeb", boxShadow: "0 2px 10px rgba(26,46,18,0.05)" }}>
                     {/* Coloured top border */}
@@ -568,40 +1086,152 @@ export function LiveDashboard(_props: LiveDashboardProps = {}) {
                   </div>
                 ))}
               </div>
+              {/* Subtle membership progress line */}
+              <p className="mt-2.5 text-center text-[10px]" style={{ color: "var(--muted-foreground)" }}>
+                Week {weekNumber} of 30 · Building your food system
+              </p>
             </div>
 
-            {/* Consultation */}
+            {/* Your Focus Today — lowest pillar driven */}
+            <div className="overflow-hidden rounded-2xl" style={{
+              background: "white",
+              border: "1px solid #ebebeb",
+              borderLeft: "4px solid #ba7517",
+              boxShadow: "0 2px 12px rgba(26,46,18,0.05)",
+            }}>
+              <div className="p-4">
+                <p className="mb-1.5 text-[9px] font-bold uppercase tracking-widest" style={{ color: "#ba7517" }}>
+                  Your Focus Today
+                </p>
+                <h3 className="font-serif text-base font-bold leading-snug" style={{ color: "var(--foreground)" }}>
+                  Add one fermented food today
+                </h3>
+                <p className="mt-1.5 text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
+                  Your probiotic score is your lowest pillar. One serving of kimchi, kefir, yoghurt,
+                  or kombucha today would make a measurable difference.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {["Probiotics", "Quick win"].map(t => <Tag key={t}>{t}</Tag>)}
+                </div>
+              </div>
+            </div>
+
+            {/* Consultation — premium editorial card */}
             <div>
               <SectionLabel>Weekly Consultation</SectionLabel>
               <div className="overflow-hidden rounded-2xl" style={{
-                background: "linear-gradient(135deg, #2a7824 0%, #0d6b50 100%)",
-                boxShadow: "0 4px 20px rgba(26,46,18,0.18)",
+                background: "linear-gradient(135deg, #6aab28 0%, #2e8c2a 40%, #c49610 75%, #c47010 100%)",
+                boxShadow: "0 6px 28px rgba(26,46,18,0.22)",
               }}>
-                {/* Lime top accent */}
-                <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-yellow), var(--icon-orange))" }} />
                 <div className="p-5">
-                  <p className="mb-1.5 text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.40)" }}>
+
+                  {/* Eyebrow */}
+                  <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.55)" }}>
                     Weekly · EatoBiotic Consultation
                   </p>
-                  <h3 className="font-serif text-base font-bold leading-snug text-white">
-                    Your weekly consultation with EatoBiotic
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.65)" }}>
-                    A consultation grounded in your week&apos;s meals and scores. One session per week.
-                  </p>
-                  <div className="mt-4 flex items-start gap-3 rounded-xl p-3.5"
-                    style={{ background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.12)" }}>
-                    <Mail size={15} color="var(--icon-lime)" className="mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-xs font-semibold text-white">Delivered to your inbox every Sunday</p>
-                      <p className="mt-0.5 text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>Next review: {deliveryDate}</p>
+
+                  {/* Headline + decorative microbiome graphic */}
+                  <div className="mt-2 flex items-start justify-between gap-3">
+                    <h3 className="font-serif text-xl font-bold leading-snug text-white">
+                      The Food System<br />Inside You
+                      <span className="mt-1 block text-sm font-normal" style={{ color: "rgba(255,255,255,0.70)" }}>Weekly Report</span>
+                    </h3>
+                    {/* Abstract microbiome / gut flora graphic */}
+                    <svg width="64" height="64" viewBox="0 0 64 64" fill="none" className="shrink-0 opacity-80" aria-hidden="true">
+                      {/* Outer orbit ring */}
+                      <circle cx="32" cy="32" r="28" stroke="rgba(255,255,255,0.20)" strokeWidth="1.2" strokeDasharray="4 3" />
+                      {/* Inner orbit ring */}
+                      <circle cx="32" cy="32" r="18" stroke="rgba(255,255,255,0.25)" strokeWidth="1" />
+                      {/* Core cell */}
+                      <circle cx="32" cy="32" r="9" fill="rgba(255,255,255,0.20)" />
+                      <circle cx="32" cy="32" r="5" fill="rgba(255,255,255,0.35)" />
+                      {/* Orbiting bacteria dots — outer ring */}
+                      <circle cx="32"  cy="4"  r="3.2" fill="rgba(255,255,255,0.60)" />
+                      <circle cx="57"  cy="20" r="2.4" fill="rgba(255,255,255,0.45)" />
+                      <circle cx="57"  cy="44" r="3"   fill="rgba(255,255,255,0.55)" />
+                      <circle cx="32"  cy="60" r="2"   fill="rgba(255,255,255,0.35)" />
+                      <circle cx="7"   cy="44" r="2.8" fill="rgba(255,255,255,0.50)" />
+                      <circle cx="7"   cy="20" r="2"   fill="rgba(255,255,255,0.40)" />
+                      {/* Orbiting bacteria dots — inner ring */}
+                      <circle cx="32"  cy="14" r="2"   fill="rgba(255,255,255,0.50)" />
+                      <circle cx="48"  cy="32" r="2.2" fill="rgba(255,255,255,0.45)" />
+                      <circle cx="16"  cy="32" r="1.8" fill="rgba(255,255,255,0.45)" />
+                      <circle cx="32"  cy="50" r="1.6" fill="rgba(255,255,255,0.40)" />
+                      {/* Connecting filament lines — prebiotic fibres */}
+                      <line x1="32" y1="23" x2="32" y2="14" stroke="rgba(255,255,255,0.25)" strokeWidth="0.8" />
+                      <line x1="41" y1="32" x2="48" y2="32" stroke="rgba(255,255,255,0.25)" strokeWidth="0.8" />
+                      <line x1="32" y1="41" x2="32" y2="50" stroke="rgba(255,255,255,0.25)" strokeWidth="0.8" />
+                      <line x1="23" y1="32" x2="16" y2="32" stroke="rgba(255,255,255,0.25)" strokeWidth="0.8" />
+                    </svg>
+                  </div>
+
+                  {/* Three feature pills */}
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {[
+                      { icon: <TrendingUp size={11} />, label: "Score review" },
+                      { icon: <Activity   size={11} />, label: "Biotics analysis" },
+                      { icon: <Target     size={11} />, label: "Your focus action" },
+                    ].map(({ icon, label }) => (
+                      <span key={label} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold text-white"
+                        style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.20)" }}>
+                        {icon}{label}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Divider */}
+                  <div className="my-4 h-px" style={{ background: "rgba(255,255,255,0.15)" }} />
+
+                  {/* Pull quote — real or fallback */}
+                  <div className="rounded-xl p-4" style={{ background: "rgba(0,0,0,0.15)", border: "1px solid rgba(255,255,255,0.10)" }}>
+                    <div className="mb-2 flex items-center gap-2">
+                      <MessageSquare size={11} color="rgba(255,255,255,0.50)" />
+                      <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.50)" }}>
+                        {weeklyReport?.report_json?.weekNumber
+                          ? `From your Week ${weeklyReport.report_json.weekNumber} report`
+                          : "From your latest report"}
+                      </p>
+                    </div>
+                    <p className="text-sm italic leading-relaxed text-white">
+                      &ldquo;{weeklyReport?.report_json?.pullQuote ?? "Your probiotic score is your biggest lever right now. One daily fermented food would shift your overall Biotics number by 8–12 points within three weeks."}&rdquo;
+                    </p>
+                  </div>
+
+                  {/* Next session box — white card */}
+                  <div className="mt-4 overflow-hidden rounded-xl" style={{ background: "white", boxShadow: "0 2px 12px rgba(0,0,0,0.12)" }}>
+                    <div className="flex items-center gap-3 px-4 py-3.5">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                        style={{ background: "linear-gradient(135deg, #6aab28, #2e8c2a)" }}>
+                        <Calendar size={16} color="white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold" style={{ color: "var(--foreground)" }}>Sunday 17 May</p>
+                        <p className="text-[11px]" style={{ color: "var(--muted-foreground)" }}>
+                          Week {weekNumber} of 30
+                        </p>
+                      </div>
+                      <div className="rounded-full px-2.5 py-1 text-[10px] font-bold text-white"
+                        style={{ background: "linear-gradient(135deg, #6aab28, #2e8c2a)" }}>
+                        Upcoming
+                      </div>
                     </div>
                   </div>
+
+                  {/* CTA — link to latest report if available, else tab switch */}
+                  {weeklyReport ? (
+                    <Link href={`/account/report/${weeklyReport.id}`}
+                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold transition-opacity hover:opacity-90"
+                      style={{ background: "white", color: "var(--icon-green)", boxShadow: "0 2px 8px rgba(0,0,0,0.10)" }}>
+                      View your latest report <ChevronRight size={13} />
+                    </Link>
+                  ) : (
                   <button onClick={() => setTab("consultations")}
-                    className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold text-white transition-opacity hover:opacity-80"
-                    style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.18)" }}>
+                    className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold transition-opacity hover:opacity-90"
+                    style={{ background: "white", color: "var(--icon-green)", boxShadow: "0 2px 8px rgba(0,0,0,0.10)" }}>
                     View past consultations <ChevronRight size={13} />
                   </button>
+                  )}
+
                 </div>
               </div>
             </div>
@@ -640,53 +1270,54 @@ export function LiveDashboard(_props: LiveDashboardProps = {}) {
       ══════════════════════════════════════════════════════════════════ */}
       {tab === "meals" && (
         <div className="mx-auto max-w-5xl px-4 pt-6 pb-16 md:px-8 md:pt-8">
-          <div className="mb-5 flex items-center justify-between">
-            <div>
-              <h2 className="font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>My Meals</h2>
-              <p className="mt-0.5 text-sm" style={{ color: "var(--muted-foreground)" }}>
-                7 meals logged this week · Average score:{" "}
-                <strong style={{ color: "var(--icon-green)" }}>73</strong>
-              </p>
-            </div>
-            <GradientButton small><Camera size={13} /> Log meal</GradientButton>
-          </div>
+          {(() => {
+            /* Use real data if available, else fall back to mock */
+            const groups = analysesByDate.length > 0
+              ? analysesByDate.map(({ date, meals }) => ({
+                  date,
+                  cards: meals.map(a => realToMealEntry(a)),
+                }))
+              : MOCK_MEALS.map(({ date, meals }) => ({ date, cards: meals }))
 
-          <div className="space-y-6">
-            {MOCK_MEALS.map(({ date, meals }) => (
-              <div key={date}>
-                <div className="mb-2 flex items-center gap-2">
-                  <div className="h-px flex-1" style={{ background: "linear-gradient(90deg, #e0e0e0, transparent)" }} />
-                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--muted-foreground)" }}>{date}</p>
-                  <div className="h-px flex-1" style={{ background: "linear-gradient(90deg, transparent, #e0e0e0)" }} />
+            const totalMeals = analysesByDate.length > 0 ? recentAnalyses.length : 7
+            const avgScore   = analysesByDate.length > 0 && recentAnalyses.length > 0
+              ? Math.round(recentAnalyses.reduce((s, a) => s + (a.biotics_score ?? 0), 0) / recentAnalyses.length)
+              : 73
+
+            return (
+              <>
+                <div className="mb-5 flex items-center justify-between">
+                  <div>
+                    <h2 className="font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>My Meals</h2>
+                    <p className="mt-0.5 text-sm" style={{ color: "var(--muted-foreground)" }}>
+                      {totalMeals} meal{totalMeals !== 1 ? "s" : ""} logged this week · Average score:{" "}
+                      <strong style={{ color: "var(--icon-green)" }}>{avgScore}</strong>
+                    </p>
+                  </div>
+                  <GradientButton small onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); setTab("overview"); setLoggerState("empty") }}>
+                    <Camera size={13} /> Log meal
+                  </GradientButton>
                 </div>
-                <div className="overflow-hidden rounded-2xl" style={{ border: "1px solid #ebebeb", boxShadow: "0 2px 12px rgba(26,46,18,0.05)" }}>
-                  <div className="h-[2px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
-                  {meals.map((meal, i) => (
-                    <div key={meal.name} className="px-5 py-4" style={{ borderTop: i > 0 ? "1px solid #f0f0f0" : undefined }}>
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xl"
-                          style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}>
-                          {meal.emoji}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium leading-snug" style={{ color: "var(--foreground)" }}>{meal.name}</p>
-                          <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>{meal.time}</p>
-                        </div>
-                        <ScoreBadge score={meal.score} />
+
+                <div className="space-y-8">
+                  {groups.map(({ date, cards }) => (
+                    <div key={date}>
+                      {/* Date separator */}
+                      <div className="mb-4 flex items-center gap-3">
+                        <div className="h-px flex-1" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), transparent)" }} />
+                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--muted-foreground)" }}>{date}</p>
+                        <div className="h-px flex-1" style={{ background: "linear-gradient(90deg, transparent, var(--icon-teal))" }} />
                       </div>
-                      <div className="mt-2.5 flex overflow-hidden rounded-lg" style={{ border: "1px solid #e8e8e8" }}>
-                        <div className="w-[3px] shrink-0"
-                          style={{ background: "linear-gradient(to bottom, var(--icon-lime), var(--icon-green))" }} />
-                        <p className="px-3 py-2.5 text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
-                          {meal.insight}
-                        </p>
+                      {/* 2-col grid on desktop, single col on mobile */}
+                      <div className="grid gap-5 md:grid-cols-2">
+                        {cards.map(meal => <MealCard key={meal.name + meal.time} meal={meal} />)}
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            ))}
-          </div>
+              </>
+            )
+          })()}
         </div>
       )}
 
@@ -759,67 +1390,134 @@ export function LiveDashboard(_props: LiveDashboardProps = {}) {
       ══════════════════════════════════════════════════════════════════ */}
       {tab === "consultations" && (
         <div className="mx-auto max-w-5xl px-4 pt-6 pb-16 md:px-8 md:pt-8">
-          <div className="mb-5">
-            <h2 className="font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>My Consultations</h2>
-            <p className="mt-0.5 text-sm" style={{ color: "var(--muted-foreground)" }}>
-              Delivered to your inbox every Sunday · {MOCK_CONSULTATIONS.length} sessions completed
-            </p>
-          </div>
+          {/* Use real weekly reports if available, else fall back to mock */}
+          {(() => {
+            const reports = weeklyReports.length > 0 ? weeklyReports : null
+            const count   = reports?.length ?? MOCK_CONSULTATIONS.length
 
-          {/* Next delivery banner */}
-          <div className="mb-5 overflow-hidden rounded-2xl" style={{
-            background: "linear-gradient(135deg, #2a7824 0%, #0d6b50 100%)",
-            boxShadow: "0 4px 16px rgba(26,46,18,0.16)",
-          }}>
-            <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-yellow), var(--icon-orange))" }} />
-            <div className="flex items-center gap-4 p-5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
-                style={{ background: "rgba(255,255,255,0.12)" }}>
-                <Mail size={18} color="var(--icon-lime)" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-white">Next consultation</p>
-                <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>
-                  Being prepared for {deliveryDate} — arrives in your inbox that morning
-                </p>
-              </div>
-            </div>
-          </div>
+            return (
+              <>
+                <div className="mb-5">
+                  <h2 className="font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>My Weekly Reports</h2>
+                  <p className="mt-0.5 text-sm" style={{ color: "var(--muted-foreground)" }}>
+                    {count > 0
+                      ? `${count} report${count !== 1 ? "s" : ""} generated · new report every Sunday`
+                      : "Your first report will appear here after your first week of logging meals"}
+                  </p>
+                </div>
 
-          {/* Past consultations */}
-          <div className="space-y-4">
-            {MOCK_CONSULTATIONS.map((c) => (
-              <div key={c.id} className="overflow-hidden rounded-2xl" style={{
-                background: "white", border: "1px solid #ebebeb", boxShadow: "0 2px 12px rgba(26,46,18,0.05)",
-              }}>
-                <div className="h-[2px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
-                <div className="border-b px-5 py-4" style={{ borderColor: "#f0f0f0" }}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--muted-foreground)" }}>{c.week}</p>
-                      <p className="mt-0.5 font-serif text-base font-bold" style={{ color: "var(--foreground)" }}>{c.date}</p>
+                {/* Next report banner */}
+                <div className="mb-5 overflow-hidden rounded-2xl" style={{
+                  background: "linear-gradient(135deg, #6aab28 0%, #2e8c2a 40%, #c49610 75%, #c47010 100%)",
+                  boxShadow: "0 4px 16px rgba(26,46,18,0.16)",
+                }}>
+                  <div className="flex items-center gap-4 p-5">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
+                      style={{ background: "rgba(255,255,255,0.15)" }}>
+                      <MessageSquare size={18} color="white" />
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="rounded-full px-2.5 py-0.5 text-xs font-semibold text-white"
-                        style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
-                        Avg {c.avgScore}
-                      </span>
-                      <span className="rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                        style={{ background: "linear-gradient(135deg, rgba(168,224,99,0.2), rgba(76,182,72,0.12))", color: "#2d7a24", border: "1px solid rgba(76,182,72,0.25)" }}>
-                        {c.delta} pts
-                      </span>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-white">Next report</p>
+                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
+                        Generated every Sunday · based on your week&apos;s meals
+                      </p>
                     </div>
                   </div>
                 </div>
-                <div className="px-5 py-4">
-                  <p className="text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{c.preview}</p>
-                  <div className="mt-4">
-                    <GradientButton small>Open full consultation <ExternalLink size={11} /></GradientButton>
+
+                {/* Real weekly report cards */}
+                {reports ? (
+                  <div className="space-y-4">
+                    {reports.map((r) => {
+                      const rj      = r.report_json
+                      const date    = new Date(r.week_starting)
+                      const dateStr = date.toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+                      const weekLabel = rj?.weekNumber ? `Week ${rj.weekNumber} of 30` : `w/c ${r.week_starting}`
+                      const avgScore  = rj?.averageScore ?? null
+                      const preview   = rj?.narrative
+                        ? rj.narrative.slice(0, 160) + (rj.narrative.length > 160 ? "…" : "")
+                        : r.content.slice(0, 160) + "…"
+
+                      return (
+                        <div key={r.id} className="overflow-hidden rounded-2xl" style={{
+                          background: "white", border: "1px solid #ebebeb", boxShadow: "0 2px 12px rgba(26,46,18,0.05)",
+                        }}>
+                          <div className="h-[2px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
+                          <div className="border-b px-5 py-4" style={{ borderColor: "#f0f0f0" }}>
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--muted-foreground)" }}>{weekLabel}</p>
+                                <p className="mt-0.5 font-serif text-base font-bold" style={{ color: "var(--foreground)" }}>{dateStr}</p>
+                                {rj?.weekSummaryTitle && (
+                                  <p className="mt-0.5 text-sm" style={{ color: "var(--muted-foreground)" }}>{rj.weekSummaryTitle}</p>
+                                )}
+                              </div>
+                              {avgScore != null && (
+                                <span className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold text-white"
+                                  style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
+                                  Avg {avgScore}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="px-5 py-4">
+                            <p className="text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{preview}</p>
+                            <div className="mt-4 flex flex-wrap gap-2">
+                              <Link href={`/account/report/${r.id}`}
+                                className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                                style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", boxShadow: "0 2px 8px rgba(45,170,110,0.25)" }}>
+                                View full report <ExternalLink size={11} />
+                              </Link>
+                              <Link href={`/account/report/${r.id}#chat`}
+                                className="inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-semibold transition-opacity hover:opacity-75"
+                                style={{ borderColor: "var(--icon-green)", color: "var(--icon-green)" }}>
+                                <MessageSquare size={11} /> Chat with EatoBiotic
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                ) : (
+                  /* Mock fallback (sandbox only) */
+                  <div className="space-y-4">
+                    {MOCK_CONSULTATIONS.map((c) => (
+                      <div key={c.id} className="overflow-hidden rounded-2xl" style={{
+                        background: "white", border: "1px solid #ebebeb", boxShadow: "0 2px 12px rgba(26,46,18,0.05)",
+                      }}>
+                        <div className="h-[2px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
+                        <div className="border-b px-5 py-4" style={{ borderColor: "#f0f0f0" }}>
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--muted-foreground)" }}>{c.week}</p>
+                              <p className="mt-0.5 font-serif text-base font-bold" style={{ color: "var(--foreground)" }}>{c.date}</p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="rounded-full px-2.5 py-0.5 text-xs font-semibold text-white"
+                                style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
+                                Avg {c.avgScore}
+                              </span>
+                              <span className="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                                style={{ background: "linear-gradient(135deg, rgba(168,224,99,0.2), rgba(76,182,72,0.12))", color: "#2d7a24", border: "1px solid rgba(76,182,72,0.25)" }}>
+                                {c.delta} pts
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="px-5 py-4">
+                          <p className="text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{c.preview}</p>
+                          <div className="mt-4">
+                            <GradientButton small>Open full report <ExternalLink size={11} /></GradientButton>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )
+          })()}
         </div>
       )}
 
