@@ -151,9 +151,17 @@ export function Footer() {
 
         <div className="mt-16 flex flex-col items-center gap-4 border-t border-border pt-8 md:flex-row md:justify-between">
           <p className="text-xs text-muted-foreground">
-            {'EatoBiotics. All rights reserved.'}
+            © 2025 EatoBiotics. All rights reserved.
           </p>
-          <div className="brand-gradient h-1 w-24 rounded-full" />
+          <div className="flex items-center gap-5">
+            <Link href="/privacy" className="text-xs text-muted-foreground transition-colors hover:text-foreground">
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="text-xs text-muted-foreground transition-colors hover:text-foreground">
+              Terms of Service
+            </Link>
+            <div className="brand-gradient h-1 w-16 rounded-full" />
+          </div>
         </div>
       </div>
     </footer>
