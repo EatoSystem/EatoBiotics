@@ -234,7 +234,7 @@ export function ReportClient({ reportId, weekStarting, reportJson, memberName, d
       }}>
         <div className="p-6 md:p-8">
           {/* Title row — text left, score ring right */}
-          <div className="flex items-start justify-between gap-6">
+          <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.55)" }}>
                 The Food System Inside You
@@ -271,7 +271,7 @@ export function ReportClient({ reportId, weekStarting, reportJson, memberName, d
 
             {/* Score ring */}
             {rj && (() => {
-              const size = 148; const sw = 12
+              const size = 120; const sw = 10
               const r2 = (size - sw * 2) / 2
               const circ = 2 * Math.PI * r2
               const offset = circ - (rj.averageScore / 100) * circ
@@ -300,7 +300,7 @@ export function ReportClient({ reportId, weekStarting, reportJson, memberName, d
                       style={{ transition: "stroke-dashoffset 1s ease" }} />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="font-mono font-bold leading-none text-white" style={{ fontSize: 36, textShadow: "0 0 20px rgba(212,245,106,0.40)" }}>{rj.averageScore}</span>
+                    <span className="font-mono font-bold leading-none text-white" style={{ fontSize: 28, textShadow: "0 0 20px rgba(212,245,106,0.40)" }}>{rj.averageScore}</span>
                     <span className="mt-1 text-[9px] font-semibold uppercase tracking-wide" style={{ color: "rgba(255,255,255,0.65)" }}>score</span>
                   </div>
                 </div>

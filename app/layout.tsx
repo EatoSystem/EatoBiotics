@@ -7,6 +7,7 @@ import { JsonLd } from '@/components/json-ld'
 import { generateOrganizationSchema } from '@/lib/structured-data'
 import { PwaRegister } from '@/components/pwa-register'
 import { PwaInstallPrompt } from '@/components/pwa-install-prompt'
+import { CookieConsent } from '@/components/cookie-consent'
 import { Toaster } from 'sonner'
 import { PHProvider } from '@/components/providers/posthog-provider'
 import { PostHogPageview } from '@/components/providers/posthog-pageview'
@@ -82,6 +83,7 @@ export default function RootLayout({
           <Toaster position="bottom-center" richColors />
           <PwaRegister />
           <PwaInstallPrompt />
+          <CookieConsent />
         </body>
         </StatsigClientProvider>
       </PHProvider>

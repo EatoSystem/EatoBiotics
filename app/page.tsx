@@ -1,5 +1,30 @@
+import type { Metadata } from "next"
 import { Suspense } from "react"
 import { Hero } from "@/components/home/hero"
+
+export const metadata: Metadata = {
+  title: "EatoBiotics — The Food System Inside You",
+  description:
+    "Discover your gut health score, analyse every meal with AI, and get a personalised weekly food system report. Build the microbiome that powers your energy, digestion, and immunity.",
+  openGraph: {
+    title: "EatoBiotics — The Food System Inside You",
+    description:
+      "Discover your gut health score, analyse every meal with AI, and get a personalised weekly food system report.",
+    url: "https://eatobiotics.com",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "EatoBiotics — The Food System Inside You" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "EatoBiotics — The Food System Inside You",
+    description: "Discover your gut health score, analyse every meal with AI, and get a personalised weekly food system report.",
+    images: ["/og-image.png"],
+  },
+  keywords: [
+    "gut health", "microbiome", "prebiotic", "probiotic", "postbiotic",
+    "food system", "gut health score", "weekly gut report", "AI meal analysis",
+    "digestive health", "gut bacteria", "biotics",
+  ],
+}
 import { Pathways } from "@/components/home/pathways"
 import { TheThreeBiotics } from "@/components/home/the-three-biotics"
 import { HowItWorks } from "@/components/home/how-it-works"

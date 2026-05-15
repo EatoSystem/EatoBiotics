@@ -835,9 +835,9 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       ══════════════════════════════════════════════════════════════════ */}
       <div style={{ background: "white" }}>
         <div className="mx-auto max-w-5xl px-5 pb-7 pt-6 md:px-8 md:pb-9 md:pt-8">
-          <div className="flex items-center justify-between gap-6">
-            <div className="flex-1">
-              <p className="font-serif text-3xl font-bold leading-tight md:text-4xl" style={{
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <p className="font-serif text-2xl font-bold leading-tight md:text-4xl" style={{
                 background: "linear-gradient(to right, #4CB648 0%, #2DAA6E 30%, #F5C518 65%, #F5A623 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
@@ -866,11 +866,11 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
               </div>
             </div>
             {/* Score ring */}
-            <div className="relative shrink-0 flex items-center justify-center" style={{ width: 120, height: 120 }}>
-              <ScoreRing score={displayScore ?? 62} size={120} strokeWidth={9} />
+            <div className="relative shrink-0 flex items-center justify-center" style={{ width: 88, height: 88 }}>
+              <ScoreRing score={displayScore ?? 62} size={88} strokeWidth={7} />
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="font-mono font-bold leading-none" style={{ fontSize: 32, color: "var(--foreground)" }}>{displayScore ?? "—"}</span>
-                <span className="mt-1 text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>score</span>
+                <span className="font-mono font-bold leading-none" style={{ fontSize: 24, color: "var(--foreground)" }}>{displayScore ?? "—"}</span>
+                <span className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>score</span>
               </div>
             </div>
           </div>
@@ -885,7 +885,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       ══════════════════════════════════════════════════════════════════ */}
       <div className="border-b" style={{ borderColor: "#ebebeb" }}>
         <div className="mx-auto max-w-5xl px-5 py-4 md:px-8">
-          <div className="flex max-w-xs items-start justify-between">
+          <div className="flex w-full max-w-sm items-start justify-between">
             {([
               { label: "Mon", status: "done"  as const },
               { label: "Tue", status: "today" as const },
@@ -928,11 +928,11 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
           TAB NAVIGATION — sticky
       ══════════════════════════════════════════════════════════════════ */}
       <div className="sticky top-[57px] z-10 border-b" style={{ background: "white", borderColor: "#ebebeb" }}>
-        <div className="mx-auto max-w-5xl px-4 md:px-8">
-          <div className="flex gap-1.5 overflow-x-auto py-2">
+        <div className="mx-auto max-w-5xl">
+          <div className="flex gap-1.5 overflow-x-auto px-4 py-2 md:px-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {TABS.map(({ id, label, icon }) => (
               <button key={id} onClick={() => setTab(id as Tab)}
-                className="flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold transition-all"
+                className="flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition-all md:px-4 md:py-2.5 md:text-sm"
                 style={tab === id
                   ? { background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", color: "white", boxShadow: "0 3px 10px rgba(45,170,110,0.28)" }
                   : { background: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))", color: "white", boxShadow: "0 2px 8px rgba(245,166,35,0.20)" }
@@ -947,7 +947,133 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       {/* ══════════════════════════════════════════════════════════════════
           OVERVIEW TAB
       ══════════════════════════════════════════════════════════════════ */}
-      {tab === "overview" && (
+      {tab === "overview" && recentAnalyses.length === 0 && (
+        <div className="mx-auto max-w-2xl px-4 pt-8 pb-20 md:px-8">
+
+          {/* ── Onboarding: first-time member ── */}
+          <div className="overflow-hidden rounded-2xl" style={{
+            background: "linear-gradient(135deg, #6aab28 0%, #2e8c2a 40%, #c49610 75%, #c47010 100%)",
+            boxShadow: "0 8px 32px rgba(26,46,18,0.22)",
+          }}>
+            <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
+            <div className="px-6 py-8 md:px-10 md:py-10">
+              <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.55)" }}>
+                Welcome to EatoBiotics
+              </p>
+              <h2 className="mt-2 font-serif text-2xl font-bold text-white md:text-3xl">
+                {name ? `Let's build your food system, ${name.split(" ")[0]}.` : "Let's build your food system."}
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.75)" }}>
+                Your Biotics score is built one meal at a time. Log your first meal and we&apos;ll give you an instant breakdown of its Prebiotic, Probiotic, and Postbiotic value.
+              </p>
+
+              {/* Steps */}
+              <div className="mt-6 space-y-3">
+                {[
+                  { n: "1", text: "Log your next meal using the box below" },
+                  { n: "2", text: "Get your instant Biotics score breakdown" },
+                  { n: "3", text: "Track patterns over time and watch your score grow" },
+                ].map(({ n, text }) => (
+                  <div key={n} className="flex items-center gap-3">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                      style={{ background: "rgba(255,255,255,0.20)", color: "white" }}>{n}</span>
+                    <span className="text-sm text-white">{text}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Arrow pointing down */}
+              <div className="mt-6 flex items-center gap-2" style={{ color: "rgba(255,255,255,0.65)" }}>
+                <Camera size={14} />
+                <span className="text-xs font-semibold">Describe or photograph your meal in the box below to start</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick-start suggestions */}
+          <div className="mt-5 overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid #ebebeb" }}>
+            <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))" }} />
+            <div className="p-5">
+              <p className="mb-3 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
+                Try one of these to get started
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  "Porridge with berries and walnuts",
+                  "Greek yoghurt with honey",
+                  "Lentil soup with sourdough",
+                  "Salmon with asparagus",
+                  "Overnight oats with chia seeds",
+                ].map((meal) => (
+                  <button key={meal}
+                    onClick={() => {
+                      // Scroll to top and pre-fill the logger
+                      window.scrollTo({ top: 0, behavior: "smooth" })
+                    }}
+                    className="rounded-full border px-3 py-1.5 text-xs font-medium transition-all hover:border-[var(--icon-green)] hover:text-[var(--icon-green)]"
+                    style={{ borderColor: "#e0e0e0", color: "var(--muted-foreground)" }}>
+                    {meal}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Log first meal inline */}
+          <div className="mt-5">
+            <div className="overflow-hidden rounded-2xl" style={{
+              background: "linear-gradient(135deg, #6aab28 0%, #2e8c2a 40%, #c49610 75%, #c47010 100%)",
+              boxShadow: "0 4px 20px rgba(26,46,18,0.18)",
+            }}>
+              <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
+              <div className="p-5">
+                <p className="mb-3 text-xs font-bold text-white opacity-80 uppercase tracking-widest">Log your first meal</p>
+                <textarea
+                  value={mealInput}
+                  onChange={(e) => setMealInput(e.target.value)}
+                  placeholder="e.g. Porridge with blueberries, walnuts and a spoonful of ground flaxseed…"
+                  rows={3}
+                  className="w-full resize-none rounded-xl border-0 p-3 text-sm outline-none focus:ring-2"
+                  style={{
+                    background: "rgba(255,255,255,0.95)",
+                    color: "var(--foreground)",
+                    boxShadow: "inset 0 1px 4px rgba(0,0,0,0.08)",
+                  }}
+                />
+                <button
+                  disabled={!mealInput.trim() || loggerState === "analysing"}
+                  onClick={async () => {
+                    if (!mealInput.trim() || loggerState === "analysing") return
+                    setLoggerState("analysing"); setAnalyseError(null)
+                    try {
+                      const res = await fetch("/api/analyse", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ meal: mealInput }),
+                      })
+                      const data = await res.json() as LiveResult & { error?: string }
+                      if (!res.ok || data.error) { setAnalyseError(data.error ?? "Analysis failed"); setLoggerState("empty"); return }
+                      setLiveResult(data); setLoggerState("result")
+                    } catch { setAnalyseError("Something went wrong — please try again"); setLoggerState("empty") }
+                  }}
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                  style={{ background: "rgba(255,255,255,0.20)", border: "1px solid rgba(255,255,255,0.30)" }}
+                >
+                  {loggerState === "analysing" ? (
+                    <><span className="animate-pulse">Analysing…</span></>
+                  ) : (
+                    <><Camera size={15} /> Analyse this meal</>
+                  )}
+                </button>
+                {analyseError && <p className="mt-2 text-center text-xs text-red-200">{analyseError}</p>}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      )}
+
+      {tab === "overview" && recentAnalyses.length > 0 && (
         <div className="mx-auto max-w-5xl px-4 pt-6 pb-16 md:grid md:grid-cols-[1fr_380px] md:gap-7 md:px-8 md:pt-8">
 
           {/* ── LEFT: Logger + Today's Meals ── */}

@@ -4,9 +4,21 @@ import { getSupabase } from "@/lib/supabase"
 import { PricingClient } from "./pricing-client"
 
 export const metadata: Metadata = {
-  title: "EatoBiotics Personal Report — €49",
+  title: "Plans & Pricing — EatoBiotics",
   description:
-    "Get your personalised EatoBiotics Report — a full Feed · Seed · Heal analysis, your 30-day gut reset plan, and a free 30-day account. One-time €49.",
+    "Choose your EatoBiotics plan. From free gut health scoring to full AI meal analysis, weekly reports, and personalised gut coaching. Plans from €9.99/month.",
+  openGraph: {
+    title: "Plans & Pricing — EatoBiotics",
+    description: "From free gut health scoring to full AI meal analysis, weekly reports, and personalised gut coaching.",
+    url: "https://eatobiotics.com/pricing",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "EatoBiotics Plans" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Plans & Pricing — EatoBiotics",
+    description: "From free gut health scoring to full AI meal analysis and personalised weekly reports.",
+    images: ["/og-image.png"],
+  },
 }
 
 export default async function PricingPage({

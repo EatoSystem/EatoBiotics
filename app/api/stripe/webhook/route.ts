@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import type Stripe from "stripe"
+import { Resend } from "resend"
 import { stripe } from "@/lib/stripe-server"
 import { getSupabase } from "@/lib/supabase"
 import { tierFromPriceId, isFoundingMember } from "@/lib/membership"
 import { logServerEvent } from "@/lib/statsig-server"
+import { welcomeSubscriptionEmailHtml } from "@/lib/email/welcome-subscription-email"
 
 // Stripe v20 with the clover API version uses slightly different type shapes.
 // We use a helper to safely access fields that may not be in the TS types.
@@ -145,6 +147,31 @@ export async function POST(req: NextRequest) {
           toTier:      tier,
           stripeEventId: event.id,
         })
+
+        // Welcome email
+        try {
+          const resendKey = process.env.RESEND_API_KEY
+          const emailFrom = process.env.EMAIL_FROM ?? "hello@eatobiotics.com"
+          if (resendKey) {
+            const { data: prof } = await supabase
+              .from("profiles")
+              .select("email, name")
+              .eq("id", profile.id)
+              .single()
+            if (prof?.email) {
+              const resend = new Resend(resendKey)
+              await resend.emails.send({
+                from:    `EatoBiotics <${emailFrom}>`,
+                to:      prof.email as string,
+                subject: `Welcome to EatoBiotics ${tier.charAt(0).toUpperCase() + tier.slice(1)} 🎉`,
+                html:    welcomeSubscriptionEmailHtml({ name: (prof.name as string | null) ?? null, tier }),
+              })
+            }
+          }
+        } catch (emailErr) {
+          console.error("[webhook] Welcome email failed:", emailErr)
+          // Non-fatal — don't throw
+        }
 
         // Statsig: subscription_started — fires once when a new subscription is created.
         // TODO: Replace profile.id with the Supabase user ID linked to a Statsig userID
