@@ -212,12 +212,50 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
   const { overall, profile, insights, nextActions, subScores } = result
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [promoCodeCopied, setPromoCodeCopied] = useState(false)
-  const [shareUnlocked, setShareUnlocked] = useState(false)
-  const [shareCopied, setShareCopied] = useState(false)
 
-  const LOW_SCORE_CODE  = process.env.NEXT_PUBLIC_LOW_SCORE_PROMO_CODE  ?? "GUTHELP"
-  const SHARE_CODE      = process.env.NEXT_PUBLIC_SHARE_PROMO_CODE      ?? "SHARE50"
+  // Low score promo — unique single-use code fetched from server
+  const [lowScoreCode,        setLowScoreCode]        = useState<string | null>(null)
+  const [lowScoreCodeLoading, setLowScoreCodeLoading] = useState(false)
+  const [lowScoreCodeCopied,  setLowScoreCodeCopied]  = useState(false)
+  const lowScoreFetched = useRef(false)
+
+  // Share-to-unlock promo — generated when user clicks a share button
+  const [shareCode,        setShareCode]        = useState<string | null>(null)
+  const [shareCodeLoading, setShareCodeLoading] = useState(false)
+  const [shareCodeCopied,  setShareCodeCopied]  = useState(false)
+  const [shareUnlocked,    setShareUnlocked]    = useState(false)
+
+  // Auto-fetch unique low-score code once when score qualifies
+  useEffect(() => {
+    if (overall >= 40) return
+    if (lowScoreFetched.current) return
+    lowScoreFetched.current = true
+    setLowScoreCodeLoading(true)
+    fetch("/api/promo/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "low_score", email: leadEmail ?? undefined, score: overall }),
+    })
+      .then((r) => r.json())
+      .then((d: { code?: string }) => { if (d.code) setLowScoreCode(d.code) })
+      .catch(() => { /* silent — code stays null, we hide the section */ })
+      .finally(() => setLowScoreCodeLoading(false))
+  }, [overall, leadEmail])
+
+  async function fetchShareCode() {
+    if (shareCode) return  // already have one
+    setShareCodeLoading(true)
+    try {
+      const res  = await fetch("/api/promo/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "share", email: leadEmail ?? undefined, score: overall }),
+      })
+      const data = await res.json() as { code?: string }
+      if (data.code) setShareCode(data.code)
+    } catch { /* silent */ }
+    finally { setShareCodeLoading(false) }
+  }
 
   function copyCode(code: string, onDone: () => void) {
     void navigator.clipboard.writeText(code).then(onDone)
@@ -437,35 +475,33 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
                       </div>
                       <div>
                         <p className="text-sm font-bold" style={{ color: "var(--foreground)" }}>Share your score — unlock 50% off</p>
-                        <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>Share to any platform and get half off your first month</p>
+                        <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>Share to any platform and get a unique half-price code just for you</p>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {/* Twitter/X */}
                       <a
                         href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`I scored ${overall}/100 on my gut health assessment 🌱 My ${profile.type} result — see how your diet shapes your microbiome. Check yours:`)}&url=${encodeURIComponent("https://eatobiotics.com/assessment")}`}
                         target="_blank" rel="noopener noreferrer"
-                        onClick={() => { setShareUnlocked(true); posthog.capture("share_to_unlock_clicked", { platform: "twitter", score: overall }) }}
+                        onClick={() => { setShareUnlocked(true); void fetchShareCode(); posthog.capture("share_to_unlock_clicked", { platform: "twitter", score: overall }) }}
                         className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
                         style={{ background: "#000000" }}
                       >
                         <Twitter size={13} /> Share on X
                       </a>
-                      {/* WhatsApp */}
                       <a
                         href={`https://wa.me/?text=${encodeURIComponent(`I scored ${overall}/100 on my gut health assessment 🌱 — check yours at eatobiotics.com/assessment`)}`}
                         target="_blank" rel="noopener noreferrer"
-                        onClick={() => { setShareUnlocked(true); posthog.capture("share_to_unlock_clicked", { platform: "whatsapp", score: overall }) }}
+                        onClick={() => { setShareUnlocked(true); void fetchShareCode(); posthog.capture("share_to_unlock_clicked", { platform: "whatsapp", score: overall }) }}
                         className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
                         style={{ background: "#25D366" }}
                       >
                         <MessageCircle size={13} /> Share on WhatsApp
                       </a>
-                      {/* Copy link */}
                       <button
                         onClick={() => {
                           void navigator.clipboard.writeText("https://eatobiotics.com/assessment")
                           setShareUnlocked(true)
+                          void fetchShareCode()
                           posthog.capture("share_to_unlock_clicked", { platform: "copy_link", score: overall })
                         }}
                         className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition-opacity hover:opacity-75"
@@ -483,22 +519,34 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
                     </div>
                     <div className="flex-1">
                       <p className="font-bold text-sm" style={{ color: "var(--foreground)" }}>50% off unlocked — thank you for sharing!</p>
-                      <p className="mt-0.5 text-xs" style={{ color: "var(--muted-foreground)" }}>Use this code at checkout for 50% off your first month:</p>
+                      <p className="mt-0.5 text-xs" style={{ color: "var(--muted-foreground)" }}>
+                        Your unique code — single-use, just for you:
+                      </p>
                       <div className="mt-3 flex items-center gap-2">
-                        <div className="flex-1 rounded-xl border px-4 py-2.5 font-mono text-base font-bold tracking-wider"
-                          style={{ background: "white", borderColor: "#86efac", color: "var(--foreground)", letterSpacing: "0.12em" }}>
-                          {SHARE_CODE}
-                        </div>
-                        <button
-                          onClick={() => { copyCode(SHARE_CODE, () => { setShareCopied(true); setTimeout(() => setShareCopied(false), 2500) }) }}
-                          className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
-                          style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", minWidth: 80 }}
-                        >
-                          {shareCopied ? <><Check size={12} /> Copied!</> : <><Copy size={12} /> Copy</>}
-                        </button>
+                        {shareCodeLoading || !shareCode ? (
+                          <div className="flex flex-1 items-center gap-2 rounded-xl border px-4 py-2.5"
+                            style={{ background: "white", borderColor: "#e2e8f0" }}>
+                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--icon-green)]/30 border-t-[var(--icon-green)]" />
+                            <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>Generating your code…</span>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex-1 rounded-xl border px-4 py-2.5 font-mono text-base font-bold tracking-wider"
+                              style={{ background: "white", borderColor: "#86efac", color: "var(--foreground)", letterSpacing: "0.12em" }}>
+                              {shareCode}
+                            </div>
+                            <button
+                              onClick={() => { copyCode(shareCode, () => { setShareCodeCopied(true); setTimeout(() => setShareCodeCopied(false), 2500) }) }}
+                              className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                              style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", minWidth: 80 }}
+                            >
+                              {shareCodeCopied ? <><Check size={12} /> Copied!</> : <><Copy size={12} /> Copy</>}
+                            </button>
+                          </>
+                        )}
                       </div>
                       <p className="mt-2 text-[11px]" style={{ color: "var(--muted-foreground)" }}>
-                        Valid for any monthly plan · Enter at checkout · Limited time
+                        This code is yours alone — it can only be redeemed once
                       </p>
                     </div>
                   </div>
@@ -510,7 +558,7 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
       </section>
 
       {/* ── Low score free month ───────────────────────────────────────── */}
-      {overall < 40 && (
+      {overall < 40 && (lowScoreCode || lowScoreCodeLoading) && (
         <section className="px-6 pb-10">
           <div className="mx-auto max-w-3xl">
             <ScrollReveal>
@@ -536,20 +584,30 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
                         Scores below 40 have the most to gain from consistent tracking and a structured plan. Use this code for a free first month on any plan:
                       </p>
                       <div className="mt-4 flex items-center gap-2">
-                        <div className="flex-1 rounded-xl px-4 py-3 font-mono text-lg font-bold tracking-widest text-white"
-                          style={{ background: "rgba(255,255,255,0.15)", border: "1.5px solid rgba(255,255,255,0.30)", letterSpacing: "0.15em" }}>
-                          {LOW_SCORE_CODE}
-                        </div>
-                        <button
-                          onClick={() => { copyCode(LOW_SCORE_CODE, () => { setPromoCodeCopied(true); setTimeout(() => setPromoCodeCopied(false), 2500); posthog.capture("low_score_promo_copied", { score: overall }) }) }}
-                          className="flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-3 text-sm font-bold transition-opacity hover:opacity-90"
-                          style={{ background: "rgba(255,255,255,0.20)", border: "1px solid rgba(255,255,255,0.30)", color: "white", minWidth: 90 }}
-                        >
-                          {promoCodeCopied ? <><Check size={13} /> Copied!</> : <><Copy size={13} /> Copy</>}
-                        </button>
+                        {lowScoreCodeLoading || !lowScoreCode ? (
+                          <div className="flex flex-1 items-center gap-2 rounded-xl px-4 py-3"
+                            style={{ background: "rgba(255,255,255,0.15)", border: "1.5px solid rgba(255,255,255,0.30)" }}>
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                            <span className="text-sm text-white/70">Generating your code…</span>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex-1 rounded-xl px-4 py-3 font-mono text-lg font-bold tracking-widest text-white"
+                              style={{ background: "rgba(255,255,255,0.15)", border: "1.5px solid rgba(255,255,255,0.30)", letterSpacing: "0.15em" }}>
+                              {lowScoreCode}
+                            </div>
+                            <button
+                              onClick={() => { copyCode(lowScoreCode, () => { setLowScoreCodeCopied(true); setTimeout(() => setLowScoreCodeCopied(false), 2500); posthog.capture("low_score_promo_copied", { score: overall }) }) }}
+                              className="flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-3 text-sm font-bold transition-opacity hover:opacity-90"
+                              style={{ background: "rgba(255,255,255,0.20)", border: "1px solid rgba(255,255,255,0.30)", color: "white", minWidth: 90 }}
+                            >
+                              {lowScoreCodeCopied ? <><Check size={13} /> Copied!</> : <><Copy size={13} /> Copy</>}
+                            </button>
+                          </>
+                        )}
                       </div>
                       <p className="mt-2.5 text-xs" style={{ color: "rgba(255,255,255,0.60)" }}>
-                        Valid for your first month on any plan · Enter at checkout · No credit card needed to start
+                        This code is yours alone · Single-use · Enter at checkout
                       </p>
                     </div>
                   </div>
