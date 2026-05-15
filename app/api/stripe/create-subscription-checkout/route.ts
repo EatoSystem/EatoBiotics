@@ -74,6 +74,7 @@ export async function POST(req: NextRequest) {
       line_items: [{ price: body.priceId, quantity: 1 }],
       success_url: `${origin}/account?subscription=success`,
       cancel_url:  `${origin}/pricing`,
+      allow_promotion_codes: true,
       metadata: { supabase_user_id: user.id },
       subscription_data: {
         metadata: { supabase_user_id: user.id },

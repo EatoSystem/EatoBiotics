@@ -15,6 +15,11 @@ import {
   Calendar,
   ShoppingCart,
   BarChart3,
+  Copy,
+  Gift,
+  Share2,
+  Twitter,
+  MessageCircle,
 } from "lucide-react"
 import posthog from "posthog-js"
 import { ScrollReveal } from "@/components/scroll-reveal"
@@ -207,6 +212,16 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
   const { overall, profile, insights, nextActions, subScores } = result
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [promoCodeCopied, setPromoCodeCopied] = useState(false)
+  const [shareUnlocked, setShareUnlocked] = useState(false)
+  const [shareCopied, setShareCopied] = useState(false)
+
+  const LOW_SCORE_CODE  = process.env.NEXT_PUBLIC_LOW_SCORE_PROMO_CODE  ?? "GUTHELP"
+  const SHARE_CODE      = process.env.NEXT_PUBLIC_SHARE_PROMO_CODE      ?? "SHARE50"
+
+  function copyCode(code: string, onDone: () => void) {
+    void navigator.clipboard.writeText(code).then(onDone)
+  }
 
   // Animated counter
   const animatedScore = useCountUp(overall)
@@ -400,6 +415,150 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
           </ScrollReveal>
         </div>
       </section>
+
+      {/* ── Share to unlock ────────────────────────────────────────────── */}
+      <section className="px-6 pb-10">
+        <div className="mx-auto max-w-3xl">
+          <ScrollReveal>
+            <div className="overflow-hidden rounded-2xl" style={{
+              background: shareUnlocked
+                ? "linear-gradient(135deg, #f0fdf4, #fefce8)"
+                : "linear-gradient(135deg, #f8fafc, #f1f5f9)",
+              border: shareUnlocked ? "1.5px solid #86efac" : "1.5px solid #e2e8f0",
+            }}>
+              <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-green), var(--icon-teal), var(--icon-yellow))" }} />
+              <div className="px-6 py-5">
+                {!shareUnlocked ? (
+                  <>
+                    <div className="mb-4 flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl"
+                        style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
+                        <Share2 size={15} color="white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold" style={{ color: "var(--foreground)" }}>Share your score — unlock 50% off</p>
+                        <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>Share to any platform and get half off your first month</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {/* Twitter/X */}
+                      <a
+                        href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`I scored ${overall}/100 on my gut health assessment 🌱 My ${profile.type} result — see how your diet shapes your microbiome. Check yours:`)}&url=${encodeURIComponent("https://eatobiotics.com/assessment")}`}
+                        target="_blank" rel="noopener noreferrer"
+                        onClick={() => { setShareUnlocked(true); posthog.capture("share_to_unlock_clicked", { platform: "twitter", score: overall }) }}
+                        className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                        style={{ background: "#000000" }}
+                      >
+                        <Twitter size={13} /> Share on X
+                      </a>
+                      {/* WhatsApp */}
+                      <a
+                        href={`https://wa.me/?text=${encodeURIComponent(`I scored ${overall}/100 on my gut health assessment 🌱 — check yours at eatobiotics.com/assessment`)}`}
+                        target="_blank" rel="noopener noreferrer"
+                        onClick={() => { setShareUnlocked(true); posthog.capture("share_to_unlock_clicked", { platform: "whatsapp", score: overall }) }}
+                        className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                        style={{ background: "#25D366" }}
+                      >
+                        <MessageCircle size={13} /> Share on WhatsApp
+                      </a>
+                      {/* Copy link */}
+                      <button
+                        onClick={() => {
+                          void navigator.clipboard.writeText("https://eatobiotics.com/assessment")
+                          setShareUnlocked(true)
+                          posthog.capture("share_to_unlock_clicked", { platform: "copy_link", score: overall })
+                        }}
+                        className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition-opacity hover:opacity-75"
+                        style={{ borderColor: "#e2e8f0", color: "var(--muted-foreground)" }}
+                      >
+                        <Copy size={13} /> Copy link
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                      style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
+                      <Gift size={18} color="white" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-bold text-sm" style={{ color: "var(--foreground)" }}>50% off unlocked — thank you for sharing!</p>
+                      <p className="mt-0.5 text-xs" style={{ color: "var(--muted-foreground)" }}>Use this code at checkout for 50% off your first month:</p>
+                      <div className="mt-3 flex items-center gap-2">
+                        <div className="flex-1 rounded-xl border px-4 py-2.5 font-mono text-base font-bold tracking-wider"
+                          style={{ background: "white", borderColor: "#86efac", color: "var(--foreground)", letterSpacing: "0.12em" }}>
+                          {SHARE_CODE}
+                        </div>
+                        <button
+                          onClick={() => { copyCode(SHARE_CODE, () => { setShareCopied(true); setTimeout(() => setShareCopied(false), 2500) }) }}
+                          className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                          style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", minWidth: 80 }}
+                        >
+                          {shareCopied ? <><Check size={12} /> Copied!</> : <><Copy size={12} /> Copy</>}
+                        </button>
+                      </div>
+                      <p className="mt-2 text-[11px]" style={{ color: "var(--muted-foreground)" }}>
+                        Valid for any monthly plan · Enter at checkout · Limited time
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      {/* ── Low score free month ───────────────────────────────────────── */}
+      {overall < 40 && (
+        <section className="px-6 pb-10">
+          <div className="mx-auto max-w-3xl">
+            <ScrollReveal>
+              <div className="overflow-hidden rounded-2xl" style={{
+                background: "linear-gradient(135deg, #6aab28 0%, #2e8c2a 40%, #c49610 75%, #c47010 100%)",
+                boxShadow: "0 8px 32px rgba(26,46,18,0.22)",
+              }}>
+                <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
+                <div className="px-6 py-6 md:px-8">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                      style={{ background: "rgba(255,255,255,0.20)" }}>
+                      <Gift size={18} color="white" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.60)" }}>
+                        Your first month is on us
+                      </p>
+                      <p className="mt-1 font-serif text-lg font-bold text-white">
+                        Your gut health needs the most attention — we want to help.
+                      </p>
+                      <p className="mt-1.5 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.80)" }}>
+                        Scores below 40 have the most to gain from consistent tracking and a structured plan. Use this code for a free first month on any plan:
+                      </p>
+                      <div className="mt-4 flex items-center gap-2">
+                        <div className="flex-1 rounded-xl px-4 py-3 font-mono text-lg font-bold tracking-widest text-white"
+                          style={{ background: "rgba(255,255,255,0.15)", border: "1.5px solid rgba(255,255,255,0.30)", letterSpacing: "0.15em" }}>
+                          {LOW_SCORE_CODE}
+                        </div>
+                        <button
+                          onClick={() => { copyCode(LOW_SCORE_CODE, () => { setPromoCodeCopied(true); setTimeout(() => setPromoCodeCopied(false), 2500); posthog.capture("low_score_promo_copied", { score: overall }) }) }}
+                          className="flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-3 text-sm font-bold transition-opacity hover:opacity-90"
+                          style={{ background: "rgba(255,255,255,0.20)", border: "1px solid rgba(255,255,255,0.30)", color: "white", minWidth: 90 }}
+                        >
+                          {promoCodeCopied ? <><Check size={13} /> Copied!</> : <><Copy size={13} /> Copy</>}
+                        </button>
+                      </div>
+                      <p className="mt-2.5 text-xs" style={{ color: "rgba(255,255,255,0.60)" }}>
+                        Valid for your first month on any plan · Enter at checkout · No credit card needed to start
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </ScrollReveal>
+          </div>
+        </section>
+      )}
 
       {/* ── C. Single CTA — the conversion moment ─────────────────────── */}
       <section className="border-y border-border bg-secondary/10 px-6 py-16">

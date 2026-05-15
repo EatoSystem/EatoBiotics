@@ -73,6 +73,7 @@ export async function POST(req: NextRequest) {
         },
       ],
       client_reference_id: resultSummary,
+      allow_promotion_codes: true,
       success_url: `${origin}/assessment/deep?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/assessment`,
     })
