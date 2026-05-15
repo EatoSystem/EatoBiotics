@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useState, useRef, useEffect } from "react"
-import { Menu, X, ChevronDown, BookOpen, Leaf, Smartphone, UtensilsCrossed, Calendar, Info, Globe, Map, Mic, Activity, Users, Brain, ClipboardList } from "lucide-react"
+import { Menu, X, ChevronDown, BookOpen, Leaf, Smartphone, UtensilsCrossed, Calendar, Mic, Users, Brain, ClipboardList } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { AccountNavItem } from "@/components/account/account-nav-item"
@@ -25,8 +25,8 @@ const navGroups: NavGroup[] = [
     label: "Learn",
     items: [
       { href: "/biotics", label: "The Biotics", description: "The 3-part framework for your gut", icon: Leaf },
+      { href: "/books", label: "The Books", description: "Three books. One complete system.", icon: BookOpen },
       { href: "/mind", label: "Mind", description: "The food system inside your mind", icon: Brain },
-      { href: "/book", label: "The Book", description: "EatoBiotics — coming 2026", icon: BookOpen },
       { href: "/app", label: "The App", description: "Your daily plate companion", icon: Smartphone },
     ],
   },
@@ -38,14 +38,6 @@ const navGroups: NavGroup[] = [
       { href: "/podcast", label: "The Podcast", description: "Conversations about food & performance", icon: Mic },
       { href: "/family", label: "For Families", description: "The food system for the whole family", icon: Users },
       { href: "/assessment-mind", label: "Mind Assessment", description: "Score your gut-brain connection", icon: ClipboardList },
-    ],
-  },
-  {
-    label: "About",
-    items: [
-      { href: "/about", label: "About", description: "Jason's story and mission", icon: Info },
-      { href: "/eatosystem", label: "EatoSystem", description: "The wider food ecosystem", icon: Globe },
-      { href: "/roadmap", label: "Roadmap", description: "What's being built next", icon: Map },
     ],
   },
 ]
@@ -159,19 +151,26 @@ export function Nav() {
         </Link>
 
         {/* Desktop nav */}
-        <div className="hidden items-center gap-8 md:flex">
+        <div className="hidden items-center gap-7 md:flex">
           {navGroups.map((group) => (
             <DropdownMenu key={group.label} group={group} pathname={pathname} />
           ))}
+          <Link
+            href="/about"
+            className={cn(
+              "text-sm font-medium transition-colors",
+              pathname === "/about" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            About
+          </Link>
           <AccountNavItem />
-          <a
-            href="https://eatobiotics.substack.com/"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href="/pricing"
             className="brand-gradient rounded-full px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
           >
-            Subscribe
-          </a>
+            Get started
+          </Link>
         </div>
 
         {/* Mobile toggle */}
@@ -245,17 +244,27 @@ export function Nav() {
               )
             })}
 
+            <Link
+              href="/about"
+              onClick={() => setOpen(false)}
+              className={cn(
+                "flex items-center rounded-xl px-3 py-3 text-base font-semibold transition-colors",
+                pathname === "/about" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              About
+            </Link>
+
             <div className="mt-1 px-3">
               <AccountNavItem />
             </div>
-            <a
-              href="https://eatobiotics.substack.com/"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/pricing"
+              onClick={() => setOpen(false)}
               className="brand-gradient mt-3 rounded-full px-5 py-3 text-center text-sm font-semibold text-white"
             >
-              Subscribe
-            </a>
+              Get started
+            </Link>
           </div>
         </div>
       )}

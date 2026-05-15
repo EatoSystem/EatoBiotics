@@ -41,8 +41,8 @@ export function Footer() {
                 <Link href="/biotics" className="text-sm text-foreground transition-colors hover:text-icon-green">
                   The Biotics
                 </Link>
-                <Link href="/book" className="text-sm text-foreground transition-colors hover:text-icon-green">
-                  The Book
+                <Link href="/books" className="text-sm text-foreground transition-colors hover:text-icon-green">
+                  The Books
                 </Link>
                 <Link href="/app" className="text-sm text-foreground transition-colors hover:text-icon-green">
                   The App
@@ -50,8 +50,8 @@ export function Footer() {
                 <Link href="/podcast" className="text-sm text-foreground transition-colors hover:text-icon-green">
                   The Podcast
                 </Link>
-                <Link href="/eatosystem" className="text-sm text-foreground transition-colors hover:text-icon-green">
-                  EatoSystem
+                <Link href="/about" className="text-sm text-foreground transition-colors hover:text-icon-green">
+                  About
                 </Link>
               </div>
             </div>
@@ -69,14 +69,9 @@ export function Footer() {
                 >
                   Substack
                 </a>
-                <a
-                  href="https://www.eatosystem.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-foreground transition-colors hover:text-icon-orange"
-                >
-                  EatoSystem.com
-                </a>
+                <Link href="/pricing" className="text-sm text-foreground transition-colors hover:text-icon-orange">
+                  Get started
+                </Link>
               </div>
 
               {/* Social icons */}
