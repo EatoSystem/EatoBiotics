@@ -25,6 +25,7 @@ export function AssessmentClient() {
   const [state, setState] = useState<AssessmentState>(emptyAssessmentState)
   const [hydrated, setHydrated] = useState(false)
   const [lead, setLead] = useState<LeadData | null>(null)
+  const [winnerCode, setWinnerCode] = useState<string | null>(null)
   const resultsViewedFired = useRef(false)
 
   // Load saved state from localStorage after hydration
@@ -66,12 +67,17 @@ export function AssessmentClient() {
     saveLeadData(leadData)
     setLead(leadData)
 
-    // Fire-and-forget: store lead in Supabase
+    // Store lead in Supabase — capture winner response for lottery
     fetch("/api/submit-lead", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(leadData),
-    }).catch(() => {/* ignore network errors */})
+    })
+      .then((r) => r.json())
+      .then((d: { ok?: boolean; winner?: boolean; promoCode?: string }) => {
+        if (d.winner && d.promoCode) setWinnerCode(d.promoCode)
+      })
+      .catch(() => {/* ignore network errors */})
 
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior })
     setState((s) => ({
@@ -214,5 +220,5 @@ export function AssessmentClient() {
   // view === "results"
   if (!state.result) return null
 
-  return <AssessmentResults result={state.result} onRetake={handleRetake} leadEmail={lead?.email} />
+  return <AssessmentResults result={state.result} onRetake={handleRetake} leadEmail={lead?.email} winnerCode={winnerCode ?? undefined} />
 }

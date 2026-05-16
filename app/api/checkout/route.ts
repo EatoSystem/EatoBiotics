@@ -72,7 +72,9 @@ export async function POST(req: NextRequest) {
           quantity: 1,
         },
       ],
-      client_reference_id: resultSummary,
+      // Store result summary in metadata (no length limit) instead of
+      // client_reference_id which has a 200-char Stripe limit
+      metadata: { result_summary: resultSummary },
       allow_promotion_codes: true,
       success_url: `${origin}/assessment/deep?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/assessment`,

@@ -23,7 +23,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       paid,
-      clientReferenceId: session.client_reference_id ?? null,
+      // Support both new metadata location and legacy client_reference_id
+      clientReferenceId: session.metadata?.result_summary ?? session.client_reference_id ?? null,
     })
   } catch (err) {
     console.error("Stripe verify error:", err)

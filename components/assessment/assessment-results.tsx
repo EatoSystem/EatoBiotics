@@ -16,10 +16,6 @@ import {
   ShoppingCart,
   BarChart3,
   Copy,
-  Gift,
-  Share2,
-  Twitter,
-  MessageCircle,
 } from "lucide-react"
 import posthog from "posthog-js"
 import { ScrollReveal } from "@/components/scroll-reveal"
@@ -206,60 +202,16 @@ interface AssessmentResultsProps {
   result: AssessmentResult
   onRetake: () => void
   leadEmail?: string
+  winnerCode?: string
 }
 
-export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentResultsProps) {
+export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: AssessmentResultsProps) {
   const { overall, profile, insights, nextActions, subScores } = result
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Low score promo — unique single-use code fetched from server
-  const [lowScoreCode,        setLowScoreCode]        = useState<string | null>(null)
-  const [lowScoreCodeLoading, setLowScoreCodeLoading] = useState(false)
-  const [lowScoreCodeCopied,  setLowScoreCodeCopied]  = useState(false)
-  const lowScoreFetched = useRef(false)
-
-  // Share-to-unlock promo — generated when user clicks a share button
-  const [shareCode,        setShareCode]        = useState<string | null>(null)
-  const [shareCodeLoading, setShareCodeLoading] = useState(false)
-  const [shareCodeCopied,  setShareCodeCopied]  = useState(false)
-  const [shareUnlocked,    setShareUnlocked]    = useState(false)
-
-  // Auto-fetch unique low-score code once when score qualifies
-  useEffect(() => {
-    if (overall >= 40) return
-    if (lowScoreFetched.current) return
-    lowScoreFetched.current = true
-    setLowScoreCodeLoading(true)
-    fetch("/api/promo/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "low_score", email: leadEmail ?? undefined, score: overall }),
-    })
-      .then((r) => r.json())
-      .then((d: { code?: string }) => { if (d.code) setLowScoreCode(d.code) })
-      .catch(() => { /* silent — code stays null, we hide the section */ })
-      .finally(() => setLowScoreCodeLoading(false))
-  }, [overall, leadEmail])
-
-  async function fetchShareCode() {
-    if (shareCode) return  // already have one
-    setShareCodeLoading(true)
-    try {
-      const res  = await fetch("/api/promo/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "share", email: leadEmail ?? undefined, score: overall }),
-      })
-      const data = await res.json() as { code?: string }
-      if (data.code) setShareCode(data.code)
-    } catch { /* silent */ }
-    finally { setShareCodeLoading(false) }
-  }
-
-  function copyCode(code: string, onDone: () => void) {
-    void navigator.clipboard.writeText(code).then(onDone)
-  }
+  // Lottery winner code copy state
+  const [winnerCodeCopied, setWinnerCodeCopied] = useState(false)
 
   // Animated counter
   const animatedScore = useCountUp(overall)
@@ -454,163 +406,58 @@ export function AssessmentResults({ result, onRetake, leadEmail }: AssessmentRes
         </div>
       </section>
 
-      {/* ── Share to unlock ────────────────────────────────────────────── */}
-      <section className="px-6 pb-10">
-        <div className="mx-auto max-w-3xl">
-          <ScrollReveal>
-            <div className="overflow-hidden rounded-2xl" style={{
-              background: shareUnlocked
-                ? "linear-gradient(135deg, #f0fdf4, #fefce8)"
-                : "linear-gradient(135deg, #f8fafc, #f1f5f9)",
-              border: shareUnlocked ? "1.5px solid #86efac" : "1.5px solid #e2e8f0",
-            }}>
-              <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-green), var(--icon-teal), var(--icon-yellow))" }} />
-              <div className="px-6 py-5">
-                {!shareUnlocked ? (
-                  <>
-                    <div className="mb-4 flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl"
-                        style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
-                        <Share2 size={15} color="white" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold" style={{ color: "var(--foreground)" }}>Share your score — unlock 50% off</p>
-                        <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>Share to any platform and get a unique half-price code just for you</p>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <a
-                        href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`I scored ${overall}/100 on my gut health assessment 🌱 My ${profile.type} result — see how your diet shapes your microbiome. Check yours:`)}&url=${encodeURIComponent("https://eatobiotics.com/assessment")}`}
-                        target="_blank" rel="noopener noreferrer"
-                        onClick={() => { setShareUnlocked(true); void fetchShareCode(); posthog.capture("share_to_unlock_clicked", { platform: "twitter", score: overall }) }}
-                        className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
-                        style={{ background: "#000000" }}
-                      >
-                        <Twitter size={13} /> Share on X
-                      </a>
-                      <a
-                        href={`https://wa.me/?text=${encodeURIComponent(`I scored ${overall}/100 on my gut health assessment 🌱 — check yours at eatobiotics.com/assessment`)}`}
-                        target="_blank" rel="noopener noreferrer"
-                        onClick={() => { setShareUnlocked(true); void fetchShareCode(); posthog.capture("share_to_unlock_clicked", { platform: "whatsapp", score: overall }) }}
-                        className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
-                        style={{ background: "#25D366" }}
-                      >
-                        <MessageCircle size={13} /> Share on WhatsApp
-                      </a>
-                      <button
-                        onClick={() => {
-                          void navigator.clipboard.writeText("https://eatobiotics.com/assessment")
-                          setShareUnlocked(true)
-                          void fetchShareCode()
-                          posthog.capture("share_to_unlock_clicked", { platform: "copy_link", score: overall })
-                        }}
-                        className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition-opacity hover:opacity-75"
-                        style={{ borderColor: "#e2e8f0", color: "var(--muted-foreground)" }}
-                      >
-                        <Copy size={13} /> Copy link
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                      style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
-                      <Gift size={18} color="white" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-bold text-sm" style={{ color: "var(--foreground)" }}>50% off unlocked — thank you for sharing!</p>
-                      <p className="mt-0.5 text-xs" style={{ color: "var(--muted-foreground)" }}>
-                        Your unique code — single-use, just for you:
-                      </p>
-                      <div className="mt-3 flex items-center gap-2">
-                        {shareCodeLoading || !shareCode ? (
-                          <div className="flex flex-1 items-center gap-2 rounded-xl border px-4 py-2.5"
-                            style={{ background: "white", borderColor: "#e2e8f0" }}>
-                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--icon-green)]/30 border-t-[var(--icon-green)]" />
-                            <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>Generating your code…</span>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="flex-1 rounded-xl border px-4 py-2.5 font-mono text-base font-bold tracking-wider"
-                              style={{ background: "white", borderColor: "#86efac", color: "var(--foreground)", letterSpacing: "0.12em" }}>
-                              {shareCode}
-                            </div>
-                            <button
-                              onClick={() => { copyCode(shareCode, () => { setShareCodeCopied(true); setTimeout(() => setShareCodeCopied(false), 2500) }) }}
-                              className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
-                              style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", minWidth: 80 }}
-                            >
-                              {shareCodeCopied ? <><Check size={12} /> Copied!</> : <><Copy size={12} /> Copy</>}
-                            </button>
-                          </>
-                        )}
-                      </div>
-                      <p className="mt-2 text-[11px]" style={{ color: "var(--muted-foreground)" }}>
-                        This code is yours alone — it can only be redeemed once
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </ScrollReveal>
-        </div>
-      </section>
-
-      {/* ── Low score free month ───────────────────────────────────────── */}
-      {overall < 40 && (lowScoreCode || lowScoreCodeLoading) && (
+      {/* ── Lottery winner 🏆 ─────────────────────────────────────────── */}
+      {winnerCode && (
         <section className="px-6 pb-10">
           <div className="mx-auto max-w-3xl">
             <ScrollReveal>
               <div className="overflow-hidden rounded-2xl" style={{
-                background: "linear-gradient(135deg, #6aab28 0%, #2e8c2a 40%, #c49610 75%, #c47010 100%)",
-                boxShadow: "0 8px 32px rgba(26,46,18,0.22)",
+                background: "linear-gradient(135deg, #7c3aed 0%, #4f46e5 35%, #0ea5e9 70%, #06b6d4 100%)",
+                boxShadow: "0 8px 40px rgba(79,70,229,0.35)",
               }}>
-                <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
+                {/* Shimmering top bar */}
+                <div className="h-[3px]" style={{ background: "linear-gradient(90deg, #fbbf24, #f59e0b, #fcd34d, #fbbf24)", backgroundSize: "200% 100%", animation: "shimmer 2s linear infinite" }} />
                 <div className="px-6 py-6 md:px-8">
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                      style={{ background: "rgba(255,255,255,0.20)" }}>
-                      <Gift size={18} color="white" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.60)" }}>
-                        Your first month is on us
+                  {/* Trophy + headline */}
+                  <div className="mb-1 flex items-center gap-3">
+                    <span className="text-4xl" aria-hidden>🏆</span>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.65)" }}>
+                        You&apos;re a milestone taker
                       </p>
-                      <p className="mt-1 font-serif text-lg font-bold text-white">
-                        Your gut health needs the most attention — we want to help.
-                      </p>
-                      <p className="mt-1.5 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.80)" }}>
-                        Scores below 40 have the most to gain from consistent tracking and a structured plan. Use this code for a free first month on any plan:
-                      </p>
-                      <div className="mt-4 flex items-center gap-2">
-                        {lowScoreCodeLoading || !lowScoreCode ? (
-                          <div className="flex flex-1 items-center gap-2 rounded-xl px-4 py-3"
-                            style={{ background: "rgba(255,255,255,0.15)", border: "1.5px solid rgba(255,255,255,0.30)" }}>
-                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                            <span className="text-sm text-white/70">Generating your code…</span>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="flex-1 rounded-xl px-4 py-3 font-mono text-lg font-bold tracking-widest text-white"
-                              style={{ background: "rgba(255,255,255,0.15)", border: "1.5px solid rgba(255,255,255,0.30)", letterSpacing: "0.15em" }}>
-                              {lowScoreCode}
-                            </div>
-                            <button
-                              onClick={() => { copyCode(lowScoreCode, () => { setLowScoreCodeCopied(true); setTimeout(() => setLowScoreCodeCopied(false), 2500); posthog.capture("low_score_promo_copied", { score: overall }) }) }}
-                              className="flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-3 text-sm font-bold transition-opacity hover:opacity-90"
-                              style={{ background: "rgba(255,255,255,0.20)", border: "1px solid rgba(255,255,255,0.30)", color: "white", minWidth: 90 }}
-                            >
-                              {lowScoreCodeCopied ? <><Check size={13} /> Copied!</> : <><Copy size={13} /> Copy</>}
-                            </button>
-                          </>
-                        )}
-                      </div>
-                      <p className="mt-2.5 text-xs" style={{ color: "rgba(255,255,255,0.60)" }}>
-                        This code is yours alone · Single-use · Enter at checkout
+                      <p className="font-serif text-xl font-bold text-white leading-tight">
+                        Congratulations — you&apos;ve won a free month!
                       </p>
                     </div>
                   </div>
+                  <p className="mt-3 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.80)" }}>
+                    Every 100th person to take the EatoBiotics assessment wins a free first month on any plan. Today, that&apos;s you 🎉 Use the code below at checkout — it&apos;s yours alone and can only be used once.
+                  </p>
+                  {/* Code box */}
+                  <div className="mt-5 flex items-center gap-2">
+                    <div
+                      className="flex-1 rounded-xl px-4 py-3 font-mono text-lg font-bold tracking-widest text-white"
+                      style={{ background: "rgba(255,255,255,0.15)", border: "1.5px solid rgba(255,255,255,0.35)", letterSpacing: "0.15em" }}
+                    >
+                      {winnerCode}
+                    </div>
+                    <button
+                      onClick={() => {
+                        void navigator.clipboard.writeText(winnerCode).then(() => {
+                          setWinnerCodeCopied(true)
+                          setTimeout(() => setWinnerCodeCopied(false), 2500)
+                          posthog.capture("lottery_winner_code_copied")
+                        })
+                      }}
+                      className="flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-3 text-sm font-bold transition-opacity hover:opacity-90"
+                      style={{ background: "rgba(255,255,255,0.20)", border: "1px solid rgba(255,255,255,0.30)", color: "white", minWidth: 90 }}
+                    >
+                      {winnerCodeCopied ? <><Check size={13} /> Copied!</> : <><Copy size={13} /> Copy</>}
+                    </button>
+                  </div>
+                  <p className="mt-2.5 text-xs" style={{ color: "rgba(255,255,255,0.60)" }}>
+                    Free first month · Single-use · Apply at checkout
+                  </p>
                 </div>
               </div>
             </ScrollReveal>
