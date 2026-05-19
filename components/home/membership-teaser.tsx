@@ -57,12 +57,12 @@ export function MembershipTeaser() {
                 €49 <span className="text-base font-normal text-muted-foreground">one-time</span>
               </p>
               <p className="mb-5 text-sm text-muted-foreground">
-                AI-generated from your assessment. Yours forever.
+                Personalised from your assessment and deep-dive answers. Yours forever.
               </p>
               <ul className="mb-6 flex-1 space-y-2.5">
                 {[
-                  "Full gut health score breakdown",
-                  "Your 30-day gut reset plan",
+                  "Full 3 Biotics score breakdown",
+                  "Your 30-day food system plan",
                   "Top 10 food recommendations",
                   "Weekly shopping framework",
                   "Meal timing guidance",

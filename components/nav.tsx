@@ -166,10 +166,10 @@ export function Nav() {
           </Link>
           <AccountNavItem />
           <Link
-            href="/pricing"
+            href="/assessment"
             className="brand-gradient rounded-full px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
           >
-            Get started
+            Take assessment
           </Link>
         </div>
 
@@ -259,11 +259,11 @@ export function Nav() {
               <AccountNavItem />
             </div>
             <Link
-              href="/pricing"
+              href="/assessment"
               onClick={() => setOpen(false)}
               className="brand-gradient mt-3 rounded-full px-5 py-3 text-center text-sm font-semibold text-white"
             >
-              Get started
+              Take assessment
             </Link>
           </div>
         </div>

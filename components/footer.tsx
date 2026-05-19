@@ -69,8 +69,8 @@ export function Footer() {
                 >
                   Substack
                 </a>
-                <Link href="/pricing" className="text-sm text-foreground transition-colors hover:text-icon-orange">
-                  Get started
+                <Link href="/assessment" className="text-sm text-foreground transition-colors hover:text-icon-orange">
+                  Take assessment
                 </Link>
               </div>
 

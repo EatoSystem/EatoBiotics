@@ -7,6 +7,7 @@ import { getSupabase } from "@/lib/supabase"
 import { getUser } from "@/lib/supabase-server"
 import { getUserMembershipTier } from "@/lib/membership"
 import type { DeepReport } from "@/lib/claude-report"
+import { displayTierForReport, getPaidReportSummaryFromSession } from "@/lib/paid-report-session"
 
 export const metadata: Metadata = {
   title: "Your EatoBiotics Report",
@@ -41,32 +42,16 @@ export default async function ReportPage({ searchParams }: Props) {
       redirect("/assessment")
     }
 
-    // Extract tier + free scores from client_reference_id (base64 encoded JSON)
-    let tier: "starter" | "full" | "premium" | "personal" = "full"
-    let freeScores: {
-      overall: number
-      subScores: Record<string, number>
-      profile: { type: string; tagline: string; description: string; color: string }
-    } | undefined
+    const summary = getPaidReportSummaryFromSession(session)
+    if (!summary) redirect("/assessment")
 
-    try {
-      if (session.client_reference_id) {
-        const decoded = JSON.parse(
-          Buffer.from(session.client_reference_id, "base64").toString("utf-8")
-        )
-        if (["starter", "full", "premium", "personal"].includes(decoded.tier)) {
-          tier = decoded.tier
-        }
-        if (decoded.overall && decoded.subScores && decoded.profile) {
-          freeScores = {
-            overall: decoded.overall,
-            subScores: decoded.subScores,
-            profile: decoded.profile,
-          }
-        }
-      }
-    } catch {
-      // Fallback to full if decode fails
+    const freeScores = {
+      overall: summary.overall,
+      subScores: summary.subScores,
+      profile: {
+        ...summary.profile,
+        color: summary.profile.color ?? "var(--icon-green)",
+      },
     }
 
     // Get user membership tier for the CTA
@@ -82,11 +67,7 @@ export default async function ReportPage({ searchParams }: Props) {
         .eq("stripe_session_id", session_id)
         .single()
 
-      // Map "personal" tier to "full" for display purposes
-      const displayTier: "starter" | "full" | "premium" =
-        tier === "personal" || tier === "full" ? "full"
-        : tier === "starter" ? "starter"
-        : "premium"
+      const displayTier = displayTierForReport(summary.tier)
 
       if (data?.status === "complete" && data.report_json) {
         // Deep assessment done — render paid report from saved data (no new Claude call)
@@ -95,7 +76,7 @@ export default async function ReportPage({ searchParams }: Props) {
             tier={displayTier}
             sessionId={session_id}
             reportJson={data.report_json as DeepReport}
-            freeScores={freeScores as Parameters<typeof PaidReportClient>[0]["freeScores"]}
+            freeScores={freeScores as unknown as Parameters<typeof PaidReportClient>[0]["freeScores"]}
             membershipTier={membershipTier}
           />
         )
@@ -106,10 +87,7 @@ export default async function ReportPage({ searchParams }: Props) {
     }
 
     // Supabase not configured (dev mode without DB) — fall through to existing client
-    const displayTier2: "starter" | "full" | "premium" =
-      tier === "personal" || tier === "full" ? "full"
-      : tier === "starter" ? "starter"
-      : "premium"
+    const displayTier2 = displayTierForReport(summary.tier)
     return <FullReportClient tier={displayTier2} />
   } catch {
     redirect("/assessment")

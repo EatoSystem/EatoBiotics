@@ -1,12 +1,10 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
+import { DEV_COOKIE, devPasswordToken, getDevPassword, isPasswordGateEnabled } from "@/lib/dev-password-gate"
 
 // ── Site-wide password gate ───────────────────────────────────────────────
-const DEV_COOKIE   = "eb_dev_auth"
-const DEV_PASSWORD = process.env.DEV_PASSWORD ?? "Monkstown"
-
-function hasSiteAccess(request: NextRequest): boolean {
-  return request.cookies.get(DEV_COOKIE)?.value === DEV_PASSWORD
+async function hasSiteAccess(request: NextRequest, password: string): Promise<boolean> {
+  return request.cookies.get(DEV_COOKIE)?.value === await devPasswordToken(password)
 }
 
 function isEnterRoute(pathname: string): boolean {
@@ -32,12 +30,19 @@ function isProtectedAccountRoute(pathname: string): boolean {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // ── Site password check (runs before everything else) ──────────────────
-  if (!isEnterRoute(pathname) && !hasSiteAccess(request)) {
-    const url = request.nextUrl.clone()
-    url.pathname = "/enter"
-    url.searchParams.set("from", pathname)
-    return NextResponse.redirect(url)
+  // Site password check. Enabled only when explicitly set during redevelopment.
+  if (isPasswordGateEnabled()) {
+    const password = getDevPassword()
+    if (!password) {
+      return new NextResponse("Password gate is enabled but DEV_PASSWORD is not set.", { status: 503 })
+    }
+
+    if (!isEnterRoute(pathname) && !(await hasSiteAccess(request, password))) {
+      const url = request.nextUrl.clone()
+      url.pathname = "/enter"
+      url.searchParams.set("from", pathname)
+      return NextResponse.redirect(url)
+    }
   }
   // ────────────────────────────────────────────────────────────────────────
 

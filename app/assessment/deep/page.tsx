@@ -4,6 +4,7 @@ import Stripe from "stripe"
 import { getSupabase } from "@/lib/supabase"
 import { DeepAssessmentClient } from "@/components/assessment/deep/deep-assessment-client"
 import type { DeepQuestion, DeepAnswers } from "@/lib/deep-assessment"
+import { getPaidReportSummaryFromSession } from "@/lib/paid-report-session"
 
 export const metadata: Metadata = {
   title: "Your Deep Assessment — EatoBiotics",
@@ -85,32 +86,13 @@ export default async function DeepAssessmentPage({ searchParams }: Props) {
       redirect("/assessment")
     }
 
-    // Decode result_summary from metadata — base64 JSON with { overall, subScores, profile, tier }
-    let tier: "personal" | "starter" | "full" | "premium" = "full"
-    let overall = 58
-    let subScores = { prebiotics: 58, probiotics: 45, postbiotics: 65, feed: 58, seed: 45, heal: 65 }
-    let profile = {
-      type: "The Aware Optimiser",
-      tagline: "You understand the basics but haven't yet built the habits to match.",
-      description: "You're aware of what good eating looks like, but consistency is the gap.",
-      color: "var(--icon-yellow)",
-    }
+    const summary = getPaidReportSummaryFromSession(session)
+    if (!summary) redirect("/assessment")
 
-    try {
-      const resultSummary = session.metadata?.result_summary ?? session.client_reference_id
-      if (resultSummary) {
-        const decoded = JSON.parse(
-          Buffer.from(resultSummary, "base64").toString("utf-8")
-        )
-        if (decoded.tier === "personal" || decoded.tier === "starter" || decoded.tier === "full" || decoded.tier === "premium") {
-          tier = decoded.tier
-        }
-        if (typeof decoded.overall === "number") overall = decoded.overall
-        if (decoded.subScores) subScores = decoded.subScores
-        if (decoded.profile) profile = decoded.profile
-      }
-    } catch {
-      // Fallback to defaults if decode fails
+    const { tier, overall, subScores } = summary
+    const profile = {
+      ...summary.profile,
+      color: summary.profile.color ?? "var(--icon-green)",
     }
 
     // Check Supabase for existing deep assessment progress

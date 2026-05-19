@@ -107,7 +107,7 @@ export function PaymentCTA({ result }: PaymentCTAProps) {
         body: JSON.stringify({
           tier,
           overall: result.overall,
-          profile: result.profile.type,
+          profile: result.profile,
           subScores: result.subScores,
         }),
       })

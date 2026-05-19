@@ -36,29 +36,10 @@ interface PricingClientProps {
 function ReportButton({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [loading, setLoading] = useState(false)
 
-  async function handleClick() {
+  function handleClick() {
     posthog.capture("report_purchase_clicked", { source: "pricing_page", tier: "personal" })
-
-    if (!isLoggedIn) {
-      // Take assessment first — checkout will be available after
-      window.location.href = "/assessment"
-      return
-    }
-
     setLoading(true)
-    try {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier: "personal" }),
-      })
-      const data = (await res.json()) as { url?: string; error?: string }
-      if (data.url) window.location.href = data.url
-    } catch (err) {
-      console.error("[report checkout]", err)
-    } finally {
-      setLoading(false)
-    }
+    window.location.href = "/assessment"
   }
 
   return (
@@ -70,12 +51,10 @@ function ReportButton({ isLoggedIn }: { isLoggedIn: boolean }) {
         background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green), var(--icon-teal))",
       }}
     >
-      {loading ? "Loading…" : isLoggedIn ? "Get My Personal Report →" : "Take the free assessment →"}
+      {loading ? "Loading..." : isLoggedIn ? "Start with the free assessment" : "Take the free assessment"}
     </button>
   )
 }
-
-/* ── Subscribe Button (€24.99/month) ────────────────────────────────── */
 
 function MemberButton({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [loading, setLoading] = useState(false)

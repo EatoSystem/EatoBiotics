@@ -175,7 +175,7 @@ export function DeepAssessmentClient({
   /* ── Loading ────────────────────────────────────────────────────── */
   if (view === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-background pt-[57px] flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="w-12 h-12 rounded-full border-4 border-[var(--icon-green)] border-t-transparent animate-spin mx-auto" />
           <p className="text-muted-foreground">Personalising your assessment…</p>
@@ -187,7 +187,7 @@ export function DeepAssessmentClient({
   /* ── Error ──────────────────────────────────────────────────────── */
   if (view === "error") {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-background pt-[57px] flex items-center justify-center">
         <div className="text-center max-w-sm space-y-4 px-4">
           <div className="text-4xl">⚠️</div>
           <h2 className="text-xl font-bold">Something went wrong</h2>
@@ -206,7 +206,7 @@ export function DeepAssessmentClient({
   /* ── Submitting ─────────────────────────────────────────────────── */
   if (view === "submitting") {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-background pt-[57px] flex items-center justify-center">
         <div className="text-center max-w-sm space-y-6 px-4">
           <div className="relative mx-auto w-20 h-20">
             <div className="w-20 h-20 rounded-full border-4 border-[var(--icon-green)]/20" />
@@ -251,9 +251,9 @@ export function DeepAssessmentClient({
   const isNewSection = currentSection && currentSection !== prevSection
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-[57px]">
       {/* Header */}
-      <div className="border-b bg-card/50 backdrop-blur sticky top-0 z-10">
+      <div className="border-b bg-card/50 backdrop-blur sticky top-[57px] z-10">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-4">
           {sectionMeta ? (
             <span className="text-xs font-bold uppercase tracking-widest shrink-0" style={{ color: sectionMeta.color }}>
@@ -351,7 +351,7 @@ export function DeepAssessmentClient({
       </div>
 
       {/* Question */}
-      <div className="max-w-2xl mx-auto px-4 pb-16">
+      <div className="max-w-2xl mx-auto px-4 pb-24">
         <DeepQuestionView
           key={currentQuestion.id}
           question={currentQuestion}

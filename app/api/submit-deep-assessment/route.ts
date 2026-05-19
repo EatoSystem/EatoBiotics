@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSupabase } from "@/lib/supabase"
 import type { DeepQuestion } from "@/lib/deep-assessment"
 import type { DeepReport } from "@/lib/claude-report"
+import { getPaidReportSummaryFromSession } from "@/lib/paid-report-session"
+import { buildFallbackPaidReport } from "@/lib/fallback-paid-report"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
   apiVersion: "2026-02-25.clover",
@@ -33,6 +35,7 @@ type FreeScores = {
   subScores: SubScores
   profile: { type: string; tagline: string; description: string }
   tier: "personal" | "starter" | "full" | "premium"
+  email?: string | null
 }
 
 type RequestBody = {
@@ -230,15 +233,15 @@ export async function POST(req: NextRequest) {
         .eq("stripe_session_id", sessionId)
         .maybeSingle()
 
-      if (existing?.status === "complete" && existing.pdf_url) {
-        return NextResponse.json({ ok: true, pdfUrl: existing.pdf_url })
+      if (existing?.status === "complete" && existing.report_json) {
+        return NextResponse.json({ ok: true, pdfUrl: existing.pdf_url ?? null })
       }
     } catch (err) {
       console.error("[submit-deep-assessment] Supabase idempotency check error:", err)
     }
   }
 
-  // Step 2: Stripe verification + decode client_reference_id
+  // Step 2: Stripe verification + decode canonical checkout metadata
   let freeScores: FreeScores
 
   if (devMode) {
@@ -274,14 +277,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Payment not confirmed" }, { status: 401 })
       }
 
-      const clientRefId = session.client_reference_id
-      if (!clientRefId) {
+      const summary = getPaidReportSummaryFromSession(session)
+      if (!summary) {
         return NextResponse.json({ error: "Missing session metadata" }, { status: 400 })
       }
 
-      freeScores = JSON.parse(
-        Buffer.from(clientRefId, "base64").toString("utf-8")
-      ) as FreeScores
+      freeScores = summary as FreeScores
     } catch (err) {
       console.error("[submit-deep-assessment] Stripe verification error:", err)
       return NextResponse.json({ error: "Failed to verify payment" }, { status: 401 })
@@ -301,11 +302,12 @@ export async function POST(req: NextRequest) {
         .eq("stripe_session_id", sessionId)
         .maybeSingle()
 
-      if (sessionRow?.email) {
+      const lookupEmail = sessionRow?.email ?? freeScores.email
+      if (lookupEmail) {
         const { data: lead } = await supabase
           .from("leads")
           .select("name")
-          .eq("email", sessionRow.email)
+          .eq("email", lookupEmail)
           .maybeSingle()
 
         if (lead?.name) {
@@ -325,6 +327,7 @@ export async function POST(req: NextRequest) {
           stripe_session_id: sessionId,
           tier,
           free_scores: { overall, subScores, profile },
+          email: freeScores.email ?? null,
           answers,
           status: "analysing",
           updated_at: new Date().toISOString(),
@@ -336,43 +339,42 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Step 5: Call Claude for deep analysis
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return NextResponse.json(
-      { error: "Claude not configured — add ANTHROPIC_API_KEY to .env.local" },
-      { status: 503 }
-    )
-  }
-
+  // Step 5: Call Claude for deep analysis. If AI generation is unavailable,
+  // use a deterministic report so a paid user never loses access after checkout.
   let report: DeepReport
-  try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-    const effectiveTier = tier === "personal" ? "full" : tier
-    const maxTokens = effectiveTier === "premium" ? 6144 : effectiveTier === "full" ? 4096 : 3072
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.warn("[submit-deep-assessment] ANTHROPIC_API_KEY not set; using fallback paid report")
+    report = buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers })
+  } else {
+    try {
+      const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+      const effectiveTier = tier === "personal" ? "full" : tier
+      const maxTokens = effectiveTier === "premium" ? 6144 : effectiveTier === "full" ? 4096 : 3072
 
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: maxTokens,
-      messages: [
-        {
-          role: "user",
-          content: buildDeepAnalysisPrompt(freeScores, questions, answers),
-        },
-      ],
-    })
+      const message = await client.messages.create({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: maxTokens,
+        messages: [
+          {
+            role: "user",
+            content: buildDeepAnalysisPrompt(freeScores, questions, answers),
+          },
+        ],
+      })
 
-    const rawText =
-      message.content[0].type === "text" ? message.content[0].text : ""
+      const rawText =
+        message.content[0].type === "text" ? message.content[0].text : ""
 
-    const cleaned = rawText
-      .replace(/^```(?:json)?\s*/i, "")
-      .replace(/\s*```\s*$/, "")
-      .trim()
+      const cleaned = rawText
+        .replace(/^```(?:json)?\s*/i, "")
+        .replace(/\s*```\s*$/, "")
+        .trim()
 
-    report = JSON.parse(cleaned) as DeepReport
-  } catch (err) {
-    console.error("[submit-deep-assessment] Claude error:", err)
-    return NextResponse.json({ error: "Report generation failed" }, { status: 500 })
+      report = JSON.parse(cleaned) as DeepReport
+    } catch (err) {
+      console.error("[submit-deep-assessment] Claude error; using fallback paid report:", err)
+      report = buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers })
+    }
   }
 
   // Step 6: Save report_json to DB
@@ -447,14 +449,14 @@ export async function POST(req: NextRequest) {
     const emailFrom = process.env.EMAIL_FROM ?? "reports@eatobiotics.com"
 
     // Look up the lead email for sending
-    let leadEmail: string | null = null
+    let leadEmail: string | null = freeScores.email ?? null
     if (supabase) {
       const { data: sessionRow } = await supabase
         .from("deep_assessments")
         .select("email")
         .eq("stripe_session_id", sessionId)
         .maybeSingle()
-      leadEmail = sessionRow?.email ?? null
+      leadEmail = sessionRow?.email ?? leadEmail
     }
 
     if (resendKey && leadEmail) {

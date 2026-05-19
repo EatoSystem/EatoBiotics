@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
+import { getPaidReportSummaryFromSession } from "@/lib/paid-report-session"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
   apiVersion: "2026-02-25.clover",
@@ -20,10 +21,12 @@ export async function GET(req: NextRequest) {
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId)
     const paid = session.payment_status === "paid"
+    const summary = getPaidReportSummaryFromSession(session)
 
     return NextResponse.json({
       paid,
-      // Support both new metadata location and legacy client_reference_id
+      summary,
+      // Backward-compatible field for older clients.
       clientReferenceId: session.metadata?.result_summary ?? session.client_reference_id ?? null,
     })
   } catch (err) {

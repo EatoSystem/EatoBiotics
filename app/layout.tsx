@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { DM_Sans, Sora, Geist_Mono } from 'next/font/google'
+import localFont from 'next/font/local'
 import { Analytics } from '@vercel/analytics/next'
 import { Nav } from '@/components/nav'
 import { Footer } from '@/components/footer'
@@ -15,17 +15,23 @@ import { StatsigClientProvider } from '@/components/providers/statsig-provider'
 import { Suspense } from 'react'
 import './globals.css'
 
-const _dmSans = DM_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+const dmSans = localFont({
+  src: [
+    { path: '../public/fonts/DMSans.ttf', weight: '400 700', style: 'normal' },
+    { path: '../public/fonts/DMSans-Italic.ttf', weight: '400 700', style: 'italic' },
+  ],
+  variable: '--font-dm-sans',
+  display: 'swap',
 })
 
-const _sora = Sora({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
+const lora = localFont({
+  src: [
+    { path: '../public/fonts/Lora.ttf', weight: '400 700', style: 'normal' },
+    { path: '../public/fonts/Lora-Italic.ttf', weight: '400 700', style: 'italic' },
+  ],
+  variable: '--font-lora',
+  display: 'swap',
 })
-
-const _geistMono = Geist_Mono({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://eatobiotics.com'),
@@ -71,7 +77,7 @@ export default function RootLayout({
     <html lang="en" style={{ backgroundColor: "#FFFFFF" }}>
       <PHProvider>
         <StatsigClientProvider>
-        <body className="bg-white font-sans antialiased">
+        <body className={`${dmSans.variable} ${lora.variable} bg-white font-sans antialiased`}>
           <Suspense fallback={null}>
             <PostHogPageview />
           </Suspense>

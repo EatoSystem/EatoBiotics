@@ -249,7 +249,7 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier, overall, profile: profile.type, subScores }),
+        body: JSON.stringify({ tier, overall, profile, subScores, email: leadEmail }),
       })
       const data = await res.json()
       if (!res.ok || !data.url) {

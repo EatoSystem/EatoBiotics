@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
+import { encodePaidReportSummary, type PaidReportTier } from "@/lib/paid-report-session"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
   apiVersion: "2026-02-25.clover",
@@ -45,16 +46,35 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { tier = "full", overall, profile, subScores } = body
+    const { tier = "personal", overall, profile, subScores, email } = body as {
+      tier?: PaidReportTier
+      overall?: number
+      profile?: { type: string; tagline: string; description: string; color?: string }
+      subScores?: Record<string, number>
+      email?: string
+    }
 
-    const config = TIER_CONFIG[tier as Tier] ?? TIER_CONFIG.full
+    const reportTier: PaidReportTier = tier && tier in TIER_CONFIG ? tier : "personal"
+    const config = TIER_CONFIG[reportTier]
 
-    // Encode result summary + tier so the report page can reconstruct it
-    const resultSummary = Buffer.from(
-      JSON.stringify({ overall, profile, subScores, tier })
-    ).toString("base64")
+    if (typeof overall !== "number" || !profile || !subScores) {
+      return NextResponse.json(
+        { error: "Complete the free assessment before checkout." },
+        { status: 400 }
+      )
+    }
 
-    const origin = req.headers.get("origin") ?? "http://localhost:3000"
+    // Encode result summary + tier so the report page can reconstruct it.
+    // metadata.result_summary is canonical because Stripe limits client_reference_id to 200 chars.
+    const resultSummary = encodePaidReportSummary({
+      overall,
+      profile,
+      subScores,
+      tier: reportTier,
+      email: email?.toLowerCase().trim() || null,
+    })
+
+    const origin = process.env.NEXT_PUBLIC_SITE_URL ?? req.headers.get("origin") ?? "http://localhost:3000"
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -75,6 +95,7 @@ export async function POST(req: NextRequest) {
       // Store result summary in metadata (no length limit) instead of
       // client_reference_id which has a 200-char Stripe limit
       metadata: { result_summary: resultSummary },
+      ...(email ? { customer_email: email.toLowerCase().trim() } : {}),
       allow_promotion_codes: true,
       success_url: `${origin}/assessment/deep?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/assessment`,
