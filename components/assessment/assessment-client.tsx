@@ -124,13 +124,13 @@ export function AssessmentClient() {
         })
       }
 
-      // Fire-and-forget: send results email
+      // Fire-and-forget: save the score now; delayed email cron sends only if no report purchase happens.
       const currentLead = lead ?? loadLeadData()
       if (currentLead) {
         fetch("/api/send-results-email", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ lead: currentLead, result: computed }),
+          body: JSON.stringify({ lead: currentLead, result: computed, delivery: "deferred" }),
         }).catch(() => {/* ignore network errors */})
 
         // Fire-and-forget: send branded magic link so user can access /account

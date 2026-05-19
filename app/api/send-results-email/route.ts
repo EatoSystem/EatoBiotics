@@ -12,7 +12,10 @@ export async function POST(req: NextRequest) {
       lead: LeadData
       result: AssessmentResult
       assessmentType?: "gut" | "mind"
+      delivery?: "immediate" | "deferred"
     }
+    const delivery = (body as { delivery?: "immediate" | "deferred" }).delivery ?? "immediate"
+    const shouldSendEmail = delivery !== "deferred"
 
     if (!lead?.email || !result?.overall) {
       return NextResponse.json({ error: "Missing lead or result" }, { status: 400 })
@@ -44,7 +47,7 @@ export async function POST(req: NextRequest) {
     const emailFrom = process.env.EMAIL_FROM ?? "results@eatobiotics.com"
     const ownerEmail = process.env.OWNER_EMAIL
 
-    if (resendKey) {
+    if (resendKey && shouldSendEmail) {
       const resend = new Resend(resendKey)
       const { error } = await resend.emails.send({
         from: `EatoBiotics <${emailFrom}>`,
@@ -56,9 +59,11 @@ export async function POST(req: NextRequest) {
       if (error) {
         console.error("[send-results-email] Resend error:", error.message)
       }
-    } else {
+    } else if (!resendKey) {
       console.log("[send-results-email] RESEND_API_KEY not set — skipping email for:", lead.email)
       console.log("[send-results-email] Subject:", subject)
+    } else {
+      console.log("[send-results-email] Deferred results email for:", lead.email)
     }
 
     // Update Supabase lead with scores (filter by assessment_type to avoid overwriting other assessment rows)
@@ -70,7 +75,7 @@ export async function POST(req: NextRequest) {
           overall_score: result.overall,
           profile_type: result.profile.type,
           sub_scores: result.subScores,
-          email_sent: !!resendKey,
+          email_sent: shouldSendEmail && !!resendKey,
         })
         .eq("email", lead.email.toLowerCase().trim())
         .eq("assessment_type", assessmentType ?? "gut")

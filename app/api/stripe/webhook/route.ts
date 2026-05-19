@@ -6,6 +6,7 @@ import { getSupabase } from "@/lib/supabase"
 import { tierFromPriceId, isFoundingMember } from "@/lib/membership"
 import { logServerEvent } from "@/lib/statsig-server"
 import { welcomeSubscriptionEmailHtml } from "@/lib/email/welcome-subscription-email"
+import { getPaidReportSummaryFromSession, isCheckoutSessionSettled } from "@/lib/paid-report-session"
 
 // Stripe v20 with the clover API version uses slightly different type shapes.
 // We use a helper to safely access fields that may not be in the TS types.
@@ -78,12 +79,31 @@ export async function POST(req: NextRequest) {
       // ── One-time report purchase (personal / starter / full / premium) ──
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session
-        if (session.payment_status !== "paid") break
         if (session.mode !== "payment") break  // skip subscription checkouts
+        if (!isCheckoutSessionSettled(session)) break
 
         // Identify the user via customer_email or user_id from metadata
-        const email = session.customer_details?.email ?? null
+        const summary = getPaidReportSummaryFromSession(session)
+        const email = summary?.email ?? session.customer_details?.email ?? null
         if (!email) break
+
+        if (summary) {
+          await supabase.from("deep_assessments").upsert(
+            {
+              stripe_session_id: session.id,
+              email: email.toLowerCase().trim(),
+              tier: summary.tier,
+              free_scores: {
+                overall: summary.overall,
+                subScores: summary.subScores,
+                profile: summary.profile,
+              },
+              status: "in_progress",
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "stripe_session_id" }
+          )
+        }
 
         // Find user profile by email
         const { data: profile } = await supabase
