@@ -62,6 +62,12 @@ export function getPaidReportSummaryFromSession(session: Stripe.Checkout.Session
   return decodePaidReportSummary(session.metadata?.result_summary ?? session.client_reference_id)
 }
 
+export function isCheckoutSessionSettled(session: Stripe.Checkout.Session): boolean {
+  // Stripe may mark 100% promo-code checkouts as "no_payment_required".
+  // Treat that as settled so free-code demos unlock the paid report flow.
+  return session.payment_status === "paid" || session.payment_status === "no_payment_required"
+}
+
 export function displayTierForReport(tier: PaidReportTier): "starter" | "full" | "premium" {
   if (tier === "starter") return "starter"
   if (tier === "premium") return "premium"

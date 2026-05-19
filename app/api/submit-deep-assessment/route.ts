@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSupabase } from "@/lib/supabase"
 import type { DeepQuestion } from "@/lib/deep-assessment"
 import type { DeepReport } from "@/lib/claude-report"
-import { getPaidReportSummaryFromSession } from "@/lib/paid-report-session"
+import { getPaidReportSummaryFromSession, isCheckoutSessionSettled } from "@/lib/paid-report-session"
 import { buildFallbackPaidReport } from "@/lib/fallback-paid-report"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
@@ -273,7 +273,7 @@ export async function POST(req: NextRequest) {
   } else {
     try {
       const session = await stripe.checkout.sessions.retrieve(sessionId)
-      if (session.payment_status !== "paid") {
+      if (!isCheckoutSessionSettled(session)) {
         return NextResponse.json({ error: "Payment not confirmed" }, { status: 401 })
       }
 

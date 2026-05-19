@@ -7,7 +7,11 @@ import { getSupabase } from "@/lib/supabase"
 import { getUser } from "@/lib/supabase-server"
 import { getUserMembershipTier } from "@/lib/membership"
 import type { DeepReport } from "@/lib/claude-report"
-import { displayTierForReport, getPaidReportSummaryFromSession } from "@/lib/paid-report-session"
+import {
+  displayTierForReport,
+  getPaidReportSummaryFromSession,
+  isCheckoutSessionSettled,
+} from "@/lib/paid-report-session"
 
 export const metadata: Metadata = {
   title: "Your EatoBiotics Report",
@@ -38,7 +42,7 @@ export default async function ReportPage({ searchParams }: Props) {
     })
     const session = await stripe.checkout.sessions.retrieve(session_id)
 
-    if (session.payment_status !== "paid") {
+    if (!isCheckoutSessionSettled(session)) {
       redirect("/assessment")
     }
 

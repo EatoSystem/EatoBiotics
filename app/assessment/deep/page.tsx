@@ -4,7 +4,7 @@ import Stripe from "stripe"
 import { getSupabase } from "@/lib/supabase"
 import { DeepAssessmentClient } from "@/components/assessment/deep/deep-assessment-client"
 import type { DeepQuestion, DeepAnswers } from "@/lib/deep-assessment"
-import { getPaidReportSummaryFromSession } from "@/lib/paid-report-session"
+import { getPaidReportSummaryFromSession, isCheckoutSessionSettled } from "@/lib/paid-report-session"
 
 export const metadata: Metadata = {
   title: "Your Deep Assessment — EatoBiotics",
@@ -82,7 +82,7 @@ export default async function DeepAssessmentPage({ searchParams }: Props) {
     })
     const session = await stripe.checkout.sessions.retrieve(session_id)
 
-    if (session.payment_status !== "paid") {
+    if (!isCheckoutSessionSettled(session)) {
       redirect("/assessment")
     }
 

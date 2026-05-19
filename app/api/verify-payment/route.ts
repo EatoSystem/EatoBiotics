@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
-import { getPaidReportSummaryFromSession } from "@/lib/paid-report-session"
+import { getPaidReportSummaryFromSession, isCheckoutSessionSettled } from "@/lib/paid-report-session"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
   apiVersion: "2026-02-25.clover",
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId)
-    const paid = session.payment_status === "paid"
+    const paid = isCheckoutSessionSettled(session)
     const summary = getPaidReportSummaryFromSession(session)
 
     return NextResponse.json({
