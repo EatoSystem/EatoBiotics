@@ -361,10 +361,20 @@ CREATE TABLE IF NOT EXISTS plate_recipes (
   shopping_sections jsonb       NOT NULL DEFAULT '[]'::jsonb,
   weekly_role       text,
   disclaimer        text,
+  image_generated   boolean     NOT NULL DEFAULT false,
+  image_model       text,
+  image_prompt      text,
+  reference_style_used boolean   NOT NULL DEFAULT false,
   is_published      boolean     NOT NULL DEFAULT false,
   created_at        timestamptz NOT NULL DEFAULT now(),
   updated_at        timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE plate_recipes
+  ADD COLUMN IF NOT EXISTS image_generated boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS image_model text,
+  ADD COLUMN IF NOT EXISTS image_prompt text,
+  ADD COLUMN IF NOT EXISTS reference_style_used boolean NOT NULL DEFAULT false;
 
 ALTER TABLE plate_recipes ENABLE ROW LEVEL SECURITY;
 

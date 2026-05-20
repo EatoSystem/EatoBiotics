@@ -74,6 +74,10 @@ type GeneratedPlate = {
     color: string
   }[]
   publicUrl?: string
+  saved?: boolean
+  generatedBy?: "openai" | "fallback"
+  imageGenerated?: boolean
+  referenceStyleUsed?: boolean
 }
 
 type StoredPlateBuilderResult = {
@@ -273,10 +277,18 @@ function buildResult(plate: PlateOption, prefs: Preferences): GeneratedPlate {
       { title: "Plants", items: uniquePlants.slice(0, 6), color: "var(--icon-lime)" },
       { title: "Finish", items: ["fermented side", "extra virgin olive oil", "seeds", "fresh herbs", "citrus"], color: "var(--icon-orange)" },
     ],
+    saved: false,
+    generatedBy: "fallback",
+    imageGenerated: false,
+    referenceStyleUsed: false,
   }
 }
 
-function mapRecipeToResult(recipe: PlateRecipe, publicUrl?: string): GeneratedPlate {
+function mapRecipeToResult(
+  recipe: PlateRecipe,
+  publicUrl?: string,
+  meta?: { saved?: boolean; generatedBy?: "openai" | "fallback"; imageGenerated?: boolean; referenceStyleUsed?: boolean }
+): GeneratedPlate {
   return {
     name: recipe.name,
     image: recipe.imageUrl,
@@ -290,7 +302,45 @@ function mapRecipeToResult(recipe: PlateRecipe, publicUrl?: string): GeneratedPl
     shoppingList: recipe.shoppingSections.flatMap((section) => section.items),
     shoppingSections: recipe.shoppingSections,
     publicUrl,
+    saved: meta?.saved,
+    generatedBy: meta?.generatedBy,
+    imageGenerated: meta?.imageGenerated ?? recipe.imageGenerated,
+    referenceStyleUsed: meta?.referenceStyleUsed ?? recipe.referenceStyleUsed,
   }
+}
+
+function GenerationStatus({ result }: { result: GeneratedPlate }) {
+  const items = [
+    {
+      label: result.generatedBy === "openai" ? "AI recipe" : "Fallback recipe",
+      active: result.generatedBy === "openai",
+    },
+    {
+      label: result.imageGenerated ? "AI image" : "Fallback image",
+      active: Boolean(result.imageGenerated),
+    },
+    {
+      label: result.saved ? "Published page" : "Not published",
+      active: Boolean(result.saved && result.publicUrl),
+    },
+  ]
+
+  return (
+    <div className="mt-4 flex flex-wrap gap-2">
+      {items.map((item) => (
+        <span
+          key={item.label}
+          className={`rounded-full border px-3 py-1.5 text-xs font-bold ${
+            item.active
+              ? "border-icon-green/30 bg-icon-green/10 text-icon-green"
+              : "border-icon-orange/30 bg-icon-orange/10 text-icon-orange"
+          }`}
+        >
+          {item.label}
+        </span>
+      ))}
+    </div>
+  )
 }
 
 function ScoreCircle({ value, label, color, size = "large" }: { value: number; label: string; color: string; size?: "large" | "small" }) {
@@ -437,7 +487,14 @@ export function PlateBuilderClient() {
         generatedBy?: "openai" | "fallback"
         imageGenerated?: boolean
       }
-      const nextResult = data.recipe ? mapRecipeToResult(data.recipe, data.publicUrl) : buildResult(plate, prefs)
+      const nextResult = data.recipe
+        ? mapRecipeToResult(data.recipe, data.publicUrl, {
+            saved: data.saved,
+            generatedBy: data.generatedBy,
+            imageGenerated: data.imageGenerated,
+            referenceStyleUsed: data.recipe.referenceStyleUsed,
+          })
+        : buildResult(plate, prefs)
       setResult(nextResult)
       window.localStorage.setItem(
         LAST_PLATE_STORAGE_KEY,
@@ -466,7 +523,7 @@ export function PlateBuilderClient() {
   }
 
   function placeholder(action: string) {
-    setNotice(`${action} is a prototype action. The next build should connect image generation, accounts, and export/share logic.`)
+    setNotice(`${action} is a placeholder action. The next build should connect accounts and export/share logic.`)
   }
 
   return (
@@ -521,6 +578,7 @@ export function PlateBuilderClient() {
                   </div>
                 </div>
                 <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{result.story}</p>
+                <GenerationStatus result={result} />
                 <div className="mt-5 grid grid-cols-3 gap-2 text-center text-xs">
                   <div className="rounded-xl border border-icon-green/20 bg-white p-3">
                     <p className="font-bold text-foreground">{result.time.prep}</p>
@@ -709,6 +767,7 @@ export function PlateBuilderClient() {
             <p className="text-xs font-bold uppercase tracking-widest" style={{ color: plate.accent }}>{plate.name}</p>
             <h2 className="mt-2 font-serif text-3xl font-semibold leading-tight text-foreground">{result.name}</h2>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{result.story}</p>
+            <GenerationStatus result={result} />
             <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <div className="rounded-2xl border border-icon-green/20 bg-white p-4">
                 <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Plate</p>

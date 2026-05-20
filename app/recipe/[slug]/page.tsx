@@ -25,6 +25,10 @@ type RecipeRow = {
   shopping_sections: PlateRecipe["shoppingSections"]
   weekly_role: string | null
   disclaimer: string | null
+  image_generated?: boolean | null
+  image_model?: string | null
+  image_prompt?: string | null
+  reference_style_used?: boolean | null
   created_at: string
 }
 
@@ -61,6 +65,10 @@ async function getRecipe(slug: string): Promise<PlateRecipe | null> {
     weeklyRole: row.weekly_role ?? "",
     disclaimer: row.disclaimer ?? "EatoBiotics recipes and scores are educational and not medical advice.",
     createdAt: row.created_at,
+    imageGenerated: row.image_generated ?? false,
+    imageModel: row.image_model ?? undefined,
+    imagePrompt: row.image_prompt ?? undefined,
+    referenceStyleUsed: row.reference_style_used ?? false,
   }
 }
 
@@ -111,7 +119,12 @@ export default async function RecipePage({ params }: PageProps) {
             </div>
           </div>
           <div className="overflow-hidden rounded-[2rem] border border-icon-green/25 bg-white">
-            <img src={recipe.imageUrl} alt={recipe.name} className="aspect-square h-full w-full object-cover" />
+            <div className="relative">
+              <img src={recipe.imageUrl} alt={recipe.name} className="aspect-square h-full w-full object-cover" />
+              <div className="absolute left-4 top-4 rounded-full border border-white/80 bg-white px-3 py-1.5 text-xs font-bold text-foreground shadow-sm">
+                {recipe.imageGenerated ? "AI-generated image" : "Fallback reference image"}
+              </div>
+            </div>
           </div>
         </div>
       </section>

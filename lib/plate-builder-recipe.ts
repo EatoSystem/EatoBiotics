@@ -52,6 +52,10 @@ export type PlateRecipe = {
   weeklyRole: string
   disclaimer: string
   createdAt: string
+  imageGenerated?: boolean
+  imageModel?: string
+  imagePrompt?: string
+  referenceStyleUsed?: boolean
 }
 
 export const PLATE_DEFINITIONS: Record<PlateId, {
@@ -126,6 +130,20 @@ function seed(text: string): number {
   return text.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0)
 }
 
+function variationFromSeed(generatedSeed: number) {
+  const themes = [
+    "crisp citrus herb",
+    "charred green and fermented",
+    "bright berry and seed",
+    "warm ginger sesame",
+    "peppery greens and lemon",
+    "golden roast and yogurt",
+    "fresh garden crunch",
+    "zesty pickle and herb",
+  ]
+  return themes[generatedSeed % themes.length]
+}
+
 function score(base: number, modifier: number): number {
   return Math.max(62, Math.min(98, Math.round(base + modifier)))
 }
@@ -170,6 +188,7 @@ export function createFallbackPlateRecipe(input: PlateRecipeInput, imageUrl?: st
   const flavour = input.flavour || "Bright and zesty"
   const goal = input.goal || "balance"
   const generatedSeed = seed(`${plateId}-${goal}-${protein}-${plants.join("-")}-${input.dietaryStyle ?? "Flexible"}-${input.dishIdea ?? ""}-${flavour}`)
+  const fallbackVariation = variationFromSeed(generatedSeed)
   const prebiotic = score(76, (plants.length % 6) * 3 + (plateId === "diversity" ? 7 : 0))
   const probiotic = score(72, (generatedSeed % 10) + (plateId === "function" ? 5 : 0))
   const postbiotic = score(74, (generatedSeed % 8) + (plateId === "restoration" ? 7 : 0))
@@ -182,7 +201,7 @@ export function createFallbackPlateRecipe(input: PlateRecipeInput, imageUrl?: st
     plateId,
     plateName: plate.name,
     name,
-    description: `${displayProtein} served with ${formatList(plants.slice(0, 6))}, a fermented accent, seeds, herbs, and a ${flavour.toLowerCase()} finish.`,
+    description: `${displayProtein} served with ${formatList(plants.slice(0, 6))}, a fermented accent, seeds, herbs, and a ${fallbackVariation} finish.`,
     imageUrl: imageUrl || plate.image,
     goal,
     flavour,
@@ -206,7 +225,7 @@ export function createFallbackPlateRecipe(input: PlateRecipeInput, imageUrl?: st
     method: [
       `Cook or warm the ${protein} until ready, then season with salt, pepper, herbs, and a little olive oil.`,
       `Prepare the plant base with ${formatList(plants.slice(0, 5))}. Keep some elements fresh and cook or warm the heartier ingredients.`,
-      `Add ${fermentedAccent}, then finish with seeds, herbs, citrus, and your ${flavour.toLowerCase()} flavour direction.`,
+      `Add ${fermentedAccent}, then finish with seeds, herbs, citrus, and a ${fallbackVariation} flavour direction.`,
       `Serve as a ${input.cookingTime || "25 minutes"} ${plate.name.replace(/^The /, "").toLowerCase()} for ${goal}, with the dressing added just before eating.`,
     ],
     shoppingSections: [
@@ -224,5 +243,9 @@ export function createFallbackPlateRecipe(input: PlateRecipeInput, imageUrl?: st
             : "A steady restorative plate built around gentle cooking, routine, recovery, and consistency.",
     disclaimer: "EatoBiotics recipes and scores are educational and not medical advice. They do not diagnose, treat, prevent, or cure any condition.",
     createdAt: new Date().toISOString(),
+    imageGenerated: Boolean(imageUrl),
+    imageModel: imageUrl ? "fallback-reference" : "static-reference",
+    imagePrompt: "",
+    referenceStyleUsed: false,
   }
 }
