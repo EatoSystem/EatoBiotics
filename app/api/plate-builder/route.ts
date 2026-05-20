@@ -19,6 +19,7 @@ const requestSchema = z.object({
   cookingTime: z.string().max(80).optional().default("25 minutes"),
   goal: z.string().max(80).optional().default("balance"),
   flavour: z.string().max(80).optional().default("Bright and zesty"),
+  creativeSeed: z.string().max(160).optional().default(""),
   publish: z.boolean().optional().default(true),
 })
 
@@ -83,11 +84,19 @@ User inputs:
 - Goal: ${input.goal}
 - Flavour direction: ${input.flavour}
 - Foods to avoid: ${input.avoid || "none"}
+- Creative seed: ${input.creativeSeed || "create a fresh, different variation from previous runs"}
 
 Naming rule:
 - If there is no user dish idea, the recipe name must be "${plate.name.replace(/^The /, "")} with [Capitalised Protein]".
 - Do not put the goal, country, or descriptive adjectives before the plate name.
 - Use title case for the protein.
+
+Recipe rules:
+- Do not simply repeat the default plate. Create a distinct dish variation every time.
+- Keep the selected plate identity, but vary the supporting plants, dressing, texture, cooking method, and flavour direction.
+- Ingredients must be specific, cookable, and useful for a real recipe.
+- Method steps must tell someone how to make the food, not how to style a photo.
+- Shopping sections should use normal shopping language, not abstract score language.
 
 Return ONLY valid JSON matching this exact shape:
 {
@@ -183,7 +192,26 @@ async function generateImageWithOpenAI(recipe: PlateRecipe): Promise<{ url?: str
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) return null
 
-  const prompt = `Overhead editorial food photography on pure white background, no plate rim visible. Create a vibrant EatoBiotics dish image for "${recipe.name}". Include the recipe ingredients and make it match a premium clean health-food brand: crisp, appetising, colourful, glossy fresh textures, square composition. No text in image.`
+  const ingredientContext = [
+    ...recipe.ingredients,
+    ...recipe.shoppingSections.flatMap((section) => section.items),
+  ].join(", ")
+
+  const prompt = `Create a premium EatoBiotics food image for "${recipe.name}".
+
+Visual style:
+- Square 1:1 overhead editorial food photography.
+- Pure white background only.
+- No ceramic plate, no bowl rim, no cutlery, no table, no props, no text.
+- Arrange the food itself as a vibrant composed bowl/plate shape, like separated glossy ingredient clusters on white.
+- Premium health-food campaign quality: crisp detail, appetising, colourful, fresh, abundant, clean, high contrast.
+- Match the EatoBiotics reference style: isolated ingredients, vivid greens, warm golds, bright fermented accents, seeds and herbs, polished social content.
+- Do not create a plain dinner plate. Do not use a beige bowl. Do not crop awkwardly.
+
+Use these recipe ingredients as the visual source:
+${ingredientContext}
+
+The image must look like a unique newly created dish, not a copy of an existing template.`
 
   const response = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
@@ -195,7 +223,7 @@ async function generateImageWithOpenAI(recipe: PlateRecipe): Promise<{ url?: str
       model: process.env.OPENAI_IMAGE_MODEL || "gpt-image-1",
       prompt,
       size: "1024x1024",
-      quality: "medium",
+      quality: "high",
       n: 1,
     }),
   })

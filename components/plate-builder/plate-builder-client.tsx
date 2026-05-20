@@ -423,6 +423,7 @@ export function PlateBuilderClient() {
         body: JSON.stringify({
           plateId: plate.id,
           ...prefs,
+          creativeSeed: `${plate.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
           publish: true,
         }),
       })
@@ -446,6 +447,8 @@ export function PlateBuilderClient() {
         setNotice("Recipe created locally. Add the Supabase plate_recipes table to publish permanent recipe pages.")
       } else if (data.generatedBy === "fallback") {
         setNotice("Recipe page created with fallback generation. Add OPENAI_API_KEY to generate new AI recipes and images.")
+      } else if (!data.imageGenerated) {
+        setNotice("Recipe content was generated, but image generation did not return a new image. Check the OpenAI image model and Vercel logs.")
       }
       window.setTimeout(() => document.getElementById("latest-creation")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50)
     } catch {
@@ -476,7 +479,7 @@ export function PlateBuilderClient() {
               Create your own EatoBiotics bowl or plate.
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-8 text-muted-foreground">
-              Build a unique dish concept with your own ingredients, timing, method, score, and image brief. This is the founder content machine first; live AI image generation can connect next.
+              Build a unique dish concept with your own ingredients, timing, method, score, and generated image. This is the founder content machine for EatoBiotics recipes, posts, and education.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <button
@@ -546,7 +549,7 @@ export function PlateBuilderClient() {
               <h2 className="mt-2 font-serif text-3xl font-semibold text-foreground">Create recipes on demand for EatoBiotics content.</h2>
             </div>
             <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
-              Pick one plate, generate a dish concept, then use the score, story, and image prompt for social posts, education, and future customer tools.
+              Pick one plate, generate a dish concept, then use the score, recipe, image, and public page for social posts, education, and future customer tools.
             </p>
           </div>
 
@@ -858,9 +861,9 @@ export function PlateBuilderClient() {
 
       <section className="px-6 py-12">
         <div className="mx-auto max-w-[900px] rounded-2xl border border-border bg-white p-6">
-          <p className="text-sm font-semibold text-foreground">Educational prototype</p>
+          <p className="text-sm font-semibold text-foreground">Educational recipe generator</p>
           <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-            EatoBiotics recipes and scores are educational and not medical advice. They do not diagnose, treat, prevent, or cure any condition. OpenAI image and recipe generation is not connected yet.
+            EatoBiotics recipes and scores are educational and not medical advice. They do not diagnose, treat, prevent, or cure any condition. Generated recipes and images should be reviewed before publishing.
           </p>
         </div>
       </section>
