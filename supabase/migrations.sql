@@ -53,6 +53,10 @@ BEGIN
   END IF;
 END $$;
 
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('plate-recipes', 'plate-recipes', true)
+ON CONFLICT (id) DO NOTHING;
+
 
 -- ────────────────────────────────────────────────────────────
 -- Migration 3: analyses table (server-side daily count tracking)
@@ -334,3 +338,45 @@ END $$;
 
 ALTER TABLE profiles
   ADD COLUMN IF NOT EXISTS food_system_story jsonb;
+
+
+-- Migration 16: Plate Builder generated recipes
+
+CREATE TABLE IF NOT EXISTS plate_recipes (
+  id                uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug              text        NOT NULL UNIQUE,
+  plate_type        text        NOT NULL,
+  plate_name        text        NOT NULL,
+  name              text        NOT NULL,
+  description       text        NOT NULL,
+  image_url         text,
+  goal              text,
+  flavour           text,
+  dietary_style     text,
+  time              jsonb       NOT NULL DEFAULT '{}'::jsonb,
+  score             jsonb       NOT NULL DEFAULT '{}'::jsonb,
+  nutrition         jsonb       NOT NULL DEFAULT '{}'::jsonb,
+  ingredients       jsonb       NOT NULL DEFAULT '[]'::jsonb,
+  method            jsonb       NOT NULL DEFAULT '[]'::jsonb,
+  shopping_sections jsonb       NOT NULL DEFAULT '[]'::jsonb,
+  weekly_role       text,
+  disclaimer        text,
+  is_published      boolean     NOT NULL DEFAULT false,
+  created_at        timestamptz NOT NULL DEFAULT now(),
+  updated_at        timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE plate_recipes ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'plate_recipes'
+      AND policyname = 'public_read_published_plate_recipes'
+  ) THEN
+    CREATE POLICY "public_read_published_plate_recipes"
+      ON plate_recipes FOR SELECT TO anon, authenticated
+      USING (is_published = true);
+  END IF;
+END $$;

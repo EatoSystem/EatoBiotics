@@ -9,5 +9,11 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
  */
 export function getSupabase() {
   if (!supabaseUrl || !supabaseKey) return null
+  try {
+    const url = new URL(supabaseUrl)
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null
+  } catch {
+    return null
+  }
   return createClient(supabaseUrl, supabaseKey)
 }
