@@ -106,9 +106,24 @@ function ScoreCircle({ value }: { value: number }) {
 
 function MiniStat({ label, value, border }: { label: string; value: string; border: string }) {
   return (
-    <div className={`rounded-2xl border ${border} bg-white p-4`}>
+    <div className={`overflow-hidden rounded-2xl border-2 ${border} bg-white`}>
+      <div className="h-1.5 bg-current" />
+      <div className="p-4">
       <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
       <p className="mt-2 font-serif text-2xl font-semibold text-foreground">{value}</p>
+      </div>
+    </div>
+  )
+}
+
+function BrandBars() {
+  return (
+    <div className="flex gap-2">
+      <span className="h-2 flex-1 rounded-full bg-icon-lime" />
+      <span className="h-2 flex-1 rounded-full bg-icon-green" />
+      <span className="h-2 flex-1 rounded-full bg-icon-teal" />
+      <span className="h-2 flex-1 rounded-full bg-icon-yellow" />
+      <span className="h-2 flex-1 rounded-full bg-icon-orange" />
     </div>
   )
 }
@@ -149,7 +164,9 @@ function FoodSystemSection({ recipe }: { recipe: PlateRecipe }) {
 
   return (
     <section className="px-6 py-8">
-      <div className="mx-auto max-w-[1180px] rounded-3xl border border-icon-green/30 bg-icon-green/5 p-6 md:p-8">
+      <div className="mx-auto max-w-[1180px] overflow-hidden rounded-3xl border-2 border-icon-green bg-white">
+        <BrandBars />
+        <div className="p-6 md:p-8">
         <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-icon-green">The Food System Inside You</p>
@@ -162,7 +179,7 @@ function FoodSystemSection({ recipe }: { recipe: PlateRecipe }) {
           </div>
           <div className="grid gap-3">
             {cards.map((card) => (
-              <div key={card.title} className={`rounded-2xl border ${card.border} bg-white p-5 shadow-sm`}>
+              <div key={card.title} className={`rounded-2xl border-2 ${card.border} bg-white p-5`}>
                 <p className={`text-xs font-bold uppercase tracking-widest ${card.color}`}>{card.title}</p>
                 <p className="mt-2 text-sm leading-7 text-muted-foreground">{card.text}</p>
               </div>
@@ -170,22 +187,23 @@ function FoodSystemSection({ recipe }: { recipe: PlateRecipe }) {
           </div>
         </div>
         <div className="mt-6 grid gap-3 sm:grid-cols-4">
-          <div className="rounded-2xl border border-icon-green/20 bg-white p-4">
+          <div className="rounded-2xl border-2 border-icon-lime bg-white p-4">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Prebiotic</p>
             <p className="mt-2 font-serif text-2xl font-semibold text-foreground">{recipe.score.prebiotic}</p>
           </div>
-          <div className="rounded-2xl border border-icon-teal/20 bg-white p-4">
+          <div className="rounded-2xl border-2 border-icon-teal bg-white p-4">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Probiotic</p>
             <p className="mt-2 font-serif text-2xl font-semibold text-foreground">{recipe.score.probiotic}</p>
           </div>
-          <div className="rounded-2xl border border-icon-orange/20 bg-white p-4">
+          <div className="rounded-2xl border-2 border-icon-orange bg-white p-4">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Postbiotic</p>
             <p className="mt-2 font-serif text-2xl font-semibold text-foreground">{recipe.score.postbiotic}</p>
           </div>
-          <div className="rounded-2xl border border-icon-yellow/30 bg-white p-4">
+          <div className="rounded-2xl border-2 border-icon-yellow bg-white p-4">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Balance</p>
             <p className="mt-2 font-serif text-2xl font-semibold text-foreground">{recipe.score.balance}</p>
           </div>
+        </div>
         </div>
       </div>
     </section>
@@ -213,12 +231,13 @@ export default async function RecipePage({ params }: PageProps) {
               <span className="rounded-full border border-icon-teal/30 px-4 py-2 text-sm font-semibold text-foreground">{recipe.nutrition.protein}g protein</span>
             </div>
             <div className="mt-8 grid max-w-2xl gap-3 sm:grid-cols-3">
-              <MiniStat label="Score" value={`${recipe.score.overall}/100`} border="border-icon-green/30" />
-              <MiniStat label="Fibre" value={`${recipe.nutrition.fibre}g`} border="border-icon-lime/40" />
-              <MiniStat label="Plate" value={recipe.plateName.replace(/^The /, "")} border="border-icon-orange/30" />
+              <MiniStat label="Score" value={`${recipe.score.overall}/100`} border="border-icon-green text-icon-green" />
+              <MiniStat label="Fibre" value={`${recipe.nutrition.fibre}g`} border="border-icon-lime text-icon-lime" />
+              <MiniStat label="Plate" value={recipe.plateName.replace(/^The /, "")} border="border-icon-orange text-icon-orange" />
             </div>
           </div>
-          <div className="overflow-hidden rounded-[2rem] border border-icon-green/30 bg-white shadow-[0_18px_60px_rgba(24,57,31,0.08)]">
+          <div className="overflow-hidden rounded-[2rem] border-2 border-icon-green bg-white">
+            <BrandBars />
             <div className="relative">
               <img src={recipe.imageUrl} alt={recipe.name} className="aspect-square h-full w-full object-cover" />
             </div>
@@ -231,7 +250,9 @@ export default async function RecipePage({ params }: PageProps) {
       <section className="px-6 py-8">
         <div className="mx-auto grid max-w-[1280px] gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="space-y-6">
-            <div className="rounded-3xl border border-icon-green/30 bg-icon-green/5 p-6">
+            <div className="overflow-hidden rounded-3xl border-2 border-icon-green bg-white">
+              <BrandBars />
+              <div className="p-6">
               <div className="flex flex-col gap-5 sm:flex-row">
                 <ScoreCircle value={recipe.score.overall} />
                 <div>
@@ -241,74 +262,90 @@ export default async function RecipePage({ params }: PageProps) {
                     A simple educational read on plant fibre, fermented contrast, postbiotic support, and meal balance.
                   </p>
                   <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-                    <p className="rounded-xl border border-icon-lime/30 bg-white p-3">Prebiotic<br /><strong>{recipe.score.prebiotic}</strong></p>
-                    <p className="rounded-xl border border-icon-teal/30 bg-white p-3">Probiotic<br /><strong>{recipe.score.probiotic}</strong></p>
-                    <p className="rounded-xl border border-icon-orange/30 bg-white p-3">Postbiotic<br /><strong>{recipe.score.postbiotic}</strong></p>
-                    <p className="rounded-xl border border-icon-green/30 bg-white p-3">Balance<br /><strong>{recipe.score.balance}</strong></p>
+                    <p className="rounded-xl border-2 border-icon-lime bg-white p-3">Prebiotic<br /><strong>{recipe.score.prebiotic}</strong></p>
+                    <p className="rounded-xl border-2 border-icon-teal bg-white p-3">Probiotic<br /><strong>{recipe.score.probiotic}</strong></p>
+                    <p className="rounded-xl border-2 border-icon-orange bg-white p-3">Postbiotic<br /><strong>{recipe.score.postbiotic}</strong></p>
+                    <p className="rounded-xl border-2 border-icon-green bg-white p-3">Balance<br /><strong>{recipe.score.balance}</strong></p>
                   </div>
                 </div>
               </div>
+              </div>
             </div>
 
-            <div className="rounded-3xl border border-icon-teal/30 bg-white p-6">
+            <div className="overflow-hidden rounded-3xl border-2 border-icon-teal bg-white">
+              <div className="h-2 bg-icon-teal" />
+              <div className="p-6">
               <p className="text-xs font-bold uppercase tracking-widest text-icon-teal">Nutrition</p>
               <div className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
-                <MiniStat label="Calories" value={`${recipe.nutrition.calories}`} border="border-icon-orange/30" />
-                <MiniStat label="Protein" value={`${recipe.nutrition.protein}g`} border="border-icon-green/30" />
-                <MiniStat label="Carbs" value={`${recipe.nutrition.carbs}g`} border="border-icon-yellow/40" />
-                <MiniStat label="Fat" value={`${recipe.nutrition.fat}g`} border="border-icon-teal/30" />
-                <MiniStat label="Fibre" value={`${recipe.nutrition.fibre}g`} border="border-icon-lime/40" />
-                <MiniStat label="Total" value={recipe.time.total} border="border-icon-green/20" />
+                <MiniStat label="Calories" value={`${recipe.nutrition.calories}`} border="border-icon-orange text-icon-orange" />
+                <MiniStat label="Protein" value={`${recipe.nutrition.protein}g`} border="border-icon-green text-icon-green" />
+                <MiniStat label="Carbs" value={`${recipe.nutrition.carbs}g`} border="border-icon-yellow text-icon-yellow" />
+                <MiniStat label="Fat" value={`${recipe.nutrition.fat}g`} border="border-icon-teal text-icon-teal" />
+                <MiniStat label="Fibre" value={`${recipe.nutrition.fibre}g`} border="border-icon-lime text-icon-lime" />
+                <MiniStat label="Total" value={recipe.time.total} border="border-icon-green text-icon-green" />
+              </div>
               </div>
             </div>
 
             {recipe.weeklyRole && (
-              <div className="rounded-3xl border border-icon-yellow/40 bg-icon-yellow/10 p-6">
+              <div className="overflow-hidden rounded-3xl border-2 border-icon-yellow bg-white">
+                <div className="h-2 bg-icon-yellow" />
+                <div className="p-6">
                 <p className="text-xs font-bold uppercase tracking-widest text-icon-orange">Weekly role</p>
                 <h3 className="mt-2 font-serif text-2xl font-semibold text-foreground">How to use this plate</h3>
                 <p className="mt-3 text-sm leading-7 text-muted-foreground">{recipe.weeklyRole}</p>
+                </div>
               </div>
             )}
 
-            <div className="rounded-3xl border border-icon-orange/30 bg-white p-6">
+            <div className="overflow-hidden rounded-3xl border-2 border-icon-orange bg-white">
+              <div className="h-2 bg-icon-orange" />
+              <div className="p-6">
               <p className="text-xs font-bold uppercase tracking-widest text-icon-orange">Shopping list</p>
               <div className="mt-4 grid gap-3">
                 {recipe.shoppingSections.map((section) => (
-                  <div key={section.title} className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+                  <div key={section.title} className="rounded-2xl border-2 border-border bg-white p-4">
                     <p className="text-xs font-bold uppercase tracking-widest" style={{ color: section.color }}>{section.title}</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {section.items.map((item) => (
-                        <span key={`${section.title}-${item}`} className="rounded-full border border-border bg-icon-green/5 px-3 py-1.5 text-xs font-semibold">{item}</span>
+                        <span key={`${section.title}-${item}`} className="rounded-full border border-icon-green/40 bg-white px-3 py-1.5 text-xs font-semibold">{item}</span>
                       ))}
                     </div>
                   </div>
                 ))}
               </div>
+              </div>
             </div>
           </div>
 
           <div className="space-y-6">
-            <div className="rounded-3xl border border-icon-green/30 bg-white p-6">
+            <div className="overflow-hidden rounded-3xl border-2 border-icon-green bg-white">
+              <div className="h-2 bg-icon-green" />
+              <div className="p-6">
               <h2 className="font-serif text-3xl font-semibold text-foreground">Ingredients</h2>
               <ul className="mt-4 grid gap-3 md:grid-cols-2">
                 {recipe.ingredients.map((ingredient) => (
-                  <li key={ingredient} className="flex gap-3 rounded-2xl border border-icon-green/15 bg-icon-green/5 p-4 text-sm leading-7 text-muted-foreground">
+                  <li key={ingredient} className="flex gap-3 rounded-2xl border-2 border-icon-green/30 bg-white p-4 text-sm leading-7 text-muted-foreground">
                     <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-icon-green" />
                     {ingredient}
                   </li>
                 ))}
               </ul>
+              </div>
             </div>
 
-            <div className="rounded-3xl border border-icon-orange/30 bg-white p-6">
+            <div className="overflow-hidden rounded-3xl border-2 border-icon-orange bg-white">
+              <div className="h-2 bg-icon-orange" />
+              <div className="p-6">
               <h2 className="font-serif text-3xl font-semibold text-foreground">Method</h2>
               <div className="mt-4 grid gap-3">
                 {recipe.method.map((step, index) => (
-                  <div key={step} className="flex gap-4 rounded-2xl border border-icon-orange/20 bg-white p-4 shadow-sm">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-icon-green text-sm font-bold text-white">{index + 1}</span>
+                  <div key={step} className="flex gap-4 rounded-2xl border-2 border-icon-orange/30 bg-white p-4">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-icon-orange text-sm font-bold text-white">{index + 1}</span>
                     <p className="pt-1 text-sm leading-relaxed text-muted-foreground">{step}</p>
                   </div>
                 ))}
+              </div>
               </div>
             </div>
           </div>
