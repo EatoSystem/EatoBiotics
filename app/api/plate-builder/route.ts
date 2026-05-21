@@ -68,6 +68,43 @@ const recipeSchema: z.ZodType<PlateRecipe> = z.object({
   referenceStyleUsed: z.boolean().optional(),
 })
 
+function boundedScore(base: number, spread: number, hash: number): number {
+  return Math.max(62, Math.min(96, base + (Math.abs(hash) % spread)))
+}
+
+function scoreHash(value: string): number {
+  return value.split("").reduce((sum, char, index) => sum + char.charCodeAt(0) * (index + 3), 17)
+}
+
+function recalculateRecipeScores(recipe: PlateRecipe, input: z.infer<typeof requestSchema>): PlateRecipe {
+  const ingredientText = [
+    recipe.name,
+    recipe.description,
+    recipe.ingredients.join(" "),
+    recipe.method.join(" "),
+    recipe.shoppingSections.flatMap((section) => section.items).join(" "),
+    input.creativeSeed,
+  ].join(" | ").toLowerCase()
+  const hash = scoreHash(ingredientText)
+  const plantItems = recipe.shoppingSections
+    .filter((section) => !/protein/i.test(section.title))
+    .flatMap((section) => section.items)
+  const fermentedHits = ["kimchi", "sauerkraut", "kefir", "yogurt", "miso", "pickle", "fermented"].filter((term) => ingredientText.includes(term)).length
+  const seedHits = ["seed", "pumpkin", "sesame", "hemp", "chia", "flax", "walnut", "almond"].filter((term) => ingredientText.includes(term)).length
+  const colourHits = ["kale", "cabbage", "berry", "beet", "carrot", "avocado", "cucumber", "greens", "herb", "pepper", "radish"].filter((term) => ingredientText.includes(term)).length
+
+  const prebiotic = boundedScore(66 + Math.min(12, plantItems.length * 2) + Math.min(6, colourHits), 9, hash)
+  const probiotic = boundedScore(64 + Math.min(12, fermentedHits * 5), 12, Math.floor(hash / 3))
+  const postbiotic = boundedScore(66 + Math.min(10, seedHits * 3) + Math.min(5, colourHits), 11, Math.floor(hash / 7))
+  const balance = boundedScore(68 + Math.min(10, recipe.ingredients.length) + Math.min(5, plantItems.length), 10, Math.floor(hash / 11))
+  const overall = Math.round((prebiotic + probiotic + postbiotic + balance) / 4)
+
+  return {
+    ...recipe,
+    score: { overall, prebiotic, probiotic, postbiotic, balance },
+  }
+}
+
 const STYLE_REFERENCE_PATHS = [
   ["public", "plate-builder", "food-1.png"],
   ["public", "plate-builder", "food-2.png"],
@@ -189,7 +226,7 @@ Return ONLY valid JSON matching this exact shape:
   "flavour": "${input.flavour}",
   "dietaryStyle": "${input.dietaryStyle}",
   "time": { "prep": "10 min", "cook": "15 min", "total": "25 min" },
-  "score": { "overall": 80, "prebiotic": 80, "probiotic": 75, "postbiotic": 78, "balance": 82 },
+  "score": { "overall": 87, "prebiotic": 91, "probiotic": 76, "postbiotic": 84, "balance": 88 },
   "nutrition": { "calories": 520, "protein": 35, "carbs": 55, "fat": 20, "fibre": 14 },
   "ingredients": ["specific ingredient role", "specific ingredient role"],
   "method": ["actual cooking step", "actual cooking step", "actual cooking step", "actual cooking step"],
@@ -279,7 +316,8 @@ Visual style:
 - Square 1:1 overhead editorial food photography.
 - Pure white background only.
 - No ceramic plate, no bowl rim, no cutlery, no table, no props, no text.
-- Arrange the food itself as a vibrant composed bowl/plate shape, like separated glossy ingredient clusters on white.
+- Arrange the food itself as a vibrant premium ingredient composition on white, like separated glossy ingredient clusters.
+- Avoid a generic circular dinner-plate look. Avoid a perfect round bowl silhouette. Use an abundant editorial layout with natural asymmetry and visible individual ingredients.
 - Premium health-food campaign quality: crisp detail, appetising, colourful, fresh, abundant, clean, high contrast.
 - Match the EatoBiotics reference style: isolated ingredients, vivid greens, warm golds, bright fermented accents, seeds and herbs, polished social content.
 - Do not create a plain dinner plate. Do not use a beige bowl. Do not crop awkwardly.
@@ -313,7 +351,7 @@ async function generateImageWithOpenAI(recipe: PlateRecipe): Promise<{ url?: str
   if (!apiKey) return null
 
   const prompt = buildImagePrompt(recipe)
-  const model = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1"
+  const model = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1.5"
   const references = await getStyleReferenceImages()
   if (references.length === 0) return null
 
@@ -452,6 +490,7 @@ export async function POST(req: NextRequest) {
 
   const generated = await generateRecipeWithOpenAI(input)
   let recipe = generated.recipe ?? createFallbackPlateRecipe(input)
+  recipe = recalculateRecipeScores(recipe, input)
   recipe = { ...recipe, slug: withUniqueSlug(recipe.slug || recipe.name), createdAt: new Date().toISOString() }
 
   const image = await generateImageWithOpenAI(recipe)
