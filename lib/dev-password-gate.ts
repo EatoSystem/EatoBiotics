@@ -1,7 +1,13 @@
 export const DEV_COOKIE = "eb_dev_auth"
 
 export function isPasswordGateEnabled(): boolean {
-  return process.env.EATOBIOTICS_PASSWORD_GATE === "true"
+  const gateSetting = process.env.EATOBIOTICS_PASSWORD_GATE?.trim().toLowerCase()
+  if (gateSetting === "false" || gateSetting === "0" || gateSetting === "off") return false
+  if (gateSetting === "true" || gateSetting === "1" || gateSetting === "on") return true
+
+  // During redevelopment, Vercel may only have DEV_PASSWORD configured.
+  // A missing password still keeps the gate off; there is no hardcoded fallback.
+  return Boolean(getDevPassword())
 }
 
 export function getDevPassword(): string | null {
