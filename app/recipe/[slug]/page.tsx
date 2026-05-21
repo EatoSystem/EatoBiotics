@@ -26,6 +26,7 @@ type RecipeRow = {
   weekly_role: string | null
   disclaimer: string | null
   image_generated?: boolean | null
+  image_options?: string[] | null
   image_model?: string | null
   image_prompt?: string | null
   reference_style_used?: boolean | null
@@ -66,6 +67,7 @@ async function getRecipe(slug: string): Promise<PlateRecipe | null> {
     disclaimer: row.disclaimer ?? "EatoBiotics recipes and scores are educational and not medical advice.",
     createdAt: row.created_at,
     imageGenerated: row.image_generated ?? false,
+    imageOptions: row.image_options ?? [],
     imageModel: row.image_model ?? undefined,
     imagePrompt: row.image_prompt ?? undefined,
     referenceStyleUsed: row.reference_style_used ?? false,

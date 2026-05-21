@@ -63,6 +63,7 @@ const recipeSchema: z.ZodType<PlateRecipe> = z.object({
   disclaimer: z.string(),
   createdAt: z.string(),
   imageGenerated: z.boolean().optional(),
+  imageOptions: z.array(z.string()).optional(),
   imageModel: z.string().optional(),
   imagePrompt: z.string().optional(),
   referenceStyleUsed: z.boolean().optional(),
@@ -281,13 +282,12 @@ async function generateRecipeWithOpenAI(input: z.infer<typeof requestSchema>): P
   }
 }
 
-async function uploadGeneratedImage(slug: string, base64: string): Promise<string | null> {
+async function uploadImageBytes(slug: string, bytes: Uint8Array, index = 0): Promise<string | null> {
   const supabase = getSupabase()
   if (!supabase) return null
 
   const bucket = process.env.SUPABASE_RECIPE_IMAGE_BUCKET || "plate-recipes"
-  const bytes = Uint8Array.from(Buffer.from(base64, "base64"))
-  const path = `${slug}.png`
+  const path = `${slug}-${index + 1}.png`
   const { error } = await supabase.storage
     .from(bucket)
     .upload(path, bytes, {
@@ -302,6 +302,22 @@ async function uploadGeneratedImage(slug: string, base64: string): Promise<strin
 
   const { data } = supabase.storage.from(bucket).getPublicUrl(path)
   return data.publicUrl
+}
+
+async function uploadGeneratedImage(slug: string, base64: string, index = 0): Promise<string | null> {
+  return uploadImageBytes(slug, Uint8Array.from(Buffer.from(base64, "base64")), index)
+}
+
+async function uploadRemoteGeneratedImage(slug: string, url: string, index = 0): Promise<string | null> {
+  try {
+    const response = await fetch(url)
+    if (!response.ok) return null
+    const bytes = new Uint8Array(await response.arrayBuffer())
+    return uploadImageBytes(slug, bytes, index)
+  } catch (error) {
+    console.error("[plate-builder] Remote image upload error", error)
+    return null
+  }
 }
 
 function buildImagePrompt(recipe: PlateRecipe): string {
@@ -346,7 +362,7 @@ async function getStyleReferenceImages(): Promise<Array<{ bytes: ArrayBuffer; fi
   return images
 }
 
-async function generateImageWithOpenAI(recipe: PlateRecipe): Promise<{ url?: string; base64?: string; prompt: string; model: string; referenceStyleUsed: boolean } | null> {
+async function generateImageWithOpenAI(recipe: PlateRecipe): Promise<{ urls: string[]; base64s: string[]; prompt: string; model: string; referenceStyleUsed: boolean } | null> {
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) return null
 
@@ -355,13 +371,13 @@ async function generateImageWithOpenAI(recipe: PlateRecipe): Promise<{ url?: str
   const references = await getStyleReferenceImages()
   if (references.length === 0) return null
 
-  const postEdit = async (imageFieldName: "image[]" | "image") => {
+  const postEdit = async (imageFieldName: "image[]" | "image", count: 1 | 4) => {
     const form = new FormData()
     form.append("model", model)
     form.append("prompt", prompt)
     form.append("size", "1024x1024")
     form.append("quality", "high")
-    form.append("n", "1")
+    form.append("n", String(count))
     for (const reference of references.slice(0, 4)) {
       form.append(imageFieldName, new Blob([reference.bytes], { type: "image/png" }), reference.filename)
     }
@@ -375,20 +391,28 @@ async function generateImageWithOpenAI(recipe: PlateRecipe): Promise<{ url?: str
     })
   }
 
-  let response = await postEdit("image[]")
-  if (!response.ok) {
-    const firstError = await response.text()
-    response = await postEdit("image")
-    if (!response.ok) {
-      console.error("[plate-builder] OpenAI image error", firstError, await response.text())
-      return null
+  let response: Response | null = null
+  const errors: string[] = []
+  for (const count of [4, 1] as const) {
+    for (const field of ["image[]", "image"] as const) {
+      response = await postEdit(field, count)
+      if (response.ok) break
+      errors.push(await response.text())
+      response = null
     }
+    if (response?.ok) break
+  }
+
+  if (!response?.ok) {
+    console.error("[plate-builder] OpenAI image error", errors.join("\n"))
+    return null
   }
 
   const data = await response.json() as { data?: Array<{ url?: string; b64_json?: string }> }
-  const image = data.data?.[0]
-  if (image?.url) return { url: image.url, prompt, model, referenceStyleUsed: true }
-  if (image?.b64_json) return { base64: image.b64_json, prompt, model, referenceStyleUsed: true }
+  const images = data.data ?? []
+  const urls = images.map((image) => image.url).filter((url): url is string => Boolean(url))
+  const base64s = images.map((image) => image.b64_json).filter((base64): base64 is string => Boolean(base64))
+  if (urls.length > 0 || base64s.length > 0) return { urls, base64s, prompt, model, referenceStyleUsed: true }
   return null
 }
 
@@ -422,6 +446,7 @@ async function saveRecipe(recipe: PlateRecipe, publish: boolean) {
       weekly_role: recipe.weeklyRole,
       disclaimer: recipe.disclaimer,
       image_generated: recipe.imageGenerated ?? false,
+      image_options: recipe.imageOptions ?? [],
       image_model: recipe.imageModel ?? null,
       image_prompt: recipe.imagePrompt ?? null,
       reference_style_used: recipe.referenceStyleUsed ?? false,
@@ -441,6 +466,7 @@ async function saveRecipe(recipe: PlateRecipe, publish: boolean) {
   if (
     error?.code === "42703" ||
     error?.message?.includes("image_generated") ||
+    error?.message?.includes("image_options") ||
     error?.message?.includes("image_model") ||
     error?.message?.includes("image_prompt") ||
     error?.message?.includes("reference_style_used")
@@ -494,11 +520,20 @@ export async function POST(req: NextRequest) {
   recipe = { ...recipe, slug: withUniqueSlug(recipe.slug || recipe.name), createdAt: new Date().toISOString() }
 
   const image = await generateImageWithOpenAI(recipe)
-  const imageUrl = image?.url ?? (image?.base64 ? await uploadGeneratedImage(recipe.slug, image.base64) : null)
+  const uploadedFromBase64 = image?.base64s?.length
+    ? await Promise.all(image.base64s.map((base64, index) => uploadGeneratedImage(recipe.slug, base64, index)))
+    : []
+  const uploadedFromUrls = image?.urls?.length
+    ? await Promise.all(image.urls.map((url, index) => uploadRemoteGeneratedImage(recipe.slug, url, index + uploadedFromBase64.length)))
+    : []
+  const uploadedUrls = [...uploadedFromBase64, ...uploadedFromUrls].filter((url): url is string => Boolean(url))
+  const imageOptions = Array.from(new Set(uploadedUrls.length > 0 ? uploadedUrls : image?.urls ?? []))
+  const imageUrl = imageOptions[0] ?? null
   recipe = {
     ...recipe,
     ...(imageUrl ? { imageUrl } : {}),
     imageGenerated: Boolean(imageUrl),
+    imageOptions,
     imageModel: image?.model,
     imagePrompt: image?.prompt ?? buildImagePrompt(recipe),
     referenceStyleUsed: image?.referenceStyleUsed ?? false,
@@ -513,10 +548,47 @@ export async function POST(req: NextRequest) {
     saved: Boolean(saved),
     generatedBy: generated.recipe ? "openai" : "fallback",
     imageGenerated: Boolean(imageUrl),
+    imageOptions,
     warnings: [
       generated.warning,
       !imageUrl ? "Image generation failed or returned no usable image" : null,
       !saved ? "Recipe page was not saved to Supabase" : null,
     ].filter(Boolean),
   })
+}
+
+export async function PATCH(req: NextRequest) {
+  let body: { slug?: string; imageUrl?: string }
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: "Invalid image selection request" }, { status: 400 })
+  }
+
+  const slug = body.slug?.trim()
+  const imageUrl = body.imageUrl?.trim()
+  if (!slug || !imageUrl) {
+    return NextResponse.json({ error: "Missing slug or imageUrl" }, { status: 400 })
+  }
+
+  const supabase = getSupabase()
+  if (!supabase) {
+    return NextResponse.json({ error: "Supabase is not configured" }, { status: 503 })
+  }
+
+  const { error } = await supabase
+    .from("plate_recipes")
+    .update({
+      image_url: imageUrl,
+      image_generated: true,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("slug", slug)
+
+  if (error) {
+    console.error("[plate-builder] Supabase image selection error", error)
+    return NextResponse.json({ error: "Could not update selected recipe image" }, { status: 500 })
+  }
+
+  return NextResponse.json({ ok: true })
 }

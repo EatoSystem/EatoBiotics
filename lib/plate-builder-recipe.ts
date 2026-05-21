@@ -54,6 +54,7 @@ export type PlateRecipe = {
   disclaimer: string
   createdAt: string
   imageGenerated?: boolean
+  imageOptions?: string[]
   imageModel?: string
   imagePrompt?: string
   referenceStyleUsed?: boolean
@@ -353,6 +354,7 @@ export function createFallbackPlateRecipe(input: PlateRecipeInput, imageUrl?: st
     disclaimer: "EatoBiotics recipes and scores are educational and not medical advice. They do not diagnose, treat, prevent, or cure any condition.",
     createdAt: new Date().toISOString(),
     imageGenerated: Boolean(imageUrl),
+    imageOptions: imageUrl ? [imageUrl] : [],
     imageModel: imageUrl ? "fallback-reference" : "static-reference",
     imagePrompt: "",
     referenceStyleUsed: false,

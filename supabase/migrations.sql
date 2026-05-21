@@ -362,6 +362,7 @@ CREATE TABLE IF NOT EXISTS plate_recipes (
   weekly_role       text,
   disclaimer        text,
   image_generated   boolean     NOT NULL DEFAULT false,
+  image_options     jsonb       NOT NULL DEFAULT '[]'::jsonb,
   image_model       text,
   image_prompt      text,
   reference_style_used boolean   NOT NULL DEFAULT false,
@@ -372,6 +373,7 @@ CREATE TABLE IF NOT EXISTS plate_recipes (
 
 ALTER TABLE plate_recipes
   ADD COLUMN IF NOT EXISTS image_generated boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS image_options jsonb NOT NULL DEFAULT '[]'::jsonb,
   ADD COLUMN IF NOT EXISTS image_model text,
   ADD COLUMN IF NOT EXISTS image_prompt text,
   ADD COLUMN IF NOT EXISTS reference_style_used boolean NOT NULL DEFAULT false;
