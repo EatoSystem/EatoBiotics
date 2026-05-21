@@ -1,8 +1,9 @@
 "use client"
 
 import Image from "next/image"
+import Link from "next/link"
 import { useState } from "react"
-import { Users, CheckCircle2, FileText, TrendingUp, Share2, UserCheck, LogOut } from "lucide-react"
+import { Users, CheckCircle2, FileText, TrendingUp, Share2, UserCheck, LogOut, ChefHat } from "lucide-react"
 
 type Lead = {
   name: string | null
@@ -121,14 +122,23 @@ export function AdminDashboard({ stats }: { stats: AdminStats }) {
               Admin
             </span>
           </div>
-          <button
-            onClick={handleSignOut}
-            disabled={signingOut}
-            className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/30 disabled:opacity-50"
-          >
-            <LogOut size={12} />
-            {signingOut ? "Signing out…" : "Sign out"}
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/admin/recipe-studio"
+              className="flex items-center gap-1.5 rounded-full border border-[var(--icon-green)]/30 px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-[var(--icon-green)]"
+            >
+              <ChefHat size={12} />
+              Recipe studio
+            </Link>
+            <button
+              onClick={handleSignOut}
+              disabled={signingOut}
+              className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/30 disabled:opacity-50"
+            >
+              <LogOut size={12} />
+              {signingOut ? "Signing out…" : "Sign out"}
+            </button>
+          </div>
         </div>
       </div>
 
