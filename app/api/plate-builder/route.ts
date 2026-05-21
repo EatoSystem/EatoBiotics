@@ -94,6 +94,15 @@ const plantSwapIdeas = [
   "combine one crisp vegetable, one soft protein, one bright acid, and one creamy element",
 ]
 
+const heroProteinIdeas: Record<z.infer<typeof requestSchema>["plateId"], string[]> = {
+  foundation: ["salmon", "mackerel", "chicken", "soft eggs", "tempeh", "white beans", "trout", "tofu"],
+  function: ["chicken", "tuna", "eggs", "turkey", "tempeh", "salmon", "lentil falafel", "tofu"],
+  diversity: ["tempeh", "tofu", "chickpea patties", "lentil kofta", "white beans", "edamame", "eggs", "salmon"],
+  restoration: ["trout", "chicken", "soft eggs", "tofu", "salmon", "white beans", "miso tempeh", "turkey"],
+}
+
+const nameAngles = ["Lemon Herb", "Miso Sesame", "Charred Green", "Citrus Crunch", "Golden Yogurt", "Pickled Herb", "Ginger Lime", "Smoky Seeded"]
+
 function seedNumber(value: string): number {
   return value.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0)
 }
@@ -104,11 +113,14 @@ function pickVariation(items: string[], seed: number, offset = 0): string {
 
 function buildVariationBrief(input: z.infer<typeof requestSchema>) {
   const seed = seedNumber(`${input.plateId}-${input.goal}-${input.flavour}-${input.creativeSeed}-${Date.now()}`)
+  const suggestedProtein = input.protein.trim() || pickVariation(heroProteinIdeas[input.plateId], seed, 17)
   return {
     angle: pickVariation(variationAngles, seed),
     plantRule: pickVariation(plantSwapIdeas, seed, 5),
     scoreBias: 3 + (seed % 9),
     methodStyle: pickVariation(["roasted", "charred", "steamed and dressed", "raw and cooked contrast", "quick sauteed", "warm grain bowl"], seed, 11),
+    suggestedProtein,
+    nameAngle: pickVariation(nameAngles, seed, 19),
   }
 }
 
@@ -129,7 +141,7 @@ Purpose:
 
 User inputs:
 - Dish idea: ${input.dishIdea || "none"}
-- Main protein: ${input.protein || plate.defaultProtein}
+- Main protein: ${input.protein || `choose a new hero ingredient; suggested for this run: ${variation.suggestedProtein}`}
 - Vegetables/grains/ferments/toppings: ${input.vegetables || plate.defaultPlants.join(", ")}
 - Country add-on: ${input.country}
 - Dietary style: ${input.dietaryStyle}
@@ -141,18 +153,22 @@ User inputs:
 
 Mandatory variation for this exact run:
 - Creative angle: ${variation.angle}
+- Hero ingredient for this run: ${variation.suggestedProtein}
+- Name angle for this run: ${variation.nameAngle}
 - Plant rule: ${variation.plantRule}
 - Cooking/method style: ${variation.methodStyle}
 - Score variation bias: ${variation.scoreBias}
 
 Naming rule:
-- If there is no user dish idea, the recipe name must be "${plate.name.replace(/^The /, "")} with [Capitalised Protein]".
+- If there is no user dish idea, the recipe name must start with "${plate.name.replace(/^The /, "")} with" and then include a unique hero phrase, such as "${plate.name.replace(/^The /, "")} with ${variation.nameAngle} ${variation.suggestedProtein.split(" ").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")}".
 - Do not put the goal, country, or descriptive adjectives before the plate name.
-- Use title case for the protein.
+- Do not return the bare default name "${plate.name.replace(/^The /, "")} with ${plate.defaultProtein.charAt(0).toUpperCase() + plate.defaultProtein.slice(1)}".
+- Use title case for the hero phrase.
 
 Recipe rules:
 - Do not simply repeat the default plate. Create a distinct dish variation every time.
 - Treat the creative seed as mandatory variation pressure. Change at least 4 meaningful elements from the default selected plate: supporting plants, sauce/dressing, fermented element, texture, herb/spice profile, cooking method, or finish.
+- If no protein was provided by the user, do not automatically use the default protein. Use the hero ingredient suggested above or another distinct protein.
 - Keep the selected plate identity, but vary the supporting plants, dressing, texture, cooking method, and flavour direction.
 - Ingredients must be specific, cookable, and useful for a real recipe.
 - Method steps must tell someone how to make the food, not how to style a photo.

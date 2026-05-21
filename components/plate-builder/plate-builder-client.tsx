@@ -683,7 +683,7 @@ export function PlateBuilderClient() {
                 <p className="text-xs font-bold uppercase tracking-widest text-icon-teal">Ready to create</p>
                 <h3 className="mt-2 font-serif text-2xl font-semibold text-foreground">{plate.name}</h3>
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                  Create a complete dish concept from the selected plate, including name, ingredients, method, time, score, and image brief.
+                  Create a new dish from this plate, including a unique name, hero ingredient, plants, method, time, score, shopping list, and image.
                 </p>
               </div>
               <button type="button" onClick={createPlate} disabled={generating} className="brand-gradient mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-70 md:mt-0 md:w-auto">

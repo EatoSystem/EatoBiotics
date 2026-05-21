@@ -219,6 +219,24 @@ const fallbackFinishes = [
   "sesame tamari glaze",
 ]
 
+const fallbackProteinPools: Record<PlateId, string[]> = {
+  foundation: ["salmon", "mackerel", "chicken", "soft eggs", "tempeh", "white beans", "trout", "tofu"],
+  function: ["chicken", "tuna", "eggs", "turkey", "tempeh", "salmon", "lentil falafel", "tofu"],
+  diversity: ["tempeh", "tofu", "chickpea patties", "lentil kofta", "white beans", "edamame", "eggs", "salmon"],
+  restoration: ["trout", "chicken", "soft eggs", "tofu", "salmon", "white beans", "miso tempeh", "turkey"],
+}
+
+const heroDescriptors = [
+  "Lemon Herb",
+  "Miso Sesame",
+  "Charred Green",
+  "Citrus Crunch",
+  "Golden Yogurt",
+  "Pickled Herb",
+  "Ginger Lime",
+  "Smoky Seeded",
+]
+
 function score(base: number, modifier: number): number {
   return Math.max(62, Math.min(98, Math.round(base + modifier)))
 }
@@ -257,11 +275,13 @@ function estimateNutrition(plateId: PlateId, protein: string, plantCount: number
 export function createFallbackPlateRecipe(input: PlateRecipeInput, imageUrl?: string): PlateRecipe {
   const plateId = input.plateId
   const plate = PLATE_DEFINITIONS[plateId]
-  const protein = input.protein?.trim() || plate.defaultProtein
-  const displayProtein = titleCase(protein)
   const flavour = input.flavour || "Bright and zesty"
   const goal = input.goal || "balance"
-  const generatedSeed = seed(`${plateId}-${goal}-${protein}-${input.dietaryStyle ?? "Flexible"}-${input.dishIdea ?? ""}-${flavour}-${input.creativeSeed ?? ""}-${Date.now()}`)
+  const seedBase = `${plateId}-${goal}-${input.protein ?? ""}-${input.dietaryStyle ?? "Flexible"}-${input.dishIdea ?? ""}-${flavour}-${input.creativeSeed ?? ""}-${Date.now()}`
+  const preliminarySeed = seed(seedBase)
+  const protein = input.protein?.trim() || pick(fallbackProteinPools[plateId], preliminarySeed, 17)
+  const displayProtein = titleCase(protein)
+  const generatedSeed = seed(`${seedBase}-${protein}`)
   const requestedPlants = splitList(input.vegetables)
   const pool = fallbackPlantPools[plateId]
   const variedPlants = Array.from(
@@ -282,7 +302,7 @@ export function createFallbackPlateRecipe(input: PlateRecipeInput, imageUrl?: st
   const probiotic = score(66, (Math.floor(generatedSeed / 3) % 17) + (plateId === "function" ? 5 : 0))
   const postbiotic = score(67, (Math.floor(generatedSeed / 7) % 16) + (plateId === "restoration" ? 6 : 0))
   const balance = score(70, (Math.floor(generatedSeed / 11) % 15) + (plateId === "foundation" ? 5 : 0))
-  const name = input.dishIdea?.trim() || `${plate.name.replace(/^The /, "")} with ${displayProtein}`
+  const name = input.dishIdea?.trim() || `${plate.name.replace(/^The /, "")} with ${pick(heroDescriptors, generatedSeed, 19)} ${displayProtein}`
   const fermentedAccent = plateId === "function" ? "live yogurt or kimchi" : plateId === "diversity" ? "sauerkraut or kimchi" : "kimchi, sauerkraut, kefir yogurt, miso, or pickled vegetables"
 
   return {
