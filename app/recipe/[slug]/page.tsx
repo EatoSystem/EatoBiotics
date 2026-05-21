@@ -95,15 +95,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-function ScoreCircle({ value }: { value: number }) {
-  return (
-    <div className="flex h-32 w-32 shrink-0 flex-col items-center justify-center rounded-full border-[10px] border-icon-green bg-white text-center">
-      <span className="font-serif text-4xl font-semibold leading-none text-foreground">{value}</span>
-      <span className="mt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">/100</span>
-    </div>
-  )
-}
-
 function MiniStat({ label, value, border }: { label: string; value: string; border: string }) {
   return (
     <div className={`overflow-hidden rounded-2xl border-2 ${border} bg-white`}>
@@ -136,68 +127,36 @@ function SectionAccent({ color }: { color: string }) {
   )
 }
 
-function formatHumanList(items: string[], fallback: string): string {
-  const cleaned = items
-    .map((item) => item.replace(/\s+-\s+.*$/, "").replace(/\s+for\s+.*$/, "").trim())
-    .filter(Boolean)
-
-  const unique = Array.from(new Set(cleaned))
-  if (unique.length === 0) return fallback
-  if (unique.length === 1) return unique[0]
-  if (unique.length === 2) return `${unique[0]} and ${unique[1]}`
-  return `${unique.slice(0, -1).join(", ")}, and ${unique[unique.length - 1]}`
-}
-
 function getPlatePurpose(recipe: PlateRecipe): string {
   if (recipe.plateId === "function") {
-    return "connect daily food with the gut-brain and immune conversation: colourful plants for microbial fuel, protein for steadier energy, and fermented contrast for a more complete biotic pattern."
+    return "a functional plate that links food choices with daily energy, mood, immunity, and recovery."
   }
   if (recipe.plateId === "diversity") {
-    return "increase microbial variety through colour, texture, fibre, legumes, herbs, and different plant families in one practical meal."
+    return "a diversity plate built around colour, texture, variety, and repeated exposure to different plant families."
   }
   if (recipe.plateId === "restoration") {
-    return "make rebuilding feel calm and repeatable: familiar ingredients, gentle cooking, enough protein, and a simple fermented or acidic finish."
+    return "a restorative plate designed to make rebuilding feel calm, practical, and repeatable."
   }
-  return "show the core EatoBiotics idea in one bowl: plants, protein, fermented elements, healthy fats, texture, and flavour working together as a weekly food-system habit."
+  return "the clearest expression of the EatoBiotics weekly plate pattern."
 }
 
 function FoodSystemSection({ recipe }: { recipe: PlateRecipe }) {
-  const plantItems = recipe.shoppingSections
-    .filter((section) => !/protein/i.test(section.title))
-    .flatMap((section) => section.items)
-  const proteinItems = recipe.shoppingSections
-    .find((section) => /protein/i.test(section.title))
-    ?.items ?? []
-  const fermentedItems = plantItems.filter((item) =>
-    /kimchi|kefir|yogurt|miso|pickle|pickled|fermented|sauerkraut/i.test(item)
-  )
-  const fibreEstimate = recipe.nutrition.fibre >= 15
-    ? "a high-fibre plate"
-    : recipe.nutrition.fibre >= 10
-      ? "a meaningful fibre base"
-      : "a lighter fibre base"
-  const proteinText = formatHumanList(proteinItems.slice(0, 2), "the protein")
-  const plantText = formatHumanList(plantItems.slice(0, 6), "the plant ingredients")
-  const fermentedText = formatHumanList(fermentedItems.slice(0, 2), "the fermented element")
-
   const cards = [
     {
-      title: "Prebiotic engine",
-      text: `${plantText} provide ${fibreEstimate}, colour diversity, and plant compounds that help feed the microbes already living in the gut.`,
+      title: "Why this plate works",
+      text: `This is ${getPlatePurpose(recipe)} It combines a clear centre, plant volume, texture, and a bright finish so the meal has structure rather than feeling like a loose collection of healthy ingredients.`,
       color: "text-icon-green",
       border: "border-icon-green/30",
     },
     {
-      title: "Protein and satiety",
-      text: `${proteinText} gives the plate structure, while fats, seeds, herbs, and cooked plants help it feel like a complete meal rather than a snack.`,
+      title: "What it feeds",
+      text: "The value is in the pattern: fibre and colour for the internal food system, enough protein and fats to make the plate satisfying, and fermented or acidic contrast to make the meal feel alive.",
       color: "text-icon-teal",
       border: "border-icon-teal/30",
     },
     {
-      title: "Fermented contrast",
-      text: fermentedItems.length > 0
-        ? `${fermentedText} adds a fermented or acidic note beside the fibre-rich plants, giving the plate a clearer probiotic signal.`
-        : "A fermented or acidic finish would make this plate stronger by adding contrast beside the fibre-rich plants and fats.",
+      title: "How to use it this week",
+      text: recipe.weeklyRole || "Use it as a repeatable plate template: keep the same structure, then change the protein, seasonal plants, fermented side, or dressing to create a new version without starting from scratch.",
       color: "text-icon-orange",
       border: "border-icon-orange/30",
     },
@@ -208,23 +167,15 @@ function FoodSystemSection({ recipe }: { recipe: PlateRecipe }) {
       <div className="mx-auto max-w-[1180px] overflow-hidden rounded-3xl border-2 border-icon-green bg-white">
         <BrandBars />
         <div className="p-6 pt-5 md:p-8 md:pt-6">
-        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+        <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-icon-green">The Food System Inside You</p>
-            <div className="mt-4 flex flex-col gap-5 sm:flex-row sm:items-center">
-              <div className="shrink-0">
-                <ScoreCircle value={recipe.score.overall} />
-                <p className="mt-2 text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground">EatoBiotics score</p>
-              </div>
-              <div>
-                <h2 className="font-serif text-4xl font-semibold leading-tight text-foreground">
-                  What this recipe is designed to do.
-                </h2>
-                <p className="mt-4 text-base leading-8 text-muted-foreground">
-                  This {recipe.plateName.toLowerCase()} uses {proteinText}, {plantText}, and {fermentedItems.length > 0 ? fermentedText : "a fermented or acidic finish"} to {getPlatePurpose(recipe)} It is food education, not medical advice: the value is in the pattern of fibre, colour, protein, fermentation, fats, herbs, and repeatable cooking.
-                </p>
-              </div>
-            </div>
+            <h2 className="mt-4 font-serif text-4xl font-semibold leading-tight text-foreground">
+              Why this plate belongs in the system.
+            </h2>
+            <p className="mt-4 text-base leading-8 text-muted-foreground">
+              EatoBiotics is not just a recipe idea. It is a way to make food choices visible: what forms the centre, what adds colour and fibre, what brings contrast, and what makes the plate easy to repeat.
+            </p>
           </div>
           <div className="grid gap-3">
             {cards.map((card) => (
@@ -233,20 +184,6 @@ function FoodSystemSection({ recipe }: { recipe: PlateRecipe }) {
                 <p className="mt-2 text-sm leading-7 text-muted-foreground">{card.text}</p>
               </div>
             ))}
-          </div>
-        </div>
-        <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border-2 border-icon-lime bg-white p-4">
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Prebiotic</p>
-            <p className="mt-2 font-serif text-2xl font-semibold text-foreground">{recipe.score.prebiotic}</p>
-          </div>
-          <div className="rounded-2xl border-2 border-icon-teal bg-white p-4">
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Probiotic</p>
-            <p className="mt-2 font-serif text-2xl font-semibold text-foreground">{recipe.score.probiotic}</p>
-          </div>
-          <div className="rounded-2xl border-2 border-icon-orange bg-white p-4">
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Postbiotic</p>
-            <p className="mt-2 font-serif text-2xl font-semibold text-foreground">{recipe.score.postbiotic}</p>
           </div>
         </div>
         </div>
@@ -295,27 +232,6 @@ export default async function RecipePage({ params }: PageProps) {
       <section className="px-6 py-8">
         <div className="mx-auto grid max-w-[1280px] gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="space-y-6">
-            <div className="rounded-3xl border-2 border-icon-green bg-white">
-              <BrandBars />
-              <div className="p-6 pt-5">
-              <div className="flex flex-col gap-5 sm:flex-row">
-                <ScoreCircle value={recipe.score.overall} />
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-icon-green">Biotic breakdown</p>
-                  <h2 className="mt-2 font-serif text-2xl font-semibold leading-tight text-foreground">EatoBiotics score</h2>
-                  <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                    A simple educational read on plant fibre, fermented contrast, and postbiotic support.
-                  </p>
-                  <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-                    <p className="rounded-xl border-2 border-icon-lime bg-white p-3">Prebiotic<br /><strong>{recipe.score.prebiotic}</strong></p>
-                    <p className="rounded-xl border-2 border-icon-teal bg-white p-3">Probiotic<br /><strong>{recipe.score.probiotic}</strong></p>
-                    <p className="rounded-xl border-2 border-icon-orange bg-white p-3">Postbiotic<br /><strong>{recipe.score.postbiotic}</strong></p>
-                  </div>
-                </div>
-              </div>
-              </div>
-            </div>
-
             <div className="rounded-3xl border-2 border-icon-teal bg-white">
               <SectionAccent color="bg-icon-teal" />
               <div className="p-6 pt-5">

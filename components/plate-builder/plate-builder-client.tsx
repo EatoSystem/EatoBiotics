@@ -346,54 +346,6 @@ function GenerationStatus({ result }: { result: GeneratedPlate }) {
   )
 }
 
-function ScoreCircle({ value, label, color, size = "large" }: { value: number; label: string; color: string; size?: "large" | "small" }) {
-  const circleSize = size === "large" ? 132 : 74
-  const stroke = size === "large" ? 10 : 7
-  const radius = (circleSize - stroke) / 2
-  const circumference = 2 * Math.PI * radius
-  const offset = circumference - (value / 100) * circumference
-
-  return (
-    <div className="flex flex-col items-center text-center">
-      <div className="relative" style={{ width: circleSize, height: circleSize }}>
-        <svg viewBox={`0 0 ${circleSize} ${circleSize}`} className="-rotate-90">
-          <circle cx={circleSize / 2} cy={circleSize / 2} r={radius} fill="none" stroke="rgba(24, 57, 31, 0.08)" strokeWidth={stroke} />
-          <circle
-            cx={circleSize / 2}
-            cy={circleSize / 2}
-            r={radius}
-            fill="none"
-            stroke={color}
-            strokeWidth={stroke}
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={size === "large" ? "font-serif text-4xl font-semibold text-foreground" : "font-serif text-xl font-semibold text-foreground"}>{value}</span>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">/100</span>
-        </div>
-      </div>
-      <p className="mt-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
-    </div>
-  )
-}
-
-function Metric({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div className="rounded-2xl border border-border bg-white p-4">
-      <div className="mb-3 flex items-center justify-between text-sm">
-        <span className="font-medium text-foreground">{label}</span>
-        <span className="font-bold" style={{ color }}>{value}</span>
-      </div>
-      <div className="h-2 rounded-full bg-border/50">
-        <div className="h-2 rounded-full" style={{ width: `${value}%`, background: color }} />
-      </div>
-    </div>
-  )
-}
-
 function NutritionStat({ label, value, unit, color }: { label: string; value: number; unit: string; color: string }) {
   return (
     <div className="rounded-xl border border-border bg-white p-3">
@@ -802,24 +754,6 @@ export function PlateBuilderClient() {
       <section className="bg-white px-6 py-6 md:py-8">
         <div className="mx-auto grid max-w-[1280px] gap-8 lg:grid-cols-[0.95fr_1.05fr]">
           <div className="space-y-5">
-            <div className="rounded-3xl border border-icon-green/30 bg-white p-6">
-              <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start">
-                <ScoreCircle value={result.score.overall} label="EatoBiotics score" color="var(--icon-green)" />
-                <div className="flex-1">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">Biotic breakdown</p>
-                  <h3 className="mt-2 font-serif text-2xl font-semibold text-foreground">How this plate supports the food system inside you.</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                    A simple educational score across prebiotic colour, probiotic contrast, and postbiotic support.
-                  </p>
-                </div>
-              </div>
-              <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                <Metric label="Prebiotic score" value={result.score.prebiotic} color="var(--icon-lime)" />
-                <Metric label="Probiotic score" value={result.score.probiotic} color="var(--icon-teal)" />
-                <Metric label="Postbiotic support" value={result.score.postbiotic} color="var(--icon-orange)" />
-              </div>
-            </div>
-
             <div className="rounded-3xl border border-icon-teal/30 bg-white p-5">
               <p className="text-xs font-semibold uppercase tracking-widest text-icon-teal">Nutritional values</p>
               <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
