@@ -76,12 +76,49 @@ const STYLE_REFERENCE_PATHS = [
   ["Food Images", "Food 9.0.png"],
 ]
 
+const variationAngles = [
+  "crisp citrus herb with fresh crunch",
+  "charred greens with fermented brightness",
+  "berry, seed, and peppery leaf contrast",
+  "warm ginger sesame with glossy greens",
+  "golden roast vegetables with yogurt herbs",
+  "zesty pickle, avocado, and seed texture",
+  "smoky protein with cool cucumber and herbs",
+  "sprouted legumes with lemon oil and cabbage",
+]
+
+const plantSwapIdeas = [
+  "swap at least two default plants for seasonal alternatives",
+  "add one bitter green, one colourful raw element, and one cooked element",
+  "use one grain or pulse, one fermented accent, one seed, and one glossy herb finish",
+  "combine one crisp vegetable, one soft protein, one bright acid, and one creamy element",
+]
+
+function seedNumber(value: string): number {
+  return value.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0)
+}
+
+function pickVariation(items: string[], seed: number, offset = 0): string {
+  return items[Math.abs(seed + offset) % items.length]
+}
+
+function buildVariationBrief(input: z.infer<typeof requestSchema>) {
+  const seed = seedNumber(`${input.plateId}-${input.goal}-${input.flavour}-${input.creativeSeed}-${Date.now()}`)
+  return {
+    angle: pickVariation(variationAngles, seed),
+    plantRule: pickVariation(plantSwapIdeas, seed, 5),
+    scoreBias: 3 + (seed % 9),
+    methodStyle: pickVariation(["roasted", "charred", "steamed and dressed", "raw and cooked contrast", "quick sauteed", "warm grain bowl"], seed, 11),
+  }
+}
+
 function stripFences(value: string): string {
   return value.trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "")
 }
 
 function buildRecipePrompt(input: z.infer<typeof requestSchema>) {
   const plate = PLATE_DEFINITIONS[input.plateId]
+  const variation = buildVariationBrief(input)
 
   return `Create one EatoBiotics recipe for the ${plate.name}.
 
@@ -102,6 +139,12 @@ User inputs:
 - Foods to avoid: ${input.avoid || "none"}
 - Creative seed: ${input.creativeSeed || "create a fresh, different variation from previous runs"}
 
+Mandatory variation for this exact run:
+- Creative angle: ${variation.angle}
+- Plant rule: ${variation.plantRule}
+- Cooking/method style: ${variation.methodStyle}
+- Score variation bias: ${variation.scoreBias}
+
 Naming rule:
 - If there is no user dish idea, the recipe name must be "${plate.name.replace(/^The /, "")} with [Capitalised Protein]".
 - Do not put the goal, country, or descriptive adjectives before the plate name.
@@ -116,6 +159,7 @@ Recipe rules:
 - Shopping sections should use normal shopping language, not abstract score language.
 - Scores and nutrition should vary within believable ranges based on the chosen ingredients.
 - The slug should be based on the recipe name only; the server will append a unique suffix.
+- Never return the same ingredient list, method, score set, or shopping list as a prior run using the selected plate defaults.
 
 Return ONLY valid JSON matching this exact shape:
 {
@@ -144,9 +188,9 @@ Return ONLY valid JSON matching this exact shape:
 }`
 }
 
-async function generateRecipeWithOpenAI(input: z.infer<typeof requestSchema>): Promise<PlateRecipe | null> {
+async function generateRecipeWithOpenAI(input: z.infer<typeof requestSchema>): Promise<{ recipe: PlateRecipe | null; warning?: string }> {
   const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) return null
+  if (!apiKey) return { recipe: null, warning: "OPENAI_API_KEY is missing" }
 
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
@@ -168,19 +212,19 @@ async function generateRecipeWithOpenAI(input: z.infer<typeof requestSchema>): P
 
   if (!response.ok) {
     console.error("[plate-builder] OpenAI recipe error", await response.text())
-    return null
+    return { recipe: null, warning: "OpenAI recipe request failed" }
   }
 
   const data = await response.json() as { output_text?: string; output?: Array<{ content?: Array<{ text?: string }> }> }
   const text = data.output_text ?? data.output?.flatMap((item) => item.content ?? []).map((item) => item.text ?? "").join("") ?? ""
-  if (!text) return null
+  if (!text) return { recipe: null, warning: "OpenAI recipe returned no text" }
 
   try {
     const parsed = JSON.parse(stripFences(text)) as unknown
-    return recipeSchema.parse(parsed)
+    return { recipe: recipeSchema.parse(parsed) }
   } catch (error) {
     console.error("[plate-builder] OpenAI recipe parse error", error)
-    return null
+    return { recipe: null, warning: "OpenAI recipe JSON could not be parsed" }
   }
 }
 
@@ -391,7 +435,7 @@ export async function POST(req: NextRequest) {
   }
 
   const generated = await generateRecipeWithOpenAI(input)
-  let recipe = generated ?? createFallbackPlateRecipe(input)
+  let recipe = generated.recipe ?? createFallbackPlateRecipe(input)
   recipe = { ...recipe, slug: withUniqueSlug(recipe.slug || recipe.name), createdAt: new Date().toISOString() }
 
   const image = await generateImageWithOpenAI(recipe)
@@ -412,7 +456,12 @@ export async function POST(req: NextRequest) {
     recipe: { ...recipe, slug },
     publicUrl: `/recipe/${slug}`,
     saved: Boolean(saved),
-    generatedBy: generated ? "openai" : "fallback",
+    generatedBy: generated.recipe ? "openai" : "fallback",
     imageGenerated: Boolean(imageUrl),
+    warnings: [
+      generated.warning,
+      !imageUrl ? "Image generation failed or returned no usable image" : null,
+      !saved ? "Recipe page was not saved to Supabase" : null,
+    ].filter(Boolean),
   })
 }

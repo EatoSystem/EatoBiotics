@@ -486,6 +486,7 @@ export function PlateBuilderClient() {
         saved?: boolean
         generatedBy?: "openai" | "fallback"
         imageGenerated?: boolean
+        warnings?: string[]
       }
       const nextResult = data.recipe
         ? mapRecipeToResult(data.recipe, data.publicUrl, {
@@ -506,6 +507,9 @@ export function PlateBuilderClient() {
         setNotice("Recipe page created with fallback generation. Add OPENAI_API_KEY to generate new AI recipes and images.")
       } else if (!data.imageGenerated) {
         setNotice("Recipe content was generated, but image generation did not return a new image. Check the OpenAI image model and Vercel logs.")
+      }
+      if (data.warnings?.length) {
+        setNotice(data.warnings.join(" · "))
       }
       window.setTimeout(() => document.getElementById("latest-creation")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50)
     } catch {

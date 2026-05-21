@@ -11,6 +11,7 @@ export type PlateRecipeInput = {
   cookingTime?: string
   goal?: string
   flavour?: string
+  creativeSeed?: string
 }
 
 export type PlateRecipe = {
@@ -130,6 +131,10 @@ function seed(text: string): number {
   return text.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0)
 }
 
+function pick<T>(items: T[], generatedSeed: number, offset = 0): T {
+  return items[Math.abs(generatedSeed + offset) % items.length]
+}
+
 function variationFromSeed(generatedSeed: number) {
   const themes = [
     "crisp citrus herb",
@@ -143,6 +148,76 @@ function variationFromSeed(generatedSeed: number) {
   ]
   return themes[generatedSeed % themes.length]
 }
+
+const fallbackPlantPools: Record<PlateId, string[]> = {
+  foundation: [
+    "quinoa",
+    "buckwheat",
+    "barley",
+    "kale",
+    "watercress",
+    "cucumber ribbons",
+    "avocado",
+    "chickpeas",
+    "butter beans",
+    "red cabbage",
+    "fennel",
+    "radish",
+  ],
+  function: [
+    "asparagus",
+    "blueberries",
+    "raspberries",
+    "avocado",
+    "lentils",
+    "kale",
+    "rocket",
+    "pumpkin seeds",
+    "soft egg",
+    "kimchi",
+    "purple cabbage",
+    "green beans",
+  ],
+  diversity: [
+    "beets",
+    "rainbow carrots",
+    "broccoli",
+    "lentils",
+    "chickpeas",
+    "mixed greens",
+    "sauerkraut",
+    "purple cabbage",
+    "edamame",
+    "sprouted seeds",
+    "charred courgette",
+    "fresh herbs",
+  ],
+  restoration: [
+    "sweet potato",
+    "roasted carrots",
+    "spinach",
+    "lentils",
+    "cabbage",
+    "parsley",
+    "brown rice",
+    "miso greens",
+    "pumpkin",
+    "cucumber",
+    "yogurt",
+    "sesame",
+  ],
+}
+
+const fallbackFinishes = [
+  "lemon herb oil",
+  "ginger lime dressing",
+  "miso tahini drizzle",
+  "olive oil and cider vinegar",
+  "yogurt herb dressing",
+  "chilli citrus finish",
+  "sumac lemon oil",
+  "sesame tamari glaze",
+]
 
 function score(base: number, modifier: number): number {
   return Math.max(62, Math.min(98, Math.round(base + modifier)))
@@ -184,15 +259,29 @@ export function createFallbackPlateRecipe(input: PlateRecipeInput, imageUrl?: st
   const plate = PLATE_DEFINITIONS[plateId]
   const protein = input.protein?.trim() || plate.defaultProtein
   const displayProtein = titleCase(protein)
-  const plants = Array.from(new Set([...splitList(input.vegetables), ...plate.defaultPlants])).slice(0, 9)
   const flavour = input.flavour || "Bright and zesty"
   const goal = input.goal || "balance"
-  const generatedSeed = seed(`${plateId}-${goal}-${protein}-${plants.join("-")}-${input.dietaryStyle ?? "Flexible"}-${input.dishIdea ?? ""}-${flavour}`)
+  const generatedSeed = seed(`${plateId}-${goal}-${protein}-${input.dietaryStyle ?? "Flexible"}-${input.dishIdea ?? ""}-${flavour}-${input.creativeSeed ?? ""}-${Date.now()}`)
+  const requestedPlants = splitList(input.vegetables)
+  const pool = fallbackPlantPools[plateId]
+  const variedPlants = Array.from(
+    new Set([
+      ...requestedPlants,
+      pick(pool, generatedSeed, 1),
+      pick(pool, generatedSeed, 3),
+      pick(pool, generatedSeed, 5),
+      pick(pool, generatedSeed, 7),
+      pick(pool, generatedSeed, 9),
+      pick(pool, generatedSeed, 11),
+    ])
+  )
+  const plants = (requestedPlants.length > 0 ? Array.from(new Set([...requestedPlants, ...variedPlants])) : variedPlants).slice(0, 9)
   const fallbackVariation = variationFromSeed(generatedSeed)
-  const prebiotic = score(76, (plants.length % 6) * 3 + (plateId === "diversity" ? 7 : 0))
-  const probiotic = score(72, (generatedSeed % 10) + (plateId === "function" ? 5 : 0))
-  const postbiotic = score(74, (generatedSeed % 8) + (plateId === "restoration" ? 7 : 0))
-  const balance = score(78, (generatedSeed % 9) + (plateId === "foundation" ? 6 : 0))
+  const finish = pick(fallbackFinishes, generatedSeed, 13)
+  const prebiotic = score(68, (plants.length % 6) * 3 + (generatedSeed % 15) + (plateId === "diversity" ? 6 : 0))
+  const probiotic = score(66, (Math.floor(generatedSeed / 3) % 17) + (plateId === "function" ? 5 : 0))
+  const postbiotic = score(67, (Math.floor(generatedSeed / 7) % 16) + (plateId === "restoration" ? 6 : 0))
+  const balance = score(70, (Math.floor(generatedSeed / 11) % 15) + (plateId === "foundation" ? 5 : 0))
   const name = input.dishIdea?.trim() || `${plate.name.replace(/^The /, "")} with ${displayProtein}`
   const fermentedAccent = plateId === "function" ? "live yogurt or kimchi" : plateId === "diversity" ? "sauerkraut or kimchi" : "kimchi, sauerkraut, kefir yogurt, miso, or pickled vegetables"
 
@@ -201,7 +290,7 @@ export function createFallbackPlateRecipe(input: PlateRecipeInput, imageUrl?: st
     plateId,
     plateName: plate.name,
     name,
-    description: `${displayProtein} served with ${formatList(plants.slice(0, 6))}, a fermented accent, seeds, herbs, and a ${fallbackVariation} finish.`,
+    description: `${displayProtein} served with ${formatList(plants.slice(0, 6))}, a fermented accent, seeds, herbs, and ${finish} for a ${fallbackVariation} finish.`,
     imageUrl: imageUrl || plate.image,
     goal,
     flavour,
@@ -219,19 +308,19 @@ export function createFallbackPlateRecipe(input: PlateRecipeInput, imageUrl?: st
       `${displayProtein} for the main protein`,
       `${formatList(plants.slice(0, 5))} for fibre, colour, and plant diversity`,
       `${fermentedAccent} for the fermented element`,
-      "extra virgin olive oil, seeds, herbs, citrus, and spices for flavour and texture",
+      `extra virgin olive oil, seeds, herbs, and ${finish} for flavour and texture`,
       input.avoid?.trim() ? `Leave out: ${input.avoid.trim()}` : "Optional finish: lemon, vinegar, lime, or herb oil",
     ],
     method: [
       `Cook or warm the ${protein} until ready, then season with salt, pepper, herbs, and a little olive oil.`,
       `Prepare the plant base with ${formatList(plants.slice(0, 5))}. Keep some elements fresh and cook or warm the heartier ingredients.`,
-      `Add ${fermentedAccent}, then finish with seeds, herbs, citrus, and a ${fallbackVariation} flavour direction.`,
+      `Add ${fermentedAccent}, then finish with seeds, herbs, and ${finish}.`,
       `Serve as a ${input.cookingTime || "25 minutes"} ${plate.name.replace(/^The /, "").toLowerCase()} for ${goal}, with the dressing added just before eating.`,
     ],
     shoppingSections: [
       { title: "Protein", items: [displayProtein], color: "var(--icon-green)" },
       { title: "Plants", items: plants.slice(0, 6), color: "var(--icon-lime)" },
-      { title: "Finish", items: ["fermented side", "extra virgin olive oil", "seeds", "fresh herbs", "citrus"], color: "var(--icon-orange)" },
+      { title: "Finish", items: ["fermented side", "extra virgin olive oil", "seeds", "fresh herbs", finish], color: "var(--icon-orange)" },
     ],
     weeklyRole:
       plateId === "foundation"
