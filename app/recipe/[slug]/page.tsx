@@ -118,12 +118,20 @@ function MiniStat({ label, value, border }: { label: string; value: string; bord
 
 function BrandBars() {
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 px-6 pt-6">
       <span className="h-2 flex-1 rounded-full bg-icon-lime" />
       <span className="h-2 flex-1 rounded-full bg-icon-green" />
       <span className="h-2 flex-1 rounded-full bg-icon-teal" />
       <span className="h-2 flex-1 rounded-full bg-icon-yellow" />
       <span className="h-2 flex-1 rounded-full bg-icon-orange" />
+    </div>
+  )
+}
+
+function SectionAccent({ color }: { color: string }) {
+  return (
+    <div className="px-6 pt-6">
+      <div className={`h-2 rounded-full ${color}`} />
     </div>
   )
 }
@@ -166,7 +174,7 @@ function FoodSystemSection({ recipe }: { recipe: PlateRecipe }) {
     <section className="px-6 py-8">
       <div className="mx-auto max-w-[1180px] overflow-hidden rounded-3xl border-2 border-icon-green bg-white">
         <BrandBars />
-        <div className="p-6 md:p-8">
+        <div className="p-6 pt-5 md:p-8 md:pt-6">
         <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-icon-green">The Food System Inside You</p>
@@ -250,9 +258,9 @@ export default async function RecipePage({ params }: PageProps) {
       <section className="px-6 py-8">
         <div className="mx-auto grid max-w-[1280px] gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="space-y-6">
-            <div className="overflow-hidden rounded-3xl border-2 border-icon-green bg-white">
+            <div className="rounded-3xl border-2 border-icon-green bg-white">
               <BrandBars />
-              <div className="p-6">
+              <div className="p-6 pt-5">
               <div className="flex flex-col gap-5 sm:flex-row">
                 <ScoreCircle value={recipe.score.overall} />
                 <div>
@@ -272,9 +280,9 @@ export default async function RecipePage({ params }: PageProps) {
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-3xl border-2 border-icon-teal bg-white">
-              <div className="h-2 bg-icon-teal" />
-              <div className="p-6">
+            <div className="rounded-3xl border-2 border-icon-teal bg-white">
+              <SectionAccent color="bg-icon-teal" />
+              <div className="p-6 pt-5">
               <p className="text-xs font-bold uppercase tracking-widest text-icon-teal">Nutrition</p>
               <div className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
                 <MiniStat label="Calories" value={`${recipe.nutrition.calories}`} border="border-icon-orange text-icon-orange" />
@@ -288,9 +296,9 @@ export default async function RecipePage({ params }: PageProps) {
             </div>
 
             {recipe.weeklyRole && (
-              <div className="overflow-hidden rounded-3xl border-2 border-icon-yellow bg-white">
-                <div className="h-2 bg-icon-yellow" />
-                <div className="p-6">
+              <div className="rounded-3xl border-2 border-icon-yellow bg-white">
+                <SectionAccent color="bg-icon-yellow" />
+                <div className="p-6 pt-5">
                 <p className="text-xs font-bold uppercase tracking-widest text-icon-orange">Weekly role</p>
                 <h3 className="mt-2 font-serif text-2xl font-semibold text-foreground">How to use this plate</h3>
                 <p className="mt-3 text-sm leading-7 text-muted-foreground">{recipe.weeklyRole}</p>
@@ -298,9 +306,9 @@ export default async function RecipePage({ params }: PageProps) {
               </div>
             )}
 
-            <div className="overflow-hidden rounded-3xl border-2 border-icon-orange bg-white">
-              <div className="h-2 bg-icon-orange" />
-              <div className="p-6">
+            <div className="rounded-3xl border-2 border-icon-orange bg-white">
+              <SectionAccent color="bg-icon-orange" />
+              <div className="p-6 pt-5">
               <p className="text-xs font-bold uppercase tracking-widest text-icon-orange">Shopping list</p>
               <div className="mt-4 grid gap-3">
                 {recipe.shoppingSections.map((section) => (
@@ -319,9 +327,9 @@ export default async function RecipePage({ params }: PageProps) {
           </div>
 
           <div className="space-y-6">
-            <div className="overflow-hidden rounded-3xl border-2 border-icon-green bg-white">
-              <div className="h-2 bg-icon-green" />
-              <div className="p-6">
+            <div className="rounded-3xl border-2 border-icon-green bg-white">
+              <SectionAccent color="bg-icon-green" />
+              <div className="p-6 pt-5">
               <h2 className="font-serif text-3xl font-semibold text-foreground">Ingredients</h2>
               <ul className="mt-4 grid gap-3 md:grid-cols-2">
                 {recipe.ingredients.map((ingredient) => (
@@ -334,9 +342,9 @@ export default async function RecipePage({ params }: PageProps) {
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-3xl border-2 border-icon-orange bg-white">
-              <div className="h-2 bg-icon-orange" />
-              <div className="p-6">
+            <div className="rounded-3xl border-2 border-icon-orange bg-white">
+              <SectionAccent color="bg-icon-orange" />
+              <div className="p-6 pt-5">
               <h2 className="font-serif text-3xl font-semibold text-foreground">Method</h2>
               <div className="mt-4 grid gap-3">
                 {recipe.method.map((step, index) => (
