@@ -415,6 +415,8 @@ async function generateImageWithOpenAI(recipe: PlateRecipe): Promise<{ urls: str
   const model = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1.5"
   const references = await getStyleReferenceImages()
   if (references.length === 0) return null
+  const referenceSeed = Math.abs(scoreHash(`${recipe.slug}-${recipe.name}-${recipe.createdAt}`))
+  const selectedReferences = [references[referenceSeed % references.length]]
 
   const postEdit = async (imageFieldName: "image[]" | "image", count: 1 | 4) => {
     const form = new FormData()
@@ -423,7 +425,7 @@ async function generateImageWithOpenAI(recipe: PlateRecipe): Promise<{ urls: str
     form.append("size", "1024x1024")
     form.append("quality", "high")
     form.append("n", String(count))
-    for (const reference of references.slice(0, 4)) {
+    for (const reference of selectedReferences) {
       form.append(imageFieldName, new Blob([reference.bytes], { type: "image/png" }), reference.filename)
     }
 
@@ -438,7 +440,7 @@ async function generateImageWithOpenAI(recipe: PlateRecipe): Promise<{ urls: str
 
   let response: Response | null = null
   const errors: string[] = []
-  for (const count of [4, 1] as const) {
+  for (const count of [1] as const) {
     for (const field of ["image[]", "image"] as const) {
       response = await postEdit(field, count)
       if (response.ok) break

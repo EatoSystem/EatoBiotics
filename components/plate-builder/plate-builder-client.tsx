@@ -531,35 +531,6 @@ export function PlateBuilderClient() {
     }
   }
 
-  async function selectImageOption(imageUrl: string) {
-    const nextResult = { ...result, image: imageUrl }
-    setResult(nextResult)
-    window.localStorage.setItem(
-      LAST_PLATE_STORAGE_KEY,
-      JSON.stringify({ version: PLATE_BUILDER_STORAGE_VERSION, selectedPlate, result: nextResult } satisfies StoredPlateBuilderResult)
-    )
-
-    if (!result.publicUrl) {
-      setNotice("Image selected for this screen. Publish the recipe to save the selection to a public page.")
-      return
-    }
-
-    const slug = result.publicUrl.split("/").filter(Boolean).pop()
-    if (!slug) return
-
-    try {
-      const response = await fetch("/api/plate-builder", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, imageUrl }),
-      })
-      if (!response.ok) throw new Error("Selection update failed")
-      setNotice("Image selected and saved to the public recipe page.")
-    } catch {
-      setNotice("Image selected here, but the public recipe page could not be updated. Please try again.")
-    }
-  }
-
   function placeholder(action: string) {
     setNotice(`${action} is a placeholder action. The next build should connect accounts and export/share logic.`)
   }
@@ -827,51 +798,6 @@ export function PlateBuilderClient() {
           </div>
         </div>
       </section>
-
-      {result.imageOptions && result.imageOptions.length > 1 && (
-        <section className="bg-white px-6 py-4">
-          <div className="mx-auto max-w-[1100px] rounded-3xl border border-icon-teal/30 bg-white p-5 md:p-6">
-            <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-icon-teal">Choose image</p>
-                <h3 className="mt-1 font-serif text-2xl font-semibold text-foreground">Pick the strongest image for the recipe page.</h3>
-              </div>
-              <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
-                The selected image updates the hero preview here and the saved public recipe page.
-              </p>
-            </div>
-            <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-              {result.imageOptions.map((imageUrl, index) => {
-                const active = result.image === imageUrl
-                return (
-                  <button
-                    key={`${imageUrl}-${index}`}
-                    type="button"
-                    onClick={() => selectImageOption(imageUrl)}
-                    className={`group overflow-hidden rounded-2xl border bg-white text-left transition-all hover:-translate-y-0.5 ${
-                      active ? "border-icon-green" : "border-border"
-                    }`}
-                  >
-                    <div className="relative aspect-square bg-white">
-                      <RecipeImage src={imageUrl} alt={`${result.name} option ${index + 1}`} className="h-full w-full object-cover" />
-                      <div className={`absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
-                        active ? "bg-icon-green text-white" : "bg-white text-foreground"
-                      }`}>
-                        {active ? <Check size={15} /> : index + 1}
-                      </div>
-                    </div>
-                    <div className="p-3">
-                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                        Option {index + 1}{active ? " selected" : ""}
-                      </p>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </section>
-      )}
 
       <section className="bg-white px-6 py-6 md:py-8">
         <div className="mx-auto grid max-w-[1280px] gap-8 lg:grid-cols-[0.95fr_1.05fr]">
