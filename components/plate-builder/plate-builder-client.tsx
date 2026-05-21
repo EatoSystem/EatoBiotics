@@ -315,15 +315,15 @@ function mapRecipeToResult(
 function GenerationStatus({ result }: { result: GeneratedPlate }) {
   const items = [
     {
-      label: result.generatedBy === "openai" ? "AI recipe" : "Fallback recipe",
+      label: result.generatedBy === "openai" ? "Recipe created" : "Draft recipe",
       active: result.generatedBy === "openai",
     },
     {
-      label: result.imageGenerated ? "AI image" : "Fallback image",
+      label: result.imageGenerated ? "Image created" : "Reference image",
       active: Boolean(result.imageGenerated),
     },
     {
-      label: result.saved ? "Published page" : "Not published",
+      label: result.saved ? "Page saved" : "Not saved",
       active: Boolean(result.saved && result.publicUrl),
     },
   ]
