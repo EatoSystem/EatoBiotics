@@ -107,6 +107,49 @@ function MiniStat({ label, value, border }: { label: string; value: string; bord
   )
 }
 
+function ScoreCircle({ value }: { value: number }) {
+  return (
+    <div className="flex h-32 w-32 shrink-0 flex-col items-center justify-center rounded-full border-[10px] border-icon-green bg-white text-center">
+      <span className="font-serif text-4xl font-semibold leading-none text-foreground">{value}</span>
+      <span className="mt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">/100</span>
+    </div>
+  )
+}
+
+function ScorePill({ label, value, border }: { label: string; value: number; border: string }) {
+  return (
+    <div className={`rounded-2xl border-2 ${border} bg-white p-4`}>
+      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
+      <p className="mt-2 font-serif text-2xl font-semibold text-foreground">{value}</p>
+    </div>
+  )
+}
+
+function EatoBioticsScoreCard({ recipe }: { recipe: PlateRecipe }) {
+  return (
+    <div className="rounded-3xl border-2 border-icon-green bg-white">
+      <BrandBars />
+      <div className="p-6 pt-5">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+          <ScoreCircle value={recipe.score.overall} />
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-icon-green">EatoBiotics Score</p>
+            <h2 className="mt-2 font-serif text-2xl font-semibold leading-tight text-foreground">Food-system strength</h2>
+            <p className="mt-2 text-sm leading-7 text-muted-foreground">
+              A simple educational read on the plate's prebiotic fibre, fermented contrast, and postbiotic support.
+            </p>
+          </div>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <ScorePill label="Prebiotic" value={recipe.score.prebiotic} border="border-icon-lime" />
+          <ScorePill label="Probiotic" value={recipe.score.probiotic} border="border-icon-teal" />
+          <ScorePill label="Postbiotic" value={recipe.score.postbiotic} border="border-icon-orange" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function BrandBars() {
   return (
     <div className="flex gap-2 px-6 pt-6">
@@ -232,6 +275,8 @@ export default async function RecipePage({ params }: PageProps) {
       <section className="px-6 py-8">
         <div className="mx-auto grid max-w-[1280px] gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="space-y-6">
+            <EatoBioticsScoreCard recipe={recipe} />
+
             <div className="rounded-3xl border-2 border-icon-teal bg-white">
               <SectionAccent color="bg-icon-teal" />
               <div className="p-6 pt-5">

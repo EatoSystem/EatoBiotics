@@ -346,6 +346,46 @@ function GenerationStatus({ result }: { result: GeneratedPlate }) {
   )
 }
 
+function ScoreCircle({ value }: { value: number }) {
+  return (
+    <div className="flex h-32 w-32 shrink-0 flex-col items-center justify-center rounded-full border-[10px] border-icon-green bg-white text-center">
+      <span className="font-serif text-4xl font-semibold leading-none text-foreground">{value}</span>
+      <span className="mt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">/100</span>
+    </div>
+  )
+}
+
+function ScorePill({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div className="rounded-2xl border bg-white p-4" style={{ borderColor: color }}>
+      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
+      <p className="mt-2 font-serif text-2xl font-semibold text-foreground">{value}</p>
+    </div>
+  )
+}
+
+function EatoBioticsScoreCard({ result }: { result: GeneratedPlate }) {
+  return (
+    <div className="rounded-3xl border border-icon-green/30 bg-white p-6">
+      <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center">
+        <ScoreCircle value={result.score.overall} />
+        <div className="flex-1">
+          <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">EatoBiotics Score</p>
+          <h3 className="mt-2 font-serif text-2xl font-semibold text-foreground">Food-system strength</h3>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            A simple educational read on the plate's prebiotic fibre, fermented contrast, and postbiotic support.
+          </p>
+        </div>
+      </div>
+      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        <ScorePill label="Prebiotic" value={result.score.prebiotic} color="var(--icon-lime)" />
+        <ScorePill label="Probiotic" value={result.score.probiotic} color="var(--icon-teal)" />
+        <ScorePill label="Postbiotic" value={result.score.postbiotic} color="var(--icon-orange)" />
+      </div>
+    </div>
+  )
+}
+
 function NutritionStat({ label, value, unit, color }: { label: string; value: number; unit: string; color: string }) {
   return (
     <div className="rounded-xl border border-border bg-white p-3">
@@ -754,6 +794,8 @@ export function PlateBuilderClient() {
       <section className="bg-white px-6 py-6 md:py-8">
         <div className="mx-auto grid max-w-[1280px] gap-8 lg:grid-cols-[0.95fr_1.05fr]">
           <div className="space-y-5">
+            <EatoBioticsScoreCard result={result} />
+
             <div className="rounded-3xl border border-icon-teal/30 bg-white p-5">
               <p className="text-xs font-semibold uppercase tracking-widest text-icon-teal">Nutritional values</p>
               <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
