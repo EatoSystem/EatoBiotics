@@ -91,9 +91,9 @@ const PLATES: PlateOption[] = [
   {
     id: "foundation",
     name: "The Food System Bowl",
-    focus: "digestion, energy, resilience, balance",
+    focus: "digestion, energy, resilience, steady meals",
     description:
-      "A balanced EatoBiotics bowl for digestion, energy, resilience, and balance.",
+      "A complete EatoBiotics bowl for digestion, energy, resilience, and steady meals.",
     image: "/plate-builder/food-1.png",
     accent: "var(--icon-lime)",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
@@ -143,7 +143,7 @@ const PLATES: PlateOption[] = [
 ]
 
 const COUNTRIES = ["None", "Ireland", "United Kingdom", "United States", "France", "Spain", "Italy", "India", "Japan", "Mexico"]
-const GOALS = ["digestion", "energy", "immunity", "mood", "recovery", "diversity", "balance"]
+const GOALS = ["digestion", "energy", "immunity", "mood", "recovery", "diversity"]
 const STYLES = ["Flexible", "Vegetarian", "Vegan", "Pescatarian", "Dairy-free", "Gluten-light"]
 const TIMES = ["15 minutes", "25 minutes", "40 minutes", "Batch cook"]
 const FLAVOURS = ["Bright and zesty", "Warm and spiced", "Fresh and herb-led", "Creamy and fermented", "Smoky and roasted", "Clean and simple"]
@@ -809,15 +809,14 @@ export function PlateBuilderClient() {
                   <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">Biotic breakdown</p>
                   <h3 className="mt-2 font-serif text-2xl font-semibold text-foreground">How this plate supports the food system inside you.</h3>
                   <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                    A simple educational score across prebiotic colour, probiotic contrast, postbiotic support, and overall balance.
+                    A simple educational score across prebiotic colour, probiotic contrast, and postbiotic support.
                   </p>
                 </div>
               </div>
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <div className="mt-6 grid gap-3 sm:grid-cols-3">
                 <Metric label="Prebiotic score" value={result.score.prebiotic} color="var(--icon-lime)" />
                 <Metric label="Probiotic score" value={result.score.probiotic} color="var(--icon-teal)" />
                 <Metric label="Postbiotic support" value={result.score.postbiotic} color="var(--icon-orange)" />
-                <Metric label="Balance score" value={result.score.balance} color="var(--icon-green)" />
               </div>
             </div>
 
