@@ -104,6 +104,85 @@ function ScoreCircle({ value }: { value: number }) {
   )
 }
 
+function FoodSystemSection({ recipe }: { recipe: PlateRecipe }) {
+  const plantItems = recipe.shoppingSections
+    .filter((section) => !/protein/i.test(section.title))
+    .flatMap((section) => section.items)
+  const proteinItems = recipe.shoppingSections
+    .find((section) => /protein/i.test(section.title))
+    ?.items ?? []
+  const fermentedItems = plantItems.filter((item) =>
+    /kimchi|kefir|yogurt|miso|pickle|pickled|fermented|sauerkraut/i.test(item)
+  )
+
+  const cards = [
+    {
+      title: "Feeds your inner food system",
+      text: `${plantItems.slice(0, 5).join(", ") || "The plant ingredients"} bring fibre, colour, and variety that help make the plate feel more complete and microbiome-aware.`,
+      color: "text-icon-green",
+      border: "border-icon-green/30",
+    },
+    {
+      title: "Adds steady nourishment",
+      text: `${proteinItems[0] || "The protein"} plus healthy fats and plants gives the bowl structure, helping it work as a proper meal rather than a snack.`,
+      color: "text-icon-teal",
+      border: "border-icon-teal/30",
+    },
+    {
+      title: "Includes biotic contrast",
+      text: fermentedItems.length > 0
+        ? `${fermentedItems[0]} adds a fermented note alongside prebiotic plants and supportive fats.`
+        : "Fermented, fibre-rich, colourful, and lightly dressed elements work together inside the EatoBiotics framework.",
+      color: "text-icon-orange",
+      border: "border-icon-orange/30",
+    },
+  ]
+
+  return (
+    <section className="px-6 py-8">
+      <div className="mx-auto max-w-[1180px] rounded-3xl border border-icon-green/30 bg-white p-6 md:p-8">
+        <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-icon-green">The Food System Inside You</p>
+            <h2 className="mt-3 font-serif text-4xl font-semibold leading-tight text-foreground">
+              What this recipe is designed to do.
+            </h2>
+            <p className="mt-4 text-base leading-8 text-muted-foreground">
+              This recipe is built as food education: a practical plate that combines plants, protein, fermented elements, healthy fats, herbs, and texture so your meal supports the internal food system you are feeding every day.
+            </p>
+          </div>
+          <div className="grid gap-3">
+            {cards.map((card) => (
+              <div key={card.title} className={`rounded-2xl border ${card.border} bg-white p-5`}>
+                <p className={`text-xs font-bold uppercase tracking-widest ${card.color}`}>{card.title}</p>
+                <p className="mt-2 text-sm leading-7 text-muted-foreground">{card.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="mt-6 grid gap-3 sm:grid-cols-4">
+          <div className="rounded-2xl border border-icon-green/20 p-4">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Prebiotic</p>
+            <p className="mt-2 font-serif text-2xl font-semibold text-foreground">{recipe.score.prebiotic}</p>
+          </div>
+          <div className="rounded-2xl border border-icon-teal/20 p-4">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Probiotic</p>
+            <p className="mt-2 font-serif text-2xl font-semibold text-foreground">{recipe.score.probiotic}</p>
+          </div>
+          <div className="rounded-2xl border border-icon-orange/20 p-4">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Postbiotic</p>
+            <p className="mt-2 font-serif text-2xl font-semibold text-foreground">{recipe.score.postbiotic}</p>
+          </div>
+          <div className="rounded-2xl border border-icon-yellow/30 p-4">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Balance</p>
+            <p className="mt-2 font-serif text-2xl font-semibold text-foreground">{recipe.score.balance}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export default async function RecipePage({ params }: PageProps) {
   const { slug } = await params
   const recipe = await getRecipe(slug)
@@ -128,13 +207,12 @@ export default async function RecipePage({ params }: PageProps) {
           <div className="overflow-hidden rounded-[2rem] border border-icon-green/25 bg-white">
             <div className="relative">
               <img src={recipe.imageUrl} alt={recipe.name} className="aspect-square h-full w-full object-cover" />
-              <div className="absolute left-4 top-4 rounded-full border border-white/80 bg-white px-3 py-1.5 text-xs font-bold text-foreground shadow-sm">
-                {recipe.imageGenerated ? "Generated image" : "Reference image"}
-              </div>
             </div>
           </div>
         </div>
       </section>
+
+      <FoodSystemSection recipe={recipe} />
 
       <section className="px-6 py-8">
         <div className="mx-auto grid max-w-[1180px] gap-6 lg:grid-cols-[0.9fr_1.1fr]">
