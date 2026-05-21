@@ -325,6 +325,43 @@ function buildImagePrompt(recipe: PlateRecipe): string {
     ...recipe.ingredients,
     ...recipe.shoppingSections.flatMap((section) => section.items),
   ].join(", ")
+  const visualSeed = scoreHash(`${recipe.slug}-${recipe.name}-${recipe.description}`)
+  const layouts = [
+    "a diagonal river composition from top-left to bottom-right with the hero protein crossing the centre and plants grouped in uneven colour islands",
+    "a loose crescent composition with negative white space through the middle and ingredients arcing around one side",
+    "a segmented editorial grid with irregular ingredient blocks, one generous hero cluster, and scattered seeds breaking the edges",
+    "a radial burst that is not circular: hero ingredient slightly off-centre, long greens pointing outward, small ferments and seeds placed asymmetrically",
+    "a stacked vertical composition with the hero ingredient high in the frame, grains and pulses lower, and herbs scattered like movement",
+    "a wide asymmetric platterless composition with two strong colour zones, a bright acid accent, and separated textures rather than a neat bowl",
+  ]
+  const heroPlacements = [
+    "hero ingredient angled at 30 degrees",
+    "hero ingredient sliced and fanned in a short line",
+    "hero ingredient broken into two distinct clusters",
+    "hero ingredient placed off-centre with plants wrapping around it",
+    "hero ingredient running horizontally across one third of the image",
+  ]
+  const colourAccents = [
+    "deep purple and emerald contrast",
+    "gold, citrus yellow, and glossy green accents",
+    "red fermented accents against pale grains",
+    "orange root vegetables with dark leafy greens",
+    "berry-like reds with avocado green and seed texture",
+    "bright herb oil dots and lemon zest highlights",
+  ]
+  const textureRules = [
+    "include at least one ribbon-cut or shaved vegetable",
+    "include one crunchy seed trail that breaks the outline",
+    "include one glossy dressing drizzle, but no sauce pool",
+    "include a fermented accent as a small vivid cluster",
+    "include herbs scattered naturally, not symmetrically",
+    "include one cooked item and one raw item with visibly different textures",
+  ]
+  const pick = (items: string[], offset: number) => items[Math.abs(visualSeed + offset) % items.length]
+  const layout = pick(layouts, 0)
+  const heroPlacement = pick(heroPlacements, 7)
+  const colourAccent = pick(colourAccents, 13)
+  const textureRule = pick(textureRules, 19)
 
   return `Create a premium EatoBiotics food image for "${recipe.name}".
 
@@ -333,10 +370,18 @@ Visual style:
 - Pure white background only.
 - No ceramic plate, no bowl rim, no cutlery, no table, no props, no text.
 - Arrange the food itself as a vibrant premium ingredient composition on white, like separated glossy ingredient clusters.
-- Avoid a generic circular dinner-plate look. Avoid a perfect round bowl silhouette. Use an abundant editorial layout with natural asymmetry and visible individual ingredients.
+- Avoid a generic circular dinner-plate look. Avoid a perfect round bowl silhouette. Avoid reusing the same quinoa-left, greens-top, cabbage-right, chickpeas-bottom cluster map.
 - Premium health-food campaign quality: crisp detail, appetising, colourful, fresh, abundant, clean, high contrast.
 - Match the EatoBiotics reference style: isolated ingredients, vivid greens, warm golds, bright fermented accents, seeds and herbs, polished social content.
 - Do not create a plain dinner plate. Do not use a beige bowl. Do not crop awkwardly.
+
+Required uniqueness for this exact image:
+- Composition layout: ${layout}.
+- Hero placement: ${heroPlacement}.
+- Colour accent: ${colourAccent}.
+- Texture rule: ${textureRule}.
+- Change the spatial map from previous EatoBiotics images while preserving the same premium white-background style.
+- Make the dish recognisable from the listed ingredients, but do not make a near-copy of any reference image.
 
 Use these recipe ingredients as the visual source:
 ${ingredientContext}
@@ -465,8 +510,41 @@ async function saveRecipe(recipe: PlateRecipe, publish: boolean) {
 
   if (
     error?.code === "42703" ||
+    error?.message?.includes("image_options")
+  ) {
+    const retry = await supabase
+      .from("plate_recipes")
+      .insert({
+        slug: recipe.slug,
+        plate_type: recipe.plateId,
+        plate_name: recipe.plateName,
+        name: recipe.name,
+        description: recipe.description,
+        image_url: recipe.imageUrl,
+        goal: recipe.goal,
+        flavour: recipe.flavour,
+        dietary_style: recipe.dietaryStyle,
+        time: recipe.time,
+        score: recipe.score,
+        nutrition: recipe.nutrition,
+        ingredients: recipe.ingredients,
+        method: recipe.method,
+        shopping_sections: recipe.shoppingSections,
+        weekly_role: recipe.weeklyRole,
+        disclaimer: recipe.disclaimer,
+        image_generated: recipe.imageGenerated ?? false,
+        image_model: recipe.imageModel ?? null,
+        image_prompt: recipe.imagePrompt ?? null,
+        reference_style_used: recipe.referenceStyleUsed ?? false,
+        is_published: publish,
+      })
+      .select("slug")
+      .single()
+    if (!retry.error) return retry.data as { slug: string }
+  }
+
+  if (
     error?.message?.includes("image_generated") ||
-    error?.message?.includes("image_options") ||
     error?.message?.includes("image_model") ||
     error?.message?.includes("image_prompt") ||
     error?.message?.includes("reference_style_used")
