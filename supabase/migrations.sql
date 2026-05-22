@@ -446,3 +446,141 @@ CREATE INDEX IF NOT EXISTS idx_leads_email
 ALTER TABLE leads
   ADD COLUMN IF NOT EXISTS abandoned_cart_email_sent_at timestamptz;
 
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 18: Row-Level Security on customer-data tables
+-- ────────────────────────────────────────────────────────────
+--
+-- WHAT THIS CLOSES
+-- Without RLS on these tables, anyone holding the public anon key (which is
+-- visible in every browser session) can SELECT every row. That exposes
+-- stripe_customer_id, email, payment metadata, PDF report contents,
+-- referral relationships, mood/digestion journal entries, etc.
+--
+-- HOW THE APP USES THESE TABLES
+-- All sensitive writes and most reads happen through server routes using the
+-- SERVICE ROLE key — RLS is bypassed for that key, so server-side flows are
+-- unaffected. The policies below restrict what the ANON and AUTHENTICATED
+-- keys (i.e. anything the browser holds) can do.
+
+-- ── profiles ──
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'profiles' AND policyname = 'users_read_own_profile'
+  ) THEN
+    CREATE POLICY "users_read_own_profile"
+      ON profiles FOR SELECT TO authenticated
+      USING (id = auth.uid());
+  END IF;
+  -- No INSERT / UPDATE / DELETE policies: profile mutations go through the
+  -- server APIs (/api/auth/callback, /api/account/settings, /api/account/delete)
+  -- with the service-role key.
+END $$;
+
+
+-- ── leads ──
+ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'leads' AND policyname = 'users_read_own_leads'
+  ) THEN
+    -- Leads are linked by user_id after auth, but the row is created BEFORE
+    -- sign-up so we also allow lookup by the JWT email claim. This keeps the
+    -- "results page after sign-in" flow working without exposing other users.
+    CREATE POLICY "users_read_own_leads"
+      ON leads FOR SELECT TO authenticated
+      USING (
+        (user_id IS NOT NULL AND user_id = auth.uid())
+        OR (email IS NOT NULL AND email = (auth.jwt() ->> 'email'))
+      );
+  END IF;
+END $$;
+
+
+-- ── deep_assessments ──
+ALTER TABLE deep_assessments ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'deep_assessments' AND policyname = 'users_read_own_deep_assessments'
+  ) THEN
+    CREATE POLICY "users_read_own_deep_assessments"
+      ON deep_assessments FOR SELECT TO authenticated
+      USING (
+        (user_id IS NOT NULL AND user_id = auth.uid())
+        OR (email IS NOT NULL AND email = (auth.jwt() ->> 'email'))
+      );
+  END IF;
+END $$;
+
+
+-- ── referrals ──
+ALTER TABLE referrals ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'referrals' AND policyname = 'users_read_own_referrals'
+  ) THEN
+    -- A user can see referrals they made (matched via their profile.referral_code)
+    -- and referrals where they are the referred party (matched via email or user_id).
+    CREATE POLICY "users_read_own_referrals"
+      ON referrals FOR SELECT TO authenticated
+      USING (
+        referrer_code IN (SELECT referral_code FROM profiles WHERE id = auth.uid())
+        OR referred_id = auth.uid()
+        OR (referred_email IS NOT NULL AND referred_email = (auth.jwt() ->> 'email'))
+      );
+  END IF;
+END $$;
+
+
+-- ── plate_data ──
+ALTER TABLE plate_data ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'plate_data' AND policyname = 'users_manage_own_plate_data'
+  ) THEN
+    CREATE POLICY "users_manage_own_plate_data"
+      ON plate_data FOR ALL TO authenticated
+      USING (user_id = auth.uid())
+      WITH CHECK (user_id = auth.uid());
+  END IF;
+END $$;
+
+
+-- ── journal_entries ──
+ALTER TABLE journal_entries ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'journal_entries' AND policyname = 'users_manage_own_journal_entries'
+  ) THEN
+    CREATE POLICY "users_manage_own_journal_entries"
+      ON journal_entries FOR ALL TO authenticated
+      USING (user_id = auth.uid())
+      WITH CHECK (user_id = auth.uid());
+  END IF;
+END $$;
+
+
+-- ── processed_stripe_events ──
+-- Dedup table for the Stripe webhook. Service-role only; no policies grant
+-- access to anon or authenticated, so they're locked out entirely.
+ALTER TABLE processed_stripe_events ENABLE ROW LEVEL SECURITY;
+
