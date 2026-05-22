@@ -85,7 +85,8 @@ This file is the authoritative reference for Claude Code sessions. Read it befor
 | membership | text | `free \| early_access \| member \| premium` — referral system |
 | referral_code | text | unique |
 | referred_by | text | nullable |
-| membership_tier | text | `free \| grow \| restore \| transform` — subscription tier |
+| membership_tier | text | `free \| trial \| member \| grow \| restore \| transform` — subscription tier (see Membership System below) |
+| trial_expires_at | timestamptz | nullable — expiry for `trial` tier granted by one-time report purchase |
 | membership_status | text | `active \| inactive \| cancelled \| past_due` |
 | stripe_customer_id | text | nullable |
 | stripe_subscription_id | text | nullable |
@@ -172,36 +173,79 @@ This file is the authoritative reference for Claude Code sessions. Read it befor
 
 ## Environment Variables
 
-### Required (existing)
+The authoritative, copy-paste list lives in [.env.example](.env.example). Summary of what each group is for:
+
+### Supabase (required)
 ```
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
-SUPABASE_URL
-SUPABASE_SERVICE_ROLE_KEY
+SUPABASE_URL                   # server fallback, same value as the NEXT_PUBLIC one
+SUPABASE_SERVICE_ROLE_KEY      # server-only
+SUPABASE_RECIPE_IMAGE_BUCKET   # storage bucket for plate-builder images
+```
+
+### Stripe (required for payments)
+```
 STRIPE_SECRET_KEY
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 STRIPE_WEBHOOK_SECRET
-ANTHROPIC_API_KEY
-RESEND_API_KEY
-EMAIL_FROM
-OWNER_EMAIL
-```
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 
-### New (added in membership build)
-```
-STRIPE_GROW_PRICE_ID          # Stripe Price ID for Grow (€9.99/mo)
-STRIPE_RESTORE_PRICE_ID       # Stripe Price ID for Restore (€49/mo)
-STRIPE_TRANSFORM_PRICE_ID     # Stripe Price ID for Transform (€99/mo)
+# Subscription price IDs — one per tier
+STRIPE_GROW_PRICE_ID           # Grow (€9.99/mo)
+STRIPE_RESTORE_PRICE_ID        # Restore (€49/mo)
+STRIPE_TRANSFORM_PRICE_ID      # Transform (€99/mo)
+STRIPE_MEMBER_PRICE_ID         # Member (€24.99/mo) — sits between Grow and Restore
 
-# These NEXT_PUBLIC_ versions are used in pricing-client.tsx
+# Public mirrors used by pricing-client.tsx
 NEXT_PUBLIC_STRIPE_GROW_PRICE_ID
 NEXT_PUBLIC_STRIPE_RESTORE_PRICE_ID
 NEXT_PUBLIC_STRIPE_TRANSFORM_PRICE_ID
+NEXT_PUBLIC_STRIPE_MEMBER_PRICE_ID
 
-FOUNDING_MEMBER_CUTOFF_DATE   # ISO date — subscriptions before this = founding member
-NEXT_PUBLIC_FOUNDING_MEMBER_CUTOFF_DATE  # Same value, public for pricing page badge
+# Optional promo coupon IDs — auto-applied when set
+STRIPE_WIN_COUPON_ID
+STRIPE_LOW_SCORE_COUPON_ID
+STRIPE_SHARE_COUPON_ID
+```
 
-CRON_SECRET                   # Optional bearer token to protect /api/weekly-checkin
+### AI providers
+```
+ANTHROPIC_API_KEY              # Claude — consult, reports, weekly check-ins
+OPENAI_API_KEY                 # plate-builder recipes + images
+OPENAI_RECIPE_MODEL            # optional override, e.g. gpt-4o-mini
+OPENAI_IMAGE_MODEL             # optional override, e.g. gpt-image-1
+NEXT_PUBLIC_ELEVENLABS_AGENT_ID # voice agent
+```
+
+### Email (Resend)
+```
+RESEND_API_KEY
+EMAIL_FROM                     # e.g. "EatoBiotics <hello@eatobiotics.com>"
+OWNER_EMAIL                    # internal BCC / notifications
+```
+
+### Analytics & feature flags
+```
+NEXT_PUBLIC_STATSIG_CLIENT_KEY
+STATSIG_SERVER_KEY
+NEXT_PUBLIC_POSTHOG_KEY
+NEXT_PUBLIC_POSTHOG_HOST
+```
+
+### Cron / admin / preview gate
+```
+CRON_SECRET                    # bearer token for /api/weekly-checkin, /api/email/*, etc.
+ADMIN_PASSWORD                 # /admin login
+DEV_PASSWORD                   # preview-site password — required in production preview
+EATOBIOTICS_PASSWORD_GATE      # "on" to force preview gate on
+EATOBIOTICS_PASSWORD_GATE_DISABLED  # "true" to bypass gate entirely
+```
+
+### Misc
+```
+NEXT_PUBLIC_SITE_URL                    # e.g. https://eatobiotics.com
+FOUNDING_MEMBER_CUTOFF_DATE             # ISO date — subscriptions before this = founding member
+NEXT_PUBLIC_FOUNDING_MEMBER_CUTOFF_DATE  # public mirror for pricing badge
 ```
 
 ---
@@ -212,9 +256,23 @@ Two parallel membership fields exist on `profiles`:
 
 1. **`membership`** (`free | early_access | member | premium`) — the OLD referral-based system. Do not modify this logic. Referral upgrades still write to this field.
 
-2. **`membership_tier`** (`free | grow | restore | transform`) — the NEW subscription tier. All paid feature gating reads from this field, via `getUserMembershipTier()` in `lib/membership.ts`.
+2. **`membership_tier`** (`free | trial | member | grow | restore | transform`) — the subscription tier. All paid feature gating reads from this field, via `getUserMembershipTier()` in `lib/membership.ts`.
 
-The `getUserMembershipTier()` function enforces grace periods for `past_due` accounts.
+Tier semantics (see [lib/membership.ts](lib/membership.ts)):
+- **free** — no subscription.
+- **trial** — 30-day grace granted by a one-time report purchase. Uses the `trial_expires_at` column; downgrades to `free` automatically when expired. Feature access mirrors `grow`.
+- **grow** (€9.99/mo) — unlimited analyses, score history, plate builder, 30-day plan.
+- **member** (€24.99/mo) — everything in `grow` plus condition calibration, monthly gut plan, PDF reports, 90-day history. Effectively a "mid-tier" sitting between Grow and Restore.
+- **restore** (€49/mo) — same feature flags as `member` today; positioned for future expansion.
+- **transform** (€99/mo) — adds AI consultation, weekly check-ins, weekly meal plans, founding-member status.
+
+The `getUserMembershipTier()` function:
+- Returns `trial` only while `trial_expires_at > now()`.
+- Returns the stored tier when `membership_status = 'active'`.
+- Allows a grace period for `past_due` while `membership_expires_at > now()`.
+- Otherwise returns `free`.
+
+The canonical feature → tier mapping lives in the `FEATURES` constant in [lib/membership.ts](lib/membership.ts). Use `canAccess(tier, feature)` rather than inline tier comparisons.
 
 ---
 
