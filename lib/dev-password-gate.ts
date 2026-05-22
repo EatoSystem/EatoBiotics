@@ -1,5 +1,5 @@
-export const DEV_COOKIE = "eb_dev_preview_auth_v2"
-export const OLD_DEV_COOKIES = ["eb_dev_auth", "eb_dev_preview_auth"]
+export const DEV_COOKIE = "eb_dev_preview_auth_v3"
+export const OLD_DEV_COOKIES = ["eb_dev_auth", "eb_dev_preview_auth", "eb_dev_preview_auth_v2"]
 const TEMPORARY_DEVELOPMENT_PASSWORD = "Monkstown"
 
 export function isPasswordGateEnabled(): boolean {
@@ -21,7 +21,7 @@ export function getDevPassword(): string | null {
 }
 
 export async function devPasswordToken(password: string): Promise<string> {
-  const data = new TextEncoder().encode(`eatobiotics-preview-v2:${password}`)
+  const data = new TextEncoder().encode(`eatobiotics-preview-v3:${password}`)
   const digest = await crypto.subtle.digest("SHA-256", data)
   return Array.from(new Uint8Array(digest))
     .map((byte) => byte.toString(16).padStart(2, "0"))

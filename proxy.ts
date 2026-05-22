@@ -1,10 +1,28 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
-import { DEV_COOKIE, devPasswordToken, getDevPassword, isPasswordGateEnabled } from "@/lib/dev-password-gate"
+import { DEV_COOKIE, OLD_DEV_COOKIES, devPasswordToken, getDevPassword, isPasswordGateEnabled } from "@/lib/dev-password-gate"
 
 // ── Site-wide password gate ───────────────────────────────────────────────
 async function hasSiteAccess(request: NextRequest, password: string): Promise<boolean> {
   return request.cookies.get(DEV_COOKIE)?.value === await devPasswordToken(password)
+}
+
+function withPreviewNoStore(response: NextResponse): NextResponse {
+  response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
+  response.headers.set("Pragma", "no-cache")
+  response.headers.set("Expires", "0")
+  response.headers.set("Surrogate-Control", "no-store")
+  response.headers.set("Clear-Site-Data", '"cache", "storage"')
+  OLD_DEV_COOKIES.forEach((cookie) => {
+    response.cookies.set(cookie, "", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 0,
+    })
+  })
+  return response
 }
 
 function isEnterRoute(pathname: string): boolean {
@@ -41,7 +59,7 @@ export async function proxy(request: NextRequest) {
       const url = request.nextUrl.clone()
       url.pathname = "/enter"
       url.searchParams.set("from", pathname)
-      return NextResponse.redirect(url)
+      return withPreviewNoStore(NextResponse.redirect(url))
     }
   }
   // ────────────────────────────────────────────────────────────────────────
