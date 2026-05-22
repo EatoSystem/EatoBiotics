@@ -3,9 +3,9 @@
 ## Password Gate
 
 - During redevelopment, set `DEV_PASSWORD` to enable the temporary site password screen.
-- Do not hardcode the development password in source control.
-- Before public launch, remove `DEV_PASSWORD` or set `EATOBIOTICS_PASSWORD_GATE_DISABLED=true`.
-- If `EATOBIOTICS_PASSWORD_GATE=true` is set without `DEV_PASSWORD`, the app should fail clearly instead of exposing a fallback password.
+- The current temporary fallback password is `Monkstown` so the preview lock remains active during redevelopment.
+- Before public launch, remove the temporary fallback from `lib/dev-password-gate.ts`, then remove `DEV_PASSWORD` or set `EATOBIOTICS_PASSWORD_GATE_DISABLED=true`.
+- Do not leave the temporary fallback in the launch build.
 
 ## MVP Flow
 
