@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { DEV_COOKIE, devPasswordToken, getDevPassword, isPasswordGateEnabled } from "@/lib/dev-password-gate"
+import { DEV_COOKIE, OLD_DEV_COOKIES, devPasswordToken, getDevPassword, isPasswordGateEnabled } from "@/lib/dev-password-gate"
 
 export async function POST(req: NextRequest) {
   if (!isPasswordGateEnabled()) {
@@ -24,6 +24,16 @@ export async function POST(req: NextRequest) {
   const res = NextResponse.json({ ok: true })
 
   // Short redevelopment preview cookie.
+  OLD_DEV_COOKIES.forEach((cookie) => {
+    res.cookies.set(cookie, "", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 0,
+    })
+  })
+
   res.cookies.set(DEV_COOKIE, await devPasswordToken(devPassword), {
     httpOnly: true,
     sameSite: "lax",
