@@ -23,13 +23,13 @@ export async function POST(req: NextRequest) {
 
   const res = NextResponse.json({ ok: true })
 
-  // Set a session cookie — expires when browser closes, or set maxAge for longer
+  // Short redevelopment preview cookie.
   res.cookies.set(DEV_COOKIE, await devPasswordToken(devPassword), {
     httpOnly: true,
     sameSite: "lax",
     secure:   process.env.NODE_ENV === "production",
     path:     "/",
-    maxAge:   60 * 60 * 24 * 7, // 7 days
+    maxAge:   60 * 60 * 12, // 12 hours
   })
 
   return res

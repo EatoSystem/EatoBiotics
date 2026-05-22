@@ -1,4 +1,4 @@
-export const DEV_COOKIE = "eb_dev_auth"
+export const DEV_COOKIE = "eb_dev_preview_auth"
 const TEMPORARY_DEVELOPMENT_PASSWORD = "Monkstown"
 
 export function isPasswordGateEnabled(): boolean {
