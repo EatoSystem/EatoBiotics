@@ -2,10 +2,10 @@
 
 ## Password Gate
 
-- During redevelopment, set `EATOBIOTICS_PASSWORD_GATE=true` and set a strong `DEV_PASSWORD`.
-- If `DEV_PASSWORD` is set and `EATOBIOTICS_PASSWORD_GATE` is not set, the development password gate will activate automatically.
-- Before public launch, set `EATOBIOTICS_PASSWORD_GATE=false` or remove the variable.
-- Never deploy with `EATOBIOTICS_PASSWORD_GATE=true` unless `DEV_PASSWORD` is set.
+- During redevelopment, set `DEV_PASSWORD` to enable the temporary site password screen.
+- Do not hardcode the development password in source control.
+- Before public launch, remove `DEV_PASSWORD` or set `EATOBIOTICS_PASSWORD_GATE_DISABLED=true`.
+- If `EATOBIOTICS_PASSWORD_GATE=true` is set without `DEV_PASSWORD`, the app should fail clearly instead of exposing a fallback password.
 
 ## MVP Flow
 

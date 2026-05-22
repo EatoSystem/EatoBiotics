@@ -30,7 +30,7 @@ function isProtectedAccountRoute(pathname: string): boolean {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Site password check. Enabled only when explicitly set during redevelopment.
+  // Site password check. During redevelopment, DEV_PASSWORD enables the gate.
   if (isPasswordGateEnabled()) {
     const password = getDevPassword()
     if (!password) {
