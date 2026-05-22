@@ -128,6 +128,7 @@ export async function POST(req: NextRequest) {
 
     const magicUrl = data.properties.action_link
 
+    let delivered = false
     if (resendKey) {
       const resend = new Resend(resendKey)
       const { error: sendError } = await resend.emails.send({
@@ -138,14 +139,18 @@ export async function POST(req: NextRequest) {
       })
       if (sendError) {
         console.error("[send-magic-link] Resend error:", sendError.message)
+      } else {
+        delivered = true
       }
     } else {
       console.log("[send-magic-link] RESEND_API_KEY not set — magic link:", magicUrl)
     }
 
-    return NextResponse.json({ ok: true })
+    // `delivered` lets the UI distinguish actual delivery from dev/skipped flows
+    // so users get an honest message and a recovery path when Resend rejects a send.
+    return NextResponse.json({ ok: true, delivered })
   } catch (err) {
     console.error("[send-magic-link] Error:", err)
-    return NextResponse.json({ ok: true, skipped: true }) // always non-fatal
+    return NextResponse.json({ ok: true, skipped: true, delivered: false })
   }
 }

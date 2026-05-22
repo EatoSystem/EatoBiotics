@@ -17,7 +17,11 @@ import { z } from "zod"
 import { anthropic } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
-import { getUserMembershipTier } from "@/lib/membership"
+import { getUserMembershipTier, canAccess } from "@/lib/membership"
+
+/** Free-tier daily analysis cap. Paid tiers (trial/member/grow/restore/transform)
+ *  bypass this gate via canAccess(tier, "unlimited_analyses"). */
+const FREE_DAILY_ANALYSIS_LIMIT = 1
 
 /* ── Validation ─────────────────────────────────────────────────────── */
 
@@ -86,6 +90,30 @@ export interface MealAnalysisResult {
 export async function POST(req: NextRequest) {
   const user = await getUser()
   if (!user) return NextResponse.json({ error: "Unauthorised" }, { status: 401 })
+
+  /* Tier-based rate limit. Free users get FREE_DAILY_ANALYSIS_LIMIT/day; everyone
+     else is unlimited. We check this BEFORE the (expensive) Claude call so we
+     never burn tokens on requests we're going to reject anyway. */
+  {
+    const tier = await getUserMembershipTier(user.id)
+    if (!canAccess(tier, "unlimited_analyses")) {
+      const supabase = getSupabase()
+      if (supabase) {
+        const startOfDay = new Date(); startOfDay.setUTCHours(0, 0, 0, 0)
+        const { count } = await supabase
+          .from("analyses")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .gte("created_at", startOfDay.toISOString())
+        if ((count ?? 0) >= FREE_DAILY_ANALYSIS_LIMIT) {
+          return NextResponse.json(
+            { error: "Daily analysis limit reached", code: "daily_limit", upgradeUrl: "/pricing" },
+            { status: 429 },
+          )
+        }
+      }
+    }
+  }
 
   /* Parse body — supports JSON or multipart */
   let body: z.infer<typeof bodySchema>

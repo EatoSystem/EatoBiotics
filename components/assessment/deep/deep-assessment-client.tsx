@@ -55,6 +55,10 @@ export function DeepAssessmentClient({
   const [currentIndex, setCurrentIndex] = useState(0)
   const [submitStage, setSubmitStage] = useState(0)
   const [errorMessage, setErrorMessage] = useState("")
+  // Tracks which step failed so the Try Again button retries the right thing.
+  // Without this, hitting retry after a submit failure incorrectly re-fetches
+  // questions and wipes the user's progress.
+  const [failedPhase, setFailedPhase] = useState<"questions" | "submit" | null>(null)
 
   const loadQuestions = useCallback(async () => {
     // If we have saved questions, resume from where we left off
@@ -87,6 +91,7 @@ export function DeepAssessmentClient({
       setView("questions")
     } catch {
       setErrorMessage("We couldn't generate your questions. Please try again.")
+      setFailedPhase("questions")
       setView("error")
     }
   }, [sessionId, tier, freeScores, savedQuestions, savedAnswers])
@@ -144,7 +149,8 @@ export function DeepAssessmentClient({
       if (!res.ok) throw new Error("Report generation failed")
       router.push(`/assessment/report?session_id=${sessionId}`)
     } catch {
-      setErrorMessage("Report generation failed. Please try again.")
+      setErrorMessage("Report generation failed. Your answers are safe — please try again.")
+      setFailedPhase("submit")
       setView("error")
     }
   }
@@ -168,6 +174,13 @@ export function DeepAssessmentClient({
   }
 
   function handleRetry() {
+    setErrorMessage("")
+    if (failedPhase === "submit") {
+      setFailedPhase(null)
+      handleSubmit()
+      return
+    }
+    setFailedPhase(null)
     setView("loading")
     loadQuestions()
   }

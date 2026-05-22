@@ -209,10 +209,14 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Sarah"
                   autoComplete="given-name"
+                  aria-invalid={errors.name ? true : undefined}
+                  aria-describedby={errors.name ? "lead-name-error" : undefined}
                   className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground/50 outline-none ring-0 transition focus:border-[var(--icon-green)] focus:ring-1 focus:ring-[var(--icon-green)]/30"
                 />
                 {errors.name && (
-                  <p className="mt-1 text-xs text-destructive">{errors.name}</p>
+                  <p id="lead-name-error" role="alert" className="mt-1 flex items-center gap-1 text-xs text-destructive">
+                    <span aria-hidden="true">⚠</span>{errors.name}
+                  </p>
                 )}
               </div>
 
@@ -228,10 +232,14 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                   autoComplete="email"
+                  aria-invalid={errors.email ? true : undefined}
+                  aria-describedby={errors.email ? "lead-email-error" : undefined}
                   className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground/50 outline-none ring-0 transition focus:border-[var(--icon-green)] focus:ring-1 focus:ring-[var(--icon-green)]/30"
                 />
                 {errors.email && (
-                  <p className="mt-1 text-xs text-destructive">{errors.email}</p>
+                  <p id="lead-email-error" role="alert" className="mt-1 flex items-center gap-1 text-xs text-destructive">
+                    <span aria-hidden="true">⚠</span>{errors.email}
+                  </p>
                 )}
               </div>
 
@@ -244,6 +252,8 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
                   id="lead-age"
                   value={ageBracket}
                   onChange={(e) => setAgeBracket(e.target.value)}
+                  aria-invalid={errors.ageBracket ? true : undefined}
+                  aria-describedby={errors.ageBracket ? "lead-age-error" : undefined}
                   className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none ring-0 transition focus:border-[var(--icon-green)] focus:ring-1 focus:ring-[var(--icon-green)]/30"
                 >
                   <option value="" disabled>Select your age range</option>
@@ -252,7 +262,9 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
                   ))}
                 </select>
                 {errors.ageBracket && (
-                  <p className="mt-1 text-xs text-destructive">{errors.ageBracket}</p>
+                  <p id="lead-age-error" role="alert" className="mt-1 flex items-center gap-1 text-xs text-destructive">
+                    <span aria-hidden="true">⚠</span>{errors.ageBracket}
+                  </p>
                 )}
               </div>
 

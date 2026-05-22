@@ -3,6 +3,10 @@
     {
       "path": "/api/weekly-checkin",
       "schedule": "0 8 * * 1"
+    },
+    {
+      "path": "/api/email/abandoned-cart",
+      "schedule": "0 16 * * *"
     }
   ]
 }

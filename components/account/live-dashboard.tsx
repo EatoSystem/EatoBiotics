@@ -1,13 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { toast } from "sonner"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
 import {
   Camera, ArrowRight, Check, ChevronRight, TrendingUp,
   FileText, UtensilsCrossed, MessageSquare, Download, ExternalLink, Flame,
-  Calendar, Target, Activity, User, Trash2, AlertTriangle,
+  Calendar, Target, Activity, User, Trash2, AlertTriangle, Sparkles, Clock,
 } from "lucide-react"
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -433,6 +434,10 @@ export interface LiveDashboardProps {
   ageBracket?:       string | null
   membershipTier?:   string | null
   membershipStatus?: string | null
+  trialExpiresAt?:   string | null
+  purchaseSuccess?:  boolean
+  reportSuccess?:    boolean
+  analysesToday?:    number
   streak?:           number
   score?:            number | null
   previousScore?:    number | null
@@ -448,6 +453,15 @@ export interface LiveDashboardProps {
   referralCode?:     string | null
   // Sandbox pass-through
   [key: string]: unknown
+}
+
+/** Tier-specific welcome copy shown via toast after subscription checkout. */
+const TIER_WELCOME: Record<string, { title: string; message: string }> = {
+  grow:      { title: "Welcome to Grow 🌱",      message: "Unlimited meal analyses and your 30-day plan are live." },
+  member:    { title: "Welcome to Member ✨",    message: "Condition calibration, monthly gut plan, and PDF reports unlocked." },
+  restore:   { title: "Welcome to Restore 🌿",   message: "Everything in Member plus deeper personalisation." },
+  transform: { title: "Welcome to Transform 💫", message: "AI consultations and weekly check-ins are ready when you are." },
+  trial:     { title: "30-day trial activated",  message: "Explore everything Grow has to offer — no charge until you choose to subscribe." },
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -661,6 +675,10 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
     ageBracket:        propAgeBracket    = null,
     membershipTier:    propMemberTier    = null,
     membershipStatus:  propMemberStatus  = null,
+    trialExpiresAt     = null,
+    purchaseSuccess    = false,
+    reportSuccess      = false,
+    analysesToday      = 0,
     streak:            propStreak = 0,
     score:             propScore  = null,
     previousScore:     propPrev   = null,
@@ -673,6 +691,42 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
     memberStartedAt    = null,
     nextBillingDate    = null,
   } = props
+
+  /* ── Welcome toast after Stripe checkout return. Fires once on mount and
+        strips the query param so a refresh doesn't replay it. ── */
+  useEffect(() => {
+    if (purchaseSuccess) {
+      const welcome = TIER_WELCOME[propMemberTier ?? ""] ?? TIER_WELCOME.grow
+      toast.success(welcome.title, { description: welcome.message, duration: 6000 })
+    } else if (reportSuccess) {
+      toast.success("Thanks for your purchase 🎉", {
+        description: "Your 30-day trial is active. Your detailed report is ready below.",
+        duration: 6000,
+      })
+    }
+    if (purchaseSuccess || reportSuccess) {
+      // Clean the URL so a refresh doesn't re-toast.
+      window.history.replaceState(null, "", "/account")
+    }
+    // Intentionally empty deps: this should fire exactly once on first paint.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  /* ── Trial countdown. Renders an inline banner in the hero. ── */
+  const trialDaysLeft = (() => {
+    if (propMemberTier !== "trial" || !trialExpiresAt) return null
+    const ms = new Date(trialExpiresAt).getTime() - Date.now()
+    if (Number.isNaN(ms)) return null
+    return Math.max(0, Math.ceil(ms / 86_400_000))
+  })()
+
+  /* ── Daily analysis limit. Only free-tier users have a daily cap;
+        paid tiers see "Unlimited" instead. Kept in sync with the
+        FREE_DAILY_ANALYSIS_LIMIT constant in app/api/analyse-meal/route.ts. ── */
+  const isPaidTier      = !!propMemberTier && propMemberTier !== "free"
+  const dailyLimit      = isPaidTier ? null : 1
+  const analysesLeft    = dailyLimit == null ? null : Math.max(0, dailyLimit - analysesToday)
+  const atDailyLimit    = dailyLimit != null && analysesLeft === 0
 
   const [tab, setTab] = useState<Tab>("overview")
   const [loggerState, setLoggerState] = useState<LoggerState>("empty")
@@ -732,6 +786,33 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       setTimeout(() => setExportState("idle"), 4000)
     } catch {
       setExportState("idle")
+    }
+  }
+
+  const [portalLoading, setPortalLoading] = useState(false)
+
+  /* Open the Stripe customer portal so the user can update card details,
+     view invoices, change plan etc. We route to the existing portal-session
+     API and redirect to the returned hosted URL. */
+  async function handleManageBilling() {
+    if (portalLoading) return
+    setPortalLoading(true)
+    try {
+      const res = await fetch("/api/stripe/create-portal-session", { method: "POST" })
+      const data = await res.json() as { url?: string; error?: string }
+      if (data.url) {
+        window.location.href = data.url
+        return
+      }
+      toast.error("We couldn't open the billing portal", {
+        description: data.error ?? "Please try again in a moment.",
+      })
+    } catch {
+      toast.error("We couldn't open the billing portal", {
+        description: "Please check your connection and try again.",
+      })
+    } finally {
+      setPortalLoading(false)
     }
   }
 
@@ -812,14 +893,27 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ description: mealInput.trim() }),
       })
-      if (!res.ok) throw new Error("Analysis failed")
+      if (!res.ok) {
+        // Translate status codes into messages the user can actually act on.
+        if (res.status === 401) {
+          setAnalyseError("Please sign in to analyse meals.")
+        } else if (res.status === 429) {
+          setAnalyseError("You've used today's analyses. Upgrade for unlimited.")
+        } else if (res.status >= 500) {
+          setAnalyseError("Our analyser hit a hiccup. Please try again in a moment.")
+        } else {
+          setAnalyseError("We couldn't analyse that meal. Try rephrasing it.")
+        }
+        setLoggerState("empty")
+        return
+      }
       const data = await res.json() as LiveResult
       setLiveResult(data)
       setLoggerState("result")
       setMealInput("")
     } catch (err) {
       console.error("[analyse-meal]", err)
-      setAnalyseError("Analysis failed — please try again")
+      setAnalyseError("Network problem — check your connection and try again.")
       setLoggerState("empty")
     }
   }
@@ -876,6 +970,61 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
           </div>
         </div>
       </div>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          TRIAL COUNTDOWN BANNER — shown only while membership_tier="trial"
+      ══════════════════════════════════════════════════════════════════ */}
+      {trialDaysLeft !== null && (
+        <div className="mx-auto max-w-5xl px-5 pb-4 md:px-8">
+          <div
+            role="status"
+            className="flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 md:px-5 md:py-4"
+            style={{
+              background: trialDaysLeft <= 3
+                ? "linear-gradient(135deg, #FFF8E6 0%, #FFEFC9 100%)"
+                : "linear-gradient(135deg, #F2FBEE 0%, #E8F6E1 100%)",
+              borderColor: trialDaysLeft <= 3 ? "#F5C518" : "rgba(76,182,72,0.3)",
+            }}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div
+                aria-hidden="true"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white"
+                style={{
+                  background: trialDaysLeft <= 3
+                    ? "linear-gradient(135deg, #F5C518, #F5A623)"
+                    : "linear-gradient(135deg, #4CB648, #2DAA6E)",
+                }}
+              >
+                {trialDaysLeft <= 3 ? <Clock size={16} /> : <Sparkles size={16} />}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold leading-tight" style={{ color: "var(--foreground)" }}>
+                  {trialDaysLeft === 0
+                    ? "Your trial ends today"
+                    : trialDaysLeft === 1
+                    ? "1 day left in your trial"
+                    : `${trialDaysLeft} days left in your trial`}
+                </p>
+                <p className="mt-0.5 text-xs leading-snug" style={{ color: "var(--muted-foreground)" }}>
+                  Subscribe to keep your meal analyses, plate builder, and 30-day plan.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/pricing"
+              className="shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+              style={{
+                background: trialDaysLeft <= 3
+                  ? "linear-gradient(135deg, #F5C518, #F5A623)"
+                  : "linear-gradient(135deg, #4CB648, #2DAA6E)",
+              }}
+            >
+              Subscribe
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Brand gradient divider */}
       <div className="section-divider" />
@@ -1131,6 +1280,32 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                     <p className="mt-2 max-w-xs text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.75)" }}>
                       Take or upload a photo of your meal. EatoBiotics will analyse its biotics profile and teach you what&apos;s happening inside.
                     </p>
+
+                    {/* Daily-limit indicator */}
+                    <div className="mt-3 flex items-center gap-2">
+                      <span
+                        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide"
+                        style={{
+                          background: atDailyLimit ? "rgba(245,197,24,0.20)" : "rgba(255,255,255,0.15)",
+                          color: "white",
+                          border: "1px solid rgba(255,255,255,0.20)",
+                        }}
+                        aria-label="Daily analysis usage"
+                      >
+                        {dailyLimit == null
+                          ? "Unlimited today"
+                          : `${analysesToday} / ${dailyLimit} today`}
+                      </span>
+                      {atDailyLimit && (
+                        <Link
+                          href="/pricing"
+                          className="text-[11px] font-semibold underline underline-offset-2"
+                          style={{ color: "rgba(255,255,255,0.92)" }}
+                        >
+                          Upgrade for unlimited
+                        </Link>
+                      )}
+                    </div>
 
                     {/* Primary CTA — Take photo, centred */}
                     <button
@@ -2025,13 +2200,23 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                         </p>
                       </div>
                     </div>
-                    <button
-                      onClick={() => setCancelStage("confirm")}
-                      className="shrink-0 rounded-xl px-4 py-2 text-sm font-semibold transition-all hover:opacity-90"
-                      style={{ background: "#fff7ed", color: "#c2410c", border: "1px solid #fed7aa" }}
-                    >
-                      Cancel plan
-                    </button>
+                    <div className="flex shrink-0 gap-2">
+                      <button
+                        onClick={handleManageBilling}
+                        disabled={portalLoading}
+                        className="rounded-xl px-4 py-2 text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-60"
+                        style={{ background: "#f0fdf4", color: "#15803d", border: "1px solid #bbf7d0" }}
+                      >
+                        {portalLoading ? "Opening…" : "Manage billing"}
+                      </button>
+                      <button
+                        onClick={() => setCancelStage("confirm")}
+                        className="rounded-xl px-4 py-2 text-sm font-semibold transition-all hover:opacity-90"
+                        style={{ background: "#fff7ed", color: "#c2410c", border: "1px solid #fed7aa" }}
+                      >
+                        Cancel plan
+                      </button>
+                    </div>
                   </div>
                 )}
 

@@ -14,9 +14,17 @@ export const metadata: Metadata = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function field<T>(obj: unknown, key: string): T | undefined { return (obj as any)?.[key] as T | undefined }
 
-export default async function AccountPage() {
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
+}) {
   const user = await getUser()
   if (!user) redirect("/assessment?signin=1")
+
+  const params = (await searchParams) ?? {}
+  const purchaseSuccess = params.subscription === "success"
+  const reportSuccess   = params.purchase === "report"
 
   const adminSupabase = getSupabase()
 
@@ -25,7 +33,7 @@ export default async function AccountPage() {
   if (adminSupabase) {
     const { data } = await adminSupabase
       .from("profiles")
-      .select("id, email, name, membership_tier, membership_status, stripe_customer_id, stripe_subscription_id, membership_started_at, referral_code")
+      .select("id, email, name, membership_tier, membership_status, stripe_customer_id, stripe_subscription_id, membership_started_at, trial_expires_at, referral_code")
       .eq("id", user.id)
       .single()
     profile = data as Record<string, unknown> | null
@@ -78,6 +86,20 @@ export default async function AccountPage() {
       .order("created_at", { ascending: false })
       .limit(30)
     recentAnalyses = (data ?? []) as RealAnalysis[]
+  }
+
+  /* ── Today's analysis count — used to render the daily-limit indicator
+        and avoid an extra client roundtrip on first paint. ── */
+  let analysesToday = 0
+  if (adminSupabase) {
+    const startOfDay = new Date()
+    startOfDay.setUTCHours(0, 0, 0, 0)
+    const { count } = await adminSupabase
+      .from("analyses")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", startOfDay.toISOString())
+    analysesToday = count ?? 0
   }
 
   /* ── Latest weekly report ── */
@@ -204,6 +226,10 @@ export default async function AccountPage() {
         ageBracket={(profile.age_bracket as string | null) ?? null}
         membershipTier={(profile.membership_tier as string | null) ?? null}
         membershipStatus={(profile.membership_status as string | null) ?? null}
+        trialExpiresAt={(profile.trial_expires_at as string | null) ?? null}
+        purchaseSuccess={purchaseSuccess}
+        reportSuccess={reportSuccess}
+        analysesToday={analysesToday}
         streak={streak}
         score={(assessments[0]?.overall_score as number | null) ?? null}
         previousScore={(assessments[1]?.overall_score as number | null) ?? null}

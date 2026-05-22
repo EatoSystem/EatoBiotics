@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
       ...(email ? { customer_email: email.toLowerCase().trim() } : {}),
       allow_promotion_codes: true,
       success_url: `${origin}/assessment/deep?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/assessment`,
+      cancel_url: `${origin}/assessment?checkout=cancelled`,
     })
 
     return NextResponse.json({ url: session.url })

@@ -147,15 +147,25 @@ export function DeepQuestionView({
       {question.type === "slider" && (
         <div className="mt-8 space-y-4">
           <div className="text-center">
-            <span className="text-4xl font-bold text-foreground">{sliderValue}</span>
+            <span className="text-4xl font-bold text-foreground" aria-hidden="true">{sliderValue}</span>
           </div>
           <div className="relative">
             <input
+              id={`q-${question.id}-slider`}
               type="range"
               min={question.min ?? 1}
               max={question.max ?? 10}
               value={sliderValue}
               onChange={(e) => handleSliderChange(Number(e.target.value))}
+              aria-label={question.text}
+              aria-valuemin={question.min ?? 1}
+              aria-valuemax={question.max ?? 10}
+              aria-valuenow={sliderValue}
+              aria-valuetext={
+                question.minLabel || question.maxLabel
+                  ? `${sliderValue} (${question.minLabel ?? ""} to ${question.maxLabel ?? ""})`
+                  : `${sliderValue}`
+              }
               className="w-full accent-[var(--icon-green)] cursor-pointer"
             />
             {(question.minLabel || question.maxLabel) && (
@@ -209,13 +219,17 @@ export function DeepQuestionView({
       {/* ── textarea ── */}
       {question.type === "textarea" && (
         <div className="mt-6 space-y-3">
+          <label htmlFor={`q-${question.id}-text`} className="sr-only">{question.text}</label>
           <textarea
+            id={`q-${question.id}-text`}
             value={textValue}
             onChange={(e) => handleTextChange(e.target.value)}
             placeholder="Type your answer here…"
+            maxLength={500}
+            aria-describedby={`q-${question.id}-counter`}
             className="w-full min-h-[120px] rounded-xl border border-border p-4 text-base resize-none focus:border-[var(--icon-green)] focus:outline-none bg-background transition-colors"
           />
-          <p className="text-xs text-muted-foreground text-right">{textValue.length}/500</p>
+          <p id={`q-${question.id}-counter`} className="text-xs text-muted-foreground text-right">{textValue.length}/500</p>
           {continueButton}
         </div>
       )}

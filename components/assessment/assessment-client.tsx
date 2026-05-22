@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { toast } from "sonner"
 import {
   loadAssessment,
   saveAssessment,
@@ -22,6 +23,32 @@ import posthog from "posthog-js"
 import { logEvent } from "@/lib/statsig-client"
 
 export function AssessmentClient() {
+  // Surface checkout outcomes that returned the user here. Without this, a
+  // cancelled or declined checkout silently drops the user back on the
+  // assessment with no acknowledgment — feels broken.
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const params = new URLSearchParams(window.location.search)
+    const checkout = params.get("checkout")
+    if (checkout === "cancelled") {
+      toast("Checkout cancelled", {
+        description: "No charge was made. Your assessment results are still here when you're ready.",
+        duration: 6000,
+      })
+      params.delete("checkout")
+      const q = params.toString()
+      window.history.replaceState(null, "", "/assessment" + (q ? `?${q}` : ""))
+    } else if (checkout === "failed") {
+      toast.error("Payment didn't go through", {
+        description: "Your card was not charged. Try a different card or contact your bank.",
+        duration: 8000,
+      })
+      params.delete("checkout")
+      const q = params.toString()
+      window.history.replaceState(null, "", "/assessment" + (q ? `?${q}` : ""))
+    }
+  }, [])
+
   const [state, setState] = useState<AssessmentState>(emptyAssessmentState)
   const [hydrated, setHydrated] = useState(false)
   const [lead, setLead] = useState<LeadData | null>(null)

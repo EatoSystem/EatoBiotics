@@ -346,21 +346,32 @@ export async function POST(req: NextRequest) {
     console.warn("[submit-deep-assessment] ANTHROPIC_API_KEY not set; using fallback paid report")
     report = buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers })
   } else {
+    // Hard timeout so a stuck Anthropic call can't hold the Vercel function open
+    // and leave the customer staring at "Analysing your food system…" indefinitely.
+    // On timeout (or any error) we fall back to the deterministic report — a paid
+    // user always gets something useful, even if AI generation is unavailable.
+    const CLAUDE_TIMEOUT_MS = 55_000
+    const abort = new AbortController()
+    const timer = setTimeout(() => abort.abort(), CLAUDE_TIMEOUT_MS)
+
     try {
       const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
       const effectiveTier = tier === "personal" ? "full" : tier
       const maxTokens = effectiveTier === "premium" ? 6144 : effectiveTier === "full" ? 4096 : 3072
 
-      const message = await client.messages.create({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: maxTokens,
-        messages: [
-          {
-            role: "user",
-            content: buildDeepAnalysisPrompt(freeScores, questions, answers),
-          },
-        ],
-      })
+      const message = await client.messages.create(
+        {
+          model: "claude-sonnet-4-20250514",
+          max_tokens: maxTokens,
+          messages: [
+            {
+              role: "user",
+              content: buildDeepAnalysisPrompt(freeScores, questions, answers),
+            },
+          ],
+        },
+        { signal: abort.signal },
+      )
 
       const rawText =
         message.content[0].type === "text" ? message.content[0].text : ""
@@ -372,8 +383,11 @@ export async function POST(req: NextRequest) {
 
       report = JSON.parse(cleaned) as DeepReport
     } catch (err) {
-      console.error("[submit-deep-assessment] Claude error; using fallback paid report:", err)
+      const reason = abort.signal.aborted ? "timeout" : "error"
+      console.error(`[submit-deep-assessment] Claude ${reason}; using fallback paid report:`, err)
       report = buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers })
+    } finally {
+      clearTimeout(timer)
     }
   }
 

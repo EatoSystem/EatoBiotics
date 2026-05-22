@@ -392,3 +392,57 @@ BEGIN
       USING (is_published = true);
   END IF;
 END $$;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 17: Webhook idempotency + tier reconciliation + hot-column indexes
+-- ────────────────────────────────────────────────────────────
+
+-- 17a. Allow the additional tier names the application code uses ('trial', 'member').
+ALTER TABLE profiles
+  DROP CONSTRAINT IF EXISTS profiles_membership_tier_check;
+
+ALTER TABLE profiles
+  ADD CONSTRAINT profiles_membership_tier_check
+  CHECK (membership_tier IN ('free', 'trial', 'member', 'grow', 'restore', 'transform'));
+
+-- 17b. Trial expiry column (read by lib/membership.ts, granted by one-time report webhook).
+ALTER TABLE profiles
+  ADD COLUMN IF NOT EXISTS trial_expires_at timestamptz;
+
+-- 17c. Dedup table — Stripe will retry webhooks; this is the lock that stops
+-- non-idempotent side effects (welcome emails, analytics) from firing twice.
+CREATE TABLE IF NOT EXISTS processed_stripe_events (
+  stripe_event_id text        PRIMARY KEY,
+  event_type      text        NOT NULL,
+  processed_at    timestamptz NOT NULL DEFAULT now()
+);
+
+-- 17d. Hot-column indexes — webhook lookups, dashboard daily counts, history pulls.
+CREATE INDEX IF NOT EXISTS idx_profiles_stripe_customer_id
+  ON profiles (stripe_customer_id) WHERE stripe_customer_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_profiles_email
+  ON profiles (email);
+
+CREATE INDEX IF NOT EXISTS idx_analyses_user_id_created_at
+  ON analyses (user_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_consultations_user_id_created_at
+  ON consultations (user_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_deep_assessments_user_id
+  ON deep_assessments (user_id) WHERE user_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_subscription_events_user_id_created_at
+  ON subscription_events (user_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_leads_email
+  ON leads (email);
+
+-- 17e. Abandoned-cart tracking: 24h recovery email tracker.
+-- Distinct from `email_sent` (which marks the immediate results email) so the
+-- two drip stages don't collide.
+ALTER TABLE leads
+  ADD COLUMN IF NOT EXISTS abandoned_cart_email_sent_at timestamptz;
+
