@@ -41,6 +41,7 @@
     "@radix-ui/react-toggle-group": "1.1.1",
     "@radix-ui/react-tooltip": "1.1.6",
     "@react-pdf/renderer": "^4.3.2",
+    "@sentry/nextjs": "^10.53.1",
     "@statsig/js-client": "^3.32.6",
     "@statsig/react-bindings": "^3.32.6",
     "@stripe/stripe-js": "^8.11.0",

@@ -1,12 +1,23 @@
 import { NextRequest, NextResponse } from "next/server"
 import type Stripe from "stripe"
 import { Resend } from "resend"
+import * as Sentry from "@sentry/nextjs"
 import { stripe } from "@/lib/stripe-server"
 import { getSupabase } from "@/lib/supabase"
 import { tierFromPriceId, isFoundingMember } from "@/lib/membership"
 import { logServerEvent } from "@/lib/statsig-server"
 import { welcomeSubscriptionEmailHtml } from "@/lib/email/welcome-subscription-email"
 import { getPaidReportSummaryFromSession, isCheckoutSessionSettled } from "@/lib/paid-report-session"
+
+/** Forward a swallowed webhook error to Sentry tagged with event metadata so
+ *  it's findable in production. console.error stays in place so Vercel logs
+ *  still show the failure context. */
+function reportWebhookError(err: unknown, event: { id: string; type: string }, where: string) {
+  Sentry.captureException(err, {
+    tags:    { stripe_event_id: event.id, event_type: event.type, area: "webhook" },
+    extra:   { where },
+  })
+}
 
 // Stripe v20 with the clover API version uses slightly different type shapes.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -151,6 +162,7 @@ export async function POST(req: NextRequest) {
           }
         } catch (err) {
           console.error("[webhook] checkout.session.completed failed:", err, "event:", event.id)
+          reportWebhookError(err, event, "checkout.session.completed")
         }
         break
       }
@@ -226,6 +238,7 @@ export async function POST(req: NextRequest) {
           }
         } catch (err) {
           console.error("[webhook] customer.subscription.created failed:", err, "event:", event.id)
+          reportWebhookError(err, event, "customer.subscription.created")
         }
         break
       }
@@ -283,6 +296,7 @@ export async function POST(req: NextRequest) {
           })
         } catch (err) {
           console.error("[webhook] customer.subscription.updated failed:", err, "event:", event.id)
+          reportWebhookError(err, event, "customer.subscription.updated")
         }
         break
       }
@@ -323,6 +337,7 @@ export async function POST(req: NextRequest) {
           })
         } catch (err) {
           console.error("[webhook] customer.subscription.deleted failed:", err, "event:", event.id)
+          reportWebhookError(err, event, "customer.subscription.deleted")
         }
         break
       }
@@ -348,6 +363,7 @@ export async function POST(req: NextRequest) {
           })
         } catch (err) {
           console.error("[webhook] invoice.payment_failed failed:", err, "event:", event.id)
+          reportWebhookError(err, event, "invoice.payment_failed")
         }
         break
       }
@@ -379,6 +395,7 @@ export async function POST(req: NextRequest) {
           await supabase.from("profiles").update(updates).eq("id", profile.id)
         } catch (err) {
           console.error("[webhook] invoice.payment_succeeded failed:", err, "event:", event.id)
+          reportWebhookError(err, event, "invoice.payment_succeeded")
         }
         break
       }

@@ -385,6 +385,13 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       const reason = abort.signal.aborted ? "timeout" : "error"
       console.error(`[submit-deep-assessment] Claude ${reason}; using fallback paid report:`, err)
+      // Sentry: high-signal — paid customer almost lost their AI report.
+      // Imported dynamically so the type module isn't required at the top.
+      const Sentry = await import("@sentry/nextjs")
+      Sentry.captureException(err, {
+        tags:    { area: "deep-report", phase: "claude", reason },
+        extra:   { sessionId, tier, timeout_ms: CLAUDE_TIMEOUT_MS },
+      })
       report = buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers })
     } finally {
       clearTimeout(timer)

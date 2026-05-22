@@ -1,0 +1,70 @@
+# Continuous integration gate.
+#
+# Goal: stop a broken build from auto-deploying through Vercel. Runs on every
+# push and pull request, finishes in ~3-5 minutes on a typical clean repo.
+#
+# Steps:
+#  1. lint     — ESLint, catches obvious bugs and style drift
+#  2. type-check — `tsc --noEmit` runs the strict TS pass that `next build`
+#     also does, but surfaces failures earlier and clearer
+#  3. build    — `next build` covers the full compilation including Sentry
+#     wrapping; the closest signal to "this would deploy"
+#
+# Build is intentionally last because it's the most expensive step.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs when a new commit lands on the same branch — avoids
+# wasted minutes when you push fixes in quick succession.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Lint, type-check, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          # Match Vercel's current default Node LTS so local CI mirrors prod.
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Lint is currently best-effort: the repo's `npm run lint` script
+      # references eslint but the package isn't in devDependencies and there's
+      # no eslint config. `continue-on-error` keeps CI green until that's set
+      # up properly; remove it once `eslint` and a config land.
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+        env:
+          # Skip Sentry source-map upload in CI — the auth token isn't available
+          # to forks/PRs, and we don't need uploads on every PR build.
+          SENTRY_SKIP_AUTO_RELEASE: 'true'
+          # Build needs *something* for these or the static-build pass crashes
+          # at module-init time. Real values are injected by Vercel in production.
+          NEXT_PUBLIC_SUPABASE_URL:      'https://placeholder.supabase.co'
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: 'placeholder-anon-key'
+          NEXT_PUBLIC_SITE_URL:          'https://eatobiotics.com'
