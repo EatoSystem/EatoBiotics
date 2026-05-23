@@ -30,7 +30,7 @@
   "shortcuts": [
     {
       "name": "My Plate",
-      "url": "/myplate",
+      "url": "/plate-builder?tab=my-plate",
       "description": "Open your daily plate"
     },
     {

@@ -118,7 +118,7 @@ export default async function FoodPage({
           <ScrollReveal delay={50}>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
-                href={`/myplate?add=${food.slug}`}
+                href={`/plate-builder?tab=my-plate&add=${food.slug}`}
                 className="brand-gradient inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow-md shadow-icon-green/20 transition-all hover:opacity-90"
               >
                 <Utensils size={15} />

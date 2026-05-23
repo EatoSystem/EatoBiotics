@@ -2337,7 +2337,7 @@ function OverviewTab({
               href: "/assessment",
               color: "var(--icon-lime)",
             },
-            { emoji: "🥗", label: "Build\nMy Plate", href: "/myplate", color: "var(--icon-green)" },
+            { emoji: "🥗", label: "Build\nMy Plate", href: "/plate-builder?tab=my-plate", color: "var(--icon-green)" },
             { emoji: "📸", label: "Analyse\na Meal", href: "/analyse", color: "var(--icon-teal)" },
           ].map(({ emoji, label, href, color }) => (
             <Link

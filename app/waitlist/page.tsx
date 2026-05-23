@@ -336,7 +336,7 @@ export default function WaitlistPage() {
                 { label: "Today's Food", href: "/today" },
                 { label: "The Biotics", href: "/biotics" },
                 { label: "Food Library", href: "/food" },
-                { label: "My Plate", href: "/myplate" },
+                { label: "My Plate", href: "/plate-builder?tab=my-plate" },
                 { label: "About Jason", href: "/about" },
                 { label: "Roadmap", href: "/roadmap" },
               ].map((link) => (

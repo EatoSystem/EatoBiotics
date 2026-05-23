@@ -247,7 +247,7 @@ export default function LivePage() {
           <div className="flex flex-wrap gap-3">
             {[
               { href: "/analyse", label: "Meal Analysis" },
-              { href: "/myplate", label: "My Plate Builder" },
+              { href: "/plate-builder?tab=my-plate", label: "My Plate Builder" },
               { href: "/food", label: "Food Library" },
               { href: "/pricing", label: "Membership Plans" },
               { href: "/demo", label: "Demo Hub" },

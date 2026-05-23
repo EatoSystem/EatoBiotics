@@ -775,7 +775,7 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
                       {food.tagline}
                     </p>
                     <Link
-                      href={`/myplate?add=${food.slug}`}
+                      href={`/plate-builder?tab=my-plate&add=${food.slug}`}
                       className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
                       style={{ background: food.accentColor }}
                     >

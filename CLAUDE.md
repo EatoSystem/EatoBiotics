@@ -63,6 +63,23 @@ This file is the authoritative reference for Claude Code sessions. Read it befor
 - `app/api/analyses/log/route.ts` — logs an analysis to `analyses` table
 - `app/api/analyses/daily-count/route.ts` — returns today's analysis count
 
+### Plate Builder (paid tiers, consolidated at `/plate-builder`)
+The plate-builder is the single hub for everything recipe/plate-related. One route, four tabs, all selectable via `?tab=`:
+- `app/plate-builder/page.tsx` — server entry; renders `<PlateBuilderTabs />` inside a Suspense boundary
+- `components/plate-builder/plate-builder-tabs.tsx` — tab strip, URL sync, switches between the four panels
+- `components/plate-builder/plate-builder-client.tsx` — **Build** tab: single-recipe generator (Claude text + OpenAI image)
+- `components/plate-builder/weekly-plan-client.tsx` — **Weekly Plan** tab: AI meal-plan generator (formerly `/create-my-plate`)
+- `components/plate-builder/my-plate-client.tsx` — **My Plate** tab: quadrant builder + plants tracker + journal (formerly `/myplate`)
+- `components/plate-builder/my-recipes-panel.tsx` — **My Recipes** tab: lists rows from `user_recipes`
+- `app/api/plate-builder/route.ts` — recipe + image generation (auth + tier gated; honours `CRON_SECRET` for the daily cron bypass)
+- `app/api/plate-builder/recipes/route.ts` — `POST` save / `GET` list user's cookbook entries
+- `app/api/plate-builder/recipes/[id]/route.ts` — `PATCH` favourite / `DELETE` remove
+- `app/api/plate-builder/daily/route.ts` — daily-recipe cron target (4am UTC, see `vercel.json`)
+- `app/api/create-plate/route.ts` — Claude-driven meal-plan endpoint backing the Weekly Plan tab
+- `lib/plate-builder-recipe.ts` — shared types and plate-archetype definitions
+
+The legacy routes `/create-my-plate` and `/myplate` no longer exist (deleted in the consolidation pass); their old links across the codebase have been updated to `/plate-builder?tab=weekly` and `/plate-builder?tab=my-plate` respectively. Static educational pages (`/energy-plate`, `/living-plate`, `/build-plate`) are intentionally separate and remain.
+
 ### Weekly Check-in (Transform cron)
 - `app/api/weekly-checkin/route.ts` — cron target, generates check-ins for all Transform members
 - `vercel.json` — configures Vercel Cron (`0 8 * * 1` = Monday 8am UTC)

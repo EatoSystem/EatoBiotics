@@ -46,7 +46,7 @@ const FEATURES = [
     label: "My Plate",
     description:
       "Build your daily gut plate by adding foods to 4 biotic categories. Track your 30-plant weekly challenge, log your wellbeing in the journal, and watch your score update live.",
-    primaryHref: "/myplate",
+    primaryHref: "/plate-builder?tab=my-plate",
     primaryLabel: "Build your plate →",
     secondaryHref: null,
     secondaryLabel: null,
