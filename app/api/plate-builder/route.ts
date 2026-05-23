@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server"
 import { readFile } from "fs/promises"
 import path from "path"
 import { z } from "zod"
+import * as Sentry from "@sentry/nextjs"
+import { anthropic } from "@/lib/anthropic"
+import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
+import { getUserMembershipTier, canAccess } from "@/lib/membership"
 import {
   PLATE_DEFINITIONS,
   createFallbackPlateRecipe,
@@ -166,16 +170,88 @@ function stripFences(value: string): string {
   return value.trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "")
 }
 
-function buildRecipePrompt(input: z.infer<typeof requestSchema>) {
-  const plate = PLATE_DEFINITIONS[input.plateId]
-  const variation = buildVariationBrief(input)
+/* ── Recipe-generation prompt ──────────────────────────────────────────────
+   Split into a STATIC system block and a SMALL per-call user block so the
+   system block becomes cacheable via Anthropic prompt caching. The static
+   block carries the EatoBiotics framework, plate archetype definitions,
+   recipe rules, naming rules, and JSON schema — ~1500 tokens that don't
+   change call-to-call. The user block carries only this specific request's
+   inputs and computed variation brief.
+─────────────────────────────────────────────────────────────────────────── */
 
-  return `Create one EatoBiotics recipe for the ${plate.name}.
+const RECIPE_SYSTEM_PROMPT = `You create practical EatoBiotics recipes as strict JSON. Return ONLY valid JSON — no markdown code fences, no commentary, no text before or after the JSON.
 
-Purpose:
-- This is a practical recipe people can cook and share.
+EATOBIOTICS FRAMEWORK
+- Prebiotics = plant/fibre diversity (kale, oats, beans, legumes, alliums, leafy greens, root veg, herbs).
+- Probiotics = live/fermented foods (yogurt, kefir, sauerkraut, kimchi, miso, tempeh, pickles).
+- Postbiotics = polyphenol- and seed-rich foods (EVOO, berries, nuts, dark chocolate 70%+, sourdough, avocado).
+
+PLATE ARCHETYPES
+- The Foundation Plate — balanced everyday plate. Defaults: salmon + quinoa, kale, cucumber, avocado, chickpeas, red cabbage. Approachable, family-friendly.
+- The Function Plate — performance-focused. Defaults: chicken + asparagus, berries, avocado, lentils, kale, pumpkin seeds. Lean protein, anti-inflammatory pigments.
+- The Diversity Plate — maximum plant variety. Defaults: tempeh + beets, rainbow carrots, broccoli, lentils, chickpeas, greens. 6+ distinct plant species per plate.
+- The Restoration Plate — gentle, gut-soothing. Defaults: trout + sweet potato, carrots, greens, lentils, cabbage, herbs. Soft proteins, cooked greens, mild ferments, easy to digest.
+
+PURPOSE
+- A practical recipe people can cook and share.
 - It must feel like EatoBiotics: food system, prebiotics, probiotics, postbiotic support, colourful, useful, premium, educational.
 - Avoid medical claims. No cures, treatment, diagnosis, or disease promises.
+
+RECIPE RULES
+- Do not simply repeat the default plate. Create a distinct dish variation every time.
+- Treat the creative seed as mandatory variation pressure. Change at least 4 meaningful elements from the default selected plate: supporting plants, sauce/dressing, fermented element, texture, herb/spice profile, cooking method, or finish.
+- If no protein was provided by the user, do not automatically use the archetype default. Use the hero ingredient suggested in the user brief or another distinct protein.
+- Keep the selected plate identity, but vary the supporting plants, dressing, texture, cooking method, and flavour direction.
+- Ingredients must be specific, cookable, and useful for a real recipe.
+- Method steps must tell someone how to make the food, not how to style a photo.
+- Shopping sections should use normal shopping language, not abstract score language.
+- Scores and nutrition should vary within believable ranges based on the chosen ingredients.
+- The slug should be based on the recipe name only; the server will append a unique suffix.
+- Never return the same ingredient list, method, score set, or shopping list as a prior run using the selected plate defaults.
+
+NAMING RULE
+- If the user provided no dish idea, the recipe name must start with the archetype name (minus "The ") followed by "with" and a unique hero phrase, e.g. "Foundation with Lemon Herb Salmon".
+- Do not put the goal, country, or descriptive adjectives before the plate name.
+- Never return the bare default name (archetype + with + default protein).
+- Use title case for the hero phrase.
+
+OUTPUT FORMAT — return ONLY this JSON shape:
+{
+  "slug": "short-url-slug",
+  "plateId": "foundation|function|diversity|restoration",
+  "plateName": "The Foundation Plate|The Function Plate|The Diversity Plate|The Restoration Plate",
+  "name": "Recipe name",
+  "description": "One appetising sentence beginning with the food, not 'A user-created...'",
+  "imageUrl": "placeholder URL (the server replaces this)",
+  "goal": "string echoing the user's goal",
+  "flavour": "string echoing the user's flavour direction",
+  "dietaryStyle": "string echoing the user's dietary style",
+  "time": { "prep": "10 min", "cook": "15 min", "total": "25 min" },
+  "score": { "overall": 87, "prebiotic": 91, "probiotic": 76, "postbiotic": 84, "balance": 88 },
+  "nutrition": { "calories": 520, "protein": 35, "carbs": 55, "fat": 20, "fibre": 14 },
+  "ingredients": ["specific ingredient with quantity", "specific ingredient with quantity"],
+  "method": ["actual cooking step", "actual cooking step", "actual cooking step", "actual cooking step"],
+  "shoppingSections": [
+    { "title": "Protein", "items": ["Chicken"], "color": "var(--icon-green)" },
+    { "title": "Plants",  "items": ["asparagus"], "color": "var(--icon-lime)" },
+    { "title": "Finish",  "items": ["fermented side"], "color": "var(--icon-orange)" }
+  ],
+  "weeklyRole": "One practical educational sentence about how this plate fits the EatoBiotics framework.",
+  "disclaimer": "EatoBiotics recipes and scores are educational and not medical advice. They do not diagnose, treat, prevent, or cure any condition.",
+  "createdAt": "ISO 8601 timestamp"
+}`
+
+function buildRecipeUserBrief(input: z.infer<typeof requestSchema>) {
+  const plate = PLATE_DEFINITIONS[input.plateId]
+  const variation = buildVariationBrief(input)
+  const heroTitleCase = variation.suggestedProtein
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ")
+  const defaultProteinCap = plate.defaultProtein.charAt(0).toUpperCase() + plate.defaultProtein.slice(1)
+  const archetypeShort = plate.name.replace(/^The /, "")
+
+  return `Generate one recipe for: ${plate.name} (plateId: ${input.plateId}, default image: ${plate.image}).
 
 User inputs:
 - Dish idea: ${input.dishIdea || "none"}
@@ -197,88 +273,70 @@ Mandatory variation for this exact run:
 - Cooking/method style: ${variation.methodStyle}
 - Score variation bias: ${variation.scoreBias}
 
-Naming rule:
-- If there is no user dish idea, the recipe name must start with "${plate.name.replace(/^The /, "")} with" and then include a unique hero phrase, such as "${plate.name.replace(/^The /, "")} with ${variation.nameAngle} ${variation.suggestedProtein.split(" ").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")}".
-- Do not put the goal, country, or descriptive adjectives before the plate name.
-- Do not return the bare default name "${plate.name.replace(/^The /, "")} with ${plate.defaultProtein.charAt(0).toUpperCase() + plate.defaultProtein.slice(1)}".
-- Use title case for the hero phrase.
+Naming guidance for this run:
+- If the user gave no dish idea, name should look like "${archetypeShort} with ${variation.nameAngle} ${heroTitleCase}".
+- Forbidden bare default name: "${archetypeShort} with ${defaultProteinCap}".
 
-Recipe rules:
-- Do not simply repeat the default plate. Create a distinct dish variation every time.
-- Treat the creative seed as mandatory variation pressure. Change at least 4 meaningful elements from the default selected plate: supporting plants, sauce/dressing, fermented element, texture, herb/spice profile, cooking method, or finish.
-- If no protein was provided by the user, do not automatically use the default protein. Use the hero ingredient suggested above or another distinct protein.
-- Keep the selected plate identity, but vary the supporting plants, dressing, texture, cooking method, and flavour direction.
-- Ingredients must be specific, cookable, and useful for a real recipe.
-- Method steps must tell someone how to make the food, not how to style a photo.
-- Shopping sections should use normal shopping language, not abstract score language.
-- Scores and nutrition should vary within believable ranges based on the chosen ingredients.
-- The slug should be based on the recipe name only; the server will append a unique suffix.
-- Never return the same ingredient list, method, score set, or shopping list as a prior run using the selected plate defaults.
-
-Return ONLY valid JSON matching this exact shape:
-{
-  "slug": "short-url-slug",
-  "plateId": "${input.plateId}",
-  "plateName": "${plate.name}",
-  "name": "Recipe name",
-  "description": "One appetising sentence beginning with the food, not with 'A user-created...'",
-  "imageUrl": "${plate.image}",
-  "goal": "${input.goal}",
-  "flavour": "${input.flavour}",
-  "dietaryStyle": "${input.dietaryStyle}",
-  "time": { "prep": "10 min", "cook": "15 min", "total": "25 min" },
-  "score": { "overall": 87, "prebiotic": 91, "probiotic": 76, "postbiotic": 84, "balance": 88 },
-  "nutrition": { "calories": 520, "protein": 35, "carbs": 55, "fat": 20, "fibre": 14 },
-  "ingredients": ["specific ingredient role", "specific ingredient role"],
-  "method": ["actual cooking step", "actual cooking step", "actual cooking step", "actual cooking step"],
-  "shoppingSections": [
-    { "title": "Protein", "items": ["Chicken"], "color": "var(--icon-green)" },
-    { "title": "Plants", "items": ["asparagus"], "color": "var(--icon-lime)" },
-    { "title": "Finish", "items": ["fermented side"], "color": "var(--icon-orange)" }
-  ],
-  "weeklyRole": "One practical educational sentence about how this plate fits the EatoBiotics framework.",
-  "disclaimer": "EatoBiotics recipes and scores are educational and not medical advice. They do not diagnose, treat, prevent, or cure any condition.",
-  "createdAt": "${new Date().toISOString()}"
-}`
+Use this timestamp for createdAt: ${new Date().toISOString()}.`
 }
 
-async function generateRecipeWithOpenAI(input: z.infer<typeof requestSchema>): Promise<{ recipe: PlateRecipe | null; warning?: string }> {
-  const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) return { recipe: null, warning: "OPENAI_API_KEY is missing" }
+/** Hard timeout so a stuck Anthropic call can't hold the function open
+ *  and leave the customer staring at a loading state. */
+const CLAUDE_TIMEOUT_MS = 30_000
 
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: process.env.OPENAI_RECIPE_MODEL || "gpt-4.1-mini",
-      input: [
-        {
-          role: "system",
-          content: "You create practical EatoBiotics recipes as strict JSON. Return only valid JSON.",
-        },
-        { role: "user", content: buildRecipePrompt(input) },
-      ],
-    }),
-  })
+async function generateRecipeWithClaude(input: z.infer<typeof requestSchema>): Promise<{ recipe: PlateRecipe | null; warning?: string }> {
+  if (!process.env.ANTHROPIC_API_KEY) return { recipe: null, warning: "ANTHROPIC_API_KEY is missing" }
 
-  if (!response.ok) {
-    console.error("[plate-builder] OpenAI recipe error", await response.text())
-    return { recipe: null, warning: "OpenAI recipe request failed" }
-  }
-
-  const data = await response.json() as { output_text?: string; output?: Array<{ content?: Array<{ text?: string }> }> }
-  const text = data.output_text ?? data.output?.flatMap((item) => item.content ?? []).map((item) => item.text ?? "").join("") ?? ""
-  if (!text) return { recipe: null, warning: "OpenAI recipe returned no text" }
+  const abort = new AbortController()
+  const timer = setTimeout(() => abort.abort(), CLAUDE_TIMEOUT_MS)
 
   try {
-    const parsed = JSON.parse(stripFences(text)) as unknown
-    return { recipe: recipeSchema.parse(parsed) }
-  } catch (error) {
-    console.error("[plate-builder] OpenAI recipe parse error", error)
-    return { recipe: null, warning: "OpenAI recipe JSON could not be parsed" }
+    const message = await anthropic.messages.create(
+      {
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 2500,
+        // System block as an array element with cache_control: ephemeral so
+        // Anthropic caches the ~1500-token framework + schema across calls.
+        system: [
+          {
+            type: "text",
+            text: RECIPE_SYSTEM_PROMPT,
+            cache_control: { type: "ephemeral" },
+          },
+        ],
+        messages: [
+          { role: "user", content: buildRecipeUserBrief(input) },
+        ],
+      },
+      { signal: abort.signal },
+    )
+
+    const firstBlock = message.content[0]
+    if (!firstBlock || firstBlock.type !== "text") {
+      return { recipe: null, warning: "Claude returned no text content" }
+    }
+
+    try {
+      const parsed = JSON.parse(stripFences(firstBlock.text)) as unknown
+      return { recipe: recipeSchema.parse(parsed) }
+    } catch (parseErr) {
+      console.error("[plate-builder] Claude JSON parse error", parseErr)
+      Sentry.captureException(parseErr, {
+        tags:  { area: "plate-builder", phase: "parse" },
+        extra: { plateId: input.plateId },
+      })
+      return { recipe: null, warning: "Claude recipe JSON could not be parsed" }
+    }
+  } catch (err) {
+    const reason = abort.signal.aborted ? "timeout" : "error"
+    console.error(`[plate-builder] Claude ${reason}`, err)
+    Sentry.captureException(err, {
+      tags:  { area: "plate-builder", phase: "claude", reason },
+      extra: { plateId: input.plateId, timeout_ms: CLAUDE_TIMEOUT_MS },
+    })
+    return { recipe: null, warning: `Claude recipe request failed (${reason})` }
+  } finally {
+    clearTimeout(timer)
   }
 }
 
@@ -412,7 +470,7 @@ async function generateImageWithOpenAI(recipe: PlateRecipe): Promise<{ urls: str
   if (!apiKey) return null
 
   const prompt = buildImagePrompt(recipe)
-  const model = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1.5"
+  const model = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1"
   const references = await getStyleReferenceImages()
   if (references.length === 0) return null
   const referenceSeed = Math.abs(scoreHash(`${recipe.slug}-${recipe.name}-${recipe.createdAt}`))
@@ -587,6 +645,21 @@ async function saveRecipe(recipe: PlateRecipe, publish: boolean) {
 }
 
 export async function POST(req: NextRequest) {
+  // Auth + tier gate — every other AI-generation route in the codebase does
+  // this; plate-builder previously did not, which left OpenAI/Anthropic budget
+  // open to anonymous abuse.
+  const user = await getUser()
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorised" }, { status: 401 })
+  }
+  const tier = await getUserMembershipTier(user.id)
+  if (!canAccess(tier, "plate_builder")) {
+    return NextResponse.json(
+      { error: "A paid EatoBiotics plan is required to use the Plate Builder" },
+      { status: 403 },
+    )
+  }
+
   let input: z.infer<typeof requestSchema>
   try {
     input = requestSchema.parse(await req.json())
@@ -594,7 +667,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid plate builder request" }, { status: 400 })
   }
 
-  const generated = await generateRecipeWithOpenAI(input)
+  const generated = await generateRecipeWithClaude(input)
   let recipe = generated.recipe ?? createFallbackPlateRecipe(input)
   recipe = recalculateRecipeScores(recipe, input)
   recipe = { ...recipe, slug: withUniqueSlug(recipe.slug || recipe.name), createdAt: new Date().toISOString() }
@@ -626,7 +699,7 @@ export async function POST(req: NextRequest) {
     recipe: { ...recipe, slug },
     publicUrl: `/recipe/${slug}`,
     saved: Boolean(saved),
-    generatedBy: generated.recipe ? "openai" : "fallback",
+    generatedBy: generated.recipe ? "claude" : "fallback",
     imageGenerated: Boolean(imageUrl),
     imageOptions,
     warnings: [
