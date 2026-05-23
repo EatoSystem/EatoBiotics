@@ -527,6 +527,46 @@ export function PlateBuilderClient() {
     setNotice(`${action} is a placeholder action. The next build should connect accounts and export/share logic.`)
   }
 
+  /* ── Save to personal cookbook ──────────────────────────────────────────
+        POSTs the current result to /api/plate-builder/recipes. The API
+        requires auth + paid tier; on 401/403 we tell the user to upgrade
+        rather than silently failing. */
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle")
+
+  async function handleSavePlate() {
+    if (saveState === "saving") return
+    setSaveState("saving"); setNotice(null)
+    const recipeSlug = `${plate.id}-${result.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}-${Date.now().toString(36)}`
+    try {
+      const res = await fetch("/api/plate-builder/recipes", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          slug:        recipeSlug,
+          plateId:     plate.id,
+          name:        result.name,
+          description: result.story,
+          imageUrl:    result.image,
+          recipe:      result,
+        }),
+      })
+      if (res.status === 401) {
+        setSaveState("error"); setNotice("Please sign in to save recipes to your cookbook."); return
+      }
+      if (res.status === 403) {
+        setSaveState("error"); setNotice("Saving recipes requires a paid EatoBiotics plan. Upgrade on the pricing page."); return
+      }
+      if (!res.ok) {
+        setSaveState("error"); setNotice("We couldn't save this recipe. Please try again."); return
+      }
+      setSaveState("saved"); setNotice("Saved to your cookbook. Find it in the My Recipes tab.")
+      // Reset to idle after a short window so the user can save edits later if they re-generate.
+      window.setTimeout(() => setSaveState("idle"), 4000)
+    } catch {
+      setSaveState("error"); setNotice("Network problem — please try again.")
+    }
+  }
+
   return (
     <main className="bg-background">
       <section className="px-6 pt-24 pb-10 md:pt-32 md:pb-16">
@@ -884,9 +924,14 @@ export function PlateBuilderClient() {
             {notice && <div className="rounded-2xl border border-icon-yellow/30 bg-white p-4 text-sm text-foreground">{notice}</div>}
 
             <div className="flex flex-wrap gap-3">
-              <button type="button" onClick={() => placeholder("Save plate")} className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-3 text-sm font-semibold text-foreground hover:border-icon-green hover:text-icon-green">
+              <button
+                type="button"
+                onClick={handleSavePlate}
+                disabled={saveState === "saving"}
+                className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-3 text-sm font-semibold text-foreground hover:border-icon-green hover:text-icon-green disabled:opacity-60 disabled:cursor-not-allowed"
+              >
                 <Save size={15} />
-                Save plate
+                {saveState === "saving" ? "Saving…" : saveState === "saved" ? "✓ Saved" : "Save plate"}
               </button>
               <button type="button" onClick={() => placeholder("Share plate")} className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-3 text-sm font-semibold text-foreground hover:border-icon-green hover:text-icon-green">
                 <Share2 size={15} />

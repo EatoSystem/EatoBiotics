@@ -1,22 +1,13 @@
-import type { Metadata } from "next"
-import { Suspense } from "react"
-import { MyPlateClient } from "./myplate-client"
+import { permanentRedirect } from "next/navigation"
 
-export const metadata: Metadata = {
-  title: "My Plate",
-  description:
-    "Build your EatoBiotics plate, track your 30 plants, and calculate your daily Biotics Score.",
-  openGraph: {
-    title: "My Plate | EatoBiotics",
-    description:
-      "Build your EatoBiotics plate, track your 30 plants, and calculate your daily Biotics Score.",
-  },
-}
-
+/**
+ * The quadrant builder + plants tracker + journal experience that used to
+ * live here now lives as a tab inside the unified /plate-builder. This page
+ * keeps the old URL alive as a 308 permanent redirect.
+ *
+ * The underlying React component is still at ./myplate-client and is
+ * imported by the tabs wrapper at components/plate-builder/plate-builder-tabs.tsx.
+ */
 export default function MyPlatePage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-background" />}>
-      <MyPlateClient />
-    </Suspense>
-  )
+  permanentRedirect("/plate-builder?tab=my-plate")
 }

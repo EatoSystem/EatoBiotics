@@ -150,8 +150,10 @@ export function MyPlateClient() {
           setTimeout(() => setAddedFoodName(null), 4000)
         }
       }
-      // Clean URL without reload
-      window.history.replaceState({}, "", "/myplate")
+      // Clean URL without reload — preserve the plate-builder tab context since
+      // this client is now rendered inside the /plate-builder tabs as well as
+      // standalone (where the standalone URL itself redirects here via 308).
+      window.history.replaceState({}, "", "/plate-builder?tab=my-plate")
     }
     refreshHeader()
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -3230,7 +3230,7 @@ function PlateTab({ plateData }: { plateData: PlateData | null }) {
       </div>
 
       <Link
-        href="/myplate"
+        href="/plate-builder?tab=my-plate"
         className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
         style={{ background: "var(--icon-green)" }}
       >
