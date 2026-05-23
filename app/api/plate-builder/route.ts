@@ -648,16 +648,26 @@ export async function POST(req: NextRequest) {
   // Auth + tier gate — every other AI-generation route in the codebase does
   // this; plate-builder previously did not, which left OpenAI/Anthropic budget
   // open to anonymous abuse.
-  const user = await getUser()
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorised" }, { status: 401 })
-  }
-  const tier = await getUserMembershipTier(user.id)
-  if (!canAccess(tier, "plate_builder")) {
-    return NextResponse.json(
-      { error: "A paid EatoBiotics plan is required to use the Plate Builder" },
-      { status: 403 },
-    )
+  //
+  // Bypass: the /api/plate-builder/daily cron calls this route internally and
+  // passes Authorization: Bearer ${CRON_SECRET}. If the secret matches, we
+  // skip the user check. Stripe-webhook-style: only a holder of the env-var
+  // secret can use this path, and the cron is the only legitimate caller.
+  const cronSecret = process.env.CRON_SECRET
+  const isCronCall = Boolean(cronSecret) && req.headers.get("authorization") === `Bearer ${cronSecret}`
+
+  if (!isCronCall) {
+    const user = await getUser()
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorised" }, { status: 401 })
+    }
+    const tier = await getUserMembershipTier(user.id)
+    if (!canAccess(tier, "plate_builder")) {
+      return NextResponse.json(
+        { error: "A paid EatoBiotics plan is required to use the Plate Builder" },
+        { status: 403 },
+      )
+    }
   }
 
   let input: z.infer<typeof requestSchema>

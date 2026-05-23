@@ -1558,6 +1558,40 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
               }
             </div>
 
+            {/* ── Build-a-plate CTA — for paid tiers with plate-builder access ── */}
+            {propMemberTier && propMemberTier !== "free" && (
+              <Link
+                href="/plate-builder"
+                className="group block overflow-hidden rounded-2xl transition-transform hover:scale-[1.01]"
+                style={{
+                  background: "linear-gradient(135deg, #2DAA6E 0%, #4CB648 100%)",
+                  boxShadow: "0 6px 24px rgba(45,170,110,0.25)",
+                  marginTop: 16,
+                }}
+              >
+                <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
+                <div className="flex items-center gap-4 px-5 py-4">
+                  <div
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full"
+                    style={{
+                      background: "rgba(255,255,255,0.18)",
+                      border: "1.5px solid rgba(255,255,255,0.28)",
+                    }}
+                    aria-hidden="true"
+                  >
+                    <UtensilsCrossed size={20} color="white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-serif text-base font-bold text-white">Build your own plate</p>
+                    <p className="text-xs leading-snug" style={{ color: "rgba(255,255,255,0.82)" }}>
+                      Generate a personalised recipe, weekly plan, or design your own.
+                    </p>
+                  </div>
+                  <ChevronRight size={18} color="white" className="shrink-0 transition-transform group-hover:translate-x-0.5" />
+                </div>
+              </Link>
+            )}
+
             {/* Today's Meals */}
             <div>
               <SectionLabel>Today&apos;s Meals</SectionLabel>

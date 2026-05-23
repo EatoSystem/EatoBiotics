@@ -21,9 +21,14 @@ export async function GET(req: NextRequest) {
   const dayIndex = Math.floor(Date.now() / 86_400_000) % DAILY_PLATES.length
   const daily = DAILY_PLATES[dayIndex]
   const origin = req.nextUrl.origin
+  // Pass the CRON secret through so the main route accepts the call without a
+  // user session. The main route honours this header as an auth bypass.
   const response = await fetch(`${origin}/api/plate-builder`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type":  "application/json",
+      ...(cronSecret ? { authorization: `Bearer ${cronSecret}` } : {}),
+    },
     body: JSON.stringify({
       ...daily,
       country: "None",

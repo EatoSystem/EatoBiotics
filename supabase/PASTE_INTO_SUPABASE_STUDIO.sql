@@ -203,3 +203,43 @@ END $$;
 -- Dedup table for the Stripe webhook. Service-role only; no policies grant
 -- access to anon or authenticated, so they're locked out entirely.
 ALTER TABLE processed_stripe_events ENABLE ROW LEVEL SECURITY;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 19: user_recipes (personal cookbook)
+-- ────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS user_recipes (
+  id           uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id      uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  slug         text        NOT NULL,
+  plate_id     text        NOT NULL CHECK (plate_id IN ('foundation', 'function', 'diversity', 'restoration')),
+  name         text        NOT NULL,
+  description  text,
+  image_url    text,
+  recipe_json  jsonb       NOT NULL,
+  is_favorite  boolean     NOT NULL DEFAULT false,
+  created_at   timestamptz NOT NULL DEFAULT now(),
+  updated_at   timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_recipes_user_id_created_at
+  ON user_recipes (user_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_user_recipes_user_id_favorite
+  ON user_recipes (user_id) WHERE is_favorite = true;
+
+ALTER TABLE user_recipes ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'user_recipes' AND policyname = 'users_manage_own_recipes'
+  ) THEN
+    CREATE POLICY "users_manage_own_recipes"
+      ON user_recipes FOR ALL TO authenticated
+      USING (user_id = auth.uid())
+      WITH CHECK (user_id = auth.uid());
+  END IF;
+END $$;
