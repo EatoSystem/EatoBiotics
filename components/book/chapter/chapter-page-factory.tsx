@@ -13,10 +13,16 @@ import { ChapterPullQuote } from "@/components/book/chapter/chapter-pull-quote"
 import { ChapterKeyTakeaways, Takeaway } from "@/components/book/chapter/chapter-key-takeaways"
 import { ImagePlaceholder } from "@/components/book/chapter/image-placeholder"
 import { ChapterFoodCard } from "@/components/book/chapter/chapter-food-card"
+import { DimensionScoreTable, ScoreLevel } from "@/components/book/chapter/dimension-score-table"
+import { FoodScoreCard, ScoreDimension } from "@/components/book/chapter/food-score-card"
+import { FoodRankingTable, RankedFood } from "@/components/book/chapter/food-ranking-table"
+import { ScoreCheatSheet, ScoreBand } from "@/components/book/chapter/score-cheat-sheet"
 import { JsonLd } from "@/components/json-ld"
 import { generateChapterSchema, generateBreadcrumbSchema } from "@/lib/structured-data"
 
-// Components available inside MDX
+// Components available inside MDX — the union of everything any chapter uses,
+// so a single shared map renders every chapter. Extra entries a given chapter
+// doesn't reference are harmless.
 const mdxComponents = {
   ChapterCallout,
   ChapterStat,
@@ -25,6 +31,14 @@ const mdxComponents = {
   Takeaway,
   ImagePlaceholder,
   ChapterFoodCard,
+  DimensionScoreTable,
+  ScoreLevel,
+  FoodScoreCard,
+  ScoreDimension,
+  FoodRankingTable,
+  RankedFood,
+  ScoreCheatSheet,
+  ScoreBand,
 }
 
 /**
