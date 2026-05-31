@@ -392,3 +392,20 @@ BEGIN
       USING (is_published = true);
   END IF;
 END $$;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 17: stripe_processed_events (Stripe webhook idempotency)
+-- ────────────────────────────────────────────────────────────
+-- Records every Stripe event.id the webhook has successfully handled so
+-- redelivered/retried events are skipped instead of double-applied.
+
+CREATE TABLE IF NOT EXISTS stripe_processed_events (
+  event_id     text        PRIMARY KEY,
+  event_type   text,
+  processed_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- RLS on with no policies: only the service-role webhook client can touch it;
+-- anon/authenticated have no access.
+ALTER TABLE stripe_processed_events ENABLE ROW LEVEL SECURITY;
