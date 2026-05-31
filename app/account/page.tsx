@@ -5,6 +5,7 @@ import { getSupabase } from "@/lib/supabase"
 import { stripe } from "@/lib/stripe-server"
 import { LiveDashboard } from "@/components/account/live-dashboard"
 import type { RealAnalysis, RealWeeklyReport } from "@/components/account/live-dashboard"
+import { TrackConversion } from "@/components/analytics/track-conversion"
 
 export const metadata: Metadata = {
   title: "My Account — EatoBiotics",
@@ -14,7 +15,14 @@ export const metadata: Metadata = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function field<T>(obj: unknown, key: string): T | undefined { return (obj as any)?.[key] as T | undefined }
 
-export default async function AccountPage() {
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ subscription?: string }>
+}) {
+  const { subscription } = await searchParams
+  const justSubscribed = subscription === "success"
+
   const user = await getUser()
   if (!user) redirect("/assessment?signin=1")
 
@@ -198,6 +206,13 @@ export default async function AccountPage() {
 
   return (
     <div className="min-h-screen bg-background pt-[57px]">
+      {justSubscribed && (
+        <TrackConversion
+          event="subscription_activated"
+          dedupeKey={`subscription_activated:${(profile.stripe_subscription_id as string | null) ?? user.id}`}
+          properties={{ tier: (profile.membership_tier as string | null) ?? null }}
+        />
+      )}
       <LiveDashboard
         name={(profile.name as string | null) ?? null}
         email={user.email ?? null}
