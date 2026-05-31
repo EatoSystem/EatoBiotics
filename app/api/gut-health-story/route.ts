@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { anthropic } from "@/lib/anthropic"
+import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { getUserMembershipTier } from "@/lib/membership"
@@ -367,7 +367,7 @@ export async function POST(req: NextRequest) {
 
       try {
         const stream = anthropic.messages.stream({
-          model: "claude-sonnet-4-20250514",
+          model: CLAUDE_MODEL,
           max_tokens: 6000,
           thinking: { type: "enabled", budget_tokens: 8000 },
           system: [

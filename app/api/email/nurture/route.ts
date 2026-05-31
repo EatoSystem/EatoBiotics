@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
 import { getSupabase } from "@/lib/supabase"
+import { verifyCronRequest } from "@/lib/cron-auth"
 
 /* ── Nurture Email Sequence ──────────────────────────────────────────────
    Runs daily via Vercel Cron (see vercel.json: "0 9 * * *").
@@ -17,7 +18,6 @@ import { getSupabase } from "@/lib/supabase"
    - Day 14 → "It's been two weeks — your gut has been changing"
 ────────────────────────────────────────────────────────────────────── */
 
-const CRON_SECRET = process.env.CRON_SECRET
 const EMAIL_FROM  = process.env.EMAIL_FROM ?? "hello@eatobiotics.com"
 const SITE_URL    = process.env.NEXT_PUBLIC_SITE_URL ?? "https://eatobiotics.com"
 
@@ -219,11 +219,9 @@ function day14Email(name: string, score: number | null): string {
 /* ── Route handler ───────────────────────────────────────────────────── */
 
 export async function GET(req: NextRequest) {
-  // Verify cron secret
-  const authHeader = req.headers.get("authorization")
-  if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  // Verify cron secret (fails closed)
+  const unauthorised = verifyCronRequest(req)
+  if (unauthorised) return unauthorised
 
   const resendKey = process.env.RESEND_API_KEY
   if (!resendKey) {

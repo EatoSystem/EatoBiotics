@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
+import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { getUserMembershipTier } from "@/lib/membership"
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 interface StoryData {
   narrative?: string
@@ -95,7 +94,7 @@ This is not a clinical report. It's a personal story about their food system jou
 
   try {
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: CLAUDE_MODEL,
       max_tokens: 1200,
       messages: [{ role: "user", content: prompt }],
     })

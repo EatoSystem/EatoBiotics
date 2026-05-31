@@ -3,7 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { anthropic } from "@/lib/anthropic"
+import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { getUserMembershipTier } from "@/lib/membership"
@@ -258,7 +258,7 @@ export async function POST(req: NextRequest) {
       // Generate summary
       try {
         const summaryMsg = await anthropic.messages.create({
-          model:      "claude-sonnet-4-20250514",
+          model:      CLAUDE_MODEL,
           max_tokens: 300,
           messages: [
             ...body.messages,
@@ -400,7 +400,7 @@ export async function POST(req: NextRequest) {
   // 9. Stream from Claude
   try {
     const stream = await anthropic.messages.stream({
-      model:      "claude-sonnet-4-20250514",
+      model:      CLAUDE_MODEL,
       max_tokens: 2000,
       system:     systemBlocks,
       messages:   body.messages,

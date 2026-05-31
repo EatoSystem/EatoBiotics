@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
 import { getSupabase } from "@/lib/supabase"
 import { buildNudgeEmail } from "@/lib/email/nudge-email"
+import { verifyCronRequest } from "@/lib/cron-auth"
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://eatobiotics.com"
 
@@ -140,14 +141,9 @@ async function sendNudge(
 /* ── Route handler ──────────────────────────────────────────────────── */
 
 export async function GET(req: NextRequest) {
-  // Protect with CRON_SECRET
-  const cronSecret = process.env.CRON_SECRET
-  if (cronSecret) {
-    const authHeader = req.headers.get("authorization")
-    if (authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: "Unauthorised" }, { status: 401 })
-    }
-  }
+  // Protect with CRON_SECRET (fails closed)
+  const unauthorised = verifyCronRequest(req)
+  if (unauthorised) return unauthorised
 
   const resendKey  = process.env.RESEND_API_KEY
   const emailFrom  = process.env.EMAIL_FROM ?? "hello@eatobiotics.com"

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
+import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getSupabase } from "@/lib/supabase"
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+import { verifyCronRequest } from "@/lib/cron-auth"
 
 /** Returns the date of the most recent Monday (UTC) as YYYY-MM-DD. */
 function getLastMondayDate(): string {
@@ -118,7 +117,7 @@ Write a 3-paragraph weekly check-in directly to the member using "you":
 Tone: warm, direct, personal. Under 200 words total. No bullet points. No headers.`
 
   const response = await anthropic.messages.create({
-    model:      "claude-sonnet-4-20250514",
+    model:      CLAUDE_MODEL,
     max_tokens: 400,
     messages:   [{ role: "user", content: prompt }],
   })
@@ -138,14 +137,9 @@ Tone: warm, direct, personal. Under 200 words total. No bullet points. No header
 /* ── Route handler ──────────────────────────────────────────────────── */
 
 export async function GET(req: NextRequest) {
-  // Protect with CRON_SECRET to prevent unauthorised triggers
-  const cronSecret = process.env.CRON_SECRET
-  if (cronSecret) {
-    const authHeader = req.headers.get("authorization")
-    if (authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: "Unauthorised" }, { status: 401 })
-    }
-  }
+  // Protect with CRON_SECRET to prevent unauthorised triggers (fails closed)
+  const unauthorised = verifyCronRequest(req)
+  if (unauthorised) return unauthorised
 
   const adminSupabase = getSupabase()
   if (!adminSupabase) {

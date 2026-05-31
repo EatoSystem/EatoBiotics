@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabase } from "@/lib/supabase"
 import { buildSequenceEmail } from "@/lib/email/sequence-email"
+import { verifyCronRequest } from "@/lib/cron-auth"
 import { Resend } from "resend"
 
 // ── Sequence day schedule ──────────────────────────────────────────────────
@@ -40,14 +41,9 @@ function getWeakestPillar(subScores: Record<string, number> | null): "feed" | "s
 // ── Route handler ──────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
-  // Verify cron secret
-  const cronSecret = process.env.CRON_SECRET
-  if (cronSecret) {
-    const auth = req.headers.get("authorization")
-    if (auth !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: "Unauthorised" }, { status: 401 })
-    }
-  }
+  // Verify cron secret (fails closed)
+  const unauthorised = verifyCronRequest(req)
+  if (unauthorised) return unauthorised
 
   const resendKey = process.env.RESEND_API_KEY
   if (!resendKey) {

@@ -6,7 +6,7 @@
 */
 
 import { NextRequest, NextResponse } from "next/server"
-import { anthropic } from "@/lib/anthropic"
+import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 
@@ -176,7 +176,7 @@ Return ONLY valid JSON (no markdown, no explanation):
 
   try {
     const response = await anthropic.messages.create({
-      model:      "claude-sonnet-4-20250514",
+      model:      CLAUDE_MODEL,
       max_tokens: 1000,
       messages:   [{ role: "user", content: prompt }],
     })

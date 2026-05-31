@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
+import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import type { MessageParam } from "@anthropic-ai/sdk/resources/messages"
 
 const ANALYSIS_PROMPT = `You are a food system nutrition analyst using the EatoBiotics framework (prebiotics, probiotics, postbiotics).
@@ -199,7 +199,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Image too large. Please use an image under 5MB." }, { status: 400 })
     }
 
-    const anthropic = new Anthropic({ apiKey })
 
     // Build message content — image path or text-only path
     type MsgContent = MessageParam["content"]
@@ -231,7 +230,7 @@ export async function POST(req: NextRequest) {
     }
 
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: CLAUDE_MODEL,
       max_tokens: 2500,
       messages: [
         {

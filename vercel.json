@@ -1,1 +1,7 @@
-{}
+{
+  "crons": [
+    { "path": "/api/weekly-checkin", "schedule": "0 8 * * 1" },
+    { "path": "/api/weekly-nudge", "schedule": "0 9 * * 1" },
+    { "path": "/api/plate-builder/daily", "schedule": "0 6 * * *" }
+  ]
+}
