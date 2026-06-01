@@ -42,140 +42,157 @@ export default async function AccountPage({
     profile = data as Record<string, unknown> | null
   }
 
-  /* ── Assessment scores (gut only — for overall score + profile type) ── */
-  let assessments: Array<{ overall_score: number | null; profile_type: string | null; sub_scores: Record<string, number> | null }> = []
-  if (adminSupabase) {
-    const { data } = await adminSupabase
-      .from("leads")
-      .select("overall_score, profile_type, sub_scores")
-      .or(`email.eq.${user.email!},user_id.eq.${user.id}`)
-      .eq("assessment_type", "gut")
-      .not("overall_score", "is", null)
-      .order("created_at", { ascending: false })
-      .limit(2)
-    assessments = (data ?? []) as typeof assessments
-  }
+  /* ── Parallel data fetch — these queries are independent (they need only the
+       authenticated user and the already-resolved profile), so run them
+       concurrently instead of sequentially to cut the dashboard's load time. ── */
+  type AssessmentRow = { overall_score: number | null; profile_type: string | null; sub_scores: Record<string, number> | null }
 
-  /* ── Biotics profile — averaged from last 5 analyses ── */
-  let bioticsProfile: { prebiotic: number; probiotic: number; postbiotic: number } | undefined
-  if (adminSupabase) {
-    const { data } = await adminSupabase
-      .from("analyses")
-      .select("prebiotic_score, probiotic_score, postbiotic_score")
-      .eq("user_id", user.id)
-      .not("biotics_score", "is", null)
-      .order("created_at", { ascending: false })
-      .limit(5)
-    const rows = (data ?? []).filter(
-      (a) => a.prebiotic_score != null && a.probiotic_score != null && a.postbiotic_score != null
-    )
-    if (rows.length > 0) {
+  const [
+    assessments,
+    bioticsProfile,
+    recentAnalyses,
+    weeklyReport,
+    weeklyReports,
+    weeklyCheckin,
+    monthlyPlan,
+    nextBillingDate,
+    streakInfo,
+  ] = await Promise.all([
+    /* Assessment scores (gut only — for overall score + profile type) */
+    (async (): Promise<AssessmentRow[]> => {
+      if (!adminSupabase) return []
+      const { data } = await adminSupabase
+        .from("leads")
+        .select("overall_score, profile_type, sub_scores")
+        .or(`email.eq.${user.email!},user_id.eq.${user.id}`)
+        .eq("assessment_type", "gut")
+        .not("overall_score", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(2)
+      return (data ?? []) as AssessmentRow[]
+    })(),
+
+    /* Biotics profile — averaged from last 5 analyses */
+    (async (): Promise<{ prebiotic: number; probiotic: number; postbiotic: number } | undefined> => {
+      if (!adminSupabase) return undefined
+      const { data } = await adminSupabase
+        .from("analyses")
+        .select("prebiotic_score, probiotic_score, postbiotic_score")
+        .eq("user_id", user.id)
+        .not("biotics_score", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(5)
+      const rows = (data ?? []).filter(
+        (a) => a.prebiotic_score != null && a.probiotic_score != null && a.postbiotic_score != null
+      )
+      if (rows.length === 0) return undefined
       const avg = (key: string) =>
         Math.round(rows.reduce((s: number, a: Record<string, unknown>) => s + ((a[key] as number) ?? 0), 0) / rows.length)
-      bioticsProfile = { prebiotic: avg("prebiotic_score"), probiotic: avg("probiotic_score"), postbiotic: avg("postbiotic_score") }
-    }
-  }
+      return { prebiotic: avg("prebiotic_score"), probiotic: avg("probiotic_score"), postbiotic: avg("postbiotic_score") }
+    })(),
 
-  /* ── Recent analyses — last 7 days, full meal detail ── */
-  let recentAnalyses: RealAnalysis[] = []
-  if (adminSupabase) {
-    const sevenDaysAgo = new Date()
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-    const { data } = await adminSupabase
-      .from("analyses")
-      .select("id, meal_name, meal_type, image_url, biotics_score, prebiotic_score, probiotic_score, postbiotic_score, quality_diversity, quality_anti_inflammatory, nutrition_json, insight, tags, created_at")
-      .eq("user_id", user.id)
-      .gte("created_at", sevenDaysAgo.toISOString())
-      .order("created_at", { ascending: false })
-      .limit(30)
-    recentAnalyses = (data ?? []) as RealAnalysis[]
-  }
+    /* Recent analyses — last 7 days, full meal detail */
+    (async (): Promise<RealAnalysis[]> => {
+      if (!adminSupabase) return []
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+      const { data } = await adminSupabase
+        .from("analyses")
+        .select("id, meal_name, meal_type, image_url, biotics_score, prebiotic_score, probiotic_score, postbiotic_score, quality_diversity, quality_anti_inflammatory, nutrition_json, insight, tags, created_at")
+        .eq("user_id", user.id)
+        .gte("created_at", sevenDaysAgo.toISOString())
+        .order("created_at", { ascending: false })
+        .limit(30)
+      return (data ?? []) as RealAnalysis[]
+    })(),
 
-  /* ── Latest weekly report ── */
-  let weeklyReport: RealWeeklyReport | null = null
-  if (adminSupabase) {
-    const { data } = await adminSupabase
-      .from("weekly_checkins")
-      .select("id, week_starting, content, report_json")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single()
-    if (data) {
-      weeklyReport = {
+    /* Latest weekly report */
+    (async (): Promise<RealWeeklyReport | null> => {
+      if (!adminSupabase) return null
+      const { data } = await adminSupabase
+        .from("weekly_checkins")
+        .select("id, week_starting, content, report_json")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single()
+      if (!data) return null
+      return {
         id:            data.id as string,
         week_starting: data.week_starting as string,
         content:       data.content as string,
         report_json:   data.report_json as RealWeeklyReport["report_json"],
       }
-    }
-  }
+    })(),
 
-  /* ── All weekly reports for Consultations tab ── */
-  let weeklyReports: RealWeeklyReport[] = []
-  if (adminSupabase) {
-    const { data } = await adminSupabase
-      .from("weekly_checkins")
-      .select("id, week_starting, content, report_json")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(10)
-    weeklyReports = (data ?? []).map((r) => ({
-      id:            r.id as string,
-      week_starting: r.week_starting as string,
-      content:       r.content as string,
-      report_json:   r.report_json as RealWeeklyReport["report_json"],
-    }))
-  }
+    /* All weekly reports for Consultations tab */
+    (async (): Promise<RealWeeklyReport[]> => {
+      if (!adminSupabase) return []
+      const { data } = await adminSupabase
+        .from("weekly_checkins")
+        .select("id, week_starting, content, report_json")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(10)
+      return (data ?? []).map((r) => ({
+        id:            r.id as string,
+        week_starting: r.week_starting as string,
+        content:       r.content as string,
+        report_json:   r.report_json as RealWeeklyReport["report_json"],
+      }))
+    })(),
 
-  /* ── Latest weekly check-in text (Transform) ── */
-  let weeklyCheckin: string | null = null
-  if (adminSupabase && profile?.membership_tier === "transform") {
-    const { data } = await adminSupabase
-      .from("weekly_checkins")
-      .select("content")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single()
-    weeklyCheckin = (data?.content as string | null) ?? null
-  }
+    /* Latest weekly check-in text (Transform) */
+    (async (): Promise<string | null> => {
+      if (!(adminSupabase && profile?.membership_tier === "transform")) return null
+      const { data } = await adminSupabase
+        .from("weekly_checkins")
+        .select("content")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single()
+      return (data?.content as string | null) ?? null
+    })(),
 
-  /* ── Monthly gut plan text (Restore+) ── */
-  let monthlyPlan: string | null = null
-  if (adminSupabase && (profile?.membership_tier === "restore" || profile?.membership_tier === "transform")) {
-    const { data } = await adminSupabase
-      .from("monthly_gut_plans")
-      .select("content")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single()
-    monthlyPlan = (data?.content as string | null) ?? null
-  }
+    /* Monthly gut plan text (Restore+) */
+    (async (): Promise<string | null> => {
+      if (!(adminSupabase && (profile?.membership_tier === "restore" || profile?.membership_tier === "transform"))) return null
+      const { data } = await adminSupabase
+        .from("monthly_gut_plans")
+        .select("content")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single()
+      return (data?.content as string | null) ?? null
+    })(),
 
-  /* ── Next billing date from Stripe ── */
-  let nextBillingDate: string | null = null
-  if (profile?.stripe_subscription_id) {
-    try {
-      const sub = await stripe.subscriptions.retrieve(profile.stripe_subscription_id as string)
-      const periodEnd = field<number>(sub, "current_period_end")
-      if (periodEnd) nextBillingDate = new Date(periodEnd * 1000).toISOString()
-    } catch (err) {
-      console.error("[account] Stripe fetch failed:", err)
-    }
-  }
+    /* Next billing date from Stripe */
+    (async (): Promise<string | null> => {
+      if (!profile?.stripe_subscription_id) return null
+      try {
+        const sub = await stripe.subscriptions.retrieve(profile.stripe_subscription_id as string)
+        const periodEnd = field<number>(sub, "current_period_end")
+        return periodEnd ? new Date(periodEnd * 1000).toISOString() : null
+      } catch (err) {
+        console.error("[account] Stripe fetch failed:", err)
+        return null
+      }
+    })(),
 
-  /* ── Streak + daily loop — consecutive days with at least one analysis ── */
-  let streakInfo = computeStreak([])
-  if (adminSupabase) {
-    const { data: streakRows } = await adminSupabase
-      .from("analyses")
-      .select("created_at")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-    streakInfo = computeStreak((streakRows ?? []).map((r) => r.created_at as string))
-  }
+    /* Streak — consecutive days with at least one analysis */
+    (async (): Promise<ReturnType<typeof computeStreak>> => {
+      if (!adminSupabase) return computeStreak([])
+      const { data: streakRows } = await adminSupabase
+        .from("analyses")
+        .select("created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+      return computeStreak((streakRows ?? []).map((r) => r.created_at as string))
+    })(),
+  ])
+
   const streak = streakInfo.current
 
   // Daily loop card data — streak + the weakest-pillar nudge from the Food System Core.
