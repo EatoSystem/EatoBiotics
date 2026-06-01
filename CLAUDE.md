@@ -215,8 +215,17 @@ NEXT_PUBLIC_STRIPE_TRANSFORM_PRICE_ID
 FOUNDING_MEMBER_CUTOFF_DATE   # ISO date — subscriptions before this = founding member
 NEXT_PUBLIC_FOUNDING_MEMBER_CUTOFF_DATE  # Same value, public for pricing page badge
 
-CRON_SECRET                   # Optional bearer token to protect /api/weekly-checkin
+CRON_SECRET                   # REQUIRED in prod — bearer token for all cron routes (they now fail closed: no secret = 503)
+
+ADMIN_SESSION_SECRET          # Secret used to sign the admin session cookie (lib/admin-auth.ts).
+                              # Falls back to ADMIN_PASSWORD if unset. Admin login fails closed without one.
+ADMIN_PASSWORD                # Admin login password (also the fallback signing secret)
 ```
+
+> **Go-live note:** the cron and admin routes are fail-closed. Set `CRON_SECRET`
+> and `ADMIN_SESSION_SECRET` (or `ADMIN_PASSWORD`) in production, and apply
+> Migration 17 (`stripe_processed_events`) and Migration 18 (`household_members`)
+> from `supabase/migrations.sql` before/at deploy.
 
 ---
 
