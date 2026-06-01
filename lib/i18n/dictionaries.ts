@@ -41,6 +41,8 @@ export interface Dictionary {
     probiotics: string
     postbiotics: string
   }
+  relationships: { self: string; child: string; partner: string; parent: string; sibling: string; other: string }
+  ageBands: { child: string; teen: string; adult: string }
   family: {
     title: string
     subtitle: string
@@ -91,6 +93,8 @@ const en: Dictionary = {
     probiotics: "Try a fermented food like yoghurt, kimchi, or kombucha for live probiotics.",
     postbiotics: "Include a postbiotic-rich food like turmeric, dark chocolate, or green tea.",
   },
+  relationships: { self: "Self", child: "Child", partner: "Partner", parent: "Parent", sibling: "Sibling", other: "Other" },
+  ageBands: { child: "Child", teen: "Teen", adult: "Adult" },
   family: {
     title: "Your family food system",
     subtitle:
@@ -142,6 +146,8 @@ const es: Dictionary = {
     probiotics: "Prueba un alimento fermentado como yogur, kimchi o kombucha para probióticos vivos.",
     postbiotics: "Incluye un alimento rico en posbióticos como cúrcuma, chocolate negro o té verde.",
   },
+  relationships: { self: "Yo", child: "Hijo/a", partner: "Pareja", parent: "Padre/Madre", sibling: "Hermano/a", other: "Otro" },
+  ageBands: { child: "Niño/a", teen: "Adolescente", adult: "Adulto/a" },
   family: {
     title: "El sistema alimentario de tu familia",
     subtitle:
@@ -193,6 +199,8 @@ const fr: Dictionary = {
     probiotics: "Essayez un aliment fermenté comme le yaourt, le kimchi ou le kombucha pour des probiotiques vivants.",
     postbiotics: "Incluez un aliment riche en postbiotiques comme le curcuma, le chocolat noir ou le thé vert.",
   },
+  relationships: { self: "Moi", child: "Enfant", partner: "Partenaire", parent: "Parent", sibling: "Frère/Sœur", other: "Autre" },
+  ageBands: { child: "Enfant", teen: "Adolescent", adult: "Adulte" },
   family: {
     title: "Le système alimentaire de votre famille",
     subtitle:
@@ -244,6 +252,8 @@ const ar: Dictionary = {
     probiotics: "جرّب طعامًا مخمّرًا مثل الزبادي أو الكيمتشي أو الكمبوتشا للحصول على بروبيوتيك حي.",
     postbiotics: "أدرِج طعامًا غنيًا بالبوستبيوتيك مثل الكركم أو الشوكولاتة الداكنة أو الشاي الأخضر.",
   },
+  relationships: { self: "أنا", child: "ابن/ابنة", partner: "شريك", parent: "أحد الوالدين", sibling: "أخ/أخت", other: "آخر" },
+  ageBands: { child: "طفل", teen: "مراهق", adult: "بالغ" },
   family: {
     title: "النظام الغذائي لعائلتك",
     subtitle: "تابِع صحة أمعاء جميع أفراد منزلك معًا. أنت من يدير الأفراد — لا حاجة لحسابات منفصلة.",

@@ -166,7 +166,10 @@ export function FamilyClient({
               <div className="min-w-0">
                 <div className="truncate font-semibold">{m.name}</div>
                 <div className="text-xs text-muted-foreground">
-                  {[m.relationship, m.ageBand].filter(Boolean).join(" · ") || t.family.householdMember}
+                  {[
+                    m.relationship ? (t.relationships[m.relationship as keyof typeof t.relationships] ?? m.relationship) : null,
+                    m.ageBand ? (t.ageBands[m.ageBand as keyof typeof t.ageBands] ?? m.ageBand) : null,
+                  ].filter(Boolean).join(" · ") || t.family.householdMember}
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -215,7 +218,7 @@ export function FamilyClient({
             >
               <option value="">{t.family.relationshipPlaceholder}</option>
               {RELATIONSHIPS.map((r) => (
-                <option key={r} value={r}>{r[0].toUpperCase() + r.slice(1)}</option>
+                <option key={r} value={r}>{t.relationships[r]}</option>
               ))}
             </select>
             <select
@@ -227,7 +230,7 @@ export function FamilyClient({
             >
               <option value="">{t.family.agePlaceholder}</option>
               {AGE_BANDS.map((a) => (
-                <option key={a} value={a}>{a[0].toUpperCase() + a.slice(1)}</option>
+                <option key={a} value={a}>{t.ageBands[a]}</option>
               ))}
             </select>
           </div>
