@@ -49,27 +49,29 @@ describe("mind getMindProfile thresholds", () => {
 })
 
 describe("computeResult coherence", () => {
-  it("family result's overall matches computeOverall and returns 5 insights", () => {
+  it("family result's overall matches computeOverall and returns 3 biotic insights", () => {
     const r = computeFamilyResult(uniformAnswers(2))
     expect(r.overall).toBe(familyComputeOverall(r.subScores))
-    expect(r.insights).toHaveLength(5)
+    expect(r.insights).toHaveLength(3)
+    expect(r.insights.map((i) => i.label).sort()).toEqual(["Postbiotics", "Prebiotics", "Probiotics"])
     expect(r.nextActions.length).toBeLessThanOrEqual(3)
   })
 
-  it("mind result's overall matches computeOverall and returns 5 insights", () => {
+  it("mind result's overall matches computeOverall and returns 3 biotic insights", () => {
     const r = computeMindResult(uniformAnswers(2))
     expect(r.overall).toBe(mindComputeOverall(r.subScores))
-    expect(r.insights).toHaveLength(5)
+    expect(r.insights).toHaveLength(3)
+    expect(r.insights.map((i) => i.label).sort()).toEqual(["Postbiotics", "Prebiotics", "Probiotics"])
     expect(r.nextActions.length).toBeLessThanOrEqual(3)
   })
 })
 
 /*
- * Insight scores now reflect the real 5-pillar answers (bucketed by each
- * question's `pillar` field) — previously they were always 0 because the
- * insight functions read legacy 5-pillar keys out of the 3-biotic SubScores.
+ * Insight scores reflect the real 3-biotic sub-scores (the model the product
+ * standardised on). Previously they were always 0 because the insight builders
+ * read legacy 5-pillar keys out of the 3-biotic SubScores.
  */
-describe("family/mind insight scores reflect the 5-pillar answers", () => {
+describe("family/mind insight scores reflect the 3-biotic answers", () => {
   it("family insights all score 100 for a perfect assessment, 0 for the lowest", () => {
     expect(computeFamilyResult(uniformAnswers(3)).insights.every((i) => i.score === 100)).toBe(true)
     expect(computeFamilyResult(uniformAnswers(0)).insights.every((i) => i.score === 0)).toBe(true)
@@ -81,8 +83,29 @@ describe("family/mind insight scores reflect the 5-pillar answers", () => {
   })
 
   it("a mid-level answer maps to a mid-level insight score (not 0)", () => {
-    // value 2 of 3 across 3 questions per pillar → 6/9 → 67
+    // value 2 of 3 across the questions in each biotic group → 67
     const insights = computeMindResult(uniformAnswers(2)).insights
     expect(insights.every((i) => i.score === 67)).toBe(true)
+  })
+})
+
+/*
+ * The weakest-pillar profile variants in the 28–41 band are now reachable
+ * (they key off the 3-biotic weakest pillar instead of unreachable legacy keys).
+ */
+describe("family weakest-pillar profile variants (28–41 band)", () => {
+  it("returns the rhythm variant when postbiotics is weakest", () => {
+    expect(getFamilyProfile(30, { prebiotics: 50, probiotics: 50, postbiotics: 10 }).type)
+      .toBe("Inconsistent System")
+  })
+
+  it("returns the fermented-foods variant when probiotics is weakest", () => {
+    expect(getFamilyProfile(30, { prebiotics: 50, probiotics: 10, postbiotics: 50 }).type)
+      .toBe("Underfed System")
+  })
+
+  it("falls back to the default when prebiotics is weakest", () => {
+    expect(getFamilyProfile(30, { prebiotics: 10, probiotics: 50, postbiotics: 50 }).type)
+      .toBe("Emerging Balance")
   })
 })

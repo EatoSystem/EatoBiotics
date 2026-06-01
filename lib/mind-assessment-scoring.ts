@@ -6,13 +6,12 @@
 import {
   computeSubScores,
   computeOverall,
-  computePillarScores,
   type SubScores,
   type AssessmentProfile,
   type PillarInsight,
   type AssessmentResult,
 } from "./assessment-scoring"
-import { MIND_QUESTIONS } from "./mind-assessment-data"
+import { PILLARS, PILLAR_ORDER, type PillarKey } from "./pillars"
 
 // Mind assessment uses its own 5-pillar system (independent of gut Feed/Seed/Heal)
 type MindPillarKey = "diversity" | "feeding" | "adding" | "consistency" | "feeling"
@@ -22,9 +21,21 @@ export type { SubScores, AssessmentProfile, PillarInsight, AssessmentResult }
 
 /* ── Profile determination ──────────────────────────────────────────── */
 
-function getWeakestPillar(sub: SubScores): MindPillarKey {
-  const entries = Object.entries(sub) as [MindPillarKey, number][]
-  return entries.reduce((min, cur) => (cur[1] < min[1] ? cur : min), entries[0])[0]
+/** Which biotic pillar the user scores lowest on (the focus area). */
+function getWeakestPillar(sub: SubScores): PillarKey {
+  return PILLAR_ORDER.reduce(
+    (min, k) => ((sub[k] ?? 0) < (sub[min] ?? 0) ? k : min),
+    PILLAR_ORDER[0],
+  )
+}
+
+// Maps each biotic to the best-fit mind insight copy (the 5 question groups
+// fold into 3 biotics: diversity+feeding → prebiotics, adding → probiotics,
+// consistency+feeling → postbiotics).
+const BIOTIC_META: Record<PillarKey, MindPillarKey> = {
+  prebiotics: "feeding",
+  probiotics: "adding",
+  postbiotics: "consistency",
 }
 
 export function getMindProfile(overall: number, sub: SubScores): AssessmentProfile {
@@ -61,7 +72,7 @@ export function getMindProfile(overall: number, sub: SubScores): AssessmentProfi
   }
 
   if (overall >= 28) {
-    if ((weakest as string) === "consistency") {
+    if (weakest === "postbiotics") {
       return {
         type: "Foggy System",
         tagline: "Good intention, disrupted by an irregular rhythm.",
@@ -70,7 +81,7 @@ export function getMindProfile(overall: number, sub: SubScores): AssessmentProfi
         color: "var(--icon-yellow)",
       }
     }
-    if ((weakest as string) === "adding") {
+    if (weakest === "probiotics") {
       return {
         type: "Foggy System",
         tagline: "Your gut is waiting for the live foods it needs to talk to your brain.",
@@ -196,26 +207,23 @@ const MIND_PILLAR_META: Record<
 
 /* ── Insights generation ────────────────────────────────────────────── */
 
-export function getMindInsights(pillarScores: Record<string, number>): PillarInsight[] {
-  const keys: MindPillarKey[] = ["diversity", "feeding", "adding", "consistency", "feeling"]
-  return keys
-    .map((k): PillarInsight => {
-      const score = pillarScores[k] ?? 0
-      const meta = MIND_PILLAR_META[k]
-      const isStrength = score >= 58
-      return {
-        pillar: k,
-        label: meta.label,
-        score,
-        strength: isStrength ? meta.strength : undefined,
-        opportunity: !isStrength ? meta.opportunity : undefined,
-        action: isStrength ? meta.actionHigh : meta.actionLow,
-        icon: meta.icon,
-        color: meta.color,
-        gradient: meta.gradient,
-      }
-    })
-    .sort((a, b) => a.score - b.score) // weakest first
+export function getMindInsights(sub: SubScores): PillarInsight[] {
+  return PILLAR_ORDER.map((biotic): PillarInsight => {
+    const score = sub[biotic] ?? 0
+    const meta = MIND_PILLAR_META[BIOTIC_META[biotic]]
+    const isStrength = score >= 58
+    return {
+      pillar: biotic,
+      label: PILLARS[biotic].label, // canonical 3-biotic label (Food System Core)
+      score,
+      strength: isStrength ? meta.strength : undefined,
+      opportunity: !isStrength ? meta.opportunity : undefined,
+      action: isStrength ? meta.actionHigh : meta.actionLow,
+      icon: meta.icon,
+      color: PILLARS[biotic].color,
+      gradient: meta.gradient,
+    }
+  }).sort((a, b) => a.score - b.score) // weakest first
 }
 
 /* ── Main compute function ──────────────────────────────────────────── */
@@ -226,9 +234,7 @@ export function computeMindResult(
   const subScores = computeSubScores(answers)
   const overall = computeOverall(subScores)
   const profile = getMindProfile(overall, subScores)
-  // Insights use the real 5-pillar scores (bucketed by each question's pillar),
-  // not the 3-biotic subScores used for the overall.
-  const insights = getMindInsights(computePillarScores(answers, MIND_QUESTIONS))
+  const insights = getMindInsights(subScores)
   const nextActions = insights.slice(0, 3).map((i) => i.action)
 
   return {

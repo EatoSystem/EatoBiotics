@@ -5,7 +5,6 @@
 import {
   computeSubScores,
   computeOverall,
-  computePillarScores,
 } from "./assessment-scoring"
 import type {
   SubScores,
@@ -13,7 +12,7 @@ import type {
   PillarInsight,
   AssessmentResult,
 } from "./assessment-scoring"
-import { FAMILY_QUESTIONS } from "./family-assessment-data"
+import { PILLARS, PILLAR_ORDER, type PillarKey } from "./pillars"
 
 // Family assessment uses its own 5-pillar system (independent of gut Feed/Seed/Heal)
 type FamilyPillarKey = "diversity" | "feeding" | "adding" | "consistency" | "feeling"
@@ -23,9 +22,21 @@ export type { SubScores, AssessmentProfile, PillarInsight, AssessmentResult }
 
 /* ── Profile determination ──────────────────────────────────────────── */
 
-function getWeakestPillar(sub: SubScores): FamilyPillarKey {
-  const entries = Object.entries(sub) as [FamilyPillarKey, number][]
-  return entries.reduce((min, cur) => (cur[1] < min[1] ? cur : min), entries[0])[0]
+/** Which biotic pillar the family scores lowest on (the focus area). */
+function getWeakestPillar(sub: SubScores): PillarKey {
+  return PILLAR_ORDER.reduce(
+    (min, k) => ((sub[k] ?? 0) < (sub[min] ?? 0) ? k : min),
+    PILLAR_ORDER[0],
+  )
+}
+
+// Maps each biotic to the best-fit family insight copy (the 5 question groups
+// fold into 3 biotics: diversity+feeding → prebiotics, adding → probiotics,
+// consistency+feeling → postbiotics).
+const BIOTIC_META: Record<PillarKey, FamilyPillarKey> = {
+  prebiotics: "feeding",
+  probiotics: "adding",
+  postbiotics: "consistency",
 }
 
 export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
@@ -62,7 +73,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
   }
 
   if (overall >= 28) {
-    if ((weakest as string) === "consistency") {
+    if (weakest === "postbiotics") {
       return {
         type: "Inconsistent System",
         tagline: "Good intention, interrupted by an unpredictable family rhythm.",
@@ -71,7 +82,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
         color: "var(--icon-yellow)",
       }
     }
-    if ((weakest as string) === "adding") {
+    if (weakest === "probiotics") {
       return {
         type: "Underfed System",
         tagline: "Your family's gut is waiting for the live foods it needs to thrive.",
@@ -195,26 +206,23 @@ const FAMILY_PILLAR_META: Record<
   },
 }
 
-export function getInsights(pillarScores: Record<string, number>): PillarInsight[] {
-  const keys: FamilyPillarKey[] = ["diversity", "feeding", "adding", "consistency", "feeling"]
-  return keys
-    .map((k): PillarInsight => {
-      const score = pillarScores[k] ?? 0
-      const meta = FAMILY_PILLAR_META[k]
-      const isStrength = score >= 58
-      return {
-        pillar: k,
-        label: meta.label,
-        score,
-        strength: isStrength ? meta.strength : undefined,
-        opportunity: !isStrength ? meta.opportunity : undefined,
-        action: isStrength ? meta.actionHigh : meta.actionLow,
-        icon: meta.icon,
-        color: meta.color,
-        gradient: meta.gradient,
-      }
-    })
-    .sort((a, b) => a.score - b.score) // weakest first
+export function getInsights(sub: SubScores): PillarInsight[] {
+  return PILLAR_ORDER.map((biotic): PillarInsight => {
+    const score = sub[biotic] ?? 0
+    const meta = FAMILY_PILLAR_META[BIOTIC_META[biotic]]
+    const isStrength = score >= 58
+    return {
+      pillar: biotic,
+      label: PILLARS[biotic].label, // canonical 3-biotic label (Food System Core)
+      score,
+      strength: isStrength ? meta.strength : undefined,
+      opportunity: !isStrength ? meta.opportunity : undefined,
+      action: isStrength ? meta.actionHigh : meta.actionLow,
+      icon: meta.icon,
+      color: PILLARS[biotic].color,
+      gradient: meta.gradient,
+    }
+  }).sort((a, b) => a.score - b.score) // weakest first
 }
 
 /* ── Main compute function ──────────────────────────────────────────── */
@@ -225,9 +233,7 @@ export function computeResult(
   const subScores = computeSubScores(answers)
   const overall = computeOverall(subScores)
   const profile = getProfile(overall, subScores)
-  // Insights use the real 5-pillar scores (bucketed by each question's pillar),
-  // not the 3-biotic subScores used for the overall.
-  const insights = getInsights(computePillarScores(answers, FAMILY_QUESTIONS))
+  const insights = getInsights(subScores)
   const nextActions = insights.slice(0, 3).map((i) => i.action)
 
   return {

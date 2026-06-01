@@ -1,6 +1,6 @@
 /* ── Assessment Scoring — 3 Biotics ──────────────────────────────────── */
 
-import type { PillarKey, AssessmentQuestion } from "./assessment-data"
+import type { PillarKey } from "./assessment-data"
 
 export interface SubScores {
   prebiotics: number   // Plant diversity, fibre, and whole foods (q1–q6)
@@ -75,30 +75,6 @@ export function computeSubScores(
     seed: probiotics,
     heal: postbiotics,
   }
-}
-
-/**
- * Scores each pillar 0–100 by bucketing answers via each question's own
- * `pillar` field (single-choice questions are 0–3). Used by verticals such as
- * mind/family whose 5 pillars don't map onto the gut Prebiotics/Probiotics/
- * Postbiotics buckets that `computeSubScores` produces.
- */
-export function computePillarScores(
-  answers: Record<string, number | string[]>,
-  questions: AssessmentQuestion[],
-): Record<string, number> {
-  const sums: Record<string, number> = {}
-  const maxes: Record<string, number> = {}
-  for (const q of questions) {
-    const v = answers[q.id]
-    sums[q.pillar] = (sums[q.pillar] ?? 0) + (typeof v === "number" ? v : 0)
-    maxes[q.pillar] = (maxes[q.pillar] ?? 0) + 3 // each single-choice question maxes at 3
-  }
-  const out: Record<string, number> = {}
-  for (const pillar of Object.keys(sums)) {
-    out[pillar] = maxes[pillar] > 0 ? Math.round((sums[pillar] / maxes[pillar]) * 100) : 0
-  }
-  return out
 }
 
 export function computeOverall(sub: SubScores): number {
