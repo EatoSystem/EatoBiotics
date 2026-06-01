@@ -23,7 +23,11 @@ export async function GET(req: NextRequest) {
   const origin = req.nextUrl.origin
   const response = await fetch(`${origin}/api/plate-builder`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      // Forward the cron bearer so the now-gated base route authorises this call.
+      Authorization: `Bearer ${process.env.CRON_SECRET ?? ""}`,
+    },
     body: JSON.stringify({
       ...daily,
       country: "None",

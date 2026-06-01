@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { readFile } from "fs/promises"
 import path from "path"
+import { cookies } from "next/headers"
 import { z } from "zod"
 import { getSupabase } from "@/lib/supabase"
+import { ADMIN_COOKIE, verifyAdminCookie } from "@/lib/admin-auth"
+import { verifyCronRequest } from "@/lib/cron-auth"
 import {
   PLATE_DEFINITIONS,
   createFallbackPlateRecipe,
@@ -11,6 +14,18 @@ import {
 } from "@/lib/plate-builder-recipe"
 
 export const runtime = "nodejs"
+
+/**
+ * Recipe generation/publishing is privileged: it spends OpenAI credits and
+ * writes to the public recipe library. Allow it only for an authenticated
+ * admin (the Recipe Studio UI) or the cron job (which forwards CRON_SECRET).
+ */
+async function authorizePlateBuilder(req: NextRequest): Promise<boolean> {
+  const cookieStore = await cookies()
+  if (verifyAdminCookie(cookieStore.get(ADMIN_COOKIE)?.value)) return true
+  // verifyCronRequest returns null when the cron bearer token is valid.
+  return verifyCronRequest(req) === null
+}
 
 const requestSchema = z.object({
   plateId: z.enum(["foundation", "function", "diversity", "restoration"]),
@@ -587,6 +602,10 @@ async function saveRecipe(recipe: PlateRecipe, publish: boolean) {
 }
 
 export async function POST(req: NextRequest) {
+  if (!(await authorizePlateBuilder(req))) {
+    return NextResponse.json({ error: "Unauthorised" }, { status: 401 })
+  }
+
   let input: z.infer<typeof requestSchema>
   try {
     input = requestSchema.parse(await req.json())
@@ -638,6 +657,10 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  if (!(await authorizePlateBuilder(req))) {
+    return NextResponse.json({ error: "Unauthorised" }, { status: 401 })
+  }
+
   let body: { slug?: string; imageUrl?: string }
   try {
     body = await req.json()

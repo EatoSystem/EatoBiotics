@@ -1,5 +1,6 @@
 import { cookies } from "next/headers"
 import { getSupabase } from "@/lib/supabase"
+import { ADMIN_COOKIE, verifyAdminCookie } from "@/lib/admin-auth"
 import { AdminLogin } from "./admin-login"
 import { AdminDashboard } from "./admin-dashboard"
 
@@ -25,7 +26,7 @@ export default async function AdminPage({
 }) {
   const params = await searchParams
   const cookieStore = await cookies()
-  const isAuthed = cookieStore.get("admin_auth")?.value === "eatobiotics-admin-ok"
+  const isAuthed = verifyAdminCookie(cookieStore.get(ADMIN_COOKIE)?.value)
 
   if (!isAuthed) {
     return <AdminLogin error={params.error === "1"} />
