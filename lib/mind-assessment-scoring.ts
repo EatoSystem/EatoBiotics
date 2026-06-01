@@ -6,11 +6,13 @@
 import {
   computeSubScores,
   computeOverall,
+  computePillarScores,
   type SubScores,
   type AssessmentProfile,
   type PillarInsight,
   type AssessmentResult,
 } from "./assessment-scoring"
+import { MIND_QUESTIONS } from "./mind-assessment-data"
 
 // Mind assessment uses its own 5-pillar system (independent of gut Feed/Seed/Heal)
 type MindPillarKey = "diversity" | "feeding" | "adding" | "consistency" | "feeling"
@@ -194,11 +196,11 @@ const MIND_PILLAR_META: Record<
 
 /* ── Insights generation ────────────────────────────────────────────── */
 
-export function getMindInsights(sub: SubScores): PillarInsight[] {
+export function getMindInsights(pillarScores: Record<string, number>): PillarInsight[] {
   const keys: MindPillarKey[] = ["diversity", "feeding", "adding", "consistency", "feeling"]
   return keys
     .map((k): PillarInsight => {
-      const score = (sub as unknown as Record<string, number>)[k] ?? 0
+      const score = pillarScores[k] ?? 0
       const meta = MIND_PILLAR_META[k]
       const isStrength = score >= 58
       return {
@@ -224,7 +226,9 @@ export function computeMindResult(
   const subScores = computeSubScores(answers)
   const overall = computeOverall(subScores)
   const profile = getMindProfile(overall, subScores)
-  const insights = getMindInsights(subScores)
+  // Insights use the real 5-pillar scores (bucketed by each question's pillar),
+  // not the 3-biotic subScores used for the overall.
+  const insights = getMindInsights(computePillarScores(answers, MIND_QUESTIONS))
   const nextActions = insights.slice(0, 3).map((i) => i.action)
 
   return {

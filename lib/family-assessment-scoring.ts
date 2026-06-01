@@ -5,6 +5,7 @@
 import {
   computeSubScores,
   computeOverall,
+  computePillarScores,
 } from "./assessment-scoring"
 import type {
   SubScores,
@@ -12,6 +13,7 @@ import type {
   PillarInsight,
   AssessmentResult,
 } from "./assessment-scoring"
+import { FAMILY_QUESTIONS } from "./family-assessment-data"
 
 // Family assessment uses its own 5-pillar system (independent of gut Feed/Seed/Heal)
 type FamilyPillarKey = "diversity" | "feeding" | "adding" | "consistency" | "feeling"
@@ -193,11 +195,11 @@ const FAMILY_PILLAR_META: Record<
   },
 }
 
-export function getInsights(sub: SubScores): PillarInsight[] {
+export function getInsights(pillarScores: Record<string, number>): PillarInsight[] {
   const keys: FamilyPillarKey[] = ["diversity", "feeding", "adding", "consistency", "feeling"]
   return keys
     .map((k): PillarInsight => {
-      const score = (sub as unknown as Record<string, number>)[k] ?? 0
+      const score = pillarScores[k] ?? 0
       const meta = FAMILY_PILLAR_META[k]
       const isStrength = score >= 58
       return {
@@ -223,7 +225,9 @@ export function computeResult(
   const subScores = computeSubScores(answers)
   const overall = computeOverall(subScores)
   const profile = getProfile(overall, subScores)
-  const insights = getInsights(subScores)
+  // Insights use the real 5-pillar scores (bucketed by each question's pillar),
+  // not the 3-biotic subScores used for the overall.
+  const insights = getInsights(computePillarScores(answers, FAMILY_QUESTIONS))
   const nextActions = insights.slice(0, 3).map((i) => i.action)
 
   return {

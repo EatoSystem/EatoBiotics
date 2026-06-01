@@ -65,23 +65,24 @@ describe("computeResult coherence", () => {
 })
 
 /*
- * CHARACTERIZATION TEST — documents a KNOWN BUG, not desired behaviour.
- *
- * getInsights/getMindInsights read legacy 5-pillar keys (diversity, feeding,
- * adding, consistency, feeling) out of a SubScores that computeSubScores only
- * populates with 3-biotic keys (prebiotics/probiotics/postbiotics + feed/seed/
- * heal). Every per-pillar insight score therefore resolves to 0, even for a
- * perfect assessment. This test locks in the current behaviour so it FAILS
- * (prompting an update) once the key mismatch is fixed.
+ * Insight scores now reflect the real 5-pillar answers (bucketed by each
+ * question's `pillar` field) — previously they were always 0 because the
+ * insight functions read legacy 5-pillar keys out of the 3-biotic SubScores.
  */
-describe("KNOWN BUG: family/mind insight scores are always 0 (pillar-key mismatch)", () => {
-  it("family insights all score 0 even for a perfect assessment", () => {
-    const r = computeFamilyResult(uniformAnswers(3)) // max answers
-    expect(r.insights.every((i) => i.score === 0)).toBe(true)
+describe("family/mind insight scores reflect the 5-pillar answers", () => {
+  it("family insights all score 100 for a perfect assessment, 0 for the lowest", () => {
+    expect(computeFamilyResult(uniformAnswers(3)).insights.every((i) => i.score === 100)).toBe(true)
+    expect(computeFamilyResult(uniformAnswers(0)).insights.every((i) => i.score === 0)).toBe(true)
   })
 
-  it("mind insights all score 0 even for a perfect assessment", () => {
-    const r = computeMindResult(uniformAnswers(3))
-    expect(r.insights.every((i) => i.score === 0)).toBe(true)
+  it("mind insights all score 100 for a perfect assessment, 0 for the lowest", () => {
+    expect(computeMindResult(uniformAnswers(3)).insights.every((i) => i.score === 100)).toBe(true)
+    expect(computeMindResult(uniformAnswers(0)).insights.every((i) => i.score === 0)).toBe(true)
+  })
+
+  it("a mid-level answer maps to a mid-level insight score (not 0)", () => {
+    // value 2 of 3 across 3 questions per pillar → 6/9 → 67
+    const insights = computeMindResult(uniformAnswers(2)).insights
+    expect(insights.every((i) => i.score === 67)).toBe(true)
   })
 })
