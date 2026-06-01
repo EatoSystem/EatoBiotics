@@ -6,6 +6,7 @@ import { stripe } from "@/lib/stripe-server"
 import { LiveDashboard } from "@/components/account/live-dashboard"
 import type { RealAnalysis, RealWeeklyReport } from "@/components/account/live-dashboard"
 import { TrackConversion } from "@/components/analytics/track-conversion"
+import { computeStreak } from "@/lib/streak"
 
 export const metadata: Metadata = {
   title: "My Account — EatoBiotics",
@@ -171,22 +172,7 @@ export default async function AccountPage({
       .select("created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
-    const days = Array.from(
-      new Set((streakRows ?? []).map((r) => (r.created_at as string).slice(0, 10)))
-    ).sort((a, b) => (a > b ? -1 : 1))
-    const todayStr     = new Date().toISOString().slice(0, 10)
-    const yesterdayStr = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10)
-    if (days.length && (days[0] === todayStr || days[0] === yesterdayStr)) {
-      let expected = days[0]
-      for (const day of days) {
-        if (day === expected) {
-          streak++
-          const d = new Date(expected + "T00:00:00Z")
-          d.setUTCDate(d.getUTCDate() - 1)
-          expected = d.toISOString().slice(0, 10)
-        } else break
-      }
-    }
+    streak = computeStreak((streakRows ?? []).map((r) => r.created_at as string)).current
   }
 
   /* ── Fallback profile if none exists yet ── */
