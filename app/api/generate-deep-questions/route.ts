@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk"
+import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import Stripe from "stripe"
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabase } from "@/lib/supabase"
@@ -6,6 +6,7 @@ import {
   FALLBACK_DEEP_QUESTIONS,
   type DeepQuestion,
 } from "@/lib/deep-assessment"
+import { PILLAR_LABELS as CORE_PILLAR_LABELS } from "@/lib/pillars"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
   apiVersion: "2026-02-25.clover",
@@ -34,12 +35,9 @@ type RequestBody = {
 }
 
 const PILLAR_LABELS: Record<string, string> = {
-  prebiotics: "Prebiotics",
-  probiotics: "Probiotics",
-  postbiotics: "Postbiotics",
-  feed: "Prebiotics",
-  seed: "Probiotics",
-  heal: "Postbiotics",
+  // Current 3 Biotics + Feed/Seed/Heal aliases — from the canonical Food System Core
+  ...CORE_PILLAR_LABELS,
+  // Legacy keys (backward compat for old stored sub_scores)
   diversity: "Plant Diversity",
   feeding: "Feeding (Fibre & Whole Foods)",
   adding: "Live & Fermented Foods",
@@ -215,12 +213,11 @@ export async function POST(req: NextRequest) {
   let questions: DeepQuestion[]
 
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
     const effectiveTier = tier === "personal" ? "full" : tier
     const maxTokens = effectiveTier === "premium" ? 4096 : effectiveTier === "full" ? 3072 : 2048
 
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+    const message = await anthropic.messages.create({
+      model: CLAUDE_MODEL,
       max_tokens: maxTokens,
       messages: [{ role: "user", content: buildDeepQuestionsPrompt(body) }],
     })

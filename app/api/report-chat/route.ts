@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { anthropic } from "@/lib/anthropic"
+import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { getUserMembershipTier } from "@/lib/membership"
@@ -88,7 +88,7 @@ You have full context of this member's week. Answer their questions based on thi
   /* Stream response */
   try {
     const stream = await anthropic.messages.stream({
-      model:      "claude-sonnet-4-20250514",
+      model:      CLAUDE_MODEL,
       max_tokens: 1500,
       system: [
         { type: "text", text: STATIC_KNOWLEDGE, cache_control: { type: "ephemeral" } },

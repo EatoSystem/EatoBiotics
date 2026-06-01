@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import type { PlateId } from "@/lib/plate-builder-recipe"
+import { verifyCronRequest } from "@/lib/cron-auth"
 
 const DAILY_PLATES: Array<{
   plateId: PlateId
@@ -13,17 +14,20 @@ const DAILY_PLATES: Array<{
 ]
 
 export async function GET(req: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET
-  if (cronSecret && req.headers.get("authorization") !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorised" }, { status: 401 })
-  }
+  // Verify cron secret (fails closed)
+  const unauthorised = verifyCronRequest(req)
+  if (unauthorised) return unauthorised
 
   const dayIndex = Math.floor(Date.now() / 86_400_000) % DAILY_PLATES.length
   const daily = DAILY_PLATES[dayIndex]
   const origin = req.nextUrl.origin
   const response = await fetch(`${origin}/api/plate-builder`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      // Forward the cron bearer so the now-gated base route authorises this call.
+      Authorization: `Bearer ${process.env.CRON_SECRET ?? ""}`,
+    },
     body: JSON.stringify({
       ...daily,
       country: "None",

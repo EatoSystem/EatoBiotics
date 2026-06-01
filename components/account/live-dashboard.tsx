@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
+import { DailyLoopCard, type DailyLoopData } from "@/components/account/daily-loop-card"
 import {
   Camera, ArrowRight, Check, ChevronRight, TrendingUp,
   FileText, UtensilsCrossed, MessageSquare, Download, ExternalLink, Flame,
@@ -446,6 +447,7 @@ export interface LiveDashboardProps {
   memberStartedAt?:  string | null
   nextBillingDate?:  string | null
   referralCode?:     string | null
+  dailyLoop?:        DailyLoopData | null
   // Sandbox pass-through
   [key: string]: unknown
 }
@@ -672,6 +674,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
     monthlyPlan        = null,
     memberStartedAt    = null,
     nextBillingDate    = null,
+    dailyLoop          = null,
   } = props
 
   const [tab, setTab] = useState<Tab>("overview")
@@ -947,6 +950,12 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       {/* ══════════════════════════════════════════════════════════════════
           OVERVIEW TAB
       ══════════════════════════════════════════════════════════════════ */}
+      {tab === "overview" && dailyLoop && (
+        <div className="pt-5">
+          <DailyLoopCard data={dailyLoop} firstName={name?.split(" ")[0] ?? null} />
+        </div>
+      )}
+
       {tab === "overview" && recentAnalyses.length === 0 && (
         <div className="mx-auto max-w-2xl px-4 pt-8 pb-20 md:px-8">
 

@@ -73,6 +73,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Database not configured" }, { status: 503 })
   }
 
+  // Idempotency: Stripe redelivers events on retry. Skip any we've already
+  // processed so we don't double-apply membership changes or log duplicates.
+  // (If the stripe_processed_events table isn't present yet, this read errors
+  //  harmlessly and processing continues as before.)
+  const { data: alreadyProcessed } = await supabase
+    .from("stripe_processed_events")
+    .select("event_id")
+    .eq("event_id", event.id)
+    .maybeSingle()
+
+  if (alreadyProcessed) {
+    return NextResponse.json({ received: true, deduped: true })
+  }
+
   try {
     switch (event.type) {
 
@@ -350,7 +364,16 @@ export async function POST(req: NextRequest) {
     }
   } catch (err) {
     console.error("[webhook] Handler error:", err)
+    // Don't record as processed — let Stripe retry this event.
     return NextResponse.json({ error: "Handler error" }, { status: 500 })
+  }
+
+  // Record only after successful handling so a failed run can be safely retried.
+  const { error: recordError } = await supabase
+    .from("stripe_processed_events")
+    .insert({ event_id: event.id, event_type: event.type })
+  if (recordError && recordError.code !== "23505") {
+    console.error("[webhook] Failed to record processed event:", recordError.message)
   }
 
   return NextResponse.json({ received: true })

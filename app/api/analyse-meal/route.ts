@@ -14,7 +14,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { anthropic } from "@/lib/anthropic"
+import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { getUserMembershipTier } from "@/lib/membership"
@@ -140,7 +140,7 @@ export async function POST(req: NextRequest) {
   let result: MealAnalysisResult
   try {
     const response = await anthropic.messages.create({
-      model:      "claude-sonnet-4-20250514",
+      model:      CLAUDE_MODEL,
       max_tokens: 800,
       system:     [{ type: "text", text: ANALYSIS_SYSTEM, cache_control: { type: "ephemeral" } }],
       messages:   [{ role: "user", content: msgContent }],

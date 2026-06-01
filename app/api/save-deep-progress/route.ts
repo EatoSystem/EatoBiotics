@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabase } from "@/lib/supabase"
+import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 
 type RequestBody = {
   sessionId: string
@@ -8,6 +9,14 @@ type RequestBody = {
 }
 
 export async function PATCH(req: NextRequest) {
+  // Unauthenticated best-effort auto-save keyed by an (unguessable) Stripe
+  // session id — rate limit per IP to blunt enumeration/abuse attempts.
+  const limit = rateLimit(`save-deep-progress:${getClientIp(req)}`, 60, 10 * 60_000)
+  if (!limit.allowed) {
+    const { body: rlBody, init } = rateLimitResponse(limit)
+    return NextResponse.json(rlBody, init)
+  }
+
   let body: RequestBody
   try {
     body = await req.json()

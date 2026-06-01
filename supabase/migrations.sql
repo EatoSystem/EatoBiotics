@@ -392,3 +392,59 @@ BEGIN
       USING (is_published = true);
   END IF;
 END $$;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 17: stripe_processed_events (Stripe webhook idempotency)
+-- ────────────────────────────────────────────────────────────
+-- Records every Stripe event.id the webhook has successfully handled so
+-- redelivered/retried events are skipped instead of double-applied.
+
+CREATE TABLE IF NOT EXISTS stripe_processed_events (
+  event_id     text        PRIMARY KEY,
+  event_type   text,
+  processed_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- RLS on with no policies: only the service-role webhook client can touch it;
+-- anon/authenticated have no access.
+ALTER TABLE stripe_processed_events ENABLE ROW LEVEL SECURITY;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 18: household_members (Family Mode — member sub-profiles)
+-- ────────────────────────────────────────────────────────────
+-- Lightweight family members owned by one account holder. No separate logins;
+-- the account holder manages the household. The family food-system score is
+-- the average of each member's latest_score (plus the owner's own score).
+
+CREATE TABLE IF NOT EXISTS household_members (
+  id           uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id     uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name         text        NOT NULL,
+  age_band     text,       -- e.g. "child" | "teen" | "adult" | age bracket
+  relationship text,       -- e.g. "child" | "partner" | "parent" | "self"
+  latest_score integer,    -- most recent food-system score (0–100), nullable
+  created_at   timestamptz NOT NULL DEFAULT now(),
+  updated_at   timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS household_members_owner_idx ON household_members (owner_id);
+
+ALTER TABLE household_members ENABLE ROW LEVEL SECURITY;
+
+-- Account holders can fully manage only their own household members.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'household_members'
+      AND policyname = 'owners_manage_household_members'
+  ) THEN
+    CREATE POLICY "owners_manage_household_members"
+      ON household_members FOR ALL
+      TO authenticated
+      USING (owner_id = auth.uid())
+      WITH CHECK (owner_id = auth.uid());
+  END IF;
+END $$;

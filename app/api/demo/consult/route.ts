@@ -1,7 +1,7 @@
 // Demo route — no auth. Uses mock context for Sarah M. Do not add real user data here.
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import Anthropic from "@anthropic-ai/sdk"
+import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 
 /* ── Validation ─────────────────────────────────────────────────────── */
 
@@ -16,9 +16,6 @@ const bodySchema = z.object({
 
 /* ── Anthropic client ───────────────────────────────────────────────── */
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
 
 /* ── Mock demo context ──────────────────────────────────────────────── */
 
@@ -135,7 +132,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const stream = await anthropic.messages.stream({
-      model:      "claude-sonnet-4-20250514",
+      model:      CLAUDE_MODEL,
       max_tokens: 2000,
       system:     systemPrompt,
       messages:   body.messages,

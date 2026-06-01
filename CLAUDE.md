@@ -163,6 +163,20 @@ This file is the authoritative reference for Claude Code sessions. Read it befor
 | tokens_used | integer | nullable |
 | created_at | timestamptz | |
 
+### household_members *(new — Family Mode)*
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid PK | |
+| owner_id | uuid | FK auth.users — the account holder; RLS scopes all access to `owner_id = auth.uid()` |
+| name | text | member display name |
+| age_band | text | nullable — `child \| teen \| adult` or age bracket |
+| relationship | text | nullable — `child \| partner \| parent \| self` |
+| latest_score | integer | nullable — most recent food-system score (0–100) |
+| created_at | timestamptz | |
+| updated_at | timestamptz | |
+
+Family food-system score = average of members' `latest_score` plus the owner's own score (`lib/family.ts`). Members are sub-profiles with **no separate login**; the account holder manages them.
+
 ### Other tables
 - `referrals` — `referrer_code`, `referred_email`, `referred_id`
 - `plate_data` — `user_id`, `plate`, `plants`, `updated_at`
@@ -201,8 +215,17 @@ NEXT_PUBLIC_STRIPE_TRANSFORM_PRICE_ID
 FOUNDING_MEMBER_CUTOFF_DATE   # ISO date — subscriptions before this = founding member
 NEXT_PUBLIC_FOUNDING_MEMBER_CUTOFF_DATE  # Same value, public for pricing page badge
 
-CRON_SECRET                   # Optional bearer token to protect /api/weekly-checkin
+CRON_SECRET                   # REQUIRED in prod — bearer token for all cron routes (they now fail closed: no secret = 503)
+
+ADMIN_SESSION_SECRET          # Secret used to sign the admin session cookie (lib/admin-auth.ts).
+                              # Falls back to ADMIN_PASSWORD if unset. Admin login fails closed without one.
+ADMIN_PASSWORD                # Admin login password (also the fallback signing secret)
 ```
+
+> **Go-live note:** the cron and admin routes are fail-closed. Set `CRON_SECRET`
+> and `ADMIN_SESSION_SECRET` (or `ADMIN_PASSWORD`) in production, and apply
+> Migration 17 (`stripe_processed_events`) and Migration 18 (`household_members`)
+> from `supabase/migrations.sql` before/at deploy.
 
 ---
 

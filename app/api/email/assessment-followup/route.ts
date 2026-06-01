@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
 import { getSupabase } from "@/lib/supabase"
 import { buildResultsEmail } from "@/lib/email/results-email"
+import { verifyCronRequest } from "@/lib/cron-auth"
 
 type LeadRow = {
   email: string
@@ -53,10 +54,9 @@ function nextActions(subScores: Record<string, number>): string[] {
 }
 
 export async function GET(req: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET
-  if (cronSecret && req.headers.get("authorization") !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorised" }, { status: 401 })
-  }
+  // Verify cron secret (fails closed)
+  const unauthorised = verifyCronRequest(req)
+  if (unauthorised) return unauthorised
 
   const resendKey = process.env.RESEND_API_KEY
   if (!resendKey) {

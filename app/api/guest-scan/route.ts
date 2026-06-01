@@ -2,8 +2,14 @@ import { NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
 import { getSupabase } from "@/lib/supabase"
 import { buildMealAnalysisEmail } from "@/lib/email/meal-analysis-email"
+import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 
 export const dynamic = "force-dynamic"
+
+/** Lightweight email shape check — rejects obviously invalid/garbage addresses. */
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254
+}
 
 interface GuestScanBody {
   email?: string
@@ -14,11 +20,30 @@ interface GuestScanBody {
 
 export async function POST(req: NextRequest) {
   try {
+    // Public endpoint that writes leads and sends email — rate limit per IP
+    // to prevent lead-table spam and outbound-email abuse to arbitrary addresses.
+    const limit = rateLimit(`guest-scan:${getClientIp(req)}`, 10, 10 * 60_000)
+    if (!limit.allowed) {
+      const { body, init } = rateLimitResponse(limit)
+      return NextResponse.json(body, init)
+    }
+
     const body = await req.json() as GuestScanBody
-    const { email, name, result, hash } = body
+    const { name, result, hash } = body
 
     if (!result || !hash) {
       return NextResponse.json({ error: "Missing result or hash" }, { status: 400 })
+    }
+
+    // Email is optional, but if supplied it must be valid — we store it and
+    // send mail to it, so reject garbage rather than spamming arbitrary strings.
+    let email: string | null = null
+    if (body.email) {
+      const normalized = body.email.toLowerCase().trim()
+      if (!isValidEmail(normalized)) {
+        return NextResponse.json({ error: "Invalid email address" }, { status: 400 })
+      }
+      email = normalized
     }
 
     const supabase = getSupabase()

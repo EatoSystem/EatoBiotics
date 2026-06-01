@@ -7,8 +7,8 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 
 export function Hero() {
   return (
-    <section className="relative min-h-screen overflow-hidden px-6 pt-20">
-      <div className="relative z-10 mx-auto flex max-w-[1200px] min-h-[calc(100vh-80px)] flex-col items-center justify-center gap-12 md:flex-row md:gap-16 lg:gap-20">
+    <section className="relative min-h-screen overflow-hidden px-6 pt-20 pb-16 md:pb-20">
+      <div className="relative z-10 mx-auto flex max-w-[1200px] min-h-[calc(100vh-160px)] flex-col items-center justify-center gap-12 md:flex-row md:gap-16 lg:gap-20">
 
         {/* ── Left: Image ──── */}
         <ScrollReveal delay={60} className="flex-1 flex items-center justify-center w-full max-w-[540px]">

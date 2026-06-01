@@ -3,6 +3,7 @@ import { z } from "zod"
 import Anthropic from "@anthropic-ai/sdk"
 import { getUser } from "@/lib/supabase-server"
 import { getUserMembershipTier, canAccess } from "@/lib/membership"
+import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 
 /* ── Validation ─────────────────────────────────────────────────────── */
 
@@ -15,9 +16,6 @@ const bodySchema = z.object({
 
 /* ── Anthropic client ───────────────────────────────────────────────── */
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
 
 /* ── JSON schemas embedded in the prompt ───────────────────────────── */
 
@@ -216,7 +214,7 @@ export async function POST(req: NextRequest) {
   let message: Anthropic.Message
   try {
     message = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: CLAUDE_MODEL,
       max_tokens: isFull ? 8000 : 5000,
       system:
         "You are a food system nutrition planner using the EatoBiotics 3-Biotics framework. You return ONLY valid JSON — no markdown code fences, no commentary, no extra text before or after the JSON.",

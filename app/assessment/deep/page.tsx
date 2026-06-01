@@ -5,6 +5,7 @@ import { getSupabase } from "@/lib/supabase"
 import { DeepAssessmentClient } from "@/components/assessment/deep/deep-assessment-client"
 import type { DeepQuestion, DeepAnswers } from "@/lib/deep-assessment"
 import { getPaidReportSummaryFromSession, isCheckoutSessionSettled } from "@/lib/paid-report-session"
+import { TrackConversion } from "@/components/analytics/track-conversion"
 
 export const metadata: Metadata = {
   title: "Your Deep Assessment — EatoBiotics",
@@ -121,13 +122,20 @@ export default async function DeepAssessmentPage({ searchParams }: Props) {
     }
 
     return (
-      <DeepAssessmentClient
-        sessionId={session_id}
-        tier={tier}
-        freeScores={{ overall, subScores, profile }}
-        savedQuestions={savedQuestions}
-        savedAnswers={savedAnswers}
-      />
+      <>
+        <TrackConversion
+          event="report_purchased"
+          dedupeKey={`report_purchased:${session_id}`}
+          properties={{ tier, session_id, overall_score: overall }}
+        />
+        <DeepAssessmentClient
+          sessionId={session_id}
+          tier={tier}
+          freeScores={{ overall, subScores, profile }}
+          savedQuestions={savedQuestions}
+          savedAnswers={savedAnswers}
+        />
+      </>
     )
   } catch {
     redirect("/assessment")

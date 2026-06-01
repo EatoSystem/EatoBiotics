@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
+import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import type { MessageParam } from "@anthropic-ai/sdk/resources/messages"
+import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 
 const ANALYSIS_PROMPT = `You are a food system nutrition analyst using the EatoBiotics framework (prebiotics, probiotics, postbiotics).
 
@@ -176,6 +177,14 @@ If you cannot identify the meal clearly (blurry, non-food image, etc.), return e
 
 export async function POST(req: NextRequest) {
   try {
+    // Public endpoint (guest scans, demo) — rate limit per IP to prevent
+    // anyone looping this expensive vision call to burn Anthropic credits.
+    const limit = rateLimit(`analyse-plate:${getClientIp(req)}`, 20, 10 * 60_000)
+    if (!limit.allowed) {
+      const { body, init } = rateLimitResponse(limit)
+      return NextResponse.json(body, init)
+    }
+
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) {
       return NextResponse.json({ error: "Analysis not available" }, { status: 503 })
@@ -199,7 +208,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Image too large. Please use an image under 5MB." }, { status: 400 })
     }
 
-    const anthropic = new Anthropic({ apiKey })
 
     // Build message content — image path or text-only path
     type MsgContent = MessageParam["content"]
@@ -231,7 +239,7 @@ export async function POST(req: NextRequest) {
     }
 
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: CLAUDE_MODEL,
       max_tokens: 2500,
       messages: [
         {

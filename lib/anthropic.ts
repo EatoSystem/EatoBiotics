@@ -18,4 +18,13 @@ export const anthropic = new Anthropic({
   },
 })
 
+/* ── Model selection ─────────────────────────────────────────────────────
+   Single source of truth for the Claude model used across all API routes.
+   Override per-environment with the CLAUDE_MODEL env var without touching
+   code. Centralising this means a model upgrade is a one-line change rather
+   than a 20-file find-and-replace.
+──────────────────────────────────────────────────────────────────────── */
+
+export const CLAUDE_MODEL = process.env.CLAUDE_MODEL ?? "claude-sonnet-4-20250514"
+
 export default anthropic

@@ -1,3 +1,5 @@
+import { PILLAR_LABELS as CORE_PILLAR_LABELS } from "@/lib/pillars"
+
 interface ResultsEmailOpts {
   name: string
   email?: string
@@ -12,15 +14,9 @@ interface ResultsEmailOpts {
 }
 
 const PILLAR_LABELS: Record<string, string> = {
-  // Current 3 Biotics keys
-  prebiotics: "Prebiotics",
-  probiotics: "Probiotics",
-  postbiotics: "Postbiotics",
-  // Feed/Seed/Heal aliases
-  feed: "Prebiotics",
-  seed: "Probiotics",
-  heal: "Postbiotics",
-  // Legacy keys (backward compat)
+  // Current 3 Biotics + Feed/Seed/Heal aliases — from the canonical Food System Core
+  ...CORE_PILLAR_LABELS,
+  // Legacy keys (backward compat for old stored sub_scores)
   diversity: "Plant Diversity",
   feeding: "Feeding",
   adding: "Live Foods",

@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk"
+import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { NextRequest, NextResponse } from "next/server"
 
 type SubScores = {
@@ -192,11 +192,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
     const maxTokens = tier === "premium" ? 4096 : tier === "full" ? 3072 : 2048
 
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+    const message = await anthropic.messages.create({
+      model: CLAUDE_MODEL,
       max_tokens: maxTokens,
       messages: [{ role: "user", content: buildPrompt(body) }],
     })

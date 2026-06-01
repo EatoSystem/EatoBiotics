@@ -2,6 +2,8 @@
 // Shared template builder for the EatoBiotics email nurture sequence.
 // Uses the same inline-styles HTML table pattern as results-email.ts.
 
+import { PILLAR_LABELS } from "@/lib/pillars"
+
 export interface SequenceEmailOpts {
   name: string
   email: string
@@ -15,12 +17,6 @@ export interface SequenceEmailOpts {
 }
 
 /* ── Pillar helpers ─────────────────────────────────────────────────── */
-
-const PILLAR_LABELS: Record<string, string> = {
-  feed: "Prebiotics",
-  seed: "Probiotics",
-  heal: "Postbiotics",
-}
 
 const PILLAR_COLORS: Record<string, string> = {
   feed: "#7fc47e",

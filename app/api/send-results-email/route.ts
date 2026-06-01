@@ -2,11 +2,25 @@ import { NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
 import { getSupabase } from "@/lib/supabase"
 import { buildResultsEmail } from "@/lib/email/results-email"
+import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
 import type { LeadData } from "@/lib/assessment-storage"
 
+/** Lightweight email shape check — rejects obviously invalid/garbage addresses. */
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254
+}
+
 export async function POST(req: NextRequest) {
   try {
+    // Public endpoint that sends mail to a caller-supplied address — rate limit
+    // per IP so it can't be abused to send branded email to arbitrary inboxes.
+    const limit = rateLimit(`send-results-email:${getClientIp(req)}`, 10, 10 * 60_000)
+    if (!limit.allowed) {
+      const { body: rlBody, init } = rateLimitResponse(limit)
+      return NextResponse.json(rlBody, init)
+    }
+
     const body = await req.json()
     const { lead, result, assessmentType } = body as {
       lead: LeadData
@@ -19,6 +33,9 @@ export async function POST(req: NextRequest) {
 
     if (!lead?.email || !result?.overall) {
       return NextResponse.json({ error: "Missing lead or result" }, { status: 400 })
+    }
+    if (!isValidEmail(lead.email)) {
+      return NextResponse.json({ error: "Invalid email address" }, { status: 400 })
     }
 
     const subScores: Record<string, number> =
