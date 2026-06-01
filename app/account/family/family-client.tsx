@@ -3,6 +3,10 @@
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import { familyScoreFromMembers, type FamilyMember, type FamilyScore } from "@/lib/family"
+import { useI18n } from "@/components/i18n/locale-provider"
+import { LanguageSwitcher } from "@/components/i18n/language-switcher"
+import { interpolate } from "@/lib/i18n/config"
+import { REVIEWED_LOCALES } from "@/lib/i18n/dictionaries"
 
 const AGE_BANDS = ["child", "teen", "adult"] as const
 const RELATIONSHIPS = ["self", "child", "partner", "parent", "sibling", "other"] as const
@@ -25,6 +29,7 @@ export function FamilyClient({
   ownerScore: number | null
   initialFamilyScore: FamilyScore
 }) {
+  const { t, locale } = useI18n()
   const [members, setMembers] = useState<FamilyMember[]>(initialMembers)
   const [name, setName] = useState("")
   const [ageBand, setAgeBand] = useState<string>("")
@@ -44,7 +49,7 @@ export function FamilyClient({
     setError(null)
     const trimmed = name.trim()
     if (!trimmed) {
-      setError("Please enter a name.")
+      setError(t.family.nameRequired)
       return
     }
     setBusy(true)
@@ -109,14 +114,18 @@ export function FamilyClient({
   return (
     <div className="min-h-screen bg-background pt-[57px]">
       <div className="mx-auto max-w-2xl px-4 py-8 md:px-8">
-        <Link href="/account" className="text-sm font-semibold" style={{ color: "var(--icon-green)" }}>
-          ← Back to dashboard
-        </Link>
+        <div className="flex items-center justify-between gap-3">
+          <Link href="/account" className="text-sm font-semibold" style={{ color: "var(--icon-green)" }}>
+            {t.common.backToDashboard}
+          </Link>
+          <LanguageSwitcher />
+        </div>
 
-        <h1 className="mt-4 text-2xl font-bold md:text-3xl">Your family food system</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Track your whole household&apos;s gut health together. Members are managed by you — no separate logins needed.
-        </p>
+        <h1 className="mt-4 text-2xl font-bold md:text-3xl">{t.family.title}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t.family.subtitle}</p>
+        {!REVIEWED_LOCALES.includes(locale) && (
+          <p className="mt-2 text-xs italic text-muted-foreground">{t.family.draftNotice}</p>
+        )}
 
         {/* Family score */}
         <div
@@ -127,11 +136,11 @@ export function FamilyClient({
             {shown.average ?? "—"}
           </div>
           <div>
-            <div className="text-lg font-bold">Family score</div>
+            <div className="text-lg font-bold">{t.family.scoreLabel}</div>
             <p className="text-sm opacity-90">
               {shown.average === null
-                ? "Add members and scores to see your household average."
-                : `Average across ${shown.contributors} of ${shown.memberCount} household member${shown.memberCount === 1 ? "" : "s"}.`}
+                ? t.family.scoreEmpty
+                : interpolate(t.family.averageNote, { contributors: shown.contributors, total: shown.memberCount })}
             </p>
           </div>
         </div>
@@ -139,8 +148,8 @@ export function FamilyClient({
         {/* Owner row */}
         <div className="mt-6 flex items-center justify-between rounded-xl border px-4 py-3" style={{ borderColor: "#ebebeb" }}>
           <div>
-            <div className="font-semibold">{ownerName ?? "You"} <span className="text-xs text-muted-foreground">· you</span></div>
-            <div className="text-xs text-muted-foreground">From your most recent meal analysis</div>
+            <div className="font-semibold">{ownerName ?? "You"} <span className="text-xs text-muted-foreground">· {t.family.you}</span></div>
+            <div className="text-xs text-muted-foreground">{t.family.ownerSource}</div>
           </div>
           <div
             className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white tabular-nums"
@@ -157,7 +166,7 @@ export function FamilyClient({
               <div className="min-w-0">
                 <div className="truncate font-semibold">{m.name}</div>
                 <div className="text-xs text-muted-foreground">
-                  {[m.relationship, m.ageBand].filter(Boolean).join(" · ") || "Household member"}
+                  {[m.relationship, m.ageBand].filter(Boolean).join(" · ") || t.family.householdMember}
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -174,10 +183,10 @@ export function FamilyClient({
                 />
                 <button
                   onClick={() => removeMember(m.id)}
-                  aria-label={`Remove ${m.name}`}
+                  aria-label={`${t.family.remove} ${m.name}`}
                   className="rounded-lg px-2 py-1 text-xs font-semibold text-muted-foreground hover:text-red-600"
                 >
-                  Remove
+                  {t.family.remove}
                 </button>
               </div>
             </div>
@@ -186,25 +195,25 @@ export function FamilyClient({
 
         {/* Add member */}
         <form onSubmit={addMember} className="mt-6 rounded-2xl border p-4" style={{ borderColor: "#ebebeb" }}>
-          <div className="text-sm font-semibold">Add a household member</div>
+          <div className="text-sm font-semibold">{t.family.addTitle}</div>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Name"
+              placeholder={t.family.namePlaceholder}
               maxLength={60}
-              aria-label="Member name"
+              aria-label={t.family.namePlaceholder}
               className="flex-1 rounded-lg border px-3 py-2 text-sm"
               style={{ borderColor: "#ebebeb" }}
             />
             <select
               value={relationship}
               onChange={(e) => setRelationship(e.target.value)}
-              aria-label="Relationship"
+              aria-label={t.family.relationshipPlaceholder}
               className="rounded-lg border px-3 py-2 text-sm"
               style={{ borderColor: "#ebebeb" }}
             >
-              <option value="">Relationship…</option>
+              <option value="">{t.family.relationshipPlaceholder}</option>
               {RELATIONSHIPS.map((r) => (
                 <option key={r} value={r}>{r[0].toUpperCase() + r.slice(1)}</option>
               ))}
@@ -212,11 +221,11 @@ export function FamilyClient({
             <select
               value={ageBand}
               onChange={(e) => setAgeBand(e.target.value)}
-              aria-label="Age band"
+              aria-label={t.family.agePlaceholder}
               className="rounded-lg border px-3 py-2 text-sm"
               style={{ borderColor: "#ebebeb" }}
             >
-              <option value="">Age…</option>
+              <option value="">{t.family.agePlaceholder}</option>
               {AGE_BANDS.map((a) => (
                 <option key={a} value={a}>{a[0].toUpperCase() + a.slice(1)}</option>
               ))}

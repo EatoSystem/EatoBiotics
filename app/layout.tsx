@@ -6,6 +6,7 @@ import { Footer } from '@/components/footer'
 import { JsonLd } from '@/components/json-ld'
 import { generateOrganizationSchema } from '@/lib/structured-data'
 import { PwaRegister } from '@/components/pwa-register'
+import { LocaleProvider } from '@/components/i18n/locale-provider'
 import { PwaInstallPrompt } from '@/components/pwa-install-prompt'
 import { CookieConsent } from '@/components/cookie-consent'
 import { Toaster } from 'sonner'
@@ -83,7 +84,9 @@ export default function RootLayout({
           </Suspense>
           <JsonLd data={generateOrganizationSchema()} />
           <Nav />
-          <main>{children}</main>
+          <LocaleProvider>
+            <main>{children}</main>
+          </LocaleProvider>
           <Footer />
           <Analytics />
           <Toaster position="bottom-center" richColors />
