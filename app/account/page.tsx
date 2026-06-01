@@ -205,7 +205,7 @@ export default async function AccountPage({
             probiotics:  bioticsProfile.probiotic,
             postbiotics: bioticsProfile.postbiotic,
           })
-          return { label: n.pillar.label, nudge: n.nudge, color: n.pillar.color, score: n.score }
+          return { key: n.pillar.key, color: n.pillar.color, score: n.score }
         })()
       : null,
   }

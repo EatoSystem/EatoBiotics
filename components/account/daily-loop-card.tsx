@@ -1,32 +1,39 @@
+"use client"
+
 import Link from "next/link"
+import { useTranslations } from "@/components/i18n/locale-provider"
+import { interpolate } from "@/lib/i18n/config"
+import type { PillarKey } from "@/lib/pillars"
 
 /* ── Daily loop card ───────────────────────────────────────────────────────
    The "Today" surface of the habit loop: streak + the single focus nudge.
-   Presentational — all logic lives in lib/streak.ts and lib/habit.ts.
+   Presentational + localized — all scoring logic lives in lib/streak.ts and
+   lib/habit.ts; all copy comes from the i18n dictionary.
 ──────────────────────────────────────────────────────────────────────────── */
 
 export interface DailyLoopData {
   streak: { current: number; longest: number; loggedToday: boolean; daysSinceLast: number | null }
-  /** Weakest pillar + its nudge, from the Food System Core. Null until there's meal data. */
-  focus: { label: string; nudge: string; color: string; score: number } | null
+  /** Weakest pillar (key + colour/score), from the Food System Core. Null until there's meal data. */
+  focus: { key: PillarKey; color: string; score: number } | null
 }
 
 export function DailyLoopCard({ data, firstName }: { data: DailyLoopData; firstName?: string | null }) {
+  const t = useTranslations()
   const { streak, focus } = data
   const greeting = firstName ? `${firstName}, ` : ""
 
   const streakLine =
     streak.current > 0
-      ? `${streak.current}-day streak`
+      ? interpolate(t.loop.streakDays, { count: streak.current })
       : streak.daysSinceLast === null
-        ? "Start your streak today"
-        : "Your streak is waiting"
+        ? t.loop.startStreak
+        : t.loop.streakWaiting
 
   const statusLine = streak.loggedToday
-    ? "Logged today — nicely done."
+    ? t.loop.statusDone
     : streak.current > 0
-      ? `${greeting}log a meal to keep your streak alive.`
-      : `${greeting}log a meal to begin.`
+      ? `${greeting}${t.loop.statusKeepAlive}`
+      : `${greeting}${t.loop.statusBegin}`
 
   return (
     <div className="mx-auto max-w-5xl px-4 pt-5 md:px-8">
@@ -45,7 +52,7 @@ export function DailyLoopCard({ data, firstName }: { data: DailyLoopData; firstN
           </div>
           {streak.longest > streak.current && (
             <div className="shrink-0 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold">
-              Best: {streak.longest} {streak.longest === 1 ? "day" : "days"}
+              {interpolate(t.loop.best, { count: streak.longest })}
             </div>
           )}
         </div>
@@ -55,10 +62,10 @@ export function DailyLoopCard({ data, firstName }: { data: DailyLoopData; firstN
           <div className="mt-4 rounded-xl bg-white/15 p-4">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide opacity-90">
               <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: focus.color }} aria-hidden />
-              Today&apos;s focus · {focus.label}
+              {t.loop.focusLabel} · {t.pillars[focus.key]}
               <span className="tabular-nums opacity-75">({focus.score}/100)</span>
             </div>
-            <p className="mt-1.5 text-sm leading-relaxed">{focus.nudge}</p>
+            <p className="mt-1.5 text-sm leading-relaxed">{t.pillarNudges[focus.key]}</p>
           </div>
         )}
 
@@ -69,10 +76,10 @@ export function DailyLoopCard({ data, firstName }: { data: DailyLoopData; firstN
             className="inline-flex items-center justify-center rounded-full bg-white px-5 py-2.5 text-sm font-bold transition-transform hover:scale-[1.02]"
             style={{ color: "var(--icon-green)" }}
           >
-            {streak.loggedToday ? "Log another meal" : "Log a meal"}
+            {streak.loggedToday ? t.common.logAnotherMeal : t.common.logMeal}
           </Link>
           <Link href="/account/family" className="text-sm font-semibold text-white/90 underline-offset-2 hover:underline">
-            Family food system →
+            {t.family.title} →
           </Link>
         </div>
       </div>

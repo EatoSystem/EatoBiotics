@@ -24,6 +24,23 @@ export interface Dictionary {
   language: {
     label: string
   }
+  loop: {
+    /** params: {count} */
+    streakDays: string
+    startStreak: string
+    streakWaiting: string
+    statusDone: string
+    statusKeepAlive: string
+    statusBegin: string
+    focusLabel: string
+    /** params: {count} */
+    best: string
+  }
+  pillarNudges: {
+    prebiotics: string
+    probiotics: string
+    postbiotics: string
+  }
   family: {
     title: string
     subtitle: string
@@ -59,6 +76,21 @@ const en: Dictionary = {
     postbiotics: "Postbiotics",
   },
   language: { label: "Language" },
+  loop: {
+    streakDays: "{count}-day streak",
+    startStreak: "Start your streak today",
+    streakWaiting: "Your streak is waiting",
+    statusDone: "Logged today — nicely done.",
+    statusKeepAlive: "log a meal to keep your streak alive.",
+    statusBegin: "log a meal to begin.",
+    focusLabel: "Today's focus",
+    best: "Best: {count}",
+  },
+  pillarNudges: {
+    prebiotics: "Add a prebiotic food like garlic, onions, or oats to feed your good bacteria.",
+    probiotics: "Try a fermented food like yoghurt, kimchi, or kombucha for live probiotics.",
+    postbiotics: "Include a postbiotic-rich food like turmeric, dark chocolate, or green tea.",
+  },
   family: {
     title: "Your family food system",
     subtitle:
@@ -95,6 +127,21 @@ const es: Dictionary = {
     postbiotics: "Posbióticos",
   },
   language: { label: "Idioma" },
+  loop: {
+    streakDays: "Racha de {count} días",
+    startStreak: "Empieza tu racha hoy",
+    streakWaiting: "Tu racha te espera",
+    statusDone: "Registrado hoy — ¡bien hecho!",
+    statusKeepAlive: "registra una comida para mantener tu racha.",
+    statusBegin: "registra una comida para empezar.",
+    focusLabel: "Enfoque de hoy",
+    best: "Mejor: {count}",
+  },
+  pillarNudges: {
+    prebiotics: "Añade un alimento prebiótico como ajo, cebolla o avena para alimentar tus bacterias buenas.",
+    probiotics: "Prueba un alimento fermentado como yogur, kimchi o kombucha para probióticos vivos.",
+    postbiotics: "Incluye un alimento rico en posbióticos como cúrcuma, chocolate negro o té verde.",
+  },
   family: {
     title: "El sistema alimentario de tu familia",
     subtitle:
@@ -131,6 +178,21 @@ const fr: Dictionary = {
     postbiotics: "Postbiotiques",
   },
   language: { label: "Langue" },
+  loop: {
+    streakDays: "Série de {count} jours",
+    startStreak: "Commencez votre série aujourd'hui",
+    streakWaiting: "Votre série vous attend",
+    statusDone: "Enregistré aujourd'hui — bravo !",
+    statusKeepAlive: "enregistrez un repas pour maintenir votre série.",
+    statusBegin: "enregistrez un repas pour commencer.",
+    focusLabel: "Objectif du jour",
+    best: "Record : {count}",
+  },
+  pillarNudges: {
+    prebiotics: "Ajoutez un aliment prébiotique comme l'ail, l'oignon ou l'avoine pour nourrir vos bonnes bactéries.",
+    probiotics: "Essayez un aliment fermenté comme le yaourt, le kimchi ou le kombucha pour des probiotiques vivants.",
+    postbiotics: "Incluez un aliment riche en postbiotiques comme le curcuma, le chocolat noir ou le thé vert.",
+  },
   family: {
     title: "Le système alimentaire de votre famille",
     subtitle:
@@ -167,6 +229,21 @@ const ar: Dictionary = {
     postbiotics: "بوستبيوتيك",
   },
   language: { label: "اللغة" },
+  loop: {
+    streakDays: "سلسلة {count} يوم",
+    startStreak: "ابدأ سلسلتك اليوم",
+    streakWaiting: "سلسلتك في انتظارك",
+    statusDone: "سُجّل اليوم — أحسنت.",
+    statusKeepAlive: "سجّل وجبة للحفاظ على سلسلتك.",
+    statusBegin: "سجّل وجبة لتبدأ.",
+    focusLabel: "تركيز اليوم",
+    best: "الأفضل: {count}",
+  },
+  pillarNudges: {
+    prebiotics: "أضِف طعامًا بريبيوتيك مثل الثوم أو البصل أو الشوفان لتغذية بكتيريا أمعائك النافعة.",
+    probiotics: "جرّب طعامًا مخمّرًا مثل الزبادي أو الكيمتشي أو الكمبوتشا للحصول على بروبيوتيك حي.",
+    postbiotics: "أدرِج طعامًا غنيًا بالبوستبيوتيك مثل الكركم أو الشوكولاتة الداكنة أو الشاي الأخضر.",
+  },
   family: {
     title: "النظام الغذائي لعائلتك",
     subtitle: "تابِع صحة أمعاء جميع أفراد منزلك معًا. أنت من يدير الأفراد — لا حاجة لحسابات منفصلة.",
