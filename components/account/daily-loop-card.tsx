@@ -63,13 +63,18 @@ export function DailyLoopCard({ data, firstName }: { data: DailyLoopData; firstN
         )}
 
         {/* CTA */}
-        <Link
-          href="/analyse"
-          className="mt-4 inline-flex items-center justify-center rounded-full bg-white px-5 py-2.5 text-sm font-bold transition-transform hover:scale-[1.02]"
-          style={{ color: "var(--icon-green)" }}
-        >
-          {streak.loggedToday ? "Log another meal" : "Log a meal"}
-        </Link>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <Link
+            href="/analyse"
+            className="inline-flex items-center justify-center rounded-full bg-white px-5 py-2.5 text-sm font-bold transition-transform hover:scale-[1.02]"
+            style={{ color: "var(--icon-green)" }}
+          >
+            {streak.loggedToday ? "Log another meal" : "Log a meal"}
+          </Link>
+          <Link href="/account/family" className="text-sm font-semibold text-white/90 underline-offset-2 hover:underline">
+            Family food system →
+          </Link>
+        </div>
       </div>
     </div>
   )
