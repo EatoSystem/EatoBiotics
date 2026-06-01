@@ -163,6 +163,20 @@ This file is the authoritative reference for Claude Code sessions. Read it befor
 | tokens_used | integer | nullable |
 | created_at | timestamptz | |
 
+### household_members *(new — Family Mode)*
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid PK | |
+| owner_id | uuid | FK auth.users — the account holder; RLS scopes all access to `owner_id = auth.uid()` |
+| name | text | member display name |
+| age_band | text | nullable — `child \| teen \| adult` or age bracket |
+| relationship | text | nullable — `child \| partner \| parent \| self` |
+| latest_score | integer | nullable — most recent food-system score (0–100) |
+| created_at | timestamptz | |
+| updated_at | timestamptz | |
+
+Family food-system score = average of members' `latest_score` plus the owner's own score (`lib/family.ts`). Members are sub-profiles with **no separate login**; the account holder manages them.
+
 ### Other tables
 - `referrals` — `referrer_code`, `referred_email`, `referred_id`
 - `plate_data` — `user_id`, `plate`, `plants`, `updated_at`
