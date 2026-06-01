@@ -7,6 +7,8 @@ import { LiveDashboard } from "@/components/account/live-dashboard"
 import type { RealAnalysis, RealWeeklyReport } from "@/components/account/live-dashboard"
 import { TrackConversion } from "@/components/analytics/track-conversion"
 import { computeStreak } from "@/lib/streak"
+import { dailyNudge } from "@/lib/habit"
+import type { DailyLoopData } from "@/components/account/daily-loop-card"
 
 export const metadata: Metadata = {
   title: "My Account — EatoBiotics",
@@ -164,15 +166,31 @@ export default async function AccountPage({
     }
   }
 
-  /* ── Streak — consecutive days with at least one analysis ── */
-  let streak = 0
+  /* ── Streak + daily loop — consecutive days with at least one analysis ── */
+  let streakInfo = computeStreak([])
   if (adminSupabase) {
     const { data: streakRows } = await adminSupabase
       .from("analyses")
       .select("created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
-    streak = computeStreak((streakRows ?? []).map((r) => r.created_at as string)).current
+    streakInfo = computeStreak((streakRows ?? []).map((r) => r.created_at as string))
+  }
+  const streak = streakInfo.current
+
+  // Daily loop card data — streak + the weakest-pillar nudge from the Food System Core.
+  const dailyLoop: DailyLoopData = {
+    streak: streakInfo,
+    focus: bioticsProfile
+      ? (() => {
+          const n = dailyNudge({
+            prebiotics:  bioticsProfile.prebiotic,
+            probiotics:  bioticsProfile.probiotic,
+            postbiotics: bioticsProfile.postbiotic,
+          })
+          return { label: n.pillar.label, nudge: n.nudge, color: n.pillar.color, score: n.score }
+        })()
+      : null,
   }
 
   /* ── Fallback profile if none exists yet ── */
@@ -206,6 +224,7 @@ export default async function AccountPage({
         membershipTier={(profile.membership_tier as string | null) ?? null}
         membershipStatus={(profile.membership_status as string | null) ?? null}
         streak={streak}
+        dailyLoop={dailyLoop}
         score={(assessments[0]?.overall_score as number | null) ?? null}
         previousScore={(assessments[1]?.overall_score as number | null) ?? null}
         profileType={(assessments[0]?.profile_type as string | null) ?? null}
