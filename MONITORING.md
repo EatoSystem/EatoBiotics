@@ -26,8 +26,14 @@ Scheduled (~every 30 min) + manual. Curl-checks `/`, `/assessment`, `/pricing`, 
 ### 5. Product analytics (already live)
 PostHog + Statsig + Vercel Analytics, plus the `report_purchased` / `subscription_activated` conversion events. Build funnel dashboards/alerts there.
 
-## Roadmap (next iterations)
-- **Full funnel E2E (Playwright):** author against the live site so selectors are verified (home → assessment submit → results → Stripe test checkout → account), run on schedule. *Needs the dev gate off to author reliably — do at/after launch.*
-- **Daily "site analysis" digest:** one scheduled job summarising uptime + error volume + funnel conversion + Web Vitals into an email (optionally AI-summarised).
+### 6. Synthetic funnel E2E — `tests/e2e/smoke.spec.ts` + `.github/workflows/e2e.yml`
+Playwright checks against the live site (homepage hero + CTA, assessment reachable, pricing tiers, `/api/health`), scheduled every 6h. Emails via Resend on failure. **Dormant until `MONITOR_BASE_URL` is set.** Run locally with `npm run test:e2e` (set `BASE_URL`).
+> The deeper assessment-submission steps are marked `TODO` in the spec — finalize their selectors against the live site (gate off) so they assert real DOM rather than guesses.
+
+### 7. Daily site-analysis digest — `app/api/monitor/digest` + `.github/workflows/digest.yml`
+Cron-protected route that summarises the last 24h (new leads, completed assessments, meals analysed, paid reports started, new subscriptions) and **emails the owner via Resend**. Triggered daily by the Daily Digest workflow (curls the route with the `CRON_SECRET` bearer — no Vercel cron). Needs repo secret `CRON_SECRET` + variable `MONITOR_BASE_URL`.
+
+## Roadmap (further)
+- **Deepen the funnel E2E** to actually submit the assessment → Stripe test checkout → account (finalize selectors live).
 - **Auto-investigate:** wire failing checks to open a GitHub issue → trigger a Claude Code session to diagnose / open a fix PR.
-- **Lighthouse CI** for performance/SEO regression tracking.
+- **Lighthouse CI** for performance/SEO regression tracking; enrich the digest with Web Vitals + error volume.

@@ -1,0 +1,26 @@
+name: Daily Digest
+
+# Triggers the daily site-analysis digest route, which emails the owner a
+# 24h funnel summary. Dormant until MONITOR_BASE_URL + CRON_SECRET are set.
+on:
+  schedule:
+    - cron: "0 8 * * *" # 08:00 UTC daily
+  workflow_dispatch:
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger digest
+        env:
+          BASE_URL: ${{ vars.MONITOR_BASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$BASE_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "MONITOR_BASE_URL or CRON_SECRET not set — skipping (configure after launch)."
+            exit 0
+          fi
+          code=$(curl -s -o /tmp/digest.out -w "%{http_code}" \
+            -H "Authorization: Bearer $CRON_SECRET" "$BASE_URL/api/monitor/digest")
+          cat /tmp/digest.out; echo
+          [ "$code" = "200" ] || { echo "Digest request failed ($code)"; exit 1; }

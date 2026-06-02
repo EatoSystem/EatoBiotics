@@ -1,0 +1,51 @@
+name: E2E Funnel
+
+# Scheduled synthetic funnel checks against the live site.
+# Dormant until MONITOR_BASE_URL is set.
+on:
+  schedule:
+    - cron: "0 */6 * * *" # every 6 hours
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Guard — skip if no target configured
+        id: guard
+        run: |
+          if [ -z "${{ vars.MONITOR_BASE_URL }}" ]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "MONITOR_BASE_URL not set — skipping (configure after launch)."
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.guard.outputs.run == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.guard.outputs.run == 'true'
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+        if: steps.guard.outputs.run == 'true'
+      - run: npx playwright install --with-deps chromium
+        if: steps.guard.outputs.run == 'true'
+      - name: Run funnel checks
+        if: steps.guard.outputs.run == 'true'
+        env:
+          BASE_URL: ${{ vars.MONITOR_BASE_URL }}
+        run: npx playwright test
+      - name: Email alert on failure
+        if: failure() && steps.guard.outputs.run == 'true'
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          ALERT_TO: ${{ vars.MONITOR_ALERT_EMAIL }}
+          ALERT_FROM: ${{ vars.MONITOR_ALERT_FROM }}
+        run: |
+          if [ -n "$RESEND_API_KEY" ] && [ -n "$ALERT_TO" ] && [ -n "$ALERT_FROM" ]; then
+            curl -s -X POST https://api.resend.com/emails \
+              -H "Authorization: Bearer $RESEND_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d "{\"from\":\"$ALERT_FROM\",\"to\":\"$ALERT_TO\",\"subject\":\"⚠️ EatoBiotics funnel E2E failed\",\"text\":\"The synthetic funnel checks failed. See the GitHub Actions run for details.\"}" > /dev/null
+          fi
