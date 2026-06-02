@@ -32,9 +32,6 @@
   --icon-teal: #2DAA6E;
   --icon-yellow: #F5C518;
   --icon-orange: #F5A623;
-
-  /* Soft sage mid-tone surface — a resting tone for alternating sections/cards */
-  --surface: #DDE8D0;
 }
 
 @theme inline {
@@ -65,7 +62,6 @@
   --color-icon-teal: var(--icon-teal);
   --color-icon-yellow: var(--icon-yellow);
   --color-icon-orange: var(--icon-orange);
-  --color-surface: var(--surface);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
