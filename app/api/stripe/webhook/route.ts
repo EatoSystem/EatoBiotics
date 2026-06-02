@@ -7,6 +7,7 @@ import { tierFromPriceId, isFoundingMember } from "@/lib/membership"
 import { logServerEvent } from "@/lib/statsig-server"
 import { welcomeSubscriptionEmailHtml } from "@/lib/email/welcome-subscription-email"
 import { getPaidReportSummaryFromSession, isCheckoutSessionSettled } from "@/lib/paid-report-session"
+import { reportError } from "@/lib/report-error"
 
 // Stripe v20 with the clover API version uses slightly different type shapes.
 // We use a helper to safely access fields that may not be in the TS types.
@@ -363,7 +364,7 @@ export async function POST(req: NextRequest) {
         break
     }
   } catch (err) {
-    console.error("[webhook] Handler error:", err)
+    await reportError("stripe-webhook", err)
     // Don't record as processed — let Stripe retry this event.
     return NextResponse.json({ error: "Handler error" }, { status: 500 })
   }
