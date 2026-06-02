@@ -36,7 +36,7 @@ export function FAQ() {
   const [open, setOpen] = useState<number | null>(null)
 
   return (
-    <section className="px-6 py-24 md:py-32">
+    <section className="bg-[var(--surface)] px-6 py-24 md:py-32">
       <div className="mx-auto max-w-[800px]">
         <ScrollReveal className="text-center mb-14">
           <p className="text-xs font-semibold uppercase tracking-widest text-icon-teal mb-3">

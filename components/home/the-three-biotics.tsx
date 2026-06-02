@@ -41,7 +41,7 @@ const biotics = [
 
 export function TheThreeBiotics() {
   return (
-    <section className="px-6 py-24 md:py-32">
+    <section className="bg-[var(--surface)] px-6 py-24 md:py-32">
       <div className="mx-auto max-w-[1200px]">
         <ScrollReveal>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
