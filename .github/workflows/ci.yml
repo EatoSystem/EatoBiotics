@@ -14,7 +14,14 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm ci
+      - name: Install dependencies (retry on transient network errors)
+        run: |
+          n=0
+          until npm ci; do
+            n=$((n+1))
+            if [ "$n" -ge 3 ]; then echo "npm ci failed after 3 attempts"; exit 1; fi
+            echo "npm ci failed (attempt $n) — retrying in 10s..."; sleep 10
+          done
       - name: Unit tests
         run: npm test
       - name: Type check
