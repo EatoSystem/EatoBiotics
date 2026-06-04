@@ -24,7 +24,6 @@ import {
   Globe,
 } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
-import { GradientText } from "@/components/gradient-text"
 
 export const metadata: Metadata = {
   title: { absolute: "EatoBetics | The Glucose System Inside You" },
@@ -115,72 +114,47 @@ export default function EatoBeticsPage() {
   return (
     <main className="overflow-hidden bg-white">
       {/* ── 1. HERO ── */}
-      <section className="relative px-6 pt-28 pb-20 md:pt-32 md:pb-28" style={{ background: "var(--foreground)" }}>
-        <div className="relative z-10 mx-auto grid max-w-[1200px] items-center gap-12 md:grid-cols-2 md:gap-16">
+      <section className="relative px-6 pt-16 pb-20 md:pt-20 md:pb-28">
+        <div className="mx-auto max-w-3xl text-center">
           <ScrollReveal>
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-white/80">
+            {/* Illustration. Drop the asset at public/images/eatobetics-hero.webp;
+                a soft gold→green gradient shows as a graceful fallback until then. */}
+            <div
+              role="img"
+              aria-label="Two figures rendered in green and gold light with a glucose curve flowing through the body, symbolising the glucose system inside you."
+              className="mx-auto mb-9 aspect-[5/6] w-full max-w-[440px] rounded-3xl"
+              style={{
+                background:
+                  "url('/images/eatobetics-hero.webp') center / contain no-repeat, radial-gradient(115% 85% at 50% 32%, rgba(245,197,24,0.22), rgba(76,182,72,0.14) 46%, #ffffff 78%)",
+              }}
+            />
+            <span className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
               <Sparkles size={14} style={{ color: "var(--icon-yellow)" }} /> Glucose Intelligence by Eato
             </span>
-            <h1 className="mt-5 font-serif text-5xl font-bold leading-[1.05] text-white sm:text-6xl">
-              EatoBetics
+            <h1 className="mt-5 font-serif text-4xl font-bold leading-[1.08] text-balance sm:text-5xl lg:text-6xl">
+              <span style={{ color: "var(--foreground)" }}>The </span>
+              <span style={{ color: "var(--icon-orange)" }}>Glucose</span>
+              <span style={{ color: "var(--foreground)" }}> System Inside </span>
+              <span style={{ color: "var(--icon-green)" }}>You</span>
             </h1>
-            <p className="mt-2 font-serif text-2xl font-semibold sm:text-3xl">
-              <GradientText>The Glucose System Inside You</GradientText>
+            <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed sm:text-xl" style={{ color: "var(--muted-foreground)" }}>
+              Personal food intelligence for energy, cravings, and metabolic health.
             </p>
-            <p className="mt-6 max-w-md text-lg leading-relaxed text-white/80">
-              There is a system running inside you right now that shapes your energy, cravings, mood, weight, sleep, and long-term metabolic health.
-            </p>
-            <p className="mt-4 max-w-md text-lg leading-relaxed text-white/80">
-              It is your glucose system. And for most people, it is running on guesswork.
-            </p>
-            <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-              <Link href="/assessment" className={PRIMARY_CTA}>
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Link
+                href="/assessment"
+                className="inline-flex items-center justify-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:opacity-90"
+                style={{ background: "var(--foreground)" }}
+              >
                 Join Early Access <ArrowRight size={16} />
               </Link>
               <Link
                 href="/assessment"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/30 px-8 py-4 text-base font-semibold text-white transition-all hover:bg-white/10"
+                className="inline-flex items-center justify-center gap-2 rounded-full border px-8 py-4 text-base font-semibold transition-colors hover:bg-[#f4f8f0]"
+                style={{ borderColor: "var(--icon-green)", color: "var(--icon-green)" }}
               >
                 Start Glucose Assessment
               </Link>
-            </div>
-          </ScrollReveal>
-
-          {/* Score card visual */}
-          <ScrollReveal delay={120}>
-            <div className="rounded-3xl bg-white p-7 shadow-2xl">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
-                  EatoBetics Score
-                </span>
-                <Activity size={18} style={{ color: "var(--icon-teal)" }} />
-              </div>
-              <div className="mt-4 flex items-end gap-3">
-                <span className="font-serif text-6xl font-bold leading-none" style={{ color: "var(--foreground)" }}>68</span>
-                <span className="mb-1.5 text-lg font-medium" style={{ color: "var(--muted-foreground)" }}>/ 100</span>
-              </div>
-              <div className="mt-2 space-y-0.5 text-sm" style={{ color: "var(--muted-foreground)" }}>
-                <p>Profile: <span className="font-semibold" style={{ color: "var(--icon-green)" }}>Emerging Stability</span></p>
-                <p>30-Day Focus: <span className="font-semibold" style={{ color: "var(--icon-orange)" }}>Flatten the Curve</span></p>
-              </div>
-
-              <div className="mt-6 space-y-4">
-                {[
-                  { label: "Energy Stability", value: 72, color: "var(--icon-green)" },
-                  { label: "Meal Timing", value: 61, color: "var(--icon-yellow)" },
-                  { label: "Glucose Load", value: 54, color: "var(--icon-orange)" },
-                ].map((m) => (
-                  <div key={m.label}>
-                    <div className="mb-1 flex items-center justify-between text-sm">
-                      <span style={{ color: "var(--foreground)" }}>{m.label}</span>
-                      <span className="font-semibold tabular-nums" style={{ color: m.color }}>{m.value}</span>
-                    </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-[#eef2ea]">
-                      <div className="h-full rounded-full" style={{ width: `${m.value}%`, background: m.color }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
           </ScrollReveal>
         </div>
