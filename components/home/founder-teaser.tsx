@@ -20,7 +20,7 @@ export function FounderTeaser() {
               {/* Image panel */}
               <div className="relative h-64 w-full overflow-hidden lg:h-auto lg:w-80 lg:shrink-0">
                 <Image
-                  src="/food-12.png"
+                  src="/food-12.webp"
                   alt="Jason Curry — Founder of EatoBiotics"
                   fill
                   className="object-cover"

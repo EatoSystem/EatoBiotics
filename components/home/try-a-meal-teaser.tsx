@@ -6,7 +6,7 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 /* ── Sample data — salmon power bowl ─────────────────────────────────── */
 
 const SAMPLE = {
-  photo: "/food-6.png",
+  photo: "/food-6.webp",
   mealName: "Salmon Power Bowl",
   score: 82,
   scoreBand: "Exceptional",

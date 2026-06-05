@@ -69,28 +69,28 @@ export const PLATE_DEFINITIONS: Record<PlateId, {
 }> = {
   foundation: {
     name: "The Food System Bowl",
-    image: "/food-1.png",
+    image: "/food-1.webp",
     defaultProtein: "salmon",
     defaultPlants: ["quinoa", "kale", "cucumber", "avocado", "chickpeas", "red cabbage"],
     accent: "var(--icon-lime)",
   },
   function: {
     name: "The Immunity Plate",
-    image: "/food-2.png",
+    image: "/food-2.webp",
     defaultProtein: "chicken",
     defaultPlants: ["asparagus", "berries", "avocado", "lentils", "kale", "pumpkin seeds"],
     accent: "var(--icon-yellow)",
   },
   diversity: {
     name: "The Living Plate",
-    image: "/food-3.png",
+    image: "/food-3.webp",
     defaultProtein: "tempeh",
     defaultPlants: ["beets", "rainbow carrots", "broccoli", "lentils", "chickpeas", "greens"],
     accent: "var(--icon-teal)",
   },
   restoration: {
     name: "The Rebuild Plate",
-    image: "/food-20.png",
+    image: "/food-20.webp",
     defaultProtein: "trout",
     defaultPlants: ["sweet potato", "carrots", "greens", "lentils", "cabbage", "herbs"],
     accent: "var(--icon-orange)",

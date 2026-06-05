@@ -122,9 +122,9 @@ function recalculateRecipeScores(recipe: PlateRecipe, input: z.infer<typeof requ
 }
 
 const STYLE_REFERENCE_PATHS = [
-  ["public", "plate-builder", "food-1.png"],
-  ["public", "plate-builder", "food-2.png"],
-  ["public", "plate-builder", "food-3.png"],
+  ["public", "plate-builder", "food-1.webp"],
+  ["public", "plate-builder", "food-2.webp"],
+  ["public", "plate-builder", "food-3.webp"],
   ["Food Images", "Food 8.0.png"],
   ["Food Images", "Food 9.0.png"],
 ]

@@ -290,7 +290,7 @@ const MOCK_MEALS: { date: string; meals: MealEntry[] }[] = [
     date: "Today — Tue 13 May",
     meals: [
       {
-        image: "/food-1.png", name: "Mackerel, kimchi & asparagus", time: "19:25", type: "Dinner", score: 71,
+        image: "/food-1.webp", name: "Mackerel, kimchi & asparagus", time: "19:25", type: "Dinner", score: 71,
         insight: "Your mackerel is delivering omega-3s that reduce gut inflammation, while the kimchi seeds live Lactobacillus cultures. The asparagus adds inulin — a prebiotic fibre that feeds those bacteria directly. Adding a handful of walnuts would push your diversity score from 55 to ~72.",
         biotics:   { prebiotic: 72, probiotic: 18, postbiotic: 41 },
         quality:   { diversity: 55, antiInflammatory: 80 },
@@ -303,7 +303,7 @@ const MOCK_MEALS: { date: string; meals: MealEntry[] }[] = [
     date: "Yesterday — Mon 12 May",
     meals: [
       {
-        image: "/food-2.png", name: "Eggs, sourdough & avocado", time: "8:20am", type: "Breakfast", score: 65,
+        image: "/food-2.webp", name: "Eggs, sourdough & avocado", time: "8:20am", type: "Breakfast", score: 65,
         insight: "Good healthy fats from the avocado and protein from the eggs. Sourdough's fermentation gives a mild probiotic lift. Swap white sourdough for wholegrain rye to double the prebiotic fibre content.",
         biotics:   { prebiotic: 45, probiotic: 22, postbiotic: 31 },
         quality:   { diversity: 40, antiInflammatory: 65 },
@@ -311,7 +311,7 @@ const MOCK_MEALS: { date: string; meals: MealEntry[] }[] = [
         tags: ["Healthy fats", "Protein", "Fermented bread"],
       },
       {
-        image: "/food-3.png", name: "Salmon salad with kimchi", time: "1:15pm", type: "Lunch", score: 78,
+        image: "/food-3.webp", name: "Salmon salad with kimchi", time: "1:15pm", type: "Lunch", score: 78,
         insight: "Excellent combination. The kimchi lifts your probiotic score significantly. Salmon's omega-3s are anti-inflammatory and the mixed leaves add polyphenol diversity. This is the pattern to repeat.",
         biotics:   { prebiotic: 61, probiotic: 48, postbiotic: 52 },
         quality:   { diversity: 72, antiInflammatory: 85 },
@@ -319,7 +319,7 @@ const MOCK_MEALS: { date: string; meals: MealEntry[] }[] = [
         tags: ["Omega-3s", "Probiotics", "Diversity"],
       },
       {
-        image: "/food-4.png", name: "Pasta, garlic & roasted veg", time: "7:30pm", type: "Dinner", score: 72,
+        image: "/food-4.webp", name: "Pasta, garlic & roasted veg", time: "7:30pm", type: "Dinner", score: 72,
         insight: "Garlic's inulin is feeding your Lactobacillus bacteria directly. The roasted veg variety is building your diversity score. Consider adding a spoonful of olive tapenade — the polyphenols would push anti-inflammatory from 58 to ~70.",
         biotics:   { prebiotic: 68, probiotic: 12, postbiotic: 38 },
         quality:   { diversity: 62, antiInflammatory: 58 },
@@ -332,7 +332,7 @@ const MOCK_MEALS: { date: string; meals: MealEntry[] }[] = [
     date: "Sun 11 May",
     meals: [
       {
-        image: "/food-5.png", name: "Greek yoghurt, berries & oats", time: "9:00am", type: "Breakfast", score: 69,
+        image: "/food-5.webp", name: "Greek yoghurt, berries & oats", time: "9:00am", type: "Breakfast", score: 69,
         insight: "Yoghurt delivers live cultures and the berries add polyphenol diversity that feeds beneficial bacteria. Oats are a strong prebiotic source. Your best breakfast pattern — the berry variety is key.",
         biotics:   { prebiotic: 55, probiotic: 58, postbiotic: 44 },
         quality:   { diversity: 60, antiInflammatory: 70 },
@@ -340,7 +340,7 @@ const MOCK_MEALS: { date: string; meals: MealEntry[] }[] = [
         tags: ["Probiotics", "Polyphenols", "Prebiotics"],
       },
       {
-        image: "/food-6.png", name: "Lentil wrap with mixed greens", time: "1:00pm", type: "Lunch", score: 74,
+        image: "/food-6.webp", name: "Lentil wrap with mixed greens", time: "1:00pm", type: "Lunch", score: 74,
         insight: "High-fibre and plant-diverse. Lentils are one of the best prebiotic foods — resistant starch that survives digestion and feeds Bifidobacterium directly. The mixed greens add polyphenol variety.",
         biotics:   { prebiotic: 72, probiotic: 8,  postbiotic: 42 },
         quality:   { diversity: 65, antiInflammatory: 62 },
@@ -348,7 +348,7 @@ const MOCK_MEALS: { date: string; meals: MealEntry[] }[] = [
         tags: ["High fibre", "Prebiotics", "Plant protein"],
       },
       {
-        image: "/food-7.png", name: "Chicken, roasted veg & kefir", time: "7:45pm", type: "Dinner", score: 81,
+        image: "/food-7.webp", name: "Chicken, roasted veg & kefir", time: "7:45pm", type: "Dinner", score: 81,
         insight: "Best meal this week. Kefir delivers live cultures across multiple strains, the diverse roasted veg builds your prebiotic base, and the chicken provides the protein your gut lining needs for repair. This is the gold standard pattern.",
         biotics:   { prebiotic: 75, probiotic: 65, postbiotic: 58 },
         quality:   { diversity: 78, antiInflammatory: 72 },
@@ -477,7 +477,7 @@ interface LiveResult {
 function realToMealEntry(a: RealAnalysis): Parameters<typeof MealCard>[0]["meal"] {
   const d = new Date(a.created_at)
   return {
-    image:   a.image_url ?? "/food-1.png",
+    image:   a.image_url ?? "/food-1.webp",
     name:    a.meal_name ?? "Analysed meal",
     time:    d.toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" }),
     type:    a.meal_type ?? "Meal",
@@ -1107,7 +1107,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
 
                   {/* Decorative food image strip — context row, subordinate */}
                   <div className="flex items-center px-5 pt-5 pb-3" style={{ opacity: 0.85 }}>
-                    {["/food-3.png", "/food-5.png", "/food-7.png", "/food-2.png"].map((src, i) => (
+                    {["/food-3.webp", "/food-5.webp", "/food-7.webp", "/food-2.webp"].map((src, i) => (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img key={i} src={src} alt=""
                         className="rounded-full object-cover"
@@ -1191,7 +1191,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                 }}>
                   <div className="mb-5 flex items-center gap-3">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/food-1.png" alt="Meal" className="h-12 w-12 shrink-0 rounded-xl object-cover" />
+                    <img src="/food-1.webp" alt="Meal" className="h-12 w-12 shrink-0 rounded-xl object-cover" />
                     <div>
                       <p className="font-semibold" style={{ color: "var(--foreground)" }}>Mackerel, kimchi & asparagus</p>
                       <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>19:25 · Dinner</p>
@@ -1250,7 +1250,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                   <div className="relative flex items-center justify-center" style={{ background: "white", minHeight: 220 }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src="/food-1.png"
+                      src="/food-1.webp"
                       alt="Mackerel, kimchi &amp; asparagus"
                       style={{ width: "100%", maxHeight: 240, objectFit: "contain", objectPosition: "center", display: "block" }}
                     />
@@ -1407,7 +1407,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                     : new Date((meal as RealAnalysis).created_at).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" })
                   const type   = isMock ? (meal as typeof MOCK_MEALS[0]["meals"][0]).type : ((meal as RealAnalysis).meal_type ?? "Meal")
                   const score  = isMock ? (meal as typeof MOCK_MEALS[0]["meals"][0]).score : ((meal as RealAnalysis).biotics_score ?? 0)
-                  const img    = isMock ? (meal as typeof MOCK_MEALS[0]["meals"][0]).image : ((meal as RealAnalysis).image_url ?? "/food-1.png")
+                  const img    = isMock ? (meal as typeof MOCK_MEALS[0]["meals"][0]).image : ((meal as RealAnalysis).image_url ?? "/food-1.webp")
                   return (
                     <div key={i} className="flex items-center gap-3 px-4 py-3.5"
                       style={{ borderTop: i > 0 ? "1px solid #f0f0f0" : undefined }}>
