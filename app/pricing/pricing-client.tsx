@@ -14,15 +14,13 @@ import {
   ChevronUp,
 } from "lucide-react"
 import posthog from "posthog-js"
+import type { MembershipTier } from "@/lib/membership"
 
 /* ── Types ───────────────────────────────────────────────────────────── */
 
-type LegacyTier = "free" | "grow" | "restore" | "transform"
-type Tier = LegacyTier | "trial" | "member"
-
 interface PricingClientProps {
   isLoggedIn: boolean
-  currentTier: LegacyTier
+  currentTier: MembershipTier
   currentStatus: string
   isFoundingMember: boolean
   highlightFeature: string | null
