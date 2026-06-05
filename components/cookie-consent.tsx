@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { EB_CONSENT_KEY, EB_CONSENT_EVENT } from "@/lib/consent"
 
-const STORAGE_KEY = "eb_cookie_consent"
+const STORAGE_KEY = EB_CONSENT_KEY
 
 export function CookieConsent() {
   const [visible, setVisible] = useState(false)
@@ -18,7 +19,10 @@ export function CookieConsent() {
   }, [])
 
   function accept() {
-    try { localStorage.setItem(STORAGE_KEY, "accepted") } catch { /* noop */ }
+    try {
+      localStorage.setItem(STORAGE_KEY, "accepted")
+      window.dispatchEvent(new Event(EB_CONSENT_EVENT))
+    } catch { /* noop */ }
     setVisible(false)
   }
 

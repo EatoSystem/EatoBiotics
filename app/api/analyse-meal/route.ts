@@ -18,6 +18,7 @@ import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { getUserMembershipTier } from "@/lib/membership"
+import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 
 /* ── Validation ─────────────────────────────────────────────────────── */
 
@@ -87,6 +88,13 @@ export async function POST(req: NextRequest) {
   const user = await getUser()
   if (!user) return NextResponse.json({ error: "Unauthorised" }, { status: 401 })
 
+  /* Per-IP rate limit — cheap abuse guard before the expensive AI call */
+  const rl = rateLimit(`analyse-meal:${getClientIp(req)}`, 20, 60_000)
+  if (!rl.allowed) {
+    const { body: rlBody, init } = rateLimitResponse(rl)
+    return NextResponse.json(rlBody, init)
+  }
+
   /* Parse body — supports JSON or multipart */
   let body: z.infer<typeof bodySchema>
   try {
@@ -113,6 +121,31 @@ export async function POST(req: NextRequest) {
 
   if (!body.description && !body.image) {
     return NextResponse.json({ error: "Either description or image is required" }, { status: 400 })
+  }
+
+  /* Fail closed: this AI-cost endpoint requires the DB to enforce limits. */
+  const supabase = getSupabase()
+  if (!supabase) {
+    return NextResponse.json({ error: "Service temporarily unavailable" }, { status: 503 })
+  }
+
+  /* Per-tier daily cap (mirrors /api/analyse; free/unknown → 2/day) */
+  const tier = await getUserMembershipTier(user.id)
+  const DAILY_LIMITS: Record<string, number> = { grow: 2, restore: 5, transform: 10 }
+  const dailyLimit = DAILY_LIMITS[tier] ?? 2
+  const todayUTC = new Date()
+  todayUTC.setUTCHours(0, 0, 0, 0)
+  const { count: todayCount } = await supabase
+    .from("analyses")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .gte("created_at", todayUTC.toISOString())
+  if ((todayCount ?? 0) >= dailyLimit) {
+    const resetAt = new Date(todayUTC.getTime() + 24 * 60 * 60 * 1000).toISOString()
+    return NextResponse.json(
+      { error: `Daily limit reached. Your plan allows ${dailyLimit} meal analyses per day.`, resetAt },
+      { status: 429 },
+    )
   }
 
   /* Build message content (text + optional image) */
@@ -155,11 +188,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Analysis failed — try again" }, { status: 500 })
   }
 
-  /* Save to analyses table */
-  const adminSupabase = getSupabase()
-  if (adminSupabase) {
-    const tier = await getUserMembershipTier(user.id)
-    const { data: saved, error } = await adminSupabase
+  /* Save to analyses table (supabase + tier resolved above) */
+  {
+    const { data: saved, error } = await supabase
       .from("analyses")
       .insert({
         user_id:                   user.id,
