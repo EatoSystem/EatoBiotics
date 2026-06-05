@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { DemoReport, type DemoReportData } from "@/components/report/demo-report"
 
 export const metadata: Metadata = {
+  robots: { index: false },
   title: "Sample Report — The Food System Inside Your Mind | EatoBiotics",
   description:
     "See a full sample EatoBiotics gut-brain report — how your food system affects mood, focus, and mental clarity, with targeted foods and a 30-day mind-gut plan.",

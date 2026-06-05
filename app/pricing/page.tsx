@@ -12,13 +12,11 @@ export const metadata: Metadata = {
     title: "Plans & Pricing — EatoBiotics",
     description: "From free gut health scoring to full AI meal analysis, weekly reports, and personalised gut coaching.",
     url: "https://eatobiotics.com/pricing",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "EatoBiotics Plans" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Plans & Pricing — EatoBiotics",
     description: "From free gut health scoring to full AI meal analysis and personalised weekly reports.",
-    images: ["/og-image.png"],
   },
 }
 

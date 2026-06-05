@@ -10,6 +10,7 @@ import { StartMindFinal } from "@/components/start-mind/start-mind-final"
 import { StickyCTAMind } from "@/components/start-mind/sticky-cta-mind"
 
 export const metadata: Metadata = {
+  robots: { index: false },
   title: "What's your Gut-Brain Score? | EatoBiotics",
   description:
     "Discover how your daily food habits are shaping your mood, focus, and mental clarity. Get your free Gut-Brain Score in under 2 minutes.",

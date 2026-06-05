@@ -14,13 +14,11 @@ export const metadata: Metadata = {
     description:
       "Discover your gut health score, analyse every meal with AI, and get a personalised weekly food system report.",
     url: "https://eatobiotics.com",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "EatoBiotics — The Food System Inside You" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "EatoBiotics — The Food System Inside You",
     description: "Discover your gut health score, analyse every meal with AI, and get a personalised weekly food system report.",
-    images: ["/og-image.png"],
   },
   keywords: [
     "gut health", "microbiome", "prebiotic", "probiotic", "postbiotic",

@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { DemoReport, type DemoReportData } from "@/components/report/demo-report"
 
 export const metadata: Metadata = {
+  robots: { index: false },
   title: "Sample Report — The Food System Inside You | EatoBiotics",
   description:
     "See a full sample EatoBiotics personal gut health report — your Prebiotics · Probiotics · Postbiotics scores, key insights, 7-day plan, 5 foods, and a 30-day roadmap.",
