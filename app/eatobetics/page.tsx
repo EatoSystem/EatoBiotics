@@ -122,10 +122,10 @@ export default function EatoBeticsPage() {
             <div
               role="img"
               aria-label="Two figures rendered in green and gold light with a glucose curve flowing through the body, symbolising the glucose system inside you."
-              className="mx-auto mb-9 aspect-[5/6] w-full max-w-[440px] rounded-3xl"
+              className="mx-auto mb-9 aspect-[3/2] w-full max-w-[640px] rounded-3xl"
               style={{
                 background:
-                  "url('/images/eatobetics-hero.webp') center / contain no-repeat, radial-gradient(115% 85% at 50% 32%, rgba(245,197,24,0.22), rgba(76,182,72,0.14) 46%, #ffffff 78%)",
+                  "url('/images/eatobetics-hero.png') center / contain no-repeat, radial-gradient(110% 80% at 50% 38%, rgba(245,197,24,0.20), rgba(76,182,72,0.12) 48%, #ffffff 80%)",
               }}
             />
             <span className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
