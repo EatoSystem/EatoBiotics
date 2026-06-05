@@ -105,7 +105,7 @@ export function WhatWereBuilding() {
           </ScrollReveal>
           <ScrollReveal delay={80} className="w-full md:w-[340px] lg:w-[400px] shrink-0">
             <Image
-              src="/food-12.png"
+              src="/food-12.webp"
               alt="Fresh ingredients that form the EatoBiotics food system"
               width={600}
               height={600}
@@ -173,7 +173,7 @@ export function WhatWereBuilding() {
                   <div className="hidden lg:block lg:w-72 lg:shrink-0">
                     <div className="relative h-full min-h-[280px] overflow-hidden">
                       <Image
-                        src="/food-2.png"
+                        src="/food-2.webp"
                         alt="Fresh food"
                         fill
                         className="object-cover"

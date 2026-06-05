@@ -111,7 +111,7 @@ export default function WeeklyPage() {
             <ScrollReveal delay={80} className="w-full flex-1 md:max-w-[480px]">
               <div className="relative mx-auto max-w-[420px] md:max-w-none">
                 <Image
-                  src="/food-9.png"
+                  src="/food-9.webp"
                   alt="A vibrant composition of EatoBiotics ingredients — vegetables, fermented foods, grains, and healthy fats"
                   width={700}
                   height={700}
@@ -158,7 +158,7 @@ export default function WeeklyPage() {
             {/* Right: Food 3.0 — diverse mixed-system composition */}
             <ScrollReveal delay={80} className="w-full md:w-[340px] lg:w-[400px] shrink-0">
               <Image
-                src="/food-14.png"
+                src="/food-14.webp"
                 alt="A diverse arrangement of EatoBiotics ingredients — the whole food system in one composition"
                 width={600}
                 height={600}
@@ -497,7 +497,7 @@ export default function WeeklyPage() {
             {/* Right: Food 6.0 — complete bowl showing all four quadrant types */}
             <ScrollReveal delay={60} className="w-full md:w-[360px] lg:w-[420px] shrink-0 md:pt-14">
               <Image
-                src="/food-6.png"
+                src="/food-6.webp"
                 alt="A complete EatoBiotics plate showing all four parts — prebiotic base, probiotic side, protein balance, and postbiotic builders"
                 width={600}
                 height={600}
