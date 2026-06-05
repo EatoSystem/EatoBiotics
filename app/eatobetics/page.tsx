@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Image from "next/image"
 import Link from "next/link"
 import {
   ArrowRight,
@@ -113,52 +114,107 @@ const PRODUCT_STACK = [
 export default function EatoBeticsPage() {
   return (
     <main className="overflow-hidden bg-white">
-      {/* ── 1. HERO ── */}
-      <section className="relative px-6 pt-16 pb-20 md:pt-20 md:pb-28">
-        <div className="mx-auto max-w-3xl text-center">
-          <ScrollReveal>
-            {/* Illustration. Drop the asset at public/images/eatobetics-hero.webp;
-                a soft gold→green gradient shows as a graceful fallback until then. */}
-            <div
-              role="img"
-              aria-label="Two figures rendered in green and gold light with a glucose curve flowing through the body, symbolising the glucose system inside you."
-              className="mx-auto mb-9 aspect-[3/2] w-full max-w-[640px] rounded-3xl"
-              style={{
-                background:
-                  "url('/images/eatobetics-hero.png') center / contain no-repeat, radial-gradient(110% 80% at 50% 38%, rgba(245,197,24,0.20), rgba(76,182,72,0.12) 48%, #ffffff 80%)",
-              }}
-            />
-            <span className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
-              <Sparkles size={14} style={{ color: "var(--icon-yellow)" }} /> Glucose Intelligence by Eato
-            </span>
-            <h1 className="mt-5 font-serif text-4xl font-bold leading-[1.08] text-balance sm:text-5xl lg:text-6xl">
-              <span style={{ color: "var(--foreground)" }}>The </span>
-              <span style={{ color: "var(--icon-orange)" }}>Glucose</span>
-              <span style={{ color: "var(--foreground)" }}> System Inside </span>
-              <span style={{ color: "var(--icon-green)" }}>You</span>
-            </h1>
-            <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed sm:text-xl" style={{ color: "var(--muted-foreground)" }}>
-              Personal food intelligence for energy, cravings, and metabolic health.
-            </p>
-            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link
-                href="/assessment"
-                className="inline-flex items-center justify-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:opacity-90"
-                style={{ background: "var(--foreground)" }}
-              >
-                Join Early Access <ArrowRight size={16} />
-              </Link>
-              <Link
-                href="/assessment"
-                className="inline-flex items-center justify-center gap-2 rounded-full border px-8 py-4 text-base font-semibold transition-colors hover:bg-[#f4f8f0]"
-                style={{ borderColor: "var(--icon-green)", color: "var(--icon-green)" }}
-              >
-                Start Glucose Assessment
-              </Link>
+      {/* ── 1. HERO (homepage two-column layout) ── */}
+      <section className="relative min-h-screen overflow-hidden px-6 pt-20 pb-16 md:pb-20">
+        <div className="relative z-10 mx-auto flex max-w-[1200px] min-h-[calc(100vh-160px)] flex-col items-center justify-center gap-12 md:flex-row md:gap-16 lg:gap-20">
+
+          {/* ── Left: Image ── */}
+          <ScrollReveal delay={60} className="flex-1 flex items-center justify-center w-full max-w-[620px]">
+            <div className="relative w-full">
+              {/* Soft glucose-gold → green glow; also a graceful backdrop until the
+                  asset is dropped at public/images/eatobetics-hero.png */}
+              <div
+                aria-hidden
+                className="absolute inset-0 -z-10 blur-3xl"
+                style={{
+                  background:
+                    "radial-gradient(60% 60% at 50% 48%, rgba(245,197,24,0.22), rgba(76,182,72,0.12) 55%, transparent 78%)",
+                }}
+              />
+              <Image
+                src="/images/eatobetics-hero.png"
+                alt="The glucose system inside you — two figures in green and gold light with a glucose curve flowing through the body"
+                width={1200}
+                height={800}
+                priority
+                className="w-full h-auto object-contain"
+              />
             </div>
           </ScrollReveal>
+
+          {/* ── Right: Text ── */}
+          <div className="flex-1 text-left max-w-[560px]">
+            <ScrollReveal>
+              <span className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
+                <Sparkles size={14} style={{ color: "var(--icon-yellow)" }} /> Glucose Intelligence by Eato
+              </span>
+            </ScrollReveal>
+
+            <ScrollReveal delay={80}>
+              <h1 className="mt-5 font-serif text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl text-balance">
+                <span style={{ color: "var(--icon-orange)" }}>The Glucose System</span>{" "}
+                <span
+                  style={{
+                    background: "linear-gradient(90deg, var(--icon-yellow), var(--icon-orange), var(--icon-green))",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                >
+                  Inside You
+                </span>
+              </h1>
+            </ScrollReveal>
+
+            <ScrollReveal delay={140}>
+              <p className="mt-4 max-w-md text-xl font-medium text-foreground sm:text-2xl">
+                Personal food intelligence for energy, cravings, and metabolic health.
+              </p>
+              <p className="mt-4 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg">
+                Understand how every meal affects your glucose, get your EatoBetics Score,
+                and follow a personalised 30-day plan to a steadier food system.
+              </p>
+            </ScrollReveal>
+
+            <ScrollReveal delay={220}>
+              <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+                <Link href="/assessment" className={PRIMARY_CTA}>
+                  Join Early Access <ArrowRight size={16} />
+                </Link>
+                <Link
+                  href="/assessment"
+                  className="text-sm font-medium text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
+                >
+                  Start glucose assessment
+                </Link>
+              </div>
+            </ScrollReveal>
+
+            <ScrollReveal delay={320}>
+              <div className="mt-8 flex items-center gap-6">
+                {[
+                  { num: "Free", label: "To start" },
+                  { num: "3 min", label: "Takes about" },
+                  { num: "30 days", label: "To results" },
+                ].map((s, i) => (
+                  <div key={s.label} className="flex items-center gap-5">
+                    {i > 0 && <div className="h-5 w-px bg-border" />}
+                    <div>
+                      <p className="font-serif text-lg font-bold text-foreground">{s.num}</p>
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        {s.label}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollReveal>
+          </div>
         </div>
       </section>
+
+      {/* Brand-gradient divider — matches the homepage */}
+      <div style={{ height: "2px", background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
 
       {/* ── 2. PROBLEM ── */}
       <section className="px-6 py-24 md:py-32">
