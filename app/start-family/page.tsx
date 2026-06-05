@@ -10,6 +10,7 @@ import { StartFamilyFinal } from "@/components/start-family/start-family-final"
 import { StickyCtagFamily } from "@/components/start-family/sticky-cta-family"
 
 export const metadata: Metadata = {
+  robots: { index: false },
   title: "What's your Family Food System Score? | EatoBiotics",
   description:
     "Discover how your household's food habits are shaping every family member's health. Get your free Family Food System Score in 2 minutes.",

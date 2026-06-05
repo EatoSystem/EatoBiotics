@@ -31,6 +31,7 @@
 import { useEffect } from "react"
 import { useClientAsyncInit, StatsigProvider } from "@statsig/react-bindings"
 import { _registerStatsigLogger } from "@/lib/statsig-client"
+import { getSupabaseBrowser } from "@/lib/supabase-browser"
 
 export function StatsigClientProvider({
   children,
@@ -75,6 +76,21 @@ function StatsigEnabledProvider({
       // Use the string overload: logEvent(eventName, value?, metadata?)
       client.logEvent(name, value, metadata)
     })
+  }, [client])
+
+  // Sync the real Supabase user into Statsig once available (was "anonymous"),
+  // so gates, experiments, and subscription analytics key to the logged-in user.
+  useEffect(() => {
+    if (!client) return
+    const supabase = getSupabaseBrowser()
+    const sync = (userId?: string, email?: string | null) => {
+      if (userId) client.updateUserSync({ userID: userId, email: email ?? undefined })
+    }
+    supabase.auth.getSession().then(({ data }) => sync(data.session?.user.id, data.session?.user.email))
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) =>
+      sync(session?.user.id, session?.user.email),
+    )
+    return () => subscription.unsubscribe()
   }, [client])
 
   // normally — gates default to OFF / false, which is safe.

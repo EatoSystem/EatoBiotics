@@ -94,7 +94,7 @@ const PLATES: PlateOption[] = [
     focus: "digestion, energy, resilience, steady meals",
     description:
       "A complete EatoBiotics bowl for digestion, energy, resilience, and steady meals.",
-    image: "/plate-builder/food-1.png",
+    image: "/food-1.png",
     accent: "var(--icon-lime)",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
     hero: "Glossy salmon, quinoa, kale, cucumber ribbons, avocado, chickpeas, yogurt, kimchi, red cabbage, and seeds.",
@@ -107,7 +107,7 @@ const PLATES: PlateOption[] = [
     focus: "immunity, mood, energy, recovery",
     description:
       "A bright EatoBiotics plate for immunity, mood, energy, and recovery.",
-    image: "/plate-builder/food-2.png",
+    image: "/food-2.png",
     accent: "var(--icon-yellow)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-yellow))",
     hero: "Golden chicken, asparagus, berries, avocado, lentils, kale, live yogurt, kimchi, eggs, and pumpkin seeds.",
@@ -120,7 +120,7 @@ const PLATES: PlateOption[] = [
     focus: "richness, diversity, nourishment, consistency",
     description:
       "A colourful plant-diverse plate for richness, variety, nourishment, and consistency.",
-    image: "/plate-builder/food-3.png",
+    image: "/food-3.png",
     accent: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-teal), var(--icon-yellow))",
     hero: "Tempeh, beets, rainbow carrots, broccoli, lentils, chickpeas, sauerkraut, purple cabbage, avocado, greens, herbs, and seeds.",
