@@ -1,15 +1,11 @@
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
-import Stripe from "stripe"
+import { stripe } from "@/lib/stripe-server"
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabase } from "@/lib/supabase"
 import type { DeepQuestion } from "@/lib/deep-assessment"
 import type { DeepReport } from "@/lib/claude-report"
 import { getPaidReportSummaryFromSession, isCheckoutSessionSettled } from "@/lib/paid-report-session"
 import { buildFallbackPaidReport } from "@/lib/fallback-paid-report"
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
-  apiVersion: "2026-02-25.clover",
-})
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

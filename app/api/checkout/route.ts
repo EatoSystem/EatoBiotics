@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import Stripe from "stripe"
+import { stripe } from "@/lib/stripe-server"
 import { encodePaidReportSummary, type PaidReportTier } from "@/lib/paid-report-session"
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
-  apiVersion: "2026-02-25.clover",
-})
 
 const TIER_CONFIG = {
   // ── New primary tier ──────────────────────────────────────────────────

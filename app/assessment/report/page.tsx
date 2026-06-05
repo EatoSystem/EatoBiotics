@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
-import Stripe from "stripe"
+import { stripe } from "@/lib/stripe-server"
 import { FullReportClient } from "@/components/assessment/full-report-client"
 import { PaidReportClient } from "@/components/assessment/paid-report-client"
 import { getSupabase } from "@/lib/supabase"
@@ -37,9 +37,6 @@ export default async function ReportPage({ searchParams }: Props) {
   }
 
   try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2026-02-25.clover",
-    })
     const session = await stripe.checkout.sessions.retrieve(session_id)
 
     if (!isCheckoutSessionSettled(session)) {

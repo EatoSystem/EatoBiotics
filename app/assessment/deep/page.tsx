@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
-import Stripe from "stripe"
+import { stripe } from "@/lib/stripe-server"
 import { getSupabase } from "@/lib/supabase"
 import { DeepAssessmentClient } from "@/components/assessment/deep/deep-assessment-client"
 import type { DeepQuestion, DeepAnswers } from "@/lib/deep-assessment"
@@ -78,9 +78,6 @@ export default async function DeepAssessmentPage({ searchParams }: Props) {
   }
 
   try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2026-02-25.clover",
-    })
     const session = await stripe.checkout.sessions.retrieve(session_id)
 
     if (!isCheckoutSessionSettled(session)) {
