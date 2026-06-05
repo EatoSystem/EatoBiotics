@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { PricingClient } from "./pricing-client"
+import type { MembershipTier } from "@/lib/membership"
 
 export const metadata: Metadata = {
   title: "Plans & Pricing — EatoBiotics",
@@ -31,7 +32,7 @@ export default async function PricingPage({
 
   const user = await getUser()
 
-  let currentTier: "free" | "grow" | "restore" | "transform" = "free"
+  let currentTier: MembershipTier = "free"
   let currentStatus: string = "inactive"
   let isFoundingMember = false
 

@@ -3,6 +3,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 import { DashboardClient } from "@/components/account/dashboard-client"
+import { TIER_META } from "@/lib/membership"
 
 export const metadata: Metadata = {
   title: "Account Preview — EatoBiotics",
@@ -96,30 +97,16 @@ function lastMonday() {
 
 /* ── Tier metadata ────────────────────────────────────────────────── */
 
-const TIER_META = {
-  free: {
-    label: "Free",
-    price: "Free",
-    color: "var(--icon-lime)",
-  },
-  grow: {
-    label: "Grow",
-    price: "€9.99/mo",
-    color: "var(--icon-green)",
-  },
-  restore: {
-    label: "Restore",
-    price: "€49/mo",
-    color: "var(--icon-teal)",
-  },
-  transform: {
-    label: "Transform",
-    price: "€99/mo",
-    color: "var(--icon-orange)",
-  },
-}
+type DemoTier = "free" | "grow" | "restore" | "transform"
 
-type DemoTier = keyof typeof TIER_META
+// Presentation-only accent colours for the demo. Tier label/price come from the
+// canonical TIER_META in lib/membership (single source of truth).
+const TIER_COLORS: Record<DemoTier, string> = {
+  free:      "var(--icon-lime)",
+  grow:      "var(--icon-green)",
+  restore:   "var(--icon-teal)",
+  transform: "var(--icon-orange)",
+}
 
 /* ── Mock profiles per tier ───────────────────────────────────────── */
 
@@ -236,21 +223,21 @@ export default async function DemoAccountTierPage({
   return (
     <div className="min-h-screen bg-background pt-[57px]">
       {/* Demo banner */}
-      <div className="border-b px-4 py-2.5" style={{ background: `color-mix(in srgb, ${meta.color} 10%, var(--background))`, borderColor: `color-mix(in srgb, ${meta.color} 25%, transparent)` }}>
+      <div className="border-b px-4 py-2.5" style={{ background: `color-mix(in srgb, ${TIER_COLORS[tier]} 10%, var(--background))`, borderColor: `color-mix(in srgb, ${TIER_COLORS[tier]} 25%, transparent)` }}>
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Link href="/demo/account" className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft size={12} /> All tiers
             </Link>
             <span className="text-muted-foreground/40 text-xs">·</span>
-            <p className="text-xs font-semibold" style={{ color: meta.color }}>
+            <p className="text-xs font-semibold" style={{ color: TIER_COLORS[tier] }}>
               Previewing <strong>{meta.label}</strong> ({meta.price}) — sample data for Sarah M.
             </p>
           </div>
           <Link
             href="/assessment"
             className="shrink-0 text-xs font-semibold hover:underline"
-            style={{ color: meta.color }}
+            style={{ color: TIER_COLORS[tier] }}
           >
             Get your real account →
           </Link>
