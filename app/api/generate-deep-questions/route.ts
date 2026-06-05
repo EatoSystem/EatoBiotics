@@ -1,5 +1,5 @@
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
-import Stripe from "stripe"
+import { stripe } from "@/lib/stripe-server"
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabase } from "@/lib/supabase"
 import {
@@ -7,10 +7,6 @@ import {
   type DeepQuestion,
 } from "@/lib/deep-assessment"
 import { PILLAR_LABELS as CORE_PILLAR_LABELS } from "@/lib/pillars"
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
-  apiVersion: "2026-02-25.clover",
-})
 
 type SubScores = {
   prebiotics?: number
