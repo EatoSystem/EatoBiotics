@@ -4,7 +4,7 @@ import { GlucoseAssessmentClient } from "@/components/eatobetics/glucose-assessm
 export const metadata: Metadata = {
   title: { absolute: "EatoBetics Assessment — Your Glucose Intelligence Score" },
   description:
-    "A free 15-question EatoBetics assessment of how your meals, rhythm, and daily habits support steady energy and glucose. Get your EatoBetics Score in about 3 minutes.",
+    "A free EatoBetics assessment of how your meals, rhythm, strength habits, and daily routine support steady energy and glucose. Get your EatoBetics Score and full report in about 4 minutes.",
   robots: { index: false },
   openGraph: {
     title: "EatoBetics Assessment — Your Glucose Intelligence Score",

@@ -11,7 +11,6 @@
  */
 
 import { useEffect, useRef, useState } from "react"
-import Link from "next/link"
 import {
   ArrowRight,
   ArrowLeft,
@@ -19,8 +18,8 @@ import {
   Sparkles,
   Salad,
   Clock,
-  Activity,
-  RotateCcw,
+  Dumbbell,
+  HeartPulse,
   ShieldCheck,
   type LucideIcon,
 } from "lucide-react"
@@ -33,9 +32,9 @@ import {
   computeGlucoseResult,
   type GlucoseResult,
 } from "@/lib/glucose-assessment-scoring"
-import { ScoreRing } from "@/components/assessment/score-ring"
+import { GlucoseReport } from "@/components/eatobetics/glucose-report"
 
-const ICONS: Record<string, LucideIcon> = { Salad, Clock, Activity }
+const ICONS: Record<string, LucideIcon> = { Salad, Clock, Dumbbell, HeartPulse }
 const STORAGE_KEY = "eatobetics-glucose-assessment"
 
 type View = "intro" | "questions" | "results"
@@ -139,7 +138,7 @@ export function GlucoseAssessmentClient() {
   }
 
   if (view === "intro") return <Intro onStart={start} />
-  if (view === "results" && result) return <Results result={result} onRetake={retake} />
+  if (view === "results" && result) return <GlucoseReport result={result} onRetake={retake} />
   return (
     <Questions
       index={safeIndex}
@@ -166,12 +165,13 @@ function Intro({ onStart }: { onStart: () => void }) {
           <span style={{ color: "var(--foreground)" }}> Intelligence Score?</span>
         </h1>
         <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
-          A 15-question check-in on how your meals, rhythm, and daily habits support
-          steady energy and glucose. Free, about 3 minutes, no account needed.
+          A quick, structured check-in on how your meals, rhythm, strength habits, and
+          daily routine support steady energy and glucose. Free, about 4 minutes, no
+          account needed.
         </p>
 
         {/* Pillars */}
-        <div className="mt-12 grid gap-4 sm:grid-cols-3">
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Object.values(GLUCOSE_PILLARS).map((p) => {
             const Icon = ICONS[p.icon] ?? Salad
             return (
@@ -283,117 +283,6 @@ function Questions({
             <ArrowLeft size={15} /> Back
           </button>
         </div>
-      </div>
-    </main>
-  )
-}
-
-/* ── Results ────────────────────────────────────────────────────── */
-
-function Results({ result, onRetake }: { result: GlucoseResult; onRetake: () => void }) {
-  const { overall, profile, insights, subScores, nextActions } = result
-
-  return (
-    <main className="bg-white px-6 pb-24 pt-24">
-      <div className="mx-auto max-w-2xl">
-        {/* Score card */}
-        <div
-          className="relative overflow-hidden rounded-[2rem] border-2 p-8 text-center shadow-2xl"
-          style={{ borderColor: "color-mix(in srgb, var(--icon-orange) 35%, transparent)" }}
-        >
-          <div className="absolute inset-x-0 top-0 h-1.5" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
-          <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-orange)" }}>
-            Your EatoBetics Score
-          </p>
-          <div className="mt-6 flex justify-center">
-            <ScoreRing score={overall} color={profile.color} gradientId="glucose-score-ring" profileType={profile.type} />
-          </div>
-          <p className="mt-5 font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>{profile.tagline}</p>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{profile.description}</p>
-        </div>
-
-        {/* Pillar bars */}
-        <div className="mt-6 rounded-3xl border border-[#e8efe2] bg-white p-7 shadow-sm">
-          <h3 className="font-serif text-lg font-bold" style={{ color: "var(--foreground)" }}>Your glucose pillars</h3>
-          <div className="mt-5 space-y-5">
-            {(["plate", "rhythm", "recovery"] as const).map((key) => {
-              const meta = GLUCOSE_PILLARS[key]
-              const score = subScores[key]
-              return (
-                <div key={key}>
-                  <div className="mb-1.5 flex items-center justify-between">
-                    <span className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>{meta.label}</span>
-                    <span className="font-serif text-sm font-bold" style={{ color: meta.color }}>{score}</span>
-                  </div>
-                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
-                    <div className="h-full rounded-full transition-all duration-700" style={{ width: `${score}%`, background: meta.gradient }} />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Insights (weakest first) */}
-        <div className="mt-6 space-y-4">
-          {insights.map((ins) => {
-            const Icon = ICONS[ins.icon] ?? Salad
-            return (
-              <div key={ins.pillar} className="rounded-3xl border border-[#e8efe2] bg-white p-6 shadow-sm">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white" style={{ background: ins.gradient }}>
-                    <Icon size={20} />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-serif text-lg font-bold" style={{ color: "var(--foreground)" }}>{ins.label}</h4>
-                      <span className="font-serif text-base font-bold" style={{ color: ins.color }}>{ins.score}</span>
-                    </div>
-                    <p className="mt-1.5 text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
-                      {ins.strength ?? ins.opportunity}
-                    </p>
-                    <p className="mt-3 rounded-xl px-3 py-2 text-sm leading-relaxed" style={{ background: "color-mix(in srgb, var(--muted) 60%, transparent)", color: "var(--foreground)" }}>
-                      <span className="font-semibold">Try this: </span>{ins.action}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Next actions */}
-        <div className="mt-6 rounded-3xl p-7" style={{ background: "#f4f8f0", border: "1px solid #e1ead8" }}>
-          <h3 className="font-serif text-lg font-bold" style={{ color: "var(--foreground)" }}>Your 30-day starting point</h3>
-          <ul className="mt-4 space-y-3">
-            {nextActions.map((a, i) => (
-              <li key={i} className="flex items-start gap-3 text-sm" style={{ color: "var(--foreground)" }}>
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: "var(--icon-green)" }}>{i + 1}</span>
-                <span className="leading-relaxed">{a}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* CTA */}
-        <div className="mt-8 rounded-[2rem] px-6 py-10 text-center" style={{ background: "linear-gradient(135deg, #14250F 0%, #1A2E12 50%, #2C3A12 100%)" }}>
-          <h3 className="font-serif text-2xl font-bold text-white sm:text-3xl text-balance">Want the full EatoBetics Report?</h3>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-white/75">
-            Join early access for your personalised glucose profile, meal intelligence, and a guided 30-day protocol.
-          </p>
-          <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link href="/eatobetics" className="brand-gradient inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:opacity-90">
-              Join early access <ArrowRight size={15} />
-            </Link>
-            <button onClick={onRetake} className="inline-flex items-center gap-2 rounded-full border border-white/30 px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-white/10">
-              <RotateCcw size={14} /> Retake
-            </button>
-          </div>
-        </div>
-
-        <p className="mt-6 flex items-center justify-center gap-2 text-center text-xs" style={{ color: "var(--muted-foreground)" }}>
-          <ShieldCheck size={13} /> EatoBetics is educational and does not diagnose, treat, or cure any condition.
-        </p>
       </div>
     </main>
   )

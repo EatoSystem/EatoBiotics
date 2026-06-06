@@ -1,17 +1,19 @@
 // lib/glucose-assessment-data.ts
 //
 // EatoBetics (glucose) assessment — modelled on the EatoBiotics framework
-// (lib/assessment-data.ts), but built around the Glucose Intelligence Lens.
+// (lib/assessment-data.ts), built around the Glucose Intelligence Lens.
 //
-// 15 questions across 3 glucose pillars (mirrors the 6/3/6 split):
-//   Plate    (q1–q6)   — how meals are built: fibre, protein, carb quality, food order
-//   Rhythm   (q7–q9)   — when & how regularly you eat: timing, spacing, late eating
-//   Recovery (q10–q15) — the life around meals: movement, energy, sleep, stress
+// 1 context question (not scored) + 18 scored questions across 4 pillars:
+//   Plate    (p1–p6)  — how meals are built: fibre, protein, carb quality, order
+//   Rhythm   (r1–r3)  — when & how regularly you eat: timing, spacing, late meals
+//   Strength (s1–s4)  — protein for muscle, resistance training, walking, movement
+//   Recovery (e1–e5)  — the life around meals: energy, cravings, sleep, stress
 //
-// Higher option value = more glucose-supportive. All copy is educational and
-// avoids diagnose/treat/cure framing.
+// Higher option value = more glucose-supportive. Context answers personalise
+// the report (e.g. GLP-1 medication → muscle-preserving focus). All copy is
+// educational and avoids diagnose/treat/cure framing.
 
-export type GlucosePillarKey = "plate" | "rhythm" | "recovery"
+export type GlucosePillarKey = "plate" | "rhythm" | "strength" | "recovery"
 
 export interface GlucoseAnswerOption {
   label: string
@@ -20,10 +22,10 @@ export interface GlucoseAnswerOption {
 }
 
 export interface GlucoseQuestion {
-  id: string // "g1"–"g15"
-  pillar: GlucosePillarKey
+  id: string
+  pillar: GlucosePillarKey | "context"
   sectionTitle: string
-  index: number // 1–15
+  index: number
   text: string
   type: "single"
   options: GlucoseAnswerOption[]
@@ -55,31 +57,66 @@ export const GLUCOSE_PILLARS: Record<GlucosePillarKey, GlucosePillarMeta> = {
     color: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
   },
-  recovery: {
-    key: "recovery",
-    label: "Recovery",
-    blurb: "The life around your meals — movement, energy, sleep, and stress.",
-    icon: "Activity",
+  strength: {
+    key: "strength",
+    label: "Strength",
+    blurb: "Protein for muscle, resistance training, and how much you walk and move.",
+    icon: "Dumbbell",
     color: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
   },
+  recovery: {
+    key: "recovery",
+    label: "Recovery",
+    blurb: "The life around your meals — energy, cravings, sleep, and stress.",
+    icon: "HeartPulse",
+    color: "var(--icon-green)",
+    gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-lime))",
+  },
 }
 
+// Scored question IDs per pillar — scoring sums only these.
+export const GLUCOSE_PILLAR_IDS: Record<GlucosePillarKey, string[]> = {
+  plate: ["p1", "p2", "p3", "p4", "p5", "p6"],
+  rhythm: ["r1", "r2", "r3"],
+  strength: ["s1", "s2", "s3", "s4"],
+  recovery: ["e1", "e2", "e3", "e4", "e5"],
+}
+
+export const GLP1_QUESTION_ID = "ctx_glp1"
+
 export const GLUCOSE_SECTION_COLORS: Record<string, string> = {
+  "About You": "var(--icon-teal)",
   "Plate — Building Better Meals": "var(--icon-green)",
   "Plate — Carbohydrate Quality": "var(--icon-lime)",
   "Rhythm — Timing & Spacing": "var(--icon-teal)",
-  "Recovery — Movement & Energy": "var(--icon-yellow)",
-  "Recovery — Sleep & Stress": "var(--icon-orange)",
+  "Strength — Muscle & Movement": "var(--icon-orange)",
+  "Recovery — Energy, Sleep & Stress": "var(--icon-green)",
 }
 
 export const GLUCOSE_QUESTIONS: GlucoseQuestion[] = [
-  // ── PLATE (q1–q6) ──────────────────────────────────────────────
+  // ── CONTEXT (not scored) ───────────────────────────────────────
   {
-    id: "g1",
+    id: GLP1_QUESTION_ID,
+    pillar: "context",
+    sectionTitle: "About You",
+    index: 1,
+    text: "Are you currently using — or considering — a GLP-1 medication (such as Ozempic, Wegovy, Mounjaro, or Saxenda)?",
+    type: "single",
+    options: [
+      { value: 0, label: "No, not currently", description: "I'm not using or planning to use one" },
+      { value: 1, label: "Considering it", description: "I'm thinking about it or in discussion with a clinician" },
+      { value: 2, label: "Yes — recently started", description: "I've started within the last few months" },
+      { value: 3, label: "Yes — for a while now", description: "I've been using one for several months or longer" },
+    ],
+  },
+
+  // ── PLATE (p1–p6) ──────────────────────────────────────────────
+  {
+    id: "p1",
     pillar: "plate",
     sectionTitle: "Plate — Building Better Meals",
-    index: 1,
+    index: 2,
     text: "How often do your main meals include vegetables, salad, or other high-fibre foods?",
     type: "single",
     options: [
@@ -90,10 +127,10 @@ export const GLUCOSE_QUESTIONS: GlucoseQuestion[] = [
     ],
   },
   {
-    id: "g2",
+    id: "p2",
     pillar: "plate",
     sectionTitle: "Plate — Building Better Meals",
-    index: 2,
+    index: 3,
     text: "How often do your meals include a source of protein (e.g. eggs, fish, meat, beans, tofu, dairy)?",
     type: "single",
     options: [
@@ -104,10 +141,10 @@ export const GLUCOSE_QUESTIONS: GlucoseQuestion[] = [
     ],
   },
   {
-    id: "g3",
+    id: "p3",
     pillar: "plate",
     sectionTitle: "Plate — Building Better Meals",
-    index: 3,
+    index: 4,
     text: "When a meal has starch (rice, potato, bread, pasta), do you tend to eat vegetables or protein first?",
     type: "single",
     options: [
@@ -118,10 +155,10 @@ export const GLUCOSE_QUESTIONS: GlucoseQuestion[] = [
     ],
   },
   {
-    id: "g4",
+    id: "p4",
     pillar: "plate",
     sectionTitle: "Plate — Carbohydrate Quality",
-    index: 4,
+    index: 5,
     text: "When you eat carbohydrates, what type are they most often?",
     type: "single",
     options: [
@@ -132,10 +169,10 @@ export const GLUCOSE_QUESTIONS: GlucoseQuestion[] = [
     ],
   },
   {
-    id: "g5",
+    id: "p5",
     pillar: "plate",
     sectionTitle: "Plate — Carbohydrate Quality",
-    index: 5,
+    index: 6,
     text: "How often do you have sugary drinks, sweets, or refined snacks on their own (not part of a meal)?",
     type: "single",
     options: [
@@ -146,10 +183,10 @@ export const GLUCOSE_QUESTIONS: GlucoseQuestion[] = [
     ],
   },
   {
-    id: "g6",
+    id: "p6",
     pillar: "plate",
     sectionTitle: "Plate — Carbohydrate Quality",
-    index: 6,
+    index: 7,
     text: "Overall, how balanced are your typical plates?",
     type: "single",
     options: [
@@ -160,12 +197,12 @@ export const GLUCOSE_QUESTIONS: GlucoseQuestion[] = [
     ],
   },
 
-  // ── RHYTHM (q7–q9) ─────────────────────────────────────────────
+  // ── RHYTHM (r1–r3) ─────────────────────────────────────────────
   {
-    id: "g7",
+    id: "r1",
     pillar: "rhythm",
     sectionTitle: "Rhythm — Timing & Spacing",
-    index: 7,
+    index: 8,
     text: "How regular are your meal times from day to day?",
     type: "single",
     options: [
@@ -176,10 +213,10 @@ export const GLUCOSE_QUESTIONS: GlucoseQuestion[] = [
     ],
   },
   {
-    id: "g8",
+    id: "r2",
     pillar: "rhythm",
     sectionTitle: "Rhythm — Timing & Spacing",
-    index: 8,
+    index: 9,
     text: "How often do you eat a meal or snack within about two hours of going to bed?",
     type: "single",
     options: [
@@ -190,10 +227,10 @@ export const GLUCOSE_QUESTIONS: GlucoseQuestion[] = [
     ],
   },
   {
-    id: "g9",
+    id: "r3",
     pillar: "rhythm",
     sectionTitle: "Rhythm — Timing & Spacing",
-    index: 9,
+    index: 10,
     text: "How often do you go long stretches without eating and then have a very large meal?",
     type: "single",
     options: [
@@ -204,26 +241,70 @@ export const GLUCOSE_QUESTIONS: GlucoseQuestion[] = [
     ],
   },
 
-  // ── RECOVERY (q10–q15) ─────────────────────────────────────────
+  // ── STRENGTH (s1–s4) ───────────────────────────────────────────
   {
-    id: "g10",
-    pillar: "recovery",
-    sectionTitle: "Recovery — Movement & Energy",
-    index: 10,
-    text: "How often do you move after meals — even a short walk?",
+    id: "s1",
+    pillar: "strength",
+    sectionTitle: "Strength — Muscle & Movement",
+    index: 11,
+    text: "How often do your meals include enough protein to support muscle and strength (roughly a palm-sized portion — eggs, fish, meat, dairy, beans, or tofu)?",
+    type: "single",
+    options: [
+      { value: 0, label: "Rarely", description: "I don't usually think about protein for muscle" },
+      { value: 1, label: "Some meals", description: "A decent portion now and then" },
+      { value: 2, label: "Most meals", description: "I usually get a solid protein portion" },
+      { value: 3, label: "Every main meal", description: "I deliberately build each meal around enough protein" },
+    ],
+  },
+  {
+    id: "s2",
+    pillar: "strength",
+    sectionTitle: "Strength — Muscle & Movement",
+    index: 12,
+    text: "How often do you do resistance or strength activity (weights, resistance bands, or bodyweight exercises)?",
+    type: "single",
+    options: [
+      { value: 0, label: "Never", description: "Strength training isn't part of my routine" },
+      { value: 1, label: "Occasionally", description: "Every so often, but not regularly" },
+      { value: 2, label: "1–2 times a week", description: "I fit in some resistance work weekly" },
+      { value: 3, label: "3+ times a week", description: "Strength training is a consistent habit" },
+    ],
+  },
+  {
+    id: "s3",
+    pillar: "strength",
+    sectionTitle: "Strength — Muscle & Movement",
+    index: 13,
+    text: "On a typical day, how much do you walk or stay on your feet?",
+    type: "single",
+    options: [
+      { value: 0, label: "Very little", description: "Mostly sitting through the day" },
+      { value: 1, label: "A bit", description: "Some walking, but not much" },
+      { value: 2, label: "A fair amount", description: "I'm up and moving regularly" },
+      { value: 3, label: "A lot", description: "I'm active and on my feet most of the day" },
+    ],
+  },
+  {
+    id: "s4",
+    pillar: "strength",
+    sectionTitle: "Strength — Muscle & Movement",
+    index: 14,
+    text: "How often do you take a short walk after meals?",
     type: "single",
     options: [
       { value: 0, label: "Rarely", description: "I usually sit or rest after eating" },
       { value: 1, label: "Sometimes", description: "Occasionally, when it fits" },
-      { value: 2, label: "Most days", description: "I often walk or move after a meal" },
+      { value: 2, label: "Most days", description: "I often walk after a meal" },
       { value: 3, label: "Daily", description: "A post-meal walk is a regular habit" },
     ],
   },
+
+  // ── RECOVERY (e1–e5) ───────────────────────────────────────────
   {
-    id: "g11",
+    id: "e1",
     pillar: "recovery",
-    sectionTitle: "Recovery — Movement & Energy",
-    index: 11,
+    sectionTitle: "Recovery — Energy, Sleep & Stress",
+    index: 15,
     text: "How do you usually feel in the one to two hours after eating?",
     type: "single",
     options: [
@@ -234,10 +315,10 @@ export const GLUCOSE_QUESTIONS: GlucoseQuestion[] = [
     ],
   },
   {
-    id: "g12",
+    id: "e2",
     pillar: "recovery",
-    sectionTitle: "Recovery — Movement & Energy",
-    index: 12,
+    sectionTitle: "Recovery — Energy, Sleep & Stress",
+    index: 16,
     text: "How often do you get strong cravings or sudden hunger between meals?",
     type: "single",
     options: [
@@ -248,10 +329,10 @@ export const GLUCOSE_QUESTIONS: GlucoseQuestion[] = [
     ],
   },
   {
-    id: "g13",
+    id: "e3",
     pillar: "recovery",
-    sectionTitle: "Recovery — Sleep & Stress",
-    index: 13,
+    sectionTitle: "Recovery — Energy, Sleep & Stress",
+    index: 17,
     text: "How many hours of sleep do you typically get?",
     type: "single",
     options: [
@@ -262,10 +343,10 @@ export const GLUCOSE_QUESTIONS: GlucoseQuestion[] = [
     ],
   },
   {
-    id: "g14",
+    id: "e4",
     pillar: "recovery",
-    sectionTitle: "Recovery — Sleep & Stress",
-    index: 14,
+    sectionTitle: "Recovery — Energy, Sleep & Stress",
+    index: 18,
     text: "How would you describe your typical stress levels?",
     type: "single",
     options: [
@@ -276,10 +357,10 @@ export const GLUCOSE_QUESTIONS: GlucoseQuestion[] = [
     ],
   },
   {
-    id: "g15",
+    id: "e5",
     pillar: "recovery",
-    sectionTitle: "Recovery — Sleep & Stress",
-    index: 15,
+    sectionTitle: "Recovery — Energy, Sleep & Stress",
+    index: 19,
     text: "Overall, how steady, clear, and energised do you feel through the day?",
     type: "single",
     options: [
