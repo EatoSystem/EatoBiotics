@@ -12,6 +12,7 @@ import {
   Calendar,
   ChevronDown,
   ChevronUp,
+  Dumbbell,
 } from "lucide-react"
 import posthog from "posthog-js"
 import type { MembershipTier } from "@/lib/membership"
@@ -223,6 +224,33 @@ export function PricingClient({
             </Link>
             .
           </p>
+        </div>
+      )}
+
+      {/* GLP-1 Companion highlight — arrives via /pricing?feature=glp1-companion */}
+      {highlightFeature === "glp1-companion" && (
+        <div
+          className="mb-8 flex flex-col items-center gap-3 rounded-2xl p-5 text-center sm:flex-row sm:text-left"
+          style={{
+            background: "color-mix(in srgb, var(--icon-green) 8%, var(--card))",
+            border: "1px solid color-mix(in srgb, var(--icon-green) 25%, transparent)",
+          }}
+        >
+          <span
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white"
+            style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}
+          >
+            <Dumbbell size={18} />
+          </span>
+          <div className="flex-1">
+            <p className="text-sm font-semibold" style={{ color: "var(--icon-green)" }}>
+              The GLP-1 Companion is included with EatoBiotics membership.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Track your protein against your muscle-protecting target every day. Take the free
+              assessment to begin, then continue with a membership below.
+            </p>
+          </div>
         </div>
       )}
 
@@ -458,6 +486,7 @@ export function PricingClient({
               "New 30-day focus plan each month",
               "Weekly personalised food guidance",
               "Monthly progress report (included)",
+              "GLP-1 Companion — daily protein & muscle tracker",
               "Ongoing food recommendations",
               "Priority access to new features",
             ].map((f) => (

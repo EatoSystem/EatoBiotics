@@ -95,6 +95,29 @@ async function generateWeeklyCheckin(userId: string, userEmail: string): Promise
 
   const pillarSummary = formatBioticScores(subScores)
 
+  // GLP-1 Companion progress — only relevant if the member is tracking.
+  const { data: glp1Rows } = await adminSupabase
+    .from("glp1_logs")
+    .select("protein_grams, protein_target, strength_session")
+    .eq("user_id", userId)
+    .gte("log_date", sevenDaysAgo.toISOString().slice(0, 10))
+
+  const glp1Logs = glp1Rows ?? []
+  let glp1Note = ""
+  let glp1Instruction = ""
+  if (glp1Logs.length > 0) {
+    const hit = (l: { protein_grams: number | null; protein_target: number | null }) =>
+      l.protein_grams != null && l.protein_target != null && l.protein_grams >= l.protein_target
+    const hits        = glp1Logs.filter(hit).length
+    const sessions    = glp1Logs.filter((l) => l.strength_session).length
+    const proteinDays = glp1Logs.filter((l) => l.protein_grams != null)
+    const avgProtein  = proteinDays.length
+      ? Math.round(proteinDays.reduce((s, l) => s + (l.protein_grams ?? 0), 0) / proteinDays.length)
+      : 0
+    glp1Note = `\n- GLP-1 Companion: protein target hit on ${hits} of ${glp1Logs.length} logged day(s), ${sessions} strength session(s), ~${avgProtein}g average protein/day. This member is on a GLP-1 medication, so protecting muscle is a priority.`
+    glp1Instruction = `\n\nThis member is using the GLP-1 Companion. Briefly acknowledge their protein and strength-training progress this week and give one specific, encouraging tip for protecting muscle while on their medication (e.g. protein at every meal, a resistance session). Keep it supportive and non-medical.`
+  }
+
   const dataNote = analysisCount === 1
     ? `Only 1 meal has been logged this week. Extract as much insight as possible from this single data point.`
     : `${analysisCount} meals logged this week.`
@@ -107,14 +130,14 @@ Data for this week:
 - Current Biotics Score: ${latestScore ?? "Unknown"}/100
 - Previous Biotics Score: ${previousScore ?? "Unknown"}/100
 - 3 Biotics pillar scores: ${pillarSummary}
-- Meal analyses this week: ${scoreSummary}
+- Meal analyses this week: ${scoreSummary}${glp1Note}
 
 Write a 3-paragraph weekly check-in directly to the member using "you":
 1. This week in your food system health (what the data shows — be honest if data is limited but still insightful)
 2. What's working and what needs attention (constructive, specific)
 3. Your focus for next week — one clear priority with a practical action
 
-Tone: warm, direct, personal. Under 200 words total. No bullet points. No headers.`
+Tone: warm, direct, personal. Under 200 words total. No bullet points. No headers.${glp1Instruction}`
 
   const response = await anthropic.messages.create({
     model:      CLAUDE_MODEL,
