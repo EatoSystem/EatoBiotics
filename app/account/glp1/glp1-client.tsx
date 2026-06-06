@@ -2,10 +2,13 @@
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
-import { Dumbbell, Check, Flame, TrendingUp, TrendingDown, Loader2, ArrowLeft } from "lucide-react"
+import { Dumbbell, Check, Flame, TrendingUp, TrendingDown, Loader2, ArrowLeft, Settings2, Target } from "lucide-react"
 import {
   type Activity,
+  type Glp1Medication,
   ACTIVITY_LABELS,
+  MEDICATIONS,
+  medicationLabel,
   lbToKg,
   proteinTarget,
 } from "@/lib/glp1"
@@ -19,6 +22,13 @@ export type Glp1Log = {
   notes: string | null
 }
 
+export type Glp1Profile = {
+  medication: string | null
+  start_weight_kg: number | null
+  goal_weight_kg: number | null
+  started_at: string | null
+}
+
 type Unit = "kg" | "lb"
 
 const today = () => new Date().toISOString().slice(0, 10)
@@ -27,17 +37,27 @@ export function Glp1Client({
   memberName,
   initialLogs,
   latestWeightKg,
+  initialProfile,
 }: {
   memberName: string | null
   initialLogs: Glp1Log[]
   latestWeightKg: number | null
+  initialProfile: Glp1Profile | null
 }) {
   const [logs, setLogs] = useState<Glp1Log[]>(initialLogs)
+  const [profile, setProfile] = useState<Glp1Profile | null>(initialProfile)
+  const [editing, setEditing] = useState(false)
   const todayLog = logs.find((l) => l.log_date === today())
 
   const [unit, setUnit] = useState<Unit>("kg")
   const [weight, setWeight] = useState<string>(
-    todayLog?.weight_kg != null ? String(todayLog.weight_kg) : latestWeightKg != null ? String(latestWeightKg) : "",
+    todayLog?.weight_kg != null
+      ? String(todayLog.weight_kg)
+      : latestWeightKg != null
+        ? String(latestWeightKg)
+        : initialProfile?.start_weight_kg != null
+          ? String(initialProfile.start_weight_kg)
+          : "",
   )
   const [activity, setActivity] = useState<Activity>("strength")
   const [protein, setProtein] = useState<string>(
@@ -119,6 +139,28 @@ export function Glp1Client({
 
   const ringColor = pct >= 100 ? "var(--icon-green)" : pct >= 60 ? "var(--icon-lime)" : "var(--icon-yellow)"
 
+  // ── First run (or editing): onboarding setup ──
+  if (!profile || editing) {
+    return (
+      <Glp1Onboarding
+        memberName={memberName}
+        initial={profile}
+        canCancel={!!profile}
+        onCancel={() => setEditing(false)}
+        onDone={(p) => { setProfile(p); setEditing(false) }}
+      />
+    )
+  }
+
+  const medLabel = medicationLabel(profile.medication)
+  const subtitle = medLabel && profile.medication !== "not_started"
+    ? `On ${medLabel} · protecting muscle while you lose weight.`
+    : "Protect muscle while you lose weight."
+  // Anchor the weight trend to the starting weight, if recorded before any log.
+  const baseline = profile.start_weight_kg != null && profile.started_at
+    ? { date: profile.started_at, kg: profile.start_weight_kg }
+    : undefined
+
   return (
     <div className="mx-auto max-w-2xl px-5 py-10">
       <Link href="/account" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground">
@@ -129,12 +171,18 @@ export function Glp1Client({
         <span className="flex h-11 w-11 items-center justify-center rounded-2xl text-white shadow-sm" style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
           <Dumbbell size={20} />
         </span>
-        <div>
+        <div className="flex-1">
           <h1 className="font-serif text-2xl font-bold tracking-tight text-foreground">
             {memberName ? `${memberName}'s ` : "Your "}GLP-1 Companion
           </h1>
-          <p className="text-sm text-muted-foreground">Protect muscle while you lose weight.</p>
+          <p className="text-sm text-muted-foreground">{subtitle}</p>
         </div>
+        <button
+          onClick={() => setEditing(true)}
+          className="shrink-0 self-start rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <Settings2 size={13} className="mr-1 inline" /> Setup
+        </button>
       </div>
 
       {/* ── Today's target + log ── */}
@@ -249,7 +297,7 @@ export function Glp1Client({
       </div>
 
       {/* ── Weight trend ── */}
-      <WeightTrend logs={logs} unit={unit} />
+      <WeightTrend logs={logs} unit={unit} baseline={baseline} goalKg={profile.goal_weight_kg} />
 
       {/* ── History ── */}
       {logs.length > 0 && (
@@ -288,14 +336,32 @@ export function Glp1Client({
 }
 
 /** 30-day weight trend line chart, drawn from logged weights (in the chosen unit). */
-function WeightTrend({ logs, unit }: { logs: Glp1Log[]; unit: Unit }) {
+function WeightTrend({
+  logs,
+  unit,
+  baseline,
+  goalKg,
+}: {
+  logs: Glp1Log[]
+  unit: Unit
+  baseline?: { date: string; kg: number }
+  goalKg?: number | null
+}) {
+  const toDisp = (kg: number) => (unit === "kg" ? kg : kg * 2.20462)
+  const round1 = (n: number) => Math.round(n * 10) / 10
+
   const pts = useMemo(() => {
-    const toDisp = (kg: number) => (unit === "kg" ? kg : kg * 2.20462)
-    return logs
+    const logged = logs
       .filter((l) => l.weight_kg != null)
-      .map((l) => ({ date: l.log_date, v: Math.round(toDisp(l.weight_kg as number) * 10) / 10 }))
+      .map((l) => ({ date: l.log_date, v: round1(toDisp(l.weight_kg as number)) }))
       .sort((a, b) => a.date.localeCompare(b.date))
-  }, [logs, unit])
+    // Anchor to the recorded starting weight when it predates the first log.
+    if (baseline && (logged.length === 0 || baseline.date < logged[0].date)) {
+      return [{ date: baseline.date, v: round1(toDisp(baseline.kg)) }, ...logged]
+    }
+    return logged
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [logs, unit, baseline?.date, baseline?.kg])
 
   if (pts.length < 2) return null
 
@@ -327,9 +393,19 @@ function WeightTrend({ logs, unit }: { logs: Glp1Log[]; unit: Unit }) {
           {delta !== 0 && (
             <p className="mt-1 flex items-center gap-1 text-sm font-semibold" style={{ color: down ? "var(--icon-green)" : "var(--muted-foreground)" }}>
               {down ? <TrendingDown size={15} /> : <TrendingUp size={15} />}
-              {down ? "−" : "+"}{Math.abs(delta)} {unit} over {days} day{days !== 1 ? "s" : ""}
+              {down ? "−" : "+"}{Math.abs(delta)} {unit} {baseline ? "since starting" : `over ${days} day${days !== 1 ? "s" : ""}`}
             </p>
           )}
+          {goalKg != null && (() => {
+            const goal = round1(toDisp(goalKg))
+            const toGo = round1(last - goal)
+            return (
+              <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                <Target size={12} style={{ color: "var(--icon-orange)" }} />
+                {toGo > 0 ? `Goal ${goal} ${unit} · ${toGo} ${unit} to go` : `Goal ${goal} ${unit} · reached 🎉`}
+              </p>
+            )
+          })()}
         </div>
         <div className="text-right">
           <span className="font-serif text-2xl font-bold text-foreground">{last}</span>
@@ -363,6 +439,163 @@ function SummaryStat({ icon, value, label }: { icon: React.ReactNode; value: str
       </span>
       <div className="mt-2 font-serif text-xl font-bold text-foreground">{value}</div>
       <div className="text-[11px] leading-tight text-muted-foreground">{label}</div>
+    </div>
+  )
+}
+
+/* ── First-run onboarding / setup ──────────────────────────────────────── */
+
+function Glp1Onboarding({
+  memberName,
+  initial,
+  canCancel,
+  onCancel,
+  onDone,
+}: {
+  memberName: string | null
+  initial: Glp1Profile | null
+  canCancel: boolean
+  onCancel: () => void
+  onDone: (p: Glp1Profile) => void
+}) {
+  const [medication, setMedication] = useState<Glp1Medication | null>((initial?.medication as Glp1Medication) ?? null)
+  const [unit, setUnit] = useState<Unit>("kg")
+  const [startWeight, setStartWeight] = useState<string>(initial?.start_weight_kg != null ? String(initial.start_weight_kg) : "")
+  const [goalWeight, setGoalWeight] = useState<string>(initial?.goal_weight_kg != null ? String(initial.goal_weight_kg) : "")
+  const [startedAt, setStartedAt] = useState<string>(initial?.started_at ?? today())
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const toKg = (s: string): number | null => {
+    const n = parseFloat(s)
+    if (isNaN(n) || n <= 0) return null
+    return Math.round((unit === "kg" ? n : lbToKg(n)) * 10) / 10
+  }
+
+  async function submit(skip: boolean) {
+    setSaving(true)
+    setError(null)
+    const startKg = skip ? null : toKg(startWeight)
+    const goalKg = skip ? null : toKg(goalWeight)
+    const payload: Glp1Profile = {
+      medication: skip ? null : medication,
+      start_weight_kg: startKg,
+      goal_weight_kg: goalKg,
+      started_at: skip ? null : startKg != null ? startedAt : null,
+    }
+    try {
+      const res = await fetch("/api/glp1/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j.error ?? "Could not save")
+      }
+      const j = await res.json().catch(() => ({}))
+      onDone((j.profile as Glp1Profile) ?? payload)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not save")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="mx-auto max-w-xl px-5 py-12">
+      <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-sm" style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
+        <Dumbbell size={24} />
+      </span>
+      <h1 className="mt-5 text-center font-serif text-2xl font-bold tracking-tight text-foreground">
+        {canCancel ? "Update your setup" : memberName ? `Let's set up your Companion, ${memberName.split(" ")[0]}` : "Let's set up your Companion"}
+      </h1>
+      <p className="mx-auto mt-2 max-w-sm text-center text-sm text-muted-foreground">
+        A few details so we can personalise your protein target and track your progress
+        from day one. You can change these any time.
+      </p>
+
+      <div className="mt-8 space-y-7">
+        {/* Medication */}
+        <div>
+          <label className="text-sm font-semibold text-foreground">Which medication are you on?</label>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {MEDICATIONS.map((m) => {
+              const active = medication === m.value
+              return (
+                <button
+                  key={m.value}
+                  onClick={() => setMedication(m.value)}
+                  className="rounded-xl border-2 px-4 py-3 text-left text-sm font-semibold transition-all"
+                  style={{ borderColor: active ? "var(--icon-green)" : "var(--border)", background: active ? "color-mix(in srgb, var(--icon-green) 8%, transparent)" : "transparent", color: "var(--foreground)" }}
+                >
+                  {m.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Start weight */}
+        <div>
+          <label className="text-sm font-semibold text-foreground">Your starting weight</label>
+          <div className="mt-2 flex gap-2">
+            <input
+              type="number" inputMode="decimal" min={0} placeholder="e.g. 84"
+              value={startWeight} onChange={(e) => setStartWeight(e.target.value)}
+              className="w-full rounded-xl border-2 border-border bg-background px-4 py-2.5 font-serif text-lg font-bold text-foreground outline-none focus:border-[color:var(--icon-green)]"
+            />
+            <div className="flex shrink-0 overflow-hidden rounded-xl border-2 border-border">
+              {(["kg", "lb"] as Unit[]).map((u) => (
+                <button key={u} onClick={() => setUnit(u)} className="px-4 text-sm font-semibold transition-colors"
+                  style={{ background: unit === u ? "var(--icon-green)" : "transparent", color: unit === u ? "white" : "var(--muted-foreground)" }}>
+                  {u}
+                </button>
+              ))}
+            </div>
+          </div>
+          <p className="mt-1.5 text-xs text-muted-foreground">We use this to anchor your weight trend.</p>
+        </div>
+
+        {/* Goal weight + start date */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="text-sm font-semibold text-foreground">Goal weight <span className="font-normal text-muted-foreground">(optional)</span></label>
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                type="number" inputMode="decimal" min={0} placeholder="e.g. 76"
+                value={goalWeight} onChange={(e) => setGoalWeight(e.target.value)}
+                className="w-full rounded-xl border-2 border-border bg-background px-4 py-2.5 font-semibold text-foreground outline-none focus:border-[color:var(--icon-green)]"
+              />
+              <span className="text-sm text-muted-foreground">{unit}</span>
+            </div>
+          </div>
+          <div>
+            <label className="text-sm font-semibold text-foreground">When did you start? <span className="font-normal text-muted-foreground">(optional)</span></label>
+            <input
+              type="date" max={today()} value={startedAt} onChange={(e) => setStartedAt(e.target.value)}
+              className="mt-2 w-full rounded-xl border-2 border-border bg-background px-3 py-2.5 text-sm font-medium text-foreground outline-none focus:border-[color:var(--icon-green)]"
+            />
+          </div>
+        </div>
+      </div>
+
+      <button
+        onClick={() => submit(false)} disabled={saving}
+        className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+        style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}
+      >
+        {saving ? <><Loader2 size={15} className="animate-spin" /> Saving…</> : canCancel ? "Save setup" : "Start tracking"}
+      </button>
+      {error && <p className="mt-2 text-center text-sm text-red-500">{error}</p>}
+
+      <div className="mt-3 text-center">
+        {canCancel ? (
+          <button onClick={onCancel} className="text-xs font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground">Cancel</button>
+        ) : (
+          <button onClick={() => submit(true)} disabled={saving} className="text-xs font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground">Skip for now</button>
+        )}
+      </div>
     </div>
   )
 }

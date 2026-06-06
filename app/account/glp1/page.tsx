@@ -5,7 +5,7 @@ import { ArrowRight, Dumbbell, Lock } from "lucide-react"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { canAccess, getUserMembershipTier } from "@/lib/membership"
-import { Glp1Client, type Glp1Log } from "./glp1-client"
+import { Glp1Client, type Glp1Log, type Glp1Profile } from "./glp1-client"
 
 export const metadata: Metadata = {
   title: "GLP-1 Companion — EatoBetics",
@@ -51,10 +51,11 @@ export default async function Glp1AccountPage() {
     )
   }
 
-  // ── Member: load recent logs ──
+  // ── Member: load profile + recent logs ──
   const adminSupabase = getSupabase()
   let memberName: string | null = null
   let logs: Glp1Log[] = []
+  let glp1Profile: Glp1Profile | null = null
 
   if (adminSupabase) {
     const { data: profile } = await adminSupabase
@@ -63,6 +64,13 @@ export default async function Glp1AccountPage() {
       .eq("id", user.id)
       .single()
     memberName = profile?.name ?? null
+
+    const { data: profileRow } = await adminSupabase
+      .from("glp1_profile")
+      .select("medication, start_weight_kg, goal_weight_kg, started_at")
+      .eq("user_id", user.id)
+      .single()
+    glp1Profile = (profileRow ?? null) as Glp1Profile | null
 
     const { data: logData } = await adminSupabase
       .from("glp1_logs")
@@ -83,6 +91,7 @@ export default async function Glp1AccountPage() {
         memberName={memberName}
         initialLogs={logs}
         latestWeightKg={latestWeightKg}
+        initialProfile={glp1Profile}
       />
     </div>
   )

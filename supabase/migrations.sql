@@ -491,3 +491,41 @@ BEGIN
       WITH CHECK (user_id = auth.uid());
   END IF;
 END $$;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 20: glp1_profile (GLP-1 Companion — onboarding/setup)
+-- ────────────────────────────────────────────────────────────
+-- One row per user, captured on first run of the GLP-1 Companion: which
+-- medication they're on, their starting weight, and (optionally) a goal
+-- weight + start date. Used to personalise the tracker target and to anchor
+-- the weight-trend baseline. Educational setup — not medical data.
+
+CREATE TABLE IF NOT EXISTS glp1_profile (
+  id              uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id         uuid        NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+  medication      text,       -- ozempic | wegovy | mounjaro | other | not_started
+  start_weight_kg numeric(5,1),
+  goal_weight_kg  numeric(5,1),
+  started_at      date,       -- when they started the medication / tracking
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  updated_at      timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE glp1_profile ENABLE ROW LEVEL SECURITY;
+
+-- Users can fully manage only their own GLP-1 profile.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'glp1_profile'
+      AND policyname = 'users_manage_own_glp1_profile'
+  ) THEN
+    CREATE POLICY "users_manage_own_glp1_profile"
+      ON glp1_profile FOR ALL
+      TO authenticated
+      USING (user_id = auth.uid())
+      WITH CHECK (user_id = auth.uid());
+  END IF;
+END $$;
