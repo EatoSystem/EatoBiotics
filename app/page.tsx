@@ -35,6 +35,7 @@ import { MembershipTeaser } from "@/components/home/membership-teaser"
 import { Testimonials } from "@/components/home/testimonials"
 import { TrustDisclaimer } from "@/components/home/trust-disclaimer"
 import { FAQ } from "@/components/home/faq"
+import { ClosingCta } from "@/components/home/closing-cta"
 import { StickyCta } from "@/components/start/sticky-cta"
 
 async function requirePreviewAccess() {
@@ -71,6 +72,7 @@ export default async function Home() {
       <div className="section-divider" />
       <TrustDisclaimer />
       <FAQ />
+      <ClosingCta />
       <StickyCta />
     </>
   )
