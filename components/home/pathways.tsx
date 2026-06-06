@@ -57,17 +57,16 @@ export function Pathways() {
         <ScrollReveal>
           <div className="mb-14 text-center">
             <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              The Ecosystem
+              Choose Your Path
             </p>
             <h2 className="font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-              Start with yourself.{" "}
-              <span className="text-muted-foreground font-normal">Extend to your family.</span>
-              <br className="hidden sm:block" />
-              {" "}Support your mind.
+              Three ways to use{" "}
+              <span className="brand-gradient-text">EatoBiotics.</span>
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground">
-              The food system you build begins with your own habits, grows through your household,
-              and can support how you think, feel, and function.
+              Start with yourself, extend to your family, and support your mind — the food system
+              you build begins with your own habits, grows through your household, and can support
+              how you think, feel, and function.
             </p>
           </div>
         </ScrollReveal>

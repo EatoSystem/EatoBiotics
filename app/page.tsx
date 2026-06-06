@@ -57,12 +57,13 @@ export default async function Home() {
     <>
       <Suspense fallback={null}><Hero /></Suspense>
       <div style={{ height: "2px", background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
-      <Pathways />
-      <TheThreeBiotics />
       <HowItWorks />
-      <ThePlate />
       <div className="section-divider" />
       <ScorePreview />
+      <TheThreeBiotics />
+      <ThePlate />
+      <div className="section-divider" />
+      <Pathways />
       <div className="section-divider" />
       <MembershipTeaser />
       <div className="section-divider" />
