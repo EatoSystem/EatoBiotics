@@ -365,25 +365,53 @@ function WeightTrend({
 
   if (pts.length < 2) return null
 
-  const W = 400, H = 130, padX = 14, padTop = 20, padBot = 24
-  const innerW = W - padX * 2, innerH = H - padTop - padBot
-  const vals = pts.map((p) => p.v)
-  let min = Math.min(...vals), max = Math.max(...vals)
-  if (min === max) { min -= 1; max += 1 }
-  const x = (i: number) => padX + (innerW * i) / (pts.length - 1)
-  const y = (v: number) => padTop + innerH * (1 - (v - min) / (max - min))
-  const line = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${x(i).toFixed(1)} ${y(p.v).toFixed(1)}`).join(" ")
-  const area = `${line} L ${x(pts.length - 1).toFixed(1)} ${(H - padBot).toFixed(1)} L ${x(0).toFixed(1)} ${(H - padBot).toFixed(1)} Z`
+  const goalDisp = goalKg != null ? round1(toDisp(goalKg)) : null
 
-  const first = pts[0].v, last = pts[pts.length - 1].v
-  const delta = Math.round((last - first) * 10) / 10
-  const days = Math.max(
-    1,
-    Math.round((Date.parse(pts[pts.length - 1].date) - Date.parse(pts[0].date)) / 86_400_000),
-  )
+  // Least-squares trend (display-unit per day) over the points' actual dates.
+  const dayIdx = pts.map((p) => (Date.parse(p.date) - Date.parse(pts[0].date)) / 86_400_000)
+  const vals = pts.map((p) => p.v)
+  const n = pts.length
+  const xm = dayIdx.reduce((s, v) => s + v, 0) / n
+  const ym = vals.reduce((s, v) => s + v, 0) / n
+  const denom = dayIdx.reduce((s, v) => s + (v - xm) ** 2, 0)
+  const rate = denom > 0 ? dayIdx.reduce((s, v, i) => s + (v - xm) * (vals[i] - ym), 0) / denom : 0
+
+  const last = pts[n - 1].v
+  const first = pts[0].v
+  const delta = round1(last - first)
   const down = delta < 0
-  const fmt = (d: string) =>
-    new Date(d + "T00:00:00Z").toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" })
+  const days = Math.max(1, Math.round(dayIdx[n - 1]))
+
+  // Projection: only when genuinely trending toward a goal that's still ahead.
+  const onTrack = goalDisp != null && rate < -0.001 && goalDisp < last
+  const daysToGoal = onTrack ? (goalDisp! - last) / rate : Infinity
+  const projecting = onTrack && daysToGoal <= 180
+  const projDate = isFinite(daysToGoal)
+    ? new Date(Date.parse(pts[n - 1].date) + daysToGoal * 86_400_000)
+    : null
+
+  // Geometry — compress history to the left when we draw a forward projection.
+  const W = 400, H = 140, padX = 14, padTop = 18, padBot = 26
+  const innerW = W - padX * 2, innerH = H - padTop - padBot
+  const histW = innerW * (projecting ? 0.62 : 1)
+
+  let lo = Math.min(...vals), hi = Math.max(...vals)
+  if (goalDisp != null) { lo = Math.min(lo, goalDisp); hi = Math.max(hi, goalDisp) }
+  if (lo === hi) { lo -= 1; hi += 1 }
+  const padV = (hi - lo) * 0.14 || 1
+  lo -= padV; hi += padV
+
+  const x = (i: number) => padX + (histW * i) / (n - 1)
+  const y = (v: number) => padTop + innerH * (1 - (v - lo) / (hi - lo))
+  const line = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${x(i).toFixed(1)} ${y(p.v).toFixed(1)}`).join(" ")
+  const area = `${line} L ${x(n - 1).toFixed(1)} ${(H - padBot).toFixed(1)} L ${x(0).toFixed(1)} ${(H - padBot).toFixed(1)} Z`
+  const nowX = padX + histW
+  const yGoal = goalDisp != null ? y(goalDisp) : 0
+
+  const fmt = (d: string | Date) =>
+    (typeof d === "string" ? new Date(d + "T00:00:00Z") : d).toLocaleDateString(undefined, {
+      month: "short", day: "numeric", timeZone: "UTC",
+    })
 
   return (
     <div className="mt-6 rounded-3xl border border-border bg-card p-5 shadow-sm">
@@ -396,36 +424,59 @@ function WeightTrend({
               {down ? "−" : "+"}{Math.abs(delta)} {unit} {baseline ? "since starting" : `over ${days} day${days !== 1 ? "s" : ""}`}
             </p>
           )}
-          {goalKg != null && (() => {
-            const goal = round1(toDisp(goalKg))
-            const toGo = round1(last - goal)
+          {goalDisp != null && (() => {
+            const toGo = round1(last - goalDisp)
             return (
               <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                 <Target size={12} style={{ color: "var(--icon-orange)" }} />
-                {toGo > 0 ? `Goal ${goal} ${unit} · ${toGo} ${unit} to go` : `Goal ${goal} ${unit} · reached 🎉`}
+                {toGo > 0 ? `Goal ${goalDisp} ${unit} · ${toGo} ${unit} to go` : `Goal ${goalDisp} ${unit} · reached 🎉`}
               </p>
             )
           })()}
+          {projecting && projDate && (
+            <p className="mt-1 text-xs font-medium" style={{ color: "var(--icon-green)" }}>
+              On track to reach it around {fmt(projDate)}
+            </p>
+          )}
         </div>
         <div className="text-right">
           <span className="font-serif text-2xl font-bold text-foreground">{last}</span>
           <span className="ml-1 text-xs text-muted-foreground">{unit}</span>
         </div>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="mt-3 w-full" role="img" aria-label="Weight over time">
+      <svg viewBox={`0 0 ${W} ${H}`} className="mt-3 w-full" role="img" aria-label="Weight over time with goal and projection">
         <defs>
           <linearGradient id="weightTrendFill" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="var(--icon-green)" stopOpacity="0.22" />
             <stop offset="100%" stopColor="var(--icon-green)" stopOpacity="0" />
           </linearGradient>
         </defs>
+
+        {/* Goal line */}
+        {goalDisp != null && (
+          <>
+            <line x1={padX} y1={yGoal} x2={padX + innerW} y2={yGoal} stroke="var(--icon-orange)" strokeWidth="1.4" strokeDasharray="4 4" opacity="0.7" />
+            <text x={padX + innerW} y={yGoal - 4} textAnchor="end" fontSize="9" fill="var(--icon-orange)" fontWeight="700">Goal {goalDisp}</text>
+          </>
+        )}
+
+        {/* Projection segment + 'now' divider */}
+        {projecting && (
+          <>
+            <line x1={nowX} y1={padTop} x2={nowX} y2={H - padBot} stroke="var(--border)" strokeWidth="1" strokeDasharray="2 3" />
+            <path d={`M ${nowX.toFixed(1)} ${y(last).toFixed(1)} L ${(padX + innerW).toFixed(1)} ${yGoal.toFixed(1)}`} fill="none" stroke="var(--icon-green)" strokeWidth="2" strokeDasharray="5 4" opacity="0.55" strokeLinecap="round" />
+            <circle cx={padX + innerW} cy={yGoal} r="3.2" fill="none" stroke="var(--icon-green)" strokeWidth="1.8" />
+            <text x={nowX} y={H - padBot + 11} textAnchor="middle" fontSize="8.5" fill="var(--muted-foreground)">now</text>
+          </>
+        )}
+
         <path d={area} fill="url(#weightTrendFill)" />
         <path d={line} fill="none" stroke="var(--icon-green)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx={x(pts.length - 1)} cy={y(last)} r="3.6" fill="var(--icon-green)" />
+        <circle cx={x(n - 1)} cy={y(last)} r="3.6" fill="var(--icon-green)" />
       </svg>
       <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
         <span>{fmt(pts[0].date)}</span>
-        <span>{fmt(pts[pts.length - 1].date)}</span>
+        <span>{projecting && projDate ? fmt(projDate) : fmt(pts[n - 1].date)}</span>
       </div>
     </div>
   )
