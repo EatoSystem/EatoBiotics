@@ -187,7 +187,7 @@ export default function Glp1CompanionPage() {
           <div className="relative z-10 grid gap-8 md:grid-cols-2 md:items-center">
             <ScrollReveal>
               <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-widest" style={{ borderColor: "var(--border)", color: "var(--icon-orange)" }}>
-                <Sparkles size={13} /> Restore &amp; Transform members
+                <Sparkles size={13} /> Included with membership
               </span>
               <h2 className="mt-4 font-serif text-3xl font-bold leading-tight text-balance sm:text-4xl" style={{ color: "var(--foreground)" }}>
                 Track it daily in your Companion

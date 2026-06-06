@@ -40,7 +40,7 @@ export default async function Glp1AccountPage() {
               className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
               style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}
             >
-              <Lock size={14} /> Unlock with Restore <ArrowRight size={14} />
+              <Lock size={14} /> Unlock with membership <ArrowRight size={14} />
             </Link>
             <Link href="/eatobetics/glp1" className="text-sm font-medium underline underline-offset-4 text-muted-foreground">
               Try the free protein calculator
