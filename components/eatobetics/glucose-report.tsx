@@ -137,6 +137,9 @@ export function GlucoseReport({ result, onRetake }: { result: GlucoseResult; onR
             <p className="mt-4 text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
               This is general education, not medical advice. Always follow the guidance of the clinician managing your medication.
             </p>
+            <Link href="/eatobetics/glp1" className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-75" style={{ color: "var(--icon-green)" }}>
+              Open your GLP-1 Companion <ArrowRight size={14} />
+            </Link>
           </div>
         )}
 

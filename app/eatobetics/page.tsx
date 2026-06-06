@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   Globe,
   Check,
+  Syringe,
 } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 
@@ -416,6 +417,32 @@ export default function EatoBeticsPage() {
           <p className="mx-auto mt-10 max-w-2xl text-center text-sm" style={{ color: "var(--muted-foreground)" }}>
             EatoBetics supports understanding and helps people have better conversations with healthcare professionals. It is food intelligence — not medical treatment.
           </p>
+
+          {/* GLP-1 Companion callout */}
+          <ScrollReveal>
+            <Link href="/eatobetics/glp1" className="group mt-12 block">
+              <div className="relative overflow-hidden rounded-[2rem] border border-[#f0e6cf] p-8 shadow-[0_14px_50px_-22px_rgba(245,166,35,0.4)] transition-all duration-300 hover:-translate-y-1 md:p-10" style={{ background: "linear-gradient(150deg, #FBF6EA 0%, #FFFFFF 55%, #F1F8EC 100%)" }}>
+                <div aria-hidden className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full opacity-50 blur-3xl" style={{ background: "radial-gradient(circle, color-mix(in srgb, var(--icon-yellow) 30%, transparent), transparent 70%)" }} />
+                <div className="relative z-10 flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm" style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
+                      <Syringe size={22} />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-orange)" }}>New · GLP-1 Companion</span>
+                      <h3 className="mt-1 font-serif text-2xl font-bold" style={{ color: "var(--foreground)" }}>On Ozempic, Wegovy, or Mounjaro?</h3>
+                      <p className="mt-1.5 max-w-xl text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
+                        Keep the muscle, not just lose the weight. Estimate your protein target and get a muscle-smart plan for your appetite window.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="brand-gradient inline-flex shrink-0 items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow-lg transition-transform group-hover:scale-[1.03]">
+                    Explore <ArrowRight size={15} />
+                  </span>
+                </div>
+              </div>
+            </Link>
+          </ScrollReveal>
         </div>
       </section>
 
