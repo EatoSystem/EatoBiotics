@@ -19,6 +19,7 @@ const STATIC_PATHS: Array<{ path: string; priority: number; changeFrequency: Cha
   { path: "/about",             priority: 0.6, changeFrequency: "monthly" },
   { path: "/eatosystem",        priority: 0.6, changeFrequency: "monthly" },
   { path: "/biotics",           priority: 0.6, changeFrequency: "monthly" },
+  { path: "/eatobetics",        priority: 0.7, changeFrequency: "monthly" },
   { path: "/food",              priority: 0.6, changeFrequency: "monthly" },
   { path: "/gut-brain",         priority: 0.6, changeFrequency: "monthly" },
   { path: "/assessment-family", priority: 0.6, changeFrequency: "monthly" },
