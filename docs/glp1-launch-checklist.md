@@ -57,6 +57,10 @@ Companion is **included with membership**. Copy reflects this:
       has `glp1_logs` for the week.
 - [ ] Confirm `CRON_SECRET` is set in production (route fails closed without it).
 - [ ] Cron schedule `0 8 * * 1` (Mon 08:00 UTC) confirmed in `vercel.json`.
+- [ ] **Daily reminder** (`/api/glp1/reminder`, `0 18 * * *`): emails onboarded
+      members who logged in the last 14 days but not today. Needs `RESEND_API_KEY`
+      + `EMAIL_FROM` (skips cleanly if unset) and `CRON_SECRET`. Never emails the
+      never-started or fully-lapsed.
 
 ## 6. Clinical / compliance
 
