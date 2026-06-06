@@ -8,8 +8,34 @@ import { DailyLoopCard, type DailyLoopData } from "@/components/account/daily-lo
 import {
   Camera, ArrowRight, Check, ChevronRight, TrendingUp,
   FileText, UtensilsCrossed, MessageSquare, Download, ExternalLink, Flame,
-  Calendar, Target, Activity, User, Trash2, AlertTriangle,
+  Calendar, Target, Activity, User, Trash2, AlertTriangle, Dumbbell,
 } from "lucide-react"
+
+/* ─────────────────────────────────────────────────────────────────────────
+   GLP-1 Companion entry card — compact, self-selecting. Links to the gated
+   /account/glp1 tracker (which upsells non-members). Shown in both overview
+   states so new and active members can find it.
+   ───────────────────────────────────────────────────────────────────────── */
+function Glp1CompanionCard() {
+  return (
+    <Link href="/account/glp1" className="group block overflow-hidden rounded-2xl transition-shadow hover:shadow-[0_8px_28px_rgba(26,46,18,0.14)]"
+      style={{ background: "white", border: "1px solid #ebebeb", boxShadow: "0 2px 12px rgba(26,46,18,0.05)" }}>
+      <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-yellow), var(--icon-orange), var(--icon-green))" }} />
+      <div className="flex items-center gap-4 p-5">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm"
+          style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
+          <Dumbbell size={20} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-orange)" }}>GLP-1 Companion</p>
+          <h3 className="font-serif text-base font-bold leading-snug" style={{ color: "var(--foreground)" }}>On Ozempic, Wegovy, or Mounjaro?</h3>
+          <p className="mt-0.5 text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>Track your protein and protect muscle while you lose weight.</p>
+        </div>
+        <ChevronRight size={16} className="shrink-0 transition-transform group-hover:translate-x-0.5" style={{ color: "var(--icon-green)" }} />
+      </div>
+    </Link>
+  )
+}
 
 /* ─────────────────────────────────────────────────────────────────────────
    Score ring — gradient arc
@@ -1028,6 +1054,11 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             </div>
           </div>
 
+          {/* GLP-1 Companion — compact, self-selecting entry point */}
+          <div className="mt-5">
+            <Glp1CompanionCard />
+          </div>
+
           {/* Log first meal inline */}
           <div className="mt-5">
             <div className="overflow-hidden rounded-2xl" style={{
@@ -1653,6 +1684,9 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                 </div>
               </div>
             </div>
+
+            {/* GLP-1 Companion — compact, self-selecting entry point */}
+            <Glp1CompanionCard />
 
           </div>{/* end right */}
         </div>
