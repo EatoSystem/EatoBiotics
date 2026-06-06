@@ -448,3 +448,46 @@ BEGIN
       WITH CHECK (owner_id = auth.uid());
   END IF;
 END $$;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 19: glp1_logs (GLP-1 Companion — protein/muscle tracker)
+-- ────────────────────────────────────────────────────────────
+-- One row per user per day. Tracks protein intake against the muscle-
+-- preservation target (see lib/glp1.ts), body weight, and whether a
+-- resistance-training session was done. Gated to the Restore tier+
+-- (the in-app GLP-1 Companion). Educational tracking — not medical data.
+
+CREATE TABLE IF NOT EXISTS glp1_logs (
+  id              uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id         uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  log_date        date        NOT NULL,
+  protein_grams   integer,    -- protein actually eaten that day (g)
+  protein_target  integer,    -- the day's target at time of logging (g)
+  weight_kg       numeric(5,1),
+  strength_session boolean    NOT NULL DEFAULT false,
+  notes           text,
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  updated_at      timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (user_id, log_date)
+);
+
+CREATE INDEX IF NOT EXISTS glp1_logs_user_date_idx ON glp1_logs (user_id, log_date DESC);
+
+ALTER TABLE glp1_logs ENABLE ROW LEVEL SECURITY;
+
+-- Users can fully manage only their own GLP-1 logs.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'glp1_logs'
+      AND policyname = 'users_manage_own_glp1_logs'
+  ) THEN
+    CREATE POLICY "users_manage_own_glp1_logs"
+      ON glp1_logs FOR ALL
+      TO authenticated
+      USING (user_id = auth.uid())
+      WITH CHECK (user_id = auth.uid());
+  END IF;
+END $$;

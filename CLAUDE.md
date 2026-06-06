@@ -71,6 +71,14 @@ This file is the authoritative reference for Claude Code sessions. Read it befor
 - `app/pricing/page.tsx` — server component (public)
 - `app/pricing/pricing-client.tsx` — interactive pricing cards
 
+### GLP-1 Companion
+- `lib/glp1.ts` — protein factors + target math (single clinical tuning point)
+- `app/eatobetics/glp1/page.tsx` — public landing + free protein calculator
+- `components/eatobetics/protein-calculator.tsx` — interactive calculator (free)
+- `app/account/glp1/page.tsx` — gated tracker (Restore+; soft upsell otherwise)
+- `app/account/glp1/glp1-client.tsx` — daily protein/weight/strength tracker
+- `app/api/glp1/log/route.ts` — upserts a day's log (auth + `glp1_companion` gate)
+
 ---
 
 ## Database Tables
@@ -177,6 +185,21 @@ This file is the authoritative reference for Claude Code sessions. Read it befor
 
 Family food-system score = average of members' `latest_score` plus the owner's own score (`lib/family.ts`). Members are sub-profiles with **no separate login**; the account holder manages them.
 
+### glp1_logs *(new — GLP-1 Companion, Restore+ only)*
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid PK | |
+| user_id | uuid | FK auth.users — RLS scopes to `user_id = auth.uid()` |
+| log_date | date | one row per user per day (`UNIQUE(user_id, log_date)`) |
+| protein_grams | integer | nullable — protein eaten that day |
+| protein_target | integer | nullable — the day's target at time of logging |
+| weight_kg | numeric(5,1) | nullable |
+| strength_session | boolean | default false |
+| notes | text | nullable |
+| created_at / updated_at | timestamptz | |
+
+All GLP-1 protein/muscle assumptions (factors, target math) live in **`lib/glp1.ts`** — the single clinical tuning point used by both the public calculator and the in-app tracker.
+
 ### Other tables
 - `referrals` — `referrer_code`, `referred_email`, `referred_id`
 - `plate_data` — `user_id`, `plate`, `plants`, `updated_at`
@@ -224,8 +247,8 @@ ADMIN_PASSWORD                # Admin login password (also the fallback signing 
 
 > **Go-live note:** the cron and admin routes are fail-closed. Set `CRON_SECRET`
 > and `ADMIN_SESSION_SECRET` (or `ADMIN_PASSWORD`) in production, and apply
-> Migration 17 (`stripe_processed_events`) and Migration 18 (`household_members`)
-> from `supabase/migrations.sql` before/at deploy.
+> Migration 17 (`stripe_processed_events`), Migration 18 (`household_members`),
+> and Migration 19 (`glp1_logs`) from `supabase/migrations.sql` before/at deploy.
 
 ---
 

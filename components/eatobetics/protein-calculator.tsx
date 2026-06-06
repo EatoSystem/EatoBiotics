@@ -10,23 +10,16 @@
 
 import { useState } from "react"
 import { Dumbbell, Utensils } from "lucide-react"
+import {
+  type Activity,
+  ACTIVITY_LABELS,
+  PROTEIN_FACTORS,
+  lbToKg,
+  proteinTarget,
+  perMealTarget,
+} from "@/lib/glp1"
 
 type Unit = "kg" | "lb"
-type Activity = "light" | "moderate" | "strength"
-
-// Protein per kg of body weight. Higher targets help preserve muscle during
-// the caloric deficit a GLP-1 creates; resistance training raises the need.
-const FACTORS: Record<Activity, number> = {
-  light: 1.4,
-  moderate: 1.6,
-  strength: 1.9,
-}
-
-const ACTIVITY_LABELS: Record<Activity, { label: string; sub: string }> = {
-  light: { label: "Lighter", sub: "Mostly day-to-day movement" },
-  moderate: { label: "Active", sub: "Regular walking or cardio" },
-  strength: { label: "Strength training", sub: "Resistance work 2+ times a week" },
-}
 
 export function ProteinCalculator() {
   const [weight, setWeight] = useState<string>("75")
@@ -36,9 +29,9 @@ export function ProteinCalculator() {
 
   const w = parseFloat(weight)
   const valid = !isNaN(w) && w > 0
-  const kg = unit === "kg" ? w : w / 2.20462
-  const daily = valid ? Math.round(kg * FACTORS[activity]) : 0
-  const perMeal = valid ? Math.round(daily / meals) : 0
+  const kg = unit === "kg" ? w : lbToKg(w)
+  const daily = valid ? proteinTarget(kg, activity) : 0
+  const perMeal = valid ? perMealTarget(daily, meals) : 0
 
   return (
     <div className="overflow-hidden rounded-[2rem] border border-black/[0.06] bg-white shadow-[0_18px_60px_-24px_rgba(26,46,18,0.28)]">
@@ -133,7 +126,7 @@ export function ProteinCalculator() {
           </div>
 
           <p className="mt-6 text-[11px] leading-relaxed text-white/45">
-            An educational estimate (~{FACTORS[activity]} g per kg). Protein needs vary —
+            An educational estimate (~{PROTEIN_FACTORS[activity]} g per kg). Protein needs vary —
             always follow the guidance of the clinician or dietitian managing your care.
           </p>
         </div>
