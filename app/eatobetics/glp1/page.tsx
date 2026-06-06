@@ -90,10 +90,13 @@ export default function Glp1CompanionPage() {
               <Link href={ASSESSMENT_HREF} className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:opacity-90 hover:shadow-xl">
                 Take the free assessment <ArrowRight size={16} />
               </Link>
-              <a href="#calculator" className="text-sm font-medium underline underline-offset-4 transition-colors" style={{ color: "var(--muted-foreground)" }}>
-                Estimate your protein target
-              </a>
+              <Link href="/eatobetics/glp1/check" className="inline-flex items-center gap-2 rounded-full border px-8 py-4 text-base font-semibold transition-colors hover:bg-black/[0.03]" style={{ borderColor: "var(--border)", color: "var(--foreground)" }}>
+                Take the 90-second check
+              </Link>
             </div>
+            <a href="#calculator" className="mt-4 inline-block text-sm font-medium underline underline-offset-4 transition-colors" style={{ color: "var(--muted-foreground)" }}>
+              Or estimate your protein target
+            </a>
           </ScrollReveal>
         </div>
       </section>
