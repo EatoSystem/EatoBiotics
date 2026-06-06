@@ -180,6 +180,77 @@ export default function Glp1CompanionPage() {
         </div>
       </section>
 
+      {/* ── IN-APP TRACKER (monetised) ── */}
+      <section className="px-6 pb-4">
+        <div className="relative mx-auto max-w-[1100px] overflow-hidden rounded-[2.5rem] border border-[#e3ecd9] p-8 shadow-[0_18px_60px_-26px_rgba(26,46,18,0.3)] md:p-12" style={{ background: "linear-gradient(150deg, #F4F9EF 0%, #FFFFFF 55%, #FBF6EA 100%)" }}>
+          <div aria-hidden className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full opacity-50 blur-3xl" style={{ background: "radial-gradient(circle, color-mix(in srgb, var(--icon-green) 22%, transparent), transparent 70%)" }} />
+          <div className="relative z-10 grid gap-8 md:grid-cols-2 md:items-center">
+            <ScrollReveal>
+              <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-widest" style={{ borderColor: "var(--border)", color: "var(--icon-orange)" }}>
+                <Sparkles size={13} /> Restore &amp; Transform members
+              </span>
+              <h2 className="mt-4 font-serif text-3xl font-bold leading-tight text-balance sm:text-4xl" style={{ color: "var(--foreground)" }}>
+                Track it daily in your Companion
+              </h2>
+              <p className="mt-4 text-base leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
+                The free calculator gives you the target. Members get the full GLP-1 Companion:
+                log your protein against it each day, track weight and strength sessions, and
+                watch your muscle-protecting streak build week to week.
+              </p>
+              <ul className="mt-5 space-y-2.5">
+                {[
+                  "Daily protein target with a live progress ring",
+                  "Weight trend & strength-session tracking",
+                  "Weekly summary of the days you protected muscle",
+                ].map((t) => (
+                  <li key={t} className="flex items-start gap-2.5 text-sm" style={{ color: "var(--foreground)" }}>
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-white" style={{ background: "var(--icon-green)" }}><Check size={12} /></span>
+                    {t}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                <Link href="/account/glp1" className="inline-flex items-center justify-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-white shadow-lg transition-opacity hover:opacity-90" style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
+                  Open your Companion <ArrowRight size={15} />
+                </Link>
+                <Link href="/pricing?feature=glp1-companion" className="inline-flex items-center justify-center gap-2 rounded-full border px-7 py-3.5 text-sm font-semibold transition-colors hover:bg-black/[0.03]" style={{ borderColor: "var(--border)", color: "var(--foreground)" }}>
+                  See membership
+                </Link>
+              </div>
+            </ScrollReveal>
+
+            {/* Tracker preview */}
+            <ScrollReveal delay={120}>
+              <div className="rounded-3xl border border-black/[0.06] bg-white p-6 shadow-[0_14px_50px_-22px_rgba(26,46,18,0.35)]">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
+                  <Dumbbell size={14} /> Today
+                </div>
+                <div className="mt-4 flex items-center justify-center">
+                  <div className="relative">
+                    <svg width="120" height="120" viewBox="0 0 120 120" className="-rotate-90">
+                      <circle cx="60" cy="60" r="52" fill="none" stroke="#eef1ea" strokeWidth="10" />
+                      <circle cx="60" cy="60" r="52" fill="none" stroke="var(--icon-green)" strokeWidth="10" strokeLinecap="round" strokeDasharray={`${0.82 * 2 * Math.PI * 52} ${2 * Math.PI * 52}`} />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="font-serif text-3xl font-bold" style={{ color: "var(--foreground)" }}>128</span>
+                      <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>of 156 g</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-5 grid grid-cols-3 gap-2 text-center">
+                  {[["5/6", "Days hit"], ["3", "Sessions"], ["142g", "Avg/day"]].map(([v, l]) => (
+                    <div key={l} className="rounded-2xl bg-[#f4f8f0] p-3">
+                      <div className="font-serif text-lg font-bold" style={{ color: "var(--foreground)" }}>{v}</div>
+                      <div className="text-[10px]" style={{ color: "var(--muted-foreground)" }}>{l}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </ScrollReveal>
+          </div>
+        </div>
+      </section>
+
       {/* ── SIDE EFFECTS ── */}
       <section className="px-6 py-24 md:py-32" style={{ background: "#f4f8f0" }}>
         <div className="mx-auto max-w-[1100px]">

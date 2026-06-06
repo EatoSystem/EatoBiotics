@@ -24,6 +24,7 @@ export const FEATURES = {
   monthly_gut_plan:      ["member", "restore", "transform"],
   pdf_reports:           ["member", "restore", "transform"],
   ai_consultation:       ["transform"],
+  glp1_companion:        ["member", "restore", "transform"],
   weekly_checkin:        ["transform"],
   weekly_meal_plans:     ["transform"],
   create_my_plate:       ["trial", "member", "grow", "restore", "transform"],
