@@ -76,8 +76,9 @@ This file is the authoritative reference for Claude Code sessions. Read it befor
 - `app/eatobetics/glp1/page.tsx` — public landing + free protein calculator
 - `components/eatobetics/protein-calculator.tsx` — interactive calculator (free)
 - `app/account/glp1/page.tsx` — gated tracker (Restore+; soft upsell otherwise)
-- `app/account/glp1/glp1-client.tsx` — daily protein/weight/strength tracker
+- `app/account/glp1/glp1-client.tsx` — onboarding + daily protein/weight/strength tracker + weight-trend chart
 - `app/api/glp1/log/route.ts` — upserts a day's log (auth + `glp1_companion` gate)
+- `app/api/glp1/profile/route.ts` — upserts the onboarding profile (medication, start/goal weight)
 
 ---
 
@@ -200,6 +201,19 @@ Family food-system score = average of members' `latest_score` plus the owner's o
 
 All GLP-1 protein/muscle assumptions (factors, target math) live in **`lib/glp1.ts`** — the single clinical tuning point used by both the public calculator and the in-app tracker.
 
+### glp1_profile *(new — GLP-1 Companion onboarding, Restore+ only)*
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid PK | |
+| user_id | uuid | FK auth.users — UNIQUE, RLS scopes to `user_id = auth.uid()` |
+| medication | text | `ozempic \| wegovy \| mounjaro \| other \| not_started` |
+| start_weight_kg | numeric(5,1) | nullable — anchors the weight-trend baseline |
+| goal_weight_kg | numeric(5,1) | nullable |
+| started_at | date | nullable — when they started the medication / tracking |
+| created_at / updated_at | timestamptz | |
+
+Captured on first run of the in-app tracker (`Glp1Onboarding`); upserted via `app/api/glp1/profile/route.ts`. One row per user.
+
 ### Other tables
 - `referrals` — `referrer_code`, `referred_email`, `referred_id`
 - `plate_data` — `user_id`, `plate`, `plants`, `updated_at`
@@ -248,7 +262,8 @@ ADMIN_PASSWORD                # Admin login password (also the fallback signing 
 > **Go-live note:** the cron and admin routes are fail-closed. Set `CRON_SECRET`
 > and `ADMIN_SESSION_SECRET` (or `ADMIN_PASSWORD`) in production, and apply
 > Migration 17 (`stripe_processed_events`), Migration 18 (`household_members`),
-> and Migration 19 (`glp1_logs`) from `supabase/migrations.sql` before/at deploy.
+> Migration 19 (`glp1_logs`), and Migration 20 (`glp1_profile`) from
+> `supabase/migrations.sql` before/at deploy.
 
 ---
 

@@ -11,6 +11,10 @@ Last reviewed: 2026-06-06.
       production Supabase project. The tracker writes/read fail without it.
   - Verify: table `glp1_logs` exists with `UNIQUE (user_id, log_date)` and RLS
     policy `users_manage_own_glp1_logs` enabled.
+- [ ] **Apply Migration 20** (`glp1_profile`) — stores onboarding (medication,
+      start/goal weight). First-run setup fails to persist without it.
+  - Verify: table `glp1_profile` exists with `UNIQUE (user_id)` and RLS policy
+    `users_manage_own_glp1_profile` enabled.
 - [ ] Confirm Migrations 17 (`stripe_processed_events`) and 18 (`household_members`)
       are also applied (prior builds).
 
@@ -64,6 +68,8 @@ Companion is **included with membership**. Copy reflects this:
 
 ## 7. Pre-launch QA pass
 
+- [ ] Onboarding: first visit shows setup (medication, start/goal weight); saving
+      reveals the tracker; "Setup" reopens it; "Skip for now" doesn't re-prompt.
 - [ ] Calculator: kg/lb toggle, activity change, meals change → target updates.
 - [ ] Tracker: log a day → progress ring, weekly summary, and history update;
       reload persists the day.

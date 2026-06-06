@@ -32,6 +32,23 @@ export const ACTIVITY_LABELS: Record<Activity, { label: string; sub: string }> =
 /** Tier required to access the in-app GLP-1 Companion tracker + plan. */
 export const GLP1_PLAN_TIER = "restore" as const
 
+/* ── Onboarding: medications ────────────────────────────────────────────── */
+
+export type Glp1Medication = "ozempic" | "wegovy" | "mounjaro" | "other" | "not_started"
+
+export const MEDICATIONS: { value: Glp1Medication; label: string }[] = [
+  { value: "ozempic", label: "Ozempic" },
+  { value: "wegovy", label: "Wegovy" },
+  { value: "mounjaro", label: "Mounjaro" },
+  { value: "other", label: "Other GLP-1" },
+  { value: "not_started", label: "Not started yet" },
+]
+
+/** Human label for a stored medication value, or null if unknown/unset. */
+export function medicationLabel(value: string | null | undefined): string | null {
+  return MEDICATIONS.find((m) => m.value === value)?.label ?? null
+}
+
 /** Convert pounds to kilograms. */
 export function lbToKg(lb: number): number {
   return lb / 2.20462
