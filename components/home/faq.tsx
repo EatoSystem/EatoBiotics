@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { ScrollReveal } from "@/components/scroll-reveal"
-import { ChevronDown } from "lucide-react"
+import { Plus } from "lucide-react"
 import Link from "next/link"
 
 const FAQS = [
@@ -33,59 +33,86 @@ const FAQS = [
 ]
 
 export function FAQ() {
-  const [open, setOpen] = useState<number | null>(null)
+  const [open, setOpen] = useState<number | null>(0)
 
   return (
-    <section className="px-6 py-24 md:py-32">
-      <div className="mx-auto max-w-[800px]">
-        <ScrollReveal className="text-center mb-14">
-          <p className="text-xs font-semibold uppercase tracking-widest text-icon-teal mb-3">
-            FAQ
-          </p>
-          <h2 className="font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-            Questions &amp;{" "}
-            <span className="brand-gradient-text">Answers</span>
-          </h2>
+    <section className="px-6 py-24 md:py-32" style={{ background: "linear-gradient(180deg, #FFFFFF 0%, #F6FAF2 100%)" }}>
+      <div className="mx-auto grid max-w-[1100px] gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
+        {/* Left: heading (sticky on desktop) */}
+        <ScrollReveal>
+          <div className="lg:sticky lg:top-28">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-icon-teal">
+              FAQ
+            </p>
+            <h2 className="font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
+              Questions &amp;{" "}
+              <span className="brand-gradient-text">Answers</span>
+            </h2>
+            <p className="mt-4 max-w-sm text-base leading-relaxed text-muted-foreground">
+              Everything you need to know about the Biotics Score, the framework, and how to start.
+            </p>
+            <p className="mt-6 text-sm text-muted-foreground">
+              Still have questions?{" "}
+              <Link
+                href="/biotics"
+                className="font-medium text-foreground underline underline-offset-4 transition-colors hover:text-icon-green"
+              >
+                Learn the full framework →
+              </Link>
+            </p>
+          </div>
         </ScrollReveal>
 
+        {/* Right: accordion */}
         <div className="space-y-3">
-          {FAQS.map((faq, i) => (
-            <ScrollReveal key={i} delay={i * 40}>
-              <div className="overflow-hidden rounded-2xl border border-border bg-background">
-                <button
-                  onClick={() => setOpen(open === i ? null : i)}
-                  className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left"
+          {FAQS.map((faq, i) => {
+            const isOpen = open === i
+            return (
+              <ScrollReveal key={i} delay={i * 40}>
+                <div
+                  className="overflow-hidden rounded-2xl border bg-white transition-all duration-300"
+                  style={{
+                    borderColor: isOpen ? "color-mix(in srgb, var(--icon-green) 35%, transparent)" : "var(--border)",
+                    boxShadow: isOpen
+                      ? "0 16px 40px -18px rgba(26,46,18,0.22)"
+                      : "0 2px 10px -6px rgba(26,46,18,0.08)",
+                  }}
                 >
-                  <span className="font-semibold text-foreground text-base leading-snug">
-                    {faq.q}
-                  </span>
-                  <ChevronDown
-                    size={18}
-                    className="shrink-0 text-muted-foreground transition-transform duration-200"
-                    style={{ transform: open === i ? "rotate(180deg)" : "rotate(0deg)" }}
-                  />
-                </button>
-                {open === i && (
-                  <div className="px-6 pb-5">
-                    <p className="text-sm leading-relaxed text-muted-foreground">{faq.a}</p>
+                  <button
+                    onClick={() => setOpen(isOpen ? null : i)}
+                    className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left"
+                    aria-expanded={isOpen}
+                  >
+                    <span className="text-base font-semibold leading-snug text-foreground">
+                      {faq.q}
+                    </span>
+                    <span
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all duration-300"
+                      style={{
+                        background: isOpen ? "var(--icon-green)" : "color-mix(in srgb, var(--icon-green) 12%, transparent)",
+                        color: isOpen ? "#fff" : "var(--icon-green)",
+                        transform: isOpen ? "rotate(45deg)" : "rotate(0deg)",
+                      }}
+                    >
+                      <Plus size={16} />
+                    </span>
+                  </button>
+                  {/* Smooth height animation via grid-rows */}
+                  <div
+                    className="grid transition-all duration-300 ease-out"
+                    style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
+                  >
+                    <div className="overflow-hidden">
+                      <p className="px-6 pb-5 text-sm leading-relaxed text-muted-foreground">
+                        {faq.a}
+                      </p>
+                    </div>
                   </div>
-                )}
-              </div>
-            </ScrollReveal>
-          ))}
+                </div>
+              </ScrollReveal>
+            )
+          })}
         </div>
-
-        <ScrollReveal delay={200}>
-          <p className="mt-10 text-center text-sm text-muted-foreground">
-            Still have questions?{" "}
-            <Link
-              href="/biotics"
-              className="font-medium text-foreground underline underline-offset-4 hover:text-icon-green transition-colors"
-            >
-              Learn the full framework →
-            </Link>
-          </p>
-        </ScrollReveal>
       </div>
     </section>
   )

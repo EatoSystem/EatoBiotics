@@ -35,6 +35,7 @@ import { MembershipTeaser } from "@/components/home/membership-teaser"
 import { Testimonials } from "@/components/home/testimonials"
 import { TrustDisclaimer } from "@/components/home/trust-disclaimer"
 import { FAQ } from "@/components/home/faq"
+import { ClosingCta } from "@/components/home/closing-cta"
 import { StickyCta } from "@/components/start/sticky-cta"
 
 async function requirePreviewAccess() {
@@ -57,12 +58,13 @@ export default async function Home() {
     <>
       <Suspense fallback={null}><Hero /></Suspense>
       <div style={{ height: "2px", background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
-      <Pathways />
-      <TheThreeBiotics />
       <HowItWorks />
-      <ThePlate />
       <div className="section-divider" />
       <ScorePreview />
+      <TheThreeBiotics />
+      <ThePlate />
+      <div className="section-divider" />
+      <Pathways />
       <div className="section-divider" />
       <MembershipTeaser />
       <div className="section-divider" />
@@ -70,6 +72,7 @@ export default async function Home() {
       <div className="section-divider" />
       <TrustDisclaimer />
       <FAQ />
+      <ClosingCta />
       <StickyCta />
     </>
   )
