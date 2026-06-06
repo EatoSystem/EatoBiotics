@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
-import { Dumbbell, Check, Flame, TrendingUp, Loader2, ArrowLeft } from "lucide-react"
+import { Dumbbell, Check, Flame, TrendingUp, TrendingDown, Loader2, ArrowLeft } from "lucide-react"
 import {
   type Activity,
   ACTIVITY_LABELS,
@@ -248,6 +248,9 @@ export function Glp1Client({
         <SummaryStat icon={<TrendingUp size={16} />} value={weekly.avgProtein ? `${weekly.avgProtein}g` : "—"} label="Avg protein/day" />
       </div>
 
+      {/* ── Weight trend ── */}
+      <WeightTrend logs={logs} unit={unit} />
+
       {/* ── History ── */}
       {logs.length > 0 && (
         <div className="mt-6 rounded-3xl border border-border bg-card p-5 shadow-sm">
@@ -280,6 +283,74 @@ export function Glp1Client({
         Educational tracking, not medical advice. Protein needs are individual — follow the
         guidance of the clinician or dietitian managing your care.
       </p>
+    </div>
+  )
+}
+
+/** 30-day weight trend line chart, drawn from logged weights (in the chosen unit). */
+function WeightTrend({ logs, unit }: { logs: Glp1Log[]; unit: Unit }) {
+  const pts = useMemo(() => {
+    const toDisp = (kg: number) => (unit === "kg" ? kg : kg * 2.20462)
+    return logs
+      .filter((l) => l.weight_kg != null)
+      .map((l) => ({ date: l.log_date, v: Math.round(toDisp(l.weight_kg as number) * 10) / 10 }))
+      .sort((a, b) => a.date.localeCompare(b.date))
+  }, [logs, unit])
+
+  if (pts.length < 2) return null
+
+  const W = 400, H = 130, padX = 14, padTop = 20, padBot = 24
+  const innerW = W - padX * 2, innerH = H - padTop - padBot
+  const vals = pts.map((p) => p.v)
+  let min = Math.min(...vals), max = Math.max(...vals)
+  if (min === max) { min -= 1; max += 1 }
+  const x = (i: number) => padX + (innerW * i) / (pts.length - 1)
+  const y = (v: number) => padTop + innerH * (1 - (v - min) / (max - min))
+  const line = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${x(i).toFixed(1)} ${y(p.v).toFixed(1)}`).join(" ")
+  const area = `${line} L ${x(pts.length - 1).toFixed(1)} ${(H - padBot).toFixed(1)} L ${x(0).toFixed(1)} ${(H - padBot).toFixed(1)} Z`
+
+  const first = pts[0].v, last = pts[pts.length - 1].v
+  const delta = Math.round((last - first) * 10) / 10
+  const days = Math.max(
+    1,
+    Math.round((Date.parse(pts[pts.length - 1].date) - Date.parse(pts[0].date)) / 86_400_000),
+  )
+  const down = delta < 0
+  const fmt = (d: string) =>
+    new Date(d + "T00:00:00Z").toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" })
+
+  return (
+    <div className="mt-6 rounded-3xl border border-border bg-card p-5 shadow-sm">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Weight trend</p>
+          {delta !== 0 && (
+            <p className="mt-1 flex items-center gap-1 text-sm font-semibold" style={{ color: down ? "var(--icon-green)" : "var(--muted-foreground)" }}>
+              {down ? <TrendingDown size={15} /> : <TrendingUp size={15} />}
+              {down ? "−" : "+"}{Math.abs(delta)} {unit} over {days} day{days !== 1 ? "s" : ""}
+            </p>
+          )}
+        </div>
+        <div className="text-right">
+          <span className="font-serif text-2xl font-bold text-foreground">{last}</span>
+          <span className="ml-1 text-xs text-muted-foreground">{unit}</span>
+        </div>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="mt-3 w-full" role="img" aria-label="Weight over time">
+        <defs>
+          <linearGradient id="weightTrendFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--icon-green)" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="var(--icon-green)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={area} fill="url(#weightTrendFill)" />
+        <path d={line} fill="none" stroke="var(--icon-green)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx={x(pts.length - 1)} cy={y(last)} r="3.6" fill="var(--icon-green)" />
+      </svg>
+      <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+        <span>{fmt(pts[0].date)}</span>
+        <span>{fmt(pts[pts.length - 1].date)}</span>
+      </div>
     </div>
   )
 }
