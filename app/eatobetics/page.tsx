@@ -131,9 +131,12 @@ export default function EatoBeticsPage() {
                     "radial-gradient(60% 60% at 50% 48%, rgba(245,197,24,0.22), rgba(76,182,72,0.12) 55%, transparent 78%)",
                 }}
               />
+              {/* TODO: swap src to /images/eatobetics-hero.png once the glucose
+                  illustration is uploaded. Using the homepage illustration as a
+                  temporary on-brand placeholder so the hero is never empty. */}
               <Image
-                src="/images/eatobetics-hero.png"
-                alt="The glucose system inside you — two figures in green and gold light with a glucose curve flowing through the body"
+                src="/images/hero-gut.png"
+                alt="The glucose system inside you — a figure in green and gold light with a glucose curve flowing through the body"
                 width={1200}
                 height={800}
                 priority
