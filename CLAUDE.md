@@ -79,6 +79,7 @@ This file is the authoritative reference for Claude Code sessions. Read it befor
 - `app/account/glp1/glp1-client.tsx` — onboarding + daily protein/weight/strength tracker + weight-trend chart
 - `app/api/glp1/log/route.ts` — upserts a day's log (auth + `glp1_companion` gate)
 - `app/api/glp1/profile/route.ts` — upserts the onboarding profile (medication, start/goal weight)
+- `app/api/glp1/reminder/route.ts` — daily cron; emails onboarded members who logged recently but not today (`lib/email/glp1-reminder-email.ts`, schedule `0 18 * * *`)
 
 ---
 
