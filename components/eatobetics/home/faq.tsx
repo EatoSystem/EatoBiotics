@@ -32,7 +32,7 @@ const FAQS = [
   },
 ]
 
-export function EatobeticsFaq() {
+export function EbFaq() {
   const [open, setOpen] = useState<number | null>(0)
 
   return (
@@ -68,11 +68,7 @@ export function EatobeticsFaq() {
                     boxShadow: isOpen ? "0 16px 40px -18px rgba(26,46,18,0.22)" : "0 2px 10px -6px rgba(26,46,18,0.08)",
                   }}
                 >
-                  <button
-                    onClick={() => setOpen(isOpen ? null : i)}
-                    className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left"
-                    aria-expanded={isOpen}
-                  >
+                  <button onClick={() => setOpen(isOpen ? null : i)} className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left" aria-expanded={isOpen}>
                     <span className="text-base font-semibold leading-snug text-foreground">{faq.q}</span>
                     <span
                       className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all duration-300"
