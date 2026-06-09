@@ -3,6 +3,7 @@ import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { getUserMembershipTier } from "@/lib/membership"
+import { guardAiUsage } from "@/lib/ai-guard"
 
 
 export async function POST(req: NextRequest) {
@@ -14,6 +15,9 @@ export async function POST(req: NextRequest) {
   if (tier !== "transform" && tier !== "restore") {
     return NextResponse.json({ error: "Restore or Transform membership required" }, { status: 403 })
   }
+
+  const blocked = await guardAiUsage(user.id, "meal_plan")
+  if (blocked) return blocked
 
   const adminSupabase = getSupabase()
   if (!adminSupabase) return NextResponse.json({ error: "DB unavailable" }, { status: 500 })

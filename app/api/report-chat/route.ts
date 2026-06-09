@@ -4,6 +4,7 @@ import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { getUserMembershipTier } from "@/lib/membership"
+import { guardAiUsage } from "@/lib/ai-guard"
 import type { WeeklyReportJson } from "@/app/api/weekly-report/generate/route"
 
 /* ── Validation ─────────────────────────────────────────────────────── */
@@ -38,6 +39,9 @@ export async function POST(req: NextRequest) {
   if (tier === "free") {
     return NextResponse.json({ error: "Report chat requires an active membership" }, { status: 403 })
   }
+
+  const blocked = await guardAiUsage(user.id, "report_chat")
+  if (blocked) return blocked
 
   let body: z.infer<typeof bodySchema>
   try { body = bodySchema.parse(await req.json()) }

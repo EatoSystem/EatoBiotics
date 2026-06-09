@@ -3,18 +3,24 @@ import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { getUserMembershipTier } from "@/lib/membership"
+import { guardAiUsage } from "@/lib/ai-guard"
 
 
 export async function POST(req: NextRequest) {
-  // Allow cron trigger with CRON_SECRET or authenticated user
+  // Allow cron trigger with CRON_SECRET or authenticated user.
+  // CRON_SECRET must be set for the cron path — otherwise "Bearer undefined"
+  // would match an unset env var (fail open).
   const authHeader = req.headers.get("authorization")
-  const isCron = authHeader === `Bearer ${process.env.CRON_SECRET}`
+  const isCron = !!process.env.CRON_SECRET && authHeader === `Bearer ${process.env.CRON_SECRET}`
 
   if (!isCron) {
     const user = await getUser()
     if (!user) return NextResponse.json({ error: "Unauthorised" }, { status: 401 })
     const tier = await getUserMembershipTier(user.id)
     if (tier !== "transform") return NextResponse.json({ error: "Transform required" }, { status: 403 })
+
+    const blocked = await guardAiUsage(user.id, "monthly_review")
+    if (blocked) return blocked
   }
 
   const adminSupabase = getSupabase()

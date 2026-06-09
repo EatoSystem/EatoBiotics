@@ -265,8 +265,18 @@ ADMIN_PASSWORD                # Admin login password (also the fallback signing 
 > **Go-live note:** the cron and admin routes are fail-closed. Set `CRON_SECRET`
 > and `ADMIN_SESSION_SECRET` (or `ADMIN_PASSWORD`) in production, and apply
 > Migration 17 (`stripe_processed_events`), Migration 18 (`household_members`),
-> Migration 19 (`glp1_logs`), Migration 20 (`glp1_profile`), and Migration 21
-> (`glp1_logs.side_effects`) from `supabase/migrations.sql` before/at deploy.
+> Migration 19 (`glp1_logs`), Migration 20 (`glp1_profile`), Migration 21
+> (`glp1_logs.side_effects`), and Migration 22 (`ai_usage` — AI daily caps)
+> from `supabase/migrations.sql` before/at deploy.
+
+### AI cost guard
+All user-triggered Claude endpoints must be capped. `lib/ai-guard.ts` provides
+`guardAiUsage(userId, feature)` — an in-memory burst limit plus a DB-backed
+daily cap (table `ai_usage`, Migration 22; per-feature limits in `AI_LIMITS`).
+Wired into: `meal-plan/generate`, `weekly-report/generate`,
+`monthly-review/generate`, `monthly-plan/generate`, `report-chat`.
+(`analyse`, `consult`, and `food-intelligence` have their own table-count caps.)
+New AI routes must call `guardAiUsage` (or implement an equivalent cap).
 
 ---
 
