@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Your EatoBiotics Account — See It In Action",
   description:
     "Explore the EatoBiotics account dashboard with live sample data — your gut score, meal analysis, monthly plan, and more.",
+  robots: { index: false, follow: false }, // public demo with mock data — keep out of search
 }
 
 /* ────────────────────────────────────────────────────────────────────────

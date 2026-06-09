@@ -8,7 +8,7 @@ import { DailyLoopCard, type DailyLoopData } from "@/components/account/daily-lo
 import {
   Camera, ArrowRight, Check, ChevronRight, TrendingUp,
   FileText, UtensilsCrossed, MessageSquare, Download, ExternalLink, Flame,
-  Calendar, Target, Activity, User, Trash2, AlertTriangle, Dumbbell,
+  Calendar, Target, Activity, User, Trash2, AlertTriangle, Dumbbell, Gift, Copy,
 } from "lucide-react"
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -34,6 +34,58 @@ function Glp1CompanionCard() {
         <ChevronRight size={16} className="shrink-0 transition-transform group-hover:translate-x-0.5" style={{ color: "var(--icon-green)" }} />
       </div>
     </Link>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Refer-a-friend card — surfaces the (previously invisible) referral code so
+   the built-in viral loop is actually usable. Share link → assessment?ref=CODE.
+   ───────────────────────────────────────────────────────────────────────── */
+function ReferralCard({ code }: { code: string | null }) {
+  const [copied, setCopied] = useState(false)
+  if (!code) return null
+
+  const shareUrl = `https://eatobiotics.com/assessment?ref=${code}`
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      /* clipboard blocked — no-op */
+    }
+  }
+
+  return (
+    <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid #ebebeb", boxShadow: "0 2px 12px rgba(26,46,18,0.05)" }}>
+      <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
+      <div className="p-5">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm" style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}>
+            <Gift size={20} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Refer a friend</p>
+            <h3 className="font-serif text-base font-bold leading-snug" style={{ color: "var(--foreground)" }}>Share your food system</h3>
+            <p className="mt-0.5 text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>Invite friends to take the free assessment with your link.</p>
+          </div>
+        </div>
+        <div className="mt-4 flex items-center gap-2">
+          <span className="min-w-0 flex-1 truncate rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs text-muted-foreground">
+            eatobiotics.com/assessment?ref={code}
+          </span>
+          <button
+            onClick={copy}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+            style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
+            aria-label="Copy referral link"
+          >
+            {copied ? <><Check size={13} /> Copied</> : <><Copy size={13} /> Copy</>}
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -701,6 +753,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
     memberStartedAt    = null,
     nextBillingDate    = null,
     dailyLoop          = null,
+    referralCode       = null,
   } = props
 
   const [tab, setTab] = useState<Tab>("overview")
@@ -1057,6 +1110,11 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
           {/* GLP-1 Companion — compact, self-selecting entry point */}
           <div className="mt-5">
             <Glp1CompanionCard />
+          </div>
+
+          {/* Refer a friend */}
+          <div className="mt-5">
+            <ReferralCard code={referralCode} />
           </div>
 
           {/* Log first meal inline */}
@@ -1687,6 +1745,9 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
 
             {/* GLP-1 Companion — compact, self-selecting entry point */}
             <Glp1CompanionCard />
+
+            {/* Refer a friend */}
+            <ReferralCard code={referralCode} />
 
           </div>{/* end right */}
         </div>

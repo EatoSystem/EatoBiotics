@@ -141,6 +141,9 @@ export function Testimonials() {
             )
           })}
         </div>
+        <p className="mt-8 text-center text-xs text-muted-foreground/80">
+          Illustrative results based on the EatoBiotics framework. Individual results vary.
+        </p>
       </div>
     </section>
   )
