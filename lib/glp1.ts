@@ -49,6 +49,15 @@ export function medicationLabel(value: string | null | undefined): string | null
   return MEDICATIONS.find((m) => m.value === value)?.label ?? null
 }
 
+/* ── Side effects (tracker symptom tagging) ─────────────────────────────── */
+
+export const SIDE_EFFECTS: { key: string; label: string }[] = [
+  { key: "nausea", label: "Nausea" },
+  { key: "fullness", label: "Fullness" },
+  { key: "constipation", label: "Constipation" },
+  { key: "fatigue", label: "Fatigue" },
+]
+
 /** Convert pounds to kilograms. */
 export function lbToKg(lb: number): number {
   return lb / 2.20462

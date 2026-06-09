@@ -77,7 +77,7 @@ This file is the authoritative reference for Claude Code sessions. Read it befor
 - `components/eatobetics/protein-calculator.tsx` — interactive calculator (free)
 - `app/eatobetics/glp1/check/page.tsx` + `components/eatobetics/glp1-check.tsx` — public muscle-preservation readiness check (client-scored, no backend)
 - `app/account/glp1/page.tsx` — gated tracker (Restore+; soft upsell otherwise)
-- `app/account/glp1/glp1-client.tsx` — onboarding + daily protein/weight/strength tracker + weight-trend chart
+- `app/account/glp1/glp1-client.tsx` — onboarding + daily protein/weight/strength/side-effect tracker, weight-trend chart (goal line + projection), protein-adherence + side-effect analytics
 - `app/api/glp1/log/route.ts` — upserts a day's log (auth + `glp1_companion` gate)
 - `app/api/glp1/profile/route.ts` — upserts the onboarding profile (medication, start/goal weight)
 - `app/api/glp1/reminder/route.ts` — daily cron; emails onboarded members who logged recently but not today (`lib/email/glp1-reminder-email.ts`, schedule `0 18 * * *`)
@@ -199,6 +199,7 @@ Family food-system score = average of members' `latest_score` plus the owner's o
 | weight_kg | numeric(5,1) | nullable |
 | strength_session | boolean | default false |
 | notes | text | nullable |
+| side_effects | text[] | nullable — per-day symptom tags (nausea, fullness, …) |
 | created_at / updated_at | timestamptz | |
 
 All GLP-1 protein/muscle assumptions (factors, target math) live in **`lib/glp1.ts`** — the single clinical tuning point used by both the public calculator and the in-app tracker.
@@ -264,8 +265,8 @@ ADMIN_PASSWORD                # Admin login password (also the fallback signing 
 > **Go-live note:** the cron and admin routes are fail-closed. Set `CRON_SECRET`
 > and `ADMIN_SESSION_SECRET` (or `ADMIN_PASSWORD`) in production, and apply
 > Migration 17 (`stripe_processed_events`), Migration 18 (`household_members`),
-> Migration 19 (`glp1_logs`), and Migration 20 (`glp1_profile`) from
-> `supabase/migrations.sql` before/at deploy.
+> Migration 19 (`glp1_logs`), Migration 20 (`glp1_profile`), and Migration 21
+> (`glp1_logs.side_effects`) from `supabase/migrations.sql` before/at deploy.
 
 ---
 

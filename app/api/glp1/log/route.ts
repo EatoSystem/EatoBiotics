@@ -11,6 +11,7 @@ const bodySchema = z.object({
   weight_kg:        z.number().min(20).max(400).nullable().optional(),
   strength_session: z.boolean().optional(),
   notes:            z.string().max(500).nullable().optional(),
+  side_effects:     z.array(z.string().max(40)).max(10).nullable().optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -50,6 +51,7 @@ export async function POST(req: NextRequest) {
         weight_kg:        body.weight_kg ?? null,
         strength_session: body.strength_session ?? false,
         notes:            body.notes ?? null,
+        side_effects:     body.side_effects && body.side_effects.length ? body.side_effects : null,
         updated_at:       new Date().toISOString(),
       },
       { onConflict: "user_id,log_date" },

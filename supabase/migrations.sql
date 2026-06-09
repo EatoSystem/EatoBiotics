@@ -529,3 +529,12 @@ BEGIN
       WITH CHECK (user_id = auth.uid());
   END IF;
 END $$;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 21: glp1_logs.side_effects (GLP-1 Companion — symptom tracking)
+-- ────────────────────────────────────────────────────────────
+-- Optional per-day side-effect tags (e.g. nausea, fullness, constipation,
+-- fatigue) for the in-app tracker's analytics. Additive column; nullable.
+
+ALTER TABLE glp1_logs ADD COLUMN IF NOT EXISTS side_effects text[];
