@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react"
 import { useEffect, useState } from "react"
 
 /** Mobile sticky CTA for the EatoBetics homepage — mirrors the EatoBiotics one. */
-export function EatobeticsStickyCta() {
+export function EbStickyCta() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -21,10 +21,7 @@ export function EatobeticsStickyCta() {
       }`}
       style={{ background: "linear-gradient(to top, var(--background) 70%, transparent)" }}
     >
-      <Link
-        href="/eatobetics/assessment"
-        className="brand-gradient flex w-full items-center justify-center gap-2 rounded-full py-4 text-base font-semibold text-white shadow-xl shadow-icon-green/30"
-      >
+      <Link href="/eatobetics/assessment" className="brand-gradient flex w-full items-center justify-center gap-2 rounded-full py-4 text-base font-semibold text-white shadow-xl shadow-icon-green/30">
         Get your EatoBetics Score
         <ArrowRight size={16} />
       </Link>
