@@ -223,12 +223,6 @@ export default function EatoSportsPage() {
 
           {/* ── Right: Text ── */}
           <div className="flex-1 text-left max-w-[560px]">
-            <ScrollReveal>
-              <span className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
-                <Flame size={14} style={{ color: "var(--icon-orange)" }} /> Performance Intelligence by Eato
-              </span>
-            </ScrollReveal>
-
             <ScrollReveal delay={80}>
               <h1 className="mt-5 font-serif text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl text-balance">
                 <span style={{ color: "var(--icon-orange)" }}>The Performance System</span>{" "}
