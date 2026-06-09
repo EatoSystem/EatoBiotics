@@ -560,3 +560,24 @@ CREATE TABLE IF NOT EXISTS ai_usage (
 CREATE INDEX IF NOT EXISTS ai_usage_user_date_idx ON ai_usage (user_id, usage_date);
 
 ALTER TABLE ai_usage ENABLE ROW LEVEL SECURITY;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 23: email_sends (idempotent lifecycle email log)
+-- ────────────────────────────────────────────────────────────
+-- One row per (email, kind) so lifecycle crons (trial win-back, etc.) send a
+-- given email at most once per recipient. Service-role only (RLS on, no
+-- policies).
+
+CREATE TABLE IF NOT EXISTS email_sends (
+  id       uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  email    text        NOT NULL,
+  kind     text        NOT NULL,
+  user_id  uuid        REFERENCES auth.users(id) ON DELETE SET NULL,
+  sent_at  timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (email, kind)
+);
+
+CREATE INDEX IF NOT EXISTS email_sends_email_idx ON email_sends (email);
+
+ALTER TABLE email_sends ENABLE ROW LEVEL SECURITY;

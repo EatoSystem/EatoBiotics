@@ -133,6 +133,7 @@ export async function POST(req: NextRequest) {
         // Only if user is currently free (don't downgrade an existing subscriber)
         const currentTier = (profile.membership_tier as string) ?? "free"
         const trialTiers = ["free", "trial"]
+        let trialGranted = false
         if (trialTiers.includes(currentTier)) {
           const trialExpiresAt = new Date()
           trialExpiresAt.setDate(trialExpiresAt.getDate() + 30)
@@ -145,6 +146,21 @@ export async function POST(req: NextRequest) {
               trial_expires_at:  trialExpiresAt.toISOString(),
             })
             .eq("id", profile.id)
+          trialGranted = true
+        }
+
+        // Revenue analytics: report purchase + trial start
+        await logServerEvent("report_purchased", profile.id, {
+          tier:            summary?.tier ?? "personal",
+          amount:          String((session.amount_total ?? 0) / 100),
+          currency:        (session.currency ?? "eur").toUpperCase(),
+          stripe_event_id: event.id,
+        })
+        if (trialGranted) {
+          await logServerEvent("trial_started", profile.id, {
+            source:          "report_purchase",
+            stripe_event_id: event.id,
+          })
         }
         break
       }
@@ -213,8 +229,11 @@ export async function POST(req: NextRequest) {
         //       once you call client.updateUser({ userID: user.id }) after login.
         await logServerEvent("subscription_started", profile.id, {
           tier,
+          amount:             String((sub.items.data[0]?.price.unit_amount ?? 0) / 100),
+          currency:           (sub.items.data[0]?.price.currency ?? "eur").toUpperCase(),
+          interval:           sub.items.data[0]?.price.recurring?.interval ?? "month",
           is_founding_member: String(founding),
-          stripe_event_id: event.id,
+          stripe_event_id:    event.id,
         })
         break
       }
