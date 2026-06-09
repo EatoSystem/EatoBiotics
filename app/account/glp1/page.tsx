@@ -74,7 +74,7 @@ export default async function Glp1AccountPage() {
 
     const { data: logData } = await adminSupabase
       .from("glp1_logs")
-      .select("log_date, protein_grams, protein_target, weight_kg, strength_session, notes")
+      .select("log_date, protein_grams, protein_target, weight_kg, strength_session, notes, side_effects")
       .eq("user_id", user.id)
       .order("log_date", { ascending: false })
       .limit(30)

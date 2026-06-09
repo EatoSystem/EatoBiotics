@@ -8,6 +8,7 @@ import {
   type Glp1Medication,
   ACTIVITY_LABELS,
   MEDICATIONS,
+  SIDE_EFFECTS,
   medicationLabel,
   lbToKg,
   proteinTarget,
@@ -20,6 +21,7 @@ export type Glp1Log = {
   weight_kg: number | null
   strength_session: boolean
   notes: string | null
+  side_effects: string[] | null
 }
 
 export type Glp1Profile = {
@@ -32,6 +34,8 @@ export type Glp1Profile = {
 type Unit = "kg" | "lb"
 
 const today = () => new Date().toISOString().slice(0, 10)
+const fmtDay = (ds: string) =>
+  new Date(ds + "T00:00:00Z").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" })
 
 export function Glp1Client({
   memberName,
@@ -64,6 +68,7 @@ export function Glp1Client({
     todayLog?.protein_grams != null ? String(todayLog.protein_grams) : "",
   )
   const [strength, setStrength] = useState<boolean>(todayLog?.strength_session ?? false)
+  const [sideEffects, setSideEffects] = useState<string[]>(todayLog?.side_effects ?? [])
   const [notes, setNotes] = useState<string>(todayLog?.notes ?? "")
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -97,6 +102,46 @@ export function Glp1Client({
     return { hits, sessions, avgProtein, logged: recent.length }
   }, [logs])
 
+  // ── Protein adherence (last 14 days) ──
+  const adherence = useMemo(() => {
+    const out: { ds: string; frac: number; hit: boolean; has: boolean }[] = []
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date()
+      d.setUTCDate(d.getUTCDate() - i)
+      const ds = d.toISOString().slice(0, 10)
+      const log = logs.find((l) => l.log_date === ds)
+      let frac = 0, hit = false, has = false
+      if (log?.protein_grams != null && log.protein_target) {
+        has = true
+        frac = Math.min(1, log.protein_grams / log.protein_target)
+        hit = log.protein_grams >= log.protein_target
+      } else if (log?.protein_grams != null) {
+        has = true
+        frac = 0.5
+      }
+      out.push({ ds, frac, hit, has })
+    }
+    return out
+  }, [logs])
+
+  // ── Side-effects summary (last 14 days) ──
+  const sideEffectSummary = useMemo(() => {
+    const cutoff = new Date()
+    cutoff.setUTCDate(cutoff.getUTCDate() - 13)
+    const cutoffStr = cutoff.toISOString().slice(0, 10)
+    const counts: Record<string, number> = {}
+    for (const l of logs) {
+      if (l.log_date >= cutoffStr && l.side_effects) {
+        for (const k of l.side_effects) counts[k] = (counts[k] ?? 0) + 1
+      }
+    }
+    return SIDE_EFFECTS.map((s) => ({ ...s, count: counts[s.key] ?? 0 })).filter((s) => s.count > 0)
+  }, [logs])
+
+  function toggleSideEffect(key: string) {
+    setSideEffects((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]))
+  }
+
   async function save() {
     setSaving(true)
     setError(null)
@@ -112,6 +157,7 @@ export function Glp1Client({
           weight_kg: kg > 0 ? Math.round(kg * 10) / 10 : null,
           strength_session: strength,
           notes: notes.trim() || null,
+          side_effects: sideEffects.length ? sideEffects : null,
         }),
       })
       if (!res.ok) {
@@ -126,6 +172,7 @@ export function Glp1Client({
         weight_kg: kg > 0 ? Math.round(kg * 10) / 10 : null,
         strength_session: strength,
         notes: notes.trim() || null,
+        side_effects: sideEffects.length ? sideEffects : null,
       }
       setLogs((prev) => [updated, ...prev.filter((l) => l.log_date !== today())])
       setSaved(true)
@@ -272,8 +319,26 @@ export function Glp1Client({
             </span>
           </button>
 
+          {/* Side effects */}
+          <p className="mt-4 text-sm font-medium text-foreground">Any side effects today?</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {SIDE_EFFECTS.map((s) => {
+              const active = sideEffects.includes(s.key)
+              return (
+                <button
+                  key={s.key}
+                  onClick={() => toggleSideEffect(s.key)}
+                  className="rounded-full border-2 px-3.5 py-1.5 text-xs font-semibold transition-all"
+                  style={{ borderColor: active ? "var(--icon-orange)" : "var(--border)", background: active ? "color-mix(in srgb, var(--icon-orange) 10%, transparent)" : "transparent", color: active ? "var(--icon-orange)" : "var(--muted-foreground)" }}
+                >
+                  {s.label}
+                </button>
+              )
+            })}
+          </div>
+
           <input
-            type="text" maxLength={500} placeholder="Notes (optional) — how you felt, side effects…"
+            type="text" maxLength={500} placeholder="Notes (optional) — how you felt today…"
             value={notes} onChange={(e) => setNotes(e.target.value)}
             className="mt-3 w-full rounded-xl border-2 border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:border-[color:var(--icon-green)]"
           />
@@ -298,6 +363,45 @@ export function Glp1Client({
 
       {/* ── Weight trend ── */}
       <WeightTrend logs={logs} unit={unit} baseline={baseline} goalKg={profile.goal_weight_kg} />
+
+      {/* ── Protein adherence (14 days) ── */}
+      {adherence.some((d) => d.has) && (
+        <div className="mt-6 rounded-3xl border border-border bg-card p-5 shadow-sm">
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Protein adherence · last 14 days</p>
+          <div className="mt-4 flex h-14 items-end gap-1.5">
+            {adherence.map((d) => (
+              <div key={d.ds} className="group relative flex-1" title={`${fmtDay(d.ds)}${d.has ? ` · ${Math.round(d.frac * 100)}% of target` : " · no log"}`}>
+                <div className="w-full rounded-md" style={{
+                  height: `${d.has ? Math.max(6, Math.round(d.frac * 52)) : 4}px`,
+                  background: d.has ? (d.hit ? "var(--icon-green)" : "var(--icon-yellow)") : "var(--border)",
+                  opacity: d.has ? 1 : 0.5,
+                }} />
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 flex items-center gap-4 text-[10px] text-muted-foreground">
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm" style={{ background: "var(--icon-green)" }} /> Target hit</span>
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm" style={{ background: "var(--icon-yellow)" }} /> Under target</span>
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm" style={{ background: "var(--border)" }} /> No log</span>
+          </div>
+        </div>
+      )}
+
+      {/* ── Side effects (14 days) ── */}
+      {sideEffectSummary.length > 0 && (
+        <div className="mt-6 rounded-3xl border border-border bg-card p-5 shadow-sm">
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Side effects · last 14 days</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {sideEffectSummary.map((s) => (
+              <span key={s.key} className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold" style={{ borderColor: "color-mix(in srgb, var(--icon-orange) 35%, transparent)", color: "var(--icon-orange)" }}>
+                {s.label}
+                <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: "var(--icon-orange)" }}>{s.count}</span>
+              </span>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground">Spotting a pattern? Share it with the clinician managing your medication.</p>
+        </div>
+      )}
 
       {/* ── History ── */}
       {logs.length > 0 && (

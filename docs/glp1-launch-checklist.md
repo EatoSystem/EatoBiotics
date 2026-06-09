@@ -15,6 +15,8 @@ Last reviewed: 2026-06-06.
       start/goal weight). First-run setup fails to persist without it.
   - Verify: table `glp1_profile` exists with `UNIQUE (user_id)` and RLS policy
     `users_manage_own_glp1_profile` enabled.
+- [ ] **Apply Migration 21** (`glp1_logs.side_effects`) — additive `text[]`
+      column for per-day symptom tags (powers the side-effect analytics).
 - [ ] Confirm Migrations 17 (`stripe_processed_events`) and 18 (`household_members`)
       are also applied (prior builds).
 
