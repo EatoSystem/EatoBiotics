@@ -67,6 +67,15 @@ This file is the authoritative reference for Claude Code sessions. Read it befor
 - `app/api/weekly-checkin/route.ts` — cron target, generates check-ins for all Transform members
 - `vercel.json` — configures Vercel Cron (`0 8 * * 1` = Monday 8am UTC)
 
+### Trial win-back + revenue analytics
+- `app/api/email/trial-winback/route.ts` — daily cron; emails trial users ~3 days
+  before expiry ("pre") and just after ("post"); idempotent via `email_sends`
+  (Migration 23); fires the `trial_expired` analytics event. Schedule `0 10 * * *`.
+- `lib/email/trial-winback-email.ts` — the two-phase email template.
+- Revenue events via `logServerEvent` (`lib/statsig-server.ts`) in
+  `app/api/stripe/webhook/route.ts`: `report_purchased` (with amount/currency),
+  `trial_started`, and amount/interval added to `subscription_started`.
+
 ### Pricing
 - `app/pricing/page.tsx` — server component (public)
 - `app/pricing/pricing-client.tsx` — interactive pricing cards
