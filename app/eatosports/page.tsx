@@ -7,7 +7,7 @@ import {
   RefreshCw,
   Shield,
   ArrowUpRight,
-  ChevronRight,
+  ArrowRight,
   Users,
   Award,
   Briefcase,
@@ -198,182 +198,200 @@ const MOCK_SCORES = [
 export default function EatoSportsPage() {
   return (
     <>
-      {/* ── 1. HERO ─────────────────────────────────────── */}
-      <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-20 pb-20 md:pb-32">
-        <div className="relative z-10 mx-auto flex max-w-[720px] flex-col items-center text-center">
-          {/* Icon — same as EatoBiotics homepage, placeholder until EatoSports icon is ready */}
-          <ScrollReveal>
-            <Image
-              src="/eatobiotics-icon.webp"
-              alt="EatoSports icon"
-              width={200}
-              height={200}
-              priority
-              className="h-40 w-40 sm:h-48 sm:w-48 md:h-56 md:w-56"
-            />
-          </ScrollReveal>
+      {/* ── 1. HERO (two-column, matches homepage / EatoBetics) ── */}
+      <section className="relative min-h-screen overflow-hidden px-6 pt-20 pb-16 md:pb-20">
+        <div className="relative z-10 mx-auto flex max-w-[1200px] min-h-[calc(100vh-160px)] flex-col items-center justify-center gap-12 md:flex-row md:gap-16 lg:gap-20">
 
-          {/* Headline — brand name as H1, matching homepage "EatoBiotics" pattern */}
-          <ScrollReveal delay={100}>
-            <h1 className="mt-8 font-serif text-6xl font-semibold tracking-tight sm:text-7xl md:text-8xl lg:text-9xl text-balance">
-              <span className="brand-gradient-text">EatoSports</span>
-            </h1>
-          </ScrollReveal>
-
-          {/* Sub-headline */}
-          <ScrollReveal delay={200}>
-            <p className="mt-4 font-serif text-xl font-medium text-foreground sm:text-2xl md:text-3xl">
-              The Food System for Sports
-            </p>
-          </ScrollReveal>
-
-          {/* Body */}
-          <ScrollReveal delay={300}>
-            <p className="mt-6 max-w-lg text-base leading-relaxed text-muted-foreground md:text-lg">
-              EatoSports is a new way to understand how food supports athletic performance.
-              Built on the same philosophy as EatoBiotics — but applied to energy, recovery,
-              resilience, and results for athletes and active people.
-            </p>
-          </ScrollReveal>
-
-          {/* Italic quote — mirrors homepage orange quote */}
-          <ScrollReveal delay={400}>
-            <p className="mt-6 max-w-md text-base font-medium italic text-icon-orange md:text-lg">
-              &ldquo;Build the performance system inside you — and help build the food system around you.&rdquo;
-            </p>
-          </ScrollReveal>
-
-          {/* CTAs */}
-          <ScrollReveal delay={500}>
-            <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-              <a
-                href="#framework"
-                className="inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:opacity-90 hover:shadow-xl"
-                style={{ background: SPORTS_GRADIENT, boxShadow: "0 8px 32px color-mix(in srgb, var(--icon-orange) 25%, transparent)" }}
-              >
-                Explore the 4 Systems
-                <ChevronRight size={16} />
-              </a>
-              <a
-                href="#how-it-works"
-                className="inline-flex items-center gap-2 rounded-full border border-border px-8 py-4 text-base font-semibold text-foreground transition-all hover:border-icon-orange hover:text-icon-orange"
-              >
-                See how it works
-              </a>
+          {/* ── Left: Image ── */}
+          <ScrollReveal delay={60} className="flex-1 flex items-center justify-center w-full max-w-[620px]">
+            <div className="relative w-full">
+              <div
+                aria-hidden
+                className="absolute inset-0 -z-10 blur-3xl"
+                style={{ background: "radial-gradient(60% 60% at 50% 48%, rgba(245,197,24,0.28), rgba(245,166,35,0.14) 55%, transparent 78%)" }}
+              />
+              <Image
+                src="/images/eatosports-hero.webp"
+                alt="The performance system inside you — four athletes mid-stride, lit in gold energy"
+                width={1500}
+                height={1000}
+                priority
+                className="w-full h-auto object-contain"
+              />
             </div>
           </ScrollReveal>
-        </div>
-      </section>
 
-      {/* ── DIVIDER ─────────────────────────────────────── */}
-      <div className="section-divider" />
+          {/* ── Right: Text ── */}
+          <div className="flex-1 text-left max-w-[560px]">
+            <ScrollReveal>
+              <span className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
+                <Flame size={14} style={{ color: "var(--icon-orange)" }} /> Performance Intelligence by Eato
+              </span>
+            </ScrollReveal>
 
-      {/* ── 2. FRAMEWORK ────────────────────────────────── */}
-      <section id="framework" className="px-6 py-24 md:py-32">
-        <div className="mx-auto max-w-[1200px]">
-          <ScrollReveal>
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-icon-orange">
-                  The Framework
-                </p>
-                <h2 className="mt-4 text-balance font-serif text-4xl font-semibold text-foreground sm:text-5xl md:text-6xl">
-                  The 4 Systems
-                  <br />
-                  <span className="brand-gradient-text">of Performance</span>
-                </h2>
+            <ScrollReveal delay={80}>
+              <h1 className="mt-5 font-serif text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl text-balance">
+                <span style={{ color: "var(--icon-orange)" }}>The Performance System</span>{" "}
+                <span
+                  style={{
+                    background: "linear-gradient(90deg, var(--icon-yellow), var(--icon-orange), var(--icon-green))",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                >
+                  Inside You
+                </span>
+              </h1>
+            </ScrollReveal>
+
+            <ScrollReveal delay={140}>
+              <p className="mt-4 max-w-md text-xl font-medium text-foreground sm:text-2xl">
+                Fuel, build, recover, protect — the food system behind your performance.
+              </p>
+              <p className="mt-4 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg">
+                EatoSports applies the EatoBiotics philosophy to sport through the 4 Systems of
+                Performance. Take the free assessment, get your EatoSports Score, and fuel the
+                way you train, recover, and compete.
+              </p>
+            </ScrollReveal>
+
+            <ScrollReveal delay={220}>
+              <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+                <Link
+                  href="/eatosports-assessment"
+                  className="inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:opacity-90 hover:shadow-xl"
+                  style={{ background: SPORTS_GRADIENT, boxShadow: "0 8px 32px color-mix(in srgb, var(--icon-orange) 25%, transparent)" }}
+                >
+                  Take the free assessment <ArrowRight size={16} />
+                </Link>
+                <a href="#framework" className="text-sm font-medium text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground">
+                  Explore the 4 Systems
+                </a>
               </div>
-            </div>
-            <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
-              A simple and practical framework for understanding how food supports the four
-              core systems every athlete, team, and active person relies on.
-            </p>
-          </ScrollReveal>
+            </ScrollReveal>
 
-          <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {SYSTEMS.map((sys, index) => (
-              <ScrollReveal key={sys.number} delay={index * 120}>
-                <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-background p-7 transition-all hover:shadow-lg">
-                  {/* Top gradient bar */}
-                  <div
-                    className="absolute top-0 left-0 right-0 h-1.5"
-                    style={{ background: `linear-gradient(90deg, ${sys.gradientFrom}, ${sys.gradientTo})` }}
-                  />
-
-                  {/* Number */}
-                  <span
-                    className="font-serif text-5xl font-semibold md:text-6xl"
-                    style={{ color: sys.accent }}
-                  >
-                    {sys.number}
-                  </span>
-
-                  {/* Title + label */}
-                  <h3 className="mt-5 font-serif text-xl font-semibold text-foreground">
-                    {sys.title}
-                  </h3>
-                  <p
-                    className="mt-1 text-xs font-bold uppercase tracking-widest"
-                    style={{ color: sys.accent }}
-                  >
-                    {sys.label}
-                  </p>
-
-                  {/* Description */}
-                  <p className="mt-4 flex-1 text-sm leading-relaxed text-muted-foreground">
-                    {sys.description}
-                  </p>
-
-                  {/* Support line */}
-                  <p className="mt-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-                    {sys.support}
-                  </p>
-
-                  {/* Bottom gradient bar */}
-                  <div
-                    className="mt-5 h-1.5 w-16 rounded-full transition-all group-hover:w-24"
-                    style={{ background: `linear-gradient(90deg, ${sys.gradientFrom}, ${sys.gradientTo})` }}
-                  />
-                </div>
-              </ScrollReveal>
-            ))}
+            <ScrollReveal delay={320}>
+              <div className="mt-8 flex items-center gap-6">
+                {[
+                  { num: "Free", label: "To start" },
+                  { num: "3 min", label: "Takes about" },
+                  { num: "4 Systems", label: "Of performance" },
+                ].map((s, i) => (
+                  <div key={s.label} className="flex items-center gap-5">
+                    {i > 0 && <div className="h-5 w-px bg-border" />}
+                    <div>
+                      <p className="font-serif text-lg font-bold text-foreground">{s.num}</p>
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{s.label}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollReveal>
           </div>
         </div>
       </section>
 
+      {/* ── Brand-gradient divider — matches homepage ── */}
+      <div style={{ height: "2px", background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
+
+      {/* ── 2. FRAMEWORK (homepage "How It Works" style) ── */}
+      <section id="framework" className="px-6 py-24 md:py-32">
+        <div className="mx-auto max-w-[1200px]">
+          <div className="mb-16 flex flex-col gap-10 md:flex-row md:items-center md:gap-16">
+            <ScrollReveal className="flex-1">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-icon-orange">The Framework</p>
+              <h2 className="font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
+                The 4 Systems{" "}
+                <span className="brand-gradient-text">of Performance</span>
+              </h2>
+              <p className="mt-4 max-w-lg text-base leading-relaxed text-muted-foreground">
+                A simple, practical framework for how food supports the four core systems every
+                athlete, team, and active person relies on — fuel, build, recover, protect.
+              </p>
+            </ScrollReveal>
+            <ScrollReveal delay={80} className="w-full md:w-[340px] lg:w-[400px] shrink-0">
+              <Image src="/food-9.webp" alt="Performance plate of whole foods" width={600} height={600} className="w-full h-auto rounded-3xl" />
+            </ScrollReveal>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {SYSTEMS.map((sys, index) => {
+              const Icon = sys.icon
+              const bgGradient = `linear-gradient(160deg, color-mix(in srgb, ${sys.accent} 10%, transparent), transparent 60%)`
+              return (
+                <ScrollReveal key={sys.number} delay={index * 80}>
+                  <div
+                    className="relative flex h-full flex-col rounded-3xl p-6 transition-shadow hover:shadow-lg"
+                    style={{ background: bgGradient, border: `1.5px solid color-mix(in srgb, ${sys.accent} 30%, transparent)`, borderLeft: `4px solid ${sys.accent}` }}
+                  >
+                    <p className="mb-4 text-xs font-bold uppercase tracking-widest" style={{ color: sys.accent }}>{sys.number}</p>
+                    <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `color-mix(in srgb, ${sys.accent} 15%, transparent)` }}>
+                      <Icon size={20} style={{ color: sys.accent }} />
+                    </div>
+                    <h3 className="font-serif text-xl font-semibold text-foreground">{sys.title}</h3>
+                    <p className="mt-1 text-xs font-bold uppercase tracking-widest" style={{ color: sys.accent }}>{sys.label}</p>
+                    <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">{sys.description}</p>
+                    <p className="mt-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">{sys.support}</p>
+                    {index < SYSTEMS.length - 1 && (
+                      <div className="absolute -right-3 top-1/2 hidden -translate-y-1/2 lg:block" style={{ zIndex: 1 }}>
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full text-white" style={{ background: `linear-gradient(135deg, ${sys.gradientFrom}, ${sys.gradientTo})` }}>
+                          <ArrowRight size={12} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </ScrollReveal>
+              )
+            })}
+          </div>
+
+          <ScrollReveal delay={400}>
+            <div className="mt-12 text-center">
+              <Link
+                href="/eatosports-assessment"
+                className="inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:opacity-90 hover:shadow-xl"
+                style={{ background: SPORTS_GRADIENT, boxShadow: "0 8px 32px color-mix(in srgb, var(--icon-orange) 25%, transparent)" }}
+              >
+                Take the free assessment <ArrowRight size={16} />
+              </Link>
+              <p className="mt-3 text-xs text-muted-foreground">Free to start. No card needed. Takes about 3 minutes.</p>
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
       {/* ── DIVIDER ─────────────────────────────────────── */}
       <div className="section-divider" />
 
-      {/* ── 3b. EATOSPORTS PLATE ─────────────────────────── */}
-      <section className="bg-secondary/40 px-6 py-24 md:py-32">
+      {/* ── 3b. EATOSPORTS PLATE (homepage / EatoBetics "The Plate" style) ── */}
+      <section className="px-6 py-24 md:py-32">
         <div className="mx-auto max-w-[1200px]">
           <div className="flex flex-col gap-16 lg:flex-row lg:items-center lg:gap-20">
 
             {/* Left: text */}
             <div className="lg:w-[420px] lg:shrink-0">
               <ScrollReveal>
-                <p className="text-xs font-semibold uppercase tracking-widest text-icon-orange">
-                  The Framework
-                </p>
-                <h2 className="mt-4 text-balance font-serif text-4xl font-semibold text-foreground sm:text-5xl">
+                <p className="text-xs font-semibold uppercase tracking-widest text-icon-teal">The Framework</p>
+                <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
                   One plate.{" "}
                   <span className="brand-gradient-text">Built with 4 Systems.</span>
                 </h2>
                 <p className="mt-6 text-base leading-relaxed text-muted-foreground">
-                  The EatoSports Plate is the practical model at the heart of the framework.
-                  Four systems — each one mapping to a specific aspect of physical performance.
+                  The EatoSports Plate is the practical model at the heart of the framework — four
+                  systems, each mapping to a specific part of physical performance.
                 </p>
                 <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-                  Each system targets what your body needs most: the fuel to go, the building
-                  blocks to grow, the reset to recover, and the protection to keep going.
+                  Build every plate around what your body needs most: the fuel to go, the blocks to
+                  grow, the reset to recover, and the protection to keep going.
                 </p>
               </ScrollReveal>
               <ScrollReveal delay={150}>
                 <Link
-                  href="#framework"
+                  href="/eatosports-assessment"
                   className="mt-8 inline-flex items-center gap-2 rounded-full border-2 border-icon-orange px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-icon-orange hover:text-white"
                 >
-                  Explore the 4 Systems
+                  Take the assessment
                   <ArrowUpRight size={14} />
                 </Link>
               </ScrollReveal>
@@ -396,70 +414,22 @@ export default function EatoSportsPage() {
                 </p>
               </ScrollReveal>
 
-              {/* System cards */}
               <ScrollReveal delay={200}>
                 <div className="mt-8 grid grid-cols-2 gap-4">
                   {[
-                    {
-                      label: "Energy",
-                      system: "FUEL",
-                      description: "Fuel for output and repeat performance.",
-                      color: "var(--icon-lime)",
-                      gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
-                      examples: ["Salmon", "Eggs", "White beans", "Oats"],
-                    },
-                    {
-                      label: "Recovery",
-                      system: "RESET",
-                      description: "Reset and readiness.",
-                      color: "var(--icon-teal)",
-                      gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
-                      examples: ["Broccoli", "Berries", "Leafy greens", "Beets"],
-                    },
-                    {
-                      label: "Build",
-                      system: "DEVELOP",
-                      description: "Muscle repair and growth.",
-                      color: "var(--icon-yellow)",
-                      gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
-                      examples: ["Chicken", "Brown rice", "Lentils", "Sweet potato"],
-                    },
-                    {
-                      label: "Protection",
-                      system: "PROTECT",
-                      description: "Resilience and immune support.",
-                      color: "var(--icon-orange)",
-                      gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-yellow))",
-                      examples: ["Greek yogurt", "Almonds", "Seeds", "Dark chocolate"],
-                    },
+                    { label: "Energy", system: "FUEL", color: "var(--icon-lime)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))", examples: ["Salmon", "Eggs", "White beans", "Oats"] },
+                    { label: "Build", system: "DEVELOP", color: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", examples: ["Chicken", "Brown rice", "Lentils", "Sweet potato"] },
+                    { label: "Recovery", system: "RESET", color: "var(--icon-yellow)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))", examples: ["Broccoli", "Berries", "Leafy greens", "Beets"] },
+                    { label: "Protection", system: "PROTECT", color: "var(--icon-orange)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-yellow))", examples: ["Greek yogurt", "Almonds", "Seeds", "Dark chocolate"] },
                   ].map((s, index) => (
                     <ScrollReveal key={s.label} delay={index * 80}>
                       <div className="relative overflow-hidden rounded-2xl border border-border bg-background p-5 transition-shadow hover:shadow-lg">
-                        <div
-                          className="absolute top-0 left-0 right-0 h-1"
-                          style={{ background: s.gradient }}
-                        />
-                        <p
-                          className="text-xs font-bold uppercase tracking-widest"
-                          style={{ color: s.color }}
-                        >
-                          {s.system}
-                        </p>
-                        <h3 className="mt-1.5 font-serif text-base font-semibold text-foreground">
-                          {s.label}
-                        </h3>
-                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                          {s.description}
-                        </p>
+                        <div className="absolute top-0 left-0 right-0 h-1" style={{ background: s.gradient }} />
+                        <p className="text-xs font-bold uppercase tracking-widest" style={{ color: s.color }}>{s.system}</p>
+                        <h3 className="mt-1.5 font-serif text-base font-semibold text-foreground">{s.label}</h3>
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           {s.examples.map((ex) => (
-                            <span
-                              key={ex}
-                              className="rounded-full px-2 py-0.5 text-xs font-medium text-white"
-                              style={{ background: s.gradient }}
-                            >
-                              {ex}
-                            </span>
+                            <span key={ex} className="rounded-full px-2 py-0.5 text-xs font-medium text-white" style={{ background: s.gradient }}>{ex}</span>
                           ))}
                         </div>
                       </div>
