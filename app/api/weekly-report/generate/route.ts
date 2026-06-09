@@ -6,6 +6,7 @@
 */
 
 import { NextRequest, NextResponse } from "next/server"
+import { guardAiUsage } from "@/lib/ai-guard"
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
@@ -80,6 +81,10 @@ export async function POST(req: NextRequest) {
       .single()
     if (existing) return NextResponse.json({ cached: true, report: existing })
   }
+
+  /* Cap (re)generation — cached reads above stay free */
+  const blocked = await guardAiUsage(user.id, "weekly_report")
+  if (blocked) return blocked
 
   /* Fetch this week's analyses */
   const { data: weekRows } = await adminSupabase

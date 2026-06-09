@@ -538,3 +538,25 @@ END $$;
 -- fatigue) for the in-app tracker's analytics. Additive column; nullable.
 
 ALTER TABLE glp1_logs ADD COLUMN IF NOT EXISTS side_effects text[];
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 22: ai_usage (per-user daily AI usage counters)
+-- ────────────────────────────────────────────────────────────
+-- One row per user per day per AI feature (meal_plan, report_chat, …) used by
+-- lib/ai-guard.ts to enforce daily caps on Claude-backed endpoints and bound
+-- worst-case AI spend. Service-role access only (RLS on, no policies).
+
+CREATE TABLE IF NOT EXISTS ai_usage (
+  id         uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  usage_date date        NOT NULL,
+  feature    text        NOT NULL,
+  count      integer     NOT NULL DEFAULT 0,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (user_id, usage_date, feature)
+);
+
+CREATE INDEX IF NOT EXISTS ai_usage_user_date_idx ON ai_usage (user_id, usage_date);
+
+ALTER TABLE ai_usage ENABLE ROW LEVEL SECURITY;

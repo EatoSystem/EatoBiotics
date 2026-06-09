@@ -3,6 +3,7 @@ import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { getUserMembershipTier } from "@/lib/membership"
+import { guardAiUsage } from "@/lib/ai-guard"
 
 
 /** Returns the first day of the current month as YYYY-MM-DD (UTC). */
@@ -26,6 +27,9 @@ export async function POST(req: NextRequest) {
       { status: 403 }
     )
   }
+
+  const blocked = await guardAiUsage(user.id, "monthly_plan")
+  if (blocked) return blocked
 
   const adminSupabase = getSupabase()
   if (!adminSupabase) {
