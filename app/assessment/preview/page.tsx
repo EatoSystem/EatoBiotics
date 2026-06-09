@@ -4,6 +4,7 @@ import Link from "next/link"
 export const metadata: Metadata = {
   title: "Assessment Preview — EatoBiotics",
   description: "Internal preview and test links for the EatoBiotics assessment system.",
+  robots: { index: false, follow: false }, // internal test console — keep out of search
 }
 
 const TIER_COLORS = {
