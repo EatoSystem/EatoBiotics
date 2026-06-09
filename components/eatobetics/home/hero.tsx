@@ -13,21 +13,20 @@ export function EbHero() {
       <div className="relative z-10 mx-auto flex max-w-[1200px] min-h-[calc(100vh-160px)] flex-col items-center justify-center gap-12 md:flex-row md:gap-16 lg:gap-20">
 
         {/* ── Left: Image ── */}
-        <ScrollReveal delay={60} className="flex-1 flex items-center justify-center w-full max-w-[540px]">
+        <ScrollReveal delay={60} className="flex-1 flex items-center justify-center w-full max-w-[620px]">
           <div className="relative w-full">
             <div
               aria-hidden
               className="absolute inset-0 -z-10 blur-3xl"
               style={{ background: "radial-gradient(60% 60% at 50% 48%, rgba(245,197,24,0.22), rgba(76,182,72,0.12) 55%, transparent 78%)" }}
             />
-            {/* TODO: swap to /images/eatobetics-hero.png once the glucose illustration is uploaded. */}
             <Image
-              src="/images/hero-gut.png"
-              alt="The glucose system inside you — a figure in green and gold light with a glucose curve flowing through the body"
-              width={900}
-              height={900}
+              src="/images/eatobetics-hero.webp"
+              alt="The glucose system inside you — two figures lit in green and gold, with a glucose curve flowing between them"
+              width={1500}
+              height={1000}
               priority
-              className="w-full h-auto max-h-[70vw] object-contain md:max-h-none"
+              className="w-full h-auto object-contain"
             />
           </div>
         </ScrollReveal>
