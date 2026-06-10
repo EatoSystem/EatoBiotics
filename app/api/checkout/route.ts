@@ -3,30 +3,14 @@ import { stripe } from "@/lib/stripe-server"
 import { encodePaidReportSummary, type PaidReportTier } from "@/lib/paid-report-session"
 
 const TIER_CONFIG = {
-  // ── New primary tier ──────────────────────────────────────────────────
+  // The single one-time report offering. The legacy starter/full/premium tiers
+  // were retired — any request still carrying one of those names falls back to
+  // `personal` via the `tier in TIER_CONFIG` guard below.
   personal: {
     amount: 4900,
     name: "EatoBiotics Personal Report",
     description:
       "Your full Feed · Seed · Heal analysis, 30-day gut reset plan, top 10 food recommendations, and a free 30-day EatoBiotics account.",
-  },
-  // ── Legacy tiers (kept for backward compatibility) ─────────────────────
-  starter: {
-    amount: 2000,
-    name: "Starter Insights Report — EatoBiotics",
-    description: "Your food system score, top 5 priority foods, and a 7-day daily starter plan.",
-  },
-  full: {
-    amount: 4000,
-    name: "Full EatoBiotics Report",
-    description:
-      "Pillar-by-pillar food recommendations, your top 12 foods ranked by impact, and a personalised 30-day rebuilding plan.",
-  },
-  premium: {
-    amount: 5000,
-    name: "Premium EatoBiotics Report",
-    description:
-      "Everything in the Full Report, plus personalised meal timing, a seasonal food guide, weekly shopping list, 90-day milestone tracker, and 3 Biotic Kitchen recipes.",
   },
 } as const
 
@@ -42,7 +26,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { tier = "personal", overall, profile, subScores, email } = body as {
+    const { overall, profile, subScores, email } = body as {
       tier?: PaidReportTier
       overall?: number
       profile?: { type: string; tagline: string; description: string; color?: string }
@@ -50,7 +34,9 @@ export async function POST(req: NextRequest) {
       email?: string
     }
 
-    const reportTier: PaidReportTier = tier && tier in TIER_CONFIG ? tier : "personal"
+    // Only the €49 Personal Report is sold now; any legacy tier in the request
+    // is ignored and falls back to `personal`.
+    const reportTier = "personal" as const
     const config = TIER_CONFIG[reportTier]
 
     if (typeof overall !== "number" || !profile || !subScores) {
