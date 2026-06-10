@@ -98,7 +98,10 @@ syncs to Supabase (`stability_assessments`, `stability_logs` — Migration 24) v
 `app/api/stability/route.ts`. `lib/stability/storage.ts` keeps a synchronous
 local cache and `hydrateFromServer()` pulls/merges server data on mount; writes
 push in the background (gated on an authed flag). Surfaced on the account
-dashboard via `StabilityCard` (`components/account/dashboard-parts.tsx`).
+dashboard via `StabilityCard` (`components/account/dashboard-parts.tsx`). The
+Transform AI consultant (`app/api/consult/route.ts`) reads the member's stability
+assessment + recent logs (via `computeReport`) into its prompt, with
+non-diagnostic + red-flag→GP guardrails baked into the cached knowledge base.
 - `lib/stability/{types,questions,scoring,insights,storage,sample-data}.ts` —
   data model, assessment questions, `calculateStabilityScore`, rule-based
   insights/report, localStorage persistence, demo seed data.
