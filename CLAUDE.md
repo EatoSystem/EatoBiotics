@@ -275,8 +275,13 @@ ADMIN_PASSWORD                # Admin login password (also the fallback signing 
 > and `ADMIN_SESSION_SECRET` (or `ADMIN_PASSWORD`) in production, and apply
 > Migration 17 (`stripe_processed_events`), Migration 18 (`household_members`),
 > Migration 19 (`glp1_logs`), Migration 20 (`glp1_profile`), Migration 21
-> (`glp1_logs.side_effects`), and Migration 22 (`ai_usage` — AI daily caps)
-> from `supabase/migrations.sql` before/at deploy.
+> (`glp1_logs.side_effects`), Migration 22 (`ai_usage` — AI daily caps), and
+> Migration 23 (`email_sends` — lifecycle-email idempotency) from
+> `supabase/migrations.sql` before/at deploy. The latest two (22 + 23) are also
+> in **`supabase/go-live-migrations.sql`** — paste straight into the Supabase
+> SQL editor (idempotent; validated against Postgres). One-time report pricing
+> is **personal-only (€49)** — the legacy starter/full/premium tiers were retired
+> (`/reports` now redirects to `/pricing`).
 
 ### AI cost guard
 All user-triggered Claude endpoints must be capped. `lib/ai-guard.ts` provides
