@@ -11,7 +11,7 @@ import {
   Calendar, Target, Activity, User, Trash2, AlertTriangle,
 } from "lucide-react"
 import {
-  Glp1CompanionCard, ReferralCard, ScoreRing, MiniRing, ScoreBar,
+  Glp1CompanionCard, StabilityCard, ReferralCard, ScoreRing, MiniRing, ScoreBar,
   Tag, SectionLabel, GradientButton, ringColors,
 } from "@/components/account/dashboard-parts"
 
@@ -893,6 +893,11 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             <Glp1CompanionCard />
           </div>
 
+          {/* EatoBiotics Stability */}
+          <div className="mt-5">
+            <StabilityCard />
+          </div>
+
           {/* Refer a friend */}
           <div className="mt-5">
             <ReferralCard code={referralCode} />
@@ -1526,6 +1531,9 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
 
             {/* GLP-1 Companion — compact, self-selecting entry point */}
             <Glp1CompanionCard />
+
+            {/* EatoBiotics Stability */}
+            <StabilityCard />
 
             {/* Refer a friend */}
             <ReferralCard code={referralCode} />
