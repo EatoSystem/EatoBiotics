@@ -1,9 +1,9 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { Sparkles, TrendingUp, Database } from "lucide-react"
-import { loadLogs, seedLogs } from "@/lib/stability/storage"
+import { loadLogs, seedLogs, hydrateFromServer } from "@/lib/stability/storage"
 import { generateInsights } from "@/lib/stability/insights"
 import { sampleLogs } from "@/lib/stability/sample-data"
 import type { StabilityDailyLog, StoolType } from "@/lib/stability/types"
@@ -29,6 +29,7 @@ const fmt = (d: string) => new Date(d + "T00:00:00Z").toLocaleDateString(undefin
 
 export function StabilityInsights() {
   const [logs, setLogs] = useState<StabilityDailyLog[]>(() => loadLogs())
+  useEffect(() => { hydrateFromServer().then((ok) => { if (ok) setLogs(loadLogs()) }) }, [])
   const ordered = useMemo(() => logs.slice().sort((a, b) => a.date.localeCompare(b.date)), [logs])
   const last14 = ordered.slice(-14)
   const insights = useMemo(() => generateInsights(logs, 14), [logs])

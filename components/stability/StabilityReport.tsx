@@ -1,15 +1,16 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { Database, FileText, TrendingDown, TrendingUp } from "lucide-react"
-import { loadLogs, seedLogs } from "@/lib/stability/storage"
+import { loadLogs, seedLogs, hydrateFromServer } from "@/lib/stability/storage"
 import { computeReport } from "@/lib/stability/insights"
 import { sampleLogs } from "@/lib/stability/sample-data"
 import type { StabilityDailyLog } from "@/lib/stability/types"
 
 export function StabilityReport() {
   const [logs, setLogs] = useState<StabilityDailyLog[]>(() => loadLogs())
+  useEffect(() => { hydrateFromServer().then((ok) => { if (ok) setLogs(loadLogs()) }) }, [])
   const report = useMemo(() => computeReport(logs, 30), [logs])
 
   function loadSample() { const s = sampleLogs(); seedLogs(s); setLogs(s) }

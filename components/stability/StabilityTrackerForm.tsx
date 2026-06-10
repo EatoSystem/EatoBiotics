@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Check, Loader2, Trash2 } from "lucide-react"
 import type { BowelEvent, StabilityDailyLog } from "@/lib/stability/types"
-import { loadLog, saveLog, todayKey } from "@/lib/stability/storage"
+import { loadLog, saveLog, todayKey, hydrateFromServer } from "@/lib/stability/storage"
 import { BowelEventForm } from "./BowelEventForm"
 
 function blankLog(date: string): StabilityDailyLog {
@@ -48,10 +48,18 @@ export function StabilityTrackerForm({ date = todayKey() }: { date?: string }) {
   const [log, setLog] = useState<StabilityDailyLog>(() => loadLog(date) ?? blankLog(date))
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const dirty = useRef(false)
 
-  function patch(p: Partial<StabilityDailyLog>) { setLog((l) => ({ ...l, ...p })) }
-  function addEvent(e: BowelEvent) { setLog((l) => ({ ...l, events: [...l.events, e].sort((a, b) => a.time.localeCompare(b.time)) })) }
-  function removeEvent(id: string) { setLog((l) => ({ ...l, events: l.events.filter((e) => e.id !== id) })) }
+  // Pull from Supabase on mount; only apply if the user hasn't started editing.
+  useEffect(() => {
+    hydrateFromServer().then((ok) => {
+      if (ok && !dirty.current) { const fresh = loadLog(date); if (fresh) setLog(fresh) }
+    })
+  }, [date])
+
+  function patch(p: Partial<StabilityDailyLog>) { dirty.current = true; setLog((l) => ({ ...l, ...p })) }
+  function addEvent(e: BowelEvent) { dirty.current = true; setLog((l) => ({ ...l, events: [...l.events, e].sort((a, b) => a.time.localeCompare(b.time)) })) }
+  function removeEvent(id: string) { dirty.current = true; setLog((l) => ({ ...l, events: l.events.filter((e) => e.id !== id) })) }
 
   function save() {
     setSaving(true)

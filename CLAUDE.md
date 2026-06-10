@@ -93,9 +93,12 @@ This file is the authoritative reference for Claude Code sessions. Read it befor
 
 ### EatoBiotics Stability™ (digestive-stability module)
 Educational self-tracking tool — **not** a medical device (no diagnosis/treatment).
-Currently **localStorage-backed** (no auth/DB) so it works standalone; the storage
-interface (`lib/stability/storage.ts`) is the single swap point for a future
-Supabase layer.
+**localStorage-first** so it works standalone for everyone; when signed in it also
+syncs to Supabase (`stability_assessments`, `stability_logs` — Migration 24) via
+`app/api/stability/route.ts`. `lib/stability/storage.ts` keeps a synchronous
+local cache and `hydrateFromServer()` pulls/merges server data on mount; writes
+push in the background (gated on an authed flag). Surfaced on the account
+dashboard via `StabilityCard` (`components/account/dashboard-parts.tsx`).
 - `lib/stability/{types,questions,scoring,insights,storage,sample-data}.ts` —
   data model, assessment questions, `calculateStabilityScore`, rule-based
   insights/report, localStorage persistence, demo seed data.

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { ArrowRight, AlertTriangle, Check, ListChecks } from "lucide-react"
-import { loadAssessment } from "@/lib/stability/storage"
+import { loadAssessment, hydrateFromServer } from "@/lib/stability/storage"
 import type { StabilityAssessment } from "@/lib/stability/types"
 import { StabilityScoreCard } from "./StabilityScoreCard"
 import { RedFlagWarning } from "./RedFlagWarning"
@@ -28,7 +28,7 @@ function sevenDayPlan(steps: string[]): string[] {
 export function StabilityResults() {
   const [data, setData] = useState<StabilityAssessment | null | undefined>(undefined)
 
-  useEffect(() => { setData(loadAssessment()) }, [])
+  useEffect(() => { hydrateFromServer().finally(() => setData(loadAssessment())) }, [])
 
   if (data === undefined) {
     return <div className="py-20 text-center text-sm text-muted-foreground">Loading your results…</div>
