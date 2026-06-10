@@ -710,6 +710,9 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                 Good {timeOfDay},<br />{displayName}.
               </p>
               <div className="mt-4 flex flex-wrap items-center gap-2.5">
+                <Link href="/account/today" className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-bold transition-colors hover:bg-black/[0.03]" style={{ borderColor: "var(--icon-green)", color: "var(--icon-green)" }}>
+                  <Calendar size={13} /> Today
+                </Link>
                 {displayStreak > 0 && (
                   <span className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold text-white"
                     style={{ background: "linear-gradient(135deg, #F5C518, #F5A623)", boxShadow: "0 2px 10px rgba(245,166,35,0.35)" }}>
