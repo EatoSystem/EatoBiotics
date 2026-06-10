@@ -7,6 +7,8 @@ import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { getUserMembershipTier } from "@/lib/membership"
+import { computeReport } from "@/lib/stability/insights"
+import type { StabilityDailyLog } from "@/lib/stability/types"
 
 /* ── Validation ─────────────────────────────────────────────────────── */
 
@@ -95,6 +97,13 @@ RESPONSE FORMAT:
 • Be specific with quantities: "1 tablespoon" not "some"
 • Medical conditions: acknowledge, give food context, always recommend a healthcare provider for diagnosis/treatment
 
+DIGESTIVE STABILITY (EatoBiotics Stability™):
+You can also help members with digestive stability — bowel urgency, stool quality, predictability, leakage, and the food/lifestyle patterns around them. When a member has Stability data (shown in their profile below), use it.
+• Speak in associative, non-diagnostic language: "may be associated with", "appears more common on", "worth tracking" — never "this is caused by", "you have", or "this will cure".
+• Suggest gentle, one-variable-at-a-time food and lifestyle experiments (soluble fibre built up slowly, steady hydration, food order, a walk after meals, sleep and stress consistency, tracking caffeine/rich-meal timing against urgency).
+• You must NOT diagnose, replace a doctor, tell anyone to stop medication, or claim to treat/cure bowel incontinence, IBS, IBD, or any condition.
+• RED FLAGS — if the member mentions blood in stool, black/tarry stools, unexplained weight loss, severe abdominal pain, a sudden change in bowel habits, persistent diarrhoea, night-time bowel symptoms, fever, or anaemia: gently and clearly urge them to contact their GP/doctor as a priority, and avoid strong dietary prescriptions beyond gentle tracking.
+
 Always end every response with one specific, immediately actionable step the member can take today — formatted as:
 Your next step: [one clear, specific, and personalised action]`
 
@@ -106,8 +115,9 @@ function buildMemberProfile(context: {
   healthGoals: string[]
   weeklyCheckinSummary: string | null
   recentSessionSummaries: Array<{ summary: string; created_at: string }>
+  stabilitySummary: string | null
 }): string {
-  const { name, overallScore, subScores, recentScores, healthGoals, weeklyCheckinSummary, recentSessionSummaries } = context
+  const { name, overallScore, subScores, recentScores, healthGoals, weeklyCheckinSummary, recentSessionSummaries, stabilitySummary } = context
 
   const scoreHistory = recentScores.length > 0
     ? recentScores.map((s) => `  - ${s.date}: ${s.score}/100`).join("\n")
@@ -152,6 +162,7 @@ ${strongestPillar ? `Their strongest pillar is ${strongestPillar} — build on t
 Recent Score History (last 30 days):
 ${scoreHistory}
 Health goals: ${goalsSummary}${checkinSection}
+${stabilitySummary ? `\nDIGESTIVE STABILITY DATA (EatoBiotics Stability™):\n${stabilitySummary}\nUse this when they ask about bowel urgency, stool, leakage, or stability. Stay associative and non-diagnostic, and route any red-flag symptoms to their GP.\n` : ""}
 ${memorySection}
 MEMORY PROTOCOL:
 You have access to summaries of this member's previous sessions above. Reference them naturally — "Last time we talked about your Adding score, how has that been?" Build on what you know. Don't repeat advice already given unless asked. Treat this as an ongoing relationship, not a first meeting.`
@@ -299,6 +310,7 @@ export async function POST(req: NextRequest) {
   let healthGoals: string[] = []
   let weeklyCheckinSummary: string | null = null
   let recentSessionSummaries: Array<{ summary: string; created_at: string }> = []
+  let stabilitySummary: string | null = null
 
   if (adminSupabase) {
     const { data: profileData } = await adminSupabase
@@ -362,6 +374,24 @@ export async function POST(req: NextRequest) {
       .order("created_at", { ascending: false })
       .limit(3)
     recentSessionSummaries = (recentSessions ?? []) as Array<{ summary: string; created_at: string }>
+
+    // EatoBiotics Stability™ — latest assessment + recent daily logs
+    const [{ data: stabAssess }, { data: stabLogRows }] = await Promise.all([
+      adminSupabase.from("stability_assessments").select("score").eq("user_id", user.id).maybeSingle(),
+      adminSupabase.from("stability_logs").select("data").eq("user_id", user.id).order("log_date", { ascending: false }).limit(30),
+    ])
+    const stabLogs = (stabLogRows ?? []).map((r) => r.data as StabilityDailyLog)
+    if (stabAssess?.score || stabLogs.length) {
+      const parts: string[] = []
+      const sc = stabAssess?.score as { totalScore?: number; band?: string } | null
+      if (sc?.totalScore != null) parts.push(`Stability Score: ${sc.totalScore}/100${sc.band ? ` (${sc.band})` : ""}.`)
+      if (stabLogs.length) {
+        const rep = computeReport(stabLogs, 30)
+        parts.push(`Last ${rep.logCount} logged day(s): avg stability ${rep.avgStability ?? "n/a"}/10, ${rep.urgencyEpisodes} urgency episode(s), ${rep.accidentEpisodes} accident/leakage episode(s)${rep.commonStoolType ? `, most common stool type ${rep.commonStoolType}` : ""}.`)
+        if (rep.insights.length) parts.push(`Observed associations: ${rep.insights.map((i) => i.text).join(" ")}`)
+      }
+      stabilitySummary = parts.join(" ")
+    }
   }
 
   // 7. Build system prompt blocks (static cached + dynamic member profile)
@@ -373,6 +403,7 @@ export async function POST(req: NextRequest) {
     healthGoals,
     weeklyCheckinSummary,
     recentSessionSummaries,
+    stabilitySummary,
   })
 
   const systemBlocks: import("@anthropic-ai/sdk/resources").TextBlockParam[] = [
