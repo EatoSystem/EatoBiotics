@@ -41,6 +41,9 @@ export function Footer() {
                 <Link href="/biotics" className="text-sm text-foreground transition-colors hover:text-icon-green">
                   The Biotics
                 </Link>
+                <Link href="/stability" className="text-sm text-foreground transition-colors hover:text-icon-green">
+                  Stability
+                </Link>
                 <Link href="/books" className="text-sm text-foreground transition-colors hover:text-icon-green">
                   The Books
                 </Link>

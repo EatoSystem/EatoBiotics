@@ -91,6 +91,22 @@ This file is the authoritative reference for Claude Code sessions. Read it befor
 - `app/api/glp1/profile/route.ts` — upserts the onboarding profile (medication, start/goal weight)
 - `app/api/glp1/reminder/route.ts` — daily cron; emails onboarded members who logged recently but not today (`lib/email/glp1-reminder-email.ts`, schedule `0 18 * * *`)
 
+### EatoBiotics Stability™ (digestive-stability module)
+Educational self-tracking tool — **not** a medical device (no diagnosis/treatment).
+Currently **localStorage-backed** (no auth/DB) so it works standalone; the storage
+interface (`lib/stability/storage.ts`) is the single swap point for a future
+Supabase layer.
+- `lib/stability/{types,questions,scoring,insights,storage,sample-data}.ts` —
+  data model, assessment questions, `calculateStabilityScore`, rule-based
+  insights/report, localStorage persistence, demo seed data.
+- `app/stability/page.tsx` — public landing (`StabilityHero` + measures + score
+  bands + how-it-works + red-flag box).
+- `app/stability/assessment/page.tsx` → results, tracker, insights, report
+  (the latter four `noindex`; client components in `components/stability/*`).
+- `components/stability/{MedicalDisclaimer,RedFlagWarning}.tsx` — appear on every
+  Stability page. All copy is non-diagnostic ("possible contributor", "may be
+  associated with") and points red-flag symptoms to a GP.
+
 ---
 
 ## Database Tables
