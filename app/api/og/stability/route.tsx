@@ -21,18 +21,25 @@ const B = {
 
 const BRAND_STRIPE = `linear-gradient(90deg, ${B.lime}, ${B.green}, ${B.teal}, ${B.yellow}, ${B.orange})`
 
+/** Band → accent colour (mirrors STABILITY_BANDS in lib/stability/scoring.ts). */
+const BAND_COLOR: Record<string, string> = {
+  "High Instability":     B.orange,
+  "Moderate Instability": B.yellow,
+  "Improving Stability":  B.lime,
+  "Strong Stability":     B.green,
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const score      = Math.max(0, Math.min(100, parseInt(searchParams.get("score")      ?? "0",  10)))
-  const percentile = Math.max(1, Math.min(99,  parseInt(searchParams.get("percentile") ?? "50", 10)))
-  const label      = searchParams.get("label")   ?? "Gut Explorer"
-  const emoji      = searchParams.get("emoji")   ?? "🧭"
+  const score = Math.max(0, Math.min(100, parseInt(searchParams.get("score") ?? "0", 10)))
+  const band  = searchParams.get("band") ?? "Improving Stability"
+  const accent = BAND_COLOR[band] ?? B.teal
 
   // Compute ring stroke-dashoffset for the SVG arc
-  const r           = 120
-  const circumf     = 2 * Math.PI * r
-  const filled      = (score / 100) * circumf
-  const offset      = circumf - filled
+  const r       = 120
+  const circumf = 2 * Math.PI * r
+  const filled  = (score / 100) * circumf
+  const offset  = circumf - filled
 
   return new ImageResponse(
     (
@@ -54,7 +61,7 @@ export async function GET(request: Request) {
           position: "absolute",
           top: 100, left: 100, width: 400, height: 430,
           borderRadius: "50%",
-          background: `radial-gradient(circle, rgba(77,182,72,0.18) 0%, transparent 70%)`,
+          background: `radial-gradient(circle, rgba(45,170,110,0.18) 0%, transparent 70%)`,
           display: "flex",
         }} />
 
@@ -77,7 +84,7 @@ export async function GET(request: Request) {
           }}>
             <img src={OG_ICON_BASE64} width={36} height={36} style={{ borderRadius: 8, flexShrink: 0 }} />
             <span style={{ fontSize: 17, fontWeight: 700, color: "rgba(255,255,255,0.7)", letterSpacing: "-0.3px", display: "flex" }}>
-              EatoBiotics
+              EatoBiotics Stability™
             </span>
           </div>
 
@@ -116,29 +123,28 @@ export async function GET(request: Request) {
             </div>
           </div>
 
-          {/* Label pill */}
+          {/* Band pill */}
           <div style={{
             marginTop: 8,
             display: "flex", alignItems: "center", gap: 8,
             background: "rgba(45,170,110,0.15)",
-            border: `1px solid rgba(45,170,110,0.4)`,
+            border: `1px solid ${accent}`,
             borderRadius: 100,
             padding: "10px 24px",
           }}>
-            <span style={{ fontSize: 26, display: "flex" }}>{emoji}</span>
-            <span style={{ fontSize: 22, fontWeight: 700, color: B.teal, display: "flex", letterSpacing: "-0.3px" }}>
-              {label}
+            <span style={{ fontSize: 22, fontWeight: 700, color: accent, display: "flex", letterSpacing: "-0.3px" }}>
+              {band}
             </span>
           </div>
 
-          {/* Percentile */}
+          {/* Caption */}
           <p style={{
             marginTop: 12,
             fontSize: 15, color: "rgba(255,255,255,0.45)",
             textAlign: "center",
             display: "flex",
           }}>
-            Higher than {percentile}% of people with typical eating habits
+            My digestive stability score
           </p>
         </div>
 
@@ -153,29 +159,29 @@ export async function GET(request: Request) {
           gap: 28,
         }}>
 
-          {/* Gut health score label */}
+          {/* Label */}
           <div style={{ display: "flex" }}>
             <div style={{
               display: "flex", background: B.lime, color: B.fore,
               fontSize: 12, fontWeight: 800, letterSpacing: "2px",
               textTransform: "uppercase", padding: "6px 14px", borderRadius: 100,
             }}>
-              Gut Health Score
+              Stability Score
             </div>
           </div>
 
           {/* Headline */}
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <span style={{ fontSize: 52, fontWeight: 800, color: "#FFFFFF", lineHeight: 0.95, letterSpacing: "-2px", display: "flex" }}>
-              What's your
+              How stable
             </span>
             <span style={{ fontSize: 52, fontWeight: 800, color: B.green, lineHeight: 0.95, letterSpacing: "-2px", display: "flex" }}>
-              gut score?
+              is your gut?
             </span>
           </div>
 
           <p style={{ fontSize: 18, color: "rgba(255,255,255,0.55)", lineHeight: 1.5, margin: 0, display: "flex" }}>
-            A 2-minute assessment reveals your biotic balance across 5 pillars of gut health.
+            A 3-minute check across stool, urgency, food, and lifestyle — and a gentle 7-day plan.
           </p>
 
           {/* Brand pills */}
@@ -187,7 +193,7 @@ export async function GET(request: Request) {
 
           {/* URL */}
           <p style={{ fontSize: 15, color: "rgba(255,255,255,0.35)", margin: 0, display: "flex" }}>
-            eatobiotics.com/assessment
+            eatobiotics.com/stability
           </p>
         </div>
 
