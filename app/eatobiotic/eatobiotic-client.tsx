@@ -6,12 +6,13 @@ import Link from "next/link"
 import {
   ArrowRight, ArrowUpRight,
   Mic, MicOff, CheckCircle,
-  MessageSquare, Send,
+  MessageSquare, Lock,
   Leaf, Droplets, Zap, Dumbbell,
   Check,
 } from "lucide-react"
 import { useConversation } from "@11labs/react"
 import { ScrollReveal } from "@/components/scroll-reveal"
+import { TextChat } from "@/components/eatobiotic/text-chat"
 
 type Status = "idle" | "connecting" | "active" | "ended"
 type ActiveTab = "voice" | "text"
@@ -215,13 +216,12 @@ function Orb({ fast = false }: { fast?: boolean }) {
 }
 
 /* ── Main component ───────────────────────────────────────────────── */
-export function EatobioticClient() {
+export function EatobioticClient({ signedIn, voiceEnabled }: { signedIn: boolean; voiceEnabled: boolean }) {
   const [status, setStatus] = useState<Status>("idle")
   const [muted, setMuted] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<ActiveTab>("voice")
+  const [activeTab, setActiveTab] = useState<ActiveTab>("text")
   const [textInput, setTextInput] = useState("")
-  const [textSent, setTextSent] = useState(false)
 
   const sessionRef = useRef<HTMLDivElement>(null)
 
@@ -238,9 +238,25 @@ export function EatobioticClient() {
     setError(null)
     setStatus("connecting")
     try {
-      await conversation.startSession({
-        agentId: process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID ?? "demo",
-      })
+      // Mint a short-lived signed URL server-side (paid-gated; agent ID stays private).
+      const res = await fetch("/api/eatobiotic/voice-token", { method: "POST" })
+      if (res.status === 401) {
+        setError("Please sign in to start a voice session.")
+        setStatus("idle")
+        return
+      }
+      if (res.status === 403) {
+        setError("Voice guidance is part of membership. Upgrade to talk with your Expert.")
+        setStatus("idle")
+        return
+      }
+      const data = (await res.json().catch(() => ({}))) as { configured?: boolean; signedUrl?: string }
+      if (data.configured === false || !data.signedUrl) {
+        setError("Voice guidance is being set up — please check back soon. You can text your Expert now.")
+        setStatus("idle")
+        return
+      }
+      await conversation.startSession({ signedUrl: data.signedUrl })
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not connect. Please try again.")
       setStatus("idle")
@@ -263,15 +279,11 @@ export function EatobioticClient() {
   const reset = () => { setStatus("idle"); setError(null); setMuted(false) }
 
   const handleChipClick = (chip: string) => {
-    setTextInput(chip)
+    // Re-seed even if the same chip is tapped twice (append a zero-width marker
+    // so the seed value changes and the TextChat effect re-fires).
+    setTextInput(chip + (textInput === chip ? "​" : ""))
     setActiveTab("text")
-    setTextSent(false)
     scrollToSession()
-  }
-
-  const handleTextSend = () => {
-    if (!textInput.trim()) return
-    setTextSent(true)
   }
 
   /* ── Render ─────────────────────────────────────────────────────── */
@@ -439,18 +451,47 @@ export function EatobioticClient() {
                 {/* State machine */}
                 <div className="flex flex-col items-center gap-5 py-4">
 
-                  {status === "idle" && (
+                  {status === "idle" && voiceEnabled && (
                     <>
                       <Orb />
                       <p className="font-serif text-lg font-semibold text-foreground">Your Expert is ready.</p>
                       <p className="text-sm text-muted-foreground">Tap to begin your conversation.</p>
-                      {error && <p className="text-sm text-destructive">{error}</p>}
+                      {error && <p className="text-sm" style={{ color: "var(--icon-orange)" }}>{error}</p>}
                       <button
                         onClick={startSession}
                         className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 hover:opacity-90 transition-all"
                       >
                         Start speaking <ArrowRight size={16} />
                       </button>
+                    </>
+                  )}
+
+                  {status === "idle" && !voiceEnabled && (
+                    <>
+                      <div
+                        className="flex h-20 w-20 items-center justify-center rounded-full"
+                        style={{ background: "color-mix(in srgb, var(--icon-green) 12%, var(--background))" }}
+                      >
+                        <Lock size={30} style={{ color: "var(--icon-green)" }} />
+                      </div>
+                      <p className="font-serif text-lg font-semibold text-foreground">Voice is a member perk</p>
+                      <p className="max-w-xs text-center text-sm text-muted-foreground">
+                        Talk naturally with your Food System Expert as part of EatoBiotics membership. Text chat is free for everyone — try it now.
+                      </p>
+                      <div className="flex flex-col items-center gap-3 sm:flex-row">
+                        <Link
+                          href="/pricing?feature=ai-voice"
+                          className="brand-gradient inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-white shadow-md shadow-icon-green/20 transition-all hover:opacity-90"
+                        >
+                          {signedIn ? "Upgrade for voice" : "See membership"} <ArrowRight size={15} />
+                        </Link>
+                        <button
+                          onClick={() => setActiveTab("text")}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-border px-7 py-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary md:hidden"
+                        >
+                          Use text instead
+                        </button>
+                      </div>
                     </>
                   )}
 
@@ -545,74 +586,14 @@ export function EatobioticClient() {
                   </div>
                   <div>
                     <p className="font-semibold text-foreground text-lg">Text Session</p>
-                    <p className="text-sm text-muted-foreground">Prefer to write? Ask your Expert anything by text.</p>
+                    <p className="text-sm text-muted-foreground">
+                      Ask your Expert anything by text — free for everyone{signedIn ? ", personalised to your scores" : ""}.
+                    </p>
                   </div>
                 </div>
 
-                {/* Input area */}
-                <div className="flex flex-col gap-4">
-                  {textSent ? (
-                    <div
-                      className="rounded-xl p-5 text-sm leading-relaxed"
-                      style={{ background: "color-mix(in srgb, var(--icon-green) 8%, var(--background))" }}
-                    >
-                      <p className="font-semibold text-foreground mb-1">Thanks for your question.</p>
-                      <p className="text-muted-foreground">
-                        Text conversations are coming soon. In the meantime, start a voice session or get your Biotics Score to prepare.
-                      </p>
-                      <button
-                        onClick={() => { setTextSent(false); setTextInput("") }}
-                        className="mt-3 text-xs text-icon-green underline underline-offset-2 hover:opacity-80 transition-opacity"
-                      >
-                        Ask another question
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="relative">
-                      <textarea
-                        rows={4}
-                        value={textInput}
-                        onChange={(e) => setTextInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && !e.shiftKey) {
-                            e.preventDefault()
-                            handleTextSend()
-                          }
-                        }}
-                        placeholder="Ask about your plate, gut health, Biotics Score, or weekly food plan…"
-                        className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 pr-14 text-sm text-foreground placeholder:text-muted-foreground focus:border-icon-green focus:outline-none focus:ring-1 focus:ring-icon-green/30"
-                      />
-                      <button
-                        onClick={handleTextSend}
-                        disabled={!textInput.trim()}
-                        className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-lg text-white transition-all disabled:opacity-30"
-                        style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}
-                        aria-label="Send"
-                      >
-                        <Send size={16} />
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Quick-fill chips */}
-                  {!textSent && (
-                    <div className="flex flex-wrap gap-2">
-                      {["What should I eat this week?", "How do I improve my Biotics Score?", "What is my Prebiotic Base?"].map((chip) => (
-                        <button
-                          key={chip}
-                          onClick={() => { setTextInput(chip); setTextSent(false) }}
-                          className="rounded-full border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-icon-green hover:text-foreground"
-                        >
-                          {chip}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  <p className="text-xs text-muted-foreground text-center">
-                    Text conversations are coming soon. Voice is available now.
-                  </p>
-                </div>
+                {/* Live text chat */}
+                <TextChat seed={textInput} />
               </div>
             </ScrollReveal>
 

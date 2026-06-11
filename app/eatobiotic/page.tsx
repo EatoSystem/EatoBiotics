@@ -1,4 +1,6 @@
 import type { Metadata } from "next"
+import { getUser } from "@/lib/supabase-server"
+import { canAccess, getUserMembershipTier } from "@/lib/membership"
 import { EatobioticClient } from "./eatobiotic-client"
 
 export const metadata: Metadata = {
@@ -12,6 +14,18 @@ export const metadata: Metadata = {
   },
 }
 
-export default function EatobioticPage() {
-  return <EatobioticClient />
+export default async function EatobioticPage() {
+  // Text chat is free for everyone; voice is a paid-tier perk.
+  let signedIn = false
+  let voiceEnabled = false
+  try {
+    const user = await getUser()
+    if (user) {
+      signedIn = true
+      const tier = await getUserMembershipTier(user.id)
+      voiceEnabled = canAccess(tier, "ai_voice")
+    }
+  } catch { /* auth unavailable → treat as signed-out */ }
+
+  return <EatobioticClient signedIn={signedIn} voiceEnabled={voiceEnabled} />
 }
