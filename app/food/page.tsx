@@ -4,7 +4,24 @@ import Image from "next/image"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { GradientText } from "@/components/gradient-text"
 import { foods, getTodaysFood, getBrainHealthFoods, bioticLabels, type BioticType } from "@/lib/foods"
+import { GOALS, FOOD_GOAL_SLUGS } from "@/lib/food-goals"
 import { ArrowUpRight, Calendar } from "lucide-react"
+
+/** Short, card-friendly teasers for the "find foods by goal" grid. */
+const GOAL_TEASE: Record<string, string> = {
+  digestion: "Prebiotic + probiotic foods to improve gut function",
+  energy: "Protein + postbiotic foods that power your metabolism",
+  immunity: "Prebiotic + postbiotic foods that strengthen your defences",
+  mood: "Gut-brain foods linked to serotonin and cognitive health",
+  recovery: "Protein + postbiotic foods for repair and inflammation",
+  sleep: "Prebiotic-rich foods that support the gut-sleep axis",
+  "gut-health": "All three biotics for a diverse microbiome",
+  bloating: "Gentle prebiotic + probiotic foods for a calmer gut",
+  inflammation: "Postbiotic + prebiotic foods that calm inflammation",
+  skin: "Gut-skin axis foods for clearer, calmer skin",
+  weight: "High-fibre + protein foods for satiety and balance",
+  stability: "Soluble-fibre foods for steadier digestion",
+}
 
 export const metadata: Metadata = {
   title: "Food Library",
@@ -354,14 +371,7 @@ export default function FoodLibraryPage() {
             </p>
           </ScrollReveal>
           <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              { goal: "digestion",  label: "Digestion",  emoji: "🌿", color: "var(--icon-lime)",   gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",   desc: "Prebiotic + probiotic foods to improve gut function" },
-              { goal: "energy",     label: "Energy",     emoji: "⚡",  color: "var(--icon-yellow)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))", desc: "Protein + postbiotic foods that power your metabolism" },
-              { goal: "immunity",   label: "Immunity",   emoji: "🛡️", color: "var(--icon-teal)",   gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",   desc: "Prebiotic + postbiotic foods that strengthen your defences" },
-              { goal: "mood",       label: "Mood",       emoji: "🧠", color: "var(--icon-green)",  gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",   desc: "Gut-brain foods linked to serotonin and cognitive health" },
-              { goal: "recovery",   label: "Recovery",   emoji: "💪", color: "var(--icon-orange)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))", desc: "Protein + postbiotic foods for repair and inflammation" },
-              { goal: "sleep",      label: "Sleep",      emoji: "🌙", color: "var(--icon-teal)",   gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))",   desc: "Prebiotic-rich foods that support the gut-sleep axis" },
-            ].map((g, i) => (
+            {FOOD_GOAL_SLUGS.map((slug) => ({ goal: slug, label: GOALS[slug].label, emoji: GOALS[slug].emoji, color: GOALS[slug].color, desc: GOAL_TEASE[slug] ?? GOALS[slug].metaDesc })).map((g, i) => (
               <ScrollReveal key={g.goal} delay={i * 60}>
                 <Link href={`/food/for/${g.goal}`} className="group flex items-center gap-4 rounded-2xl border border-border bg-background p-5 transition-all hover:shadow-md">
                   <div
