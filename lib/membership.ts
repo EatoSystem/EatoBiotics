@@ -27,6 +27,7 @@ export const FEATURES = {
   glp1_companion:        ["member", "restore", "transform"],
   stability_insights:    ["member", "restore", "transform"],
   stability_report:      ["member", "restore", "transform"],
+  ai_voice:              ["trial", "member", "grow", "restore", "transform"],
   weekly_checkin:        ["transform"],
   weekly_meal_plans:     ["transform"],
   create_my_plate:       ["trial", "member", "grow", "restore", "transform"],
