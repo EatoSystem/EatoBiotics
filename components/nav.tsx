@@ -3,44 +3,11 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useState, useRef, useEffect } from "react"
-import { Menu, X, ChevronDown, BookOpen, Leaf, Smartphone, UtensilsCrossed, Calendar, Mic, Users, Brain, ClipboardList } from "lucide-react"
+import { Menu, X, ChevronDown } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { AccountNavItem } from "@/components/account/account-nav-item"
-
-type DropdownItem = {
-  href: string
-  label: string
-  description: string
-  icon: React.ComponentType<{ size?: number; className?: string }>
-}
-
-type NavGroup = {
-  label: string
-  items: DropdownItem[]
-}
-
-const navGroups: NavGroup[] = [
-  {
-    label: "Learn",
-    items: [
-      { href: "/biotics", label: "The Biotics", description: "The 3-part framework for your gut", icon: Leaf },
-      { href: "/books", label: "The Books", description: "Three books. One complete system.", icon: BookOpen },
-      { href: "/mind", label: "Mind", description: "The food system inside your mind", icon: Brain },
-      { href: "/app", label: "The App", description: "Your daily plate companion", icon: Smartphone },
-    ],
-  },
-  {
-    label: "Explore",
-    items: [
-      { href: "/food", label: "Food Library", description: "Every food profiled for your gut", icon: UtensilsCrossed },
-      { href: "/today", label: "Today's Food", description: "A new food spotlight, daily", icon: Calendar },
-      { href: "/podcast", label: "The Podcast", description: "Conversations about food & performance", icon: Mic },
-      { href: "/family", label: "For Families", description: "The food system for the whole family", icon: Users },
-      { href: "/assessment-mind", label: "Mind Assessment", description: "Score your gut-brain connection", icon: ClipboardList },
-    ],
-  },
-]
+import { NAV_GROUPS, NAV_LINKS, type NavGroup } from "@/lib/nav"
 
 function DropdownMenu({ group, pathname }: { group: NavGroup; pathname: string }) {
   const [open, setOpen] = useState(false)
@@ -79,7 +46,7 @@ function DropdownMenu({ group, pathname }: { group: NavGroup; pathname: string }
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 mt-3 w-64 rounded-2xl border border-border bg-background shadow-xl shadow-black/10">
+        <div className="absolute top-full right-0 mt-3 w-72 rounded-2xl border border-border bg-background shadow-xl shadow-black/10">
           <div className="p-2">
             {group.items.map((item) => {
               const active = pathname === item.href || pathname.startsWith(item.href + "/")
@@ -152,18 +119,21 @@ export function Nav() {
 
         {/* Desktop nav */}
         <div className="hidden items-center gap-7 md:flex">
-          {navGroups.map((group) => (
+          {NAV_GROUPS.map((group) => (
             <DropdownMenu key={group.label} group={group} pathname={pathname} />
           ))}
-          <Link
-            href="/about"
-            className={cn(
-              "text-sm font-medium transition-colors",
-              pathname === "/about" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            About
-          </Link>
+          {NAV_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                "text-sm font-medium transition-colors",
+                pathname === link.href ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {link.label}
+            </Link>
+          ))}
           <AccountNavItem />
           <Link
             href="/assessment"
@@ -185,9 +155,9 @@ export function Nav() {
 
       {/* Mobile menu */}
       {open && (
-        <div className="border-t border-border bg-background px-6 py-6 md:hidden">
+        <div className="max-h-[calc(100vh-61px)] overflow-y-auto border-t border-border bg-background px-6 py-6 md:hidden">
           <div className="flex flex-col gap-2">
-            {navGroups.map((group) => {
+            {NAV_GROUPS.map((group) => {
               const isGroupOpen = mobileGroup === group.label
               const isActive = group.items.some(
                 (item) => pathname === item.href || pathname.startsWith(item.href + "/")
@@ -244,16 +214,19 @@ export function Nav() {
               )
             })}
 
-            <Link
-              href="/about"
-              onClick={() => setOpen(false)}
-              className={cn(
-                "flex items-center rounded-xl px-3 py-3 text-base font-semibold transition-colors",
-                pathname === "/about" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              About
-            </Link>
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setOpen(false)}
+                className={cn(
+                  "flex items-center rounded-xl px-3 py-3 text-base font-semibold transition-colors",
+                  pathname === link.href ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {link.label}
+              </Link>
+            ))}
 
             <div className="mt-1 px-3">
               <AccountNavItem />

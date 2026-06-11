@@ -338,7 +338,10 @@ The `getUserMembershipTier()` function enforces grace periods for `past_due` acc
 - `app/api/auth/` routes (auth flow)
 - Any existing Supabase table columns — only ADD, never modify or drop
 - The referral system (`membership` column, referral upgrade logic)
-- Nav and footer components
+
+> Nav + footer are maintained via the shared config in **`lib/nav.ts`** — edit
+> the config (not the components) to add or move destinations; header and
+> footer consume it together.
 
 ---
 

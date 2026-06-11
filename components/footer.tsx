@@ -1,5 +1,10 @@
 import Link from "next/link"
 import Image from "next/image"
+import { NAV_GROUPS } from "@/lib/nav"
+
+/** Footer link columns derive from the shared nav config so header and footer
+ *  can never drift apart; only the Company column is footer-specific. */
+const COLUMN_ACCENTS = ["text-icon-green", "text-icon-teal", "text-icon-yellow"]
 
 export function Footer() {
   return (
@@ -8,7 +13,7 @@ export function Footer() {
       <div className="section-divider" />
 
       <div className="mx-auto max-w-[1200px] px-6 py-16">
-        <div className="flex flex-col gap-12 md:flex-row md:justify-between">
+        <div className="flex flex-col gap-12 lg:flex-row lg:justify-between">
           <div className="max-w-xs">
             <div className="flex items-center gap-2.5">
               <Image
@@ -32,38 +37,42 @@ export function Footer() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-16">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
-                Explore
-              </p>
-              <div className="mt-4 flex flex-col gap-3">
-                <Link href="/biotics" className="text-sm text-foreground transition-colors hover:text-icon-green">
-                  The Biotics
-                </Link>
-                <Link href="/stability" className="text-sm text-foreground transition-colors hover:text-icon-green">
-                  Stability
-                </Link>
-                <Link href="/books" className="text-sm text-foreground transition-colors hover:text-icon-green">
-                  The Books
-                </Link>
-                <Link href="/app" className="text-sm text-foreground transition-colors hover:text-icon-green">
-                  The App
-                </Link>
-                <Link href="/podcast" className="text-sm text-foreground transition-colors hover:text-icon-green">
-                  The Podcast
-                </Link>
-                <Link href="/about" className="text-sm text-foreground transition-colors hover:text-icon-green">
-                  About
-                </Link>
+          <div className="flex flex-wrap gap-x-14 gap-y-10">
+            {/* Programs / Food / Learn — from the shared nav config */}
+            {NAV_GROUPS.map((group, i) => (
+              <div key={group.label}>
+                <p className={`text-xs font-semibold uppercase tracking-widest ${COLUMN_ACCENTS[i % COLUMN_ACCENTS.length]}`}>
+                  {group.label}
+                </p>
+                <div className="mt-4 flex flex-col gap-3">
+                  {group.items.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className="text-sm text-foreground transition-colors hover:text-icon-green"
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
+            ))}
 
+            {/* Company — footer-specific */}
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-icon-orange">
-                Connect
+                Company
               </p>
               <div className="mt-4 flex flex-col gap-3">
+                <Link href="/about" className="text-sm text-foreground transition-colors hover:text-icon-orange">
+                  About
+                </Link>
+                <Link href="/pricing" className="text-sm text-foreground transition-colors hover:text-icon-orange">
+                  Pricing
+                </Link>
+                <Link href="/assessment" className="text-sm text-foreground transition-colors hover:text-icon-orange">
+                  Take assessment
+                </Link>
                 <a
                   href="https://eatobiotics.substack.com/"
                   target="_blank"
@@ -72,9 +81,6 @@ export function Footer() {
                 >
                   Substack
                 </a>
-                <Link href="/assessment" className="text-sm text-foreground transition-colors hover:text-icon-orange">
-                  Take assessment
-                </Link>
               </div>
 
               {/* Social icons */}
