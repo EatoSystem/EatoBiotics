@@ -1,5 +1,7 @@
 import type { MetadataRoute } from "next"
 import { chapters } from "@/lib/chapters"
+import { foods } from "@/lib/foods"
+import { FOOD_GOAL_SLUGS } from "@/lib/food-goals"
 import { getSupabase } from "@/lib/supabase"
 
 const SITE_URL = "https://eatobiotics.com"
@@ -47,6 +49,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: p.priority,
   }))
 
+  // Programmatic food content — individual profiles + "best foods for X" pages.
+  const foodEntries: MetadataRoute.Sitemap = foods.map((f) => ({
+    url: `${SITE_URL}/food/${f.slug}`,
+    lastModified: now,
+    changeFrequency: "monthly",
+    priority: 0.5,
+  }))
+
+  const goalEntries: MetadataRoute.Sitemap = FOOD_GOAL_SLUGS.map((g) => ({
+    url: `${SITE_URL}/food/for/${g}`,
+    lastModified: now,
+    changeFrequency: "monthly",
+    priority: 0.6,
+  }))
+
   // Only published book chapters — drafts and coming-soon are excluded from indexing.
   const chapterEntries: MetadataRoute.Sitemap = chapters
     .filter((c) => c.status === "published")
@@ -80,5 +97,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error("[sitemap] Failed to load recipes:", err)
   }
 
-  return [...staticEntries, ...chapterEntries, ...recipeEntries]
+  return [...staticEntries, ...foodEntries, ...goalEntries, ...chapterEntries, ...recipeEntries]
 }
