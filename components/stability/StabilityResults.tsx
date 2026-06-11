@@ -6,6 +6,7 @@ import { ArrowRight, AlertTriangle, Check, ListChecks } from "lucide-react"
 import { loadAssessment, hydrateFromServer } from "@/lib/stability/storage"
 import type { StabilityAssessment } from "@/lib/stability/types"
 import { StabilityScoreCard } from "./StabilityScoreCard"
+import { StabilityShareCard } from "./StabilityShareCard"
 import { RedFlagWarning } from "./RedFlagWarning"
 
 /** Build a gentle 7-day plan from the recommendations (padded with steady defaults). */
@@ -54,6 +55,8 @@ export function StabilityResults() {
       {score.redFlags.length > 0 && <RedFlagWarning matched={score.redFlags} />}
 
       <StabilityScoreCard score={score} />
+
+      <StabilityShareCard score={score} />
 
       {/* Contributors + actions */}
       <div className="grid gap-5 sm:grid-cols-2">

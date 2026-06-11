@@ -393,7 +393,10 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
 
       {/* ── Share your score ───────────────────────────────────────────── */}
       <section className="px-6 pb-12">
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-3xl space-y-4">
+          <ScrollReveal>
+            <ShareScoreCard result={result} />
+          </ScrollReveal>
           <ScrollReveal>
               <ScoreCard
                 score={result.overall}
