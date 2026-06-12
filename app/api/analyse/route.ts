@@ -4,6 +4,7 @@ import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { getUserMembershipTier } from "@/lib/membership"
+import { logServerEvent } from "@/lib/statsig-server"
 
 /* ── Base analysis prompt (same content as /api/analyse-plate) ─────── */
 
@@ -317,6 +318,12 @@ export async function POST(req: NextRequest) {
 
     const mealDesc = (parsed.overallAssessment as string | undefined)?.slice(0, 500) ?? null
 
+    // Activation analytics: detect the user's very first analysis BEFORE inserting.
+    const { count: priorCount } = await supabase
+      .from("analyses")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+
     void supabase.from("analyses").insert({
       user_id:                  user.id,
       biotics_score:            scoreVal,
@@ -327,6 +334,12 @@ export async function POST(req: NextRequest) {
       analysis_output:          parsed,
       tier_at_time_of_analysis: tier,
     })
+
+    const meta = { tier, has_score: String(scoreVal != null), source: "analyse" }
+    await logServerEvent("meal_logged", user.id, meta)
+    if ((priorCount ?? 0) === 0) {
+      await logServerEvent("first_meal_logged", user.id, meta)
+    }
   }
 
   return NextResponse.json(parsed)
