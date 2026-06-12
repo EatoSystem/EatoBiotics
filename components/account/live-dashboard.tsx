@@ -331,6 +331,112 @@ interface LiveResult {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
+   Map the real /api/analyse response → LiveResult. The API returns
+   { score, foods[], whatThisMealDoes, overallAssessment, nutrition:
+   { protein_g, … } } — NOT LiveResult's keys — so casting it directly
+   renders zeros. Component scores mirror the server-side rubric in
+   app/api/analyse/route.ts.
+   ───────────────────────────────────────────────────────────────────────── */
+function mapAnalyseResponse(p: Record<string, unknown>, mealText: string): LiveResult {
+  const foods = Array.isArray(p.foods) ? (p.foods as Array<{ name?: string; biotic?: string }>) : []
+  const count = (b: string) => foods.filter((f) => f.biotic === b).length
+  const pre = count("prebiotic"), pro = count("probiotic"), post = count("postbiotic")
+  const n = (p.nutrition ?? {}) as Record<string, number | undefined>
+  const hour = new Date().getHours()
+  return {
+    id: null,
+    meal_name: mealText.length > 64 ? mealText.slice(0, 61) + "…" : mealText,
+    meal_type: hour < 11 ? "Breakfast" : hour < 15 ? "Lunch" : hour < 21 ? "Dinner" : "Snack",
+    biotics_score: typeof p.score === "number" ? p.score : 0,
+    prebiotic_score:  pre >= 4 ? 45 : pre === 3 ? 40 : pre === 2 ? 32 : pre === 1 ? 20 : 0,
+    probiotic_score:  pro >= 2 ? 25 : pro === 1 ? 20 : 10,
+    postbiotic_score: post >= 1 ? 15 : 5,
+    // Display proxies — derived from the foods breakdown, not Claude-scored.
+    quality_diversity:         Math.min(95, foods.length * 15),
+    quality_anti_inflammatory: post >= 1 ? 70 : 40,
+    nutrition: {
+      calories: n.calories ?? 0,
+      protein:  n.protein_g ?? 0,
+      carbs:    n.carbs_g   ?? 0,
+      fat:      n.fat_g     ?? 0,
+      fibre:    n.fibre_g   ?? 0,
+    },
+    insight: (p.whatThisMealDoes as string | undefined) ?? (p.overallAssessment as string | undefined) ?? "",
+    tags: foods.slice(0, 4).map((f) => f.name ?? "").filter(Boolean),
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   First-meal celebration — the activation moment. Shown in the first-visit
+   branch when the member's very first analysis completes (previously the
+   result was never rendered there at all).
+   ───────────────────────────────────────────────────────────────────────── */
+function FirstMealCelebration({ result, firstName, onLogAnother }: {
+  result: LiveResult
+  firstName: string | null
+  onLogAnother: () => void
+}) {
+  const circ = 2 * Math.PI * 44
+  return (
+    <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid #ebebeb", boxShadow: "0 8px 32px rgba(26,46,18,0.12)" }}>
+      <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
+      <div className="px-6 py-8 text-center md:px-10">
+        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
+          First meal analysed 🎉
+        </p>
+        <h2 className="mt-2 font-serif text-2xl font-bold" style={{ color: "var(--foreground)" }}>
+          {firstName ? `That's day one done, ${firstName}.` : "That's day one done."}
+        </h2>
+
+        {/* Score ring */}
+        <div className="mx-auto mt-6 flex items-center justify-center">
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <defs>
+              <linearGradient id="first-meal-ring" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%"   stopColor="var(--icon-lime)" />
+                <stop offset="50%"  stopColor="var(--icon-green)" />
+                <stop offset="100%" stopColor="var(--icon-teal)" />
+              </linearGradient>
+            </defs>
+            <circle cx="60" cy="60" r="44" fill="none" stroke="#ededed" strokeWidth="9" />
+            <circle cx="60" cy="60" r="44" fill="none" stroke="url(#first-meal-ring)" strokeWidth="9" strokeLinecap="round"
+              strokeDasharray={`${(circ * result.biotics_score) / 100} ${circ}`} transform="rotate(-90 60 60)" />
+            <text x="60" y="56" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 28, fontWeight: 800, fill: "var(--foreground)" }}>{result.biotics_score}</text>
+            <text x="60" y="76" textAnchor="middle" style={{ fontSize: 11, fill: "var(--muted-foreground)" }}>/100</text>
+          </svg>
+        </div>
+        <p className="mt-1 text-xs font-semibold" style={{ color: "var(--muted-foreground)" }}>{result.meal_name}</p>
+
+        {/* Biotic bars */}
+        <div className="mx-auto mt-6 max-w-sm space-y-2.5 text-left">
+          <ScoreBar label="Prebiotic"  score={result.prebiotic_score} />
+          <ScoreBar label="Probiotic"  score={result.probiotic_score} />
+          <ScoreBar label="Postbiotic" score={result.postbiotic_score} />
+        </div>
+
+        {result.insight && (
+          <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
+            {result.insight}
+          </p>
+        )}
+
+        <div className="mx-auto mt-5 max-w-md rounded-xl px-4 py-3 text-sm" style={{ background: "color-mix(in srgb, var(--icon-green) 8%, white)", color: "var(--foreground)" }}>
+          <Flame size={14} className="mr-1.5 inline-block" style={{ color: "var(--icon-orange)" }} />
+          Your streak starts now — log one meal tomorrow to keep it alive.
+        </div>
+
+        <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <GradientButton onClick={() => window.location.reload()}>See my dashboard</GradientButton>
+          <button onClick={onLogAnother} className="text-sm font-semibold underline underline-offset-4" style={{ color: "var(--muted-foreground)" }}>
+            Log another meal
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
    Convert RealAnalysis → MealEntry shape used by MealCard
    ───────────────────────────────────────────────────────────────────────── */
 function realToMealEntry(a: RealAnalysis): Parameters<typeof MealCard>[0]["meal"] {
@@ -822,6 +928,14 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       {tab === "overview" && recentAnalyses.length === 0 && (
         <div className="mx-auto max-w-2xl px-4 pt-8 pb-20 md:px-8">
 
+          {loggerState === "result" && liveResult ? (
+            <FirstMealCelebration
+              result={liveResult}
+              firstName={name?.split(" ")[0] ?? null}
+              onLogAnother={() => { setLoggerState("empty"); setMealInput("") }}
+            />
+          ) : (<>
+
           {/* ── Onboarding: first-time member ── */}
           <div className="overflow-hidden rounded-2xl" style={{
             background: "linear-gradient(135deg, #6aab28 0%, #2e8c2a 40%, #c49610 75%, #c47010 100%)",
@@ -857,57 +971,13 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
               {/* Arrow pointing down */}
               <div className="mt-6 flex items-center gap-2" style={{ color: "rgba(255,255,255,0.65)" }}>
                 <Camera size={14} />
-                <span className="text-xs font-semibold">Describe or photograph your meal in the box below to start</span>
+                <span className="text-xs font-semibold">Describe your meal in the box below to start</span>
               </div>
             </div>
           </div>
 
-          {/* Quick-start suggestions */}
-          <div className="mt-5 overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid #ebebeb" }}>
-            <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))" }} />
-            <div className="p-5">
-              <p className="mb-3 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
-                Try one of these to get started
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  "Porridge with berries and walnuts",
-                  "Greek yoghurt with honey",
-                  "Lentil soup with sourdough",
-                  "Salmon with asparagus",
-                  "Overnight oats with chia seeds",
-                ].map((meal) => (
-                  <button key={meal}
-                    onClick={() => {
-                      // Scroll to top and pre-fill the logger
-                      window.scrollTo({ top: 0, behavior: "smooth" })
-                    }}
-                    className="rounded-full border px-3 py-1.5 text-xs font-medium transition-all hover:border-[var(--icon-green)] hover:text-[var(--icon-green)]"
-                    style={{ borderColor: "#e0e0e0", color: "var(--muted-foreground)" }}>
-                    {meal}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* GLP-1 Companion — compact, self-selecting entry point */}
-          <div className="mt-5">
-            <Glp1CompanionCard />
-          </div>
-
-          {/* EatoBiotics Stability */}
-          <div className="mt-5">
-            <StabilityCard />
-          </div>
-
-          {/* Refer a friend */}
-          <div className="mt-5">
-            <ReferralCard code={referralCode} />
-          </div>
-
-          {/* Log first meal inline */}
-          <div className="mt-5">
+          {/* Log first meal — directly under the card that points to it */}
+          <div id="first-meal-logger" className="mt-5">
             <div className="overflow-hidden rounded-2xl" style={{
               background: "linear-gradient(135deg, #6aab28 0%, #2e8c2a 40%, #c49610 75%, #c47010 100%)",
               boxShadow: "0 4px 20px rgba(26,46,18,0.18)",
@@ -938,9 +1008,10 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ meal: mealInput }),
                       })
-                      const data = await res.json() as LiveResult & { error?: string }
+                      const data = await res.json() as Record<string, unknown> & { error?: string }
                       if (!res.ok || data.error) { setAnalyseError(data.error ?? "Analysis failed"); setLoggerState("empty"); return }
-                      setLiveResult(data); setLoggerState("result")
+                      setLiveResult(mapAnalyseResponse(data, mealInput)); setLoggerState("result")
+                      window.scrollTo({ top: 0, behavior: "smooth" })
                     } catch { setAnalyseError("Something went wrong — please try again"); setLoggerState("empty") }
                   }}
                   className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
@@ -955,6 +1026,53 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                 {analyseError && <p className="mt-2 text-center text-xs text-red-200">{analyseError}</p>}
               </div>
             </div>
+          </div>
+
+          {/* Quick-start suggestions */}
+          <div className="mt-5 overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid #ebebeb" }}>
+            <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))" }} />
+            <div className="p-5">
+              <p className="mb-3 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
+                Try one of these to get started
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  "Porridge with berries and walnuts",
+                  "Greek yoghurt with honey",
+                  "Lentil soup with sourdough",
+                  "Salmon with asparagus",
+                  "Overnight oats with chia seeds",
+                ].map((meal) => (
+                  <button key={meal}
+                    onClick={() => {
+                      // Pre-fill the logger and bring it into view
+                      setMealInput(meal)
+                      document.getElementById("first-meal-logger")?.scrollIntoView({ behavior: "smooth", block: "center" })
+                    }}
+                    className="rounded-full border px-3 py-1.5 text-xs font-medium transition-all hover:border-[var(--icon-green)] hover:text-[var(--icon-green)]"
+                    style={{ borderColor: "#e0e0e0", color: "var(--muted-foreground)" }}>
+                    {meal}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          </>)}
+
+          {/* GLP-1 Companion — compact, self-selecting entry point */}
+          <div className="mt-5">
+            <Glp1CompanionCard />
+          </div>
+
+          {/* EatoBiotics Stability */}
+          <div className="mt-5">
+            <StabilityCard />
+          </div>
+
+          {/* Refer a friend */}
+          <div className="mt-5">
+            <ReferralCard code={referralCode} />
           </div>
 
         </div>
