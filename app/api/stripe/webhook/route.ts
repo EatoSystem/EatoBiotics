@@ -6,6 +6,7 @@ import { getSupabase } from "@/lib/supabase"
 import { tierFromPriceId, isFoundingMember } from "@/lib/membership"
 import { logServerEvent } from "@/lib/statsig-server"
 import { welcomeSubscriptionEmailHtml } from "@/lib/email/welcome-subscription-email"
+import { cancellationEmail } from "@/lib/email/paid-onboarding-email"
 import { getPaidReportSummaryFromSession, isCheckoutSessionSettled } from "@/lib/paid-report-session"
 import { reportError } from "@/lib/report-error"
 
@@ -340,6 +341,35 @@ export async function POST(req: NextRequest) {
           from_tier:       (existing?.membership_tier as string | null) ?? "unknown",
           stripe_event_id: event.id,
         })
+
+        // Goodbye / win-back email
+        try {
+          const resendKey = process.env.RESEND_API_KEY
+          const emailFrom = process.env.EMAIL_FROM ?? "hello@eatobiotics.com"
+          if (resendKey) {
+            const { data: prof } = await supabase
+              .from("profiles")
+              .select("email, name")
+              .eq("id", profile.id)
+              .single()
+            if (prof?.email) {
+              const { subject, html } = cancellationEmail({
+                name: (prof.name as string | null) ?? null,
+                tier: (existing?.membership_tier as string | null) ?? "membership",
+              })
+              const resend = new Resend(resendKey)
+              await resend.emails.send({
+                from: `EatoBiotics <${emailFrom}>`,
+                to:   prof.email as string,
+                subject,
+                html,
+              })
+            }
+          }
+        } catch (emailErr) {
+          console.error("[webhook] Cancellation email failed:", emailErr)
+          // Non-fatal — don't throw
+        }
         break
       }
 
