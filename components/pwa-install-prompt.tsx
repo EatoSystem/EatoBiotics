@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import { X, Download, Share } from "lucide-react"
+import posthog from "posthog-js"
 
 const DISMISSED_KEY = "eb_install_dismissed"
 
@@ -56,6 +57,7 @@ export function PwaInstallPrompt() {
     const { outcome } = await deferredPrompt.current.userChoice
     if (outcome === "accepted") {
       localStorage.setItem(DISMISSED_KEY, "1")
+      posthog.capture("pwa_installed", { platform: "android" })
     }
     deferredPrompt.current = null
     setShow(null)

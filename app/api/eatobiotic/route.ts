@@ -6,6 +6,7 @@ import { getSupabase } from "@/lib/supabase"
 import { getUserMembershipTier } from "@/lib/membership"
 import { guardAiUsage } from "@/lib/ai-guard"
 import { rateLimit, getClientIp } from "@/lib/rate-limit"
+import { logServerEvent } from "@/lib/statsig-server"
 import { computeReport } from "@/lib/stability/insights"
 import type { StabilityDailyLog } from "@/lib/stability/types"
 
@@ -92,6 +93,12 @@ export async function POST(req: NextRequest) {
       )
     }
   }
+
+  await logServerEvent("chat_message_sent", user?.id ?? "anonymous", {
+    product:   "eatobiotic",
+    signed_in: user ? "true" : "false",
+    turn:      String(body.messages.filter((m) => m.role === "user").length),
+  })
 
   // Personalised context for signed-in users.
   let contextBlock: string | null = null

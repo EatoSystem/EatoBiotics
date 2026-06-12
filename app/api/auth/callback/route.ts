@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseServer } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"  // service role client for admin ops
+import { logServerEvent } from "@/lib/statsig-server"
 
 function generateReferralCode(): string {
   return Math.random().toString(36).substring(2, 8).toUpperCase()
@@ -73,6 +74,11 @@ export async function GET(request: NextRequest) {
           referred_by: ref ?? null,
         })
 
+        // Analytics: a brand-new account was just created (magic-link confirmed).
+        await logServerEvent("signup_completed", user.id, {
+          referred: ref ? "true" : "false",
+        })
+
         // Link existing leads rows to this user_id
         await adminSupabase
           .from("leads")
@@ -94,6 +100,10 @@ export async function GET(request: NextRequest) {
             referred_email: user.email!,
             referred_id: user.id,
           }, { onConflict: "referred_email" })
+
+          await logServerEvent("referral_redeemed", user.id, {
+            referrer_code: ref.toUpperCase(),
+          })
 
           // Check if referrer should get early_access reward (3+ referrals)
           const { count } = await adminSupabase

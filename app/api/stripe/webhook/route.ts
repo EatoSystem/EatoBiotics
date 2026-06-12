@@ -292,6 +292,15 @@ export async function POST(req: NextRequest) {
           toTier:       newTier ?? oldTier,
           stripeEventId: event.id,
         })
+
+        // Analytics: only surface real tier changes (not status-only updates).
+        if (eventType === "upgraded" || eventType === "downgraded") {
+          await logServerEvent(`subscription_${eventType}`, profile.id, {
+            from_tier:       oldTier ?? "unknown",
+            to_tier:         newTier ?? "unknown",
+            stripe_event_id: event.id,
+          })
+        }
         break
       }
 
@@ -325,6 +334,11 @@ export async function POST(req: NextRequest) {
           fromTier:     existing?.membership_tier ?? null,
           toTier:       "free",
           stripeEventId: event.id,
+        })
+
+        await logServerEvent("subscription_cancelled", profile.id, {
+          from_tier:       (existing?.membership_tier as string | null) ?? "unknown",
+          stripe_event_id: event.id,
         })
         break
       }
