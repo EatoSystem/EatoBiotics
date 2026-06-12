@@ -3,6 +3,8 @@ import { z } from "zod"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { stripe } from "@/lib/stripe-server"
+import { tierFromPriceId } from "@/lib/membership"
+import { logServerEvent } from "@/lib/statsig-server"
 
 const bodySchema = z.object({
   priceId: z.string().min(1, "priceId is required"),
@@ -79,6 +81,11 @@ export async function POST(req: NextRequest) {
       subscription_data: {
         metadata: { supabase_user_id: user.id },
       },
+    })
+
+    await logServerEvent("checkout_started", user.id, {
+      kind: "subscription",
+      tier: tierFromPriceId(body.priceId) ?? "unknown",
     })
 
     return NextResponse.json({ url: session.url })

@@ -7,6 +7,7 @@ import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { getUserMembershipTier } from "@/lib/membership"
+import { logServerEvent } from "@/lib/statsig-server"
 import { computeReport } from "@/lib/stability/insights"
 import type { StabilityDailyLog } from "@/lib/stability/types"
 
@@ -193,6 +194,11 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
   }
+
+  await logServerEvent("chat_message_sent", user.id, {
+    product: "consult",
+    turn:    String(body.messages.filter((m) => m.role === "user").length),
+  })
 
   const adminSupabase = getSupabase()
 

@@ -3,6 +3,7 @@ import { z } from "zod"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { getUserMembershipTier } from "@/lib/membership"
+import { logServerEvent } from "@/lib/statsig-server"
 
 const bodySchema = z.object({
   biotics_score:    z.number().int().min(0).max(100).optional(),
@@ -29,6 +30,12 @@ export async function POST(req: NextRequest) {
 
   const tier = await getUserMembershipTier(user.id)
 
+  // Detect the activation moment: is this the user's first logged analysis?
+  const { count: priorCount } = await adminSupabase
+    .from("analyses")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+
   const { error } = await adminSupabase.from("analyses").insert({
     user_id:                  user.id,
     biotics_score:            body.biotics_score ?? null,
@@ -38,6 +45,15 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     console.error("[analyses/log]", error.message)
+  } else {
+    const meta = {
+      tier,
+      has_score: String(body.biotics_score != null),
+    }
+    await logServerEvent("meal_logged", user.id, meta)
+    if ((priorCount ?? 0) === 0) {
+      await logServerEvent("first_meal_logged", user.id, meta)
+    }
   }
 
   return NextResponse.json({ ok: true })
