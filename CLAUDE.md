@@ -293,6 +293,42 @@ ADMIN_SESSION_SECRET          # Secret used to sign the admin session cookie (li
 ADMIN_PASSWORD                # Admin login password (also the fallback signing secret)
 ```
 
+### Integrations & analytics
+```
+CLAUDE_MODEL                  # Claude model override (lib/anthropic.ts). Default: claude-sonnet-4-20250514
+OPENAI_API_KEY                # SECOND AI provider — used ONLY by the plate-builder
+OPENAI_RECIPE_MODEL           # (app/api/plate-builder) for recipe generation. Default: gpt-4.1-mini
+OPENAI_IMAGE_MODEL            # …and recipe images. Provider split is deliberate:
+                              # Claude = coaching/reports/chat, OpenAI = plate-builder recipes/images.
+SUPABASE_RECIPE_IMAGE_BUCKET  # Storage bucket for generated recipe images. Default: plate-recipes
+
+ELEVENLABS_API_KEY            # Voice agent for /eatobiotic (signed URLs minted server-side in
+ELEVENLABS_AGENT_ID           # app/api/eatobiotic/voice-token — voice shows "being set up" until both are set)
+
+STATSIG_SERVER_KEY            # Server-side analytics events (lib/statsig-server.ts logServerEvent).
+                              # Without it ALL server funnel events (signup, first meal, checkout,
+                              # churn, chat) are silently dropped — set in prod.
+NEXT_PUBLIC_STATSIG_CLIENT_KEY # Statsig browser SDK (gates + client events)
+NEXT_PUBLIC_POSTHOG_KEY       # PostHog browser analytics + $exception error capture
+NEXT_PUBLIC_POSTHOG_HOST      # PostHog host (defaults to PostHog cloud)
+
+NEXT_PUBLIC_SITE_URL          # Canonical site origin used in emails + redirects.
+                              # Default: https://eatobiotics.com
+
+STRIPE_MEMBER_PRICE_ID        # Price ID for the Member tier (€24.99/mo)
+NEXT_PUBLIC_STRIPE_MEMBER_PRICE_ID
+STRIPE_LOW_SCORE_COUPON_ID    # Promo coupons: low-score offer (submit-lead),
+STRIPE_SHARE_COUPON_ID        # share reward, and assessment-lottery win
+STRIPE_WIN_COUPON_ID          # (app/api/promo/generate, app/api/submit-lead)
+
+DEV_PASSWORD                  # Site-wide preview password gate (lib/dev-password-gate.ts; proxy.ts
+EATOBIOTICS_PASSWORD_GATE     # redirects to /enter). NOTE: a temporary fallback password is
+EATOBIOTICS_PASSWORD_GATE_DISABLED # hardcoded in lib/dev-password-gate.ts — remove before launch.
+```
+
+> `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` is listed above for completeness but is
+> currently unreferenced in code (checkout uses server-created sessions).
+
 > **Go-live note:** the cron and admin routes are fail-closed. Set `CRON_SECRET`
 > and `ADMIN_SESSION_SECRET` (or `ADMIN_PASSWORD`) in production, and apply
 > Migration 17 (`stripe_processed_events`), Migration 18 (`household_members`),
