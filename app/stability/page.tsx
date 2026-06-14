@@ -1,16 +1,17 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import {
-  ArrowRight, ChevronDown, RefreshCw, Heart, ShieldCheck, TrendingUp,
-  Compass, Sprout, HeartPulse, Infinity as InfinityIcon, ClipboardCheck,
-  LineChart, Sparkles, Trophy,
+  Apple, Clock, Heart, ShieldCheck, ArrowRight, ArrowUpRight,
+  Plane, Briefcase, Users, HeartPulse, Eye, Compass, Repeat, ClipboardList,
+  ClipboardCheck, LineChart, Sparkles, Trophy, Activity, Sprout, Infinity as InfinityIcon,
 } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { StabilityHero } from "@/components/stability/StabilityHero"
 import { StabilityCtaButton } from "@/components/stability/StabilityCtaButton"
+import { StabilityFramework } from "@/components/stability/StabilityFramework"
+import { StabilityScoreShowcase } from "@/components/stability/StabilityScoreShowcase"
 import { RedFlagWarning } from "@/components/stability/RedFlagWarning"
 import { MedicalDisclaimer } from "@/components/stability/MedicalDisclaimer"
-import { STABILITY_BANDS } from "@/lib/stability/scoring"
 
 export const metadata: Metadata = {
   title: { absolute: "EatoBiotics Stability™ | The Stability System Inside You" },
@@ -23,222 +24,181 @@ export const metadata: Metadata = {
   },
 }
 
-/* ── Section 3 — The Four Pillars of Stability™ ──────────────────────── */
-const PILLARS = [
-  { icon: RefreshCw,  title: "Consistency",    body: "How regularly your Food System performs.",      accent: "var(--icon-lime)" },
-  { icon: Heart,      title: "Comfort",        body: "How comfortable your digestive experience feels.", accent: "var(--icon-green)" },
-  { icon: ShieldCheck,title: "Confidence",     body: "How much trust you have in your Food System.",   accent: "var(--icon-teal)" },
-  { icon: TrendingUp, title: "Predictability", body: "How reliably your Food System responds day to day.", accent: "var(--icon-yellow)" },
-]
+const STABILITY_GRADIENT = "linear-gradient(135deg, var(--icon-green), var(--icon-teal))"
 
-/* ── Section 6 — The Systems of EatoBiotics ──────────────────────────── */
+/* ── Section 3 — The 4 Systems of Stability ──────────────────────────── */
 const SYSTEMS = [
-  { icon: Compass,      name: "Stability™",  tagline: "The Stability System Inside You",  status: "live",  color: "var(--icon-teal)" },
-  { icon: Sprout,       name: "Diversity™",  tagline: "The Diversity System Inside You",  status: "soon",  color: "var(--icon-lime)" },
-  { icon: HeartPulse,   name: "Recovery™",   tagline: "The Recovery System Inside You",   status: "soon",  color: "var(--icon-orange)" },
-  { icon: InfinityIcon, name: "Longevity™",  tagline: "The Longevity System Inside You",  status: "soon",  color: "var(--icon-green)" },
+  {
+    number: "01", title: "Food", label: "NOURISH", icon: Apple,
+    accent: "var(--icon-lime)", gradientFrom: "var(--icon-lime)", gradientTo: "var(--icon-green)",
+    description: "How meals, fibre, hydration, trigger foods, and overall food quality influence the day-to-day stability of your digestion.",
+    support: "Fibre · Hydration · Quality",
+  },
+  {
+    number: "02", title: "Rhythm", label: "ROUTINE", icon: Clock,
+    accent: "var(--icon-green)", gradientFrom: "var(--icon-green)", gradientTo: "var(--icon-teal)",
+    description: "How meal timing, bowel timing, sleep, stress, and your daily routine shape how predictable your Food System feels.",
+    support: "Timing · Sleep · Routine",
+  },
+  {
+    number: "03", title: "Comfort", label: "EASE", icon: Heart,
+    accent: "var(--icon-teal)", gradientFrom: "var(--icon-teal)", gradientTo: "var(--icon-yellow)",
+    description: "How bloating, cramps, discomfort, stool quality, and digestive ease shape how settled and confident you feel.",
+    support: "Bloating · Comfort · Ease",
+  },
+  {
+    number: "04", title: "Confidence", label: "FREEDOM", icon: ShieldCheck,
+    accent: "var(--icon-yellow)", gradientFrom: "var(--icon-yellow)", gradientTo: "var(--icon-orange)",
+    description: "How stability affects travel, work, exercise, social life, and the freedom to live fully without second-guessing your gut.",
+    support: "Travel · Social · Freedom",
+  },
 ]
 
-/* ── Section 7 — How It Works ────────────────────────────────────────── */
-const STEPS = [
-  { icon: ClipboardCheck, title: "Take the Stability Assessment",  body: "A short, calm questionnaire builds your baseline Stability Score™." },
-  { icon: LineChart,      title: "Track Stability Patterns",       body: "Log the daily signals that shape how settled and predictable you feel." },
-  { icon: Sparkles,       title: "Receive Personalised Insights",  body: "See the habits, foods, and patterns influencing your stability." },
-  { icon: Trophy,         title: "Improve Your Stability Score™",  body: "Change one thing at a time and watch your stability strengthen." },
+/* ── Section 5 — Why Stability matters (contrast cards) ──────────────── */
+const CONTRASTS = [
+  { icon: Eye, old: "Instead of only tracking symptoms", neu: "Track the systems behind them.", accent: "var(--icon-lime)" },
+  { icon: LineChart, old: "Instead of guessing triggers", neu: "Identify patterns over time.", accent: "var(--icon-teal)" },
+  { icon: Repeat, old: "Instead of focusing on restriction", neu: "Build confidence through consistency.", accent: "var(--icon-yellow)" },
+  { icon: Compass, old: "Instead of one-off advice", neu: "A Stability Plan that improves with you.", accent: "var(--icon-orange)" },
 ]
 
-const STEP_GRADS = [
-  "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
-  "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
-  "linear-gradient(135deg, var(--icon-teal), var(--icon-yellow))",
-  "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
+/* ── Section 6 — Different lives, different patterns ─────────────────── */
+const SCENARIOS = [
+  {
+    title: "Travel Days", subtitle: "Holidays · Commutes · Away from home", icon: Plane,
+    accent: "var(--icon-lime)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
+    systems: ["Rhythm", "Confidence"],
+    description: "For people who worry about toilets, timing, routine disruption, and confidence away from home.",
+  },
+  {
+    title: "Work Days", subtitle: "Meetings · Commutes · Pressure", icon: Briefcase,
+    accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
+    systems: ["Rhythm", "Comfort"],
+    description: "For people managing meetings, commutes, stress, and unpredictable symptoms through the working day.",
+  },
+  {
+    title: "Social Days", subtitle: "Eating out · Events · Friends", icon: Users,
+    accent: "var(--icon-yellow)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
+    systems: ["Comfort", "Confidence"],
+    description: "For people who want the confidence to eat out, attend events, and enjoy life without second-guessing.",
+  },
+  {
+    title: "Recovery Days", subtitle: "After illness · Antibiotics · Stress", icon: HeartPulse,
+    accent: "var(--icon-orange)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-yellow))",
+    systems: ["Food", "Rhythm"],
+    description: "For people rebuilding stability after illness, antibiotics, stress, or a period of disruption.",
+  },
+]
+
+/* ── Section 7 — How Stability works (flow + mock card) ─────────────── */
+const FLOW = [
+  { step: "01", icon: ClipboardCheck, label: "Take the Stability Assessment", detail: "A short assessment builds your baseline Stability Score™." },
+  { step: "02", icon: Activity, label: "Track Your Patterns", detail: "Log the signals that shape stability — food, rhythm, comfort, sleep, and stress." },
+  { step: "03", icon: Sparkles, label: "Discover Your Insights", detail: "EatoBiotic surfaces the habits, foods, and patterns that may influence your stability." },
+  { step: "04", icon: Trophy, label: "Improve Your Stability Score™", detail: "Follow a personalised Stability Plan and build confidence over time." },
+]
+
+const MOCK_SCORES = [
+  { system: "Food", score: 80, accent: "var(--icon-lime)", gradient: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))" },
+  { system: "Rhythm", score: 64, accent: "var(--icon-green)", gradient: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))" },
+  { system: "Comfort", score: 58, accent: "var(--icon-teal)", gradient: "linear-gradient(90deg, var(--icon-teal), var(--icon-yellow))" },
+  { system: "Confidence", score: 72, accent: "var(--icon-yellow)", gradient: "linear-gradient(90deg, var(--icon-yellow), var(--icon-orange))" },
+]
+
+/* ── Section 9 — EatoBiotics Foundation (dark) ──────────────────────── */
+const FOUNDATION = [
+  { number: "01", title: "Food System", accent: "var(--icon-lime)", gradient: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))", body: "Stability begins with understanding how your Food System responds to food, habits, and the realities of daily life." },
+  { number: "02", title: "Stability Score™", accent: "var(--icon-green)", gradient: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))", body: "Your score translates everyday patterns into a clear, single measure of how reliably your Food System performs." },
+  { number: "03", title: "Biotics Score™", accent: "var(--icon-teal)", gradient: "linear-gradient(90deg, var(--icon-teal), var(--icon-yellow))", body: "Stability contributes to your overall Biotics Score™ — the core score at the heart of EatoBiotics." },
+]
+
+/* ── Section 10 — The Systems of EatoBiotics ────────────────────────── */
+const EB_SYSTEMS = [
+  { number: "01", name: "Stability™", icon: Compass, tagline: "The Stability System Inside You", status: "Available today", live: true, accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" },
+  { number: "02", name: "Diversity™", icon: Sprout, tagline: "The Diversity System Inside You", status: "Coming soon", live: false, accent: "var(--icon-lime)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" },
+  { number: "03", name: "Recovery™", icon: HeartPulse, tagline: "The Recovery System Inside You", status: "Coming soon", live: false, accent: "var(--icon-orange)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-yellow))" },
+  { number: "04", name: "Longevity™", icon: InfinityIcon, tagline: "The Longevity System Inside You", status: "Coming soon", live: false, accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" },
 ]
 
 export default function StabilityPage() {
   return (
-    <main className="overflow-hidden bg-white">
+    <>
+      {/* ── 1. HERO ── */}
       <StabilityHero />
-      <div className="section-divider" />
+      <div style={{ height: "2px", background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
 
-      {/* ── 2. The Problem ──────────────────────────────────────────── */}
+      {/* ── 2. THE PROBLEM (editorial) ── */}
       <section className="px-6 py-24 md:py-32">
-        <div className="mx-auto max-w-3xl text-center">
-          <ScrollReveal>
-            <p className="mb-4 text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--icon-orange)" }}>The Problem</p>
-            <h2 className="font-serif text-3xl font-bold leading-tight text-balance sm:text-4xl lg:text-5xl" style={{ color: "var(--foreground)" }}>
-              When your Food System is unstable, life becomes smaller.
-            </h2>
-            <p className="mt-6 text-lg leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
-              Digestive instability can affect confidence, travel, work, exercise, relationships,
-              and everyday decision-making. Many people don&apos;t know what patterns influence their
-              digestive stability. <span style={{ color: "var(--foreground)" }}>Stability™ helps reveal those patterns.</span>
-            </p>
-          </ScrollReveal>
-        </div>
-      </section>
-
-      {/* ── 3. The Four Pillars of Stability™ ───────────────────────── */}
-      <section className="px-6 py-24 md:py-32" style={{ background: "#f4f8f0" }}>
         <div className="mx-auto max-w-[1200px]">
-          <ScrollReveal className="mx-auto max-w-2xl text-center">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--icon-teal)" }}>The Framework</p>
-            <h2 className="font-serif text-3xl font-bold text-balance sm:text-4xl lg:text-5xl" style={{ color: "var(--foreground)" }}>The Four Pillars of Stability™</h2>
-            <p className="mt-5 text-lg leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
-              Four dimensions that together describe how stable your Food System really is.
-            </p>
-          </ScrollReveal>
-          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {PILLARS.map((p, i) => (
-              <ScrollReveal key={p.title} delay={i * 70}>
-                <div
-                  className="group relative h-full rounded-3xl p-7 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_-22px_rgba(26,46,18,0.26)]"
-                  style={{
-                    background: `linear-gradient(160deg, color-mix(in srgb, ${p.accent} 12%, white), white 62%)`,
-                    border: `1.5px solid color-mix(in srgb, ${p.accent} 28%, transparent)`,
-                    borderLeft: `4px solid ${p.accent}`,
-                  }}
-                >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-sm" style={{ background: `color-mix(in srgb, ${p.accent} 88%, black 4%)` }}>
-                    <p.icon size={22} />
-                  </div>
-                  <h3 className="mt-5 font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>{p.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{p.body}</p>
-                </div>
-              </ScrollReveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── 4. Your Stability Score™ ────────────────────────────────── */}
-      <section className="px-6 py-24 md:py-32">
-        <div className="mx-auto max-w-[1100px]">
-          <div className="grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
-            {/* Premium score ring mockup */}
-            <ScrollReveal className="flex justify-center">
-              <div className="relative">
-                <div aria-hidden className="absolute inset-0 -z-10 blur-3xl" style={{ background: "radial-gradient(50% 50% at 50% 50%, rgba(45,170,110,0.18), transparent 72%)" }} />
-                <svg width="280" height="280" viewBox="0 0 280 280">
-                  <defs>
-                    <linearGradient id="score-ring" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="var(--icon-lime)" />
-                      <stop offset="50%" stopColor="var(--icon-teal)" />
-                      <stop offset="100%" stopColor="var(--icon-yellow)" />
-                    </linearGradient>
-                  </defs>
-                  <circle cx="140" cy="140" r="112" fill="none" stroke="#eef2ec" strokeWidth="18" />
-                  <circle cx="140" cy="140" r="112" fill="none" stroke="url(#score-ring)" strokeWidth="18" strokeLinecap="round"
-                    strokeDasharray={`${2 * Math.PI * 112 * 0.72} ${2 * Math.PI * 112}`} transform="rotate(-90 140 140)" />
-                  <text x="140" y="132" textAnchor="middle" className="font-serif" style={{ fontSize: 56, fontWeight: 800, fill: "var(--foreground)" }}>72</text>
-                  <text x="140" y="166" textAnchor="middle" style={{ fontSize: 14, fill: "var(--muted-foreground)" }}>/ 100</text>
-                </svg>
-                <span className="mx-auto mt-4 block w-fit rounded-full px-4 py-1.5 text-sm font-bold text-white" style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}>
-                  Improving Stability
-                </span>
+          <div className="grid gap-12 lg:grid-cols-2 lg:items-center lg:gap-20">
+            <ScrollReveal>
+              <p className="text-xs font-bold uppercase tracking-widest text-icon-teal">The Problem</p>
+              <h2 className="mt-4 text-pretty font-serif text-3xl font-semibold text-foreground sm:text-4xl md:text-5xl">
+                When your Food System is unstable,{" "}
+                <span className="brand-gradient-text">life becomes smaller.</span>
+              </h2>
+              <blockquote className="mt-8 border-l-2 pl-6 font-serif text-xl font-medium italic text-foreground" style={{ borderColor: "var(--icon-teal)" }}>
+                &ldquo;Before your Food System can thrive, it must first become stable.&rdquo;
+              </blockquote>
+            </ScrollReveal>
+            <ScrollReveal delay={150}>
+              <div className="rounded-3xl border border-border bg-secondary/40 p-8 md:p-10">
+                <p className="text-base leading-relaxed text-muted-foreground">
+                  Digestive instability can affect confidence, travel, work, exercise, relationships, and
+                  everyday decision-making. It quietly shrinks the things you feel able to do.
+                </p>
+                <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+                  Many people do not know what patterns influence their stability — which foods, which
+                  routines, which days. <span className="font-semibold text-foreground">Stability™ helps reveal those patterns</span>, so you can
+                  build a more predictable, comfortable, and confident Food System.
+                </p>
               </div>
             </ScrollReveal>
-
-            <div>
-              <ScrollReveal>
-                <p className="mb-4 text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>The Score</p>
-                <h2 className="font-serif text-3xl font-bold text-balance sm:text-4xl lg:text-5xl" style={{ color: "var(--foreground)" }}>Your Stability Score™</h2>
-                <p className="mt-5 text-lg leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
-                  A single score designed to measure the stability of your Food System. The
-                  Stability Score™ contributes to your overall Biotics Score™.
-                </p>
-              </ScrollReveal>
-              <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                {STABILITY_BANDS.map((b, i) => {
-                  const max = (STABILITY_BANDS[i + 1]?.min ?? 101) - 1
-                  return (
-                    <ScrollReveal key={b.band} delay={i * 60}>
-                      <div className="h-full rounded-2xl border border-black/[0.06] bg-white p-4 shadow-sm">
-                        <div className="flex items-center justify-between">
-                          <span className="font-serif text-base font-bold" style={{ color: "var(--foreground)" }}>{b.band}</span>
-                          <span className="font-serif text-sm font-bold" style={{ color: b.color }}>{b.min}–{max}</span>
-                        </div>
-                        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#eef2ec]">
-                          <div className="h-full rounded-full" style={{ width: `${max}%`, background: b.color }} />
-                        </div>
-                      </div>
-                    </ScrollReveal>
-                  )
-                })}
-              </div>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* ── 5. Relationship to EatoBiotics ──────────────────────────── */}
-      <section className="px-6 py-24 md:py-32" style={{ background: "#f4f8f0" }}>
-        <div className="mx-auto max-w-2xl text-center">
-          <ScrollReveal>
-            <p className="mb-4 text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--icon-teal)" }}>How It Fits</p>
-            <h2 className="font-serif text-3xl font-bold text-balance sm:text-4xl" style={{ color: "var(--foreground)" }}>
-              Stability™ is part of the Food System Inside You
-            </h2>
-          </ScrollReveal>
+      <div className="section-divider" />
 
-          <ScrollReveal delay={80}>
-            <div className="mt-12 flex flex-col items-center gap-4">
-              <div className="w-full max-w-sm rounded-3xl border border-black/[0.06] bg-white p-6 shadow-sm">
-                <p className="font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>EatoBiotics</p>
-                <p className="mt-1 text-sm" style={{ color: "var(--muted-foreground)" }}>The Food System Inside You</p>
-              </div>
-              <ChevronDown size={22} style={{ color: "var(--icon-teal)" }} />
-              <div className="w-full max-w-sm rounded-3xl p-6 text-white shadow-md" style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
-                <p className="font-serif text-xl font-bold">Stability™</p>
-                <p className="mt-1 text-sm text-white/80">The Stability System Inside You</p>
-              </div>
-              <ChevronDown size={22} style={{ color: "var(--icon-teal)" }} />
-              <div className="w-full max-w-sm rounded-3xl border border-black/[0.06] bg-white p-6 shadow-sm">
-                <p className="brand-gradient-text font-serif text-xl font-bold">Biotics Score™</p>
-                <p className="mt-1 text-sm" style={{ color: "var(--muted-foreground)" }}>Your overall Food System health</p>
-              </div>
-            </div>
-            <p className="mx-auto mt-10 max-w-lg text-base leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
-              Stability is one of the foundational systems that contributes to your overall Food
-              System health — before your Food System can thrive, it first needs to become stable.
-            </p>
-          </ScrollReveal>
-        </div>
-      </section>
-
-      {/* ── 6. The Systems of EatoBiotics ───────────────────────────── */}
+      {/* ── 3. THE 4 SYSTEMS OF STABILITY ── */}
       <section className="px-6 py-24 md:py-32">
         <div className="mx-auto max-w-[1200px]">
-          <ScrollReveal className="mx-auto max-w-2xl text-center">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>The Roadmap</p>
-            <h2 className="font-serif text-3xl font-bold text-balance sm:text-4xl lg:text-5xl" style={{ color: "var(--foreground)" }}>The Systems of EatoBiotics</h2>
-            <p className="mt-5 text-lg leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
-              Stability is the first system. More are on the way.
+          <ScrollReveal className="max-w-2xl">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-icon-teal">The Framework</p>
+            <h2 className="font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
+              The 4 Systems{" "}
+              <span className="brand-gradient-text">of Stability</span>
+            </h2>
+            <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+              Four systems that shape how predictable, comfortable, and confident your Food System feels
+              day to day — Food, Rhythm, Comfort, and Confidence.
             </p>
           </ScrollReveal>
-          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {SYSTEMS.map((s, i) => {
-              const live = s.status === "live"
+
+          <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {SYSTEMS.map((sys, index) => {
+              const Icon = sys.icon
+              const bgGradient = `linear-gradient(160deg, color-mix(in srgb, ${sys.accent} 10%, transparent), transparent 60%)`
               return (
-                <ScrollReveal key={s.name} delay={i * 70}>
-                  <div className={`group relative h-full overflow-hidden rounded-2xl border bg-background p-6 transition-all ${live ? "hover:shadow-lg" : ""}`}
-                    style={{ borderColor: live ? `color-mix(in srgb, ${s.color} 40%, transparent)` : "var(--border)" }}>
-                    <div className="absolute top-0 left-0 right-0 h-1" style={{ background: live ? `linear-gradient(90deg, ${s.color}, var(--icon-lime))` : "var(--border)" }} />
-                    <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${live ? "text-white" : ""}`}
-                      style={{ background: live ? s.color : "color-mix(in srgb, var(--muted-foreground) 10%, white)", color: live ? "white" : "var(--muted-foreground)" }}>
-                      <s.icon size={22} />
+                <ScrollReveal key={sys.number} delay={index * 80}>
+                  <div
+                    className="relative flex h-full flex-col rounded-3xl p-6 transition-shadow hover:shadow-lg"
+                    style={{ background: bgGradient, border: `1.5px solid color-mix(in srgb, ${sys.accent} 30%, transparent)`, borderLeft: `4px solid ${sys.accent}` }}
+                  >
+                    <p className="mb-4 text-xs font-bold uppercase tracking-widest" style={{ color: sys.accent }}>{sys.number}</p>
+                    <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `color-mix(in srgb, ${sys.accent} 15%, transparent)` }}>
+                      <Icon size={20} style={{ color: sys.accent }} />
                     </div>
-                    <div className="mt-5 flex items-center gap-2">
-                      <h3 className="font-serif text-lg font-bold" style={{ color: live ? "var(--foreground)" : "var(--muted-foreground)" }}>{s.name}</h3>
-                      <span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white"
-                        style={{ background: live ? `linear-gradient(135deg, ${s.color}, var(--icon-green))` : "color-mix(in srgb, var(--muted-foreground) 22%, white)" }}>
-                        {live ? "Available now" : "Coming soon"}
-                      </span>
-                    </div>
-                    <p className="mt-1.5 text-sm leading-relaxed" style={{ color: "var(--muted-foreground)", opacity: live ? 1 : 0.85 }}>{s.tagline}</p>
-                    {live && (
-                      <Link href="/stability/assessment" className="mt-4 inline-flex items-center gap-1 text-sm font-semibold opacity-70 transition-opacity group-hover:opacity-100" style={{ color: s.color }}>
-                        Start now <ArrowRight size={14} />
-                      </Link>
+                    <h3 className="font-serif text-xl font-semibold text-foreground">{sys.title}</h3>
+                    <p className="mt-1 text-xs font-bold uppercase tracking-widest" style={{ color: sys.accent }}>{sys.label}</p>
+                    <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">{sys.description}</p>
+                    <p className="mt-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">{sys.support}</p>
+                    {index < SYSTEMS.length - 1 && (
+                      <div className="absolute -right-3 top-1/2 hidden -translate-y-1/2 lg:block" style={{ zIndex: 1 }}>
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full text-white" style={{ background: `linear-gradient(135deg, ${sys.gradientFrom}, ${sys.gradientTo})` }}>
+                          <ArrowRight size={12} />
+                        </div>
+                      </div>
                     )}
                   </div>
                 </ScrollReveal>
@@ -248,23 +208,134 @@ export default function StabilityPage() {
         </div>
       </section>
 
-      {/* ── 7. How It Works ─────────────────────────────────────────── */}
-      <section id="how-it-works" className="scroll-mt-24 px-6 py-24 md:py-32" style={{ background: "#f4f8f0" }}>
+      <div className="section-divider" />
+
+      {/* ── 4. ONE FOOD SYSTEM. BUILT WITH STABILITY. ── */}
+      <section className="px-6 py-24 md:py-32">
         <div className="mx-auto max-w-[1200px]">
-          <ScrollReveal className="mx-auto max-w-2xl text-center">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>How It Works</p>
-            <h2 className="font-serif text-3xl font-bold text-balance sm:text-4xl lg:text-5xl" style={{ color: "var(--foreground)" }}>Four steps to a stronger system</h2>
-          </ScrollReveal>
-          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {STEPS.map((s, i) => (
-              <ScrollReveal key={s.title} delay={i * 70}>
-                <div className="relative h-full rounded-3xl border border-black/[0.05] bg-white p-6 shadow-[0_10px_40px_-16px_rgba(26,46,18,0.16)]">
-                  <div className="flex items-center justify-between">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl font-serif text-base font-bold text-white shadow-sm" style={{ background: STEP_GRADS[i] }}>{i + 1}</span>
-                    <s.icon size={20} style={{ color: "var(--icon-teal)" }} />
+          <div className="flex flex-col gap-16 lg:flex-row lg:items-center lg:gap-20">
+            <div className="lg:w-[420px] lg:shrink-0">
+              <ScrollReveal>
+                <p className="text-xs font-semibold uppercase tracking-widest text-icon-teal">The Framework</p>
+                <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
+                  One Food System.{" "}
+                  <span className="brand-gradient-text">Built with Stability.</span>
+                </h2>
+                <p className="mt-6 text-base leading-relaxed text-muted-foreground">
+                  Stability is not one habit. It is the result of how Food, Rhythm, Comfort, and Confidence
+                  work together inside your Food System.
+                </p>
+                <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+                  Together, the four systems shape your Stability Score™ — which contributes to your overall
+                  Biotics Score™, the core score of EatoBiotics.
+                </p>
+              </ScrollReveal>
+              <ScrollReveal delay={150}>
+                <Link href="/stability/assessment" className="mt-8 inline-flex items-center gap-2 rounded-full border-2 border-icon-teal px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-icon-teal hover:text-white">
+                  Take the assessment <ArrowUpRight size={14} />
+                </Link>
+              </ScrollReveal>
+            </div>
+            <div className="flex-1">
+              <ScrollReveal delay={100}><StabilityFramework /></ScrollReveal>
+              <ScrollReveal delay={200}>
+                <p className="mt-4 text-center text-xs text-muted-foreground">
+                  A connected system where each part supports the next — measured as one Stability Score™.
+                </p>
+              </ScrollReveal>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="section-divider" />
+
+      {/* ── 5. WHY STABILITY MATTERS ── */}
+      <section className="bg-secondary/40 px-6 py-24 md:py-32">
+        <div className="mx-auto max-w-[1200px]">
+          <div className="grid gap-16 lg:grid-cols-2 lg:items-start lg:gap-24">
+            <ScrollReveal>
+              <p className="text-xs font-bold uppercase tracking-widest text-icon-teal">Why Stability</p>
+              <h2 className="mt-4 text-pretty font-serif text-3xl font-semibold text-foreground sm:text-4xl md:text-5xl">
+                Most gut health tools were not built for real life.
+              </h2>
+              <p className="mt-6 text-base leading-relaxed text-muted-foreground">
+                Many people are told to eat better, take fibre, avoid triggers, or try probiotics — but
+                they are rarely given a way to understand what actually makes their Food System more stable.
+              </p>
+              <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+                Stability™ helps connect daily patterns to real-life outcomes, so progress feels visible,
+                understandable, and within reach.
+              </p>
+              <blockquote className="mt-8 border-l-2 pl-6 font-serif text-xl font-medium italic text-foreground" style={{ borderColor: "var(--icon-teal)" }}>
+                &ldquo;Stability is built, not guessed.&rdquo;
+              </blockquote>
+            </ScrollReveal>
+
+            <ScrollReveal delay={150}>
+              <div className="space-y-5">
+                {CONTRASTS.map((item, i) => (
+                  <div key={i} className="flex gap-5 rounded-2xl border border-border bg-background p-6">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ background: `color-mix(in srgb, ${item.accent} 15%, transparent)` }}>
+                      <item.icon size={20} style={{ color: item.accent }} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground line-through decoration-muted-foreground/40">{item.old}</p>
+                      <p className="mt-1 flex items-center gap-2 font-semibold text-foreground">
+                        <ArrowRight size={15} style={{ color: item.accent }} /> {item.neu}
+                      </p>
+                    </div>
                   </div>
-                  <h3 className="mt-5 font-serif text-lg font-bold" style={{ color: "var(--foreground)" }}>{s.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{s.body}</p>
+                ))}
+              </div>
+            </ScrollReveal>
+          </div>
+        </div>
+      </section>
+
+      <div className="section-divider" />
+
+      {/* ── 6. DIFFERENT LIVES. DIFFERENT PATTERNS. ── */}
+      <section className="px-6 py-24 md:py-32">
+        <div className="mx-auto max-w-[1200px]">
+          <ScrollReveal>
+            <p className="text-xs font-bold uppercase tracking-widest text-icon-teal">Applied to Life</p>
+            <h2 className="mt-4 text-pretty font-serif text-4xl font-semibold text-foreground sm:text-5xl md:text-6xl">
+              Different lives.
+              <br />
+              <span className="brand-gradient-text">Different patterns.</span>
+              <br />
+              One Stability System.
+            </h2>
+            <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
+              Stability looks different for everyone. The system adapts to the realities of daily life —
+              wherever you are and whatever the day asks of you.
+            </p>
+          </ScrollReveal>
+
+          <div className="mt-16 grid gap-6 sm:grid-cols-2">
+            {SCENARIOS.map((sc, index) => (
+              <ScrollReveal key={sc.title} delay={index * 100}>
+                <div className="relative overflow-hidden rounded-2xl border border-border bg-background p-7">
+                  <div className="absolute top-0 left-0 right-0 h-1" style={{ background: sc.gradient }} />
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl" style={{ background: `color-mix(in srgb, ${sc.accent} 15%, transparent)` }}>
+                      <sc.icon size={22} style={{ color: sc.accent }} />
+                    </div>
+                    <div>
+                      <h3 className="font-serif text-xl font-semibold text-foreground">{sc.title}</h3>
+                      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: sc.accent }}>{sc.subtitle}</p>
+                    </div>
+                  </div>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {sc.systems.map((s) => {
+                      const sys = SYSTEMS.find((x) => x.title === s)
+                      return (
+                        <span key={s} className="rounded-full px-3 py-1 text-xs font-semibold text-white" style={{ background: `linear-gradient(135deg, ${sys?.gradientFrom}, ${sys?.gradientTo})` }}>{s}</span>
+                      )
+                    })}
+                  </div>
+                  <p className="mt-5 text-sm leading-relaxed text-muted-foreground">{sc.description}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -272,34 +343,238 @@ export default function StabilityPage() {
         </div>
       </section>
 
-      {/* ── 8. Final CTA ────────────────────────────────────────────── */}
-      <section className="px-6 py-16 md:py-20">
-        <div className="relative mx-auto max-w-[1100px] overflow-hidden rounded-[2.5rem] px-6 py-20 text-center md:py-24" style={{ background: "linear-gradient(135deg, #14250F 0%, #1A2E12 45%, #243611 100%)" }}>
-          <div aria-hidden className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full opacity-40 blur-3xl" style={{ background: "radial-gradient(circle, var(--icon-green), transparent 70%)" }} />
-          <div aria-hidden className="pointer-events-none absolute -bottom-24 -right-16 h-72 w-72 rounded-full opacity-30 blur-3xl" style={{ background: "radial-gradient(circle, var(--icon-yellow), transparent 70%)" }} />
-          <div className="absolute inset-x-0 top-0 h-1.5" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
-          <div className="relative z-10">
-            <ScrollReveal>
-              <h2 className="mx-auto max-w-xl font-serif text-3xl font-semibold leading-tight text-white sm:text-4xl text-balance">Build Your Stability System</h2>
-              <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-white/70">
-                Take the Stability Assessment and begin building a more predictable, comfortable,
-                and confident Food System.
-              </p>
-              <div className="mt-8 flex justify-center">
-                <StabilityCtaButton source="footer_cta" className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-xl shadow-black/30 transition-opacity hover:opacity-90" />
+      <div className="section-divider" />
+
+      {/* ── 7. HOW STABILITY WORKS ── */}
+      <section id="how-it-works" className="scroll-mt-24 bg-secondary/40 px-6 py-24 md:py-32">
+        <div className="mx-auto max-w-[1200px]">
+          <ScrollReveal>
+            <p className="text-xs font-bold uppercase tracking-widest text-icon-teal">The Tool</p>
+            <h2 className="mt-4 text-pretty font-serif text-4xl font-semibold text-foreground sm:text-5xl md:text-6xl">
+              How Stability™
+              <br />
+              <span className="brand-gradient-text">works</span>
+            </h2>
+            <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
+              A simple, repeatable loop that turns your daily patterns into a clear Stability Score™ — and
+              a plan to improve it.
+            </p>
+          </ScrollReveal>
+
+          {/* 4-step flow */}
+          <div className="mt-14">
+            <ScrollReveal delay={100}>
+              <div className="grid gap-8 sm:grid-cols-4 sm:gap-0">
+                {FLOW.map((item, i) => (
+                  <div key={item.step} className="flex items-start gap-3 sm:flex-col sm:gap-2">
+                    <div className="flex items-center gap-3 sm:w-full">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white" style={{ background: STABILITY_GRADIENT }}>{item.step}</div>
+                      {i < FLOW.length - 1 && (
+                        <div className="hidden h-px flex-1 sm:block" style={{ background: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))", opacity: 0.3 }} />
+                      )}
+                    </div>
+                    <div className="pt-0.5 sm:pt-3">
+                      <item.icon size={20} style={{ color: "var(--icon-teal)" }} />
+                      <p className="mt-2 text-sm font-semibold text-foreground">{item.label}</p>
+                      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{item.detail}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </ScrollReveal>
+          </div>
+
+          {/* Mock tracker card */}
+          <ScrollReveal delay={200}>
+            <div className="mt-14 overflow-hidden rounded-3xl border border-border bg-background shadow-lg">
+              <div className="flex items-center justify-between px-7 py-5" style={{ background: "color-mix(in srgb, var(--icon-teal) 6%, var(--background))" }}>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: STABILITY_GRADIENT }}>
+                    <ClipboardList size={16} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Stability Tracker</p>
+                    <p className="text-xs text-muted-foreground">Your 4 Systems · this week</p>
+                  </div>
+                </div>
+                <span className="rounded-full px-3 py-1 text-xs font-bold text-white" style={{ background: STABILITY_GRADIENT }}>Example</span>
+              </div>
+              <div className="px-7 pb-7 pt-6">
+                <div className="space-y-5">
+                  {MOCK_SCORES.map((item) => (
+                    <div key={item.system}>
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-sm font-semibold text-foreground">{item.system}</span>
+                        <span className="text-sm font-bold" style={{ color: item.accent }}>{item.score}/100</span>
+                      </div>
+                      <div className="h-2.5 overflow-hidden rounded-full bg-secondary">
+                        <div className="h-full rounded-full" style={{ width: `${item.score}%`, background: item.gradient }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-7 flex items-start gap-4 rounded-2xl p-5" style={{ background: "color-mix(in srgb, var(--icon-teal) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--icon-teal) 25%, transparent)" }}>
+                  <Sparkles size={18} style={{ color: "var(--icon-teal)", flexShrink: 0, marginTop: 2 }} />
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Steady your Comfort system</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Comfort is your priority gap this week. A more consistent evening meal time and a little
+                      more soluble fibre could meaningfully steady how settled your days feel.
+                    </p>
+                  </div>
+                </div>
+                <p className="mt-5 text-center text-xs text-muted-foreground/60">A conceptual preview of the Stability tracker — for education and self-tracking, not diagnosis.</p>
+              </div>
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      <div className="section-divider" />
+
+      {/* ── 8. YOUR STABILITY SCORE™ ── */}
+      <section className="px-6 py-24 md:py-32">
+        <div className="mx-auto max-w-[1100px]">
+          <ScrollReveal className="mx-auto max-w-2xl text-center">
+            <p className="text-xs font-bold uppercase tracking-widest text-icon-teal">The Score</p>
+            <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">Your Stability Score™</h2>
+            <p className="mt-6 text-base leading-relaxed text-muted-foreground">
+              A single score designed to measure how reliably your Food System performs day to day.
+            </p>
+            <p className="mt-3 font-semibold text-foreground">Your Stability Score™ contributes to your overall Biotics Score™.</p>
+          </ScrollReveal>
+          <div className="mt-16">
+            <StabilityScoreShowcase />
           </div>
         </div>
       </section>
 
-      {/* ── Compliance (de-emphasized) ──────────────────────────────── */}
+      <div className="section-divider" />
+
+      {/* ── 9. EATOBIOTICS FOUNDATION (dark) ── */}
+      <section className="bg-foreground px-6 py-24 md:py-32">
+        <div className="mx-auto max-w-[1200px]">
+          <ScrollReveal>
+            <p className="text-xs font-bold uppercase tracking-widest text-icon-lime">The Food System Inside You</p>
+            <h2 className="mt-4 text-pretty font-serif text-4xl font-semibold text-background sm:text-5xl md:text-6xl">
+              EatoBiotics.
+              <br />
+              <span className="brand-gradient-text">The foundation Stability™ is built on.</span>
+            </h2>
+            <p className="mt-6 max-w-2xl text-base leading-relaxed text-background/70">
+              Stability™ is part of EatoBiotics — The Food System Inside You. It helps measure how reliably
+              your Food System performs, and contributes to your overall Biotics Score™.
+            </p>
+          </ScrollReveal>
+          <ScrollReveal delay={150}>
+            <Link href="/" className="mt-8 inline-flex items-center gap-2 rounded-full border-2 border-icon-lime px-6 py-3 text-sm font-semibold text-background transition-colors hover:bg-icon-lime hover:text-foreground">
+              Explore EatoBiotics <ArrowUpRight size={14} />
+            </Link>
+          </ScrollReveal>
+
+          <div className="mt-16 grid gap-6 sm:grid-cols-3">
+            {FOUNDATION.map((card, index) => (
+              <ScrollReveal key={card.title} delay={index * 100}>
+                <div className="relative flex flex-col overflow-hidden rounded-2xl p-7" style={{ background: `color-mix(in srgb, ${card.accent} 8%, var(--foreground))`, border: `1px solid color-mix(in srgb, ${card.accent} 25%, transparent)` }}>
+                  <div className="absolute top-0 left-0 right-0 h-1" style={{ background: card.gradient }} />
+                  <span className="font-serif text-4xl font-semibold" style={{ color: card.accent }}>{card.number}</span>
+                  <h3 className="mt-4 font-serif text-xl font-semibold text-background">{card.title}</h3>
+                  <p className="mt-3 flex-1 text-sm leading-relaxed text-background/70">{card.body}</p>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+          <ScrollReveal delay={200}>
+            <p className="mt-10 text-center text-sm text-background/50">Stability is the first system within EatoBiotics — the foundation everything else is built on.</p>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      <div className="section-divider" />
+
+      {/* ── 10. THE SYSTEMS OF EATOBIOTICS ── */}
+      <section className="bg-secondary/40 px-6 py-24 md:py-32">
+        <div className="mx-auto max-w-[1200px]">
+          <ScrollReveal>
+            <p className="text-xs font-bold uppercase tracking-widest text-icon-teal">The Roadmap</p>
+            <h2 className="mt-4 text-pretty font-serif text-4xl font-semibold text-foreground sm:text-5xl md:text-6xl">
+              The Systems
+              <br />
+              <span className="brand-gradient-text">of EatoBiotics</span>
+            </h2>
+            <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
+              Stability is the first system. More are on the way — each one a new way to understand the Food
+              System inside you.
+            </p>
+          </ScrollReveal>
+
+          <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {EB_SYSTEMS.map((sys, index) => (
+              <ScrollReveal key={sys.number} delay={index * 100}>
+                <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-background p-6 transition-all hover:shadow-lg">
+                  <div className="absolute top-0 left-0 right-0 h-1" style={{ background: sys.live ? sys.gradient : "var(--border)" }} />
+                  <div className="flex items-start justify-between">
+                    <span className="font-serif text-5xl font-bold" style={{ color: sys.live ? sys.accent : "var(--muted-foreground)" }}>{sys.number}</span>
+                    <span className="mt-1 rounded-full px-2.5 py-1 text-xs font-semibold text-white" style={{ background: sys.live ? sys.gradient : "color-mix(in srgb, var(--muted-foreground) 35%, transparent)" }}>{sys.status}</span>
+                  </div>
+                  <div className="mt-4 flex items-center gap-2">
+                    <sys.icon size={18} style={{ color: sys.live ? sys.accent : "var(--muted-foreground)" }} />
+                    <h3 className="font-serif text-xl font-semibold" style={{ color: sys.live ? "var(--foreground)" : "var(--muted-foreground)" }}>{sys.name}</h3>
+                  </div>
+                  <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">{sys.tagline}</p>
+                  {sys.live ? (
+                    <Link href="/stability/assessment" className="mt-5 flex items-center gap-1 text-sm font-semibold opacity-70 transition-opacity group-hover:opacity-100" style={{ color: sys.accent }}>
+                      Start now <ArrowUpRight size={14} />
+                    </Link>
+                  ) : (
+                    <span className="mt-5 text-sm font-semibold text-muted-foreground/50">In development</span>
+                  )}
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="section-divider" />
+
+      {/* ── 11. FINAL CTA ── */}
+      <section className="px-6 py-24 md:py-32">
+        <div className="mx-auto max-w-[900px]">
+          <div className="overflow-hidden rounded-3xl border border-border bg-background">
+            <div className="h-1.5 w-full brand-gradient" />
+            <div className="p-10 md:p-16 text-center">
+              <ScrollReveal>
+                <p className="text-xs font-bold uppercase tracking-widest text-icon-teal">EatoBiotics Stability™</p>
+                <h2 className="mt-4 text-balance font-serif text-4xl font-semibold text-foreground sm:text-5xl">
+                  Build your <span className="brand-gradient-text">Stability System</span>
+                </h2>
+                <p className="mx-auto mt-6 max-w-lg text-base leading-relaxed text-muted-foreground">
+                  Take the Stability Assessment and begin building a more predictable, comfortable, and
+                  confident Food System.
+                </p>
+              </ScrollReveal>
+              <ScrollReveal delay={150}>
+                <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+                  <StabilityCtaButton source="footer_cta" />
+                  <Link href="/stability/tracker" className="inline-flex items-center gap-2 rounded-full border border-border px-8 py-4 text-base font-semibold text-foreground transition-all hover:border-icon-teal hover:text-icon-teal">
+                    Track Today&apos;s Gut Stability
+                  </Link>
+                </div>
+                <p className="mt-4 text-sm text-muted-foreground">Free to start. No card needed. Takes about 3 minutes.</p>
+              </ScrollReveal>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Compliance (clean, de-emphasized) ── */}
       <section className="px-6 pb-12">
         <div className="mx-auto max-w-3xl">
           <ScrollReveal><RedFlagWarning compact /></ScrollReveal>
         </div>
       </section>
       <MedicalDisclaimer />
-    </main>
+    </>
   )
 }

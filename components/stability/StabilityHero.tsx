@@ -78,8 +78,8 @@ export function StabilityHero() {
             <div className="mt-8 flex items-center gap-6">
               {[
                 { num: "Free", label: "To start" },
-                { num: "3 min", label: "Takes about" },
-                { num: "Personalised", label: "Your insights" },
+                { num: "3 min", label: "Assessment" },
+                { num: "Personalised", label: "Stability plan" },
               ].map((s, i) => (
                 <div key={s.label} className="flex items-center gap-5">
                   {i > 0 && <div className="h-5 w-px bg-border" />}
