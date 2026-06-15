@@ -14,6 +14,7 @@ type ChangeFreq = MetadataRoute.Sitemap[number]["changeFrequency"]
 /** Curated public, indexable pages with crawl priority. */
 const STATIC_PATHS: Array<{ path: string; priority: number; changeFrequency: ChangeFreq }> = [
   { path: "",                   priority: 1.0, changeFrequency: "weekly"  },
+  { path: "/you",               priority: 0.8, changeFrequency: "monthly" },
   { path: "/assessment",        priority: 0.9, changeFrequency: "monthly" },
   { path: "/pricing",           priority: 0.9, changeFrequency: "monthly" },
   { path: "/book",              priority: 0.8, changeFrequency: "weekly"  },

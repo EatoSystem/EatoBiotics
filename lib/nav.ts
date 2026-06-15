@@ -1,6 +1,6 @@
 import type { ComponentType } from "react"
 import {
-  Leaf,
+  User,
   Compass,
   Activity,
   Dumbbell,
@@ -46,12 +46,12 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Programs",
     items: [
-      { href: "/biotics",    label: "Gut Health",      description: "The 3-part Biotics framework",                icon: Leaf },
-      { href: "/stability",  label: "Stability™",      description: "Steadier, more predictable digestion",        icon: Compass },
-      { href: "/eatobetics", label: "Glucose & GLP-1", description: "EatoBetics — steady glucose, protected muscle", icon: Activity },
-      { href: "/eatosports", label: "Sports",          description: "EatoSports — fuel performance from the gut",  icon: Dumbbell },
-      { href: "/mind",       label: "Mind",            description: "The food system inside your mind",            icon: Brain },
-      { href: "/family",     label: "Family",          description: "The food system for the whole household",     icon: Users },
+      { href: "/you",        label: "You",             description: "The Food System Inside You",          icon: User },
+      { href: "/stability",  label: "Stability™",      description: "The Stability System Inside You",      icon: Compass },
+      { href: "/eatobetics", label: "Glucose & GLP-1", description: "The Glucose System Inside You",        icon: Activity },
+      { href: "/family",     label: "Family",          description: "The Food System Inside Your Family",   icon: Users },
+      { href: "/mind",       label: "Mind",            description: "The Food System Inside Your Mind",     icon: Brain },
+      { href: "/eatosports", label: "Sports",          description: "The Performance System Inside You",    icon: Dumbbell },
     ],
   },
   {
