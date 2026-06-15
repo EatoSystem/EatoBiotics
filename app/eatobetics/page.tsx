@@ -3,7 +3,7 @@ import Link from "next/link"
 import {
   Activity, Zap, Clock, ArrowRight, ArrowUpRight, ShieldCheck, Pill,
   Calculator, Salad, LineChart, CalendarCheck, ClipboardCheck, Gauge, FileText,
-  Sparkles, Compass, Dumbbell, Leaf,
+  Sparkles, Compass, Dumbbell, User,
 } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { EbHero } from "@/components/eatobetics/home/hero"
@@ -103,7 +103,7 @@ const FAMILY = [
   { number: "01", name: "EatoBetics", icon: Activity, tagline: "The Glucose System Inside You", status: "You're here", here: true, href: null, accent: "var(--icon-orange)", gradient: EB_GRADIENT },
   { number: "02", name: "Stability™", icon: Compass, tagline: "The Stability System Inside You", status: "Explore", here: false, href: "/stability", accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" },
   { number: "03", name: "EatoSports", icon: Dumbbell, tagline: "The Performance System Inside You", status: "Explore", here: false, href: "/eatosports", accent: "var(--icon-yellow)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" },
-  { number: "04", name: "Gut Health", icon: Leaf, tagline: "The 3-part Biotics framework", status: "Explore", here: false, href: "/biotics", accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" },
+  { number: "04", name: "You", icon: User, tagline: "The Food System Inside You", status: "Explore", here: false, href: "/you", accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" },
 ]
 
 export default function EatoBeticsPage() {
