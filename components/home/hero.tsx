@@ -13,6 +13,11 @@ export function Hero() {
         {/* ── Left: Image ──── */}
         <ScrollReveal delay={60} className="flex-1 flex items-center justify-center w-full max-w-[540px]">
           <div className="relative w-full">
+            <div
+              aria-hidden
+              className="absolute inset-0 -z-10 blur-3xl"
+              style={{ background: "radial-gradient(60% 60% at 50% 48%, rgba(76,182,72,0.20), rgba(45,170,110,0.12) 55%, transparent 78%)" }}
+            />
             <Image
               src="/images/hero-gut.png"
               alt="The food system inside you — gut microbiome illustration"

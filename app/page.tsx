@@ -26,15 +26,13 @@ export const metadata: Metadata = {
     "digestive health", "gut bacteria", "biotics",
   ],
 }
-import { Pathways } from "@/components/home/pathways"
+import { TheProblem } from "@/components/home/the-problem"
 import { TheThreeBiotics } from "@/components/home/the-three-biotics"
 import { HowItWorks } from "@/components/home/how-it-works"
 import { ThePlate } from "@/components/home/the-plate"
 import { ScorePreview } from "@/components/home/score-preview"
+import { Ecosystem } from "@/components/home/ecosystem"
 import { MembershipTeaser } from "@/components/home/membership-teaser"
-import { Testimonials } from "@/components/home/testimonials"
-import { TrustDisclaimer } from "@/components/home/trust-disclaimer"
-import { FAQ } from "@/components/home/faq"
 import { ClosingCta } from "@/components/home/closing-cta"
 import { StickyCta } from "@/components/start/sticky-cta"
 
@@ -58,20 +56,18 @@ export default async function Home() {
     <>
       <Suspense fallback={null}><Hero /></Suspense>
       <div style={{ height: "2px", background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
+      <TheProblem />
+      <div className="section-divider" />
       <HowItWorks />
       <div className="section-divider" />
       <ScorePreview />
       <TheThreeBiotics />
       <ThePlate />
       <div className="section-divider" />
-      <Pathways />
+      <Ecosystem />
       <div className="section-divider" />
       <MembershipTeaser />
       <div className="section-divider" />
-      <Testimonials />
-      <div className="section-divider" />
-      <TrustDisclaimer />
-      <FAQ />
       <ClosingCta />
       <StickyCta />
     </>
