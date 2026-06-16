@@ -27,9 +27,8 @@ export const metadata: Metadata = {
   ],
 }
 import { TheProblem } from "@/components/home/the-problem"
-import { TheThreeBiotics } from "@/components/home/the-three-biotics"
+import { TheFramework } from "@/components/home/the-framework"
 import { HowItWorks } from "@/components/home/how-it-works"
-import { ThePlate } from "@/components/home/the-plate"
 import { ScorePreview } from "@/components/home/score-preview"
 import { Ecosystem } from "@/components/home/ecosystem"
 import { MembershipTeaser } from "@/components/home/membership-teaser"
@@ -60,9 +59,9 @@ export default async function Home() {
       <div className="section-divider" />
       <HowItWorks />
       <div className="section-divider" />
+      <TheFramework />
+      <div className="section-divider" />
       <ScorePreview />
-      <TheThreeBiotics />
-      <ThePlate />
       <div className="section-divider" />
       <Ecosystem />
       <div className="section-divider" />
