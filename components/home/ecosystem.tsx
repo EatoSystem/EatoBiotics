@@ -30,8 +30,9 @@ export function Ecosystem() {
             <span className="brand-gradient-text">Six systems.</span>
           </h2>
           <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
-            The Food System Inside You is the core. Each program applies the same three biotics to a
-            different part of your life — your gut, your glucose, your family, your mind, your sport.
+            Your food system does not work in isolation. EatoBiotics connects digestion, diversity,
+            stability, recovery, longevity, and performance into one clear way to understand and
+            improve your health.
           </p>
         </ScrollReveal>
 

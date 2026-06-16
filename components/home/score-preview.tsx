@@ -1,41 +1,61 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowRight } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { ArrowRight, Sprout } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { ScoreRing } from "@/components/assessment/score-ring"
 
 const EXAMPLE = {
   overall: 62,
-  profile: "Emerging Balance",
+  label: "Good potential",
   pillars: [
     {
-      label: "Prebiotics",
-      score: 71,
-      color: "var(--icon-lime)",
-      gradient: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))",
-      description: "Plant diversity & fibre",
-    },
-    {
-      label: "Probiotics",
-      score: 38,
+      label: "Stability",
+      score: 58,
       color: "var(--icon-teal)",
       gradient: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))",
-      description: "Fermented & live foods",
+      description: "Day-to-day steadiness",
     },
     {
-      label: "Postbiotics",
-      score: 67,
+      label: "Diversity",
+      score: 71,
+      color: "var(--icon-green)",
+      gradient: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))",
+      description: "Plant variety & fibre",
+    },
+    {
+      label: "Recovery",
+      score: 64,
       color: "var(--icon-orange)",
       gradient: "linear-gradient(90deg, var(--icon-yellow), var(--icon-orange))",
       description: "Consistency & rhythm",
     },
   ],
   insight:
-    "Prebiotics and Postbiotics are working well — your gut has a solid fibre base and eating rhythm. The opportunity is Probiotics: adding one fermented food daily could measurably shift your gut diversity within weeks.",
+    "Diversity and Recovery are already working well — a solid fibre base and a steady eating rhythm. Your biggest opportunity is Stability: a few simple daily habits could smooth out your digestion within weeks.",
 }
 
 export function ScorePreview() {
+  const ref = useRef<HTMLDivElement>(null)
+  const [inView, setInView] = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true)
+          observer.disconnect()
+        }
+      },
+      { threshold: 0.3 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <section className="px-6 py-20 md:py-28">
       <div className="mx-auto max-w-[1100px]">
@@ -59,9 +79,18 @@ export function ScorePreview() {
 
         <ScrollReveal delay={80}>
           <div
-            className="relative mx-auto max-w-lg overflow-hidden rounded-3xl border-2 bg-card shadow-2xl"
+            ref={ref}
+            className="relative mx-auto max-w-xl overflow-hidden rounded-[2rem] border-2 bg-card shadow-2xl"
             style={{ borderColor: "color-mix(in srgb, var(--icon-teal) 40%, transparent)" }}
           >
+            {/* Botanical accent */}
+            <Sprout
+              aria-hidden
+              size={150}
+              className="pointer-events-none absolute -right-8 -top-6 opacity-[0.06]"
+              style={{ color: "var(--icon-green)" }}
+            />
+
             {/* Gradient bar */}
             <div
               className="h-1.5 w-full"
@@ -71,7 +100,7 @@ export function ScorePreview() {
               }}
             />
 
-            <div className="px-8 py-8">
+            <div className="relative px-8 py-9 sm:px-10">
               {/* Label + profile badge */}
               <div className="mb-6 flex items-center justify-between">
                 <p
@@ -84,21 +113,21 @@ export function ScorePreview() {
                   className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white"
                   style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-teal))" }}
                 >
-                  {EXAMPLE.profile}
+                  {EXAMPLE.label}
                 </span>
               </div>
 
-              {/* Score ring */}
-              <div className="flex justify-center mb-7">
+              {/* Score ring — counts up when scrolled into view */}
+              <div className="mb-8 flex justify-center">
                 <ScoreRing
-                  score={EXAMPLE.overall}
+                  score={inView ? EXAMPLE.overall : 0}
                   color="var(--icon-green)"
                   gradientId="homepage-score-ring"
-                  profileType={EXAMPLE.profile}
+                  profileType={EXAMPLE.label}
                 />
               </div>
 
-              {/* Three biotic pillar bars */}
+              {/* Sub-score bars — fill when scrolled into view */}
               <div className="mb-6 flex flex-col gap-4">
                 {EXAMPLE.pillars.map(({ label, score, color, gradient, description }) => (
                   <div key={label}>
@@ -109,10 +138,14 @@ export function ScorePreview() {
                       </div>
                       <span className="font-serif text-sm font-bold" style={{ color }}>{score}</span>
                     </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
                       <div
                         className="h-full rounded-full"
-                        style={{ width: `${score}%`, background: gradient }}
+                        style={{
+                          width: inView ? `${score}%` : "0%",
+                          background: gradient,
+                          transition: "width 900ms ease-out",
+                        }}
                       />
                     </div>
                   </div>
@@ -137,10 +170,10 @@ export function ScorePreview() {
               href="/assessment"
               className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
             >
-              Get my EatoBiotics Score <ArrowRight size={16} />
+              Get my gut score free <ArrowRight size={16} />
             </Link>
             <p className="mt-3 text-xs text-muted-foreground">
-              Free to take. No account needed. Takes about 3 minutes.
+              Takes about 3 minutes. No account required.
             </p>
           </div>
         </ScrollReveal>

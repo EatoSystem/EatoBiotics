@@ -14,6 +14,7 @@ const biotics = [
     image: "/prebiotics-1.png",
     description:
       "The fibers and compounds in everyday foods that nourish your beneficial gut bacteria. Think garlic, onions, oats, bananas, and asparagus -- the fuel your microbiome runs on.",
+    stat: "30+ plant foods/week",
   },
   {
     number: "02",
@@ -25,6 +26,7 @@ const biotics = [
     image: "/probiotics-1.png",
     description:
       "Living microorganisms found in fermented foods like yogurt, kimchi, sauerkraut, and kefir. They replenish and diversify the bacterial community in your gut.",
+    stat: "2–3 servings/week",
   },
   {
     number: "03",
@@ -36,6 +38,7 @@ const biotics = [
     image: "/postbiotics-1.png",
     description:
       "The beneficial byproducts your gut bacteria create -- short-chain fatty acids, vitamins, and neurotransmitters. The actual output that makes you feel better every day.",
+    stat: "Better gut resilience",
   },
 ]
 
@@ -138,6 +141,15 @@ export function TheFramework() {
                     <p className="mt-4 flex-1 text-sm leading-relaxed text-muted-foreground">
                       {biotic.description}
                     </p>
+                    <span
+                      className="mt-5 inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-bold"
+                      style={{
+                        background: `color-mix(in srgb, ${biotic.color} 15%, transparent)`,
+                        color: `color-mix(in srgb, ${biotic.color} 78%, var(--foreground))`,
+                      }}
+                    >
+                      {biotic.stat}
+                    </span>
                     <div className="mt-6 flex items-center justify-between">
                       <div
                         className="h-2 w-20 rounded-full"

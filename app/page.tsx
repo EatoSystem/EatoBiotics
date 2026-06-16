@@ -31,6 +31,7 @@ import { TheFramework } from "@/components/home/the-framework"
 import { HowItWorks } from "@/components/home/how-it-works"
 import { ScorePreview } from "@/components/home/score-preview"
 import { Ecosystem } from "@/components/home/ecosystem"
+import { SocialProof } from "@/components/home/social-proof"
 import { MembershipTeaser } from "@/components/home/membership-teaser"
 import { ClosingCta } from "@/components/home/closing-cta"
 import { StickyCta } from "@/components/start/sticky-cta"
@@ -64,6 +65,8 @@ export default async function Home() {
       <ScorePreview />
       <div className="section-divider" />
       <Ecosystem />
+      <div className="section-divider" />
+      <SocialProof />
       <div className="section-divider" />
       <MembershipTeaser />
       <div className="section-divider" />
