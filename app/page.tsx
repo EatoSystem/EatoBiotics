@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     "digestive health", "gut bacteria", "biotics",
   ],
 }
-import { TheProblem } from "@/components/home/the-problem"
+import { TheVibrantYou } from "@/components/home/the-vibrant-you"
 import { TheFramework } from "@/components/home/the-framework"
 import { HowItWorks } from "@/components/home/how-it-works"
 import { ScorePreview } from "@/components/home/score-preview"
@@ -55,7 +55,7 @@ export default async function Home() {
     <>
       <Suspense fallback={null}><Hero /></Suspense>
       <div style={{ height: "2px", background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
-      <TheProblem />
+      <TheVibrantYou />
       <div className="section-divider" />
       <HowItWorks />
       <div className="section-divider" />
