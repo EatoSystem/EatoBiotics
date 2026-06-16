@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     "digestive health", "gut bacteria", "biotics",
   ],
 }
-import { TheVibrantYou } from "@/components/home/the-vibrant-you"
+import { PowersEverything } from "@/components/home/powers-everything"
 import { TheFramework } from "@/components/home/the-framework"
 import { HowItWorks } from "@/components/home/how-it-works"
 import { ScorePreview } from "@/components/home/score-preview"
@@ -56,7 +56,7 @@ export default async function Home() {
     <>
       <Suspense fallback={null}><Hero /></Suspense>
       <SoftDivider />
-      <TheVibrantYou />
+      <PowersEverything />
       <HowItWorks />
       <TheFramework />
       <ScorePreview />
