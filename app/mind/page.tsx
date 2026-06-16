@@ -97,7 +97,7 @@ const PROGRAMS = [
   { number: "01", name: "Mind", icon: Brain, tagline: "The Food System Inside Your Mind", status: "You're here", here: true, href: null, accent: "var(--icon-teal)", gradient: MIND_GRADIENT },
   { number: "02", name: "You", icon: User, tagline: "The Food System Inside You", status: "Explore", here: false, href: "/you", accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" },
   { number: "03", name: "Stability™", icon: Compass, tagline: "The Stability System Inside You", status: "Explore", here: false, href: "/stability", accent: "var(--icon-lime)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" },
-  { number: "04", name: "EatoBetics", icon: Activity, tagline: "The Glucose System Inside You", status: "Explore", here: false, href: "/eatobetics", accent: "var(--icon-orange)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" },
+  { number: "04", name: "EatoBetics", icon: Activity, tagline: "The Glucose System Inside You", status: "Explore", here: false, href: "/glucose", accent: "var(--icon-orange)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" },
 ]
 
 export default function MindPage() {

@@ -253,7 +253,7 @@ export default function EatoSportsPage() {
             <ScrollReveal delay={220}>
               <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
                 <Link
-                  href="/eatosports-assessment"
+                  href="/performance-assessment"
                   className="inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:opacity-90 hover:shadow-xl"
                   style={{ background: SPORTS_GRADIENT, boxShadow: "0 8px 32px color-mix(in srgb, var(--icon-orange) 25%, transparent)" }}
                 >
@@ -343,7 +343,7 @@ export default function EatoSportsPage() {
           <ScrollReveal delay={400}>
             <div className="mt-12 text-center">
               <Link
-                href="/eatosports-assessment"
+                href="/performance-assessment"
                 className="inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:opacity-90 hover:shadow-xl"
                 style={{ background: SPORTS_GRADIENT, boxShadow: "0 8px 32px color-mix(in srgb, var(--icon-orange) 25%, transparent)" }}
               >
@@ -382,7 +382,7 @@ export default function EatoSportsPage() {
               </ScrollReveal>
               <ScrollReveal delay={150}>
                 <Link
-                  href="/eatosports-assessment"
+                  href="/performance-assessment"
                   className="mt-8 inline-flex items-center gap-2 rounded-full border-2 border-icon-orange px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-icon-orange hover:text-white"
                 >
                   Take the assessment

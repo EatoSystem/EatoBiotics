@@ -48,10 +48,10 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/you",        label: "You",             description: "The Food System Inside You",          icon: User },
       { href: "/stability",  label: "Stability™",      description: "The Stability System Inside You",      icon: Compass },
-      { href: "/eatobetics", label: "Glucose & GLP-1", description: "The Glucose System Inside You",        icon: Activity },
+      { href: "/glucose",    label: "Glucose & GLP-1", description: "The Glucose System Inside You",        icon: Activity },
       { href: "/family",     label: "Family",          description: "The Food System Inside Your Family",   icon: Users },
       { href: "/mind",       label: "Mind",            description: "The Food System Inside Your Mind",     icon: Brain },
-      { href: "/eatosports", label: "Sports",          description: "The Performance System Inside You",    icon: Dumbbell },
+      { href: "/performance", label: "Sports",         description: "The Performance System Inside You",    icon: Dumbbell },
     ],
   },
   {

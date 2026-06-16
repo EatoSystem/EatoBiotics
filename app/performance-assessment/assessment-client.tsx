@@ -23,7 +23,7 @@ import { ScoreRing } from "@/components/assessment/score-ring"
    CONSTANTS
 ───────────────────────────────────────────────── */
 const SPORTS_GRADIENT = "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))"
-const LS_KEY = "eatosports-assessment"
+const LS_KEY = "performance-assessment"
 
 /* ─────────────────────────────────────────────────
    SPORTS & LEVELS DATA
@@ -936,7 +936,7 @@ function SportsResults({ state, onReset }: { state: AssessmentState; result?: Sp
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Link
-              href="/eatosports"
+              href="/performance"
               className="inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
               style={{ background: SPORTS_GRADIENT }}
             >

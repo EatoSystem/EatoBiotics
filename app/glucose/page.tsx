@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   },
 }
 
-const ASSESSMENT_HREF = "/eatobetics/assessment"
+const ASSESSMENT_HREF = "/glucose/assessment"
 const EB_GRADIENT = "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))"
 
 /* ── Section 3 — The 3 Systems of EatoBetics (the Score pillars) ─────── */
@@ -71,7 +71,7 @@ const PATHWAYS = [
   {
     label: "GLP-1", title: "Make the most of your medication", icon: Pill,
     accent: "var(--icon-orange)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
-    pillars: ["Stability", "Energy"], href: "/eatobetics/glp1",
+    pillars: ["Stability", "Energy"], href: "/glucose/glp1",
     copy: "On Ozempic, Wegovy, or Mounjaro? Use your appetite window to protect muscle and rebuild your relationship with food — not just eat less.",
     glp1: true,
   },
@@ -102,7 +102,7 @@ const FOUNDATION = [
 const FAMILY = [
   { number: "01", name: "EatoBetics", icon: Activity, tagline: "The Glucose System Inside You", status: "You're here", here: true, href: null, accent: "var(--icon-orange)", gradient: EB_GRADIENT },
   { number: "02", name: "Stability™", icon: Compass, tagline: "The Stability System Inside You", status: "Explore", here: false, href: "/stability", accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" },
-  { number: "03", name: "EatoSports", icon: Dumbbell, tagline: "The Performance System Inside You", status: "Explore", here: false, href: "/eatosports", accent: "var(--icon-yellow)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" },
+  { number: "03", name: "EatoSports", icon: Dumbbell, tagline: "The Performance System Inside You", status: "Explore", here: false, href: "/performance", accent: "var(--icon-yellow)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" },
   { number: "04", name: "You", icon: User, tagline: "The Food System Inside You", status: "Explore", here: false, href: "/you", accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" },
 ]
 
@@ -319,7 +319,7 @@ export default function EatoBeticsPage() {
                   <p className="mt-5 flex-1 text-sm leading-relaxed text-muted-foreground">{p.copy}</p>
                   <div className="mt-6 space-y-3">
                     {p.glp1 && (
-                      <Link href="/eatobetics/glp1" className="inline-flex items-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-75" style={{ color: p.accent }}>
+                      <Link href="/glucose/glp1" className="inline-flex items-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-75" style={{ color: p.accent }}>
                         Explore the GLP-1 Companion <ArrowUpRight size={14} />
                       </Link>
                     )}
@@ -551,7 +551,7 @@ export default function EatoBeticsPage() {
                   <Link href={ASSESSMENT_HREF} className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:opacity-90 hover:shadow-xl">
                     Take the free assessment <ArrowRight size={16} />
                   </Link>
-                  <Link href="/eatobetics/glp1" className="inline-flex items-center gap-2 rounded-full border border-border px-8 py-4 text-base font-semibold text-foreground transition-all hover:border-icon-orange hover:text-icon-orange">
+                  <Link href="/glucose/glp1" className="inline-flex items-center gap-2 rounded-full border border-border px-8 py-4 text-base font-semibold text-foreground transition-all hover:border-icon-orange hover:text-icon-orange">
                     Explore the GLP-1 Companion
                   </Link>
                 </div>

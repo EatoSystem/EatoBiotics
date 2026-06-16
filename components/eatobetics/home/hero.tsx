@@ -5,7 +5,7 @@ import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 
-const ASSESSMENT_HREF = "/eatobetics/assessment"
+const ASSESSMENT_HREF = "/glucose/assessment"
 
 export function EbHero() {
   return (

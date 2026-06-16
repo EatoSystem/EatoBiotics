@@ -190,7 +190,7 @@ export function Glp1Check() {
 
           <div className="border-t border-black/[0.06] p-7 sm:p-9">
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Link href="/eatobetics/assessment" className="brand-gradient inline-flex flex-1 items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition-opacity hover:opacity-90">
+              <Link href="/glucose/assessment" className="brand-gradient inline-flex flex-1 items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition-opacity hover:opacity-90">
                 Take the full assessment <ArrowRight size={15} />
               </Link>
               <Link href="/account/glp1" className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border px-6 py-3.5 text-sm font-semibold transition-colors hover:bg-black/[0.03]" style={{ borderColor: "var(--border)", color: "var(--foreground)" }}>
