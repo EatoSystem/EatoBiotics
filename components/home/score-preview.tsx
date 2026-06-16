@@ -78,9 +78,15 @@ export function ScorePreview() {
         </ScrollReveal>
 
         <ScrollReveal delay={80}>
+          <div ref={ref} className="relative mx-auto max-w-2xl">
+            {/* Subtle green glow around the card */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -inset-6 -z-10 rounded-[2.5rem] opacity-70 blur-3xl"
+              style={{ background: "radial-gradient(60% 60% at 50% 45%, color-mix(in srgb, var(--icon-green) 28%, transparent), transparent 75%)" }}
+            />
           <div
-            ref={ref}
-            className="relative mx-auto max-w-xl overflow-hidden rounded-[2rem] border-2 bg-card shadow-2xl"
+            className="relative overflow-hidden rounded-[2rem] border-2 bg-card shadow-[0_40px_80px_-32px_rgba(20,37,15,0.45)]"
             style={{ borderColor: "color-mix(in srgb, var(--icon-teal) 40%, transparent)" }}
           >
             {/* Botanical accent */}
@@ -100,9 +106,9 @@ export function ScorePreview() {
               }}
             />
 
-            <div className="relative px-8 py-9 sm:px-10">
+            <div className="relative px-9 py-11 sm:px-12">
               {/* Label + profile badge */}
-              <div className="mb-6 flex items-center justify-between">
+              <div className="mb-7 flex items-center justify-between">
                 <p
                   className="text-xs font-bold uppercase tracking-widest"
                   style={{ color: "var(--icon-teal)" }}
@@ -118,27 +124,28 @@ export function ScorePreview() {
               </div>
 
               {/* Score ring — counts up when scrolled into view */}
-              <div className="mb-8 flex justify-center">
+              <div className="mb-9 flex justify-center">
                 <ScoreRing
                   score={inView ? EXAMPLE.overall : 0}
                   color="var(--icon-green)"
                   gradientId="homepage-score-ring"
                   profileType={EXAMPLE.label}
+                  className="relative mx-auto h-64 w-64 sm:h-72 sm:w-72"
                 />
               </div>
 
               {/* Sub-score bars — fill when scrolled into view */}
-              <div className="mb-6 flex flex-col gap-4">
+              <div className="mb-7 flex flex-col gap-5">
                 {EXAMPLE.pillars.map(({ label, score, color, gradient, description }) => (
                   <div key={label}>
-                    <div className="mb-1.5 flex items-center justify-between">
+                    <div className="mb-2 flex items-center justify-between">
                       <div>
-                        <span className="text-sm font-semibold text-foreground">{label}</span>
-                        <span className="ml-2 text-xs text-muted-foreground">{description}</span>
+                        <span className="text-base font-semibold text-foreground">{label}</span>
+                        <span className="ml-2 text-sm text-muted-foreground">{description}</span>
                       </div>
-                      <span className="font-serif text-sm font-bold" style={{ color }}>{score}</span>
+                      <span className="font-serif text-base font-bold" style={{ color }}>{score}</span>
                     </div>
-                    <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+                    <div className="h-3 w-full overflow-hidden rounded-full bg-muted">
                       <div
                         className="h-full rounded-full"
                         style={{
@@ -154,7 +161,7 @@ export function ScorePreview() {
 
               {/* Insight */}
               <div
-                className="rounded-2xl px-4 py-3 text-sm text-muted-foreground leading-relaxed"
+                className="rounded-2xl px-5 py-4 text-base text-muted-foreground leading-relaxed"
                 style={{ background: "color-mix(in srgb, var(--muted) 60%, transparent)" }}
               >
                 <span className="font-semibold text-foreground">What this means: </span>
@@ -162,17 +169,18 @@ export function ScorePreview() {
               </div>
             </div>
           </div>
+          </div>
         </ScrollReveal>
 
         <ScrollReveal delay={180}>
           <div className="mt-10 text-center">
             <Link
               href="/assessment"
-              className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
+              className="brand-gradient inline-flex items-center gap-2.5 rounded-full px-10 py-5 text-lg font-semibold text-white shadow-xl shadow-icon-green/25 transition-all hover:shadow-2xl hover:shadow-icon-green/35 hover:opacity-90"
             >
-              Get my gut score free <ArrowRight size={16} />
+              Get my gut score free <ArrowRight size={18} />
             </Link>
-            <p className="mt-3 text-xs text-muted-foreground">
+            <p className="mt-3.5 text-sm text-muted-foreground">
               Takes about 3 minutes. No account required.
             </p>
           </div>

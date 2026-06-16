@@ -43,28 +43,37 @@ export function TheVibrantYou() {
           </div>
         </ScrollReveal>
 
-        <div className="mt-14 grid gap-6 md:grid-cols-3">
+        <div className="mt-16 grid gap-7 md:grid-cols-3">
           {outcomes.map((o, index) => (
             <ScrollReveal key={o.label} delay={index * 100}>
-              <div className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-card p-8 transition-all hover:-translate-y-1 hover:shadow-xl">
+              <div
+                className="group relative flex h-full min-h-[340px] flex-col overflow-hidden rounded-[1.75rem] border border-border p-9 shadow-lg transition-all hover:-translate-y-1.5 hover:shadow-2xl"
+                style={{ background: `linear-gradient(165deg, color-mix(in srgb, ${o.accent} 9%, var(--card)) 0%, var(--card) 55%)` }}
+              >
                 <div
                   aria-hidden
-                  className="absolute top-0 left-0 right-0 h-1.5"
+                  className="absolute top-0 left-0 right-0 h-2"
                   style={{ background: `linear-gradient(90deg, ${o.accent}, color-mix(in srgb, ${o.accent} 40%, transparent))` }}
                 />
+                {/* soft accent glow */}
                 <div
-                  className="flex h-14 w-14 items-center justify-center rounded-2xl"
-                  style={{ background: `color-mix(in srgb, ${o.accent} 14%, transparent)` }}
+                  aria-hidden
+                  className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full opacity-50 blur-2xl transition-opacity duration-300 group-hover:opacity-80"
+                  style={{ background: `radial-gradient(circle, color-mix(in srgb, ${o.accent} 30%, transparent), transparent 70%)` }}
+                />
+                <div
+                  className="relative flex h-16 w-16 items-center justify-center rounded-2xl shadow-sm"
+                  style={{ background: `color-mix(in srgb, ${o.accent} 16%, transparent)` }}
                 >
-                  <o.icon size={26} style={{ color: o.accent }} />
+                  <o.icon size={30} style={{ color: o.accent }} />
                 </div>
-                <h3 className="mt-6 font-serif text-2xl font-semibold text-foreground">{o.label}</h3>
-                <p className="mt-2 flex-1 text-base leading-relaxed text-muted-foreground">{o.line}</p>
+                <h3 className="relative mt-7 font-serif text-2xl font-semibold text-foreground">{o.label}</h3>
+                <p className="relative mt-3 flex-1 text-base leading-relaxed text-muted-foreground">{o.line}</p>
                 <span
-                  className="mt-6 inline-flex w-fit items-center rounded-full px-3.5 py-1.5 text-sm font-bold"
+                  className="relative mt-7 inline-flex w-fit items-center rounded-full px-4 py-2 text-base font-bold shadow-sm"
                   style={{
-                    background: `color-mix(in srgb, ${o.accent} 16%, transparent)`,
-                    color: `color-mix(in srgb, ${o.accent} 75%, var(--foreground))`,
+                    background: `color-mix(in srgb, ${o.accent} 18%, transparent)`,
+                    color: `color-mix(in srgb, ${o.accent} 78%, var(--foreground))`,
                   }}
                 >
                   {o.stat}
@@ -73,15 +82,6 @@ export function TheVibrantYou() {
             </ScrollReveal>
           ))}
         </div>
-
-        {/* Gradient unifier strip */}
-        <ScrollReveal delay={360}>
-          <div className="brand-gradient mt-6 flex items-center justify-center rounded-2xl px-6 py-4 text-center shadow-md">
-            <p className="font-serif text-base font-semibold text-white sm:text-lg">
-              One thriving food system powers them all.
-            </p>
-          </div>
-        </ScrollReveal>
       </div>
     </section>
   )

@@ -57,25 +57,25 @@ export function HowItWorks() {
           {STEPS.map((step, i) => (
             <ScrollReveal key={step.number} delay={i * 80}>
               <div
-                className="relative flex h-full flex-col rounded-3xl p-7 transition-shadow hover:shadow-lg"
+                className="relative flex h-full min-h-[280px] flex-col rounded-3xl p-8 transition-shadow hover:shadow-lg"
                 style={{
                   background: step.bgGradient,
                   border: `1.5px solid color-mix(in srgb, ${step.color} 30%, transparent)`,
                   borderLeft: `4px solid ${step.color}`,
                 }}
               >
-                {/* Large step number */}
+                {/* Display-scale step number */}
                 <span
-                  className="font-serif text-6xl font-bold leading-none md:text-7xl"
+                  className="font-serif text-7xl font-bold leading-none md:text-8xl"
                   style={{ color: step.color }}
                 >
                   {step.number}
                 </span>
 
-                <h3 className="mt-6 font-serif text-2xl font-semibold text-foreground">
+                <h3 className="mt-9 font-serif text-2xl font-semibold text-foreground">
                   {step.title}
                 </h3>
-                <p className="mt-2 text-base leading-relaxed text-muted-foreground">
+                <p className="mt-3 text-base leading-relaxed text-muted-foreground">
                   {step.line}
                 </p>
 

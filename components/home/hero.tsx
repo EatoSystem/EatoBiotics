@@ -7,11 +7,11 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 
 export function Hero() {
   return (
-    <section className="relative min-h-screen overflow-hidden px-6 pt-20 pb-16 md:pb-20">
-      <div className="relative z-10 mx-auto flex max-w-[1200px] min-h-[calc(100vh-160px)] flex-col items-center justify-center gap-12 md:flex-row md:gap-16 lg:gap-20">
+    <section className="relative min-h-screen overflow-hidden px-6 pt-24 pb-20 md:pt-28 md:pb-28">
+      <div className="relative z-10 mx-auto flex max-w-[1280px] min-h-[calc(100vh-140px)] flex-col items-center justify-center gap-12 md:flex-row md:gap-16 lg:gap-24">
 
         {/* ── Left: Image ──── */}
-        <ScrollReveal delay={60} className="flex-1 flex items-center justify-center w-full max-w-[540px]">
+        <ScrollReveal delay={60} className="flex-1 flex items-center justify-center w-full max-w-[660px]">
           <div className="relative w-full">
             <div
               aria-hidden
@@ -30,10 +30,10 @@ export function Hero() {
         </ScrollReveal>
 
         {/* ── Right: Text ── */}
-        <div className="flex-1 text-left max-w-[560px]">
+        <div className="flex-1 text-left max-w-[600px]">
           <ScrollReveal>
             <h1
-              className="font-serif text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl text-balance"
+              className="font-serif text-5xl font-bold leading-[1.05] sm:text-6xl lg:text-7xl text-balance"
             >
               <span style={{ color: "var(--icon-green)" }}>The Food System</span>{" "}
               <span
@@ -59,11 +59,11 @@ export function Hero() {
             <div className="mt-8">
               <Link
                 href="/assessment"
-                className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
+                className="brand-gradient inline-flex items-center gap-2.5 rounded-full px-10 py-5 text-lg font-semibold text-white shadow-xl shadow-icon-green/25 transition-all hover:shadow-2xl hover:shadow-icon-green/35 hover:opacity-90"
               >
-                Get my gut score free <ArrowRight size={16} />
+                Get my gut score free <ArrowRight size={18} />
               </Link>
-              <p className="mt-3 text-xs text-muted-foreground">
+              <p className="mt-3.5 text-sm text-muted-foreground">
                 Takes about 3 minutes. No account required.
               </p>
             </div>

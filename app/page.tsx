@@ -55,23 +55,28 @@ export default async function Home() {
   return (
     <>
       <Suspense fallback={null}><Hero /></Suspense>
-      <div style={{ height: "2px", background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
+      <SoftDivider />
       <TheVibrantYou />
-      <div className="section-divider" />
       <HowItWorks />
-      <div className="section-divider" />
       <TheFramework />
-      <div className="section-divider" />
       <ScorePreview />
-      <div className="section-divider" />
+      <SoftDivider />
       <Ecosystem />
-      <div className="section-divider" />
       <SocialProof />
-      <div className="section-divider" />
+      <SoftDivider />
       <MembershipTeaser />
-      <div className="section-divider" />
       <ClosingCta />
       <StickyCta />
     </>
+  )
+}
+
+function SoftDivider() {
+  return (
+    <div
+      aria-hidden
+      className="mx-auto h-px w-full max-w-[1100px]"
+      style={{ background: "linear-gradient(90deg, transparent, color-mix(in srgb, var(--icon-green) 18%, transparent), transparent)" }}
+    />
   )
 }

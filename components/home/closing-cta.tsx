@@ -4,7 +4,7 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 
 export function ClosingCta() {
   return (
-    <section className="px-6 py-8">
+    <section className="px-6 pt-20 pb-16 md:pt-24 md:pb-20">
       <div
         className="relative mx-auto max-w-[1200px] overflow-hidden rounded-[2.5rem] px-6 py-20 text-center md:py-28"
         style={{ background: "linear-gradient(135deg, #14250F 0%, #1A2E12 45%, #2C3A12 100%)" }}

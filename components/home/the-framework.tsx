@@ -93,10 +93,10 @@ export function TheFramework() {
             </div>
             <Link
               href="/biotics"
-              className="flex items-center gap-1 text-sm font-medium text-icon-green transition-colors hover:text-icon-orange"
+              className="inline-flex w-fit items-center gap-1.5 rounded-full border border-icon-green/30 bg-icon-green/5 px-5 py-2.5 text-sm font-semibold text-icon-green transition-all hover:border-icon-green/50 hover:bg-icon-green/10"
             >
               Learn the framework
-              <ArrowUpRight size={14} />
+              <ArrowUpRight size={15} />
             </Link>
           </div>
         </ScrollReveal>
@@ -142,7 +142,7 @@ export function TheFramework() {
                       {biotic.description}
                     </p>
                     <span
-                      className="mt-5 inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-bold"
+                      className="mt-5 inline-flex w-fit items-center rounded-full px-3.5 py-1.5 text-sm font-bold"
                       style={{
                         background: `color-mix(in srgb, ${biotic.color} 15%, transparent)`,
                         color: `color-mix(in srgb, ${biotic.color} 78%, var(--foreground))`,

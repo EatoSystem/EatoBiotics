@@ -4,12 +4,12 @@ import { User, Compass, Activity, Users, Brain, Dumbbell, ArrowUpRight } from "l
 import { ScrollReveal } from "@/components/scroll-reveal"
 
 const PROGRAMS = [
-  { name: "You", icon: User, tagline: "The Food System Inside You", description: "100 trillion gut microbes, shaped by every meal — learn to feed them well.", href: "/you", accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))", image: "/images/hero-gut.png", imageAlt: "The food system inside you — gut microbiome illustration" },
-  { name: "Stability", icon: Compass, tagline: "The Stability System Inside You", description: "Find your Stability Score and the habits that steady your day-to-day digestion.", href: "/stability", accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))", image: "/images/stability-hero.png", imageAlt: "The stability system inside you — digestive stability illustration" },
-  { name: "Glucose", icon: Activity, tagline: "The Glucose System Inside You", description: "See how food drives your energy, cravings, and long-term glucose balance.", href: "/glucose", accent: "var(--icon-orange)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))", image: "/images/eatobetics-hero.webp", imageAlt: "The glucose system inside you — blood-sugar balance illustration" },
-  { name: "Family", icon: Users, tagline: "The Food System Inside Your Family", description: "One weekly plate and simple daily habits that build gut health for everyone.", href: "/family", accent: "var(--icon-lime)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))", image: "/images/family-hero.png", imageAlt: "The food system inside your family — family gut health illustration" },
-  { name: "Mind", icon: Brain, tagline: "The Food System Inside Your Mind", description: "Your gut makes most of your serotonin — see how food shapes mood and focus.", href: "/mind", accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", image: "/images/mind-hero.png", imageAlt: "The food system inside your mind — gut-brain axis illustration" },
-  { name: "Performance", icon: Dumbbell, tagline: "The Performance System Inside You", description: "Fuel, build, recover, protect — the food system behind how you train and compete.", href: "/performance", accent: "var(--icon-yellow)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))", image: "/images/eatosports-hero.webp", imageAlt: "The performance system inside you — athletes mid-stride illustration" },
+  { name: "You", icon: User, tagline: "The Food System Inside You", description: "Your personal food system score.", href: "/you", accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))", image: "/images/hero-gut.png", imageAlt: "The food system inside you — gut microbiome illustration" },
+  { name: "Stability", icon: Compass, tagline: "The Stability System Inside You", description: "Calm digestion and daily consistency.", href: "/stability", accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))", image: "/images/stability-hero.png", imageAlt: "The stability system inside you — digestive stability illustration" },
+  { name: "Glucose", icon: Activity, tagline: "The Glucose System Inside You", description: "Steadier energy, cravings, and blood sugar rhythm.", href: "/glucose", accent: "var(--icon-orange)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))", image: "/images/eatobetics-hero.webp", imageAlt: "The glucose system inside you — blood-sugar balance illustration" },
+  { name: "Family", icon: Users, tagline: "The Food System Inside Your Family", description: "Better food habits for households and daily routines.", href: "/family", accent: "var(--icon-lime)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))", image: "/images/family-hero.png", imageAlt: "The food system inside your family — family gut health illustration" },
+  { name: "Mind", icon: Brain, tagline: "The Food System Inside Your Mind", description: "Food, gut, mood, focus, and mental clarity.", href: "/mind", accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", image: "/images/mind-hero.png", imageAlt: "The food system inside your mind — gut-brain axis illustration" },
+  { name: "Performance", icon: Dumbbell, tagline: "The Performance System Inside You", description: "Fuel energy, recovery, strength, and output.", href: "/performance", accent: "var(--icon-yellow)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))", image: "/images/eatosports-hero.webp", imageAlt: "The performance system inside you — athletes mid-stride illustration" },
 ]
 
 export function Ecosystem() {
@@ -36,7 +36,17 @@ export function Ecosystem() {
           </p>
         </ScrollReveal>
 
-        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+          className="relative mt-16 overflow-hidden rounded-[2rem] border border-border/50 p-5 sm:p-8"
+          style={{ background: "color-mix(in srgb, var(--icon-green) 3%, transparent)" }}
+        >
+          {/* connected-system glow */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 opacity-70"
+            style={{ background: "radial-gradient(45% 55% at 50% 40%, color-mix(in srgb, var(--icon-teal) 9%, transparent), transparent 72%)" }}
+          />
+          <div className="relative grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {PROGRAMS.map((p, index) => (
             <ScrollReveal key={p.name} delay={index * 80}>
               <Link
@@ -85,6 +95,7 @@ export function Ecosystem() {
               </Link>
             </ScrollReveal>
           ))}
+          </div>
         </div>
       </div>
     </section>
