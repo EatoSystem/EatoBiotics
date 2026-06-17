@@ -27,6 +27,8 @@ export interface AssessmentSummary {
   bandDescription?: string
   strengths: string[]
   priorities: string[]
+  /** Descriptive per-area insight lines (label + a sentence) for the report. */
+  details?: { label: string; text: string }[]
   sevenDay: string[]
   thirtyDay?: string[]
 }
@@ -97,6 +99,7 @@ function fromAssessmentResult(
     bandDescription: r.profile.description,
     strengths: r.insights.filter((i) => i.strength).map((i) => i.label),
     priorities: r.insights.filter((i) => i.opportunity).map((i) => i.label),
+    details: r.insights.map((i) => ({ label: i.label, text: i.strength ?? i.opportunity ?? i.action })),
     sevenDay: r.nextActions,
   }
 }
@@ -150,6 +153,7 @@ function glucoseSummary(): AssessmentSummary | null {
     bandDescription: r.profile.description,
     strengths: r.insights.filter((i) => i.strength).map((i) => i.label),
     priorities: r.insights.filter((i) => i.opportunity).map((i) => i.label),
+    details: r.insights.map((i) => ({ label: i.label, text: i.strength ?? i.opportunity ?? i.action })),
     sevenDay: r.nextActions,
     thirtyDay: r.protocol.map((w) => `${w.title}: ${w.body}`),
   }
@@ -196,6 +200,7 @@ function performanceSummary(): AssessmentSummary | null {
     bandLabel: perfProfile(overall),
     strengths: ordered.filter(([k]) => sub[k] >= 58).map(([, p]) => p.label),
     priorities: ordered.filter(([k]) => sub[k] < 58).map(([, p]) => p.label),
+    details: ordered.map(([k, p]) => ({ label: p.label, text: sub[k] >= 58 ? "A clear strength — keep this consistent." : p.action })),
     sevenDay: ordered.filter(([k]) => sub[k] < 58).slice(0, 3).map(([, p]) => p.action),
   }
 }

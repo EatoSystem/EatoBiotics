@@ -5,9 +5,31 @@ import Link from "next/link"
 import { ArrowRight, Sparkles, CheckCircle2, Target, CalendarDays } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { ScoreRing } from "@/components/assessment/score-ring"
-import { resolvedFoundation, getJourney } from "@/lib/assessment/journey"
+import { resolvedFoundation, getJourney, journeyType } from "@/lib/assessment/journey"
 import { getSummary, isComplete, type AssessmentSummary, type AddonKey } from "@/lib/assessment/registry"
 import { ensureHydrated, persist } from "@/lib/assessment/sync"
+import { loadLeadData } from "@/lib/assessment-storage"
+
+const EMAILED_KEY = "eb_assessment_report_emailed_v1"
+
+/** Email the combined report once per journey state (re-sends if an add-on is added). */
+function maybeEmailReport(foundation: AssessmentSummary | null, addon: AssessmentSummary | null) {
+  if (typeof window === "undefined" || !foundation) return
+  const lead = loadLeadData()
+  if (!lead?.email) return
+  const marker = `${lead.email}|${journeyType() ?? "unknown"}`
+  try {
+    if (window.localStorage.getItem(EMAILED_KEY) === marker) return
+    window.localStorage.setItem(EMAILED_KEY, marker) // optimistic — avoid duplicate sends on re-mount
+  } catch {
+    return
+  }
+  void fetch("/api/assessment/email-report", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ lead: { name: lead.name, email: lead.email }, foundation, addon }),
+  }).catch(() => {})
+}
 
 const ADDON_FOCUS: Record<AddonKey, string> = {
   stability: "consistency and digestive comfort",
@@ -35,6 +57,20 @@ function List({ title, items, icon: Icon, accent }: { title: string; items: stri
   )
 }
 
+function Patterns({ items }: { items?: { label: string; text: string }[] }) {
+  if (!items || items.length === 0) return null
+  return (
+    <div className="mt-5 space-y-2.5">
+      <p className="text-sm font-bold uppercase tracking-wide text-icon-teal">Key patterns</p>
+      {items.map((d, i) => (
+        <p key={i} className="text-sm leading-relaxed text-muted-foreground">
+          <span className="font-semibold text-foreground">{d.label}:</span> {d.text}
+        </p>
+      ))}
+    </div>
+  )
+}
+
 function ScoreBlock({ s, gradientId }: { s: AssessmentSummary; gradientId: string }) {
   return (
     <div className="flex flex-col items-center text-center">
@@ -56,14 +92,17 @@ export function CombinedReport() {
       await ensureHydrated() // pull signed-in user's journey (cross-device) before rendering
       if (cancelled) return
       const f = resolvedFoundation()
-      setFoundation(f ? getSummary(f) : null)
+      const fSummary = f ? getSummary(f) : null
+      setFoundation(fSummary)
       const sel = getJourney().selectedAddon
-      if (sel && isComplete(sel)) {
-        setAddon(getSummary(sel))
+      const aSummary = sel && isComplete(sel) ? getSummary(sel) : null
+      if (aSummary && sel) {
+        setAddon(aSummary)
         setAddonKey(sel)
       }
       setReady(true)
       void persist() // push local journey up if signed in
+      maybeEmailReport(fSummary, aSummary) // email the report (once per journey state)
     })()
     return () => {
       cancelled = true
@@ -126,6 +165,7 @@ export function CombinedReport() {
             <div className="h-full rounded-[1.5rem] border border-border bg-card p-7">
               <h2 className="font-serif text-xl font-semibold text-foreground">What your foundation tells us</h2>
               {foundation.bandDescription && <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{foundation.bandDescription}</p>}
+              <Patterns items={foundation.details} />
               <div className="mt-6 space-y-5">
                 <List title="Strengths" items={foundation.strengths} icon={Sparkles} accent="var(--icon-green)" />
                 <List title="Priority areas" items={foundation.priorities} icon={Target} accent="var(--icon-orange)" />
@@ -138,6 +178,7 @@ export function CombinedReport() {
               <div className="h-full rounded-[1.5rem] border border-border bg-card p-7">
                 <h2 className="font-serif text-xl font-semibold text-foreground">What your {addon.label} add-on tells us</h2>
                 {addon.bandDescription && <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{addon.bandDescription}</p>}
+                <Patterns items={addon.details} />
                 <div className="mt-6 space-y-5">
                   <List title="Strengths" items={addon.strengths} icon={Sparkles} accent="var(--icon-green)" />
                   <List title="Priority areas" items={addon.priorities} icon={Target} accent="var(--icon-orange)" />
