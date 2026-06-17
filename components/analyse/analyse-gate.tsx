@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect } from "react"
 import Link from "next/link"
-import { ArrowRight, Zap, X } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { useFeatureGate } from "@statsig/react-bindings"
 import { logEvent } from "@/lib/statsig-client"
 import { GuestScanFlow } from "./guest-scan-flow"
@@ -21,7 +21,7 @@ interface AnalyseGateProps {
  * - Not logged in: renders children; a modal intercepts submit attempts
  * - Logged in, free tier, 0 lifetime scans + gate ON: renders children (free first scan)
  * - Logged in, free tier, scan used OR gate OFF: upsell gate (no upload shown)
- * - Paid tier (grow/restore/transform): renders children normally
+ * - Paid member: renders children normally
  *
  * Statsig gates wired here:
  *   free_first_meal_scan — kill switch for the free-first-scan feature
@@ -73,13 +73,9 @@ export function AnalyseGate({ membershipTier, isLoggedIn, lifetimeCount = 0, chi
     return <GuestScanFlow />
   }
 
-  // ── Paid tier ─────────────────────────────────────────────────────────────
-  // Both free-tier branches return early above; membershipTier is paid here.
-  return (
-    <AnalyseWrapper membershipTier={membershipTier as "grow" | "restore" | "transform"}>
-      {children}
-    </AnalyseWrapper>
-  )
+  // ── Paid member ───────────────────────────────────────────────────────────
+  // Both free-tier branches return early above; a paying member has full access.
+  return <>{children}</>
 }
 
 /* ── Paywall gate — fires paywall_seen on mount ──────────────────────── */
@@ -108,7 +104,7 @@ function PaywallGate({ reason }: { reason: string }) {
         Ready to track daily?
       </h2>
       <p className="mx-auto mt-3 max-w-sm text-base text-muted-foreground">
-        You&apos;ve used your free scan. Upgrade to Grow for €9.99/month to get daily meal
+        You&apos;ve used your free scan. Become a Member for €24.99/month to get unlimited meal
         analyses with full biotic breakdowns and personalised food recommendations.
       </p>
       <Link
@@ -116,7 +112,7 @@ function PaywallGate({ reason }: { reason: string }) {
         className="mt-6 inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
         style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
       >
-        Upgrade to Grow <ArrowRight size={14} />
+        Become a Member <ArrowRight size={14} />
       </Link>
       <p className="mt-4 text-xs text-muted-foreground/60">
         Already a member?{" "}
@@ -158,123 +154,3 @@ function GuestInterceptor({
   )
 }
 
-/* ── Paid tier wrapper — handles post-analysis upgrade prompts ─────── */
-
-function AnalyseWrapper({
-  membershipTier,
-  children,
-}: {
-  membershipTier: "grow" | "restore" | "transform"
-  children: React.ReactNode
-}) {
-  return (
-    <div>
-      {children}
-      {/* Contextual upgrade prompts rendered below results */}
-      {membershipTier === "grow" && (
-        <GrowUpgradePrompt />
-      )}
-      {membershipTier === "restore" && (
-        <RestoreUpgradePrompt />
-      )}
-    </div>
-  )
-}
-
-/* ── Contextual upgrade prompts ────────────────────────────────────── */
-
-const DISMISS_TTL_MS = 7 * 24 * 60 * 60 * 1000
-
-function isDismissed(key: string): boolean {
-  if (typeof window === "undefined") return false
-  const val = localStorage.getItem(`eatobiotics-prompt-dismissed-${key}`)
-  return !!val && Date.now() - Number(val) < DISMISS_TTL_MS
-}
-
-function dismiss(key: string) {
-  localStorage.setItem(`eatobiotics-prompt-dismissed-${key}`, String(Date.now()))
-}
-
-function GrowUpgradePrompt() {
-  const [visible, setVisible] = useState(!isDismissed("grow_post_analysis"))
-
-  if (!visible) return null
-
-  return (
-    <div
-      className="mt-6 flex items-start justify-between gap-4 rounded-2xl p-5"
-      style={{
-        background: "color-mix(in srgb, var(--icon-green) 8%, var(--card))",
-        border: "1px solid color-mix(in srgb, var(--icon-green) 20%, transparent)",
-      }}
-    >
-      <div className="flex items-start gap-3">
-        <Zap size={16} className="mt-0.5 shrink-0" style={{ color: "var(--icon-green)" }} />
-        <div>
-          <p className="text-sm font-semibold text-foreground">
-            Want to see how this compares to your last 30 days?
-          </p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Upgrade to Restore for your full score history and a personalised monthly food system plan.
-          </p>
-          <Link
-            href="/pricing"
-            className="mt-2 inline-flex items-center gap-1 text-xs font-semibold transition-opacity hover:opacity-80"
-            style={{ color: "var(--icon-green)" }}
-          >
-            See Restore <ArrowRight size={11} />
-          </Link>
-        </div>
-      </div>
-      <button
-        onClick={() => { dismiss("grow_post_analysis"); setVisible(false) }}
-        className="shrink-0 text-xs text-muted-foreground/60 hover:text-muted-foreground"
-        aria-label="Dismiss"
-      >
-        <X size={14} />
-      </button>
-    </div>
-  )
-}
-
-function RestoreUpgradePrompt() {
-  const [visible, setVisible] = useState(!isDismissed("restore_post_analysis"))
-
-  if (!visible) return null
-
-  return (
-    <div
-      className="mt-6 flex items-start justify-between gap-4 rounded-2xl p-5"
-      style={{
-        background: "color-mix(in srgb, var(--icon-teal) 8%, var(--card))",
-        border: "1px solid color-mix(in srgb, var(--icon-teal) 20%, transparent)",
-      }}
-    >
-      <div className="flex items-start gap-3">
-        <Zap size={16} className="mt-0.5 shrink-0" style={{ color: "var(--icon-teal)" }} />
-        <div>
-          <p className="text-sm font-semibold text-foreground">
-            Have a question about this result?
-          </p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Transform members can ask our AI food system consultant anything, any time.
-          </p>
-          <Link
-            href="/pricing"
-            className="mt-2 inline-flex items-center gap-1 text-xs font-semibold transition-opacity hover:opacity-80"
-            style={{ color: "var(--icon-teal)" }}
-          >
-            Ask the advisor <ArrowRight size={11} />
-          </Link>
-        </div>
-      </div>
-      <button
-        onClick={() => { dismiss("restore_post_analysis"); setVisible(false) }}
-        className="shrink-0 text-xs text-muted-foreground/60 hover:text-muted-foreground"
-        aria-label="Dismiss"
-      >
-        <X size={14} />
-      </button>
-    </div>
-  )
-}

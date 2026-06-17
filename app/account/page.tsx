@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { stripe } from "@/lib/stripe-server"
+import { canAccess, type MembershipTier } from "@/lib/membership"
 import { LiveDashboard } from "@/components/account/live-dashboard"
 import type { RealAnalysis, RealWeeklyReport } from "@/components/account/live-dashboard"
 import { TrackConversion } from "@/components/analytics/track-conversion"
@@ -144,7 +145,7 @@ export default async function AccountPage({
 
     /* Latest weekly check-in text (Transform) */
     (async (): Promise<string | null> => {
-      if (!(adminSupabase && profile?.membership_tier === "transform")) return null
+      if (!(adminSupabase && canAccess((profile?.membership_tier ?? "free") as MembershipTier, "weekly_checkin"))) return null
       const { data } = await adminSupabase
         .from("weekly_checkins")
         .select("content")
@@ -157,7 +158,7 @@ export default async function AccountPage({
 
     /* Monthly gut plan text (Restore+) */
     (async (): Promise<string | null> => {
-      if (!(adminSupabase && (profile?.membership_tier === "restore" || profile?.membership_tier === "transform"))) return null
+      if (!(adminSupabase && canAccess((profile?.membership_tier ?? "free") as MembershipTier, "monthly_gut_plan"))) return null
       const { data } = await adminSupabase
         .from("monthly_gut_plans")
         .select("content")

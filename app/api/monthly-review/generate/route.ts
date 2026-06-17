@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
-import { getUserMembershipTier } from "@/lib/membership"
+import { getUserMembershipTier, isPaidTier, PAID_TIERS } from "@/lib/membership"
 import { guardAiUsage } from "@/lib/ai-guard"
 
 
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     const user = await getUser()
     if (!user) return NextResponse.json({ error: "Unauthorised" }, { status: 401 })
     const tier = await getUserMembershipTier(user.id)
-    if (tier !== "transform") return NextResponse.json({ error: "Transform required" }, { status: 403 })
+    if (!isPaidTier(tier)) return NextResponse.json({ error: "Active membership required" }, { status: 403 })
 
     const blocked = await guardAiUsage(user.id, "monthly_review")
     if (blocked) return blocked
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   const adminSupabase = getSupabase()
   if (!adminSupabase) return NextResponse.json({ error: "DB unavailable" }, { status: 500 })
 
-  // If cron: process all active transform members
+  // If cron: process all active members
   // If user request: process just that user
   let userIds: string[] = []
 
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     const { data } = await adminSupabase
       .from("profiles")
       .select("id")
-      .eq("membership_tier", "transform")
+      .in("membership_tier", PAID_TIERS)
       .eq("membership_status", "active")
     userIds = (data ?? []).map((p) => p.id as string)
   } else {

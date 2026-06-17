@@ -31,9 +31,9 @@ const GATE_CONFIGS: Record<string, GateConfig> = {
     icon: <Zap size={20} style={{ color: "var(--icon-yellow)" }} />,
     title: "Track meals & watch your score move",
     description: "Log what you eat and see your Biotics Score shift in real time. Build a streak. Get daily nudges based on your weakest pillar.",
-    requiredTier: "grow",
-    requiredLabel: "Grow",
-    price: "€9.99/mo",
+    requiredTier: "member",
+    requiredLabel: "Member",
+    price: "€24.99/mo",
     benefits: [
       "2 meal analyses per day",
       "See your score move in real time",
@@ -52,9 +52,9 @@ const GATE_CONFIGS: Record<string, GateConfig> = {
     icon: <TrendingUp size={20} style={{ color: "var(--icon-teal)" }} />,
     title: "Build your personalised food plate",
     description: "Create your weekly plate with AI meal plans built around your score and profile. See exactly what to eat each day.",
-    requiredTier: "grow",
-    requiredLabel: "Grow",
-    price: "€9.99/mo",
+    requiredTier: "member",
+    requiredLabel: "Member",
+    price: "€24.99/mo",
     benefits: [
       "AI-generated daily & weekly meal plans",
       "Plans built around your profile type",
@@ -73,9 +73,9 @@ const GATE_CONFIGS: Record<string, GateConfig> = {
     icon: <Calendar size={20} style={{ color: "var(--icon-teal)" }} />,
     title: "Your personalised monthly gut plan",
     description: "Every month, a new gut plan drops — built from your score data, your weakest pillars, and your goals. Feels like a personal nutritionist.",
-    requiredTier: "restore",
-    requiredLabel: "Restore",
-    price: "€49/mo",
+    requiredTier: "member",
+    requiredLabel: "Member",
+    price: "€24.99/mo",
     benefits: [
       "Monthly AI-built gut plan",
       "5 daily meal analyses",
@@ -94,9 +94,9 @@ const GATE_CONFIGS: Record<string, GateConfig> = {
     icon: <BookOpen size={20} style={{ color: "var(--icon-teal)" }} />,
     title: "Your personal Gut Health Story",
     description: "Claude reads your full history — assessment, meals, patterns — and writes a warm, personal narrative of your gut health journey.",
-    requiredTier: "restore",
-    requiredLabel: "Restore",
-    price: "€49/mo",
+    requiredTier: "member",
+    requiredLabel: "Member",
+    price: "€24.99/mo",
     benefits: [
       "Personal narrative based on your real meal data",
       "5-section story: where you started, patterns, biotic profile",
@@ -115,9 +115,9 @@ const GATE_CONFIGS: Record<string, GateConfig> = {
     icon: <Brain size={20} style={{ color: "var(--icon-teal)" }} />,
     title: "Your personal Food Intelligence Report",
     description: "Claude analyses 90 days of your meal data with extended reasoning to surface the real patterns — what you eat most, your biggest gaps, and your gut-health fingerprint.",
-    requiredTier: "restore",
-    requiredLabel: "Restore",
-    price: "€49/mo",
+    requiredTier: "member",
+    requiredLabel: "Member",
+    price: "€24.99/mo",
     benefits: [
       "Deep pattern analysis across 90 days of meals",
       "Food frequency breakdown with biotic classification",
@@ -136,9 +136,9 @@ const GATE_CONFIGS: Record<string, GateConfig> = {
     icon: <span className="text-xl">🤖</span>,
     title: "Your personal EatoBiotic AI",
     description: "Unlimited conversations with an AI nutritionist that knows your score, your history, and your goals. Weekly check-ins. Full food system optimisation.",
-    requiredTier: "transform",
-    requiredLabel: "Transform",
-    price: "€99/mo",
+    requiredTier: "member",
+    requiredLabel: "Member",
+    price: "€24.99/mo",
     benefits: [
       "Unlimited AI consultations",
       "AI references your full history",
@@ -227,7 +227,7 @@ export function UpgradeGate({ feature, currentTier }: UpgradeGateProps) {
               <span className="ml-1 text-sm text-muted-foreground">· cancel anytime</span>
             </div>
             <Link
-              href={`/pricing?feature=${config.requiredTier}`}
+              href="/pricing"
               onClick={() => posthog.capture("upgrade_gate_clicked", {
                 feature,
                 required_tier: config.requiredTier,

@@ -2075,10 +2075,10 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                       <ul className="space-y-1.5 text-sm" style={{ color: "var(--muted-foreground)" }}>
                         <li>• Your meal analysis and biotics scoring will stop</li>
                         <li>• Weekly reports will no longer be generated</li>
-                        {(propMemberTier === "restore" || propMemberTier === "transform") && (
+                        {propMemberTier !== "grow" && (
                           <li>• Your personalised monthly gut plan will end</li>
                         )}
-                        {propMemberTier === "transform" && (
+                        {propMemberTier !== "grow" && (
                           <li>• AI consultation access will be removed</li>
                         )}
                       </ul>

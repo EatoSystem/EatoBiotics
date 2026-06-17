@@ -17,7 +17,7 @@ const PILLAR_NEXT_ACTIONS: Record<string, string> = {
 }
 
 interface MonthlyProgressCardProps {
-  membershipTier: "grow" | "restore" | "transform"
+  membershipTier: "trial" | "member" | "grow" | "restore" | "transform"
   analysisCount: number
   trendDirection: "up" | "stable" | "down"
   bestStreak: number
@@ -68,7 +68,7 @@ export function MonthlyProgressCard({
           ))}
         </div>
 
-        {membershipTier === "transform" && monthlyReviewContent && (
+        {(membershipTier === "transform" || membershipTier === "member" || membershipTier === "trial") && monthlyReviewContent && (
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Your AI Monthly Review</p>
             <div className="rounded-xl bg-secondary/30 p-4">
@@ -93,7 +93,7 @@ export function MonthlyProgressCard({
           </div>
         )}
 
-        {membershipTier !== "transform" && (
+        {membershipTier !== "transform" && membershipTier !== "member" && membershipTier !== "trial" && (
           <p className="mt-3 text-xs text-muted-foreground/50 text-center">Keep going — your score moves when your habits do.</p>
         )}
       </div>

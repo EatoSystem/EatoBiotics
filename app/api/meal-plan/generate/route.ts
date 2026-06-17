@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
-import { getUserMembershipTier } from "@/lib/membership"
+import { getUserMembershipTier, isPaidTier } from "@/lib/membership"
 import { guardAiUsage } from "@/lib/ai-guard"
 
 
@@ -12,8 +12,8 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorised" }, { status: 401 })
 
   const tier = await getUserMembershipTier(user.id)
-  if (tier !== "transform" && tier !== "restore") {
-    return NextResponse.json({ error: "Restore or Transform membership required" }, { status: 403 })
+  if (!isPaidTier(tier)) {
+    return NextResponse.json({ error: "Active membership required" }, { status: 403 })
   }
 
   const blocked = await guardAiUsage(user.id, "meal_plan")

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
 import { getSupabase } from "@/lib/supabase"
+import { canAccess, PAID_TIERS, type MembershipTier } from "@/lib/membership"
 import { buildNudgeEmail } from "@/lib/email/nudge-email"
 import { verifyCronRequest } from "@/lib/cron-auth"
 
@@ -69,7 +70,7 @@ async function sendNudge(
 
   // Latest weekly check-in (Transform members only)
   let weeklyCheckinContent: string | null = null
-  if (membershipTier === "transform") {
+  if (canAccess(membershipTier as MembershipTier, "weekly_checkin")) {
     const { data: checkin } = await adminSupabase
       .from("weekly_checkins")
       .select("content")
@@ -165,7 +166,7 @@ export async function GET(req: NextRequest) {
   const { data: paidMembers, error: paidErr } = await adminSupabase
     .from("profiles")
     .select("id, email, name, membership_tier")
-    .in("membership_tier", ["grow", "restore", "transform"])
+    .in("membership_tier", PAID_TIERS)
     .eq("membership_status", "active")
 
   if (paidErr) {

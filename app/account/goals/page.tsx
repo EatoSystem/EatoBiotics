@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
-import { getUserMembershipTier } from "@/lib/membership"
+import { getUserMembershipTier, isPaidTier } from "@/lib/membership"
 import { GoalsClient } from "./goals-client"
 
 export const metadata: Metadata = {
@@ -15,7 +15,7 @@ export default async function GoalsPage() {
   if (!user) redirect("/assessment?signin=1")
 
   const tier = await getUserMembershipTier(user.id)
-  if (tier !== "restore" && tier !== "transform") {
+  if (!isPaidTier(tier)) {
     redirect("/pricing?feature=condition_calibration")
   }
 

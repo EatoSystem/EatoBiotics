@@ -677,7 +677,7 @@ export function IntelligenceClient({ tier }: { tier: "member" | "restore" | "tra
             className="h-1.5 w-1.5 rounded-full"
             style={{ background: tier === "transform" ? "var(--icon-orange)" : "var(--icon-teal)" }}
           />
-          {tier === "transform" ? "Transform" : "Restore"} · Food Intelligence
+          Member · Food Intelligence
         </span>
       </div>
 

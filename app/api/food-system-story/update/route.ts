@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
-import { getUserMembershipTier } from "@/lib/membership"
+import { getUserMembershipTier, isPaidTier } from "@/lib/membership"
 
 
 interface StoryData {
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   const user = await getUser()
   if (!user) return NextResponse.json({ error: "Unauthorised" }, { status: 401 })
   const tier = await getUserMembershipTier(user.id)
-  if (tier !== "transform") return NextResponse.json({ error: "Transform required" }, { status: 403 })
+  if (!isPaidTier(tier)) return NextResponse.json({ error: "Active membership required" }, { status: 403 })
 
   const adminSupabase = getSupabase()
   if (!adminSupabase) return NextResponse.json({ error: "DB unavailable" }, { status: 500 })

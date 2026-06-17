@@ -172,10 +172,10 @@ function ShoppingList({ categories }: { categories: ShoppingCategory[] }) {
 
 export function MealPlanClient({
   initialPlan,
-  membershipTier,
 }: {
   initialPlan: MealPlan | null
-  membershipTier: string
+  /** Retained for the parent's prop contract; the page is now member-only. */
+  membershipTier?: string
 }) {
   const [plan, setPlan] = useState<MealPlan | null>(initialPlan)
   const [loading, setLoading] = useState(false)
@@ -220,7 +220,7 @@ export function MealPlanClient({
       {/* Header */}
       <div className="mb-6">
         <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "var(--icon-lime)" }}>
-          {membershipTier === "transform" ? "Transform" : "Restore"} Feature
+          Member Feature
         </p>
         <h1 className="font-serif text-3xl font-semibold text-foreground mb-2">
           Weekly Meal Plan
