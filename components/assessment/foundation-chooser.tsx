@@ -7,6 +7,7 @@ import { User, Users, ArrowRight, Sparkles } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { patchJourney, getJourney, completedFoundations } from "@/lib/assessment/journey"
 import { ADDONS, FOUNDATIONS, type FoundationKey } from "@/lib/assessment/registry"
+import { ensureHydrated } from "@/lib/assessment/sync"
 
 const FOUNDATION_CARDS: Array<{
   key: FoundationKey
@@ -45,6 +46,10 @@ export function FoundationChooser() {
   useEffect(() => {
     setPendingAddon(getJourney().pendingAddon)
     setDoneFoundations(completedFoundations())
+    void (async () => {
+      await ensureHydrated() // returning signed-in users: reflect synced foundation state
+      setDoneFoundations(completedFoundations())
+    })()
   }, [])
 
   const pendingLabel = pendingAddon && pendingAddon in ADDONS ? ADDONS[pendingAddon as keyof typeof ADDONS].label : null

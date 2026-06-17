@@ -11,6 +11,7 @@ import Link from "next/link"
 import { Activity, ArrowRight, Sparkles, BarChart3, ShieldPlus, Brain } from "lucide-react"
 import { getJourney } from "@/lib/assessment/journey"
 import { ADDONS, type AddonKey } from "@/lib/assessment/registry"
+import { persist } from "@/lib/assessment/sync"
 
 const ADDON_CARDS: Array<{ key: AddonKey; icon: typeof Activity; blurb: string; accent: string }> = [
   { key: "stability", icon: Activity, blurb: "Digestive calm, consistency, and confidence.", accent: "var(--icon-teal)" },
@@ -26,6 +27,7 @@ export function JourneyNextStep() {
   useEffect(() => {
     setPendingAddon(getJourney().pendingAddon)
     setReady(true)
+    void persist() // foundation just completed — persist for signed-in users
   }, [])
 
   if (!ready) return null

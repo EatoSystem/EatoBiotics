@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation"
 import { ArrowRight, Loader2 } from "lucide-react"
 import { hasAnyFoundation, patchJourney } from "@/lib/assessment/journey"
 import { isComplete, ADDONS, type AddonKey } from "@/lib/assessment/registry"
+import { persist } from "@/lib/assessment/sync"
 
 export function FoundationGuard({ addon, children }: { addon: AddonKey; children: React.ReactNode }) {
   const router = useRouter()
@@ -29,12 +30,23 @@ export function FoundationGuard({ addon, children }: { addon: AddonKey; children
     setStatus("ok")
   }, [addon, router])
 
-  // Once the add-on completes, surface the combined-report CTA.
+  // Once the add-on completes, surface the combined-report CTA + persist (signed in).
   useEffect(() => {
     if (status !== "ok") return
-    const tick = () => setAddonDone(isComplete(addon))
-    tick()
-    const id = window.setInterval(tick, 1500)
+    let pushed = false
+    const check = () => {
+      if (!isComplete(addon)) return false
+      setAddonDone(true)
+      if (!pushed) {
+        pushed = true
+        void persist()
+      }
+      return true
+    }
+    if (check()) return
+    const id = window.setInterval(() => {
+      if (check()) window.clearInterval(id)
+    }, 1500)
     return () => window.clearInterval(id)
   }, [status, addon])
 

@@ -7,6 +7,7 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 import { ScoreRing } from "@/components/assessment/score-ring"
 import { resolvedFoundation, getJourney } from "@/lib/assessment/journey"
 import { getSummary, isComplete, type AssessmentSummary, type AddonKey } from "@/lib/assessment/registry"
+import { ensureHydrated, persist } from "@/lib/assessment/sync"
 
 const ADDON_FOCUS: Record<AddonKey, string> = {
   stability: "consistency and digestive comfort",
@@ -50,14 +51,23 @@ export function CombinedReport() {
   const [addonKey, setAddonKey] = useState<AddonKey | null>(null)
 
   useEffect(() => {
-    const f = resolvedFoundation()
-    setFoundation(f ? getSummary(f) : null)
-    const sel = getJourney().selectedAddon
-    if (sel && isComplete(sel)) {
-      setAddon(getSummary(sel))
-      setAddonKey(sel)
+    let cancelled = false
+    void (async () => {
+      await ensureHydrated() // pull signed-in user's journey (cross-device) before rendering
+      if (cancelled) return
+      const f = resolvedFoundation()
+      setFoundation(f ? getSummary(f) : null)
+      const sel = getJourney().selectedAddon
+      if (sel && isComplete(sel)) {
+        setAddon(getSummary(sel))
+        setAddonKey(sel)
+      }
+      setReady(true)
+      void persist() // push local journey up if signed in
+    })()
+    return () => {
+      cancelled = true
     }
-    setReady(true)
   }, [])
 
   if (!ready) return null

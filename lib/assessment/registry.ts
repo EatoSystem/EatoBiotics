@@ -209,12 +209,48 @@ const SUMMARY_FNS: Record<AssessmentKey, () => AssessmentSummary | null> = {
   performance: performanceSummary,
 }
 
-/** Normalised summary for one assessment, or null if not completed. */
-export function getSummary(key: AssessmentKey): AssessmentSummary | null {
-  return SUMMARY_FNS[key]()
+/* ── Cross-device summary cache ──────────────────────────────────────────────
+ * The journey sync layer (lib/assessment/sync.ts) hydrates the signed-in user's
+ * summaries here, so the combined report renders on a fresh device where the six
+ * raw assessment localStorage records don't exist. */
+const SUMMARY_CACHE_KEY = "eb_assessment_summaries_v1"
+
+function readCachedSummaries(): Partial<Record<AssessmentKey, AssessmentSummary>> {
+  if (typeof window === "undefined") return {}
+  try {
+    const raw = window.localStorage.getItem(SUMMARY_CACHE_KEY)
+    return raw ? (JSON.parse(raw) as Partial<Record<AssessmentKey, AssessmentSummary>>) : {}
+  } catch {
+    return {}
+  }
 }
 
-/** True once the underlying assessment has a usable result in localStorage. */
+export function writeCachedSummaries(map: Partial<Record<AssessmentKey, AssessmentSummary>>): void {
+  if (typeof window === "undefined") return
+  try {
+    window.localStorage.setItem(SUMMARY_CACHE_KEY, JSON.stringify(map))
+  } catch {
+    /* quota / private mode — ignore */
+  }
+}
+
+/** Normalised summary for one assessment: computed live from the assessment's own
+ *  localStorage, falling back to the hydrated cache (fresh-device / cross-device). */
+export function getSummary(key: AssessmentKey): AssessmentSummary | null {
+  return SUMMARY_FNS[key]() ?? readCachedSummaries()[key] ?? null
+}
+
+/** True once the assessment has a usable result (live or hydrated). */
 export function isComplete(key: AssessmentKey): boolean {
   return getSummary(key) !== null
+}
+
+/** All currently-available summaries (live preferred, cache fallback), keyed. */
+export function allSummaries(): Partial<Record<AssessmentKey, AssessmentSummary>> {
+  const out: Partial<Record<AssessmentKey, AssessmentSummary>> = {}
+  for (const key of [...(Object.keys(FOUNDATIONS) as FoundationKey[]), ...ADDON_KEYS] as AssessmentKey[]) {
+    const s = getSummary(key)
+    if (s) out[key] = s
+  }
+  return out
 }

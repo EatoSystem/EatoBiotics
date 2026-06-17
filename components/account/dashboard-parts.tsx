@@ -9,9 +9,12 @@
    unchanged from the originals.
    ───────────────────────────────────────────────────────────────────────── */
 
-import { useState, type ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import Link from "next/link"
-import { Activity, Check, ChevronRight, Copy, Dumbbell, Gift } from "lucide-react"
+import { Activity, Check, ChevronRight, Copy, Dumbbell, FileText, Gift } from "lucide-react"
+import { resolvedFoundation, getJourney } from "@/lib/assessment/journey"
+import { getSummary } from "@/lib/assessment/registry"
+import { ensureHydrated } from "@/lib/assessment/sync"
 
 /** GLP-1 Companion entry card — compact, self-selecting. Links to /account/glp1. */
 export function Glp1CompanionCard() {
@@ -50,6 +53,70 @@ export function StabilityCard() {
           <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-orange)" }}>EatoBiotics Stability™</p>
           <h3 className="font-serif text-base font-bold leading-snug" style={{ color: "var(--foreground)" }}>Bowel urgency or unpredictability?</h3>
           <p className="mt-0.5 text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>Track stool, urgency, and triggers — and build digestive stability.</p>
+        </div>
+        <ChevronRight size={16} className="shrink-0 transition-transform group-hover:translate-x-0.5" style={{ color: "var(--icon-green)" }} />
+      </div>
+    </Link>
+  )
+}
+
+/** Assessment journey + combined report card. Self-hydrating: pulls the signed-in
+ *  user's persisted journey (cross-device) then renders the foundation + add-on
+ *  scores, linking to the combined report. Renders nothing until a foundation exists. */
+export function AssessmentJourneyCard() {
+  const [data, setData] = useState<{
+    foundationLabel: string
+    foundationScore: number
+    addonLabel?: string
+    addonScore?: number
+  } | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      await ensureHydrated() // pull the signed-in user's journey into the local cache
+      if (cancelled) return
+      const f = resolvedFoundation()
+      const fs = f ? getSummary(f) : null
+      if (!fs) {
+        setData(null)
+        return
+      }
+      const sel = getJourney().selectedAddon
+      const as = sel ? getSummary(sel) : null
+      setData({ foundationLabel: fs.label, foundationScore: fs.score, addonLabel: as?.label, addonScore: as?.score })
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  if (!data) return null
+
+  return (
+    <Link href="/assessment/results" className="group block overflow-hidden rounded-2xl transition-shadow hover:shadow-[0_8px_28px_rgba(26,46,18,0.14)]"
+      style={{ background: "white", border: "1px solid #ebebeb", boxShadow: "0 2px 12px rgba(26,46,18,0.05)" }}>
+      <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-green), var(--icon-teal), var(--icon-lime))" }} />
+      <div className="flex items-center gap-4 p-5">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm"
+          style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
+          <FileText size={20} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Your Food System Report</p>
+          <h3 className="font-serif text-base font-bold leading-snug" style={{ color: "var(--foreground)" }}>
+            {data.foundationLabel} foundation{data.addonLabel ? ` + ${data.addonLabel}` : ""}
+          </h3>
+          <p className="mt-1 flex flex-wrap items-center gap-2 text-xs" style={{ color: "var(--muted-foreground)" }}>
+            <span className="rounded-full px-2 py-0.5 font-semibold" style={{ background: "color-mix(in srgb, var(--icon-green) 12%, transparent)", color: "var(--icon-green)" }}>
+              Food System {data.foundationScore}
+            </span>
+            {data.addonLabel != null && data.addonScore != null && (
+              <span className="rounded-full px-2 py-0.5 font-semibold" style={{ background: "color-mix(in srgb, var(--icon-teal) 12%, transparent)", color: "var(--icon-teal)" }}>
+                {data.addonLabel} {data.addonScore}
+              </span>
+            )}
+          </p>
         </div>
         <ChevronRight size={16} className="shrink-0 transition-transform group-hover:translate-x-0.5" style={{ color: "var(--icon-green)" }} />
       </div>
