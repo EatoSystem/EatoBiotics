@@ -11,7 +11,7 @@
 
 import { useEffect, useState, type ReactNode } from "react"
 import Link from "next/link"
-import { Activity, Check, ChevronRight, Copy, Dumbbell, FileText, Gift } from "lucide-react"
+import { Activity, Check, ChevronRight, Copy, Dumbbell, FileText, Gift, Mic } from "lucide-react"
 import { resolvedFoundation, getJourney } from "@/lib/assessment/journey"
 import { getSummary } from "@/lib/assessment/registry"
 import { ensureHydrated } from "@/lib/assessment/sync"
@@ -53,6 +53,30 @@ export function StabilityCard() {
           <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-orange)" }}>EatoBiotics Stability™</p>
           <h3 className="font-serif text-base font-bold leading-snug" style={{ color: "var(--foreground)" }}>Bowel urgency or unpredictability?</h3>
           <p className="mt-0.5 text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>Track stool, urgency, and triggers — and build digestive stability.</p>
+        </div>
+        <ChevronRight size={16} className="shrink-0 transition-transform group-hover:translate-x-0.5" style={{ color: "var(--icon-green)" }} />
+      </div>
+    </Link>
+  )
+}
+
+/** Voice consultation entry card — links to the EatoBiotic voice agent (/eatobiotic).
+ *  The page self-handles tier gating (voice = paid; text free) and the "being set up"
+ *  state, so this card is safe to show to every signed-in member. */
+export function VoiceConsultCard() {
+  return (
+    <Link href="/eatobiotic" className="group block overflow-hidden rounded-2xl transition-shadow hover:shadow-[0_8px_28px_rgba(26,46,18,0.14)]"
+      style={{ background: "white", border: "1px solid #ebebeb", boxShadow: "0 2px 12px rgba(26,46,18,0.05)" }}>
+      <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-teal), var(--icon-green), var(--icon-lime))" }} />
+      <div className="flex items-center gap-4 p-5">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm"
+          style={{ background: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" }}>
+          <Mic size={20} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-teal)" }}>EatoBiotic Voice</p>
+          <h3 className="font-serif text-base font-bold leading-snug" style={{ color: "var(--foreground)" }}>Prefer to talk it through?</h3>
+          <p className="mt-0.5 text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>Start a voice conversation with your gut-health expert.</p>
         </div>
         <ChevronRight size={16} className="shrink-0 transition-transform group-hover:translate-x-0.5" style={{ color: "var(--icon-green)" }} />
       </div>

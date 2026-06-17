@@ -11,7 +11,7 @@ import {
   Calendar, Target, Activity, User, Trash2, AlertTriangle,
 } from "lucide-react"
 import {
-  Glp1CompanionCard, StabilityCard, AssessmentJourneyCard, ReferralCard, ScoreRing, MiniRing, ScoreBar,
+  Glp1CompanionCard, StabilityCard, AssessmentJourneyCard, VoiceConsultCard, ReferralCard, ScoreRing, MiniRing, ScoreBar,
   Tag, SectionLabel, GradientButton, ringColors,
 } from "@/components/account/dashboard-parts"
 
@@ -1075,6 +1075,11 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             <AssessmentJourneyCard />
           </div>
 
+          {/* Talk to EatoBiotic — voice consultation */}
+          <div className="mt-5">
+            <VoiceConsultCard />
+          </div>
+
           {/* Refer a friend */}
           <div className="mt-5">
             <ReferralCard code={referralCode} />
@@ -1663,6 +1668,9 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
 
             {/* Assessment journey + combined report (renders only when a foundation exists) */}
             <AssessmentJourneyCard />
+
+            {/* Talk to EatoBiotic — voice consultation */}
+            <VoiceConsultCard />
 
             {/* Refer a friend */}
             <ReferralCard code={referralCode} />
