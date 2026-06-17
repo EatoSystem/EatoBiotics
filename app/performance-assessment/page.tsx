@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { SportsAssessmentClient } from "./assessment-client"
+import { FoundationGuard } from "@/components/assessment/foundation-guard"
 
 export const metadata: Metadata = {
   title: "EatoSports Assessment — Find Your Performance Food Profile | EatoBiotics",
@@ -8,5 +9,9 @@ export const metadata: Metadata = {
 }
 
 export default function EatoSportsAssessmentPage() {
-  return <SportsAssessmentClient />
+  return (
+    <FoundationGuard addon="performance">
+      <SportsAssessmentClient />
+    </FoundationGuard>
+  )
 }

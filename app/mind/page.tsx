@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   },
 }
 
-const ASSESSMENT_HREF = "/assessment-mind"
+const ASSESSMENT_HREF = "/assessment/add/mind"
 const MIND_GRADIENT = "linear-gradient(135deg, var(--icon-green), var(--icon-teal))"
 
 /* ── Section 3 — The 5 Pillars of your Mind Score ───────────────────── */

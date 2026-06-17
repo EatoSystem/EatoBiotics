@@ -4,12 +4,12 @@ import { User, Compass, Activity, Users, Brain, Dumbbell, ArrowUpRight } from "l
 import { ScrollReveal } from "@/components/scroll-reveal"
 
 const PROGRAMS = [
-  { name: "You", icon: User, tagline: "The Food System Inside You", description: "Your personal food system score.", href: "/you", accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))", image: "/images/hero-gut.png", imageAlt: "The food system inside you — gut microbiome illustration" },
-  { name: "Stability", icon: Compass, tagline: "The Stability System Inside You", description: "Calm digestion and daily consistency.", href: "/stability", accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))", image: "/images/stability-hero.png", imageAlt: "The stability system inside you — digestive stability illustration" },
-  { name: "Glucose", icon: Activity, tagline: "The Glucose System Inside You", description: "Steadier energy, cravings, and blood sugar rhythm.", href: "/glucose", accent: "var(--icon-orange)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))", image: "/images/eatobetics-hero.webp", imageAlt: "The glucose system inside you — blood-sugar balance illustration" },
-  { name: "Family", icon: Users, tagline: "The Food System Inside Your Family", description: "Better food habits for households and daily routines.", href: "/family", accent: "var(--icon-lime)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))", image: "/images/family-hero.png", imageAlt: "The food system inside your family — family gut health illustration" },
-  { name: "Mind", icon: Brain, tagline: "The Food System Inside Your Mind", description: "Food, gut, mood, focus, and mental clarity.", href: "/mind", accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", image: "/images/mind-hero.png", imageAlt: "The food system inside your mind — gut-brain axis illustration" },
-  { name: "Performance", icon: Dumbbell, tagline: "The Performance System Inside You", description: "Fuel energy, recovery, strength, and output.", href: "/performance", accent: "var(--icon-yellow)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))", image: "/images/eatosports-hero.webp", imageAlt: "The performance system inside you — athletes mid-stride illustration" },
+  { name: "You", kind: "Foundation", cta: "Start with You", icon: User, tagline: "The Food System Inside You", description: "Your personal Food System foundation, score, report, and improvement priorities.", href: "/assessment/you", accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))", image: "/images/hero-gut.png", imageAlt: "The food system inside you — gut microbiome illustration" },
+  { name: "Family", kind: "Foundation", cta: "Start with Family", icon: Users, tagline: "The Food System Inside Your Family", description: "Your household Food System foundation, routines, habits, and shared priorities.", href: "/assessment/family", accent: "var(--icon-lime)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))", image: "/images/family-hero.png", imageAlt: "The food system inside your family — family gut health illustration" },
+  { name: "Stability", kind: "Add-on", cta: "Add Stability", icon: Compass, tagline: "The Stability System Inside You", description: "Add deeper support for digestive calm, consistency, and confidence.", href: "/assessment/add/stability", accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))", image: "/images/stability-hero.png", imageAlt: "The stability system inside you — digestive stability illustration" },
+  { name: "Glucose", kind: "Add-on", cta: "Add Glucose", icon: Activity, tagline: "The Glucose System Inside You", description: "Add deeper support for steadier energy, cravings, and glucose rhythm.", href: "/assessment/add/glucose", accent: "var(--icon-orange)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))", image: "/images/eatobetics-hero.webp", imageAlt: "The glucose system inside you — blood-sugar balance illustration" },
+  { name: "Mind", kind: "Add-on", cta: "Add Mind", icon: Brain, tagline: "The Food System Inside Your Mind", description: "Add deeper support for food, gut, mood, focus, and mental clarity.", href: "/assessment/add/mind", accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", image: "/images/mind-hero.png", imageAlt: "The food system inside your mind — gut-brain axis illustration" },
+  { name: "Performance", kind: "Add-on", cta: "Add Performance", icon: Dumbbell, tagline: "The Performance System Inside You", description: "Add deeper support for energy, recovery, movement, and output.", href: "/assessment/add/performance", accent: "var(--icon-yellow)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))", image: "/images/eatosports-hero.webp", imageAlt: "The performance system inside you — athletes mid-stride illustration" },
 ]
 
 export function Ecosystem() {
@@ -27,12 +27,12 @@ export function Ecosystem() {
           <h2 className="mt-4 text-pretty font-serif text-4xl font-semibold text-foreground sm:text-5xl md:text-6xl">
             One philosophy.
             <br />
-            <span className="brand-gradient-text">Six systems.</span>
+            <span className="brand-gradient-text">Two foundations. Four add-ons.</span>
           </h2>
           <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
-            Your food system does not work in isolation. EatoBiotics connects digestion, diversity,
-            stability, recovery, longevity, and performance into one clear way to understand and
-            improve your health.
+            Every journey begins with a foundation assessment. Once we understand your personal or family
+            Food System baseline, you can add a focused assessment for Stability, Glucose, Mind, or
+            Performance when you want deeper support.
           </p>
         </ScrollReveal>
 
@@ -82,13 +82,19 @@ export function Ecosystem() {
                         <p.icon size={20} className="text-white" />
                       </div>
                       <div>
+                        <span
+                          className="text-[10px] font-bold uppercase tracking-widest"
+                          style={{ color: p.kind === "Foundation" ? "var(--icon-green)" : "color-mix(in srgb, var(--muted-foreground) 90%, transparent)" }}
+                        >
+                          {p.kind}
+                        </span>
                         <h3 className="font-serif text-xl font-semibold leading-tight text-foreground transition-colors group-hover:text-[color:var(--accent)]">{p.name}</h3>
                         <p className="text-xs text-muted-foreground">{p.tagline}</p>
                       </div>
                     </div>
                     <p className="mt-4 flex-1 text-sm leading-relaxed text-muted-foreground">{p.description}</p>
                     <span className="mt-4 flex items-center gap-1 text-sm font-semibold opacity-80 transition-opacity group-hover:opacity-100" style={{ color: p.accent }}>
-                      Explore <ArrowUpRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+                      {p.cta} <ArrowUpRight size={14} className="transition-transform group-hover:translate-x-0.5" />
                     </span>
                   </div>
                 </div>

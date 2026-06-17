@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   },
 }
 
-const ASSESSMENT_HREF = "/glucose/assessment"
+const ASSESSMENT_HREF = "/assessment/add/glucose"
 const EB_GRADIENT = "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))"
 
 /* ── Section 3 — The 3 Systems of EatoBetics (the Score pillars) ─────── */
@@ -218,7 +218,7 @@ export default function EatoBeticsPage() {
               </ScrollReveal>
               <ScrollReveal delay={150}>
                 <Link href={ASSESSMENT_HREF} className="mt-8 inline-flex items-center gap-2 rounded-full border-2 border-icon-orange px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-icon-orange hover:text-white">
-                  Take the assessment <ArrowUpRight size={14} />
+                  Add Glucose <ArrowUpRight size={14} />
                 </Link>
               </ScrollReveal>
             </div>

@@ -22,6 +22,7 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 import { ScoreRing } from "./score-ring"
 import { MissionNote } from "./mission-note"
 import { ShareScoreCard } from "./share-score-card"
+import { JourneyNextStep } from "./journey-next-step"
 import { ScoreCard } from "./score-card"
 import type { AssessmentResult, PillarInsight } from "@/lib/assessment-scoring"
 import type { PillarKey } from "@/lib/assessment-data"
@@ -349,6 +350,9 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
           </div>
         </div>
       </section>
+
+      {/* ── Foundation → add-on journey next step ──────────────────────── */}
+      <section className="px-6"><JourneyNextStep /></section>
 
       {/* ── B. Weakest pillar callout — free insight ───────────────────── */}
       <section className="px-6 pb-12">

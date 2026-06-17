@@ -231,8 +231,8 @@ export default function StabilityPage() {
                 </p>
               </ScrollReveal>
               <ScrollReveal delay={150}>
-                <Link href="/stability/assessment" className="mt-8 inline-flex items-center gap-2 rounded-full border-2 border-icon-teal px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-icon-teal hover:text-white">
-                  Take the assessment <ArrowUpRight size={14} />
+                <Link href="/assessment/add/stability" className="mt-8 inline-flex items-center gap-2 rounded-full border-2 border-icon-teal px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-icon-teal hover:text-white">
+                  Add Stability <ArrowUpRight size={14} />
                 </Link>
               </ScrollReveal>
             </div>
@@ -523,7 +523,7 @@ export default function StabilityPage() {
                   </div>
                   <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">{sys.tagline}</p>
                   {sys.live ? (
-                    <Link href="/stability/assessment" className="mt-5 flex items-center gap-1 text-sm font-semibold opacity-70 transition-opacity group-hover:opacity-100" style={{ color: sys.accent }}>
+                    <Link href="/assessment/add/stability" className="mt-5 flex items-center gap-1 text-sm font-semibold opacity-70 transition-opacity group-hover:opacity-100" style={{ color: sys.accent }}>
                       Start now <ArrowUpRight size={14} />
                     </Link>
                   ) : (

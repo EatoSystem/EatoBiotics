@@ -17,6 +17,7 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 import { ScoreRing } from "@/components/assessment/score-ring"
 import { MissionNote } from "@/components/assessment/mission-note"
 import { PersonalReportCta } from "@/components/assessment/personal-report-cta"
+import { JourneyNextStep } from "@/components/assessment/journey-next-step"
 import type { AssessmentResult, PillarInsight } from "@/lib/assessment-scoring"
 import { getFoodBySlug } from "@/lib/foods"
 
@@ -202,6 +203,9 @@ export function FamilyAssessmentResults({ result, onRetake, leadEmail }: FamilyA
           </div>
         </div>
       </section>
+
+      {/* ── Foundation → add-on journey next step ──────────────────────── */}
+      <section className="px-6"><JourneyNextStep /></section>
 
       {/* ── Profile description ──────────────────────────────────────── */}
       <section className="px-6 pb-16">
