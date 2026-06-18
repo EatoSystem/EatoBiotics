@@ -1,240 +1,300 @@
-/* ── Family Assessment Scoring ─────────────────────────────────────────── */
-// Same math as lib/assessment-scoring.ts.
-// Only profiles and pillar insight copy are reframed for family context.
+/* ── Family Assessment Scoring — native 5-pillar Food Culture model ─────────
+ * The Family assessment is its OWN model: five household-specific sub-scores
+ * (Exposure, Foundation, Live Foods, Rhythm, Food Culture), each 0–100, scored
+ * directly from the 15 questions. It no longer borrows the You 3-Biotics insight
+ * layer.
+ *
+ * A secondary 3-Biotics summary is derived for continuity with the rest of
+ * EatoBiotics (and stored as the canonical `subScores` so the dashboard / consult
+ * / nudge consumers keep working):
+ *   Exposure + Foundation → Prebiotics · Live Foods → Probiotics ·
+ *   Rhythm + Food Culture → Postbiotics.
+ * Because Exposure+Foundation span q1–q6, Live Foods q7–q9, and Rhythm+Food
+ * Culture q10–q15, that derivation is identical to computeSubScores(answers) —
+ * so stored scores stay byte-compatible with the previous model.
+ */
 
-import {
-  computeSubScores,
-  computeOverall,
-} from "./assessment-scoring"
+import { computeSubScores, computeOverall } from "./assessment-scoring"
 import type {
   SubScores,
   AssessmentProfile,
   PillarInsight,
   AssessmentResult,
 } from "./assessment-scoring"
-import { PILLARS, PILLAR_ORDER, type PillarKey } from "./pillars"
-
-// Family assessment uses its own 5-pillar system (independent of gut Feed/Seed/Heal)
-type FamilyPillarKey = "diversity" | "feeding" | "adding" | "consistency" | "feeling"
 
 export { computeSubScores, computeOverall }
 export type { SubScores, AssessmentProfile, PillarInsight, AssessmentResult }
 
-/* ── Profile determination ──────────────────────────────────────────── */
+export type FamilyPillarKey = "exposure" | "foundation" | "liveFoods" | "rhythm" | "foodCulture"
 
-/** Which biotic pillar the family scores lowest on (the focus area). */
-function getWeakestPillar(sub: SubScores): PillarKey {
-  return PILLAR_ORDER.reduce(
-    (min, k) => ((sub[k] ?? 0) < (sub[min] ?? 0) ? k : min),
-    PILLAR_ORDER[0],
-  )
+export interface FamilyPillarScores {
+  exposure: number
+  foundation: number
+  liveFoods: number
+  rhythm: number
+  foodCulture: number
 }
 
-// Maps each biotic to the best-fit family insight copy (the 5 question groups
-// fold into 3 biotics: diversity+feeding → prebiotics, adding → probiotics,
-// consistency+feeling → postbiotics).
-const BIOTIC_META: Record<PillarKey, FamilyPillarKey> = {
-  prebiotics: "feeding",
-  probiotics: "adding",
-  postbiotics: "consistency",
+/** Non-scored context that shapes recommendations only. */
+export interface FamilyContext {
+  householdSize?: number
+  ages?: number
+  pickyEating?: number
+  budget?: number
+  cookingTime?: number
+  schoolMeals?: number
+  mainGoal?: number
 }
 
-export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
-  const weakest = getWeakestPillar(sub)
-
-  if (overall >= 75) {
-    return {
-      type: "Thriving System",
-      tagline: "Your family's food culture is working hard in everyone's favour.",
-      description:
-        "You're doing something genuinely rare — feeding your family with intention, variety, and consistency in a way that meaningfully supports every gut in the house. Your scores reflect a system that is well-fed, well-timed, and well-balanced. The opportunity now is to refine the edges, explore new foods together, and deepen what's already working.",
-      color: "var(--icon-green)",
-    }
-  }
-
-  if (overall >= 58) {
-    return {
-      type: "Strong Foundation",
-      tagline: "Your family has built something real — now it's time to sharpen it.",
-      description:
-        "Your family has solid eating habits and gut health is benefiting from your effort. There are one or two pillars where a targeted shift would unlock noticeably better results for everyone at the table. The good news: you don't need a transformation — just a refinement.",
-      color: "var(--icon-teal)",
-    }
-  }
-
-  if (overall >= 42) {
-    return {
-      type: "Emerging Balance",
-      tagline: "The building blocks are there. Consistency is the family's next step.",
-      description:
-        "Your family has awareness and some strong habits, but they haven't fully integrated into a reliable daily pattern yet. Your family's gut health responds to consistency — even small, repeatable improvements compound quickly. You're closer to a strong family foundation than you might think.",
-      color: "var(--icon-lime)",
-    }
-  }
-
-  if (overall >= 28) {
-    if (weakest === "postbiotics") {
-      return {
-        type: "Inconsistent System",
-        tagline: "Good intention, interrupted by an unpredictable family rhythm.",
-        description:
-          "Your family has intention around food — it shows in some of your answers. What the microbiome is missing right now is predictability. When eating is erratic — rushed meals, skipped meals, irregular timing — even good food choices deliver less benefit. The fix isn't eating better; it's eating more consistently as a family.",
-        color: "var(--icon-yellow)",
-      }
-    }
-    if (weakest === "probiotics") {
-      return {
-        type: "Underfed System",
-        tagline: "Your family's gut is waiting for the live foods it needs to thrive.",
-        description:
-          "Your family's eating habits have real strengths — fibre, whole foods, and variety are present. What the microbiome is missing is direct microbial input from live and fermented foods. This is the most targeted gap to address, and the fastest one to close. Adding even one fermented food daily for the family can shift things meaningfully within weeks.",
-        color: "var(--icon-yellow)",
-      }
-    }
-    return {
-      type: "Emerging Balance",
-      tagline: "Progress is underway — targeted effort will accelerate it.",
-      description:
-        "Your family has some good habits in place, but there are clear gaps where the food system isn't yet consistently supporting gut health. Focusing on the weakest areas first will create the fastest momentum for every family member.",
-      color: "var(--icon-lime)",
-    }
-  }
-
-  if (overall >= 15) {
-    return {
-      type: "Inconsistent System",
-      tagline: "Your family's gut is waiting for a more stable foundation.",
-      description:
-        "Across most pillars, your family's current eating patterns aren't yet giving the microbiome what it needs to function well. This isn't a judgement — it's a starting point. Small, specific changes to the daily family food rhythm will compound faster than you expect.",
-      color: "var(--icon-orange)",
-    }
-  }
-
-  return {
-    type: "Early Builder",
-    tagline: "Your family is at the beginning of something important.",
-    description:
-      "Your family's food system health journey is just beginning, and that means every improvement from here creates a meaningful impact. The most effective place to start is building a simple, repeatable base — a handful of whole foods, eaten consistently together. Complexity comes later.",
-    color: "var(--icon-orange)",
-  }
+export interface FamilyResult extends AssessmentResult {
+  /** The primary, family-native pillar scores (0–100 each). */
+  pillarScores: FamilyPillarScores
+  /** Secondary 3-Biotics view of the same answers. */
+  biotics: { prebiotics: number; probiotics: number; postbiotics: number }
+  /** Context-aware tips (never affect the score). */
+  contextTips: string[]
+  context?: FamilyContext
 }
 
-/* ── Per-pillar insight copy (family-framed) ────────────────────────── */
+/* ── Pillar question groups ─────────────────────────────────────────── */
 
-const FAMILY_PILLAR_META: Record<
-  FamilyPillarKey,
-  {
-    label: string
-    icon: string
-    color: string
-    gradient: string
-    strength: string
-    opportunity: string
-    actionLow: string
-    actionHigh: string
+export const FAMILY_PILLAR_IDS: Record<FamilyPillarKey, string[]> = {
+  exposure: ["q1", "q2", "q3"],
+  foundation: ["q4", "q5", "q6"],
+  liveFoods: ["q7", "q8", "q9"],
+  rhythm: ["q10", "q11", "q12"],
+  foodCulture: ["q13", "q14", "q15"],
+}
+
+export const FAMILY_PILLAR_ORDER: FamilyPillarKey[] = [
+  "exposure",
+  "foundation",
+  "liveFoods",
+  "rhythm",
+  "foodCulture",
+]
+
+function num(answers: Record<string, number | string[]>, id: string): number {
+  const v = answers[id]
+  return typeof v === "number" ? v : 0
+}
+
+/** Each pillar = its three 0–3 answers scaled to 0–100. */
+export function computeFamilyPillarScores(
+  answers: Record<string, number | string[]>,
+): FamilyPillarScores {
+  const out = {} as FamilyPillarScores
+  for (const key of FAMILY_PILLAR_ORDER) {
+    const ids = FAMILY_PILLAR_IDS[key]
+    const raw = ids.reduce((sum, id) => sum + num(answers, id), 0)
+    out[key] = Math.round((raw / (ids.length * 3)) * 100)
   }
-> = {
-  diversity: {
-    label: "Diversity",
+  return out
+}
+
+/* ── Per-pillar insight copy (family Food Culture pillars) ───────────── */
+
+interface FamilyPillarMeta {
+  label: string
+  icon: string
+  color: string
+  gradient: string
+  strength: string
+  opportunity: string
+  actionLow: string
+  actionHigh: string
+}
+
+const FAMILY_PILLAR_META: Record<FamilyPillarKey, FamilyPillarMeta> = {
+  exposure: {
+    label: "Exposure",
     icon: "Leaf",
     color: "var(--icon-lime)",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
     strength:
-      "Your family is regularly exposing everyone's microbiome to a wide variety of plant inputs — one of the strongest predictors of a healthy, resilient gut for every person at the table.",
+      "Your family meets a good range of foods, and new tastes are offered in a relaxed, low-pressure way — exactly how willingness to try grows over time.",
     opportunity:
-      "Variety is already part of your family's diet — the next step is expanding the range a little further. Adding 2–3 unfamiliar plants each week meaningfully increases microbial richness without overhauling your meals.",
+      "Tastes change with gentle, repeated exposure. Offering one new food to look at, smell, or taste — with zero pressure to finish — can slowly widen what the whole family enjoys.",
     actionLow:
-      "This week: introduce one unfamiliar plant food to a family meal — a new bean, a different leafy green, or a vegetable nobody has tried recently. One new plant per week adds up fast.",
+      "This week: put one new plant food on the table to try, no pressure to eat it. Re-offer foods calmly over time — it can take many low-key tries.",
     actionHigh:
-      "Keep a loose mental note of the weekly plant count. If you dip below 20, add one new plant category — seeds, sea vegetables, or a new legume.",
+      "Keep variety growing: rotate in an unfamiliar vegetable, bean, or grain each week and let everyone explore it at their own pace.",
   },
-  feeding: {
-    label: "Feeding",
+  foundation: {
+    label: "Foundation",
     icon: "Wheat",
     color: "var(--icon-green)",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
     strength:
-      "Your family is consistently feeding everyone's gut bacteria the fibre-rich whole foods they need — the raw material your microbiomes convert into short-chain fatty acids.",
+      "Your family's everyday defaults — meals and snacks built on fibre-rich whole foods — give every gut in the house a steady, supportive base.",
     opportunity:
-      "Fibre from whole plants is the primary fuel for gut bacteria. A simple anchor at each family meal — legumes, wholegrains, or vegetables — creates the consistent supply every microbiome needs to do its best work.",
+      "Reliable defaults do the heavy lifting. Anchoring everyday breakfasts, lunches, and snacks with some protein and fibre may support steadier energy across the household.",
     actionLow:
-      "This week: anchor every main family meal with one fibre source. Lentils, oats, vegetables, wholegrains, or beans all count — and even a small portion makes a difference for every family member.",
+      "This week: upgrade one repeated default — add a fibre source (oats, beans, wholegrain, or veg) to a breakfast, lunch, or snack the family already eats.",
     actionHigh:
-      "Diversify your family's fibre sources. Add resistant starch (cooled potato, green banana) or new legumes to hit different microbial populations across the household.",
+      "Broaden the base: rotate in different legumes, wholegrains, and prebiotic foods so the family's staples cover more ground.",
   },
-  adding: {
-    label: "Adding",
+  liveFoods: {
+    label: "Live Foods",
     icon: "FlaskConical",
     color: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
     strength:
-      "Your family is regularly introducing live, fermented foods that directly seed the microbiome with beneficial bacteria — one of the most targeted dietary inputs available for every age.",
+      "Your family regularly includes live and fermented foods where they suit each person — an easy, age-appropriate way to support a varied microbiome.",
     opportunity:
-      "Fermented foods are the most direct way to introduce new bacteria to the gut. Even one serving a day — yoghurt at breakfast, miso broth at lunch, or a tablespoon of sauerkraut at dinner — makes a measurable difference for the whole family within weeks.",
+      "Live and fermented foods can be a simple, family-friendly addition. Even one suitable option a few days a week — natural yoghurt or kefir for younger ones — is a gentle place to start.",
     actionLow:
-      "This week: add one fermented food to at least one family meal each day — natural yoghurt with breakfast or kefir as an afternoon snack works for all ages.",
+      "This week: add one age-appropriate live food the family already likes — natural yoghurt or kefir works well for most ages.",
     actionHigh:
-      "Rotate the family's fermented food sources. Each carries a different bacterial profile — alternate between at least three types across the week for broader microbiome coverage.",
+      "Rotate the family's live foods across the week so everyone meets a wider range of cultures.",
   },
-  consistency: {
-    label: "Consistency",
+  rhythm: {
+    label: "Rhythm",
     icon: "Clock",
     color: "var(--icon-yellow)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     strength:
-      "Your family's eating rhythm is one of your biggest assets. Consistent meal timing allows every microbiome in the household to anticipate and prepare — improving digestion, blood sugar stability, and nutrient absorption for everyone.",
+      "Your family's mealtimes are predictable, shared, and easy to repeat — a rhythm like this takes pressure off the day and helps everyone eat well without thinking about it.",
     opportunity:
-      "The family's gut microbiomes respond well to rhythm. Even rough consistency in meal timing — within a 30-minute window — improves how effectively every gut processes the food the family is already eating. The food choices don't need to change; the pattern does.",
+      "A repeatable rhythm makes healthy eating easier for everyone. A few reliable meals, roughly consistent times, and one shared meal can do more than any single 'perfect' dinner.",
     actionLow:
-      "This week: set three family anchor meal times and protect them. Even rough consistency signals every gut in the house to prepare and respond.",
+      "This week: lock in a couple of reliable go-to meals and one shared family meal you can repeat — predictability beats perfection.",
     actionHigh:
-      "Identify the conditions that break the family's rhythm (school activities, late meetings, social eating) and pre-plan one simple solution for each scenario.",
+      "Smooth the routine: a loose weekly plan and a short shopping list for your go-to meals keeps the rhythm easy to protect.",
   },
-  feeling: {
-    label: "Feeling",
+  foodCulture: {
+    label: "Food Culture",
     icon: "Heart",
     color: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     strength:
-      "Your family is responding well to how you're eating together — with stable energy, clear focus, and good digestive comfort across the household. This is a clear signal that the gut-brain axis is functioning well for every family member.",
+      "Mealtimes in your home are calm and shared, with food handled without pressure — a positive food culture like this is one of the strongest things a family can build.",
     opportunity:
-      "How family members feel after eating is a direct signal from their gut. If energy or digestion is variable — especially in children — tracking one word per meal for a few days often reveals which foods or patterns are at play, and the fix is usually simpler than expected.",
+      "How food feels matters as much as what's on the plate. Keeping mealtimes low-pressure, involving children in choosing and cooking, and sharing the load can make eating well feel lighter for everyone.",
     actionLow:
-      "This week: ask each child to describe how they feel one hour after their main meal for three days — just one word. This builds the pattern awareness needed to identify what's working and what isn't.",
+      "This week: pick one mealtime to keep completely pressure-free, and invite a child to help choose or prepare part of it.",
     actionHigh:
-      "Pay attention to what disrupts feeling scores in the family. Identify 2–3 foods or habits that reliably diminish energy or comfort, and experiment with reducing them one at a time.",
+      "Keep protecting the calm: share the cooking load and let everyone have a say — a relaxed table is what makes the rest stick.",
   },
 }
 
-export function getInsights(sub: SubScores): PillarInsight[] {
-  return PILLAR_ORDER.map((biotic): PillarInsight => {
-    const score = sub[biotic] ?? 0
-    const meta = FAMILY_PILLAR_META[BIOTIC_META[biotic]]
-    const isStrength = score >= 58
+const STRENGTH_THRESHOLD = 58
+
+export function getFamilyInsights(pillarScores: FamilyPillarScores): PillarInsight[] {
+  return FAMILY_PILLAR_ORDER.map((key): PillarInsight => {
+    const score = pillarScores[key]
+    const meta = FAMILY_PILLAR_META[key]
+    const isStrength = score >= STRENGTH_THRESHOLD
     return {
-      pillar: biotic,
-      label: PILLARS[biotic].label, // canonical 3-biotic label (Food System Core)
+      pillar: key,
+      label: meta.label,
       score,
       strength: isStrength ? meta.strength : undefined,
       opportunity: !isStrength ? meta.opportunity : undefined,
       action: isStrength ? meta.actionHigh : meta.actionLow,
       icon: meta.icon,
-      color: PILLARS[biotic].color,
+      color: meta.color,
       gradient: meta.gradient,
     }
   }).sort((a, b) => a.score - b.score) // weakest first
 }
 
-/* ── Main compute function ──────────────────────────────────────────── */
+/* ── Profile (band) — reuses the family 3-Biotics overall for continuity ── */
+
+export function getFamilyProfile(overall: number, _biotics?: SubScores): AssessmentProfile {
+  // The band copy is the family-framed wrapper around the shared overall bands.
+  if (overall >= 75) {
+    return {
+      type: "Thriving Food Culture",
+      tagline: "Your family's food culture is working hard in everyone's favour.",
+      description:
+        "You're feeding your family with variety, rhythm, and a calm, shared table. That mix — what's eaten and how it feels — is exactly what supports every gut in the house. The opportunity now is to keep doing what's working and explore new foods together.",
+      color: "var(--icon-green)",
+    }
+  }
+  if (overall >= 58) {
+    return {
+      type: "Strong Foundation",
+      tagline: "Your family has built something real — now sharpen the edges.",
+      description:
+        "Your family has solid habits across the table. There are one or two pillars where a small, kind change would make things noticeably easier for everyone — not a transformation, just a refinement.",
+      color: "var(--icon-teal)",
+    }
+  }
+  if (overall >= 42) {
+    return {
+      type: "Emerging Balance",
+      tagline: "The building blocks are there — consistency is the next step.",
+      description:
+        "Your family has real strengths and some areas still finding their rhythm. Small, repeatable changes — protected mealtimes, reliable defaults, a calmer table — compound quickly. You're closer than it might feel.",
+      color: "var(--icon-lime)",
+    }
+  }
+  if (overall >= 28) {
+    return {
+      type: "Finding Your Rhythm",
+      tagline: "A few steady anchors will make everything easier.",
+      description:
+        "Feeding a family is genuinely hard, and this is a starting point, not a verdict. Choosing one or two anchors — a reliable meal, a calmer mealtime — tends to lift several areas at once.",
+      color: "var(--icon-yellow)",
+    }
+  }
+  return {
+    type: "Early Builder",
+    tagline: "Your family is at the beginning of something good.",
+    description:
+      "Every small change from here makes a real difference. The easiest place to start is a simple, repeatable base — a couple of reliable meals, eaten together when you can, with the pressure turned down. Complexity comes later.",
+    color: "var(--icon-orange)",
+  }
+}
+
+/* ── Context-aware tips (never change the score) ─────────────────────── */
+
+function buildContextTips(ctx: FamilyContext): string[] {
+  const tips: string[] = []
+  if (ctx.pickyEating != null && ctx.pickyEating <= 1) {
+    tips.push("With selective eaters, lean on calm repeated exposure — keep offering small tastes without pressure, and pair new foods with familiar favourites.")
+  }
+  if (ctx.budget != null && ctx.budget <= 0) {
+    tips.push("On a tight budget, frozen and tinned vegetables, beans, lentils, and own-brand oats are cheap, reliable ways to lift the Foundation pillar.")
+  }
+  if (ctx.cookingTime != null && ctx.cookingTime <= 1) {
+    tips.push("With little cooking time, batch a couple of go-to meals and lean on quick assembly (wholegrain wrap, beans, yoghurt) to protect Rhythm.")
+  }
+  if (ctx.schoolMeals != null && ctx.schoolMeals <= 1) {
+    tips.push("If lunchboxes do a lot of the work, a simple repeatable formula — wholegrain base, protein, fruit or veg, a live food — keeps weekday lunches solid.")
+  }
+  return tips
+}
+
+/* ── Main compute ───────────────────────────────────────────────────── */
 
 export function computeResult(
-  answers: Record<string, number | string[]>
-): AssessmentResult {
-  const subScores = computeSubScores(answers)
-  const overall = computeOverall(subScores)
-  const profile = getProfile(overall, subScores)
-  const insights = getInsights(subScores)
+  answers: Record<string, number | string[]>,
+  context?: FamilyContext,
+): FamilyResult {
+  const pillarScores = computeFamilyPillarScores(answers)
+  const biotics = computeSubScores(answers)
+  const overall = computeOverall(biotics)
+  const profile = getFamilyProfile(overall, biotics)
+  const insights = getFamilyInsights(pillarScores)
   const nextActions = insights.slice(0, 3).map((i) => i.action)
+
+  // Canonical sub_scores: 3-Biotics (back-compat) + the 5 native pillars under
+  // the legacy 5-key names so the dashboard's sub-score extractor keeps working.
+  const subScores: SubScores = {
+    prebiotics: biotics.prebiotics,
+    probiotics: biotics.probiotics,
+    postbiotics: biotics.postbiotics,
+    feed: biotics.prebiotics,
+    seed: biotics.probiotics,
+    heal: biotics.postbiotics,
+    diversity: pillarScores.exposure,
+    feeding: pillarScores.foundation,
+    adding: pillarScores.liveFoods,
+    consistency: pillarScores.rhythm,
+    feeling: pillarScores.foodCulture,
+  }
 
   return {
     subScores,
@@ -242,6 +302,14 @@ export function computeResult(
     profile,
     insights,
     nextActions,
+    pillarScores,
+    biotics: {
+      prebiotics: biotics.prebiotics,
+      probiotics: biotics.probiotics,
+      postbiotics: biotics.postbiotics,
+    },
+    contextTips: context ? buildContextTips(context) : [],
+    context,
     completedAt: Date.now(),
   }
 }

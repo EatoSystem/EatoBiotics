@@ -3,7 +3,7 @@ import { SportsAssessmentClient } from "./assessment-client"
 import { FoundationGuard } from "@/components/assessment/foundation-guard"
 
 export const metadata: Metadata = {
-  title: "EatoSports Assessment — Find Your Performance Food Profile | EatoBiotics",
+  title: "EatoBiotics Performance — Find Your Performance Food Profile | EatoBiotics",
   description:
     "12 questions. Your sport, your level. A personalised performance food profile built around the 4 Systems of Performance.",
 }

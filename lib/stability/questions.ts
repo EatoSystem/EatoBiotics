@@ -173,3 +173,23 @@ export const DEFAULT_FLAGS: SafetyFlags = {
 
 /** Total number of scored questions (for the progress bar). */
 export const TOTAL_STEPS = STABILITY_SECTIONS.length + 1 // sections + safety screen
+
+/* ── Answer-completeness validation (pure, unit-testable) ───────────────────
+ * A user must explicitly answer every scored question before any score is
+ * computed/shown — no score may be derived from DEFAULT_ANSWERS alone. These
+ * helpers drive the form's "see results" gate and are asserted in tests. */
+
+/** Every scored question id the user must explicitly answer. */
+export function requiredStabilityQuestionIds(): (keyof StabilityAnswers)[] {
+  return STABILITY_SECTIONS.flatMap((s) => s.questions.map((q) => q.id))
+}
+
+/**
+ * True only when every required scored question has been explicitly answered.
+ * `answeredIds` is the set of question ids the user actively touched.
+ */
+export function allStabilityAnswered(answeredIds: string[]): boolean {
+  const answered = new Set(answeredIds)
+  const required = requiredStabilityQuestionIds()
+  return required.every((id) => answered.has(id))
+}

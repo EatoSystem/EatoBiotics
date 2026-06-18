@@ -9,6 +9,7 @@ import { resolvedFoundation, getJourney, journeyType } from "@/lib/assessment/jo
 import { getSummary, isComplete, type AssessmentSummary, type AddonKey } from "@/lib/assessment/registry"
 import { ensureHydrated, persist } from "@/lib/assessment/sync"
 import { loadLeadData } from "@/lib/assessment-storage"
+import { buildCombinedResult } from "@/lib/combined-assessment-result"
 
 const EMAILED_KEY = "eb_assessment_report_emailed_v1"
 
@@ -125,9 +126,12 @@ export function CombinedReport() {
     )
   }
 
-  const title = addon ? `Your Food System + ${addon.label} Report` : `Your ${foundation.label === "Family" ? "Family " : ""}Food System Report`
-  const mergedSeven = [...foundation.sevenDay, ...(addon?.sevenDay ?? [])].slice(0, 6)
-  const thirtyDay = addon?.thirtyDay
+  // Typed, non-diagnostic merge of foundation + add-on (title, summary,
+  // foundation influence, merged actions, and the right disclaimer).
+  const combined = buildCombinedResult(foundation, addon)
+  const title = combined.reportTitle
+  const mergedSeven = combined.first7Days
+  const thirtyDay = combined.next30Days
 
   return (
     <section className="px-6 pt-28 pb-24 md:pt-32">
@@ -156,6 +160,18 @@ export function CombinedReport() {
                 {addonKey ? ADDON_FOCUS[addonKey] : "your focus area"}.
               </p>
             )}
+          </div>
+        </ScrollReveal>
+
+        {/* Combined summary + how the foundation supports the add-on area */}
+        <ScrollReveal delay={100}>
+          <div className="mt-8 rounded-[1.5rem] border border-border bg-card p-7">
+            <p className="text-sm font-bold uppercase tracking-wide text-icon-green">What this means together</p>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{combined.combinedSummary}</p>
+            <p className="mt-4 text-sm leading-relaxed text-foreground">
+              <span className="font-semibold">How your foundation helps: </span>
+              {combined.foundationInfluence}
+            </p>
           </div>
         </ScrollReveal>
 
@@ -233,6 +249,9 @@ export function CombinedReport() {
             </Link>
           </div>
         </ScrollReveal>
+
+        {/* Disclaimer — behaviour-based support score, never a diagnosis */}
+        <p className="mt-8 text-center text-xs leading-relaxed text-muted-foreground/80">{combined.disclaimer}</p>
       </div>
     </section>
   )

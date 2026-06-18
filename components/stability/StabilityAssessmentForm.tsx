@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { ArrowLeft, ArrowRight, ShieldAlert } from "lucide-react"
 import {
   STABILITY_SECTIONS, SAFETY_QUESTIONS, DEFAULT_ANSWERS, DEFAULT_FLAGS, TOTAL_STEPS,
+  requiredStabilityQuestionIds, allStabilityAnswered,
 } from "@/lib/stability/questions"
 import { calculateStabilityScore } from "@/lib/stability/scoring"
 import { saveAssessment } from "@/lib/stability/storage"
@@ -16,6 +17,10 @@ export function StabilityAssessmentForm() {
   const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState<StabilityAnswers>({ ...DEFAULT_ANSWERS })
   const [flags, setFlags] = useState<SafetyFlags>({ ...DEFAULT_FLAGS })
+  // Track which scored questions the user has actually answered. No score may be
+  // computed from untouched DEFAULT_ANSWERS — see allStabilityAnswered().
+  const [answered, setAnswered] = useState<Set<string>>(new Set())
+  const [confirmed, setConfirmed] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
   const isSafety = step === STABILITY_SECTIONS.length
@@ -23,11 +28,24 @@ export function StabilityAssessmentForm() {
   const anyFlag = Object.values(flags).some(Boolean)
   const matchedFlags = SAFETY_QUESTIONS.filter((q) => flags[q.id]).map((q) => q.label)
 
+  const requiredIds = requiredStabilityQuestionIds()
+  const allAnswered = allStabilityAnswered([...answered])
+  const remaining = requiredIds.filter((id) => !answered.has(id)).length
+  const canFinish = allAnswered && confirmed && !submitting
+
   function set<K extends keyof StabilityAnswers>(id: K, value: number) {
     setAnswers((a) => ({ ...a, [id]: id === "usualStool" ? (value as StoolType) : value }))
+    setAnswered((prev) => {
+      if (prev.has(id)) return prev
+      const next = new Set(prev)
+      next.add(id)
+      return next
+    })
   }
 
   function finish() {
+    // Hard guard: never compute/show a score from an incomplete/default state.
+    if (!allAnswered || !confirmed) return
     setSubmitting(true)
     const score = calculateStabilityScore(answers, flags)
     saveAssessment({ answers, flags, score })
@@ -38,6 +56,13 @@ export function StabilityAssessmentForm() {
 
   return (
     <div className="mx-auto max-w-2xl">
+      {/* Sticky red-flag warning — shown immediately the moment any safety flag is ticked */}
+      {anyFlag && (
+        <div className="sticky top-3 z-20 mb-4">
+          <RedFlagWarning matched={matchedFlags} compact />
+        </div>
+      )}
+
       {/* Progress */}
       <div className="mb-6 flex items-center gap-3">
         <div className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: "var(--border)" }}>
@@ -70,6 +95,25 @@ export function StabilityAssessmentForm() {
               })}
             </div>
             {anyFlag && <div className="mt-5"><RedFlagWarning matched={matchedFlags} compact /></div>}
+
+            {/* Completeness + explicit confirmation gate */}
+            <div className="mt-6 rounded-2xl border p-4" style={{ borderColor: "var(--border)", background: "#f7f9f4" }}>
+              {!allAnswered ? (
+                <p className="text-sm font-medium" style={{ color: "var(--icon-orange)" }}>
+                  Please answer every question before seeing your score — {remaining} still {remaining === 1 ? "needs" : "need"} an answer. Use Back to complete the earlier sections.
+                </p>
+              ) : (
+                <label className="flex cursor-pointer items-start gap-3 text-sm" style={{ color: "var(--foreground)" }}>
+                  <input
+                    type="checkbox"
+                    checked={confirmed}
+                    onChange={(e) => setConfirmed(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--icon-green)]"
+                  />
+                  <span>I&apos;ve answered these questions honestly for myself.</span>
+                </label>
+              )}
+            </div>
           </>
         ) : (
           <>
@@ -105,8 +149,8 @@ export function StabilityAssessmentForm() {
             </button>
           ) : <span />}
           {isSafety ? (
-            <button type="button" onClick={finish} disabled={submitting}
-              className="brand-gradient inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-white shadow-lg transition-opacity hover:opacity-90 disabled:opacity-60">
+            <button type="button" onClick={finish} disabled={!canFinish}
+              className="brand-gradient inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-white shadow-lg transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
               {submitting ? "Calculating…" : "See my Stability Score"} <ArrowRight size={15} />
             </button>
           ) : (

@@ -8,6 +8,7 @@ import type { StabilityAssessment } from "@/lib/stability/types"
 import { StabilityScoreCard } from "./StabilityScoreCard"
 import { StabilityShareCard } from "./StabilityShareCard"
 import { RedFlagWarning } from "./RedFlagWarning"
+import { STABILITY_DISCLAIMER } from "@/lib/assessment-disclaimers"
 
 /** Build a gentle 7-day plan from the recommendations (padded with steady defaults). */
 function sevenDayPlan(steps: string[]): string[] {
@@ -52,6 +53,8 @@ export function StabilityResults() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      {/* Safety-first: when red flags are present, medical guidance comes BEFORE
+          the score and any lifestyle recommendations below. */}
       {score.redFlags.length > 0 && <RedFlagWarning matched={score.redFlags} />}
 
       <StabilityScoreCard score={score} />
@@ -113,6 +116,9 @@ export function StabilityResults() {
         <Link href="/stability/tracker" className="brand-gradient inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-white">Start tracking daily <ArrowRight size={15} /></Link>
         <Link href="/stability/assessment" className="inline-flex items-center gap-2 rounded-full border px-7 py-3.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground" style={{ borderColor: "var(--border)" }}>Retake assessment</Link>
       </div>
+
+      {/* Required, exact Stability safety disclaimer. */}
+      <p className="text-center text-[11px] leading-relaxed text-muted-foreground/80">{STABILITY_DISCLAIMER}</p>
     </div>
   )
 }

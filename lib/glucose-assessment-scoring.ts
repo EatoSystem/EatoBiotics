@@ -15,12 +15,12 @@ import {
 
 export type GlucoseSubScores = Record<GlucosePillarKey, number>
 
-// Weighting (sums to 1): Plate 30%, Rhythm 15%, Strength 25%, Recovery 30%.
-const PILLAR_WEIGHTS: Record<GlucosePillarKey, number> = {
+// Weighting (sums to 1): Plate 30%, Rhythm 20%, Strength 25%, Recovery 25%.
+export const PILLAR_WEIGHTS: Record<GlucosePillarKey, number> = {
   plate: 0.3,
-  rhythm: 0.15,
+  rhythm: 0.2,
   strength: 0.25,
-  recovery: 0.3,
+  recovery: 0.25,
 }
 
 export type Glp1Status = "none" | "considering" | "active"
