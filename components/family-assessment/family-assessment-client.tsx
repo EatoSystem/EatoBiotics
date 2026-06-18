@@ -79,7 +79,7 @@ export function FamilyAssessmentClient() {
     fetch("/api/submit-lead", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(leadData),
+      body: JSON.stringify({ ...leadData, assessmentType: "family" }),
     }).catch(() => {/* ignore network errors */})
 
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior })
@@ -112,7 +112,7 @@ export function FamilyAssessmentClient() {
         fetch("/api/send-results-email", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ lead: currentLead, result: computed }),
+          body: JSON.stringify({ lead: currentLead, result: computed, assessmentType: "family" }),
         }).catch(() => {/* ignore network errors */})
 
         fetch("/api/auth/send-magic-link", {
