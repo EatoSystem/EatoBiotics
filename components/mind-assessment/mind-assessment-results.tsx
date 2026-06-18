@@ -16,6 +16,7 @@ import {
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { ScoreRing } from "@/components/assessment/score-ring"
 import { PersonalReportCta } from "@/components/assessment/personal-report-cta"
+import { SaveResultsCard } from "@/components/assessment/save-results-card"
 import type { AssessmentResult, PillarInsight } from "@/lib/assessment-scoring"
 import { MIND_DISCLAIMER } from "@/lib/assessment-disclaimers"
 import { getFoodBySlug } from "@/lib/foods"
@@ -87,27 +88,6 @@ function PillarMiniBar({ insight, index }: { insight: PillarInsight; index: numb
   )
 }
 
-/* ── Save Results Card ───────────────────────────────────────────────── */
-
-function SaveResultsCard({ email }: { email?: string }) {
-  const [sent] = useState(true)
-  if (!email) return null
-
-  return (
-    <div className="rounded-2xl border bg-card p-6 text-center space-y-3">
-      <div className="w-10 h-10 rounded-full bg-[var(--icon-teal)]/10 flex items-center justify-center mx-auto">
-        <span className="text-xl">📧</span>
-      </div>
-      <h3 className="font-semibold text-base">Your results are on their way</h3>
-      {sent ? (
-        <p className="text-sm text-muted-foreground">
-          We&apos;ve sent your Mind Assessment results and brain food plan to{" "}
-          <span className="font-semibold text-foreground">{email}</span>.
-        </p>
-      ) : null}
-    </div>
-  )
-}
 
 /* ── Main component ──────────────────────────────────────────────────── */
 
@@ -392,7 +372,7 @@ export function MindAssessmentResults({ result, onRetake, leadEmail }: MindAsses
       <section className="border-t border-border px-6 py-16">
         <div className="mx-auto max-w-3xl">
           <ScrollReveal>
-            <SaveResultsCard email={leadEmail} />
+            <SaveResultsCard email={leadEmail} accentVar="--icon-teal" />
           </ScrollReveal>
         </div>
       </section>

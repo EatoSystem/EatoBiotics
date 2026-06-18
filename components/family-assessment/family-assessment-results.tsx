@@ -18,6 +18,7 @@ import { ScoreRing } from "@/components/assessment/score-ring"
 import { MissionNote } from "@/components/assessment/mission-note"
 import { PersonalReportCta } from "@/components/assessment/personal-report-cta"
 import { JourneyNextStep } from "@/components/assessment/journey-next-step"
+import { SaveResultsCard } from "@/components/assessment/save-results-card"
 import type { AssessmentResult, PillarInsight } from "@/lib/assessment-scoring"
 import { getFoodBySlug } from "@/lib/foods"
 
@@ -88,52 +89,6 @@ function PillarMiniBar({ insight, index }: { insight: PillarInsight; index: numb
   )
 }
 
-/* ── Save Results Card ───────────────────────────────────────────────── */
-
-function SaveResultsCard({ email }: { email?: string }) {
-  const [sent, setSent] = useState(true)
-
-  if (!email) return null
-
-  return (
-    <div className="rounded-2xl border bg-card p-6 text-center space-y-3">
-      <div className="w-10 h-10 rounded-full bg-[var(--icon-green)]/10 flex items-center justify-center mx-auto">
-        <span className="text-xl">📧</span>
-      </div>
-      <h3 className="font-semibold text-base">Your sign-in link is on its way</h3>
-      {sent ? (
-        <p className="text-sm text-muted-foreground">
-          We&apos;ve sent a sign-in link to{" "}
-          <span className="font-semibold text-foreground">{email}</span> — check your inbox to save
-          these results and access your account.
-        </p>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          Sending a sign-in link to <span className="font-semibold text-foreground">{email}</span>…
-        </p>
-      )}
-      {sent && (
-        <p className="text-xs text-muted-foreground/60">
-          Can&apos;t find it? Check your spam folder or{" "}
-          <button
-            onClick={() => {
-              setSent(false)
-              fetch("/api/auth/send-magic-link", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email }),
-              }).then(() => setSent(true)).catch(() => setSent(true))
-            }}
-            className="underline hover:text-foreground transition-colors"
-          >
-            resend the link
-          </button>
-          .
-        </p>
-      )}
-    </div>
-  )
-}
 
 /* ── Main component ──────────────────────────────────────────────────── */
 

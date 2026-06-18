@@ -114,12 +114,7 @@ export function FamilyAssessmentClient() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ lead: currentLead, result: computed, assessmentType: "family" }),
         }).catch(() => {/* ignore network errors */})
-
-        fetch("/api/auth/send-magic-link", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: currentLead.email, name: currentLead.name }),
-        }).catch(() => {/* ignore network errors */})
+        // The sign-in (magic) link is sent + status-tracked by SaveResultsCard.
       }
 
       setState((s) => ({

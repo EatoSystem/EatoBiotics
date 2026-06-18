@@ -138,6 +138,9 @@ export async function POST(req: NextRequest) {
       })
       if (sendError) {
         console.error("[send-magic-link] Resend error:", sendError.message)
+        // Surface the failure so the caller (SaveResultsCard) can stop showing
+        // a false "sent" and offer a retry. Still HTTP 200 (non-fatal).
+        return NextResponse.json({ ok: false, reason: "send_failed" })
       }
     } else {
       console.log("[send-magic-link] RESEND_API_KEY not set — magic link:", magicUrl)
