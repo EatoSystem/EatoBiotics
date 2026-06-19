@@ -89,6 +89,30 @@ function magicLinkEmailHtml({ magicUrl, name }: { magicUrl: string; name?: strin
 </html>`
 }
 
+async function sendSupabaseOtpEmail({
+  supabaseUrl,
+  supabaseAnonKey,
+  email,
+  siteUrl,
+}: {
+  supabaseUrl: string
+  supabaseAnonKey: string
+  email: string
+  siteUrl: string
+}) {
+  const client = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+
+  return client.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: `${siteUrl}/auth/callback`,
+      shouldCreateUser: true,
+    },
+  })
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { email, name } = await req.json() as { email?: string; name?: string }
@@ -100,65 +124,84 @@ export async function POST(req: NextRequest) {
     }
 
     const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    const supabaseServiceKey =
+      process.env.SUPABASE_SERVICE_ROLE_KEY ??
+      process.env.SUPABASE_SERVICE_KEY ??
+      process.env.SUPABASE_SECRET_KEY
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY
     const resendKey = process.env.RESEND_API_KEY
     const emailFrom = process.env.EMAIL_FROM ?? "hello@eatobiotics.com"
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://eatobiotics.com"
 
-    if (!supabaseUrl || !supabaseServiceKey) {
-      console.error("[send-magic-link] Supabase configuration missing")
+    if (!supabaseUrl) {
+      console.error("[send-magic-link] Supabase URL missing")
       return NextResponse.json(
         { error: "Magic link auth is not configured." },
         { status: 503 }
       )
     }
 
-    if (!resendKey) {
-      console.error("[send-magic-link] RESEND_API_KEY missing")
-      return NextResponse.json(
-        { error: "Magic link email delivery is not configured." },
-        { status: 503 }
-      )
+    // Preferred path: generate the link with the service role and send the branded email through Resend.
+    if (supabaseServiceKey && resendKey) {
+      const adminSupabase = createClient(supabaseUrl, supabaseServiceKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      })
+
+      const { data, error: linkError } = await adminSupabase.auth.admin.generateLink({
+        type: "magiclink",
+        email: normalizedEmail,
+        options: {
+          redirectTo: `${siteUrl}/auth/callback`,
+        },
+      })
+
+      if (!linkError && data?.properties?.action_link) {
+        const magicUrl = data.properties.action_link
+        const resend = new Resend(resendKey)
+        const { error: sendError } = await resend.emails.send({
+          from: `EatoBiotics <${emailFrom}>`,
+          to: normalizedEmail,
+          subject: "Your EatoBiotics sign-in link",
+          html: magicLinkEmailHtml({ magicUrl, name }),
+        })
+
+        if (!sendError) {
+          return NextResponse.json({ ok: true, provider: "resend" })
+        }
+
+        console.error("[send-magic-link] Resend error:", sendError.message)
+      } else {
+        console.error("[send-magic-link] generateLink error:", linkError?.message)
+      }
+    } else {
+      if (!supabaseServiceKey) console.error("[send-magic-link] Supabase service role key missing")
+      if (!resendKey) console.error("[send-magic-link] RESEND_API_KEY missing")
     }
 
-    const adminSupabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    })
+    // Fallback path: let Supabase send its own OTP/magic-link email with the anon key.
+    if (supabaseAnonKey) {
+      const { error: otpError } = await sendSupabaseOtpEmail({
+        supabaseUrl,
+        supabaseAnonKey,
+        email: normalizedEmail,
+        siteUrl,
+      })
 
-    const { data, error: linkError } = await adminSupabase.auth.admin.generateLink({
-      type: "magiclink",
-      email: normalizedEmail,
-      options: {
-        redirectTo: `${siteUrl}/auth/callback`,
-      },
-    })
+      if (!otpError) {
+        return NextResponse.json({ ok: true, provider: "supabase-otp" })
+      }
 
-    if (linkError || !data?.properties?.action_link) {
-      console.error("[send-magic-link] generateLink error:", linkError?.message)
+      console.error("[send-magic-link] signInWithOtp error:", otpError.message)
       return NextResponse.json(
         { error: "Could not create sign-in link." },
         { status: 500 }
       )
     }
 
-    const magicUrl = data.properties.action_link
-    const resend = new Resend(resendKey)
-    const { error: sendError } = await resend.emails.send({
-      from: `EatoBiotics <${emailFrom}>`,
-      to: normalizedEmail,
-      subject: "Your EatoBiotics sign-in link",
-      html: magicLinkEmailHtml({ magicUrl, name }),
-    })
-
-    if (sendError) {
-      console.error("[send-magic-link] Resend error:", sendError.message)
-      return NextResponse.json(
-        { error: "Could not send sign-in email." },
-        { status: 502 }
-      )
-    }
-
-    return NextResponse.json({ ok: true })
+    return NextResponse.json(
+      { error: "Magic link email delivery is not configured." },
+      { status: 503 }
+    )
   } catch (err) {
     console.error("[send-magic-link] Error:", err)
     return NextResponse.json(
