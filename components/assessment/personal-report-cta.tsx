@@ -34,7 +34,7 @@ export function PersonalReportCta({ result }: PersonalReportCtaProps) {
         body: JSON.stringify({
           tier: "personal",
           overall: result.overall,
-          profile: result.profile.type,
+          profile: result.profile,
           subScores: result.subScores,
         }),
       })
