@@ -79,7 +79,7 @@ function decodeCompactSummary(parsed: Record<string, unknown>): PaidReportSummar
   return {
     tier: parsed.t,
     overall: parsed.o,
-    subScores,
+    subScores: subScores as unknown as Record<string, number>,
     profile,
     email: typeof parsed.e === "string" ? parsed.e : null,
   }
