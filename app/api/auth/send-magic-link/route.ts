@@ -93,20 +93,32 @@ export async function POST(req: NextRequest) {
   try {
     const { email, name } = await req.json() as { email?: string; name?: string }
 
-    if (!email) {
+    const normalizedEmail = email?.toLowerCase().trim()
+
+    if (!normalizedEmail) {
       return NextResponse.json({ error: "Missing email" }, { status: 400 })
     }
 
-    const supabaseUrl = process.env.SUPABASE_URL
+    const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
     const resendKey = process.env.RESEND_API_KEY
     const emailFrom = process.env.EMAIL_FROM ?? "hello@eatobiotics.com"
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://eatobiotics.com"
 
-    // Gracefully skip if not configured (dev environments without keys)
     if (!supabaseUrl || !supabaseServiceKey) {
-      console.log("[send-magic-link] Supabase not configured — skipping for:", email)
-      return NextResponse.json({ ok: true, skipped: true })
+      console.error("[send-magic-link] Supabase configuration missing")
+      return NextResponse.json(
+        { error: "Magic link auth is not configured." },
+        { status: 503 }
+      )
+    }
+
+    if (!resendKey) {
+      console.error("[send-magic-link] RESEND_API_KEY missing")
+      return NextResponse.json(
+        { error: "Magic link email delivery is not configured." },
+        { status: 503 }
+      )
     }
 
     const adminSupabase = createClient(supabaseUrl, supabaseServiceKey, {
@@ -115,7 +127,7 @@ export async function POST(req: NextRequest) {
 
     const { data, error: linkError } = await adminSupabase.auth.admin.generateLink({
       type: "magiclink",
-      email,
+      email: normalizedEmail,
       options: {
         redirectTo: `${siteUrl}/auth/callback`,
       },
@@ -123,29 +135,35 @@ export async function POST(req: NextRequest) {
 
     if (linkError || !data?.properties?.action_link) {
       console.error("[send-magic-link] generateLink error:", linkError?.message)
-      return NextResponse.json({ ok: true, skipped: true }) // non-fatal
+      return NextResponse.json(
+        { error: "Could not create sign-in link." },
+        { status: 500 }
+      )
     }
 
     const magicUrl = data.properties.action_link
+    const resend = new Resend(resendKey)
+    const { error: sendError } = await resend.emails.send({
+      from: `EatoBiotics <${emailFrom}>`,
+      to: normalizedEmail,
+      subject: "Your EatoBiotics sign-in link",
+      html: magicLinkEmailHtml({ magicUrl, name }),
+    })
 
-    if (resendKey) {
-      const resend = new Resend(resendKey)
-      const { error: sendError } = await resend.emails.send({
-        from: `EatoBiotics <${emailFrom}>`,
-        to: email,
-        subject: "Your EatoBiotics sign-in link",
-        html: magicLinkEmailHtml({ magicUrl, name }),
-      })
-      if (sendError) {
-        console.error("[send-magic-link] Resend error:", sendError.message)
-      }
-    } else {
-      console.log("[send-magic-link] RESEND_API_KEY not set — magic link:", magicUrl)
+    if (sendError) {
+      console.error("[send-magic-link] Resend error:", sendError.message)
+      return NextResponse.json(
+        { error: "Could not send sign-in email." },
+        { status: 502 }
+      )
     }
 
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error("[send-magic-link] Error:", err)
-    return NextResponse.json({ ok: true, skipped: true }) // always non-fatal
+    return NextResponse.json(
+      { error: "Could not send sign-in email." },
+      { status: 500 }
+    )
   }
 }
