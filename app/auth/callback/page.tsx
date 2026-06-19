@@ -11,6 +11,12 @@ function safeNextPath(next: string | null): string {
   return next
 }
 
+function safeId(id: string | null): string | null {
+  if (!id) return null
+  const trimmed = id.trim()
+  return /^[a-zA-Z0-9_-]{6,80}$/.test(trimmed) ? trimmed : null
+}
+
 function AuthCallbackClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -21,10 +27,16 @@ function AuthCallbackClient() {
     async function finishSignIn() {
       const nextPath = safeNextPath(searchParams.get("next"))
       const supabase = getSupabaseBrowser()
+      const assessmentId = safeId(searchParams.get("assessmentId"))
+      const reportId = safeId(searchParams.get("reportId"))
       const code = searchParams.get("code")
       const hashParams = new URLSearchParams(window.location.hash.slice(1))
       const access_token = hashParams.get("access_token")
       const refresh_token = hashParams.get("refresh_token")
+
+      await supabase.auth.signOut({ scope: "local" }).catch((err) => {
+        console.warn("[auth-callback] local sign-out before magic-link session failed", err)
+      })
 
       const { error } = code
         ? await supabase.auth.exchangeCodeForSession(code)
@@ -39,7 +51,11 @@ function AuthCallbackClient() {
         return
       }
 
-      const setup = await fetch("/api/auth/setup-profile", { method: "POST" }).catch(() => null)
+      const setup = await fetch("/api/auth/setup-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assessmentId, reportId }),
+      }).catch(() => null)
       if (cancelled) return
 
       if (!setup?.ok) {

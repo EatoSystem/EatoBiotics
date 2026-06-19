@@ -25,6 +25,7 @@ export function AssessmentClient() {
   const [state, setState] = useState<AssessmentState>(emptyAssessmentState)
   const [hydrated, setHydrated] = useState(false)
   const [lead, setLead] = useState<LeadData | null>(null)
+  const [assessmentId, setAssessmentId] = useState<string | null>(null)
   const [winnerCode, setWinnerCode] = useState<string | null>(null)
   const resultsViewedFired = useRef(false)
 
@@ -74,7 +75,8 @@ export function AssessmentClient() {
       body: JSON.stringify(leadData),
     })
       .then((r) => r.json())
-      .then((d: { ok?: boolean; winner?: boolean; promoCode?: string }) => {
+      .then((d: { ok?: boolean; winner?: boolean; promoCode?: string; assessmentId?: string | null }) => {
+        if (d.assessmentId) setAssessmentId(d.assessmentId)
         if (d.winner && d.promoCode) setWinnerCode(d.promoCode)
       })
       .catch(() => {/* ignore network errors */})
@@ -137,7 +139,7 @@ export function AssessmentClient() {
         fetch("/api/auth/send-magic-link", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: currentLead.email, name: currentLead.name, next: "/account" }),
+          body: JSON.stringify({ email: currentLead.email, name: currentLead.name, assessmentId, next: "/account" }),
         }).catch(() => {/* ignore network errors */})
       }
 

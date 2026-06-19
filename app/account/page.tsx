@@ -21,10 +21,11 @@ function field<T>(obj: unknown, key: string): T | undefined { return (obj as any
 export default async function AccountPage({
   searchParams,
 }: {
-  searchParams: Promise<{ subscription?: string }>
+  searchParams: Promise<{ subscription?: string; debug?: string }>
 }) {
-  const { subscription } = await searchParams
+  const { subscription, debug } = await searchParams
   const justSubscribed = subscription === "success"
+  const showDebug = debug === "1" || process.env.NODE_ENV !== "production"
 
   const user = await getUser()
   if (!user) redirect("/assessment?signin=1")
@@ -46,7 +47,7 @@ export default async function AccountPage({
   /* ── Parallel data fetch — these queries are independent (they need only the
        authenticated user and the already-resolved profile), so run them
        concurrently instead of sequentially to cut the dashboard's load time. ── */
-  type AssessmentRow = { overall_score: number | null; profile_type: string | null; sub_scores: Record<string, number> | null }
+  type AssessmentRow = { id: string; overall_score: number | null; profile_type: string | null; sub_scores: Record<string, number> | null }
 
   const [
     assessments,
@@ -62,7 +63,7 @@ export default async function AccountPage({
     /* Assessment scores (gut only — for overall score + profile type) */
     (async (): Promise<AssessmentRow[]> => {
       if (!adminSupabase) return []
-      const baseSelect = "overall_score, profile_type, sub_scores"
+      const baseSelect = "id, overall_score, profile_type, sub_scores"
       const byUser = await adminSupabase
         .from("leads")
         .select(baseSelect)
@@ -207,6 +208,16 @@ export default async function AccountPage({
     })(),
   ])
 
+  const matchedAssessment = assessments[0] ?? null
+
+  console.log("[account] selected assessment", {
+    authenticatedEmail: normalizedEmail,
+    authenticatedUserId: user.id,
+    profileName: (profile?.name as string | null) ?? null,
+    matchedAssessmentId: matchedAssessment?.id ?? null,
+    matchedScore: matchedAssessment?.overall_score ?? null,
+  })
+
   const streak = streakInfo.current
 
   // Daily loop card data — streak + the weakest-pillar nudge from the Food System Core.
@@ -247,6 +258,15 @@ export default async function AccountPage({
           dedupeKey={`subscription_activated:${(profile.stripe_subscription_id as string | null) ?? user.id}`}
           properties={{ tier: (profile.membership_tier as string | null) ?? null }}
         />
+      )}
+      {showDebug && (
+        <div className="mx-auto mt-4 max-w-5xl rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-950">
+          <p className="font-semibold">Account debug</p>
+          <p>Signed-in email: {user.email ?? "—"}</p>
+          <p>Profile name: {(profile.name as string | null) ?? "—"}</p>
+          <p>Matched assessment ID: {matchedAssessment?.id ?? "—"}</p>
+          <p>Matched score: {matchedAssessment?.overall_score ?? "—"}</p>
+        </div>
       )}
       <LiveDashboard
         name={(profile.name as string | null) ?? null}

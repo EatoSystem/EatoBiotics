@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Store in Supabase if configured
+    let assessmentId: string | null = null
     const supabase = getSupabase()
     if (supabase) {
       // Check if this is a brand-new lead (not a repeat submission)
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
 
       const isNewLead = !existing
 
-      const { error } = await supabase.from("leads").upsert(
+      const { data: upsertedLead, error } = await supabase.from("leads").upsert(
         {
           name,
           email,
@@ -72,7 +73,8 @@ export async function POST(req: NextRequest) {
           assessment_type: assessmentType ?? "gut",
         },
         { onConflict: "email,assessment_type" }
-      )
+      ).select("id").single()
+      assessmentId = (upsertedLead?.id as string | undefined) ?? (existing?.id as string | undefined) ?? null
       if (error) {
         console.error("[submit-lead] Supabase error:", error.message)
       }
@@ -98,7 +100,7 @@ export async function POST(req: NextRequest) {
         if (count !== null && count % 100 === 0) {
           const promoCode = await createLotteryPromoCode(email)
           if (promoCode) {
-            return NextResponse.json({ ok: true, winner: true, promoCode, milestone: count })
+            return NextResponse.json({ ok: true, winner: true, promoCode, milestone: count, assessmentId })
           }
         }
       }
@@ -106,7 +108,7 @@ export async function POST(req: NextRequest) {
       console.log("[submit-lead] New lead (Supabase not configured):", { name, email, ageBracket })
     }
 
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ ok: true, assessmentId })
   } catch (err) {
     console.error("[submit-lead] Error:", err)
     return NextResponse.json({ error: "Internal error" }, { status: 500 })

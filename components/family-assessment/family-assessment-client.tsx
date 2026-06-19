@@ -56,6 +56,7 @@ export function FamilyAssessmentClient() {
   const [state, setState] = useState<AssessmentState>(emptyAssessmentState)
   const [hydrated, setHydrated] = useState(false)
   const [lead, setLead] = useState<LeadData | null>(null)
+  const [assessmentId, setAssessmentId] = useState<string | null>(null)
 
   useEffect(() => {
     const saved = loadFamilyAssessment()
@@ -80,7 +81,10 @@ export function FamilyAssessmentClient() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(leadData),
-    }).catch(() => {/* ignore network errors */})
+    })
+      .then((r) => r.json())
+      .then((d: { assessmentId?: string | null }) => { if (d.assessmentId) setAssessmentId(d.assessmentId) })
+      .catch(() => {/* ignore network errors */})
 
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior })
     setState((s) => ({
@@ -118,7 +122,7 @@ export function FamilyAssessmentClient() {
         fetch("/api/auth/send-magic-link", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: currentLead.email, name: currentLead.name, next: "/account" }),
+          body: JSON.stringify({ email: currentLead.email, name: currentLead.name, assessmentId, next: "/account" }),
         }).catch(() => {/* ignore network errors */})
       }
 

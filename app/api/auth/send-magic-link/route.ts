@@ -96,18 +96,36 @@ function safeNextPath(next: unknown): string {
   return next
 }
 
+function safeId(id: unknown): string | null {
+  if (typeof id !== "string") return null
+  const trimmed = id.trim()
+  return /^[a-zA-Z0-9_-]{6,80}$/.test(trimmed) ? trimmed : null
+}
+
+function callbackUrl(siteUrl: string, nextPath: string, assessmentId: string | null, reportId: string | null): string {
+  const url = new URL("/auth/callback", siteUrl)
+  url.searchParams.set("next", nextPath)
+  if (assessmentId) url.searchParams.set("assessmentId", assessmentId)
+  if (reportId) url.searchParams.set("reportId", reportId)
+  return url.toString()
+}
+
 async function sendSupabaseOtpEmail({
   supabaseUrl,
   supabaseAnonKey,
   email,
   siteUrl,
   nextPath,
+  assessmentId,
+  reportId,
 }: {
   supabaseUrl: string
   supabaseAnonKey: string
   email: string
   siteUrl: string
   nextPath: string
+  assessmentId: string | null
+  reportId: string | null
 }) {
   const client = createClient(supabaseUrl, supabaseAnonKey, {
     auth: { autoRefreshToken: false, persistSession: false },
@@ -116,7 +134,7 @@ async function sendSupabaseOtpEmail({
   return client.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+      emailRedirectTo: callbackUrl(siteUrl, nextPath, assessmentId, reportId),
       shouldCreateUser: true,
     },
   })
@@ -124,9 +142,11 @@ async function sendSupabaseOtpEmail({
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, name, next } = await req.json() as { email?: string; name?: string; next?: string }
+    const { email, name, next, assessmentId: rawAssessmentId, reportId: rawReportId } = await req.json() as { email?: string; name?: string; next?: string; assessmentId?: string; reportId?: string }
 
     const nextPath = safeNextPath(next)
+    let assessmentId = safeId(rawAssessmentId)
+    let reportId = safeId(rawReportId)
     const normalizedEmail = email?.toLowerCase().trim()
 
     if (!normalizedEmail) {
@@ -157,11 +177,32 @@ export async function POST(req: NextRequest) {
         auth: { autoRefreshToken: false, persistSession: false },
       })
 
+      if (!assessmentId) {
+        const { data: lead } = await adminSupabase
+          .from("leads")
+          .select("id")
+          .ilike("email", normalizedEmail)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single()
+        assessmentId = (lead?.id as string | undefined) ?? null
+      }
+      if (!reportId) {
+        const { data: report } = await adminSupabase
+          .from("deep_assessments")
+          .select("id")
+          .ilike("email", normalizedEmail)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single()
+        reportId = (report?.id as string | undefined) ?? null
+      }
+
       const { data, error: linkError } = await adminSupabase.auth.admin.generateLink({
         type: "magiclink",
         email: normalizedEmail,
         options: {
-          redirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+          redirectTo: callbackUrl(siteUrl, nextPath, assessmentId, reportId),
         },
       })
 
@@ -196,6 +237,8 @@ export async function POST(req: NextRequest) {
         email: normalizedEmail,
         siteUrl,
         nextPath,
+        assessmentId,
+        reportId,
       })
 
       if (!otpError) {
