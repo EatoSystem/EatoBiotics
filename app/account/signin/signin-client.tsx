@@ -28,7 +28,7 @@ export function SignInClient() {
       const res = await fetch("/api/auth/send-magic-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: target }),
+        body: JSON.stringify({ email: target, next: "/account" }),
       })
       const data = await res.json()
       if (data.error) {

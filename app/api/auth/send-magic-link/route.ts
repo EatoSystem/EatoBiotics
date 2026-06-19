@@ -89,16 +89,25 @@ function magicLinkEmailHtml({ magicUrl, name }: { magicUrl: string; name?: strin
 </html>`
 }
 
+function safeNextPath(next: unknown): string {
+  if (typeof next !== "string") return "/account"
+  if (!next.startsWith("/") || next.startsWith("//")) return "/account"
+  if (next.startsWith("/auth/") || next.startsWith("/api/")) return "/account"
+  return next
+}
+
 async function sendSupabaseOtpEmail({
   supabaseUrl,
   supabaseAnonKey,
   email,
   siteUrl,
+  nextPath,
 }: {
   supabaseUrl: string
   supabaseAnonKey: string
   email: string
   siteUrl: string
+  nextPath: string
 }) {
   const client = createClient(supabaseUrl, supabaseAnonKey, {
     auth: { autoRefreshToken: false, persistSession: false },
@@ -107,7 +116,7 @@ async function sendSupabaseOtpEmail({
   return client.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${siteUrl}/auth/callback`,
+      emailRedirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(nextPath)}`,
       shouldCreateUser: true,
     },
   })
@@ -115,8 +124,9 @@ async function sendSupabaseOtpEmail({
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, name } = await req.json() as { email?: string; name?: string }
+    const { email, name, next } = await req.json() as { email?: string; name?: string; next?: string }
 
+    const nextPath = safeNextPath(next)
     const normalizedEmail = email?.toLowerCase().trim()
 
     if (!normalizedEmail) {
@@ -151,7 +161,7 @@ export async function POST(req: NextRequest) {
         type: "magiclink",
         email: normalizedEmail,
         options: {
-          redirectTo: `${siteUrl}/auth/callback`,
+          redirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(nextPath)}`,
         },
       })
 
@@ -185,6 +195,7 @@ export async function POST(req: NextRequest) {
         supabaseAnonKey,
         email: normalizedEmail,
         siteUrl,
+        nextPath,
       })
 
       if (!otpError) {

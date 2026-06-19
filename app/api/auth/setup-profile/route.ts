@@ -6,12 +6,22 @@ function generateReferralCode(): string {
   return Math.random().toString(36).substring(2, 8).toUpperCase()
 }
 
+function normalizeEmail(email: string | null | undefined): string | null {
+  const normalized = email?.trim().toLowerCase()
+  return normalized || null
+}
+
 export async function POST() {
   const supabase = await getSupabaseServer()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
+  }
+
+  const normalizedEmail = normalizeEmail(user.email)
+  if (!normalizedEmail) {
+    return NextResponse.json({ error: "Authenticated user is missing an email" }, { status: 400 })
   }
 
   const adminSupabase = getSupabase()
@@ -26,15 +36,15 @@ export async function POST() {
       .eq("id", user.id)
       .single()
 
-    if (!existing) {
-      const { data: lead } = await adminSupabase
-        .from("leads")
-        .select("name, age_bracket")
-        .eq("email", user.email!)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single()
+    const { data: lead } = await adminSupabase
+      .from("leads")
+      .select("name, age_bracket")
+      .ilike("email", normalizedEmail)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single()
 
+    if (!existing) {
       let referralCode = generateReferralCode()
       const { data: conflict } = await adminSupabase
         .from("profiles")
@@ -47,28 +57,33 @@ export async function POST() {
 
       await adminSupabase.from("profiles").insert({
         id: user.id,
-        email: user.email!,
+        email: normalizedEmail,
         name: lead?.name ?? null,
         age_bracket: lead?.age_bracket ?? null,
         membership: "free",
         referral_code: referralCode,
       })
-
+    } else {
+      await adminSupabase
+        .from("profiles")
+        .update({ email: normalizedEmail })
+        .eq("id", user.id)
     }
 
-    // Always link user_id to any unlinked rows for this email
-    // (runs on every sign-in so new assessments taken after account creation are linked too)
+    // Always link user_id to matching rows by normalized email. Run on every sign-in
+    // so reports created before account creation or from differently-cased emails
+    // attach to the authenticated account before /account loads.
     await adminSupabase
       .from("leads")
-      .update({ user_id: user.id })
-      .eq("email", user.email!)
-      .is("user_id", null)
+      .update({ user_id: user.id, email: normalizedEmail })
+      .ilike("email", normalizedEmail)
+      .or(`user_id.is.null,user_id.eq.${user.id}`)
 
     await adminSupabase
       .from("deep_assessments")
-      .update({ user_id: user.id })
-      .eq("email", user.email!)
-      .is("user_id", null)
+      .update({ user_id: user.id, email: normalizedEmail })
+      .ilike("email", normalizedEmail)
+      .or(`user_id.is.null,user_id.eq.${user.id}`)
   } catch (err) {
     console.error("[setup-profile] error (non-fatal):", err)
   }

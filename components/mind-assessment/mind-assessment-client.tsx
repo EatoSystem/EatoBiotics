@@ -101,7 +101,7 @@ export function MindAssessmentClient() {
         fetch("/api/auth/send-magic-link", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: currentLead.email, name: currentLead.name }),
+          body: JSON.stringify({ email: currentLead.email, name: currentLead.name, next: "/account" }),
         }).catch(() => {})
       }
 

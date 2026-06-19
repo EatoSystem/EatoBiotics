@@ -120,7 +120,7 @@ function SaveResultsCard({ email }: { email?: string }) {
               fetch("/api/auth/send-magic-link", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email }),
+                body: JSON.stringify({ email, next: "/account" }),
               }).then(() => setSent(true)).catch(() => setSent(true))
             }}
             className="underline hover:text-foreground transition-colors"

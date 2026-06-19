@@ -15,6 +15,17 @@ import {
   Tag, SectionLabel, GradientButton, ringColors,
 } from "@/components/account/dashboard-parts"
 
+function EmptyCard({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
+  return (
+    <div className="rounded-2xl border border-dashed p-5 text-center" style={{ borderColor: "#d9d9d9", background: "#fafafa" }}>
+      <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full" style={{ background: "white", color: "var(--icon-green)" }}>
+        {icon}
+      </div>
+      <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>{title}</p>
+      <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{body}</p>
+    </div>
+  )
+}
 
 function MealCard({ meal }: { meal: { image: string; name: string; time: string; type: string; score: number; insight: string; biotics: { prebiotic: number; probiotic: number; postbiotic: number }; quality: { diversity: number; antiInflammatory: number }; nutrition: { calories: number; protein: number; carbs: number; fat: number; fibre: number }; tags: string[] } }) {
   const circ = 2 * Math.PI * 36
@@ -144,111 +155,6 @@ type MealEntry = {
   tags: string[]
 }
 
-const MOCK_MEALS: { date: string; meals: MealEntry[] }[] = [
-  {
-    date: "Today — Tue 13 May",
-    meals: [
-      {
-        image: "/food-1.webp", name: "Mackerel, kimchi & asparagus", time: "19:25", type: "Dinner", score: 71,
-        insight: "Your mackerel is delivering omega-3s that reduce gut inflammation, while the kimchi seeds live Lactobacillus cultures. The asparagus adds inulin — a prebiotic fibre that feeds those bacteria directly. Adding a handful of walnuts would push your diversity score from 55 to ~72.",
-        biotics:   { prebiotic: 72, probiotic: 18, postbiotic: 41 },
-        quality:   { diversity: 55, antiInflammatory: 80 },
-        nutrition: { calories: 385, protein: 38, carbs: 12, fat: 18, fibre: 7 },
-        tags: ["Omega-3s", "Probiotics", "Prebiotics", "Anti-inflammatory"],
-      },
-    ],
-  },
-  {
-    date: "Yesterday — Mon 12 May",
-    meals: [
-      {
-        image: "/food-2.webp", name: "Eggs, sourdough & avocado", time: "8:20am", type: "Breakfast", score: 65,
-        insight: "Good healthy fats from the avocado and protein from the eggs. Sourdough's fermentation gives a mild probiotic lift. Swap white sourdough for wholegrain rye to double the prebiotic fibre content.",
-        biotics:   { prebiotic: 45, probiotic: 22, postbiotic: 31 },
-        quality:   { diversity: 40, antiInflammatory: 65 },
-        nutrition: { calories: 420, protein: 18, carbs: 32, fat: 22, fibre: 4 },
-        tags: ["Healthy fats", "Protein", "Fermented bread"],
-      },
-      {
-        image: "/food-3.webp", name: "Salmon salad with kimchi", time: "1:15pm", type: "Lunch", score: 78,
-        insight: "Excellent combination. The kimchi lifts your probiotic score significantly. Salmon's omega-3s are anti-inflammatory and the mixed leaves add polyphenol diversity. This is the pattern to repeat.",
-        biotics:   { prebiotic: 61, probiotic: 48, postbiotic: 52 },
-        quality:   { diversity: 72, antiInflammatory: 85 },
-        nutrition: { calories: 340, protein: 32, carbs: 12, fat: 16, fibre: 5 },
-        tags: ["Omega-3s", "Probiotics", "Diversity"],
-      },
-      {
-        image: "/food-4.webp", name: "Pasta, garlic & roasted veg", time: "7:30pm", type: "Dinner", score: 72,
-        insight: "Garlic's inulin is feeding your Lactobacillus bacteria directly. The roasted veg variety is building your diversity score. Consider adding a spoonful of olive tapenade — the polyphenols would push anti-inflammatory from 58 to ~70.",
-        biotics:   { prebiotic: 68, probiotic: 12, postbiotic: 38 },
-        quality:   { diversity: 62, antiInflammatory: 58 },
-        nutrition: { calories: 510, protein: 14, carbs: 82, fat: 9, fibre: 8 },
-        tags: ["Prebiotics", "Plant diversity", "Garlic"],
-      },
-    ],
-  },
-  {
-    date: "Sun 11 May",
-    meals: [
-      {
-        image: "/food-5.webp", name: "Greek yoghurt, berries & oats", time: "9:00am", type: "Breakfast", score: 69,
-        insight: "Yoghurt delivers live cultures and the berries add polyphenol diversity that feeds beneficial bacteria. Oats are a strong prebiotic source. Your best breakfast pattern — the berry variety is key.",
-        biotics:   { prebiotic: 55, probiotic: 58, postbiotic: 44 },
-        quality:   { diversity: 60, antiInflammatory: 70 },
-        nutrition: { calories: 295, protein: 14, carbs: 44, fat: 8, fibre: 6 },
-        tags: ["Probiotics", "Polyphenols", "Prebiotics"],
-      },
-      {
-        image: "/food-6.webp", name: "Lentil wrap with mixed greens", time: "1:00pm", type: "Lunch", score: 74,
-        insight: "High-fibre and plant-diverse. Lentils are one of the best prebiotic foods — resistant starch that survives digestion and feeds Bifidobacterium directly. The mixed greens add polyphenol variety.",
-        biotics:   { prebiotic: 72, probiotic: 8,  postbiotic: 42 },
-        quality:   { diversity: 65, antiInflammatory: 62 },
-        nutrition: { calories: 380, protein: 18, carbs: 58, fat: 7, fibre: 12 },
-        tags: ["High fibre", "Prebiotics", "Plant protein"],
-      },
-      {
-        image: "/food-7.webp", name: "Chicken, roasted veg & kefir", time: "7:45pm", type: "Dinner", score: 81,
-        insight: "Best meal this week. Kefir delivers live cultures across multiple strains, the diverse roasted veg builds your prebiotic base, and the chicken provides the protein your gut lining needs for repair. This is the gold standard pattern.",
-        biotics:   { prebiotic: 75, probiotic: 65, postbiotic: 58 },
-        quality:   { diversity: 78, antiInflammatory: 72 },
-        nutrition: { calories: 445, protein: 38, carbs: 28, fat: 14, fibre: 7 },
-        tags: ["Probiotics", "Diversity", "High protein"],
-      },
-    ],
-  },
-]
-
-const MOCK_REPORTS = [
-  { id: 1, title: "Full Biotics Assessment", profileType: "Emerging Balance",  month: "April 2025",   score: 62, delta: "+8 since January", positive: true,  pillars: { prebiotic: 71, probiotic: 23, postbiotic: 48 } },
-  { id: 2, title: "Full Biotics Assessment", profileType: "Developing System", month: "January 2025", score: 54, delta: "First assessment",  positive: null,  pillars: { prebiotic: 55, probiotic: 18, postbiotic: 38 } },
-]
-
-const MOCK_CONSULTATIONS = [
-  {
-    id: 1, date: "Sunday, 11 May 2025", week: "Week 8 of 30", avgScore: 73, delta: 5,
-    weekSummaryTitle: "Your Best Week for Plant Diversity",
-    pillars: { prebiotic: 71, probiotic: 23, postbiotic: 48 },
-    pullQuote: "Your food system showed real momentum this week. Plant diversity was your strongest area — 9 different plants, your best showing in a month.",
-    focusAction: "Add a fermented food to 4 out of 7 dinners this week — kefir, kimchi, or live yoghurt all count.",
-    mealCount: 9,
-  },
-  {
-    id: 2, date: "Sunday, 4 May 2025", week: "Week 7 of 30", avgScore: 68, delta: 4,
-    weekSummaryTitle: "Consistency Building — Momentum Is Growing",
-    pillars: { prebiotic: 65, probiotic: 28, postbiotic: 42 },
-    pullQuote: "Your prebiotic score held steady and your fermented food frequency improved to 4 out of 7 days. The habit is forming — keep the weekend routine tighter.",
-    focusAction: "Tighten your weekend routine — aim for the same meal quality Saturday and Sunday as you do during the week.",
-    mealCount: 11,
-  },
-  {
-    id: 3, date: "Sunday, 27 Apr 2025", week: "Week 6 of 30", avgScore: 64, delta: 2,
-    weekSummaryTitle: "Mid-Week Strong — Weekends Need Attention",
-    pillars: { prebiotic: 60, probiotic: 19, postbiotic: 38 },
-    pullQuote: "Monday–Friday averaged 71 but Saturday dropped to 48. You have the pattern — now extend it to the full week.",
-    focusAction: "Plan two gut-friendly meals for the weekend before Saturday arrives — preparation is the key lever here.",
-    mealCount: 8,
-  },
-]
 
 /* ─────────────────────────────────────────────────────────────────────────
    Real-data types
@@ -285,7 +191,7 @@ export interface RealWeeklyReport {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
-   Component props — all optional, mock data used as fallback
+   Component props — all optional; authenticated dashboards only render real user data
    ───────────────────────────────────────────────────────────────────────── */
 export interface LiveDashboardProps {
   name?:             string | null
@@ -732,14 +638,14 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
     }
   }
 
-  /* Compute real values with mock fallbacks */
-  const displayName    = name ?? "Jason"
-  const displayScore   = propScore   ?? 62
-  const displayPrev    = propPrev    ?? 54
+  /* Compute display values from authenticated user data only */
+  const displayName    = name ?? "there"
+  const displayScore   = propScore
+  const displayPrev    = propPrev
   const displayStreak  = propStreak  || 0
-  const displayProfile = profileType ?? "Emerging Balance"
+  const displayProfile = profileType ?? "Assessment pending"
 
-  const displayBiotics = propBiotics ?? { prebiotic: 71, probiotic: 23, postbiotic: 48 }
+  const displayBiotics = propBiotics
 
   /* Today's real meals */
   const todayStr = new Date().toISOString().slice(0, 10)
@@ -839,7 +745,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             </div>
             {/* Score ring */}
             <div className="relative shrink-0 flex items-center justify-center" style={{ width: 88, height: 88 }}>
-              <ScoreRing score={displayScore ?? 62} size={88} strokeWidth={7} />
+              <ScoreRing score={displayScore ?? 0} size={88} strokeWidth={7} />
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="font-mono font-bold leading-none" style={{ fontSize: 24, color: "var(--foreground)" }}>{displayScore ?? "—"}</span>
                 <span className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>score</span>
@@ -1382,10 +1288,11 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
               <p className="mb-3 text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--muted-foreground)" }}>
                 Your Last Analysis
               </p>
-              {latestAnalysis
-                ? <MealCard meal={realToMealEntry(latestAnalysis)} />
-                : <MealCard meal={MOCK_MEALS[0].meals[0]} />
-              }
+              {latestAnalysis ? (
+                <MealCard meal={realToMealEntry(latestAnalysis)} />
+              ) : (
+                <EmptyCard icon={<UtensilsCrossed size={18} />} title="No meal analyses yet" body="Log a meal to start building your dashboard." />
+              )}
             </div>
 
             {/* Today's Meals */}
@@ -1394,16 +1301,13 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
               <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid #ebebeb", boxShadow: "0 2px 12px rgba(26,46,18,0.05)" }}>
                 <div className="h-[2px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
 
-                {/* Real today's meals — or mock fallback */}
-                {(todayMeals.length > 0 ? todayMeals : MOCK_MEALS[0].meals).map((meal, i) => {
-                  const isMock = todayMeals.length === 0
-                  const name   = isMock ? (meal as typeof MOCK_MEALS[0]["meals"][0]).name : ((meal as RealAnalysis).meal_name ?? "Meal")
-                  const time   = isMock
-                    ? (meal as typeof MOCK_MEALS[0]["meals"][0]).time
-                    : new Date((meal as RealAnalysis).created_at).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" })
-                  const type   = isMock ? (meal as typeof MOCK_MEALS[0]["meals"][0]).type : ((meal as RealAnalysis).meal_type ?? "Meal")
-                  const score  = isMock ? (meal as typeof MOCK_MEALS[0]["meals"][0]).score : ((meal as RealAnalysis).biotics_score ?? 0)
-                  const img    = isMock ? (meal as typeof MOCK_MEALS[0]["meals"][0]).image : ((meal as RealAnalysis).image_url ?? "/food-1.webp")
+                {/* Real today's meals */}
+                {todayMeals.map((meal, i) => {
+                  const name = meal.meal_name ?? "Meal"
+                  const time = new Date(meal.created_at).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" })
+                  const type = meal.meal_type ?? "Meal"
+                  const score = meal.biotics_score ?? 0
+                  const img = meal.image_url ?? "/food-1.webp"
                   return (
                     <div key={i} className="flex items-center gap-3 px-4 py-3.5"
                       style={{ borderTop: i > 0 ? "1px solid #f0f0f0" : undefined }}>
@@ -1436,13 +1340,10 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                 )}
 
                 {/* Daily average */}
-                {(todayMeals.length > 0 || true) && (
+                {todayMeals.length > 0 && (
                   <div className="border-t px-4 py-2.5" style={{ borderColor: "#f0f0f0" }}>
                     <p className="text-right text-[11px]" style={{ color: "var(--muted-foreground)" }}>
-                      Today&apos;s average:{" "}
-                      <strong style={{ color: "var(--icon-green)" }}>
-                        {todayAvg ?? MOCK_MEALS[0].meals[0].score}
-                      </strong>
+                      Today&apos;s average: <strong style={{ color: "var(--icon-green)" }}>{todayAvg}</strong>
                     </p>
                   </div>
                 )}
@@ -1457,7 +1358,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             {/* Biotics Profile */}
             <div>
               <SectionLabel>Your Biotics Profile</SectionLabel>
-              <div className="grid grid-cols-3 gap-3">
+              {displayBiotics ? <div className="grid grid-cols-3 gap-3">
                 {([
                   { label: "Prebiotic",  score: displayBiotics.prebiotic,  delta: displayBiotics.prebiotic  >= 60 ? "On track"    : displayBiotics.prebiotic  >= 30 ? "Building"    : "Needs work", c0: "#A8E063", c1: "#4CB648", textColor: "#2d7a24", borderColor: "var(--icon-lime)" },
                   { label: "Probiotic",  score: displayBiotics.probiotic,  delta: displayBiotics.probiotic  >= 60 ? "On track"    : displayBiotics.probiotic  >= 30 ? "Building"    : "Needs work", c0: "#F5C518", c1: "#F5A623", textColor: "#a05a0a", borderColor: "var(--icon-orange)" },
@@ -1474,7 +1375,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                     </div>
                   </div>
                 ))}
-              </div>
+              </div> : <EmptyCard icon={<Activity size={18} />} title="No biotics profile yet" body="Analyse meals to calculate your live prebiotic, probiotic, and postbiotic scores." />}
               {/* Subtle membership progress line */}
               <p className="mt-2.5 text-center text-[10px]" style={{ color: "var(--muted-foreground)" }}>
                 Week {weekNumber} of 30 · Building your food system
@@ -1571,7 +1472,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                   {/* Divider */}
                   <div className="my-4 h-px" style={{ background: "rgba(255,255,255,0.15)" }} />
 
-                  {/* Pull quote — real or fallback */}
+                  {/* Pull quote from the real latest report */}
                   <div className="rounded-xl p-4" style={{ background: "rgba(0,0,0,0.15)", border: "1px solid rgba(255,255,255,0.10)" }}>
                     <div className="mb-2 flex items-center gap-2">
                       <MessageSquare size={11} color="rgba(255,255,255,0.50)" />
@@ -1670,17 +1571,15 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
         <div className="mx-auto max-w-5xl px-4 pt-6 pb-16 md:px-8 md:pt-8">
           {(() => {
             /* Use real data if available, else fall back to mock */
-            const groups = analysesByDate.length > 0
-              ? analysesByDate.map(({ date, meals }) => ({
-                  date,
-                  cards: meals.map(a => realToMealEntry(a)),
-                }))
-              : MOCK_MEALS.map(({ date, meals }) => ({ date, cards: meals }))
+            const groups = analysesByDate.map(({ date, meals }) => ({
+              date,
+              cards: meals.map(a => realToMealEntry(a)),
+            }))
 
-            const totalMeals = analysesByDate.length > 0 ? recentAnalyses.length : 7
-            const avgScore   = analysesByDate.length > 0 && recentAnalyses.length > 0
+            const totalMeals = recentAnalyses.length
+            const avgScore = recentAnalyses.length > 0
               ? Math.round(recentAnalyses.reduce((s, a) => s + (a.biotics_score ?? 0), 0) / recentAnalyses.length)
-              : 73
+              : null
 
             return (
               <>
@@ -1689,7 +1588,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                     <h2 className="font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>My Meals</h2>
                     <p className="mt-0.5 text-sm" style={{ color: "var(--muted-foreground)" }}>
                       {totalMeals} meal{totalMeals !== 1 ? "s" : ""} logged this week · Average score:{" "}
-                      <strong style={{ color: "var(--icon-green)" }}>{avgScore}</strong>
+                      <strong style={{ color: "var(--icon-green)" }}>{avgScore ?? "—"}</strong>
                     </p>
                   </div>
                   <GradientButton small onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); setTab("overview"); setLoggerState("empty") }}>
@@ -1697,7 +1596,9 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                   </GradientButton>
                 </div>
 
-                <div className="space-y-8">
+                {groups.length === 0 ? (
+                  <EmptyCard icon={<UtensilsCrossed size={18} />} title="No meals logged yet" body="Your meal history will appear here after your first analysis." />
+                ) : <div className="space-y-8">
                   {groups.map(({ date, cards }) => (
                     <div key={date}>
                       {/* Date separator */}
@@ -1712,7 +1613,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                       </div>
                     </div>
                   ))}
-                </div>
+                </div>}
               </>
             )
           })()}
@@ -1726,60 +1627,8 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
         <div className="mx-auto max-w-5xl px-4 pt-6 pb-16 md:px-8 md:pt-8">
           <div className="mb-5">
             <h2 className="font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>My Reports</h2>
-            <p className="mt-0.5 text-sm" style={{ color: "var(--muted-foreground)" }}>{MOCK_REPORTS.length} assessments completed</p>
           </div>
-
-          <div className="space-y-4 md:grid md:grid-cols-2 md:gap-5 md:space-y-0">
-            {MOCK_REPORTS.map((r) => (
-              <div key={r.id} className="overflow-hidden rounded-2xl" style={{ border: "1px solid #ebebeb", boxShadow: "0 2px 16px rgba(26,46,18,0.06)" }}>
-                {/* Full gradient header */}
-                <div className="px-5 py-5" style={{ background: "linear-gradient(135deg, #1a4a14 0%, #0a5c44 100%)" }}>
-                  <div className="h-[2px] mb-4 rounded-full" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-yellow), var(--icon-orange))" }} />
-                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.40)" }}>{r.month}</p>
-                  <div className="mt-1 flex items-end justify-between gap-3">
-                    <div>
-                      <p className="font-serif text-lg font-bold text-white">{r.title}</p>
-                      <p className="text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>{r.profileType}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-mono text-3xl font-bold leading-none" style={{ color: "var(--icon-lime)" }}>{r.score}</p>
-                      <p className="mt-0.5 text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>/100</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Pillar bars */}
-                <div className="space-y-2.5 px-5 py-4" style={{ background: "white" }}>
-                  <ScoreBar label="Prebiotic"  score={r.pillars.prebiotic} />
-                  <ScoreBar label="Probiotic"  score={r.pillars.probiotic} />
-                  <ScoreBar label="Postbiotic" score={r.pillars.postbiotic} />
-                </div>
-
-                {/* Footer */}
-                <div className="flex items-center justify-between gap-3 border-t px-5 py-3.5"
-                  style={{ borderColor: "#ebebeb", background: "white" }}>
-                  {r.positive ? (
-                    <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                      style={{ background: "linear-gradient(135deg, rgba(168,224,99,0.18), rgba(76,182,72,0.12))", color: "var(--icon-green)", border: "1px solid rgba(76,182,72,0.25)" }}>
-                      <TrendingUp size={10} /> {r.delta}
-                    </span>
-                  ) : (
-                    <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>{r.delta}</span>
-                  )}
-                  <div className="flex gap-2">
-                    <Link href="#" className="flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold transition-opacity hover:opacity-70"
-                      style={{ borderColor: "#d0d0d0", color: "var(--muted-foreground)" }}>
-                      <Download size={11} /> PDF
-                    </Link>
-                    <Link href="#" className="flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-80"
-                      style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", boxShadow: "0 2px 8px rgba(45,170,110,0.25)" }}>
-                      View report <ExternalLink size={11} />
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <EmptyCard icon={<FileText size={18} />} title="We could not find your assessment report for this email." body="If you used a different email for your assessment, sign in with that address or contact support." />
         </div>
       )}
 
@@ -1787,11 +1636,11 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
           CONSULTATIONS TAB
       ══════════════════════════════════════════════════════════════════ */}
       {tab === "consultations" && (() => {
-        const reports   = weeklyReports.length > 0 ? weeklyReports : null
-        const count     = reports?.length ?? MOCK_CONSULTATIONS.length
+        const reports   = weeklyReports
+        const count     = reports.length
 
         /* Normalise real reports → ReportCardData */
-        const realCards: ReportCardData[] = (reports ?? []).map((r) => {
+        const realCards: ReportCardData[] = reports.map((r) => {
           const rj = r.report_json
           return {
             id:               r.id,
@@ -1811,23 +1660,8 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
           }
         })
 
-        /* Normalise mock → ReportCardData */
-        const mockCards: ReportCardData[] = MOCK_CONSULTATIONS.map((c) => ({
-          id:               c.id,
-          dateStr:          c.date,
-          weekLabel:        c.week,
-          avgScore:         c.avgScore,
-          delta:            c.delta,
-          weekSummaryTitle: c.weekSummaryTitle,
-          pillars:          c.pillars,
-          pullQuote:        c.pullQuote,
-          focusAction:      c.focusAction,
-          mealCount:        c.mealCount,
-          reportHref:       null,
-          chatHref:         null,
-        }))
+        const cards = realCards
 
-        const cards = reports ? realCards : mockCards
 
         /* Score progression strip — scores oldest→newest */
         const scoreSequence = cards.map(c => c.avgScore).filter((s): s is number => s != null).reverse()

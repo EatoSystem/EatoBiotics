@@ -30,13 +30,14 @@ export default async function AccountPage({
   if (!user) redirect("/assessment?signin=1")
 
   const adminSupabase = getSupabase()
+  const normalizedEmail = user.email?.trim().toLowerCase() ?? null
 
   /* ── Profile ── */
   let profile: Record<string, unknown> | null = null
   if (adminSupabase) {
     const { data } = await adminSupabase
       .from("profiles")
-      .select("id, email, name, membership_tier, membership_status, stripe_customer_id, stripe_subscription_id, membership_started_at, referral_code")
+      .select("id, email, name, age_bracket, membership_tier, membership_status, stripe_customer_id, stripe_subscription_id, membership_started_at, referral_code")
       .eq("id", user.id)
       .single()
     profile = data as Record<string, unknown> | null
@@ -61,15 +62,28 @@ export default async function AccountPage({
     /* Assessment scores (gut only — for overall score + profile type) */
     (async (): Promise<AssessmentRow[]> => {
       if (!adminSupabase) return []
-      const { data } = await adminSupabase
+      const baseSelect = "overall_score, profile_type, sub_scores"
+      const byUser = await adminSupabase
         .from("leads")
-        .select("overall_score, profile_type, sub_scores")
-        .or(`email.eq.${user.email!},user_id.eq.${user.id}`)
+        .select(baseSelect)
+        .eq("user_id", user.id)
         .eq("assessment_type", "gut")
         .not("overall_score", "is", null)
         .order("created_at", { ascending: false })
         .limit(2)
-      return (data ?? []) as AssessmentRow[]
+
+      const userRows = (byUser.data ?? []) as AssessmentRow[]
+      if (userRows.length > 0 || !normalizedEmail) return userRows
+
+      const byEmail = await adminSupabase
+        .from("leads")
+        .select(baseSelect)
+        .ilike("email", normalizedEmail)
+        .eq("assessment_type", "gut")
+        .not("overall_score", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(2)
+      return (byEmail.data ?? []) as AssessmentRow[]
     })(),
 
     /* Biotics profile — averaged from last 5 analyses */
