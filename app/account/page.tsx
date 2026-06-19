@@ -47,7 +47,7 @@ export default async function AccountPage({
   /* ── Parallel data fetch — these queries are independent (they need only the
        authenticated user and the already-resolved profile), so run them
        concurrently instead of sequentially to cut the dashboard's load time. ── */
-  type AssessmentRow = { id: string; overall_score: number | null; profile_type: string | null; sub_scores: Record<string, number> | null }
+  type AssessmentRow = { id: string; name: string | null; overall_score: number | null; profile_type: string | null; sub_scores: Record<string, number> | null }
 
   const [
     assessments,
@@ -63,7 +63,7 @@ export default async function AccountPage({
     /* Assessment scores (gut only — for overall score + profile type) */
     (async (): Promise<AssessmentRow[]> => {
       if (!adminSupabase) return []
-      const baseSelect = "id, overall_score, profile_type, sub_scores"
+      const baseSelect = "id, name, overall_score, profile_type, sub_scores"
       const byUser = await adminSupabase
         .from("leads")
         .select(baseSelect)
@@ -209,11 +209,13 @@ export default async function AccountPage({
   ])
 
   const matchedAssessment = assessments[0] ?? null
+  const dashboardName = matchedAssessment?.name ?? (profile?.name as string | null) ?? null
 
   console.log("[account] selected assessment", {
     authenticatedEmail: normalizedEmail,
     authenticatedUserId: user.id,
     profileName: (profile?.name as string | null) ?? null,
+    dashboardName,
     matchedAssessmentId: matchedAssessment?.id ?? null,
     matchedScore: matchedAssessment?.overall_score ?? null,
   })
@@ -264,12 +266,13 @@ export default async function AccountPage({
           <p className="font-semibold">Account debug</p>
           <p>Signed-in email: {user.email ?? "—"}</p>
           <p>Profile name: {(profile.name as string | null) ?? "—"}</p>
+          <p>Dashboard name: {dashboardName ?? "—"}</p>
           <p>Matched assessment ID: {matchedAssessment?.id ?? "—"}</p>
           <p>Matched score: {matchedAssessment?.overall_score ?? "—"}</p>
         </div>
       )}
       <LiveDashboard
-        name={(profile.name as string | null) ?? null}
+        name={dashboardName}
         email={user.email ?? null}
         ageBracket={(profile.age_bracket as string | null) ?? null}
         membershipTier={(profile.membership_tier as string | null) ?? null}

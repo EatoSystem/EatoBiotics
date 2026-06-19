@@ -34,8 +34,8 @@ function AuthCallbackClient() {
       const access_token = hashParams.get("access_token")
       const refresh_token = hashParams.get("refresh_token")
 
-      await supabase.auth.signOut({ scope: "local" }).catch((err) => {
-        console.warn("[auth-callback] local sign-out before magic-link session failed", err)
+      await supabase.auth.signOut().catch((err) => {
+        console.warn("[auth-callback] sign-out before magic-link session failed", err)
       })
 
       const { error } = code

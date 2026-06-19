@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
   let selectedAssessmentId: string | null = explicitAssessmentId
   let selectedScore: number | null = null
   let profileName: string | null = null
+  let linkedLeadName: string | null = null
 
   try {
     const { data: existing } = await adminSupabase
@@ -95,9 +96,10 @@ export async function POST(req: NextRequest) {
         .from("leads")
         .update({ user_id: user.id, email: normalizedEmail })
         .eq("id", explicitAssessmentId)
-        .select("id, overall_score")
+        .select("id, name, overall_score")
       for (const row of (data ?? []) as LinkedRow[]) {
         linkedLeadIds.add(row.id)
+        linkedLeadName = (row as LinkedRow & { name?: string | null }).name ?? linkedLeadName
         selectedAssessmentId = row.id
         selectedScore = row.overall_score ?? selectedScore
       }
@@ -115,11 +117,12 @@ export async function POST(req: NextRequest) {
     // 2) Rows already attached to this authenticated user.
     const { data: userLeadRows } = await adminSupabase
       .from("leads")
-      .select("id, overall_score")
+      .select("id, name, overall_score")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
     for (const row of (userLeadRows ?? []) as LinkedRow[]) {
       linkedLeadIds.add(row.id)
+      linkedLeadName = ((row as LinkedRow & { name?: string | null }).name ?? linkedLeadName)
       if (!selectedAssessmentId && row.overall_score != null) {
         selectedAssessmentId = row.id
         selectedScore = row.overall_score
@@ -139,9 +142,10 @@ export async function POST(req: NextRequest) {
       .update({ user_id: user.id, email: normalizedEmail })
       .ilike("email", normalizedEmail)
       .or(`user_id.is.null,user_id.eq.${user.id}`)
-      .select("id, overall_score")
+      .select("id, name, overall_score")
     for (const row of (emailLeadRows ?? []) as LinkedRow[]) {
       linkedLeadIds.add(row.id)
+      linkedLeadName = ((row as LinkedRow & { name?: string | null }).name ?? linkedLeadName)
       if (!selectedAssessmentId && row.overall_score != null) {
         selectedAssessmentId = row.id
         selectedScore = row.overall_score
@@ -156,11 +160,21 @@ export async function POST(req: NextRequest) {
       .select("id")
     for (const row of (emailDeepRows ?? []) as { id: string }[]) linkedDeepAssessmentIds.add(row.id)
 
+
+    if (linkedLeadName && linkedLeadName !== profileName) {
+      await adminSupabase
+        .from("profiles")
+        .update({ name: linkedLeadName, email: normalizedEmail })
+        .eq("id", user.id)
+      profileName = linkedLeadName
+    }
+
     console.log("[setup-profile] linked account", {
       authenticatedEmail: normalizedEmail,
       authenticatedUserId: user.id,
       profileName,
       linkedLeadIds: Array.from(linkedLeadIds),
+      linkedLeadName,
       linkedDeepAssessmentIds: Array.from(linkedDeepAssessmentIds),
       selectedAssessmentId,
       selectedScore,
