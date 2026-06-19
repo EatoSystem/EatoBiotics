@@ -16,6 +16,28 @@ const TIER_CONFIG = {
 
 type Tier = keyof typeof TIER_CONFIG
 
+type CheckoutProfile = {
+  type: string
+  tagline: string
+  description: string
+  color?: string
+}
+
+function isCheckoutProfile(profile: unknown): profile is CheckoutProfile {
+  if (!profile || typeof profile !== "object") return false
+
+  const candidate = profile as Partial<CheckoutProfile>
+
+  return (
+    typeof candidate.type === "string" &&
+    candidate.type.trim().length > 0 &&
+    typeof candidate.tagline === "string" &&
+    candidate.tagline.trim().length > 0 &&
+    typeof candidate.description === "string" &&
+    candidate.description.trim().length > 0
+  )
+}
+
 export async function POST(req: NextRequest) {
   if (!process.env.STRIPE_SECRET_KEY) {
     return NextResponse.json(
@@ -29,7 +51,7 @@ export async function POST(req: NextRequest) {
     const { overall, profile, subScores, email } = body as {
       tier?: PaidReportTier
       overall?: number
-      profile?: { type: string; tagline: string; description: string; color?: string }
+      profile?: unknown
       subScores?: Record<string, number>
       email?: string
     }
@@ -39,7 +61,13 @@ export async function POST(req: NextRequest) {
     const reportTier = "personal" as const
     const config = TIER_CONFIG[reportTier]
 
-    if (typeof overall !== "number" || !profile || !subScores) {
+    if (
+      typeof overall !== "number" ||
+      !Number.isFinite(overall) ||
+      !isCheckoutProfile(profile) ||
+      !subScores ||
+      typeof subScores !== "object"
+    ) {
       return NextResponse.json(
         { error: "Complete the free assessment before checkout." },
         { status: 400 }
