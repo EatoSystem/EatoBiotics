@@ -19,25 +19,26 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 const CARDS = [
   {
     icon: Gauge,
-    image: "/prebiotics-1.png",
     title: "Understand Your Score",
     body: "See the health of your internal food system at a glance — a single, personal score built from how you really eat.",
+    color: "var(--icon-green)",
+    bg: "linear-gradient(160deg, color-mix(in srgb, var(--icon-green) 10%, transparent), transparent 60%)",
   },
   {
     icon: UtensilsCrossed,
-    image: "/probiotics-1.png",
     title: "Improve Your Meals",
     body: "Describe any plate and learn how it feeds the system inside you, with simple, premium guidance you can use today.",
+    color: "var(--icon-teal)",
+    bg: "linear-gradient(160deg, color-mix(in srgb, var(--icon-teal) 10%, transparent), transparent 60%)",
   },
   {
     icon: Sprout,
-    image: "/postbiotics-1.png",
     title: "Build Better Habits",
     body: "Turn small daily choices into lasting change — reports, recipes, and rhythms that rebuild health from the inside out.",
+    color: "var(--icon-orange)",
+    bg: "linear-gradient(160deg, color-mix(in srgb, var(--icon-orange) 10%, transparent), transparent 60%)",
   },
 ]
-
-const FOOD_STRIP = ["/food-1.webp", "/food-5.webp", "/food-8.webp", "/food-11.webp", "/food-14.webp", "/food-18.webp"]
 
 const GRADIENT_BAR =
   "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))"
@@ -215,46 +216,60 @@ export default function WaitlistPage() {
       {/* Gradient divider */}
       <div style={{ height: "2px", background: GRADIENT_BAR }} />
 
-      {/* ── Premium feature cards ──────────────────────────────────────── */}
-      <section className="px-6 py-20">
-        <div className="mx-auto max-w-[1100px]">
-          <ScrollReveal>
-            <p className="text-center text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
-              What you&rsquo;ll unlock
-            </p>
-            <h2 className="mt-3 text-center font-serif text-3xl font-bold text-foreground sm:text-4xl">
-              Your inner food system, made simple
-            </h2>
-          </ScrollReveal>
+      {/* ── What you'll unlock — homepage "how it works" styling ───────── */}
+      <section className="px-6 py-24 md:py-28">
+        <div className="mx-auto max-w-[1200px]">
+          <div className="mb-14 flex flex-col gap-10 md:flex-row md:items-center md:gap-16">
+            <ScrollReveal className="flex-1">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-icon-green">
+                What you&rsquo;ll unlock
+              </p>
+              <h2 className="font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
+                Your inner food system,{" "}
+                <span className="brand-gradient-text">made simple</span>
+              </h2>
+              <p className="mt-4 max-w-lg text-base leading-relaxed text-muted-foreground">
+                Join the waitlist to be first to access your EatoBiotics score, AI meal
+                analysis, personalised reports, recipes, and membership.
+              </p>
+            </ScrollReveal>
+            <ScrollReveal delay={80} className="w-full shrink-0 md:w-[340px] lg:w-[400px]">
+              <div className="relative">
+                <div
+                  aria-hidden
+                  className="absolute inset-0 -z-10 blur-3xl"
+                  style={{ background: "radial-gradient(60% 60% at 50% 50%, rgba(76,182,72,0.18), transparent 75%)" }}
+                />
+                <Image
+                  src="/eatobiotics-plate.png"
+                  alt="The EatoBiotics plate — a balanced food system"
+                  width={600}
+                  height={600}
+                  className="h-auto w-full"
+                />
+              </div>
+            </ScrollReveal>
+          </div>
 
-          <div className="mt-12 grid gap-6 sm:grid-cols-3">
-            {CARDS.map(({ icon: Icon, image, title, body }, i) => (
+          <div className="grid gap-6 sm:grid-cols-3">
+            {CARDS.map(({ icon: Icon, title, body, color, bg }, i) => (
               <ScrollReveal key={title} delay={i * 90}>
-                <div className="group h-full overflow-hidden rounded-3xl border border-border bg-card transition-all hover:-translate-y-1 hover:shadow-xl">
-                  <div className="relative flex h-36 items-center justify-center overflow-hidden">
-                    <div
-                      aria-hidden
-                      className="absolute inset-0 opacity-[0.10]"
-                      style={{ background: GRADIENT_BAR }}
-                    />
-                    <Image
-                      src={image}
-                      alt=""
-                      width={160}
-                      height={160}
-                      className="relative h-24 w-24 object-contain transition-transform duration-300 group-hover:scale-110"
-                    />
+                <div
+                  className="flex h-full flex-col rounded-3xl p-7 transition-shadow hover:shadow-lg"
+                  style={{
+                    background: bg,
+                    border: `1.5px solid color-mix(in srgb, ${color} 30%, transparent)`,
+                    borderLeft: `4px solid ${color}`,
+                  }}
+                >
+                  <div
+                    className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl"
+                    style={{ background: `color-mix(in srgb, ${color} 15%, transparent)` }}
+                  >
+                    <Icon size={22} style={{ color }} />
                   </div>
-                  <div className="p-7">
-                    <div
-                      className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl text-white"
-                      style={{ background: GRADIENT_BAR }}
-                    >
-                      <Icon size={20} />
-                    </div>
-                    <h3 className="font-serif text-xl font-bold text-foreground">{title}</h3>
-                    <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">{body}</p>
-                  </div>
+                  <h3 className="mb-2 font-serif text-xl font-semibold text-foreground">{title}</h3>
+                  <p className="flex-1 text-sm leading-relaxed text-muted-foreground">{body}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -262,27 +277,11 @@ export default function WaitlistPage() {
         </div>
       </section>
 
-      {/* ── Food imagery strip ─────────────────────────────────────────── */}
-      <section className="px-6 pb-4">
-        <div className="mx-auto max-w-[1100px]">
-          <ScrollReveal>
-            <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
-              {FOOD_STRIP.map((src, i) => (
-                <div
-                  key={src}
-                  className="relative aspect-square overflow-hidden rounded-2xl border border-border"
-                  style={{ borderTopColor: i % 2 === 0 ? "var(--icon-green)" : "var(--icon-orange)", borderTopWidth: "3px" }}
-                >
-                  <Image src={src} alt="" fill sizes="(max-width: 640px) 33vw, 16vw" className="object-cover" />
-                </div>
-              ))}
-            </div>
-          </ScrollReveal>
-        </div>
-      </section>
+      {/* Gradient divider */}
+      <div style={{ height: "2px", background: GRADIENT_BAR }} />
 
       {/* ── Founder note ───────────────────────────────────────────────── */}
-      <section className="px-6 py-20">
+      <section className="px-6 py-20 md:py-24">
         <div className="mx-auto max-w-2xl text-center">
           <ScrollReveal>
             <div className="mx-auto mb-6 h-px w-16 rounded-full" style={{ background: GRADIENT_BAR }} />
