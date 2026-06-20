@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { stripe } from "@/lib/stripe-server"
+import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 
 /* ── Unique code generator ────────────────────────────────────────────────
    Produces codes like EB-HELP-A3KZY8WQ — no confusable characters (0/O, 1/I/L)
@@ -43,6 +44,15 @@ export async function POST(req: NextRequest) {
 
   if (type !== "low_score" && type !== "share") {
     return NextResponse.json({ error: "Invalid type" }, { status: 400 })
+  }
+
+  // Always-on IP cap. The per-email Stripe cap below is skipped when no email is
+  // supplied, so without this an attacker could mint unlimited single-use
+  // discount codes. (5 codes / hour per source, regardless of email.)
+  const ipLimit = rateLimit(`promo-generate:${getClientIp(req)}`, 5, 60 * 60_000)
+  if (!ipLimit.allowed) {
+    const { body: rlBody, init } = rateLimitResponse(ipLimit)
+    return NextResponse.json(rlBody, init)
   }
 
   // Validate low_score requests server-side

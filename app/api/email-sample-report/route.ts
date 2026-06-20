@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
+import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 
 // Map report titles to their demo URLs
 const REPORT_URL_MAP: Record<string, string> = {
@@ -10,6 +11,15 @@ const REPORT_URL_MAP: Record<string, string> = {
 
 export async function POST(req: NextRequest) {
   try {
+    // Public endpoint that sends mail to a caller-supplied address — rate limit
+    // per IP so it can't be abused to spam arbitrary inboxes or burn the Resend
+    // quota / domain reputation. (5 sample emails / 10 min per source.)
+    const limit = rateLimit(`email-sample-report:${getClientIp(req)}`, 5, 10 * 60_000)
+    if (!limit.allowed) {
+      const { body: rlBody, init } = rateLimitResponse(limit)
+      return NextResponse.json(rlBody, init)
+    }
+
     const { email, reportTitle } = (await req.json()) as {
       email?: string
       reportTitle?: string

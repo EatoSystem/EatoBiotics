@@ -1,5 +1,6 @@
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { NextRequest, NextResponse } from "next/server"
+import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 
 type SubScores = {
   diversity: number
@@ -172,6 +173,14 @@ Write their Premium Deep Dive Report. Respond with ONLY valid JSON (no markdown,
 }
 
 export async function POST(req: NextRequest) {
+  // Unauthenticated, Claude-backed endpoint — cap per IP so it can't be looped
+  // to burn Anthropic credits. (8 reports / 10 min from a single source.)
+  const limit = rateLimit(`generate-report:${getClientIp(req)}`, 8, 10 * 60_000)
+  if (!limit.allowed) {
+    const { body: rlBody, init } = rateLimitResponse(limit)
+    return NextResponse.json(rlBody, init)
+  }
+
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json(
       { error: "Claude not configured — add ANTHROPIC_API_KEY to .env.local" },
