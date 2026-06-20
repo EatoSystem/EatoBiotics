@@ -90,6 +90,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ url: session.url })
   } catch (err) {
     console.error("[checkout] Stripe checkout error:", err)
-    return NextResponse.json({ error: "Failed to create checkout session" }, { status: 500 })
+    // Surface the real Stripe error so failures are diagnosable instead of a
+    // generic 500. (Stripe errors carry a safe, user-presentable `message`.)
+    const detail = err instanceof Error ? err.message : "Unknown error"
+    return NextResponse.json(
+      { error: "Failed to create checkout session", detail },
+      { status: 500 }
+    )
   }
 }

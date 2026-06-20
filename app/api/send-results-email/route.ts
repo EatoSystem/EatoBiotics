@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
 
     // Send email via Resend if configured
     const resendKey = process.env.RESEND_API_KEY
-    const emailFrom = process.env.EMAIL_FROM ?? "results@eatobiotics.com"
+    const emailFrom = process.env.EMAIL_FROM ?? "hello@eatobiotics.com"
     const ownerEmail = process.env.OWNER_EMAIL
 
     if (resendKey && shouldSendEmail) {

@@ -1,4 +1,5 @@
 import { PILLAR_LABELS as CORE_PILLAR_LABELS } from "@/lib/pillars"
+import { renderBrandEmail, BRAND_GRADIENT, BRAND_GREEN } from "./brand-layout"
 
 interface ResultsEmailOpts {
   name: string
@@ -206,30 +207,19 @@ export function buildResultsEmail(opts: ResultsEmailOpts): {
 
   const retestDateStr = retestDate()
 
-  const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${subject}</title>
-</head>
-<body style="margin: 0; padding: 0; background-color: #f5f5f0; font-family: Arial, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f5f5f0; padding: 32px 16px;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+  const contentHtml = `
+        <table width="100%" cellpadding="0" cellspacing="0" border="0">
 
-          <!-- Header -->
+          <!-- Title -->
           <tr>
-            <td style="background: linear-gradient(135deg, #7fc47e 0%, #3ab0a0 100%); padding: 28px 40px; text-align: center;">
-              <p style="margin: 0 0 4px 0; font-size: 11px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.8); font-family: Arial, sans-serif;">EatoBiotics</p>
-              <h1 style="margin: 0; font-size: 26px; font-weight: bold; color: #ffffff; font-family: Georgia, serif;">Your ${scoreNoun} Score</h1>
+            <td style="padding: 32px 40px 0; text-align: center;">
+              <h2 style="margin: 0; font-size: 22px; font-weight: bold; color: #1A2E12; font-family: Georgia, serif;">Your ${scoreNoun} Score</h2>
             </td>
           </tr>
 
           <!-- Score hero -->
           <tr>
-            <td style="padding: 36px 40px 0; text-align: center;">
+            <td style="padding: 20px 40px 0; text-align: center;">
               <p style="margin: 0 0 4px; font-size: 15px; color: #666666; font-family: Arial, sans-serif;">Hi ${name}, your assessment is ready.</p>
               ${ageBracketLine}
               <div style="margin: 20px auto 0;">
@@ -308,7 +298,7 @@ export function buildResultsEmail(opts: ResultsEmailOpts): {
           <tr>
             <td style="padding: 32px 40px; text-align: center;">
               <p style="margin: 0 0 20px; font-size: 16px; color: #333333; font-family: Georgia, serif; font-style: italic;">Ready to see exactly what to eat, what to add, and a 30-day plan?</p>
-              <a href="${SITE_URL}/assessment" style="display: inline-block; background: linear-gradient(135deg, #7fc47e 0%, #3ab0a0 100%); color: #ffffff; text-decoration: none; font-size: 15px; font-weight: bold; font-family: Arial, sans-serif; padding: 14px 32px; border-radius: 50px;">Unlock Your Full Report →</a>
+              <a href="${SITE_URL}/assessment" style="display: inline-block; background-color: ${BRAND_GREEN}; background-image: ${BRAND_GRADIENT}; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: bold; font-family: Arial, sans-serif; padding: 14px 32px; border-radius: 50px;">Unlock Your Full Report →</a>
             </td>
           </tr>
 
@@ -337,20 +327,14 @@ export function buildResultsEmail(opts: ResultsEmailOpts): {
             </td>
           </tr>
 
-          <!-- Footer -->
-          <tr>
-            <td style="background: #f9f9f9; padding: 20px 40px; text-align: center; border-top: 1px solid #eeeeee;">
-              <p style="margin: 0 0 4px; font-size: 12px; color: #aaaaaa; font-family: Arial, sans-serif;">© EatoBiotics · <a href="${SITE_URL}" style="color: #aaaaaa;">eatobiotics.com</a></p>
-              <p style="margin: 0; font-size: 11px; color: #cccccc; font-family: Arial, sans-serif;">This assessment is for educational purposes and is not medical advice.</p>
-            </td>
-          </tr>
+        </table>`
 
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`
+  const html = renderBrandEmail({
+    subject,
+    preheader: `Your ${scoreNoun} score: ${overall}/100 — ${profileType}`,
+    contentHtml,
+    footerNote: "This assessment is for educational purposes and is not medical advice.",
+  })
 
   return { subject, html }
 }
