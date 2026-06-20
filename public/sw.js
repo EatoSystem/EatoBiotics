@@ -1,4 +1,4 @@
-const CACHE_NAME = "eatobiotics-v3"
+const CACHE_NAME = "eatobiotics-v4"
 const PRECACHE_URLS = ["/offline"]
 
 self.addEventListener("install", (event) => {
