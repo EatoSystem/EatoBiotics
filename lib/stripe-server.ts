@@ -11,14 +11,16 @@
  */
 import Stripe from "stripe"
 
-const API_VERSION = "2026-02-25.clover" as const
 let _client: Stripe | null = null
 
 export function getStripe(): Stripe {
   if (!_client) {
     const key = process.env.STRIPE_SECRET_KEY
     if (!key) throw new Error("STRIPE_SECRET_KEY is not set")
-    _client = new Stripe(key, { apiVersion: API_VERSION })
+    // No explicit apiVersion: use the version pinned by the installed SDK so we
+    // never send an API version the SDK/account doesn't recognise (which makes
+    // every request — e.g. checkout.sessions.create — throw).
+    _client = new Stripe(key)
   }
   return _client
 }

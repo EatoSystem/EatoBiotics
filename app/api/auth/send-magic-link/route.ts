@@ -1,93 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
 import { createClient } from "@supabase/supabase-js"
-
-function magicLinkEmailHtml({ magicUrl, name }: { magicUrl: string; name?: string }) {
-  const greeting = name ? `Hi ${name.split(" ")[0]},` : "Hi there,"
-  return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Sign in to EatoBiotics</title>
-</head>
-<body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;padding:40px 16px;">
-    <tr>
-      <td align="center">
-        <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb;max-width:560px;width:100%;">
-          <!-- Header -->
-          <tr>
-            <td style="background:linear-gradient(135deg,#7bc67e,#56C135);padding:36px 40px;text-align:center;">
-              <div style="font-size:32px;margin-bottom:12px;">🌿</div>
-              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">EatoBiotics</h1>
-              <p style="margin:6px 0 0;color:rgba(255,255,255,0.9);font-size:14px;letter-spacing:0.1px;">The Food System Inside You</p>
-            </td>
-          </tr>
-          <!-- Body -->
-          <tr>
-            <td style="padding:36px 40px;">
-              <p style="margin:0 0 6px;color:#111827;font-size:16px;font-weight:600;">${greeting}</p>
-              <p style="margin:0 0 28px;color:#374151;font-size:15px;line-height:1.65;">
-                Here&rsquo;s your sign-in link for EatoBiotics &mdash; your personalised food system health app. Click below to access your account.
-              </p>
-              <!-- Context pills -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
-                <tr>
-                  <td style="padding:0 4px 0 0;width:33%;">
-                    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 8px;text-align:center;">
-                      <div style="font-size:20px;margin-bottom:5px;">📊</div>
-                      <p style="margin:0;font-size:11px;font-weight:600;color:#15803d;">Your gut score</p>
-                    </div>
-                  </td>
-                  <td style="padding:0 4px;width:33%;">
-                    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 8px;text-align:center;">
-                      <div style="font-size:20px;margin-bottom:5px;">🌱</div>
-                      <p style="margin:0;font-size:11px;font-weight:600;color:#15803d;">Food recommendations</p>
-                    </div>
-                  </td>
-                  <td style="padding:0 0 0 4px;width:33%;">
-                    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 8px;text-align:center;">
-                      <div style="font-size:20px;margin-bottom:5px;">🔬</div>
-                      <p style="margin:0;font-size:11px;font-weight:600;color:#15803d;">Food system insights</p>
-                    </div>
-                  </td>
-                </tr>
-              </table>
-              <!-- CTA -->
-              <table cellpadding="0" cellspacing="0" style="margin:0 auto 28px;">
-                <tr>
-                  <td style="background:linear-gradient(135deg,#7bc67e,#56C135);border-radius:12px;">
-                    <a href="${magicUrl}" style="display:block;padding:15px 36px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:-0.1px;">
-                      Sign in to EatoBiotics →
-                    </a>
-                  </td>
-                </tr>
-              </table>
-              <p style="margin:0 0 6px;color:#6b7280;font-size:13px;line-height:1.5;text-align:center;">
-                This link expires in <strong>60 minutes</strong> and can only be used once.
-              </p>
-              <p style="margin:0;color:#9ca3af;font-size:12px;line-height:1.5;text-align:center;">
-                If you didn&rsquo;t request this, you can safely ignore this email.
-              </p>
-            </td>
-          </tr>
-          <!-- Footer -->
-          <tr>
-            <td style="padding:20px 40px;border-top:1px solid #f3f4f6;text-align:center;">
-              <p style="margin:0 0 4px;color:#6b7280;font-size:12px;font-weight:600;">EatoBiotics</p>
-              <p style="margin:0;color:#9ca3af;font-size:11px;">
-                The Food System Inside You &middot; <a href="https://eatobiotics.com" style="color:#9ca3af;text-decoration:none;">eatobiotics.com</a>
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`
-}
+import { buildMagicLinkEmail } from "@/lib/email/magic-link-email"
 
 export async function POST(req: NextRequest) {
   try {
@@ -130,11 +44,12 @@ export async function POST(req: NextRequest) {
 
     if (resendKey) {
       const resend = new Resend(resendKey)
+      const { subject, html } = buildMagicLinkEmail({ magicUrl, name })
       const { error: sendError } = await resend.emails.send({
         from: `EatoBiotics <${emailFrom}>`,
         to: email,
-        subject: "Your EatoBiotics sign-in link",
-        html: magicLinkEmailHtml({ magicUrl, name }),
+        subject,
+        html,
       })
       if (sendError) {
         console.error("[send-magic-link] Resend error:", sendError.message)

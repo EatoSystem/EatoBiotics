@@ -26,15 +26,18 @@ export async function POST() {
       .eq("id", user.id)
       .single()
 
-    if (!existing) {
-      const { data: lead } = await adminSupabase
-        .from("leads")
-        .select("name, age_bracket")
-        .eq("email", user.email!)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single()
+    // Latest lead for this email — the name/age the user entered most recently
+    // at the start of an assessment. Used both to seed a new profile and to keep
+    // an existing profile's name in sync (so a stale value can never persist).
+    const { data: lead } = await adminSupabase
+      .from("leads")
+      .select("name, age_bracket")
+      .eq("email", user.email!)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single()
 
+    if (!existing) {
       let referralCode = generateReferralCode()
       const { data: conflict } = await adminSupabase
         .from("profiles")
@@ -53,7 +56,13 @@ export async function POST() {
         membership: "free",
         referral_code: referralCode,
       })
-
+    } else if (lead?.name) {
+      // Existing profile — refresh the name/age from the latest assessment so the
+      // account header always reflects what the user actually entered.
+      await adminSupabase
+        .from("profiles")
+        .update({ name: lead.name, ...(lead.age_bracket ? { age_bracket: lead.age_bracket } : {}) })
+        .eq("id", user.id)
     }
 
     // Always link user_id to any unlinked rows for this email

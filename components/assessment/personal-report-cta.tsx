@@ -34,7 +34,9 @@ export function PersonalReportCta({ result }: PersonalReportCtaProps) {
         body: JSON.stringify({
           tier: "personal",
           overall: result.overall,
-          profile: result.profile.type,
+          // /api/checkout expects the full profile object, not just the type
+          // string — sending the string fails validation and 500s.
+          profile: result.profile,
           subScores: result.subScores,
         }),
       })
