@@ -11,29 +11,29 @@ const EXAMPLE = {
   label: "Good potential",
   pillars: [
     {
-      label: "Stability",
-      score: 58,
+      label: "Prebiotics",
+      score: 71,
+      color: "var(--icon-lime)",
+      gradient: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))",
+      description: "Plant diversity & fibre",
+    },
+    {
+      label: "Probiotics",
+      score: 38,
       color: "var(--icon-teal)",
       gradient: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))",
-      description: "Day-to-day steadiness",
+      description: "Fermented & live foods",
     },
     {
-      label: "Diversity",
-      score: 71,
-      color: "var(--icon-green)",
-      gradient: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))",
-      description: "Plant variety & fibre",
-    },
-    {
-      label: "Recovery",
-      score: 64,
+      label: "Postbiotics",
+      score: 67,
       color: "var(--icon-orange)",
       gradient: "linear-gradient(90deg, var(--icon-yellow), var(--icon-orange))",
       description: "Consistency & rhythm",
     },
   ],
   insight:
-    "Diversity and Recovery are already working well — a solid fibre base and a steady eating rhythm. Your biggest opportunity is Stability: a few simple daily habits could smooth out your digestion within weeks.",
+    "Prebiotics and Postbiotics are working well — your gut has a solid fibre base and eating rhythm. The opportunity is Probiotics: adding one fermented food daily could measurably shift your gut diversity within weeks.",
 }
 
 export function ScorePreview() {
