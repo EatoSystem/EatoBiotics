@@ -21,12 +21,12 @@ function MealCard({ meal }: { meal: { image: string; name: string; time: string;
   const [rc0, rc1, rc2] = ringColors(meal.score)
   const ringId = `mc-ring-${meal.name.replace(/\s+/g, "").slice(0, 8)}`
   return (
-    <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid #ebebeb", boxShadow: "0 4px 20px rgba(26,46,18,0.07)" }}>
+    <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid var(--border)", boxShadow: "0 4px 20px rgba(26,46,18,0.07)" }}>
       {/* Gradient top accent */}
       <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
 
       {/* Identity row */}
-      <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: "#f0f0f0" }}>
+      <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: "var(--border)" }}>
         <div>
           <p className="font-semibold text-sm leading-snug" style={{ color: "var(--foreground)" }}>{meal.name}</p>
           <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>{meal.time} · {meal.type}</p>
@@ -77,7 +77,7 @@ function MealCard({ meal }: { meal: { image: string; name: string; time: string;
         </div>
       </div>
 
-      <div className="mx-4 h-px" style={{ background: "#f0f0f0" }} />
+      <div className="mx-4 h-px" style={{ background: "var(--border)" }} />
 
       {/* Meal Quality */}
       <div className="px-4 pb-3 pt-3">
@@ -88,7 +88,7 @@ function MealCard({ meal }: { meal: { image: string; name: string; time: string;
         </div>
       </div>
 
-      <div className="mx-4 h-px" style={{ background: "#f0f0f0" }} />
+      <div className="mx-4 h-px" style={{ background: "var(--border)" }} />
 
       {/* Nutrition Context */}
       <div className="pt-3 pb-1">
@@ -102,7 +102,7 @@ function MealCard({ meal }: { meal: { image: string; name: string; time: string;
             { label: "Fibre",    value: String(meal.nutrition.fibre),    unit: "g",    color: "var(--icon-lime)" },
           ] as { label: string; value: string; unit: string; color: string }[]).map(({ label, value, unit, color }, i) => (
             <div key={label} className="flex flex-col items-center py-2.5"
-              style={{ borderRight: i < 4 ? "1px solid #f0f0f0" : undefined }}>
+              style={{ borderRight: i < 4 ? "1px solid var(--border)" : undefined }}>
               <span className="font-mono text-sm font-semibold leading-none" style={{ color }}>{value}</span>
               <span className="mt-0.5 text-[9px]" style={{ color: "var(--muted-foreground)" }}>{unit}</span>
               <span className="mt-0.5 text-[9px]" style={{ color: "var(--muted-foreground)" }}>{label}</span>
@@ -111,7 +111,7 @@ function MealCard({ meal }: { meal: { image: string; name: string; time: string;
         </div>
       </div>
 
-      <div className="mx-4 h-px" style={{ background: "#f0f0f0" }} />
+      <div className="mx-4 h-px" style={{ background: "var(--border)" }} />
 
       {/* Insight */}
       <div className="mx-4 my-3 flex overflow-hidden rounded-xl" style={{ border: "1px solid #e8e8e8" }}>
@@ -378,7 +378,7 @@ function FirstMealCelebration({ result, firstName, onLogAnother }: {
 }) {
   const circ = 2 * Math.PI * 44
   return (
-    <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid #ebebeb", boxShadow: "0 8px 32px rgba(26,46,18,0.12)" }}>
+    <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid var(--border)", boxShadow: "0 8px 32px rgba(26,46,18,0.12)" }}>
       <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
       <div className="px-6 py-8 text-center md:px-10">
         <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
@@ -483,12 +483,12 @@ interface ReportCardData {
 function ReportCard({ card }: { card: ReportCardData }) {
   const pos = card.delta !== null && card.delta > 0
   return (
-    <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid #ebebeb", boxShadow: "0 4px 20px rgba(26,46,18,0.07)" }}>
+    <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid var(--border)", boxShadow: "0 4px 20px rgba(26,46,18,0.07)" }}>
       {/* Gradient top bar */}
       <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
 
       {/* Header */}
-      <div className="border-b px-5 pt-4 pb-3" style={{ borderColor: "#f0f0f0" }}>
+      <div className="border-b px-5 pt-4 pb-3" style={{ borderColor: "var(--border)" }}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--muted-foreground)" }}>
@@ -525,7 +525,7 @@ function ReportCard({ card }: { card: ReportCardData }) {
 
       {/* Biotics pillars */}
       {card.pillars && (
-        <div className="border-b px-5 py-4" style={{ borderColor: "#f0f0f0" }}>
+        <div className="border-b px-5 py-4" style={{ borderColor: "var(--border)" }}>
           <p className="mb-2.5 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
             Biotics this week
           </p>
@@ -832,7 +832,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                   </span>
                 )}
                 <span className="inline-flex items-center rounded-full px-4 py-1.5 text-sm font-semibold"
-                  style={{ background: "#f3f3f3", color: "var(--muted-foreground)" }}>
+                  style={{ background: "var(--muted)", color: "var(--muted-foreground)" }}>
                   {displayProfile}
                 </span>
               </div>
@@ -855,7 +855,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       {/* ══════════════════════════════════════════════════════════════════
           WEEK STRIP
       ══════════════════════════════════════════════════════════════════ */}
-      <div className="border-b" style={{ borderColor: "#ebebeb" }}>
+      <div className="border-b" style={{ borderColor: "var(--border)" }}>
         <div className="mx-auto max-w-5xl px-5 py-4 md:px-8">
           <div className="flex w-full max-w-sm items-start justify-between">
             {([
@@ -877,7 +877,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                       ? { border: "2.5px solid var(--icon-green)", background: "white",
                           animation: "pulse-ring 2s ease-in-out infinite",
                           boxShadow: "0 0 0 3px rgba(76,182,72,0.15)" }
-                      : { border: "1.5px solid #e0e0e0", background: "white" }
+                      : { border: "1.5px solid var(--border)", background: "white" }
                   }
                 >
                   {status === "done" && <Check size={13} strokeWidth={2.5} color="white" />}
@@ -899,7 +899,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       {/* ══════════════════════════════════════════════════════════════════
           TAB NAVIGATION — sticky
       ══════════════════════════════════════════════════════════════════ */}
-      <div className="sticky top-[57px] z-10 border-b" style={{ background: "white", borderColor: "#ebebeb" }}>
+      <div className="sticky top-[57px] z-10 border-b" style={{ background: "white", borderColor: "var(--border)" }}>
         <div className="mx-auto max-w-5xl">
           <div className="flex gap-1.5 overflow-x-auto px-4 py-2 md:px-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {TABS.map(({ id, label, icon }) => (
@@ -907,7 +907,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                 className="flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition-all md:px-4 md:py-2.5 md:text-sm"
                 style={tab === id
                   ? { background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", color: "white", boxShadow: "0 3px 10px rgba(45,170,110,0.28)" }
-                  : { background: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))", color: "white", boxShadow: "0 2px 8px rgba(245,166,35,0.20)" }
+                  : { background: "var(--muted)", color: "var(--muted-foreground)" }
                 }>
                 {icon}{label}
               </button>
@@ -938,7 +938,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
 
           {/* ── Onboarding: first-time member ── */}
           <div className="overflow-hidden rounded-2xl" style={{
-            background: "linear-gradient(135deg, #6aab28 0%, #2e8c2a 40%, #c49610 75%, #c47010 100%)",
+            background: "linear-gradient(135deg, var(--icon-green) 0%, var(--icon-teal) 45%, var(--icon-yellow) 80%, var(--icon-orange) 100%)",
             boxShadow: "0 8px 32px rgba(26,46,18,0.22)",
           }}>
             <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
@@ -979,7 +979,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
           {/* Log first meal — directly under the card that points to it */}
           <div id="first-meal-logger" className="mt-5">
             <div className="overflow-hidden rounded-2xl" style={{
-              background: "linear-gradient(135deg, #6aab28 0%, #2e8c2a 40%, #c49610 75%, #c47010 100%)",
+              background: "linear-gradient(135deg, var(--icon-green) 0%, var(--icon-teal) 45%, var(--icon-yellow) 80%, var(--icon-orange) 100%)",
               boxShadow: "0 4px 20px rgba(26,46,18,0.18)",
             }}>
               <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
@@ -1029,7 +1029,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
           </div>
 
           {/* Quick-start suggestions */}
-          <div className="mt-5 overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid #ebebeb" }}>
+          <div className="mt-5 overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid var(--border)" }}>
             <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))" }} />
             <div className="p-5">
               <p className="mb-3 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
@@ -1105,7 +1105,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
               {/* Empty state */}
               {loggerState === "empty" && (
                 <div className="overflow-hidden rounded-2xl" style={{
-                  background: "linear-gradient(135deg, #6aab28 0%, #2e8c2a 40%, #c49610 75%, #c47010 100%)",
+                  background: "linear-gradient(135deg, var(--icon-green) 0%, var(--icon-teal) 45%, var(--icon-yellow) 80%, var(--icon-orange) 100%)",
                   boxShadow: "0 8px 32px rgba(26,46,18,0.22)",
                 }}>
                   {/* Top brand gradient strip */}
@@ -1193,7 +1193,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
               {/* Analysing state */}
               {loggerState === "analysing" && (
                 <div className="rounded-2xl p-5" style={{
-                  background: "white", border: "1px solid #ebebeb", boxShadow: "0 2px 16px rgba(26,46,18,0.06)",
+                  background: "white", border: "1px solid var(--border)", boxShadow: "0 2px 16px rgba(26,46,18,0.06)",
                 }}>
                   <div className="mb-5 flex items-center gap-3">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1216,7 +1216,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                       </div>
                     ))}
                   </div>
-                  <div className="mt-5 overflow-hidden rounded-full" style={{ height: "4px", background: "#ebebeb" }}>
+                  <div className="mt-5 overflow-hidden rounded-full" style={{ height: "4px", background: "var(--border)" }}>
                     <div className="h-full rounded-full" style={{ width: "62%", background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
                   </div>
                 </div>
@@ -1235,13 +1235,13 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                 const logTime = r.created_at ? new Date(r.created_at).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" }) : "just now"
                 return (
                 <div className="overflow-hidden rounded-2xl" style={{
-                  background: "white", border: "1px solid #ebebeb", boxShadow: "0 4px 24px rgba(26,46,18,0.07)",
+                  background: "white", border: "1px solid var(--border)", boxShadow: "0 4px 24px rgba(26,46,18,0.07)",
                 }}>
                   {/* Gradient top accent */}
                   <div className="h-[3px] w-full" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
 
                   {/* Meal identity row */}
-                  <div className="flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: "#f0f0f0" }}>
+                  <div className="flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: "var(--border)" }}>
                     <div>
                       <p className="font-semibold text-sm leading-snug" style={{ color: "var(--foreground)" }}>{r.meal_name}</p>
                       <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>{logTime} · {r.meal_type}</p>
@@ -1306,7 +1306,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                     </div>
                   </div>
 
-                  <div className="mx-5 h-px" style={{ background: "#f0f0f0" }} />
+                  <div className="mx-5 h-px" style={{ background: "var(--border)" }} />
 
                   {/* ── MEAL QUALITY ── */}
                   <div className="px-5 pb-3 pt-3">
@@ -1319,7 +1319,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                     </div>
                   </div>
 
-                  <div className="mx-5 h-px" style={{ background: "#f0f0f0" }} />
+                  <div className="mx-5 h-px" style={{ background: "var(--border)" }} />
 
                   {/* ── NUTRITION CONTEXT ── */}
                   <div className="pb-1 pt-3">
@@ -1335,7 +1335,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                         { label: "Fibre",    value: String(r.nutrition.fibre),    unit: "g",    color: "var(--icon-lime)" },
                       ] as { label: string; value: string; unit: string; color: string }[]).map(({ label, value, unit, color }, i) => (
                         <div key={label} className="flex flex-col items-center py-2.5"
-                          style={{ borderRight: i < 4 ? "1px solid #f0f0f0" : undefined }}>
+                          style={{ borderRight: i < 4 ? "1px solid var(--border)" : undefined }}>
                           <span className="font-mono text-sm font-semibold leading-none" style={{ color }}>{value}</span>
                           <span className="mt-0.5 text-[9px]" style={{ color: "var(--muted-foreground)" }}>{unit}</span>
                           <span className="mt-0.5 text-[9px]" style={{ color: "var(--muted-foreground)" }}>{label}</span>
@@ -1344,7 +1344,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                     </div>
                   </div>
 
-                  <div className="mx-5 h-px" style={{ background: "#f0f0f0" }} />
+                  <div className="mx-5 h-px" style={{ background: "var(--border)" }} />
 
                   {/* Insight panel — white with gradient left border */}
                   <div className="mx-5 mb-3 flex overflow-hidden rounded-xl" style={{ border: "1px solid #e8e8e8" }}>
@@ -1401,7 +1401,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             {/* Today's Meals */}
             <div>
               <SectionLabel>Today&apos;s Meals</SectionLabel>
-              <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid #ebebeb", boxShadow: "0 2px 12px rgba(26,46,18,0.05)" }}>
+              <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid var(--border)", boxShadow: "0 2px 12px rgba(26,46,18,0.05)" }}>
                 <div className="h-[2px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
 
                 {/* Real today's meals — or mock fallback */}
@@ -1416,7 +1416,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                   const img    = isMock ? (meal as typeof MOCK_MEALS[0]["meals"][0]).image : ((meal as RealAnalysis).image_url ?? "/food-1.webp")
                   return (
                     <div key={i} className="flex items-center gap-3 px-4 py-3.5"
-                      style={{ borderTop: i > 0 ? "1px solid #f0f0f0" : undefined }}>
+                      style={{ borderTop: i > 0 ? "1px solid var(--border)" : undefined }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={img} alt="" className="h-9 w-9 shrink-0 rounded-lg object-cover" />
                       <div className="min-w-0 flex-1">
@@ -1430,7 +1430,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
 
                 {/* + Log prompt when fewer than 3 meals logged today */}
                 {todayMeals.length < 3 && (
-                  <div className="flex items-center gap-3 px-4 py-3" style={{ borderTop: "1px solid #f0f0f0", opacity: 0.55 }}>
+                  <div className="flex items-center gap-3 px-4 py-3" style={{ borderTop: "1px solid var(--border)", opacity: 0.55 }}>
                     <div className="h-2 w-2 shrink-0 rounded-full" style={{ border: "1.5px solid #c8c8c8" }} />
                     <p className="flex-1 text-sm" style={{ color: "var(--muted-foreground)" }}>
                       {todayMeals.length === 0 ? "No meals logged today" : "Log another meal"}
@@ -1447,7 +1447,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
 
                 {/* Daily average */}
                 {(todayMeals.length > 0 || true) && (
-                  <div className="border-t px-4 py-2.5" style={{ borderColor: "#f0f0f0" }}>
+                  <div className="border-t px-4 py-2.5" style={{ borderColor: "var(--border)" }}>
                     <p className="text-right text-[11px]" style={{ color: "var(--muted-foreground)" }}>
                       Today&apos;s average:{" "}
                       <strong style={{ color: "var(--icon-green)" }}>
@@ -1474,7 +1474,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                   { label: "Postbiotic", score: displayBiotics.postbiotic, delta: displayBiotics.postbiotic >= 60 ? "Strong"      : displayBiotics.postbiotic >= 30 ? "Stable"      : "Needs work", c0: "#4CB648", c1: "#2DAA6E", textColor: "#0a6644", borderColor: "var(--icon-teal)" },
                 ] as { label: string; score: number; delta: string; c0: string; c1: string; textColor: string; borderColor: string }[]).map(({ label, score, delta, c0, c1, textColor, borderColor }) => (
                   <div key={label} className="flex flex-col items-center overflow-hidden rounded-2xl"
-                    style={{ background: "white", border: "1px solid #ebebeb", boxShadow: "0 2px 10px rgba(26,46,18,0.05)" }}>
+                    style={{ background: "white", border: "1px solid var(--border)", boxShadow: "0 2px 10px rgba(26,46,18,0.05)" }}>
                     {/* Coloured top border */}
                     <div className="h-[3.5px] w-full" style={{ background: `linear-gradient(90deg, ${c0}, ${c1})` }} />
                     <div className="flex flex-col items-center p-3.5">
@@ -1494,12 +1494,12 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             {/* Your Focus Today — lowest pillar driven */}
             <div className="overflow-hidden rounded-2xl" style={{
               background: "white",
-              border: "1px solid #ebebeb",
-              borderLeft: "4px solid #ba7517",
+              border: "1px solid var(--border)",
+              borderLeft: "4px solid var(--icon-orange)",
               boxShadow: "0 2px 12px rgba(26,46,18,0.05)",
             }}>
               <div className="p-4">
-                <p className="mb-1.5 text-[9px] font-bold uppercase tracking-widest" style={{ color: "#ba7517" }}>
+                <p className="mb-1.5 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-orange)" }}>
                   Your Focus Today
                 </p>
                 <h3 className="font-serif text-base font-bold leading-snug" style={{ color: "var(--foreground)" }}>
@@ -1519,7 +1519,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             <div>
               <SectionLabel>Weekly Consultation</SectionLabel>
               <div className="overflow-hidden rounded-2xl" style={{
-                background: "linear-gradient(135deg, #6aab28 0%, #2e8c2a 40%, #c49610 75%, #c47010 100%)",
+                background: "linear-gradient(135deg, var(--icon-green) 0%, var(--icon-teal) 45%, var(--icon-yellow) 80%, var(--icon-orange) 100%)",
                 boxShadow: "0 6px 28px rgba(26,46,18,0.22)",
               }}>
                 <div className="p-5">
@@ -1600,7 +1600,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                   <div className="mt-4 overflow-hidden rounded-xl" style={{ background: "white", boxShadow: "0 2px 12px rgba(0,0,0,0.12)" }}>
                     <div className="flex items-center gap-3 px-4 py-3.5">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-                        style={{ background: "linear-gradient(135deg, #6aab28, #2e8c2a)" }}>
+                        style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
                         <Calendar size={16} color="white" />
                       </div>
                       <div className="flex-1">
@@ -1610,7 +1610,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                         </p>
                       </div>
                       <div className="rounded-full px-2.5 py-1 text-[10px] font-bold text-white"
-                        style={{ background: "linear-gradient(135deg, #6aab28, #2e8c2a)" }}>
+                        style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
                         Upcoming
                       </div>
                     </div>
@@ -1636,7 +1636,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             </div>
 
             {/* Monthly Focus */}
-            <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid #ebebeb", boxShadow: "0 2px 12px rgba(26,46,18,0.05)" }}>
+            <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid var(--border)", boxShadow: "0 2px 12px rgba(26,46,18,0.05)" }}>
               <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
               <div className="flex overflow-hidden">
                 <div className="w-[3px] shrink-0"
@@ -1747,7 +1747,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
 
           <div className="space-y-4 md:grid md:grid-cols-2 md:gap-5 md:space-y-0">
             {MOCK_REPORTS.map((r) => (
-              <div key={r.id} className="overflow-hidden rounded-2xl" style={{ border: "1px solid #ebebeb", boxShadow: "0 2px 16px rgba(26,46,18,0.06)" }}>
+              <div key={r.id} className="overflow-hidden rounded-2xl" style={{ border: "1px solid var(--border)", boxShadow: "0 2px 16px rgba(26,46,18,0.06)" }}>
                 {/* Full gradient header */}
                 <div className="px-5 py-5" style={{ background: "linear-gradient(135deg, #1a4a14 0%, #0a5c44 100%)" }}>
                   <div className="h-[2px] mb-4 rounded-full" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-yellow), var(--icon-orange))" }} />
@@ -1773,7 +1773,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
 
                 {/* Footer */}
                 <div className="flex items-center justify-between gap-3 border-t px-5 py-3.5"
-                  style={{ borderColor: "#ebebeb", background: "white" }}>
+                  style={{ borderColor: "var(--border)", background: "white" }}>
                   {r.positive ? (
                     <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold"
                       style={{ background: "linear-gradient(135deg, rgba(168,224,99,0.18), rgba(76,182,72,0.12))", color: "var(--icon-green)", border: "1px solid rgba(76,182,72,0.25)" }}>
@@ -1902,7 +1902,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             </div>
 
             {/* ── Next report banner with week progress dots ── */}
-            <div className="mb-5 overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid #ebebeb", boxShadow: "0 4px 16px rgba(26,46,18,0.07)" }}>
+            <div className="mb-5 overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid var(--border)", boxShadow: "0 4px 16px rgba(26,46,18,0.07)" }}>
               <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
               <div className="flex items-center gap-4 p-5">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
@@ -1929,7 +1929,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                           : isToday
                           ? { border: "2px solid var(--icon-green)", background: "white" }
                           : isFuture
-                          ? { background: "#ebebeb" }
+                          ? { background: "var(--border)" }
                           : { background: "#d1d5db" }
                         }
                       />
@@ -1959,9 +1959,9 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
         <div className="mx-auto max-w-2xl px-4 pt-6 pb-16 md:px-8 md:pt-8 space-y-6">
 
           {/* ── Section 1: Personal Details ── */}
-          <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid #ebebeb", boxShadow: "0 4px 20px rgba(26,46,18,0.06)" }}>
+          <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid var(--border)", boxShadow: "0 4px 20px rgba(26,46,18,0.06)" }}>
             <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }} />
-            <div className="px-5 py-4 border-b" style={{ borderColor: "#f0f0f0" }}>
+            <div className="px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}>
                   <User size={14} color="white" />
@@ -1976,7 +1976,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
               {/* Email — read only */}
               <div>
                 <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>Email</label>
-                <div className="w-full rounded-xl border px-4 py-2.5 text-sm" style={{ borderColor: "#e5e7eb", background: "#f9fafb", color: "var(--muted-foreground)" }}>
+                <div className="w-full rounded-xl border px-4 py-2.5 text-sm" style={{ borderColor: "var(--border)", background: "var(--muted)", color: "var(--muted-foreground)" }}>
                   {(propEmail as string | null) ?? "—"}
                 </div>
                 <p className="mt-1 text-xs" style={{ color: "var(--muted-foreground)" }}>Email cannot be changed</p>
@@ -1990,7 +1990,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                   onChange={(e) => setAcctName(e.target.value)}
                   placeholder="Your name"
                   className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition"
-                  style={{ borderColor: "#e5e7eb", background: "white", color: "var(--foreground)" }}
+                  style={{ borderColor: "var(--border)", background: "white", color: "var(--foreground)" }}
                 />
               </div>
               {/* Age bracket */}
@@ -2000,7 +2000,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                   value={acctAgeBracket}
                   onChange={(e) => setAcctAgeBracket(e.target.value)}
                   className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition"
-                  style={{ borderColor: "#e5e7eb", background: "white", color: "var(--foreground)" }}
+                  style={{ borderColor: "var(--border)", background: "white", color: "var(--foreground)" }}
                 >
                   <option value="">Select your age range</option>
                   {AGE_BRACKETS.map((b) => (
@@ -2031,7 +2031,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
           </div>
 
           {/* ── Section 1b: Subscription ── always visible ── */}
-          <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: cancelStage === "confirm" ? "1.5px solid #fed7aa" : "1px solid #ebebeb", boxShadow: "0 4px 20px rgba(26,46,18,0.06)" }}>
+          <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: cancelStage === "confirm" ? "1.5px solid #fed7aa" : "1px solid var(--border)", boxShadow: "0 4px 20px rgba(26,46,18,0.06)" }}>
             <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-yellow), var(--icon-orange))" }} />
 
             {/* ── Active paid plan: cancel flow ── */}
@@ -2093,7 +2093,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                       <button
                         onClick={() => { setCancelStage("idle"); setCancelError(null) }}
                         className="flex-1 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all hover:bg-gray-50"
-                        style={{ borderColor: "#e5e7eb", color: "var(--muted-foreground)" }}
+                        style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}
                       >
                         Keep my plan
                       </button>
@@ -2176,7 +2176,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
           </div>
 
           {/* ── Section 2: Export My Data ── */}
-          <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid #ebebeb", boxShadow: "0 4px 20px rgba(26,46,18,0.06)" }}>
+          <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid var(--border)", boxShadow: "0 4px 20px rgba(26,46,18,0.06)" }}>
             <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-teal), var(--icon-lime))" }} />
             <div className="px-5 py-5">
               <div className="flex items-start justify-between gap-4">
@@ -2205,7 +2205,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
           </div>
 
           {/* ── Section 3: Delete My Account ── */}
-          <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: deleteStage !== "closed" ? "1.5px solid #fca5a5" : "1px solid #ebebeb", boxShadow: "0 4px 20px rgba(26,46,18,0.06)" }}>
+          <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: deleteStage !== "closed" ? "1.5px solid #fca5a5" : "1px solid var(--border)", boxShadow: "0 4px 20px rgba(26,46,18,0.06)" }}>
             <div className="h-[3px]" style={{ background: "linear-gradient(90deg, #f87171, #ef4444)" }} />
 
             {/* Stage 0 — closed trigger */}
@@ -2250,7 +2250,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                   <button
                     onClick={() => setDeleteStage("closed")}
                     className="flex-1 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all hover:bg-gray-50"
-                    style={{ borderColor: "#e5e7eb", color: "var(--muted-foreground)" }}
+                    style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}
                   >
                     Cancel
                   </button>
@@ -2282,7 +2282,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                   <button
                     onClick={() => { setDeleteStage("closed"); setDeleteInput(""); setDeleteError(null) }}
                     className="flex-1 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all hover:bg-gray-50"
-                    style={{ borderColor: "#e5e7eb", color: "var(--muted-foreground)" }}
+                    style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}
                   >
                     Cancel
                   </button>
