@@ -83,9 +83,13 @@ export async function POST(req: NextRequest) {
       cancel_url: `${origin}/assessment`,
     })
 
+    console.log(
+      `[checkout] Session ${session.id} created (mode=payment, amount=${config.amount}, hasEmail=${Boolean(email)}, livemode=${session.livemode})`
+    )
+
     return NextResponse.json({ url: session.url })
   } catch (err) {
-    console.error("Stripe checkout error:", err)
+    console.error("[checkout] Stripe checkout error:", err)
     return NextResponse.json({ error: "Failed to create checkout session" }, { status: 500 })
   }
 }
