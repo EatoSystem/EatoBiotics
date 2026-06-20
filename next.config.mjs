@@ -13,11 +13,7 @@ const nextConfig = {
     ]
   },
   async headers() {
-    // Baseline security headers applied to every response. (A full
-    // Content-Security-Policy is intentionally omitted here because the app
-    // loads several third-party scripts — PostHog, Statsig, Stripe, Vercel —
-    // and a misconfigured CSP would silently break them; add one deliberately
-    // with those origins allowlisted if/when needed.)
+    // Baseline security headers applied to every response.
     // Content-Security-Policy. 'unsafe-inline'/'unsafe-eval' are required by
     // Next.js's inline runtime + the third-party SDKs below; the value still
     // restricts script/connect/frame origins, blocks plugins (object-src), and
