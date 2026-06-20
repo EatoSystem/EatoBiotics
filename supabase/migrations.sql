@@ -631,3 +631,33 @@ BEGIN
       FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
   END IF;
 END $$;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 25: assessment_journeys (foundation→add-on journey persistence)
+-- ────────────────────────────────────────────────────────────
+-- Cross-device persistence for the foundation-first assessment journey
+-- (lib/assessment/journey.ts + registry.ts). `journey` mirrors the localStorage
+-- journey store; `summaries` is a map of assessmentKey → normalised
+-- AssessmentSummary — enough to render the combined report on any device without
+-- round-tripping the six raw assessment localStorage shapes. RLS-scoped to the
+-- owner; one row per user.
+
+CREATE TABLE IF NOT EXISTS assessment_journeys (
+  id         uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    uuid        NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+  journey    jsonb       NOT NULL,
+  summaries  jsonb       NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE assessment_journeys ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'assessment_journeys' AND policyname = 'users_manage_own_assessment_journeys') THEN
+    CREATE POLICY "users_manage_own_assessment_journeys" ON assessment_journeys
+      FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+  END IF;
+END $$;

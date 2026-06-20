@@ -16,7 +16,9 @@ import {
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { ScoreRing } from "@/components/assessment/score-ring"
 import { PersonalReportCta } from "@/components/assessment/personal-report-cta"
+import { SaveResultsCard } from "@/components/assessment/save-results-card"
 import type { AssessmentResult, PillarInsight } from "@/lib/assessment-scoring"
+import { MIND_DISCLAIMER } from "@/lib/assessment-disclaimers"
 import { getFoodBySlug } from "@/lib/foods"
 
 /* ── Brain Starter Pack ──────────────────────────────────────────────── */
@@ -86,27 +88,6 @@ function PillarMiniBar({ insight, index }: { insight: PillarInsight; index: numb
   )
 }
 
-/* ── Save Results Card ───────────────────────────────────────────────── */
-
-function SaveResultsCard({ email }: { email?: string }) {
-  const [sent] = useState(true)
-  if (!email) return null
-
-  return (
-    <div className="rounded-2xl border bg-card p-6 text-center space-y-3">
-      <div className="w-10 h-10 rounded-full bg-[var(--icon-teal)]/10 flex items-center justify-center mx-auto">
-        <span className="text-xl">📧</span>
-      </div>
-      <h3 className="font-semibold text-base">Your results are on their way</h3>
-      {sent ? (
-        <p className="text-sm text-muted-foreground">
-          We&apos;ve sent your Mind Assessment results and brain food plan to{" "}
-          <span className="font-semibold text-foreground">{email}</span>.
-        </p>
-      ) : null}
-    </div>
-  )
-}
 
 /* ── Main component ──────────────────────────────────────────────────── */
 
@@ -114,6 +95,7 @@ export function MindAssessmentResults({ result, onRetake, leadEmail }: MindAsses
   const { overall, profile, insights, nextActions } = result
   const strengths = insights.filter((i) => i.strength)
   const opportunities = insights.filter((i) => i.opportunity)
+  const safetyNote = (result as { safetyNote?: string }).safetyNote
 
   return (
     <div className="min-h-screen bg-background">
@@ -135,7 +117,14 @@ export function MindAssessmentResults({ result, onRetake, leadEmail }: MindAsses
             <h1 className="mt-4 font-serif text-3xl font-semibold text-foreground sm:text-4xl md:text-5xl">
               Your Gut-Brain Score
             </h1>
+            <p className="mx-auto mt-4 max-w-xl text-xs leading-relaxed text-muted-foreground">{MIND_DISCLAIMER}</p>
           </div>
+
+          {safetyNote && (
+            <div className="mx-auto mb-8 max-w-xl rounded-2xl border border-icon-orange/30 bg-icon-orange/5 p-4 text-center">
+              <p className="text-sm leading-relaxed text-foreground">{safetyNote}</p>
+            </div>
+          )}
 
           <div className="flex flex-col items-center gap-8 sm:flex-row sm:items-start sm:gap-10 lg:gap-16">
             <div className="flex shrink-0 flex-col items-center">
@@ -383,7 +372,7 @@ export function MindAssessmentResults({ result, onRetake, leadEmail }: MindAsses
       <section className="border-t border-border px-6 py-16">
         <div className="mx-auto max-w-3xl">
           <ScrollReveal>
-            <SaveResultsCard email={leadEmail} />
+            <SaveResultsCard email={leadEmail} accentVar="--icon-teal" />
           </ScrollReveal>
         </div>
       </section>

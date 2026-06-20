@@ -3,7 +3,7 @@ import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { ownerOrFilter } from "@/lib/supabase-filters"
-import { getUserMembershipTier } from "@/lib/membership"
+import { getUserMembershipTier, isPaidTier } from "@/lib/membership"
 import { guardAiUsage } from "@/lib/ai-guard"
 
 
@@ -20,11 +20,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 })
   }
 
-  // Tier check — Restore+ only
+  // Tier check — members only
   const tier = await getUserMembershipTier(user.id)
-  if (tier !== "restore" && tier !== "transform") {
+  if (!isPaidTier(tier)) {
     return NextResponse.json(
-      { error: "Monthly gut plans require a Restore or Transform membership." },
+      { error: "Monthly gut plans require an active membership." },
       { status: 403 }
     )
   }
@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
 
   const overallScore = (latestAssessment?.overall_score as number | null) ?? null
 
-  const prompt = `You are the EatoBiotics Monthly Food System Plan Generator. Create a personalised, forward-looking monthly food system plan for a ${tier === "transform" ? "Transform" : "Restore"} member.
+  const prompt = `You are the EatoBiotics Monthly Food System Plan Generator. Create a personalised, forward-looking monthly food system plan for an EatoBiotics member.
 
 Member data:
 - Name: ${name ?? "Member"}

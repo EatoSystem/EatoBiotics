@@ -82,9 +82,9 @@ This file is the authoritative reference for Claude Code sessions. Read it befor
 
 ### GLP-1 Companion
 - `lib/glp1.ts` — protein factors + target math (single clinical tuning point)
-- `app/eatobetics/glp1/page.tsx` — public landing + free protein calculator
+- `app/glucose/glp1/page.tsx` — public landing + free protein calculator
 - `components/eatobetics/protein-calculator.tsx` — interactive calculator (free)
-- `app/eatobetics/glp1/check/page.tsx` + `components/eatobetics/glp1-check.tsx` — public muscle-preservation readiness check (client-scored, no backend)
+- `app/glucose/glp1/check/page.tsx` + `components/eatobetics/glp1-check.tsx` — public muscle-preservation readiness check (client-scored, no backend)
 - `app/account/glp1/page.tsx` — gated tracker (Restore+; soft upsell otherwise)
 - `app/account/glp1/glp1-client.tsx` — onboarding + daily protein/weight/strength/side-effect tracker, weight-trend chart (goal line + projection), protein-adherence + side-effect analytics
 - `app/api/glp1/log/route.ts` — upserts a day's log (auth + `glp1_companion` gate)

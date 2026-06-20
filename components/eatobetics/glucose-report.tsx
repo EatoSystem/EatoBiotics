@@ -137,7 +137,7 @@ export function GlucoseReport({ result, onRetake }: { result: GlucoseResult; onR
             <p className="mt-4 text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
               This is general education, not medical advice. Always follow the guidance of the clinician managing your medication.
             </p>
-            <Link href="/eatobetics/glp1" className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-75" style={{ color: "var(--icon-green)" }}>
+            <Link href="/glucose/glp1" className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-75" style={{ color: "var(--icon-green)" }}>
               Open your GLP-1 Companion <ArrowRight size={14} />
             </Link>
           </div>
@@ -228,7 +228,7 @@ export function GlucoseReport({ result, onRetake }: { result: GlucoseResult; onR
             Join early access for meal-by-meal glucose intelligence, weekly check-ins, and a guided version of your 30-day protocol.
           </p>
           <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link href="/eatobetics" className="brand-gradient inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:opacity-90">
+            <Link href="/glucose" className="brand-gradient inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:opacity-90">
               Join early access <ArrowRight size={15} />
             </Link>
             <button onClick={onRetake} className="inline-flex items-center gap-2 rounded-full border border-white/30 px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-white/10">

@@ -139,7 +139,7 @@ export function Nav() {
             href="/assessment"
             className="brand-gradient rounded-full px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
           >
-            Take assessment
+            Get my gut score free →
           </Link>
         </div>
 
@@ -236,7 +236,7 @@ export function Nav() {
               onClick={() => setOpen(false)}
               className="brand-gradient mt-3 rounded-full px-5 py-3 text-center text-sm font-semibold text-white"
             >
-              Take assessment
+              Get my gut score free →
             </Link>
           </div>
         </div>

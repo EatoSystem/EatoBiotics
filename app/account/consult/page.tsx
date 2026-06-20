@@ -4,7 +4,7 @@ import { redirect } from "next/navigation"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { ownerOrFilter } from "@/lib/supabase-filters"
-import { getUserMembershipTier } from "@/lib/membership"
+import { getUserMembershipTier, canAccess } from "@/lib/membership"
 import { ConsultClient } from "./consult-client"
 
 export const metadata: Metadata = {
@@ -17,7 +17,7 @@ export default async function ConsultPage() {
   if (!user) redirect("/assessment?signin=1")
 
   const tier = await getUserMembershipTier(user.id)
-  if (tier !== "transform") {
+  if (!canAccess(tier, "ai_consultation")) {
     redirect("/pricing?feature=ai-consultation")
   }
 

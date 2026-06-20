@@ -1,241 +1,261 @@
-/* ── Mind Assessment Scoring ────────────────────────────────────────── */
-// Re-uses computeSubScores and computeOverall from assessment-scoring.ts
-// unchanged — same pillar keys, same question IDs (q1–q15), same 0–3 values.
-// Only profiles, PILLAR_META copy, and result framing are mind-specific.
+/* ── Mind Assessment Scoring — native 5-pillar food-pattern model ───────────
+ * The Mind assessment is a food-pattern REFLECTION tool for mental energy,
+ * clarity, and focus — never a mental-health screening or diagnosis. It has its
+ * own five sub-scores (Plant & Polyphenol Diversity, Brain Fuel, Live Foods,
+ * Rhythm, Mind Response), each 0–100, scored directly from the 15 questions.
+ *
+ * A secondary 3-Biotics summary is derived for continuity and stored as the
+ * canonical `subScores` (back-compat with the dashboard / consult / nudge).
+ * All copy is careful and non-deterministic ("may support", "is associated with").
+ */
 
-import {
-  computeSubScores,
-  computeOverall,
-  type SubScores,
-  type AssessmentProfile,
-  type PillarInsight,
-  type AssessmentResult,
+import { computeSubScores, computeOverall } from "./assessment-scoring"
+import type {
+  SubScores,
+  AssessmentProfile,
+  PillarInsight,
+  AssessmentResult,
 } from "./assessment-scoring"
-import { PILLARS, PILLAR_ORDER, type PillarKey } from "./pillars"
-
-// Mind assessment uses its own 5-pillar system (independent of gut Feed/Seed/Heal)
-type MindPillarKey = "diversity" | "feeding" | "adding" | "consistency" | "feeling"
 
 export { computeSubScores, computeOverall }
 export type { SubScores, AssessmentProfile, PillarInsight, AssessmentResult }
 
-/* ── Profile determination ──────────────────────────────────────────── */
+export type MindPillarKey =
+  | "plantDiversity"
+  | "brainFuel"
+  | "liveFoods"
+  | "rhythm"
+  | "mindResponse"
 
-/** Which biotic pillar the user scores lowest on (the focus area). */
-function getWeakestPillar(sub: SubScores): PillarKey {
-  return PILLAR_ORDER.reduce(
-    (min, k) => ((sub[k] ?? 0) < (sub[min] ?? 0) ? k : min),
-    PILLAR_ORDER[0],
-  )
+export interface MindPillarScores {
+  plantDiversity: number
+  brainFuel: number
+  liveFoods: number
+  rhythm: number
+  mindResponse: number
 }
 
-// Maps each biotic to the best-fit mind insight copy (the 5 question groups
-// fold into 3 biotics: diversity+feeding → prebiotics, adding → probiotics,
-// consistency+feeling → postbiotics).
-const BIOTIC_META: Record<PillarKey, MindPillarKey> = {
-  prebiotics: "feeding",
-  probiotics: "adding",
-  postbiotics: "consistency",
+export interface MindResult extends AssessmentResult {
+  pillarScores: MindPillarScores
+  biotics: { prebiotics: number; probiotics: number; postbiotics: number }
+  /** Shown when responses suggest persistent low mood/focus — points to a professional. */
+  safetyNote?: string
 }
 
-export function getMindProfile(overall: number, sub: SubScores): AssessmentProfile {
-  const weakest = getWeakestPillar(sub)
-
-  if (overall >= 75) {
-    return {
-      type: "Sharp Mind",
-      tagline: "Your gut-brain axis is working hard in your favour.",
-      description:
-        "You're doing something genuinely rare — feeding your gut with the diversity, live foods, and consistency it needs to produce the neurotransmitters your brain runs on. Your mental clarity, mood stability, and focus are all benefiting from a gut-brain connection that is functioning the way it should. The opportunity now is refinement — deepening what's already working and protecting the habits that got you here.",
-      color: "var(--icon-green)",
-    }
-  }
-
-  if (overall >= 58) {
-    return {
-      type: "Clear Foundation",
-      tagline: "Solid gut habits are supporting your mental clarity — now sharpen the edges.",
-      description:
-        "You have real gut-brain support in place. Your food habits are giving your microbiome most of what it needs to produce serotonin, regulate mood, and sustain focus. There are one or two pillars where a targeted shift would make a noticeable difference to how you feel mentally — not a transformation, just a refinement.",
-      color: "var(--icon-teal)",
-    }
-  }
-
-  if (overall >= 42) {
-    return {
-      type: "Emerging Clarity",
-      tagline: "The building blocks are there — consistency will unlock the rest.",
-      description:
-        "You have awareness and some strong food habits, but they haven't fully integrated into the daily rhythm your gut-brain axis needs. The microbiome responds to consistency — small, repeatable changes compound quickly. Your mental clarity and mood stability are already being shaped by what you eat. Tightening the pattern will reveal how much further they can go.",
-      color: "var(--icon-lime)",
-    }
-  }
-
-  if (overall >= 28) {
-    if (weakest === "postbiotics") {
-      return {
-        type: "Foggy System",
-        tagline: "Good intention, disrupted by an irregular rhythm.",
-        description:
-          "You have real food knowledge — it shows in your answers. What your gut-brain axis is missing right now is predictability. When eating is erratic — skipped meals, late eating, irregular timing — your cortisol stays elevated, your serotonin production is disrupted, and mental clarity suffers. The fix isn't eating better food. It's eating more consistently.",
-        color: "var(--icon-yellow)",
-      }
-    }
-    if (weakest === "probiotics") {
-      return {
-        type: "Foggy System",
-        tagline: "Your gut is waiting for the live foods it needs to talk to your brain.",
-        description:
-          "Your eating habits have real strengths — fibre, whole foods, and variety are present. What your gut-brain axis is missing is direct microbial input from live and fermented foods. These are the fastest way to increase the microbial diversity that produces serotonin, dopamine precursors, and short-chain fatty acids that reduce neuroinflammation.",
-        color: "var(--icon-yellow)",
-      }
-    }
-    return {
-      type: "Foggy System",
-      tagline: "Progress is underway — targeted effort will sharpen the picture.",
-      description:
-        "You have some good habits in place, but there are clear gaps in what your gut is receiving. Your microbiome's ability to support your brain depends on diversity, live foods, and consistent feeding. Focusing on your weakest pillars first will create the fastest momentum.",
-      color: "var(--icon-yellow)",
-    }
-  }
-
-  if (overall >= 15) {
-    return {
-      type: "Reactive Mind",
-      tagline: "Your gut is waiting for a more stable foundation.",
-      description:
-        "Across most pillars, your current eating patterns aren't yet giving your microbiome what it needs to consistently support your brain. This isn't a judgment — it's a starting point. Your gut produces the vast majority of your body's serotonin. Giving it the right inputs — fibre, fermented foods, variety, rhythm — creates changes you'll feel mentally within weeks.",
-      color: "var(--icon-orange)",
-    }
-  }
-
-  return {
-    type: "Early Mind Builder",
-    tagline: "You're at the beginning of something important.",
-    description:
-      "Your gut-brain journey is just beginning, and that means every improvement from here creates real mental impact. The most effective place to start is building a simple, repeatable daily base — a handful of whole foods, eaten consistently, with one fermented food added daily. The gut-brain connection responds quickly to even modest changes.",
-    color: "var(--icon-orange)",
-  }
+export const MIND_PILLAR_IDS: Record<MindPillarKey, string[]> = {
+  plantDiversity: ["q1", "q2", "q3"],
+  brainFuel: ["q4", "q5", "q6"],
+  liveFoods: ["q7", "q8", "q9"],
+  rhythm: ["q10", "q11", "q12"],
+  mindResponse: ["q13", "q14", "q15"],
 }
 
-/* ── Per-pillar insight copy (mind-framed) ──────────────────────────── */
+export const MIND_PILLAR_ORDER: MindPillarKey[] = [
+  "plantDiversity",
+  "brainFuel",
+  "liveFoods",
+  "rhythm",
+  "mindResponse",
+]
 
-const MIND_PILLAR_META: Record<
-  MindPillarKey,
-  {
-    label: string
-    icon: string
-    color: string
-    gradient: string
-    strength: string
-    opportunity: string
-    actionLow: string
-    actionHigh: string
+/** Non-diagnostic guidance shown if mental clarity/mood responses are low. */
+export const MIND_PROFESSIONAL_NOTE =
+  "If low mood, anxiety, or focus difficulties are persistent, severe, or getting worse, please speak with a qualified health professional. This is a food-pattern reflection tool and does not assess mental health."
+
+function num(answers: Record<string, number | string[]>, id: string): number {
+  const v = answers[id]
+  return typeof v === "number" ? v : 0
+}
+
+export function computeMindPillarScores(
+  answers: Record<string, number | string[]>,
+): MindPillarScores {
+  const out = {} as MindPillarScores
+  for (const key of MIND_PILLAR_ORDER) {
+    const ids = MIND_PILLAR_IDS[key]
+    const raw = ids.reduce((sum, id) => sum + num(answers, id), 0)
+    out[key] = Math.round((raw / (ids.length * 3)) * 100)
   }
-> = {
-  diversity: {
-    label: "Brain Nutrition",
+  return out
+}
+
+interface MindPillarMeta {
+  label: string
+  icon: string
+  color: string
+  gradient: string
+  strength: string
+  opportunity: string
+  actionLow: string
+  actionHigh: string
+}
+
+const MIND_PILLAR_META: Record<MindPillarKey, MindPillarMeta> = {
+  plantDiversity: {
+    label: "Plant & Polyphenol Diversity",
     icon: "Leaf",
     color: "var(--icon-lime)",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
     strength:
-      "You're exposing your gut microbiome to a wide variety of plant polyphenols — the compounds that directly feed serotonin-producing bacteria and support cognitive resilience.",
+      "You meet a wide range of plants and colourful, polyphenol-rich foods — a pattern associated with a varied gut microbiome, which may support mood and clarity for some people.",
     opportunity:
-      "Polyphenol-rich plant diversity is the foundation of a gut that talks clearly to your brain. Adding 2–3 new plants each week meaningfully increases the microbial populations responsible for neurotransmitter production.",
+      "Plant variety and colour may support the gut bacteria involved in mood and focus. Adding 2–3 new or colourful plants a week is a gentle way to widen that base.",
     actionLow:
-      "This week: introduce one new plant food — a new berry, leafy green, or legume. One new plant per week adds up to 50+ new microbiome inputs per year.",
+      "This week: add one new colourful plant — berries, leafy greens, or a vegetable you don't usually buy. Variety matters more than perfection.",
     actionHigh:
-      "Keep your weekly plant count above 20. If it dips, add one new category — seeds, sea vegetables, or a new legume — to maintain the polyphenol diversity your brain depends on.",
+      "Keep your weekly plant count high and rotate colours so you keep meeting a broad range of polyphenols.",
   },
-  feeding: {
+  brainFuel: {
     label: "Brain Fuel",
     icon: "Wheat",
     color: "var(--icon-green)",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
     strength:
-      "You're consistently feeding your gut the fibre-rich whole foods that produce short-chain fatty acids — the molecules that reduce neuroinflammation and support the blood-brain barrier.",
+      "You regularly anchor meals with fibre-rich whole foods and a steady breakfast — a pattern that may support more even energy through the day.",
     opportunity:
-      "Fibre from whole plants is the primary fuel for bacteria that produce butyrate — a short-chain fatty acid that protects the brain from inflammation. One fibre anchor per meal gives your microbiome consistent, predictable fuel.",
+      "Regular nourishment with protein and fibre — especially at breakfast — may help steady energy and focus. One reliable anchor meal is a good place to start.",
     actionLow:
-      "This week: anchor every main meal with one fibre source. Oats, lentils, sweet potato, or vegetables all count — even small portions make a meaningful difference.",
+      "This week: build one dependable breakfast with some protein and fibre (eggs and oats, yoghurt and fruit, beans on wholegrain toast).",
     actionHigh:
-      "Diversify your fibre sources to hit different microbial populations. Add resistant starch (cooled rice, green banana) or new legumes alongside your usual whole foods.",
+      "Diversify your fibre sources across the week so your everyday meals keep doing the heavy lifting.",
   },
-  adding: {
-    label: "Live Mind Foods",
+  liveFoods: {
+    label: "Live Foods",
     icon: "FlaskConical",
     color: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
     strength:
-      "You're regularly introducing live, fermented foods that directly seed your gut with the bacteria most linked to serotonin production, mood regulation, and cognitive clarity.",
+      "You regularly include live and fermented foods — a simple habit associated with greater microbial diversity, which may support steadier mood for some people.",
     opportunity:
-      "Fermented foods are the most direct way to increase the gut-brain active microbial populations. Even one serving a day — kefir, miso, kimchi, or natural yoghurt — makes a measurable difference to mood and focus within 2–3 weeks.",
+      "Live and fermented foods are an easy daily addition that may support a more varied microbiome. Even one serving a day is a fine starting point.",
     actionLow:
-      "This week: add one fermented food to at least one meal each day — kefir with breakfast, miso broth with lunch, or kimchi with dinner. The brain impact is faster than most people expect.",
+      "This week: add one fermented food you enjoy to a daily meal — kefir, natural yoghurt, kimchi, or miso.",
     actionHigh:
-      "Rotate your fermented food sources. Each carries a different bacterial profile — alternate between at least three types across the week for broader gut-brain axis coverage.",
+      "Rotate your fermented foods across the week so you meet a wider range of cultures.",
   },
-  consistency: {
-    label: "Mind Rhythm",
+  rhythm: {
+    label: "Rhythm",
     icon: "Clock",
     color: "var(--icon-yellow)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     strength:
-      "Your eating rhythm is one of your biggest mental health assets. Consistent meal timing supports your circadian clock, regulates cortisol, and gives your gut the predictability it needs to produce mood-stabilising neurotransmitters on schedule.",
+      "Your eating rhythm is steady, with regular timing and caffeine, late meals, and alcohol kept in check — a pattern associated with more stable energy and mood.",
     opportunity:
-      "Your gut-brain axis runs on circadian rhythm. Consistent meal timing — even rough consistency within a 30-minute window — synchronises cortisol patterns, improves serotonin production timing, and reduces the mid-afternoon mental crashes that often signal rhythm disruption.",
+      "Regular timing — and keeping caffeine, late eating, and alcohol in check — may support steadier energy and fewer mid-afternoon dips.",
     actionLow:
-      "This week: set three anchor meal times and protect them. The gut-brain axis responds to predictability — even rough consistency sends a powerful stabilising signal.",
+      "This week: set three anchor meal times and protect them, and notice how caffeine timing affects your afternoon.",
     actionHigh:
-      "Identify what disrupts your rhythm (late nights, travel, skipped meals) and pre-plan one simple solution for each. Protecting the rhythm protects the mental output.",
+      "Spot what most disrupts your rhythm (late nights, skipped meals, extra coffee) and pre-plan one simple fix for each.",
   },
-  feeling: {
+  mindResponse: {
     label: "Mind Response",
     icon: "Heart",
     color: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     strength:
-      "Your mind is responding well to how you're eating — with stable mood, clear thinking, and consistent focus. This is a direct signal that your gut-brain axis is functioning as it should.",
+      "You generally feel clear and even after eating, with steady focus through the day — a good sign that your current patterns are working for you.",
     opportunity:
-      "Mental fog, mood dips, and afternoon crashes are often gut signals, not brain signals. Tracking one word per meal for three days frequently reveals which foods or patterns are disrupting your gut-brain communication — and the fix is usually simpler than expected.",
+      "Post-meal fog, cravings, and afternoon crashes can sometimes track with food patterns. Noticing them is the first step — for some people, small changes may support mood, energy, or focus.",
     actionLow:
-      "This week: note your mental clarity one hour after each meal for three days — just one word. This builds the pattern awareness you need to identify what's helping and what's holding you back.",
+      "This week: jot one word on your clarity an hour after meals for a few days. Patterns often point to a simple, kind next step.",
     actionHigh:
-      "Pay attention to what disrupts your focus or mood scores. Identify 2–3 foods or habits that reliably diminish your clarity, and experiment with reducing them one at a time.",
+      "Notice which foods or habits reliably dent your focus, and experiment with adjusting them one at a time.",
   },
 }
 
-/* ── Insights generation ────────────────────────────────────────────── */
+const STRENGTH_THRESHOLD = 58
 
-export function getMindInsights(sub: SubScores): PillarInsight[] {
-  return PILLAR_ORDER.map((biotic): PillarInsight => {
-    const score = sub[biotic] ?? 0
-    const meta = MIND_PILLAR_META[BIOTIC_META[biotic]]
-    const isStrength = score >= 58
+export function getMindInsights(pillarScores: MindPillarScores): PillarInsight[] {
+  return MIND_PILLAR_ORDER.map((key): PillarInsight => {
+    const score = pillarScores[key]
+    const meta = MIND_PILLAR_META[key]
+    const isStrength = score >= STRENGTH_THRESHOLD
     return {
-      pillar: biotic,
-      label: PILLARS[biotic].label, // canonical 3-biotic label (Food System Core)
+      pillar: key,
+      label: meta.label,
       score,
       strength: isStrength ? meta.strength : undefined,
       opportunity: !isStrength ? meta.opportunity : undefined,
       action: isStrength ? meta.actionHigh : meta.actionLow,
       icon: meta.icon,
-      color: PILLARS[biotic].color,
+      color: meta.color,
       gradient: meta.gradient,
     }
   }).sort((a, b) => a.score - b.score) // weakest first
 }
 
-/* ── Main compute function ──────────────────────────────────────────── */
+export function getMindProfile(overall: number): AssessmentProfile {
+  if (overall >= 75) {
+    return {
+      type: "Sharp & Steady",
+      tagline: "Your food patterns are working in your mind's favour.",
+      description:
+        "Your eating patterns line up well with steady mental energy and clarity — variety, reliable fuel, live foods, a good rhythm, and a mind that responds well. This is a snapshot of patterns that are serving you; the opportunity now is to protect them.",
+      color: "var(--icon-green)",
+    }
+  }
+  if (overall >= 58) {
+    return {
+      type: "Clear Foundation",
+      tagline: "Solid food patterns — a small tweak or two could sharpen things further.",
+      description:
+        "Your patterns give your mind a good base. One or two areas, tightened up, may support even steadier energy and focus. This is a starting point, not a verdict — small changes tend to compound.",
+      color: "var(--icon-teal)",
+    }
+  }
+  if (overall >= 42) {
+    return {
+      type: "Emerging Clarity",
+      tagline: "The building blocks are there — consistency is the next step.",
+      description:
+        "You have real strengths and some areas still finding their rhythm. Steady, repeatable changes may support how clear and even you feel. You're closer than it might seem.",
+      color: "var(--icon-lime)",
+    }
+  }
+  if (overall >= 28) {
+    return {
+      type: "Finding Your Rhythm",
+      tagline: "A few steady anchors could make a real difference.",
+      description:
+        "Some current patterns may be working against steady energy and focus. This is a kind starting point — choosing one or two anchors (a reliable breakfast, a steadier rhythm) often lifts several areas at once.",
+      color: "var(--icon-yellow)",
+    }
+  }
+  return {
+    type: "Early Builder",
+    tagline: "You're at the start of something worthwhile.",
+    description:
+      "Every small change from here can help. The easiest place to begin is a simple, repeatable base — a steady breakfast, regular meals, and a little more variety — and to notice how you feel as you go.",
+    color: "var(--icon-orange)",
+  }
+}
 
 export function computeMindResult(
-  answers: Record<string, number | string[]>
-): AssessmentResult {
-  const subScores = computeSubScores(answers)
-  const overall = computeOverall(subScores)
-  const profile = getMindProfile(overall, subScores)
-  const insights = getMindInsights(subScores)
+  answers: Record<string, number | string[]>,
+): MindResult {
+  const pillarScores = computeMindPillarScores(answers)
+  const biotics = computeSubScores(answers)
+  const overall = computeOverall(biotics)
+  const profile = getMindProfile(overall)
+  const insights = getMindInsights(pillarScores)
   const nextActions = insights.slice(0, 3).map((i) => i.action)
+
+  // Low self-reported mental response → surface the professional-help note.
+  const safetyNote = pillarScores.mindResponse <= 33 ? MIND_PROFESSIONAL_NOTE : undefined
+
+  const subScores: SubScores = {
+    prebiotics: biotics.prebiotics,
+    probiotics: biotics.probiotics,
+    postbiotics: biotics.postbiotics,
+    feed: biotics.prebiotics,
+    seed: biotics.probiotics,
+    heal: biotics.postbiotics,
+    diversity: pillarScores.plantDiversity,
+    feeding: pillarScores.brainFuel,
+    adding: pillarScores.liveFoods,
+    consistency: pillarScores.rhythm,
+    feeling: pillarScores.mindResponse,
+  }
 
   return {
     subScores,
@@ -243,6 +263,13 @@ export function computeMindResult(
     profile,
     insights,
     nextActions,
+    pillarScores,
+    biotics: {
+      prebiotics: biotics.prebiotics,
+      probiotics: biotics.probiotics,
+      postbiotics: biotics.postbiotics,
+    },
+    ...(safetyNote ? { safetyNote } : {}),
     completedAt: Date.now(),
   }
 }

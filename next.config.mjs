@@ -3,6 +3,15 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  async redirects() {
+    return [
+      { source: "/eatobetics", destination: "/glucose", permanent: true },
+      { source: "/eatobetics/:path*", destination: "/glucose/:path*", permanent: true },
+      { source: "/eatosports", destination: "/performance", permanent: true },
+      { source: "/eatosports-assessment", destination: "/performance-assessment", permanent: true },
+      { source: "/eatosports-assessment/:path*", destination: "/performance-assessment/:path*", permanent: true },
+    ]
+  },
   async headers() {
     // Baseline security headers applied to every response. (A full
     // Content-Security-Policy is intentionally omitted here because the app

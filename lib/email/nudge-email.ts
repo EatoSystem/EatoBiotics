@@ -17,6 +17,7 @@ function scoreColor(score: number): string {
 }
 
 function tierLabel(tier: string): string {
+  if (tier === "member" || tier === "trial") return "Member"
   if (tier === "transform") return "Transform"
   if (tier === "restore")   return "Restore"
   if (tier === "grow")      return "Grow"

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
-import { getUserMembershipTier } from "@/lib/membership"
+import { getUserMembershipTier, isPaidTier } from "@/lib/membership"
 
 const ALLOWED_GOALS = [
   "Digestive health and IBS management",
@@ -28,9 +28,9 @@ export async function PATCH(req: NextRequest) {
   }
 
   const tier = await getUserMembershipTier(user.id)
-  if (tier !== "restore" && tier !== "transform") {
+  if (!isPaidTier(tier)) {
     return NextResponse.json(
-      { error: "Health goals require a Restore or Transform membership" },
+      { error: "Health goals require an active membership" },
       { status: 403 }
     )
   }

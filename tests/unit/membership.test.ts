@@ -2,10 +2,10 @@ import { describe, it, expect, afterEach } from "vitest"
 import { canAccess, tierFromPriceId, isFoundingMember, TIER_META } from "@/lib/membership"
 
 describe("canAccess", () => {
-  it("gates AI consultation to transform only", () => {
+  it("grants AI consultation to the single membership (and legacy transform), not free", () => {
+    expect(canAccess("member", "ai_consultation")).toBe(true)
+    expect(canAccess("trial", "ai_consultation")).toBe(true)
     expect(canAccess("transform", "ai_consultation")).toBe(true)
-    expect(canAccess("restore", "ai_consultation")).toBe(false)
-    expect(canAccess("grow", "ai_consultation")).toBe(false)
     expect(canAccess("free", "ai_consultation")).toBe(false)
   })
 
@@ -16,8 +16,20 @@ describe("canAccess", () => {
     expect(canAccess("free", "unlimited_analyses")).toBe(false)
   })
 
-  it("treats member like restore for 90-day history (and grow like a base tier)", () => {
-    expect(canAccess("member", "score_history_90")).toBe(true)
+  it("gives the single membership full access — incl. premium features", () => {
+    for (const feature of ["ai_consultation", "weekly_checkin", "weekly_meal_plans", "score_history_90"] as const) {
+      expect(canAccess("member", feature)).toBe(true)
+    }
+  })
+
+  it("makes the trial mirror member except the founding-member badge", () => {
+    expect(canAccess("trial", "weekly_checkin")).toBe(true)
+    expect(canAccess("trial", "score_history_90")).toBe(true)
+    expect(canAccess("trial", "founding_member")).toBe(false)
+    expect(canAccess("member", "founding_member")).toBe(true)
+  })
+
+  it("leaves legacy grow as a base tier (no 90-day history)", () => {
     expect(canAccess("grow", "score_history_90")).toBe(false)
   })
 })

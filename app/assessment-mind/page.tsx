@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { MindAssessmentClient } from "@/components/mind-assessment/mind-assessment-client"
+import { FoundationGuard } from "@/components/assessment/foundation-guard"
 
 export const metadata: Metadata = {
   title: "The Mind Assessment | EatoBiotics",
@@ -13,5 +14,9 @@ export const metadata: Metadata = {
 }
 
 export default function AssessmentMindPage() {
-  return <MindAssessmentClient />
+  return (
+    <FoundationGuard addon="mind">
+      <MindAssessmentClient />
+    </FoundationGuard>
+  )
 }

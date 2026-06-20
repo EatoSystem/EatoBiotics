@@ -88,10 +88,10 @@ const PLATE = [
 const PROGRAMS = [
   { name: "You", icon: User, tagline: "The Food System Inside You", status: "You're here", here: true, href: null, accent: "var(--icon-green)", gradient: YOU_GRADIENT },
   { name: "Stability™", icon: Compass, tagline: "The Stability System Inside You", status: "Explore", here: false, href: "/stability", accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" },
-  { name: "EatoBetics", icon: Activity, tagline: "The Glucose System Inside You", status: "Explore", here: false, href: "/eatobetics", accent: "var(--icon-orange)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" },
+  { name: "EatoBetics", icon: Activity, tagline: "The Glucose System Inside You", status: "Explore", here: false, href: "/glucose", accent: "var(--icon-orange)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" },
   { name: "Family", icon: Users, tagline: "The Food System Inside Your Family", status: "Explore", here: false, href: "/family", accent: "var(--icon-lime)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" },
   { name: "Mind", icon: Brain, tagline: "The Food System Inside Your Mind", status: "Explore", here: false, href: "/mind", accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" },
-  { name: "Sports", icon: Dumbbell, tagline: "The Performance System Inside You", status: "Explore", here: false, href: "/eatosports", accent: "var(--icon-yellow)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" },
+  { name: "Sports", icon: Dumbbell, tagline: "The Performance System Inside You", status: "Explore", here: false, href: "/performance", accent: "var(--icon-yellow)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" },
 ]
 
 export default function YouPage() {

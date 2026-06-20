@@ -97,12 +97,7 @@ export function MindAssessmentClient() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ lead: currentLead, result: computed, assessmentType: "mind" }),
         }).catch(() => {})
-
-        fetch("/api/auth/send-magic-link", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: currentLead.email, name: currentLead.name }),
-        }).catch(() => {})
+        // The sign-in (magic) link is sent + status-tracked by SaveResultsCard.
       }
 
       setState((s) => ({

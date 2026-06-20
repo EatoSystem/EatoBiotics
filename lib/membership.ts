@@ -12,26 +12,29 @@ export type MembershipStatus = "active" | "inactive" | "cancelled" | "past_due"
 
 /* ── Feature flags ──────────────────────────────────────────────────────── */
 
-// trial  → same base access as grow
-// member → same access as restore
+// Single-membership model: there is now one paid plan — `member`. It unlocks
+// EVERY feature. `trial` (granted by the one-time €49 report) mirrors `member`
+// for 30 days as the on-ramp, except the founding-member badge (paid subs only).
+// Legacy grow/restore/transform are retired but kept here for back-compat with
+// any existing rows — their historical access is preserved (additive only).
 
 export const FEATURES = {
   unlimited_analyses:    ["trial", "member", "grow", "restore", "transform"],
   score_history_30:      ["trial", "member", "grow", "restore", "transform"],
-  score_history_90:      ["member", "restore", "transform"],
+  score_history_90:      ["trial", "member", "restore", "transform"],
   plate_builder:         ["trial", "member", "grow", "restore", "transform"],
-  condition_calibration: ["member", "restore", "transform"],
-  monthly_gut_plan:      ["member", "restore", "transform"],
-  pdf_reports:           ["member", "restore", "transform"],
-  ai_consultation:       ["transform"],
-  glp1_companion:        ["member", "restore", "transform"],
-  stability_insights:    ["member", "restore", "transform"],
-  stability_report:      ["member", "restore", "transform"],
+  condition_calibration: ["trial", "member", "restore", "transform"],
+  monthly_gut_plan:      ["trial", "member", "restore", "transform"],
+  pdf_reports:           ["trial", "member", "restore", "transform"],
+  ai_consultation:       ["trial", "member", "transform"],
+  glp1_companion:        ["trial", "member", "restore", "transform"],
+  stability_insights:    ["trial", "member", "restore", "transform"],
+  stability_report:      ["trial", "member", "restore", "transform"],
   ai_voice:              ["trial", "member", "grow", "restore", "transform"],
-  weekly_checkin:        ["transform"],
-  weekly_meal_plans:     ["transform"],
+  weekly_checkin:        ["trial", "member", "transform"],
+  weekly_meal_plans:     ["trial", "member", "transform"],
   create_my_plate:       ["trial", "member", "grow", "restore", "transform"],
-  founding_member:       ["transform"],
+  founding_member:       ["member", "transform"],
   thirty_day_plan:       ["trial", "member", "grow", "restore", "transform"],
 } as const
 
@@ -40,6 +43,19 @@ export type Feature = keyof typeof FEATURES
 export function canAccess(tier: MembershipTier, feature: Feature): boolean {
   return (FEATURES[feature] as readonly string[]).includes(tier)
 }
+
+/**
+ * Single-membership helper: is this a paying plan (i.e. NOT free)?
+ * Under the one-membership model, any paid plan — the Member subscription, the
+ * 30-day trial, and legacy grow/restore/transform — unlocks every paid feature.
+ * Use this for premium route/page gates that should now key off "free vs paid".
+ */
+export function isPaidTier(tier: MembershipTier): boolean {
+  return tier !== "free"
+}
+
+/** All paying tiers — handy for DB `.in(...)` filters in cron jobs. */
+export const PAID_TIERS: MembershipTier[] = ["trial", "member", "grow", "restore", "transform"]
 
 /* ── Tier ↔ Stripe price mapping ────────────────────────────────────────── */
 

@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ArrowRight, Check, Zap } from "lucide-react"
+import { ArrowRight, Check, ShieldCheck } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 
 export function MembershipTeaser() {
@@ -9,38 +9,22 @@ export function MembershipTeaser() {
 
         <ScrollReveal>
           <div className="mb-12 text-center">
-            <div
-              className="mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest"
-              style={{ background: "color-mix(in srgb, var(--icon-lime) 15%, transparent)", color: "var(--icon-green)" }}
-            >
-              <Zap size={11} /> One clear path
-            </div>
             <h2 className="font-serif text-4xl font-semibold tracking-tight text-foreground sm:text-5xl text-balance">
-              €49 report.{" "}
-              <span
-                style={{
-                  background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green), var(--icon-teal))",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                Free 30-day account.
-              </span>
+              Two ways to start
             </h2>
             <p className="mt-4 mx-auto max-w-lg text-base text-muted-foreground leading-relaxed">
-              Take the free assessment to get your EatoBiotics Score. Then unlock your Personal Report
-              for a one-time €49 — and get a free 30-day account to follow your plan.
+              Start with clarity. Continue with a system.
             </p>
           </div>
         </ScrollReveal>
 
-        {/* Two-column layout */}
-        <div className="grid gap-5 sm:grid-cols-2">
+        {/* Two sequential steps */}
+        <div className="grid items-stretch gap-6 sm:grid-cols-2 lg:gap-7">
 
-          {/* Report card */}
+          {/* Step 1 — Gut Report */}
           <ScrollReveal delay={60}>
             <div
-              className="relative flex flex-col rounded-3xl border-2 bg-card p-8 shadow-lg"
+              className="relative flex h-full flex-col rounded-3xl border-2 bg-card p-8 shadow-lg"
               style={{ borderColor: "color-mix(in srgb, var(--icon-teal) 50%, transparent)" }}
             >
               <div
@@ -51,22 +35,20 @@ export function MembershipTeaser() {
                 className="mb-1 text-[10px] font-bold uppercase tracking-widest"
                 style={{ color: "var(--icon-teal)" }}
               >
-                Personal Report
+                Step 1 · Gut Report
               </p>
               <p className="mb-1 font-serif text-3xl font-bold text-foreground">
                 €49 <span className="text-base font-normal text-muted-foreground">one-time</span>
               </p>
               <p className="mb-5 text-sm text-muted-foreground">
-                Personalised from your assessment and deep-dive answers. Yours forever.
+                Understand what is driving your gut score and get your personalised 30-day action plan.
               </p>
               <ul className="mb-6 flex-1 space-y-2.5">
                 {[
-                  "Full 3 Biotics score breakdown",
-                  "Your 30-day food system plan",
-                  "Top 10 food recommendations",
-                  "Weekly shopping framework",
-                  "Meal timing guidance",
-                  "Free 30-day account included",
+                  "See what is driving your gut score",
+                  "Get a personalised 30-day action plan",
+                  "Know your next best food changes",
+                  "Understand your stability, diversity, and recovery scores",
                 ].map((f) => (
                   <li key={f} className="flex items-start gap-2.5 text-sm text-muted-foreground">
                     <Check size={13} className="mt-0.5 shrink-0" style={{ color: "var(--icon-teal)" }} />
@@ -76,17 +58,30 @@ export function MembershipTeaser() {
               </ul>
               <Link
                 href="/assessment"
-                className="flex items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-white transition-all hover:opacity-90 hover:shadow-lg"
+                className="flex items-center justify-center gap-2 rounded-full py-4 text-base font-semibold text-white transition-all hover:opacity-90 hover:shadow-lg"
                 style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-teal))" }}
               >
-                Take the free assessment <ArrowRight size={14} />
+                Get my Gut Report <ArrowRight size={16} />
               </Link>
             </div>
           </ScrollReveal>
 
-          {/* After 30 days card */}
+          {/* Step 2 — Membership (elevated, ongoing system) */}
           <ScrollReveal delay={120}>
-            <div className="flex flex-col rounded-3xl border bg-card p-8">
+            <div
+              className="relative flex h-full flex-col rounded-3xl border-2 p-8 pt-9 shadow-2xl"
+              style={{
+                borderColor: "color-mix(in srgb, var(--icon-green) 60%, transparent)",
+                background: "linear-gradient(170deg, color-mix(in srgb, var(--icon-green) 7%, var(--card)) 0%, var(--card) 55%)",
+              }}
+            >
+              {/* Prominent floating badge */}
+              <span
+                className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-white shadow-md"
+                style={{ background: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" }}
+              >
+                Best for ongoing improvement
+              </span>
               <div
                 className="mb-5 h-1 w-full rounded-full"
                 style={{ background: "linear-gradient(90deg, var(--icon-teal), var(--icon-green))" }}
@@ -95,22 +90,20 @@ export function MembershipTeaser() {
                 className="mb-1 text-[10px] font-bold uppercase tracking-widest"
                 style={{ color: "var(--icon-green)" }}
               >
-                After 30 days — optional
+                Step 2 · EatoBiotics Membership
               </p>
               <p className="mb-1 font-serif text-3xl font-bold text-foreground">
                 €24.99<span className="text-base font-normal text-muted-foreground">/month</span>
               </p>
               <p className="mb-5 text-sm text-muted-foreground">
-                Continue your journey. Cancel any time.
+                Keep improving your score, meals, habits, and food confidence week by week.
               </p>
               <ul className="mb-6 flex-1 space-y-2.5">
                 {[
-                  "Monthly updated EatoBiotics Score",
-                  "New 30-day focus plan each month",
-                  "Weekly personalised food guidance",
-                  "Monthly progress report",
-                  "Ongoing food recommendations",
-                  "Priority access to new features",
+                  "Track your score week by week",
+                  "Build better meals with ongoing guidance",
+                  "Stay accountable with a simple daily system",
+                  "Keep improving after your 30-day plan",
                 ].map((f) => (
                   <li key={f} className="flex items-start gap-2.5 text-sm text-muted-foreground">
                     <Check size={13} className="mt-0.5 shrink-0" style={{ color: "var(--icon-green)" }} />
@@ -120,20 +113,20 @@ export function MembershipTeaser() {
               </ul>
               <Link
                 href="/pricing"
-                className="flex items-center justify-center gap-2 rounded-full border py-3 text-sm font-semibold text-foreground transition-all hover:bg-muted"
+                className="flex items-center justify-center gap-2 rounded-full py-4 text-base font-semibold text-white transition-all hover:opacity-90 hover:shadow-lg"
+                style={{ background: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" }}
               >
-                See full details <ArrowRight size={14} />
+                Join EatoBiotics <ArrowRight size={16} />
               </Link>
+              <p className="mt-2.5 text-center text-xs text-muted-foreground">Cancel anytime.</p>
             </div>
           </ScrollReveal>
         </div>
 
         <ScrollReveal delay={220}>
-          <p className="mt-6 text-center text-xs text-muted-foreground">
-            No subscription required to get started. The report is a one-time purchase.{" "}
-            <Link href="/pricing" className="underline underline-offset-4 hover:text-foreground transition-colors">
-              Full pricing details →
-            </Link>
+          <p className="mt-6 flex items-center justify-center gap-2 text-center text-xs font-medium text-muted-foreground">
+            <ShieldCheck size={14} style={{ color: "var(--icon-green)" }} />
+            30-day money-back guarantee on the Gut Report.
           </p>
         </ScrollReveal>
 

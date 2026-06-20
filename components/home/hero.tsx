@@ -7,11 +7,11 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 
 export function Hero() {
   return (
-    <section className="relative min-h-screen overflow-hidden px-6 pt-20 pb-16 md:pb-20">
-      <div className="relative z-10 mx-auto flex max-w-[1200px] min-h-[calc(100vh-160px)] flex-col items-center justify-center gap-12 md:flex-row md:gap-16 lg:gap-20">
+    <section className="relative min-h-screen overflow-hidden px-6 pt-24 pb-20 md:pt-28 md:pb-28">
+      <div className="relative z-10 mx-auto flex max-w-[1280px] min-h-[calc(100vh-140px)] flex-col items-center justify-center gap-12 md:flex-row md:gap-16 lg:gap-24">
 
         {/* ── Left: Image ──── */}
-        <ScrollReveal delay={60} className="flex-1 flex items-center justify-center w-full max-w-[540px]">
+        <ScrollReveal delay={60} className="flex-1 flex items-center justify-center w-full max-w-[660px]">
           <div className="relative w-full">
             <div
               aria-hidden
@@ -30,10 +30,10 @@ export function Hero() {
         </ScrollReveal>
 
         {/* ── Right: Text ── */}
-        <div className="flex-1 text-left max-w-[560px]">
+        <div className="flex-1 text-left max-w-[600px]">
           <ScrollReveal>
             <h1
-              className="font-serif text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl text-balance"
+              className="font-serif text-5xl font-bold leading-[1.05] sm:text-6xl lg:text-7xl text-balance"
             >
               <span style={{ color: "var(--icon-green)" }}>The Food System</span>{" "}
               <span
@@ -50,49 +50,32 @@ export function Hero() {
           </ScrollReveal>
 
           <ScrollReveal delay={100}>
-            <p className="mt-4 max-w-md text-xl font-medium text-foreground sm:text-2xl">
-              Improve your inner food system in 30 days.
-            </p>
             <p className="mt-4 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Take the free EatoBiotics Assessment, discover your gut health score, and get
-              a personalised plan to improve your eating — starting today.
+              Discover what your gut is actually doing — and get a plan to improve it in 30 days.
             </p>
           </ScrollReveal>
 
           <ScrollReveal delay={200}>
-            <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+            <div className="mt-8">
               <Link
                 href="/assessment"
-                className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
+                className="brand-gradient inline-flex items-center gap-2.5 rounded-full px-10 py-5 text-lg font-semibold text-white shadow-xl shadow-icon-green/25 transition-all hover:shadow-2xl hover:shadow-icon-green/35 hover:opacity-90"
               >
-                Take the free assessment <ArrowRight size={16} />
+                Get my gut score free <ArrowRight size={18} />
               </Link>
-              <a
-                href="#how-it-works"
-                className="text-sm font-medium text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
-              >
-                See how it works
-              </a>
+              <p className="mt-3.5 text-sm text-muted-foreground">
+                Takes about 3 minutes. No account required.
+              </p>
             </div>
           </ScrollReveal>
 
           <ScrollReveal delay={320}>
-            <div className="mt-8 flex items-center gap-6">
-              {[
-                { num: "Free", label: "To start" },
-                { num: "3 min", label: "Takes about" },
-                { num: "30 days", label: "To results" },
-              ].map((s, i) => (
-                <div key={s.label} className="flex items-center gap-5">
-                  {i > 0 && <div className="h-5 w-px bg-border" />}
-                  <div>
-                    <p className="font-serif text-lg font-bold text-foreground">{s.num}</p>
-                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                      {s.label}
-                    </p>
-                  </div>
-                </div>
-              ))}
+            <div className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm font-medium text-muted-foreground">
+              <span>3-minute assessment</span>
+              <span className="h-1 w-1 rounded-full bg-border" />
+              <span>Personalised gut score</span>
+              <span className="h-1 w-1 rounded-full bg-border" />
+              <span>30-day action plan</span>
             </div>
           </ScrollReveal>
         </div>

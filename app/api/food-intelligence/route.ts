@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
-import { getUserMembershipTier } from "@/lib/membership"
+import { getUserMembershipTier, canAccess } from "@/lib/membership"
 
 /* ── Food Intelligence Streaming Endpoint ───────────────────────────────
    Hackathon build — deep pattern analysis over a user's meal history.
@@ -337,7 +337,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 3. Rate limit
-  const DAILY_LIMITS: Record<string, number> = { restore: 3, transform: 10 }
+  const DAILY_LIMITS: Record<string, number> = { trial: 10, member: 10, restore: 3, transform: 10 }
   const dailyLimit = DAILY_LIMITS[tier] ?? 3
   const todayUTC = new Date()
   todayUTC.setUTCHours(0, 0, 0, 0)
@@ -386,9 +386,9 @@ export async function POST(req: NextRequest) {
       .single(),
   ])
 
-  // Weekly check-in for Transform members
+  // Weekly check-in for members who have it
   let weeklyCheckin: string | null = null
-  if (tier === "transform") {
+  if (canAccess(tier, "weekly_checkin")) {
     const { data: checkin } = await supabase
       .from("weekly_checkins")
       .select("content")
