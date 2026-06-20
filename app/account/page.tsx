@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
+import { ownerOrFilter } from "@/lib/supabase-filters"
 import { stripe } from "@/lib/stripe-server"
 import { LiveDashboard } from "@/components/account/live-dashboard"
 import type { RealAnalysis, RealWeeklyReport } from "@/components/account/live-dashboard"
@@ -64,7 +65,7 @@ export default async function AccountPage({
       const { data } = await adminSupabase
         .from("leads")
         .select("overall_score, profile_type, sub_scores")
-        .or(`email.eq.${user.email!},user_id.eq.${user.id}`)
+        .or(ownerOrFilter(user.id, user.email))
         .eq("assessment_type", "gut")
         .not("overall_score", "is", null)
         .order("created_at", { ascending: false })

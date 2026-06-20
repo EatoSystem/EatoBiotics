@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
+import { ownerOrFilter } from "@/lib/supabase-filters"
 import { canAccess, getUserMembershipTier } from "@/lib/membership"
 import { computeReport } from "@/lib/stability/insights"
 import type { StabilityAssessment, StabilityDailyLog, StabilityReportData } from "@/lib/stability/types"
@@ -37,7 +38,7 @@ export default async function DoctorReportPage() {
         sb
           .from("leads")
           .select("overall_score, sub_scores, created_at")
-          .or(`email.eq.${user.email!},user_id.eq.${user.id}`)
+          .or(ownerOrFilter(user.id, user.email))
           .not("overall_score", "is", null)
           .order("created_at", { ascending: false })
           .limit(1)

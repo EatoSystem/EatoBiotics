@@ -16,7 +16,11 @@ import { Suspense } from "react"
  */
 function PreviewAccessForm() {
   const searchParams = useSearchParams()
-  const from = searchParams.get("from") ?? "/"
+  const rawFrom = searchParams.get("from") ?? "/"
+  // Only allow same-origin relative paths — never an absolute URL, a
+  // protocol-relative "//host", or a "javascript:" URI (which would execute
+  // when assigned to window.location.href).
+  const from = /^\/(?!\/)/.test(rawFrom) ? rawFrom : "/"
 
   const [password, setPassword] = useState("")
   const [error, setError]       = useState(false)

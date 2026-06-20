@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
+import { ownerOrFilter } from "@/lib/supabase-filters"
 import { computeStreak } from "@/lib/streak"
 import { dailyNudge } from "@/lib/habit"
 import type { DailyLoopData } from "@/components/account/daily-loop-card"
@@ -37,7 +38,7 @@ export default async function TodayPage() {
     ] = await Promise.all([
       sb.from("profiles").select("name").eq("id", user.id).single(),
       sb.from("analyses").select("prebiotic_score, probiotic_score, postbiotic_score").eq("user_id", user.id).not("biotics_score", "is", null).order("created_at", { ascending: false }).limit(5),
-      sb.from("leads").select("overall_score").or(`email.eq.${user.email!},user_id.eq.${user.id}`).not("overall_score", "is", null).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      sb.from("leads").select("overall_score").or(ownerOrFilter(user.id, user.email)).not("overall_score", "is", null).order("created_at", { ascending: false }).limit(1).maybeSingle(),
       sb.from("analyses").select("id", { count: "exact", head: true }).eq("user_id", user.id).gte("created_at", startOfTodayIso),
       sb.from("analyses").select("created_at").eq("user_id", user.id).order("created_at", { ascending: false }),
       sb.from("glp1_profile").select("user_id").eq("user_id", user.id).maybeSingle(),
