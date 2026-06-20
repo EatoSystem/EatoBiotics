@@ -34,7 +34,6 @@ import { Ecosystem } from "@/components/home/ecosystem"
 import { SocialProof } from "@/components/home/social-proof"
 import { MembershipTeaser } from "@/components/home/membership-teaser"
 import { ClosingCta } from "@/components/home/closing-cta"
-import { StickyCta } from "@/components/start/sticky-cta"
 
 async function requirePreviewAccess() {
   if (!isPasswordGateEnabled()) return
@@ -66,7 +65,6 @@ export default async function Home() {
       <SoftDivider />
       <MembershipTeaser />
       <ClosingCta />
-      <StickyCta />
     </>
   )
 }
