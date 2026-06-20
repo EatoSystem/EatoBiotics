@@ -9,10 +9,20 @@ export function StickyCta() {
 
   useEffect(() => {
     const onScroll = () => {
-      setVisible(window.scrollY > window.innerHeight * 0.85)
+      const scrolledPastHero = window.scrollY > window.innerHeight * 0.85
+      // Hide once the closing CTA at the foot of the page is in view, so the
+      // sticky bar doesn't duplicate that section's identical button.
+      const nearBottom =
+        window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 640
+      setVisible(scrolledPastHero && !nearBottom)
     }
+    onScroll()
     window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
+    window.addEventListener("resize", onScroll)
+    return () => {
+      window.removeEventListener("scroll", onScroll)
+      window.removeEventListener("resize", onScroll)
+    }
   }, [])
 
   return (

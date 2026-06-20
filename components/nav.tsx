@@ -228,13 +228,13 @@ export function Nav() {
               </Link>
             ))}
 
-            <div className="mt-1 px-3">
+            <div className="mt-3 flex items-center gap-4 border-t border-border px-3 pt-5">
               <AccountNavItem />
             </div>
             <Link
               href="/assessment"
               onClick={() => setOpen(false)}
-              className="brand-gradient mt-3 rounded-full px-5 py-3 text-center text-sm font-semibold text-white"
+              className="brand-gradient mt-4 rounded-full px-5 py-3.5 text-center text-base font-semibold text-white"
             >
               Get my gut score free →
             </Link>
