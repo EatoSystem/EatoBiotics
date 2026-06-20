@@ -26,7 +26,14 @@ function withPreviewNoStore(response: NextResponse): NextResponse {
 }
 
 function isEnterRoute(pathname: string): boolean {
-  return pathname === "/enter" || pathname.startsWith("/api/enter")
+  // Routes reachable while the gate is on: the public waitlist landing page
+  // (/enter), the waitlist capture API, and the hidden founder/admin login.
+  return (
+    pathname === "/enter" ||
+    pathname === "/preview-access" ||
+    pathname.startsWith("/api/enter") ||
+    pathname.startsWith("/api/waitlist")
+  )
 }
 // ─────────────────────────────────────────────────────────────────────────
 

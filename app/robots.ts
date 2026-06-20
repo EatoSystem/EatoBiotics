@@ -19,6 +19,7 @@ export default function robots(): MetadataRoute.Robots {
         "/admin",
         "/auth/",
         "/enter",
+        "/preview-access",
         "/demo",
         "/analyse-demo",
         "/login",
