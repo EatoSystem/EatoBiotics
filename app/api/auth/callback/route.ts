@@ -10,7 +10,10 @@ function generateReferralCode(): string {
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get("code")
-  const next = searchParams.get("next") ?? "/account"
+  const rawNext = searchParams.get("next") ?? "/account"
+  // Only allow same-origin relative paths so ?next= can't be used as an open
+  // redirect (e.g. "//evil.com" or ".evil.com" appended to the origin).
+  const next = /^\/(?!\/)/.test(rawNext) ? rawNext : "/account"
   const ref = searchParams.get("ref")  // referral code if present
 
   if (!code) {
