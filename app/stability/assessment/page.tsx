@@ -3,6 +3,7 @@ import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { StabilityAssessmentForm } from "@/components/stability/StabilityAssessmentForm"
 import { MedicalDisclaimer } from "@/components/stability/MedicalDisclaimer"
+import { FoundationGuard } from "@/components/assessment/foundation-guard"
 
 export const metadata: Metadata = {
   title: "Stability Assessment — EatoBiotics Stability™",
@@ -20,7 +21,9 @@ export default function StabilityAssessmentPage() {
           <h1 className="mt-4 text-center font-serif text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Stability Assessment</h1>
           <p className="mx-auto mt-2 max-w-md text-center text-sm text-muted-foreground">A few calm questions about your gut, food, and lifestyle. Nothing here is a diagnosis.</p>
         </div>
-        <StabilityAssessmentForm />
+        <FoundationGuard addon="stability">
+          <StabilityAssessmentForm />
+        </FoundationGuard>
       </section>
       <MedicalDisclaimer />
     </main>

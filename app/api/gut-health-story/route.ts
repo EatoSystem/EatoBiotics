@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
-import { getUserMembershipTier } from "@/lib/membership"
+import { getUserMembershipTier, canAccess } from "@/lib/membership"
 
 /* ── Gut Health Story Streaming Endpoint ────────────────────────────────
    Hackathon Day 7 — AI-generated personal gut health narrative.
@@ -198,7 +198,7 @@ export async function POST(req: NextRequest) {
   if (!supabase) return NextResponse.json({ error: "Service unavailable" }, { status: 503 })
 
   // 3. Rate limit — read from profiles.food_system_story
-  const DAILY_LIMITS: Record<string, number> = { restore: 2, transform: 5 }
+  const DAILY_LIMITS: Record<string, number> = { trial: 5, member: 5, restore: 2, transform: 5 }
   const dailyLimit = DAILY_LIMITS[tier] ?? 2
   const todayStr = new Date().toISOString().slice(0, 10)
 
@@ -257,9 +257,9 @@ export async function POST(req: NextRequest) {
       .single(),
   ])
 
-  // Transform: fetch latest weekly check-in
+  // Members with weekly check-ins: fetch the latest one
   let weeklyCheckin: string | null = null
-  if (tier === "transform") {
+  if (canAccess(tier, "weekly_checkin")) {
     const { data: checkin } = await supabase
       .from("weekly_checkins")
       .select("content")

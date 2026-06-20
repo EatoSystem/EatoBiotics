@@ -281,7 +281,7 @@ export async function POST(req: NextRequest) {
         // Determine event type for logging
         let eventType = "updated"
         if (newTier && oldTier && newTier !== oldTier) {
-          const tierOrder: Record<string, number> = { free: 0, grow: 1, restore: 2, transform: 3 }
+          const tierOrder: Record<string, number> = { free: 0, trial: 1, grow: 1, member: 2, restore: 2, transform: 3 }
           eventType = (tierOrder[newTier] ?? 0) > (tierOrder[oldTier] ?? 0)
             ? "upgraded" : "downgraded"
         }

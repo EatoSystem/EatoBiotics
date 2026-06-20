@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     const { lead, result, assessmentType } = body as {
       lead: LeadData
       result: AssessmentResult
-      assessmentType?: "gut" | "mind"
+      assessmentType?: "gut" | "mind" | "family"
       delivery?: "immediate" | "deferred"
     }
     const delivery = (body as { delivery?: "immediate" | "deferred" }).delivery ?? "immediate"
@@ -38,14 +38,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid email address" }, { status: 400 })
     }
 
-    const subScores: Record<string, number> =
-      assessmentType === "mind"
-        ? { ...result.subScores }
-        : {
-            prebiotics: result.subScores.prebiotics ?? result.subScores.feed ?? 0,
-            probiotics: result.subScores.probiotics ?? result.subScores.seed ?? 0,
-            postbiotics: result.subScores.postbiotics ?? result.subScores.heal ?? 0,
-          }
+    // Mind & Family present their five native pillars (carried on result.insights);
+    // gut keeps the three biotics. Gut subScores path is unchanged.
+    const isFivePillar = assessmentType === "mind" || assessmentType === "family"
+    const pillars = isFivePillar
+      ? (result.insights ?? []).map((i) => ({ label: i.label, score: i.score }))
+      : undefined
+    const subScores: Record<string, number> = {
+      prebiotics: result.subScores.prebiotics ?? result.subScores.feed ?? 0,
+      probiotics: result.subScores.probiotics ?? result.subScores.seed ?? 0,
+      postbiotics: result.subScores.postbiotics ?? result.subScores.heal ?? 0,
+    }
     const { subject, html } = buildResultsEmail({
       name: lead.name,
       email: lead.email,
@@ -54,6 +57,7 @@ export async function POST(req: NextRequest) {
       tagline: result.profile.tagline,
       profileDescription: result.profile.description,
       subScores,
+      pillars,
       nextActions: result.nextActions,
       ageBracket: lead.ageBracket,
       assessmentType: assessmentType ?? "gut",

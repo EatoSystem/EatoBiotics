@@ -46,9 +46,9 @@ Companion is **included with membership**. Copy reflects this:
 
 ## 4. Funnel surfaces (all linked)
 
-- [x] Public landing: `/eatobetics/glp1` (free calculator + tracker promo band).
-- [x] Assessment report GLP-1 section links to `/eatobetics/glp1`.
-- [x] `/eatobetics` page has a GLP-1 Companion callout.
+- [x] Public landing: `/glucose/glp1` (free calculator + tracker promo band).
+- [x] Assessment report GLP-1 section links to `/glucose/glp1`.
+- [x] `/glucose` page has a GLP-1 Companion callout.
 - [x] `/account` dashboard shows the GLP-1 Companion card (both overview states).
 - [ ] Smoke-test each link in production once deployed.
 
@@ -80,4 +80,4 @@ Companion is **included with membership**. Copy reflects this:
 - [ ] Tracker: log a day → progress ring, weekly summary, and history update;
       reload persists the day.
 - [ ] Tracker upsert: logging the same day twice updates the row (no duplicate).
-- [ ] Mobile layout check on `/eatobetics/glp1` and `/account/glp1`.
+- [ ] Mobile layout check on `/glucose/glp1` and `/account/glp1`.

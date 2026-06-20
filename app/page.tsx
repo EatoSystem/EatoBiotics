@@ -26,12 +26,12 @@ export const metadata: Metadata = {
     "digestive health", "gut bacteria", "biotics",
   ],
 }
-import { TheProblem } from "@/components/home/the-problem"
-import { TheThreeBiotics } from "@/components/home/the-three-biotics"
+import { PowersEverything } from "@/components/home/powers-everything"
+import { TheFramework } from "@/components/home/the-framework"
 import { HowItWorks } from "@/components/home/how-it-works"
-import { ThePlate } from "@/components/home/the-plate"
 import { ScorePreview } from "@/components/home/score-preview"
 import { Ecosystem } from "@/components/home/ecosystem"
+import { SocialProof } from "@/components/home/social-proof"
 import { MembershipTeaser } from "@/components/home/membership-teaser"
 import { ClosingCta } from "@/components/home/closing-cta"
 import { StickyCta } from "@/components/start/sticky-cta"
@@ -55,21 +55,28 @@ export default async function Home() {
   return (
     <>
       <Suspense fallback={null}><Hero /></Suspense>
-      <div style={{ height: "2px", background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
-      <TheProblem />
-      <div className="section-divider" />
+      <SoftDivider />
+      <PowersEverything />
       <HowItWorks />
-      <div className="section-divider" />
+      <TheFramework />
       <ScorePreview />
-      <TheThreeBiotics />
-      <ThePlate />
-      <div className="section-divider" />
+      <SoftDivider />
       <Ecosystem />
-      <div className="section-divider" />
+      <SocialProof />
+      <SoftDivider />
       <MembershipTeaser />
-      <div className="section-divider" />
       <ClosingCta />
       <StickyCta />
     </>
+  )
+}
+
+function SoftDivider() {
+  return (
+    <div
+      aria-hidden
+      className="mx-auto h-px w-full max-w-[1100px]"
+      style={{ background: "linear-gradient(90deg, transparent, color-mix(in srgb, var(--icon-green) 18%, transparent), transparent)" }}
+    />
   )
 }

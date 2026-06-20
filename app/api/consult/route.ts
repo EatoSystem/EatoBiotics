@@ -7,7 +7,7 @@ import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { ownerOrFilter } from "@/lib/supabase-filters"
-import { getUserMembershipTier } from "@/lib/membership"
+import { getUserMembershipTier, canAccess } from "@/lib/membership"
 import { logServerEvent } from "@/lib/statsig-server"
 import { computeReport } from "@/lib/stability/insights"
 import type { StabilityDailyLog } from "@/lib/stability/types"
@@ -179,11 +179,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 })
   }
 
-  // 2. Check Transform membership
+  // 2. Check membership access
   const tier = await getUserMembershipTier(user.id)
-  if (tier !== "transform") {
+  if (!canAccess(tier, "ai_consultation")) {
     return NextResponse.json(
-      { error: "AI consultation requires an active Transform membership" },
+      { error: "AI consultation requires an active membership" },
       { status: 403 }
     )
   }

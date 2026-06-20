@@ -3,7 +3,7 @@ import { z } from "zod"
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
-import { getUserMembershipTier } from "@/lib/membership"
+import { getUserMembershipTier, canAccess, isPaidTier, type MembershipTier } from "@/lib/membership"
 
 /* ── GutScan Streaming Endpoint ─────────────────────────────────────────
    Hackathon build — streaming vision analysis with extended thinking.
@@ -120,7 +120,7 @@ const bodySchema = z.object({
 
 async function buildContextSection(
   userId: string,
-  tier: "grow" | "restore" | "transform",
+  tier: MembershipTier,
   supabase: NonNullable<ReturnType<typeof getSupabase>>
 ): Promise<string> {
   if (tier === "grow") return ""
@@ -173,7 +173,7 @@ async function buildContextSection(
     }
   }
 
-  if (tier === "transform") {
+  if (canAccess(tier, "weekly_checkin")) {
     const { data: checkin } = await supabase
       .from("weekly_checkins")
       .select("content")
@@ -262,9 +262,9 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 5. Build member context for Restore/Transform
+  // 5. Build member context for members
   let contextSection = ""
-  if (supabase && (tier === "restore" || tier === "transform")) {
+  if (supabase && isPaidTier(tier)) {
     try {
       contextSection = await buildContextSection(user.id, tier, supabase)
     } catch (err) {

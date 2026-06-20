@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       name: string
       ageBracket: string
       referralCode?: string
-      assessmentType?: "gut" | "mind"
+      assessmentType?: "gut" | "mind" | "family"
     }
     const email = ((body as { email: string }).email ?? "").toLowerCase().trim()
 

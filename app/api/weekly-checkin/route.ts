@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getSupabase } from "@/lib/supabase"
 import { ownerOrFilter } from "@/lib/supabase-filters"
+import { FEATURES } from "@/lib/membership"
 import { verifyCronRequest } from "@/lib/cron-auth"
 
 /** Returns the date of the most recent Monday (UTC) as YYYY-MM-DD. */
@@ -170,11 +171,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Database not configured" }, { status: 503 })
   }
 
-  // Fetch all active Transform members
-  const { data: transformMembers, error } = await adminSupabase
+  // Fetch all active members whose tier includes the weekly check-in feature
+  const { data: checkinMembers, error } = await adminSupabase
     .from("profiles")
     .select("id, email")
-    .eq("membership_tier", "transform")
+    .in("membership_tier", [...FEATURES.weekly_checkin])
     .eq("membership_status", "active")
 
   if (error) {
@@ -182,7 +183,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Database error" }, { status: 500 })
   }
 
-  const members = transformMembers ?? []
+  const members = checkinMembers ?? []
   let processed = 0
   let failed = 0
 

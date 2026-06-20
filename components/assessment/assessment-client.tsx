@@ -124,20 +124,14 @@ export function AssessmentClient() {
         })
       }
 
-      // Fire-and-forget: save the score now; delayed email cron sends only if no report purchase happens.
+      // Fire-and-forget: email the score report now (like Family/Mind). The
+      // sign-in (magic) link is sent + status-tracked by SaveResultsCard.
       const currentLead = lead ?? loadLeadData()
       if (currentLead) {
         fetch("/api/send-results-email", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ lead: currentLead, result: computed, delivery: "deferred" }),
-        }).catch(() => {/* ignore network errors */})
-
-        // Fire-and-forget: send branded magic link so user can access /account
-        fetch("/api/auth/send-magic-link", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: currentLead.email, name: currentLead.name }),
+          body: JSON.stringify({ lead: currentLead, result: computed }),
         }).catch(() => {/* ignore network errors */})
       }
 

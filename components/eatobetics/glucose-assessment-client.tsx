@@ -21,6 +21,7 @@ import {
   Dumbbell,
   HeartPulse,
   ShieldCheck,
+  Info,
   type LucideIcon,
 } from "lucide-react"
 import {
@@ -33,6 +34,7 @@ import {
   type GlucoseResult,
 } from "@/lib/glucose-assessment-scoring"
 import { GlucoseReport } from "@/components/eatobetics/glucose-report"
+import { GLUCOSE_DISCLAIMER } from "@/lib/assessment-disclaimers"
 
 const ICONS: Record<string, LucideIcon> = { Salad, Clock, Dumbbell, HeartPulse }
 const STORAGE_KEY = "eatobetics-glucose-assessment"
@@ -138,7 +140,13 @@ export function GlucoseAssessmentClient() {
   }
 
   if (view === "intro") return <Intro onStart={start} />
-  if (view === "results" && result) return <GlucoseReport result={result} onRetake={retake} />
+  if (view === "results" && result)
+    return (
+      <>
+        <GlucoseDisclaimer />
+        <GlucoseReport result={result} onRetake={retake} />
+      </>
+    )
   return (
     <Questions
       index={safeIndex}
@@ -147,6 +155,34 @@ export function GlucoseAssessmentClient() {
       onAnswer={answer}
       onBack={back}
     />
+  )
+}
+
+/* ── Results disclaimer ─────────────────────────────────────────── */
+
+function GlucoseDisclaimer() {
+  return (
+    <div className="bg-white px-6 pt-24">
+      <div className="mx-auto max-w-2xl">
+        <div
+          className="flex items-start gap-3 rounded-2xl border px-5 py-4 text-sm leading-relaxed"
+          style={{
+            borderColor: "color-mix(in srgb, var(--icon-orange) 30%, transparent)",
+            background: "color-mix(in srgb, var(--icon-orange) 6%, white)",
+            color: "var(--foreground)",
+          }}
+        >
+          <Info size={16} className="mt-0.5 shrink-0" style={{ color: "var(--icon-orange)" }} />
+          <p>
+            {GLUCOSE_DISCLAIMER}{" "}
+            <span style={{ color: "var(--muted-foreground)" }}>
+              It reflects how strongly your habits may support steadier glucose — measuring your
+              actual glucose needs a continuous glucose monitor (CGM) or blood testing.
+            </span>
+          </p>
+        </div>
+      </div>
+    </div>
   )
 }
 

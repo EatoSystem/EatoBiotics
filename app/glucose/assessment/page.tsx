@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { GlucoseAssessmentClient } from "@/components/eatobetics/glucose-assessment-client"
+import { FoundationGuard } from "@/components/assessment/foundation-guard"
 
 export const metadata: Metadata = {
   title: { absolute: "EatoBetics Assessment — Your Glucose Intelligence Score" },
@@ -14,5 +15,9 @@ export const metadata: Metadata = {
 }
 
 export default function EatoBeticsAssessmentPage() {
-  return <GlucoseAssessmentClient />
+  return (
+    <FoundationGuard addon="glucose">
+      <GlucoseAssessmentClient />
+    </FoundationGuard>
+  )
 }

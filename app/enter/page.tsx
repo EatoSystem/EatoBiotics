@@ -1,10 +1,11 @@
 import Link from "next/link"
 import { WaitlistHero } from "./waitlist-hero"
-import { TheThreeBiotics } from "@/components/home/the-three-biotics"
+import { PowersEverything } from "@/components/home/powers-everything"
 import { HowItWorks } from "@/components/home/how-it-works"
+import { TheFramework } from "@/components/home/the-framework"
 import { ScorePreview } from "@/components/home/score-preview"
-import { ThePlate } from "@/components/home/the-plate"
 import { Ecosystem } from "@/components/home/ecosystem"
+import { SocialProof } from "@/components/home/social-proof"
 
 /**
  * Public pre-launch waitlist landing page.
@@ -12,12 +13,23 @@ import { Ecosystem } from "@/components/home/ecosystem"
  * This is the page every visitor lands on while the site password gate is on
  * (proxy.ts redirects all traffic here). The hero captures waitlist emails;
  * everything below it reuses the real homepage showcase sections so the gated
- * page is a true preview of the product. The founder / admin password login
- * lives at /preview-access, reached via the discreet footer link below.
+ * page is a true preview of the product. Keep these sections in sync with
+ * app/page.tsx. The founder / admin password login lives at /preview-access,
+ * reached via the discreet footer link below.
  */
 
 const GRADIENT_BAR =
   "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))"
+
+function SoftDivider() {
+  return (
+    <div
+      aria-hidden
+      className="mx-auto h-px w-full max-w-[1100px]"
+      style={{ background: "linear-gradient(90deg, transparent, color-mix(in srgb, var(--icon-green) 18%, transparent), transparent)" }}
+    />
+  )
+}
 
 export default function WaitlistPage() {
   return (
@@ -25,16 +37,15 @@ export default function WaitlistPage() {
       {/* Waitlist hero + email capture */}
       <WaitlistHero />
 
-      {/* ── Homepage showcase ──────────────────────────────────────────── */}
+      {/* ── Homepage showcase (mirrors app/page.tsx) ───────────────────── */}
       <div style={{ height: "2px", background: GRADIENT_BAR }} />
-      <TheThreeBiotics />
-      <div className="section-divider" />
+      <PowersEverything />
       <HowItWorks />
-      <div className="section-divider" />
+      <TheFramework />
       <ScorePreview />
-      <ThePlate />
-      <div className="section-divider" />
+      <SoftDivider />
       <Ecosystem />
+      <SocialProof />
 
       {/* ── Founder note ───────────────────────────────────────────────── */}
       <div style={{ height: "2px", background: GRADIENT_BAR }} />

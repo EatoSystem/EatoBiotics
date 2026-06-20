@@ -4,7 +4,7 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 
 export function ClosingCta() {
   return (
-    <section className="px-6 py-8">
+    <section className="px-6 pt-20 pb-16 md:pt-24 md:pb-20">
       <div
         className="relative mx-auto max-w-[1200px] overflow-hidden rounded-[2.5rem] px-6 py-20 text-center md:py-28"
         style={{ background: "linear-gradient(135deg, #14250F 0%, #1A2E12 45%, #2C3A12 100%)" }}
@@ -46,33 +46,23 @@ export function ClosingCta() {
               </span>
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-white/70 sm:text-lg">
-              Take the free assessment, get your EatoBiotics Score, and start your personalised
-              30-day plan — in about three minutes.
+              Your gut, digestion, meals, energy, and long-term health are connected. EatoBiotics
+              helps you measure the system, rebuild the plate, and improve every week.
             </p>
           </ScrollReveal>
 
           <ScrollReveal delay={120}>
-            <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <div className="mt-9 flex justify-center">
               <Link
                 href="/assessment"
                 className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-xl shadow-black/30 transition-all hover:opacity-90"
               >
-                Take the free assessment <ArrowRight size={16} />
-              </Link>
-              <Link
-                href="/pricing"
-                className="inline-flex items-center gap-2 rounded-full border border-white/25 px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-white/10"
-              >
-                See plans &amp; pricing
+                Get my gut score free <ArrowRight size={16} />
               </Link>
             </div>
-            <div className="mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-white/55">
-              <span>Free to start</span>
-              <span className="h-1 w-1 rounded-full bg-white/30" />
-              <span>No card needed</span>
-              <span className="h-1 w-1 rounded-full bg-white/30" />
-              <span>~3 minutes</span>
-            </div>
+            <p className="mt-5 text-xs text-white/55">
+              Takes about 3 minutes. No account required.
+            </p>
           </ScrollReveal>
         </div>
       </div>

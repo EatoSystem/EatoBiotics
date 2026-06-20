@@ -8,10 +8,16 @@ interface ResultsEmailOpts {
   tagline: string
   profileDescription?: string
   subScores: { [key: string]: number }
+  /** Explicit, ordered pillar rows (Mind/Family pass their 5 native pillars here). */
+  pillars?: { label: string; score: number }[]
   nextActions: string[]
   ageBracket?: string
-  assessmentType?: "gut" | "mind"
+  assessmentType?: "gut" | "mind" | "family"
 }
+
+// Email-safe hex palette for the five native pillars (CSS vars don't render in email).
+const PILLAR_PALETTE = ["#7fc47e", "#4caf7d", "#3ab0a0", "#e6b84a", "#e07b4a"]
+const PILLAR_BG_PALETTE = ["#f3faf3", "#f0faf5", "#f0f9f8", "#fdf8ee", "#fdf5f0"]
 
 const PILLAR_LABELS: Record<string, string> = {
   // Current 3 Biotics + Feed/Seed/Heal aliases — from the canonical Food System Core
@@ -64,28 +70,45 @@ export function buildResultsEmail(opts: ResultsEmailOpts): {
   subject: string
   html: string
 } {
-  const { name, email, overall, profileType, tagline, profileDescription, subScores, nextActions, ageBracket, assessmentType } = opts
+  const { name, email, overall, profileType, tagline, profileDescription, subScores, pillars, nextActions, ageBracket, assessmentType } = opts
 
-  const isMind = assessmentType === "mind"
-  const subject = isMind
-    ? `Your EatoBiotics Mind Score: ${overall}/100 — ${profileType}`
-    : `Your EatoBiotics Score: ${overall}/100 — ${profileType}`
+  const variant = assessmentType === "mind" ? "mind" : assessmentType === "family" ? "family" : "gut"
+  const scoreNoun = variant === "mind" ? "Mind" : variant === "family" ? "Family Food System" : "Food System"
+  const subjectPrefix = variant === "mind" ? "Mind " : variant === "family" ? "Family " : ""
+  const subject = `Your EatoBiotics ${subjectPrefix}Score: ${overall}/100 — ${profileType}`
 
-  // Sort pillars: highest first
-  const sortedPillars = Object.entries(subScores).sort(([, a], [, b]) => b - a)
-  const [strongestKey, strongestScore] = sortedPillars[0]
-  const [focusKey, focusScore] = sortedPillars[sortedPillars.length - 1]
-  const strongestLabel = PILLAR_LABELS[strongestKey] ?? strongestKey
-  const focusLabel = PILLAR_LABELS[focusKey] ?? focusKey
-  const strongestColor = PILLAR_COLORS[strongestKey] ?? "#4caf7d"
-  const focusColor = PILLAR_COLORS[focusKey] ?? "#e07b4a"
+  // Normalised, sorted (highest-first) pillar rows. Mind/Family pass explicit
+  // pillars (coloured from the fixed palette by index); gut derives from subScores.
+  type Row = { label: string; score: number; color: string; bg: string }
+  const rows: Row[] =
+    pillars && pillars.length
+      ? pillars.map((p, i) => ({
+          label: p.label,
+          score: p.score,
+          color: PILLAR_PALETTE[i % PILLAR_PALETTE.length],
+          bg: PILLAR_BG_PALETTE[i % PILLAR_BG_PALETTE.length],
+        }))
+      : Object.entries(subScores).map(([key, score]) => ({
+          label: PILLAR_LABELS[key] ?? key,
+          score,
+          color: PILLAR_COLORS[key] ?? "#4caf7d",
+          bg: PILLAR_BG[key] ?? "#f9f9f9",
+        }))
+  const sortedRows = [...rows].sort((a, b) => b.score - a.score)
+  const strongest = sortedRows[0]
+  const focus = sortedRows[sortedRows.length - 1]
+  const strongestLabel = strongest.label
+  const strongestScore = strongest.score
+  const focusLabel = focus.label
+  const focusScore = focus.score
+  const strongestColor = strongest.color
+  const focusColor = focus.color
 
   // Pillar rows — colored left-border table rows
-  const pillarsHtml = sortedPillars
-    .map(([key, score]) => {
-      const label = PILLAR_LABELS[key] ?? key
-      const color = PILLAR_COLORS[key] ?? "#4caf7d"
-      const bg = PILLAR_BG[key] ?? "#f9f9f9"
+  const pillarsHtml = sortedRows
+    .map((row) => {
+      const { label, color, bg } = row
+      const score = row.score
       const pct = Math.round(score)
       const isStrength = score >= 65
       const badge = isStrength
@@ -200,7 +223,7 @@ export function buildResultsEmail(opts: ResultsEmailOpts): {
           <tr>
             <td style="background: linear-gradient(135deg, #7fc47e 0%, #3ab0a0 100%); padding: 28px 40px; text-align: center;">
               <p style="margin: 0 0 4px 0; font-size: 11px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.8); font-family: Arial, sans-serif;">EatoBiotics</p>
-              <h1 style="margin: 0; font-size: 26px; font-weight: bold; color: #ffffff; font-family: Georgia, serif;">${isMind ? "Your Mind Score" : "Your Food System Score"}</h1>
+              <h1 style="margin: 0; font-size: 26px; font-weight: bold; color: #ffffff; font-family: Georgia, serif;">Your ${scoreNoun} Score</h1>
             </td>
           </tr>
 
@@ -242,7 +265,7 @@ export function buildResultsEmail(opts: ResultsEmailOpts): {
           <!-- Pillar scores -->
           <tr>
             <td style="padding: 24px 40px 0;">
-              <p style="margin: 0 0 12px; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: #999999; font-family: Arial, sans-serif;">Prebiotics · Probiotics · Postbiotics</p>
+              <p style="margin: 0 0 12px; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: #999999; font-family: Arial, sans-serif;">${variant === "gut" ? "Prebiotics · Probiotics · Postbiotics" : "Your 5 Pillars"}</p>
               <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 ${pillarsHtml}
               </table>

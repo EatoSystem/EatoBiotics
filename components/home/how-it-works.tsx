@@ -1,41 +1,36 @@
-import Image from "next/image"
 import Link from "next/link"
-import { ArrowRight, ClipboardList, BarChart2, Utensils, TrendingUp } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 
 const STEPS = [
   {
     number: "01",
-    icon: ClipboardList,
     title: "Assess",
-    description: "Answer 15 questions about what you eat. Free, takes about 3 minutes. No account needed.",
+    line: "Answer a few questions.",
     color: "var(--icon-lime)",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
     bgGradient: "linear-gradient(160deg, color-mix(in srgb, var(--icon-lime) 10%, transparent), transparent 60%)",
   },
   {
     number: "02",
-    icon: BarChart2,
     title: "Score",
-    description: "Get your EatoBiotics Score — a breakdown of your key eating habits and exactly where your gut health stands today.",
+    line: "See your gut score instantly.",
     color: "var(--icon-green)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
     bgGradient: "linear-gradient(160deg, color-mix(in srgb, var(--icon-green) 10%, transparent), transparent 60%)",
   },
   {
     number: "03",
-    icon: Utensils,
     title: "Report",
-    description: "Unlock your Personal Report for €49 — a 30-day plan, your top food recommendations, and meal timing guidance.",
+    line: "Get your personal insight report.",
     color: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-yellow))",
     bgGradient: "linear-gradient(160deg, color-mix(in srgb, var(--icon-teal) 10%, transparent), transparent 60%)",
   },
   {
     number: "04",
-    icon: TrendingUp,
-    title: "30 Days",
-    description: "Follow your plan with a free 30-day EatoBiotics account — daily actions, progress tracking, and weekly check-ins.",
+    title: "30-Day Plan",
+    line: "Follow your plan and improve weekly.",
     color: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     bgGradient: "linear-gradient(160deg, color-mix(in srgb, var(--icon-orange) 10%, transparent), transparent 60%)",
@@ -46,85 +41,61 @@ export function HowItWorks() {
   return (
     <section id="how-it-works" className="px-6 py-24 md:py-32">
       <div className="mx-auto max-w-[1200px]">
-        <div className="flex flex-col gap-10 md:flex-row md:items-center md:gap-16 mb-16">
-          <ScrollReveal className="flex-1">
-            <p className="text-xs font-semibold uppercase tracking-widest text-icon-green mb-3">
+        <ScrollReveal>
+          <div className="mx-auto mb-16 max-w-2xl text-center">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-icon-green">
               How It Works
             </p>
             <h2 className="font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
               From score to plan{" "}
               <span className="brand-gradient-text">in four steps</span>
             </h2>
-            <p className="mt-4 max-w-lg text-base text-muted-foreground leading-relaxed">
-              Free assessment → EatoBiotics Score → Personal Report → 30-day account. Here&apos;s how it works.
-            </p>
-          </ScrollReveal>
-          <ScrollReveal delay={80} className="w-full md:w-[340px] lg:w-[400px] shrink-0">
-            <Image
-              src="/food-5.webp"
-              alt="Colourful fresh ingredients arranged as a food system"
-              width={600}
-              height={600}
-              className="w-full h-auto"
-            />
-          </ScrollReveal>
-        </div>
+          </div>
+        </ScrollReveal>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {STEPS.map((step, i) => {
-            const Icon = step.icon
-            return (
-              <ScrollReveal key={step.number} delay={i * 80}>
-                <div
-                  className="relative flex flex-col rounded-3xl p-6 transition-shadow hover:shadow-lg h-full"
-                  style={{
-                    background: step.bgGradient,
-                    border: `1.5px solid color-mix(in srgb, ${step.color} 30%, transparent)`,
-                    borderLeft: `4px solid ${step.color}`,
-                  }}
+          {STEPS.map((step, i) => (
+            <ScrollReveal key={step.number} delay={i * 80}>
+              <div
+                className="relative flex h-full min-h-[280px] flex-col rounded-3xl p-8 transition-shadow hover:shadow-lg"
+                style={{
+                  background: step.bgGradient,
+                  border: `1.5px solid color-mix(in srgb, ${step.color} 30%, transparent)`,
+                  borderLeft: `4px solid ${step.color}`,
+                }}
+              >
+                {/* Display-scale step number */}
+                <span
+                  className="font-serif text-7xl font-bold leading-none md:text-8xl"
+                  style={{ color: step.color }}
                 >
-                  {/* Step number */}
-                  <p
-                    className="text-xs font-bold uppercase tracking-widest mb-4"
-                    style={{ color: step.color }}
-                  >
-                    {step.number}
-                  </p>
+                  {step.number}
+                </span>
 
-                  {/* Icon */}
+                <h3 className="mt-9 font-serif text-2xl font-semibold text-foreground">
+                  {step.title}
+                </h3>
+                <p className="mt-3 text-base leading-relaxed text-muted-foreground">
+                  {step.line}
+                </p>
+
+                {/* Connector (not on last) */}
+                {i < STEPS.length - 1 && (
                   <div
-                    className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl"
-                    style={{ background: `color-mix(in srgb, ${step.color} 15%, transparent)` }}
+                    className="absolute -right-3 top-1/2 hidden -translate-y-1/2 lg:block"
+                    style={{ zIndex: 1 }}
                   >
-                    <Icon size={20} style={{ color: step.color }} />
-                  </div>
-
-                  {/* Content */}
-                  <h3 className="font-serif text-xl font-semibold text-foreground mb-2">
-                    {step.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed flex-1">
-                    {step.description}
-                  </p>
-
-                  {/* Connector line (not on last) */}
-                  {i < STEPS.length - 1 && (
                     <div
-                      className="absolute -right-3 top-1/2 hidden -translate-y-1/2 lg:block"
-                      style={{ zIndex: 1 }}
+                      className="flex h-6 w-6 items-center justify-center rounded-full text-white"
+                      style={{ background: step.gradient }}
                     >
-                      <div
-                        className="flex h-6 w-6 items-center justify-center rounded-full text-white"
-                        style={{ background: step.gradient }}
-                      >
-                        <ArrowRight size={12} />
-                      </div>
+                      <ArrowRight size={12} />
                     </div>
-                  )}
-                </div>
-              </ScrollReveal>
-            )
-          })}
+                  </div>
+                )}
+              </div>
+            </ScrollReveal>
+          ))}
         </div>
 
         {/* CTA */}
@@ -134,10 +105,10 @@ export function HowItWorks() {
               href="/assessment"
               className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
             >
-              Take the free assessment <ArrowRight size={16} />
+              Get my gut score free <ArrowRight size={16} />
             </Link>
             <p className="mt-3 text-xs text-muted-foreground">
-              Free to start. No card needed. Takes about 3 minutes.
+              Takes about 3 minutes. No account required.
             </p>
           </div>
         </ScrollReveal>

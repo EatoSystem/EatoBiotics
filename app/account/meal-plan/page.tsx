@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
-import { getUserMembershipTier } from "@/lib/membership"
+import { getUserMembershipTier, isPaidTier } from "@/lib/membership"
 import { MealPlanClient } from "./meal-plan-client"
 
 export const metadata: Metadata = {
@@ -15,7 +15,7 @@ export default async function MealPlanPage() {
   if (!user) redirect("/assessment?signin=1")
 
   const tier = await getUserMembershipTier(user.id)
-  if (tier !== "transform" && tier !== "restore") {
+  if (!isPaidTier(tier)) {
     redirect("/pricing?feature=meal-plan")
   }
 

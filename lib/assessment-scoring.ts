@@ -1,6 +1,7 @@
 /* ── Assessment Scoring — 3 Biotics ──────────────────────────────────── */
 
 import type { PillarKey } from "./assessment-data"
+import type { ConfidenceLabel } from "@/lib/assessment-types"
 
 export interface SubScores {
   prebiotics: number   // Plant diversity, fibre, and whole foods (q1–q6)
@@ -272,6 +273,39 @@ export function computeResult(
     insights,
     nextActions,
     completedAt: Date.now(),
+  }
+}
+
+/* ── Result sections (presentation helper) ──────────────────────────────
+ * Derives the standard, constructive result sections every foundation result
+ * shows: What this means · Why it matters · What to do this week · Strongest
+ * area · Biggest opportunity · a Snapshot/Pattern/Tracked confidence label. */
+
+export interface FoundationSections {
+  whatThisMeans: string
+  whyItMatters: string
+  whatToDoThisWeek: string
+  strongestArea: string
+  biggestOpportunity: string
+  confidenceLabel: ConfidenceLabel
+}
+
+export function resultSections(
+  result: AssessmentResult,
+  confidenceLabel: ConfidenceLabel = "Snapshot",
+): FoundationSections {
+  const insights = result.insights // already sorted weakest-first
+  const strongest = insights.length ? insights[insights.length - 1] : null
+  const weakest = insights.length ? insights[0] : null
+  return {
+    whatThisMeans: result.profile.description,
+    whyItMatters:
+      "Your inner food system shapes how the rest of your body is supported — energy, digestion, immunity, and resilience all build on it. This is a behaviour snapshot you can move, not a fixed trait.",
+    whatToDoThisWeek:
+      result.nextActions[0] ?? weakest?.action ?? "Pick one small, repeatable change for this week.",
+    strongestArea: strongest?.label ?? "—",
+    biggestOpportunity: weakest?.label ?? "—",
+    confidenceLabel,
   }
 }
 

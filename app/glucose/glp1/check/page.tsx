@@ -17,7 +17,7 @@ export default function Glp1CheckPage() {
         <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[360px]" style={{ background: "radial-gradient(60% 70% at 50% 0%, color-mix(in srgb, var(--icon-yellow) 14%, transparent), transparent 70%)" }} />
         <div className="relative z-10 mx-auto max-w-xl">
           <ScrollReveal>
-            <Link href="/eatobetics/glp1" className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors" style={{ color: "var(--muted-foreground)" }}>
+            <Link href="/glucose/glp1" className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors" style={{ color: "var(--muted-foreground)" }}>
               <ArrowLeft size={14} /> GLP-1 Companion
             </Link>
             <h1 className="mt-4 text-center font-serif text-3xl font-bold leading-tight text-balance sm:text-4xl" style={{ color: "var(--foreground)" }}>

@@ -1,41 +1,61 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowRight } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { ArrowRight, Sprout } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { ScoreRing } from "@/components/assessment/score-ring"
 
 const EXAMPLE = {
   overall: 62,
-  profile: "Emerging Balance",
+  label: "Good potential",
   pillars: [
     {
-      label: "Prebiotics",
-      score: 71,
-      color: "var(--icon-lime)",
-      gradient: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))",
-      description: "Plant diversity & fibre",
-    },
-    {
-      label: "Probiotics",
-      score: 38,
+      label: "Stability",
+      score: 58,
       color: "var(--icon-teal)",
       gradient: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))",
-      description: "Fermented & live foods",
+      description: "Day-to-day steadiness",
     },
     {
-      label: "Postbiotics",
-      score: 67,
+      label: "Diversity",
+      score: 71,
+      color: "var(--icon-green)",
+      gradient: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))",
+      description: "Plant variety & fibre",
+    },
+    {
+      label: "Recovery",
+      score: 64,
       color: "var(--icon-orange)",
       gradient: "linear-gradient(90deg, var(--icon-yellow), var(--icon-orange))",
       description: "Consistency & rhythm",
     },
   ],
   insight:
-    "Prebiotics and Postbiotics are working well — your gut has a solid fibre base and eating rhythm. The opportunity is Probiotics: adding one fermented food daily could measurably shift your gut diversity within weeks.",
+    "Diversity and Recovery are already working well — a solid fibre base and a steady eating rhythm. Your biggest opportunity is Stability: a few simple daily habits could smooth out your digestion within weeks.",
 }
 
 export function ScorePreview() {
+  const ref = useRef<HTMLDivElement>(null)
+  const [inView, setInView] = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true)
+          observer.disconnect()
+        }
+      },
+      { threshold: 0.3 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <section className="px-6 py-20 md:py-28">
       <div className="mx-auto max-w-[1100px]">
@@ -58,10 +78,25 @@ export function ScorePreview() {
         </ScrollReveal>
 
         <ScrollReveal delay={80}>
+          <div ref={ref} className="relative mx-auto max-w-2xl">
+            {/* Subtle green glow around the card */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -inset-6 -z-10 rounded-[2.5rem] opacity-70 blur-3xl"
+              style={{ background: "radial-gradient(60% 60% at 50% 45%, color-mix(in srgb, var(--icon-green) 28%, transparent), transparent 75%)" }}
+            />
           <div
-            className="relative mx-auto max-w-lg overflow-hidden rounded-3xl border-2 bg-card shadow-2xl"
+            className="relative overflow-hidden rounded-[2rem] border-2 bg-card shadow-[0_40px_80px_-32px_rgba(20,37,15,0.45)]"
             style={{ borderColor: "color-mix(in srgb, var(--icon-teal) 40%, transparent)" }}
           >
+            {/* Botanical accent */}
+            <Sprout
+              aria-hidden
+              size={150}
+              className="pointer-events-none absolute -right-8 -top-6 opacity-[0.06]"
+              style={{ color: "var(--icon-green)" }}
+            />
+
             {/* Gradient bar */}
             <div
               className="h-1.5 w-full"
@@ -71,9 +106,9 @@ export function ScorePreview() {
               }}
             />
 
-            <div className="px-8 py-8">
+            <div className="relative px-9 py-11 sm:px-12">
               {/* Label + profile badge */}
-              <div className="mb-6 flex items-center justify-between">
+              <div className="mb-7 flex items-center justify-between">
                 <p
                   className="text-xs font-bold uppercase tracking-widest"
                   style={{ color: "var(--icon-teal)" }}
@@ -84,35 +119,40 @@ export function ScorePreview() {
                   className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white"
                   style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-teal))" }}
                 >
-                  {EXAMPLE.profile}
+                  {EXAMPLE.label}
                 </span>
               </div>
 
-              {/* Score ring */}
-              <div className="flex justify-center mb-7">
+              {/* Score ring — counts up when scrolled into view */}
+              <div className="mb-9 flex justify-center">
                 <ScoreRing
-                  score={EXAMPLE.overall}
+                  score={inView ? EXAMPLE.overall : 0}
                   color="var(--icon-green)"
                   gradientId="homepage-score-ring"
-                  profileType={EXAMPLE.profile}
+                  profileType={EXAMPLE.label}
+                  className="relative mx-auto h-64 w-64 sm:h-72 sm:w-72"
                 />
               </div>
 
-              {/* Three biotic pillar bars */}
-              <div className="mb-6 flex flex-col gap-4">
+              {/* Sub-score bars — fill when scrolled into view */}
+              <div className="mb-7 flex flex-col gap-5">
                 {EXAMPLE.pillars.map(({ label, score, color, gradient, description }) => (
                   <div key={label}>
-                    <div className="mb-1.5 flex items-center justify-between">
+                    <div className="mb-2 flex items-center justify-between">
                       <div>
-                        <span className="text-sm font-semibold text-foreground">{label}</span>
-                        <span className="ml-2 text-xs text-muted-foreground">{description}</span>
+                        <span className="text-base font-semibold text-foreground">{label}</span>
+                        <span className="ml-2 text-sm text-muted-foreground">{description}</span>
                       </div>
-                      <span className="font-serif text-sm font-bold" style={{ color }}>{score}</span>
+                      <span className="font-serif text-base font-bold" style={{ color }}>{score}</span>
                     </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div className="h-3 w-full overflow-hidden rounded-full bg-muted">
                       <div
                         className="h-full rounded-full"
-                        style={{ width: `${score}%`, background: gradient }}
+                        style={{
+                          width: inView ? `${score}%` : "0%",
+                          background: gradient,
+                          transition: "width 900ms ease-out",
+                        }}
                       />
                     </div>
                   </div>
@@ -121,7 +161,7 @@ export function ScorePreview() {
 
               {/* Insight */}
               <div
-                className="rounded-2xl px-4 py-3 text-sm text-muted-foreground leading-relaxed"
+                className="rounded-2xl px-5 py-4 text-base text-muted-foreground leading-relaxed"
                 style={{ background: "color-mix(in srgb, var(--muted) 60%, transparent)" }}
               >
                 <span className="font-semibold text-foreground">What this means: </span>
@@ -129,18 +169,19 @@ export function ScorePreview() {
               </div>
             </div>
           </div>
+          </div>
         </ScrollReveal>
 
         <ScrollReveal delay={180}>
           <div className="mt-10 text-center">
             <Link
               href="/assessment"
-              className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
+              className="brand-gradient inline-flex items-center gap-2.5 rounded-full px-10 py-5 text-lg font-semibold text-white shadow-xl shadow-icon-green/25 transition-all hover:shadow-2xl hover:shadow-icon-green/35 hover:opacity-90"
             >
-              Get my EatoBiotics Score <ArrowRight size={16} />
+              Get my gut score free <ArrowRight size={18} />
             </Link>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Free to take. No account needed. Takes about 3 minutes.
+            <p className="mt-3.5 text-sm text-muted-foreground">
+              Takes about 3 minutes. No account required.
             </p>
           </div>
         </ScrollReveal>

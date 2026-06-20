@@ -138,7 +138,9 @@ export async function POST(req: NextRequest) {
       })
       if (sendError) {
         console.error("[send-magic-link] Resend error:", sendError.message)
-        return NextResponse.json({ ok: true, emailSent: false })
+        // Surface the failure so the caller (SaveResultsCard) can stop showing
+        // a false "sent" and offer a retry. Still HTTP 200 (non-fatal).
+        return NextResponse.json({ ok: false, reason: "send_failed" })
       }
       console.log(`[send-magic-link] Sign-in link emailed to ${email} via ${emailFrom}`)
     } else {

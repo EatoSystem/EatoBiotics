@@ -42,7 +42,7 @@ export default async function Glp1AccountPage() {
             >
               <Lock size={14} /> Unlock with membership <ArrowRight size={14} />
             </Link>
-            <Link href="/eatobetics/glp1" className="text-sm font-medium underline underline-offset-4 text-muted-foreground">
+            <Link href="/glucose/glp1" className="text-sm font-medium underline underline-offset-4 text-muted-foreground">
               Try the free protein calculator
             </Link>
           </div>

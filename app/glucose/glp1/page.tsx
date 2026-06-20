@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   },
 }
 
-const ASSESSMENT_HREF = "/eatobetics/assessment"
+const ASSESSMENT_HREF = "/glucose/assessment"
 const CARD =
   "h-full rounded-3xl border border-black/[0.05] bg-white p-7 shadow-[0_10px_40px_-16px_rgba(26,46,18,0.18)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_24px_60px_-22px_rgba(26,46,18,0.28)]"
 const G = {
@@ -90,7 +90,7 @@ export default function Glp1CompanionPage() {
               <Link href={ASSESSMENT_HREF} className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:opacity-90 hover:shadow-xl">
                 Take the free assessment <ArrowRight size={16} />
               </Link>
-              <Link href="/eatobetics/glp1/check" className="inline-flex items-center gap-2 rounded-full border px-8 py-4 text-base font-semibold transition-colors hover:bg-black/[0.03]" style={{ borderColor: "var(--border)", color: "var(--foreground)" }}>
+              <Link href="/glucose/glp1/check" className="inline-flex items-center gap-2 rounded-full border px-8 py-4 text-base font-semibold transition-colors hover:bg-black/[0.03]" style={{ borderColor: "var(--border)", color: "var(--foreground)" }}>
                 Take the 90-second check
               </Link>
             </div>
@@ -332,7 +332,7 @@ export default function Glp1CompanionPage() {
                 <Link href={ASSESSMENT_HREF} className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-xl shadow-black/30 transition-all hover:opacity-90">
                   Take the free assessment <ArrowRight size={16} />
                 </Link>
-                <Link href="/eatobetics" className="inline-flex items-center gap-2 rounded-full border border-white/25 px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-white/10">
+                <Link href="/glucose" className="inline-flex items-center gap-2 rounded-full border border-white/25 px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-white/10">
                   About EatoBetics
                 </Link>
               </div>
