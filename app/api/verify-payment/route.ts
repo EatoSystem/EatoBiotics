@@ -19,6 +19,10 @@ export async function GET(req: NextRequest) {
     const paid = isCheckoutSessionSettled(session)
     const summary = getPaidReportSummaryFromSession(session)
 
+    console.log(
+      `[verify-payment] Session ${sessionId}: paid=${paid}, status=${session.status}, payment_status=${session.payment_status}`
+    )
+
     return NextResponse.json({
       paid,
       summary,

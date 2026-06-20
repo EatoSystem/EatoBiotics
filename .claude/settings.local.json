@@ -134,7 +134,8 @@
       "Bash(npx tsx --tsconfig tsconfig.json -e ' *)",
       "Bash(grep -n \"borderRadius: undefined\\\\|borderRadius:$\\\\|borderRadius: }\" components/report/report-pdf.tsx)",
       "Bash(npx tsx *)",
-      "Bash(del _test_render.ts _test_output.pdf)"
+      "Bash(del _test_render.ts _test_output.pdf)",
+      "mcp__c9973395-fc40-41ea-87df-9074bd0ffff5__list_projects"
     ]
   }
 }

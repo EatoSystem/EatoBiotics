@@ -138,12 +138,15 @@ export async function POST(req: NextRequest) {
       })
       if (sendError) {
         console.error("[send-magic-link] Resend error:", sendError.message)
+        return NextResponse.json({ ok: true, emailSent: false })
       }
+      console.log(`[send-magic-link] Sign-in link emailed to ${email} via ${emailFrom}`)
     } else {
-      console.log("[send-magic-link] RESEND_API_KEY not set — magic link:", magicUrl)
+      console.warn("[send-magic-link] RESEND_API_KEY not set — link generated but NOT emailed:", magicUrl)
+      return NextResponse.json({ ok: true, emailSent: false, skipped: true })
     }
 
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ ok: true, emailSent: true })
   } catch (err) {
     console.error("[send-magic-link] Error:", err)
     return NextResponse.json({ ok: true, skipped: true }) // always non-fatal

@@ -3,12 +3,14 @@ export const OLD_DEV_COOKIES = ["eb_dev_auth", "eb_dev_preview_auth", "eb_dev_pr
 const TEMPORARY_DEVELOPMENT_PASSWORD = "Monkstown"
 
 export function isPasswordGateEnabled(): boolean {
-  // Temporary redevelopment lock: prefer Vercel's DEV_PASSWORD, then the short-term
-  // fallback requested for the private build. Remove the fallback before launch.
-  if (getDevPassword()) return true
-
+  // Go-live kill-switch always wins: set EATOBIOTICS_PASSWORD_GATE_DISABLED=true
+  // (or 1/on) to take the site fully public. Until then the gate stays ON so the
+  // public sees the waitlist page and only the founder password unlocks the site.
   const forceOff = process.env.EATOBIOTICS_PASSWORD_GATE_DISABLED?.trim().toLowerCase()
   if (forceOff === "true" || forceOff === "1" || forceOff === "on") return false
+
+  // Gate is ON by default. DEV_PASSWORD (Vercel) overrides the fallback password.
+  if (getDevPassword()) return true
 
   const gateSetting = process.env.EATOBIOTICS_PASSWORD_GATE?.trim().toLowerCase()
   if (gateSetting === "true" || gateSetting === "1" || gateSetting === "on") return true
