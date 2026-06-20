@@ -32,14 +32,17 @@ issues #1, #3, #4, and #5. (CLAUDE.md already flagged this: _"remove before laun
 
 ## 2. Root causes & fixes (code)
 
-### Fix A — Password gate no longer forces the site closed _(CRITICAL)_
+### Fix A — Password gate stays on now, one switch to go live _(CRITICAL)_
 **File:** `lib/dev-password-gate.ts`
-- Removed the hardcoded `"Monkstown"` fallback.
-- The gate is now **OFF by default** and only turns on when explicitly configured
-  (`DEV_PASSWORD` set, or `EATOBIOTICS_PASSWORD_GATE=true`).
-- `EATOBIOTICS_PASSWORD_GATE_DISABLED=true` remains a hard kill-switch.
-- **Effect:** production is public and the full customer flow works. The pre-launch
-  waitlist can still be re-enabled at will via env (see §7).
+- The gate **stays ON by default** (waitlist mode): the public sees the waitlist at
+  `/enter` and only the founder password unlocks the site. `DEV_PASSWORD` (Vercel)
+  overrides the fallback password.
+- **To go fully live, set `EATOBIOTICS_PASSWORD_GATE_DISABLED=true`** — a single
+  kill-switch that takes the site public. That is the one and only flip needed at
+  launch; everything downstream (assessment → payment → report → magic link →
+  account) then works because of Fixes B–D.
+- Originally the gate was forced on *unconditionally* (it ignored env), so it could
+  never be turned off. The kill-switch ordering is now reliable.
 
 ### Fix B — Auth always works, even with the waitlist gate on
 **File:** `proxy.ts`
@@ -163,11 +166,13 @@ appears **only** on intentionally-demo routes (`/demo/account`, `/account-you`,
 | `ANTHROPIC_API_KEY` | Vercel | Report generation (falls back to a deterministic report if absent). |
 
 ### Gate / launch control
-| Variable | Recommended for launch |
-|----------|------------------------|
-| `DEV_PASSWORD` | **Unset** (set it only to run the waitlist). |
-| `EATOBIOTICS_PASSWORD_GATE` | **Unset / not `true`**. |
-| `EATOBIOTICS_PASSWORD_GATE_DISABLED` | Optional belt-and-braces: `true` to guarantee public. |
+| Variable | Pre-launch (now) | Go-live |
+|----------|------------------|---------|
+| `DEV_PASSWORD` | Set to your founder password (or rely on the built-in fallback) | Can stay set — ignored once disabled below |
+| `EATOBIOTICS_PASSWORD_GATE_DISABLED` | Unset (gate ON → waitlist shows) | **Set to `true`** → site goes fully public |
+
+**Launch = set `EATOBIOTICS_PASSWORD_GATE_DISABLED=true` in Vercel.** Nothing else
+needs to change for the customer flow to work.
 
 ### Subscriptions (if selling memberships)
 `STRIPE_GROW_PRICE_ID`, `STRIPE_RESTORE_PRICE_ID`, `STRIPE_TRANSFORM_PRICE_ID`
@@ -190,7 +195,8 @@ appears **only** on intentionally-demo routes (`/demo/account`, `/account-you`,
      `checkout.session.completed`, `customer.subscription.created/updated/deleted`,
      `invoice.payment_succeeded`, `invoice.payment_failed`. Copy its signing secret
      into `STRIPE_WEBHOOK_SECRET`. Ensure the key is **live** mode for real sales.
-4. **Gate** — confirm `DEV_PASSWORD` is **unset** in production (or set the disable flag).
+4. **Gate** — to go live, set `EATOBIOTICS_PASSWORD_GATE_DISABLED=true` in Vercel.
+   Leave it unset to keep the waitlist showing.
 5. **DB** — apply outstanding migrations; confirm RLS + the `pdf-reports` bucket.
 
 ---
@@ -214,14 +220,15 @@ Run on the production domain with the gate **off**:
 
 ## 10. Production-readiness checklist
 
-- [x] Password gate no longer forces the site closed (env-controlled).
-- [x] Auth routes bypass the gate.
+- [x] Password gate stays ON now (waitlist) with a reliable go-live kill-switch.
+- [x] Auth routes bypass the gate (magic-link sign-in works even with the gate on).
 - [x] Magic-link callback handles all Supabase auth flows.
 - [x] Logging added across checkout / verify / magic-link.
+- [x] Production build compiles cleanly (all routes valid).
 - [ ] `RESEND_API_KEY` + verified `EMAIL_FROM` domain (manual).
 - [ ] Supabase auth redirect allow-list includes `/auth/callback` + `/account` (manual).
 - [ ] Stripe **live** keys + live webhook endpoint & secret (manual).
 - [ ] `NEXT_PUBLIC_SITE_URL` = production domain (manual).
-- [ ] `DEV_PASSWORD` unset in prod (manual).
-- [ ] Migrations applied + RLS verified + `pdf-reports` bucket exists (manual).
+- [ ] **Launch flip:** set `EATOBIOTICS_PASSWORD_GATE_DISABLED=true` (manual).
+- [ ] Migrations applied + RLS verified + `pdf-reports` bucket exists (manual — I can verify via Supabase if you approve the connection).
 - [ ] End-to-end test (§9) passes for two separate users (manual).

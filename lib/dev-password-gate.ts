@@ -1,17 +1,15 @@
 export const DEV_COOKIE = "eb_dev_preview_auth_v3"
 export const OLD_DEV_COOKIES = ["eb_dev_auth", "eb_dev_preview_auth", "eb_dev_preview_auth_v2"]
+const TEMPORARY_DEVELOPMENT_PASSWORD = "Monkstown"
 
 export function isPasswordGateEnabled(): boolean {
-  // Explicit kill-switch always wins, so production can be force-public.
+  // Go-live kill-switch always wins: set EATOBIOTICS_PASSWORD_GATE_DISABLED=true
+  // (or 1/on) to take the site fully public. Until then the gate stays ON so the
+  // public sees the waitlist page and only the founder password unlocks the site.
   const forceOff = process.env.EATOBIOTICS_PASSWORD_GATE_DISABLED?.trim().toLowerCase()
   if (forceOff === "true" || forceOff === "1" || forceOff === "on") return false
 
-  // The gate is OFF by default. It only turns on when explicitly configured:
-  //   - DEV_PASSWORD is set (the password to bypass it), or
-  //   - EATOBIOTICS_PASSWORD_GATE is "true"/"1"/"on".
-  // There is NO hardcoded fallback password — a real customer must always be
-  // able to complete assessment → payment → report → magic link → account in
-  // production. To run the pre-launch waitlist instead, set DEV_PASSWORD.
+  // Gate is ON by default. DEV_PASSWORD (Vercel) overrides the fallback password.
   if (getDevPassword()) return true
 
   const gateSetting = process.env.EATOBIOTICS_PASSWORD_GATE?.trim().toLowerCase()
@@ -21,7 +19,7 @@ export function isPasswordGateEnabled(): boolean {
 }
 
 export function getDevPassword(): string | null {
-  return process.env.DEV_PASSWORD?.trim() || null
+  return process.env.DEV_PASSWORD?.trim() || TEMPORARY_DEVELOPMENT_PASSWORD
 }
 
 export async function devPasswordToken(password: string): Promise<string> {
