@@ -3,6 +3,7 @@ import { z } from "zod"
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
+import { ownerOrFilter } from "@/lib/supabase-filters"
 import { getUserMembershipTier } from "@/lib/membership"
 import { guardAiUsage } from "@/lib/ai-guard"
 import { rateLimit, getClientIp } from "@/lib/rate-limit"
@@ -107,7 +108,7 @@ export async function POST(req: NextRequest) {
     if (sb) {
       const [tier, { data: lead }, { data: stabAssess }, { data: profile }, { data: stabLogRows }] = await Promise.all([
         getUserMembershipTier(user.id),
-        sb.from("leads").select("overall_score, sub_scores").or(`email.eq.${user.email!},user_id.eq.${user.id}`).not("overall_score", "is", null).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        sb.from("leads").select("overall_score, sub_scores").or(ownerOrFilter(user.id, user.email)).not("overall_score", "is", null).order("created_at", { ascending: false }).limit(1).maybeSingle(),
         sb.from("stability_assessments").select("score").eq("user_id", user.id).maybeSingle(),
         sb.from("profiles").select("name").eq("id", user.id).maybeSingle(),
         sb.from("stability_logs").select("data").eq("user_id", user.id).order("log_date", { ascending: false }).limit(30),

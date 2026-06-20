@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
+import { ownerOrFilter } from "@/lib/supabase-filters"
 import { getUserMembershipTier } from "@/lib/membership"
 
 
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
   const { data: latestAssessment } = await adminSupabase
     .from("leads")
     .select("overall_score")
-    .or(`user_id.eq.${user.id}`)
+    .or(ownerOrFilter(user.id))
     .not("overall_score", "is", null)
     .order("created_at", { ascending: false })
     .limit(1)

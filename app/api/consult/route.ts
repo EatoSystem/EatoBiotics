@@ -6,6 +6,7 @@ import { z } from "zod"
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
+import { ownerOrFilter } from "@/lib/supabase-filters"
 import { getUserMembershipTier } from "@/lib/membership"
 import { logServerEvent } from "@/lib/statsig-server"
 import { computeReport } from "@/lib/stability/insights"
@@ -331,7 +332,7 @@ export async function POST(req: NextRequest) {
     const { data: latestAssessment } = await adminSupabase
       .from("leads")
       .select("overall_score, sub_scores, created_at")
-      .or(`email.eq.${user.email!},user_id.eq.${user.id}`)
+      .or(ownerOrFilter(user.id, user.email))
       .not("overall_score", "is", null)
       .order("created_at", { ascending: false })
       .limit(1)
@@ -349,7 +350,7 @@ export async function POST(req: NextRequest) {
     const { data: historyData } = await adminSupabase
       .from("leads")
       .select("overall_score, created_at")
-      .or(`email.eq.${user.email!},user_id.eq.${user.id}`)
+      .or(ownerOrFilter(user.id, user.email))
       .not("overall_score", "is", null)
       .gte("created_at", thirtyDaysAgo.toISOString())
       .order("created_at", { ascending: true })

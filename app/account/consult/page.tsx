@@ -3,6 +3,7 @@ import { Suspense } from "react"
 import { redirect } from "next/navigation"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
+import { ownerOrFilter } from "@/lib/supabase-filters"
 import { getUserMembershipTier } from "@/lib/membership"
 import { ConsultClient } from "./consult-client"
 
@@ -40,7 +41,7 @@ export default async function ConsultPage() {
     const { data: latestAssessment } = await adminSupabase
       .from("leads")
       .select("overall_score, sub_scores")
-      .or(`email.eq.${user.email!},user_id.eq.${user.id}`)
+      .or(ownerOrFilter(user.id, user.email))
       .not("overall_score", "is", null)
       .order("created_at", { ascending: false })
       .limit(1)

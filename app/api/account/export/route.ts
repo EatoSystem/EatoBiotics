@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
+import { ownerOrFilter } from "@/lib/supabase-filters"
 
 export async function GET() {
   try {
@@ -19,7 +20,7 @@ export async function GET() {
       adminSupabase.from("profiles").select("*").eq("id", userId).single(),
       adminSupabase.from("analyses").select("*").eq("user_id", userId),
       adminSupabase.from("weekly_checkins").select("*").eq("user_id", userId),
-      adminSupabase.from("leads").select("*").or(`user_id.eq.${userId},email.eq.${email}`),
+      adminSupabase.from("leads").select("*").or(ownerOrFilter(userId, email)),
     ])
 
     const exportData = {

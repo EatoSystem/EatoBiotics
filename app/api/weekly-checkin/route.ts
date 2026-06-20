@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { getSupabase } from "@/lib/supabase"
+import { ownerOrFilter } from "@/lib/supabase-filters"
 import { verifyCronRequest } from "@/lib/cron-auth"
 
 /** Returns the date of the most recent Monday (UTC) as YYYY-MM-DD. */
@@ -77,7 +78,7 @@ async function generateWeeklyCheckin(userId: string, userEmail: string): Promise
   const { data: assessments } = await adminSupabase
     .from("leads")
     .select("overall_score, sub_scores, created_at")
-    .or(`email.eq.${userEmail},user_id.eq.${userId}`)
+    .or(ownerOrFilter(userId, userEmail))
     .not("overall_score", "is", null)
     .order("created_at", { ascending: false })
     .limit(2)
