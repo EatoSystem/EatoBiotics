@@ -98,3 +98,133 @@ ALTER TABLE leads ADD COLUMN IF NOT EXISTS food_challenge text;
 ALTER TABLE leads DROP CONSTRAINT IF EXISTS leads_assessment_type_check;
 ALTER TABLE leads ADD CONSTRAINT leads_assessment_type_check
   CHECK (assessment_type = ANY (ARRAY['gut'::text, 'mind'::text, 'family'::text, 'waitlist'::text]));
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 28: RLS consolidation + initplan perf + meal_scans tightening
+-- ────────────────────────────────────────────────────────────
+-- Collapses the 3 layered generations of RLS policies into one optimized policy
+-- per table (the old public-role ALL/SELECT twins are dropped), wraps every
+-- auth.uid()/auth.jwt() call in a scalar subselect so it is evaluated once per
+-- query (not per row), drops the public WITH CHECK(true) meal_scans INSERT
+-- (server inserts via the service role, which bypasses RLS), and adds covering
+-- indexes for previously-unindexed foreign keys. Non-regressive: no client code
+-- writes these tables; all writes go through the service role.
+
+-- Own-row FOR ALL (authenticated)
+DROP POLICY IF EXISTS "Users see own profile" ON profiles;
+DROP POLICY IF EXISTS "profiles: own row" ON profiles;
+DROP POLICY IF EXISTS "users_read_own_profile" ON profiles;
+CREATE POLICY "profiles_own" ON profiles FOR ALL TO authenticated
+  USING ((select auth.uid()) = id) WITH CHECK ((select auth.uid()) = id);
+
+DROP POLICY IF EXISTS "Users see own plate" ON plate_data;
+DROP POLICY IF EXISTS "plate_data: own row" ON plate_data;
+DROP POLICY IF EXISTS "users_manage_own_plate_data" ON plate_data;
+CREATE POLICY "plate_data_own" ON plate_data FOR ALL TO authenticated
+  USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+
+DROP POLICY IF EXISTS "Users see own journal" ON journal_entries;
+DROP POLICY IF EXISTS "journal_entries: own rows" ON journal_entries;
+DROP POLICY IF EXISTS "users_manage_own_journal_entries" ON journal_entries;
+CREATE POLICY "journal_entries_own" ON journal_entries FOR ALL TO authenticated
+  USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+
+DROP POLICY IF EXISTS "analyses: own rows" ON analyses;
+DROP POLICY IF EXISTS "users_insert_own_analyses" ON analyses;
+DROP POLICY IF EXISTS "users_read_own_analyses" ON analyses;
+CREATE POLICY "analyses_own" ON analyses FOR ALL TO authenticated
+  USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+
+DROP POLICY IF EXISTS "consultations: own rows" ON consultations;
+DROP POLICY IF EXISTS "users_read_own_consultations" ON consultations;
+CREATE POLICY "consultations_own" ON consultations FOR ALL TO authenticated
+  USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+
+DROP POLICY IF EXISTS "subscription_events: own rows" ON subscription_events;
+DROP POLICY IF EXISTS "users_read_own_subscription_events" ON subscription_events;
+CREATE POLICY "subscription_events_own" ON subscription_events FOR ALL TO authenticated
+  USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+
+DROP POLICY IF EXISTS "weekly_checkins: own rows" ON weekly_checkins;
+DROP POLICY IF EXISTS "users_read_own_checkins" ON weekly_checkins;
+CREATE POLICY "weekly_checkins_own" ON weekly_checkins FOR ALL TO authenticated
+  USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+
+DROP POLICY IF EXISTS "users_manage_own_meal_plans" ON meal_plans;
+CREATE POLICY "meal_plans_own" ON meal_plans FOR ALL TO authenticated
+  USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+
+DROP POLICY IF EXISTS "users_manage_own_food_protocols" ON food_protocols;
+CREATE POLICY "food_protocols_own" ON food_protocols FOR ALL TO authenticated
+  USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+
+-- SELECT-only (authenticated), richer email/JWT fallbacks, fully wrapped
+DROP POLICY IF EXISTS "leads: own row" ON leads;
+DROP POLICY IF EXISTS "users_read_own_leads" ON leads;
+CREATE POLICY "leads_own_read" ON leads FOR SELECT TO authenticated
+  USING (((user_id IS NOT NULL) AND (user_id = (select auth.uid())))
+      OR ((email IS NOT NULL) AND (email = ((select auth.jwt()) ->> 'email'::text))));
+
+DROP POLICY IF EXISTS "deep_assessments: own rows" ON deep_assessments;
+DROP POLICY IF EXISTS "users_read_own_deep_assessments" ON deep_assessments;
+CREATE POLICY "deep_assessments_own_read" ON deep_assessments FOR SELECT TO authenticated
+  USING (((user_id IS NOT NULL) AND (user_id = (select auth.uid())))
+      OR ((email IS NOT NULL) AND (email = ((select auth.jwt()) ->> 'email'::text))));
+
+DROP POLICY IF EXISTS "Users see own referrals" ON referrals;
+DROP POLICY IF EXISTS "users_read_own_referrals" ON referrals;
+CREATE POLICY "referrals_own_read" ON referrals FOR SELECT TO authenticated
+  USING ((referrer_code IN (SELECT profiles.referral_code FROM profiles WHERE (profiles.id = (select auth.uid()))))
+      OR (referred_id = (select auth.uid()))
+      OR ((referred_email IS NOT NULL) AND (referred_email = ((select auth.jwt()) ->> 'email'::text))));
+
+DROP POLICY IF EXISTS "users_read_own_plans" ON monthly_gut_plans;
+CREATE POLICY "monthly_gut_plans_own_read" ON monthly_gut_plans FOR SELECT TO authenticated
+  USING (user_id = (select auth.uid()));
+
+DROP POLICY IF EXISTS "users_read_own_monthly_reviews" ON monthly_reviews;
+CREATE POLICY "monthly_reviews_own_read" ON monthly_reviews FOR SELECT TO authenticated
+  USING (user_id = (select auth.uid()));
+
+-- food_intelligence_reports: public -> authenticated, wrapped
+DROP POLICY IF EXISTS "Users can read own food intelligence reports" ON food_intelligence_reports;
+DROP POLICY IF EXISTS "Users can insert own food intelligence reports" ON food_intelligence_reports;
+CREATE POLICY "fir_own_read" ON food_intelligence_reports FOR SELECT TO authenticated
+  USING ((select auth.uid()) = user_id);
+CREATE POLICY "fir_own_insert" ON food_intelligence_reports FOR INSERT TO authenticated
+  WITH CHECK ((select auth.uid()) = user_id);
+
+-- meal_scans: drop the public WITH CHECK(true) INSERT (service role still inserts)
+DROP POLICY IF EXISTS "meal_scans_insert" ON meal_scans;
+
+-- Re-wrap policies on the Migration 17-25 tables (they used bare auth.uid())
+DROP POLICY IF EXISTS "owners_manage_household_members" ON household_members;
+CREATE POLICY "owners_manage_household_members" ON household_members FOR ALL TO authenticated
+  USING (owner_id = (select auth.uid())) WITH CHECK (owner_id = (select auth.uid()));
+
+DROP POLICY IF EXISTS "users_manage_own_glp1_logs" ON glp1_logs;
+CREATE POLICY "users_manage_own_glp1_logs" ON glp1_logs FOR ALL TO authenticated
+  USING (user_id = (select auth.uid())) WITH CHECK (user_id = (select auth.uid()));
+
+DROP POLICY IF EXISTS "users_manage_own_glp1_profile" ON glp1_profile;
+CREATE POLICY "users_manage_own_glp1_profile" ON glp1_profile FOR ALL TO authenticated
+  USING (user_id = (select auth.uid())) WITH CHECK (user_id = (select auth.uid()));
+
+DROP POLICY IF EXISTS "users_manage_own_stability_assessments" ON stability_assessments;
+CREATE POLICY "users_manage_own_stability_assessments" ON stability_assessments FOR ALL TO authenticated
+  USING (user_id = (select auth.uid())) WITH CHECK (user_id = (select auth.uid()));
+
+DROP POLICY IF EXISTS "users_manage_own_stability_logs" ON stability_logs;
+CREATE POLICY "users_manage_own_stability_logs" ON stability_logs FOR ALL TO authenticated
+  USING (user_id = (select auth.uid())) WITH CHECK (user_id = (select auth.uid()));
+
+DROP POLICY IF EXISTS "users_manage_own_assessment_journeys" ON assessment_journeys;
+CREATE POLICY "users_manage_own_assessment_journeys" ON assessment_journeys FOR ALL TO authenticated
+  USING (user_id = (select auth.uid())) WITH CHECK (user_id = (select auth.uid()));
+
+-- Covering indexes for unindexed foreign keys
+CREATE INDEX IF NOT EXISTS idx_monthly_gut_plans_user_id ON monthly_gut_plans (user_id);
+CREATE INDEX IF NOT EXISTS idx_referrals_referred_id ON referrals (referred_id);
+CREATE INDEX IF NOT EXISTS idx_weekly_checkins_user_id ON weekly_checkins (user_id);
+CREATE INDEX IF NOT EXISTS idx_email_sends_user_id ON email_sends (user_id);
