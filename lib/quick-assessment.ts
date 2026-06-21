@@ -18,9 +18,43 @@ import {
   type AssessmentResult,
 } from "./assessment-scoring"
 
-/* ── Scored questions ──────────────────────────────────────────────────── */
+/* ── The three engines (pillars) ───────────────────────────────────────── */
 
 export type QuickPillar = "prebiotics" | "probiotics" | "postbiotics"
+
+export interface Engine {
+  index: number
+  label: string   // clinical name, shown in eyebrows/progress/reveal
+  verb: string    // brand sub-descriptor (Feed/Seed/Produce)
+  color: string
+  blurb: string
+}
+
+export const ENGINES: Record<QuickPillar, Engine> = {
+  prebiotics: {
+    index: 1,
+    label: "Prebiotics",
+    verb: "Feed",
+    color: "var(--icon-green)",
+    blurb: "The fuel your whole system runs on.",
+  },
+  probiotics: {
+    index: 2,
+    label: "Probiotics",
+    verb: "Seed",
+    color: "var(--icon-teal)",
+    blurb: "The living reinforcements you send in.",
+  },
+  postbiotics: {
+    index: 3,
+    label: "Postbiotics",
+    verb: "Produce",
+    color: "var(--icon-orange)",
+    blurb: "What your gut gives back to you.",
+  },
+}
+
+/* ── Scored questions ──────────────────────────────────────────────────── */
 
 export interface QuickOption {
   label: string
@@ -32,6 +66,7 @@ export interface QuickQuestion {
   id: string
   pillar: QuickPillar
   text: string
+  subtitle: string
   options: QuickOption[]
 }
 
@@ -40,56 +75,61 @@ export const QUICK_QUESTIONS: QuickQuestion[] = [
   {
     id: "diversity",
     pillar: "prebiotics",
-    text: "How many different plant foods do you eat in a typical week?",
+    text: "Over a normal week, how alive is your plate?",
+    subtitle: "Your gut bacteria thrive on the variety of plants you eat.",
     options: [
-      { value: 0, label: "1–5 plants", description: "A small set of familiar staples" },
-      { value: 1, label: "6–12 plants", description: "Some variety across the week" },
-      { value: 2, label: "13–20 plants", description: "A decent spread of categories" },
-      { value: 3, label: "21 or more", description: "I actively seek variety every week" },
+      { value: 0, label: "Same few staples", description: "A small, familiar rotation" },
+      { value: 1, label: "Some variety", description: "A bit of range across the week" },
+      { value: 2, label: "A broad range", description: "Lots of different plants and colours" },
+      { value: 3, label: "Something new constantly", description: "I actively seek variety" },
     ],
   },
   {
     id: "fibre",
     pillar: "prebiotics",
-    text: "How often do your meals include fibre-rich whole foods — vegetables, legumes, wholegrains, nuts, or seeds?",
+    text: "How often does your gut get fed real fibre?",
+    subtitle: "Plants, beans, whole grains, nuts, seeds — the fuel the whole system runs on.",
     options: [
-      { value: 0, label: "Rarely", description: "Mostly refined or processed foods" },
-      { value: 1, label: "Sometimes", description: "A few times a week" },
-      { value: 2, label: "Often", description: "Most days have a fibre-rich meal" },
-      { value: 3, label: "Almost always", description: "Whole foods are my foundation" },
+      { value: 0, label: "Rarely", description: "Mostly refined or processed food" },
+      { value: 1, label: "Some days", description: "A few times a week" },
+      { value: 2, label: "Most days", description: "A fibre-rich meal most days" },
+      { value: 3, label: "Nearly every meal", description: "It's the base of how I eat" },
     ],
   },
   {
     id: "fermented",
     pillar: "probiotics",
-    text: "How often do you eat fermented or live foods — yoghurt, kefir, sauerkraut, kimchi, or miso?",
+    text: "How often do living foods reach your gut?",
+    subtitle: "Yoghurt, kefir, kimchi, sauerkraut, miso — they seed new life into your microbiome.",
     options: [
-      { value: 0, label: "Rarely or never", description: "Not part of my eating" },
-      { value: 1, label: "Now and then", description: "Occasionally, not a habit" },
-      { value: 2, label: "A few times a week", description: "A regular part of my week" },
-      { value: 3, label: "Most days", description: "Live foods feature daily" },
+      { value: 0, label: "Almost never", description: "Not part of my routine" },
+      { value: 1, label: "Now and then", description: "Occasionally" },
+      { value: 2, label: "A few times a week", description: "A regular habit" },
+      { value: 3, label: "Most days", description: "Living foods feature daily" },
     ],
   },
   {
     id: "rhythm",
     pillar: "postbiotics",
-    text: "How consistent is your daily eating rhythm — roughly regular meal times?",
+    text: "What's your daily eating rhythm like?",
+    subtitle: "Your system produces more when it runs on a steady tide.",
     options: [
       { value: 0, label: "All over the place", description: "Meals happen whenever they happen" },
-      { value: 1, label: "Somewhat", description: "Loosely regular on good days" },
+      { value: 1, label: "Loose", description: "Roughly regular on good days" },
       { value: 2, label: "Mostly steady", description: "Similar times most days" },
-      { value: 3, label: "Very consistent", description: "A dependable daily rhythm" },
+      { value: 3, label: "Like clockwork", description: "A dependable daily rhythm" },
     ],
   },
   {
     id: "recovery",
     pillar: "postbiotics",
-    text: "How do you usually feel after meals — energy, digestion, and comfort?",
+    text: "Lately, what is your gut telling you?",
+    subtitle: "When it's thriving it pays you back — steady energy, easy digestion, good mood.",
     options: [
-      { value: 0, label: "Often off", description: "Bloated, sluggish, or uncomfortable" },
-      { value: 1, label: "Mixed", description: "Some good meals, some not" },
-      { value: 2, label: "Usually good", description: "Comfortable and steady most of the time" },
-      { value: 3, label: "Consistently great", description: "Light, energised, and settled" },
+      { value: 0, label: "It's struggling", description: "Bloated, sluggish, or off" },
+      { value: 1, label: "Mixed signals", description: "Some good days, some not" },
+      { value: 2, label: "Mostly good", description: "Comfortable and steady" },
+      { value: 3, label: "Thriving", description: "Light and energised" },
     ],
   },
 ]
