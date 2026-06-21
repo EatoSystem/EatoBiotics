@@ -148,6 +148,9 @@ export function ReportPremiumAddons({ addons, claudeReport }: ReportPremiumAddon
         <section className="border-t border-border bg-secondary/10 px-6 py-12">
           <div className="mx-auto max-w-2xl">
             <ScrollReveal>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[var(--icon-green)]">
+                Priorities
+              </p>
               <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
                 Your Priority Map
               </h2>
@@ -192,6 +195,9 @@ export function ReportPremiumAddons({ addons, claudeReport }: ReportPremiumAddon
         <section className="border-t border-border px-6 py-12">
           <div className="mx-auto max-w-2xl">
             <ScrollReveal>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[var(--icon-green)]">
+                The Strategy
+              </p>
               <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
                 Your 12-Week System Strategy
               </h2>
@@ -238,6 +244,9 @@ export function ReportPremiumAddons({ addons, claudeReport }: ReportPremiumAddon
         <section className="border-t border-border bg-secondary/10 px-6 py-12">
           <div className="mx-auto max-w-2xl">
             <ScrollReveal>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[var(--icon-green)]">
+                Interpretation
+              </p>
               <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
                 Your System, Interpreted
               </h2>
