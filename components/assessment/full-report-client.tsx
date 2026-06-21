@@ -35,6 +35,9 @@ const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: 
 
 /* ── Helpers ──────────────────────────────────────────────────────────── */
 
+/** Unified soft card shadow (matches the account dashboard + homepage). */
+const CARD_SHADOW = "0 2px 12px rgba(26,46,18,0.05)"
+
 function formatRetestDate(completedAt: number): string {
   const d = new Date(completedAt + 75 * 24 * 60 * 60 * 1000)
   return d.toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" })
@@ -90,7 +93,10 @@ function DeepDiveCard({ dive }: { dive: PillarDeepDive }) {
   const Icon = ICON_MAP[dive.icon] ?? Leaf
 
   return (
-    <div className="rounded-3xl border border-border bg-background overflow-hidden">
+    <div
+      className="rounded-3xl border border-border bg-background overflow-hidden transition-shadow hover:shadow-lg"
+      style={{ boxShadow: CARD_SHADOW }}
+    >
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center gap-4 p-6 text-left"
@@ -136,7 +142,7 @@ function DeepDiveCard({ dive }: { dive: PillarDeepDive }) {
                   <p className="text-sm font-bold text-foreground">{food.food}</p>
                 </div>
                 <p className="text-xs leading-relaxed text-muted-foreground">{food.why}</p>
-                <div className="mt-2.5 rounded-lg bg-[var(--icon-green)]/6 px-3 py-2">
+                <div className="mt-2.5 rounded-lg bg-[var(--icon-green)]/8 px-3 py-2">
                   <p className="text-[11px] leading-relaxed text-foreground/70">
                     <span className="font-semibold text-[var(--icon-green)]">How to use: </span>
                     {food.howToUse}
@@ -151,7 +157,7 @@ function DeepDiveCard({ dive }: { dive: PillarDeepDive }) {
           </p>
           <div className="mt-3 space-y-2">
             {dive.reduce.map((item) => (
-              <div key={item.food} className="flex gap-3 rounded-xl border border-destructive/10 bg-destructive/4 p-4">
+              <div key={item.food} className="flex gap-3 rounded-xl border border-destructive/10 bg-destructive/5 p-4">
                 <span className="mt-0.5 shrink-0 text-destructive/60 font-bold text-sm">✕</span>
                 <div>
                   <p className="text-sm font-semibold text-foreground">{item.food}</p>
@@ -188,10 +194,18 @@ function FullReportSections({
             <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: result.profile.color }} />
             Full Report
           </div>
-          <h1 className="mt-5 font-serif text-3xl font-semibold text-foreground sm:text-4xl">
+          <h1 className="mt-5 font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
             The Food System Inside You
           </h1>
-          <div className="mt-8 flex justify-center">
+          <div className="relative mt-8 flex justify-center">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -inset-6 -z-10 rounded-full opacity-70 blur-3xl print:hidden"
+              style={{
+                background:
+                  "radial-gradient(60% 60% at 50% 45%, color-mix(in srgb, var(--icon-green) 28%, transparent), transparent 75%)",
+              }}
+            />
             <ScoreRing
               score={result.overall}
               color={result.profile.color}
@@ -212,6 +226,9 @@ function FullReportSections({
       <section className="border-t border-border bg-secondary/10 px-6 py-16">
         <div className="mx-auto max-w-2xl">
           <ScrollReveal>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[var(--icon-green)]">
+              Pillar Breakdown
+            </p>
             <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
               Your Pillar Deep-Dives
             </h2>
@@ -234,6 +251,9 @@ function FullReportSections({
         <section className="border-t border-border px-6 py-16">
           <div className="mx-auto max-w-2xl">
             <ScrollReveal>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[var(--icon-green)]">
+                Your System
+              </p>
               <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
                 Your System Pattern
               </h2>
@@ -249,6 +269,9 @@ function FullReportSections({
       <section className="px-6 py-16">
         <div className="mx-auto max-w-2xl">
           <ScrollReveal>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[var(--icon-green)]">
+              Eat This
+            </p>
             <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
               Your Top 12 Foods
             </h2>
@@ -293,6 +316,9 @@ function FullReportSections({
       <section className="border-t border-border bg-secondary/10 px-6 py-16">
         <div className="mx-auto max-w-2xl">
           <ScrollReveal>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[var(--icon-green)]">
+              Quick Wins
+            </p>
             <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
               5 Easy Food Swaps
             </h2>
@@ -330,7 +356,10 @@ function FullReportSections({
       <section className="px-6 pb-8">
         <div className="mx-auto max-w-2xl">
           <ScrollReveal>
-            <div className="flex items-start gap-4 rounded-2xl border border-[var(--icon-teal)]/20 bg-[var(--icon-teal)]/5 p-5">
+            <div
+              className="flex items-start gap-4 rounded-2xl border border-[var(--icon-teal)]/20 border-l-4 border-l-[var(--icon-teal)] p-5"
+              style={{ background: "color-mix(in srgb, var(--icon-teal) 8%, transparent)" }}
+            >
               <div
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white text-base"
                 style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}
@@ -355,6 +384,9 @@ function FullReportSections({
       <section className="border-t border-border bg-secondary/10 px-6 py-16">
         <div className="mx-auto max-w-2xl">
           <ScrollReveal>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[var(--icon-green)]">
+              The Plan
+            </p>
             <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
               Your 30-Day Plan
             </h2>
@@ -364,7 +396,10 @@ function FullReportSections({
           </ScrollReveal>
           {claudeReport?.rhythmInsight && (
             <ScrollReveal>
-              <div className="mb-6 mt-4 rounded-2xl border border-[var(--icon-teal)]/20 bg-[var(--icon-teal)]/5 p-5">
+              <div
+                className="mb-6 mt-4 rounded-2xl border border-[var(--icon-teal)]/20 border-l-4 border-l-[var(--icon-teal)] p-5"
+                style={{ background: "color-mix(in srgb, var(--icon-teal) 8%, transparent)" }}
+              >
                 <p className="text-xs font-bold uppercase tracking-widest text-[var(--icon-teal)] mb-2">
                   Rhythm + Feeling Insight
                 </p>
@@ -378,7 +413,10 @@ function FullReportSections({
             {claudeReport?.thirtyDayRoadmap
               ? claudeReport.thirtyDayRoadmap.map((week) => (
                   <ScrollReveal key={week.week} delay={week.week * 60}>
-                    <div className="rounded-3xl border border-border bg-background overflow-hidden">
+                    <div
+                      className="rounded-3xl border border-border bg-background overflow-hidden transition-shadow hover:shadow-lg"
+                      style={{ boxShadow: CARD_SHADOW }}
+                    >
                       <button
                         onClick={() => setOpenWeek(openWeek === week.week ? 0 : week.week)}
                         className="w-full flex items-center justify-between gap-4 p-5 text-left"
@@ -421,7 +459,10 @@ function FullReportSections({
                 ))
               : report.thirtyDayPlan.map((week) => (
                   <ScrollReveal key={week.week} delay={week.week * 60}>
-                    <div className="rounded-3xl border border-border bg-background overflow-hidden">
+                    <div
+                      className="rounded-3xl border border-border bg-background overflow-hidden transition-shadow hover:shadow-lg"
+                      style={{ boxShadow: CARD_SHADOW }}
+                    >
                       <button
                         onClick={() => setOpenWeek(openWeek === week.week ? 0 : week.week)}
                         className="w-full flex items-center justify-between gap-4 p-5 text-left"

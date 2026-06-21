@@ -4,6 +4,7 @@ import { useState } from "react"
 import { ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ScrollReveal } from "@/components/scroll-reveal"
+import { ScoreRing } from "./score-ring"
 import { MissionNote } from "./mission-note"
 import { ReportMembershipCTA } from "./report-membership-cta"
 import type {
@@ -28,20 +29,41 @@ interface PaidReportClientProps {
 
 /* ── Sub-components ──────────────────────────────────────────────── */
 
-function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+/** Unified soft card shadow (matches the account dashboard + homepage). */
+const CARD_SHADOW = "0 2px 12px rgba(26,46,18,0.05)"
+
+function SectionHeader({
+  eyebrow,
+  title,
+  subtitle,
+}: {
+  eyebrow?: string
+  title: string
+  subtitle?: string
+}) {
   return (
     <div className="mb-6">
-      <div className="h-0.5 w-12 brand-gradient rounded-full mb-3" />
-      <h2 className="text-2xl font-bold font-serif">{title}</h2>
-      {subtitle && <p className="text-muted-foreground mt-1">{subtitle}</p>}
+      {eyebrow && (
+        <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[var(--icon-green)]">
+          {eyebrow}
+        </p>
+      )}
+      <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl text-balance">
+        {title}
+      </h2>
+      {subtitle && (
+        <p className="mt-2 leading-relaxed text-muted-foreground">{subtitle}</p>
+      )}
     </div>
   )
 }
 
 function TopTriggerCard({ trigger, explanation }: { trigger: string; explanation: string }) {
   return (
-    <div className="bg-[var(--icon-teal)]/6 border border-[var(--icon-teal)]/20 rounded-2xl p-6 relative overflow-hidden">
-      <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--icon-teal)] rounded-l-2xl" />
+    <div
+      className="rounded-3xl border border-[var(--icon-teal)]/20 border-l-4 border-l-[var(--icon-teal)] p-6"
+      style={{ background: "color-mix(in srgb, var(--icon-teal) 8%, transparent)" }}
+    >
       <p className="text-xs font-bold uppercase tracking-widest text-[var(--icon-teal)] mb-3">
         🔍 Your Key Insight
       </p>
@@ -77,11 +99,11 @@ export function PaidReportClient({
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-3xl mx-auto px-4 py-8 space-y-10">
+      <div className="max-w-3xl mx-auto px-5 py-8 space-y-12">
 
         {/* ── Hero ─────────────────────────────────────────────────── */}
         <section>
-          <div className="text-center py-8 space-y-4">
+          <div className="text-center py-8 space-y-6">
             <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full bg-secondary text-muted-foreground">
               {freeScores?.profile?.color && (
                 <span
@@ -97,21 +119,25 @@ export function PaidReportClient({
             </div>
 
             {freeScores && (
-              <div className="flex items-center justify-center gap-3 flex-wrap">
-                <span
-                  className="text-sm font-semibold"
-                  style={{ color: freeScores.profile.color }}
-                >
-                  {freeScores.profile.type}
-                </span>
-                <span className="text-muted-foreground text-sm">·</span>
-                <span className="text-sm font-bold text-foreground">
-                  {freeScores.overall}/100
-                </span>
+              <div className="relative flex justify-center">
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute -inset-6 -z-10 rounded-full opacity-70 blur-3xl"
+                  style={{
+                    background:
+                      "radial-gradient(60% 60% at 50% 45%, color-mix(in srgb, var(--icon-green) 28%, transparent), transparent 75%)",
+                  }}
+                />
+                <ScoreRing
+                  score={freeScores.overall}
+                  color={freeScores.profile.color}
+                  gradientId="paid-report-ring"
+                  profileType={freeScores.profile.type}
+                />
               </div>
             )}
 
-            <h1 className="text-3xl font-bold font-serif sm:text-4xl leading-snug">
+            <h1 className="font-serif text-3xl font-semibold sm:text-4xl leading-snug text-balance">
               {r.opening.split(".")[0]}.
             </h1>
 
@@ -121,8 +147,11 @@ export function PaidReportClient({
         {/* ── Your Pattern ─────────────────────────────────────────── */}
         <section>
           <ScrollReveal>
-            <SectionHeader title="Your Pattern" />
-            <div className="rounded-2xl border border-border bg-background p-6 space-y-4">
+            <SectionHeader eyebrow="The Big Picture" title="Your Pattern" />
+            <div
+              className="rounded-3xl border border-border bg-background p-6 space-y-4 transition-shadow hover:shadow-lg"
+              style={{ boxShadow: CARD_SHADOW }}
+            >
               <p className="text-base leading-relaxed text-foreground/80">{r.opening}</p>
               <div className="h-px bg-border" />
               <p className="text-sm leading-relaxed text-muted-foreground">{r.scoreInterpretation}</p>
@@ -134,6 +163,7 @@ export function PaidReportClient({
         <section>
           <ScrollReveal>
             <SectionHeader
+              eyebrow="Where You Stand"
               title="Strengths & Opportunities"
               subtitle="What's already working for you — and where your biggest gains are."
             />
@@ -146,7 +176,8 @@ export function PaidReportClient({
                 {r.strengths.map((strength, i) => (
                   <div
                     key={i}
-                    className="rounded-xl border border-[var(--icon-green)]/20 bg-[var(--icon-green)]/5 p-4"
+                    className="rounded-2xl border border-[var(--icon-green)]/20 border-l-4 border-l-[var(--icon-green)] p-4"
+                    style={{ background: "color-mix(in srgb, var(--icon-green) 8%, transparent)" }}
                   >
                     <p className="text-sm font-semibold text-foreground mb-1">{strength}</p>
                     <p className="text-xs leading-relaxed text-muted-foreground">
@@ -163,7 +194,8 @@ export function PaidReportClient({
                 {r.opportunities.map((opp, i) => (
                   <div
                     key={i}
-                    className="rounded-xl border border-[var(--icon-orange)]/20 bg-[var(--icon-orange)]/5 p-4"
+                    className="rounded-2xl border border-[var(--icon-orange)]/20 border-l-4 border-l-[var(--icon-orange)] p-4"
+                    style={{ background: "color-mix(in srgb, var(--icon-orange) 8%, transparent)" }}
                   >
                     <p className="text-sm font-semibold text-foreground mb-1">{opp}</p>
                     <p className="text-xs leading-relaxed text-muted-foreground">
@@ -179,7 +211,7 @@ export function PaidReportClient({
         {/* ── Your Key Insight ─────────────────────────────────────── */}
         <section>
           <ScrollReveal>
-            <SectionHeader title="Your Key Insight" />
+            <SectionHeader eyebrow="Key Insight" title="Your Key Insight" />
             <TopTriggerCard
               trigger={r.topTrigger}
               explanation={r.topTriggerExplanation}
@@ -191,6 +223,7 @@ export function PaidReportClient({
         <section>
           <ScrollReveal>
             <SectionHeader
+              eyebrow="Going Deeper"
               title="Deep Insight"
               subtitle="What your answers reveal about your food system."
             />
@@ -208,6 +241,7 @@ export function PaidReportClient({
         <section>
           <ScrollReveal>
             <SectionHeader
+              eyebrow="Start Here"
               title="Your 7-Day Starter Plan"
               subtitle="One small action each day to shift your food system health trajectory."
             />
@@ -215,7 +249,8 @@ export function PaidReportClient({
               {r.sevenDayPlan.map((item, i) => (
                 <div
                   key={i}
-                  className="flex items-start gap-4 rounded-2xl border border-border bg-background p-4"
+                  className="flex items-start gap-4 rounded-2xl border border-border bg-background p-5 transition-shadow hover:shadow-lg"
+                  style={{ boxShadow: CARD_SHADOW }}
                 >
                   <div
                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
@@ -241,7 +276,7 @@ export function PaidReportClient({
             {/* Your System Pattern */}
             <section>
               <ScrollReveal>
-                <SectionHeader title="Your System Pattern" />
+                <SectionHeader eyebrow="Your System" title="Your System Pattern" />
                 <p className="text-base leading-relaxed text-foreground/80 whitespace-pre-line">
                   {rFull.habitAnalysis}
                 </p>
@@ -252,11 +287,15 @@ export function PaidReportClient({
             <section>
               <ScrollReveal>
                 <SectionHeader
+                  eyebrow="Rhythm & Energy"
                   title="Rhythm & Energy"
                   subtitle="How consistency and feeling combine in your system."
                 />
                 <div className="space-y-4">
-                  <div className="rounded-2xl border border-[var(--icon-teal)]/20 bg-[var(--icon-teal)]/5 p-5">
+                  <div
+                    className="rounded-2xl border border-[var(--icon-teal)]/20 border-l-4 border-l-[var(--icon-teal)] p-5"
+                    style={{ background: "color-mix(in srgb, var(--icon-teal) 8%, transparent)" }}
+                  >
                     <p className="text-xs font-bold uppercase tracking-widest text-[var(--icon-teal)] mb-2">
                       Rhythm Insight
                     </p>
@@ -274,7 +313,7 @@ export function PaidReportClient({
             {/* Lifestyle Connection */}
             <section>
               <ScrollReveal>
-                <SectionHeader title="Lifestyle Connection" />
+                <SectionHeader eyebrow="Lifestyle" title="Lifestyle Connection" />
                 <p className="text-base leading-relaxed text-foreground/80">
                   {rFull.lifestyleConnection}
                 </p>
@@ -285,6 +324,7 @@ export function PaidReportClient({
             <section>
               <ScrollReveal>
                 <SectionHeader
+                  eyebrow="Personalised Foods"
                   title="5 Foods Chosen For You"
                   subtitle="Selected specifically based on your answers — not generic recommendations."
                 />
@@ -292,7 +332,8 @@ export function PaidReportClient({
                   {rFull.specificFoodList.map((food, i) => (
                     <div
                       key={i}
-                      className="rounded-2xl border border-border bg-background p-5 flex flex-col gap-3"
+                      className="rounded-2xl border border-border bg-background p-5 flex flex-col gap-3 transition-shadow hover:shadow-lg"
+                      style={{ boxShadow: CARD_SHADOW }}
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-4xl">{food.emoji}</span>
@@ -301,7 +342,7 @@ export function PaidReportClient({
                       <p className="text-xs leading-relaxed text-muted-foreground">
                         {food.whyForThem}
                       </p>
-                      <div className="rounded-xl bg-[var(--icon-green)]/6 px-3 py-2">
+                      <div className="rounded-xl bg-[var(--icon-green)]/8 px-3 py-2">
                         <p className="text-[11px] leading-relaxed text-foreground/70">
                           <span className="font-semibold text-[var(--icon-green)]">How to use: </span>
                           {food.howToUse}
@@ -317,6 +358,7 @@ export function PaidReportClient({
             <section>
               <ScrollReveal>
                 <SectionHeader
+                  eyebrow="The Plan"
                   title="Your 30-Day Roadmap"
                   subtitle="Four weeks of focused actions built around your unique food system."
                 />
@@ -324,7 +366,8 @@ export function PaidReportClient({
                   {rFull.thirtyDayRoadmap.map((week) => (
                     <div
                       key={week.week}
-                      className="rounded-3xl border border-border bg-background overflow-hidden"
+                      className="rounded-3xl border border-border bg-background overflow-hidden transition-shadow hover:shadow-lg"
+                      style={{ boxShadow: CARD_SHADOW }}
                     >
                       <button
                         onClick={() =>
@@ -381,11 +424,15 @@ export function PaidReportClient({
             <section>
               <ScrollReveal>
                 <SectionHeader
+                  eyebrow="Priorities"
                   title="Priority Map"
                   subtitle="Your single biggest blocker and biggest builder right now."
                 />
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-5">
+                  <div
+                    className="rounded-2xl border border-destructive/20 border-l-4 border-l-destructive p-5"
+                    style={{ background: "color-mix(in srgb, var(--destructive) 8%, transparent)" }}
+                  >
                     <p className="text-xs font-bold uppercase tracking-widest text-destructive/70 mb-3">
                       🚧 Biggest Blocker
                     </p>
@@ -396,7 +443,10 @@ export function PaidReportClient({
                       {rPremium.priorityMap.blockerExplanation}
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-[var(--icon-green)]/20 bg-[var(--icon-green)]/5 p-5">
+                  <div
+                    className="rounded-2xl border border-[var(--icon-green)]/20 border-l-4 border-l-[var(--icon-green)] p-5"
+                    style={{ background: "color-mix(in srgb, var(--icon-green) 8%, transparent)" }}
+                  >
                     <p className="text-xs font-bold uppercase tracking-widest text-[var(--icon-green)] mb-3">
                       ✦ Biggest Builder
                     </p>
@@ -414,12 +464,15 @@ export function PaidReportClient({
             {/* Gut Diagnostic Analysis */}
             <section>
               <ScrollReveal>
-                <SectionHeader title="Gut Diagnostic Analysis" />
+                <SectionHeader eyebrow="Diagnostic" title="Gut Diagnostic Analysis" />
                 <div className="space-y-4">
                   <p className="text-base leading-relaxed text-foreground/80">
                     {rPremium.gutDiagnosticSummary}
                   </p>
-                  <div className="rounded-2xl border border-[var(--icon-orange)]/20 bg-[var(--icon-orange)]/5 p-5">
+                  <div
+                    className="rounded-2xl border border-[var(--icon-orange)]/20 border-l-4 border-l-[var(--icon-orange)] p-5"
+                    style={{ background: "color-mix(in srgb, var(--icon-orange) 8%, transparent)" }}
+                  >
                     <p className="text-xs font-bold uppercase tracking-widest text-[var(--icon-orange)] mb-2">
                       Symptom Pattern
                     </p>
@@ -434,8 +487,11 @@ export function PaidReportClient({
             {/* Your System Story */}
             <section>
               <ScrollReveal>
-                <SectionHeader title="Your System Story" />
-                <blockquote className="border-l-4 border-[var(--icon-green)] pl-6 py-2">
+                <SectionHeader eyebrow="Your Story" title="Your System Story" />
+                <blockquote
+                  className="rounded-2xl border-l-4 border-[var(--icon-green)] py-5 pl-6 pr-5"
+                  style={{ background: "color-mix(in srgb, var(--icon-green) 6%, transparent)" }}
+                >
                   <p className="text-xl font-serif font-semibold leading-relaxed text-foreground italic">
                     "{rPremium.systemStory}"
                   </p>
@@ -446,7 +502,7 @@ export function PaidReportClient({
             {/* System Interpretation */}
             <section>
               <ScrollReveal>
-                <SectionHeader title="Your System Interpretation" />
+                <SectionHeader eyebrow="Interpretation" title="Your System Interpretation" />
                 <div className="space-y-4">
                   {rPremium.systemInterpretation.split("\n\n").map((para, i) => (
                     <p key={i} className="text-base leading-relaxed text-foreground/80">
@@ -461,6 +517,7 @@ export function PaidReportClient({
             <section>
               <ScrollReveal>
                 <SectionHeader
+                  eyebrow="The Strategy"
                   title="Phased Strategy"
                   subtitle="Three phases to systematically upgrade your food system health."
                 />
@@ -468,7 +525,8 @@ export function PaidReportClient({
                   {rPremium.phasedStrategy.map((phase, i) => (
                     <div
                       key={i}
-                      className="rounded-2xl border border-border bg-background p-5"
+                      className="rounded-2xl border border-border bg-background p-5 transition-shadow hover:shadow-lg"
+                      style={{ boxShadow: CARD_SHADOW }}
                     >
                       <div className="flex items-center gap-3 mb-3">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full brand-gradient text-xs font-bold text-white">
@@ -501,7 +559,7 @@ export function PaidReportClient({
         {/* ── Closing ──────────────────────────────────────────────── */}
         <section>
           <ScrollReveal>
-            <SectionHeader title="Final Thoughts" />
+            <SectionHeader eyebrow="Closing" title="Final Thoughts" />
             <div className="space-y-4">
               {r.closing.split("\n\n").map((para, i) => (
                 <p key={i} className="text-base leading-relaxed text-foreground/80">
@@ -515,7 +573,10 @@ export function PaidReportClient({
         {/* ── Retest nudge ─────────────────────────────────────────── */}
         <section>
           <ScrollReveal>
-            <div className="flex items-start gap-4 rounded-2xl border border-[var(--icon-teal)]/20 bg-[var(--icon-teal)]/5 p-5">
+            <div
+              className="flex items-start gap-4 rounded-2xl border border-[var(--icon-teal)]/20 border-l-4 border-l-[var(--icon-teal)] p-5"
+              style={{ background: "color-mix(in srgb, var(--icon-teal) 8%, transparent)" }}
+            >
               <div
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white text-base"
                 style={{
