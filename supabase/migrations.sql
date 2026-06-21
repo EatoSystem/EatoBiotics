@@ -661,3 +661,19 @@ BEGIN
       FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
   END IF;
 END $$;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 26: leads waitlist segmentation columns
+-- ────────────────────────────────────────────────────────────
+-- The pre-launch "Discover Your Food System Type" flow (components/waitlist/
+-- discover-flow.tsx → app/api/waitlist/route.ts) captures a little segmentation
+-- context alongside the quick-quiz profile. profile_type / overall_score /
+-- sub_scores already exist on leads; these four nullable columns store the
+-- unscored context so the launch report and audience segments can use it.
+-- ADD-only and idempotent.
+
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS country        text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS diet           text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS main_goal      text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS food_challenge text;

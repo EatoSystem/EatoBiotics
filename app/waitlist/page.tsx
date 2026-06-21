@@ -3,6 +3,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { GradientText } from "@/components/gradient-text"
+import { DiscoverFlow } from "@/components/waitlist/discover-flow"
 import { ArrowUpRight, BookOpen, Smartphone, GraduationCap, Check, Zap, Users, Star } from "lucide-react"
 
 export const metadata: Metadata = {
@@ -111,34 +112,22 @@ export default function WaitlistPage() {
 
           <ScrollReveal delay={200}>
             <h1 className="mt-4 font-serif text-5xl font-semibold tracking-tight text-foreground sm:text-6xl md:text-7xl text-balance">
-              Three launches.{" "}
-              <GradientText>One subscription.</GradientText>
+              Discover your{" "}
+              <GradientText>Food System Type.</GradientText>
             </h1>
           </ScrollReveal>
 
           <ScrollReveal delay={300}>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
-              The EatoBiotics book, app, and course are all coming in 2026. Subscribe to the
-              Substack and you&apos;ll be first to know the moment each one launches —
-              with early access, founding member pricing, and direct access to Jason.
+              Take the 1-minute quiz to discover your Food System Type, then join the waitlist
+              to get your full personalised report the moment EatoBiotics launches in 2026.
             </p>
           </ScrollReveal>
 
           <ScrollReveal delay={400}>
-            <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
-              <a
-                href="https://eatobiotics.substack.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
-              >
-                Join the waitlist on Substack
-                <ArrowUpRight size={16} />
-              </a>
+            <div className="mt-10 w-full">
+              <DiscoverFlow />
             </div>
-            <p className="mt-3 text-sm text-muted-foreground">
-              Free to subscribe. Unsubscribe anytime.
-            </p>
           </ScrollReveal>
 
           <ScrollReveal delay={500}>

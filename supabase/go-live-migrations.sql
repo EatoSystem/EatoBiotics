@@ -85,3 +85,10 @@ DO $$ BEGIN
       FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
   END IF;
 END $$;
+
+
+-- Migration 26: leads waitlist segmentation columns (ADD-only, idempotent)
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS country        text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS diet           text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS main_goal      text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS food_challenge text;
