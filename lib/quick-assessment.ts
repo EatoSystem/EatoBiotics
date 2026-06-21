@@ -27,6 +27,7 @@ export interface Engine {
   label: string   // clinical name, shown in eyebrows/progress/reveal
   verb: string    // brand sub-descriptor (Feed/Seed/Produce)
   color: string
+  gradient: string
   blurb: string
 }
 
@@ -36,6 +37,7 @@ export const ENGINES: Record<QuickPillar, Engine> = {
     label: "Prebiotics",
     verb: "Feed",
     color: "var(--icon-green)",
+    gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
     blurb: "The fuel your whole system runs on.",
   },
   probiotics: {
@@ -43,6 +45,7 @@ export const ENGINES: Record<QuickPillar, Engine> = {
     label: "Probiotics",
     verb: "Seed",
     color: "var(--icon-teal)",
+    gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
     blurb: "The living reinforcements you send in.",
   },
   postbiotics: {
@@ -50,6 +53,7 @@ export const ENGINES: Record<QuickPillar, Engine> = {
     label: "Postbiotics",
     verb: "Produce",
     color: "var(--icon-orange)",
+    gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     blurb: "What your gut gives back to you.",
   },
 }
