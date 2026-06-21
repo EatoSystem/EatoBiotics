@@ -64,8 +64,8 @@ export function WaitlistHero() {
 
           <ScrollReveal delay={140}>
             <p className="mt-5 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Take the 1-minute quiz to discover your Food System Type — then join the
-              waitlist to get your full personalised report at launch.
+              Take the 60-second discovery to meet the living food system inside you — then
+              join the waitlist to get your full personalised report at launch.
             </p>
           </ScrollReveal>
 
