@@ -677,3 +677,16 @@ ALTER TABLE leads ADD COLUMN IF NOT EXISTS country        text;
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS diet           text;
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS main_goal      text;
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS food_challenge text;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 27: widen leads.assessment_type CHECK
+-- ────────────────────────────────────────────────────────────
+-- The live DB constraint only allowed 'gut' | 'mind', which silently rejected
+-- waitlist (and family) lead upserts — the documented set is
+-- gut | mind | family | waitlist. Widen to match. Strictly more permissive;
+-- no existing rows affected.
+
+ALTER TABLE leads DROP CONSTRAINT IF EXISTS leads_assessment_type_check;
+ALTER TABLE leads ADD CONSTRAINT leads_assessment_type_check
+  CHECK (assessment_type = ANY (ARRAY['gut'::text, 'mind'::text, 'family'::text, 'waitlist'::text]));
