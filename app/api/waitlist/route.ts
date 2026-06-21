@@ -2,13 +2,30 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSupabase } from "@/lib/supabase"
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 import { waitlistConfirmationEmail } from "@/lib/email/waitlist-email"
+import { waitlistResultEmail } from "@/lib/email/waitlist-result-email"
+import type { AssessmentResult } from "@/lib/assessment-scoring"
+
+interface WaitlistBody {
+  email?: string
+  name?: string
+  ageBracket?: string
+  country?: string
+  diet?: string
+  mainGoal?: string
+  foodChallenge?: string
+  result?: AssessmentResult
+}
 
 /**
- * Public waitlist capture for the pre-launch landing page (/enter).
- * Stores the email in the existing `leads` table, tagged with
- * assessment_type "waitlist" so it never collides with assessment leads, and
- * sends a branded confirmation email to new signups. Tolerant by design — it
- * never blocks the visitor, and email failure is non-fatal.
+ * Public waitlist capture for the pre-launch landing page (/enter + /waitlist).
+ * Stores the lead in the existing `leads` table, tagged with assessment_type
+ * "waitlist" so it never collides with assessment leads. When the quick "Food
+ * System Type" quiz is completed it also persists the profile + scores and the
+ * segmentation context (country/diet/goal/challenge), and emails the result.
+ *
+ * Backward compatible: a bare { email } still works and sends the generic
+ * confirmation. Tolerant by design — never blocks the visitor, email is
+ * non-fatal.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -19,12 +36,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(rlBody, init)
     }
 
-    const body = (await req.json()) as { email?: string }
+    const body = (await req.json()) as WaitlistBody
     const email = (body.email ?? "").toLowerCase().trim()
 
     // Lightweight email sanity check.
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: "Please enter a valid email." }, { status: 400 })
+    }
+
+    const result = body.result
+    const clean = (s?: string) => {
+      const t = (s ?? "").trim()
+      return t ? t.slice(0, 120) : undefined
+    }
+
+    // Only persist columns we actually received, so a bare { email } stays minimal.
+    const row: Record<string, unknown> = { email, assessment_type: "waitlist" }
+    if (clean(body.name)) row.name = clean(body.name)
+    if (clean(body.ageBracket)) row.age_bracket = clean(body.ageBracket)
+    if (clean(body.country)) row.country = clean(body.country)
+    if (clean(body.diet)) row.diet = clean(body.diet)
+    if (clean(body.mainGoal)) row.main_goal = clean(body.mainGoal)
+    if (clean(body.foodChallenge)) row.food_challenge = clean(body.foodChallenge)
+    if (result) {
+      row.overall_score = result.overall
+      row.profile_type = result.profile?.type
+      row.sub_scores = result.subScores
     }
 
     let isNew = true
@@ -39,10 +76,9 @@ export async function POST(req: NextRequest) {
         .maybeSingle()
       isNew = !existing
 
-      const { error } = await supabase.from("leads").upsert(
-        { email, assessment_type: "waitlist" },
-        { onConflict: "email,assessment_type" }
-      )
+      const { error } = await supabase
+        .from("leads")
+        .upsert(row, { onConflict: "email,assessment_type" })
       if (error) {
         console.error("[waitlist] Supabase error:", error.message)
       }
@@ -50,7 +86,7 @@ export async function POST(req: NextRequest) {
       console.log("[waitlist] New signup (Supabase not configured):", email)
     }
 
-    // Send the confirmation email to new signups (non-fatal).
+    // Send the appropriate email to new signups (non-fatal).
     if (isNew) {
       const resendKey = process.env.RESEND_API_KEY
       const emailFrom = process.env.EMAIL_FROM ?? "hello@eatobiotics.com"
@@ -58,7 +94,9 @@ export async function POST(req: NextRequest) {
         try {
           const { Resend } = await import("resend")
           const resend = new Resend(resendKey)
-          const { subject, html } = waitlistConfirmationEmail()
+          const { subject, html } = result
+            ? waitlistResultEmail(result, clean(body.name))
+            : waitlistConfirmationEmail()
           const ownerEmail = process.env.OWNER_EMAIL
           const { error: sendError } = await resend.emails.send({
             from: `EatoBiotics <${emailFrom}>`,
@@ -70,13 +108,13 @@ export async function POST(req: NextRequest) {
           if (sendError) {
             console.error("[waitlist] Resend error:", sendError.message)
           } else {
-            console.log(`[waitlist] Confirmation emailed to ${email}`)
+            console.log(`[waitlist] ${result ? "Result" : "Confirmation"} emailed to ${email}`)
           }
         } catch (err) {
           console.error("[waitlist] Email step error:", err)
         }
       } else {
-        console.warn("[waitlist] RESEND_API_KEY not set — skipping confirmation email")
+        console.warn("[waitlist] RESEND_API_KEY not set — skipping email")
       }
     }
 

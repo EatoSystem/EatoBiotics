@@ -127,7 +127,7 @@ non-diagnostic + red-flag→GP guardrails baked into the cached knowledge base.
 | membership | text | `free \| early_access \| member \| premium` — referral system |
 | referral_code | text | unique |
 | referred_by | text | nullable |
-| membership_tier | text | `free \| grow \| restore \| transform` — subscription tier |
+| membership_tier | text | `free \| trial \| member \| grow \| restore \| transform` — subscription tier (DB CHECK allows all six) |
 | membership_status | text | `active \| inactive \| cancelled \| past_due` |
 | stripe_customer_id | text | nullable |
 | stripe_subscription_id | text | nullable |
@@ -146,6 +146,11 @@ non-diagnostic + red-flag→GP guardrails baked into the cached knowledge base.
 | profile_type | text | nullable |
 | sub_scores | jsonb | `{diversity, feeding, adding, consistency, feeling}` |
 | email_sent | boolean | nullable |
+| assessment_type | text | `gut \| mind \| family \| waitlist` (DB CHECK; default `gut`). Unique key is `(email, assessment_type)` |
+| country | text | nullable — waitlist segmentation (Discover flow) |
+| diet | text | nullable — waitlist segmentation |
+| main_goal | text | nullable — waitlist segmentation |
+| food_challenge | text | nullable — waitlist segmentation |
 | created_at | timestamptz | |
 
 ### deep_assessments
