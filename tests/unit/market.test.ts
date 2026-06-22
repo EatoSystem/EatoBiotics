@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { resolveMarket, marketBySlug, marketByName, MARKETS, DEFAULT_MARKET } from "@/lib/market"
+import { resolveMarket, marketBySlug, marketByName, rankCountries, MARKETS, DEFAULT_MARKET } from "@/lib/market"
 import { foodSet, FOOD_PROFILES } from "@/lib/foods-by-country"
 
 describe("market resolution", () => {
@@ -41,5 +41,17 @@ describe("market resolution", () => {
   it("all 8 food profiles are authored", () => {
     expect(Object.keys(FOOD_PROFILES)).toHaveLength(8)
     expect(foodSet("east_asian").fermented).toContain("kimchi")
+  })
+
+  it("ranks country signups desc with flags + ranks", () => {
+    const board = rankCountries(["Ireland", "Ireland", "United States", null, " ", "Ireland", "United States"])
+    expect(board[0]).toMatchObject({ name: "Ireland", count: 3, rank: 1, flag: "🇮🇪" })
+    expect(board[1]).toMatchObject({ name: "United States", count: 2, rank: 2 })
+    expect(board).toHaveLength(2) // null/blank dropped
+  })
+
+  it("falls back to a globe flag for unknown countries", () => {
+    const board = rankCountries(["Atlantis"])
+    expect(board[0].flag).toBe("🌍")
   })
 })

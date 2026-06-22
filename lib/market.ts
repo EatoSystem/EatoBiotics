@@ -93,3 +93,18 @@ export function marketByName(name?: string | null): Market | null {
   const target = name.trim().toLowerCase()
   return Object.values(MARKETS).find((mk) => mk.name.toLowerCase() === target) ?? null
 }
+
+export interface CountryRank { name: string; count: number; flag: string; rank: number }
+
+/** Tally a list of country names into a flagged, ranked leaderboard (desc by count). */
+export function rankCountries(names: Array<string | null | undefined>): CountryRank[] {
+  const counts = new Map<string, number>()
+  for (const n of names) {
+    const c = n?.trim()
+    if (c) counts.set(c, (counts.get(c) ?? 0) + 1)
+  }
+  return [...counts.entries()]
+    .map(([name, count]) => ({ name, count, flag: marketByName(name)?.flag ?? "🌍" }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    .map((e, i) => ({ ...e, rank: i + 1 }))
+}

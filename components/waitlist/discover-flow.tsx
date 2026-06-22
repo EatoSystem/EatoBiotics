@@ -18,6 +18,7 @@ import Link from "next/link"
 import { ArrowRight, ArrowLeft, Sparkles, Check } from "lucide-react"
 import { ScoreRing } from "@/components/assessment/score-ring"
 import { WaitlistStatus } from "@/components/waitlist/waitlist-status"
+import { CountryLeaderboard } from "@/components/waitlist/country-leaderboard"
 import { getPercentile } from "@/lib/percentile"
 import { resolveMarket, marketByName, DEFAULT_MARKET, type FoodProfile } from "@/lib/market"
 import { foodSet } from "@/lib/foods-by-country"
@@ -229,6 +230,7 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
         {reportUrl && result && shareCode && (
           <WaitlistStatus shareCode={shareCode} shareUrl={reportUrl} profileType={result.profile.type} overall={result.overall} />
         )}
+        {shareCode && <CountryLeaderboard shareCode={shareCode} />}
       </div>
     )
   }

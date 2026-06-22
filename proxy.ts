@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 import { DEV_COOKIE, OLD_DEV_COOKIES, devPasswordToken, getDevPassword, isPasswordGateEnabled } from "@/lib/dev-password-gate"
+import { LANDING_SLUGS } from "@/lib/market"
 
 // ── Site-wide password gate ───────────────────────────────────────────────
 async function hasSiteAccess(request: NextRequest, password: string): Promise<boolean> {
@@ -61,6 +62,15 @@ function isProtectedAccountRoute(pathname: string): boolean {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // Pretty per-country URLs: /ie, /uk, /us… → the canonical /c/<slug> landing page.
+  // Public ad/SEO entry points; rewrite before the gate so they're reachable.
+  const seg = pathname.slice(1).toLowerCase()
+  if (LANDING_SLUGS.includes(seg)) {
+    const url = request.nextUrl.clone()
+    url.pathname = `/c/${seg}`
+    return NextResponse.rewrite(url)
+  }
 
   // Site password check. During redevelopment, DEV_PASSWORD enables the gate.
   if (isPasswordGateEnabled()) {
