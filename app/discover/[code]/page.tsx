@@ -3,7 +3,7 @@ import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { getSupabase } from "@/lib/supabase"
 import { ScoreRing } from "@/components/assessment/score-ring"
-import { ShareResult } from "@/components/waitlist/share-result"
+import { WaitlistStatus } from "@/components/waitlist/waitlist-status"
 import { resultFromLead } from "@/lib/waitlist-result"
 import { ENGINES, type QuickPillar } from "@/lib/quick-assessment"
 import { getPercentile } from "@/lib/percentile"
@@ -135,9 +135,9 @@ export default async function DiscoverResultPage({ params }: { params: Promise<{
         </div>
       </section>
 
-      {/* Share */}
+      {/* Skip-the-line + share */}
       <section className="mt-10">
-        <ShareResult shareUrl={shareUrl} profileType={profile.type} overall={overall} />
+        <WaitlistStatus shareCode={code} shareUrl={shareUrl} profileType={profile.type} overall={overall} />
       </section>
 
       {/* The advert — what the full report adds */}
@@ -150,7 +150,7 @@ export default async function DiscoverResultPage({ params }: { params: Promise<{
             easy swaps, a 30-day plan built around your weakest engine, pillar deep-dives, AI meal scoring,
             and recipes — plus your daily Biotics Score™.
           </p>
-          <Link href="/enter" className="brand-gradient mt-6 inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-white shadow-lg transition-transform hover:-translate-y-0.5">
+          <Link href={`/enter?ref=${code}`} className="brand-gradient mt-6 inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-white shadow-lg transition-transform hover:-translate-y-0.5">
             Join the waitlist for early access <ArrowRight size={15} />
           </Link>
         </div>
@@ -159,7 +159,7 @@ export default async function DiscoverResultPage({ params }: { params: Promise<{
       {/* CTA — take it yourself */}
       <section className="mt-8 text-center">
         <p className="text-sm text-muted-foreground">Not your result?</p>
-        <Link href="/enter" className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--icon-green)] hover:underline">
+        <Link href={`/enter?ref=${code}`} className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--icon-green)] hover:underline">
           Discover your own food system <ArrowRight size={14} />
         </Link>
       </section>

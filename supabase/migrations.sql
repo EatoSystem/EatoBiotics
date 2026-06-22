@@ -834,3 +834,12 @@ ALTER TABLE leads ADD COLUMN IF NOT EXISTS share_code     text;
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS referred_by    text;
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS referral_count integer NOT NULL DEFAULT 0;
 CREATE UNIQUE INDEX IF NOT EXISTS leads_share_code_key ON leads (share_code) WHERE share_code IS NOT NULL;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 30: leads.reward_code (invite-to-unlock founding-member reward)
+-- ────────────────────────────────────────────────────────────
+-- Stores the single founding-member coupon minted once a lead crosses the
+-- referral unlock threshold (see app/api/waitlist/status). ADD-only, idempotent.
+
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS reward_code text;

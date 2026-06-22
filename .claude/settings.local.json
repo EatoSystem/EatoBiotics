@@ -135,7 +135,9 @@
       "Bash(grep -n \"borderRadius: undefined\\\\|borderRadius:$\\\\|borderRadius: }\" components/report/report-pdf.tsx)",
       "Bash(npx tsx *)",
       "Bash(del _test_render.ts _test_output.pdf)",
-      "mcp__c9973395-fc40-41ea-87df-9074bd0ffff5__list_projects"
+      "mcp__c9973395-fc40-41ea-87df-9074bd0ffff5__list_projects",
+      "mcp__c9973395-fc40-41ea-87df-9074bd0ffff5__apply_migration",
+      "mcp__c9973395-fc40-41ea-87df-9074bd0ffff5__execute_sql"
     ]
   }
 }
