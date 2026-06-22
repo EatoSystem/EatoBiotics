@@ -1,98 +1,106 @@
 /**
- * Instant "result teaser" email sent when someone completes the quick Food
- * System Type quiz and joins the waitlist. Reveals their profile type + the 3
- * biotic scores and offers early access at launch. Mirrors
- * the gradient-header style of waitlist-email.ts.
+ * "Food System Mini Report" — sent when someone completes the quick quiz and
+ * joins the waitlist. Explains their result (type, three engines, biggest
+ * opportunity), teases what the full EatoBiotics report adds (the advert), and
+ * links to their shareable web mini report. Built on the shared brand wrapper;
+ * email-safe (hex colours, tables, inline styles).
  */
+import { renderBrandEmail, BRAND_INK, BRAND_MUTED, SERIF, SANS } from "./brand-layout"
+import { getPercentile } from "@/lib/percentile"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://eatobiotics.com"
+
+// Email-safe (hex) engine palette — CSS vars don't render in email clients.
+const ENGINE_HEX: Record<"prebiotics" | "probiotics" | "postbiotics", { label: string; color: string }> = {
+  prebiotics: { label: "Prebiotics", color: "#4CB648" },
+  probiotics: { label: "Probiotics", color: "#2DAA6E" },
+  postbiotics: { label: "Postbiotics", color: "#F5A623" },
+}
 
 export function waitlistResultEmail(
   result: AssessmentResult,
-  name?: string
+  name?: string,
+  shareCode?: string
 ): { subject: string; html: string } {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://eatobiotics.com"
+  const { profile, overall, subScores, insights } = result
   const greeting = name ? `Hi ${name},` : "Hi there,"
-  const { profile, overall, subScores } = result
+  const percentile = getPercentile(overall)
+  const weakest = insights[0]
+  const reportUrl = shareCode ? `${SITE_URL}/discover/${shareCode}` : `${SITE_URL}/enter`
   const subject = `Your Food System Type: ${profile.type} 🌱`
 
-  const scoreCell = (emoji: string, label: string, value: number) => `
-    <td style="padding:0 4px 8px;width:33%;">
-      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 8px;text-align:center;">
-        <div style="font-size:18px;margin-bottom:4px;">${emoji}</div>
-        <div style="font-size:20px;font-weight:700;color:#15803d;line-height:1;">${value}</div>
-        <p style="margin:4px 0 0;font-size:10px;font-weight:600;color:#15803d;text-transform:uppercase;letter-spacing:0.04em;">${label}</p>
-      </div>
-    </td>`
-
-  const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${subject}</title>
-</head>
-<body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;padding:40px 16px;">
-    <tr>
-      <td align="center">
-        <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb;max-width:560px;width:100%;">
-          <!-- Header -->
-          <tr>
-            <td style="background:linear-gradient(135deg,#A8E063,#4CB648,#2DAA6E,#F5C518,#F5A623);padding:40px 40px;text-align:center;">
-              <div style="font-size:34px;margin-bottom:10px;">🌱</div>
-              <p style="margin:0 0 6px;color:rgba(255,255,255,0.92);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;">Your Food System Type</p>
-              <h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:700;letter-spacing:-0.5px;">${profile.type}</h1>
-              <p style="margin:10px 0 0;color:rgba(255,255,255,0.92);font-size:14px;">Overall score ${overall}/100</p>
-            </td>
-          </tr>
-          <!-- Body -->
-          <tr>
-            <td style="padding:36px 40px;">
-              <p style="margin:0 0 16px;color:#1A2E12;font-size:18px;font-weight:600;">${greeting}</p>
-              <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.65;">
-                ${profile.tagline} ${profile.description}
-              </p>
-
-              <!-- Biotic scores -->
-              <p style="margin:0 0 10px;color:#1A2E12;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Your 3 Biotics</p>
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
-                <tr>
-                  ${scoreCell("🌿", "Prebiotics", subScores.prebiotics ?? 0)}
-                  ${scoreCell("🦠", "Probiotics", subScores.probiotics ?? 0)}
-                  ${scoreCell("⚡", "Postbiotics", subScores.postbiotics ?? 0)}
-                </tr>
+  const engineRow = (key: "prebiotics" | "probiotics" | "postbiotics") => {
+    const { label, color } = ENGINE_HEX[key]
+    const v = Math.max(0, Math.min(100, subScores[key] ?? 0))
+    return `
+      <tr>
+        <td style="padding:0 0 12px;">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td style="font-size:13px;font-weight:bold;color:${color};font-family:${SANS};padding-bottom:5px;">${label}</td>
+              <td align="right" style="font-size:13px;font-weight:bold;color:${BRAND_INK};font-family:${SANS};padding-bottom:5px;">${v}/100</td>
+            </tr>
+          </table>
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eef2e9;border-radius:999px;">
+            <tr><td style="padding:0;">
+              <table width="${v}%" cellpadding="0" cellspacing="0" border="0" style="min-width:6%;">
+                <tr><td style="background:${color};height:8px;border-radius:999px;font-size:0;line-height:0;">&nbsp;</td></tr>
               </table>
+            </td></tr>
+          </table>
+        </td>
+      </tr>`
+  }
 
-              <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.65;">
-                You&rsquo;re on the waitlist. When EatoBiotics opens, you&rsquo;ll be
-                <strong>first in line for early access</strong> — to unlock your full personalised
-                report (a deeper read of your food system with a plan built around your type), plus AI
-                meal scoring, recipes, and membership.
-              </p>
+  const contentHtml = `
+    <div style="padding:34px 40px 8px;">
+      <p style="margin:0 0 6px;font-size:11px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase;color:${BRAND_MUTED};font-family:${SANS};">Your Food System Type</p>
+      <h2 style="margin:0 0 4px;font-size:28px;font-weight:bold;color:${BRAND_INK};font-family:${SERIF};">${profile.type}</h2>
+      <p style="margin:0 0 18px;font-size:14px;color:${BRAND_MUTED};font-family:${SANS};">
+        Overall ${overall}/100 · higher than ${percentile}% of people with typical eating habits
+      </p>
+      <p style="margin:0 0 22px;font-size:15px;line-height:1.65;color:#374151;font-family:${SANS};">
+        ${greeting} ${profile.tagline} ${profile.description}
+      </p>
 
-              <p style="margin:0 0 6px;color:#1A2E12;font-size:15px;font-weight:600;font-style:italic;line-height:1.6;">
-                &ldquo;EatoBiotics is built to help individuals and families eat optimal for health,
-                community, and environment.&rdquo;
-              </p>
-              <p style="margin:0;color:#6b7280;font-size:13px;">— A note from the founder</p>
-            </td>
-          </tr>
-          <!-- Footer -->
-          <tr>
-            <td style="padding:20px 40px;border-top:1px solid #f3f4f6;text-align:center;">
-              <p style="margin:0 0 4px;color:#6b7280;font-size:12px;font-weight:600;">EatoBiotics</p>
-              <p style="margin:0;color:#9ca3af;font-size:11px;">
-                The Food System Inside You &middot;
-                <a href="${siteUrl}" style="color:#9ca3af;text-decoration:none;">eatobiotics.com</a>
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`
+      <p style="margin:0 0 10px;font-size:12px;font-weight:bold;letter-spacing:0.6px;text-transform:uppercase;color:${BRAND_INK};font-family:${SANS};">Your three engines</p>
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:22px;">
+        ${engineRow("prebiotics")}
+        ${engineRow("probiotics")}
+        ${engineRow("postbiotics")}
+      </table>
 
-  return { subject, html }
+      ${weakest ? `
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f3f9ee;border-radius:14px;margin-bottom:24px;">
+        <tr><td style="padding:16px 18px;">
+          <p style="margin:0 0 4px;font-size:14px;font-weight:bold;color:${BRAND_INK};font-family:${SANS};">Your biggest opportunity: ${weakest.label}</p>
+          <p style="margin:0;font-size:14px;line-height:1.6;color:#374151;font-family:${SANS};">${weakest.action}</p>
+        </td></tr>
+      </table>` : ""}
+
+      <p style="margin:0 0 10px;font-size:12px;font-weight:bold;letter-spacing:0.6px;text-transform:uppercase;color:${BRAND_INK};font-family:${SANS};">What your full report adds at launch</p>
+      <p style="margin:0 0 20px;font-size:14px;line-height:1.7;color:#374151;font-family:${SANS};">
+        Your top foods to prioritise, easy swaps, a 30-day plan built around your weakest engine, pillar deep-dives, AI meal scoring and recipes — the complete EatoBiotics experience. Join the waitlist for early access.
+      </p>
+
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:8px;">
+        <tr><td align="center">
+          <a href="${reportUrl}" style="display:inline-block;background-color:#4CB648;background-image:linear-gradient(135deg,#A8E063,#4CB648,#2DAA6E);color:#ffffff;font-size:15px;font-weight:bold;font-family:${SANS};text-decoration:none;padding:14px 34px;border-radius:999px;">View your mini report &rarr;</a>
+        </td></tr>
+      </table>
+      <p style="margin:14px 0 0;font-size:13px;line-height:1.6;color:${BRAND_MUTED};font-family:${SANS};text-align:center;">
+        Know someone who'd want to meet their food system? Share your mini report — it only takes 60 seconds to discover theirs.
+      </p>
+    </div>`
+
+  return {
+    subject,
+    html: renderBrandEmail({
+      subject,
+      preheader: `You're a ${profile.type} — ${overall}/100. Here's your food system mini report.`,
+      contentHtml,
+      footerNote: "This snapshot is for education and isn't medical advice. The full personalised report unlocks at launch.",
+    }),
+  }
 }

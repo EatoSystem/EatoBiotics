@@ -14,17 +14,23 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { ArrowRight, ArrowLeft, Sparkles, Check } from "lucide-react"
 import { ScoreRing } from "@/components/assessment/score-ring"
+import { ShareResult } from "@/components/waitlist/share-result"
+import { getPercentile } from "@/lib/percentile"
 import {
   QUICK_QUESTIONS,
   MAIN_GOAL_OPTIONS,
   FOOD_CHALLENGE_OPTIONS,
   DIET_OPTIONS,
   ENGINES,
+  ANSWER_REACTIONS,
   computeQuickResult,
   type QuickPillar,
 } from "@/lib/quick-assessment"
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://eatobiotics.com"
 
 const AGE_BRACKETS = ["Under 20", "20–29", "30–39", "40–49", "50–59", "60+"]
 
@@ -61,6 +67,16 @@ export function DiscoverFlow() {
   const [diet, setDiet] = useState("")
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle")
   const [message, setMessage] = useState("")
+  const [shareCode, setShareCode] = useState<string | null>(null)
+  const [referredBy, setReferredBy] = useState<string | null>(null)
+  const [reaction, setReaction] = useState<string | null>(null)
+  const [introsSeen, setIntrosSeen] = useState<Set<QuickPillar>>(new Set())
+
+  // Capture a referral code from the URL (?ref=CODE) for skip-the-line credit.
+  useEffect(() => {
+    const ref = new URLSearchParams(window.location.search).get("ref")
+    if (ref) setReferredBy(ref.trim().slice(0, 16))
+  }, [])
 
   const result = useMemo(
     () => (phase === "reveal" || phase === "form" || phase === "done" ? computeQuickResult(answers) : null),
@@ -78,9 +94,11 @@ export function DiscoverFlow() {
     if (phase === "reveal" || phase === "form" || phase === "done") setRevealMounted(true)
   }, [phase])
 
-  function pickAnswer(id: string, value: number) {
+  function pickAnswer(id: string, value: number, pillar: QuickPillar) {
+    if (reaction) return
     setAnswers((a) => ({ ...a, [id]: value }))
-    setTimeout(() => setStep((s) => s + 1), 180)
+    setReaction(ANSWER_REACTIONS[pillar][value] ?? null)
+    setTimeout(() => { setReaction(null); setStep((s) => s + 1) }, 950)
   }
 
   function pickContext(setter: (v: string) => void, value: string, isLast: boolean) {
@@ -105,10 +123,10 @@ export function DiscoverFlow() {
       const res = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name, ageBracket, country, diet, mainGoal, foodChallenge, result }),
+        body: JSON.stringify({ email, name, ageBracket, country, diet, mainGoal, foodChallenge, referredBy, result }),
       })
-      const data = (await res.json()) as { ok?: boolean; error?: string }
-      if (res.ok && data.ok) setPhase("done")
+      const data = (await res.json()) as { ok?: boolean; error?: string; shareCode?: string }
+      if (res.ok && data.ok) { setShareCode(data.shareCode ?? null); setPhase("done") }
       else { setStatus("error"); setMessage(data.error ?? "Something went wrong. Please try again.") }
     } catch {
       setStatus("error"); setMessage("Something went wrong. Please try again.")
@@ -169,6 +187,7 @@ export function DiscoverFlow() {
 
   /* ── Done ──────────────────────────────────────────────────────────── */
   else if (phase === "done") {
+    const reportUrl = shareCode ? `${SITE_URL}/discover/${shareCode}` : null
     content = (
       <div key="done" className="mx-auto max-w-md">
         <div className={`animate-quiz-step ${CARD}`}>
@@ -181,9 +200,19 @@ export function DiscoverFlow() {
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               We&rsquo;ve emailed your Food System Type and a snapshot of your three engines. When
               EatoBiotics opens you&rsquo;ll be first in line for early access to your full report.
-              Thank you for joining the movement.
             </p>
+            {reportUrl && (
+              <Link href={`/discover/${shareCode}`} className="brand-gradient mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition-transform hover:-translate-y-0.5">
+                View your mini report <ArrowRight size={15} />
+              </Link>
+            )}
           </div>
+          {reportUrl && result && (
+            <div className="border-t border-border p-6">
+              <p className="mb-3 text-center text-sm font-semibold text-foreground">Know someone who&rsquo;d want to meet their food system?</p>
+              <ShareResult shareUrl={reportUrl} profileType={result.profile.type} overall={result.overall} compact />
+            </div>
+          )}
         </div>
       </div>
     )
@@ -217,6 +246,9 @@ export function DiscoverFlow() {
             </h2>
             <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
               {profile.tagline}
+            </p>
+            <p className="mt-2 text-xs font-semibold text-muted-foreground">
+              Higher than {getPercentile(overall)}% of people with typical eating habits
             </p>
 
             {/* Three engines — animated bars */}
@@ -316,6 +348,9 @@ export function DiscoverFlow() {
     const accent = engine ? engine.color : "var(--icon-teal)"
     const gradient = engine ? engine.gradient : "linear-gradient(135deg, var(--icon-green), var(--icon-teal))"
     const activeEngineIndex = engine ? engine.index : 3
+    // Show a "meet this engine" interstitial before the first question of each engine.
+    const isFirstOfEngine = !!q && (step === 0 || QUICK_QUESTIONS[step - 1].pillar !== q.pillar)
+    const showEngineIntro = !!q && !!engine && isFirstOfEngine && !introsSeen.has(q.pillar)
 
     content = (
       <>
@@ -356,7 +391,27 @@ export function DiscoverFlow() {
             style={{ background: `radial-gradient(60% 80% at 50% 0%, color-mix(in srgb, ${accent} 26%, transparent), transparent 75%)` }}
           />
           <div className="relative p-6 sm:p-8">
-            {q && engine && (
+            {/* "Meet this engine" interstitial */}
+            {q && engine && showEngineIntro && (
+              <div className="text-center">
+                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-white shadow-sm" style={{ background: gradient }}>
+                  Engine {engine.index} of 3
+                </span>
+                <h2 className="mt-4 font-serif text-3xl font-bold text-foreground">
+                  {engine.label} <span className="text-base font-semibold" style={{ color: accent }}>· {engine.verb}</span>
+                </h2>
+                <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">{engine.fact}</p>
+                <button
+                  onClick={() => setIntrosSeen((s) => new Set(s).add(q.pillar))}
+                  className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-base font-semibold text-white shadow-lg transition-transform hover:-translate-y-0.5"
+                  style={{ background: gradient }}
+                >
+                  {engine.index === 1 ? "Let's begin" : "Continue"} <ArrowRight size={16} />
+                </button>
+              </div>
+            )}
+
+            {q && engine && !showEngineIntro && (
               <>
                 <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-white shadow-sm" style={{ background: gradient }}>
                   <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/25 text-[10px]">{engine.index}</span>
@@ -370,7 +425,8 @@ export function DiscoverFlow() {
                     return (
                       <button
                         key={o.label}
-                        onClick={() => pickAnswer(q.id, o.value)}
+                        onClick={() => pickAnswer(q.id, o.value, q.pillar)}
+                        disabled={!!reaction}
                         className="relative flex w-full items-center justify-between gap-4 overflow-hidden rounded-2xl border py-4 pl-6 pr-5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.99]"
                         style={
                           active
@@ -391,6 +447,11 @@ export function DiscoverFlow() {
                     )
                   })}
                 </div>
+                {reaction && (
+                  <div className="animate-quiz-step mt-4 flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-center text-sm font-semibold" style={{ background: `color-mix(in srgb, ${accent} 10%, transparent)`, color: accent }}>
+                    <Sparkles size={14} /> {reaction}
+                  </div>
+                )}
               </>
             )}
 

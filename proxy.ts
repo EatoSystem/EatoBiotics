@@ -34,6 +34,7 @@ function isEnterRoute(pathname: string): boolean {
   return (
     pathname === "/enter" ||
     pathname === "/preview-access" ||
+    pathname.startsWith("/discover") ||  // public shareable mini-report pages + OG
     pathname.startsWith("/api/enter") ||
     pathname.startsWith("/api/waitlist") ||
     pathname.startsWith("/auth/callback") ||

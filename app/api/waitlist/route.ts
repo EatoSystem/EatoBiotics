@@ -3,6 +3,7 @@ import { getSupabase } from "@/lib/supabase"
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 import { waitlistConfirmationEmail } from "@/lib/email/waitlist-email"
 import { waitlistResultEmail } from "@/lib/email/waitlist-result-email"
+import { generateShareCode } from "@/lib/waitlist-result"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
 
 interface WaitlistBody {
@@ -13,6 +14,7 @@ interface WaitlistBody {
   diet?: string
   mainGoal?: string
   foodChallenge?: string
+  referredBy?: string
   result?: AssessmentResult
 }
 
@@ -65,16 +67,26 @@ export async function POST(req: NextRequest) {
     }
 
     let isNew = true
+    // The public code for the mini-report page / share / referral. Assigned when
+    // a quiz result is present; reused on repeat submissions so the link is stable.
+    let shareCode: string | undefined
+    const referredBy = clean(body.referredBy)
     const supabase = getSupabase()
     if (supabase) {
-      // Detect repeat signups so we only email someone once.
+      // Detect repeat signups (email once) and reuse any existing share code.
       const { data: existing } = await supabase
         .from("leads")
-        .select("email")
+        .select("email, share_code")
         .eq("email", email)
         .eq("assessment_type", "waitlist")
         .maybeSingle()
       isNew = !existing
+
+      if (result) {
+        shareCode = (existing?.share_code as string | undefined) ?? generateShareCode()
+        row.share_code = shareCode
+        if (isNew && referredBy && referredBy !== shareCode) row.referred_by = referredBy
+      }
 
       const { error } = await supabase
         .from("leads")
@@ -82,8 +94,24 @@ export async function POST(req: NextRequest) {
       if (error) {
         console.error("[waitlist] Supabase error:", error.message)
       }
+
+      // Credit the referrer (best-effort; pre-launch volumes make races a non-issue).
+      if (isNew && referredBy && referredBy !== shareCode) {
+        const { data: referrer } = await supabase
+          .from("leads")
+          .select("referral_count")
+          .eq("share_code", referredBy)
+          .maybeSingle()
+        if (referrer) {
+          await supabase
+            .from("leads")
+            .update({ referral_count: (referrer.referral_count ?? 0) + 1 })
+            .eq("share_code", referredBy)
+        }
+      }
     } else {
       console.log("[waitlist] New signup (Supabase not configured):", email)
+      if (result) shareCode = generateShareCode()
     }
 
     // Send the appropriate email to new signups (non-fatal).
@@ -95,7 +123,7 @@ export async function POST(req: NextRequest) {
           const { Resend } = await import("resend")
           const resend = new Resend(resendKey)
           const { subject, html } = result
-            ? waitlistResultEmail(result, clean(body.name))
+            ? waitlistResultEmail(result, clean(body.name), shareCode)
             : waitlistConfirmationEmail()
           const ownerEmail = process.env.OWNER_EMAIL
           const { error: sendError } = await resend.emails.send({
@@ -118,7 +146,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ ok: true, shareCode })
   } catch (err) {
     console.error("[waitlist] Error:", err)
     return NextResponse.json({ error: "Internal error" }, { status: 500 })
