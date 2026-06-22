@@ -35,6 +35,7 @@ function isEnterRoute(pathname: string): boolean {
     pathname === "/enter" ||
     pathname === "/preview-access" ||
     pathname.startsWith("/discover") ||  // public shareable mini-report pages + OG
+    pathname.startsWith("/c/") ||        // public per-country landing pages
     pathname.startsWith("/api/enter") ||
     pathname.startsWith("/api/waitlist") ||
     pathname.startsWith("/auth/callback") ||
@@ -114,6 +115,15 @@ export async function proxy(request: NextRequest) {
     url.pathname = "/assessment"
     url.searchParams.set("signin", "1")
     return NextResponse.redirect(url)
+  }
+
+  // Geo: remember the visitor's country (best-effort, Vercel edge header) for
+  // localisation. User selection always wins, so only set when not already present.
+  const geoCountry = request.headers.get("x-vercel-ip-country")
+  if (geoCountry && /^[A-Za-z]{2}$/.test(geoCountry) && !request.cookies.get("eb_country")) {
+    supabaseResponse.cookies.set("eb_country", geoCountry.toUpperCase(), {
+      path: "/", maxAge: 60 * 60 * 24 * 180, sameSite: "lax",
+    })
   }
 
   return supabaseResponse

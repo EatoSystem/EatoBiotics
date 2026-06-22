@@ -19,6 +19,8 @@ import { ArrowRight, ArrowLeft, Sparkles, Check } from "lucide-react"
 import { ScoreRing } from "@/components/assessment/score-ring"
 import { WaitlistStatus } from "@/components/waitlist/waitlist-status"
 import { getPercentile } from "@/lib/percentile"
+import { resolveMarket, marketByName, DEFAULT_MARKET, type FoodProfile } from "@/lib/market"
+import { foodSet } from "@/lib/foods-by-country"
 import {
   QUICK_QUESTIONS,
   MAIN_GOAL_OPTIONS,
@@ -49,8 +51,9 @@ const TOTAL_STEPS = QUICK_QUESTIONS.length + 2
 
 const CARD = "overflow-hidden rounded-[2rem] border border-border bg-card shadow-[0_24px_70px_-28px_rgba(26,46,18,0.30)]"
 
-export function DiscoverFlow() {
+export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {}) {
   const rootRef = useRef<HTMLDivElement>(null)
+  const [geoProfile, setGeoProfile] = useState<FoodProfile>(DEFAULT_MARKET.foodProfile)
 
   const [phase, setPhase] = useState<Phase>("intro")
   const [step, setStep] = useState(0)
@@ -77,6 +80,17 @@ export function DiscoverFlow() {
     const ref = new URLSearchParams(window.location.search).get("ref")
     if (ref) setReferredBy(ref.trim().slice(0, 16))
   }, [])
+
+  // Localise by country: landing-page prop wins, else the eb_country geo cookie.
+  useEffect(() => {
+    let market = defaultCountry ? marketByName(defaultCountry) : null
+    if (!market) {
+      const code = document.cookie.split("; ").find((c) => c.startsWith("eb_country="))?.split("=")[1]
+      market = resolveMarket(code)
+    }
+    setGeoProfile(market.foodProfile)
+    if (market.name && COUNTRIES.includes(market.name)) setCountry(market.name)
+  }, [defaultCountry])
 
   const result = useMemo(
     () => (phase === "reveal" || phase === "form" || phase === "done" ? computeQuickResult(answers) : null),
@@ -135,6 +149,10 @@ export function DiscoverFlow() {
 
   const inputCls = "w-full rounded-2xl border bg-card px-5 py-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:ring-2"
   const inputStyle = { borderColor: "var(--border)", ["--tw-ring-color" as string]: "var(--icon-green)" }
+
+  // Country-localised fermented-food examples (updates if the user picks a country).
+  const activeProfile: FoodProfile = marketByName(country)?.foodProfile ?? geoProfile
+  const fermentedExamples = foodSet(activeProfile).fermented
 
   let content: ReactNode = null
 
@@ -415,7 +433,9 @@ export function DiscoverFlow() {
                   {engine.label} · {engine.verb}
                 </span>
                 <h2 className="mt-4 font-serif text-2xl font-bold leading-snug text-foreground sm:text-[1.7rem]">{q.text}</h2>
-                <p className="mt-2 text-sm text-muted-foreground">{q.subtitle}</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {q.pillar === "probiotics" ? `${fermentedExamples} — they seed new life into your microbiome.` : q.subtitle}
+                </p>
                 <div className="mt-5 space-y-3">
                   {q.options.map((o) => {
                     const active = answers[q.id] === o.value

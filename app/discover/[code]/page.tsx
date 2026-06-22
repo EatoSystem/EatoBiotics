@@ -7,6 +7,8 @@ import { WaitlistStatus } from "@/components/waitlist/waitlist-status"
 import { resultFromLead } from "@/lib/waitlist-result"
 import { ENGINES, type QuickPillar } from "@/lib/quick-assessment"
 import { getPercentile } from "@/lib/percentile"
+import { marketByName, DEFAULT_MARKET } from "@/lib/market"
+import { foodSet } from "@/lib/foods-by-country"
 
 export const dynamic = "force-dynamic"
 
@@ -18,7 +20,7 @@ async function loadLead(code: string) {
   if (!supabase) return null
   const { data } = await supabase
     .from("leads")
-    .select("name, overall_score, sub_scores, profile_type, share_code")
+    .select("name, overall_score, sub_scores, profile_type, share_code, country")
     .eq("share_code", code)
     .maybeSingle()
   return data
@@ -66,6 +68,8 @@ export default async function DiscoverResultPage({ params }: { params: Promise<{
   const shareUrl = `${SITE_URL}/discover/${code}`
   const weakest = insights[0]
   const strongest = insights[insights.length - 1]
+  const market = marketByName((lead?.country as string | undefined) ?? null) ?? DEFAULT_MARKET
+  const foods = foodSet(market.foodProfile)
 
   return (
     <main className="mx-auto max-w-2xl px-5 py-12 sm:py-16">
@@ -132,6 +136,29 @@ export default async function DiscoverResultPage({ params }: { params: Promise<{
           <p className="text-xs font-bold uppercase tracking-widest text-[var(--icon-orange)]">Biggest opportunity</p>
           <p className="mt-1 font-serif text-lg font-bold text-foreground">{weakest?.label}</p>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">The fastest place to create momentum from here.</p>
+        </div>
+      </section>
+
+      {/* Local foods for your gut */}
+      <section className="mt-8 overflow-hidden rounded-3xl border border-border bg-card shadow-[0_2px_12px_rgba(26,46,18,0.05)]">
+        <div className="h-1.5 w-full brand-gradient" />
+        <div className="p-6">
+          <h2 className="font-serif text-xl font-bold text-foreground">
+            Foods to feed your gut{market.code ? ` ${market.flag}` : ""}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {market.code && market.name !== "your country" ? `Easy wins that fit how people eat in ${market.name}.` : "Easy, everyday wins for your three engines."}
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl p-4" style={{ background: "color-mix(in srgb, var(--icon-teal) 7%, transparent)" }}>
+              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-teal)" }}>Live foods (Probiotics)</p>
+              <p className="mt-1 text-sm text-foreground/80">{foods.fermented}</p>
+            </div>
+            <div className="rounded-2xl p-4" style={{ background: "color-mix(in srgb, var(--icon-green) 7%, transparent)" }}>
+              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Fibre & plants (Prebiotics)</p>
+              <p className="mt-1 text-sm text-foreground/80">{foods.prebiotic}</p>
+            </div>
+          </div>
         </div>
       </section>
 
