@@ -17,7 +17,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, ArrowLeft, Sparkles, Check } from "lucide-react"
 import { ScoreRing } from "@/components/assessment/score-ring"
-import { ShareResult } from "@/components/waitlist/share-result"
+import { WaitlistStatus } from "@/components/waitlist/waitlist-status"
 import { getPercentile } from "@/lib/percentile"
 import {
   QUICK_QUESTIONS,
@@ -189,7 +189,7 @@ export function DiscoverFlow() {
   else if (phase === "done") {
     const reportUrl = shareCode ? `${SITE_URL}/discover/${shareCode}` : null
     content = (
-      <div key="done" className="mx-auto max-w-md">
+      <div key="done" className="mx-auto max-w-md space-y-4">
         <div className={`animate-quiz-step ${CARD}`}>
           <div className="h-2 w-full brand-gradient" />
           <div className="p-8 text-center">
@@ -198,8 +198,8 @@ export function DiscoverFlow() {
             </div>
             <p className="font-serif text-2xl font-bold text-foreground">You&rsquo;re on the list</p>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              We&rsquo;ve emailed your Food System Type and a snapshot of your three engines. When
-              EatoBiotics opens you&rsquo;ll be first in line for early access to your full report.
+              We&rsquo;ve emailed your Food System Type and a snapshot of your three engines. Now climb
+              the queue — invite friends to move up the line and unlock founding-member pricing.
             </p>
             {reportUrl && (
               <Link href={`/discover/${shareCode}`} className="brand-gradient mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition-transform hover:-translate-y-0.5">
@@ -207,13 +207,10 @@ export function DiscoverFlow() {
               </Link>
             )}
           </div>
-          {reportUrl && result && (
-            <div className="border-t border-border p-6">
-              <p className="mb-3 text-center text-sm font-semibold text-foreground">Know someone who&rsquo;d want to meet their food system?</p>
-              <ShareResult shareUrl={reportUrl} profileType={result.profile.type} overall={result.overall} compact />
-            </div>
-          )}
         </div>
+        {reportUrl && result && shareCode && (
+          <WaitlistStatus shareCode={shareCode} shareUrl={reportUrl} profileType={result.profile.type} overall={result.overall} />
+        )}
       </div>
     )
   }
