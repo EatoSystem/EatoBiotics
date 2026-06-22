@@ -4,7 +4,7 @@
    can be layered on later without changing these primitives.
 ──────────────────────────────────────────────────────────────────────────── */
 
-export const LOCALES = ["en", "es", "fr", "ar"] as const
+export const LOCALES = ["en", "es", "fr", "de", "ar"] as const
 export type Locale = (typeof LOCALES)[number]
 
 export const DEFAULT_LOCALE: Locale = "en"
@@ -18,6 +18,7 @@ export const LOCALE_LABELS: Record<Locale, string> = {
   en: "English",
   es: "Español",
   fr: "Français",
+  de: "Deutsch",
   ar: "العربية",
 }
 
