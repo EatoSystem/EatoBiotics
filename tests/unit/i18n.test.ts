@@ -32,10 +32,11 @@ describe("resolveLocale", () => {
   it("falls back to the best Accept-Language match", () => {
     expect(resolveLocale(null, "es-ES,es;q=0.9,en;q=0.8")).toBe("es")
     expect(resolveLocale(undefined, "ar")).toBe("ar")
+    expect(resolveLocale(null, "de-DE,de;q=0.9")).toBe("de")
   })
 
   it("falls back to the default when nothing matches", () => {
-    expect(resolveLocale(null, "de-DE,de;q=0.9")).toBe(DEFAULT_LOCALE)
+    expect(resolveLocale(null, "it-IT,it;q=0.9")).toBe(DEFAULT_LOCALE)
     expect(resolveLocale("xx", null)).toBe(DEFAULT_LOCALE)
   })
 })
@@ -51,14 +52,31 @@ describe("interpolate", () => {
 })
 
 describe("getDictionary", () => {
+  it("includes German among the supported locales", () => {
+    expect(LOCALES).toContain("de")
+    expect(getDictionary("de").waitlist.intro.cta.length).toBeGreaterThan(0)
+  })
+
   it("returns a dictionary for every supported locale with identical shape", () => {
-    const enKeys = JSON.stringify(Object.keys(getDictionary("en").family).sort())
+    const enFamilyKeys = JSON.stringify(Object.keys(getDictionary("en").family).sort())
+    const enWaitlistKeys = JSON.stringify(Object.keys(getDictionary("en").waitlist).sort())
+    const enQuestionKeys = JSON.stringify(Object.keys(getDictionary("en").waitlist.questions).sort())
     for (const locale of LOCALES) {
       const d = getDictionary(locale)
       expect(d.common.appName).toBe("EatoBiotics")
       expect(d.pillars.prebiotics.length).toBeGreaterThan(0)
-      // every locale defines the same family keys (no missing translations)
-      expect(JSON.stringify(Object.keys(d.family).sort())).toBe(enKeys)
+      // every locale defines the same keys (no missing translations)
+      expect(JSON.stringify(Object.keys(d.family).sort())).toBe(enFamilyKeys)
+      expect(JSON.stringify(Object.keys(d.waitlist).sort())).toBe(enWaitlistKeys)
+      expect(JSON.stringify(Object.keys(d.waitlist.questions).sort())).toBe(enQuestionKeys)
+      // each scored question keeps its four answer options
+      for (const q of Object.values(d.waitlist.questions)) {
+        expect(q.options).toHaveLength(4)
+      }
+      // each pillar keeps its four answer reactions
+      expect(d.waitlist.reactions.prebiotics).toHaveLength(4)
+      expect(d.waitlist.reactions.probiotics).toHaveLength(4)
+      expect(d.waitlist.reactions.postbiotics).toHaveLength(4)
     }
   })
 })

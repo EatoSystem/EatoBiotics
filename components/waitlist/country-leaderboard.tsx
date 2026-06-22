@@ -9,11 +9,14 @@
 
 import { useEffect, useState } from "react"
 import { Globe } from "lucide-react"
+import { useTranslations } from "@/components/i18n/locale-provider"
+import { interpolate } from "@/lib/i18n/config"
 
 interface Entry { name: string; count: number; flag: string; rank: number }
 interface Board { total: number; entries: number; top: Entry[]; you: { name: string; rank: number; count: number } | null }
 
 export function CountryLeaderboard({ shareCode }: { shareCode?: string }) {
+  const t = useTranslations().waitlist.leaderboard
   const [board, setBoard] = useState<Board | null>(null)
 
   useEffect(() => {
@@ -35,15 +38,15 @@ export function CountryLeaderboard({ shareCode }: { shareCode?: string }) {
       <div className="h-1.5 w-full brand-gradient" />
       <div className="p-6">
         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[var(--icon-green)]">
-          <Globe size={14} /> The global movement
+          <Globe size={14} /> {t.eyebrow}
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
-          We open first where demand is highest — bring your country up the board.
+          {t.blurb}
         </p>
 
         {board.you && (
           <p className="mt-3 rounded-xl px-3 py-2 text-sm font-semibold text-foreground" style={{ background: "color-mix(in srgb, var(--icon-green) 8%, transparent)" }}>
-            Your country, {board.you.name}, is #{board.you.rank} — invite friends to climb.
+            {interpolate(t.you, { name: board.you.name, rank: board.you.rank })}
           </p>
         )}
 

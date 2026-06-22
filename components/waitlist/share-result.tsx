@@ -11,6 +11,8 @@
 import { useState } from "react"
 import { Share2, Copy, Check, MessageCircle } from "lucide-react"
 import posthog from "posthog-js"
+import { useTranslations } from "@/components/i18n/locale-provider"
+import { interpolate } from "@/lib/i18n/config"
 
 interface ShareResultProps {
   shareUrl: string      // absolute URL to /discover/[code]
@@ -21,9 +23,10 @@ interface ShareResultProps {
 }
 
 export function ShareResult({ shareUrl, profileType, overall, compact }: ShareResultProps) {
+  const t = useTranslations().waitlist.share
   const [copied, setCopied] = useState(false)
 
-  const text = `I'm a ${profileType} (${overall}/100) on EatoBiotics — what's your Food System Type? Discover yours in 60 seconds:`
+  const text = interpolate(t.text, { profile: profileType, score: overall })
   const canNativeShare = typeof navigator !== "undefined" && !!navigator.share
 
   function track(method: string) {
@@ -42,7 +45,7 @@ export function ShareResult({ shareUrl, profileType, overall, compact }: ShareRe
   async function handleNative() {
     if (!navigator.share) return
     try {
-      await navigator.share({ title: "My Food System Type — EatoBiotics", text, url: shareUrl })
+      await navigator.share({ title: t.nativeTitle, text, url: shareUrl })
       track("native")
     } catch { /* user dismissed — ignore */ }
   }
@@ -64,23 +67,23 @@ export function ShareResult({ shareUrl, profileType, overall, compact }: ShareRe
       {!compact && (
         <div className="mb-3 flex items-center gap-2">
           <Share2 size={15} style={{ color: "var(--icon-green)" }} />
-          <p className="text-sm font-bold text-foreground">Share your food system</p>
+          <p className="text-sm font-bold text-foreground">{t.heading}</p>
         </div>
       )}
       <div className="flex flex-wrap justify-center gap-2.5">
         {canNativeShare && (
           <button onClick={handleNative} className={btn}>
-            <Share2 size={14} /> Share
+            <Share2 size={14} /> {t.share}
           </button>
         )}
         <button onClick={openWhatsApp} className={btn}>
-          <MessageCircle size={14} style={{ color: "var(--icon-green)" }} /> WhatsApp
+          <MessageCircle size={14} style={{ color: "var(--icon-green)" }} /> {t.whatsapp}
         </button>
-        <button onClick={openX} className={btn} aria-label="Share on X">
-          <span className="text-sm font-bold">𝕏</span> Post
+        <button onClick={openX} className={btn} aria-label={t.post}>
+          <span className="text-sm font-bold">𝕏</span> {t.post}
         </button>
         <button onClick={handleCopy} className={btn}>
-          {copied ? <><Check size={14} className="text-[var(--icon-green)]" /> Copied</> : <><Copy size={14} /> Copy link</>}
+          {copied ? <><Check size={14} className="text-[var(--icon-green)]" /> {t.copied}</> : <><Copy size={14} /> {t.copyLink}</>}
         </button>
       </div>
     </div>

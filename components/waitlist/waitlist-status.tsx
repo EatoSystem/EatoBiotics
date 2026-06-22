@@ -11,6 +11,8 @@ import { useEffect, useState } from "react"
 import { Trophy, Users } from "lucide-react"
 import { ShareResult } from "@/components/waitlist/share-result"
 import { REFERRAL_JUMP } from "@/lib/waitlist-referral"
+import { useTranslations } from "@/components/i18n/locale-provider"
+import { interpolate } from "@/lib/i18n/config"
 
 interface Status {
   position: number
@@ -29,6 +31,7 @@ interface WaitlistStatusProps {
 }
 
 export function WaitlistStatus({ shareCode, shareUrl, profileType, overall }: WaitlistStatusProps) {
+  const t = useTranslations().waitlist.status
   const [status, setStatus] = useState<Status | null>(null)
 
   useEffect(() => {
@@ -49,14 +52,14 @@ export function WaitlistStatus({ shareCode, shareUrl, profileType, overall }: Wa
       <div className="p-6 text-center">
         {/* Position */}
         <div className="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest text-[var(--icon-green)]">
-          <Users size={14} /> Your place in line
+          <Users size={14} /> {t.eyebrow}
         </div>
         <p className="mt-2 font-serif text-4xl font-bold text-foreground">
           {status ? <>#{status.position.toLocaleString()}</> : <span className="text-muted-foreground">…</span>}
         </p>
         {status && (
           <p className="mt-1 text-sm text-muted-foreground">
-            of {status.total.toLocaleString()} — each friend who joins moves you up {REFERRAL_JUMP} places.
+            {interpolate(t.ofTotal, { total: status.total.toLocaleString(), jump: REFERRAL_JUMP })}
           </p>
         )}
 
@@ -67,13 +70,16 @@ export function WaitlistStatus({ shareCode, shareUrl, profileType, overall }: Wa
             <div className="flex items-start gap-3">
               <Trophy size={18} className="mt-0.5 shrink-0 text-[var(--icon-yellow)]" />
               <div>
-                <p className="text-sm font-bold text-foreground">Founding-member reward unlocked 🎉</p>
+                <p className="text-sm font-bold text-foreground">{t.unlockedTitle}</p>
                 {status.rewardCode ? (
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Your code: <span className="font-mono font-bold text-foreground">{status.rewardCode}</span> — saved for launch.
+                    {(() => {
+                      const [before, after] = t.yourCode.split("{code}")
+                      return <>{before}<span className="font-mono font-bold text-foreground">{status.rewardCode}</span>{after}</>
+                    })()}
                   </p>
                 ) : (
-                  <p className="mt-1 text-sm text-muted-foreground">We&rsquo;ll email your founding-member code before launch.</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{t.codeEmail}</p>
                 )}
               </div>
             </div>
@@ -81,7 +87,7 @@ export function WaitlistStatus({ shareCode, shareUrl, profileType, overall }: Wa
             <>
               <div className="flex items-center justify-between text-sm">
                 <span className="font-semibold text-foreground">
-                  {status ? `Invite ${remaining} more to unlock founding-member pricing` : "Invite friends to unlock founding-member pricing"}
+                  {status ? interpolate(t.inviteMore, { n: remaining }) : t.inviteGeneric}
                 </span>
                 {status && <span className="tabular-nums text-muted-foreground">{status.referralCount}/{status.threshold}</span>}
               </div>

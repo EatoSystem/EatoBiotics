@@ -1,7 +1,8 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 import { DEV_COOKIE, OLD_DEV_COOKIES, devPasswordToken, getDevPassword, isPasswordGateEnabled } from "@/lib/dev-password-gate"
-import { LANDING_SLUGS } from "@/lib/market"
+import { LANDING_SLUGS, resolveMarket } from "@/lib/market"
+import { isLocale, LOCALE_COOKIE } from "@/lib/i18n/config"
 
 // ── Site-wide password gate ───────────────────────────────────────────────
 async function hasSiteAccess(request: NextRequest, password: string): Promise<boolean> {
@@ -134,6 +135,17 @@ export async function proxy(request: NextRequest) {
     supabaseResponse.cookies.set("eb_country", geoCountry.toUpperCase(), {
       path: "/", maxAge: 60 * 60 * 24 * 180, sameSite: "lax",
     })
+    // Seed the UI language from the visitor's market (country → language) when no
+    // explicit choice exists yet. A user's switcher selection always overrides
+    // this, since the switcher sets eb_locale and we only seed when it's absent.
+    if (!request.cookies.get(LOCALE_COOKIE)) {
+      const marketLocale = resolveMarket(geoCountry).locale
+      if (isLocale(marketLocale)) {
+        supabaseResponse.cookies.set(LOCALE_COOKIE, marketLocale, {
+          path: "/", maxAge: 60 * 60 * 24 * 180, sameSite: "lax",
+        })
+      }
+    }
   }
 
   return supabaseResponse
