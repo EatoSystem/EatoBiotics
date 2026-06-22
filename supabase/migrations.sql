@@ -820,3 +820,17 @@ CREATE INDEX IF NOT EXISTS idx_monthly_gut_plans_user_id ON monthly_gut_plans (u
 CREATE INDEX IF NOT EXISTS idx_referrals_referred_id ON referrals (referred_id);
 CREATE INDEX IF NOT EXISTS idx_weekly_checkins_user_id ON weekly_checkins (user_id);
 CREATE INDEX IF NOT EXISTS idx_email_sends_user_id ON email_sends (user_id);
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 29: leads share/referral columns (waitlist growth engine)
+-- ────────────────────────────────────────────────────────────
+-- Powers the shareable mini-report page (/discover/[code]), the OG share card,
+-- and skip-the-line referrals. share_code is the public code on the result page;
+-- referred_by is the referrer's share_code; referral_count drives waitlist
+-- position + invite-to-unlock. ADD-only and idempotent.
+
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS share_code     text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS referred_by    text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS referral_count integer NOT NULL DEFAULT 0;
+CREATE UNIQUE INDEX IF NOT EXISTS leads_share_code_key ON leads (share_code) WHERE share_code IS NOT NULL;

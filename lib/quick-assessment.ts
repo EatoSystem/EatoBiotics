@@ -29,6 +29,7 @@ export interface Engine {
   color: string
   gradient: string
   blurb: string
+  fact: string    // a striking one-liner used on the "meet this engine" interstitial
 }
 
 export const ENGINES: Record<QuickPillar, Engine> = {
@@ -39,6 +40,7 @@ export const ENGINES: Record<QuickPillar, Engine> = {
     color: "var(--icon-green)",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
     blurb: "The fuel your whole system runs on.",
+    fact: "The fibre in plants is the primary fuel for your gut bacteria — variety is the single biggest driver of a diverse, resilient microbiome.",
   },
   probiotics: {
     index: 2,
@@ -47,6 +49,7 @@ export const ENGINES: Record<QuickPillar, Engine> = {
     color: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
     blurb: "The living reinforcements you send in.",
+    fact: "Fermented foods deliver living bacteria straight to your gut — the most direct, practical way to reseed and diversify it.",
   },
   postbiotics: {
     index: 3,
@@ -55,7 +58,30 @@ export const ENGINES: Record<QuickPillar, Engine> = {
     color: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     blurb: "What your gut gives back to you.",
+    fact: "~90% of your body's serotonin is made in your gut — postbiotics are how the food you eat becomes how you feel.",
   },
+}
+
+/** A short, encouraging reaction shown after each answer (indexed by the 0–3 value). */
+export const ANSWER_REACTIONS: Record<QuickPillar, [string, string, string, string]> = {
+  prebiotics: [
+    "Good to know — variety is the fastest lever you have here.",
+    "A real base to build on.",
+    "Nice — your bacteria are being well fed.",
+    "Brilliant — that's a thriving inner garden.",
+  ],
+  probiotics: [
+    "Easy win ahead — one daily fermented food shifts this fast.",
+    "A start — a little more reseeding goes a long way.",
+    "Great — you're regularly sending in reinforcements.",
+    "Outstanding — living foods are a daily habit.",
+  ],
+  postbiotics: [
+    "Your gut is asking for more rhythm and colour.",
+    "Some signal there — small, steady tweaks compound.",
+    "Good — your system is producing well.",
+    "Excellent — your gut is clearly paying you back.",
+  ],
 }
 
 /* ── Scored questions ──────────────────────────────────────────────────── */
