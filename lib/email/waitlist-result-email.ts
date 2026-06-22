@@ -1,7 +1,7 @@
 /**
  * Instant "result teaser" email sent when someone completes the quick Food
  * System Type quiz and joins the waitlist. Reveals their profile type + the 3
- * biotic scores and promises the full personalised report at launch. Mirrors
+ * biotic scores and offers early access at launch. Mirrors
  * the gradient-header style of waitlist-email.ts.
  */
 import type { AssessmentResult } from "@/lib/assessment-scoring"
@@ -64,9 +64,10 @@ export function waitlistResultEmail(
               </table>
 
               <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.65;">
-                You&rsquo;re on the waitlist. When EatoBiotics opens, you&rsquo;ll be first to receive your
-                <strong>full personalised report</strong> — a deeper read of your food system with a
-                plan built around your type, plus AI meal scoring, recipes, and membership.
+                You&rsquo;re on the waitlist. When EatoBiotics opens, you&rsquo;ll be
+                <strong>first in line for early access</strong> — to unlock your full personalised
+                report (a deeper read of your food system with a plan built around your type), plus AI
+                meal scoring, recipes, and membership.
               </p>
 
               <p style="margin:0 0 6px;color:#1A2E12;font-size:15px;font-weight:600;font-style:italic;line-height:1.6;">

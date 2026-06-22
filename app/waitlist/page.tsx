@@ -120,7 +120,7 @@ export default function WaitlistPage() {
           <ScrollReveal delay={300}>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
               Take the 60-second discovery to meet the living food system inside you, then join the
-              waitlist to get your full personalised report the moment EatoBiotics launches in 2026.
+              waitlist for early access when EatoBiotics launches in 2026.
             </p>
           </ScrollReveal>
 

@@ -180,8 +180,8 @@ export function DiscoverFlow() {
             <p className="font-serif text-2xl font-bold text-foreground">You&rsquo;re on the list</p>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               We&rsquo;ve emailed your Food System Type and a snapshot of your three engines. When
-              EatoBiotics opens you&rsquo;ll be first to get your full personalised report. Thank you
-              for joining the movement.
+              EatoBiotics opens you&rsquo;ll be first in line for early access to your full report.
+              Thank you for joining the movement.
             </p>
           </div>
         </div>
@@ -255,11 +255,11 @@ export function DiscoverFlow() {
             {phase === "reveal" ? (
               <>
                 <p className="text-center font-serif text-xl font-bold text-foreground">
-                  Get your full report at launch
+                  Be first through the door
                 </p>
                 <p className="mt-1.5 text-center text-sm text-muted-foreground">
-                  Join the waitlist and we&rsquo;ll send your complete personalised report — built around
-                  your food system — the moment EatoBiotics opens.
+                  Join the waitlist for early access. You&rsquo;ve got your snapshot — be first in line to
+                  unlock your full EatoBiotics report the moment we launch.
                 </p>
                 <button
                   onClick={() => setPhase("form")}
@@ -295,7 +295,7 @@ export function DiscoverFlow() {
                 <button type="submit"
                   disabled={status === "loading" || !email || !name || !ageBracket || !country || !diet}
                   className="brand-gradient inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-4 text-base font-semibold text-white shadow-[0_14px_30px_-10px_rgba(45,170,110,0.6)] transition-transform hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0">
-                  {status === "loading" ? "Joining…" : <>Send my report at launch <ArrowRight size={16} /></>}
+                  {status === "loading" ? "Joining…" : <>Join the waitlist <ArrowRight size={16} /></>}
                 </button>
                 {status === "error" && <p className="text-sm font-medium text-red-500">{message}</p>}
                 <p className="text-center text-xs text-muted-foreground">Free to join · Early access · No spam.</p>
@@ -348,7 +348,6 @@ export function DiscoverFlow() {
         <div
           key={`q-${step}`}
           className={`animate-quiz-step relative ${CARD}`}
-          style={{ background: `color-mix(in srgb, ${accent} 5%, var(--card))` }}
         >
           <div className="h-2 w-full" style={{ background: gradient }} />
           <div
@@ -372,19 +371,20 @@ export function DiscoverFlow() {
                       <button
                         key={o.label}
                         onClick={() => pickAnswer(q.id, o.value)}
-                        className="flex w-full items-center justify-between gap-4 rounded-2xl border px-5 py-4 text-left transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.99]"
+                        className="relative flex w-full items-center justify-between gap-4 overflow-hidden rounded-2xl border py-4 pl-6 pr-5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.99]"
                         style={
                           active
                             ? { background: gradient, borderColor: "transparent", boxShadow: `0 14px 30px -12px color-mix(in srgb, ${accent} 70%, transparent)` }
-                            : { background: `color-mix(in srgb, ${accent} 6%, var(--card))`, borderColor: `color-mix(in srgb, ${accent} 22%, transparent)` }
+                            : { background: "var(--card)", borderColor: `color-mix(in srgb, ${accent} 32%, transparent)` }
                         }
                       >
+                        {!active && <span aria-hidden className="absolute inset-y-0 left-0 w-1.5" style={{ background: gradient }} />}
                         <span>
                           <span className="block text-sm font-bold" style={{ color: active ? "white" : "var(--foreground)" }}>{o.label}</span>
                           <span className="mt-0.5 block text-xs" style={{ color: active ? "rgba(255,255,255,0.85)" : "var(--muted-foreground)" }}>{o.description}</span>
                         </span>
                         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2"
-                          style={{ borderColor: active ? "white" : `color-mix(in srgb, ${accent} 35%, transparent)`, background: active ? "rgba(255,255,255,0.25)" : "transparent" }}>
+                          style={{ borderColor: active ? "white" : `color-mix(in srgb, ${accent} 45%, transparent)`, background: active ? "rgba(255,255,255,0.25)" : "transparent" }}>
                           {active && <Check size={13} className="text-white" />}
                         </span>
                       </button>
@@ -415,7 +415,7 @@ export function DiscoverFlow() {
                         style={
                           active
                             ? { background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", borderColor: "transparent", color: "white", boxShadow: "0 12px 26px -12px rgba(45,170,110,0.7)" }
-                            : { background: "color-mix(in srgb, var(--icon-green) 6%, var(--card))", borderColor: "color-mix(in srgb, var(--icon-green) 22%, transparent)", color: "var(--foreground)" }
+                            : { background: "var(--card)", borderColor: "color-mix(in srgb, var(--icon-green) 32%, transparent)", color: "var(--foreground)" }
                         }
                       >
                         {o.label}
