@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react"
 import { getSupabase } from "@/lib/supabase"
 import { ScoreRing } from "@/components/assessment/score-ring"
 import { WaitlistStatus } from "@/components/waitlist/waitlist-status"
+import { CountryLeaderboard } from "@/components/waitlist/country-leaderboard"
 import { resultFromLead } from "@/lib/waitlist-result"
 import { ENGINES, type QuickPillar } from "@/lib/quick-assessment"
 import { getPercentile } from "@/lib/percentile"
@@ -160,6 +161,11 @@ export default async function DiscoverResultPage({ params }: { params: Promise<{
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Country leaderboard */}
+      <section className="mt-8">
+        <CountryLeaderboard shareCode={code} />
       </section>
 
       {/* Skip-the-line + share */}

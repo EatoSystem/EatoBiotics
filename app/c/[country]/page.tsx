@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { DiscoverFlow } from "@/components/waitlist/discover-flow"
+import { CountryLeaderboard } from "@/components/waitlist/country-leaderboard"
 import { PowersEverything } from "@/components/home/powers-everything"
 import { HowItWorks } from "@/components/home/how-it-works"
 import { TheFramework } from "@/components/home/the-framework"
@@ -27,6 +28,7 @@ export async function generateMetadata({ params }: { params: Promise<{ country: 
   return {
     title,
     description: `Discover your Food System Type and join the EatoBiotics waitlist in ${market.name}. A 60-second discovery of the living food system inside you.`,
+    alternates: { canonical: `/${country}` },
     openGraph: { title, description: `Discover your Food System Type — ${market.name}.` },
   }
 }
@@ -84,6 +86,11 @@ export default async function CountryLandingPage({ params }: { params: Promise<{
           <ScrollReveal delay={220}>
             <div className="mt-8">
               <DiscoverFlow defaultCountry={market.name} />
+            </div>
+          </ScrollReveal>
+          <ScrollReveal delay={280}>
+            <div className="mx-auto mt-8 max-w-xl">
+              <CountryLeaderboard />
             </div>
           </ScrollReveal>
         </div>
