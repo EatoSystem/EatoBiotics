@@ -99,6 +99,33 @@ export function Nav() {
     setMobileGroup(null)
   }, [pathname])
 
+  // Waitlist page: render a minimal brand-only header (no main-site nav) so the
+  // gated pre-launch page doesn't expose links into the still-gated site. Every
+  // other page keeps the full header below. Must come after the hooks above.
+  if (pathname === "/enter") {
+    return (
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-3">
+          <Link href="/enter" className="flex items-center gap-2.5">
+            <Image
+              src="/eatobiotics-icon.webp"
+              alt="EatoBiotics"
+              width={36}
+              height={36}
+              className="h-9 w-9"
+            />
+            <span className="font-serif text-xl font-semibold tracking-tight text-foreground">
+              EatoBiotics
+            </span>
+          </Link>
+          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Coming soon
+          </span>
+        </div>
+      </nav>
+    )
+  }
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm">
       <div className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-3">
