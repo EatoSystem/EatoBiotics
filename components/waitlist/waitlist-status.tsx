@@ -7,7 +7,8 @@
  * /discover/[code] mini-report page.
  */
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import posthog from "posthog-js"
 import { Trophy, Users } from "lucide-react"
 import { ShareResult } from "@/components/waitlist/share-result"
 import { REFERRAL_JUMP } from "@/lib/waitlist-referral"
@@ -33,12 +34,20 @@ interface WaitlistStatusProps {
 export function WaitlistStatus({ shareCode, shareUrl, profileType, overall }: WaitlistStatusProps) {
   const t = useTranslations().waitlist.status
   const [status, setStatus] = useState<Status | null>(null)
+  const unlockFired = useRef(false)
 
   useEffect(() => {
     let alive = true
     fetch(`/api/waitlist/status?code=${encodeURIComponent(shareCode)}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (alive && d?.ok) setStatus(d as Status) })
+      .then((d) => {
+        if (!alive || !d?.ok) return
+        setStatus(d as Status)
+        if (d.unlocked && !unlockFired.current) {
+          unlockFired.current = true
+          try { posthog.capture("waitlist_unlock_reached", { referral_count: d.referralCount }) } catch { /* analytics optional */ }
+        }
+      })
       .catch(() => {})
     return () => { alive = false }
   }, [shareCode])

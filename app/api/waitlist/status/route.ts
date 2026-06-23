@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSupabase } from "@/lib/supabase"
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 import { waitlistPosition, UNLOCK_THRESHOLD } from "@/lib/waitlist-referral"
+import { logServerEvent } from "@/lib/statsig-server"
 
 /**
  * Public waitlist status for the "skip the line" + invite-to-unlock mechanics.
@@ -76,6 +77,7 @@ export async function GET(req: NextRequest) {
         .eq("share_code", code)
         .eq("assessment_type", "waitlist")
       rewardCode = reward
+      await logServerEvent("waitlist_reward_minted", code, { reward_code: reward })
     } catch (err) {
       console.error("[waitlist-status] reward mint failed:", err)
     }

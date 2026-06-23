@@ -4,6 +4,7 @@ import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 import { waitlistConfirmationEmail } from "@/lib/email/waitlist-email"
 import { waitlistResultEmail } from "@/lib/email/waitlist-result-email"
 import { generateShareCode } from "@/lib/waitlist-result"
+import { logServerEvent } from "@/lib/statsig-server"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
 
 interface WaitlistBody {
@@ -107,8 +108,19 @@ export async function POST(req: NextRequest) {
             .from("leads")
             .update({ referral_count: (referrer.referral_count ?? 0) + 1 })
             .eq("share_code", referredBy)
+          await logServerEvent("waitlist_referral_credited", referredBy, { referrer_code: referredBy })
         }
       }
+
+      // Funnel analytics (server-truth — survives ad-blockers / consent). Anonymous
+      // visitors, so we key on email. Non-fatal; logServerEvent swallows errors.
+      await logServerEvent("waitlist_signup", email, {
+        is_new: String(isNew),
+        has_result: String(!!result),
+        country: clean(body.country) ?? "",
+        profile_type: (result?.profile?.type as string | undefined) ?? "",
+        referred: String(!!referredBy),
+      })
     } else {
       console.log("[waitlist] New signup (Supabase not configured):", email)
       if (result) shareCode = generateShareCode()

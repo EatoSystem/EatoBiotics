@@ -15,6 +15,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import posthog from "posthog-js"
 import { ArrowRight, ArrowLeft, Sparkles, Check } from "lucide-react"
 import { ScoreRing } from "@/components/assessment/score-ring"
 import { WaitlistStatus } from "@/components/waitlist/waitlist-status"
@@ -37,6 +38,11 @@ import {
 } from "@/lib/quick-assessment"
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://eatobiotics.com"
+
+/** Fire a PostHog funnel event (consent-gated; safely no-ops pre-consent). */
+function track(event: string, props?: Record<string, unknown>) {
+  try { posthog.capture(event, props) } catch { /* analytics optional */ }
+}
 
 const AGE_BRACKETS = ["Under 20", "20–29", "30–39", "40–49", "50–59", "60+"]
 
@@ -84,7 +90,11 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
   // Capture a referral code from the URL (?ref=CODE) for skip-the-line credit.
   useEffect(() => {
     const ref = new URLSearchParams(window.location.search).get("ref")
-    if (ref) setReferredBy(ref.trim().slice(0, 16))
+    if (ref) {
+      const code = ref.trim().slice(0, 16)
+      setReferredBy(code)
+      track("waitlist_referral_opened", { ref_code: code })
+    }
   }, [])
 
   // Localise by country: landing-page prop wins, else the eb_country geo cookie.
@@ -113,6 +123,15 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
   useEffect(() => {
     if (phase === "reveal" || phase === "form" || phase === "done") setRevealMounted(true)
   }, [phase])
+
+  // Funnel: the quiz is "completed" the moment the result is revealed (fire once).
+  const quizCompletedFired = useRef(false)
+  useEffect(() => {
+    if (phase === "reveal" && result && !quizCompletedFired.current) {
+      quizCompletedFired.current = true
+      track("waitlist_quiz_completed", { profile_type: result.profile.type, score: result.overall })
+    }
+  }, [phase, result])
 
   function pickAnswer(id: string, value: number, pillar: QuickPillar) {
     if (reaction) return
@@ -146,10 +165,16 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
         body: JSON.stringify({ email, name, ageBracket, country, diet, mainGoal, foodChallenge, referredBy, result }),
       })
       const data = (await res.json()) as { ok?: boolean; error?: string; shareCode?: string }
-      if (res.ok && data.ok) { setShareCode(data.shareCode ?? null); setPhase("done") }
-      else { setStatus("error"); setMessage(data.error ?? tw.form.genericError) }
+      if (res.ok && data.ok) {
+        setShareCode(data.shareCode ?? null); setPhase("done")
+        track("waitlist_join_submitted", { profile_type: result.profile.type, score: result.overall, country: country || undefined, referred: !!referredBy })
+      } else {
+        setStatus("error"); setMessage(data.error ?? tw.form.genericError)
+        track("waitlist_join_failed", { reason: data.error ?? "unknown" })
+      }
     } catch {
       setStatus("error"); setMessage(tw.form.genericError)
+      track("waitlist_join_failed", { reason: "network" })
     }
   }
 
@@ -197,7 +222,10 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
             ))}
           </div>
           <button
-            onClick={() => { setPhase("questions"); setStep(0) }}
+            onClick={() => {
+              track("waitlist_quiz_started", { referred: !!referredBy, country: country || undefined })
+              setPhase("questions"); setStep(0)
+            }}
             className="brand-gradient mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-4 text-base font-semibold text-white shadow-[0_14px_30px_-10px_rgba(45,170,110,0.6)] transition-transform hover:-translate-y-0.5"
           >
             {tw.intro.cta} <ArrowRight size={16} />
