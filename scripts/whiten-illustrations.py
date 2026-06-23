@@ -26,6 +26,7 @@ from PIL import Image
 # regions, so a luminance ramp cleanly removes the background.
 TARGETS = [
     "public/images/couple-hero.png",
+    "public/images/assessment-hero.png",
     "public/images/hero-gut.png",
     "public/images/family-hero.png",
     "public/images/mind-hero.png",

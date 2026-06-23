@@ -199,7 +199,7 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
               className="pointer-events-none absolute -inset-6 -z-10 rounded-full opacity-80 blur-3xl animate-pulse"
               style={{ background: "radial-gradient(60% 60% at 50% 45%, color-mix(in srgb, var(--icon-green) 38%, transparent), color-mix(in srgb, var(--icon-teal) 22%, transparent) 55%, transparent 78%)" }}
             />
-            <Image src="/images/hero-gut.png" alt="The living food system inside you" fill sizes="176px" className="object-contain" priority />
+            <Image src="/images/assessment-hero.png" alt="The food system inside you" fill sizes="176px" className="object-contain" priority />
           </div>
           <p className="mt-5 text-xs font-bold uppercase tracking-widest text-[var(--icon-green)]">
             {tw.intro.eyebrow}
