@@ -164,6 +164,9 @@ export function Footer() {
             <Link href="/terms" className="text-xs text-muted-foreground transition-colors hover:text-foreground">
               Terms of Service
             </Link>
+            <Link href="/preview-access" className="text-xs text-muted-foreground/40 transition-colors hover:text-muted-foreground">
+              Founder Access
+            </Link>
             <div className="brand-gradient h-1 w-16 rounded-full" />
           </div>
         </div>

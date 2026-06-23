@@ -200,23 +200,14 @@ export function TheFramework() {
           {/* Right: plate image + quadrant cards */}
           <div className="flex-1">
             <ScrollReveal delay={100}>
-              <div className="relative flex justify-center">
-                {/* Soft brand glow behind the plate */}
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute inset-0 -z-10 mx-auto my-auto h-[80%] w-[80%] rounded-full opacity-60 blur-3xl"
-                  style={{
-                    background:
-                      "radial-gradient(circle, color-mix(in srgb, var(--icon-green) 22%, transparent), transparent 70%)",
-                  }}
-                />
+              <div className="flex justify-center">
                 <Image
                   src="/images/eatobiotics/eatobiotics-plate.png"
                   alt="The EatoBiotics Plate showing prebiotic base, probiotic side, protein balance, and healthy fats"
                   width={1000}
                   height={1000}
                   sizes="(max-width: 1024px) 90vw, 600px"
-                  className="h-auto w-full max-w-[600px] object-contain drop-shadow-xl"
+                  className="h-auto w-full max-w-[600px] object-contain"
                   priority
                 />
               </div>
