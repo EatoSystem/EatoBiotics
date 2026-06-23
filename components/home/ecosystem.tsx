@@ -127,7 +127,7 @@ export function Ecosystem() {
               Add deeper support
             </p>
           </ScrollReveal>
-          <div className="relative grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
             {ADDONS.map((p, index) => (
               <ScrollReveal key={p.name} delay={index * 70}>
                 <ProgramCard p={p} size="small" />
