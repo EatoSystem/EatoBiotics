@@ -4,6 +4,7 @@ import { HowItWorks } from "@/components/home/how-it-works"
 import { TheFramework } from "@/components/home/the-framework"
 import { ScorePreview } from "@/components/home/score-preview"
 import { Ecosystem } from "@/components/home/ecosystem"
+import { PreviewGuard } from "@/components/waitlist/preview-guard"
 
 /**
  * Public pre-launch waitlist landing page.
@@ -35,14 +36,18 @@ export default function WaitlistPage() {
       {/* Waitlist hero + email capture */}
       <WaitlistHero />
 
-      {/* ── Homepage showcase (mirrors app/page.tsx) ───────────────────── */}
-      <div style={{ height: "2px", background: GRADIENT_BAR }} />
-      <PowersEverything />
-      <HowItWorks />
-      <TheFramework />
-      <ScorePreview />
-      <SoftDivider />
-      <Ecosystem />
+      {/* ── Homepage showcase (mirrors app/page.tsx) ───────────────────────
+          Wrapped in PreviewGuard so its CTAs don't navigate into the gated
+          main site. The same sections on app/page.tsx are NOT guarded. */}
+      <PreviewGuard>
+        <div style={{ height: "2px", background: GRADIENT_BAR }} />
+        <PowersEverything />
+        <HowItWorks />
+        <TheFramework />
+        <ScorePreview />
+        <SoftDivider />
+        <Ecosystem />
+      </PreviewGuard>
     </div>
   )
 }
