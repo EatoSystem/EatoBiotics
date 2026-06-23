@@ -162,7 +162,7 @@ export function ScorePreview() {
               {/* Insight */}
               <div
                 className="rounded-2xl px-5 py-4 text-base text-muted-foreground leading-relaxed"
-                style={{ background: "color-mix(in srgb, var(--muted) 60%, transparent)" }}
+                style={{ background: "color-mix(in srgb, var(--icon-green) 7%, var(--card))" }}
               >
                 <span className="font-semibold text-foreground">What this means: </span>
                 {EXAMPLE.insight}
