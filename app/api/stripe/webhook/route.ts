@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import type Stripe from "stripe"
-import { Resend } from "resend"
+import { sendEmail } from "@/lib/email/send"
 import { stripe } from "@/lib/stripe-server"
 import { getSupabase } from "@/lib/supabase"
 import { tierFromPriceId, isFoundingMember } from "@/lib/membership"
@@ -211,12 +211,13 @@ export async function POST(req: NextRequest) {
               .eq("id", profile.id)
               .single()
             if (prof?.email) {
-              const resend = new Resend(resendKey)
-              await resend.emails.send({
+              // New-subscription welcome (transactional) — bypasses the marketing opt-out.
+              await sendEmail({
                 from:    `EatoBiotics <${emailFrom}>`,
                 to:      prof.email as string,
                 subject: `Welcome to EatoBiotics ${tier.charAt(0).toUpperCase() + tier.slice(1)} 🎉`,
                 html:    welcomeSubscriptionEmailHtml({ name: (prof.name as string | null) ?? null, tier }),
+                skipOptOutCheck: true,
               })
             }
           }
@@ -357,12 +358,13 @@ export async function POST(req: NextRequest) {
                 name: (prof.name as string | null) ?? null,
                 tier: (existing?.membership_tier as string | null) ?? "membership",
               })
-              const resend = new Resend(resendKey)
-              await resend.emails.send({
+              // Cancellation confirmation (transactional account email).
+              await sendEmail({
                 from: `EatoBiotics <${emailFrom}>`,
                 to:   prof.email as string,
                 subject,
                 html,
+                skipOptOutCheck: true,
               })
             }
           }

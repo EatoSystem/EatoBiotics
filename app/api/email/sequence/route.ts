@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSupabase } from "@/lib/supabase"
 import { buildSequenceEmail } from "@/lib/email/sequence-email"
 import { verifyCronRequest } from "@/lib/cron-auth"
-import { Resend } from "resend"
+import { sendEmail } from "@/lib/email/send"
 
 // ── Sequence day schedule ──────────────────────────────────────────────────
 // Maps from days-since-signup to email day offset key
@@ -56,7 +56,6 @@ export async function GET(req: NextRequest) {
   }
 
   const emailFrom = process.env.EMAIL_FROM ?? "hello@eatobiotics.com"
-  const resend = new Resend(resendKey)
 
   // Fetch leads who:
   // - have an overall_score (completed assessment)
@@ -105,18 +104,19 @@ export async function GET(req: NextRequest) {
 
     try {
       const { subject, html } = buildSequenceEmail(opts)
-      const { error: sendError } = await resend.emails.send({
+      const result = await sendEmail({
         from: `EatoBiotics <${emailFrom}>`,
         to: lead.email as string,
         subject,
         html,
       })
 
-      if (sendError) {
-        errors.push(`${lead.email}: ${sendError.message}`)
-      } else {
+      if (!result.ok && result.error) {
+        errors.push(`${lead.email}: ${result.error}`)
+      } else if (result.ok) {
         sent++
       }
+      // result.skipped (opted out) — silently skip, not counted as sent or error
     } catch (err) {
       errors.push(`${lead.email}: ${err instanceof Error ? err.message : String(err)}`)
     }

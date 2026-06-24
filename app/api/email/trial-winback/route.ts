@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { Resend } from "resend"
 import { getSupabase } from "@/lib/supabase"
 import { verifyCronRequest } from "@/lib/cron-auth"
+import { sendEmail } from "@/lib/email/send"
 import { buildTrialWinbackEmail } from "@/lib/email/trial-winback-email"
 import { logServerEvent } from "@/lib/statsig-server"
 
@@ -32,7 +32,6 @@ export async function GET(req: NextRequest) {
   const sb = getSupabase()
   if (!sb) return NextResponse.json({ error: "Database not configured" }, { status: 503 })
 
-  const resend = new Resend(resendKey)
   const now = Date.now()
 
   // Trial accounts with a known expiry, within a window we might act on.
@@ -93,13 +92,11 @@ export async function GET(req: NextRequest) {
         baseUrl: BASE_URL,
       })
 
-      const { error: sendErr } = await resend.emails.send({
-        from: `EatoBiotics <${emailFrom}>`,
-        to: email,
-        subject,
-        html,
-      })
-      if (sendErr) throw new Error(sendErr.message)
+      const sent = await sendEmail({ from: `EatoBiotics <${emailFrom}>`, to: email, subject, html })
+      if (!sent.ok) {
+        if (sent.error) throw new Error(sent.error)
+        skipped++; continue // opted out — don't record as sent
+      }
 
       await sb.from("email_sends").insert({ email, kind, user_id: p.id as string })
 

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { Resend } from "resend"
 import { getSupabase } from "@/lib/supabase"
 import { buildResultsEmail } from "@/lib/email/results-email"
 import { verifyCronRequest } from "@/lib/cron-auth"
+import { sendEmail } from "@/lib/email/send"
 
 type LeadRow = {
   email: string
@@ -84,7 +84,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Database error" }, { status: 500 })
   }
 
-  const resend = new Resend(resendKey)
   const emailFrom = process.env.EMAIL_FROM ?? "results@eatobiotics.com"
   const ownerEmail = process.env.OWNER_EMAIL
   let sent = 0
@@ -126,7 +125,7 @@ export async function GET(req: NextRequest) {
     })
 
     try {
-      const { error: sendError } = await resend.emails.send({
+      const result = await sendEmail({
         from: `EatoBiotics <${emailFrom}>`,
         to: email,
         bcc: ownerEmail ? [ownerEmail] : undefined,
@@ -134,9 +133,9 @@ export async function GET(req: NextRequest) {
         html,
       })
 
-      if (sendError) {
-        errors.push(`${email}: ${sendError.message}`)
-        continue
+      if (!result.ok) {
+        if (result.error) errors.push(`${email}: ${result.error}`)
+        continue // error or opted-out — don't mark as sent
       }
 
       await supabase

@@ -15,7 +15,8 @@ const DEFAULT_FROM = `EatoBiotics <${process.env.EMAIL_FROM ?? "hello@eatobiotic
 export interface SendEmailArgs {
   to: string
   subject: string
-  html: string
+  html?: string
+  text?: string
   from?: string
   bcc?: string[]
   headers?: Record<string, string>
@@ -39,14 +40,18 @@ export async function sendEmail(args: SendEmailArgs): Promise<SendEmailResult> {
   try {
     const { Resend } = await import("resend")
     const resend = new Resend(resendKey)
-    const { error } = await resend.emails.send({
+    const payload = {
       from: args.from ?? DEFAULT_FROM,
       to: args.to,
       bcc: args.bcc,
       subject: args.subject,
       html: args.html,
+      text: args.text,
       headers: { ...unsubscribeHeaders(args.to), ...args.headers },
-    })
+    }
+    const { error } = await resend.emails.send(
+      payload as Parameters<typeof resend.emails.send>[0]
+    )
     if (error) return { ok: false, error: error.message }
     return { ok: true }
   } catch (err) {

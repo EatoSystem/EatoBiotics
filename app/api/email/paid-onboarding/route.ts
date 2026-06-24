@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { Resend } from "resend"
 import { getSupabase } from "@/lib/supabase"
 import { verifyCronRequest } from "@/lib/cron-auth"
+import { sendEmail } from "@/lib/email/send"
 import {
   paidDay1Email,
   paidDay3Email,
@@ -43,7 +43,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ skipped: true, reason: "Supabase not configured" })
   }
 
-  const resend = new Resend(resendKey)
   const now    = Date.now()
   const HOUR   = 3_600_000
 
@@ -104,13 +103,11 @@ export async function GET(req: NextRequest) {
           seq.day === "day7"  ? paidDay7Email(opts)  :
                                 paidDay14Email(opts)
 
-        const { error: sendErr } = await resend.emails.send({
-          from: `EatoBiotics <${EMAIL_FROM}>`,
-          to: email,
-          subject,
-          html,
-        })
-        if (sendErr) throw new Error(sendErr.message)
+        const result = await sendEmail({ from: `EatoBiotics <${EMAIL_FROM}>`, to: email, subject, html })
+        if (!result.ok) {
+          if (result.error) throw new Error(result.error)
+          continue // opted out — skip silently
+        }
         sent++
       } catch (err) {
         errors.push(`${seq.day} for ${m.id}: ${String(err)}`)

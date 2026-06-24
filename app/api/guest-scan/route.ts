@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { Resend } from "resend"
+import { sendEmail } from "@/lib/email/send"
 import { getSupabase } from "@/lib/supabase"
 import { buildMealAnalysisEmail } from "@/lib/email/meal-analysis-email"
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
@@ -98,7 +98,6 @@ export async function POST(req: NextRequest) {
         const emailFrom = rawFrom.includes("<") ? rawFrom : `EatoBiotics <${rawFrom}>`
 
         if (resendKey) {
-          const resend = new Resend(resendKey)
           const { subject, html } = buildMealAnalysisEmail({
             name: name || undefined,
             email,
@@ -112,12 +111,8 @@ export async function POST(req: NextRequest) {
             shareHash: hash,
           })
 
-          await resend.emails.send({
-            from: emailFrom,
-            to: email,
-            subject,
-            html,
-          })
+          // User-requested scan result (transactional) — bypasses the marketing opt-out.
+          await sendEmail({ from: emailFrom, to: email, subject, html, skipOptOutCheck: true })
         }
       } catch (emailErr) {
         console.error("[guest-scan] email send error:", emailErr)
