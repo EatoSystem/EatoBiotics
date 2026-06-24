@@ -843,3 +843,22 @@ CREATE UNIQUE INDEX IF NOT EXISTS leads_share_code_key ON leads (share_code) WHE
 -- referral unlock threshold (see app/api/waitlist/status). ADD-only, idempotent.
 
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS reward_code text;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 31: deep_assessments per-step status tracking
+-- ────────────────────────────────────────────────────────────
+-- The paid-report pipeline (generate report → PDF → upload → email) previously
+-- only had a single `status` column, so a row could be marked "complete" even if
+-- the PDF upload or the email send failed — a paying customer could silently get
+-- nothing. These per-step columns make each stage's outcome (and error) visible
+-- in the DB so the flow is diagnosable and retry-safe. ADD-only, idempotent.
+--   report_status: pending | generating | generated | failed
+--   pdf_status:    pending | generated | uploaded | upload_failed | failed
+--   email_status:  pending | sent | failed
+ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS report_status text;
+ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS pdf_status    text;
+ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS email_status  text;
+ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS report_error  text;
+ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS pdf_error     text;
+ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS email_error   text;

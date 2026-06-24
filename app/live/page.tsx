@@ -40,7 +40,7 @@ const STEPS = [
     color: "var(--icon-teal)",
     label: "Choose Your Report",
     description:
-      "Below your results you'll see three report tiers — Starter (€20), Full (€40), and Premium (€50). Pick one and pay via Stripe to unlock your deep consultation.",
+      "Below your results you'll unlock the EatoBiotics Food System Report (€49). Pay via Stripe to unlock your deep consultation.",
     locked: false,
     stripe: true,
     primaryHref: "/assessment",

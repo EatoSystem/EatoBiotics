@@ -239,3 +239,14 @@ CREATE UNIQUE INDEX IF NOT EXISTS leads_share_code_key ON leads (share_code) WHE
 
 -- Migration 30: leads.reward_code (invite-to-unlock reward; ADD-only, idempotent)
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS reward_code text;
+
+
+-- Migration 31: deep_assessments per-step status tracking (ADD-only, idempotent)
+-- Makes each stage of the paid-report pipeline (report → PDF → upload → email)
+-- visible in the DB so a failed PDF/email is never hidden behind status='complete'.
+ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS report_status text;
+ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS pdf_status    text;
+ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS email_status  text;
+ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS report_error  text;
+ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS pdf_error     text;
+ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS email_error   text;

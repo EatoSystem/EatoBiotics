@@ -456,7 +456,7 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
                 <ul className="mb-8 grid gap-2.5 sm:grid-cols-2">
                   {[
                     "Full Prebiotics / Probiotics / Postbiotics score analysis",
-                    "Your personalised 30-day gut reset plan",
+                    "Your personalised 30-day plan",
                     "Top 10 food recommendations",
                     "Weekly shopping framework",
                     "Meal timing and food rhythm guidance",

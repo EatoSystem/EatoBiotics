@@ -391,7 +391,7 @@ export function PricingClient({
               "Your EatoBiotics Score analysis",
               "Full Feed · Seed · Heal breakdown",
               "Your top 10 food recommendations",
-              "30-day gut reset plan",
+              "30-day personalised plan",
               "Weekly shopping framework",
               "Meal timing and food rhythm guidance",
               "Food swaps and avoid/reduce list",
