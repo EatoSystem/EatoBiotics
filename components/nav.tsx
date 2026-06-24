@@ -166,7 +166,7 @@ export function Nav() {
             href="/assessment"
             className="brand-gradient rounded-full px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
           >
-            Get my gut score free →
+            Understand My Food System →
           </Link>
         </div>
 
@@ -263,7 +263,7 @@ export function Nav() {
               onClick={() => setOpen(false)}
               className="brand-gradient mt-4 rounded-full px-5 py-3.5 text-center text-base font-semibold text-white"
             >
-              Get my gut score free →
+              Understand My Food System →
             </Link>
           </div>
         </div>

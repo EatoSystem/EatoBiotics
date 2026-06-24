@@ -5,7 +5,7 @@ import { DemoClient } from "@/components/assessment/demo-client"
 export const metadata: Metadata = {
   title: "Report Demo — EatoBiotics",
   description:
-    "See exactly what you get at each report tier before you buy — Starter €20, Full €40, Premium €50. Explore using real sample data.",
+    "See exactly what you get in the EatoBiotics Food System Report (€49) before you buy. Explore using real sample data.",
 }
 
 export default function DemoPage() {

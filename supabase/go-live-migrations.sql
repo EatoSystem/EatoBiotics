@@ -256,3 +256,14 @@ CREATE TABLE IF NOT EXISTS email_optouts (
   source     text
 );
 ALTER TABLE email_optouts ENABLE ROW LEVEL SECURITY;
+
+
+-- Migration 33: deep_assessments per-step status tracking (ADD-only, idempotent)
+-- Makes each stage of the paid-report pipeline (report → PDF → upload → email)
+-- visible in the DB so a failed PDF/email is never hidden behind status='complete'.
+ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS report_status text;
+ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS pdf_status    text;
+ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS email_status  text;
+ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS report_error  text;
+ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS pdf_error     text;
+ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS email_error   text;

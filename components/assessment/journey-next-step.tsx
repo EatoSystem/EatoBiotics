@@ -9,7 +9,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Activity, ArrowRight, Sparkles, BarChart3, ShieldPlus, Brain } from "lucide-react"
-import { getJourney } from "@/lib/assessment/journey"
+import { getJourney, resumeAddonRoute } from "@/lib/assessment/journey"
 import { ADDONS, type AddonKey } from "@/lib/assessment/registry"
 import { persist } from "@/lib/assessment/sync"
 
@@ -46,7 +46,7 @@ export function JourneyNextStep() {
           Your {label} assessment creates a deeper report by combining your foundation score with focused insights.
         </p>
         <Link
-          href={`/assessment/add/${pendingAddon}`}
+          href={resumeAddonRoute({ foundationType: null, pendingAddon, selectedAddon: null }, true) ?? `/assessment/add/${pendingAddon}`}
           className="brand-gradient mt-6 inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-opacity hover:opacity-90"
         >
           Continue to {label} <ArrowRight size={18} />

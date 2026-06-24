@@ -178,7 +178,7 @@ export function ScorePreview() {
               href="/assessment"
               className="brand-gradient inline-flex items-center gap-2.5 rounded-full px-10 py-5 text-lg font-semibold text-white shadow-xl shadow-icon-green/25 transition-all hover:shadow-2xl hover:shadow-icon-green/35 hover:opacity-90"
             >
-              Get my gut score free <ArrowRight size={18} />
+              Understand My Food System <ArrowRight size={18} />
             </Link>
             <p className="mt-3.5 text-sm text-muted-foreground">
               Takes about 3 minutes. No account required.

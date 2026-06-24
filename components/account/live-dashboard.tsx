@@ -287,6 +287,18 @@ export interface RealWeeklyReport {
 /* ─────────────────────────────────────────────────────────────────────────
    Component props — all optional, mock data used as fallback
    ───────────────────────────────────────────────────────────────────────── */
+/** A purchased one-time Food System Report (from `deep_assessments`). */
+export interface LivePaidReport {
+  sessionId:    string
+  tier:         string
+  createdAt:    string
+  profileType:  string | null
+  overall:      number | null
+  pdfUrl:       string | null
+  status:       string | null   // overall pipeline status
+  emailStatus:  string | null   // 'sent' | 'failed' | 'pending' | null
+}
+
 export interface LiveDashboardProps {
   name?:             string | null
   email?:            string | null
@@ -299,6 +311,7 @@ export interface LiveDashboardProps {
   profileType?:      string | null
   biotics?:          { prebiotic: number; probiotic: number; postbiotic: number }
   recentAnalyses?:   RealAnalysis[]
+  paidReports?:      LivePaidReport[]            // purchased one-time reports
   weeklyReport?:     RealWeeklyReport | null
   weeklyReports?:    RealWeeklyReport[]          // for Consultations tab
   monthlyPlan?:      string | null
@@ -634,6 +647,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
     profileType        = null,
     biotics:           propBiotics = null,
     recentAnalyses     = [],
+    paidReports        = [],
     weeklyReport       = null,
     weeklyReports      = [],
     monthlyPlan        = null,
@@ -1742,8 +1756,67 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
         <div className="mx-auto max-w-5xl px-4 pt-6 pb-16 md:px-8 md:pt-8">
           <div className="mb-5">
             <h2 className="font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>My Reports</h2>
-            <p className="mt-0.5 text-sm" style={{ color: "var(--muted-foreground)" }}>{MOCK_REPORTS.length} assessments completed</p>
+            <p className="mt-0.5 text-sm" style={{ color: "var(--muted-foreground)" }}>
+              {paidReports.length > 0
+                ? `${paidReports.length} Food System Report${paidReports.length === 1 ? "" : "s"} purchased`
+                : `${MOCK_REPORTS.length} assessments completed`}
+            </p>
           </div>
+
+          {/* Purchased Food System Reports — real data from deep_assessments */}
+          {paidReports.length > 0 && (
+            <div className="mb-6 space-y-4">
+              {paidReports.map((r) => {
+                const delivered = r.status === "complete"
+                const emailFailed = r.emailStatus === "failed"
+                return (
+                  <div key={r.sessionId} className="overflow-hidden rounded-2xl"
+                    style={{ border: "1px solid var(--border)", boxShadow: "0 2px 16px rgba(26,46,18,0.06)" }}>
+                    <div className="px-5 py-5" style={{ background: "linear-gradient(135deg, #1a4a14 0%, #0a5c44 100%)" }}>
+                      <div className="h-[2px] mb-4 rounded-full" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-yellow), var(--icon-orange))" }} />
+                      <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.40)" }}>
+                        Food System Report · {new Date(r.createdAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
+                      </p>
+                      <div className="mt-1 flex items-end justify-between gap-3">
+                        <div>
+                          <p className="font-serif text-lg font-bold text-white">Your Food System Report</p>
+                          {r.profileType && <p className="text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>{r.profileType}</p>}
+                        </div>
+                        {typeof r.overall === "number" && (
+                          <div className="text-right">
+                            <p className="font-mono text-3xl font-bold leading-none" style={{ color: "var(--icon-lime)" }}>{r.overall}</p>
+                            <p className="mt-0.5 text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>/100</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-t px-5 py-3.5"
+                      style={{ borderColor: "var(--border)", background: "white" }}>
+                      <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+                        {delivered
+                          ? (emailFailed ? "Ready to view here (email delivery retried)" : "Delivered to your inbox")
+                          : "Being prepared — we'll email it shortly"}
+                      </span>
+                      <div className="flex gap-2">
+                        {r.pdfUrl && (
+                          <a href={r.pdfUrl} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold transition-opacity hover:opacity-70"
+                            style={{ borderColor: "#d0d0d0", color: "var(--muted-foreground)" }}>
+                            <Download size={11} /> PDF
+                          </a>
+                        )}
+                        <Link href={`/assessment/report?session_id=${encodeURIComponent(r.sessionId)}`}
+                          className="flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-80"
+                          style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", boxShadow: "0 2px 8px rgba(45,170,110,0.25)" }}>
+                          View report <ExternalLink size={11} />
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
 
           <div className="space-y-4 md:grid md:grid-cols-2 md:gap-5 md:space-y-0">
             {MOCK_REPORTS.map((r) => (

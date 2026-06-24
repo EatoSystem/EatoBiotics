@@ -64,7 +64,7 @@ const TIER_LABELS: Record<string, string> = {
 const TIER_HIGHLIGHTS: Record<string, string[]> = {
   personal: [
     "Full Feed · Seed · Heal analysis",
-    "Your 30-day gut reset plan",
+    "Your 30-day personalised plan",
     "Top 10 food recommendations",
     "Weekly shopping framework",
     "Meal timing guidance",

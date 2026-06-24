@@ -61,7 +61,7 @@ export function Hero() {
                 href="/assessment"
                 className="brand-gradient inline-flex items-center gap-2.5 rounded-full px-10 py-5 text-lg font-semibold text-white shadow-xl shadow-icon-green/25 transition-all hover:shadow-2xl hover:shadow-icon-green/35 hover:opacity-90"
               >
-                Get my gut score free <ArrowRight size={18} />
+                Understand My Food System <ArrowRight size={18} />
               </Link>
               <p className="mt-3.5 text-sm text-muted-foreground">
                 Takes about 3 minutes. No account required.
@@ -73,7 +73,7 @@ export function Hero() {
             <div className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm font-medium text-muted-foreground">
               <span>3-minute assessment</span>
               <span className="h-1 w-1 rounded-full bg-border" />
-              <span>Personalised gut score</span>
+              <span>Personalised Food System Score</span>
               <span className="h-1 w-1 rounded-full bg-border" />
               <span>30-day action plan</span>
             </div>

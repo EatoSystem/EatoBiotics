@@ -96,6 +96,16 @@ export function reportType(): string | null {
   return t ? `${t}_report` : null
 }
 
+/* ── Post-foundation resume ────────────────────────────────────────────────
+   When a foundation is complete and the user had pre-selected an add-on
+   (pendingAddon), this is the route that resumes their journey: the add-on gate,
+   which forwards into the add-on assessment. Pure (takes the journey + completion
+   flag) so it's unit-testable; returns null when there's nothing to resume. */
+export function resumeAddonRoute(journey: Journey, foundationComplete: boolean): string | null {
+  if (!foundationComplete || !journey.pendingAddon) return null
+  return `/assessment/add/${journey.pendingAddon}`
+}
+
 /* ── Labels (for UI copy) ──────────────────────────────────────────────────── */
 
 export function foundationLabel(k: FoundationKey): string {

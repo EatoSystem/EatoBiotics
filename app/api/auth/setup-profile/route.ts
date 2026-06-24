@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getSupabaseServer } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
+import { reconcileAccountAfterAuth } from "@/lib/auth/reconcile-account"
 
 function generateReferralCode(): string {
   return Math.random().toString(36).substring(2, 8).toUpperCase()
@@ -65,19 +66,9 @@ export async function POST() {
         .eq("id", user.id)
     }
 
-    // Always link user_id to any unlinked rows for this email
-    // (runs on every sign-in so new assessments taken after account creation are linked too)
-    await adminSupabase
-      .from("leads")
-      .update({ user_id: user.id })
-      .eq("email", user.email!)
-      .is("user_id", null)
-
-    await adminSupabase
-      .from("deep_assessments")
-      .update({ user_id: user.id })
-      .eq("email", user.email!)
-      .is("user_id", null)
+    // Link prior anonymous assessments to this user AND activate the deferred
+    // 30-day report trial if they paid before signing up. Idempotent.
+    await reconcileAccountAfterAuth(adminSupabase, user.id, user.email!)
   } catch (err) {
     console.error("[setup-profile] error (non-fatal):", err)
   }

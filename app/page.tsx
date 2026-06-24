@@ -8,17 +8,17 @@ import { DEV_COOKIE, devPasswordToken, getDevPassword, isPasswordGateEnabled } f
 export const metadata: Metadata = {
   title: "EatoBiotics — The Food System Inside You",
   description:
-    "Discover your gut health score, analyse every meal with AI, and get a personalised weekly food system report. Build the microbiome that powers your energy, digestion, and immunity.",
+    "Discover your Food System Score, analyse every meal with AI, and get a personalised weekly food system report. Build the microbiome that powers your energy, digestion, and immunity.",
   openGraph: {
     title: "EatoBiotics — The Food System Inside You",
     description:
-      "Discover your gut health score, analyse every meal with AI, and get a personalised weekly food system report.",
+      "Discover your Food System Score, analyse every meal with AI, and get a personalised weekly food system report.",
     url: "https://eatobiotics.com",
   },
   twitter: {
     card: "summary_large_image",
     title: "EatoBiotics — The Food System Inside You",
-    description: "Discover your gut health score, analyse every meal with AI, and get a personalised weekly food system report.",
+    description: "Discover your Food System Score, analyse every meal with AI, and get a personalised weekly food system report.",
   },
   keywords: [
     "gut health", "microbiome", "prebiotic", "probiotic", "postbiotic",

@@ -59,7 +59,8 @@ export async function POST(req: NextRequest) {
       }
       console.log(`[send-magic-link] Sign-in link emailed to ${email} via ${emailFrom}`)
     } else {
-      console.warn("[send-magic-link] RESEND_API_KEY not set — link generated but NOT emailed:", magicUrl)
+      // Never log the link itself — it embeds a single-use auth token.
+      console.warn("[send-magic-link] RESEND_API_KEY not set — link generated but NOT emailed")
       return NextResponse.json({ ok: true, emailSent: false, skipped: true })
     }
 

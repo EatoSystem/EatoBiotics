@@ -8,6 +8,7 @@ import { logServerEvent } from "@/lib/statsig-server"
 import { welcomeSubscriptionEmailHtml } from "@/lib/email/welcome-subscription-email"
 import { cancellationEmail } from "@/lib/email/paid-onboarding-email"
 import { getPaidReportSummaryFromSession, isCheckoutSessionSettled } from "@/lib/paid-report-session"
+import { decideTrialActivation } from "@/lib/auth/reconcile-account"
 import { reportError } from "@/lib/report-error"
 
 // Stripe v20 with the clover API version uses slightly different type shapes.
@@ -113,6 +114,8 @@ export async function POST(req: NextRequest) {
                 overall: summary.overall,
                 subScores: summary.subScores,
                 profile: summary.profile,
+                foundationType: summary.foundationType ?? null,
+                selectedAddon: summary.selectedAddon ?? null,
               },
               status: "in_progress",
               updated_at: new Date().toISOString(),
@@ -124,27 +127,30 @@ export async function POST(req: NextRequest) {
         // Find user profile by email
         const { data: profile } = await supabase
           .from("profiles")
-          .select("id, membership_tier")
+          .select("id, membership_tier, trial_expires_at")
           .eq("email", email)
           .maybeSingle()
 
-        if (!profile) break  // user hasn't signed up yet — trial will be granted on auth
+        // If the buyer has no account yet, access can't be granted now — it's
+        // activated the first time they sign in (see lib/auth/reconcile-account.ts).
+        if (!profile) break
 
-        // Activate 30-day trial for the personal report purchase
-        // Only if user is currently free (don't downgrade an existing subscriber)
-        const currentTier = (profile.membership_tier as string) ?? "free"
-        const trialTiers = ["free", "trial"]
+        // Activate the 30-day report trial. Shared decision with the auth path so
+        // both behave identically: only free/trial accounts (never downgrade a
+        // subscriber), never shorten an existing trial, idempotent.
+        const decision = decideTrialActivation(
+          profile.membership_tier as string | null,
+          profile.trial_expires_at as string | null,
+          true // a settled payment just landed
+        )
         let trialGranted = false
-        if (trialTiers.includes(currentTier)) {
-          const trialExpiresAt = new Date()
-          trialExpiresAt.setDate(trialExpiresAt.getDate() + 30)
-
+        if (decision.activate) {
           await supabase
             .from("profiles")
             .update({
               membership_tier:   "trial",
               membership_status: "active",
-              trial_expires_at:  trialExpiresAt.toISOString(),
+              trial_expires_at:  decision.expiresAt,
             })
             .eq("id", profile.id)
           trialGranted = true

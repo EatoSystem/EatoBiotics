@@ -6,7 +6,7 @@ import { ownerOrFilter } from "@/lib/supabase-filters"
 import { stripe } from "@/lib/stripe-server"
 import { canAccess, type MembershipTier } from "@/lib/membership"
 import { LiveDashboard } from "@/components/account/live-dashboard"
-import type { RealAnalysis, RealWeeklyReport } from "@/components/account/live-dashboard"
+import type { RealAnalysis, RealWeeklyReport, LivePaidReport } from "@/components/account/live-dashboard"
 import { TrackConversion } from "@/components/analytics/track-conversion"
 import { computeStreak } from "@/lib/streak"
 import { dailyNudge } from "@/lib/habit"
@@ -59,6 +59,7 @@ export default async function AccountPage({
     monthlyPlan,
     nextBillingDate,
     streakInfo,
+    paidReports,
   ] = await Promise.all([
     /* Assessment scores (gut only — for overall score + profile type) */
     (async (): Promise<AssessmentRow[]> => {
@@ -193,6 +194,30 @@ export default async function AccountPage({
         .order("created_at", { ascending: false })
       return computeStreak((streakRows ?? []).map((r) => r.created_at as string))
     })(),
+
+    /* Purchased one-time Food System Reports (deep_assessments) */
+    (async (): Promise<LivePaidReport[]> => {
+      if (!adminSupabase) return []
+      const { data } = await adminSupabase
+        .from("deep_assessments")
+        .select("stripe_session_id, tier, created_at, pdf_url, status, email_status, free_scores")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(10)
+      return (data ?? []).map((r) => {
+        const fs = (r.free_scores ?? {}) as { overall?: number; profile?: { type?: string } }
+        return {
+          sessionId:   r.stripe_session_id as string,
+          tier:        (r.tier as string) ?? "personal",
+          createdAt:   r.created_at as string,
+          profileType: fs.profile?.type ?? null,
+          overall:     typeof fs.overall === "number" ? fs.overall : null,
+          pdfUrl:      (r.pdf_url as string | null) ?? null,
+          status:      (r.status as string | null) ?? null,
+          emailStatus: (r.email_status as string | null) ?? null,
+        }
+      })
+    })(),
   ])
 
   const streak = streakInfo.current
@@ -249,6 +274,7 @@ export default async function AccountPage({
         profileType={(assessments[0]?.profile_type as string | null) ?? null}
         biotics={bioticsProfile}
         recentAnalyses={recentAnalyses}
+        paidReports={paidReports}
         weeklyReport={weeklyReport}
         weeklyReports={weeklyReports}
         monthlyPlan={monthlyPlan}
