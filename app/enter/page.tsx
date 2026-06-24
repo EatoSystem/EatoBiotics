@@ -5,6 +5,7 @@ import { TheFramework } from "@/components/home/the-framework"
 import { ScorePreview } from "@/components/home/score-preview"
 import { Ecosystem } from "@/components/home/ecosystem"
 import { PreviewGuard } from "@/components/waitlist/preview-guard"
+import { LiveSignups } from "@/components/waitlist/live-signups"
 
 /**
  * Public pre-launch waitlist landing page.
@@ -48,6 +49,10 @@ export default function WaitlistPage() {
         <SoftDivider />
         <Ecosystem />
       </PreviewGuard>
+
+      {/* Subtle "just joined" social-proof card (fixed, page-level so it escapes
+          any transformed/overflow wrappers above). */}
+      <LiveSignups />
     </div>
   )
 }

@@ -3,6 +3,7 @@
 import Image from "next/image"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { DiscoverFlow } from "@/components/waitlist/discover-flow"
+import { WaitlistSocialProof } from "@/components/waitlist/social-proof"
 
 const GRADIENT_BAR =
   "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))"
@@ -44,6 +45,7 @@ export function WaitlistHero() {
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: GRADIENT_BAR }} />
               Coming soon · Join the waitlist
             </span>
+            <WaitlistSocialProof />
           </ScrollReveal>
 
           <ScrollReveal delay={80}>

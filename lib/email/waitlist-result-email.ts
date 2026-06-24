@@ -6,6 +6,7 @@
  * email-safe (hex colours, tables, inline styles).
  */
 import { renderBrandEmail, BRAND_INK, BRAND_MUTED, SERIF, SANS } from "./brand-layout"
+import { unsubscribeUrl } from "./unsubscribe"
 import { getPercentile } from "@/lib/percentile"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
 
@@ -21,7 +22,8 @@ const ENGINE_HEX: Record<"prebiotics" | "probiotics" | "postbiotics", { label: s
 export function waitlistResultEmail(
   result: AssessmentResult,
   name?: string,
-  shareCode?: string
+  shareCode?: string,
+  email?: string
 ): { subject: string; html: string } {
   const { profile, overall, subScores, insights } = result
   const greeting = name ? `Hi ${name},` : "Hi there,"
@@ -101,6 +103,7 @@ export function waitlistResultEmail(
       preheader: `You're a ${profile.type} — ${overall}/100. Here's your food system mini report.`,
       contentHtml,
       footerNote: "This snapshot is for education and isn't medical advice. The full personalised report unlocks at launch.",
+      unsubscribeUrl: email ? unsubscribeUrl(email) : undefined,
     }),
   }
 }

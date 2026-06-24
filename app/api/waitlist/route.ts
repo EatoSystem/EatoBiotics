@@ -3,6 +3,7 @@ import { getSupabase } from "@/lib/supabase"
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 import { waitlistConfirmationEmail } from "@/lib/email/waitlist-email"
 import { waitlistResultEmail } from "@/lib/email/waitlist-result-email"
+import { sendEmail } from "@/lib/email/send"
 import { generateShareCode } from "@/lib/waitlist-result"
 import { logServerEvent } from "@/lib/statsig-server"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
@@ -16,8 +17,15 @@ interface WaitlistBody {
   mainGoal?: string
   foodChallenge?: string
   referredBy?: string
+  utm_source?: string
+  utm_medium?: string
+  utm_campaign?: string
+  utm_content?: string
+  utm_term?: string
   result?: AssessmentResult
 }
+
+const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"] as const
 
 /**
  * Public waitlist capture for the pre-launch landing page (/enter + /waitlist).
@@ -89,6 +97,15 @@ export async function POST(req: NextRequest) {
         if (isNew && referredBy && referredBy !== shareCode) row.referred_by = referredBy
       }
 
+      // First-touch UTM attribution: only set on the initial signup so a repeat
+      // submission never overwrites the original campaign source.
+      if (isNew) {
+        for (const k of UTM_KEYS) {
+          const v = clean(body[k])
+          if (v) row[k] = v
+        }
+      }
+
       const { error } = await supabase
         .from("leads")
         .upsert(row, { onConflict: "email,assessment_type" })
@@ -120,41 +137,34 @@ export async function POST(req: NextRequest) {
         country: clean(body.country) ?? "",
         profile_type: (result?.profile?.type as string | undefined) ?? "",
         referred: String(!!referredBy),
+        utm_source: clean(body.utm_source) ?? "",
+        utm_medium: clean(body.utm_medium) ?? "",
+        utm_campaign: clean(body.utm_campaign) ?? "",
       })
     } else {
       console.log("[waitlist] New signup (Supabase not configured):", email)
       if (result) shareCode = generateShareCode()
     }
 
-    // Send the appropriate email to new signups (non-fatal).
+    // Send the appropriate email to new signups (non-fatal; sendEmail attaches
+    // List-Unsubscribe headers and skips opted-out addresses).
     if (isNew) {
-      const resendKey = process.env.RESEND_API_KEY
-      const emailFrom = process.env.EMAIL_FROM ?? "hello@eatobiotics.com"
-      if (resendKey) {
-        try {
-          const { Resend } = await import("resend")
-          const resend = new Resend(resendKey)
-          const { subject, html } = result
-            ? waitlistResultEmail(result, clean(body.name), shareCode)
-            : waitlistConfirmationEmail()
-          const ownerEmail = process.env.OWNER_EMAIL
-          const { error: sendError } = await resend.emails.send({
-            from: `EatoBiotics <${emailFrom}>`,
-            to: email,
-            bcc: ownerEmail ? [ownerEmail] : undefined,
-            subject,
-            html,
-          })
-          if (sendError) {
-            console.error("[waitlist] Resend error:", sendError.message)
-          } else {
-            console.log(`[waitlist] ${result ? "Result" : "Confirmation"} emailed to ${email}`)
-          }
-        } catch (err) {
-          console.error("[waitlist] Email step error:", err)
-        }
+      const ownerEmail = process.env.OWNER_EMAIL
+      const { subject, html } = result
+        ? waitlistResultEmail(result, clean(body.name), shareCode, email)
+        : waitlistConfirmationEmail(email)
+      const sent = await sendEmail({
+        to: email,
+        bcc: ownerEmail ? [ownerEmail] : undefined,
+        subject,
+        html,
+      })
+      if (sent.ok) {
+        console.log(`[waitlist] ${result ? "Result" : "Confirmation"} emailed to ${email}`)
+      } else if (sent.skipped) {
+        console.log(`[waitlist] Email skipped (${sent.skipped}) for ${email}`)
       } else {
-        console.warn("[waitlist] RESEND_API_KEY not set — skipping email")
+        console.error("[waitlist] Email error:", sent.error)
       }
     }
 

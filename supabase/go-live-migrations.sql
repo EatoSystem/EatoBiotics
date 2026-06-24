@@ -239,3 +239,20 @@ CREATE UNIQUE INDEX IF NOT EXISTS leads_share_code_key ON leads (share_code) WHE
 
 -- Migration 30: leads.reward_code (invite-to-unlock reward; ADD-only, idempotent)
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS reward_code text;
+
+
+-- Migration 31: leads UTM attribution columns (ADD-only, idempotent)
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_source   text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_medium   text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_campaign text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_content  text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_term     text;
+
+
+-- Migration 32: email_optouts (central unsubscribe ledger; service-role only)
+CREATE TABLE IF NOT EXISTS email_optouts (
+  email      text        PRIMARY KEY,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  source     text
+);
+ALTER TABLE email_optouts ENABLE ROW LEVEL SECURITY;

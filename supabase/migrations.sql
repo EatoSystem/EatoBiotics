@@ -843,3 +843,31 @@ CREATE UNIQUE INDEX IF NOT EXISTS leads_share_code_key ON leads (share_code) WHE
 -- referral unlock threshold (see app/api/waitlist/status). ADD-only, idempotent.
 
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS reward_code text;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 31: leads UTM attribution columns (waitlist ad tracking)
+-- ────────────────────────────────────────────────────────────
+-- First-touch campaign attribution for waitlist signups (captured from the
+-- /enter URL by the Discover flow). ADD-only and idempotent.
+
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_source   text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_medium   text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_campaign text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_content  text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_term     text;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 32: email_optouts (central email unsubscribe ledger)
+-- ────────────────────────────────────────────────────────────
+-- One row per opted-out address. Standalone (not a column on leads/profiles)
+-- because lifecycle email goes to both tables — a single lookup covers all
+-- senders. Service-role only; RLS on with no policies (no client access).
+
+CREATE TABLE IF NOT EXISTS email_optouts (
+  email      text        PRIMARY KEY,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  source     text
+);
+ALTER TABLE email_optouts ENABLE ROW LEVEL SECURITY;

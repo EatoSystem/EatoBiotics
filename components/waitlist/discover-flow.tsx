@@ -53,6 +53,10 @@ const COUNTRIES = [
 
 const ENGINE_ORDER: QuickPillar[] = ["prebiotics", "probiotics", "postbiotics"]
 
+/** Standard UTM params captured from the /enter URL for campaign attribution. */
+const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"] as const
+type Utm = Partial<Record<(typeof UTM_KEYS)[number], string>>
+
 type Phase = "intro" | "questions" | "reveal" | "form" | "done"
 
 const GOAL_STEP = QUICK_QUESTIONS.length
@@ -84,17 +88,39 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
   const [message, setMessage] = useState("")
   const [shareCode, setShareCode] = useState<string | null>(null)
   const [referredBy, setReferredBy] = useState<string | null>(null)
+  const [utm, setUtm] = useState<Utm>({})
   const [reaction, setReaction] = useState<string | null>(null)
   const [introsSeen, setIntrosSeen] = useState<Set<QuickPillar>>(new Set())
 
-  // Capture a referral code from the URL (?ref=CODE) for skip-the-line credit.
+  // Capture a referral code (?ref=CODE) + UTM campaign params from the URL.
+  // UTM is first-touch: read from the URL, else restore from sessionStorage, then
+  // persist so it survives the multi-step quiz. Fire a landing event so
+  // landing→signup conversion is measurable per campaign.
   useEffect(() => {
-    const ref = new URLSearchParams(window.location.search).get("ref")
+    const params = new URLSearchParams(window.location.search)
+
+    const ref = params.get("ref")
     if (ref) {
       const code = ref.trim().slice(0, 16)
       setReferredBy(code)
       track("waitlist_referral_opened", { ref_code: code })
     }
+
+    let captured: Utm = {}
+    for (const k of UTM_KEYS) {
+      const v = params.get(k)
+      if (v) captured[k] = v.trim().slice(0, 120)
+    }
+    if (Object.keys(captured).length === 0) {
+      try {
+        const saved = sessionStorage.getItem("eb_utm")
+        if (saved) captured = JSON.parse(saved) as Utm
+      } catch { /* sessionStorage optional */ }
+    } else {
+      try { sessionStorage.setItem("eb_utm", JSON.stringify(captured)) } catch { /* optional */ }
+    }
+    if (Object.keys(captured).length) setUtm(captured)
+    track("waitlist_landing", captured)
   }, [])
 
   // Localise by country: landing-page prop wins, else the eb_country geo cookie.
@@ -162,7 +188,7 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
       const res = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name, ageBracket, country, diet, mainGoal, foodChallenge, referredBy, result }),
+        body: JSON.stringify({ email, name, ageBracket, country, diet, mainGoal, foodChallenge, referredBy, ...utm, result }),
       })
       const data = (await res.json()) as { ok?: boolean; error?: string; shareCode?: string }
       if (res.ok && data.ok) {
