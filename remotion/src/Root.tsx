@@ -2,6 +2,7 @@ import "./index.css";
 import { Composition } from "remotion";
 import { VIDEO, VIDEO_VERTICAL, BRAND_COPY } from "./lib/brand";
 import { EatoBioticsBrandIntro } from "./compositions/EatoBioticsBrandIntro";
+import { TheFoodSystemInsideYouHero } from "./compositions/TheFoodSystemInsideYouHero";
 import { AssessmentResultVideo } from "./compositions/AssessmentResultVideo";
 import { MealScoreSocialVideo } from "./compositions/MealScoreSocialVideo";
 
@@ -26,6 +27,23 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={{
           wordmark: BRAND_COPY.name,
           tagline: BRAND_COPY.tagline,
+        }}
+      />
+
+      <Composition
+        id="TheFoodSystemInsideYouHero"
+        component={TheFoodSystemInsideYouHero}
+        durationInFrames={360}
+        fps={VIDEO.fps}
+        width={VIDEO.width}
+        height={VIDEO.height}
+        defaultProps={{
+          heroImage: "assets/food-system-inside-you.png",
+          wordmark: BRAND_COPY.name,
+          tagline: BRAND_COPY.tagline,
+          subline: "Understand your internal food system.",
+          score: 86,
+          showScoreRing: true,
         }}
       />
 
