@@ -36,6 +36,8 @@ function isEnterRoute(pathname: string): boolean {
   return (
     pathname === "/enter" ||
     pathname === "/preview-access" ||
+    pathname === "/privacy" ||           // legal links on the minimal /enter footer
+    pathname === "/terms" ||
     pathname.startsWith("/discover") ||  // public shareable mini-report pages + OG
     pathname.startsWith("/c/") ||        // public per-country landing pages
     pathname.startsWith("/api/enter") ||
