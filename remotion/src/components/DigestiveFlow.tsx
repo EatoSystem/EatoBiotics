@@ -48,7 +48,7 @@ export const DigestiveFlow: React.FC<{
         // Emerge at the top, dissolve into the gut at the bottom.
         const fade =
           Math.min(1, p / 0.12) * Math.min(1, (1 - p) / 0.18);
-        const size = 16 + 10 * Math.sin(p * Math.PI); // fattest mid-tract
+        const size = 24 + 16 * Math.sin(p * Math.PI); // fattest mid-tract
         const color = PALETTE[i % PALETTE.length];
 
         return (
@@ -61,9 +61,9 @@ export const DigestiveFlow: React.FC<{
               width: size,
               height: size,
               borderRadius: "50%",
-              background: `radial-gradient(circle, #FFFFFF 0%, ${color} 40%, ${color}00 72%)`,
-              opacity: 0.85 * fade,
-              filter: "blur(2px)",
+              background: `radial-gradient(circle, #FFFFFF 0%, ${color} 42%, ${color}00 72%)`,
+              opacity: fade,
+              filter: "blur(1.5px)",
             }}
           />
         );

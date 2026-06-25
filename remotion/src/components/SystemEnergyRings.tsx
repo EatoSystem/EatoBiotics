@@ -34,10 +34,11 @@ export const SystemEnergyRings: React.FC<{
     const scale = 1 - i * 0.16;
     const rx = (base / 2) * scale;
     const ry = rx * (0.62 - i * 0.04); // flattened = perspective tilt
-    const speed = (i % 2 === 0 ? 1 : -1) * (3 + i * 1.5); // deg/sec, alternating
+    // (i+1) full turns over an 8s loop, alternating direction → seamless + visibly moving.
+    const speed = (i % 2 === 0 ? 1 : -1) * (i + 1) * (360 / 8);
     const tilt = -18 + i * 12;
     const rot = (frame / fps) * speed;
-    return { rx, ry, tilt, rot, dash: i === count - 1 ? "2 14" : undefined, op: 0.5 - i * 0.1 };
+    return { rx, ry, tilt, rot, dash: i === count - 1 ? "2 14" : undefined, op: 0.62 - i * 0.1 };
   });
 
   return (
@@ -60,7 +61,7 @@ export const SystemEnergyRings: React.FC<{
               ry={r.ry}
               fill="none"
               stroke="url(#eato-ring-grad)"
-              strokeWidth={2}
+              strokeWidth={3}
               strokeDasharray={r.dash}
               opacity={r.op}
             />

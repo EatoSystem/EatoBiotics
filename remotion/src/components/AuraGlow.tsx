@@ -24,7 +24,7 @@ export const AuraGlow: React.FC<{
   const thump =
     Math.exp(-Math.pow((phase - 0.0) * 6, 2)) +
     0.5 * Math.exp(-Math.pow((phase - 0.18) * 7, 2));
-  const pulse = 0.9 + 0.12 * thump;
+  const pulse = 0.82 + 0.26 * thump;
 
   // Smooth green↔gold crossfade.
   const mix = 0.5 + 0.5 * Math.sin((t / hueSec) * Math.PI * 2);

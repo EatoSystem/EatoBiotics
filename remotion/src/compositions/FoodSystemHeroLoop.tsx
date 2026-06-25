@@ -30,8 +30,9 @@ export const FoodSystemHeroLoop: React.FC<{
   // Steady-state start (everything fully "in" at frame 0 → loop-safe).
   const STEADY = -200;
 
-  // Gentle vertical float — one full sine over the loop = seamless.
-  const floatY = Math.sin((frame / 240) * Math.PI * 2) * 0.008;
+  // Vertical float + breathing zoom — one full sine over the loop = seamless.
+  const floatY = Math.sin((frame / 240) * Math.PI * 2) * 0.02;
+  const zoom = 1 + 0.04 * Math.sin((frame / 240) * Math.PI * 2);
 
   // Scanner dot circling the score ring (one turn per loop = seamless).
   const ringSize = 920;
@@ -44,7 +45,7 @@ export const FoodSystemHeroLoop: React.FC<{
     <AbsoluteFill style={{ backgroundColor: "#FFFFFF" }}>
       {/* Soft brand radial wash + breathing heartbeat aura */}
       <AbsoluteFill style={{ background: SOFT_RADIAL }} />
-      <AuraGlow sizePct={0.95} beatSec={4} hueSec={8} />
+      <AuraGlow sizePct={0.95} beatSec={2} hueSec={8} />
 
       {/* Living particles (subtle) */}
       <ParticleField count={28} maxOpacity={0.4} fadeInBy={1} />
@@ -52,43 +53,44 @@ export const FoodSystemHeroLoop: React.FC<{
       {/* Energy rings behind the figure */}
       <SystemEnergyRings startFrame={STEADY} count={3} sizePct={0.98} />
 
-      {/* Back microbiome orbit (1 turn / loop) */}
+      {/* Back microbiome orbit (2 turns / loop) */}
       <OrbitingMicrobiomeLayer
         startFrame={STEADY}
-        count={5}
+        count={7}
         radiiPct={[0.42, 0.48]}
-        speed={5.625}
+        speed={11.25}
         seed={2}
-        maxOpacity={0.55}
-        trail={3}
+        maxOpacity={0.7}
+        trail={4}
         pulse
       />
 
-      {/* The figure — gentle float + breathe */}
+      {/* The figure — float + breathing zoom */}
       <HeroImageLayer
         src={heroImage}
         startFrame={STEADY}
         heightPct={0.96}
         offsetYPct={floatY}
+        scale={zoom}
         glow={false}
       />
 
       {/* Digestive system: lit base glow + flowing nutrients */}
       <DigestiveGlowPulse startFrame={STEADY} />
-      <DigestiveFlow count={9} cycleSec={4} />
+      <DigestiveFlow count={14} cycleSec={2} />
 
       {/* Shimmer glints across the figure */}
-      <Glints count={14} loopSec={8} />
+      <Glints count={20} loopSec={8} />
 
-      {/* Front microbiome orbit (2 turns / loop) */}
+      {/* Front microbiome orbit (3 turns / loop) */}
       <OrbitingMicrobiomeLayer
         startFrame={STEADY}
-        count={5}
+        count={7}
         radiiPct={[0.4, 0.46]}
-        speed={11.25}
+        speed={16.875}
         seed={9}
-        maxOpacity={0.9}
-        trail={4}
+        maxOpacity={1}
+        trail={5}
         pulse
       />
 
