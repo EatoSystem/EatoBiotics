@@ -13,6 +13,48 @@ const rand = (seed: number) => {
   return x - Math.floor(x);
 };
 
+/** One microbe glyph (bubble + core) at a given position/size/opacity. */
+const Microbe: React.FC<{
+  x: number;
+  y: number;
+  size: number;
+  color: string;
+  opacity: number;
+  scale: number;
+}> = ({ x, y, size, color, opacity, scale }) => (
+  <div
+    style={{
+      position: "absolute",
+      left: x - size / 2,
+      top: y - size / 2,
+      width: size,
+      height: size,
+      transform: `scale(${scale})`,
+      opacity,
+    }}
+  >
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        borderRadius: "50%",
+        background: "rgba(255,255,255,0.55)",
+        border: `1px solid ${color}55`,
+        boxShadow: `0 0 10px ${ICON.green}33`,
+      }}
+    />
+    <div
+      style={{
+        position: "absolute",
+        inset: "28%",
+        borderRadius: "50%",
+        background: color,
+        boxShadow: `0 0 8px ${color}aa`,
+      }}
+    />
+  </div>
+);
+
 /**
  * Microbiome dots orbiting the figure on slow elliptical paths — the "food
  * system particles" of the brand art. Deterministic, calm rotation. Place one
@@ -30,6 +72,10 @@ export const OrbitingMicrobiomeLayer: React.FC<{
   /** Offsets the deterministic seed so two instances differ. */
   seed?: number;
   maxOpacity?: number;
+  /** Number of faded trailing copies behind each microbe (comet trail). */
+  trail?: number;
+  /** Add a subtle per-microbe size pulse (periodic with the orbit). */
+  pulse?: boolean;
 }> = ({
   startFrame = 0,
   count = 8,
@@ -38,6 +84,8 @@ export const OrbitingMicrobiomeLayer: React.FC<{
   speed = 6,
   seed = 0,
   maxOpacity = 0.9,
+  trail = 0,
+  pulse = false,
 }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
@@ -57,52 +105,41 @@ export const OrbitingMicrobiomeLayer: React.FC<{
         const s = i + 1 + seed * 100;
         const radius = radiiPct[i % radiiPct.length] * height;
         const dir = rand(s) > 0.5 ? 1 : -1;
-        const angle = rand(s + 3) * Math.PI * 2 + dir * (t * speed * (Math.PI / 180));
+        const spin = dir * (t * speed * (Math.PI / 180));
+        const baseAngle = rand(s + 3) * Math.PI * 2 + spin;
         const size = 14 + rand(s + 7) * 26;
         const color = BRAND_GRADIENT_STOPS[i % BRAND_GRADIENT_STOPS.length];
 
-        const x = cx + Math.cos(angle) * radius;
-        const y = cy + Math.sin(angle) * radius * flatten;
-        // Dots near the front (lower on the ellipse) appear slightly larger/brighter.
-        const depth = (Math.sin(angle) + 1) / 2; // 0 (back) → 1 (front)
-        const scale = 0.8 + depth * 0.4;
-        const op = (0.45 + depth * 0.55) * maxOpacity;
+        const at = (angle: number) => ({
+          x: cx + Math.cos(angle) * radius,
+          y: cy + Math.sin(angle) * radius * flatten,
+          depth: (Math.sin(angle) + 1) / 2,
+        });
+
+        const main = at(baseAngle);
+        const pulseScale = pulse ? 1 + 0.12 * Math.sin(baseAngle * 3) : 1;
+        const scale = (0.8 + main.depth * 0.4) * pulseScale;
+        const op = (0.45 + main.depth * 0.55) * maxOpacity;
 
         return (
-          <div
-            key={i}
-            style={{
-              position: "absolute",
-              left: x - size / 2,
-              top: y - size / 2,
-              width: size,
-              height: size,
-              transform: `scale(${scale})`,
-              opacity: op,
-            }}
-          >
-            {/* bubble */}
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                borderRadius: "50%",
-                background: "rgba(255,255,255,0.55)",
-                border: `1px solid ${color}55`,
-                boxShadow: `0 0 10px ${ICON.green}33`,
-              }}
-            />
-            {/* microbe core */}
-            <div
-              style={{
-                position: "absolute",
-                inset: "28%",
-                borderRadius: "50%",
-                background: color,
-                boxShadow: `0 0 8px ${color}aa`,
-              }}
-            />
-          </div>
+          <React.Fragment key={i}>
+            {/* Comet trail: faded copies a few degrees behind. */}
+            {new Array(trail).fill(0).map((_, k) => {
+              const tk = at(baseAngle - dir * (k + 1) * 0.07);
+              return (
+                <Microbe
+                  key={k}
+                  x={tk.x}
+                  y={tk.y}
+                  size={size}
+                  color={color}
+                  opacity={op * (1 - (k + 1) / (trail + 1)) * 0.5}
+                  scale={(0.8 + tk.depth * 0.4) * (1 - (k + 1) * 0.12)}
+                />
+              );
+            })}
+            <Microbe x={main.x} y={main.y} size={size} color={color} opacity={op} scale={scale} />
+          </React.Fragment>
         );
       })}
     </AbsoluteFill>
