@@ -45,31 +45,31 @@ const biotics = [
 const quadrants = [
   {
     label: "Fiber Foundation",
-    color: "var(--icon-lime)",
+    color: "var(--icon-green)",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
-    examples: ["Leafy greens", "Legumes", "Root vegetables", "Whole grains"],
-    biotic: "PREBIOTIC",
+    examples: ["Leafy greens", "Broccoli", "Legumes", "Whole grains"],
+    biotic: "PREBIOTIC BASE",
   },
   {
     label: "Fermented Foods",
     color: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
     examples: ["Yogurt", "Kimchi", "Sauerkraut", "Kefir"],
-    biotic: "PROBIOTIC",
+    biotic: "PROBIOTIC SIDE",
   },
   {
     label: "Quality Protein",
-    color: "var(--icon-yellow)",
+    color: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     examples: ["Eggs", "Salmon", "Beans", "Tempeh"],
-    biotic: "PROTEIN",
+    biotic: "PROTEIN BALANCE",
   },
   {
-    label: "Healthy Fats",
-    color: "var(--icon-orange)",
-    gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-yellow))",
-    examples: ["Olive oil", "Avocado", "Nuts", "Seeds"],
-    biotic: "POSTBIOTIC",
+    label: "Daily Support",
+    color: "var(--icon-yellow)",
+    gradient: "linear-gradient(135deg, var(--icon-orange), var(--icon-yellow))",
+    examples: ["Avocado", "Olive oil", "Nuts", "Seeds"],
+    biotic: "HEALTHY FATS",
   },
 ]
 
@@ -177,18 +177,22 @@ export function TheFramework() {
           {/* Left: text */}
           <div className="lg:w-[420px] lg:shrink-0">
             <ScrollReveal>
-              <h3 className="font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
+              <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
+                The EatoBiotics Plate
+              </p>
+              <h3 className="mt-4 font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
                 One plate.{" "}
                 <span className="brand-gradient-text">Built once a week.</span>
               </h3>
               <p className="mt-6 text-base leading-relaxed text-muted-foreground">
-                The EatoBiotics Plate turns the three biotics into one practical habit. Four
-                quadrants — built once on Monday, eaten every day until Friday. One decision. Five
-                days of consistency.
+                The EatoBiotics Plate turns the three biotics into one practical weekly habit. Build
+                your plate once, then repeat it across the week to support your microbiome,
+                digestion, energy, and daily consistency.
               </p>
               <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-                Each quadrant feeds a different part of your microbiome, giving it everything it
-                needs to produce the compounds that make you feel better every day.
+                Each section of the plate supports a different part of your internal food system —
+                giving your body the fibre, fermented foods, protein, and healthy fats it needs to
+                feel better every day.
               </p>
             </ScrollReveal>
           </div>
@@ -198,20 +202,22 @@ export function TheFramework() {
             <ScrollReveal delay={100}>
               <div className="flex justify-center">
                 <Image
-                  src="/eatobiotics-plate.png"
-                  alt="The EatoBiotics Plate — divided into four sections: Prebiotic Base with leafy greens and vegetables, Probiotic Side with fermented foods, Postbiotic Builders with berries and dark chocolate, and Protein Balance with salmon, eggs and beans."
-                  width={500}
-                  height={500}
-                  className="w-full max-w-[420px] drop-shadow-md"
+                  src="/images/eatobiotics/eatobiotics-plate.png"
+                  alt="The EatoBiotics Plate showing prebiotic base, probiotic side, protein balance, and healthy fats"
+                  width={1000}
+                  height={1000}
+                  sizes="(max-width: 1024px) 90vw, 600px"
+                  className="h-auto w-full max-w-[600px] object-contain"
+                  priority
                 />
               </div>
-              <p className="mt-2 text-center text-xs text-muted-foreground">
-                A circular system where each biotic type supports the next.
+              <p className="mt-3 text-center text-xs text-muted-foreground">
+                Four sections. One weekly habit.
               </p>
             </ScrollReveal>
 
             <ScrollReveal delay={200}>
-              <div className="mt-8 grid grid-cols-2 gap-4">
+              <div className="mt-10 grid grid-cols-2 gap-4">
                 {quadrants.map((q, index) => (
                   <ScrollReveal key={q.label} delay={index * 80}>
                     <div className="relative overflow-hidden rounded-2xl border border-border bg-background p-5 transition-shadow hover:shadow-lg">
@@ -243,8 +249,8 @@ export function TheFramework() {
                   </ScrollReveal>
                 ))}
               </div>
-              <p className="mt-4 text-center text-xs text-muted-foreground">
-                Build this plate once. Eat it five days. Change it next week.
+              <p className="mt-5 text-center text-xs text-muted-foreground">
+                Build the plate once. Repeat it for five days. Change it next week.
               </p>
             </ScrollReveal>
           </div>

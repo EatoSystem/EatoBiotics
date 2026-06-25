@@ -57,7 +57,7 @@ export function ClosingCta() {
                 href="/assessment"
                 className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-xl shadow-black/30 transition-all hover:opacity-90"
               >
-                Get my gut score free <ArrowRight size={16} />
+                Understand My Food System <ArrowRight size={16} />
               </Link>
             </div>
             <p className="mt-5 text-xs text-white/55">

@@ -162,7 +162,7 @@ export function ScorePreview() {
               {/* Insight */}
               <div
                 className="rounded-2xl px-5 py-4 text-base text-muted-foreground leading-relaxed"
-                style={{ background: "color-mix(in srgb, var(--muted) 60%, transparent)" }}
+                style={{ background: "color-mix(in srgb, var(--icon-green) 7%, var(--card))" }}
               >
                 <span className="font-semibold text-foreground">What this means: </span>
                 {EXAMPLE.insight}
@@ -178,7 +178,7 @@ export function ScorePreview() {
               href="/assessment"
               className="brand-gradient inline-flex items-center gap-2.5 rounded-full px-10 py-5 text-lg font-semibold text-white shadow-xl shadow-icon-green/25 transition-all hover:shadow-2xl hover:shadow-icon-green/35 hover:opacity-90"
             >
-              Get my gut score free <ArrowRight size={18} />
+              Understand My Food System <ArrowRight size={18} />
             </Link>
             <p className="mt-3.5 text-sm text-muted-foreground">
               Takes about 3 minutes. No account required.

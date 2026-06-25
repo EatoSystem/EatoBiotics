@@ -14,7 +14,7 @@ const STEPS = [
   {
     number: "02",
     title: "Score",
-    line: "See your gut score instantly.",
+    line: "See your Food System Score instantly.",
     color: "var(--icon-green)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
     bgGradient: "linear-gradient(160deg, color-mix(in srgb, var(--icon-green) 10%, transparent), transparent 60%)",
@@ -105,7 +105,7 @@ export function HowItWorks() {
               href="/assessment"
               className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
             >
-              Get my gut score free <ArrowRight size={16} />
+              Understand My Food System <ArrowRight size={16} />
             </Link>
             <p className="mt-3 text-xs text-muted-foreground">
               Takes about 3 minutes. No account required.
