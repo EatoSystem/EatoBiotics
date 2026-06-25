@@ -3,6 +3,7 @@ import { Composition } from "remotion";
 import { VIDEO, VIDEO_VERTICAL, BRAND_COPY } from "./lib/brand";
 import { EatoBioticsBrandIntro } from "./compositions/EatoBioticsBrandIntro";
 import { TheFoodSystemInsideYouHero } from "./compositions/TheFoodSystemInsideYouHero";
+import { FoodSystemHeroLoop } from "./compositions/FoodSystemHeroLoop";
 import { AssessmentResultVideo } from "./compositions/AssessmentResultVideo";
 import { MealScoreSocialVideo } from "./compositions/MealScoreSocialVideo";
 
@@ -44,6 +45,20 @@ export const RemotionRoot: React.FC = () => {
           subline: "Understand your internal food system.",
           score: 86,
           showScoreRing: true,
+        }}
+      />
+
+      {/* Square, text-free looping variant — rendered to mp4/webm for the
+          website hero slots (homepage + waitlist). */}
+      <Composition
+        id="FoodSystemHeroLoop"
+        component={FoodSystemHeroLoop}
+        durationInFrames={240}
+        fps={VIDEO.fps}
+        width={1080}
+        height={1080}
+        defaultProps={{
+          heroImage: "assets/food-system-inside-you.png",
         }}
       />
 

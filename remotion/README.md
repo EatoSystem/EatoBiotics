@@ -40,6 +40,7 @@ right-hand props panel to change a composition's data live (score, copy, labels�
 | ------------------------ | ----------- | ------ | ------------------------------------------------------------- |
 | `EatoBioticsBrandIntro`  | 1920×1080   | 8s     | **Master brand asset** — particles → glowing food-system → score ring → lockup. The polished intro for all videos. |
 | `TheFoodSystemInsideYouHero` | 1920×1080 | 12s | **Flagship hero** — animates the "food system inside you" figure: particle ecosystem → figure resolves → digestive activation → microbiome orbits + energy rings → score ring → lockup. Homepage/advert/assessment opener. Hero image is a prop. |
+| `FoodSystemHeroLoop` | 1080×1080 | 8s | **Square, text-free loop** of the hero figure (no lockup) — rendered to mp4/webm and embedded in the website homepage + waitlist hero slots via plain `<video>`. Seamless-ish loop. |
 | `AssessmentResultVideo`  | 1920×1080   | 13s    | Post-assessment result. Data-driven (score / name / summary / pillars). |
 | `MealScoreSocialVideo`   | 1080×1920   | 11s    | Vertical (9:16) social meal-score for sharing. Data-driven (score / labels / meal image). |
 

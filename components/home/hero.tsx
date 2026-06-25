@@ -1,9 +1,9 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
+import { HeroVideo } from "@/components/hero-video"
 
 export function Hero() {
   return (
@@ -18,12 +18,11 @@ export function Hero() {
               className="absolute inset-0 -z-10 blur-3xl"
               style={{ background: "radial-gradient(60% 60% at 50% 48%, rgba(76,182,72,0.20), rgba(45,170,110,0.12) 55%, transparent 78%)" }}
             />
-            <Image
-              src="/images/hero-gut.png"
-              alt="The food system inside you — gut microbiome illustration"
-              width={900}
-              height={900}
-              priority
+            <HeroVideo
+              posterSrc="/videos/food-system-hero-poster.jpg"
+              webmSrc="/videos/food-system-hero.webm"
+              mp4Src="/videos/food-system-hero.mp4"
+              alt="The food system inside you — animated gut microbiome figure"
               className="w-full h-auto max-h-[70vw] object-contain md:max-h-none"
             />
           </div>

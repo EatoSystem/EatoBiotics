@@ -1,9 +1,9 @@
 "use client"
 
-import Image from "next/image"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { DiscoverFlow } from "@/components/waitlist/discover-flow"
 import { WaitlistSocialProof } from "@/components/waitlist/social-proof"
+import { HeroVideo } from "@/components/hero-video"
 
 const GRADIENT_BAR =
   "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))"
@@ -27,12 +27,11 @@ export function WaitlistHero() {
               className="absolute inset-0 -z-10 blur-3xl"
               style={{ background: "radial-gradient(60% 60% at 50% 48%, rgba(76,182,72,0.22), rgba(245,166,35,0.12) 55%, transparent 78%)" }}
             />
-            <Image
-              src="/images/hero-gut.png"
-              alt="The food system inside you — gut microbiome illustration"
-              width={900}
-              height={900}
-              priority
+            <HeroVideo
+              posterSrc="/videos/food-system-hero-poster.jpg"
+              webmSrc="/videos/food-system-hero.webm"
+              mp4Src="/videos/food-system-hero.mp4"
+              alt="The food system inside you — animated gut microbiome figure"
               className="w-full h-auto max-h-[70vw] object-contain md:max-h-none"
             />
           </div>
