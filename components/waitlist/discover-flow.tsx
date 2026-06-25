@@ -185,7 +185,10 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
           <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
             {tw.intro.body}
           </p>
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-2.5">
+          <p className="mt-7 mb-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            {tw.intro.bioticsHeader}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2.5">
             {ENGINE_ORDER.map((p) => (
               <span
                 key={p}

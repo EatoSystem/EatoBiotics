@@ -85,6 +85,7 @@ export interface Dictionary {
       titleHighlight: string
       titleTail: string
       body: string
+      bioticsHeader: string
       cta: string
       meta: string
     }
@@ -239,13 +240,14 @@ const en: Dictionary = {
   waitlist: {
     draftNotice: "Translation in progress — this page is shown in {language} as an automatic draft.",
     intro: {
-      eyebrow: "The Food System Inside You",
-      titleLead: "Meet the ",
-      titleHighlight: "living world",
-      titleTail: " inside you.",
-      body: "~38 trillion microbes form a food system that shapes your energy, mood, digestion and long-term health. Most people never meet it. In 60 seconds, discover the state of yours.",
-      cta: "Meet my food system",
-      meta: "Free · 60 seconds · No login",
+      eyebrow: "EATOBIOTICS",
+      titleLead: "Understand the Food System ",
+      titleHighlight: "Inside You",
+      titleTail: "",
+      body: "Your health, digestion, energy, cravings, gut comfort, and daily food choices are connected. EatoBiotics helps you assess your internal food system and gives you a personalised score, report, and plan to improve it — supporting your overall health and wellbeing.",
+      bioticsHeader: "3 Biotics",
+      cta: "Understand My Food System",
+      meta: "Join the Waitlist when complete.",
     },
     progress: {
       engineOf: "Engine {index} of 3 · {label}",
@@ -460,13 +462,14 @@ const es: Dictionary = {
   waitlist: {
     draftNotice: "Traducción en curso — esta página se muestra en {language} como borrador automático.",
     intro: {
-      eyebrow: "El sistema alimentario que llevas dentro",
-      titleLead: "Conoce el ",
-      titleHighlight: "mundo vivo",
-      titleTail: " que llevas dentro.",
-      body: "~38 billones de microbios forman un sistema alimentario que moldea tu energía, tu ánimo, tu digestión y tu salud a largo plazo. La mayoría nunca lo conoce. En 60 segundos, descubre el estado del tuyo.",
-      cta: "Conocer mi sistema alimentario",
-      meta: "Gratis · 60 segundos · Sin registro",
+      eyebrow: "EATOBIOTICS",
+      titleLead: "Comprende el sistema alimentario ",
+      titleHighlight: "que llevas dentro",
+      titleTail: "",
+      body: "Tu salud, digestión, energía, antojos, bienestar intestinal y tus decisiones alimentarias diarias están conectados. EatoBiotics te ayuda a evaluar tu sistema alimentario interno y te ofrece una puntuación, un informe y un plan personalizados para mejorarlo, apoyando tu salud y bienestar generales.",
+      bioticsHeader: "3 Biotics",
+      cta: "Comprender mi sistema alimentario",
+      meta: "Únete a la lista de espera al terminar.",
     },
     progress: {
       engineOf: "Motor {index} de 3 · {label}",
@@ -681,13 +684,14 @@ const fr: Dictionary = {
   waitlist: {
     draftNotice: "Traduction en cours — cette page est affichée en {language} sous forme de brouillon automatique.",
     intro: {
-      eyebrow: "Le système alimentaire en vous",
-      titleLead: "Découvrez le ",
-      titleHighlight: "monde vivant",
-      titleTail: " qui est en vous.",
-      body: "~38 000 milliards de microbes forment un système alimentaire qui façonne votre énergie, votre humeur, votre digestion et votre santé à long terme. La plupart des gens ne le rencontrent jamais. En 60 secondes, découvrez l'état du vôtre.",
-      cta: "Découvrir mon système alimentaire",
-      meta: "Gratuit · 60 secondes · Sans inscription",
+      eyebrow: "EATOBIOTICS",
+      titleLead: "Comprenez le système alimentaire ",
+      titleHighlight: "qui est en vous",
+      titleTail: "",
+      body: "Votre santé, votre digestion, votre énergie, vos envies, votre confort intestinal et vos choix alimentaires quotidiens sont liés. EatoBiotics vous aide à évaluer votre système alimentaire intérieur et vous donne un score, un rapport et un plan personnalisés pour l'améliorer — au service de votre santé et de votre bien-être globaux.",
+      bioticsHeader: "3 Biotics",
+      cta: "Comprendre mon système alimentaire",
+      meta: "Rejoignez la liste d'attente une fois terminé.",
     },
     progress: {
       engineOf: "Moteur {index} sur 3 · {label}",
@@ -902,13 +906,14 @@ const de: Dictionary = {
   waitlist: {
     draftNotice: "Übersetzung in Arbeit — diese Seite wird auf {language} als automatischer Entwurf angezeigt.",
     intro: {
-      eyebrow: "Das Ernährungssystem in dir",
-      titleLead: "Entdecke die ",
-      titleHighlight: "lebendige Welt",
-      titleTail: " in dir.",
-      body: "~38 Billionen Mikroben bilden ein Ernährungssystem, das deine Energie, Stimmung, Verdauung und langfristige Gesundheit prägt. Die meisten Menschen lernen es nie kennen. Entdecke in 60 Sekunden den Zustand deines eigenen.",
-      cta: "Mein Ernährungssystem entdecken",
-      meta: "Kostenlos · 60 Sekunden · Ohne Anmeldung",
+      eyebrow: "EATOBIOTICS",
+      titleLead: "Verstehe das Ernährungssystem ",
+      titleHighlight: "in dir",
+      titleTail: "",
+      body: "Deine Gesundheit, Verdauung, Energie, Gelüste, dein Darmwohlbefinden und deine täglichen Essensentscheidungen hängen zusammen. EatoBiotics hilft dir, dein inneres Ernährungssystem einzuschätzen, und gibt dir einen personalisierten Score, einen Bericht und einen Plan, um es zu verbessern — für deine Gesundheit und dein Wohlbefinden insgesamt.",
+      bioticsHeader: "3 Biotics",
+      cta: "Mein Ernährungssystem verstehen",
+      meta: "Tritt nach Abschluss der Warteliste bei.",
     },
     progress: {
       engineOf: "Motor {index} von 3 · {label}",
@@ -1122,13 +1127,14 @@ const ar: Dictionary = {
   waitlist: {
     draftNotice: "الترجمة قيد التنفيذ — تُعرض هذه الصفحة بـ{language} كمسودة تلقائية.",
     intro: {
-      eyebrow: "النظام الغذائي بداخلك",
-      titleLead: "تعرّف على ",
-      titleHighlight: "العالم الحي",
-      titleTail: " بداخلك.",
-      body: "تشكّل نحو 38 تريليون ميكروب نظامًا غذائيًا يحدد طاقتك ومزاجك وهضمك وصحتك على المدى الطويل. معظم الناس لا يتعرّفون عليه أبدًا. في 60 ثانية، اكتشف حالة نظامك.",
-      cta: "تعرّف على نظامي الغذائي",
-      meta: "مجاني · 60 ثانية · بدون تسجيل",
+      eyebrow: "EATOBIOTICS",
+      titleLead: "افهم النظام الغذائي ",
+      titleHighlight: "بداخلك",
+      titleTail: "",
+      body: "صحتك وهضمك وطاقتك والرغبة الشديدة في الطعام وراحة أمعائك وخياراتك الغذائية اليومية كلها مترابطة. يساعدك EatoBiotics على تقييم نظامك الغذائي الداخلي، ويمنحك درجة وتقريرًا وخطة مخصصة لتحسينه — لدعم صحتك وعافيتك بشكل عام.",
+      bioticsHeader: "3 Biotics",
+      cta: "افهم نظامي الغذائي",
+      meta: "انضم إلى قائمة الانتظار عند الانتهاء.",
     },
     progress: {
       engineOf: "المحرك {index} من 3 · {label}",
