@@ -1,8 +1,11 @@
-# EatoBiotics — Remotion video workspace
+# EatoBiotics — Remotion video engine
 
-This folder is a **self-contained [Remotion](https://www.remotion.dev) project**
-for producing branded EatoBiotics video content: adverts, assessment explainers,
-hero animations, and social cuts.
+A **self-contained [Remotion](https://www.remotion.dev) workspace** that is the
+foundation of the EatoBiotics **video engine** — branded video content built from
+shared brand tokens and reusable components.
+
+Product strategy this engine supports: **Brand → Assessment → Meal → Score →
+Share → Membership.**
 
 > **Isolated from the main app.** This workspace has its **own** `package.json`,
 > `node_modules`, `tsconfig.json` and ESLint config. It is **not** part of the
@@ -13,7 +16,7 @@ hero animations, and social cuts.
 ## Prerequisites
 
 - Node.js 18+
-- From this folder, install once:
+- Install once:
 
 ```bash
 cd remotion
@@ -27,30 +30,52 @@ cd remotion
 npm run dev
 ```
 
-This opens **Remotion Studio** at <http://localhost:3000> — a live, scrubbable
-preview of every composition. Edit a file in `src/` and the preview hot-reloads.
+Opens **Remotion Studio** at <http://localhost:3000> — a live, scrubbable preview
+of every composition. Edit a file in `src/` and the preview hot-reloads. Use the
+right-hand props panel to change a composition's data live (score, copy, labels…).
 
-## Render a video
+## Compositions
+
+| ID                       | Size        | Length | Purpose                                                        |
+| ------------------------ | ----------- | ------ | ------------------------------------------------------------- |
+| `EatoBioticsBrandIntro`  | 1920×1080   | 8s     | **Master brand asset** — particles → glowing food-system → score ring → lockup. The polished intro for all videos. |
+| `AssessmentResultVideo`  | 1920×1080   | 13s    | Post-assessment result. Data-driven (score / name / summary / pillars). |
+| `MealScoreSocialVideo`   | 1080×1920   | 11s    | Vertical (9:16) social meal-score for sharing. Data-driven (score / labels / meal image). |
+
+### Data-driven props
+
+`AssessmentResultVideo` and `MealScoreSocialVideo` take props so they can later
+generate personalised videos (edit live in Studio, or pass `--props`):
+
+```bash
+# Personalised assessment result
+npx remotion render AssessmentResultVideo out/result.mp4 \
+  --props='{"name":"Jason","score":84,"pillars":["Stability","Diversity","Rhythm","Energy"]}'
+
+# Meal score with a real meal photo (drop the file in remotion/public first)
+npx remotion render MealScoreSocialVideo out/meal.mp4 \
+  --props='{"score":91,"mealImage":"meals/my-lunch.jpg"}'
+```
+
+When `mealImage` is omitted, an abstract brand "plate" is used — no asset needed.
+
+## Render / export a video
 
 ```bash
 cd remotion
-npx remotion render EatoBrandIntro out/intro.mp4
-```
-
-Render a single still frame (useful for thumbnails / quick checks):
-
-```bash
-npx remotion still EatoBrandIntro out/intro.png --frame=90
+npx remotion render EatoBioticsBrandIntro out/brand-intro.mp4
+# stills (thumbnails / brand assets):
+npx remotion still EatoBioticsBrandIntro out/brand.png --frame=230
 ```
 
 ### Rendering in CI / headless / sandboxed environments
 
 Remotion normally downloads its own Chrome Headless Shell on first render. If that
-download is blocked (e.g. a restricted network), point Remotion at an existing
-**headless-shell** Chromium binary instead:
+download is blocked (restricted network), point Remotion at an existing
+**headless-shell** Chromium binary:
 
 ```bash
-npx remotion render EatoBrandIntro out/intro.mp4 \
+npx remotion render EatoBioticsBrandIntro out/brand-intro.mp4 \
   --browser-executable=/path/to/chrome-headless-shell
 ```
 
@@ -62,52 +87,58 @@ npx remotion render EatoBrandIntro out/intro.mp4 \
 ```
 remotion/
 ├── src/
-│   ├── index.ts                 # registerRoot entry
-│   ├── Root.tsx                 # composition registry (add new <Composition> here)
-│   ├── index.css                # Tailwind entry (Remotion Tailwind v4)
-│   └── eatobiotics/
-│       ├── brand.ts             # ← brand tokens: colours, gradient, fonts (single source of truth)
-│       ├── BioticPill.tsx       # reusable animated "biotic pill" capsule
-│       └── BrandIntro.tsx       # the EatoBrandIntro composition
+│   ├── index.ts                       # registerRoot entry
+│   ├── Root.tsx                       # composition registry (add new <Composition> here)
+│   ├── index.css                      # imports fonts.css + Tailwind
+│   ├── fonts.css                      # self-hosted @font-face (DM Sans + Lora)
+│   ├── fonts/                         # woff2 files (latin)
+│   ├── lib/
+│   │   ├── brand.ts                   # ← brand tokens: colours, gradients, fonts, anim, text, glow
+│   │   └── fonts.ts                   # font-family stacks
+│   ├── components/                    # reusable building blocks
+│   │   ├── ParticleField.tsx          # living brand-particle ecosystem
+│   │   ├── GlowBodySystem.tsx         # abstract glowing "food system inside you"
+│   │   ├── ScoreRing.tsx              # animated gradient score ring + count-up
+│   │   ├── BrandLockup.tsx            # logo + wordmark + tagline lockup
+│   │   ├── GradientText.tsx           # brand-gradient clipped text
+│   │   ├── MetricPill.tsx             # pillar / label chip
+│   │   └── BioticPill.tsx             # rounded capsule motif
+│   └── compositions/
+│       ├── EatoBioticsBrandIntro.tsx
+│       ├── AssessmentResultVideo.tsx
+│       └── MealScoreSocialVideo.tsx
+├── public/                            # static assets (logo, meal images)
 ├── remotion.config.ts
 └── package.json
 ```
 
 ## Brand system
 
-All brand values live in **`src/eatobiotics/brand.ts`** and mirror the website's
-design tokens in `app/globals.css`. Reuse these in every new composition so
-everything stays on-brand:
+All brand values live in **`src/lib/brand.ts`** and mirror the website's design
+tokens in `app/globals.css`. Reuse these in every new composition so everything
+stays on-brand:
 
 - **Background:** true white (`#FFFFFF`).
 - **Text:** deep green (`#1A2E12`).
 - **Brand gradient:** lime → green → teal → yellow → orange
   (`#A8E063 → #4CB648 → #2DAA6E → #F5C518 → #F5A623`).
-- **Fonts:** DM Sans (sans) + Lora (serif).
+- **Fonts:** DM Sans (sans) + Lora (serif) — self-hosted in `src/fonts/`.
 - **Rule:** warm organic green/yellow/orange only — **no blue, no purple.**
 
-### Fonts (follow-up)
+Fonts are **self-hosted** (`src/fonts.css`), so the real brand type renders in both
+Studio and headless renders with no runtime network fetch.
 
-`brand.ts` currently references the DM Sans / Lora **family names** with safe
-system fallbacks, so renders work offline. For pixel-accurate brand type, load the
-real fonts via [`@remotion/google-fonts`](https://www.remotion.dev/docs/fonts)
-(`@remotion/google-fonts/DMSans`, `@remotion/google-fonts/Lora`) or drop local
-`.woff2` files in `public/fonts` and `@font-face` them.
+## Adding a new video
 
-## Compositions
-
-| ID               | Size        | Length | Description                                  |
-| ---------------- | ----------- | ------ | -------------------------------------------- |
-| `EatoBrandIntro` | 1920×1080   | 5s     | Brand-intro foundation — the base to evolve. |
+1. Build it from `src/lib/brand.ts` tokens + the components in `src/components/`.
+2. Add the file under `src/compositions/`.
+3. Register a `<Composition>` in `src/Root.tsx`.
 
 ### Roadmap
 
-`EatoBrandIntro` is the foundation. Build on the same brand tokens + `BioticPill`
-to create:
+`EatoBioticsBrandIntro` is the master asset. Next from the same components:
 
 - **Adverts** — short product / waitlist promos.
-- **Assessment explainers** — how the Food System score works.
-- **Hero animations** — looping background / landing motion.
-- **Social videos** — vertical (1080×1920) cuts for Reels / TikTok / Shorts.
-
-Add each as a new file in `src/eatobiotics/` and register it in `src/Root.tsx`.
+- **Hero animations** — looping landing-page background motion.
+- **More social cuts** — vertical share videos for the score/meal mechanics.
+- **Membership / share** stages of the Brand → … → Membership funnel.

@@ -1,5 +1,6 @@
 import React from "react";
 import { useCurrentFrame, useVideoConfig, spring, interpolate } from "remotion";
+import { ANIM } from "../lib/brand";
 
 /**
  * A single "biotic pill" — the rounded capsule motif from the EatoBiotics brand
@@ -27,7 +28,7 @@ export const BioticPill: React.FC<{
   const enter = spring({
     frame: frame - delay,
     fps,
-    config: { damping: 200, mass: 0.8 },
+    config: ANIM.spring,
   });
 
   const scale = interpolate(enter, [0, 1], [0.6, 1]);
