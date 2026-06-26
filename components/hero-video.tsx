@@ -11,6 +11,10 @@ import Image from "next/image"
  * Note: this intentionally autoplays regardless of `prefers-reduced-motion` — it
  * is the page's hero centrepiece. A `<noscript>` static-image fallback is kept
  * for no-JS clients.
+ *
+ * `mix-blend-mode: multiply` makes the video's white background dissolve into the
+ * pure-white page (white × white = white), so there's no visible off-white tile —
+ * only the figure and its glow show. Same pattern as components/home/eatosystem-teaser.
  */
 export function HeroVideo({
   posterSrc,
@@ -36,6 +40,7 @@ export function HeroVideo({
         preload="auto"
         aria-label={alt}
         className={className}
+        style={{ mixBlendMode: "multiply" }}
       >
         {webmSrc && <source src={webmSrc} type="video/webm" />}
         <source src={mp4Src} type="video/mp4" />

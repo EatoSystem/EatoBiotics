@@ -42,7 +42,7 @@ export const AuraGlow: React.FC<{
         left: cx - base / 2,
         top: cy - base / 2,
         borderRadius: "50%",
-        background: `radial-gradient(circle at 50% 46%, ${color}3a 0%, ${color}1c 34%, rgba(255,255,255,0) 68%)`,
+        background: `radial-gradient(circle at 50% 46%, ${color}30 0%, ${color}14 34%, rgba(255,255,255,0) 66%)`,
         filter: "blur(30px)",
         opacity,
       }}

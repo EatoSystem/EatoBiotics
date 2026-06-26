@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
-import { SOFT_RADIAL, ICON } from "../lib/brand";
+import { ICON } from "../lib/brand";
 import { ParticleField } from "../components/ParticleField";
 import { ScoreRing } from "../components/ScoreRing";
 import { HeroImageLayer } from "../components/HeroImageLayer";
@@ -43,9 +43,9 @@ export const FoodSystemHeroLoop: React.FC<{
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#FFFFFF" }}>
-      {/* Soft brand radial wash + breathing heartbeat aura */}
-      <AbsoluteFill style={{ background: SOFT_RADIAL }} />
-      <AuraGlow sizePct={0.95} beatSec={2} hueSec={8} />
+      {/* Heartbeat aura — a halo hugging the figure (kept tight so the tile edges
+          stay pure #FFFFFF and blend into the white page). */}
+      <AuraGlow sizePct={0.58} beatSec={2} hueSec={8} />
 
       {/* Living particles (subtle) */}
       <ParticleField count={28} maxOpacity={0.4} fadeInBy={1} />
