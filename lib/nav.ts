@@ -76,6 +76,7 @@ export const NAV_GROUPS: NavGroup[] = [
 
 /** Standalone top-level header links (rendered after the dropdown groups). */
 export const NAV_LINKS: Array<{ href: string; label: string }> = [
-  { href: "/pricing", label: "Pricing" },
-  { href: "/about",   label: "About" },
+  { href: "/digital-twin", label: "Digital Twin" },
+  { href: "/pricing",      label: "Pricing" },
+  { href: "/about",        label: "About" },
 ]

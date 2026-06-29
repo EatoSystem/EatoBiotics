@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 import { PowersEverything } from "@/components/home/powers-everything"
 import { TheFramework } from "@/components/home/the-framework"
 import { HowItWorks } from "@/components/home/how-it-works"
-import { FoodSystemLoopSection } from "@/components/home/food-system-loop-section"
+import { DigitalTwinSection } from "@/components/home/digital-twin-section"
 import { ScorePreview } from "@/components/home/score-preview"
 import { Ecosystem } from "@/components/home/ecosystem"
 import { MembershipTeaser } from "@/components/home/membership-teaser"
@@ -57,7 +57,7 @@ export default async function Home() {
       <SoftDivider />
       <PowersEverything />
       <HowItWorks />
-      <FoodSystemLoopSection />
+      <DigitalTwinSection />
       <TheFramework />
       <ScorePreview />
       <SoftDivider />
