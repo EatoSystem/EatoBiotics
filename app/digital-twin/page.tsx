@@ -1,343 +1,382 @@
 import type { Metadata } from "next"
-import Link from "next/link"
 import {
-  ArrowRight, Lock, Brain, HeartPulse, Moon, Activity as ActivityIcon, Utensils, ClipboardList,
-  Sparkles, NotebookPen, Users, Mic, Watch, FileText, Puzzle, Bot,
+  ArrowRight, Utensils, Moon, HeartPulse, Brain, ClipboardList, TrendingUp,
+  Lightbulb, BarChart3, Leaf, History,
+  User, Users, Globe, Baby, PersonStanding, UserRound,
+  FileText, Mic, Bot, Watch, Puzzle, FlaskConical, ShieldCheck, Sparkles, Footprints,
 } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
-import { HeroVideo } from "@/components/hero-video"
 import { AgentLoopTimeline } from "@/components/agent-loop/AgentLoopTimeline"
-import { FoodSystemLoopCard } from "@/components/agent-loop/FoodSystemLoopCard"
-import { FoodSystemMemoryPanel } from "@/components/agent-loop/FoodSystemMemoryPanel"
-import { buildBaseline, LOOP_DISCLAIMER, type FoodSystemDigitalTwin } from "@/lib/agent-loop"
+import { DigitalTwinFigure, Eyebrow, CtaButton } from "@/components/digital-twin/parts"
+import { CountUp } from "@/components/digital-twin/count-up"
 
 export const metadata: Metadata = {
   title: "Your Food System Digital Twin",
   description:
-    "Build a living digital twin of the Food System Inside You. It learns from your meals, symptoms, sleep, activity and habits, shows what's changing, and gives you your next best action — improving your Food System, and helping build the Food System.",
+    "A living digital twin of the Food System Inside You. It learns from your meals, sleep, activity, symptoms and habits, understands what's changing, and guides your next best action — improving your Food System, and helping build the Food System.",
   openGraph: {
-    title: "Build Your Food System Digital Twin — EatoBiotics",
-    description:
-      "A living representation of the Food System Inside You. Understand it like never before.",
+    title: "Meet Your Food System Digital Twin — EatoBiotics",
+    description: "Understand the Food System Inside You like never before.",
     url: "https://eatobiotics.com/digital-twin",
   },
 }
 
-/* A representative (static) Digital Twin for the marketing preview. */
-const sampleBaseline = buildBaseline({
-  foundationKey: "you",
-  score: 74,
-  scoreLabel: "Strong Foundation",
-  biotics: { prebiotics: 58, probiotics: 80, postbiotics: 67 },
-  strengths: ["Fermented foods"],
-  priorities: ["Fibre diversity"],
-})
-const sampleAction = {
-  id: "sample",
-  action: "Add one prebiotic-rich food to two meals this week.",
-  why: "Your fibre diversity looks lower than your fermented-food consistency — small, repeatable changes here move your Food System Score the most.",
-  category: "food-first" as const,
-  targetBiotic: "prebiotics" as const,
-  effort: "small" as const,
-  disclaimer: LOOP_DISCLAIMER,
-}
-const SAMPLE_TWIN: FoodSystemDigitalTwin = {
-  baseline: sampleBaseline,
-  currentScore: sampleBaseline.foodSystemScore,
-  biotics: sampleBaseline.biotics,
-  observations: [],
-  trends: [
-    { label: "Food System Score", direction: "up", detail: "+6 since your baseline" },
-    { label: "Momentum", direction: "up", detail: "improving" },
-  ],
-  activeSystem: "foundation",
-  currentStage: "recommend",
-  nextBestAction: sampleAction,
-  recommendations: [sampleAction],
-  memory: {
-    completed: ["m1"],
-    ignored: [],
-    outcomes: [{ recommendationId: "m1", action: "Add a fermented food each day", status: "completed", at: 0 }],
-    preferences: {},
-  },
-  progress: { loopsCompleted: 3, scoreDelta: 6, completedActions: 2, ignoredActions: 0, momentum: "improving" },
-  updatedAt: 0,
-}
+const GREEN = "#4CB648"
+const ORANGE = "#F5A623"
+const lora = { fontFamily: "var(--font-lora), Georgia, serif" } as const
 
-const GROW_INPUTS = [
-  { icon: Utensils, label: "Meals" },
-  { icon: HeartPulse, label: "Symptoms" },
-  { icon: Moon, label: "Sleep" },
-  { icon: ActivityIcon, label: "Activity" },
-  { icon: Brain, label: "Habits" },
-  { icon: ClipboardList, label: "Assessments" },
+/* ── Ch2 inputs ─────────────────────────────────────────────── */
+const INPUTS = [
+  { Icon: Utensils, label: "Meals" }, { Icon: Moon, label: "Sleep" },
+  { Icon: Footprints, label: "Activity" }, { Icon: HeartPulse, label: "Symptoms" },
+  { Icon: Brain, label: "Habits" }, { Icon: ClipboardList, label: "Assessments" },
+  { Icon: TrendingUp, label: "Progress" },
 ]
-const GROW_FLOW = ["Food System Digital Twin", "Agent Loop", "Next Best Action", "Better Food System"]
-
-const MEMORY_ITEMS = ["Meals", "Progress", "Observations", "Habits", "Improvements"]
-
-const FUTURE = [
-  { icon: Utensils, label: "Meals" },
-  { icon: Users, label: "Family" },
-  { icon: Puzzle, label: "Add-on systems" },
-  { icon: FileText, label: "Reports" },
-  { icon: Mic, label: "Voice" },
-  { icon: Bot, label: "AI" },
-  { icon: Watch, label: "Wearables" },
-  { icon: HeartPulse, label: "Health programmes" },
+/* ── Ch3 friendly loop ──────────────────────────────────────── */
+const LOOP_STEPS = ["You live", "Observes", "Learns", "Understands", "Guides", "You improve"]
+/* ── Ch4 memories ───────────────────────────────────────────── */
+const MEMORIES = [
+  { Icon: Utensils, label: "Meals" }, { Icon: BarChart3, label: "Patterns" },
+  { Icon: TrendingUp, label: "Progress" }, { Icon: Leaf, label: "Three Biotics" },
+  { Icon: Lightbulb, label: "Recommendations" }, { Icon: History, label: "History" },
+]
+/* ── Ch7 lifecycle ──────────────────────────────────────────── */
+const LIFECYCLE = [
+  { Icon: Baby, label: "Childhood", s: 26 }, { Icon: PersonStanding, label: "Adolescence", s: 30 },
+  { Icon: User, label: "Young adult", s: 34 }, { Icon: UserRound, label: "Adult", s: 38 },
+  { Icon: Users, label: "Parent", s: 40 }, { Icon: PersonStanding, label: "Later life", s: 34 },
+]
+/* ── Ch8 future ─────────────────────────────────────────────── */
+const CONNECTED = [
+  { Icon: Utensils, label: "Meals" }, { Icon: Users, label: "Family" },
+  { Icon: FileText, label: "Reports" }, { Icon: Mic, label: "Voice" },
+  { Icon: Bot, label: "AI" }, { Icon: Watch, label: "Wearables" },
+  { Icon: HeartPulse, label: "Health programmes" }, { Icon: Puzzle, label: "Add-on systems" },
+]
+const TRUST = [
+  { Icon: FlaskConical, t: "Science-backed", s: "Microbiome research + the three biotics." },
+  { Icon: User, t: "Personal", s: "Built around your unique Food System." },
+  { Icon: ShieldCheck, t: "Private", s: "Your data. Your control. Always." },
+  { Icon: Sparkles, t: "Powerful", s: "Technology that learns; guidance that helps." },
+  { Icon: Globe, t: "Purpose", s: "Improve yours. Help build the Food System." },
 ]
 
-function CtaButton({ children, href = "/assessment" }: { children: React.ReactNode; href?: string }) {
-  return (
-    <Link
-      href={href}
-      className="inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg transition-transform hover:-translate-y-0.5"
-      style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}
-    >
-      {children}
-      <ArrowRight className="h-5 w-5" />
-    </Link>
-  )
-}
-
-function Eyebrow({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-icon-green">{children}</p>
-  )
+function tint(hex: string, pct: number) {
+  return `color-mix(in srgb, ${hex} ${pct}%, #fff)`
 }
 
 export default function DigitalTwinPage() {
   return (
-    <main className="bg-background">
-      {/* ── 1. Hero ───────────────────────────────────────────────── */}
-      <section className="px-6 pt-24 pb-16 md:pt-32">
-        <div className="mx-auto grid max-w-[1200px] items-center gap-12 lg:grid-cols-2">
-          <ScrollReveal>
-            <div className="max-w-xl">
-              <Eyebrow>Your Digital Twin</Eyebrow>
-              <h1 className="font-serif text-5xl font-semibold leading-tight text-foreground sm:text-6xl text-balance">
-                Build Your <span className="brand-gradient-text">Digital Twin</span>.
-              </h1>
-              <p className="mt-5 text-xl leading-relaxed text-muted-foreground">
-                Understand the Food System Inside You like never before — a living
-                representation that learns from your everyday and shows you what matters next.
-              </p>
-              <div className="mt-8 flex flex-col items-start gap-3">
-                <CtaButton>Build My Digital Twin</CtaButton>
-                <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Lock className="h-3.5 w-3.5" /> Private to you. No spam, ever.
-                </span>
-              </div>
-            </div>
-          </ScrollReveal>
-          <ScrollReveal>
-            <div className="relative mx-auto aspect-square w-full max-w-[460px]">
-              <HeroVideo
-                posterSrc="/videos/food-system-hero-poster.jpg"
-                mp4Src="/videos/food-system-hero.mp4"
-                webmSrc="/videos/food-system-hero.webm"
-                alt="Your living Food System Digital Twin"
-                className="h-full w-full object-contain"
-              />
-            </div>
-          </ScrollReveal>
-        </div>
-      </section>
+    <main className="overflow-hidden bg-background">
 
-      {/* ── 2. What is a Digital Twin? ────────────────────────────── */}
-      <section className="px-6 py-20">
+      {/* ════ Ch1 — Meet Your Digital Twin ════ */}
+      <section className="px-6 pt-24 pb-10 text-center md:pt-32">
         <ScrollReveal>
-          <div className="mx-auto max-w-3xl text-center">
-            <Eyebrow>What is a Digital Twin?</Eyebrow>
-            <h2 className="font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-              A living representation of the Food System Inside You.
-            </h2>
-            <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-              Most apps give you a score and stop. Your Digital Twin keeps going. It begins
-              with your baseline, then quietly grows with every meal, symptom, habit and
-              check-in — building a picture of your Food System that gets richer and more
-              useful the more you live with it. It&rsquo;s not a report. It&rsquo;s a companion.
-            </p>
-          </div>
+          <Eyebrow>Your Digital Twin</Eyebrow>
+          <DigitalTwinFigure size={460} className="my-2" />
+          <h1 style={lora} className="mx-auto mt-4 max-w-4xl text-5xl font-bold leading-[1.03] text-foreground sm:text-6xl md:text-7xl text-balance">
+            Meet your <span className="brand-gradient-text">Digital Twin</span>.
+          </h1>
+          <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
+            A living representation of the Food System Inside You — one that learns,
+            understands, and guides you to feel your best.
+          </p>
+          <div className="mt-9 flex justify-center"><CtaButton>Build My Digital Twin</CtaButton></div>
         </ScrollReveal>
       </section>
 
-      {/* ── 3. How Your Digital Twin Grows ────────────────────────── */}
-      <section className="px-6 py-20" style={{ background: "color-mix(in srgb, var(--icon-green) 4%, #fff)" }}>
+      {/* ════ Ch2 — How Your Twin Comes Alive ════ */}
+      <section className="px-6 py-24">
         <div className="mx-auto max-w-[1100px]">
           <ScrollReveal>
-            <div className="mx-auto mb-12 max-w-2xl text-center">
-              <Eyebrow>How your Digital Twin grows</Eyebrow>
-              <h2 className="font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-                Everything you do feeds one living system.
+            <div className="mx-auto mb-14 max-w-2xl text-center">
+              <Eyebrow>How it comes alive</Eyebrow>
+              <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
+                Everything you do flows into one living system.
               </h2>
             </div>
           </ScrollReveal>
           <ScrollReveal>
-            <div className="flex flex-wrap items-center justify-center gap-2.5">
-              {GROW_INPUTS.map(({ icon: Icon, label }) => (
-                <span key={label} className="inline-flex items-center gap-1.5 rounded-full bg-card px-3.5 py-2 text-sm font-semibold text-foreground ring-1 ring-border">
-                  <Icon className="h-4 w-4" style={{ color: "var(--icon-green)" }} /> {label}
-                </span>
-              ))}
-            </div>
-            <div className="my-4 flex justify-center"><ArrowRight aria-hidden className="h-5 w-5 rotate-90 text-muted-foreground" /></div>
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {GROW_FLOW.map((label, i) => (
-                <div key={label} className="flex items-center gap-2">
-                  <span
-                    className="rounded-full px-4 py-2 text-sm font-semibold text-white"
-                    style={{ background: i === 0 ? "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" : "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" }}
-                  >
-                    {label}
-                  </span>
-                  {i < GROW_FLOW.length - 1 && <ArrowRight aria-hidden className="h-4 w-4 text-muted-foreground" />}
-                </div>
-              ))}
+            <div className="grid items-center gap-8 lg:grid-cols-[1fr_auto_1fr]">
+              {/* inputs */}
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-1">
+                {INPUTS.map(({ Icon, label }) => (
+                  <div key={label} className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: tint(GREEN, 12), color: GREEN }}>
+                      <Icon className="h-[18px] w-[18px]" />
+                    </span>
+                    <span className="text-sm font-semibold text-foreground">{label}</span>
+                  </div>
+                ))}
+              </div>
+              {/* flow connector (desktop) */}
+              <svg width="120" height="240" viewBox="0 0 120 240" fill="none" className="hidden lg:block" aria-hidden>
+                {[40, 120, 200].map((y, i) => (
+                  <path key={i} d={`M0 ${y} C 60 ${y}, 60 120, 120 120`} stroke={i % 2 ? ORANGE : GREEN} strokeWidth="2" strokeDasharray="2 9" strokeLinecap="round" className="eb-flow" opacity="0.6" />
+                ))}
+              </svg>
+              {/* figure */}
+              <DigitalTwinFigure size={320} className="lg:justify-self-end" />
             </div>
           </ScrollReveal>
         </div>
       </section>
 
-      {/* ── 4. The Agent Loop (the engine) ────────────────────────── */}
-      <section className="px-6 py-20">
+      {/* ════ Ch3 — Your Twin Learns (the engine) ════ */}
+      <section className="px-6 py-24" style={{ background: tint(GREEN, 4) }}>
         <div className="mx-auto max-w-[1000px]">
           <ScrollReveal>
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <Eyebrow>The engine</Eyebrow>
-              <h2 className="font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-                The Agent Loop keeps your Twin learning.
+              <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
+                Your Twin learns — quietly, continuously.
               </h2>
-              <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
-                Quietly, in the background, an eight-stage loop turns what you log into what
-                you should do next — then learns from what helped.
-              </p>
             </div>
           </ScrollReveal>
           <ScrollReveal>
+            <ol className="mb-10 flex flex-wrap items-center justify-center gap-2">
+              {LOOP_STEPS.map((s, i) => (
+                <li key={s} className="flex items-center gap-2">
+                  <span className="rounded-full px-4 py-2 text-sm font-semibold text-white" style={{ background: i === 0 || i === LOOP_STEPS.length - 1 ? "linear-gradient(135deg,#4CB648,#2DAA6E)" : "linear-gradient(135deg,#F5C518,#F5A623)" }}>{s}</span>
+                  {i < LOOP_STEPS.length - 1 && <ArrowRight aria-hidden className="h-4 w-4 text-muted-foreground" />}
+                </li>
+              ))}
+            </ol>
+          </ScrollReveal>
+          <ScrollReveal>
             <div className="rounded-3xl border border-border bg-card p-6 sm:p-8">
+              <p className="mb-4 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">The Agent Loop — the intelligence behind your Twin</p>
               <AgentLoopTimeline currentStage="recommend" />
             </div>
           </ScrollReveal>
         </div>
       </section>
 
-      {/* ── 5. Food System Memory ─────────────────────────────────── */}
-      <section className="px-6 py-20" style={{ background: "color-mix(in srgb, var(--icon-orange) 4%, #fff)" }}>
-        <ScrollReveal>
-          <div className="mx-auto max-w-3xl text-center">
-            <Eyebrow>Food System Memory</Eyebrow>
-            <h2 className="font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-              Your Digital Twin remembers you.
-            </h2>
-            <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-              Every interaction makes it more useful. It remembers what you&rsquo;ve tried, what
-              worked, and how far you&rsquo;ve come — so guidance keeps getting more personal.
-            </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-2.5">
-              {MEMORY_ITEMS.map((label) => (
-                <span key={label} className="inline-flex items-center gap-1.5 rounded-full bg-card px-4 py-2 text-sm font-semibold text-foreground ring-1 ring-border">
-                  <NotebookPen className="h-4 w-4" style={{ color: "var(--icon-orange)" }} /> {label}
-                </span>
-              ))}
-            </div>
-          </div>
-        </ScrollReveal>
-      </section>
-
-      {/* ── 6. Personalised Guidance (live sample) ────────────────── */}
-      <section className="px-6 py-20">
+      {/* ════ Ch4 — Your Twin Remembers ════ */}
+      <section className="px-6 py-24">
         <div className="mx-auto max-w-[1000px]">
           <ScrollReveal>
-            <div className="mx-auto mb-10 max-w-2xl text-center">
-              <Eyebrow>Personalised guidance</Eyebrow>
-              <h2 className="font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-                A living companion, not a static report.
+            <div className="mx-auto mb-12 max-w-2xl text-center">
+              <Eyebrow>Memory</Eyebrow>
+              <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
+                Your Twin remembers you.
               </h2>
-              <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
-                Your score, your three biotics, your progress, and the single next best action
-                — all in one place that moves with you. (Example shown.)
-              </p>
+              <p className="mt-5 text-lg text-muted-foreground">Every interaction makes it more useful.</p>
             </div>
           </ScrollReveal>
           <ScrollReveal>
-            <FoodSystemLoopCard twin={SAMPLE_TWIN} />
-            <FoodSystemMemoryPanel className="mt-4" twin={SAMPLE_TWIN} />
+            <div className="relative mx-auto" style={{ width: 440, height: 440, maxWidth: "100%" }}>
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"><DigitalTwinFigure size={230} showParticles={false} /></div>
+              {/* rotating ring of memory chips */}
+              <div className="eb-orbit absolute inset-0">
+                {MEMORIES.map(({ Icon, label }, i) => {
+                  const a = (i / MEMORIES.length) * 2 * Math.PI - Math.PI / 2
+                  const R = 46 // percent radius
+                  const x = 50 + R * Math.cos(a)
+                  const y = 50 + R * Math.sin(a)
+                  return (
+                    <div key={label} className="absolute" style={{ left: `${x}%`, top: `${y}%`, transform: "translate(-50%,-50%)" }}>
+                      <div className="eb-orbit-rev flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 shadow-[0_2px_10px_rgba(26,46,18,0.08)]">
+                        <Icon className="h-3.5 w-3.5" style={{ color: GREEN }} />
+                        <span className="whitespace-nowrap text-xs font-semibold text-foreground">{label}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           </ScrollReveal>
         </div>
       </section>
 
-      {/* ── 7. From You to the Food System ────────────────────────── */}
-      <section className="px-6 py-24" style={{ background: "linear-gradient(160deg, color-mix(in srgb, var(--icon-green) 8%, #fff), color-mix(in srgb, var(--icon-orange) 6%, #fff))" }}>
-        <ScrollReveal>
-          <div className="mx-auto max-w-3xl text-center">
-            <Eyebrow>From you to the Food System</Eyebrow>
-            <h2 className="font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-              Build the Food System Inside You.{" "}
-              <span className="brand-gradient-text">Help build the Food System.</span>
+      {/* ════ Ch5 — Your Twin Guides You ════ */}
+      <section className="px-6 py-24" style={{ background: tint(ORANGE, 4) }}>
+        <div className="mx-auto grid max-w-[1000px] items-center gap-12 lg:grid-cols-2">
+          <ScrollReveal>
+            <Eyebrow>Guidance</Eyebrow>
+            <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
+              A living companion, not a static report.
             </h2>
-            <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-              Your Digital Twin exists to improve your own Food System. And as more people
-              strengthen the Food System Inside Them, anonymised, aggregated insights help us
-              understand and improve the wider Food System — for families, communities and the
-              future of food.
+            <p className="mt-5 max-w-md text-lg text-muted-foreground">
+              Your score, your three biotics, your progress and the single most valuable next
+              step — always in your pocket, always moving with you.
             </p>
-            <p className="mt-4 text-lg font-medium text-foreground">
-              We develop the EatoSystem from the inside out.
-            </p>
-          </div>
-        </ScrollReveal>
+            <ul className="mt-6 space-y-2 text-sm text-foreground">
+              {["Food System Score", "Three Biotics", "Next Best Action", "Progress & loop stage"].map((t) => (
+                <li key={t} className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full" style={{ background: GREEN }} />{t}</li>
+              ))}
+            </ul>
+          </ScrollReveal>
+          <ScrollReveal>
+            <PhoneDashboard />
+          </ScrollReveal>
+        </div>
       </section>
 
-      {/* ── 8. Future Vision ──────────────────────────────────────── */}
-      <section className="px-6 py-20">
+      {/* ════ Ch6 — From You to the Food System ════ */}
+      <section className="px-6 py-24" style={{ background: "linear-gradient(160deg, color-mix(in srgb,var(--icon-green) 8%,#fff), color-mix(in srgb,var(--icon-orange) 6%,#fff))" }}>
+        <div className="mx-auto max-w-[1000px] text-center">
+          <ScrollReveal>
+            <Eyebrow>From you to the Food System</Eyebrow>
+            <h2 style={lora} className="mx-auto max-w-3xl text-4xl font-semibold text-foreground sm:text-5xl text-balance">
+              Millions of healthier Food Systems. <span className="brand-gradient-text">One shared impact.</span>
+            </h2>
+          </ScrollReveal>
+          <ScrollReveal>
+            <div className="mt-12 flex flex-wrap items-center justify-center gap-3">
+              {[
+                { Icon: User, label: "You" }, { Icon: Users, label: "Your family" },
+                { Icon: Users, label: "Your community" }, { Icon: Globe, label: "The Food System" },
+              ].map(({ Icon, label }, i, arr) => (
+                <div key={label} className="flex items-center gap-3">
+                  <div className="flex flex-col items-center gap-2">
+                    <span className="flex h-16 w-16 items-center justify-center rounded-full text-white" style={{ background: `linear-gradient(135deg, color-mix(in srgb,#A8E063 ${100 - i * 22}%, #F5A623), #4CB648)` }}>
+                      <Icon className="h-7 w-7" />
+                    </span>
+                    <span className="text-sm font-semibold text-foreground">{label}</span>
+                  </div>
+                  {i < arr.length - 1 && <ArrowRight aria-hidden className="h-5 w-5 text-muted-foreground" />}
+                </div>
+              ))}
+            </div>
+          </ScrollReveal>
+          <ScrollReveal>
+            <p className="mx-auto mt-10 max-w-xl text-lg leading-relaxed text-muted-foreground">
+              Healthier individuals create healthier families. Healthier families create
+              healthier communities. Together they build a healthier Food System.
+            </p>
+            <p className="mt-4 text-lg font-semibold text-foreground">We develop the EatoSystem from the inside out.</p>
+            <div className="mt-8 flex flex-wrap justify-center gap-2">
+              {["Anonymous", "Aggregated", "Actionable", "Meaningful"].map((c) => (
+                <span key={c} className="rounded-full border border-border bg-card px-4 py-1.5 text-xs font-semibold text-muted-foreground">{c}</span>
+              ))}
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      {/* ════ Ch7 — A Lifetime of Learning ════ */}
+      <section className="px-6 py-24">
         <div className="mx-auto max-w-[1100px]">
           <ScrollReveal>
-            <div className="mx-auto mb-10 max-w-2xl text-center">
-              <Eyebrow>The road ahead</Eyebrow>
-              <h2 className="font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-                One Twin, connected to everything.
+            <div className="mx-auto mb-12 max-w-2xl text-center">
+              <Eyebrow>A lifetime of learning</Eyebrow>
+              <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
+                One Twin. A lifetime of learning.
               </h2>
-              <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
-                Where your Digital Twin is headed — a long-term vision we&rsquo;re building toward.
-              </p>
+              <p className="mt-5 text-lg text-muted-foreground">Your Digital Twin evolves with you — through every season of life.</p>
+            </div>
+          </ScrollReveal>
+          <ScrollReveal>
+            <div className="relative">
+              <div aria-hidden className="absolute left-0 right-0 top-[42px] h-0.5 rounded-full" style={{ background: "linear-gradient(90deg,#A8E063,#4CB648,#2DAA6E,#F5C518,#F5A623)" }} />
+              <div className="relative grid grid-cols-3 gap-y-8 sm:grid-cols-6">
+                {LIFECYCLE.map(({ Icon, label, s }, i) => (
+                  <div key={label} className="flex flex-col items-center text-center">
+                    <span className="flex items-center justify-center rounded-full bg-card ring-1 ring-border" style={{ width: 88, height: 88, color: `color-mix(in srgb,#4CB648 ${100 - i * 14}%, #F5A623)` }}>
+                      <Icon style={{ width: s, height: s }} />
+                    </span>
+                    <span className="mt-3 text-xs font-semibold text-foreground">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      {/* ════ Ch8 — Connected to Everything ════ */}
+      <section className="px-6 py-24" style={{ background: tint(GREEN, 4) }}>
+        <div className="mx-auto max-w-[1100px]">
+          <ScrollReveal>
+            <div className="mx-auto mb-12 max-w-2xl text-center">
+              <Eyebrow>The road ahead</Eyebrow>
+              <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
+                One Twin. Connected to everything.
+              </h2>
+              <p className="mt-5 text-lg text-muted-foreground">Future capabilities, all powered by the same Digital Twin.</p>
             </div>
           </ScrollReveal>
           <ScrollReveal>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {FUTURE.map(({ icon: Icon, label }) => (
-                <div key={label} className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-5 text-center">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl text-white" style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
-                    <Icon className="h-5 w-5" />
-                  </div>
+              {CONNECTED.map(({ Icon, label }) => (
+                <div key={label} className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-6 text-center">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-xl text-white" style={{ background: "linear-gradient(135deg,#4CB648,#2DAA6E)" }}><Icon className="h-6 w-6" /></span>
                   <span className="text-sm font-semibold text-foreground">{label}</span>
                 </div>
               ))}
             </div>
-            <p className="mt-6 text-center text-xs text-muted-foreground">
-              Long-term vision — not all features are available today.
-            </p>
+            <p className="mt-6 text-center text-xs text-muted-foreground">Long-term vision — not all features are available today.</p>
           </ScrollReveal>
         </div>
       </section>
 
-      {/* ── 9. Final CTA ──────────────────────────────────────────── */}
-      <section className="px-6 pb-28 pt-8">
+      {/* ════ Final close ════ */}
+      <section className="px-6 pb-10 pt-24 text-center">
         <ScrollReveal>
-          <div className="mx-auto max-w-2xl rounded-3xl border border-border bg-card p-10 text-center shadow-[0_8px_40px_-12px_rgba(20,37,15,0.25)]">
-            <Sparkles aria-hidden className="mx-auto h-7 w-7" style={{ color: "var(--icon-green)" }} />
-            <h2 className="mt-3 font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
-              Build Your Digital Twin.
-            </h2>
-            <p className="mt-3 text-lg text-muted-foreground">
-              Improve the Food System Inside You. Help build the Food System.
-            </p>
-            <div className="mt-7 flex justify-center">
-              <CtaButton>Build My Digital Twin</CtaButton>
-            </div>
-          </div>
+          <DigitalTwinFigure size={300} className="mb-2" />
+          <h2 style={lora} className="mx-auto max-w-3xl text-4xl font-bold text-foreground sm:text-6xl text-balance">
+            Build your <span className="brand-gradient-text">Digital Twin</span>.
+          </h2>
+          <p className="mx-auto mt-5 max-w-xl text-lg text-muted-foreground">
+            Improve the Food System Inside You. Help build the Food System.
+          </p>
+          <div className="mt-9 flex justify-center"><CtaButton>Build My Digital Twin</CtaButton></div>
         </ScrollReveal>
       </section>
+
+      {/* trust strip */}
+      <section className="px-6 pb-28">
+        <div className="mx-auto grid max-w-[1100px] gap-5 rounded-3xl border border-border bg-card p-8 sm:grid-cols-2 lg:grid-cols-5">
+          {TRUST.map(({ Icon, t, s }) => (
+            <div key={t} className="flex items-start gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: tint(GREEN, 12), color: GREEN }}><Icon className="h-[18px] w-[18px]" /></span>
+              <div><div className="text-sm font-semibold text-foreground">{t}</div><div className="text-xs leading-snug text-muted-foreground">{s}</div></div>
+            </div>
+          ))}
+        </div>
+      </section>
     </main>
+  )
+}
+
+/* ── Ch5 phone dashboard (bespoke light mockup) ─────────────── */
+function PhoneDashboard() {
+  const C = 2 * Math.PI * 52
+  const pct = 0.74
+  return (
+    <div className="mx-auto w-[280px]">
+      <div className="overflow-hidden rounded-[2.6rem] border-[7px] border-foreground bg-card p-5 shadow-[0_30px_60px_-20px_rgba(20,37,15,0.4)]">
+        <div className="mx-auto mb-4 h-5 w-20 rounded-full bg-foreground" />
+        <p className="text-sm font-semibold text-foreground">Good morning, Alex</p>
+        <p className="mt-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Your Food System Score</p>
+        <div className="relative mx-auto my-2 h-[140px] w-[140px]">
+          <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
+            <defs>
+              <linearGradient id="dtRing" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor="#A8E063" /><stop offset="0.5" stopColor="#4CB648" /><stop offset="1" stopColor="#F5A623" />
+              </linearGradient>
+            </defs>
+            <circle cx="60" cy="60" r="52" fill="none" stroke="var(--muted,#F3F3F3)" strokeWidth="10" />
+            <circle cx="60" cy="60" r="52" fill="none" stroke="url(#dtRing)" strokeWidth="10" strokeLinecap="round" strokeDasharray={`${C * pct} ${C}`} />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <CountUp to={74} className="text-4xl font-bold tabular-nums" />
+            <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: GREEN }}>Improving</span>
+          </div>
+        </div>
+        <div className="rounded-2xl p-3" style={{ background: tint(GREEN, 8) }}>
+          <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: GREEN }}>Your next best action</p>
+          <p className="mt-1 text-sm font-semibold leading-snug text-foreground">Add one prebiotic-rich food to two meals today.</p>
+        </div>
+        <div className="mt-3 space-y-2 text-xs">
+          {[["Meals logged", "3"], ["Steps", "8,245"], ["Sleep", "7h 23m"]].map(([k, v]) => (
+            <div key={k} className="flex items-center justify-between border-b border-border pb-1.5 last:border-0">
+              <span className="text-muted-foreground">{k}</span><span className="font-semibold text-foreground tabular-nums">{v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }
