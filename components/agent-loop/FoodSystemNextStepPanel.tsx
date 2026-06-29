@@ -25,9 +25,9 @@ export function FoodSystemNextStepPanel({ className = "" }: { className?: string
     if (foundation) setBaseline(readFoundationBaseline(foundation))
   }, [])
 
-  const { session, result, progress, recordAndRefresh } = useFoodSystemLoop(baseline)
+  const { twin, recordAndRefresh } = useFoodSystemLoop(baseline)
 
-  if (!baseline || !result || !session) return null
+  if (!baseline || !twin) return null
 
   return (
     <div className={className}>
@@ -40,20 +40,12 @@ export function FoodSystemNextStepPanel({ className = "" }: { className?: string
         </p>
       </div>
       <FoodSystemLoopCard
-        score={result.score}
-        stage={session.currentStage}
-        biotics={baseline.biotics}
-        recommendation={result.recommendation}
-        progress={progress ?? undefined}
+        twin={twin}
         onComplete={(id) => recordAndRefresh(id, "completed")}
         onSkip={(id) => recordAndRefresh(id, "ignored")}
       />
-      {progress && progress.loopsCompleted > 0 && (
-        <FoodSystemMemoryPanel
-          className="mt-4"
-          progress={progress}
-          outcomes={session.memory.outcomes}
-        />
+      {twin.progress.loopsCompleted > 0 && (
+        <FoodSystemMemoryPanel className="mt-4" twin={twin} />
       )}
     </div>
   )

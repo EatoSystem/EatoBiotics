@@ -54,7 +54,7 @@ export function LoopDemoClient() {
     [],
   )
 
-  const { session, result, progress, busy, addMeal, recordAndRefresh } = useFoodSystemLoop(baseline)
+  const { twin, busy, addMeal, recordAndRefresh } = useFoodSystemLoop(baseline)
   const [meal, setMeal] = useState("")
 
   const live = liveSpecialisedSystems()
@@ -75,13 +75,9 @@ export function LoopDemoClient() {
         </p>
       </div>
 
-      {result && session ? (
+      {twin ? (
         <FoodSystemLoopCard
-          score={result.score}
-          stage={session.currentStage}
-          biotics={baseline.biotics}
-          recommendation={result.recommendation}
-          progress={progress ?? undefined}
+          twin={twin}
           onComplete={(id) => recordAndRefresh(id, "completed")}
           onSkip={(id) => recordAndRefresh(id, "ignored")}
         />
@@ -121,12 +117,8 @@ export function LoopDemoClient() {
         </button>
       </form>
 
-      {progress && progress.loopsCompleted > 0 && session && (
-        <FoodSystemMemoryPanel
-          className="mt-4"
-          progress={progress}
-          outcomes={session.memory.outcomes}
-        />
+      {twin && twin.progress.loopsCompleted > 0 && (
+        <FoodSystemMemoryPanel className="mt-4" twin={twin} />
       )}
 
       {/* Specialised systems — all inherit the foundation baseline */}

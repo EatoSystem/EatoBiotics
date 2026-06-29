@@ -3,7 +3,7 @@
  * and what the user has acted on. Surfaces movement, not perfection.
  */
 
-import type { LoopProgress, Momentum, RecommendationOutcome } from "@/lib/agent-loop"
+import type { FoodSystemDigitalTwin, Momentum } from "@/lib/agent-loop"
 
 const MOMENTUM_META: Record<Momentum, { label: string; color: string }> = {
   starting: { label: "Just starting", color: "var(--icon-lime)" },
@@ -22,16 +22,15 @@ function Stat({ value, label }: { value: string; label: string }) {
 }
 
 export function FoodSystemMemoryPanel({
-  progress,
-  outcomes = [],
+  twin,
   className = "",
 }: {
-  progress: LoopProgress
-  outcomes?: RecommendationOutcome[]
+  twin: FoodSystemDigitalTwin
   className?: string
 }) {
+  const progress = twin.progress
   const m = MOMENTUM_META[progress.momentum]
-  const recent = [...outcomes].reverse().slice(0, 3)
+  const recent = [...twin.memory.outcomes].reverse().slice(0, 3)
   const delta = progress.scoreDelta
   return (
     <div className={`rounded-2xl border border-border bg-card p-5 ${className}`}>

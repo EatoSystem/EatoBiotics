@@ -1,44 +1,36 @@
 /**
  * FoodSystemLoopCard — the headline loop surface: Food System Score, current
- * loop stage, the three-biotics profile, and the one next best action. Composes
- * the smaller panels so it can drop onto the result page or the demo showcase.
+ * loop stage, the three-biotics profile, and the one next best action.
+ *
+ * Consumes the Food System Digital Twin directly (the primary read model) and
+ * feeds the atomic presentational components from it. Composes onto the result
+ * page or the demo showcase.
  */
 
 "use client"
 
-import {
-  STAGE_META,
-  type AgentLoopRecommendation,
-  type AgentLoopStage,
-  type BioticsScore,
-  type FoodSystemScore,
-  type LoopProgress,
-} from "@/lib/agent-loop"
+import { STAGE_META, getSystem, type FoodSystemDigitalTwin } from "@/lib/agent-loop"
 import { AgentLoopTimeline } from "./AgentLoopTimeline"
 import { BioticsProgressPanel } from "./BioticsProgressPanel"
 import { NextBestActionCard } from "./NextBestActionCard"
 
 export function FoodSystemLoopCard({
-  score,
-  stage,
-  biotics,
-  recommendation,
-  progress,
-  systemLabel = "Food System",
+  twin,
   onComplete,
   onSkip,
   className = "",
 }: {
-  score: FoodSystemScore
-  stage: AgentLoopStage
-  biotics: BioticsScore
-  recommendation: AgentLoopRecommendation
-  progress?: LoopProgress
-  systemLabel?: string
+  twin: FoodSystemDigitalTwin
   onComplete?: (id: string) => void
   onSkip?: (id: string) => void
   className?: string
 }) {
+  const score = twin.currentScore
+  const stage = twin.currentStage
+  const recommendation = twin.nextBestAction
+  const progress = twin.progress
+  const systemLabel = getSystem(twin.activeSystem).label
+
   return (
     <section
       className={`overflow-hidden rounded-3xl border border-border bg-card ${className}`}
@@ -71,12 +63,18 @@ export function FoodSystemLoopCard({
         </div>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
-          <BioticsProgressPanel biotics={biotics} />
-          <NextBestActionCard
-            recommendation={recommendation}
-            onComplete={onComplete}
-            onSkip={onSkip}
-          />
+          <BioticsProgressPanel biotics={twin.biotics} />
+          {recommendation ? (
+            <NextBestActionCard
+              recommendation={recommendation}
+              onComplete={onComplete}
+              onSkip={onSkip}
+            />
+          ) : (
+            <div className="flex items-center rounded-2xl border border-dashed border-border bg-card p-5 text-sm text-muted-foreground">
+              Add a meal, symptom or progress observation to begin your next Food System loop.
+            </div>
+          )}
         </div>
 
         {progress && (
