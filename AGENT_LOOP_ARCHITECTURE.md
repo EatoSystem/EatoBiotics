@@ -30,6 +30,23 @@ learning health platform, not a collection of assessments.
 
 ---
 
+## 1a. Product principles
+
+**The Dashboard is the Primary Product Surface.** The Account page is no longer an
+"account management" page — it is the customer's living Food System. Settings, billing,
+and profile remain important but are **supporting** functionality, not the centre. The
+Food System Dashboard (the Account overview, fed by the Digital Twin) is the default
+destination after login: signing in should feel like returning to your Food System.
+
+**The Four Questions.** Every customer interaction should help answer one of:
+1. What is the current state of my Food System?
+2. What changed since I last visited?
+3. What is my single most valuable next action?
+4. How am I improving over time?
+
+If every screen answers one of these, the product feels like a living Food System rather
+than a collection of assessments and reports.
+
 ## 2. The Core Loop
 
 | Stage | Responsibility |

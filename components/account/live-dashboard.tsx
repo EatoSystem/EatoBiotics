@@ -14,6 +14,8 @@ import {
   Glp1CompanionCard, StabilityCard, AssessmentJourneyCard, VoiceConsultCard, ReferralCard, ScoreRing, MiniRing, ScoreBar,
   Tag, SectionLabel, GradientButton, ringColors,
 } from "@/components/account/dashboard-parts"
+import { FoodSystemDashboard } from "@/components/account/food-system-dashboard"
+import type { FoodSystemBaseline } from "@/lib/agent-loop"
 
 
 function MealCard({ meal }: { meal: { image: string; name: string; time: string; type: string; score: number; insight: string; biotics: { prebiotic: number; probiotic: number; postbiotic: number }; quality: { diversity: number; antiInflammatory: number }; nutrition: { calories: number; protein: number; carbs: number; fat: number; fibre: number }; tags: string[] } }) {
@@ -288,6 +290,7 @@ export interface RealWeeklyReport {
    Component props — all optional, mock data used as fallback
    ───────────────────────────────────────────────────────────────────────── */
 export interface LiveDashboardProps {
+  baseline?:         FoodSystemBaseline | null
   name?:             string | null
   email?:            string | null
   ageBracket?:       string | null
@@ -623,6 +626,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
    ───────────────────────────────────────────────────────────────────────── */
 export function LiveDashboard(props: LiveDashboardProps = {}) {
   const {
+    baseline           = null,
     name               = null,
     email:             propEmail         = null,
     ageBracket:        propAgeBracket    = null,
@@ -919,6 +923,13 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       {/* ══════════════════════════════════════════════════════════════════
           OVERVIEW TAB
       ══════════════════════════════════════════════════════════════════ */}
+      {/* Food System Dashboard — the primary product surface (reads the Digital Twin). */}
+      {tab === "overview" && (
+        <div className="mx-auto max-w-5xl px-4 pt-6 md:px-8">
+          <FoodSystemDashboard baseline={baseline} firstName={name?.split(" ")[0] ?? null} />
+        </div>
+      )}
+
       {tab === "overview" && dailyLoop && (
         <div className="pt-5">
           <DailyLoopCard data={dailyLoop} firstName={name?.split(" ")[0] ?? null} />

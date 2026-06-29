@@ -10,6 +10,7 @@ import type { RealAnalysis, RealWeeklyReport } from "@/components/account/live-d
 import { TrackConversion } from "@/components/analytics/track-conversion"
 import { computeStreak } from "@/lib/streak"
 import { dailyNudge } from "@/lib/habit"
+import { buildBaselineFromAccount } from "@/lib/agent-loop"
 import type { DailyLoopData } from "@/components/account/daily-loop-card"
 
 export const metadata: Metadata = {
@@ -212,6 +213,17 @@ export default async function AccountPage({
       : null,
   }
 
+  /* ── Food System baseline (immutable root of the Digital Twin) ──
+     Derived purely from the data already fetched — assessment score + sub-scores,
+     with the analyses-averaged biotics as a fallback. Null when there's no
+     assessment yet, in which case the dashboard shows a "start your baseline" prompt. */
+  const baseline = buildBaselineFromAccount({
+    score: (assessments[0]?.overall_score as number | null) ?? null,
+    profileType: (assessments[0]?.profile_type as string | null) ?? null,
+    subScores: (assessments[0]?.sub_scores as Record<string, number> | null) ?? null,
+    bioticsFallback: bioticsProfile ?? null,
+  })
+
   /* ── Fallback profile if none exists yet ── */
   if (!profile) {
     profile = {
@@ -237,6 +249,7 @@ export default async function AccountPage({
         />
       )}
       <LiveDashboard
+        baseline={baseline}
         name={(profile.name as string | null) ?? null}
         email={user.email ?? null}
         ageBracket={(profile.age_bracket as string | null) ?? null}
