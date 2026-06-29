@@ -452,3 +452,13 @@ main {
 .animate-quiz-step {
   animation: quizStepIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+/* Food System Loop section — animated digital-twin diagram (motion-gated) */
+@keyframes fsl-flow { to { stroke-dashoffset: -8; } }
+@keyframes fsl-flow-rev { to { stroke-dashoffset: 8; } }
+@keyframes fsl-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: no-preference) {
+  .fsl-arc { animation: fsl-flow 1.6s linear infinite; }
+  .fsl-arc-rev { animation: fsl-flow-rev 1.6s linear infinite; }
+  .fsl-node { animation: fsl-fade 0.6s ease both; animation-delay: var(--d, 0s); }
+}
