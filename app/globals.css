@@ -453,12 +453,35 @@ main {
   animation: quizStepIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* Food System Loop section — animated digital-twin diagram (motion-gated) */
-@keyframes fsl-flow { to { stroke-dashoffset: -8; } }
-@keyframes fsl-flow-rev { to { stroke-dashoffset: 8; } }
-@keyframes fsl-fade { from { opacity: 0; } to { opacity: 1; } }
+/* Digital Twin section — faithful port of the Food System Loop design.
+   Layout (responsive) + motion-gated keyframes. */
+.dt-grid { display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 44px; align-items: center; }
+.dt-diagram-mobile { display: none; }
+.dt-features { display: grid; grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 1023px) {
+  .dt-grid { grid-template-columns: 1fr; gap: 32px; }
+  .dt-diagram { display: none; }       /* fixed 580px desktop diagram */
+  .dt-diagram-mobile { display: block; }
+  .dt-features { grid-template-columns: 1fr 1fr; gap: 20px; }
+}
+@media (max-width: 560px) {
+  .dt-features { grid-template-columns: 1fr; }
+}
+
+@keyframes ebDash { to { stroke-dashoffset: -1000; } }
+@keyframes ebDashRev { to { stroke-dashoffset: 1000; } }
+@keyframes ebGlow { 0%,100% { transform: translate(-50%,-50%) scale(1); opacity:.85 } 50% { transform: translate(-50%,-50%) scale(1.08); opacity:1 } }
+@keyframes ebBeam { 0%,100% { opacity:.30; transform:translate(-50%,-50%) scaleY(.94); } 50% { opacity:.7; transform:translate(-50%,-50%) scaleY(1.04); } }
+@keyframes ebRise {
+  0%   { transform: translateY(34px) scale(.5); opacity:0; }
+  18%  { opacity:1; }
+  78%  { opacity:.85; }
+  100% { transform: translateY(-184px) scale(1.15); opacity:0; }
+}
 @media (prefers-reduced-motion: no-preference) {
-  .fsl-arc { animation: fsl-flow 1.6s linear infinite; }
-  .fsl-arc-rev { animation: fsl-flow-rev 1.6s linear infinite; }
-  .fsl-node { animation: fsl-fade 0.6s ease both; animation-delay: var(--d, 0s); }
+  .eb-arc { animation: ebDash 28s linear infinite; }
+  .eb-arc-rev { animation: ebDashRev 28s linear infinite; }
+  .eb-aura { animation: ebGlow 6s ease-in-out infinite; }
+  .eb-beam { animation: ebBeam 3.4s ease-in-out infinite; }
+  .eb-rise { animation-name: ebRise; animation-timing-function: ease-in; animation-iteration-count: infinite; }
 }
