@@ -9,7 +9,6 @@
  * carries the "what now".
  */
 
-import { getScoreBand } from "@/lib/scoring"
 import type {
   AgentLoopObservation,
   AgentLoopResult,
@@ -17,17 +16,16 @@ import type {
   AgentLoopTurn,
   FoodSystemBaseline,
   FoodSystemMemory,
-  FoodSystemScore,
   LoopControls,
-  LoopProgress,
   LoopSystemKey,
-  Momentum,
   ObservationKind,
   RecommendationOutcomeStatus,
 } from "./types"
 import { nextStage } from "./stages"
 import { getSystem } from "./systems"
 import { LOOP_DISCLAIMER } from "./safety"
+import { currentFoodSystemScore, calculateLoopProgress } from "./derive"
+import { buildFoodSystemTwin } from "./twin/twin-builder"
 import { deterministicProvider } from "./providers/deterministic"
 import type { LoopIntelligenceProvider, ProviderContext } from "./providers/provider"
 
@@ -86,46 +84,6 @@ export function makeObservation(
   return { id: genId("obs"), kind, value, meta, createdAt: Date.now() }
 }
 
-/* ── Current score / progress (pure) ──────────────────────────────────────── */
-
-/** Latest known Food System Score: most recent assessment_update, else baseline. */
-function currentScore(session: AgentLoopSession): FoodSystemScore {
-  for (let i = session.turns.length - 1; i >= 0; i--) {
-    const obs = session.turns[i].observation
-    if (obs?.kind === "assessment_update" && typeof obs.meta?.score === "number") {
-      const value = obs.meta.score as number
-      return { value, band: getScoreBand(value), label: getScoreBand(value).label }
-    }
-  }
-  return session.baseline.foodSystemScore
-}
-
-function momentumOf(
-  loopsCompleted: number,
-  scoreDelta: number,
-  completed: number,
-  ignored: number,
-): Momentum {
-  if (loopsCompleted === 0) return "starting"
-  if (scoreDelta > 0) return "improving"
-  if (ignored >= 2 && ignored > completed) return "stalled"
-  return "steady"
-}
-
-export function calculateLoopProgress(session: AgentLoopSession): LoopProgress {
-  const loopsCompleted = session.turns.filter((t) => t.recommendation).length
-  const scoreDelta = currentScore(session).value - session.baseline.foodSystemScore.value
-  const completedActions = session.memory.completed.length
-  const ignoredActions = session.memory.ignored.length
-  return {
-    loopsCompleted,
-    scoreDelta,
-    completedActions,
-    ignoredActions,
-    momentum: momentumOf(loopsCompleted, scoreDelta, completedActions, ignoredActions),
-  }
-}
-
 /* ── The core loop pass ───────────────────────────────────────────────────── */
 
 export interface LoopPass {
@@ -146,11 +104,14 @@ export async function runLoop(
     throw new LoopError("This loop has reached its turn limit.")
   }
 
+  // The loop reasons over the Digital Twin: a derived, read-only projection of
+  // the user's living Food System (baseline + everything that has enriched it).
   const ctx: ProviderContext = {
     system: session.system,
     baseline: session.baseline,
     history: session.turns,
     memory: session.memory,
+    twin: buildFoodSystemTwin(session),
   }
 
   const analysis = await provider.analyse(observation, ctx)
@@ -175,7 +136,7 @@ export async function runLoop(
   }
 
   const progress = calculateLoopProgress(withTurn)
-  const score = currentScore(withTurn)
+  const score = currentFoodSystemScore(withTurn)
   const result: AgentLoopResult = {
     stage: "recommend",
     score,

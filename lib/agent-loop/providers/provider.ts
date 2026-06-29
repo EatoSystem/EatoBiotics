@@ -19,6 +19,7 @@ import type {
   FoodSystemMemory,
   LoopSystemKey,
 } from "../types"
+import type { FoodSystemDigitalTwin } from "../twin/twin-types"
 
 export interface ProviderContext {
   /** Which system this loop runs for — lets a provider bias toward its focus biotic. */
@@ -26,6 +27,13 @@ export interface ProviderContext {
   baseline: FoodSystemBaseline
   history: AgentLoopTurn[]
   memory: FoodSystemMemory
+  /**
+   * The Food System Digital Twin: a derived, read-only projection of the user's
+   * living Food System. Providers can read this single object instead of stitching
+   * baseline + history + memory themselves. (Optional so non-engine callers/tests
+   * can construct a context without it.)
+   */
+  twin?: FoodSystemDigitalTwin
 }
 
 /**

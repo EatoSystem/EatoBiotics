@@ -15,6 +15,7 @@ import {
   recordOutcome,
   makeObservation,
   calculateLoopProgress,
+  buildFoodSystemTwin,
   saveSession,
   type AgentLoopResult,
   type AgentLoopSession,
@@ -98,6 +99,8 @@ export function useFoodSystemLoop(
   )
 
   const progress = session ? calculateLoopProgress(session) : null
+  // The Digital Twin: the single living object the UI/reports consume.
+  const twin = session ? buildFoodSystemTwin(session) : null
 
-  return { session, result, progress, busy, observe, addMeal, recordAndRefresh }
+  return { session, twin, result, progress, busy, observe, addMeal, recordAndRefresh }
 }
