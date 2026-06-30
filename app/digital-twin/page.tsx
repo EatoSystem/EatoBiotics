@@ -3,11 +3,11 @@ import Image from "next/image"
 import Link from "next/link"
 import {
   ArrowRight, Baby, PersonStanding, User, UserRound, Users,
-  FlaskConical, ShieldCheck, Sparkles, Globe,
+  FlaskConical, ShieldCheck, Sparkles, Globe, TrendingUp, Flame,
 } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { HeroVideo } from "@/components/hero-video"
-import { DigitalTwinFigure, Eyebrow, CtaButton } from "@/components/digital-twin/parts"
+import { Eyebrow, CtaButton } from "@/components/digital-twin/parts"
 import { HeroStage } from "@/components/digital-twin/hero-stage"
 import { FlowDiagram } from "@/components/digital-twin/flow-diagram"
 import { BioticEcosystems } from "@/components/digital-twin/biotic-ecosystems"
@@ -15,7 +15,7 @@ import { WeekDashboard } from "@/components/digital-twin/week-dashboard"
 import { SystemDimensions } from "@/components/digital-twin/system-dimensions"
 import { ImpactJourney } from "@/components/digital-twin/impact-journey"
 import { OrbitHub } from "@/components/digital-twin/orbit-hub"
-import { CountUp } from "@/components/digital-twin/count-up"
+import { ScoreRing } from "@/components/assessment/score-ring"
 
 export const metadata: Metadata = {
   title: "Your Food System Digital Twin",
@@ -35,6 +35,12 @@ const lora = { fontFamily: "var(--font-lora), Georgia, serif" } as const
 const LOOP_STEPS = ["You live", "Observes", "Learns", "Understands", "Guides", "You improve"]
 
 const IMPROVE_CHIPS = ["Steadier energy", "Calmer digestion", "Better sleep", "Clearer focus"]
+
+const DEVELOP_CARDS = [
+  { Icon: TrendingUp, title: "Your score climbs", line: "Each logged meal nudges your Food System Score upward.", gradient: "linear-gradient(135deg,#A8E063,#4CB648)" },
+  { Icon: Sparkles, title: "Guidance adapts", line: "Your next best action changes to match where you are today.", gradient: "linear-gradient(135deg,#4CB648,#2DAA6E)" },
+  { Icon: Flame, title: "Momentum builds", line: "Small wins stack into a streak you can actually feel.", gradient: "linear-gradient(135deg,#F5C518,#F5A623)" },
+]
 
 const LIFECYCLE = [
   { Icon: Baby, label: "Childhood", s: 26, score: 58 },
@@ -131,68 +137,129 @@ export default function DigitalTwinPage() {
       </section>
 
       {/* ════ 4 · Develop — the Twin in action (animated week) ════ */}
-      <section className="px-6 py-24">
-        <div className="mx-auto grid max-w-[1050px] items-center gap-12 lg:grid-cols-2">
+      <section className="px-6 py-24 md:py-32">
+        <div className="mx-auto max-w-[1200px]">
           <ScrollReveal>
-            <Eyebrow>Develop</Eyebrow>
-            <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-              Watch it grow, day by day.
-            </h2>
-            <p className="mt-5 max-w-md text-lg text-muted-foreground">
-              Every meal makes your Twin smarter. As the week unfolds your score climbs, your
-              next best action adapts, and momentum builds.
-            </p>
-            <div className="mt-7">
-              <DevelopPlate />
+            <div className="mx-auto mb-14 max-w-2xl text-center">
+              <Eyebrow>Develop</Eyebrow>
+              <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl md:text-6xl text-balance">
+                Watch it grow, <span className="brand-gradient-text">day by day</span>.
+              </h2>
+              <p className="mt-5 text-lg text-muted-foreground">
+                Every meal makes your Twin smarter — your score climbs, your guidance adapts,
+                and momentum builds.
+              </p>
             </div>
           </ScrollReveal>
-          <ScrollReveal>
-            <WeekDashboard />
-          </ScrollReveal>
+
+          <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+            {/* Left — the living week dashboard */}
+            <ScrollReveal>
+              <div className="relative flex justify-center">
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute -inset-4 -z-10 rounded-[3rem] opacity-70 blur-3xl"
+                  style={{ background: "radial-gradient(55% 55% at 50% 45%, rgba(76,182,72,0.28), transparent 75%)" }}
+                />
+                <WeekDashboard />
+              </div>
+            </ScrollReveal>
+
+            {/* Right — what happens as the week unfolds */}
+            <ScrollReveal>
+              <div className="flex flex-col gap-4">
+                {DEVELOP_CARDS.map((c) => (
+                  <div
+                    key={c.title}
+                    className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 transition-shadow hover:shadow-lg"
+                  >
+                    <span aria-hidden className="absolute inset-y-0 left-0 w-1.5" style={{ background: c.gradient }} />
+                    <div className="flex items-start gap-4 pl-2">
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white" style={{ background: c.gradient }}>
+                        <c.Icon className="h-5 w-5" />
+                      </span>
+                      <div>
+                        <h3 className="font-serif text-lg font-semibold text-foreground">{c.title}</h3>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{c.line}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollReveal>
+          </div>
         </div>
       </section>
 
       {/* ════ 5 · Improve — aspirational vitality ════ */}
-      <section className="px-6 py-24" style={{ background: tint(ORANGE, 4) }}>
-        <div className="mx-auto grid max-w-[1050px] items-center gap-12 lg:grid-cols-2">
+      <section className="px-6 py-24 md:py-32" style={{ background: tint(ORANGE, 4) }}>
+        <div className="mx-auto max-w-[1200px]">
           <ScrollReveal>
-            <div className="mx-auto w-[82%] lg:w-full">
-              <DigitalTwinFigure size={400} src="/images/eatosports-hero.webp" alt="Vitality and energy in motion" />
+            <div className="mx-auto mb-14 max-w-2xl text-center">
+              <Eyebrow>Improve</Eyebrow>
+              <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl md:text-6xl text-balance">
+                Feel the <span className="brand-gradient-text">difference</span>.
+              </h2>
+              <p className="mt-5 text-lg text-muted-foreground">
+                Small steps compound. As your Food System strengthens, you feel it in how you live.
+              </p>
             </div>
           </ScrollReveal>
-          <ScrollReveal>
-            <Eyebrow>Improve</Eyebrow>
-            <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-              Feel the difference.
-            </h2>
-            <div className="mt-6 flex items-end gap-4">
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Baseline</div>
-                <div style={lora} className="text-3xl font-bold leading-none text-muted-foreground">74</div>
+
+          <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+            {/* Left — aspirational image, large + well-framed */}
+            <ScrollReveal>
+              <div className="relative mx-auto w-full max-w-[520px]">
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute -inset-6 -z-10 rounded-[3rem] opacity-80 blur-3xl"
+                  style={{ background: "radial-gradient(60% 60% at 50% 48%, rgba(245,197,24,0.30), rgba(76,182,72,0.18) 55%, transparent 78%)" }}
+                />
+                <Image
+                  src="/images/eatosports-hero.webp"
+                  alt="Vitality and energy in motion"
+                  width={760}
+                  height={760}
+                  sizes="(max-width: 1024px) 90vw, 520px"
+                  className="h-auto w-full object-contain"
+                  style={{ mixBlendMode: "multiply" }}
+                />
               </div>
-              <ArrowRight className="mb-1 h-7 w-7 text-icon-green" />
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-wider text-icon-green">Now</div>
-                <span style={lora} className="text-6xl font-bold leading-none" >
-                  <span style={{ color: GREEN }}><CountUp to={80} className="tabular-nums" /></span>
-                </span>
+            </ScrollReveal>
+
+            {/* Right — the outcome panel */}
+            <ScrollReveal>
+              <div className="relative overflow-hidden rounded-[2rem] border border-border bg-card p-8 shadow-[0_30px_70px_-30px_rgba(20,37,15,0.4)] sm:p-10">
+                <span aria-hidden className="absolute inset-x-0 top-0 h-1.5" style={{ background: "linear-gradient(90deg,#A8E063,#4CB648,#2DAA6E,#F5C518,#F5A623)" }} />
+                <div className="flex flex-col items-center gap-8 sm:flex-row sm:items-center">
+                  <ScoreRing score={80} color="var(--icon-green)" gradientId="dt-improve-ring" profileType="Improving" className="relative h-44 w-44 shrink-0 sm:h-48 sm:w-48" />
+                  <div className="text-center sm:text-left">
+                    <div className="flex items-center justify-center gap-2 sm:justify-start">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Baseline 74</span>
+                      <ArrowRight className="h-4 w-4 text-icon-green" />
+                      <span className="rounded-full px-2.5 py-0.5 text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#4CB648,#2DAA6E)" }}>+6</span>
+                    </div>
+                    <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                      Six weeks of small, guided steps — and a measurably stronger Food System.
+                    </p>
+                    <Sparkline />
+                  </div>
+                </div>
+
+                <div className="mt-8 grid grid-cols-2 gap-3">
+                  {IMPROVE_CHIPS.map((c) => (
+                    <span key={c} className="inline-flex items-center gap-2 rounded-2xl border border-border bg-background px-4 py-3 text-sm font-semibold text-foreground">
+                      <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: GREEN }} />{c}
+                    </span>
+                  ))}
+                </div>
+
+                <Link href="/performance" className="mt-7 inline-flex items-center gap-1.5 text-sm font-semibold text-icon-green">
+                  Built for performance, too <ArrowRight className="h-4 w-4" />
+                </Link>
               </div>
-              <span className="mb-2 rounded-full px-3 py-1 text-sm font-semibold text-white" style={{ background: "linear-gradient(135deg,#4CB648,#2DAA6E)" }}>+6</span>
-            </div>
-            <p className="mt-5 max-w-md text-lg text-muted-foreground">
-              Small steps compound. As your Food System strengthens, you feel it in how you live.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-2">
-              {IMPROVE_CHIPS.map((c) => (
-                <span key={c} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground">
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: GREEN }} />{c}
-                </span>
-              ))}
-            </div>
-            <Link href="/performance" className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-icon-green">
-              Built for performance, too <ArrowRight className="h-4 w-4" />
-            </Link>
-          </ScrollReveal>
+            </ScrollReveal>
+          </div>
         </div>
       </section>
 
@@ -322,25 +389,31 @@ export default function DigitalTwinPage() {
   )
 }
 
-/* ── Develop: the EatoBiotics plate (every meal feeds the Twin) ─ */
-function DevelopPlate() {
+/* ── Improve: a small upward trend sparkline (brand gradient) ─── */
+function Sparkline() {
+  const pts = [10, 18, 15, 26, 30, 38, 44]
+  const w = 180
+  const h = 48
+  const max = 48
+  const step = w / (pts.length - 1)
+  const coords = pts.map((p, i) => [i * step, h - (p / max) * h] as const)
+  const line = coords.map(([x, y], i) => `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`).join(" ")
+  const area = `${line} L ${w} ${h} L 0 ${h} Z`
   return (
-    <div className="flex items-center gap-4 rounded-3xl border border-border bg-card p-4 shadow-[0_2px_10px_rgba(26,46,18,0.05)]">
-      <Image
-        src="/images/eatobiotics/eatobiotics-plate.png"
-        alt="The EatoBiotics plate — prebiotic base, probiotic side, protein balance, healthy fats"
-        width={160}
-        height={160}
-        sizes="160px"
-        className="h-20 w-20 shrink-0 sm:h-24 sm:w-24"
-        style={{ mixBlendMode: "multiply" }}
-      />
-      <div>
-        <div className="text-xs font-semibold uppercase tracking-wider text-icon-green">Every meal counts</div>
-        <p className="mt-1 text-sm font-semibold leading-snug text-foreground">
-          Build a plate, log how you feel — your Twin learns from each one.
-        </p>
-      </div>
-    </div>
+    <svg viewBox={`0 0 ${w} ${h}`} className="mt-4 h-12 w-full max-w-[220px]" aria-hidden>
+      <defs>
+        <linearGradient id="dt-spark-line" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#A8E063" /><stop offset="0.5" stopColor="#4CB648" /><stop offset="1" stopColor="#F5A623" />
+        </linearGradient>
+        <linearGradient id="dt-spark-area" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="rgba(76,182,72,0.28)" /><stop offset="1" stopColor="rgba(76,182,72,0)" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill="url(#dt-spark-area)" />
+      <path d={line} fill="none" stroke="url(#dt-spark-line)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      {coords.map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r={i === coords.length - 1 ? 3.5 : 0} fill="#F5A623" />
+      ))}
+    </svg>
   )
 }
