@@ -481,6 +481,23 @@ main {
 @keyframes ebFlowLine { to { stroke-dashoffset: -120; } }
 @keyframes ebOrbit { to { transform: rotate(360deg); } }
 @keyframes ebOrbitRev { to { transform: rotate(-360deg); } }
+
+/* ── /digital-twin v3 (cinematic) ──────────────────────────── */
+/* Large, slow ambient hero particles wandering + breathing. */
+@keyframes ebFloatBig {
+  0%   { transform: translate(0,0) scale(1);      opacity: .35; }
+  50%  { transform: translate(14px,-22px) scale(1.18); opacity: .8; }
+  100% { transform: translate(0,0) scale(1);      opacity: .35; }
+}
+/* Slow spinning orbital rings (hero stage). */
+@keyframes ebRingSpin { to { transform: rotate(360deg); } }
+/* Vertical gradient flow along the You→Food-System connectors. */
+@keyframes ebFlowDown { to { background-position: 0 22px; } }
+/* Soft breathing pulse for the biotic ecosystem orbs. */
+@keyframes ebPulseSoft {
+  0%,100% { transform: scale(1);    opacity: .9; }
+  50%     { transform: scale(1.05); opacity: 1; }
+}
 @media (prefers-reduced-motion: no-preference) {
   .eb-arc { animation: ebDash 28s linear infinite; }
   .eb-arc-rev { animation: ebDashRev 28s linear infinite; }
@@ -490,4 +507,9 @@ main {
   .eb-flow { animation: ebFlowLine 3s linear infinite; }
   .eb-orbit { animation: ebOrbit 44s linear infinite; }
   .eb-orbit-rev { animation: ebOrbitRev 44s linear infinite; }
+  .eb-float-big { animation-name: ebFloatBig; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+  .eb-ring-spin { animation: ebRingSpin 60s linear infinite; }
+  .eb-ring-spin-rev { animation: ebRingSpin 80s linear infinite reverse; }
+  .eb-flow-down { animation: ebFlowDown 1.1s linear infinite; }
+  .eb-pulse-soft { animation: ebPulseSoft 5s ease-in-out infinite; }
 }

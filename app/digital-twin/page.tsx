@@ -2,15 +2,19 @@ import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import {
-  ArrowRight, Utensils, Moon, HeartPulse, Search, TrendingUp,
-  Lightbulb, Infinity as InfinityIcon, Footprints, BarChart3,
-  User, Users, Globe, Baby, PersonStanding, UserRound,
-  FileText, Mic, Bot, Watch, Puzzle, FlaskConical, ShieldCheck, Sparkles,
+  ArrowRight, Baby, PersonStanding, User, UserRound, Users,
+  FlaskConical, ShieldCheck, Sparkles, Globe,
 } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { HeroVideo } from "@/components/hero-video"
 import { DigitalTwinFigure, Eyebrow, CtaButton } from "@/components/digital-twin/parts"
+import { HeroStage } from "@/components/digital-twin/hero-stage"
+import { FlowDiagram } from "@/components/digital-twin/flow-diagram"
+import { BioticEcosystems } from "@/components/digital-twin/biotic-ecosystems"
+import { WeekDashboard } from "@/components/digital-twin/week-dashboard"
 import { SystemDimensions } from "@/components/digital-twin/system-dimensions"
+import { ImpactJourney } from "@/components/digital-twin/impact-journey"
+import { OrbitHub } from "@/components/digital-twin/orbit-hub"
 import { CountUp } from "@/components/digital-twin/count-up"
 
 export const metadata: Metadata = {
@@ -28,43 +32,17 @@ const GREEN = "#4CB648"
 const ORANGE = "#F5A623"
 const lora = { fontFamily: "var(--font-lora), Georgia, serif" } as const
 
-/* ── Visualise: the live loop ───────────────────────────────── */
-const INPUTS = [
-  { Icon: Utensils, label: "Meals", sub: "What you eat" },
-  { Icon: HeartPulse, label: "Symptoms", sub: "How you feel" },
-  { Icon: Moon, label: "Sleep", sub: "How you rest" },
-  { Icon: Footprints, label: "Activity", sub: "How you move" },
-  { Icon: BarChart3, label: "Progress", sub: "Your updates" },
-]
-const OUTPUTS = [
-  { Icon: Search, label: "Analyse", sub: "We find patterns" },
-  { Icon: Lightbulb, label: "Understand", sub: "What it means" },
-  { Icon: ArrowRight, label: "Recommend", sub: "Your next step" },
-  { Icon: TrendingUp, label: "Improve", sub: "You feel better" },
-  { Icon: InfinityIcon, label: "Learn", sub: "The loop continues" },
-]
 const LOOP_STEPS = ["You live", "Observes", "Learns", "Understands", "Guides", "You improve"]
 
-/* ── Improve: vitality chips ────────────────────────────────── */
-const IMPROVE_CHIPS = [
-  { label: "Steadier energy" },
-  { label: "Calmer digestion" },
-  { label: "Better sleep" },
-  { label: "Clearer focus" },
-]
+const IMPROVE_CHIPS = ["Steadier energy", "Calmer digestion", "Better sleep", "Clearer focus"]
 
-/* ── Lifecycle ──────────────────────────────────────────────── */
 const LIFECYCLE = [
-  { Icon: Baby, label: "Childhood", s: 26 }, { Icon: PersonStanding, label: "Adolescence", s: 30 },
-  { Icon: User, label: "Young adult", s: 34 }, { Icon: UserRound, label: "Adult", s: 38 },
-  { Icon: Users, label: "Parent", s: 40 }, { Icon: PersonStanding, label: "Later life", s: 34 },
-]
-/* ── Connected (future) ─────────────────────────────────────── */
-const CONNECTED = [
-  { Icon: Utensils, label: "Meals" }, { Icon: Users, label: "Family" },
-  { Icon: FileText, label: "Reports" }, { Icon: Mic, label: "Voice" },
-  { Icon: Bot, label: "AI" }, { Icon: Watch, label: "Wearables" },
-  { Icon: HeartPulse, label: "Health programmes" }, { Icon: Puzzle, label: "Add-on systems" },
+  { Icon: Baby, label: "Childhood", s: 26, score: 58 },
+  { Icon: PersonStanding, label: "Adolescence", s: 30, score: 64 },
+  { Icon: User, label: "Young adult", s: 34, score: 71 },
+  { Icon: UserRound, label: "Adult", s: 38, score: 76 },
+  { Icon: Users, label: "Parent", s: 40, score: 81 },
+  { Icon: PersonStanding, label: "Later life", s: 34, score: 84 },
 ]
 const TRUST = [
   { Icon: FlaskConical, t: "Science-backed", s: "Microbiome research + the three biotics." },
@@ -82,11 +60,11 @@ export default function DigitalTwinPage() {
   return (
     <main className="overflow-hidden bg-background">
 
-      {/* ════ 1 · Hero — Meet your Digital Twin ════ */}
-      <section className="px-6 pt-24 pb-10 text-center md:pt-32">
-        <ScrollReveal>
+      {/* ════ 1 · Cinematic Hero ════ */}
+      <section className="relative flex min-h-[90vh] flex-col items-center justify-center px-6 pt-20 pb-12 text-center">
+        <ScrollReveal className="flex flex-col items-center">
           <Eyebrow>Your Digital Twin</Eyebrow>
-          <div className="mx-auto my-2 w-[min(460px,86vw)]">
+          <HeroStage>
             <HeroVideo
               posterSrc="/videos/dt-hero-poster.jpg"
               mp4Src="/videos/dt-hero.mp4"
@@ -94,19 +72,19 @@ export default function DigitalTwinPage() {
               alt="Your living Food System Digital Twin"
               className="h-auto w-full"
             />
-          </div>
-          <h1 style={lora} className="mx-auto mt-4 max-w-4xl text-5xl font-bold leading-[1.03] text-foreground sm:text-6xl md:text-7xl text-balance">
+          </HeroStage>
+          <h1 style={lora} className="mx-auto -mt-2 max-w-4xl text-5xl font-bold leading-[1.02] text-foreground sm:text-6xl md:text-7xl text-balance">
             Meet your <span className="brand-gradient-text">Digital Twin</span>.
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
-            A living picture of the Food System Inside You — see it, understand it,
-            grow it, and feel the difference.
+            A living picture of the Food System Inside You — see it, understand it, grow it,
+            and feel the difference.
           </p>
           <div className="mt-9 flex justify-center"><CtaButton>Build My Digital Twin</CtaButton></div>
         </ScrollReveal>
       </section>
 
-      {/* ════ 2 · Visualise — see the Food System Inside You ════ */}
+      {/* ════ 2 · Visualise — flowing streams ════ */}
       <section className="px-6 py-24">
         <div className="mx-auto max-w-[1100px]">
           <ScrollReveal>
@@ -116,54 +94,11 @@ export default function DigitalTwinPage() {
                 See the Food System Inside You.
               </h2>
               <p className="mt-5 text-lg text-muted-foreground">
-                Everything you do flows into one living system — made visible at last.
+                Everything you live flows into one living system — and guidance flows back.
               </p>
             </div>
           </ScrollReveal>
-          <ScrollReveal>
-            <div className="grid items-center gap-8 lg:grid-cols-[1fr_auto_1fr]">
-              {/* inputs */}
-              <div className="grid gap-3">
-                {INPUTS.map(({ Icon, label, sub }) => (
-                  <div key={label} className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: tint(GREEN, 12), color: GREEN }}>
-                      <Icon className="h-[18px] w-[18px]" />
-                    </span>
-                    <span>
-                      <span className="block text-sm font-semibold text-foreground">{label}</span>
-                      <span className="block text-xs text-muted-foreground">{sub}</span>
-                    </span>
-                  </div>
-                ))}
-              </div>
-              {/* twin */}
-              <div className="flex flex-col items-center">
-                <DigitalTwinFigure size={320} src="/images/couple-hero.png" />
-                <div className="-mt-2 rounded-2xl border border-border bg-card px-6 py-3 text-center shadow-[0_12px_32px_rgba(26,46,18,0.10)]">
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-foreground">Your Food System</div>
-                  <div style={{ ...lora, color: GREEN }} className="text-5xl font-bold leading-none">
-                    <CountUp to={74} />
-                  </div>
-                  <div className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">System score</div>
-                </div>
-              </div>
-              {/* outputs */}
-              <div className="grid gap-3">
-                {OUTPUTS.map(({ Icon, label, sub }) => (
-                  <div key={label} className="flex flex-row-reverse items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-right">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: tint(ORANGE, 12), color: ORANGE }}>
-                      <Icon className="h-[18px] w-[18px]" />
-                    </span>
-                    <span>
-                      <span className="block text-sm font-semibold text-foreground">{label}</span>
-                      <span className="block text-xs text-muted-foreground">{sub}</span>
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </ScrollReveal>
-          {/* the loop, in words */}
+          <ScrollReveal><FlowDiagram /></ScrollReveal>
           <ScrollReveal>
             <ol className="mt-12 flex flex-wrap items-center justify-center gap-2">
               {LOOP_STEPS.map((s, i) => (
@@ -177,65 +112,52 @@ export default function DigitalTwinPage() {
         </div>
       </section>
 
-      {/* ════ 3 · Understand — what's really going on ════ */}
+      {/* ════ 3 · Understand — living biotic ecosystems ════ */}
       <section className="px-6 py-24" style={{ background: tint(GREEN, 4) }}>
         <div className="mx-auto max-w-[1100px]">
           <ScrollReveal>
-            <div className="mx-auto mb-12 max-w-2xl text-center">
+            <div className="mx-auto mb-16 max-w-2xl text-center">
               <Eyebrow>Understand</Eyebrow>
               <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-                Understand what&apos;s really going on.
+                Three living ecosystems inside you.
               </h2>
               <p className="mt-5 text-lg text-muted-foreground">
-                Your Twin is built on the three biotics — feed, add, harvest. That&apos;s how
-                we turn your strengths, gaps and priorities into a plan.
+                Feed them, add to them, harvest the benefits — that&apos;s how your Twin grows.
               </p>
             </div>
           </ScrollReveal>
-          <ScrollReveal>
-            <div className="mx-auto max-w-3xl overflow-hidden rounded-3xl border border-border bg-card p-4 shadow-[0_2px_12px_rgba(26,46,18,0.05)] sm:p-6">
-              <Image
-                src="/images/3-biotics-infographic.png"
-                alt="The 3 Biotics Framework — prebiotics feed, probiotics add, postbiotics harvest"
-                width={1200}
-                height={1200}
-                sizes="(max-width: 768px) 92vw, 768px"
-                className="h-auto w-full"
-                style={{ mixBlendMode: "multiply" }}
-              />
-            </div>
-          </ScrollReveal>
+          <ScrollReveal><BioticEcosystems /></ScrollReveal>
         </div>
       </section>
 
-      {/* ════ 4 · Develop — grow it, day by day ════ */}
+      {/* ════ 4 · Develop — the Twin in action (animated week) ════ */}
       <section className="px-6 py-24">
         <div className="mx-auto grid max-w-[1050px] items-center gap-12 lg:grid-cols-2">
           <ScrollReveal>
             <Eyebrow>Develop</Eyebrow>
             <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-              Grow it, day by day.
+              Watch it grow, day by day.
             </h2>
             <p className="mt-5 max-w-md text-lg text-muted-foreground">
-              Every meal makes your Twin smarter. Build a plate, log how you feel, and watch
-              your score, your three biotics and your next best action move with you.
+              Every meal makes your Twin smarter. As the week unfolds your score climbs, your
+              next best action adapts, and momentum builds.
             </p>
             <div className="mt-7">
               <DevelopPlate />
             </div>
           </ScrollReveal>
           <ScrollReveal>
-            <PhoneDashboard />
+            <WeekDashboard />
           </ScrollReveal>
         </div>
       </section>
 
-      {/* ════ 5 · Improve — feel the difference ════ */}
+      {/* ════ 5 · Improve — aspirational vitality ════ */}
       <section className="px-6 py-24" style={{ background: tint(ORANGE, 4) }}>
         <div className="mx-auto grid max-w-[1050px] items-center gap-12 lg:grid-cols-2">
           <ScrollReveal>
-            <div className="mx-auto w-[78%] lg:w-full">
-              <DigitalTwinFigure size={360} src="/images/eatosports-hero.webp" alt="Vitality and energy in motion" />
+            <div className="mx-auto w-[82%] lg:w-full">
+              <DigitalTwinFigure size={400} src="/images/eatosports-hero.webp" alt="Vitality and energy in motion" />
             </div>
           </ScrollReveal>
           <ScrollReveal>
@@ -243,19 +165,27 @@ export default function DigitalTwinPage() {
             <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
               Feel the difference.
             </h2>
-            <div className="mt-6 flex items-end gap-3">
-              <span style={lora} className="text-6xl font-bold leading-none text-foreground">
-                <CountUp to={80} className="tabular-nums" />
-              </span>
-              <span className="mb-2 rounded-full px-3 py-1 text-sm font-semibold text-white" style={{ background: "linear-gradient(135deg,#4CB648,#2DAA6E)" }}>+6 since baseline</span>
+            <div className="mt-6 flex items-end gap-4">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Baseline</div>
+                <div style={lora} className="text-3xl font-bold leading-none text-muted-foreground">74</div>
+              </div>
+              <ArrowRight className="mb-1 h-7 w-7 text-icon-green" />
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-wider text-icon-green">Now</div>
+                <span style={lora} className="text-6xl font-bold leading-none" >
+                  <span style={{ color: GREEN }}><CountUp to={80} className="tabular-nums" /></span>
+                </span>
+              </div>
+              <span className="mb-2 rounded-full px-3 py-1 text-sm font-semibold text-white" style={{ background: "linear-gradient(135deg,#4CB648,#2DAA6E)" }}>+6</span>
             </div>
-            <p className="mt-4 max-w-md text-lg text-muted-foreground">
+            <p className="mt-5 max-w-md text-lg text-muted-foreground">
               Small steps compound. As your Food System strengthens, you feel it in how you live.
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
               {IMPROVE_CHIPS.map((c) => (
-                <span key={c.label} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground">
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: GREEN }} />{c.label}
+                <span key={c} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground">
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: GREEN }} />{c}
                 </span>
               ))}
             </div>
@@ -266,7 +196,7 @@ export default function DigitalTwinPage() {
         </div>
       </section>
 
-      {/* ════ 6 · Many dimensions — one Twin, many lenses ════ */}
+      {/* ════ 6 · Many dimensions — product cards ════ */}
       <section className="px-6 py-24">
         <div className="mx-auto max-w-[1100px]">
           <ScrollReveal>
@@ -284,7 +214,7 @@ export default function DigitalTwinPage() {
         </div>
       </section>
 
-      {/* ════ 7 · From you to the Food System ════ */}
+      {/* ════ 7 · From you to the Food System — vertical journey ════ */}
       <section className="px-6 py-24" style={{ background: "linear-gradient(160deg, color-mix(in srgb,var(--icon-green) 8%,#fff), color-mix(in srgb,var(--icon-orange) 6%,#fff))" }}>
         <div className="mx-auto max-w-[1000px] text-center">
           <ScrollReveal>
@@ -294,30 +224,11 @@ export default function DigitalTwinPage() {
             </h2>
           </ScrollReveal>
           <ScrollReveal>
-            <div className="mt-12 flex flex-wrap items-center justify-center gap-3">
-              {[
-                { Icon: User, label: "You" }, { Icon: Users, label: "Your family" },
-                { Icon: Users, label: "Your community" }, { Icon: Globe, label: "The Food System" },
-              ].map(({ Icon, label }, i, arr) => (
-                <div key={label} className="flex items-center gap-3">
-                  <div className="flex flex-col items-center gap-2">
-                    <span className="flex h-16 w-16 items-center justify-center rounded-full text-white" style={{ background: `linear-gradient(135deg, color-mix(in srgb,#A8E063 ${100 - i * 22}%, #F5A623), #4CB648)` }}>
-                      <Icon className="h-7 w-7" />
-                    </span>
-                    <span className="text-sm font-semibold text-foreground">{label}</span>
-                  </div>
-                  {i < arr.length - 1 && <ArrowRight aria-hidden className="h-5 w-5 text-muted-foreground" />}
-                </div>
-              ))}
-            </div>
+            <div className="mt-14"><ImpactJourney /></div>
           </ScrollReveal>
           <ScrollReveal>
-            <p className="mx-auto mt-10 max-w-xl text-lg leading-relaxed text-muted-foreground">
-              Healthier individuals create healthier families. Healthier families create
-              healthier communities. Together they build a healthier Food System.
-            </p>
-            <p className="mt-4 text-lg font-semibold text-foreground">We develop the EatoSystem from the inside out.</p>
-            <div className="mt-8 flex flex-wrap justify-center gap-2">
+            <p className="mt-12 text-lg font-semibold text-foreground">We develop the EatoSystem from the inside out.</p>
+            <div className="mt-6 flex flex-wrap justify-center gap-2">
               {["Anonymous", "Aggregated", "Actionable", "Meaningful"].map((c) => (
                 <span key={c} className="rounded-full border border-border bg-card px-4 py-1.5 text-xs font-semibold text-muted-foreground">{c}</span>
               ))}
@@ -330,24 +241,25 @@ export default function DigitalTwinPage() {
       <section className="px-6 py-24">
         <div className="mx-auto max-w-[1100px]">
           <ScrollReveal>
-            <div className="mx-auto mb-12 max-w-2xl text-center">
+            <div className="mx-auto mb-14 max-w-2xl text-center">
               <Eyebrow>A lifetime of learning</Eyebrow>
               <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
                 One Twin. A lifetime of learning.
               </h2>
-              <p className="mt-5 text-lg text-muted-foreground">Your Digital Twin evolves with you — through every season of life.</p>
+              <p className="mt-5 text-lg text-muted-foreground">Your Digital Twin evolves with you — growing through every season of life.</p>
             </div>
           </ScrollReveal>
           <ScrollReveal>
             <div className="relative">
-              <div aria-hidden className="absolute left-0 right-0 top-[42px] h-0.5 rounded-full" style={{ background: "linear-gradient(90deg,#A8E063,#4CB648,#2DAA6E,#F5C518,#F5A623)" }} />
-              <div className="relative grid grid-cols-3 gap-y-8 sm:grid-cols-6">
-                {LIFECYCLE.map(({ Icon, label, s }, i) => (
+              <div aria-hidden className="absolute left-0 right-0 top-[44px] h-1 rounded-full" style={{ background: "linear-gradient(90deg,#A8E063,#4CB648,#2DAA6E,#F5C518,#F5A623)" }} />
+              <div className="relative grid grid-cols-3 gap-y-10 sm:grid-cols-6">
+                {LIFECYCLE.map(({ Icon, label, s, score }, i) => (
                   <div key={label} className="flex flex-col items-center text-center">
-                    <span className="flex items-center justify-center rounded-full bg-card ring-1 ring-border" style={{ width: 88, height: 88, color: `color-mix(in srgb,#4CB648 ${100 - i * 14}%, #F5A623)` }}>
+                    <span className="relative flex items-center justify-center rounded-full bg-card ring-1 ring-border" style={{ width: 92, height: 92, color: `color-mix(in srgb,#4CB648 ${100 - i * 14}%, #F5A623)` }}>
                       <Icon style={{ width: s, height: s }} />
+                      <span className="absolute -bottom-2 rounded-full px-2 py-0.5 text-[10px] font-bold text-white" style={{ background: "linear-gradient(135deg,#4CB648,#2DAA6E)" }}>{score}</span>
                     </span>
-                    <span className="mt-3 text-xs font-semibold text-foreground">{label}</span>
+                    <span className="mt-4 text-xs font-semibold text-foreground">{label}</span>
                   </div>
                 ))}
               </div>
@@ -356,7 +268,7 @@ export default function DigitalTwinPage() {
         </div>
       </section>
 
-      {/* ════ 9 · Connected to everything ════ */}
+      {/* ════ 9 · Connected to everything — orbiting hub ════ */}
       <section className="px-6 py-24" style={{ background: tint(GREEN, 4) }}>
         <div className="mx-auto max-w-[1100px]">
           <ScrollReveal>
@@ -365,27 +277,18 @@ export default function DigitalTwinPage() {
               <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
                 One Twin. Connected to everything.
               </h2>
-              <p className="mt-5 text-lg text-muted-foreground">Future capabilities, all powered by the same Digital Twin.</p>
+              <p className="mt-5 text-lg text-muted-foreground">Every capability orbits a single intelligent core — your Digital Twin.</p>
             </div>
           </ScrollReveal>
-          <ScrollReveal>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {CONNECTED.map(({ Icon, label }) => (
-                <div key={label} className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-6 text-center">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-xl text-white" style={{ background: "linear-gradient(135deg,#4CB648,#2DAA6E)" }}><Icon className="h-6 w-6" /></span>
-                  <span className="text-sm font-semibold text-foreground">{label}</span>
-                </div>
-              ))}
-            </div>
-            <p className="mt-6 text-center text-xs text-muted-foreground">Long-term vision — not all features are available today.</p>
-          </ScrollReveal>
+          <ScrollReveal><OrbitHub /></ScrollReveal>
+          <p className="mt-8 text-center text-xs text-muted-foreground">Long-term vision — not all features are available today.</p>
         </div>
       </section>
 
       {/* ════ 10 · Final close ════ */}
       <section className="px-6 pb-10 pt-24 text-center">
-        <ScrollReveal>
-          <div className="mx-auto mb-2 w-[min(300px,72vw)]">
+        <ScrollReveal className="flex flex-col items-center">
+          <HeroStage>
             <HeroVideo
               posterSrc="/videos/dt-close-poster.jpg"
               mp4Src="/videos/dt-close.mp4"
@@ -393,8 +296,8 @@ export default function DigitalTwinPage() {
               alt="Your Food System Digital Twin"
               className="h-auto w-full"
             />
-          </div>
-          <h2 style={lora} className="mx-auto max-w-3xl text-4xl font-bold text-foreground sm:text-6xl text-balance">
+          </HeroStage>
+          <h2 style={lora} className="mx-auto -mt-2 max-w-3xl text-4xl font-bold text-foreground sm:text-6xl text-balance">
             Build your <span className="brand-gradient-text">Digital Twin</span>.
           </h2>
           <p className="mx-auto mt-5 max-w-xl text-lg text-muted-foreground">
@@ -437,47 +340,6 @@ function DevelopPlate() {
         <p className="mt-1 text-sm font-semibold leading-snug text-foreground">
           Build a plate, log how you feel — your Twin learns from each one.
         </p>
-      </div>
-    </div>
-  )
-}
-
-/* ── Develop: phone dashboard (bespoke light mockup) ─────────── */
-function PhoneDashboard() {
-  const C = 2 * Math.PI * 52
-  const pct = 0.74
-  return (
-    <div className="mx-auto w-[280px]">
-      <div className="overflow-hidden rounded-[2.6rem] border-[7px] border-foreground bg-card p-5 shadow-[0_30px_60px_-20px_rgba(20,37,15,0.4)]">
-        <div className="mx-auto mb-4 h-5 w-20 rounded-full bg-foreground" />
-        <p className="text-sm font-semibold text-foreground">Good morning, Alex</p>
-        <p className="mt-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Your Food System Score</p>
-        <div className="relative mx-auto my-2 h-[140px] w-[140px]">
-          <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
-            <defs>
-              <linearGradient id="dtRing" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stopColor="#A8E063" /><stop offset="0.5" stopColor="#4CB648" /><stop offset="1" stopColor="#F5A623" />
-              </linearGradient>
-            </defs>
-            <circle cx="60" cy="60" r="52" fill="none" stroke="var(--muted,#F3F3F3)" strokeWidth="10" />
-            <circle cx="60" cy="60" r="52" fill="none" stroke="url(#dtRing)" strokeWidth="10" strokeLinecap="round" strokeDasharray={`${C * pct} ${C}`} />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <CountUp to={74} className="text-4xl font-bold tabular-nums" />
-            <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: GREEN }}>Improving</span>
-          </div>
-        </div>
-        <div className="rounded-2xl p-3" style={{ background: tint(GREEN, 8) }}>
-          <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: GREEN }}>Your next best action</p>
-          <p className="mt-1 text-sm font-semibold leading-snug text-foreground">Add one prebiotic-rich food to two meals today.</p>
-        </div>
-        <div className="mt-3 space-y-2 text-xs">
-          {[["Meals logged", "3"], ["Steps", "8,245"], ["Sleep", "7h 23m"]].map(([k, v]) => (
-            <div key={k} className="flex items-center justify-between border-b border-border pb-1.5 last:border-0">
-              <span className="text-muted-foreground">{k}</span><span className="font-semibold text-foreground tabular-nums">{v}</span>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   )
