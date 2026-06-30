@@ -1,22 +1,25 @@
 import type { Metadata } from "next"
+import Image from "next/image"
+import Link from "next/link"
 import {
-  ArrowRight, Utensils, Moon, HeartPulse, Brain, ClipboardList, TrendingUp,
-  Lightbulb, BarChart3, Leaf, History,
+  ArrowRight, Utensils, Moon, HeartPulse, Search, TrendingUp,
+  Lightbulb, Infinity as InfinityIcon, Footprints, BarChart3,
   User, Users, Globe, Baby, PersonStanding, UserRound,
-  FileText, Mic, Bot, Watch, Puzzle, FlaskConical, ShieldCheck, Sparkles, Footprints,
+  FileText, Mic, Bot, Watch, Puzzle, FlaskConical, ShieldCheck, Sparkles,
 } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
-import { AgentLoopTimeline } from "@/components/agent-loop/AgentLoopTimeline"
+import { HeroVideo } from "@/components/hero-video"
 import { DigitalTwinFigure, Eyebrow, CtaButton } from "@/components/digital-twin/parts"
+import { SystemDimensions } from "@/components/digital-twin/system-dimensions"
 import { CountUp } from "@/components/digital-twin/count-up"
 
 export const metadata: Metadata = {
   title: "Your Food System Digital Twin",
   description:
-    "A living digital twin of the Food System Inside You. It learns from your meals, sleep, activity, symptoms and habits, understands what's changing, and guides your next best action — improving your Food System, and helping build the Food System.",
+    "A living digital twin of the Food System Inside You. See it, understand it, develop it day by day, and feel the difference — improving your Food System, and helping build the Food System.",
   openGraph: {
     title: "Meet Your Food System Digital Twin — EatoBiotics",
-    description: "Understand the Food System Inside You like never before.",
+    description: "Visualise, understand, develop and improve the Food System Inside You.",
     url: "https://eatobiotics.com/digital-twin",
   },
 }
@@ -25,28 +28,38 @@ const GREEN = "#4CB648"
 const ORANGE = "#F5A623"
 const lora = { fontFamily: "var(--font-lora), Georgia, serif" } as const
 
-/* ── Ch2 inputs ─────────────────────────────────────────────── */
+/* ── Visualise: the live loop ───────────────────────────────── */
 const INPUTS = [
-  { Icon: Utensils, label: "Meals" }, { Icon: Moon, label: "Sleep" },
-  { Icon: Footprints, label: "Activity" }, { Icon: HeartPulse, label: "Symptoms" },
-  { Icon: Brain, label: "Habits" }, { Icon: ClipboardList, label: "Assessments" },
-  { Icon: TrendingUp, label: "Progress" },
+  { Icon: Utensils, label: "Meals", sub: "What you eat" },
+  { Icon: HeartPulse, label: "Symptoms", sub: "How you feel" },
+  { Icon: Moon, label: "Sleep", sub: "How you rest" },
+  { Icon: Footprints, label: "Activity", sub: "How you move" },
+  { Icon: BarChart3, label: "Progress", sub: "Your updates" },
 ]
-/* ── Ch3 friendly loop ──────────────────────────────────────── */
+const OUTPUTS = [
+  { Icon: Search, label: "Analyse", sub: "We find patterns" },
+  { Icon: Lightbulb, label: "Understand", sub: "What it means" },
+  { Icon: ArrowRight, label: "Recommend", sub: "Your next step" },
+  { Icon: TrendingUp, label: "Improve", sub: "You feel better" },
+  { Icon: InfinityIcon, label: "Learn", sub: "The loop continues" },
+]
 const LOOP_STEPS = ["You live", "Observes", "Learns", "Understands", "Guides", "You improve"]
-/* ── Ch4 memories ───────────────────────────────────────────── */
-const MEMORIES = [
-  { Icon: Utensils, label: "Meals" }, { Icon: BarChart3, label: "Patterns" },
-  { Icon: TrendingUp, label: "Progress" }, { Icon: Leaf, label: "Three Biotics" },
-  { Icon: Lightbulb, label: "Recommendations" }, { Icon: History, label: "History" },
+
+/* ── Improve: vitality chips ────────────────────────────────── */
+const IMPROVE_CHIPS = [
+  { label: "Steadier energy" },
+  { label: "Calmer digestion" },
+  { label: "Better sleep" },
+  { label: "Clearer focus" },
 ]
-/* ── Ch7 lifecycle ──────────────────────────────────────────── */
+
+/* ── Lifecycle ──────────────────────────────────────────────── */
 const LIFECYCLE = [
   { Icon: Baby, label: "Childhood", s: 26 }, { Icon: PersonStanding, label: "Adolescence", s: 30 },
   { Icon: User, label: "Young adult", s: 34 }, { Icon: UserRound, label: "Adult", s: 38 },
   { Icon: Users, label: "Parent", s: 40 }, { Icon: PersonStanding, label: "Later life", s: 34 },
 ]
-/* ── Ch8 future ─────────────────────────────────────────────── */
+/* ── Connected (future) ─────────────────────────────────────── */
 const CONNECTED = [
   { Icon: Utensils, label: "Meals" }, { Icon: Users, label: "Family" },
   { Icon: FileText, label: "Reports" }, { Icon: Mic, label: "Voice" },
@@ -69,72 +82,90 @@ export default function DigitalTwinPage() {
   return (
     <main className="overflow-hidden bg-background">
 
-      {/* ════ Ch1 — Meet Your Digital Twin ════ */}
+      {/* ════ 1 · Hero — Meet your Digital Twin ════ */}
       <section className="px-6 pt-24 pb-10 text-center md:pt-32">
         <ScrollReveal>
           <Eyebrow>Your Digital Twin</Eyebrow>
-          <DigitalTwinFigure size={460} className="my-2" />
+          <div className="mx-auto my-2 w-[min(460px,86vw)]">
+            <HeroVideo
+              posterSrc="/videos/dt-hero-poster.jpg"
+              mp4Src="/videos/dt-hero.mp4"
+              webmSrc="/videos/dt-hero.webm"
+              alt="Your living Food System Digital Twin"
+              className="h-auto w-full"
+            />
+          </div>
           <h1 style={lora} className="mx-auto mt-4 max-w-4xl text-5xl font-bold leading-[1.03] text-foreground sm:text-6xl md:text-7xl text-balance">
             Meet your <span className="brand-gradient-text">Digital Twin</span>.
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
-            A living representation of the Food System Inside You — one that learns,
-            understands, and guides you to feel your best.
+            A living picture of the Food System Inside You — see it, understand it,
+            grow it, and feel the difference.
           </p>
           <div className="mt-9 flex justify-center"><CtaButton>Build My Digital Twin</CtaButton></div>
         </ScrollReveal>
       </section>
 
-      {/* ════ Ch2 — How Your Twin Comes Alive ════ */}
+      {/* ════ 2 · Visualise — see the Food System Inside You ════ */}
       <section className="px-6 py-24">
         <div className="mx-auto max-w-[1100px]">
           <ScrollReveal>
             <div className="mx-auto mb-14 max-w-2xl text-center">
-              <Eyebrow>How it comes alive</Eyebrow>
+              <Eyebrow>Visualise</Eyebrow>
               <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-                Everything you do flows into one living system.
+                See the Food System Inside You.
               </h2>
+              <p className="mt-5 text-lg text-muted-foreground">
+                Everything you do flows into one living system — made visible at last.
+              </p>
             </div>
           </ScrollReveal>
           <ScrollReveal>
             <div className="grid items-center gap-8 lg:grid-cols-[1fr_auto_1fr]">
               {/* inputs */}
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-1">
-                {INPUTS.map(({ Icon, label }) => (
+              <div className="grid gap-3">
+                {INPUTS.map(({ Icon, label, sub }) => (
                   <div key={label} className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: tint(GREEN, 12), color: GREEN }}>
                       <Icon className="h-[18px] w-[18px]" />
                     </span>
-                    <span className="text-sm font-semibold text-foreground">{label}</span>
+                    <span>
+                      <span className="block text-sm font-semibold text-foreground">{label}</span>
+                      <span className="block text-xs text-muted-foreground">{sub}</span>
+                    </span>
                   </div>
                 ))}
               </div>
-              {/* flow connector (desktop) */}
-              <svg width="120" height="240" viewBox="0 0 120 240" fill="none" className="hidden lg:block" aria-hidden>
-                {[40, 120, 200].map((y, i) => (
-                  <path key={i} d={`M0 ${y} C 60 ${y}, 60 120, 120 120`} stroke={i % 2 ? ORANGE : GREEN} strokeWidth="2" strokeDasharray="2 9" strokeLinecap="round" className="eb-flow" opacity="0.6" />
+              {/* twin */}
+              <div className="flex flex-col items-center">
+                <DigitalTwinFigure size={320} src="/images/couple-hero.png" />
+                <div className="-mt-2 rounded-2xl border border-border bg-card px-6 py-3 text-center shadow-[0_12px_32px_rgba(26,46,18,0.10)]">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-foreground">Your Food System</div>
+                  <div style={{ ...lora, color: GREEN }} className="text-5xl font-bold leading-none">
+                    <CountUp to={74} />
+                  </div>
+                  <div className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">System score</div>
+                </div>
+              </div>
+              {/* outputs */}
+              <div className="grid gap-3">
+                {OUTPUTS.map(({ Icon, label, sub }) => (
+                  <div key={label} className="flex flex-row-reverse items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-right">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: tint(ORANGE, 12), color: ORANGE }}>
+                      <Icon className="h-[18px] w-[18px]" />
+                    </span>
+                    <span>
+                      <span className="block text-sm font-semibold text-foreground">{label}</span>
+                      <span className="block text-xs text-muted-foreground">{sub}</span>
+                    </span>
+                  </div>
                 ))}
-              </svg>
-              {/* figure */}
-              <DigitalTwinFigure size={320} className="lg:justify-self-end" />
+              </div>
             </div>
           </ScrollReveal>
-        </div>
-      </section>
-
-      {/* ════ Ch3 — Your Twin Learns (the engine) ════ */}
-      <section className="px-6 py-24" style={{ background: tint(GREEN, 4) }}>
-        <div className="mx-auto max-w-[1000px]">
+          {/* the loop, in words */}
           <ScrollReveal>
-            <div className="mx-auto mb-10 max-w-2xl text-center">
-              <Eyebrow>The engine</Eyebrow>
-              <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-                Your Twin learns — quietly, continuously.
-              </h2>
-            </div>
-          </ScrollReveal>
-          <ScrollReveal>
-            <ol className="mb-10 flex flex-wrap items-center justify-center gap-2">
+            <ol className="mt-12 flex flex-wrap items-center justify-center gap-2">
               {LOOP_STEPS.map((s, i) => (
                 <li key={s} className="flex items-center gap-2">
                   <span className="rounded-full px-4 py-2 text-sm font-semibold text-white" style={{ background: i === 0 || i === LOOP_STEPS.length - 1 ? "linear-gradient(135deg,#4CB648,#2DAA6E)" : "linear-gradient(135deg,#F5C518,#F5A623)" }}>{s}</span>
@@ -143,69 +174,55 @@ export default function DigitalTwinPage() {
               ))}
             </ol>
           </ScrollReveal>
-          <ScrollReveal>
-            <div className="rounded-3xl border border-border bg-card p-6 sm:p-8">
-              <p className="mb-4 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">The Agent Loop — the intelligence behind your Twin</p>
-              <AgentLoopTimeline currentStage="recommend" />
-            </div>
-          </ScrollReveal>
         </div>
       </section>
 
-      {/* ════ Ch4 — Your Twin Remembers ════ */}
-      <section className="px-6 py-24">
-        <div className="mx-auto max-w-[1000px]">
+      {/* ════ 3 · Understand — what's really going on ════ */}
+      <section className="px-6 py-24" style={{ background: tint(GREEN, 4) }}>
+        <div className="mx-auto max-w-[1100px]">
           <ScrollReveal>
             <div className="mx-auto mb-12 max-w-2xl text-center">
-              <Eyebrow>Memory</Eyebrow>
+              <Eyebrow>Understand</Eyebrow>
               <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-                Your Twin remembers you.
+                Understand what&apos;s really going on.
               </h2>
-              <p className="mt-5 text-lg text-muted-foreground">Every interaction makes it more useful.</p>
+              <p className="mt-5 text-lg text-muted-foreground">
+                Your Twin is built on the three biotics — feed, add, harvest. That&apos;s how
+                we turn your strengths, gaps and priorities into a plan.
+              </p>
             </div>
           </ScrollReveal>
           <ScrollReveal>
-            <div className="relative mx-auto" style={{ width: 440, height: 440, maxWidth: "100%" }}>
-              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"><DigitalTwinFigure size={230} showParticles={false} /></div>
-              {/* rotating ring of memory chips */}
-              <div className="eb-orbit absolute inset-0">
-                {MEMORIES.map(({ Icon, label }, i) => {
-                  const a = (i / MEMORIES.length) * 2 * Math.PI - Math.PI / 2
-                  const R = 46 // percent radius
-                  const x = 50 + R * Math.cos(a)
-                  const y = 50 + R * Math.sin(a)
-                  return (
-                    <div key={label} className="absolute" style={{ left: `${x}%`, top: `${y}%`, transform: "translate(-50%,-50%)" }}>
-                      <div className="eb-orbit-rev flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 shadow-[0_2px_10px_rgba(26,46,18,0.08)]">
-                        <Icon className="h-3.5 w-3.5" style={{ color: GREEN }} />
-                        <span className="whitespace-nowrap text-xs font-semibold text-foreground">{label}</span>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+            <div className="mx-auto max-w-3xl overflow-hidden rounded-3xl border border-border bg-card p-4 shadow-[0_2px_12px_rgba(26,46,18,0.05)] sm:p-6">
+              <Image
+                src="/images/3-biotics-infographic.png"
+                alt="The 3 Biotics Framework — prebiotics feed, probiotics add, postbiotics harvest"
+                width={1200}
+                height={1200}
+                sizes="(max-width: 768px) 92vw, 768px"
+                className="h-auto w-full"
+                style={{ mixBlendMode: "multiply" }}
+              />
             </div>
           </ScrollReveal>
         </div>
       </section>
 
-      {/* ════ Ch5 — Your Twin Guides You ════ */}
-      <section className="px-6 py-24" style={{ background: tint(ORANGE, 4) }}>
-        <div className="mx-auto grid max-w-[1000px] items-center gap-12 lg:grid-cols-2">
+      {/* ════ 4 · Develop — grow it, day by day ════ */}
+      <section className="px-6 py-24">
+        <div className="mx-auto grid max-w-[1050px] items-center gap-12 lg:grid-cols-2">
           <ScrollReveal>
-            <Eyebrow>Guidance</Eyebrow>
+            <Eyebrow>Develop</Eyebrow>
             <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-              A living companion, not a static report.
+              Grow it, day by day.
             </h2>
             <p className="mt-5 max-w-md text-lg text-muted-foreground">
-              Your score, your three biotics, your progress and the single most valuable next
-              step — always in your pocket, always moving with you.
+              Every meal makes your Twin smarter. Build a plate, log how you feel, and watch
+              your score, your three biotics and your next best action move with you.
             </p>
-            <ul className="mt-6 space-y-2 text-sm text-foreground">
-              {["Food System Score", "Three Biotics", "Next Best Action", "Progress & loop stage"].map((t) => (
-                <li key={t} className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full" style={{ background: GREEN }} />{t}</li>
-              ))}
-            </ul>
+            <div className="mt-7">
+              <DevelopPlate />
+            </div>
           </ScrollReveal>
           <ScrollReveal>
             <PhoneDashboard />
@@ -213,7 +230,61 @@ export default function DigitalTwinPage() {
         </div>
       </section>
 
-      {/* ════ Ch6 — From You to the Food System ════ */}
+      {/* ════ 5 · Improve — feel the difference ════ */}
+      <section className="px-6 py-24" style={{ background: tint(ORANGE, 4) }}>
+        <div className="mx-auto grid max-w-[1050px] items-center gap-12 lg:grid-cols-2">
+          <ScrollReveal>
+            <div className="mx-auto w-[78%] lg:w-full">
+              <DigitalTwinFigure size={360} src="/images/eatosports-hero.webp" alt="Vitality and energy in motion" />
+            </div>
+          </ScrollReveal>
+          <ScrollReveal>
+            <Eyebrow>Improve</Eyebrow>
+            <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
+              Feel the difference.
+            </h2>
+            <div className="mt-6 flex items-end gap-3">
+              <span style={lora} className="text-6xl font-bold leading-none text-foreground">
+                <CountUp to={80} className="tabular-nums" />
+              </span>
+              <span className="mb-2 rounded-full px-3 py-1 text-sm font-semibold text-white" style={{ background: "linear-gradient(135deg,#4CB648,#2DAA6E)" }}>+6 since baseline</span>
+            </div>
+            <p className="mt-4 max-w-md text-lg text-muted-foreground">
+              Small steps compound. As your Food System strengthens, you feel it in how you live.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-2">
+              {IMPROVE_CHIPS.map((c) => (
+                <span key={c.label} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground">
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: GREEN }} />{c.label}
+                </span>
+              ))}
+            </div>
+            <Link href="/performance" className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-icon-green">
+              Built for performance, too <ArrowRight className="h-4 w-4" />
+            </Link>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      {/* ════ 6 · Many dimensions — one Twin, many lenses ════ */}
+      <section className="px-6 py-24">
+        <div className="mx-auto max-w-[1100px]">
+          <ScrollReveal>
+            <div className="mx-auto mb-12 max-w-2xl text-center">
+              <Eyebrow>Many dimensions</Eyebrow>
+              <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
+                One Twin. Many lenses.
+              </h2>
+              <p className="mt-5 text-lg text-muted-foreground">
+                The same living system, seen through every part of your health and life.
+              </p>
+            </div>
+          </ScrollReveal>
+          <ScrollReveal><SystemDimensions /></ScrollReveal>
+        </div>
+      </section>
+
+      {/* ════ 7 · From you to the Food System ════ */}
       <section className="px-6 py-24" style={{ background: "linear-gradient(160deg, color-mix(in srgb,var(--icon-green) 8%,#fff), color-mix(in srgb,var(--icon-orange) 6%,#fff))" }}>
         <div className="mx-auto max-w-[1000px] text-center">
           <ScrollReveal>
@@ -255,7 +326,7 @@ export default function DigitalTwinPage() {
         </div>
       </section>
 
-      {/* ════ Ch7 — A Lifetime of Learning ════ */}
+      {/* ════ 8 · A lifetime of learning ════ */}
       <section className="px-6 py-24">
         <div className="mx-auto max-w-[1100px]">
           <ScrollReveal>
@@ -285,7 +356,7 @@ export default function DigitalTwinPage() {
         </div>
       </section>
 
-      {/* ════ Ch8 — Connected to Everything ════ */}
+      {/* ════ 9 · Connected to everything ════ */}
       <section className="px-6 py-24" style={{ background: tint(GREEN, 4) }}>
         <div className="mx-auto max-w-[1100px]">
           <ScrollReveal>
@@ -311,10 +382,18 @@ export default function DigitalTwinPage() {
         </div>
       </section>
 
-      {/* ════ Final close ════ */}
+      {/* ════ 10 · Final close ════ */}
       <section className="px-6 pb-10 pt-24 text-center">
         <ScrollReveal>
-          <DigitalTwinFigure size={300} className="mb-2" />
+          <div className="mx-auto mb-2 w-[min(300px,72vw)]">
+            <HeroVideo
+              posterSrc="/videos/dt-close-poster.jpg"
+              mp4Src="/videos/dt-close.mp4"
+              webmSrc="/videos/dt-close.webm"
+              alt="Your Food System Digital Twin"
+              className="h-auto w-full"
+            />
+          </div>
           <h2 style={lora} className="mx-auto max-w-3xl text-4xl font-bold text-foreground sm:text-6xl text-balance">
             Build your <span className="brand-gradient-text">Digital Twin</span>.
           </h2>
@@ -340,7 +419,30 @@ export default function DigitalTwinPage() {
   )
 }
 
-/* ── Ch5 phone dashboard (bespoke light mockup) ─────────────── */
+/* ── Develop: the EatoBiotics plate (every meal feeds the Twin) ─ */
+function DevelopPlate() {
+  return (
+    <div className="flex items-center gap-4 rounded-3xl border border-border bg-card p-4 shadow-[0_2px_10px_rgba(26,46,18,0.05)]">
+      <Image
+        src="/images/eatobiotics/eatobiotics-plate.png"
+        alt="The EatoBiotics plate — prebiotic base, probiotic side, protein balance, healthy fats"
+        width={160}
+        height={160}
+        sizes="160px"
+        className="h-20 w-20 shrink-0 sm:h-24 sm:w-24"
+        style={{ mixBlendMode: "multiply" }}
+      />
+      <div>
+        <div className="text-xs font-semibold uppercase tracking-wider text-icon-green">Every meal counts</div>
+        <p className="mt-1 text-sm font-semibold leading-snug text-foreground">
+          Build a plate, log how you feel — your Twin learns from each one.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/* ── Develop: phone dashboard (bespoke light mockup) ─────────── */
 function PhoneDashboard() {
   const C = 2 * Math.PI * 52
   const pct = 0.74
