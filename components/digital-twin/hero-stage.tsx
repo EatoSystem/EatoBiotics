@@ -62,8 +62,9 @@ export function HeroStage({ children }: { children: React.ReactNode }) {
         />
       ))}
 
-      {/* the figure/video */}
-      <div className="relative z-10 w-[78%]">{children}</div>
+      {/* the figure/video — no positive z-index, so mix-blend-mode: multiply blends
+          against the page (white dissolves). DOM order keeps it above the layers above. */}
+      <div className="relative w-[78%]">{children}</div>
     </div>
   )
 }
