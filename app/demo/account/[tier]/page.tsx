@@ -266,7 +266,7 @@ export default async function DemoAccountTierPage({
 
       <div className="pt-10">
         <div className="pb-2">
-          <TwinHero twin={demoTwin} visual={demoTwinVisual} feed={demoFeed} />
+          <TwinHero twin={demoTwin} visual={demoTwinVisual} feed={demoFeed} detailHref="/demo/account/twin" />
         </div>
         <DashboardClient
           profile={profile}

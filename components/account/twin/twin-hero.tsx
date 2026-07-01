@@ -11,9 +11,10 @@
  */
 
 import { DigitalTwinFigure } from "@/components/digital-twin/parts"
+import Link from "next/link"
 import { ScoreRing } from "@/components/assessment/score-ring"
 import { ScoreBar } from "@/components/account/dashboard-parts"
-import { TrendingUp, Flame, Leaf, Target, Sparkles, Activity } from "lucide-react"
+import { TrendingUp, Flame, Leaf, Target, Sparkles, Activity, ArrowRight } from "lucide-react"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
 import type { TwinVisualState } from "@/lib/account/twin-visual"
 import type { TwinFeedEntry } from "@/lib/agent-loop/account-twin"
@@ -40,12 +41,15 @@ export function TwinHero({
   visual,
   feed,
   learning = false,
+  detailHref = "/account/twin",
 }: {
   twin: FoodSystemDigitalTwin
   visual: TwinVisualState
   feed: TwinFeedEntry[]
   /** Briefly true right after a meal log while the server re-derives. */
   learning?: boolean
+  /** Where "Open full Twin" links (demo overrides to /demo/account/twin). */
+  detailHref?: string
 }) {
   const nba = twin.nextBestAction
 
@@ -150,6 +154,10 @@ export function TwinHero({
                   )
                 })}
               </div>
+
+              <Link href={detailHref} className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: "var(--icon-green)" }}>
+                Open your full Living Twin <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
           </div>
         </div>

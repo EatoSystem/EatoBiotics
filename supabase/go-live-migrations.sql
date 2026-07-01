@@ -267,3 +267,17 @@ ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS email_status  text;
 ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS report_error  text;
 ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS pdf_error     text;
 ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS email_error   text;
+
+
+-- Migration 34: enable Supabase Realtime on `analyses` (Living Twin, /account/twin)
+-- Lets the Twin update live across devices as meals are logged. RLS already scopes
+-- analyses to user_id = auth.uid(); idempotent. App degrades gracefully without it.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'analyses'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.analyses;
+  END IF;
+END $$;

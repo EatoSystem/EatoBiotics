@@ -8,7 +8,7 @@
  */
 
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
-import type { Momentum } from "@/lib/agent-loop/types"
+import type { BioticKey, Momentum } from "@/lib/agent-loop/types"
 
 export interface TwinVisualState {
   /** Score shown in the ring (0–100). */
@@ -35,20 +35,20 @@ const MOMENTUM_LABEL: Record<Momentum, string> = {
 }
 
 /**
- * Bias the aura warmth by which biotic leads: prebiotics → lime/green,
- * probiotics → teal/green, postbiotics → yellow/orange. Always within the brand
- * palette (green → yellow → orange; never blue/purple).
+ * Bias the aura warmth by a biotic: prebiotics → lime/green, probiotics →
+ * teal/green, postbiotics → yellow/orange. Always within the brand palette
+ * (green → yellow → orange; never blue/purple). Exported so the lens switcher can
+ * re-tint the Twin toward a specialised system's focus biotic.
  */
-function auraGradient(twin: FoodSystemDigitalTwin, intensity: number): string {
-  const strongest = twin.biotics.strongest
+export function auraGradientForBiotic(biotic: BioticKey, intensity = 0.6): string {
   const inner =
-    strongest === "postbiotics"
+    biotic === "postbiotics"
       ? `rgba(245,197,24,${0.28 + 0.24 * intensity})`
-      : strongest === "probiotics"
+      : biotic === "probiotics"
         ? `rgba(45,170,110,${0.28 + 0.24 * intensity})`
         : `rgba(168,224,99,${0.30 + 0.25 * intensity})`
   const mid =
-    strongest === "postbiotics"
+    biotic === "postbiotics"
       ? `rgba(245,166,35,${0.16 + 0.16 * intensity})`
       : `rgba(245,197,24,${0.14 + 0.16 * intensity})`
   return `radial-gradient(circle, ${inner} 0%, ${mid} 44%, rgba(255,255,255,0) 72%)`
@@ -69,7 +69,7 @@ export function twinVisualState(twin: FoodSystemDigitalTwin): TwinVisualState {
     particleDensity: confidence,
     pulseSec,
     momentum,
-    auraGradient: auraGradient(twin, confidence),
+    auraGradient: auraGradientForBiotic(twin.biotics.strongest, confidence),
     momentumLabel: MOMENTUM_LABEL[momentum],
   }
 }
