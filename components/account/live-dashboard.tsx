@@ -14,6 +14,10 @@ import {
   Glp1CompanionCard, StabilityCard, AssessmentJourneyCard, VoiceConsultCard, ReferralCard, ScoreRing, MiniRing, ScoreBar,
   Tag, SectionLabel, GradientButton, ringColors,
 } from "@/components/account/dashboard-parts"
+import { TwinHero } from "@/components/account/twin/twin-hero"
+import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
+import type { TwinVisualState } from "@/lib/account/twin-visual"
+import type { TwinFeedEntry } from "@/lib/agent-loop/account-twin"
 
 
 function MealCard({ meal }: { meal: { image: string; name: string; time: string; type: string; score: number; insight: string; biotics: { prebiotic: number; probiotic: number; postbiotic: number }; quality: { diversity: number; antiInflammatory: number }; nutrition: { calories: number; protein: number; carbs: number; fat: number; fibre: number }; tags: string[] } }) {
@@ -320,6 +324,9 @@ export interface LiveDashboardProps {
   nextBillingDate?:  string | null
   referralCode?:     string | null
   dailyLoop?:        DailyLoopData | null
+  twin?:             FoodSystemDigitalTwin | null
+  twinVisual?:       TwinVisualState | null
+  twinFeed?:         TwinFeedEntry[] | null
   // Sandbox pass-through
   [key: string]: unknown
 }
@@ -655,6 +662,9 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
     nextBillingDate    = null,
     dailyLoop          = null,
     referralCode       = null,
+    twin               = null,
+    twinVisual         = null,
+    twinFeed           = null,
   } = props
 
   const [tab, setTab] = useState<Tab>("overview")
@@ -800,6 +810,9 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       setLiveResult(data)
       setLoggerState("result")
       setMealInput("")
+      // Re-derive the Living Twin server-side so it visibly updates with the new
+      // meal (score/biotics/feed). Client result state is preserved across refresh.
+      router.refresh()
     } catch (err) {
       console.error("[analyse-meal]", err)
       setAnalyseError("Analysis failed — please try again")
@@ -933,6 +946,10 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       {/* ══════════════════════════════════════════════════════════════════
           OVERVIEW TAB
       ══════════════════════════════════════════════════════════════════ */}
+      {tab === "overview" && twin && twinVisual && recentAnalyses.length > 0 && (
+        <TwinHero twin={twin} visual={twinVisual} feed={twinFeed ?? []} learning={loggerState === "analysing"} />
+      )}
+
       {tab === "overview" && dailyLoop && (
         <div className="pt-5">
           <DailyLoopCard data={dailyLoop} firstName={name?.split(" ")[0] ?? null} />
