@@ -42,6 +42,7 @@ export function TwinHero({
   feed,
   learning = false,
   detailHref = "/account/twin",
+  figureSrc = "/images/couple-hero.png",
 }: {
   twin: FoodSystemDigitalTwin
   visual: TwinVisualState
@@ -50,6 +51,8 @@ export function TwinHero({
   learning?: boolean
   /** Where "Open full Twin" links (demo overrides to /demo/account/twin). */
   detailHref?: string
+  /** Twin figure image (male/female by the member's sex; defaults to the couple). */
+  figureSrc?: string
 }) {
   const nba = twin.nextBestAction
 
@@ -81,7 +84,7 @@ export function TwinHero({
               />
               <DigitalTwinFigure
                 size={220}
-                src="/images/couple-hero.png"
+                src={figureSrc}
                 alt="Your living Food System Digital Twin"
                 showParticles={visual.particleDensity > 0.35}
               />

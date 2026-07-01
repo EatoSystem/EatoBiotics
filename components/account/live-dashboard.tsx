@@ -327,6 +327,8 @@ export interface LiveDashboardProps {
   twin?:             FoodSystemDigitalTwin | null
   twinVisual?:       TwinVisualState | null
   twinFeed?:         TwinFeedEntry[] | null
+  twinFigureSrc?:    string
+  sex?:              string | null
   // Sandbox pass-through
   [key: string]: unknown
 }
@@ -665,6 +667,8 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
     twin               = null,
     twinVisual         = null,
     twinFeed           = null,
+    twinFigureSrc      = undefined,
+    sex                = null,
   } = props
 
   const [tab, setTab] = useState<Tab>("overview")
@@ -676,6 +680,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
   /* My Account tab state */
   const [acctName,       setAcctName]       = useState(name ?? "")
   const [acctAgeBracket, setAcctAgeBracket] = useState(propAgeBracket ?? "")
+  const [acctSex,        setAcctSex]        = useState(sex ?? "")
   const [acctSaving,     setAcctSaving]     = useState(false)
   const [acctSaved,      setAcctSaved]      = useState(false)
   const [acctError,      setAcctError]      = useState<string | null>(null)
@@ -697,11 +702,13 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       const res = await fetch("/api/account/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: acctName || null, age_bracket: acctAgeBracket || null }),
+        body: JSON.stringify({ name: acctName || null, age_bracket: acctAgeBracket || null, sex: acctSex || null }),
       })
       if (!res.ok) throw new Error("Save failed")
       setAcctSaved(true)
       setTimeout(() => setAcctSaved(false), 3000)
+      // Re-derive server data so the Living Twin figure reflects the new sex.
+      router.refresh()
     } catch {
       setAcctError("Save failed — please try again")
     } finally {
@@ -952,7 +959,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
           OVERVIEW TAB
       ══════════════════════════════════════════════════════════════════ */}
       {tab === "overview" && twin && twinVisual && recentAnalyses.length > 0 && (
-        <TwinHero twin={twin} visual={twinVisual} feed={twinFeed ?? []} learning={loggerState === "analysing"} />
+        <TwinHero twin={twin} visual={twinVisual} feed={twinFeed ?? []} figureSrc={twinFigureSrc} learning={loggerState === "analysing"} />
       )}
 
       {tab === "overview" && dailyLoop && (
@@ -2102,6 +2109,21 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                     <option key={b} value={b}>{b}</option>
                   ))}
                 </select>
+              </div>
+              {/* Sex — personalises your Living Twin figure */}
+              <div>
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>Sex</label>
+                <select
+                  value={acctSex}
+                  onChange={(e) => setAcctSex(e.target.value)}
+                  className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition"
+                  style={{ borderColor: "var(--border)", background: "white", color: "var(--foreground)" }}
+                >
+                  <option value="">Prefer not to say</option>
+                  <option value="female">Female</option>
+                  <option value="male">Male</option>
+                </select>
+                <p className="mt-1 text-[11px]" style={{ color: "var(--muted-foreground)" }}>Personalises your Living Twin figure.</p>
               </div>
               {/* Member since */}
               {memberStartedAt && (

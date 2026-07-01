@@ -85,3 +85,16 @@ describe("buildTwinLenses", () => {
     expect(glucose.observes.length).toBeGreaterThan(0)
   })
 })
+
+describe("twinFigureSrc", () => {
+  it("falls back to the couple figure when sex is unknown, and resolves per sex", async () => {
+    const { twinFigureSrc, normaliseSex, TWIN_FIGURE_FALLBACK } = await import("@/lib/account/twin-figure")
+    expect(twinFigureSrc(null)).toBe(TWIN_FIGURE_FALLBACK)
+    expect(normaliseSex("banana")).toBeNull()
+    expect(normaliseSex("male")).toBe("male")
+    // Wire-now-art-later: male/female currently use the placeholder, but the
+    // resolver must always return a non-empty image path for each.
+    expect(twinFigureSrc("male")).toBeTruthy()
+    expect(twinFigureSrc("female")).toBeTruthy()
+  })
+})

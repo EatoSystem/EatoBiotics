@@ -910,3 +910,12 @@ BEGIN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.analyses;
   END IF;
 END $$;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 35: profiles.sex (Living Twin figure personalisation)
+-- ────────────────────────────────────────────────────────────
+-- The account Living Twin figure is male/female to match the customer. Nullable
+-- (values 'male' | 'female', else null → the generic couple figure). ADD-only,
+-- idempotent. Set via My Account settings + onboarding.
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS sex text;

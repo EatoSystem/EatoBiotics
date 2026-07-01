@@ -13,6 +13,7 @@ import { dailyNudge } from "@/lib/habit"
 import type { DailyLoopData } from "@/components/account/daily-loop-card"
 import { buildAccountTwin } from "@/lib/agent-loop/account-twin"
 import { twinVisualState } from "@/lib/account/twin-visual"
+import { twinFigureSrc, normaliseSex } from "@/lib/account/twin-figure"
 
 export const metadata: Metadata = {
   title: "My Account — EatoBiotics",
@@ -40,7 +41,7 @@ export default async function AccountPage({
   if (adminSupabase) {
     const { data } = await adminSupabase
       .from("profiles")
-      .select("id, email, name, membership_tier, membership_status, stripe_customer_id, stripe_subscription_id, membership_started_at, referral_code")
+      .select("id, email, name, membership_tier, membership_status, stripe_customer_id, stripe_subscription_id, membership_started_at, referral_code, age_bracket, sex")
       .eq("id", user.id)
       .single()
     profile = data as Record<string, unknown> | null
@@ -312,6 +313,8 @@ export default async function AccountPage({
         twin={accountTwin?.twin ?? null}
         twinVisual={twinVisual}
         twinFeed={accountTwin?.feed ?? null}
+        twinFigureSrc={twinFigureSrc(normaliseSex((profile.sex as string | null) ?? null))}
+        sex={(profile.sex as string | null) ?? null}
       />
     </div>
   )

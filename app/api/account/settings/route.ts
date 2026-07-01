@@ -7,14 +7,18 @@ export async function PATCH(req: NextRequest) {
     const user = await getUser()
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-    const { name, age_bracket } = await req.json()
+    const body = await req.json()
+
+    // Partial update — only touch the fields actually provided, so a caller that
+    // sends just { sex } (onboarding) doesn't wipe name/age_bracket, and vice versa.
+    const update: Record<string, unknown> = { updated_at: new Date().toISOString() }
+    if ("name" in body) update.name = body.name ?? null
+    if ("age_bracket" in body) update.age_bracket = body.age_bracket ?? null
+    if ("sex" in body) update.sex = body.sex === "male" || body.sex === "female" ? body.sex : null
 
     const supabase = getSupabase()
     if (supabase) {
-      await supabase
-        .from("profiles")
-        .update({ name: name ?? null, age_bracket: age_bracket ?? null, updated_at: new Date().toISOString() })
-        .eq("id", user.id)
+      await supabase.from("profiles").update(update).eq("id", user.id)
     }
 
     return NextResponse.json({ ok: true })

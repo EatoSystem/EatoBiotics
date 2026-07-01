@@ -25,6 +25,7 @@ export function OnboardingModal({ memberName, consultHref, skip }: OnboardingMod
   const [visible, setVisible] = useState(false)
   const [step, setStep] = useState(0)
   const [selected, setSelected] = useState<string | null>(null)
+  const [sexChoice, setSexChoice] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
   const firstName = memberName?.split(" ")[0] ?? null
@@ -42,14 +43,24 @@ export function OnboardingModal({ memberName, consultHref, skip }: OnboardingMod
   }
 
   async function saveIntentAndNext() {
-    if (!selected) { setStep(1); return }
+    if (!selected && !sexChoice) { setStep(1); return }
     setSaving(true)
     try {
-      await fetch("/api/profile/goals", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ goals: [selected] }),
-      })
+      if (selected) {
+        await fetch("/api/profile/goals", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ goals: [selected] }),
+        })
+      }
+      if (sexChoice) {
+        // Personalises the Living Twin figure; partial PATCH won't touch name/age.
+        await fetch("/api/account/settings", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sex: sexChoice }),
+        })
+      }
     } catch { /* non-fatal */ }
     setSaving(false)
     setStep(1)
@@ -117,13 +128,37 @@ export function OnboardingModal({ memberName, consultHref, skip }: OnboardingMod
                   </button>
                 ))}
               </div>
+
+              {/* Personalise the Living Twin figure */}
+              <p className="text-sm text-muted-foreground mb-2">Your Twin is…</p>
+              <div className="grid grid-cols-2 gap-2 mb-6">
+                {[
+                  { id: "female", label: "Female" },
+                  { id: "male", label: "Male" },
+                ].map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => setSexChoice((s) => (s === opt.id ? null : opt.id))}
+                    className={cn(
+                      "rounded-2xl border p-3 text-center text-sm font-semibold transition-all",
+                      sexChoice === opt.id
+                        ? "text-foreground shadow-sm"
+                        : "border-border text-muted-foreground hover:text-foreground"
+                    )}
+                    style={sexChoice === opt.id ? { borderColor: "var(--icon-teal)", background: "color-mix(in srgb, var(--icon-teal) 8%, white)" } : undefined}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+
               <button
                 onClick={saveIntentAndNext}
                 disabled={saving}
                 className="w-full rounded-full py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
                 style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
               >
-                {saving ? "Saving…" : selected ? "Continue" : "Skip for now"}{!saving && <ArrowRight size={14} className="inline ml-1.5" />}
+                {saving ? "Saving…" : (selected || sexChoice) ? "Continue" : "Skip for now"}{!saving && <ArrowRight size={14} className="inline ml-1.5" />}
               </button>
             </div>
           )}

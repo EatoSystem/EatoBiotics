@@ -53,12 +53,15 @@ export function TwinDashboard({
   feed,
   lenses,
   userId,
+  figureSrc = "/images/couple-hero.png",
 }: {
   twin: FoodSystemDigitalTwin
   visual: TwinVisualState
   feed: TwinFeedEntry[]
   lenses: LensDef[]
   userId: string | null
+  /** Twin figure image (male/female by the member's sex; defaults to the couple). */
+  figureSrc?: string
 }) {
   useTwinRealtime(userId)
   const [lens, setLens] = useState(lenses[0]?.key ?? "foundation")
@@ -98,7 +101,7 @@ export function TwinDashboard({
                 className="eb-aura pointer-events-none absolute left-1/2 top-1/2 h-[115%] w-[115%] -translate-x-1/2 -translate-y-1/2 rounded-full"
                 style={{ background: aura, opacity: 0.55 + 0.45 * visual.confidence, animationDuration: `${visual.pulseSec}s` }}
               />
-              <DigitalTwinFigure size={240} src="/images/couple-hero.png" alt="Your living Food System Digital Twin" showParticles={visual.particleDensity > 0.35} />
+              <DigitalTwinFigure size={240} src={figureSrc} alt="Your living Food System Digital Twin" showParticles={visual.particleDensity > 0.35} />
             </div>
             <div className="flex flex-1 flex-col items-center gap-5 sm:flex-row sm:items-center">
               <ScoreRing score={visual.ringScore} color="var(--icon-green)" gradientId="twin-page-ring" profileType={visual.momentumLabel} className="relative h-40 w-40 shrink-0" />
