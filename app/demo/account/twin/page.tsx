@@ -4,10 +4,11 @@ import { ArrowLeft } from "lucide-react"
 import { buildAccountTwin, type AccountTwinInput } from "@/lib/agent-loop/account-twin"
 import { twinVisualState } from "@/lib/account/twin-visual"
 import { buildTwinLenses } from "@/lib/account/twin-data"
+import { twinFigureSrc } from "@/lib/account/twin-figure"
 import { TwinDashboard } from "@/components/account/twin/twin-dashboard"
 
 export const metadata: Metadata = {
-  title: "Living Twin Preview — EatoBiotics",
+  title: "Digital Twin Preview — EatoBiotics",
   robots: "noindex",
 }
 
@@ -38,11 +39,11 @@ export default async function DemoTwinPage() {
           <Link href="/demo/account/member" className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground">
             <ArrowLeft size={12} /> Account
           </Link>
-          <p className="text-xs font-semibold" style={{ color: "var(--icon-teal)" }}>Living Twin preview — sample data for Sarah M.</p>
+          <p className="text-xs font-semibold" style={{ color: "var(--icon-teal)" }}>Digital Twin preview — sample data for Sarah M.</p>
         </div>
       </div>
       {/* userId=null → Realtime hook no-ops; this is a static demo snapshot. */}
-      <TwinDashboard twin={twin} visual={visual} feed={feed} lenses={lenses} userId={null} />
+      <TwinDashboard twin={twin} visual={visual} feed={feed} lenses={lenses} userId={null} figureSrc={twinFigureSrc("female")} />
     </div>
   )
 }

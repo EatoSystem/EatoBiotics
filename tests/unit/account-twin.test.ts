@@ -97,4 +97,14 @@ describe("twinFigureSrc", () => {
     expect(twinFigureSrc("male")).toBeTruthy()
     expect(twinFigureSrc("female")).toBeTruthy()
   })
+
+  it("resolves per-sex Digital Twin hero video, null when unknown", async () => {
+    const { twinVideo } = await import("@/lib/account/twin-figure")
+    expect(twinVideo(null)).toBeNull()
+    const male = twinVideo("male")
+    expect(male?.webm).toBe("/videos/dt-twin-male.webm")
+    expect(male?.mp4).toBe("/videos/dt-twin-male.mp4")
+    expect(male?.poster).toContain("dt-twin-male")
+    expect(twinVideo("female")?.webm).toBe("/videos/dt-twin-female.webm")
+  })
 })

@@ -5,7 +5,9 @@ import { DashboardClient } from "@/components/account/dashboard-client"
 import { TIER_META } from "@/lib/membership"
 import { buildAccountTwin } from "@/lib/agent-loop/account-twin"
 import { twinVisualState } from "@/lib/account/twin-visual"
+import { twinFigureSrc, twinVideo } from "@/lib/account/twin-figure"
 import { TwinHero } from "@/components/account/twin/twin-hero"
+import { TwinLearnedToday } from "@/components/account/twin/twin-sections"
 
 export const metadata: Metadata = {
   title: "Account Preview — EatoBiotics",
@@ -193,7 +195,7 @@ export default async function DemoAccountTierPage({
             </p>
             <span className="text-muted-foreground/40 text-xs">·</span>
             <Link href="/demo/account/twin" className="flex items-center gap-1 text-xs font-semibold hover:underline" style={{ color: TIER_COLORS[tier] }}>
-              View the Living Twin →
+              View the Digital Twin →
             </Link>
           </div>
           <Link
@@ -208,7 +210,9 @@ export default async function DemoAccountTierPage({
 
       <div className="pt-10">
         <div className="pb-2">
-          <TwinHero twin={demoTwin} visual={demoTwinVisual} feed={demoFeed} detailHref="/demo/account/twin" />
+          {/* Sample data uses the female Digital Twin so the demo showcases the art. */}
+          <TwinHero twin={demoTwin} visual={demoTwinVisual} figureSrc={twinFigureSrc("female")} video={twinVideo("female")} detailHref="/demo/account/twin" />
+          <TwinLearnedToday feed={demoFeed} />
         </div>
         <DashboardClient
           profile={profile}

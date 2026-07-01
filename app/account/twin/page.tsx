@@ -9,7 +9,7 @@ import { twinFigureSrc, normaliseSex } from "@/lib/account/twin-figure"
 import { TwinDashboard } from "@/components/account/twin/twin-dashboard"
 
 export const metadata: Metadata = {
-  title: "Your Living Twin — EatoBiotics",
+  title: "Your Digital Twin — EatoBiotics",
   description: "Your Food System Digital Twin — live, learning, and lens by lens.",
   robots: "noindex",
 }

@@ -15,9 +15,12 @@ import {
   Tag, SectionLabel, GradientButton, ringColors,
 } from "@/components/account/dashboard-parts"
 import { TwinHero } from "@/components/account/twin/twin-hero"
+import { TwinLearnedToday, TwinNextAction, TwinScorePanel } from "@/components/account/twin/twin-sections"
+import { FoodSystemMemoryPanel } from "@/components/agent-loop"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
 import type { TwinVisualState } from "@/lib/account/twin-visual"
 import type { TwinFeedEntry } from "@/lib/agent-loop/account-twin"
+import type { TwinVideo } from "@/lib/account/twin-figure"
 
 
 function MealCard({ meal }: { meal: { image: string; name: string; time: string; type: string; score: number; insight: string; biotics: { prebiotic: number; probiotic: number; postbiotic: number }; quality: { diversity: number; antiInflammatory: number }; nutrition: { calories: number; protein: number; carbs: number; fat: number; fibre: number }; tags: string[] } }) {
@@ -328,6 +331,7 @@ export interface LiveDashboardProps {
   twinVisual?:       TwinVisualState | null
   twinFeed?:         TwinFeedEntry[] | null
   twinFigureSrc?:    string
+  twinVideo?:        TwinVideo | null
   sex?:              string | null
   // Sandbox pass-through
   [key: string]: unknown
@@ -668,6 +672,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
     twinVisual         = null,
     twinFeed           = null,
     twinFigureSrc      = undefined,
+    twinVideo          = null,
     sex                = null,
   } = props
 
@@ -855,7 +860,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                 </Link>
                 {twin && (
                   <Link href="/account/twin" className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-bold transition-colors hover:bg-black/[0.03]" style={{ borderColor: "var(--icon-teal)", color: "var(--icon-teal)" }}>
-                    <Activity size={13} /> My Twin
+                    <Activity size={13} /> My Digital Twin
                   </Link>
                 )}
                 {displayStreak > 0 && (
@@ -958,11 +963,25 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       {/* ══════════════════════════════════════════════════════════════════
           OVERVIEW TAB
       ══════════════════════════════════════════════════════════════════ */}
-      {tab === "overview" && twin && twinVisual && recentAnalyses.length > 0 && (
-        <TwinHero twin={twin} visual={twinVisual} feed={twinFeed ?? []} figureSrc={twinFigureSrc} learning={loggerState === "analysing"} />
+      {/* ── The Digital Twin experience (shown whenever a Twin exists) ── */}
+      {tab === "overview" && twin && twinVisual && (
+        <>
+          <TwinHero twin={twin} visual={twinVisual} figureSrc={twinFigureSrc} video={twinVideo} learning={loggerState === "analysing"} />
+          <TwinLearnedToday feed={twinFeed ?? []} />
+          <TwinNextAction twin={twin} />
+          <TwinScorePanel twin={twin} visual={twinVisual} />
+          <section className="mx-auto max-w-5xl px-4 pt-8 md:px-8">
+            <div className="mb-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Memory</p>
+              <h3 className="mt-1 font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>Your Digital Twin remembers what works.</h3>
+            </div>
+            <FoodSystemMemoryPanel twin={twin} />
+          </section>
+        </>
       )}
 
-      {tab === "overview" && dailyLoop && (
+      {/* Daily loop nudge — only when there's no Twin yet (early users). */}
+      {tab === "overview" && !twin && dailyLoop && (
         <div className="pt-5">
           <DailyLoopCard data={dailyLoop} firstName={name?.split(" ")[0] ?? null} />
         </div>
@@ -2123,7 +2142,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                   <option value="female">Female</option>
                   <option value="male">Male</option>
                 </select>
-                <p className="mt-1 text-[11px]" style={{ color: "var(--muted-foreground)" }}>Personalises your Living Twin figure.</p>
+                <p className="mt-1 text-[11px]" style={{ color: "var(--muted-foreground)" }}>Personalises your Digital Twin figure.</p>
               </div>
               {/* Member since */}
               {memberStartedAt && (

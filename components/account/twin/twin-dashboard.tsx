@@ -79,7 +79,7 @@ export function TwinDashboard({
               <ArrowLeft size={12} /> Account
             </Link>
             <h1 className="mt-1 font-serif text-2xl font-bold md:text-3xl" style={{ color: "var(--foreground)" }}>
-              Your Living Twin
+              Your Digital Twin
             </h1>
           </div>
           <span className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold" style={{ background: "color-mix(in srgb, var(--icon-green) 10%, white)", color: "var(--icon-green)", border: "1px solid var(--border)" }}>
@@ -101,7 +101,7 @@ export function TwinDashboard({
                 className="eb-aura pointer-events-none absolute left-1/2 top-1/2 h-[115%] w-[115%] -translate-x-1/2 -translate-y-1/2 rounded-full"
                 style={{ background: aura, opacity: 0.55 + 0.45 * visual.confidence, animationDuration: `${visual.pulseSec}s` }}
               />
-              <DigitalTwinFigure size={240} src={figureSrc} alt="Your living Food System Digital Twin" showParticles={visual.particleDensity > 0.35} />
+              <DigitalTwinFigure size={240} src={figureSrc} alt="Your Food System Digital Twin" showParticles={visual.particleDensity > 0.35} />
             </div>
             <div className="flex flex-1 flex-col items-center gap-5 sm:flex-row sm:items-center">
               <ScoreRing score={visual.ringScore} color="var(--icon-green)" gradientId="twin-page-ring" profileType={visual.momentumLabel} className="relative h-40 w-40 shrink-0" />

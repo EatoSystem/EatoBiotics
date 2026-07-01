@@ -13,7 +13,7 @@ import { dailyNudge } from "@/lib/habit"
 import type { DailyLoopData } from "@/components/account/daily-loop-card"
 import { buildAccountTwin } from "@/lib/agent-loop/account-twin"
 import { twinVisualState } from "@/lib/account/twin-visual"
-import { twinFigureSrc, normaliseSex } from "@/lib/account/twin-figure"
+import { twinFigureSrc, twinVideo, normaliseSex } from "@/lib/account/twin-figure"
 
 export const metadata: Metadata = {
   title: "My Account — EatoBiotics",
@@ -314,6 +314,7 @@ export default async function AccountPage({
         twinVisual={twinVisual}
         twinFeed={accountTwin?.feed ?? null}
         twinFigureSrc={twinFigureSrc(normaliseSex((profile.sex as string | null) ?? null))}
+        twinVideo={twinVideo(normaliseSex((profile.sex as string | null) ?? null))}
         sex={(profile.sex as string | null) ?? null}
       />
     </div>

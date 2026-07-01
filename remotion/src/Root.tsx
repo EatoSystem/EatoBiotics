@@ -4,6 +4,7 @@ import { VIDEO, VIDEO_VERTICAL, BRAND_COPY } from "./lib/brand";
 import { EatoBioticsBrandIntro } from "./compositions/EatoBioticsBrandIntro";
 import { TheFoodSystemInsideYouHero } from "./compositions/TheFoodSystemInsideYouHero";
 import { FoodSystemHeroLoop } from "./compositions/FoodSystemHeroLoop";
+import { DigitalTwinHeroLoop } from "./compositions/DigitalTwinHeroLoop";
 import { AssessmentResultVideo } from "./compositions/AssessmentResultVideo";
 import { MealScoreSocialVideo } from "./compositions/MealScoreSocialVideo";
 
@@ -59,6 +60,20 @@ export const RemotionRoot: React.FC = () => {
         height={1080}
         defaultProps={{
           heroImage: "assets/food-system-inside-you.png",
+        }}
+      />
+
+      {/* Account "Your Digital Twin" hero — landscape 3:2, subtle loop over the
+          already-rich male/female artwork. Rendered to mp4/webm for /account. */}
+      <Composition
+        id="DigitalTwinHeroLoop"
+        component={DigitalTwinHeroLoop}
+        durationInFrames={240}
+        fps={VIDEO.fps}
+        width={1440}
+        height={960}
+        defaultProps={{
+          heroImage: "assets/twin-male.png",
         }}
       />
 
