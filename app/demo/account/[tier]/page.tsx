@@ -4,6 +4,9 @@ import { redirect } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 import { DashboardClient } from "@/components/account/dashboard-client"
 import { TIER_META } from "@/lib/membership"
+import { buildAccountTwin } from "@/lib/agent-loop/account-twin"
+import { twinVisualState } from "@/lib/account/twin-visual"
+import { TwinHero } from "@/components/account/twin/twin-hero"
 
 export const metadata: Metadata = {
   title: "Account Preview — EatoBiotics",
@@ -220,6 +223,23 @@ export default async function DemoAccountTierPage({
     getMockData(tier)
   const dailyPromptIndex = new Date().getDay()
 
+  /* ── Living Twin (demo) — assembled from Sarah M.'s sample data so the account
+       Twin can be previewed + tested on every tier. ── */
+  const { twin: demoTwin, feed: demoFeed } = await buildAccountTwin({
+    score: 62,
+    previousScore: 54,
+    profileType: "Emerging Balance",
+    biotics: { prebiotic: 71, probiotic: 52, postbiotic: 40 },
+    streak,
+    meals: [
+      { name: "Chicken, roasted veg & kefir", score: 81, prebiotic: 75, probiotic: 65, postbiotic: 58, createdAt: new Date(Date.now() - 3 * 3_600_000).toISOString() },
+      { name: "Lentil wrap with mixed greens", score: 74, prebiotic: 72, probiotic: 8, postbiotic: 42, createdAt: new Date(Date.now() - 26 * 3_600_000).toISOString() },
+      { name: "Greek yoghurt, berries & oats", score: 69, prebiotic: 55, probiotic: 58, postbiotic: 44, createdAt: new Date(Date.now() - 30 * 3_600_000).toISOString() },
+      { name: "Mackerel, kimchi & asparagus", score: 71, prebiotic: 72, probiotic: 18, postbiotic: 41, createdAt: new Date(Date.now() - 50 * 3_600_000).toISOString() },
+    ],
+  })
+  const demoTwinVisual = twinVisualState(demoTwin)
+
   return (
     <div className="min-h-screen bg-background pt-[57px]">
       {/* Demo banner */}
@@ -245,6 +265,9 @@ export default async function DemoAccountTierPage({
       </div>
 
       <div className="pt-10">
+        <div className="pb-2">
+          <TwinHero twin={demoTwin} visual={demoTwinVisual} feed={demoFeed} />
+        </div>
         <DashboardClient
           profile={profile}
           assessments={MOCK_ASSESSMENTS}
