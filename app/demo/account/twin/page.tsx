@@ -35,8 +35,8 @@ export default async function DemoTwinPage() {
     <div className="bg-background">
       <div className="border-b px-4 py-2.5" style={{ background: "color-mix(in srgb, var(--icon-teal) 8%, var(--background))", borderColor: "color-mix(in srgb, var(--icon-teal) 20%, transparent)" }}>
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
-          <Link href="/demo/account" className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground">
-            <ArrowLeft size={12} /> All tiers
+          <Link href="/demo/account/member" className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground">
+            <ArrowLeft size={12} /> Account
           </Link>
           <p className="text-xs font-semibold" style={{ color: "var(--icon-teal)" }}>Living Twin preview — sample data for Sarah M.</p>
         </div>

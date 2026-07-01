@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { ArrowLeft } from "lucide-react"
 import { DashboardClient } from "@/components/account/dashboard-client"
 import { TIER_META } from "@/lib/membership"
 import { buildAccountTwin } from "@/lib/agent-loop/account-twin"
@@ -100,20 +99,19 @@ function lastMonday() {
 
 /* ── Tier metadata ────────────────────────────────────────────────── */
 
-type DemoTier = "free" | "grow" | "restore" | "transform"
+// Single-membership model: the demo shows one account — Member. (Legacy
+// grow/restore/transform are retired; their URLs redirect to /demo/account/member.)
+type DemoTier = "member"
 
-// Presentation-only accent colours for the demo. Tier label/price come from the
+// Presentation-only accent colour for the demo. Label/price come from the
 // canonical TIER_META in lib/membership (single source of truth).
 const TIER_COLORS: Record<DemoTier, string> = {
-  free:      "var(--icon-lime)",
-  grow:      "var(--icon-green)",
-  restore:   "var(--icon-teal)",
-  transform: "var(--icon-orange)",
+  member: "var(--icon-teal)",
 }
 
 /* ── Mock profiles per tier ───────────────────────────────────────── */
 
-function getMockData(tier: DemoTier) {
+function getMockData() {
   const base = {
     id: "demo-user",
     email: "sarah@example.com",
@@ -128,68 +126,11 @@ function getMockData(tier: DemoTier) {
     trial_expires_at: null,
   }
 
-  if (tier === "free") {
-    return {
-      profile: {
-        ...base,
-        membership_tier: "free" as const,
-        membership_status: "inactive" as const,
-        membership_started_at: null,
-        is_founding_member: false,
-        health_goals: [] as string[],
-      },
-      nextBillingDate: null,
-      weeklyCheckin: null,
-      monthlyGutPlan: null,
-      dailyConsultCount: 0,
-      monthlyConsultCount: 0,
-      streak: 0,
-    }
-  }
-
-  if (tier === "grow") {
-    return {
-      profile: {
-        ...base,
-        membership_tier: "grow" as const,
-        membership_status: "active" as const,
-        membership_started_at: monthsAgo(2),
-        is_founding_member: false,
-        health_goals: [] as string[],
-      },
-      nextBillingDate: monthsFromNow(1),
-      weeklyCheckin: null,
-      monthlyGutPlan: null,
-      dailyConsultCount: 0,
-      monthlyConsultCount: 0,
-      streak: 5,
-    }
-  }
-
-  if (tier === "restore") {
-    return {
-      profile: {
-        ...base,
-        membership_tier: "restore" as const,
-        membership_status: "active" as const,
-        membership_started_at: monthsAgo(1),
-        is_founding_member: false,
-        health_goals: ["Digestive health and IBS management", "Energy and fatigue reduction"],
-      },
-      nextBillingDate: monthsFromNow(1),
-      weeklyCheckin: null,
-      monthlyGutPlan: { content: MOCK_PLAN_CONTENT, month: firstOfMonth() },
-      dailyConsultCount: 0,
-      monthlyConsultCount: 0,
-      streak: 5,
-    }
-  }
-
-  // transform
+  // The one paid account: Member — unlocks every feature.
   return {
     profile: {
       ...base,
-      membership_tier: "transform" as const,
+      membership_tier: "member" as const,
       membership_status: "active" as const,
       membership_started_at: monthsAgo(2),
       is_founding_member: true,
@@ -212,15 +153,16 @@ export default async function DemoAccountTierPage({
   params: Promise<{ tier: string }>
 }) {
   const { tier: tierParam } = await params
-  const validTiers: DemoTier[] = ["free", "grow", "restore", "transform"]
-  if (!validTiers.includes(tierParam as DemoTier)) {
-    redirect("/demo/account")
+  // Single-membership model: only the Member account exists. Legacy tier URLs
+  // (free/grow/restore/transform) and anything else collapse to it.
+  if (tierParam !== "member") {
+    redirect("/demo/account/member")
   }
 
-  const tier = tierParam as DemoTier
+  const tier: DemoTier = "member"
   const meta = TIER_META[tier]
   const { profile, nextBillingDate, weeklyCheckin, monthlyGutPlan, dailyConsultCount, monthlyConsultCount, streak } =
-    getMockData(tier)
+    getMockData()
   const dailyPromptIndex = new Date().getDay()
 
   /* ── Living Twin (demo) — assembled from Sarah M.'s sample data so the account
@@ -246,13 +188,13 @@ export default async function DemoAccountTierPage({
       <div className="border-b px-4 py-2.5" style={{ background: `color-mix(in srgb, ${TIER_COLORS[tier]} 10%, var(--background))`, borderColor: `color-mix(in srgb, ${TIER_COLORS[tier]} 25%, transparent)` }}>
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Link href="/demo/account" className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft size={12} /> All tiers
-            </Link>
-            <span className="text-muted-foreground/40 text-xs">·</span>
             <p className="text-xs font-semibold" style={{ color: TIER_COLORS[tier] }}>
-              Previewing <strong>{meta.label}</strong> ({meta.price}) — sample data for Sarah M.
+              Previewing the <strong>{meta.label}</strong> account ({meta.price}) — sample data for Sarah M.
             </p>
+            <span className="text-muted-foreground/40 text-xs">·</span>
+            <Link href="/demo/account/twin" className="flex items-center gap-1 text-xs font-semibold hover:underline" style={{ color: TIER_COLORS[tier] }}>
+              View the Living Twin →
+            </Link>
           </div>
           <Link
             href="/assessment"
@@ -278,10 +220,10 @@ export default async function DemoAccountTierPage({
           monthlyGutPlan={monthlyGutPlan}
           dailyConsultCount={dailyConsultCount}
           monthlyConsultCount={monthlyConsultCount}
-          bioticsProfile={tier === "free" ? null : MOCK_BIOTICS_PROFILE}
+          bioticsProfile={MOCK_BIOTICS_PROFILE}
           streak={streak}
           dailyPromptIndex={dailyPromptIndex}
-          consultHref={tier === "transform" ? "/demo/account/consult" : undefined}
+          consultHref="/demo/account/consult"
         />
       </div>
     </div>

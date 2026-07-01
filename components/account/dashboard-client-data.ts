@@ -110,7 +110,7 @@ export const SCORE_COLORS: Record<string, string> = {
   "Starting Out":      "#ef4444",
 }
 
-export const DAILY_LIMITS: Record<string, number> = { grow: 2, restore: 5, transform: 10 }
+export const DAILY_LIMITS: Record<string, number> = { grow: 2, restore: 5, transform: 10, member: 10 }
 
 export const TIER_ACCENT: Record<string, { bg: string; text: string; label: string }> = {
   free:      { bg: "rgba(255,255,255,0.1)",  text: "rgba(255,255,255,0.6)",  label: "Free" },
@@ -121,7 +121,7 @@ export const TIER_ACCENT: Record<string, { bg: string; text: string; label: stri
   transform: { bg: "rgba(249,115,22,0.22)",  text: "#fdba74",                label: "Transform Member" },
 }
 
-export const TIER_ORDER: Record<string, number> = { free: 0, grow: 1, restore: 2, transform: 3 }
+export const TIER_ORDER: Record<string, number> = { free: 0, grow: 1, restore: 2, transform: 3, member: 4 }
 
 /* ── Biotics copy ───────────────────────────────────────────────────── */
 
