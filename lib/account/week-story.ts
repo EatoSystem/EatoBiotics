@@ -7,6 +7,8 @@
  * all the copy so it is unit-testable. First-person Twin voice, non-medical.
  */
 
+import { detectPatterns } from "@/lib/account/patterns"
+import type { AccountTwinMeal } from "@/lib/agent-loop/account-twin"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
 
 export interface WeekStorySlide {
@@ -94,6 +96,31 @@ export function buildWeekStory(twin: FoodSystemDigitalTwin): WeekStorySlide[] {
     detail: `${BIOTIC_LABEL[weakest]} is where I'd love more help — that's your biggest opportunity.`,
     accent: "#2DAA6E",
   })
+
+  // Longitudinal pattern — the Twin noticing something specific about them.
+  const patternMeals: AccountTwinMeal[] = twin.observations
+    .filter((o) => o.kind === "meal_description" || o.kind === "meal_photo")
+    .map((o) => {
+      const meta = o.meta as { score?: number; biotics?: { prebiotic?: number; probiotic?: number; postbiotic?: number } } | undefined
+      return {
+        name: String(o.value),
+        score: Number(meta?.score ?? 0),
+        prebiotic: Number(meta?.biotics?.prebiotic ?? 0),
+        probiotic: Number(meta?.biotics?.probiotic ?? 0),
+        postbiotic: Number(meta?.biotics?.postbiotic ?? 0),
+        createdAt: new Date(o.createdAt).toISOString(),
+      }
+    })
+  const pattern = detectPatterns(patternMeals)[0]
+  if (pattern) {
+    slides.push({
+      key: "pattern",
+      eyebrow: "What I noticed",
+      title: pattern.title,
+      detail: pattern.detail,
+      accent: "#7ED9A8",
+    })
+  }
 
   slides.push({
     key: "score",

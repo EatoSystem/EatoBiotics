@@ -74,9 +74,26 @@ export const NAV_GROUPS: NavGroup[] = [
   },
 ]
 
+/**
+ * Launch-focus header: ONE "Explore" dropdown instead of three, so the primary
+ * nav carries only the product spine (Digital Twin → How it works → Pricing →
+ * About + the single assessment CTA). The footer keeps the full three-group
+ * config above, so every destination stays reachable; the least-central Learn
+ * items (Trilogy, Podcast, App) are footer-only.
+ */
+const HEADER_EXPLORE_EXCLUDE = new Set(["/books", "/podcast", "/app"])
+
+export const HEADER_GROUPS: NavGroup[] = [
+  {
+    label: "Explore",
+    items: NAV_GROUPS.flatMap((g) => g.items).filter((i) => !HEADER_EXPLORE_EXCLUDE.has(i.href)),
+  },
+]
+
 /** Standalone top-level header links (rendered after the dropdown groups). */
 export const NAV_LINKS: Array<{ href: string; label: string }> = [
   { href: "/digital-twin", label: "Digital Twin" },
+  { href: "/method",       label: "How It Works" },
   { href: "/pricing",      label: "Pricing" },
   { href: "/about",        label: "About" },
 ]

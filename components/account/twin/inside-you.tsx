@@ -65,7 +65,10 @@ export function InsideYouSection({
         </div>
         <InsideYouPlayer chapters={chapters} />
         <p className="mt-3 px-1 text-[11px] leading-relaxed" style={{ color: "rgba(253,251,247,0.4)" }}>
-          EatoBiotics provides food-first guidance for general wellbeing and is not medical advice.
+          EatoBiotics provides food-first guidance for general wellbeing and is not medical advice.{" "}
+          <Link href="/method" className="font-semibold underline underline-offset-2 transition-colors hover:text-white" style={{ color: "rgba(253,251,247,0.55)" }}>
+            Read our method →
+          </Link>
         </p>
       </div>
     </section>

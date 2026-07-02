@@ -7,7 +7,7 @@ import { Menu, X, ChevronDown } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { AccountNavItem } from "@/components/account/account-nav-item"
-import { NAV_GROUPS, NAV_LINKS, type NavGroup } from "@/lib/nav"
+import { HEADER_GROUPS, NAV_LINKS, type NavGroup } from "@/lib/nav"
 
 function DropdownMenu({ group, pathname }: { group: NavGroup; pathname: string }) {
   const [open, setOpen] = useState(false)
@@ -144,9 +144,9 @@ export function Nav() {
           </span>
         </Link>
 
-        {/* Desktop nav */}
+        {/* Desktop nav — launch-focus: one Explore dropdown, spine links after */}
         <div className="hidden items-center gap-7 md:flex">
-          {NAV_GROUPS.map((group) => (
+          {HEADER_GROUPS.map((group) => (
             <DropdownMenu key={group.label} group={group} pathname={pathname} />
           ))}
           {NAV_LINKS.map((link) => (
@@ -184,7 +184,7 @@ export function Nav() {
       {open && (
         <div className="max-h-[calc(100vh-61px)] overflow-y-auto border-t border-border bg-background px-6 py-6 md:hidden">
           <div className="flex flex-col gap-2">
-            {NAV_GROUPS.map((group) => {
+            {HEADER_GROUPS.map((group) => {
               const isGroupOpen = mobileGroup === group.label
               const isActive = group.items.some(
                 (item) => pathname === item.href || pathname.startsWith(item.href + "/")

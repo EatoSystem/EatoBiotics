@@ -81,17 +81,18 @@ export async function getAccountTwinInput(userId: string, email: string | null):
       return { prebiotic: avg("prebiotic_score"), probiotic: avg("probiotic_score"), postbiotic: avg("postbiotic_score") }
     })(),
 
-    /* Recent meals (last 7 days) */
+    /* Recent meals — 30 days so longitudinal patterns (lib/account/patterns)
+       have real history; the twin replay itself stays capped at the newest 20. */
     (async () => {
-      const sevenDaysAgo = new Date()
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+      const thirtyDaysAgo = new Date()
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
       const { data } = await supabase
         .from("analyses")
         .select("meal_name, biotics_score, prebiotic_score, probiotic_score, postbiotic_score, created_at")
         .eq("user_id", userId)
-        .gte("created_at", sevenDaysAgo.toISOString())
+        .gte("created_at", thirtyDaysAgo.toISOString())
         .order("created_at", { ascending: false })
-        .limit(30)
+        .limit(60)
       return (data ?? []) as {
         meal_name: string | null
         biotics_score: number | null

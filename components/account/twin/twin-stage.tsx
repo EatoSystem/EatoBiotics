@@ -344,6 +344,10 @@ export function TwinStage({
             </div>
             <h2 className="eb-reveal mt-2 max-w-xl font-serif text-lg font-bold leading-snug md:text-xl" style={{ color: "rgba(253,251,247,0.88)", animationDelay: "400ms" }}>
               The Food System inside you, learning from every meal.
+              {" "}
+              <Link href="/method" className="whitespace-nowrap align-middle font-sans text-xs font-semibold underline underline-offset-2 transition-colors hover:text-white" style={{ color: "rgba(253,251,247,0.45)" }}>
+                How is this scored?
+              </Link>
             </h2>
 
             <div className="mt-5 grid gap-6 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-8">

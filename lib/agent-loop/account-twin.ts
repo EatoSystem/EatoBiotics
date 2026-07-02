@@ -10,6 +10,7 @@
  */
 
 import { getScoreBand } from "@/lib/scoring"
+import { detectPatterns } from "@/lib/account/patterns"
 import { buildBaseline } from "./baseline"
 import { createAgentLoopSession, makeObservation, runLoop } from "./engine"
 import { deterministicProvider } from "./providers/deterministic"
@@ -137,6 +138,11 @@ function buildFeed(input: AccountTwinInput, twin: FoodSystemDigitalTwin): TwinFe
     detail: `I've learned from ${twin.observations.length} signal${twin.observations.length === 1 ? "" : "s"} so far`,
     at: null,
   })
+
+  // Longitudinal patterns — the Twin getting visibly smarter (max 2 per feed).
+  for (const p of detectPatterns(input.meals).slice(0, 2)) {
+    feed.push({ id: `pattern-${p.id}`, icon: p.icon, title: p.title, detail: p.detail, at: null })
+  }
 
   // Streak.
   if ((input.streak ?? 0) >= 2) {
