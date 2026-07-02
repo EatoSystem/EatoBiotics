@@ -65,8 +65,8 @@ export default function InsideYouPlayer({ chapters }: { chapters: InsideYouChapt
 
   return (
     <div>
-      {/* stage */}
-      <div className="relative overflow-hidden rounded-2xl border border-border" style={{ boxShadow: "0 8px 32px rgba(26,46,18,0.10)" }}>
+      {/* stage — cinema frame on the dark band */}
+      <div className="relative overflow-hidden rounded-2xl" style={{ border: "1px solid rgba(253,251,247,0.14)", boxShadow: "0 18px 60px rgba(0,0,0,0.45)" }}>
         <Player
           ref={playerRef}
           component={InsideYouComposition}
@@ -104,20 +104,20 @@ export default function InsideYouPlayer({ chapters }: { chapters: InsideYouChapt
               key={ch.key}
               type="button"
               onClick={() => seekChapter(ch, i)}
-              className="flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-bold transition-all"
+              className="flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-bold backdrop-blur transition-all"
               style={{
-                background: isActive ? c : "color-mix(in srgb, var(--muted) 60%, white)",
-                color: isActive ? "white" : "var(--muted-foreground)",
-                border: `1px solid ${isActive ? c : "var(--border)"}`,
-                boxShadow: isActive ? `0 4px 14px ${c}44` : "none",
+                background: isActive ? c : "rgba(253,251,247,0.07)",
+                color: isActive ? "#0B1607" : "rgba(253,251,247,0.75)",
+                border: `1px solid ${isActive ? c : "rgba(253,251,247,0.18)"}`,
+                boxShadow: isActive ? `0 4px 20px ${c}55` : "none",
               }}
             >
-              <span className="flex h-4 w-4 items-center justify-center rounded-full text-[9px]" style={{ background: isActive ? "rgba(255,255,255,0.25)" : `${c}22`, color: isActive ? "white" : c }}>
+              <span className="flex h-4 w-4 items-center justify-center rounded-full text-[9px]" style={{ background: isActive ? "rgba(11,22,7,0.18)" : `${c}26`, color: isActive ? "#0B1607" : c }}>
                 {i + 1}
               </span>
               {ch.label}
               {ch.value != null && (
-                <span className="rounded-full px-1.5 py-0.5 text-[10px]" style={{ background: isActive ? "rgba(255,255,255,0.22)" : `${c}18`, color: isActive ? "white" : c }}>
+                <span className="rounded-full px-1.5 py-0.5 text-[10px]" style={{ background: isActive ? "rgba(11,22,7,0.16)" : `${c}1f`, color: isActive ? "#0B1607" : c }}>
                   {ch.value}
                 </span>
               )}
@@ -128,7 +128,7 @@ export default function InsideYouPlayer({ chapters }: { chapters: InsideYouChapt
 
       {/* takeaway for the active chapter */}
       {activeChapter && (
-        <p className="mt-2.5 rounded-xl px-4 py-3 text-sm leading-relaxed" style={{ background: "color-mix(in srgb, var(--icon-green) 6%, white)", border: "1px solid var(--border)", color: "var(--foreground)" }}>
+        <p className="mt-2.5 rounded-xl px-4 py-3 text-sm leading-relaxed backdrop-blur" style={{ background: "rgba(253,251,247,0.06)", border: "1px solid rgba(253,251,247,0.14)", color: "rgba(253,251,247,0.88)" }}>
           {activeChapter.takeaway}
         </p>
       )}

@@ -14,7 +14,8 @@ import {
   Glp1CompanionCard, StabilityCard, AssessmentJourneyCard, VoiceConsultCard, ReferralCard, ScoreRing, MiniRing, ScoreBar,
   Tag, SectionLabel, GradientButton, ringColors,
 } from "@/components/account/dashboard-parts"
-import { TwinHero } from "@/components/account/twin/twin-hero"
+import { TwinStage } from "@/components/account/twin/twin-stage"
+import { TodayStrip } from "@/components/account/twin/today-strip"
 import { TwinLearnedToday, TwinNextAction, TwinScorePanel } from "@/components/account/twin/twin-sections"
 import { InsideYouTeaser } from "@/components/account/twin/inside-you"
 import { FoodSystemMemoryPanel } from "@/components/agent-loop"
@@ -967,7 +968,14 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       {/* ── The Digital Twin experience (shown whenever a Twin exists) ── */}
       {tab === "overview" && twin && twinVisual && (
         <>
-          <TwinHero twin={twin} visual={twinVisual} figureSrc={twinFigureSrc} video={twinVideo} learning={loggerState === "analysing"} />
+          <TodayStrip twin={twin} firstName={name?.split(" ")[0] ?? null} streak={displayStreak} />
+          <TwinStage
+            twin={twin}
+            visual={twinVisual}
+            figureSrc={twinFigureSrc ?? "/images/couple-hero.png"}
+            video={twinVideo}
+            learning={loggerState === "analysing"}
+          />
           <TwinLearnedToday feed={twinFeed ?? []} />
           <InsideYouTeaser twin={twin} />
           <TwinNextAction twin={twin} />

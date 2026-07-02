@@ -6,7 +6,8 @@ import { TIER_META } from "@/lib/membership"
 import { buildAccountTwin } from "@/lib/agent-loop/account-twin"
 import { twinVisualState } from "@/lib/account/twin-visual"
 import { twinFigureSrc, twinVideo } from "@/lib/account/twin-figure"
-import { TwinHero } from "@/components/account/twin/twin-hero"
+import { TwinStage } from "@/components/account/twin/twin-stage"
+import { TodayStrip } from "@/components/account/twin/today-strip"
 import { TwinLearnedToday } from "@/components/account/twin/twin-sections"
 import { InsideYouSection } from "@/components/account/twin/inside-you"
 
@@ -212,7 +213,8 @@ export default async function DemoAccountTierPage({
       <div className="pt-10">
         <div className="pb-2">
           {/* Sample data uses the female Digital Twin so the demo showcases the art. */}
-          <TwinHero twin={demoTwin} visual={demoTwinVisual} figureSrc={twinFigureSrc("female")} video={twinVideo("female")} detailHref="/demo/account/twin" />
+          <TodayStrip twin={demoTwin} firstName="Sarah" streak={streak} />
+          <TwinStage twin={demoTwin} visual={demoTwinVisual} figureSrc={twinFigureSrc("female")} video={twinVideo("female")} detailHref="/demo/account/twin" />
           <TwinLearnedToday feed={demoFeed} />
           {/* Public showcase: the full personalized story plays right on the demo. */}
           <InsideYouSection twin={demoTwin} />

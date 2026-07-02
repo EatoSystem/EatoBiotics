@@ -52,7 +52,7 @@ export const SYSTEM_HOTSPOTS: SystemHotspot[] = [
     x: 57,
     y: 50,
     biotic: "prebiotics",
-    what: "This is home base — trillions of microbes digesting what you can't. Prebiotic fibre from a variety of plants is what keeps that inner garden thriving.",
+    what: "This is home base — trillions of microbes digesting what you can't. Prebiotic fibre from a variety of plants is what keeps that inner ecosystem thriving.",
     action: "Add one new plant this week — leeks, asparagus or a handful of mixed seeds.",
   },
   {

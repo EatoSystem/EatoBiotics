@@ -632,11 +632,11 @@ function ScoreMeaningPage({ data }: { data: DemoReportData }) {
           <Text style={[s.body, { lineHeight: 1.7, marginBottom: 12 }]}>
             This creates a <Text style={{ fontFamily: "DM-Sans-Bold" }}>one-sided system</Text> — you're feeding the microbiome but not actively seeding it with the bacterial diversity it needs to thrive. Probiotics is the most responsive pillar to targeted dietary change. Small, consistent additions can produce measurable shifts within <Text style={{ fontFamily: "DM-Sans-Bold" }}>2–4 weeks</Text>.
           </Text>
-          {/* Garden analogy */}
+          {/* Ecosystem analogy */}
           <View style={[s.cardSoft, { borderLeftWidth: 3, borderLeftColor: C.green, borderLeftStyle: "solid" }]}>
-            <Eyebrow text="The garden analogy" mb={4}/>
+            <Eyebrow text="The ecosystem analogy" mb={4}/>
             <Text style={[s.body, { fontSize: 9.5 }]}>
-              Think of your gut like a garden: you're watering regularly and the soil is in good condition (Prebiotics + Postbiotics), but you haven't been planting seeds (Probiotics). The structure is there — the flora just needs to be populated.
+              Think of your gut as a living ecosystem: the habitat is well kept and well fed (Prebiotics + Postbiotics), but new residents rarely arrive (Probiotics). The structure is there — the community just needs to be populated.
             </Text>
           </View>
         </View>

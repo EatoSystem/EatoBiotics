@@ -5,7 +5,7 @@ import { getSupabase } from "@/lib/supabase"
 import { buildAccountTwin } from "@/lib/agent-loop/account-twin"
 import { twinVisualState } from "@/lib/account/twin-visual"
 import { getAccountTwinInput, buildTwinLenses } from "@/lib/account/twin-data"
-import { twinFigureSrc, normaliseSex } from "@/lib/account/twin-figure"
+import { twinFigureSrc, twinVideo, normaliseSex } from "@/lib/account/twin-figure"
 import { TwinDashboard } from "@/components/account/twin/twin-dashboard"
 
 export const metadata: Metadata = {
@@ -32,6 +32,6 @@ export default async function AccountTwinPage() {
   const lenses = buildTwinLenses()
 
   return (
-    <TwinDashboard twin={twin} visual={visual} feed={feed} lenses={lenses} userId={user.id} figureSrc={twinFigureSrc(sex)} />
+    <TwinDashboard twin={twin} visual={visual} feed={feed} lenses={lenses} userId={user.id} figureSrc={twinFigureSrc(sex)} video={twinVideo(sex)} />
   )
 }

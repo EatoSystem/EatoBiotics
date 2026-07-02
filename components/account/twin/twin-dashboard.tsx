@@ -3,19 +3,17 @@
 /**
  * TwinDashboard — the dedicated /account/twin experience.
  *
- * Composes the member's living Twin from the shared FoodSystemDigitalTwin: the
- * interactive System Map (tap hotspots on the figure to learn each system,
- * re-tintable by lens), the personalized "Inside You" Remotion story, the live
- * loop stage, the three biotics, trends + memory, the learning feed, and the
- * lens switcher. Kept live via useTwinRealtime (Realtime + visibility refresh);
- * a new meal triggers the MealReactionBurst so the Twin visibly learns. Reuses
- * the agent-loop components that already consume the twin directly.
+ * Cinematic structure: a dark full-bleed TwinStage (luminous orb figure,
+ * constellation hotspots, score cockpit) → the dark Inside You cinema band →
+ * light content (lenses, the live loop, biotics, memory, trends, learning
+ * feed). Kept live via useTwinRealtime (Realtime + visibility refresh); a new
+ * meal fires the MealReactionBurst over the orb so the Twin visibly learns.
+ * Reuses the agent-loop components that already consume the twin directly.
  */
 
 import { useCallback, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Target, Activity, TrendingUp, Flame, Leaf, Sparkles, UtensilsCrossed } from "lucide-react"
-import { ScoreRing } from "@/components/assessment/score-ring"
+import { ArrowLeft, Activity, TrendingUp, Flame, Leaf, Sparkles } from "lucide-react"
 import {
   AgentLoopTimeline,
   FoodSystemLoopCard,
@@ -23,13 +21,12 @@ import {
   BioticsProgressPanel,
 } from "@/components/agent-loop"
 import { TwinLenses, type LensDef } from "./twin-lenses"
-import { SystemMap } from "./system-map"
-import { MealReactionBurst } from "./meal-reaction"
+import { TwinStage } from "./twin-stage"
 import { InsideYouSection } from "./inside-you"
 import { useTwinRealtime } from "./use-twin-realtime"
-import { auraGradientForBiotic } from "@/lib/account/twin-visual"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
 import type { TwinVisualState } from "@/lib/account/twin-visual"
+import type { TwinVideo } from "@/lib/account/twin-figure"
 import type { TwinFeedEntry } from "@/lib/agent-loop/account-twin"
 
 const FEED_ICON = { momentum: TrendingUp, streak: Flame, biotic: Leaf, meal: Sparkles } as const
@@ -58,6 +55,7 @@ export function TwinDashboard({
   lenses,
   userId,
   figureSrc = "/images/couple-hero.png",
+  video = null,
   demo = false,
 }: {
   twin: FoodSystemDigitalTwin
@@ -67,6 +65,8 @@ export function TwinDashboard({
   userId: string | null
   /** Twin figure image (male/female by the member's sex; defaults to the couple). */
   figureSrc?: string
+  /** Per-sex Remotion twin video, when known. */
+  video?: TwinVideo | null
   /** Demo mode: shows a "Simulate a meal" button so the reaction is previewable. */
   demo?: boolean
 }) {
@@ -74,87 +74,40 @@ export function TwinDashboard({
   const onNewMeal = useCallback(() => setMealBurst((k) => k + 1), [])
   useTwinRealtime(userId, onNewMeal)
   const [lens, setLens] = useState(lenses[0]?.key ?? "foundation")
-  const activeLens = lenses.find((l) => l.key === lens) ?? lenses[0]
-  const aura = auraGradientForBiotic(activeLens.focusBiotic, visual.confidence)
-  const nba = twin.nextBestAction
 
   return (
     <div className="min-h-screen bg-background pt-[57px]">
+      {/* dark page header — blends into the stage below */}
+      <div style={{ background: "#0B1607" }}>
+        <div className="mx-auto max-w-6xl px-4 pt-6 md:px-8">
+          <Link href="/account" className="inline-flex items-center gap-1 text-xs transition-colors hover:text-white" style={{ color: "rgba(253,251,247,0.55)" }}>
+            <ArrowLeft size={12} /> Account
+          </Link>
+          <h1 className="mt-1 font-serif text-2xl font-bold md:text-3xl" style={{ color: "#FDFBF7" }}>
+            Your Digital Twin
+          </h1>
+        </div>
+      </div>
+
+      {/* the cinematic stage */}
+      <TwinStage
+        twin={twin}
+        visual={visual}
+        figureSrc={figureSrc}
+        video={video}
+        detailHref={null}
+        demo={demo}
+        burstKey={mealBurst}
+        onSimulateMeal={demo ? onNewMeal : undefined}
+      />
+
+      {/* the Inside You cinema band */}
+      <InsideYouSection twin={twin} />
+
+      {/* light content */}
       <div className="mx-auto max-w-5xl px-5 py-8 md:px-8">
-        {/* header */}
-        <div className="mb-6 flex items-center justify-between gap-3">
-          <div>
-            <Link href="/account" className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground">
-              <ArrowLeft size={12} /> Account
-            </Link>
-            <h1 className="mt-1 font-serif text-2xl font-bold md:text-3xl" style={{ color: "var(--foreground)" }}>
-              Your Digital Twin
-            </h1>
-          </div>
-          <span className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold" style={{ background: "color-mix(in srgb, var(--icon-green) 10%, white)", color: "var(--icon-green)", border: "1px solid var(--border)" }}>
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "var(--icon-green)", animation: "pulse-ring 2s ease-in-out infinite" }} />
-              <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: "var(--icon-green)" }} />
-            </span>
-            Live &amp; learning
-          </span>
-        </div>
-
-        {/* hero — interactive System Map (tap the hotspots) + score */}
-        <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid var(--border)", boxShadow: "0 8px 32px rgba(26,46,18,0.10)" }}>
-          <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
-          <div className="p-6 md:p-8">
-            <SystemMap
-              twin={twin}
-              visual={visual}
-              figureSrc={figureSrc}
-              baseAura={aura}
-              figureSize={280}
-              overlay={<MealReactionBurst playKey={mealBurst} />}
-              defaultPanel={
-                <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center">
-                  <ScoreRing score={visual.ringScore} color="var(--icon-green)" gradientId="twin-page-ring" profileType={visual.momentumLabel} className="relative h-40 w-40 shrink-0" />
-                  <div className="min-w-0 flex-1 text-center sm:text-left">
-                    <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--muted-foreground)" }}>Food System Score · {visual.momentumLabel}</p>
-                    <h2 className="mt-1 font-serif text-xl font-bold leading-snug" style={{ color: "var(--foreground)" }}>
-                      Learning about your food system, constantly.
-                    </h2>
-                    <p className="mt-1.5 text-xs" style={{ color: "var(--muted-foreground)" }}>
-                      Tap a glowing point on your Twin to see what&apos;s happening inside.
-                    </p>
-                    {nba && (
-                      <div className="mt-4 flex items-start gap-3 rounded-xl px-4 py-3 text-left" style={{ background: "linear-gradient(135deg, rgba(245,197,24,0.10), rgba(245,166,35,0.08))", border: "1px solid rgba(245,166,35,0.25)" }}>
-                        <Target size={14} style={{ color: "var(--icon-orange)", flexShrink: 0, marginTop: 2 }} />
-                        <div>
-                          <p className="mb-0.5 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-orange)" }}>Your Twin&apos;s next best action</p>
-                          <p className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>{nba.action}</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              }
-            />
-            {demo && (
-              <div className="mt-5 flex justify-center border-t border-border pt-4">
-                <button
-                  type="button"
-                  onClick={onNewMeal}
-                  className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold text-white transition-transform hover:-translate-y-0.5"
-                  style={{ background: "linear-gradient(135deg, #4CB648, #2DAA6E)", boxShadow: "0 6px 20px rgba(76,182,72,0.25)" }}
-                >
-                  <UtensilsCrossed size={13} /> Simulate a meal — watch your Twin learn
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Inside You — the personalized animated story */}
-        <InsideYouSection twin={twin} className="pt-8" />
-
         {/* lenses */}
-        <div className="mt-8">
+        <div>
           <SectionLabel>One Twin · many lenses</SectionLabel>
           <TwinLenses lenses={lenses} selected={lens} onSelect={setLens} biotics={twin.biotics} />
         </div>

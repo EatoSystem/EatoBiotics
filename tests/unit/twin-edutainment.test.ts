@@ -36,10 +36,11 @@ describe("buildInsideYouChapters", () => {
     expect(chapters[0].fromFrame).toBe(0)
     expect(chapters[3].fromFrame).toBe(3 * INSIDE_YOU_CHAPTER_FRAMES)
     expect(chapters.reduce((s, c) => s + c.durationInFrames, 0)).toBe(INSIDE_YOU_DURATION_FRAMES)
-    // Copy is personalized + non-medical.
+    // Copy is personalized, non-medical, and garden-free (brand decision).
     expect(chapters[1].takeaway.toLowerCase()).toContain("prebiotic")
     for (const c of chapters) {
       expect(c.narration).not.toMatch(/cure|treat|diagnos/i)
+      expect(`${c.title} ${c.narration} ${c.takeaway}`).not.toMatch(/garden/i)
       expect(c.takeaway.length).toBeGreaterThan(10)
     }
   })
@@ -73,6 +74,7 @@ describe("systemMapState", () => {
       expect(h.level).toBeTruthy()
       expect(h.bioticLabel[0]).toBe(h.bioticLabel[0].toUpperCase())
       expect(h.what).not.toMatch(/cure|treat|diagnos/i)
+      expect(`${h.what} ${h.action}`).not.toMatch(/garden/i)
       expect(h.action.length).toBeGreaterThan(10)
     }
   })

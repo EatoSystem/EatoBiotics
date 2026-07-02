@@ -39,11 +39,12 @@ export interface InsideYouChapter {
 /** Total composition length (all four chapters). */
 export const INSIDE_YOU_DURATION_FRAMES = INSIDE_YOU_CHAPTER_FRAMES * 4
 
+/** Reads naturally after "Your … level is". */
 function level(v: number | null): string {
   if (v == null) return "still learning"
   if (v >= 70) return "strong"
   if (v >= 45) return "building"
-  return "needs feeding"
+  return "running low"
 }
 
 export function buildInsideYouChapters(twin: FoodSystemDigitalTwin): InsideYouChapter[] {
@@ -66,7 +67,7 @@ export function buildInsideYouChapters(twin: FoodSystemDigitalTwin): InsideYouCh
     {
       key: "prebiotics",
       label: "Prebiotics feed",
-      title: "Fibre feeds your inner garden",
+      title: "Fibre feeds the living system inside you",
       narration:
         "Prebiotic fibres from plants travel down to feed the trillions of microbes that call you home.",
       value: pre,

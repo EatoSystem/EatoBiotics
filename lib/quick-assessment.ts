@@ -68,7 +68,7 @@ export const ANSWER_REACTIONS: Record<QuickPillar, [string, string, string, stri
     "Good to know — variety is the fastest lever you have here.",
     "A real base to build on.",
     "Nice — your bacteria are being well fed.",
-    "Brilliant — that's a thriving inner garden.",
+    "Brilliant — that’s a thriving inner ecosystem.",
   ],
   probiotics: [
     "Easy win ahead — one daily fermented food shifts this fast.",

@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react"
 import { buildAccountTwin, type AccountTwinInput } from "@/lib/agent-loop/account-twin"
 import { twinVisualState } from "@/lib/account/twin-visual"
 import { buildTwinLenses } from "@/lib/account/twin-data"
-import { twinFigureSrc } from "@/lib/account/twin-figure"
+import { twinFigureSrc, twinVideo } from "@/lib/account/twin-figure"
 import { TwinDashboard } from "@/components/account/twin/twin-dashboard"
 
 export const metadata: Metadata = {
@@ -43,7 +43,7 @@ export default async function DemoTwinPage() {
         </div>
       </div>
       {/* userId=null → Realtime hook no-ops; demo mode adds "Simulate a meal". */}
-      <TwinDashboard twin={twin} visual={visual} feed={feed} lenses={lenses} userId={null} figureSrc={twinFigureSrc("female")} demo />
+      <TwinDashboard twin={twin} visual={visual} feed={feed} lenses={lenses} userId={null} figureSrc={twinFigureSrc("female")} video={twinVideo("female")} demo />
     </div>
   )
 }
