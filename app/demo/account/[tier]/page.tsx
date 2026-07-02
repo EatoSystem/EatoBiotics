@@ -10,6 +10,8 @@ import { TwinStage } from "@/components/account/twin/twin-stage"
 import { TodayStrip } from "@/components/account/twin/today-strip"
 import { TwinLearnedToday } from "@/components/account/twin/twin-sections"
 import { InsideYouSection } from "@/components/account/twin/inside-you"
+import { DailyRitual } from "@/components/account/twin/daily-ritual"
+import { AskTwin } from "@/components/account/twin/ask-twin"
 
 export const metadata: Metadata = {
   title: "Account Preview — EatoBiotics",
@@ -213,11 +215,13 @@ export default async function DemoAccountTierPage({
       <div className="pt-10">
         <div className="pb-2">
           {/* Sample data uses the female Digital Twin so the demo showcases the art. */}
-          <TodayStrip twin={demoTwin} firstName="Sarah" streak={streak} />
+          <TodayStrip twin={demoTwin} firstName="Sarah" streak={streak} showStory />
           <TwinStage twin={demoTwin} visual={demoTwinVisual} figureSrc={twinFigureSrc("female")} video={twinVideo("female")} detailHref="/demo/account/twin" />
+          <DailyRitual twin={demoTwin} streak={streak} />
           <TwinLearnedToday feed={demoFeed} />
           {/* Public showcase: the full personalized story plays right on the demo. */}
           <InsideYouSection twin={demoTwin} />
+          <AskTwin twin={demoTwin} consultHref="/demo/account/consult" />
         </div>
         <DashboardClient
           profile={profile}

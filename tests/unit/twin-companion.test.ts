@@ -1,0 +1,135 @@
+import { describe, it, expect } from "vitest"
+import { buildAccountTwin, type AccountTwinInput } from "@/lib/agent-loop/account-twin"
+import {
+  dayKey,
+  lastSevenDayKeys,
+  loadRitual,
+  saveRitual,
+  ritualComplete,
+  ritualCount,
+  EMPTY_RITUAL,
+  type Store,
+} from "@/lib/account/ritual"
+import { detectMilestones, unseenMilestones, loadSeen, saveSeen } from "@/lib/account/milestones"
+import { projectScore, FORECAST_HABITS } from "@/lib/account/forecast"
+import { buildWeekStory } from "@/lib/account/week-story"
+
+function memStore(): Store {
+  const m = new Map<string, string>()
+  return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => void m.set(k, v) }
+}
+
+function sampleInput(over: Partial<AccountTwinInput> = {}): AccountTwinInput {
+  return {
+    score: 74,
+    previousScore: 62,
+    profileType: "Emerging Balance",
+    biotics: { prebiotic: 71, probiotic: 23, postbiotic: 48 },
+    streak: 4,
+    meals: [
+      { name: "Kefir & berries", score: 78, prebiotic: 55, probiotic: 65, postbiotic: 44, createdAt: new Date(Date.now() - 2 * 3_600_000).toISOString() },
+      { name: "Lentil salad", score: 71, prebiotic: 72, probiotic: 8, postbiotic: 42, createdAt: new Date(Date.now() - 26 * 3_600_000).toISOString() },
+    ],
+    ...over,
+  }
+}
+
+describe("ritual", () => {
+  it("round-trips a day through an injected store and derives completion", () => {
+    const store = memStore()
+    const key = dayKey(new Date(2026, 6, 2))
+    expect(key).toBe("2026-07-02")
+    expect(loadRitual(store, key)).toEqual(EMPTY_RITUAL)
+    saveRitual(store, key, { fermented: true, plants: true, feeling: false })
+    const r = loadRitual(store, key)
+    expect(r.fermented).toBe(true)
+    expect(ritualCount(r)).toBe(2)
+    expect(ritualComplete(r)).toBe(false)
+    saveRitual(store, key, { ...r, feeling: true })
+    expect(ritualComplete(loadRitual(store, key))).toBe(true)
+    // Null store (SSR) is safe.
+    expect(loadRitual(null, key)).toEqual(EMPTY_RITUAL)
+  })
+
+  it("lists the last seven local day keys oldest → today", () => {
+    const keys = lastSevenDayKeys(new Date(2026, 6, 2))
+    expect(keys.length).toBe(7)
+    expect(keys[6]).toBe("2026-07-02")
+    expect(keys[0]).toBe("2026-06-26")
+  })
+})
+
+describe("milestones", () => {
+  it("detects first meal, score gains, band crossings and streaks", async () => {
+    const { twin } = await buildAccountTwin(sampleInput())
+    const ms = detectMilestones(twin, 4)
+    const ids = ms.map((m) => m.id)
+    expect(ids).toContain("first-meal")
+    expect(ids).toContain("delta-10") // 62 → 74
+    expect(ids).toContain("streak-3")
+    // First-person, celebratory, non-medical.
+    for (const m of ms) {
+      expect(`${m.title} ${m.detail}`).not.toMatch(/cure|treat|diagnos|garden/i)
+    }
+    // Seen-set filtering fires each milestone once.
+    const store = memStore()
+    saveSeen(store, ["first-meal"])
+    const unseen = unseenMilestones(ms, loadSeen(store))
+    expect(unseen.map((m) => m.id)).not.toContain("first-meal")
+    expect(unseen.length).toBe(ms.length - 1)
+  })
+})
+
+describe("projectScore (what-if forecast)", () => {
+  it("is flat with no habits, monotonic with habits, and capped at 100", async () => {
+    const { twin } = await buildAccountTwin(sampleInput())
+    const none = projectScore(twin, {})
+    expect(none.weeks.every((w) => w === none.weeks[0])).toBe(true)
+    expect(none.gain).toBe(0)
+
+    const all = projectScore(twin, { fermented: true, plants: true, logging: true })
+    for (let i = 1; i < all.weeks.length; i++) expect(all.weeks[i]).toBeGreaterThanOrEqual(all.weeks[i - 1])
+    expect(all.gain).toBeGreaterThan(0)
+    expect(all.projected).toBeLessThanOrEqual(100)
+
+    // Fermented alone helps (probiotics are the weak spot in the sample).
+    const ferm = projectScore(twin, { fermented: true })
+    expect(ferm.gain).toBeGreaterThan(0)
+    expect(all.projected).toBeGreaterThanOrEqual(ferm.projected)
+
+    // Logging alone earns a small honest gain.
+    const log = projectScore(twin, { logging: true })
+    expect(log.gain).toBeGreaterThan(0)
+    expect(log.gain).toBeLessThanOrEqual(4)
+
+    expect(FORECAST_HABITS.length).toBe(3)
+  })
+})
+
+describe("buildWeekStory", () => {
+  it("builds first-person slides from the week's signals", async () => {
+    const { twin } = await buildAccountTwin(sampleInput())
+    const slides = buildWeekStory(twin)
+    const keys = slides.map((s) => s.key)
+    expect(keys[0]).toBe("intro")
+    expect(keys).toContain("meals")
+    expect(keys).toContain("best-meal")
+    expect(keys).toContain("biotics")
+    expect(keys).toContain("score")
+    expect(keys).toContain("focus")
+    // Best meal is the highest-scoring one.
+    const best = slides.find((s) => s.key === "best-meal")!
+    expect(best.title).toBe("Kefir & berries")
+    expect(best.stat).toBe("78")
+    for (const s of slides) {
+      expect(`${s.title} ${s.detail}`).not.toMatch(/cure|treat|diagnos|garden/i)
+    }
+  })
+
+  it("handles a quiet week (no meals) gracefully", async () => {
+    const { twin } = await buildAccountTwin(sampleInput({ meals: [], streak: 0 }))
+    const slides = buildWeekStory(twin)
+    expect(slides.find((s) => s.key === "meals")!.title).toContain("quiet week")
+    expect(slides.some((s) => s.key === "best-meal")).toBe(false)
+  })
+})

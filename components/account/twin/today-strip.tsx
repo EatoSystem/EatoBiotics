@@ -11,6 +11,7 @@
 
 import Link from "next/link"
 import { Flame, Plus, Check } from "lucide-react"
+import { WeekStoryButton } from "./week-story"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
 
 function greeting(): string {
@@ -33,13 +34,18 @@ export function TodayStrip({
   firstName,
   streak = 0,
   addMealHref = "/analyse",
+  showStory = false,
 }: {
   twin: FoodSystemDigitalTwin
   firstName: string | null
   streak?: number
   addMealHref?: string
+  /** Force the "Your Week Inside" chip (demo); otherwise it shows Mon–Wed. */
+  showStory?: boolean
 }) {
   const logged = mealLoggedToday(twin)
+  const dow = new Date().getDay()
+  const storyReady = showStory || (dow >= 1 && dow <= 3)
 
   return (
     <div style={{ background: "#0B1607", borderBottom: "1px solid rgba(253,251,247,0.08)" }}>
@@ -64,13 +70,16 @@ export function TodayStrip({
           )}
         </span>
 
-        <Link
-          href={addMealHref}
-          className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors hover:bg-white/10"
-          style={{ border: "1px solid rgba(168,224,99,0.5)", color: "#A8E063" }}
-        >
-          <Plus size={12} /> Add meal
-        </Link>
+        <span className="ml-auto flex shrink-0 items-center gap-2">
+          {storyReady && <WeekStoryButton twin={twin} variant="dark" />}
+          <Link
+            href={addMealHref}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors hover:bg-white/10"
+            style={{ border: "1px solid rgba(168,224,99,0.5)", color: "#A8E063" }}
+          >
+            <Plus size={12} /> Add meal
+          </Link>
+        </span>
       </div>
     </div>
   )

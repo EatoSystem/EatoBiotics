@@ -32,6 +32,6 @@ export default async function AccountTwinPage() {
   const lenses = buildTwinLenses()
 
   return (
-    <TwinDashboard twin={twin} visual={visual} feed={feed} lenses={lenses} userId={user.id} figureSrc={twinFigureSrc(sex)} video={twinVideo(sex)} />
+    <TwinDashboard twin={twin} visual={visual} feed={feed} lenses={lenses} userId={user.id} figureSrc={twinFigureSrc(sex)} video={twinVideo(sex)} streak={input.streak ?? 0} />
   )
 }

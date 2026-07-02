@@ -436,7 +436,10 @@ html, body, main {
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    /* End on `none` (not translateY(0)): with fill-mode `both`, a retained
+       transform would make <main> the containing block for every
+       position:fixed descendant (overlays, bottom sheets) forever. */
+    transform: none;
   }
 }
 

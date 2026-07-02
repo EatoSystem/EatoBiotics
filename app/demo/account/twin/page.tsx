@@ -43,7 +43,7 @@ export default async function DemoTwinPage() {
         </div>
       </div>
       {/* userId=null → Realtime hook no-ops; demo mode adds "Simulate a meal". */}
-      <TwinDashboard twin={twin} visual={visual} feed={feed} lenses={lenses} userId={null} figureSrc={twinFigureSrc("female")} video={twinVideo("female")} demo />
+      <TwinDashboard twin={twin} visual={visual} feed={feed} lenses={lenses} userId={null} figureSrc={twinFigureSrc("female")} video={twinVideo("female")} demo streak={DEMO_INPUT.streak ?? 0} consultHref="/demo/account/consult" />
     </div>
   )
 }

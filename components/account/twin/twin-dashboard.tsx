@@ -23,6 +23,10 @@ import {
 import { TwinLenses, type LensDef } from "./twin-lenses"
 import { TwinStage } from "./twin-stage"
 import { InsideYouSection } from "./inside-you"
+import { Journey } from "./journey"
+import { ForecastCard } from "./forecast"
+import { AskTwin } from "./ask-twin"
+import { WeekStoryButton } from "./week-story"
 import { useTwinRealtime } from "./use-twin-realtime"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
 import type { TwinVisualState } from "@/lib/account/twin-visual"
@@ -57,6 +61,8 @@ export function TwinDashboard({
   figureSrc = "/images/couple-hero.png",
   video = null,
   demo = false,
+  streak = 0,
+  consultHref = "/account/consult",
 }: {
   twin: FoodSystemDigitalTwin
   visual: TwinVisualState
@@ -69,6 +75,8 @@ export function TwinDashboard({
   video?: TwinVideo | null
   /** Demo mode: shows a "Simulate a meal" button so the reaction is previewable. */
   demo?: boolean
+  streak?: number
+  consultHref?: string
 }) {
   const [mealBurst, setMealBurst] = useState(0)
   const onNewMeal = useCallback(() => setMealBurst((k) => k + 1), [])
@@ -79,13 +87,16 @@ export function TwinDashboard({
     <div className="min-h-screen bg-background pt-[57px]">
       {/* dark page header — blends into the stage below */}
       <div style={{ background: "#0B1607" }}>
-        <div className="mx-auto max-w-6xl px-4 pt-6 md:px-8">
-          <Link href="/account" className="inline-flex items-center gap-1 text-xs transition-colors hover:text-white" style={{ color: "rgba(253,251,247,0.55)" }}>
-            <ArrowLeft size={12} /> Account
-          </Link>
-          <h1 className="mt-1 font-serif text-2xl font-bold md:text-3xl" style={{ color: "#FDFBF7" }}>
-            Your Digital Twin
-          </h1>
+        <div className="mx-auto flex max-w-6xl items-end justify-between gap-3 px-4 pt-6 md:px-8">
+          <div>
+            <Link href="/account" className="inline-flex items-center gap-1 text-xs transition-colors hover:text-white" style={{ color: "rgba(253,251,247,0.55)" }}>
+              <ArrowLeft size={12} /> Account
+            </Link>
+            <h1 className="mt-1 font-serif text-2xl font-bold md:text-3xl" style={{ color: "#FDFBF7" }}>
+              Your Digital Twin
+            </h1>
+          </div>
+          <WeekStoryButton twin={twin} variant="dark" />
         </div>
       </div>
 
@@ -103,6 +114,11 @@ export function TwinDashboard({
 
       {/* the Inside You cinema band */}
       <InsideYouSection twin={twin} />
+
+      {/* journey + what-if (light, full-width sections) */}
+      <Journey twin={twin} streak={streak} />
+      <ForecastCard twin={twin} />
+      <AskTwin twin={twin} consultHref={consultHref} />
 
       {/* light content */}
       <div className="mx-auto max-w-5xl px-5 py-8 md:px-8">

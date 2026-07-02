@@ -122,19 +122,19 @@ function buildFeed(input: AccountTwinInput, twin: FoodSystemDigitalTwin): TwinFe
   const feed: TwinFeedEntry[] = []
   const { momentum, scoreDelta } = twin.progress
 
-  // Momentum headline.
+  // Momentum headline — the Twin speaks in first person.
   feed.push({
     id: "momentum",
     icon: "momentum",
     title:
       momentum === "improving"
-        ? `Momentum is building${scoreDelta > 0 ? ` — +${scoreDelta} since baseline` : ""}`
+        ? `Momentum is building${scoreDelta > 0 ? ` — +${scoreDelta} since we met` : ""}`
         : momentum === "stalled"
-          ? "Your Twin noticed things have slowed"
+          ? "I noticed things have slowed"
           : momentum === "starting"
-            ? "Your Twin is getting to know you"
+            ? "I'm getting to know you"
             : "Holding steady — keep the rhythm",
-    detail: `${twin.observations.length} signal${twin.observations.length === 1 ? "" : "s"} learned so far`,
+    detail: `I've learned from ${twin.observations.length} signal${twin.observations.length === 1 ? "" : "s"} so far`,
     at: null,
   })
 
@@ -144,7 +144,7 @@ function buildFeed(input: AccountTwinInput, twin: FoodSystemDigitalTwin): TwinFe
       id: "streak",
       icon: "streak",
       title: `${input.streak}-day logging streak`,
-      detail: "Consistency is the strongest signal your Twin has",
+      detail: "Consistency is the strongest signal I have",
       at: null,
     })
   }
@@ -159,7 +159,7 @@ function buildFeed(input: AccountTwinInput, twin: FoodSystemDigitalTwin): TwinFe
       id: `meal-${m.createdAt}-${m.name}`,
       icon: "biotic",
       title: m.name,
-      detail: `Fed your ${BIOTIC_NAME[tb]} · meal score ${m.score}`,
+      detail: `This fed your ${BIOTIC_NAME[tb]} · meal score ${m.score}`,
       at: m.createdAt,
     })
   }

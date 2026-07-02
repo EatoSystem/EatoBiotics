@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
@@ -18,6 +18,11 @@ import { TwinStage } from "@/components/account/twin/twin-stage"
 import { TodayStrip } from "@/components/account/twin/today-strip"
 import { TwinLearnedToday, TwinNextAction, TwinScorePanel } from "@/components/account/twin/twin-sections"
 import { InsideYouTeaser } from "@/components/account/twin/inside-you"
+import { DailyRitual } from "@/components/account/twin/daily-ritual"
+import { AskTwin } from "@/components/account/twin/ask-twin"
+import { MeetTwinChecklist } from "@/components/account/twin/meet-checklist"
+import { detectMilestones, unseenMilestones, loadSeen, saveSeen, type Milestone } from "@/lib/account/milestones"
+import { browserStore } from "@/lib/account/ritual"
 import { FoodSystemMemoryPanel } from "@/components/agent-loop"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
 import type { TwinVisualState } from "@/lib/account/twin-visual"
@@ -779,6 +784,27 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
 
   const displayBiotics = propBiotics ?? { prebiotic: 71, probiotic: 23, postbiotic: 48 }
 
+  /* Milestone celebrations — fire once per milestone (localStorage seen-set):
+     burst over the stage orb + a celebration card at the top of the feed. */
+  const [celebration, setCelebration] = useState<Milestone | null>(null)
+  const [celebrationKey, setCelebrationKey] = useState(0)
+  useEffect(() => {
+    if (!twin) return
+    const store = browserStore()
+    const seen = loadSeen(store)
+    const fresh = unseenMilestones(detectMilestones(twin, propStreak || 0), seen)
+    if (fresh.length === 0) return
+    const m = fresh[0]
+    // Celebrate after the arrival choreography settles.
+    const t = setTimeout(() => {
+      setCelebration(m)
+      setCelebrationKey((k) => k + 1)
+    }, 1600)
+    saveSeen(store, [...seen, m.id])
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [twin])
+
   /* Today's real meals */
   const todayStr = new Date().toISOString().slice(0, 10)
   const todayMeals = recentAnalyses.filter((a) => a.created_at.startsWith(todayStr))
@@ -968,17 +994,38 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       {/* ── The Digital Twin experience (shown whenever a Twin exists) ── */}
       {tab === "overview" && twin && twinVisual && (
         <>
-          <TodayStrip twin={twin} firstName={name?.split(" ")[0] ?? null} streak={displayStreak} />
+          <TodayStrip
+            twin={twin}
+            firstName={name?.split(" ")[0] ?? null}
+            streak={displayStreak}
+            addMealHref={recentAnalyses.length > 0 ? "#log-meal" : "#first-meal-logger"}
+          />
           <TwinStage
             twin={twin}
             visual={twinVisual}
             figureSrc={twinFigureSrc ?? "/images/couple-hero.png"}
             video={twinVideo}
             learning={loggerState === "analysing"}
+            addMealHref={recentAnalyses.length > 0 ? "#log-meal" : "#first-meal-logger"}
+            burstKey={celebrationKey}
+            burstMessage={celebration?.title}
+            checklist={
+              twin.observations.length < 3 ? (
+                <MeetTwinChecklist twin={twin} addMealHref={recentAnalyses.length > 0 ? "#log-meal" : "#first-meal-logger"} />
+              ) : undefined
+            }
           />
-          <TwinLearnedToday feed={twinFeed ?? []} />
+          <DailyRitual twin={twin} streak={displayStreak} />
+          <TwinLearnedToday
+            feed={
+              celebration
+                ? [{ id: `milestone-${celebration.id}`, icon: "momentum" as const, title: celebration.title, detail: celebration.detail, at: null }, ...(twinFeed ?? [])]
+                : (twinFeed ?? [])
+            }
+          />
           <InsideYouTeaser twin={twin} />
           <TwinNextAction twin={twin} />
+          <AskTwin twin={twin} consultHref="/account/consult" />
           <TwinScorePanel twin={twin} visual={twinVisual} />
           <section className="mx-auto max-w-5xl px-4 pt-8 md:px-8">
             <div className="mb-4">
@@ -1172,7 +1219,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             </p>
 
             {/* Logger */}
-            <div>
+            <div id="log-meal" className="scroll-mt-24">
 
               {/* Empty state */}
               {loggerState === "empty" && (

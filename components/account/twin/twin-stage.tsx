@@ -136,7 +136,9 @@ export function TwinStage({
   addMealHref = "/analyse",
   demo = false,
   burstKey = 0,
+  burstMessage,
   onSimulateMeal,
+  checklist,
 }: {
   twin: FoodSystemDigitalTwin
   visual: TwinVisualState
@@ -149,8 +151,12 @@ export function TwinStage({
   demo?: boolean
   /** Increment to fire the meal-reaction burst over the orb. */
   burstKey?: number
+  /** Custom burst chip text (milestone celebrations). */
+  burstMessage?: string
   /** Demo only: shows the "Simulate a meal" button. */
   onSimulateMeal?: () => void
+  /** Day-one slot: rendered instead of the sparkline (e.g. MeetTwinChecklist). */
+  checklist?: React.ReactNode
 }) {
   const [selected, setSelected] = useState<SystemHotspotKey | null>(null)
   const hotspots = useMemo(() => systemMapState(twin), [twin])
@@ -282,7 +288,7 @@ export function TwinStage({
               )
             })}
 
-            <MealReactionBurst playKey={burstKey} />
+            <MealReactionBurst playKey={burstKey} message={burstMessage ?? "Your Twin just learned from your meal"} />
 
             {/* live pill */}
             <div className="absolute -top-1 left-0 flex items-center gap-2 rounded-full px-3 py-1.5 backdrop-blur" style={{ background: "rgba(253,251,247,0.08)", border: "1px solid rgba(253,251,247,0.18)" }}>
@@ -322,7 +328,7 @@ export function TwinStage({
             </h2>
 
             <div className="mt-5 grid gap-6 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-8">
-              <Sparkline twin={twin} />
+              {checklist ?? <Sparkline twin={twin} />}
               <div className="max-w-sm space-y-3">
                 <BioticBar biotic="prebiotics" score={twin.biotics.prebiotics.score} delay={700} />
                 <BioticBar biotic="probiotics" score={twin.biotics.probiotics.score} delay={800} />
@@ -358,12 +364,20 @@ export function TwinStage({
           </div>
         </div>
 
-        {/* ── dark-glass education panel (opens under the grid) ── */}
+        {/* ── dark-glass education panel: bottom sheet on mobile, inline on md+ ── */}
+        {active && (
+          <button
+            type="button"
+            aria-label="Close panel"
+            onClick={() => setSelected(null)}
+            className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          />
+        )}
         {active && (
           <div
             key={active.key}
-            className="eb-reveal mt-8 rounded-2xl p-5 backdrop-blur-md md:p-6"
-            style={{ background: "rgba(253,251,247,0.07)", border: `1px solid color-mix(in srgb, ${HOTSPOT_COLOR[active.key]} 45%, transparent)` }}
+            className="eb-reveal fixed inset-x-0 bottom-0 z-50 max-h-[72vh] overflow-y-auto rounded-t-2xl bg-[rgba(253,251,247,0.07)] p-5 backdrop-blur-md max-md:bg-[#0E1B08F5] md:static md:z-auto md:mt-8 md:max-h-none md:overflow-visible md:rounded-2xl md:p-6"
+            style={{ border: `1px solid color-mix(in srgb, ${HOTSPOT_COLOR[active.key]} 45%, transparent)` }}
           >
             <div className="flex items-start justify-between gap-3">
               <div>
