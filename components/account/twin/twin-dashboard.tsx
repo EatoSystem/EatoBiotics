@@ -22,6 +22,7 @@ import {
 } from "@/components/agent-loop"
 import { TwinLenses, type LensDef } from "./twin-lenses"
 import { TwinStage } from "./twin-stage"
+import { QuickLog } from "./quick-log"
 import { InsideYouSection } from "./inside-you"
 import { Journey } from "./journey"
 import { ForecastCard } from "./forecast"
@@ -82,6 +83,7 @@ export function TwinDashboard({
   const onNewMeal = useCallback(() => setMealBurst((k) => k + 1), [])
   useTwinRealtime(userId, onNewMeal)
   const [lens, setLens] = useState(lenses[0]?.key ?? "foundation")
+  const [quickLogOpen, setQuickLogOpen] = useState(false)
 
   return (
     <div className="min-h-screen bg-background pt-[57px]">
@@ -110,7 +112,11 @@ export function TwinDashboard({
         demo={demo}
         burstKey={mealBurst}
         onSimulateMeal={demo ? onNewMeal : undefined}
+        onAddMeal={() => setQuickLogOpen(true)}
       />
+
+      {/* quick-log (mock in demo — no API); a new meal fires the stage burst */}
+      <QuickLog open={quickLogOpen} onClose={() => setQuickLogOpen(false)} onLearned={onNewMeal} mock={demo} />
 
       {/* the Inside You cinema band */}
       <InsideYouSection twin={twin} />

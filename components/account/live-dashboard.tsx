@@ -8,7 +8,7 @@ import { DailyLoopCard, type DailyLoopData } from "@/components/account/daily-lo
 import {
   Camera, ArrowRight, Check, ChevronRight, TrendingUp,
   FileText, UtensilsCrossed, MessageSquare, Download, ExternalLink, Flame,
-  Calendar, Target, Activity, User, Trash2, AlertTriangle,
+  Calendar, Target, Activity, User, Trash2, AlertTriangle, Plus,
 } from "lucide-react"
 import {
   Glp1CompanionCard, StabilityCard, AssessmentJourneyCard, VoiceConsultCard, ReferralCard, ScoreRing, MiniRing, ScoreBar,
@@ -16,14 +16,14 @@ import {
 } from "@/components/account/dashboard-parts"
 import { TwinStage } from "@/components/account/twin/twin-stage"
 import { TodayStrip } from "@/components/account/twin/today-strip"
-import { TwinLearnedToday, TwinNextAction, TwinScorePanel } from "@/components/account/twin/twin-sections"
+import { TwinLearnedToday } from "@/components/account/twin/twin-sections"
+import { QuickLog } from "@/components/account/twin/quick-log"
 import { InsideYouTeaser } from "@/components/account/twin/inside-you"
 import { DailyRitual } from "@/components/account/twin/daily-ritual"
 import { AskTwin } from "@/components/account/twin/ask-twin"
 import { MeetTwinChecklist } from "@/components/account/twin/meet-checklist"
 import { detectMilestones, unseenMilestones, loadSeen, saveSeen, type Milestone } from "@/lib/account/milestones"
 import { browserStore } from "@/lib/account/ritual"
-import { FoodSystemMemoryPanel } from "@/components/agent-loop"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
 import type { TwinVisualState } from "@/lib/account/twin-visual"
 import type { TwinFeedEntry } from "@/lib/agent-loop/account-twin"
@@ -654,6 +654,18 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
 /* ─────────────────────────────────────────────────────────────────────────
    Component
    ───────────────────────────────────────────────────────────────────────── */
+/** Tiny group eyebrow that gives the Overview its Today → This week → Learn rhythm. */
+function GroupLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mx-auto max-w-5xl px-4 pt-10 md:px-8">
+      <p className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.25em]" style={{ color: "var(--muted-foreground)" }}>
+        {children}
+        <span className="h-px flex-1" style={{ background: "var(--border)" }} />
+      </p>
+    </div>
+  )
+}
+
 export function LiveDashboard(props: LiveDashboardProps = {}) {
   const {
     name               = null,
@@ -788,6 +800,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
      burst over the stage orb + a celebration card at the top of the feed. */
   const [celebration, setCelebration] = useState<Milestone | null>(null)
   const [celebrationKey, setCelebrationKey] = useState(0)
+  const [quickLogOpen, setQuickLogOpen] = useState(false)
   useEffect(() => {
     if (!twin) return
     const store = browserStore()
@@ -867,8 +880,10 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
     <div className="min-h-screen" style={{ background: "white" }}>
 
       {/* ══════════════════════════════════════════════════════════════════
-          HERO — gradient band
+          HERO — gradient band (legacy greeting; the Twin's TodayStrip + stage
+          replace it, so it only renders for members without a Twin yet)
       ══════════════════════════════════════════════════════════════════ */}
+      {!twin && (<>
       <div style={{ background: "white" }}>
         <div className="mx-auto max-w-5xl px-5 pb-7 pt-6 md:px-8 md:pb-9 md:pt-8">
           <div className="flex items-start justify-between gap-4">
@@ -967,23 +982,47 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
           </div>
         </div>
       </div>
+      </>)}
+
+      {/* Quick-log — portalled modal; a new meal fires the stage burst. */}
+      {twin && (
+        <QuickLog
+          open={quickLogOpen}
+          onClose={() => setQuickLogOpen(false)}
+          onLearned={() => {
+            setCelebration(null)
+            setCelebrationKey((k) => k + 1)
+          }}
+        />
+      )}
 
       {/* ══════════════════════════════════════════════════════════════════
-          TAB NAVIGATION — sticky
+          TAB NAVIGATION — sticky dark glass bar (bridges the dark stage and
+          the light content so the account reads as one product)
       ══════════════════════════════════════════════════════════════════ */}
-      <div className="sticky top-[57px] z-10 border-b" style={{ background: "white", borderColor: "var(--border)" }}>
+      <div className="sticky top-[57px] z-30 border-b" style={{ background: "rgba(11,22,7,0.92)", backdropFilter: "blur(10px)", borderColor: "rgba(253,251,247,0.1)" }}>
         <div className="mx-auto max-w-5xl">
-          <div className="flex gap-1.5 overflow-x-auto px-4 py-2 md:px-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <div className="flex items-center gap-1.5 overflow-x-auto px-4 py-2 md:px-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {TABS.map(({ id, label, icon }) => (
               <button key={id} onClick={() => setTab(id as Tab)}
                 className="flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition-all md:px-4 md:py-2.5 md:text-sm"
                 style={tab === id
-                  ? { background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", color: "white", boxShadow: "0 3px 10px rgba(45,170,110,0.28)" }
-                  : { background: "var(--muted)", color: "var(--muted-foreground)" }
+                  ? { background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", color: "white", boxShadow: "0 3px 10px rgba(45,170,110,0.35)" }
+                  : { background: "rgba(253,251,247,0.06)", color: "rgba(253,251,247,0.7)", border: "1px solid rgba(253,251,247,0.12)" }
                 }>
                 {icon}{label}
               </button>
             ))}
+            {twin && (
+              <button
+                type="button"
+                onClick={() => setQuickLogOpen(true)}
+                className="ml-auto flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold transition-transform hover:-translate-y-0.5 md:px-4 md:py-2.5 md:text-sm"
+                style={{ background: "linear-gradient(135deg, #F5C518, #F5A623)", color: "#3a2c05", boxShadow: "0 3px 12px rgba(245,166,35,0.4)" }}
+              >
+                <Plus size={14} strokeWidth={3} /> Log
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -998,7 +1037,8 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             twin={twin}
             firstName={name?.split(" ")[0] ?? null}
             streak={displayStreak}
-            addMealHref={recentAnalyses.length > 0 ? "#log-meal" : "#first-meal-logger"}
+            onAddMeal={() => setQuickLogOpen(true)}
+            todayHref="/account/today"
           />
           <TwinStage
             twin={twin}
@@ -1006,7 +1046,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             figureSrc={twinFigureSrc ?? "/images/couple-hero.png"}
             video={twinVideo}
             learning={loggerState === "analysing"}
-            addMealHref={recentAnalyses.length > 0 ? "#log-meal" : "#first-meal-logger"}
+            onAddMeal={() => setQuickLogOpen(true)}
             burstKey={celebrationKey}
             burstMessage={celebration?.title}
             checklist={
@@ -1015,7 +1055,12 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
               ) : undefined
             }
           />
+          {/* [TODAY] — the daily ritual heartbeat */}
+          <GroupLabel>Today</GroupLabel>
           <DailyRitual twin={twin} streak={displayStreak} />
+
+          {/* [THIS WEEK] — what the Twin has learned */}
+          <GroupLabel>This week</GroupLabel>
           <TwinLearnedToday
             feed={
               celebration
@@ -1023,17 +1068,12 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                 : (twinFeed ?? [])
             }
           />
+
+          {/* [LEARN & ASK] — education + the AI bridge. Score/next-action live
+              on the stage and /account/twin — no duplicates here. */}
+          <GroupLabel>Learn &amp; ask</GroupLabel>
           <InsideYouTeaser twin={twin} />
-          <TwinNextAction twin={twin} />
           <AskTwin twin={twin} consultHref="/account/consult" />
-          <TwinScorePanel twin={twin} visual={twinVisual} />
-          <section className="mx-auto max-w-5xl px-4 pt-8 md:px-8">
-            <div className="mb-4">
-              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Memory</p>
-              <h3 className="mt-1 font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>Your Digital Twin remembers what works.</h3>
-            </div>
-            <FoodSystemMemoryPanel twin={twin} />
-          </section>
         </>
       )}
 
@@ -1860,11 +1900,12 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       {tab === "reports" && (
         <div className="mx-auto max-w-5xl px-4 pt-6 pb-16 md:px-8 md:pt-8">
           <div className="mb-5">
-            <h2 className="font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>My Reports</h2>
+            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Snapshots</p>
+            <h2 className="mt-1 font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>Moments your Twin remembers</h2>
             <p className="mt-0.5 text-sm" style={{ color: "var(--muted-foreground)" }}>
               {paidReports.length > 0
-                ? `${paidReports.length} Food System Report${paidReports.length === 1 ? "" : "s"} purchased`
-                : `${MOCK_REPORTS.length} assessments completed`}
+                ? `${paidReports.length} Food System snapshot${paidReports.length === 1 ? "" : "s"} — each one a moment your Twin can look back on`
+                : `${MOCK_REPORTS.length} assessment snapshot${MOCK_REPORTS.length === 1 ? "" : "s"} of your Food System so far`}
             </p>
           </div>
 
@@ -1880,7 +1921,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                     <div className="px-5 py-5" style={{ background: "linear-gradient(135deg, #1a4a14 0%, #0a5c44 100%)" }}>
                       <div className="h-[2px] mb-4 rounded-full" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-yellow), var(--icon-orange))" }} />
                       <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.40)" }}>
-                        Food System Report · {new Date(r.createdAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
+                        Snapshot · Food System Report · {new Date(r.createdAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
                       </p>
                       <div className="mt-1 flex items-end justify-between gap-3">
                         <div>

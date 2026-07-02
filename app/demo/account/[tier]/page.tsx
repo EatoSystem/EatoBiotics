@@ -6,8 +6,7 @@ import { TIER_META } from "@/lib/membership"
 import { buildAccountTwin } from "@/lib/agent-loop/account-twin"
 import { twinVisualState } from "@/lib/account/twin-visual"
 import { twinFigureSrc, twinVideo } from "@/lib/account/twin-figure"
-import { TwinStage } from "@/components/account/twin/twin-stage"
-import { TodayStrip } from "@/components/account/twin/today-strip"
+import { DemoTwinHero } from "@/components/account/twin/demo-hero"
 import { TwinLearnedToday } from "@/components/account/twin/twin-sections"
 import { InsideYouSection } from "@/components/account/twin/inside-you"
 import { DailyRitual } from "@/components/account/twin/daily-ritual"
@@ -214,9 +213,17 @@ export default async function DemoAccountTierPage({
 
       <div className="pt-10">
         <div className="pb-2">
-          {/* Sample data uses the female Digital Twin so the demo showcases the art. */}
-          <TodayStrip twin={demoTwin} firstName="Sarah" streak={streak} showStory />
-          <TwinStage twin={demoTwin} visual={demoTwinVisual} figureSrc={twinFigureSrc("female")} video={twinVideo("female")} detailHref="/demo/account/twin" />
+          {/* Sample data uses the female Digital Twin so the demo showcases the art.
+              DemoTwinHero adds the mock QuickLog so the log→learn loop is previewable. */}
+          <DemoTwinHero
+            twin={demoTwin}
+            visual={demoTwinVisual}
+            figureSrc={twinFigureSrc("female")}
+            video={twinVideo("female")}
+            streak={streak}
+            firstName="Sarah"
+            detailHref="/demo/account/twin"
+          />
           <DailyRitual twin={demoTwin} streak={streak} />
           <TwinLearnedToday feed={demoFeed} />
           {/* Public showcase: the full personalized story plays right on the demo. */}

@@ -35,6 +35,8 @@ export function TodayStrip({
   streak = 0,
   addMealHref = "/analyse",
   showStory = false,
+  onAddMeal,
+  todayHref,
 }: {
   twin: FoodSystemDigitalTwin
   firstName: string | null
@@ -42,6 +44,10 @@ export function TodayStrip({
   addMealHref?: string
   /** Force the "Your Week Inside" chip (demo); otherwise it shows Mon–Wed. */
   showStory?: boolean
+  /** When set, Add-meal opens QuickLog instead of navigating. */
+  onAddMeal?: () => void
+  /** Optional link to the Today page (moved here from the old greeting band). */
+  todayHref?: string
 }) {
   const logged = mealLoggedToday(twin)
   const dow = new Date().getDay()
@@ -71,14 +77,30 @@ export function TodayStrip({
         </span>
 
         <span className="ml-auto flex shrink-0 items-center gap-2">
+          {todayHref && (
+            <Link href={todayHref} className="hidden text-xs font-semibold transition-colors hover:text-white sm:inline" style={{ color: "rgba(253,251,247,0.55)" }}>
+              Today page →
+            </Link>
+          )}
           {storyReady && <WeekStoryButton twin={twin} variant="dark" />}
-          <Link
-            href={addMealHref}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors hover:bg-white/10"
-            style={{ border: "1px solid rgba(168,224,99,0.5)", color: "#A8E063" }}
-          >
-            <Plus size={12} /> Add meal
-          </Link>
+          {onAddMeal ? (
+            <button
+              type="button"
+              onClick={onAddMeal}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors hover:bg-white/10"
+              style={{ border: "1px solid rgba(168,224,99,0.5)", color: "#A8E063" }}
+            >
+              <Plus size={12} /> Add meal
+            </button>
+          ) : (
+            <Link
+              href={addMealHref}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors hover:bg-white/10"
+              style={{ border: "1px solid rgba(168,224,99,0.5)", color: "#A8E063" }}
+            >
+              <Plus size={12} /> Add meal
+            </Link>
+          )}
         </span>
       </div>
     </div>

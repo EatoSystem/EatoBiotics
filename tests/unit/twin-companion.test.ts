@@ -11,6 +11,7 @@ import {
   type Store,
 } from "@/lib/account/ritual"
 import { detectMilestones, unseenMilestones, loadSeen, saveSeen } from "@/lib/account/milestones"
+import { stageMood, stageMoodKey } from "@/lib/account/stage-mood"
 import { projectScore, FORECAST_HABITS } from "@/lib/account/forecast"
 import { buildWeekStory } from "@/lib/account/week-story"
 
@@ -103,6 +104,38 @@ describe("projectScore (what-if forecast)", () => {
     expect(log.gain).toBeLessThanOrEqual(4)
 
     expect(FORECAST_HABITS.length).toBe(3)
+  })
+})
+
+describe("stageMood", () => {
+  it("maps hours to dawn/day/dusk/night with correct boundaries", () => {
+    expect(stageMoodKey(5)).toBe("dawn")
+    expect(stageMoodKey(10)).toBe("dawn")
+    expect(stageMoodKey(11)).toBe("day")
+    expect(stageMoodKey(16)).toBe("day")
+    expect(stageMoodKey(17)).toBe("dusk")
+    expect(stageMoodKey(21)).toBe("dusk")
+    expect(stageMoodKey(22)).toBe("night")
+    expect(stageMoodKey(2)).toBe("night")
+    expect(stageMoodKey(4)).toBe("night")
+  })
+
+  it("brightens when fed, calms while waiting, and stays gentle at night", () => {
+    const fedDay = stageMood(13, { fed: true })
+    const waitingDay = stageMood(13, { fed: false })
+    expect(fedDay.auraMult).toBeGreaterThan(waitingDay.auraMult)
+    expect(fedDay.particles).toBe(true)
+    expect(waitingDay.particles).toBe(false)
+    // Night damps even a fed twin, and never shows particles.
+    const fedNight = stageMood(23, { fed: true })
+    expect(fedNight.auraMult).toBeLessThan(fedDay.auraMult)
+    expect(fedNight.particles).toBe(false)
+    // Every mood keeps a human-readable line + brand-safe glows.
+    for (const h of [6, 12, 19, 23]) {
+      const m = stageMood(h, { fed: true })
+      expect(m.line.length).toBeGreaterThan(5)
+      expect(m.glowA).toMatch(/^rgba\(/)
+    }
   })
 })
 

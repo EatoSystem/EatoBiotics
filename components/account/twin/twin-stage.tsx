@@ -15,14 +15,17 @@
  * Used at the top of the account Overview and /account/twin (and the demos).
  */
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { ArrowRight, Leaf, Target, Utensils, UtensilsCrossed, X } from "lucide-react"
 import { HeroVideo } from "@/components/hero-video"
 import { DigitalTwinFigure } from "@/components/digital-twin/parts"
 import { MealReactionBurst } from "./meal-reaction"
+import { ShareTwin } from "./share-twin"
 import { useCountUp } from "./use-count-up"
 import { systemMapState, type SystemHotspotKey, type SystemHotspotState } from "@/lib/account/system-map"
+import { stageMood, type StageMood } from "@/lib/account/stage-mood"
+import { browserStore, dayKey, loadRitual, ritualCount } from "@/lib/account/ritual"
 import { auraGradientForBiotic } from "@/lib/account/twin-visual"
 import type { TwinVisualState } from "@/lib/account/twin-visual"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
@@ -139,6 +142,7 @@ export function TwinStage({
   burstMessage,
   onSimulateMeal,
   checklist,
+  onAddMeal,
 }: {
   twin: FoodSystemDigitalTwin
   visual: TwinVisualState
@@ -157,8 +161,22 @@ export function TwinStage({
   onSimulateMeal?: () => void
   /** Day-one slot: rendered instead of the sparkline (e.g. MeetTwinChecklist). */
   checklist?: React.ReactNode
+  /** When set, the Add-meal CTA opens QuickLog instead of navigating. */
+  onAddMeal?: () => void
 }) {
   const [selected, setSelected] = useState<SystemHotspotKey | null>(null)
+  /* Time-of-day + engagement mood — computed after mount so SSR/hydration match. */
+  const [mood, setMood] = useState<StageMood>(() => stageMood(13, { fed: true }))
+  useEffect(() => {
+    const fedToday =
+      twin.observations.some((o) => {
+        if (o.kind !== "meal_description" && o.kind !== "meal_photo") return false
+        const start = new Date()
+        start.setHours(0, 0, 0, 0)
+        return o.createdAt >= start.getTime()
+      }) || ritualCount(loadRitual(browserStore(), dayKey())) > 0
+    setMood(stageMood(new Date().getHours(), { fed: fedToday }))
+  }, [twin])
   const hotspots = useMemo(() => systemMapState(twin), [twin])
   const active: SystemHotspotState | null = hotspots.find((h) => h.key === selected) ?? null
   const aura = active
@@ -170,10 +188,10 @@ export function TwinStage({
 
   return (
     <section className="relative overflow-hidden" style={{ background: STAGE_BG }}>
-      {/* atmosphere: layered glows + vignette (brand greens/ambers only) */}
+      {/* atmosphere: layered glows + vignette, tinted by the time-of-day mood */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-24 -top-32 h-[420px] w-[420px] rounded-full" style={{ background: "radial-gradient(circle, rgba(168,224,99,0.14) 0%, transparent 65%)" }} />
-        <div className="absolute -right-32 top-10 h-[520px] w-[520px] rounded-full" style={{ background: "radial-gradient(circle, rgba(45,170,110,0.16) 0%, transparent 65%)" }} />
+        <div className="absolute -left-24 -top-32 h-[420px] w-[420px] rounded-full transition-all duration-1000" style={{ background: `radial-gradient(circle, ${mood.glowA} 0%, transparent 65%)` }} />
+        <div className="absolute -right-32 top-10 h-[520px] w-[520px] rounded-full transition-all duration-1000" style={{ background: `radial-gradient(circle, ${mood.glowB} 0%, transparent 65%)` }} />
         <div className="absolute -bottom-40 left-1/3 h-[460px] w-[460px] rounded-full" style={{ background: "radial-gradient(circle, rgba(245,166,35,0.09) 0%, transparent 65%)" }} />
         <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at center, transparent 55%, rgba(5,10,3,0.55) 100%)" }} />
       </div>
@@ -194,7 +212,7 @@ export function TwinStage({
             <div
               aria-hidden
               className="eb-aura pointer-events-none absolute left-1/2 top-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 rounded-full"
-              style={{ background: aura, opacity: 0.5 + 0.4 * visual.confidence, animationDuration: `${visual.pulseSec}s`, mixBlendMode: "screen" }}
+              style={{ background: aura, opacity: Math.min(1, (0.5 + 0.4 * visual.confidence) * mood.auraMult), animationDuration: `${visual.pulseSec}s`, mixBlendMode: "screen", transition: "opacity 1s" }}
             />
             {/* the figure — video in a circular mask, or the still figure */}
             <div className="eb-orb-bloom absolute left-1/2 top-1/2 h-[84%] w-[84%] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full" style={{ animationDelay: "150ms" }}>
@@ -208,7 +226,7 @@ export function TwinStage({
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center" style={{ background: CREAM }}>
-                  <DigitalTwinFigure size={300} src={figureSrc} alt="Your Food System Digital Twin" showParticles={visual.particleDensity > 0.35} />
+                  <DigitalTwinFigure size={300} src={figureSrc} alt="Your Food System Digital Twin" showParticles={visual.particleDensity > 0.35 || mood.particles} />
                 </div>
               )}
             </div>
@@ -306,6 +324,7 @@ export function TwinStage({
           <div className="min-w-0">
             <p className="eb-reveal text-[11px] font-bold uppercase tracking-[0.22em]" style={{ color: "#A8E063", animationDelay: "200ms" }}>
               Your Digital Twin · {visual.momentumLabel}
+              <span className="ml-2 font-semibold normal-case tracking-normal" style={{ color: "rgba(253,251,247,0.4)" }}>{mood.line}</span>
             </p>
             <div className="eb-reveal mt-3 flex flex-wrap items-end gap-x-4 gap-y-2" style={{ animationDelay: "300ms" }}>
               <div className="flex items-baseline gap-2">
@@ -352,9 +371,16 @@ export function TwinStage({
                   Open My Digital Twin <ArrowRight className="h-4 w-4" />
                 </Link>
               )}
-              <Link href={addMealHref} className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-colors hover:bg-white/10" style={{ border: "1px solid rgba(168,224,99,0.5)", color: "#A8E063" }}>
-                <Utensils className="h-4 w-4" /> Add Today&apos;s Meal
-              </Link>
+              {onAddMeal ? (
+                <button type="button" onClick={onAddMeal} className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-colors hover:bg-white/10" style={{ border: "1px solid rgba(168,224,99,0.5)", color: "#A8E063" }}>
+                  <Utensils className="h-4 w-4" /> Add Today&apos;s Meal
+                </button>
+              ) : (
+                <Link href={addMealHref} className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-colors hover:bg-white/10" style={{ border: "1px solid rgba(168,224,99,0.5)", color: "#A8E063" }}>
+                  <Utensils className="h-4 w-4" /> Add Today&apos;s Meal
+                </Link>
+              )}
+              <ShareTwin twin={twin} visual={visual} />
               {demo && onSimulateMeal && (
                 <button type="button" onClick={onSimulateMeal} className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-colors hover:bg-white/10" style={{ border: "1px solid rgba(245,197,24,0.5)", color: "#F5C518" }}>
                   <UtensilsCrossed className="h-4 w-4" /> Simulate a meal
