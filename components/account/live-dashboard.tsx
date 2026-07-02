@@ -16,6 +16,7 @@ import {
 } from "@/components/account/dashboard-parts"
 import { TwinHero } from "@/components/account/twin/twin-hero"
 import { TwinLearnedToday, TwinNextAction, TwinScorePanel } from "@/components/account/twin/twin-sections"
+import { InsideYouTeaser } from "@/components/account/twin/inside-you"
 import { FoodSystemMemoryPanel } from "@/components/agent-loop"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
 import type { TwinVisualState } from "@/lib/account/twin-visual"
@@ -968,6 +969,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
         <>
           <TwinHero twin={twin} visual={twinVisual} figureSrc={twinFigureSrc} video={twinVideo} learning={loggerState === "analysing"} />
           <TwinLearnedToday feed={twinFeed ?? []} />
+          <InsideYouTeaser twin={twin} />
           <TwinNextAction twin={twin} />
           <TwinScorePanel twin={twin} visual={twinVisual} />
           <section className="mx-auto max-w-5xl px-4 pt-8 md:px-8">

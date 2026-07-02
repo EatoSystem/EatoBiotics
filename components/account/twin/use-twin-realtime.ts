@@ -11,12 +11,14 @@
  *    Twin re-derives on return even without Realtime.
  */
 
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
 
-export function useTwinRealtime(userId: string | null) {
+export function useTwinRealtime(userId: string | null, onNewMeal?: () => void) {
   const router = useRouter()
+  const onNewMealRef = useRef(onNewMeal)
+  onNewMealRef.current = onNewMeal
 
   useEffect(() => {
     if (!userId) return
@@ -30,7 +32,10 @@ export function useTwinRealtime(userId: string | null) {
         .on(
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "analyses", filter: `user_id=eq.${userId}` },
-          () => router.refresh(),
+          () => {
+            onNewMealRef.current?.()
+            router.refresh()
+          },
         )
         .subscribe()
       cleanup = () => {

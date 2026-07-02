@@ -51,6 +51,8 @@ const nextConfig = {
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.posthog.com https://*.statsig.com https://js.stripe.com https://*.vercel-scripts.com",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
+      // data:/blob: media is needed by @remotion/player's silent-audio autoplay shim.
+      "media-src 'self' data: blob:",
       "font-src 'self' data:",
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.posthog.com https://*.statsig.com https://api.stripe.com https://*.anthropic.com https://*.elevenlabs.io wss://*.elevenlabs.io https://*.openai.com https://*.vercel-insights.com",
       "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",

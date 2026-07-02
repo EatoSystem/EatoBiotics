@@ -8,6 +8,7 @@ import { twinVisualState } from "@/lib/account/twin-visual"
 import { twinFigureSrc, twinVideo } from "@/lib/account/twin-figure"
 import { TwinHero } from "@/components/account/twin/twin-hero"
 import { TwinLearnedToday } from "@/components/account/twin/twin-sections"
+import { InsideYouSection } from "@/components/account/twin/inside-you"
 
 export const metadata: Metadata = {
   title: "Account Preview — EatoBiotics",
@@ -213,6 +214,8 @@ export default async function DemoAccountTierPage({
           {/* Sample data uses the female Digital Twin so the demo showcases the art. */}
           <TwinHero twin={demoTwin} visual={demoTwinVisual} figureSrc={twinFigureSrc("female")} video={twinVideo("female")} detailHref="/demo/account/twin" />
           <TwinLearnedToday feed={demoFeed} />
+          {/* Public showcase: the full personalized story plays right on the demo. */}
+          <InsideYouSection twin={demoTwin} />
         </div>
         <DashboardClient
           profile={profile}

@@ -3,17 +3,18 @@
 /**
  * TwinDashboard — the dedicated /account/twin experience.
  *
- * Composes the member's living Twin from the shared FoodSystemDigitalTwin: an
- * enlarged living figure (re-tintable by lens), the live loop stage, the three
- * biotics, trends + memory, the learning feed, and the lens switcher. Kept live
- * via useTwinRealtime (Realtime + visibility refresh). Reuses the agent-loop
- * components that already consume the twin directly.
+ * Composes the member's living Twin from the shared FoodSystemDigitalTwin: the
+ * interactive System Map (tap hotspots on the figure to learn each system,
+ * re-tintable by lens), the personalized "Inside You" Remotion story, the live
+ * loop stage, the three biotics, trends + memory, the learning feed, and the
+ * lens switcher. Kept live via useTwinRealtime (Realtime + visibility refresh);
+ * a new meal triggers the MealReactionBurst so the Twin visibly learns. Reuses
+ * the agent-loop components that already consume the twin directly.
  */
 
-import { useState } from "react"
+import { useCallback, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Target, Activity, TrendingUp, Flame, Leaf, Sparkles } from "lucide-react"
-import { DigitalTwinFigure } from "@/components/digital-twin/parts"
+import { ArrowLeft, Target, Activity, TrendingUp, Flame, Leaf, Sparkles, UtensilsCrossed } from "lucide-react"
 import { ScoreRing } from "@/components/assessment/score-ring"
 import {
   AgentLoopTimeline,
@@ -22,6 +23,9 @@ import {
   BioticsProgressPanel,
 } from "@/components/agent-loop"
 import { TwinLenses, type LensDef } from "./twin-lenses"
+import { SystemMap } from "./system-map"
+import { MealReactionBurst } from "./meal-reaction"
+import { InsideYouSection } from "./inside-you"
 import { useTwinRealtime } from "./use-twin-realtime"
 import { auraGradientForBiotic } from "@/lib/account/twin-visual"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
@@ -54,6 +58,7 @@ export function TwinDashboard({
   lenses,
   userId,
   figureSrc = "/images/couple-hero.png",
+  demo = false,
 }: {
   twin: FoodSystemDigitalTwin
   visual: TwinVisualState
@@ -62,8 +67,12 @@ export function TwinDashboard({
   userId: string | null
   /** Twin figure image (male/female by the member's sex; defaults to the couple). */
   figureSrc?: string
+  /** Demo mode: shows a "Simulate a meal" button so the reaction is previewable. */
+  demo?: boolean
 }) {
-  useTwinRealtime(userId)
+  const [mealBurst, setMealBurst] = useState(0)
+  const onNewMeal = useCallback(() => setMealBurst((k) => k + 1), [])
+  useTwinRealtime(userId, onNewMeal)
   const [lens, setLens] = useState(lenses[0]?.key ?? "foundation")
   const activeLens = lenses.find((l) => l.key === lens) ?? lenses[0]
   const aura = auraGradientForBiotic(activeLens.focusBiotic, visual.confidence)
@@ -91,38 +100,58 @@ export function TwinDashboard({
           </span>
         </div>
 
-        {/* hero — living figure (lens-tinted) + score */}
+        {/* hero — interactive System Map (tap the hotspots) + score */}
         <div className="overflow-hidden rounded-2xl" style={{ background: "white", border: "1px solid var(--border)", boxShadow: "0 8px 32px rgba(26,46,18,0.10)" }}>
           <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
-          <div className="flex flex-col items-center gap-6 p-6 md:flex-row md:items-center md:gap-10 md:p-8">
-            <div className="relative shrink-0">
-              <div
-                aria-hidden
-                className="eb-aura pointer-events-none absolute left-1/2 top-1/2 h-[115%] w-[115%] -translate-x-1/2 -translate-y-1/2 rounded-full"
-                style={{ background: aura, opacity: 0.55 + 0.45 * visual.confidence, animationDuration: `${visual.pulseSec}s` }}
-              />
-              <DigitalTwinFigure size={240} src={figureSrc} alt="Your Food System Digital Twin" showParticles={visual.particleDensity > 0.35} />
-            </div>
-            <div className="flex flex-1 flex-col items-center gap-5 sm:flex-row sm:items-center">
-              <ScoreRing score={visual.ringScore} color="var(--icon-green)" gradientId="twin-page-ring" profileType={visual.momentumLabel} className="relative h-40 w-40 shrink-0" />
-              <div className="min-w-0 flex-1 text-center sm:text-left">
-                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--muted-foreground)" }}>Food System Score · {visual.momentumLabel}</p>
-                <h2 className="mt-1 font-serif text-xl font-bold leading-snug" style={{ color: "var(--foreground)" }}>
-                  Learning about your food system, constantly.
-                </h2>
-                {nba && (
-                  <div className="mt-4 flex items-start gap-3 rounded-xl px-4 py-3" style={{ background: "linear-gradient(135deg, rgba(245,197,24,0.10), rgba(245,166,35,0.08))", border: "1px solid rgba(245,166,35,0.25)" }}>
-                    <Target size={14} style={{ color: "var(--icon-orange)", flexShrink: 0, marginTop: 2 }} />
-                    <div>
-                      <p className="mb-0.5 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-orange)" }}>Your Twin&apos;s next best action</p>
-                      <p className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>{nba.action}</p>
-                    </div>
+          <div className="p-6 md:p-8">
+            <SystemMap
+              twin={twin}
+              visual={visual}
+              figureSrc={figureSrc}
+              baseAura={aura}
+              figureSize={280}
+              overlay={<MealReactionBurst playKey={mealBurst} />}
+              defaultPanel={
+                <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center">
+                  <ScoreRing score={visual.ringScore} color="var(--icon-green)" gradientId="twin-page-ring" profileType={visual.momentumLabel} className="relative h-40 w-40 shrink-0" />
+                  <div className="min-w-0 flex-1 text-center sm:text-left">
+                    <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--muted-foreground)" }}>Food System Score · {visual.momentumLabel}</p>
+                    <h2 className="mt-1 font-serif text-xl font-bold leading-snug" style={{ color: "var(--foreground)" }}>
+                      Learning about your food system, constantly.
+                    </h2>
+                    <p className="mt-1.5 text-xs" style={{ color: "var(--muted-foreground)" }}>
+                      Tap a glowing point on your Twin to see what&apos;s happening inside.
+                    </p>
+                    {nba && (
+                      <div className="mt-4 flex items-start gap-3 rounded-xl px-4 py-3 text-left" style={{ background: "linear-gradient(135deg, rgba(245,197,24,0.10), rgba(245,166,35,0.08))", border: "1px solid rgba(245,166,35,0.25)" }}>
+                        <Target size={14} style={{ color: "var(--icon-orange)", flexShrink: 0, marginTop: 2 }} />
+                        <div>
+                          <p className="mb-0.5 text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-orange)" }}>Your Twin&apos;s next best action</p>
+                          <p className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>{nba.action}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
+              }
+            />
+            {demo && (
+              <div className="mt-5 flex justify-center border-t border-border pt-4">
+                <button
+                  type="button"
+                  onClick={onNewMeal}
+                  className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold text-white transition-transform hover:-translate-y-0.5"
+                  style={{ background: "linear-gradient(135deg, #4CB648, #2DAA6E)", boxShadow: "0 6px 20px rgba(76,182,72,0.25)" }}
+                >
+                  <UtensilsCrossed size={13} /> Simulate a meal — watch your Twin learn
+                </button>
               </div>
-            </div>
+            )}
           </div>
         </div>
+
+        {/* Inside You — the personalized animated story */}
+        <InsideYouSection twin={twin} className="pt-8" />
 
         {/* lenses */}
         <div className="mt-8">

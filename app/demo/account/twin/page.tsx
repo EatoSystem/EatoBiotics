@@ -42,8 +42,8 @@ export default async function DemoTwinPage() {
           <p className="text-xs font-semibold" style={{ color: "var(--icon-teal)" }}>Digital Twin preview — sample data for Sarah M.</p>
         </div>
       </div>
-      {/* userId=null → Realtime hook no-ops; this is a static demo snapshot. */}
-      <TwinDashboard twin={twin} visual={visual} feed={feed} lenses={lenses} userId={null} figureSrc={twinFigureSrc("female")} />
+      {/* userId=null → Realtime hook no-ops; demo mode adds "Simulate a meal". */}
+      <TwinDashboard twin={twin} visual={visual} feed={feed} lenses={lenses} userId={null} figureSrc={twinFigureSrc("female")} demo />
     </div>
   )
 }
