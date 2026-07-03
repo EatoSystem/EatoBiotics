@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * useTwinRealtime — keeps the Living Twin feeling live.
+ * useTwinRealtime — keeps the living Food System feeling live.
  *
  * 1) Subscribes (best-effort) to INSERTs on the member's `analyses` rows via
  *    Supabase Realtime; a new meal → router.refresh() re-derives the Twin. Wrapped

@@ -16,6 +16,7 @@ import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
 import { X, Sparkles, Utensils, Camera } from "lucide-react"
 import { useCountUp } from "./use-count-up"
+import { MealImpactChips } from "./meal-impact"
 import { AFTER_MEAL_STEPS } from "@/lib/account/evolution"
 import type { BioticKey } from "@/lib/agent-loop/types"
 
@@ -27,6 +28,8 @@ export interface QuickLogResult {
   probiotic_score: number
   postbiotic_score: number
   insight: string
+  /** analyse-meal tags (Fermented Foods, High Fibre, …) — drive the impact chips. */
+  tags?: string[]
 }
 
 const MOCK_RESULT: QuickLogResult = {
@@ -36,6 +39,7 @@ const MOCK_RESULT: QuickLogResult = {
   probiotic_score: 74,
   postbiotic_score: 61,
   insight: "Strong all-rounder — the kimchi brings live cultures while quinoa and vegetables feed your resident microbes.",
+  tags: ["Fermented Foods", "Omega-3s", "Plant Diversity", "Protein Rich"],
 }
 
 const EXAMPLES = ["Porridge with berries & seeds", "Lentil soup and sourdough", "Chicken, greens & kefir"]
@@ -164,7 +168,7 @@ export function QuickLog({
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Log a meal">
       <button type="button" aria-label="Close" onClick={close} className="absolute inset-0" style={{ background: "rgba(5,10,3,0.72)", backdropFilter: "blur(4px)" }} />
       <div
-        className="eb-pop-in relative w-full max-w-lg overflow-hidden rounded-2xl"
+        className="eb-pop-in relative max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-2xl"
         style={{ background: "linear-gradient(175deg, #10200A 0%, #0B1607 70%)", border: "1px solid rgba(253,251,247,0.16)", boxShadow: "0 30px 90px rgba(0,0,0,0.6)" }}
       >
         <div className="h-[3px]" style={{ background: "linear-gradient(90deg, #A8E063, #4CB648, #2DAA6E, #F5C518, #F5A623)" }} />
@@ -182,7 +186,7 @@ export function QuickLog({
           {phase !== "result" && (
             <>
               <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#A8E063" }}>Quick log</p>
-              <h2 className="mt-1 font-serif text-xl font-bold" style={{ color: "#FDFBF7" }}>Show your Twin a meal</h2>
+              <h2 className="mt-1 font-serif text-xl font-bold" style={{ color: "#FDFBF7" }}>Show your Food System a meal</h2>
               <textarea
                 ref={inputRef}
                 value={input}
@@ -257,7 +261,7 @@ export function QuickLog({
                 {phase === "analysing" ? (
                   <>
                     <span className="eb-aura h-4 w-4 rounded-full" style={{ background: "radial-gradient(circle, #A8E063 0%, rgba(168,224,99,0) 70%)" }} />
-                    Your Twin is tasting it…
+                    Your Food System is tasting it…
                   </>
                 ) : (
                   <>
@@ -271,7 +275,7 @@ export function QuickLog({
           {phase === "result" && result && (
             <div className="text-center">
               <p className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest" style={{ background: "rgba(168,224,99,0.12)", border: "1px solid rgba(168,224,99,0.35)", color: "#A8E063" }}>
-                <Sparkles size={10} /> Your Twin just learned from this
+                <Sparkles size={10} /> Your Food System just learned from this
               </p>
               <h2 className="mt-3 font-serif text-lg font-bold leading-snug" style={{ color: "#FDFBF7" }}>{result.meal_name}</h2>
               <div className="mt-3">
@@ -293,6 +297,9 @@ export function QuickLog({
                   )
                 })}
               </div>
+              {/* what this meal does to the Food System — visual-first impact */}
+              <MealImpactChips input={result} />
+
               <p className="mt-4 rounded-xl px-4 py-3 text-left text-sm leading-relaxed" style={{ background: "rgba(253,251,247,0.06)", border: "1px solid rgba(253,251,247,0.14)", color: "rgba(253,251,247,0.85)" }}>
                 {result.insight}
               </p>

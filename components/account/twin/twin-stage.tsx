@@ -238,12 +238,12 @@ export function TwinStage({
                   posterSrc={video.poster}
                   mp4Src={video.mp4}
                   webmSrc={video.webm}
-                  alt="Your Food System Digital Twin"
+                  alt="The Food System Inside You"
                   className="h-full w-full object-cover"
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center" style={{ background: CREAM }}>
-                  <DigitalTwinFigure size={300} src={figureSrc} alt="Your Food System Digital Twin" showParticles={visual.particleDensity > 0.35 || mood.particles || evolution.index >= 3} />
+                  <DigitalTwinFigure size={300} src={figureSrc} alt="The Food System Inside You" showParticles={visual.particleDensity > 0.35 || mood.particles || evolution.index >= 3} />
                 </div>
               )}
             </div>
@@ -323,7 +323,7 @@ export function TwinStage({
               )
             })}
 
-            <MealReactionBurst playKey={burstKey} message={burstMessage ?? "Your Twin just learned from your meal"} />
+            <MealReactionBurst playKey={burstKey} message={burstMessage ?? "Your Food System just learned from your meal"} />
 
             {/* live pill */}
             <div className="absolute -top-1 left-0 flex items-center gap-2 rounded-full px-3 py-1.5 backdrop-blur" style={{ background: "rgba(253,251,247,0.08)", border: "1px solid rgba(253,251,247,0.18)" }}>
@@ -361,7 +361,7 @@ export function TwinStage({
           {/* ── score cockpit ── */}
           <div className="min-w-0">
             <p className="eb-reveal text-[11px] font-bold uppercase tracking-[0.22em]" style={{ color: "#A8E063", animationDelay: "200ms" }}>
-              Your Digital Twin · {visual.momentumLabel}
+              Your Food System Today · {visual.momentumLabel}
               <span className="ml-2 font-semibold normal-case tracking-normal" style={{ color: "rgba(253,251,247,0.4)" }}>{mood.line}</span>
             </p>
             <div className="eb-reveal mt-3 flex flex-wrap items-end gap-x-4 gap-y-2" style={{ animationDelay: "300ms" }}>
@@ -381,7 +381,7 @@ export function TwinStage({
               </span>
             </div>
             <h2 className="eb-reveal mt-2 max-w-xl font-serif text-lg font-bold leading-snug md:text-xl" style={{ color: "rgba(253,251,247,0.88)", animationDelay: "400ms" }}>
-              The Food System inside you, learning from every meal.
+              The Food System Inside You — watch it learn, see it improve.
               {" "}
               <Link href="/method" className="whitespace-nowrap align-middle font-sans text-xs font-semibold underline underline-offset-2 transition-colors hover:text-white" style={{ color: "rgba(253,251,247,0.45)" }}>
                 How is this scored?
@@ -410,7 +410,7 @@ export function TwinStage({
             <div className="eb-reveal mt-6 flex flex-wrap gap-3" style={{ animationDelay: "1100ms" }}>
               {detailHref && (
                 <Link href={detailHref} className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5" style={{ background: "linear-gradient(135deg, #4CB648, #2DAA6E)", boxShadow: "0 6px 24px rgba(76,182,72,0.35)" }}>
-                  Open My Digital Twin <ArrowRight className="h-4 w-4" />
+                  Open My Food System <ArrowRight className="h-4 w-4" />
                 </Link>
               )}
               {onAddMeal ? (

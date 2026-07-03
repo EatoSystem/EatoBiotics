@@ -52,7 +52,7 @@ export interface AccountTwinResult {
 
 const BIOTIC_NAME = { prebiotic: "Prebiotics", probiotic: "Probiotics", postbiotic: "Postbiotics" } as const
 
-/** Which biotic a meal most supported (for the "what your Twin learned" feed). */
+/** Which biotic a meal most supported (for the "what your Food System learned" feed). */
 function topBiotic(m: AccountTwinMeal): keyof typeof BIOTIC_NAME {
   const entries: [keyof typeof BIOTIC_NAME, number][] = [
     ["prebiotic", m.prebiotic],
@@ -118,7 +118,7 @@ export async function buildAccountTwin(input: AccountTwinInput): Promise<Account
   return { twin, feed }
 }
 
-/** The "what your Twin just learned" feed — newest first. */
+/** The "what your Food System just learned" feed — newest first. */
 function buildFeed(input: AccountTwinInput, twin: FoodSystemDigitalTwin): TwinFeedEntry[] {
   const feed: TwinFeedEntry[] = []
   const { momentum, scoreDelta } = twin.progress

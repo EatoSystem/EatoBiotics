@@ -13,17 +13,18 @@ import { FlowDiagram } from "@/components/digital-twin/flow-diagram"
 import { BioticEcosystems } from "@/components/digital-twin/biotic-ecosystems"
 import { WeekDashboard } from "@/components/digital-twin/week-dashboard"
 import { SystemDimensions } from "@/components/digital-twin/system-dimensions"
+import { InsideOutEmbed } from "@/components/twin-motion/inside-out-embed"
 import { ImpactJourney } from "@/components/digital-twin/impact-journey"
 import { OrbitHub } from "@/components/digital-twin/orbit-hub"
 import { ScoreRing } from "@/components/assessment/score-ring"
 
 export const metadata: Metadata = {
-  title: "Your Food System Digital Twin",
+  title: "Your Food System — EatoBiotics",
   description:
-    "A living digital twin of the Food System Inside You. See it, understand it, develop it day by day, and feel the difference — improving your Food System, and helping build the Food System.",
+    "Build the Food System Inside You. Watch it learn. See it improve. Feel the difference. A living picture of your Food System — powered by a Food System Digital Twin.",
   openGraph: {
-    title: "Meet Your Food System Digital Twin — EatoBiotics",
-    description: "Visualise, understand, develop and improve the Food System Inside You.",
+    title: "Your Food System — EatoBiotics",
+    description: "Build the Food System Inside You. Watch it learn. See it improve. Feel the difference.",
     url: "https://eatobiotics.com/digital-twin",
   },
 }
@@ -69,24 +70,24 @@ export default function DigitalTwinPage() {
       {/* ════ 1 · Cinematic Hero ════ */}
       <section className="relative flex min-h-[90vh] flex-col items-center justify-center px-6 pt-20 pb-12 text-center">
         <ScrollReveal className="flex flex-col items-center">
-          <Eyebrow>Your Digital Twin</Eyebrow>
+          <Eyebrow>Your Food System</Eyebrow>
           <HeroStage>
             <HeroVideo
               posterSrc="/videos/dt-hero-poster.jpg"
               mp4Src="/videos/dt-hero.mp4"
               webmSrc="/videos/dt-hero.webm"
-              alt="Your living Food System Digital Twin"
+              alt="The living Food System Inside You"
               className="h-auto w-full"
             />
           </HeroStage>
           <h1 style={lora} className="mx-auto -mt-2 max-w-4xl text-5xl font-bold leading-[1.02] text-foreground sm:text-6xl md:text-7xl text-balance">
-            Meet your <span className="brand-gradient-text">Digital Twin</span>.
+            Build the <span className="brand-gradient-text">Food System Inside You</span>.
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
-            A living picture of the Food System Inside You — see it, understand it, grow it,
-            and feel the difference.
+            Watch it learn. See it improve. Feel the difference. A living picture of your Food
+            System — powered by a Food System Digital Twin.
           </p>
-          <div className="mt-9 flex justify-center"><CtaButton>Build My Digital Twin</CtaButton></div>
+          <div className="mt-9 flex justify-center"><CtaButton>Build My Food System</CtaButton></div>
         </ScrollReveal>
       </section>
 
@@ -311,9 +312,9 @@ export default function DigitalTwinPage() {
             <div className="mx-auto mb-14 max-w-2xl text-center">
               <Eyebrow>A lifetime of learning</Eyebrow>
               <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-                One Twin. A lifetime of learning.
+                One Food System. A lifetime of learning.
               </h2>
-              <p className="mt-5 text-lg text-muted-foreground">Your Digital Twin evolves with you — growing through every season of life.</p>
+              <p className="mt-5 text-lg text-muted-foreground">Your Food System evolves with you — growing through every season of life.</p>
             </div>
           </ScrollReveal>
           <ScrollReveal>
@@ -335,6 +336,29 @@ export default function DigitalTwinPage() {
         </div>
       </section>
 
+      {/* ════ 8.5 · From the inside out — the EatoSystem philosophy ════ */}
+      <section className="relative overflow-hidden px-6 py-24" style={{ background: "linear-gradient(175deg, #0B1607 0%, #122208 55%, #16290F 100%)" }}>
+        <div className="mx-auto max-w-[1100px]">
+          <ScrollReveal>
+            <div className="mx-auto mb-10 max-w-2xl text-center">
+              <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: "#A8E063" }}>From the inside out</p>
+              <h2 style={{ ...lora, color: "#FDFBF7" }} className="text-4xl font-semibold sm:text-5xl text-balance">
+                You are where the Food System begins.
+              </h2>
+              <p className="mt-5 text-lg" style={{ color: "rgba(253,251,247,0.65)" }}>
+                Improve the Food System Inside You, and it ripples outward — through your family,
+                your community, your county, your country — into the Food System itself.
+              </p>
+            </div>
+          </ScrollReveal>
+          <ScrollReveal>
+            <div className="mx-auto max-w-3xl">
+              <InsideOutEmbed />
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
       {/* ════ 9 · Connected to everything — orbiting hub ════ */}
       <section className="px-6 py-24" style={{ background: tint(GREEN, 4) }}>
         <div className="mx-auto max-w-[1100px]">
@@ -342,9 +366,9 @@ export default function DigitalTwinPage() {
             <div className="mx-auto mb-12 max-w-2xl text-center">
               <Eyebrow>The road ahead</Eyebrow>
               <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-                One Twin. Connected to everything.
+                One Food System. Connected to everything.
               </h2>
-              <p className="mt-5 text-lg text-muted-foreground">Every capability orbits a single intelligent core — your Digital Twin.</p>
+              <p className="mt-5 text-lg text-muted-foreground">Every capability orbits a single intelligent core — your Food System, powered by its Digital Twin.</p>
             </div>
           </ScrollReveal>
           <ScrollReveal><OrbitHub /></ScrollReveal>
@@ -360,17 +384,17 @@ export default function DigitalTwinPage() {
               posterSrc="/videos/dt-close-poster.jpg"
               mp4Src="/videos/dt-close.mp4"
               webmSrc="/videos/dt-close.webm"
-              alt="Your Food System Digital Twin"
+              alt="The Food System Inside You"
               className="h-auto w-full"
             />
           </HeroStage>
           <h2 style={lora} className="mx-auto -mt-2 max-w-3xl text-4xl font-bold text-foreground sm:text-6xl text-balance">
-            Build your <span className="brand-gradient-text">Digital Twin</span>.
+            Build the <span className="brand-gradient-text">Food System Inside You</span>.
           </h2>
           <p className="mx-auto mt-5 max-w-xl text-lg text-muted-foreground">
-            Improve the Food System Inside You. Help build the Food System.
+            Watch it learn. See it improve. Feel the difference — and help build the Food System.
           </p>
-          <div className="mt-9 flex justify-center"><CtaButton>Build My Digital Twin</CtaButton></div>
+          <div className="mt-9 flex justify-center"><CtaButton>Build My Food System</CtaButton></div>
         </ScrollReveal>
       </section>
 

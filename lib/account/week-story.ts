@@ -1,5 +1,5 @@
 /**
- * EatoBiotics — "Your Week Inside" story builder (pure, deterministic).
+ * EatoBiotics — "Your Food System This Week" story builder (pure, deterministic).
  *
  * Turns the twin's last 7 days into 5–6 full-screen story slides (the Monday
  * recap): intro, meals learned, best meal, biotic win, score trend, and next
@@ -52,7 +52,7 @@ export function buildWeekStory(twin: FoodSystemDigitalTwin): WeekStorySlide[] {
 
   slides.push({
     key: "intro",
-    eyebrow: "Your Week Inside",
+    eyebrow: "Your Food System This Week",
     title: "Here's what I learned about you this week.",
     detail: "30 seconds — tap to move through.",
     accent: "#A8E063",

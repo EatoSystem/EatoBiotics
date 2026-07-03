@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * TwinHero — the premium "Your Digital Twin" hero at the top of the account.
+ * TwinHero — the premium "Your Food System" hero at the top of the account.
  *
  * Shows the member's Digital Twin as a Remotion-rendered animated figure
  * (male/female by sex, played via HeroVideo; couple still-figure fallback when
@@ -59,12 +59,12 @@ export function TwinHero({
               posterSrc={video.poster}
               mp4Src={video.mp4}
               webmSrc={video.webm}
-              alt="Your Food System Digital Twin"
+              alt="The Food System Inside You"
               className="mx-auto block h-auto w-full max-w-[760px]"
             />
           ) : (
             <div className="py-4">
-              <DigitalTwinFigure size={300} src={figureSrc} alt="Your Food System Digital Twin" showParticles={visual.particleDensity > 0.35} />
+              <DigitalTwinFigure size={300} src={figureSrc} alt="The Food System Inside You" showParticles={visual.particleDensity > 0.35} />
             </div>
           )}
           {/* live / learning pill */}
@@ -84,9 +84,9 @@ export function TwinHero({
           <ScoreRing score={visual.ringScore} color="var(--icon-green)" gradientId="account-twin-hero-ring" profileType={visual.momentumLabel} className="relative mx-auto h-36 w-36 shrink-0 sm:h-40 sm:w-40" />
 
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--muted-foreground)" }}>Your Digital Twin</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--muted-foreground)" }}>Your Food System</p>
             <h2 className="mt-1 font-serif text-xl font-bold leading-snug md:text-2xl" style={{ color: "var(--foreground)" }}>
-              Your Digital Twin has been learning about your Food System.
+              Your Food System has been learning about your Food System.
             </h2>
 
             {/* strongest + weakest biotic */}
@@ -113,7 +113,7 @@ export function TwinHero({
             {/* CTAs */}
             <div className="mt-5 flex flex-wrap gap-3">
               <Link href={detailHref} className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90" style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", boxShadow: "0 3px 10px rgba(45,170,110,0.28)" }}>
-                Open My Digital Twin <ArrowRight className="h-4 w-4" />
+                Open My Food System <ArrowRight className="h-4 w-4" />
               </Link>
               <Link href={addMealHref} className="inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-semibold transition-colors hover:bg-black/[0.03]" style={{ borderColor: "var(--icon-green)", color: "var(--icon-green)" }}>
                 <Utensils className="h-4 w-4" /> Add Today&apos;s Meal

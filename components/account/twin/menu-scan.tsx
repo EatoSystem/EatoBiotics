@@ -70,7 +70,7 @@ export function MenuScan({ mock = false }: { mock?: boolean }) {
         <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Eating out?</p>
         <h3 className="mt-1 font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>Score the menu.</h3>
         <p className="mt-1 text-sm" style={{ color: "var(--muted-foreground)" }}>
-          Paste any menu and your Twin picks the best dishes for what it needs most right now.
+          Paste any menu and your Food System picks the best dishes for what it needs most right now.
         </p>
       </div>
 
@@ -94,7 +94,7 @@ export function MenuScan({ mock = false }: { mock?: boolean }) {
               className="mt-3 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold text-white transition-transform enabled:hover:-translate-y-0.5 disabled:opacity-50"
               style={{ background: "linear-gradient(135deg, #4CB648, #2DAA6E)", boxShadow: "0 4px 16px rgba(76,182,72,0.3)" }}
             >
-              <UtensilsCrossed size={14} /> {busy ? "Your Twin is reading the menu…" : "Pick my best dishes"}
+              <UtensilsCrossed size={14} /> {busy ? "Your Food System is reading the menu…" : "Pick my best dishes"}
             </button>
           </>
         ) : (
@@ -130,7 +130,7 @@ export function MenuScan({ mock = false }: { mock?: boolean }) {
           </>
         )}
         <p className="mt-3 text-[11px] leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
-          Food-first suggestions from your Twin&apos;s current levels — not medical advice.
+          Food-first suggestions from your Food System&apos;s current levels — not medical advice.
         </p>
       </div>
     </section>

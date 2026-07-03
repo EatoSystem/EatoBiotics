@@ -4,7 +4,7 @@
  * TwinLenses — "one Twin, many lenses."
  *
  * A chip row (Foundation + the live specialised systems) that lets a member view
- * their single Living Twin through each lens. Selecting a lens re-tints the Twin
+ * their single living Food System through each lens. Selecting a lens re-tints the Twin
  * (handled by the parent via onSelect) and shows that system's framing: what it
  * watches, the member's current standing on its focus biotic, and a link to the
  * system. Presentational + non-diagnostic. Phase 2 re-frames the foundation twin;

@@ -8,7 +8,7 @@ import { twinFigureSrc, twinVideo } from "@/lib/account/twin-figure"
 import { TwinDashboard } from "@/components/account/twin/twin-dashboard"
 
 export const metadata: Metadata = {
-  title: "Digital Twin Preview — EatoBiotics",
+  title: "Your Food System Preview — EatoBiotics",
   robots: "noindex",
 }
 
@@ -39,7 +39,7 @@ export default async function DemoTwinPage() {
           <Link href="/demo/account/member" className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground">
             <ArrowLeft size={12} /> Account
           </Link>
-          <p className="text-xs font-semibold" style={{ color: "var(--icon-teal)" }}>Digital Twin preview — sample data for Sarah M.</p>
+          <p className="text-xs font-semibold" style={{ color: "var(--icon-teal)" }}>Your Food System preview — sample data for Sarah M.</p>
         </div>
       </div>
       {/* userId=null → Realtime hook no-ops; demo mode adds "Simulate a meal". */}

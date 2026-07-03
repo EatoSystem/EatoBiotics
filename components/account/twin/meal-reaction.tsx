@@ -5,7 +5,7 @@
  *
  * Rendered over the twin figure; each time `playKey` increments, plays a ~2.6s
  * CSS/SVG burst (no Remotion — instant): coloured food particles converge into
- * the figure, a ring blooms outward, and a "Your Twin just learned from your
+ * the figure, a ring blooms outward, and a "Your Food System just learned from your
  * meal" chip pops in. Deterministic particle placement; motion is
  * reduced-motion-gated via the eb-* classes (the chip still appears without it).
  */
@@ -26,7 +26,7 @@ const PARTICLES = [
   { x: -50, y: -140, c: "#F5C518", s: 7, d: 220 },
 ]
 
-export function MealReactionBurst({ playKey, message = "Your Twin just learned from your meal" }: { playKey: number; message?: string }) {
+export function MealReactionBurst({ playKey, message = "Your Food System just learned from your meal" }: { playKey: number; message?: string }) {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {

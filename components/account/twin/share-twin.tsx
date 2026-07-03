@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * ShareTwin — "Share my Twin" button for the stage CTA row.
+ * ShareTwin — "Share my Food System" button for the stage CTA row.
  *
  * Rasterises the member's twin to a 1080×1350 card (lib/account/share-card,
  * pure Canvas 2D) and hands it to the Web Share API when available, otherwise
@@ -38,14 +38,14 @@ export function ShareTwin({ twin, visual }: { twin: FoodSystemDigitalTwin; visua
       })
       const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/png"))
       if (!blob) return
-      const file = new File([blob], "my-digital-twin.png", { type: "image/png" })
+      const file = new File([blob], "my-food-system.png", { type: "image/png" })
       if (typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: "My Digital Twin — EatoBiotics" }).catch(() => {})
+        await navigator.share({ files: [file], title: "My Food System — EatoBiotics" }).catch(() => {})
       } else {
         const url = URL.createObjectURL(blob)
         const a = document.createElement("a")
         a.href = url
-        a.download = "my-digital-twin.png"
+        a.download = "my-food-system.png"
         a.click()
         URL.revokeObjectURL(url)
       }
@@ -62,7 +62,7 @@ export function ShareTwin({ twin, visual }: { twin: FoodSystemDigitalTwin; visua
       className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-colors hover:bg-white/10 disabled:opacity-60"
       style={{ border: "1px solid rgba(253,251,247,0.3)", color: "rgba(253,251,247,0.85)" }}
     >
-      <Share2 className="h-4 w-4" /> {busy ? "Preparing…" : "Share my Twin"}
+      <Share2 className="h-4 w-4" /> {busy ? "Preparing…" : "Share my Food System"}
     </button>
   )
 }

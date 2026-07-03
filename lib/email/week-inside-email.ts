@@ -1,5 +1,5 @@
 /**
- * "Your Week Inside" — the Monday story, as an email.
+ * "Your Food System This Week" — the Monday story, as an email.
  *
  * Renders the member's WeekStorySlide[] (lib/account/week-story — the same
  * slides the in-app story shows) into a dark-stage-styled HTML email with a
@@ -16,7 +16,7 @@ function esc(s: string): string {
 }
 
 export function buildWeekInsideEmail(firstName: string | null, slides: WeekStorySlide[]): { subject: string; html: string; text: string } {
-  const subject = "Your Week Inside — what your Digital Twin learned"
+  const subject = "Your Food System This Week — what your Food System learned"
 
   const slideHtml = slides
     .map(
@@ -37,14 +37,14 @@ export function buildWeekInsideEmail(firstName: string | null, slides: WeekStory
 <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:linear-gradient(175deg,#0B1607 0%,#122208 60%,#16290F 100%);background-color:#0B1607;border-radius:16px;overflow:hidden;">
   <tr><td style="height:4px;background:linear-gradient(90deg,#A8E063,#4CB648,#2DAA6E,#F5C518,#F5A623);font-size:0;">&nbsp;</td></tr>
   <tr><td style="padding:30px 28px 8px 28px;">
-    <p style="margin:0;font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#A8E063;font-family:Arial,sans-serif;">Your Week Inside</p>
+    <p style="margin:0;font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#A8E063;font-family:Arial,sans-serif;">Your Food System This Week</p>
     <p style="margin:8px 0 0 0;font-size:24px;line-height:1.25;font-weight:bold;color:#FDFBF7;font-family:Georgia,serif;">
-      ${firstName ? esc(firstName) + ", h" : "H"}ere's what your Digital Twin learned this week.
+      ${firstName ? esc(firstName) + ", h" : "H"}ere's what your Food System learned this week.
     </p>
   </td></tr>
   ${slideHtml}
   <tr><td align="center" style="padding:6px 28px 30px 28px;">
-    <a href="${BASE_URL}/account/twin" style="display:inline-block;background:#4CB648;color:#ffffff;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;text-decoration:none;padding:13px 28px;border-radius:999px;">Open your Digital Twin →</a>
+    <a href="${BASE_URL}/account/twin" style="display:inline-block;background:#4CB648;color:#ffffff;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;text-decoration:none;padding:13px 28px;border-radius:999px;">Open your Food System →</a>
   </td></tr>
   <tr><td style="padding:0 28px 26px 28px;">
     <p style="margin:0;font-size:11px;line-height:1.5;color:rgba(253,251,247,0.4);font-family:Arial,sans-serif;">
@@ -57,9 +57,9 @@ export function buildWeekInsideEmail(firstName: string | null, slides: WeekStory
 </body></html>`
 
   const text =
-    `Your Week Inside — what your Digital Twin learned\n\n` +
+    `Your Food System This Week — what your Food System learned\n\n` +
     slides.map((s) => `${s.eyebrow.toUpperCase()}\n${s.stat ? s.stat + " — " : ""}${s.title}\n${s.detail}\n`).join("\n") +
-    `\nOpen your Digital Twin: ${BASE_URL}/account/twin\n\n` +
+    `\nOpen your Food System: ${BASE_URL}/account/twin\n\n` +
     `EatoBiotics provides food-first guidance for general wellbeing and is not medical advice.`
 
   return { subject, html, text }

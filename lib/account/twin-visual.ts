@@ -2,7 +2,7 @@
  * EatoBiotics — Twin → visual state mapper.
  *
  * A pure, deterministic function that turns the read-only `FoodSystemDigitalTwin`
- * into the handful of visual parameters the account's Living Twin renders (glow
+ * into the handful of visual parameters the account's living Food System renders (glow
  * colours, particle density, pulse speed, "confidence" haze). Kept pure + free of
  * React so it is unit-testable and reused identically on server and client.
  */

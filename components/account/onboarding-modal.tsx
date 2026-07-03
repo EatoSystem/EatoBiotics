@@ -54,7 +54,7 @@ export function OnboardingModal({ memberName, consultHref, skip }: OnboardingMod
         })
       }
       if (sexChoice) {
-        // Personalises the Living Twin figure; partial PATCH won't touch name/age.
+        // Personalises the living Food System figure; partial PATCH won't touch name/age.
         await fetch("/api/account/settings", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -129,8 +129,8 @@ export function OnboardingModal({ memberName, consultHref, skip }: OnboardingMod
                 ))}
               </div>
 
-              {/* Personalise the Living Twin figure */}
-              <p className="text-sm text-muted-foreground mb-2">Your Twin is…</p>
+              {/* Personalise the living Food System figure */}
+              <p className="text-sm text-muted-foreground mb-2">Your Food System is…</p>
               <div className="grid grid-cols-2 gap-2 mb-6">
                 {[
                   { id: "female", label: "Female" },

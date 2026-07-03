@@ -64,7 +64,7 @@ export function ForecastCard({ twin }: { twin: FoodSystemDigitalTwin }) {
     <section className="mx-auto max-w-5xl px-4 pt-8 md:px-8">
       <div className="mb-4">
         <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>What if…</p>
-        <h3 className="mt-1 font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>Try a habit on your Twin first.</h3>
+        <h3 className="mt-1 font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>Try a habit on your Food System first.</h3>
         <p className="mt-1 text-sm" style={{ color: "var(--muted-foreground)" }}>
           Toggle a habit and see how your next four weeks could move.
         </p>

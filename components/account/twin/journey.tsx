@@ -59,7 +59,7 @@ export function Journey({ twin, streak = 0 }: { twin: FoodSystemDigitalTwin; str
     <section className="mx-auto max-w-5xl px-4 pt-8 md:px-8">
       <div className="mb-4">
         <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Journey</p>
-        <h3 className="mt-1 font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>Your journey so far</h3>
+        <h3 className="mt-1 font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>Your Food System Journey</h3>
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5" style={{ boxShadow: "0 2px 12px rgba(26,46,18,0.05)" }}>

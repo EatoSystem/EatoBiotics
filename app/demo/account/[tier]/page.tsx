@@ -170,7 +170,7 @@ export default async function DemoAccountTierPage({
     getMockData()
   const dailyPromptIndex = new Date().getDay()
 
-  /* ── Living Twin (demo) — assembled from Sarah M.'s sample data so the account
+  /* ── living Food System (demo) — assembled from Sarah M.'s sample data so the account
        Twin can be previewed + tested on every tier. ── */
   const { twin: demoTwin, feed: demoFeed } = await buildAccountTwin({
     score: 62,
@@ -198,7 +198,7 @@ export default async function DemoAccountTierPage({
             </p>
             <span className="text-muted-foreground/40 text-xs">·</span>
             <Link href="/demo/account/twin" className="flex items-center gap-1 text-xs font-semibold hover:underline" style={{ color: TIER_COLORS[tier] }}>
-              View the Digital Twin →
+              View My Food System →
             </Link>
           </div>
           <Link

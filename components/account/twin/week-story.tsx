@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * WeekStory — the "Your Week Inside" full-screen story.
+ * WeekStory — the "Your Food System This Week" full-screen story.
  *
  * Instagram-style recap of the member's week from their Twin: progress
  * segments up top, tap/arrow to advance, X (or Esc) to close. Slides come from
@@ -50,7 +50,7 @@ export function WeekStory({ twin, onClose }: { twin: FoodSystemDigitalTwin; onCl
       style={{ background: "linear-gradient(175deg, #0B1607 0%, #122208 55%, #16290F 100%)" }}
       role="dialog"
       aria-modal="true"
-      aria-label="Your Week Inside"
+      aria-label="Your Food System This Week"
     >
       {/* ambient glow tinted by the slide accent */}
       <div aria-hidden className="pointer-events-none absolute inset-0 transition-all duration-700" style={{ background: `radial-gradient(circle at 50% 30%, ${slide.accent}22 0%, transparent 60%)` }} />
@@ -118,7 +118,7 @@ export function WeekStoryButton({ twin, variant = "light" }: { twin: FoodSystemD
             : { border: "1px solid var(--icon-green)", color: "var(--icon-green)", background: "color-mix(in srgb, var(--icon-green) 6%, white)" }
         }
       >
-        <PlayCircle size={13} /> Your Week Inside
+        <PlayCircle size={13} /> Your Food System This Week
       </button>
       {/* Portalled to <body>: keeps the fixed overlay viewport-sized even if an
           ancestor (e.g. an animated <main>) ever becomes a containing block. */}

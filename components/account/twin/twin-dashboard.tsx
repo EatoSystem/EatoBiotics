@@ -96,7 +96,7 @@ export function TwinDashboard({
               <ArrowLeft size={12} /> Account
             </Link>
             <h1 className="mt-1 font-serif text-2xl font-bold md:text-3xl" style={{ color: "#FDFBF7" }}>
-              Your Digital Twin
+              Your Food System
             </h1>
           </div>
           <WeekStoryButton twin={twin} variant="dark" />
@@ -132,7 +132,7 @@ export function TwinDashboard({
       <div className="mx-auto max-w-5xl px-5 py-8 md:px-8">
         {/* lenses */}
         <div>
-          <SectionLabel>One Twin · many lenses</SectionLabel>
+          <SectionLabel>One Food System · many lenses</SectionLabel>
           <TwinLenses lenses={lenses} selected={lens} onSelect={setLens} biotics={twin.biotics} />
         </div>
 
@@ -154,7 +154,7 @@ export function TwinDashboard({
             <BioticsProgressPanel biotics={twin.biotics} />
           </div>
           <div>
-            <SectionLabel>Progress &amp; memory</SectionLabel>
+            <SectionLabel>Your Food System Memory</SectionLabel>
             <FoodSystemMemoryPanel twin={twin} />
           </div>
         </div>
@@ -186,7 +186,7 @@ export function TwinDashboard({
         <div className="mt-8">
           <div className="mb-3 flex items-center gap-1.5">
             <Activity size={12} style={{ color: "var(--icon-green)" }} />
-            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>What your Twin has learned</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>What your Food System has learned</p>
           </div>
           <div className="space-y-1.5">
             {feed.map((e) => {

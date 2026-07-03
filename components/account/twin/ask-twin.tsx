@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * AskTwin — "Ask your Digital Twin" entry into the AI consult.
+ * AskTwin — "Ask your Food System" entry into the AI consult.
  *
  * Three deterministic prompt chips built from the member's twin state (their
  * weakest biotic, the current next action, their latest meal) that deep-link
@@ -36,7 +36,7 @@ export function AskTwin({ twin, consultHref = "/account/consult" }: { twin: Food
   return (
     <section className="mx-auto max-w-5xl px-4 pt-8 md:px-8">
       <div className="mb-4">
-        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Ask your Twin</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Ask your Food System</p>
         <h3 className="mt-1 font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>It knows your Food System. Ask it anything.</h3>
       </div>
       <div className="rounded-2xl border border-border bg-card p-5" style={{ boxShadow: "0 2px 12px rgba(26,46,18,0.05)" }}>
@@ -55,7 +55,7 @@ export function AskTwin({ twin, consultHref = "/account/consult" }: { twin: Food
           ))}
         </div>
         <p className="mt-3 text-[11px] leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
-          Answers come from your AI consultant with your Twin&apos;s context. EatoBiotics provides food-first guidance for general wellbeing and is not medical advice.
+          Answers come from your AI consultant with your Food System&apos;s context. EatoBiotics provides food-first guidance for general wellbeing and is not medical advice.
         </p>
       </div>
     </section>

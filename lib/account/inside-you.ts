@@ -59,10 +59,10 @@ export function buildInsideYouChapters(twin: FoodSystemDigitalTwin): InsideYouCh
       label: "You eat",
       title: "Every meal is a message",
       narration:
-        "Each plate you build sends instructions to the living Food System inside you — your Twin listens to every one.",
+        "Each plate you build sends instructions to the living Food System inside you — your Food System listens to every one.",
       value: score,
       valueLabel: "Your Food System Score today",
-      takeaway: `Your Twin has learned from ${twin.observations.length} signal${twin.observations.length === 1 ? "" : "s"} so far — every meal teaches it more.`,
+      takeaway: `Your Food System has learned from ${twin.observations.length} signal${twin.observations.length === 1 ? "" : "s"} so far — every meal teaches it more.`,
     },
     {
       key: "prebiotics",

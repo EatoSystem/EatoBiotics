@@ -65,7 +65,7 @@ export function drawTwinCard(ctx: CanvasRenderingContext2D, data: ShareCardData)
   ctx.textAlign = "center"
   ctx.fillStyle = "#A8E063"
   ctx.font = `800 30px ${SANS}`
-  ctx.fillText("M Y   D I G I T A L   T W I N", cx, 150)
+  ctx.fillText("M Y   F O O D   S Y S T E M", cx, 150)
   ctx.fillStyle = CREAM
   ctx.font = `700 58px ${SERIF}`
   ctx.fillText("The Food System Inside Me", cx, 225)

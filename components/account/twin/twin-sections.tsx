@@ -2,7 +2,7 @@
 
 /**
  * Digital Twin Overview sections:
- *  - TwinLearnedToday  → "What Your Twin Learned Today" (the learning feed as cards)
+ *  - TwinLearnedToday  → "What Your Food System Learned Today" (the learning feed as cards)
  *  - TwinNextAction    → the single next best action (reuses NextBestActionCard,
  *                        with local complete/skip acknowledgement — no backend write yet)
  *  - TwinScorePanel    → premium Food System Score (ScoreRing + trend + biotics)
@@ -38,12 +38,12 @@ function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) 
   )
 }
 
-/* ── What Your Twin Learned Today ──────────────────────────────────── */
+/* ── What Your Food System Learned Today ──────────────────────────────────── */
 export function TwinLearnedToday({ feed }: { feed: TwinFeedEntry[] }) {
   if (!feed.length) return null
   return (
     <section className="mx-auto max-w-5xl px-4 pt-8 md:px-8">
-      <SectionHeading eyebrow="Learning" title="What your Digital Twin learned today" />
+      <SectionHeading eyebrow="Learning" title="What your Food System learned today" />
       <div className="grid gap-2.5 sm:grid-cols-2">
         {feed.slice(0, 6).map((e) => {
           const Icon = FEED_ICON[e.icon] ?? Sparkles
@@ -73,7 +73,7 @@ export function TwinNextAction({ twin }: { twin: FoodSystemDigitalTwin }) {
 
   return (
     <section className="mx-auto max-w-5xl px-4 pt-8 md:px-8">
-      <SectionHeading eyebrow="Guidance" title="Your next best action" />
+      <SectionHeading eyebrow="Today's Focus" title="Your Next Best Action" />
       {status === "open" ? (
         <NextBestActionCard
           recommendation={nba}
@@ -87,7 +87,7 @@ export function TwinNextAction({ twin }: { twin: FoodSystemDigitalTwin }) {
           </span>
           <div>
             <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
-              {status === "done" ? "Nice — your Digital Twin noted that." : "No problem — it'll suggest this again."}
+              {status === "done" ? "Nice — your Food System noted that." : "No problem — it'll suggest this again."}
             </p>
             <button onClick={() => setStatus("open")} className="mt-0.5 text-xs font-semibold underline underline-offset-2" style={{ color: "var(--icon-green)" }}>
               Undo

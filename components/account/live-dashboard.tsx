@@ -16,7 +16,7 @@ import {
 } from "@/components/account/dashboard-parts"
 import { TwinStage } from "@/components/account/twin/twin-stage"
 import { TodayStrip } from "@/components/account/twin/today-strip"
-import { TwinLearnedToday } from "@/components/account/twin/twin-sections"
+import { TwinLearnedToday, TwinNextAction } from "@/components/account/twin/twin-sections"
 import { QuickLog } from "@/components/account/twin/quick-log"
 import { InsideYouTeaser } from "@/components/account/twin/inside-you"
 import { DailyRitual } from "@/components/account/twin/daily-ritual"
@@ -732,7 +732,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       if (!res.ok) throw new Error("Save failed")
       setAcctSaved(true)
       setTimeout(() => setAcctSaved(false), 3000)
-      // Re-derive server data so the Living Twin figure reflects the new sex.
+      // Re-derive server data so the living Food System figure reflects the new sex.
       router.refresh()
     } catch {
       setAcctError("Save failed — please try again")
@@ -867,7 +867,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       setLiveResult(data)
       setLoggerState("result")
       setMealInput("")
-      // Re-derive the Living Twin server-side so it visibly updates with the new
+      // Re-derive the living Food System server-side so it visibly updates with the new
       // meal (score/biotics/feed). Client result state is preserved across refresh.
       router.refresh()
     } catch (err) {
@@ -907,7 +907,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                 </Link>
                 {twin && (
                   <Link href="/account/twin" className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-bold transition-colors hover:bg-black/[0.03]" style={{ borderColor: "var(--icon-teal)", color: "var(--icon-teal)" }}>
-                    <Activity size={13} /> My Digital Twin
+                    <Activity size={13} /> My Food System
                   </Link>
                 )}
                 {displayStreak > 0 && (
@@ -1059,9 +1059,10 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
               ) : undefined
             }
           />
-          {/* [TODAY] — the daily ritual heartbeat */}
+          {/* [TODAY] — the daily ritual heartbeat + one clear priority */}
           <GroupLabel>Today</GroupLabel>
           <DailyRitual twin={twin} streak={displayStreak} authed={!!propEmail} />
+          <TwinNextAction twin={twin} />
 
           {/* [THIS WEEK] — what the Twin has learned */}
           <GroupLabel>This week</GroupLabel>
@@ -1905,10 +1906,10 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
         <div className="mx-auto max-w-5xl px-4 pt-6 pb-16 md:px-8 md:pt-8">
           <div className="mb-5">
             <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Snapshots</p>
-            <h2 className="mt-1 font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>Moments your Twin remembers</h2>
+            <h2 className="mt-1 font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>Moments your Food System remembers</h2>
             <p className="mt-0.5 text-sm" style={{ color: "var(--muted-foreground)" }}>
               {paidReports.length > 0
-                ? `${paidReports.length} Food System snapshot${paidReports.length === 1 ? "" : "s"} — each one a moment your Twin can look back on`
+                ? `${paidReports.length} Food System snapshot${paidReports.length === 1 ? "" : "s"} — each one a moment your Food System can look back on`
                 : `${MOCK_REPORTS.length} assessment snapshot${MOCK_REPORTS.length === 1 ? "" : "s"} of your Food System so far`}
             </p>
           </div>
@@ -2231,7 +2232,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                   ))}
                 </select>
               </div>
-              {/* Sex — personalises your Living Twin figure */}
+              {/* Sex — personalises your living Food System figure */}
               <div>
                 <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>Sex</label>
                 <select
@@ -2244,7 +2245,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                   <option value="female">Female</option>
                   <option value="male">Male</option>
                 </select>
-                <p className="mt-1 text-[11px]" style={{ color: "var(--muted-foreground)" }}>Personalises your Digital Twin figure.</p>
+                <p className="mt-1 text-[11px]" style={{ color: "var(--muted-foreground)" }}>Personalises your Food System figure.</p>
               </div>
               {/* Member since */}
               {memberStartedAt && (

@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * TodayStrip — "Today with your Twin", the daily ritual bar.
+ * TodayStrip — "Today with your Food System", the daily ritual bar.
  *
  * A slim dark bar that sits directly above the TwinStage and blends into it:
  * time-of-day greeting by name, streak flame, whether today's meal has reached
@@ -42,7 +42,7 @@ export function TodayStrip({
   firstName: string | null
   streak?: number
   addMealHref?: string
-  /** Force the "Your Week Inside" chip (demo); otherwise it shows Mon–Wed. */
+  /** Force the "Your Food System This Week" chip (demo); otherwise it shows Mon–Wed. */
   showStory?: boolean
   /** When set, Add-meal opens QuickLog instead of navigating. */
   onAddMeal?: () => void
@@ -69,10 +69,10 @@ export function TodayStrip({
         <span className="inline-flex items-center gap-1.5 text-xs" style={{ color: logged ? "#A8E063" : "rgba(253,251,247,0.55)" }}>
           {logged ? (
             <>
-              <Check size={12} /> Today&apos;s meal reached your Twin
+              <Check size={12} /> Today&apos;s meal reached your Food System
             </>
           ) : (
-            "Your Twin is waiting for today's first meal"
+            "Your Food System is waiting for today's first meal"
           )}
         </span>
 

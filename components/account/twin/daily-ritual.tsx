@@ -74,7 +74,7 @@ export function DailyRitual({ twin, streak = 0, authed = false }: { twin: FoodSy
       <div className="mb-4">
         <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Daily ritual</p>
         <h3 className="mt-1 font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>
-          {ritualComplete(ritual) ? "All three — your Twin felt that." : "Three taps. That's the whole habit."}
+          {ritualComplete(ritual) ? "All three — your Food System felt that." : "Three taps. That's the whole habit."}
         </h3>
       </div>
 
@@ -113,7 +113,7 @@ export function DailyRitual({ twin, streak = 0, authed = false }: { twin: FoodSy
         {/* the Twin's acknowledgement */}
         {ack && (
           <p key={ack} className="eb-pop-in mt-3 rounded-xl px-4 py-2.5 text-sm" style={{ background: "color-mix(in srgb, var(--icon-green) 7%, white)", border: "1px solid var(--border)", color: "var(--foreground)" }}>
-            <span className="font-semibold" style={{ color: "var(--icon-green)" }}>Your Twin: </span>
+            <span className="font-semibold" style={{ color: "var(--icon-green)" }}>Your Food System: </span>
             &ldquo;{ack}&rdquo;
           </p>
         )}
