@@ -13,6 +13,7 @@ import { FlowDiagram } from "@/components/digital-twin/flow-diagram"
 import { BioticEcosystems } from "@/components/digital-twin/biotic-ecosystems"
 import { WeekDashboard } from "@/components/digital-twin/week-dashboard"
 import { SystemDimensions } from "@/components/digital-twin/system-dimensions"
+import { ReactionCards } from "@/components/digital-twin/reaction-cards"
 import { InsideOutEmbed } from "@/components/twin-motion/inside-out-embed"
 import { ImpactJourney } from "@/components/digital-twin/impact-journey"
 import { OrbitHub } from "@/components/digital-twin/orbit-hub"
@@ -134,6 +135,41 @@ export default function DigitalTwinPage() {
             </div>
           </ScrollReveal>
           <ScrollReveal><BioticEcosystems /></ScrollReveal>
+        </div>
+      </section>
+
+      {/* ════ 3b · See it in action — every choice creates a reaction ════ */}
+      <section className="px-6 py-24">
+        <div className="mx-auto max-w-[1100px]">
+          <ScrollReveal>
+            <div className="mx-auto mb-12 max-w-2xl text-center">
+              <Eyebrow>See it in action</Eyebrow>
+              <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
+                Every choice creates a reaction.
+              </h2>
+              <p className="mt-5 text-lg text-muted-foreground">
+                Kefir lights the probiotic network. Beans expand the fibre pathways. Your Food
+                System responds to everything — and shows you, in the same colours, every day.
+              </p>
+            </div>
+          </ScrollReveal>
+          <ScrollReveal><ReactionCards /></ScrollReveal>
+          <ScrollReveal>
+            <div
+              className="mx-auto mt-8 flex max-w-3xl flex-col items-center gap-4 rounded-[2rem] border border-border bg-card px-8 py-8 text-center sm:flex-row sm:text-left"
+              style={{ boxShadow: "0 20px 50px -25px rgba(20,37,15,0.35)" }}
+            >
+              <p style={lora} className="flex-1 text-2xl font-semibold leading-snug text-foreground">
+                You see it. You feel it. <span className="brand-gradient-text">You improve it.</span>
+              </p>
+              <div className="shrink-0">
+                <p className="text-sm text-muted-foreground">Understanding creates empowerment.<br />Empowerment creates change.</p>
+                <Link href="/demo/account/twin" className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-icon-green">
+                  Watch a Food System respond <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 
