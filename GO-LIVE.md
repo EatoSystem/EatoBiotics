@@ -50,7 +50,7 @@ Fail-closed items — the feature is OFF or erroring without them:
 | Route | Schedule | Purpose |
 |---|---|---|
 | `/api/weekly-checkin` | `0 8 * * 1` | Member weekly check-in generation |
-| `/api/email/week-inside` | `0 9 * * 1` | "Your Week Inside" Monday story email |
+| `/api/email/week-inside` | `0 9 * * 1` | "Your Food System This Week" Monday story email |
 | `/api/stability/reminder` | `0 9 * * *` | Stability tracking nudge |
 | `/api/email/sequence` | `0 9 * * *` | Lifecycle sequences |
 | `/api/email/trial-winback` | `0 10 * * *` | Trial pre/post-expiry |

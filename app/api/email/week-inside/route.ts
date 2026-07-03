@@ -7,9 +7,9 @@ import { getAccountTwinInput } from "@/lib/account/twin-data"
 import { buildAccountTwin } from "@/lib/agent-loop/account-twin"
 import { buildWeekStory } from "@/lib/account/week-story"
 
-/* ── "Your Week Inside" Monday story email ───────────────────────────────
+/* ── "Your Food System This Week" Monday story email ─────────────────────
    Weekly cron (0 9 * * 1). For each active/trial member, renders the same
-   Week Inside story the app shows into an email. Skips quiet weeks (no meals
+   This Week story the app shows into an email. Skips quiet weeks (no meals
    AND no score movement). Idempotent per user + ISO week via email_sends
    (kind "week_inside_<isoWeek>"). Marketing category → opt-outs honoured by
    sendEmail. Fail-closed on CRON_SECRET via verifyCronRequest.
