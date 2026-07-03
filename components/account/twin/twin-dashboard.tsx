@@ -22,7 +22,7 @@ import {
 } from "@/components/agent-loop"
 import { TwinLenses, type LensDef } from "./twin-lenses"
 import { TwinStage } from "./twin-stage"
-import { QuickLog } from "./quick-log"
+import { QuickLog, MOCK_QUICK_LOG_RESULT, type QuickLogResult } from "./quick-log"
 import { InsideYouSection } from "./inside-you"
 import { Journey } from "./journey"
 import { ForecastCard } from "./forecast"
@@ -85,6 +85,12 @@ export function TwinDashboard({
   useTwinRealtime(userId, onNewMeal)
   const [lens, setLens] = useState(lenses[0]?.key ?? "foundation")
   const [quickLogOpen, setQuickLogOpen] = useState(false)
+  /* The Meal Reveal — a logged meal plays out on the stage. */
+  const [reveal, setReveal] = useState<QuickLogResult | null>(null)
+  const onReveal = useCallback((r: QuickLogResult) => {
+    setReveal(r)
+    document.getElementById("fs-stage")?.scrollIntoView({ behavior: "smooth" })
+  }, [])
 
   return (
     <div className="min-h-screen bg-background pt-[57px]">
@@ -112,12 +118,18 @@ export function TwinDashboard({
         detailHref={null}
         demo={demo}
         burstKey={mealBurst}
-        onSimulateMeal={demo ? onNewMeal : undefined}
+        onSimulateMeal={demo ? () => onReveal(MOCK_QUICK_LOG_RESULT) : undefined}
         onAddMeal={() => setQuickLogOpen(true)}
+        reveal={reveal}
+        onRevealDone={() => setReveal(null)}
+        onLogAnother={() => {
+          setReveal(null)
+          setQuickLogOpen(true)
+        }}
       />
 
-      {/* quick-log (mock in demo — no API); a new meal fires the stage burst */}
-      <QuickLog open={quickLogOpen} onClose={() => setQuickLogOpen(false)} onLearned={onNewMeal} mock={demo} />
+      {/* quick-log (mock in demo — no API); the analysed meal reveals on the stage */}
+      <QuickLog open={quickLogOpen} onClose={() => setQuickLogOpen(false)} onReveal={onReveal} mock={demo} />
 
       {/* the Inside You cinema band */}
       <InsideYouSection twin={twin} />

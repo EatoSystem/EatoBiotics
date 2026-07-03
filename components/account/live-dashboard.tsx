@@ -17,7 +17,7 @@ import {
 import { TwinStage } from "@/components/account/twin/twin-stage"
 import { TodayStrip } from "@/components/account/twin/today-strip"
 import { TwinLearnedToday, TwinNextAction } from "@/components/account/twin/twin-sections"
-import { QuickLog } from "@/components/account/twin/quick-log"
+import { QuickLog, type QuickLogResult } from "@/components/account/twin/quick-log"
 import { InsideYouTeaser } from "@/components/account/twin/inside-you"
 import { DailyRitual } from "@/components/account/twin/daily-ritual"
 import { AskTwin } from "@/components/account/twin/ask-twin"
@@ -802,6 +802,8 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
   const [celebration, setCelebration] = useState<Milestone | null>(null)
   const [celebrationKey, setCelebrationKey] = useState(0)
   const [quickLogOpen, setQuickLogOpen] = useState(false)
+  /* The Meal Reveal — a logged meal plays out on the stage. */
+  const [reveal, setReveal] = useState<QuickLogResult | null>(null)
   useEffect(() => {
     if (!twin) return
     const store = browserStore()
@@ -988,14 +990,15 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       </div>
       </>)}
 
-      {/* Quick-log — portalled modal; a new meal fires the stage burst. */}
+      {/* Quick-log — portalled modal; the analysed meal reveals on the stage. */}
       {twin && (
         <QuickLog
           open={quickLogOpen}
           onClose={() => setQuickLogOpen(false)}
-          onLearned={() => {
+          onReveal={(r) => {
             setCelebration(null)
-            setCelebrationKey((k) => k + 1)
+            setReveal(r)
+            document.getElementById("fs-stage")?.scrollIntoView({ behavior: "smooth" })
           }}
         />
       )}
@@ -1053,6 +1056,12 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             onAddMeal={() => setQuickLogOpen(true)}
             burstKey={celebrationKey}
             burstMessage={celebration?.title}
+            reveal={reveal}
+            onRevealDone={() => setReveal(null)}
+            onLogAnother={() => {
+              setReveal(null)
+              setQuickLogOpen(true)
+            }}
             checklist={
               twin.observations.length < 3 ? (
                 <MeetTwinChecklist twin={twin} addMealHref={recentAnalyses.length > 0 ? "#log-meal" : "#first-meal-logger"} />

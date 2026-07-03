@@ -30,9 +30,11 @@ export interface QuickLogResult {
   insight: string
   /** analyse-meal tags (Fermented Foods, High Fibre, …) — drive the impact chips. */
   tags?: string[]
+  /** analyse-meal nutrition — the reveal's kcal · protein · fibre strip. */
+  nutrition?: { calories: number; protein: number; fibre: number }
 }
 
-const MOCK_RESULT: QuickLogResult = {
+export const MOCK_QUICK_LOG_RESULT: QuickLogResult = {
   meal_name: "Salmon, quinoa & kimchi bowl",
   biotics_score: 79,
   prebiotic_score: 68,
@@ -40,6 +42,7 @@ const MOCK_RESULT: QuickLogResult = {
   postbiotic_score: 61,
   insight: "Strong all-rounder — the kimchi brings live cultures while quinoa and vegetables feed your resident microbes.",
   tags: ["Fermented Foods", "Omega-3s", "Plant Diversity", "Protein Rich"],
+  nutrition: { calories: 520, protein: 34, fibre: 9 },
 }
 
 const EXAMPLES = ["Porridge with berries & seeds", "Lentil soup and sourdough", "Chicken, greens & kefir"]
@@ -64,12 +67,18 @@ export function QuickLog({
   open,
   onClose,
   onLearned,
+  onReveal,
   mock = false,
 }: {
   open: boolean
   onClose: () => void
   /** Called once per analysed meal, when the result lands (fires the stage burst). */
   onLearned?: () => void
+  /**
+   * When set, the result skips the in-modal phase entirely: the modal closes
+   * and the meal plays out ON the stage (the Meal Reveal). Replaces onLearned.
+   */
+  onReveal?: (result: QuickLogResult) => void
   mock?: boolean
 }) {
   const router = useRouter()
@@ -140,7 +149,7 @@ export function QuickLog({
       let data: QuickLogResult
       if (mock) {
         await new Promise((r) => setTimeout(r, 1200))
-        data = { ...MOCK_RESULT, meal_name: description && description.length < 48 ? description : MOCK_RESULT.meal_name }
+        data = { ...MOCK_QUICK_LOG_RESULT, meal_name: description && description.length < 48 ? description : MOCK_QUICK_LOG_RESULT.meal_name }
       } else {
         const res = await fetch("/api/analyse-meal", {
           method: "POST",
@@ -150,17 +159,24 @@ export function QuickLog({
         if (!res.ok) throw new Error("Analysis failed")
         data = (await res.json()) as QuickLogResult
       }
-      setResult(data)
-      setPhase("result")
       setInput("")
       setPhoto(null)
-      learnedRef.current = true
       if (!mock) router.refresh()
+      if (onReveal) {
+        // The stage takes over — close without the burst; the reveal IS the moment.
+        setPhase("idle")
+        onClose()
+        onReveal(data)
+      } else {
+        setResult(data)
+        setPhase("result")
+        learnedRef.current = true
+      }
     } catch {
       setError("Analysis failed — please try again")
       setPhase("idle")
     }
-  }, [input, photo, mock, router])
+  }, [input, photo, mock, router, onReveal, onClose])
 
   if (!open || typeof document === "undefined") return null
 

@@ -21,8 +21,10 @@ import { ArrowRight, Leaf, Target, Utensils, UtensilsCrossed, X } from "lucide-r
 import { HeroVideo } from "@/components/hero-video"
 import { DigitalTwinFigure } from "@/components/digital-twin/parts"
 import { MealReactionBurst } from "./meal-reaction"
+import { MealPathwayOverlay, MealRevealPanel, revealAura } from "./meal-reveal"
 import { ShareTwin } from "./share-twin"
 import { useCountUp } from "./use-count-up"
+import type { QuickLogResult } from "./quick-log"
 import { systemMapState, type SystemHotspotKey, type SystemHotspotState } from "@/lib/account/system-map"
 import { stageMood, type StageMood } from "@/lib/account/stage-mood"
 import { twinEvolution } from "@/lib/account/evolution"
@@ -144,6 +146,9 @@ export function TwinStage({
   onSimulateMeal,
   checklist,
   onAddMeal,
+  reveal = null,
+  onRevealDone,
+  onLogAnother,
 }: {
   twin: FoodSystemDigitalTwin
   visual: TwinVisualState
@@ -164,8 +169,21 @@ export function TwinStage({
   checklist?: React.ReactNode
   /** When set, the Add-meal CTA opens QuickLog instead of navigating. */
   onAddMeal?: () => void
+  /** The Meal Reveal — when set, the meal plays out on the stage: pathway
+      nodes light on the figure, the story replaces the cockpit. */
+  reveal?: QuickLogResult | null
+  /** Called when the member finishes the reveal ("Done") — restores the cockpit. */
+  onRevealDone?: () => void
+  /** Called from the reveal's "Log another" — reopens the QuickLog. */
+  onLogAnother?: () => void
 }) {
   const [selected, setSelected] = useState<SystemHotspotKey | null>(null)
+  const revealing = reveal != null
+  /* one key per revealed meal so the choreography restarts cleanly */
+  const revealKey = reveal ? `${reveal.meal_name}·${reveal.biotics_score}` : ""
+  useEffect(() => {
+    if (revealing) setSelected(null)
+  }, [revealing])
   /* Time-of-day + engagement mood — computed after mount so SSR/hydration match. */
   const [mood, setMood] = useState<StageMood>(() => stageMood(13, { fed: true }))
   useEffect(() => {
@@ -180,16 +198,18 @@ export function TwinStage({
   }, [twin])
   const hotspots = useMemo(() => systemMapState(twin), [twin])
   const active: SystemHotspotState | null = hotspots.find((h) => h.key === selected) ?? null
-  const aura = active
-    ? auraGradientForBiotic(active.biotic, visual.confidence)
-    : auraGradientForBiotic(twin.biotics.weakest, visual.confidence)
+  const aura = reveal
+    ? revealAura(reveal)
+    : active
+      ? auraGradientForBiotic(active.biotic, visual.confidence)
+      : auraGradientForBiotic(twin.biotics.weakest, visual.confidence)
 
   const score = useCountUp(visual.ringScore)
   const delta = twin.progress.scoreDelta
   const evolution = useMemo(() => twinEvolution(twin), [twin])
 
   return (
-    <section className="relative overflow-hidden" style={{ background: STAGE_BG }}>
+    <section id="fs-stage" className="relative scroll-mt-14 overflow-hidden" style={{ background: STAGE_BG }}>
       {/* atmosphere: layered glows + vignette, tinted by the time-of-day mood */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <div className="absolute -left-24 -top-32 h-[420px] w-[420px] rounded-full transition-all duration-1000" style={{ background: `radial-gradient(circle, ${mood.glowA} 0%, transparent 65%)` }} />
@@ -248,8 +268,8 @@ export function TwinStage({
               )}
             </div>
 
-            {/* constellation connector lines (desktop) */}
-            <svg aria-hidden viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 hidden h-full w-full sm:block">
+            {/* constellation connector lines (desktop) — hidden while a meal reveals */}
+            <svg aria-hidden viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 hidden h-full w-full sm:block" style={{ opacity: revealing ? 0 : 1, transition: "opacity 300ms" }}>
               {hotspots.map((h) => {
                 const a = LABEL_ANCHOR[h.key]
                 return (
@@ -265,7 +285,7 @@ export function TwinStage({
             </svg>
 
             {/* hotspot nodes */}
-            {hotspots.map((h, i) => {
+            {!revealing && hotspots.map((h, i) => {
               const c = HOTSPOT_COLOR[h.key]
               const isActive = selected === h.key
               return (
@@ -290,7 +310,7 @@ export function TwinStage({
             })}
 
             {/* floating labels (desktop) */}
-            {hotspots.map((h, i) => {
+            {!revealing && hotspots.map((h, i) => {
               const a = LABEL_ANCHOR[h.key]
               const c = HOTSPOT_COLOR[h.key]
               const isActive = selected === h.key
@@ -325,6 +345,9 @@ export function TwinStage({
 
             <MealReactionBurst playKey={burstKey} message={burstMessage ?? "Your Food System just learned from your meal"} />
 
+            {/* the Meal Reveal — pathway nodes light where the meal lands */}
+            {reveal && <MealPathwayOverlay key={revealKey} result={reveal} />}
+
             {/* live pill */}
             <div className="absolute -top-1 left-0 flex items-center gap-2 rounded-full px-3 py-1.5 backdrop-blur" style={{ background: "rgba(253,251,247,0.08)", border: "1px solid rgba(253,251,247,0.18)" }}>
               <span className="relative flex h-2 w-2">
@@ -332,7 +355,7 @@ export function TwinStage({
                 <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: "#A8E063" }} />
               </span>
               <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#A8E063" }}>
-                {learning ? "Learning…" : "Live & learning"}
+                {revealing ? "Receiving your meal…" : learning ? "Learning…" : "Live & learning"}
               </span>
             </div>
 
@@ -358,7 +381,16 @@ export function TwinStage({
             </div>
           </div>
 
-          {/* ── score cockpit ── */}
+          {/* ── the Meal Reveal story panel (replaces the cockpit while a meal plays) ── */}
+          {reveal ? (
+            <MealRevealPanel
+              key={revealKey}
+              result={reveal}
+              onDone={() => onRevealDone?.()}
+              onLogAnother={onLogAnother}
+            />
+          ) : (
+          /* ── score cockpit ── */
           <div className="min-w-0">
             <p className="eb-reveal text-[11px] font-bold uppercase tracking-[0.22em]" style={{ color: "#A8E063", animationDelay: "200ms" }}>
               Your Food System Today · {visual.momentumLabel}
@@ -430,6 +462,7 @@ export function TwinStage({
               )}
             </div>
           </div>
+          )}
         </div>
 
         {/* ── dark-glass education panel: bottom sheet on mobile, inline on md+ ── */}

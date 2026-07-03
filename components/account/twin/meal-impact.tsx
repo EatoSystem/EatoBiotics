@@ -20,7 +20,16 @@ const LEVEL_LABEL: Record<MealImpactRow["level"], string> = {
   strain: "Strain",
 }
 
-export function MealImpactChips({ input }: { input: MealImpactInput }) {
+export function MealImpactChips({
+  input,
+  startDelayMs = 200,
+  stepDelayMs = 120,
+}: {
+  input: MealImpactInput
+  /** Stagger timing — the Meal Reveal syncs these with the pathway nodes on the figure. */
+  startDelayMs?: number
+  stepDelayMs?: number
+}) {
   const rows = mealImpact(input)
   const [open, setOpen] = useState<string | null>(null)
 
@@ -39,7 +48,7 @@ export function MealImpactChips({ input }: { input: MealImpactInput }) {
               key={r.key}
               className="eb-reveal overflow-hidden rounded-xl transition-all"
               style={{
-                animationDelay: `${200 + i * 120}ms`,
+                animationDelay: `${startDelayMs + i * stepDelayMs}ms`,
                 background: strained ? "rgba(245,166,35,0.08)" : dim ? "rgba(253,251,247,0.03)" : `color-mix(in srgb, ${r.color} 10%, transparent)`,
                 border: `1px solid ${strained ? "rgba(245,166,35,0.4)" : dim ? "rgba(253,251,247,0.1)" : `color-mix(in srgb, ${r.color} 40%, transparent)`}`,
                 boxShadow: r.level === "strong" ? `0 0 18px ${r.color}33` : "none",
