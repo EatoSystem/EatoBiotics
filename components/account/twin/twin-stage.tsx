@@ -25,6 +25,7 @@ import { ShareTwin } from "./share-twin"
 import { useCountUp } from "./use-count-up"
 import { systemMapState, type SystemHotspotKey, type SystemHotspotState } from "@/lib/account/system-map"
 import { stageMood, type StageMood } from "@/lib/account/stage-mood"
+import { twinEvolution } from "@/lib/account/evolution"
 import { browserStore, dayKey, loadRitual, ritualCount } from "@/lib/account/ritual"
 import { auraGradientForBiotic } from "@/lib/account/twin-visual"
 import type { TwinVisualState } from "@/lib/account/twin-visual"
@@ -185,6 +186,7 @@ export function TwinStage({
 
   const score = useCountUp(visual.ringScore)
   const delta = twin.progress.scoreDelta
+  const evolution = useMemo(() => twinEvolution(twin), [twin])
 
   return (
     <section className="relative overflow-hidden" style={{ background: STAGE_BG }}>
@@ -208,6 +210,21 @@ export function TwinStage({
                 boxShadow: "0 0 120px 30px rgba(168,224,99,0.14)",
               }}
             />
+            {/* evolution orbit rings — one per growth stage reached */}
+            {Array.from({ length: evolution.index }).map((_, i) => (
+              <div
+                key={i}
+                aria-hidden
+                className={i % 2 ? "eb-ring-spin-rev absolute left-1/2 top-1/2 rounded-full" : "eb-ring-spin absolute left-1/2 top-1/2 rounded-full"}
+                style={{
+                  width: `${96 + (i + 1) * 5}%`,
+                  height: `${96 + (i + 1) * 5}%`,
+                  marginLeft: `-${(96 + (i + 1) * 5) / 2}%`,
+                  marginTop: `-${(96 + (i + 1) * 5) / 2}%`,
+                  border: `1px dashed rgba(168,224,99,${0.28 - i * 0.05})`,
+                }}
+              />
+            ))}
             {/* biotic-tinted aura breathing over the light core */}
             <div
               aria-hidden
@@ -226,7 +243,7 @@ export function TwinStage({
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center" style={{ background: CREAM }}>
-                  <DigitalTwinFigure size={300} src={figureSrc} alt="Your Food System Digital Twin" showParticles={visual.particleDensity > 0.35 || mood.particles} />
+                  <DigitalTwinFigure size={300} src={figureSrc} alt="Your Food System Digital Twin" showParticles={visual.particleDensity > 0.35 || mood.particles || evolution.index >= 3} />
                 </div>
               )}
             </div>
@@ -317,6 +334,27 @@ export function TwinStage({
               <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#A8E063" }}>
                 {learning ? "Learning…" : "Live & learning"}
               </span>
+            </div>
+
+            {/* evolution badge — the growth ladder */}
+            <div
+              className="absolute -top-1 right-0 flex items-center gap-1.5 rounded-full px-3 py-1.5 backdrop-blur"
+              style={{ background: "rgba(245,197,24,0.1)", border: "1px solid rgba(245,197,24,0.35)" }}
+              title={evolution.blurb}
+            >
+              <span className="flex items-center gap-0.5">
+                {[1, 2, 3, 4].map((i) => (
+                  <span key={i} className="h-1.5 w-1.5 rounded-full" style={{ background: i <= evolution.index ? "#F5C518" : "rgba(253,251,247,0.2)" }} />
+                ))}
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#F5C518" }}>
+                {evolution.label}
+              </span>
+              {evolution.next && (
+                <span className="hidden text-[10px] font-semibold sm:inline" style={{ color: "rgba(253,251,247,0.5)" }}>
+                  · {evolution.next.remaining} meal{evolution.next.remaining === 1 ? "" : "s"} to {evolution.next.label}
+                </span>
+              )}
             </div>
           </div>
 

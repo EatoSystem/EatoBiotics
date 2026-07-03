@@ -14,8 +14,9 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
-import { X, Sparkles, Utensils } from "lucide-react"
+import { X, Sparkles, Utensils, Camera } from "lucide-react"
 import { useCountUp } from "./use-count-up"
+import { AFTER_MEAL_STEPS } from "@/lib/account/evolution"
 import type { BioticKey } from "@/lib/agent-loop/types"
 
 /** The slice of /api/analyse-meal's response QuickLog renders. */
@@ -70,9 +71,30 @@ export function QuickLog({
   const router = useRouter()
   const [phase, setPhase] = useState<"idle" | "analysing" | "result">("idle")
   const [input, setInput] = useState("")
+  const [photo, setPhoto] = useState<string | null>(null)
   const [result, setResult] = useState<QuickLogResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  /* Downscale a picked photo to ≤1024px JPEG so uploads stay small + fast. */
+  const onPickPhoto = useCallback((file: File | null) => {
+    if (!file || !file.type.startsWith("image/")) return
+    const url = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => {
+      const max = 1024
+      const scale = Math.min(1, max / Math.max(img.width, img.height))
+      const canvas = document.createElement("canvas")
+      canvas.width = Math.round(img.width * scale)
+      canvas.height = Math.round(img.height * scale)
+      canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height)
+      setPhoto(canvas.toDataURL("image/jpeg", 0.85))
+      URL.revokeObjectURL(url)
+    }
+    img.onerror = () => URL.revokeObjectURL(url)
+    img.src = url
+  }, [])
   /* The stage burst fires on close (not on result) so it's visible once the
      modal is out of the way. */
   const learnedRef = useRef(false)
@@ -90,6 +112,7 @@ export function QuickLog({
       setPhase("idle")
       setResult(null)
       setError(null)
+      setPhoto(null)
       learnedRef.current = false
       setTimeout(() => inputRef.current?.focus(), 60)
     }
@@ -106,19 +129,19 @@ export function QuickLog({
 
   const analyse = useCallback(async () => {
     const description = input.trim()
-    if (!description) return
+    if (!description && !photo) return
     setPhase("analysing")
     setError(null)
     try {
       let data: QuickLogResult
       if (mock) {
         await new Promise((r) => setTimeout(r, 1200))
-        data = { ...MOCK_RESULT, meal_name: description.length < 48 ? description : MOCK_RESULT.meal_name }
+        data = { ...MOCK_RESULT, meal_name: description && description.length < 48 ? description : MOCK_RESULT.meal_name }
       } else {
         const res = await fetch("/api/analyse-meal", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ description }),
+          body: JSON.stringify({ description: description || undefined, image: photo ?? undefined }),
         })
         if (!res.ok) throw new Error("Analysis failed")
         data = (await res.json()) as QuickLogResult
@@ -126,13 +149,14 @@ export function QuickLog({
       setResult(data)
       setPhase("result")
       setInput("")
+      setPhoto(null)
       learnedRef.current = true
       if (!mock) router.refresh()
     } catch {
       setError("Analysis failed — please try again")
       setPhase("idle")
     }
-  }, [input, mock, router])
+  }, [input, photo, mock, router])
 
   if (!open || typeof document === "undefined") return null
 
@@ -175,7 +199,40 @@ export function QuickLog({
                 className="mt-4 w-full resize-none rounded-xl px-4 py-3 text-sm outline-none transition-colors focus:border-[#A8E063]"
                 style={{ background: "rgba(253,251,247,0.06)", border: "1px solid rgba(253,251,247,0.18)", color: "#FDFBF7" }}
               />
-              <div className="mt-2.5 flex flex-wrap gap-1.5">
+              {/* photo logging — snap the plate instead of typing */}
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => onPickPhoto(e.target.files?.[0] ?? null)}
+              />
+              <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={phase === "analysing"}
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold transition-colors hover:bg-white/10"
+                  style={{ border: "1px solid rgba(245,197,24,0.45)", color: "#F5C518" }}
+                >
+                  <Camera size={12} /> {photo ? "Retake photo" : "Photo of your plate"}
+                </button>
+                {photo && (
+                  <span className="relative inline-block">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={photo} alt="Your meal" className="h-9 w-9 rounded-lg object-cover" style={{ border: "1px solid rgba(253,251,247,0.25)" }} />
+                    <button
+                      type="button"
+                      onClick={() => setPhoto(null)}
+                      aria-label="Remove photo"
+                      className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full text-white"
+                      style={{ background: "#F5A623" }}
+                    >
+                      <X size={9} strokeWidth={3} />
+                    </button>
+                  </span>
+                )}
                 {EXAMPLES.map((ex) => (
                   <button
                     key={ex}
@@ -193,7 +250,7 @@ export function QuickLog({
               <button
                 type="button"
                 onClick={() => void analyse()}
-                disabled={!input.trim() || phase === "analysing"}
+                disabled={(!input.trim() && !photo) || phase === "analysing"}
                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold text-white transition-transform enabled:hover:-translate-y-0.5 disabled:opacity-50"
                 style={{ background: "linear-gradient(135deg, #4CB648, #2DAA6E)", boxShadow: "0 6px 24px rgba(76,182,72,0.35)" }}
               >
@@ -239,6 +296,27 @@ export function QuickLog({
               <p className="mt-4 rounded-xl px-4 py-3 text-left text-sm leading-relaxed" style={{ background: "rgba(253,251,247,0.06)", border: "1px solid rgba(253,251,247,0.14)", color: "rgba(253,251,247,0.85)" }}>
                 {result.insight}
               </p>
+
+              {/* the after-meal journey — edutainment beat after every log */}
+              <div className="mt-4 rounded-xl p-4 text-left" style={{ background: "rgba(253,251,247,0.04)", border: "1px solid rgba(253,251,247,0.1)" }}>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#A8E063" }}>What happens next inside you</p>
+                <div className="mt-3 space-y-0">
+                  {AFTER_MEAL_STEPS.map((s, i) => (
+                    <div key={s.at} className="eb-reveal relative flex gap-3 pb-3 last:pb-0" style={{ animationDelay: `${300 + i * 180}ms` }}>
+                      {i < AFTER_MEAL_STEPS.length - 1 && (
+                        <span aria-hidden className="absolute left-[5px] top-4 h-full w-px" style={{ background: "rgba(253,251,247,0.15)" }} />
+                      )}
+                      <span className="relative mt-1 h-[11px] w-[11px] shrink-0 rounded-full" style={{ background: s.color, boxShadow: `0 0 8px ${s.color}88` }} />
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold" style={{ color: "rgba(253,251,247,0.9)" }}>
+                          <span style={{ color: s.color }}>{s.at}</span> · {s.title}
+                        </p>
+                        <p className="mt-0.5 text-[11px] leading-snug" style={{ color: "rgba(253,251,247,0.6)" }}>{s.detail}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
               <div className="mt-4 flex gap-2.5">
                 <button
                   type="button"

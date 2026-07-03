@@ -26,6 +26,7 @@ import { QuickLog } from "./quick-log"
 import { InsideYouSection } from "./inside-you"
 import { Journey } from "./journey"
 import { ForecastCard } from "./forecast"
+import { MenuScan } from "./menu-scan"
 import { AskTwin } from "./ask-twin"
 import { WeekStoryButton } from "./week-story"
 import { useTwinRealtime } from "./use-twin-realtime"
@@ -121,9 +122,10 @@ export function TwinDashboard({
       {/* the Inside You cinema band */}
       <InsideYouSection twin={twin} />
 
-      {/* journey + what-if (light, full-width sections) */}
+      {/* journey + what-if + real-world tools (light, full-width sections) */}
       <Journey twin={twin} streak={streak} />
       <ForecastCard twin={twin} />
+      <MenuScan mock={demo} />
       <AskTwin twin={twin} consultHref={consultHref} />
 
       {/* light content */}

@@ -24,21 +24,30 @@ import {
   ritualComplete,
   type RitualDay,
 } from "@/lib/account/ritual"
+import { hydrateTwinState, pushTwinState } from "@/lib/account/twin-state-sync"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
 
-export function DailyRitual({ twin, streak = 0 }: { twin: FoodSystemDigitalTwin; streak?: number }) {
+export function DailyRitual({ twin, streak = 0, authed = false }: { twin: FoodSystemDigitalTwin; streak?: number; authed?: boolean }) {
   const [ritual, setRitual] = useState<RitualDay>(EMPTY_RITUAL)
   const [ack, setAck] = useState<string | null>(null)
   const today = dayKey()
 
   useEffect(() => {
     setRitual(loadRitual(browserStore(), today))
-  }, [today])
+    // Signed-in members: pull server-side ritual/milestone state so streaks
+    // survive across devices (localStorage stays the live source of truth).
+    if (authed) {
+      void hydrateTwinState(browserStore()).then((todayChanged) => {
+        if (todayChanged) setRitual(loadRitual(browserStore(), today))
+      })
+    }
+  }, [today, authed])
 
   const toggle = (key: keyof RitualDay) => {
     const next = { ...ritual, [key]: !ritual[key] }
     setRitual(next)
     saveRitual(browserStore(), today, next)
+    if (authed) pushTwinState(browserStore())
     if (next[key]) {
       const check = RITUAL_CHECKS.find((c) => c.key === key)
       setAck(check?.ack ?? null)

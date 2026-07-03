@@ -24,6 +24,7 @@ import { AskTwin } from "@/components/account/twin/ask-twin"
 import { MeetTwinChecklist } from "@/components/account/twin/meet-checklist"
 import { detectMilestones, unseenMilestones, loadSeen, saveSeen, type Milestone } from "@/lib/account/milestones"
 import { browserStore } from "@/lib/account/ritual"
+import { pushTwinState } from "@/lib/account/twin-state-sync"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
 import type { TwinVisualState } from "@/lib/account/twin-visual"
 import type { TwinFeedEntry } from "@/lib/agent-loop/account-twin"
@@ -814,6 +815,9 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       setCelebrationKey((k) => k + 1)
     }, 1600)
     saveSeen(store, [...seen, m.id])
+    // Sync the seen-set so milestones fire once across devices (real members
+    // always have an email prop; the static preview has none → no-op).
+    if (propEmail) pushTwinState(store)
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [twin])
@@ -1057,7 +1061,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
           />
           {/* [TODAY] — the daily ritual heartbeat */}
           <GroupLabel>Today</GroupLabel>
-          <DailyRitual twin={twin} streak={displayStreak} />
+          <DailyRitual twin={twin} streak={displayStreak} authed={!!propEmail} />
 
           {/* [THIS WEEK] — what the Twin has learned */}
           <GroupLabel>This week</GroupLabel>

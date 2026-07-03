@@ -286,3 +286,24 @@ END $$;
 -- Migration 35: profiles.sex (Living Twin figure personalisation) — ADD-only, idempotent.
 -- Nullable ('male' | 'female', else null → generic couple figure). Set via My Account + onboarding.
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS sex text;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 36: twin_state (ritual + milestone sync across devices)
+-- ────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS twin_state (
+  user_id         uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  rituals         jsonb NOT NULL DEFAULT '{}'::jsonb,
+  milestones_seen text[] NOT NULL DEFAULT '{}',
+  updated_at      timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE twin_state ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'twin_state' AND policyname = 'twin_state_own') THEN
+    CREATE POLICY twin_state_own ON twin_state
+      FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+  END IF;
+END $$;

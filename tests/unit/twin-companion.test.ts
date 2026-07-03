@@ -12,6 +12,9 @@ import {
 } from "@/lib/account/ritual"
 import { detectMilestones, unseenMilestones, loadSeen, saveSeen } from "@/lib/account/milestones"
 import { stageMood, stageMoodKey } from "@/lib/account/stage-mood"
+import { twinEvolution, AFTER_MEAL_STEPS } from "@/lib/account/evolution"
+import { mergeServerRituals, collectLocalRituals } from "@/lib/account/twin-state-sync"
+import { buildWeekInsideEmail } from "@/lib/email/week-inside-email"
 import { projectScore, FORECAST_HABITS } from "@/lib/account/forecast"
 import { buildWeekStory } from "@/lib/account/week-story"
 
@@ -104,6 +107,84 @@ describe("projectScore (what-if forecast)", () => {
     expect(log.gain).toBeLessThanOrEqual(4)
 
     expect(FORECAST_HABITS.length).toBe(3)
+  })
+})
+
+describe("twin-state sync merge", () => {
+  it("server rituals fill empty local days, but local days win", () => {
+    const store = memStore()
+    const today = dayKey()
+    // Local already has today (partially done).
+    saveRitual(store, today, { fermented: true, plants: false, feeling: false })
+    const changed = mergeServerRituals(store, {
+      [today]: { fermented: false, plants: true, feeling: true }, // server disagrees → ignored
+      "2026-06-20": { fermented: true, plants: true, feeling: true }, // local empty → filled
+      "not-a-day": { fermented: true, plants: true, feeling: true }, // invalid key → ignored
+    })
+    expect(changed).toEqual(["2026-06-20"])
+    expect(loadRitual(store, today).fermented).toBe(true) // local untouched
+    expect(loadRitual(store, today).plants).toBe(false)
+    expect(ritualComplete(loadRitual(store, "2026-06-20"))).toBe(true)
+  })
+
+  it("collects only non-empty local days from the last 7", () => {
+    const store = memStore()
+    const today = dayKey()
+    saveRitual(store, today, { fermented: true, plants: false, feeling: false })
+    const collected = collectLocalRituals(store)
+    expect(Object.keys(collected)).toEqual([today])
+  })
+})
+
+describe("buildWeekInsideEmail", () => {
+  it("renders the week's slides into HTML + text with the twin CTA", async () => {
+    const { twin } = await buildAccountTwin(sampleInput())
+    const slides = buildWeekStory(twin)
+    const { subject, html, text } = buildWeekInsideEmail("Sarah", slides)
+    expect(subject).toContain("Your Week Inside")
+    expect(html).toContain("Sarah")
+    expect(html).toContain("/account/twin")
+    for (const s of slides) expect(html).toContain(s.title.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"))
+    expect(text).toContain("Open your Digital Twin")
+    expect(`${html}`).not.toMatch(/garden/i)
+  })
+})
+
+describe("twinEvolution", () => {
+  it("maps meal counts to growth stages with correct boundaries", async () => {
+    const mealFor = (n: number) =>
+      Array.from({ length: n }, (_, i) => ({
+        name: `Meal ${i}`,
+        score: 70,
+        prebiotic: 60,
+        probiotic: 50,
+        postbiotic: 40,
+        createdAt: new Date(Date.now() - i * 3_600_000).toISOString(),
+      }))
+    const stageFor = async (n: number) => {
+      const { twin } = await buildAccountTwin(sampleInput({ meals: mealFor(n) }))
+      return twinEvolution(twin)
+    }
+    expect((await stageFor(0)).stage).toBe("meeting")
+    expect((await stageFor(2)).stage).toBe("meeting")
+    const learning = await stageFor(3)
+    expect(learning.stage).toBe("learning")
+    expect(learning.index).toBe(2)
+    expect(learning.next).toEqual({ label: "Attuned", remaining: 7 })
+    expect((await stageFor(10)).stage).toBe("attuned")
+    // Replay caps at 20 meals, so Expert (25+) is reached over time via history
+    // — the boundary itself is still exercised through the raw count logic.
+    const attuned = await stageFor(20)
+    expect(attuned.stage).toBe("attuned")
+    expect(attuned.next!.label).toBe("Expert")
+  })
+
+  it("keeps the after-meal journey generic and non-medical", () => {
+    expect(AFTER_MEAL_STEPS.length).toBe(4)
+    for (const s of AFTER_MEAL_STEPS) {
+      expect(`${s.title} ${s.detail}`).not.toMatch(/cure|treat|diagnos|garden|will\b/i)
+      expect(s.at).toBeTruthy()
+    }
   })
 })
 

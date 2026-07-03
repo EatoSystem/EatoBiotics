@@ -919,3 +919,28 @@ END $$;
 -- (values 'male' | 'female', else null → the generic couple figure). ADD-only,
 -- idempotent. Set via My Account settings + onboarding.
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS sex text;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 36: twin_state (ritual + milestone sync across devices)
+-- ────────────────────────────────────────────────────────────
+-- The Digital Twin's Daily Ritual ticks and milestone seen-set are
+-- localStorage-first for instant taps; this table lets signed-in members keep
+-- them across devices. One row per user; the app merge-writes (union of
+-- milestone ids, per-day ritual merge) via /api/twin-state. Idempotent.
+CREATE TABLE IF NOT EXISTS twin_state (
+  user_id         uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  rituals         jsonb NOT NULL DEFAULT '{}'::jsonb,   -- { "YYYY-MM-DD": {fermented,plants,feeling} }
+  milestones_seen text[] NOT NULL DEFAULT '{}',
+  updated_at      timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE twin_state ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'twin_state' AND policyname = 'twin_state_own') THEN
+    CREATE POLICY twin_state_own ON twin_state
+      FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+  END IF;
+END $$;
