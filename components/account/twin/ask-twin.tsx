@@ -30,11 +30,11 @@ function buildPrompts(twin: FoodSystemDigitalTwin): string[] {
   return prompts.slice(0, 3)
 }
 
-export function AskTwin({ twin, consultHref = "/account/consult" }: { twin: FoodSystemDigitalTwin; consultHref?: string }) {
+export function AskTwin({ twin, consultHref = "/account/consult", bare = false }: { twin: FoodSystemDigitalTwin; consultHref?: string; bare?: boolean }) {
   const prompts = buildPrompts(twin)
 
   return (
-    <section className="mx-auto max-w-5xl px-4 pt-8 md:px-8">
+    <section className={bare ? "min-w-0" : "mx-auto max-w-5xl px-4 pt-8 md:px-8"}>
       <div className="mb-4">
         <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Ask your Food System</p>
         <h3 className="mt-1 font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>It knows your Food System. Ask it anything.</h3>

@@ -655,14 +655,44 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
 /* ─────────────────────────────────────────────────────────────────────────
    Component
    ───────────────────────────────────────────────────────────────────────── */
-/** Tiny group eyebrow that gives the Overview its Today → This week → Learn rhythm. */
+/** Chapter heading — serif title + hairline; one consistent pt-12 rhythm so the
+    Overview reads as chapters of one page, not stacked fragments. */
 function GroupLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mx-auto max-w-5xl px-4 pt-10 md:px-8">
-      <p className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.25em]" style={{ color: "var(--muted-foreground)" }}>
-        {children}
+    <div className="mx-auto max-w-5xl px-4 pt-12 md:px-8">
+      <div className="flex items-center gap-4">
+        <h2 className="shrink-0 font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>{children}</h2>
         <span className="h-px flex-1" style={{ background: "var(--border)" }} />
-      </p>
+      </div>
+    </div>
+  )
+}
+
+/** What changed today — the twin's live trends as sentence chips (↑ growth in
+    green, ↓ dips in amber; changes, not levels — the daily return loop). */
+function WhatChangedToday({ twin }: { twin: FoodSystemDigitalTwin }) {
+  if (!twin.trends.length) return null
+  return (
+    <div className="mx-auto max-w-5xl px-4 pt-6 md:px-8">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: "var(--muted-foreground)" }}>What changed</span>
+        {twin.trends.slice(0, 4).map((t) => (
+          <span
+            key={t.label}
+            title={t.detail}
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
+            style={
+              t.direction === "up"
+                ? { background: "rgba(168,224,99,0.16)", border: "1px solid rgba(76,182,72,0.3)", color: "#2d7a24" }
+                : t.direction === "down"
+                  ? { background: "rgba(245,166,35,0.12)", border: "1px solid rgba(245,166,35,0.3)", color: "#a05a0a" }
+                  : { background: "var(--muted)", border: "1px solid var(--border)", color: "var(--muted-foreground)" }
+            }
+          >
+            {t.direction === "up" ? "↑" : t.direction === "down" ? "↓" : "→"} {t.label}
+          </span>
+        ))}
+      </div>
     </div>
   )
 }
@@ -883,7 +913,8 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
   const timeOfDay = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening"
 
   return (
-    <div className="min-h-screen" style={{ background: "white" }}>
+    // one continuous warm canvas — cards float on the wash, no flat-white seams
+    <div className="min-h-screen" style={{ background: "#FDFBF7" }}>
 
       {/* ══════════════════════════════════════════════════════════════════
           HERO — gradient band (legacy greeting; the Twin's TodayStrip + stage
@@ -1068,10 +1099,18 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
               ) : undefined
             }
           />
+          {/* dark→light bridge — the stage hands over to the cream canvas */}
+          <div aria-hidden style={{ height: 64, background: "linear-gradient(180deg, #16290F 0%, #E9F1DC 55%, #FDFBF7 100%)" }} />
+
+          {/* what changed today — the daily return loop, sentences not levels */}
+          <WhatChangedToday twin={twin} />
+
           {/* [TODAY] — the daily ritual heartbeat + one clear priority */}
           <GroupLabel>Today</GroupLabel>
-          <DailyRitual twin={twin} streak={displayStreak} authed={!!propEmail} />
-          <TwinNextAction twin={twin} />
+          <div className="mx-auto mt-4 grid max-w-5xl items-start gap-5 px-4 md:px-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+            <DailyRitual twin={twin} streak={displayStreak} authed={!!propEmail} bare />
+            <TwinNextAction twin={twin} bare />
+          </div>
 
           {/* [THIS WEEK] — what the Twin has learned */}
           <GroupLabel>This week</GroupLabel>
@@ -1086,8 +1125,10 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
           {/* [LEARN & ASK] — education + the AI bridge. Score/next-action live
               on the stage and /account/twin — no duplicates here. */}
           <GroupLabel>Learn &amp; ask</GroupLabel>
-          <InsideYouTeaser twin={twin} />
-          <AskTwin twin={twin} consultHref="/account/consult" />
+          <div className="mx-auto mt-4 grid max-w-5xl items-start gap-5 px-4 md:px-8 lg:grid-cols-2">
+            <InsideYouTeaser twin={twin} bare />
+            <AskTwin twin={twin} consultHref="/account/consult" bare />
+          </div>
         </>
       )}
 
@@ -1267,37 +1308,33 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
           {/* ── LEFT: Logger + Today's Meals ── */}
           <div className="space-y-5">
 
-            {/* Returning user context hook */}
-            <p className="text-center text-xs" style={{ color: "var(--muted-foreground)" }}>
-              Your last meal was logged yesterday. Ready to start today?
-            </p>
-
             {/* Logger */}
             <div id="log-meal" className="scroll-mt-24">
 
-              {/* Empty state */}
+              {/* Empty state — standard white card language, same behaviour */}
               {loggerState === "empty" && (
                 <div className="overflow-hidden rounded-2xl" style={{
-                  background: "linear-gradient(135deg, var(--icon-green) 0%, var(--icon-teal) 45%, var(--icon-yellow) 80%, var(--icon-orange) 100%)",
-                  boxShadow: "0 8px 32px rgba(26,46,18,0.22)",
+                  background: "white",
+                  border: "1px solid var(--border)",
+                  boxShadow: "0 4px 20px rgba(26,46,18,0.07)",
                 }}>
                   {/* Top brand gradient strip */}
                   <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
 
                   {/* Decorative food image strip — context row, subordinate */}
-                  <div className="flex items-center px-5 pt-5 pb-3" style={{ opacity: 0.85 }}>
+                  <div className="flex items-center px-5 pt-5 pb-3">
                     {["/food-3.webp", "/food-5.webp", "/food-7.webp", "/food-2.webp"].map((src, i) => (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img key={i} src={src} alt=""
                         className="rounded-full object-cover"
                         style={{
                           width: 32, height: 32, flexShrink: 0,
-                          border: "2px solid rgba(255,255,255,0.22)",
+                          border: "2px solid white",
                           marginLeft: i > 0 ? -8 : 0,
-                          boxShadow: "0 2px 6px rgba(0,0,0,0.22)",
+                          boxShadow: "0 2px 6px rgba(26,46,18,0.18)",
                         }} />
                     ))}
-                    <span className="ml-3 text-xs font-semibold" style={{ color: "rgba(255,255,255,0.70)" }}>
+                    <span className="ml-3 text-xs font-semibold" style={{ color: "var(--muted-foreground)" }}>
                       7 meals analysed this week
                     </span>
                   </div>
@@ -1308,29 +1345,29 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                     <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full"
                       style={{
                         background: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
-                        boxShadow: "0 4px 20px rgba(245,166,35,0.45)",
+                        boxShadow: "0 4px 20px rgba(245,166,35,0.35)",
                       }}>
                       <Camera size={26} color="white" />
                     </div>
 
-                    <h2 className="font-serif text-xl font-bold text-white">
+                    <h2 className="font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>
                       Analyse your Meal
                     </h2>
-                    <p className="mt-2 max-w-xs text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.75)" }}>
+                    <p className="mt-2 max-w-xs text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
                       Take or upload a photo of your meal. EatoBiotics will analyse its biotics profile and teach you what&apos;s happening inside.
                     </p>
 
                     {/* Primary CTA — Take photo, centred */}
                     <button
-                      className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold transition-opacity hover:opacity-90"
-                      style={{ background: "white", color: "var(--icon-green)", boxShadow: "0 4px 16px rgba(0,0,0,0.15)" }}>
+                      className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+                      style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", boxShadow: "0 4px 16px rgba(45,170,110,0.3)" }}>
                       <Camera size={16} /> Take photo
                     </button>
 
                     {/* Secondary — Upload, equal sibling to Take photo */}
                     <button
-                      className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-opacity hover:opacity-90"
-                      style={{ background: "white", color: "var(--icon-green)", boxShadow: "0 4px 16px rgba(0,0,0,0.15)" }}>
+                      className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-colors hover:bg-black/[0.03]"
+                      style={{ background: "white", border: "1px solid var(--icon-green)", color: "var(--icon-green)" }}>
                       ↑ Upload image
                     </button>
 
@@ -1342,22 +1379,22 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                         value={mealInput}
                         onChange={(e) => setMealInput(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter") void handleAnalyse() }}
-                        className="flex-1 rounded-xl px-4 py-2.5 text-sm outline-none placeholder:text-white/45"
+                        className="flex-1 rounded-xl px-4 py-2.5 text-sm outline-none transition-colors focus:border-[var(--icon-green)]"
                         style={{
-                          background: "rgba(255,255,255,0.10)",
-                          border: "1px solid rgba(255,255,255,0.18)",
-                          color: "white",
+                          background: "var(--muted)",
+                          border: "1px solid var(--border)",
+                          color: "var(--foreground)",
                         }} />
                       <button
                         onClick={() => void handleAnalyse()}
                         disabled={!mealInput.trim()}
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl disabled:opacity-40"
-                        style={{ background: "rgba(255,255,255,0.20)" }}>
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white disabled:opacity-40"
+                        style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
                         <ArrowRight size={16} color="white" />
                       </button>
                     </div>
                     {analyseError && (
-                      <p className="mt-2 text-center text-xs" style={{ color: "rgba(255,100,100,0.90)" }}>{analyseError}</p>
+                      <p className="mt-2 text-center text-xs" style={{ color: "#a05a0a" }}>{analyseError}</p>
                     )}
                   </div>
                 </div>

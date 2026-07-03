@@ -41,38 +41,63 @@ function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) 
 /* ── What Your Food System Learned Today ──────────────────────────────────── */
 export function TwinLearnedToday({ feed }: { feed: TwinFeedEntry[] }) {
   if (!feed.length) return null
+  const [top, ...rest] = feed
+  const TopIcon = FEED_ICON[top.icon] ?? Sparkles
   return (
     <section className="mx-auto max-w-5xl px-4 pt-8 md:px-8">
       <SectionHeading eyebrow="Learning" title="What your Food System learned today" />
-      <div className="grid gap-2.5 sm:grid-cols-2">
-        {feed.slice(0, 6).map((e) => {
-          const Icon = FEED_ICON[e.icon] ?? Sparkles
-          return (
-            <div key={e.id} className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4" style={{ boxShadow: "0 2px 12px rgba(26,46,18,0.05)" }}>
-              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ background: "color-mix(in srgb, var(--icon-green) 12%, white)", color: "var(--icon-green)" }}>
-                <Icon size={14} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold leading-snug" style={{ color: "var(--foreground)" }}>{e.title}</p>
-                <p className="mt-0.5 text-xs leading-snug" style={{ color: "var(--muted-foreground)" }}>{e.detail}</p>
-              </div>
-              {e.at && <span className="shrink-0 text-[10px]" style={{ color: "var(--muted-foreground)" }}>{timeAgo(e.at)}</span>}
-            </div>
-          )
-        })}
+
+      {/* Insight of the day — the one thing to remember */}
+      <div
+        className="flex items-start gap-4 rounded-2xl p-5"
+        style={{
+          background: "linear-gradient(135deg, color-mix(in srgb, var(--icon-green) 9%, white), color-mix(in srgb, var(--icon-yellow) 7%, white))",
+          border: "1px solid color-mix(in srgb, var(--icon-green) 35%, white)",
+          boxShadow: "0 4px 24px rgba(76,182,72,0.12)",
+        }}
+      >
+        <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white" style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", boxShadow: "0 4px 14px rgba(76,182,72,0.35)" }}>
+          <TopIcon size={16} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Insight of the day</p>
+          <p className="mt-1 font-serif text-base font-bold leading-snug" style={{ color: "var(--foreground)" }}>{top.title}</p>
+          <p className="mt-0.5 text-sm leading-snug" style={{ color: "var(--muted-foreground)" }}>{top.detail}</p>
+        </div>
+        {top.at && <span className="shrink-0 text-[10px]" style={{ color: "var(--muted-foreground)" }}>{timeAgo(top.at)}</span>}
       </div>
+
+      {rest.length > 0 && (
+        <div className="mt-2.5 grid gap-2.5 sm:grid-cols-2">
+          {rest.slice(0, 6).map((e) => {
+            const Icon = FEED_ICON[e.icon] ?? Sparkles
+            return (
+              <div key={e.id} className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4" style={{ boxShadow: "0 2px 12px rgba(26,46,18,0.05)" }}>
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ background: "color-mix(in srgb, var(--icon-green) 12%, white)", color: "var(--icon-green)" }}>
+                  <Icon size={14} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold leading-snug" style={{ color: "var(--foreground)" }}>{e.title}</p>
+                  <p className="mt-0.5 text-xs leading-snug" style={{ color: "var(--muted-foreground)" }}>{e.detail}</p>
+                </div>
+                {e.at && <span className="shrink-0 text-[10px]" style={{ color: "var(--muted-foreground)" }}>{timeAgo(e.at)}</span>}
+              </div>
+            )
+          })}
+        </div>
+      )}
     </section>
   )
 }
 
 /* ── Your Next Best Action ─────────────────────────────────────────── */
-export function TwinNextAction({ twin }: { twin: FoodSystemDigitalTwin }) {
+export function TwinNextAction({ twin, bare = false }: { twin: FoodSystemDigitalTwin; bare?: boolean }) {
   const [status, setStatus] = useState<"open" | "done" | "skipped">("open")
   const nba = twin.nextBestAction
   if (!nba) return null
 
   return (
-    <section className="mx-auto max-w-5xl px-4 pt-8 md:px-8">
+    <section className={bare ? "min-w-0" : "mx-auto max-w-5xl px-4 pt-8 md:px-8"}>
       <SectionHeading eyebrow="Today's Focus" title="Your Next Best Action" />
       {status === "open" ? (
         <NextBestActionCard

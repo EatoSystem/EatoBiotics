@@ -79,11 +79,11 @@ export function InsideYouSection({
  * Compact Overview teaser — links to the full interactive story on the Twin
  * page without loading the Remotion player on the account Overview.
  */
-export function InsideYouTeaser({ twin, href = "/account/twin" }: { twin: FoodSystemDigitalTwin; href?: string }) {
+export function InsideYouTeaser({ twin, href = "/account/twin", bare = false }: { twin: FoodSystemDigitalTwin; href?: string; bare?: boolean }) {
   const chapters = useMemo(() => buildInsideYouChapters(twin), [twin])
   const colors = ["#4CB648", "#A8E063", "#2DAA6E", "#F5A623"]
   return (
-    <section className="mx-auto max-w-5xl px-4 pt-8 md:px-8">
+    <section className={bare ? "min-w-0" : "mx-auto max-w-5xl px-4 pt-8 md:px-8"}>
       <Link
         href={href}
         className="group flex items-center gap-4 rounded-2xl border border-border p-5 transition-shadow hover:shadow-lg"

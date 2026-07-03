@@ -27,7 +27,7 @@ import {
 import { hydrateTwinState, pushTwinState } from "@/lib/account/twin-state-sync"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
 
-export function DailyRitual({ twin, streak = 0, authed = false }: { twin: FoodSystemDigitalTwin; streak?: number; authed?: boolean }) {
+export function DailyRitual({ twin, streak = 0, authed = false, bare = false }: { twin: FoodSystemDigitalTwin; streak?: number; authed?: boolean; bare?: boolean }) {
   const [ritual, setRitual] = useState<RitualDay>(EMPTY_RITUAL)
   const [ack, setAck] = useState<string | null>(null)
   const today = dayKey()
@@ -70,7 +70,7 @@ export function DailyRitual({ twin, streak = 0, authed = false }: { twin: FoodSy
   const done = ritualCount(ritual)
 
   return (
-    <section className="mx-auto max-w-5xl px-4 pt-8 md:px-8">
+    <section className={bare ? "min-w-0" : "mx-auto max-w-5xl px-4 pt-8 md:px-8"}>
       <div className="mb-4">
         <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Daily ritual</p>
         <h3 className="mt-1 font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>
