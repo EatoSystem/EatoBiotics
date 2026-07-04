@@ -246,7 +246,7 @@ export default async function DemoAccountTierPage({
           <GroupLabel>This week</GroupLabel>
           <TwinLearnedToday feed={demoFeed} />
           {/* Public showcase: the full personalized story plays right on the demo. */}
-          <InsideYouSection twin={demoTwin} />
+          <InsideYouSection twin={demoTwin} figureSrc={twinFigureSrc("female")} />
           <GroupLabel>Learn &amp; ask</GroupLabel>
           <AskTwin twin={demoTwin} consultHref="/demo/account/consult" />
         </div>

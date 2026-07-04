@@ -136,7 +136,7 @@ export function TwinDashboard({
       <QuickLog open={quickLogOpen} onClose={() => setQuickLogOpen(false)} onReveal={onReveal} mock={demo} />
 
       {/* the Inside You cinema band */}
-      <InsideYouSection twin={twin} />
+      <InsideYouSection twin={twin} figureSrc={figureSrc} />
 
       {/* journey + what-if + real-world tools (light, full-width sections) */}
       <Journey twin={twin} streak={streak} />

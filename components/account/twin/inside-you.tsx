@@ -8,42 +8,25 @@
  */
 
 import { useMemo } from "react"
-import dynamic from "next/dynamic"
 import Link from "next/link"
 import { Play } from "lucide-react"
 import { buildInsideYouChapters } from "@/lib/account/inside-you"
+import { InsideYouJourney } from "./inside-you-journey"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
-
-const InsideYouPlayer = dynamic(() => import("@/components/twin-motion/inside-you-player"), {
-  ssr: false,
-  loading: () => (
-    <div
-      className="flex aspect-video w-full items-center justify-center rounded-2xl"
-      style={{ background: "linear-gradient(175deg, #0B1607 0%, #16290F 100%)", border: "1px solid rgba(253,251,247,0.14)" }}
-    >
-      <div className="text-center">
-        <div
-          className="eb-aura mx-auto h-16 w-16 rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(168,224,99,0.7) 0%, rgba(245,197,24,0.4) 55%, rgba(255,255,255,0) 75%)" }}
-        />
-        <p className="mt-3 text-xs font-semibold" style={{ color: "rgba(253,251,247,0.6)" }}>
-          Waking your Food System story…
-        </p>
-      </div>
-    </div>
-  ),
-})
 
 /**
  * Full-bleed dark cinema band: the page reads dark stage → light content →
- * dark cinema → light, which is what makes the experience feel premium.
+ * dark cinema → light, which is what makes the experience feel premium. The
+ * body is the stage — an interactive journey through it, not a passive film.
  */
 export function InsideYouSection({
   twin,
+  figureSrc = "/images/couple-hero.png",
   eyebrow = "Inside you",
-  title = "How the Food System inside you works",
+  title = "Journey through the Food System inside you",
 }: {
   twin: FoodSystemDigitalTwin
+  figureSrc?: string
   eyebrow?: string
   title?: string
 }) {
@@ -56,15 +39,15 @@ export function InsideYouSection({
         <div className="absolute -right-24 bottom-0 h-[420px] w-[420px] rounded-full" style={{ background: "radial-gradient(circle, rgba(245,166,35,0.08) 0%, transparent 65%)" }} />
       </div>
       <div className="relative mx-auto max-w-5xl px-4 py-12 md:px-8 md:py-16">
-        <div className="mb-5">
+        <div className="mb-7">
           <p className="text-[11px] font-bold uppercase tracking-[0.22em]" style={{ color: "#A8E063" }}>{eyebrow}</p>
           <h3 className="mt-2 font-serif text-2xl font-bold md:text-3xl" style={{ color: "#FDFBF7" }}>{title}</h3>
           <p className="mt-1.5 text-sm" style={{ color: "rgba(253,251,247,0.55)" }}>
-            A living story with your real levels — tap a chapter to jump in.
+            Move through your body at your own pace — tap a stop, or play the whole journey.
           </p>
         </div>
-        <InsideYouPlayer chapters={chapters} />
-        <p className="mt-3 px-1 text-[11px] leading-relaxed" style={{ color: "rgba(253,251,247,0.4)" }}>
+        <InsideYouJourney chapters={chapters} figureSrc={figureSrc} />
+        <p className="mt-6 px-1 text-[11px] leading-relaxed" style={{ color: "rgba(253,251,247,0.4)" }}>
           EatoBiotics provides food-first guidance for general wellbeing and is not medical advice.{" "}
           <Link href="/method" className="font-semibold underline underline-offset-2 transition-colors hover:text-white" style={{ color: "rgba(253,251,247,0.55)" }}>
             Read our method →
