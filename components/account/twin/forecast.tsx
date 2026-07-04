@@ -10,11 +10,51 @@
  */
 
 import { useMemo, useState } from "react"
+import Image from "next/image"
 import { Check } from "lucide-react"
 import { FORECAST_HABITS, projectScore, type HabitSelection } from "@/lib/account/forecast"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
 
 const HABIT_COLOR: Record<string, string> = { fermented: "#2DAA6E", plants: "#A8E063", logging: "#F5C518" }
+
+/* Where each projected biotic lights the preview body (% of the mini stage). */
+const FORECAST_NODE = {
+  probiotics: { x: 54, y: 54, color: "#2DAA6E" }, // gut — fermented
+  prebiotics: { x: 47, y: 62, color: "#A8E063" },  // lower gut — plants
+  postbiotics: { x: 48, y: 44, color: "#F5C518" }, // core — the give-back
+} as const
+
+/** The preview body: brighter aura + pathway nodes lit by the *projected*
+    4-week biotics, so a better choice visibly strengthens the Food System. */
+function ForecastFigure({ biotics, projected, now, figureSrc }: {
+  biotics: { prebiotics: number; probiotics: number; postbiotics: number }
+  projected: number
+  now: number
+  figureSrc: string
+}) {
+  const lift = Math.max(0, projected - now) // 0..~30
+  return (
+    <div className="relative mx-auto aspect-square w-full max-w-[200px]">
+      <div className="absolute left-1/2 top-1/2 h-[94%] w-[94%] rounded-full" style={{ transform: "translate(-50%,-50%)", background: "radial-gradient(circle, #FDFBF7 0%, #FDFBF7 55%, rgba(253,251,247,0) 76%)" }} />
+      {/* aura brightens with the projected overall gain */}
+      <div className="eb-aura absolute left-1/2 top-1/2 h-full w-full rounded-full" style={{ transform: "translate(-50%,-50%)", background: "radial-gradient(circle, rgba(168,224,99,0.55) 0%, rgba(245,197,24,0.4) 45%, transparent 72%)", opacity: 0.55 + Math.min(0.4, lift / 60), transition: "opacity .6s" }} />
+      <Image src={figureSrc} alt="" width={200} height={200} sizes="200px" className="absolute left-1/2 top-1/2 h-[74%] w-[74%] object-contain" style={{ transform: "translate(-50%,-50%)", mixBlendMode: "multiply" }} />
+      {(Object.keys(FORECAST_NODE) as Array<keyof typeof FORECAST_NODE>).map((k) => {
+        const node = FORECAST_NODE[k]
+        const level = biotics[k] // 0..100
+        const strong = level >= 55
+        return (
+          <span key={k} aria-hidden className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${node.x}%`, top: `${node.y}%` }}>
+            <span className="relative flex h-6 w-6 items-center justify-center">
+              {strong && <span className="eb-ping absolute inline-flex h-full w-full rounded-full" style={{ background: node.color, opacity: 0.5 }} />}
+              <span className="relative inline-flex rounded-full" style={{ height: 6 + (level / 100) * 8, width: 6 + (level / 100) * 8, background: node.color, boxShadow: `0 0 ${4 + (level / 100) * 14}px ${node.color}cc`, opacity: 0.4 + (level / 100) * 0.6, transition: "all .6s" }} />
+            </span>
+          </span>
+        )
+      })}
+    </div>
+  )
+}
 
 function Curve({ weeks, now }: { weeks: number[]; now: number }) {
   const w = 560
@@ -54,7 +94,7 @@ function Curve({ weeks, now }: { weeks: number[]; now: number }) {
   )
 }
 
-export function ForecastCard({ twin }: { twin: FoodSystemDigitalTwin }) {
+export function ForecastCard({ twin, figureSrc = "/images/couple-hero.png" }: { twin: FoodSystemDigitalTwin; figureSrc?: string }) {
   const [habits, setHabits] = useState<HabitSelection>({})
   const forecast = useMemo(() => projectScore(twin, habits), [twin, habits])
   const now = Math.round(twin.currentScore.value)
@@ -99,7 +139,14 @@ export function ForecastCard({ twin }: { twin: FoodSystemDigitalTwin }) {
           })}
         </div>
 
-        <div className="mt-4">
+        <div className="mt-4 grid gap-4 md:grid-cols-[200px_1fr] md:items-center">
+          {/* the preview body — brightens with a better projected day */}
+          <div>
+            <ForecastFigure biotics={forecast.biotics} projected={forecast.projected} now={now} figureSrc={figureSrc} />
+            <p className="mt-1 text-center text-[10px] font-bold uppercase tracking-widest" style={{ color: anyOn && forecast.gain > 0 ? "var(--icon-green)" : "var(--muted-foreground)" }}>
+              {anyOn && forecast.gain > 0 ? "Your Food System in 4 weeks" : "Your Food System today"}
+            </p>
+          </div>
           <Curve weeks={forecast.weeks} now={now} />
         </div>
 

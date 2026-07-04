@@ -106,6 +106,16 @@ describe("projectScore (what-if forecast)", () => {
     expect(log.gain).toBeGreaterThan(0)
     expect(log.gain).toBeLessThanOrEqual(4)
 
+    // Projected biotics drive the preview figure: fermented lifts probiotics,
+    // plants lift prebiotics, both spill into postbiotics; none holds steady.
+    expect(none.biotics.probiotics).toBe(twin.biotics.probiotics.score)
+    expect(none.biotics.prebiotics).toBe(twin.biotics.prebiotics.score)
+    expect(ferm.biotics.probiotics).toBeGreaterThan(twin.biotics.probiotics.score)
+    const plants = projectScore(twin, { plants: true })
+    expect(plants.biotics.prebiotics).toBeGreaterThan(twin.biotics.prebiotics.score)
+    expect(all.biotics.postbiotics).toBeGreaterThanOrEqual(twin.biotics.postbiotics.score)
+    for (const v of Object.values(all.biotics)) expect(v).toBeLessThanOrEqual(100)
+
     expect(FORECAST_HABITS.length).toBe(3)
   })
 })

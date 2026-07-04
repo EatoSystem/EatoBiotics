@@ -35,6 +35,8 @@ export interface Forecast {
   projected: number
   /** Gain vs now. */
   gain: number
+  /** Projected 4-week per-biotic levels — drives the preview figure's pathways. */
+  biotics: { prebiotics: number; probiotics: number; postbiotics: number }
 }
 
 /** Weekly gain a biotic can absorb — larger when the level is low (diminishing returns). */
@@ -71,5 +73,14 @@ export function projectScore(twin: FoodSystemDigitalTwin, habits: HabitSelection
   }
 
   const projected = weeks[weeks.length - 1]
-  return { weeks, projected, gain: projected - now }
+  return {
+    weeks,
+    projected,
+    gain: projected - now,
+    biotics: {
+      prebiotics: Math.round(b.prebiotics),
+      probiotics: Math.round(b.probiotics),
+      postbiotics: Math.round(b.postbiotics),
+    },
+  }
 }

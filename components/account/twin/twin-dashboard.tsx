@@ -140,7 +140,7 @@ export function TwinDashboard({
 
       {/* journey + what-if + real-world tools (light, full-width sections) */}
       <Journey twin={twin} streak={streak} />
-      <ForecastCard twin={twin} />
+      <ForecastCard twin={twin} figureSrc={figureSrc} />
       <MenuScan mock={demo} />
       <AskTwin twin={twin} consultHref={consultHref} />
 
