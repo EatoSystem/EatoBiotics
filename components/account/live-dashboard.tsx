@@ -22,6 +22,7 @@ import { QuickLog, type QuickLogResult } from "@/components/account/twin/quick-l
 import { InsideYouTeaser } from "@/components/account/twin/inside-you"
 import { DailyRitual } from "@/components/account/twin/daily-ritual"
 import { AskTwin } from "@/components/account/twin/ask-twin"
+import { SystemsExplorer } from "@/components/account/systems-explorer"
 import { MeetTwinChecklist } from "@/components/account/twin/meet-checklist"
 import { MeetBodyHero } from "@/components/account/twin/meet-body-hero"
 import { detectMilestones, unseenMilestones, loadSeen, saveSeen, type Milestone } from "@/lib/account/milestones"
@@ -1146,6 +1147,10 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             <InsideYouTeaser twin={twin} bare />
             <AskTwin twin={twin} consultHref="/account/consult" bare />
           </div>
+
+          {/* [EXPLORE] — lenses into the same Food System (Foundation / Health / Life) */}
+          <GroupLabel>Explore your Food System</GroupLabel>
+          <SystemsExplorer />
         </>
       )}
 
