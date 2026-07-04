@@ -30,14 +30,68 @@ const STOP_META = [
 
 const AUTOPLAY_MS = 6000
 
-/* Drifting life near the active region — microbes for the gut stops, sparks for
-   the give-back. Deterministic placement so SSR/client match. */
-const MOTES = [
-  { dx: -34, dy: -18, s: 9, d: 0 },
-  { dx: 30, dy: 22, s: 7, d: 1400 },
-  { dx: -22, dy: 28, s: 8, d: 2600 },
-  { dx: 26, dy: -26, s: 6, d: 900 },
-]
+/* ── Per-stop living motion — the biology of each stop, told in particles ─────
+   0 You eat        → food motes converge into the body (the meal entering)
+   1 Down in your gut → fibre streams drift + feeding pulses (prebiotics feed)
+   2 Your microbes    → a colony wobbles and multiplies (probiotics work)
+   3 Through your body → postbiotic sparks + rings radiate out (the give-back)
+   Keyed by stop so animations restart cleanly. Reduced-motion-safe (eb-*). */
+function StopMotion({ stop, color, region }: { stop: number; color: string; region: { x: number; y: number } }) {
+  const cx = `${region.x}%`
+  const cy = `${region.y}%`
+
+  if (stop === 0) {
+    // food converging inward onto the body
+    const drops = [
+      { x: -120, y: -90, c: "#A8E063", s: 10, d: 0 },
+      { x: 110, y: -70, c: "#F5C518", s: 8, d: 300 },
+      { x: -80, y: 100, c: "#4CB648", s: 9, d: 600 },
+      { x: 130, y: 60, c: "#F5A623", s: 7, d: 200 },
+      { x: 0, y: -130, c: "#2DAA6E", s: 9, d: 450 },
+    ]
+    return (
+      <div key={stop} aria-hidden className="pointer-events-none absolute inset-0">
+        {drops.map((p, i) => (
+          <span key={i} className="eb-absorb absolute" style={{ left: cx, top: cy, width: p.s, height: p.s, marginLeft: -p.s / 2, marginTop: -p.s / 2, borderRadius: "50%", background: p.c, boxShadow: `0 0 12px ${p.c}aa`, opacity: 0, animationDuration: "1.5s", animationDelay: `${p.d + 200}ms`, ["--eb-from-x" as string]: `${p.x}px`, ["--eb-from-y" as string]: `${p.y}px` }} />
+        ))}
+      </div>
+    )
+  }
+
+  if (stop === 3) {
+    // the give-back — rings + sparks radiating through the whole body
+    return (
+      <div key={stop} aria-hidden className="pointer-events-none absolute inset-0">
+        {[0, 1].map((i) => (
+          <span key={`ring-${i}`} className="eb-burst-ring absolute rounded-full" style={{ left: cx, top: cy, width: "60%", height: "60%", border: `2px solid ${color}99`, animationDelay: `${i * 700}ms`, animationDuration: "2.4s" }} />
+        ))}
+        {[-60, -20, 20, 60].map((dx, i) => (
+          <span key={`spark-${i}`} className="eb-rise absolute rounded-full" style={{ left: `calc(${cx} + ${dx}px)`, top: cy, width: 6, height: 6, background: i % 2 ? "#F5C518" : color, boxShadow: `0 0 10px ${color}`, animationDelay: `${i * 260}ms`, animationDuration: "3.4s" }} />
+        ))}
+      </div>
+    )
+  }
+
+  // stops 1 & 2 — a drifting / multiplying colony near the gut
+  const count = stop === 2 ? 8 : 5
+  const motes = Array.from({ length: count }, (_, i) => {
+    const a = (i / count) * Math.PI * 2
+    const r = 22 + (i % 3) * 12
+    return { dx: Math.cos(a) * r, dy: Math.sin(a) * r * 0.85, s: 6 + (i % 3) * 2, d: i * 320, ping: stop === 2 && i % 3 === 0 }
+  })
+  return (
+    <div key={stop} aria-hidden className="pointer-events-none absolute inset-0">
+      {motes.map((m, i) => (
+        <span key={i} className="eb-float-big absolute" style={{ left: `calc(${cx} + ${m.dx}px)`, top: `calc(${cy} + ${m.dy}px)`, width: m.s, height: m.s, borderRadius: "50%", background: `radial-gradient(circle, ${color} 0%, ${color}66 60%, transparent 78%)`, boxShadow: `0 0 10px ${color}88`, animationDelay: `${m.d}ms`, animationDuration: "11s", transition: "left .7s ease, top .7s ease" }} />
+      ))}
+      {motes.filter((m) => m.ping).map((m, i) => (
+        <span key={`ping-${i}`} className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `calc(${cx} + ${m.dx}px)`, top: `calc(${cy} + ${m.dy}px)` }}>
+          <span className="eb-ping inline-flex h-5 w-5 rounded-full" style={{ background: color, opacity: 0.4 }} />
+        </span>
+      ))}
+    </div>
+  )
+}
 
 export function InsideYouJourney({ chapters, figureSrc }: { chapters: InsideYouChapter[]; figureSrc: string }) {
   const n = chapters.length
@@ -98,25 +152,8 @@ export function InsideYouJourney({ chapters, figureSrc }: { chapters: InsideYouC
           style={{ mixBlendMode: "multiply" }}
         />
 
-        {/* drifting life near the active region */}
-        {MOTES.map((m, i) => (
-          <span
-            key={`${stop}-${i}`}
-            aria-hidden
-            className="eb-float-big absolute rounded-full"
-            style={{
-              left: `calc(${meta.region.x}% + ${m.dx}px)`,
-              top: `calc(${meta.region.y}% + ${m.dy}px)`,
-              width: m.s,
-              height: m.s,
-              background: `radial-gradient(circle, ${color} 0%, ${color}66 60%, transparent 75%)`,
-              boxShadow: `0 0 10px ${color}88`,
-              animationDelay: `${m.d}ms`,
-              animationDuration: "12s",
-              transition: "left .7s ease, top .7s ease",
-            }}
-          />
-        ))}
+        {/* per-stop living motion — the biology of the active stop */}
+        <StopMotion stop={stop} color={color} region={meta.region} />
 
         {/* waypoint dots on the body — tap to jump */}
         {STOP_META.map((s, i) => {
