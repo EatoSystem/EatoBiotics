@@ -207,6 +207,7 @@ export function TwinStage({
   reveal = null,
   onRevealDone,
   onLogAnother,
+  signals = [],
 }: {
   twin: FoodSystemDigitalTwin
   visual: TwinVisualState
@@ -234,6 +235,9 @@ export function TwinStage({
   onRevealDone?: () => void
   /** Called from the reveal's "Log another" — reopens the QuickLog. */
   onLogAnother?: () => void
+  /** Today's completed ritual signals — soft persistent lit nodes on the figure
+      (the body carrying the day's habits). Node = % coords, like the reveal. */
+  signals?: Array<{ key: string; node: { x: number; y: number }; color: string; strain?: boolean }>
 }) {
   const [selected, setSelected] = useState<SystemHotspotKey | null>(null)
   const revealing = reveal != null
@@ -307,7 +311,7 @@ export function TwinStage({
             <div
               aria-hidden
               className="eb-aura pointer-events-none absolute left-1/2 top-1/2 h-full w-full rounded-full"
-              style={{ transform: "translate(-50%,-50%)", background: aura, opacity: Math.min(1, (0.5 + 0.4 * visual.confidence) * mood.auraMult), animationDuration: `${visual.pulseSec}s`, mixBlendMode: "screen", transition: "opacity 1s" }}
+              style={{ transform: "translate(-50%,-50%)", background: aura, opacity: Math.min(1, (0.5 + 0.4 * visual.confidence) * mood.auraMult + (revealing ? 0 : signals.length * 0.05)), animationDuration: `${visual.pulseSec}s`, mixBlendMode: "screen", transition: "opacity 1s" }}
             />
             {/* the figure — video in a circular mask, or the still figure */}
             <div className="eb-orb-bloom absolute left-1/2 top-1/2 h-[84%] w-[84%] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full" style={{ animationDelay: "150ms" }}>
@@ -328,6 +332,22 @@ export function TwinStage({
 
             {/* ambient microbes + nutrients drifting inside the orb (calm loop) */}
             {!revealing && <StageAmbientLife />}
+
+            {/* today's ritual signals — soft persistent lit nodes: the body
+                carrying the day's habits (sleep, movement, food, mood) */}
+            {!revealing && signals.map((s) => (
+              <span
+                key={s.key}
+                aria-hidden
+                className="pointer-events-none absolute z-[6] -translate-x-1/2 -translate-y-1/2"
+                style={{ left: `${s.node.x}%`, top: `${s.node.y}%` }}
+              >
+                <span className="relative flex h-6 w-6 items-center justify-center">
+                  <span className="eb-ping absolute inline-flex h-full w-full rounded-full" style={{ background: s.color, opacity: s.strain ? 0.28 : 0.4, animationDuration: s.strain ? "3.2s" : "2.6s" }} />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full" style={{ background: s.color, boxShadow: `0 0 10px ${s.color}aa` }} />
+                </span>
+              </span>
+            ))}
 
             {/* constellation connector lines (desktop) — hidden while a meal reveals */}
             <svg aria-hidden viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 hidden h-full w-full sm:block" style={{ opacity: revealing ? 0 : 1, transition: "opacity 300ms" }}>

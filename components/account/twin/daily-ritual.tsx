@@ -56,21 +56,28 @@ function RitualBodyReaction({ check, figureSrc }: { check: RitualCheck; figureSr
   )
 }
 
-export function DailyRitual({ twin, streak = 0, authed = false, bare = false, figureSrc = "/images/couple-hero.png" }: { twin: FoodSystemDigitalTwin; streak?: number; authed?: boolean; bare?: boolean; figureSrc?: string }) {
+export function DailyRitual({ twin, streak = 0, authed = false, bare = false, figureSrc = "/images/couple-hero.png", onSignalsChange }: { twin: FoodSystemDigitalTwin; streak?: number; authed?: boolean; bare?: boolean; figureSrc?: string; onSignalsChange?: (ritual: RitualDay) => void }) {
   const [ritual, setRitual] = useState<RitualDay>(EMPTY_RITUAL)
   /** The last check ticked — drives the inline body-pulse reaction. */
   const [reacted, setReacted] = useState<RitualCheck | null>(null)
   const today = dayKey()
 
   useEffect(() => {
-    setRitual(loadRitual(browserStore(), today))
+    const loaded = loadRitual(browserStore(), today)
+    setRitual(loaded)
+    onSignalsChange?.(loaded)
     // Signed-in members: pull server-side ritual/milestone state so streaks
     // survive across devices (localStorage stays the live source of truth).
     if (authed) {
       void hydrateTwinState(browserStore()).then((todayChanged) => {
-        if (todayChanged) setRitual(loadRitual(browserStore(), today))
+        if (todayChanged) {
+          const merged = loadRitual(browserStore(), today)
+          setRitual(merged)
+          onSignalsChange?.(merged)
+        }
       })
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [today, authed])
 
   const toggle = (key: keyof RitualDay) => {
@@ -78,6 +85,7 @@ export function DailyRitual({ twin, streak = 0, authed = false, bare = false, fi
     setRitual(next)
     saveRitual(browserStore(), today, next)
     if (authed) pushTwinState(browserStore())
+    onSignalsChange?.(next)
     // Ticking a signal makes the body react; unticking clears the pulse.
     setReacted(next[key] ? RITUAL_CHECKS.find((c) => c.key === key) ?? null : null)
   }

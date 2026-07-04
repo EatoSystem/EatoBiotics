@@ -6,10 +6,11 @@
  * previewable: Add meal → analyse → the Meal Reveal plays out on the stage.
  */
 
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { TodayStrip } from "./today-strip"
 import { TwinStage } from "./twin-stage"
 import { QuickLog, MOCK_QUICK_LOG_RESULT, type QuickLogResult } from "./quick-log"
+import { browserStore, dayKey, loadRitual, ritualSignals } from "@/lib/account/ritual"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
 import type { TwinVisualState } from "@/lib/account/twin-visual"
 import type { TwinVideo } from "@/lib/account/twin-figure"
@@ -37,6 +38,15 @@ export function DemoTwinHero({
     setReveal(r)
     document.getElementById("fs-stage")?.scrollIntoView({ behavior: "smooth" })
   }, [])
+  /* Light the demo stage with today's ritual signals (re-reads when the tab
+     regains focus, e.g. after ticking a signal further down the page). */
+  const [signals, setSignals] = useState(() => ritualSignals(loadRitual(null, dayKey())))
+  useEffect(() => {
+    const read = () => setSignals(ritualSignals(loadRitual(browserStore(), dayKey())))
+    read()
+    window.addEventListener("focus", read)
+    return () => window.removeEventListener("focus", read)
+  }, [])
 
   return (
     <>
@@ -56,6 +66,7 @@ export function DemoTwinHero({
           setReveal(null)
           setQuickLogOpen(true)
         }}
+        signals={signals}
       />
       <QuickLog open={quickLogOpen} onClose={() => setQuickLogOpen(false)} onReveal={onReveal} mock />
     </>

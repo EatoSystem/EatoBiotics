@@ -24,7 +24,7 @@ import { DailyRitual } from "@/components/account/twin/daily-ritual"
 import { AskTwin } from "@/components/account/twin/ask-twin"
 import { MeetTwinChecklist } from "@/components/account/twin/meet-checklist"
 import { detectMilestones, unseenMilestones, loadSeen, saveSeen, type Milestone } from "@/lib/account/milestones"
-import { browserStore } from "@/lib/account/ritual"
+import { browserStore, dayKey as ritualDayKey, loadRitual, ritualSignals, type RitualDay } from "@/lib/account/ritual"
 import { pushTwinState } from "@/lib/account/twin-state-sync"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
 import type { TwinVisualState } from "@/lib/account/twin-visual"
@@ -835,6 +835,11 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
   const [quickLogOpen, setQuickLogOpen] = useState(false)
   /* The Meal Reveal — a logged meal plays out on the stage. */
   const [reveal, setReveal] = useState<QuickLogResult | null>(null)
+  /* Today's ritual signals — light the stage figure with the day's habits. */
+  const [todaySignals, setTodaySignals] = useState<RitualDay | null>(null)
+  useEffect(() => {
+    setTodaySignals(loadRitual(browserStore(), ritualDayKey()))
+  }, [])
   useEffect(() => {
     if (!twin) return
     const store = browserStore()
@@ -1099,6 +1104,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
               setReveal(null)
               setQuickLogOpen(true)
             }}
+            signals={todaySignals ? ritualSignals(todaySignals) : []}
             checklist={
               twin.observations.length < 3 ? (
                 <MeetTwinChecklist twin={twin} addMealHref={recentAnalyses.length > 0 ? "#log-meal" : "#first-meal-logger"} />
@@ -1114,7 +1120,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
           {/* [TODAY] — the daily ritual heartbeat + one clear priority */}
           <GroupLabel>Today</GroupLabel>
           <div className="mx-auto mt-4 grid max-w-5xl items-start gap-5 px-4 md:px-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-            <DailyRitual twin={twin} streak={displayStreak} authed={!!propEmail} bare figureSrc={twinFigureSrc ?? "/images/couple-hero.png"} />
+            <DailyRitual twin={twin} streak={displayStreak} authed={!!propEmail} bare figureSrc={twinFigureSrc ?? "/images/couple-hero.png"} onSignalsChange={setTodaySignals} />
             <TwinNextAction twin={twin} bare />
           </div>
 

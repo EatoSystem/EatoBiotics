@@ -39,6 +39,12 @@ export const RITUAL_CHECKS: RitualCheck[] = [
 
 export const EMPTY_RITUAL: RitualDay = { fermented: false, plants: false, moved: false, slept: false, feeling: false }
 
+/** Completed checks as lit-node signals for the stage figure (the body carrying
+    the day's habits). Shape matches TwinStage's `signals` prop. */
+export function ritualSignals(r: RitualDay): Array<{ key: string; node: { x: number; y: number }; color: string; strain?: boolean }> {
+  return RITUAL_CHECKS.filter((c) => r[c.key]).map((c) => ({ key: c.key, node: c.node, color: c.color, strain: c.strain }))
+}
+
 /** Minimal storage interface so the pure logic is testable without a browser. */
 export interface Store {
   getItem(key: string): string | null
