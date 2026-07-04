@@ -15,6 +15,7 @@ import {
   Tag, SectionLabel, GradientButton, ringColors,
 } from "@/components/account/dashboard-parts"
 import { TwinStage } from "@/components/account/twin/twin-stage"
+import { ExperienceNav } from "@/components/account/experience-nav"
 import { TodayStrip } from "@/components/account/twin/today-strip"
 import { TwinLearnedToday, TwinNextAction } from "@/components/account/twin/twin-sections"
 import { QuickLog, type QuickLogResult } from "@/components/account/twin/quick-log"
@@ -1078,6 +1079,11 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             onAddMeal={() => setQuickLogOpen(true)}
             todayHref="/account/today"
           />
+          <div style={{ background: "#0B1607" }}>
+            <div className="mx-auto max-w-6xl px-4 pb-3 md:px-8">
+              <ExperienceNav variant="dark" />
+            </div>
+          </div>
           <TwinStage
             twin={twin}
             visual={twinVisual}

@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { Camera, Dumbbell, Activity, ArrowRight, ChevronRight, LayoutDashboard } from "lucide-react"
 import { DailyLoopCard, type DailyLoopData } from "@/components/account/daily-loop-card"
+import { ExperienceNav } from "@/components/account/experience-nav"
 
 interface TodayClientProps {
   firstName: string | null
@@ -55,6 +56,9 @@ export function TodayClient(props: TodayClientProps) {
           </Link>
         )}
       </div>
+
+      {/* the three experiences */}
+      <div className="mt-4"><ExperienceNav /></div>
 
       {/* Streak + today's focus (reused daily-loop card) */}
       <div className="mt-5">

@@ -22,6 +22,7 @@ import {
 } from "@/components/agent-loop"
 import { TwinLenses, type LensDef } from "./twin-lenses"
 import { TwinStage } from "./twin-stage"
+import { ExperienceNav } from "@/components/account/experience-nav"
 import { QuickLog, MOCK_QUICK_LOG_RESULT, type QuickLogResult } from "./quick-log"
 import { InsideYouSection } from "./inside-you"
 import { Journey } from "./journey"
@@ -106,6 +107,9 @@ export function TwinDashboard({
             </h1>
           </div>
           <WeekStoryButton twin={twin} variant="dark" />
+        </div>
+        <div className="mx-auto max-w-6xl px-4 pb-4 pt-3 md:px-8">
+          <ExperienceNav variant="dark" />
         </div>
       </div>
 
