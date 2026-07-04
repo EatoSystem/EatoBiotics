@@ -6,6 +6,11 @@ import {
   Dumbbell,
   Brain,
   Users,
+  HeartPulse,
+  Sparkles,
+  Flower2,
+  Sun,
+  Baby,
   UtensilsCrossed,
   ScanLine,
   Calendar,
@@ -44,14 +49,19 @@ export interface NavGroup {
 
 export const NAV_GROUPS: NavGroup[] = [
   {
-    label: "Programs",
+    label: "Systems",
     items: [
       { href: "/you",        label: "You",             description: "The Food System Inside You",          icon: User },
+      { href: "/family",     label: "Family",          description: "The Food System Inside Your Family",   icon: Users },
       { href: "/stability",  label: "Stability™",      description: "The Stability System Inside You",      icon: Compass },
       { href: "/glucose",    label: "Glucose & GLP-1", description: "The Glucose System Inside You",        icon: Activity },
-      { href: "/family",     label: "Family",          description: "The Food System Inside Your Family",   icon: Users },
       { href: "/mind",       label: "Mind",            description: "The Food System Inside Your Mind",     icon: Brain },
       { href: "/performance", label: "Sports",         description: "The Performance System Inside You",    icon: Dumbbell },
+      { href: "/recovery",   label: "Recovery",        description: "The Recovery System Inside You",       icon: HeartPulse },
+      { href: "/longevity",  label: "Longevity",       description: "The Longevity System Inside You",      icon: Sparkles },
+      { href: "/pregnancy",  label: "Pregnancy",       description: "Food-first support through pregnancy", icon: Flower2 },
+      { href: "/birth",      label: "Birth",           description: "Nourishment around birth & recovery",  icon: Sun },
+      { href: "/baby",       label: "Baby",            description: "Gentle food education for families",   icon: Baby },
     ],
   },
   {
@@ -79,9 +89,13 @@ export const NAV_GROUPS: NavGroup[] = [
  * nav carries only the product spine (Digital Twin → How it works → Pricing →
  * About + the single assessment CTA). The footer keeps the full three-group
  * config above, so every destination stays reachable; the least-central Learn
- * items (Trilogy, Podcast, App) are footer-only.
+ * items (Trilogy, Podcast, App) and the scaffold "coming soon" systems
+ * (Recovery, Longevity, Pregnancy, Birth, Baby) are footer-only.
  */
-const HEADER_EXPLORE_EXCLUDE = new Set(["/books", "/podcast", "/app"])
+const HEADER_EXPLORE_EXCLUDE = new Set([
+  "/books", "/podcast", "/app",
+  "/recovery", "/longevity", "/pregnancy", "/birth", "/baby",
+])
 
 export const HEADER_GROUPS: NavGroup[] = [
   {
