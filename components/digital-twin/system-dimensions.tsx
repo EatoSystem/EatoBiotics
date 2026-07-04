@@ -85,8 +85,8 @@ export function SystemDimensions() {
           <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden px-6 pt-5">
             <div
               aria-hidden
-              className="eb-aura pointer-events-none absolute left-1/2 top-1/2 h-[78%] w-[78%] -translate-x-1/2 -translate-y-1/2 rounded-full"
-              style={{ background: `radial-gradient(circle, color-mix(in srgb,${d.to} 26%, transparent) 0%, transparent 70%)` }}
+              className="eb-aura pointer-events-none absolute left-1/2 top-1/2 h-[78%] w-[78%] rounded-full"
+              style={{ transform: "translate(-50%,-50%)", background: `radial-gradient(circle, color-mix(in srgb,${d.to} 26%, transparent) 0%, transparent 70%)` }}
             />
             <Image
               src={d.img}

@@ -7,10 +7,22 @@ import { buildAccountTwin } from "@/lib/agent-loop/account-twin"
 import { twinVisualState } from "@/lib/account/twin-visual"
 import { twinFigureSrc, twinVideo } from "@/lib/account/twin-figure"
 import { DemoTwinHero } from "@/components/account/twin/demo-hero"
-import { TwinLearnedToday } from "@/components/account/twin/twin-sections"
+import { TwinLearnedToday, TwinNextAction } from "@/components/account/twin/twin-sections"
 import { InsideYouSection } from "@/components/account/twin/inside-you"
 import { DailyRitual } from "@/components/account/twin/daily-ritual"
 import { AskTwin } from "@/components/account/twin/ask-twin"
+
+/** Chapter heading — mirrors the real Overview's one-canvas rhythm. */
+function GroupLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mx-auto max-w-5xl px-4 pt-12 md:px-8">
+      <div className="flex items-center gap-4">
+        <h2 className="shrink-0 font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>{children}</h2>
+        <span className="h-px flex-1" style={{ background: "var(--border)" }} />
+      </div>
+    </div>
+  )
+}
 
 export const metadata: Metadata = {
   title: "Account Preview — EatoBiotics",
@@ -224,10 +236,18 @@ export default async function DemoAccountTierPage({
             firstName="Sarah"
             detailHref="/demo/account/twin"
           />
-          <DailyRitual twin={demoTwin} streak={streak} />
+          {/* dark→light bridge — the stage hands over to the cream canvas */}
+          <div aria-hidden style={{ height: 64, background: "linear-gradient(180deg, #16290F 0%, #E9F1DC 55%, #FDFBF7 100%)" }} />
+          <GroupLabel>Today</GroupLabel>
+          <div className="mx-auto mt-4 grid max-w-5xl items-start gap-5 px-4 md:px-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+            <DailyRitual twin={demoTwin} streak={streak} bare />
+            <TwinNextAction twin={demoTwin} bare />
+          </div>
+          <GroupLabel>This week</GroupLabel>
           <TwinLearnedToday feed={demoFeed} />
           {/* Public showcase: the full personalized story plays right on the demo. */}
           <InsideYouSection twin={demoTwin} />
+          <GroupLabel>Learn &amp; ask</GroupLabel>
           <AskTwin twin={demoTwin} consultHref="/demo/account/consult" />
         </div>
         <DashboardClient

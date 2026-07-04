@@ -248,8 +248,8 @@ export function TwinStage({
             {/* biotic-tinted aura breathing over the light core */}
             <div
               aria-hidden
-              className="eb-aura pointer-events-none absolute left-1/2 top-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 rounded-full"
-              style={{ background: aura, opacity: Math.min(1, (0.5 + 0.4 * visual.confidence) * mood.auraMult), animationDuration: `${visual.pulseSec}s`, mixBlendMode: "screen", transition: "opacity 1s" }}
+              className="eb-aura pointer-events-none absolute left-1/2 top-1/2 h-full w-full rounded-full"
+              style={{ transform: "translate(-50%,-50%)", background: aura, opacity: Math.min(1, (0.5 + 0.4 * visual.confidence) * mood.auraMult), animationDuration: `${visual.pulseSec}s`, mixBlendMode: "screen", transition: "opacity 1s" }}
             />
             {/* the figure — video in a circular mask, or the still figure */}
             <div className="eb-orb-bloom absolute left-1/2 top-1/2 h-[84%] w-[84%] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full" style={{ animationDelay: "150ms" }}>

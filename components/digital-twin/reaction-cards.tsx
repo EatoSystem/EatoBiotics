@@ -95,8 +95,9 @@ function MiniSystem({ r }: { r: Reaction }) {
       />
       {/* reaction aura — tinted by the reaction, dimmer under strain */}
       <div
-        className="eb-aura absolute left-1/2 top-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 rounded-full"
+        className="eb-aura absolute left-1/2 top-1/2 h-full w-full rounded-full"
         style={{
+          transform: "translate(-50%,-50%)",
           background: r.whole
             ? `radial-gradient(circle, ${r.color}66 0%, ${YELLOW}33 50%, transparent 72%)`
             : `radial-gradient(circle at ${r.node.x}% ${r.node.y}%, ${r.color}${r.strain ? "3d" : "66"} 0%, transparent 55%)`,
