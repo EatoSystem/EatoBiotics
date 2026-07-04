@@ -1369,8 +1369,11 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                       Take or upload a photo of your meal. EatoBiotics will analyse its biotics profile and teach you what&apos;s happening inside.
                     </p>
 
-                    {/* Primary CTA — Take photo, centred */}
+                    {/* Primary CTA — Take photo → opens the QuickLog, which
+                        captures the plate and plays the meal out on the stage.
+                        Falls back to focusing the describe box when no Twin. */}
                     <button
+                      onClick={() => (twin ? setQuickLogOpen(true) : document.getElementById("inline-describe-meal")?.focus())}
                       className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
                       style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", boxShadow: "0 4px 16px rgba(45,170,110,0.3)" }}>
                       <Camera size={16} /> Take photo
@@ -1378,6 +1381,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
 
                     {/* Secondary — Upload, equal sibling to Take photo */}
                     <button
+                      onClick={() => (twin ? setQuickLogOpen(true) : document.getElementById("inline-describe-meal")?.focus())}
                       className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-colors hover:bg-black/[0.03]"
                       style={{ background: "white", border: "1px solid var(--icon-green)", color: "var(--icon-green)" }}>
                       ↑ Upload image
@@ -1386,6 +1390,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                     {/* Tertiary — describe, real API */}
                     <div className="mt-2.5 flex w-full items-center gap-2">
                       <input
+                        id="inline-describe-meal"
                         type="text"
                         placeholder="Or describe your meal…"
                         value={mealInput}
