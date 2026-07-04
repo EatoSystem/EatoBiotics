@@ -145,7 +145,12 @@ const MOCK_RECENT_ANALYSES: RealAnalysis[] = [
    Page
    ──────────────────────────────────────────────────────────────────────── */
 
-export default async function AccountYouLivePage() {
+export default async function AccountYouLivePage({ searchParams }: { searchParams: Promise<{ state?: string }> }) {
+  // ?state=new drives the brand-new-member first-visit state (no Twin, no meals)
+  // so the MeetBodyHero "first 60 seconds" is testable without auth.
+  const { state } = await searchParams
+  const isNew = state === "new"
+
   const { twin, feed } = await buildAccountTwin({
     score: MOCK_ASSESSMENTS[0].overall_score,
     previousScore: MOCK_ASSESSMENTS[1].overall_score,
@@ -208,12 +213,12 @@ export default async function AccountYouLivePage() {
         weeklyCheckin={`This week your food system data showed a solid upward trend — your average meal score came in at 71, up from 64 the week before. You logged 5 analyses, which is exactly the consistency that drives meaningful change in your microbiome over time.\n\nWhat improved most was your plant diversity — you hit 9 different plants across the week, your best showing in a month. What still needs attention is your fermented food frequency: only 2 out of 7 days included a live food source.\n\nYour focus for next week: make fermented foods non-negotiable. Pick one — kefir in the morning, yoghurt as a snack, or kimchi with dinner — and lock it in before adding anything else.`}
         memberStartedAt={MOCK_PROFILE.membership_started_at}
         weeklyReports={MOCK_WEEKLY_REPORTS}
-        recentAnalyses={MOCK_RECENT_ANALYSES}
-        twin={twin}
-        twinVisual={twinVisual}
-        twinFeed={feed}
+        recentAnalyses={isNew ? [] : MOCK_RECENT_ANALYSES}
+        twin={isNew ? null : twin}
+        twinVisual={isNew ? null : twinVisual}
+        twinFeed={isNew ? null : feed}
         twinFigureSrc={twinFigureSrc("female")}
-        streak={5}
+        streak={isNew ? 0 : 5}
       />
 
     </div>

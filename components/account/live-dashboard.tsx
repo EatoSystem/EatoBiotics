@@ -23,6 +23,7 @@ import { InsideYouTeaser } from "@/components/account/twin/inside-you"
 import { DailyRitual } from "@/components/account/twin/daily-ritual"
 import { AskTwin } from "@/components/account/twin/ask-twin"
 import { MeetTwinChecklist } from "@/components/account/twin/meet-checklist"
+import { MeetBodyHero } from "@/components/account/twin/meet-body-hero"
 import { detectMilestones, unseenMilestones, loadSeen, saveSeen, type Milestone } from "@/lib/account/milestones"
 import { browserStore, dayKey as ritualDayKey, loadRitual, ritualSignals, type RitualDay } from "@/lib/account/ritual"
 import { pushTwinState } from "@/lib/account/twin-state-sync"
@@ -918,6 +919,10 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
   const hour = new Date().getHours()
   const timeOfDay = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening"
 
+  /* A brand-new member (no Twin, no meals) meets the living body first — so the
+     legacy greeting/score band is suppressed in favour of the MeetBodyHero. */
+  const newMemberFirstVisit = !twin && recentAnalyses.length === 0 && loggerState !== "result"
+
   return (
     // one continuous warm canvas — cards float on the wash, no flat-white seams
     <div className="min-h-screen" style={{ background: "#FDFBF7" }}>
@@ -926,7 +931,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
           HERO — gradient band (legacy greeting; the Twin's TodayStrip + stage
           replace it, so it only renders for members without a Twin yet)
       ══════════════════════════════════════════════════════════════════ */}
-      {!twin && (<>
+      {!twin && !newMemberFirstVisit && (<>
       <div style={{ background: "white" }}>
         <div className="mx-auto max-w-5xl px-5 pb-7 pt-6 md:px-8 md:pb-9 md:pt-8">
           <div className="flex items-start justify-between gap-4">
@@ -1149,6 +1154,12 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
         <div className="pt-5">
           <DailyLoopCard data={dailyLoop} firstName={name?.split(" ")[0] ?? null} />
         </div>
+      )}
+
+      {/* First 60 seconds — a brand-new member meets the living body before any
+          numbers, then the first meal wakes it up. */}
+      {tab === "overview" && recentAnalyses.length === 0 && loggerState !== "result" && (
+        <MeetBodyHero firstName={name?.split(" ")[0] ?? null} figureSrc={twinFigureSrc ?? "/images/couple-hero.png"} />
       )}
 
       {tab === "overview" && recentAnalyses.length === 0 && (
