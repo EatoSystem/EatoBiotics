@@ -130,6 +130,64 @@ function BioticBar({ biotic, score, delay }: { biotic: BioticKey; score: number;
   )
 }
 
+/* ── Ambient life — slow microbes drifting + nutrients rising inside the orb ──
+   Calm, not gimmicky: low-opacity brand-green motes on the proven eb-float-big /
+   eb-rise loops (both reduced-motion-gated in globals). Deterministic layout so
+   SSR and client match. Hidden during the meal reveal to keep that beat clean. */
+const MICROBES = [
+  { x: 30, y: 34, s: 9, c: "#4CB648", d: 0, dur: 13 },
+  { x: 68, y: 40, s: 7, c: "#2DAA6E", d: 2200, dur: 15 },
+  { x: 42, y: 62, s: 10, c: "#A8E063", d: 1200, dur: 12 },
+  { x: 60, y: 70, s: 6, c: "#4CB648", d: 3400, dur: 16 },
+  { x: 38, y: 48, s: 5, c: "#7ED9A8", d: 900, dur: 14 },
+]
+const NUTRIENTS = [
+  { x: 46, s: 5, c: "#A8E063", d: 0, dur: 7.5 },
+  { x: 54, s: 4, c: "#F5C518", d: 2600, dur: 8.5 },
+  { x: 50, s: 5, c: "#4CB648", d: 4200, dur: 8 },
+]
+
+function StageAmbientLife() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 z-[5] overflow-hidden rounded-full">
+      {/* microbes: soft cell bodies with a faint membrane ring, wandering slowly */}
+      {MICROBES.map((m, i) => (
+        <span
+          key={`m-${i}`}
+          className="eb-float-big absolute rounded-full"
+          style={{
+            left: `${m.x}%`,
+            top: `${m.y}%`,
+            width: m.s,
+            height: m.s,
+            background: `radial-gradient(circle, ${m.c} 0%, ${m.c}66 55%, transparent 72%)`,
+            boxShadow: `0 0 10px ${m.c}66, inset 0 0 0 1px ${m.c}55`,
+            animationDelay: `${m.d}ms`,
+            animationDuration: `${m.dur}s`,
+          }}
+        />
+      ))}
+      {/* nutrients: tiny motes rising up through the digestive core */}
+      {NUTRIENTS.map((n, i) => (
+        <span
+          key={`n-${i}`}
+          className="eb-rise absolute rounded-full"
+          style={{
+            left: `${n.x}%`,
+            top: "72%",
+            width: n.s,
+            height: n.s,
+            background: n.c,
+            boxShadow: `0 0 8px ${n.c}aa`,
+            animationDelay: `${n.d}ms`,
+            animationDuration: `${n.dur}s`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
 /* ── The stage ────────────────────────────────────────────────────────────── */
 
 export function TwinStage({
@@ -267,6 +325,9 @@ export function TwinStage({
                 </div>
               )}
             </div>
+
+            {/* ambient microbes + nutrients drifting inside the orb (calm loop) */}
+            {!revealing && <StageAmbientLife />}
 
             {/* constellation connector lines (desktop) — hidden while a meal reveals */}
             <svg aria-hidden viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 hidden h-full w-full sm:block" style={{ opacity: revealing ? 0 : 1, transition: "opacity 300ms" }}>
