@@ -6,11 +6,11 @@ import { User, Users, ArrowRight, Loader2 } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { FoundationChooser } from "@/components/assessment/foundation-chooser"
 import { getJourney, patchJourney, completedFoundations } from "@/lib/assessment/journey"
-import { ADDONS, type AddonKey, type FoundationKey } from "@/lib/assessment/registry"
+import { HEALTH_SYSTEMS, type AssessedSystemKey, type FoundationKey } from "@/lib/assessment/registry"
 
 type Mode = "loading" | "foundation" | "which" | "redirecting"
 
-export function AddonGate({ addon }: { addon: AddonKey }) {
+export function AddonGate({ addon }: { addon: AssessedSystemKey }) {
   const router = useRouter()
   const [mode, setMode] = useState<Mode>("loading")
   const ran = useRef(false)
@@ -31,20 +31,20 @@ export function AddonGate({ addon }: { addon: AddonKey }) {
     if (j.foundationType && done.includes(j.foundationType)) {
       patchJourney({ selectedAddon: addon, pendingAddon: null })
       setMode("redirecting")
-      router.replace(ADDONS[addon].route)
+      router.replace(HEALTH_SYSTEMS[addon].route)
       return
     }
     if (done.length === 1) {
       patchJourney({ foundationType: done[0], selectedAddon: addon, pendingAddon: null })
       setMode("redirecting")
-      router.replace(ADDONS[addon].route)
+      router.replace(HEALTH_SYSTEMS[addon].route)
       return
     }
     // Both foundations completed and none chosen — ask which to build on.
     setMode("which")
   }, [addon, router])
 
-  const label = ADDONS[addon].label
+  const label = HEALTH_SYSTEMS[addon].label
 
   if (mode === "foundation") return <FoundationChooser />
 
@@ -52,7 +52,7 @@ export function AddonGate({ addon }: { addon: AddonKey }) {
     const pick = (f: FoundationKey) => {
       patchJourney({ foundationType: f, selectedAddon: addon, pendingAddon: null })
       setMode("redirecting")
-      router.replace(ADDONS[addon].route)
+      router.replace(HEALTH_SYSTEMS[addon].route)
     }
     return (
       <section className="px-6 pt-28 pb-24 md:pt-32">

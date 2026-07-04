@@ -4,14 +4,14 @@
  * These types are pure (no React / localStorage / Supabase imports) so the
  * combined-result builder and disclaimers stay unit-testable and SSR-safe.
  *
- * The two foundations (You, Family) and the four add-ons (Mind, Glucose,
- * Stability, Performance) all normalise into the same summary shape; a final
- * report always = one foundation + an optional add-on.
+ * The two foundations (You, Family) and the four assessed Health systems (Mind,
+ * Glucose, Stability, Performance) all normalise into the same summary shape; a
+ * final report always = one foundation + an optional Health system.
  */
 
 export type FoundationKey = "you" | "family"
-export type AddonKey = "mind" | "glucose" | "stability" | "performance"
-export type AssessmentKey = FoundationKey | AddonKey
+export type AssessedSystemKey = "mind" | "glucose" | "stability" | "performance"
+export type AssessmentKey = FoundationKey | AssessedSystemKey
 
 /** How much history backs the score — surfaced on results so a one-off feels honest. */
 export type ConfidenceLabel = "Snapshot" | "Pattern" | "Tracked"
@@ -30,7 +30,7 @@ export interface SubScore {
  */
 export interface AssessmentSummaryLike {
   key: AssessmentKey
-  kind: "foundation" | "addon"
+  kind: "foundation" | "health"
   label: string
   scoreLabel: string
   score: number
@@ -60,7 +60,7 @@ export interface FoundationResult {
 }
 
 export interface AddonResult {
-  addonType: AddonKey
+  addonType: AssessedSystemKey
   score: number
   band: string
   subscores: SubScore[]

@@ -57,7 +57,7 @@ export function buildCombinedReportEmail({
       </td></tr>
       <tr><td style="padding:32px 40px;">
         <p style="margin:0 0 18px;color:#111827;font-size:16px;font-weight:600;">${greeting}</p>
-        <p style="margin:0 0 22px;color:#374151;font-size:15px;line-height:1.65;">Here's your${addon ? " combined" : ""} Food System report. Your add-on score builds on your foundation — together they show where small, consistent changes will help most.</p>
+        <p style="margin:0 0 22px;color:#374151;font-size:15px;line-height:1.65;">Here's your${addon ? " combined" : ""} Food System report. Your system score builds on your foundation — together they show where small, consistent changes will help most.</p>
         <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">${scoresRow}</table>
         ${foundation.bandDescription ? `<p style="margin:0 0 18px;color:#374151;font-size:14px;line-height:1.6;"><strong style="color:#111827;">${foundation.bandLabel}.</strong> ${foundation.bandDescription}</p>` : ""}
         ${priorities.length ? `<p style="margin:18px 0 0;color:#111827;font-size:14px;font-weight:700;">Priority areas</p>${bullets(priorities)}` : ""}

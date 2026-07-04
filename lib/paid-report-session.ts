@@ -2,10 +2,10 @@ import type Stripe from "stripe"
 
 export type PaidReportTier = "personal" | "starter" | "full" | "premium"
 
-/** Foundation/add-on architecture carried through checkout (kept as local unions
- *  so this payment helper stays decoupled from the assessment registry). */
+/** Foundation/Health-system architecture carried through checkout (kept as local
+ *  unions so this payment helper stays decoupled from the assessment registry). */
 export type PaidReportFoundation = "you" | "family"
-export type PaidReportAddon = "stability" | "glucose" | "mind" | "performance"
+export type PaidReportHealthSystem = "stability" | "glucose" | "mind" | "performance"
 
 export type PaidReportSummary = {
   tier: PaidReportTier
@@ -20,12 +20,13 @@ export type PaidReportSummary = {
   email?: string | null
   /** Which foundation assessment this report is built from ("you"/"family"). */
   foundationType?: PaidReportFoundation | null
-  /** Optional deeper-support add-on selected at checkout. */
-  selectedAddon?: PaidReportAddon | null
+  /** Optional deeper-support Health system selected at checkout (wire key kept
+   *  as `selectedAddon` for backward-compatible Stripe metadata / DB payloads). */
+  selectedAddon?: PaidReportHealthSystem | null
 }
 
 const VALID_FOUNDATIONS: PaidReportFoundation[] = ["you", "family"]
-const VALID_ADDONS: PaidReportAddon[] = ["stability", "glucose", "mind", "performance"]
+const VALID_ADDONS: PaidReportHealthSystem[] = ["stability", "glucose", "mind", "performance"]
 
 function asFoundation(value: unknown): PaidReportFoundation | null {
   return typeof value === "string" && VALID_FOUNDATIONS.includes(value as PaidReportFoundation)
@@ -33,9 +34,9 @@ function asFoundation(value: unknown): PaidReportFoundation | null {
     : null
 }
 
-function asAddon(value: unknown): PaidReportAddon | null {
-  return typeof value === "string" && VALID_ADDONS.includes(value as PaidReportAddon)
-    ? (value as PaidReportAddon)
+function asAddon(value: unknown): PaidReportHealthSystem | null {
+  return typeof value === "string" && VALID_ADDONS.includes(value as PaidReportHealthSystem)
+    ? (value as PaidReportHealthSystem)
     : null
 }
 

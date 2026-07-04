@@ -1,18 +1,21 @@
 /**
- * lib/assessment/journey.ts — the foundation→add-on journey state machine.
+ * lib/assessment/journey.ts — the foundation→system journey state machine.
  *
  * localStorage-first (anonymous, no auth). It records the user's *intent*
- * (which foundation they're on, which add-on is selected/pending); actual
+ * (which foundation they're on, which Health system is selected/pending); actual
  * completion is always derived from the registry (single source of truth), so
  * status never drifts from the real assessment records.
+ *
+ * The persisted `eb_assessment_journey_v1` field names (`pendingAddon`,
+ * `selectedAddon`) are kept unchanged so in-flight journeys survive the rename.
  */
 
 import {
   isComplete,
   FOUNDATIONS,
-  ADDONS,
+  HEALTH_SYSTEMS,
   type FoundationKey,
-  type AddonKey,
+  type AssessedSystemKey,
 } from "./registry"
 
 const JOURNEY_KEY = "eb_assessment_journey_v1"
@@ -20,10 +23,10 @@ const JOURNEY_KEY = "eb_assessment_journey_v1"
 export interface Journey {
   /** The foundation the current journey is built on. */
   foundationType: FoundationKey | null
-  /** An add-on chosen before a foundation existed — resumed after foundation completes. */
-  pendingAddon: AddonKey | null
-  /** The add-on being layered onto the foundation (once a foundation exists). */
-  selectedAddon: AddonKey | null
+  /** A system chosen before a foundation existed — resumed after foundation completes. */
+  pendingAddon: AssessedSystemKey | null
+  /** The system being layered onto the foundation (once a foundation exists). */
+  selectedAddon: AssessedSystemKey | null
 }
 
 function empty(): Journey {
@@ -111,6 +114,6 @@ export function resumeAddonRoute(journey: Journey, foundationComplete: boolean):
 export function foundationLabel(k: FoundationKey): string {
   return FOUNDATIONS[k].label
 }
-export function addonLabel(k: AddonKey): string {
-  return ADDONS[k].label
+export function addonLabel(k: AssessedSystemKey): string {
+  return HEALTH_SYSTEMS[k].label
 }

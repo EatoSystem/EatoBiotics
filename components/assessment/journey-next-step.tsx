@@ -2,18 +2,19 @@
 
 /**
  * Shown on a completed foundation (You/Family) result. If the user arrived via
- * an add-on (pendingAddon), it surfaces a prominent "continue" CTA; otherwise it
- * offers the four optional add-ons + a link to the foundation report.
+ * a Health system (pendingAddon), it surfaces a prominent "continue" CTA;
+ * otherwise it offers the four assessed Health systems + a link to the
+ * foundation report.
  */
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Activity, ArrowRight, Sparkles, BarChart3, ShieldPlus, Brain } from "lucide-react"
 import { getJourney, resumeAddonRoute } from "@/lib/assessment/journey"
-import { ADDONS, type AddonKey } from "@/lib/assessment/registry"
+import { HEALTH_SYSTEMS, type AssessedSystemKey } from "@/lib/assessment/registry"
 import { persist } from "@/lib/assessment/sync"
 
-const ADDON_CARDS: Array<{ key: AddonKey; icon: typeof Activity; blurb: string; accent: string }> = [
+const SYSTEM_CARDS: Array<{ key: AssessedSystemKey; icon: typeof Activity; blurb: string; accent: string }> = [
   { key: "stability", icon: Activity, blurb: "Digestive calm, consistency, and confidence.", accent: "var(--icon-teal)" },
   { key: "glucose", icon: BarChart3, blurb: "Steadier energy, cravings, and glucose rhythm.", accent: "var(--icon-orange)" },
   { key: "mind", icon: Brain, blurb: "Food, gut, mood, focus, and mental clarity.", accent: "var(--icon-green)" },
@@ -21,7 +22,7 @@ const ADDON_CARDS: Array<{ key: AddonKey; icon: typeof Activity; blurb: string; 
 ]
 
 export function JourneyNextStep() {
-  const [pendingAddon, setPendingAddon] = useState<AddonKey | null>(null)
+  const [pendingAddon, setPendingAddon] = useState<AssessedSystemKey | null>(null)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
@@ -33,7 +34,7 @@ export function JourneyNextStep() {
   if (!ready) return null
 
   if (pendingAddon) {
-    const label = ADDONS[pendingAddon].label
+    const label = HEALTH_SYSTEMS[pendingAddon].label
     return (
       <div className="mx-auto my-12 max-w-2xl rounded-[1.5rem] border p-6 text-center sm:p-8" style={{ borderColor: "color-mix(in srgb, var(--icon-green) 35%, transparent)", background: "color-mix(in srgb, var(--icon-green) 6%, transparent)" }}>
         <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-icon-green">
@@ -60,11 +61,11 @@ export function JourneyNextStep() {
       <div className="text-center">
         <h3 className="font-serif text-2xl font-semibold text-foreground">Add a deeper focus</h3>
         <p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground">
-          Add-ons build on your foundation. Layer on a focused assessment for a deeper combined report — or view your report now.
+          Health systems build on your foundation. Layer on a focused assessment for a deeper combined report — or view your report now.
         </p>
       </div>
       <div className="mt-7 grid gap-4 sm:grid-cols-2">
-        {ADDON_CARDS.map((c) => (
+        {SYSTEM_CARDS.map((c) => (
           <Link
             key={c.key}
             href={`/assessment/add/${c.key}`}
@@ -74,7 +75,7 @@ export function JourneyNextStep() {
               <c.icon size={20} style={{ color: c.accent }} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-serif text-base font-semibold text-foreground">Add {ADDONS[c.key].label}</p>
+              <p className="font-serif text-base font-semibold text-foreground">Add {HEALTH_SYSTEMS[c.key].label}</p>
               <p className="text-xs leading-relaxed text-muted-foreground">{c.blurb}</p>
             </div>
             <ArrowRight size={16} className="shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" style={{ color: c.accent }} />

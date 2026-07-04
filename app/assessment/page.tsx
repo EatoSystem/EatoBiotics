@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Food System Assessment | EatoBiotics",
     description:
-      "Start with your Food System foundation — You or Family — then layer on a focused add-on assessment for a deeper combined report.",
+      "Start with your Food System foundation — You or Family — then layer on a focused system assessment for a deeper combined report.",
   },
 }
 

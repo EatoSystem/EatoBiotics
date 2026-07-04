@@ -4,7 +4,7 @@ import {
   encodePaidReportSummary,
   type PaidReportTier,
   type PaidReportFoundation,
-  type PaidReportAddon,
+  type PaidReportHealthSystem,
 } from "@/lib/paid-report-session"
 
 const TIER_CONFIG = {
@@ -20,7 +20,7 @@ const TIER_CONFIG = {
 } as const
 
 const FOUNDATIONS: PaidReportFoundation[] = ["you", "family"]
-const ADDONS: PaidReportAddon[] = ["stability", "glucose", "mind", "performance"]
+const HEALTH_SYSTEMS: PaidReportHealthSystem[] = ["stability", "glucose", "mind", "performance"]
 
 export async function POST(req: NextRequest) {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -47,8 +47,8 @@ export async function POST(req: NextRequest) {
     const foundation = FOUNDATIONS.includes(foundationType as PaidReportFoundation)
       ? (foundationType as PaidReportFoundation)
       : null
-    const addon = ADDONS.includes(selectedAddon as PaidReportAddon)
-      ? (selectedAddon as PaidReportAddon)
+    const addon = HEALTH_SYSTEMS.includes(selectedAddon as PaidReportHealthSystem)
+      ? (selectedAddon as PaidReportHealthSystem)
       : null
 
     // Only the €49 Personal Report is sold now; any legacy tier in the request

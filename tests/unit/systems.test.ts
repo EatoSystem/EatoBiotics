@@ -3,7 +3,7 @@ import {
   SYSTEMS, SYSTEM_KEYS, FOUNDATION_KEYS, HEALTH_KEYS, LIFE_KEYS,
   foundationSystems, healthSystems, lifeSystems, liveSystems, systemsByFamily,
 } from "@/lib/systems"
-import { FOUNDATIONS, ADDONS } from "@/lib/assessment/registry"
+import { FOUNDATIONS, HEALTH_SYSTEMS } from "@/lib/assessment/registry"
 
 describe("systems catalog", () => {
   it("SYSTEM_KEYS covers every catalog entry, grouped by family", () => {
@@ -41,7 +41,7 @@ describe("systems catalog", () => {
   it("live systems have an assessmentRoute matching the assessment registry", () => {
     const routes: Record<string, string> = {}
     for (const f of Object.values(FOUNDATIONS)) routes[f.key] = f.route
-    for (const a of Object.values(ADDONS)) routes[a.key] = a.route
+    for (const a of Object.values(HEALTH_SYSTEMS)) routes[a.key] = a.route
     for (const s of liveSystems()) {
       expect(s.assessmentRoute, s.key).toBeDefined()
       expect(s.assessmentRoute, `${s.key} route matches registry`).toBe(routes[s.key])
