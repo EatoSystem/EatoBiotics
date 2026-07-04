@@ -44,12 +44,12 @@ describe("ritual", () => {
     const key = dayKey(new Date(2026, 6, 2))
     expect(key).toBe("2026-07-02")
     expect(loadRitual(store, key)).toEqual(EMPTY_RITUAL)
-    saveRitual(store, key, { fermented: true, plants: true, feeling: false })
+    saveRitual(store, key, { fermented: true, plants: true, moved: false, slept: false, feeling: false })
     const r = loadRitual(store, key)
     expect(r.fermented).toBe(true)
     expect(ritualCount(r)).toBe(2)
     expect(ritualComplete(r)).toBe(false)
-    saveRitual(store, key, { ...r, feeling: true })
+    saveRitual(store, key, { fermented: true, plants: true, moved: true, slept: true, feeling: true })
     expect(ritualComplete(loadRitual(store, key))).toBe(true)
     // Null store (SSR) is safe.
     expect(loadRitual(null, key)).toEqual(EMPTY_RITUAL)
@@ -115,11 +115,11 @@ describe("twin-state sync merge", () => {
     const store = memStore()
     const today = dayKey()
     // Local already has today (partially done).
-    saveRitual(store, today, { fermented: true, plants: false, feeling: false })
+    saveRitual(store, today, { fermented: true, plants: false, moved: false, slept: false, feeling: false })
     const changed = mergeServerRituals(store, {
-      [today]: { fermented: false, plants: true, feeling: true }, // server disagrees → ignored
-      "2026-06-20": { fermented: true, plants: true, feeling: true }, // local empty → filled
-      "not-a-day": { fermented: true, plants: true, feeling: true }, // invalid key → ignored
+      [today]: { fermented: false, plants: true, moved: false, slept: false, feeling: true }, // server disagrees → ignored
+      "2026-06-20": { fermented: true, plants: true, moved: true, slept: true, feeling: true }, // local empty → filled
+      "not-a-day": { fermented: true, plants: true, moved: true, slept: true, feeling: true }, // invalid key → ignored
     })
     expect(changed).toEqual(["2026-06-20"])
     expect(loadRitual(store, today).fermented).toBe(true) // local untouched
@@ -130,7 +130,7 @@ describe("twin-state sync merge", () => {
   it("collects only non-empty local days from the last 7", () => {
     const store = memStore()
     const today = dayKey()
-    saveRitual(store, today, { fermented: true, plants: false, feeling: false })
+    saveRitual(store, today, { fermented: true, plants: false, moved: false, slept: false, feeling: false })
     const collected = collectLocalRituals(store)
     expect(Object.keys(collected)).toEqual([today])
   })

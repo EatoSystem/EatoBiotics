@@ -11,6 +11,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react"
+import Image from "next/image"
 import { Check, Flame } from "lucide-react"
 import {
   RITUAL_CHECKS,
@@ -23,13 +24,42 @@ import {
   ritualCount,
   ritualComplete,
   type RitualDay,
+  type RitualCheck,
 } from "@/lib/account/ritual"
 import { hydrateTwinState, pushTwinState } from "@/lib/account/twin-state-sync"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
 
-export function DailyRitual({ twin, streak = 0, authed = false, bare = false }: { twin: FoodSystemDigitalTwin; streak?: number; authed?: boolean; bare?: boolean }) {
+/** The body reacting to a habit: a mini figure with the pathway pinging at the
+    signal's node, plus the one-line biology lesson. Amber signals buffer. */
+function RitualBodyReaction({ check, figureSrc }: { check: RitualCheck; figureSrc: string }) {
+  return (
+    <div className="eb-pop-in mt-3 flex items-center gap-4 rounded-xl px-4 py-3" style={{ background: `color-mix(in srgb, ${check.color} 8%, white)`, border: `1px solid color-mix(in srgb, ${check.color} 30%, white)` }}>
+      {/* the mini body, reacting */}
+      <div className="relative h-20 w-20 shrink-0">
+        <div className="absolute left-1/2 top-1/2 h-[94%] w-[94%] rounded-full" style={{ transform: "translate(-50%,-50%)", background: "radial-gradient(circle, #FDFBF7 0%, #FDFBF7 55%, rgba(253,251,247,0) 76%)" }} />
+        <div className="eb-aura absolute left-1/2 top-1/2 h-full w-full rounded-full" style={{ transform: "translate(-50%,-50%)", background: `radial-gradient(circle at ${check.node.x}% ${check.node.y}%, ${check.color}${check.strain ? "40" : "66"} 0%, transparent 55%)`, animationDuration: check.strain ? "5s" : "3.4s" }} />
+        <Image src={figureSrc} alt="" width={80} height={80} sizes="80px" className="absolute left-1/2 top-1/2 h-[74%] w-[74%] object-contain" style={{ transform: "translate(-50%,-50%)", mixBlendMode: "multiply" }} />
+        <span className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${check.node.x}%`, top: `${check.node.y}%` }}>
+          <span className="relative flex h-5 w-5 items-center justify-center">
+            <span className="eb-ping absolute inline-flex h-full w-full rounded-full" style={{ background: check.color, opacity: check.strain ? 0.4 : 0.6, animationDuration: check.strain ? "2.4s" : "1.6s" }} />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full" style={{ background: check.color, border: "2px solid white", boxShadow: `0 0 12px ${check.color}cc` }} />
+          </span>
+        </span>
+      </div>
+      {/* the lesson */}
+      <div className="min-w-0">
+        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Your body just felt that</p>
+        <p className="mt-0.5 text-sm font-semibold leading-snug" style={{ color: "var(--foreground)" }}>{check.effect}</p>
+        <p className="mt-0.5 text-xs italic leading-snug" style={{ color: "var(--muted-foreground)" }}>&ldquo;{check.ack}&rdquo;</p>
+      </div>
+    </div>
+  )
+}
+
+export function DailyRitual({ twin, streak = 0, authed = false, bare = false, figureSrc = "/images/couple-hero.png" }: { twin: FoodSystemDigitalTwin; streak?: number; authed?: boolean; bare?: boolean; figureSrc?: string }) {
   const [ritual, setRitual] = useState<RitualDay>(EMPTY_RITUAL)
-  const [ack, setAck] = useState<string | null>(null)
+  /** The last check ticked — drives the inline body-pulse reaction. */
+  const [reacted, setReacted] = useState<RitualCheck | null>(null)
   const today = dayKey()
 
   useEffect(() => {
@@ -48,12 +78,8 @@ export function DailyRitual({ twin, streak = 0, authed = false, bare = false }: 
     setRitual(next)
     saveRitual(browserStore(), today, next)
     if (authed) pushTwinState(browserStore())
-    if (next[key]) {
-      const check = RITUAL_CHECKS.find((c) => c.key === key)
-      setAck(check?.ack ?? null)
-    } else {
-      setAck(null)
-    }
+    // Ticking a signal makes the body react; unticking clears the pulse.
+    setReacted(next[key] ? RITUAL_CHECKS.find((c) => c.key === key) ?? null : null)
   }
 
   /* Which of the last 7 days count as "alive": a meal signal or a done ritual. */
@@ -74,13 +100,13 @@ export function DailyRitual({ twin, streak = 0, authed = false, bare = false }: 
       <div className="mb-4">
         <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Daily ritual</p>
         <h3 className="mt-1 font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>
-          {ritualComplete(ritual) ? "All three — your Food System felt that." : "Three taps. That's the whole habit."}
+          {ritualComplete(ritual) ? "A full day — your Food System felt all of it." : "Tap what's true today. Your body reacts to each one."}
         </h3>
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5" style={{ boxShadow: "0 2px 12px rgba(26,46,18,0.05)" }}>
-        {/* the three check-ins */}
-        <div className="grid gap-2.5 sm:grid-cols-3">
+        {/* the daily check-ins — food, movement, sleep, mood */}
+        <div className="grid gap-2.5 grid-cols-2 sm:grid-cols-3">
           {RITUAL_CHECKS.map((c) => {
             const on = ritual[c.key]
             return (
@@ -110,13 +136,8 @@ export function DailyRitual({ twin, streak = 0, authed = false, bare = false }: 
           })}
         </div>
 
-        {/* the Twin's acknowledgement */}
-        {ack && (
-          <p key={ack} className="eb-pop-in mt-3 rounded-xl px-4 py-2.5 text-sm" style={{ background: "color-mix(in srgb, var(--icon-green) 7%, white)", border: "1px solid var(--border)", color: "var(--foreground)" }}>
-            <span className="font-semibold" style={{ color: "var(--icon-green)" }}>Your Food System: </span>
-            &ldquo;{ack}&rdquo;
-          </p>
-        )}
+        {/* the body reacts — a pulse at the pathway this signal feeds + the lesson */}
+        {reacted && <RitualBodyReaction key={reacted.key} check={reacted} figureSrc={figureSrc} />}
 
         {/* rhythm bar */}
         <div className="mt-5 flex flex-wrap items-center gap-4 border-t border-border pt-4">

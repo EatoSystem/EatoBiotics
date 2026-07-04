@@ -240,7 +240,7 @@ export default async function DemoAccountTierPage({
           <div aria-hidden style={{ height: 64, background: "linear-gradient(180deg, #16290F 0%, #E9F1DC 55%, #FDFBF7 100%)" }} />
           <GroupLabel>Today</GroupLabel>
           <div className="mx-auto mt-4 grid max-w-5xl items-start gap-5 px-4 md:px-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-            <DailyRitual twin={demoTwin} streak={streak} bare />
+            <DailyRitual twin={demoTwin} streak={streak} bare figureSrc={twinFigureSrc("female")} />
             <TwinNextAction twin={demoTwin} bare />
           </div>
           <GroupLabel>This week</GroupLabel>

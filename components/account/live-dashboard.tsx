@@ -1108,7 +1108,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
           {/* [TODAY] — the daily ritual heartbeat + one clear priority */}
           <GroupLabel>Today</GroupLabel>
           <div className="mx-auto mt-4 grid max-w-5xl items-start gap-5 px-4 md:px-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-            <DailyRitual twin={twin} streak={displayStreak} authed={!!propEmail} bare />
+            <DailyRitual twin={twin} streak={displayStreak} authed={!!propEmail} bare figureSrc={twinFigureSrc ?? "/images/couple-hero.png"} />
             <TwinNextAction twin={twin} bare />
           </div>
 
