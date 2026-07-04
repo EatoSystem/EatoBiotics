@@ -14,11 +14,12 @@ import Link from "next/link"
 import { ArrowLeft, ArrowRight } from "lucide-react"
 import { ExperienceNav } from "@/components/account/experience-nav"
 import { WeekStoryButton } from "./week-story"
+import { MilestoneRail } from "./journey"
 import { buildWeekStory } from "@/lib/account/week-story"
 import { useCountUp } from "./use-count-up"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
 
-export function ThisWeekClient({ twin, consultHref = "/account/consult" }: { twin: FoodSystemDigitalTwin; consultHref?: string }) {
+export function ThisWeekClient({ twin, streak = 0, consultHref = "/account/consult" }: { twin: FoodSystemDigitalTwin; streak?: number; consultHref?: string }) {
   const slides = buildWeekStory(twin)
   const score = useCountUp(Math.round(twin.currentScore.value))
   const delta = twin.progress.scoreDelta
@@ -64,8 +65,15 @@ export function ThisWeekClient({ twin, consultHref = "/account/consult" }: { twi
         </div>
       </section>
 
+      {/* the long arc — where this week sits in the whole journey */}
+      <div className="mx-auto max-w-3xl px-5 pt-8 md:px-8">
+        <div className="rounded-2xl border bg-white p-5" style={{ borderColor: "var(--border)", boxShadow: "0 4px 20px rgba(26,46,18,0.06)" }}>
+          <MilestoneRail twin={twin} streak={streak} bare />
+        </div>
+      </div>
+
       {/* the week's story — chaptered bands */}
-      <div className="mx-auto max-w-3xl px-5 py-10 md:px-8">
+      <div className="mx-auto max-w-3xl px-5 pb-10 pt-6 md:px-8">
         <div className="space-y-3">
           {slides
             .filter((s) => s.key !== "intro")

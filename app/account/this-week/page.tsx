@@ -18,5 +18,5 @@ export default async function ThisWeekPage() {
   const input = await getAccountTwinInput(user.id, user.email ?? null)
   const { twin } = await buildAccountTwin(input)
 
-  return <ThisWeekClient twin={twin} />
+  return <ThisWeekClient twin={twin} streak={input.streak ?? 0} />
 }

@@ -9,8 +9,9 @@
  */
 
 import { useMemo, useState } from "react"
-import { Sparkles } from "lucide-react"
+import { Flag, MapPin, Check } from "lucide-react"
 import { detectMilestones } from "@/lib/account/milestones"
+import { twinEvolution } from "@/lib/account/evolution"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
 
 interface Point {
@@ -32,9 +33,61 @@ function buildPoints(twin: FoodSystemDigitalTwin): Point[] {
   return pts.sort((a, b) => a.t - b.t)
 }
 
+/** The milestone rail: Baseline → each earned milestone → You're here (Day N) →
+    Next milestone. Progress as a story with named beats, not just a chart.
+    Exported so the This Week page can show the same long-arc progress. */
+export function MilestoneRail({ twin, streak, bare = false }: { twin: FoodSystemDigitalTwin; streak: number; bare?: boolean }) {
+  const earned = detectMilestones(twin, streak)
+  const evo = twinEvolution(twin)
+  const dayN = Math.max(1, Math.round((twin.updatedAt - twin.baseline.createdAt) / 86_400_000) + 1)
+
+  type Node = { id: string; label: string; kind: "past" | "here" | "next" }
+  const nodes: Node[] = [
+    { id: "baseline", label: "Baseline", kind: "past" },
+    ...earned.slice(0, 4).map((m) => ({ id: m.id, label: m.title.replace(/^I |^You've |^You /, ""), kind: "past" as const })),
+    { id: "here", label: `You're here · Day ${dayN}`, kind: "here" as const },
+    ...(evo.next ? [{ id: "next", label: `${evo.next.label} · ${evo.next.remaining} meal${evo.next.remaining === 1 ? "" : "s"} to go`, kind: "next" as const }] : []),
+  ]
+
+  return (
+    <div className={bare ? "" : "mt-4 border-t border-border pt-4"}>
+      <p className="mb-3 text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--muted-foreground)" }}>Milestones</p>
+      <div className="flex items-start gap-1 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        {nodes.map((n, i) => {
+          const c = n.kind === "here" ? "#F5A623" : n.kind === "next" ? "#9aa88f" : "#4CB648"
+          return (
+            <div key={n.id} className="flex items-start">
+              <div className="flex w-24 shrink-0 flex-col items-center text-center">
+                <span className="relative flex h-8 w-8 items-center justify-center rounded-full" style={{ background: n.kind === "next" ? "white" : c, border: `2px solid ${c}`, boxShadow: n.kind === "here" ? `0 0 12px ${c}88` : "none" }}>
+                  {n.kind === "here" ? <MapPin size={14} color="white" /> : n.kind === "next" ? <Flag size={13} style={{ color: c }} /> : <Check size={14} color="white" strokeWidth={3} />}
+                  {n.kind === "here" && <span className="eb-ping absolute inline-flex h-full w-full rounded-full" style={{ background: c, opacity: 0.4 }} />}
+                </span>
+                <span className="mt-1.5 text-[10px] font-semibold leading-tight" style={{ color: n.kind === "here" ? "#a05a0a" : "var(--foreground)" }}>{n.label}</span>
+              </div>
+              {i < nodes.length - 1 && <span className="mt-4 h-0.5 w-4 shrink-0 rounded-full" style={{ background: "var(--border)" }} />}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* evolution stage ladder — explains the badge on the stage */}
+      <div className="mt-4 flex flex-wrap items-center gap-2.5">
+        <span className="flex items-center gap-1">
+          {[1, 2, 3, 4].map((i) => (
+            <span key={i} className="h-2 w-2 rounded-full" style={{ background: i <= evo.index ? "#F5C518" : "var(--border)" }} />
+          ))}
+        </span>
+        <span className="text-xs font-bold" style={{ color: "#a05a0a" }}>{evo.label}</span>
+        <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+          {evo.next ? `${evo.next.remaining} meal${evo.next.remaining === 1 ? "" : "s"} to ${evo.next.label}` : "Fully attuned to your Food System"}
+        </span>
+      </div>
+    </div>
+  )
+}
+
 export function Journey({ twin, streak = 0 }: { twin: FoodSystemDigitalTwin; streak?: number }) {
   const points = useMemo(() => buildPoints(twin), [twin])
-  const milestones = useMemo(() => detectMilestones(twin, streak), [twin, streak])
   const [hover, setHover] = useState<number | null>(null)
 
   if (points.length < 2) return null
@@ -104,16 +157,8 @@ export function Journey({ twin, streak = 0 }: { twin: FoodSystemDigitalTwin; str
             : "Baseline → every meal signal → today. Tap a point for its story."}
         </p>
 
-        {/* milestone chips */}
-        {milestones.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
-            {milestones.slice(0, 4).map((m) => (
-              <span key={m.id} className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold" style={{ background: "color-mix(in srgb, var(--icon-green) 10%, white)", border: "1px solid var(--border)", color: "var(--icon-green)" }} title={m.detail}>
-                <Sparkles size={10} /> {m.title}
-              </span>
-            ))}
-          </div>
-        )}
+        {/* milestone rail + evolution ladder */}
+        <MilestoneRail twin={twin} streak={streak} />
       </div>
     </section>
   )
