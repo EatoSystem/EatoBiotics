@@ -48,6 +48,50 @@ export function revealAura(result: QuickLogResult): string {
   return `radial-gradient(circle, ${c}55 0%, ${c}22 45%, transparent 70%)`
 }
 
+/* ── The 24h journey the meal takes through the body ──────────────────────────
+   AFTER_MEAL_STEPS gives at/title/detail/colour; here we anchor each stage to a
+   region of the figure (% coords + glow radius) and add the biology + "what you
+   may feel" so the reveal can play the food travelling down the body. */
+export interface MealJourneyStage {
+  at: string
+  title: string
+  detail: string
+  color: string
+  node: { x: number; y: number; r: number }
+  biotic: string
+  feel: string
+}
+
+const JOURNEY_REGION = [
+  { x: 52, y: 40, r: 30 }, // Now — stomach / first contact
+  { x: 49, y: 50, r: 33 }, // ~4h — small intestine, nutrients absorbed
+  { x: 47, y: 61, r: 35 }, // ~12h — colon, microbes ferment the fibre
+  { x: 50, y: 49, r: 66 }, // ~24h — the give-back radiates through the whole body
+]
+const JOURNEY_BIOTIC = ["Digestion begins", "Prebiotic fibre travels on", "Prebiotics feed your microbes", "Postbiotics produced"]
+const JOURNEY_FEEL = [
+  "full and satisfied as the meal is broken down",
+  "steady energy as nutrients are absorbed",
+  "this is where fibre earns its keep — your microbes ferment it",
+  "compounds associated with comfort, calm and steadier energy",
+]
+
+export const JOURNEY_STAGES: MealJourneyStage[] = AFTER_MEAL_STEPS.map((s, i) => ({
+  at: s.at,
+  title: s.title,
+  detail: s.detail,
+  color: s.color,
+  node: JOURNEY_REGION[i] ?? JOURNEY_REGION[0],
+  biotic: JOURNEY_BIOTIC[i] ?? "",
+  feel: JOURNEY_FEEL[i] ?? "",
+}))
+
+/** When the after-meal journey should start auto-playing — once the impact rows
+    have finished landing (matches the panel's afterDelay + a beat). */
+export function mealRevealStartDelayMs(result: QuickLogResult): number {
+  return REVEAL_ROW_BASE_MS + mealImpact(result).length * REVEAL_ROW_STEP_MS + 900
+}
+
 /* Inward particle drift — the meal being received (reuses the eb-absorb language). */
 const DRIFT = [
   { x: -140, y: -80, c: "#A8E063", s: 9 },
@@ -58,11 +102,38 @@ const DRIFT = [
   { x: 80, y: 135, c: "#A8E063", s: 6 },
 ]
 
-export function MealPathwayOverlay({ result }: { result: QuickLogResult }) {
+export function MealPathwayOverlay({ result, journeyStage = null }: { result: QuickLogResult; journeyStage?: number | null }) {
   const rows = useMemo(() => mealImpact(result), [result])
+  const stage = journeyStage != null ? JOURNEY_STAGES[journeyStage] : null
 
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 z-20">
+      {/* the food travelling through the body — a bright region glow that moves
+          down the tract (stomach → small intestine → colon → whole body) as the
+          24h journey plays / is scrubbed */}
+      {stage && (
+        <>
+          <span
+            className="absolute rounded-full"
+            style={{
+              left: `${stage.node.x}%`,
+              top: `${stage.node.y}%`,
+              width: `${stage.node.r}%`,
+              height: `${stage.node.r}%`,
+              transform: "translate(-50%,-50%)",
+              background: `radial-gradient(circle, ${stage.color}88 0%, ${stage.color}33 45%, transparent 70%)`,
+              transition: "left .8s ease, top .8s ease, width .8s ease, height .8s ease, background .8s ease",
+              mixBlendMode: "screen",
+            }}
+          />
+          <span className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${stage.node.x}%`, top: `${stage.node.y}%`, transition: "left .8s ease, top .8s ease" }}>
+            <span className="relative flex h-9 w-9 items-center justify-center">
+              <span className="eb-ping absolute inline-flex h-full w-full rounded-full" style={{ background: stage.color, opacity: 0.6 }} />
+              <span className="relative inline-flex h-3.5 w-3.5 rounded-full" style={{ background: stage.color, boxShadow: `0 0 18px ${stage.color}` }} />
+            </span>
+          </span>
+        </>
+      )}
       {/* particles drifting into the figure as the reveal begins */}
       {DRIFT.map((p, i) => (
         <span
@@ -156,13 +227,19 @@ export function MealRevealPanel({
   result,
   onDone,
   onLogAnother,
+  stage = 0,
+  onStageChange,
 }: {
   result: QuickLogResult
   onDone: () => void
   onLogAnother?: () => void
+  /** Active stage of the 24h body-journey (0–3), shared with the figure. */
+  stage?: number
+  onStageChange?: (i: number) => void
 }) {
   const rows: MealImpactRow[] = useMemo(() => mealImpact(result), [result])
   const afterDelay = REVEAL_ROW_BASE_MS + rows.length * REVEAL_ROW_STEP_MS
+  const active = JOURNEY_STAGES[stage] ?? JOURNEY_STAGES[0]
 
   return (
     <div className="min-w-0">
@@ -189,16 +266,40 @@ export function MealRevealPanel({
         </p>
       )}
 
-      {/* what happens next — compact horizontal after-meal journey */}
-      <div className="eb-reveal mt-4 max-w-xl" style={{ animationDelay: `${afterDelay + 200}ms` }}>
-        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#A8E063" }}>What happens next inside you</p>
-        <div className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {AFTER_MEAL_STEPS.map((s, i) => (
-            <div key={s.at} className="eb-reveal rounded-xl px-2.5 py-2" style={{ background: "rgba(253,251,247,0.04)", border: "1px solid rgba(253,251,247,0.1)", animationDelay: `${afterDelay + 300 + i * 150}ms` }}>
-              <p className="text-[10px] font-bold" style={{ color: s.color }}>{s.at}</p>
-              <p className="mt-0.5 text-[11px] font-semibold leading-snug" style={{ color: "rgba(253,251,247,0.85)" }}>{s.title}</p>
-            </div>
+      {/* follow your meal through the day — a scrubbable 24h journey that plays
+          out on the figure (the region glow travels down the body) */}
+      <div className="eb-reveal mt-5 max-w-xl" style={{ animationDelay: `${afterDelay + 200}ms` }}>
+        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#A8E063" }}>Follow your meal through the day</p>
+        {/* scrubber */}
+        <div className="mt-2.5 flex items-end gap-1.5">
+          {JOURNEY_STAGES.map((s, i) => (
+            <button
+              key={s.at}
+              type="button"
+              onClick={() => onStageChange?.(i)}
+              aria-pressed={i === stage}
+              className="flex flex-1 flex-col items-center gap-1.5"
+            >
+              <span className="text-[10px] font-bold transition-colors" style={{ color: i === stage ? s.color : "rgba(253,251,247,0.5)" }}>{s.at}</span>
+              <span className="relative h-1.5 w-full overflow-hidden rounded-full" style={{ background: "rgba(253,251,247,0.12)" }}>
+                <span className="absolute inset-y-0 left-0 rounded-full transition-all duration-500" style={{ width: i <= stage ? "100%" : "0%", background: s.color, boxShadow: i === stage ? `0 0 8px ${s.color}` : "none" }} />
+              </span>
+            </button>
           ))}
+        </div>
+        {/* active stage — the education panel */}
+        <div key={stage} className="eb-pop-in mt-3 rounded-xl p-4" style={{ background: `color-mix(in srgb, ${active.color} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${active.color} 35%, transparent)` }}>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: active.color, color: "#0B1607" }}>{active.at}</span>
+            <p className="font-serif text-base font-bold" style={{ color: CREAM }}>{active.title}</p>
+          </div>
+          <p className="mt-1.5 text-sm leading-relaxed" style={{ color: "rgba(253,251,247,0.8)" }}>{active.detail}</p>
+          <div className="mt-2.5 flex flex-col gap-1.5 border-t pt-2.5 text-xs" style={{ borderColor: "rgba(253,251,247,0.12)" }}>
+            <span className="inline-flex items-center gap-1.5 font-semibold" style={{ color: active.color }}>
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: active.color }} /> {active.biotic}
+            </span>
+            <span style={{ color: "rgba(253,251,247,0.6)" }}>You may feel {active.feel}.</span>
+          </div>
         </div>
       </div>
 

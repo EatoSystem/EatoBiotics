@@ -21,7 +21,7 @@ import { ArrowRight, Leaf, Target, Utensils, UtensilsCrossed, X } from "lucide-r
 import { HeroVideo } from "@/components/hero-video"
 import { DigitalTwinFigure } from "@/components/digital-twin/parts"
 import { MealReactionBurst } from "./meal-reaction"
-import { MealPathwayOverlay, MealRevealPanel, revealAura } from "./meal-reveal"
+import { MealPathwayOverlay, MealRevealPanel, revealAura, JOURNEY_STAGES, mealRevealStartDelayMs } from "./meal-reveal"
 import { ShareTwin } from "./share-twin"
 import { useCountUp } from "./use-count-up"
 import type { QuickLogResult } from "./quick-log"
@@ -246,6 +246,20 @@ export function TwinStage({
   useEffect(() => {
     if (revealing) setSelected(null)
   }, [revealing])
+
+  /* The meal's 24h journey through the body — shared by the figure overlay
+     (region glow travels down the tract) and the panel scrubber. Auto-plays
+     once after the impact rows land, then the member can scrub it. */
+  const [mealStage, setMealStage] = useState(0)
+  useEffect(() => {
+    if (!reveal) return
+    setMealStage(0)
+    const start = mealRevealStartDelayMs(reveal)
+    const timers = JOURNEY_STAGES.slice(1).map((_, i) =>
+      window.setTimeout(() => setMealStage(i + 1), start + (i + 1) * 2000),
+    )
+    return () => timers.forEach((t) => clearTimeout(t))
+  }, [reveal])
   /* Time-of-day + engagement mood — computed after mount so SSR/hydration match. */
   const [mood, setMood] = useState<StageMood>(() => stageMood(13, { fed: true }))
   useEffect(() => {
@@ -426,8 +440,9 @@ export function TwinStage({
 
             <MealReactionBurst playKey={burstKey} message={burstMessage ?? "Your Food System just learned from your meal"} />
 
-            {/* the Meal Reveal — pathway nodes light where the meal lands */}
-            {reveal && <MealPathwayOverlay key={revealKey} result={reveal} />}
+            {/* the Meal Reveal — pathway nodes light where the meal lands +
+                the 24h journey glow travelling down the body */}
+            {reveal && <MealPathwayOverlay key={revealKey} result={reveal} journeyStage={mealStage} />}
 
             {/* live pill */}
             <div className="absolute -top-1 left-0 flex items-center gap-2 rounded-full px-3 py-1.5 backdrop-blur" style={{ background: "rgba(253,251,247,0.08)", border: "1px solid rgba(253,251,247,0.18)" }}>
@@ -469,6 +484,8 @@ export function TwinStage({
               result={reveal}
               onDone={() => onRevealDone?.()}
               onLogAnother={onLogAnother}
+              stage={mealStage}
+              onStageChange={setMealStage}
             />
           ) : (
           /* ── score cockpit ── */
