@@ -11,7 +11,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Activity, ArrowRight, Sparkles, BarChart3, ShieldPlus, Brain } from "lucide-react"
 import { getJourney, resumeAddonRoute } from "@/lib/assessment/journey"
-import { HEALTH_SYSTEMS, type AssessedSystemKey } from "@/lib/assessment/registry"
+import { HEALTH_SYSTEMS, ASSESSED_SYSTEMS, type AssessedSystemKey, type AnyAssessedKey } from "@/lib/assessment/registry"
 import { persist } from "@/lib/assessment/sync"
 
 const SYSTEM_CARDS: Array<{ key: AssessedSystemKey; icon: typeof Activity; blurb: string; accent: string }> = [
@@ -22,7 +22,7 @@ const SYSTEM_CARDS: Array<{ key: AssessedSystemKey; icon: typeof Activity; blurb
 ]
 
 export function JourneyNextStep() {
-  const [pendingAddon, setPendingAddon] = useState<AssessedSystemKey | null>(null)
+  const [pendingAddon, setPendingAddon] = useState<AnyAssessedKey | null>(null)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export function JourneyNextStep() {
   if (!ready) return null
 
   if (pendingAddon) {
-    const label = HEALTH_SYSTEMS[pendingAddon].label
+    const label = ASSESSED_SYSTEMS[pendingAddon].label
     return (
       <div className="mx-auto my-12 max-w-2xl rounded-[1.5rem] border p-6 text-center sm:p-8" style={{ borderColor: "color-mix(in srgb, var(--icon-green) 35%, transparent)", background: "color-mix(in srgb, var(--icon-green) 6%, transparent)" }}>
         <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-icon-green">

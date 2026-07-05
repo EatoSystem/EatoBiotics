@@ -11,7 +11,10 @@
 
 export type FoundationKey = "you" | "family"
 export type AssessedSystemKey = "mind" | "glucose" | "stability" | "performance"
-export type AssessmentKey = FoundationKey | AssessedSystemKey
+/** Life systems with a real (non-diagnostic, food-first) assessment. */
+export type LifeAssessedKey = "pregnancy"
+export type AnyAssessedKey = AssessedSystemKey | LifeAssessedKey
+export type AssessmentKey = FoundationKey | AnyAssessedKey
 
 /** How much history backs the score — surfaced on results so a one-off feels honest. */
 export type ConfidenceLabel = "Snapshot" | "Pattern" | "Tracked"
@@ -30,7 +33,7 @@ export interface SubScore {
  */
 export interface AssessmentSummaryLike {
   key: AssessmentKey
-  kind: "foundation" | "health"
+  kind: "foundation" | "health" | "life"
   label: string
   scoreLabel: string
   score: number
@@ -60,7 +63,7 @@ export interface FoundationResult {
 }
 
 export interface AddonResult {
-  addonType: AssessedSystemKey
+  addonType: AnyAssessedKey
   score: number
   band: string
   subscores: SubScore[]

@@ -13,9 +13,9 @@
 import {
   isComplete,
   FOUNDATIONS,
-  HEALTH_SYSTEMS,
+  ASSESSED_SYSTEMS,
   type FoundationKey,
-  type AssessedSystemKey,
+  type AnyAssessedKey,
 } from "./registry"
 
 const JOURNEY_KEY = "eb_assessment_journey_v1"
@@ -24,9 +24,9 @@ export interface Journey {
   /** The foundation the current journey is built on. */
   foundationType: FoundationKey | null
   /** A system chosen before a foundation existed — resumed after foundation completes. */
-  pendingAddon: AssessedSystemKey | null
+  pendingAddon: AnyAssessedKey | null
   /** The system being layered onto the foundation (once a foundation exists). */
-  selectedAddon: AssessedSystemKey | null
+  selectedAddon: AnyAssessedKey | null
 }
 
 function empty(): Journey {
@@ -114,6 +114,6 @@ export function resumeAddonRoute(journey: Journey, foundationComplete: boolean):
 export function foundationLabel(k: FoundationKey): string {
   return FOUNDATIONS[k].label
 }
-export function addonLabel(k: AssessedSystemKey): string {
-  return HEALTH_SYSTEMS[k].label
+export function addonLabel(k: AnyAssessedKey): string {
+  return ASSESSED_SYSTEMS[k].label
 }

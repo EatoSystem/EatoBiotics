@@ -6,7 +6,7 @@ import { ArrowRight, Sparkles, CheckCircle2, Target, CalendarDays } from "lucide
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { ScoreRing } from "@/components/assessment/score-ring"
 import { resolvedFoundation, getJourney, journeyType } from "@/lib/assessment/journey"
-import { getSummary, isComplete, type AssessmentSummary, type AssessedSystemKey } from "@/lib/assessment/registry"
+import { getSummary, isComplete, type AssessmentSummary, type AnyAssessedKey } from "@/lib/assessment/registry"
 import { ensureHydrated, persist } from "@/lib/assessment/sync"
 import { loadLeadData } from "@/lib/assessment-storage"
 import { buildCombinedResult } from "@/lib/combined-assessment-result"
@@ -32,11 +32,12 @@ function maybeEmailReport(foundation: AssessmentSummary | null, addon: Assessmen
   }).catch(() => {})
 }
 
-const ADDON_FOCUS: Record<AssessedSystemKey, string> = {
+const ADDON_FOCUS: Record<AnyAssessedKey, string> = {
   stability: "consistency and digestive comfort",
   glucose: "energy, cravings, and glucose rhythm",
   mind: "mood, focus, and mental clarity",
   performance: "energy, recovery, and output",
+  pregnancy: "food variety, meal rhythm, and general wellbeing",
 }
 
 function List({ title, items, icon: Icon, accent }: { title: string; items: string[]; icon: typeof Target; accent: string }) {
@@ -85,7 +86,7 @@ export function CombinedReport() {
   const [ready, setReady] = useState(false)
   const [foundation, setFoundation] = useState<AssessmentSummary | null>(null)
   const [addon, setAddon] = useState<AssessmentSummary | null>(null)
-  const [addonKey, setAddonKey] = useState<AssessedSystemKey | null>(null)
+  const [addonKey, setAddonKey] = useState<AnyAssessedKey | null>(null)
 
   useEffect(() => {
     let cancelled = false

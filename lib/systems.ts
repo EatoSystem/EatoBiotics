@@ -156,7 +156,7 @@ export const SYSTEMS: Record<SystemKey, SystemDef> = {
     tagline: "Food-first education and gentle guidance through pregnancy.",
     focus: "General wellbeing food patterns, education, and questions for your professional.",
     description: "Support your Food System through pregnancy with food-first education, gentle guidance and next steps for general wellbeing.",
-    href: "/pregnancy", status: "scaffold",
+    href: "/pregnancy", assessmentRoute: "/pregnancy/assessment", status: "live",
     requiresFoundation: true, allowedFoundations: BOTH, futureBridge: "PregMonth", safetyLevel: "sensitive",
     icon: Flower2, accent: "var(--icon-lime)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
   },

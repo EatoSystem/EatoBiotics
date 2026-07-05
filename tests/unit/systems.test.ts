@@ -3,7 +3,7 @@ import {
   SYSTEMS, SYSTEM_KEYS, FOUNDATION_KEYS, HEALTH_KEYS, LIFE_KEYS,
   foundationSystems, healthSystems, lifeSystems, liveSystems, systemsByFamily,
 } from "@/lib/systems"
-import { FOUNDATIONS, HEALTH_SYSTEMS } from "@/lib/assessment/registry"
+import { FOUNDATIONS, HEALTH_SYSTEMS, LIFE_SYSTEMS } from "@/lib/assessment/registry"
 
 describe("systems catalog", () => {
   it("SYSTEM_KEYS covers every catalog entry, grouped by family", () => {
@@ -23,12 +23,17 @@ describe("systems catalog", () => {
     }
   })
 
-  it("Life systems are sensitive, bridged, and carry no assessment", () => {
+  it("Life systems are always sensitive and bridged", () => {
     for (const s of lifeSystems()) {
       expect(s.safetyLevel, s.key).toBe("sensitive")
       expect(s.futureBridge, s.key).toBeDefined()
-      expect(s.assessmentRoute, s.key).toBeUndefined()
-      expect(s.status, s.key).toBe("scaffold")
+    }
+  })
+
+  it("scaffold Life systems (birth, baby) carry no assessment yet", () => {
+    for (const key of ["birth", "baby"] as const) {
+      expect(SYSTEMS[key].status).toBe("scaffold")
+      expect(SYSTEMS[key].assessmentRoute).toBeUndefined()
     }
   })
 
@@ -42,6 +47,7 @@ describe("systems catalog", () => {
     const routes: Record<string, string> = {}
     for (const f of Object.values(FOUNDATIONS)) routes[f.key] = f.route
     for (const a of Object.values(HEALTH_SYSTEMS)) routes[a.key] = a.route
+    for (const a of Object.values(LIFE_SYSTEMS)) routes[a.key] = a.route
     for (const s of liveSystems()) {
       expect(s.assessmentRoute, s.key).toBeDefined()
       expect(s.assessmentRoute, `${s.key} route matches registry`).toBe(routes[s.key])

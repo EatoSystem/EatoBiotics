@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { AddonGate } from "@/components/assessment/addon-gate"
-import { isHealthSystemKey } from "@/lib/assessment/registry"
+import { isAssessedKey } from "@/lib/assessment/registry"
 
 export const metadata: Metadata = {
   title: "Add a focus to your assessment | EatoBiotics",
@@ -12,6 +12,6 @@ export const metadata: Metadata = {
 
 export default async function AddonGatePage({ params }: { params: Promise<{ addon: string }> }) {
   const { addon } = await params
-  if (!isHealthSystemKey(addon)) notFound()
+  if (!isAssessedKey(addon)) notFound()
   return <AddonGate addon={addon} />
 }
