@@ -202,3 +202,15 @@ export const FAMILY_META: Record<SystemFamily, { label: string; blurb: string }>
   health: { label: "Health Systems", blurb: "Strengthen a specific area of your Food System." },
   life: { label: "Life Systems", blurb: "Food-first support through major life transitions." },
 }
+
+/**
+ * Future Life Systems — architecture only, not products. Surfaced (clearly
+ * labelled "Future", never linked) on /food-systems so the platform's long arc
+ * is visible without implying availability.
+ */
+export const FUTURE_LIFE_SYSTEMS: Record<FutureLifeSystemKey, { label: string; blurb: string }> = {
+  child: { label: "Child", blurb: "Food-first support for the childhood years — variety, routine, and a family table that works." },
+  teen: { label: "Teen", blurb: "Fuel for growth, focus, and independence as eating habits become their own." },
+  adult: { label: "Adult", blurb: "Steady support through the busiest decades — energy, rhythm, and resilience." },
+  "healthy-ageing": { label: "Healthy Ageing", blurb: "Diversity and food patterns associated with ageing well, for the long run." },
+}
