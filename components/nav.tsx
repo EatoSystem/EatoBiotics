@@ -2,27 +2,17 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { useState, useRef, useEffect } from "react"
-import { Menu, X, ChevronDown } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Menu, X, ChevronDown, ArrowRight } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { AccountNavItem } from "@/components/account/account-nav-item"
-import { HEADER_GROUPS, NAV_LINKS, type NavGroup } from "@/lib/nav"
+import { HEADER_DROPDOWN_GROUPS, MEGA_MENU_GROUPS, NAV_LINKS, type NavGroup } from "@/lib/nav"
+import { MegaMenu, useDisclosureMenu } from "@/components/nav/mega-menu"
 
 function DropdownMenu({ group, pathname }: { group: NavGroup; pathname: string }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  // Close on outside click
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false)
-      }
-    }
-    document.addEventListener("mousedown", handleClick)
-    return () => document.removeEventListener("mousedown", handleClick)
-  }, [])
+  const { open, setOpen, containerRef, triggerRef, onBlurCapture } = useDisclosureMenu(pathname)
+  const panelId = `nav-menu-${group.label.toLowerCase().replace(/\s+/g, "-")}`
 
   // Is any child active?
   const isActive = group.items.some(
@@ -30,9 +20,13 @@ function DropdownMenu({ group, pathname }: { group: NavGroup; pathname: string }
   )
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={containerRef} onBlurCapture={onBlurCapture} className="relative">
       <button
+        ref={triggerRef}
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-haspopup="true"
+        aria-controls={panelId}
         className={cn(
           "flex items-center gap-1 text-sm font-medium transition-colors",
           isActive || open ? "text-foreground" : "text-muted-foreground hover:text-foreground"
@@ -46,7 +40,7 @@ function DropdownMenu({ group, pathname }: { group: NavGroup; pathname: string }
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 mt-3 w-72 rounded-2xl border border-border bg-background shadow-xl shadow-black/10">
+        <div id={panelId} className="absolute top-full left-1/2 mt-3 w-72 -translate-x-1/2 rounded-2xl border border-border bg-background shadow-xl shadow-black/10">
           <div className="p-2">
             {group.items.map((item) => {
               const active = pathname === item.href || pathname.startsWith(item.href + "/")
@@ -144,9 +138,20 @@ export function Nav() {
           </span>
         </Link>
 
-        {/* Desktop nav — launch-focus: one Explore dropdown, spine links after */}
-        <div className="hidden items-center gap-7 md:flex">
-          {HEADER_GROUPS.map((group) => (
+        {/* Desktop nav — the product architecture: Home · Food Systems (mega) ·
+            Food · Learn · Pricing · About · account · CTA */}
+        <div className="hidden items-center gap-6 md:flex">
+          <Link
+            href="/"
+            className={cn(
+              "text-sm font-medium transition-colors",
+              pathname === "/" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Home
+          </Link>
+          <MegaMenu pathname={pathname} />
+          {HEADER_DROPDOWN_GROUPS.map((group) => (
             <DropdownMenu key={group.label} group={group} pathname={pathname} />
           ))}
           {NAV_LINKS.map((link) => (
@@ -175,16 +180,97 @@ export function Nav() {
           onClick={() => setOpen(!open)}
           className="text-foreground md:hidden"
           aria-label={open ? "Close menu" : "Open menu"}
+          aria-expanded={open}
         >
           {open ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 
-      {/* Mobile menu */}
+      {/* Mobile menu — accordion grouped by product architecture */}
       {open && (
         <div className="max-h-[calc(100vh-61px)] overflow-y-auto border-t border-border bg-background px-6 py-6 md:hidden">
           <div className="flex flex-col gap-2">
-            {HEADER_GROUPS.map((group) => {
+            <Link
+              href="/"
+              onClick={() => setOpen(false)}
+              className={cn(
+                "flex items-center rounded-xl px-3 py-3 text-base font-semibold transition-colors",
+                pathname === "/" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Home
+            </Link>
+
+            {/* Food Systems — Foundation / Health / Life sub-groups */}
+            <div>
+              <button
+                onClick={() => setMobileGroup(mobileGroup === "Food Systems" ? null : "Food Systems")}
+                aria-expanded={mobileGroup === "Food Systems"}
+                className={cn(
+                  "flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-base font-semibold transition-colors",
+                  mobileGroup === "Food Systems" ? "bg-secondary/40 text-foreground" : "text-muted-foreground"
+                )}
+              >
+                Food Systems
+                <ChevronDown
+                  size={16}
+                  className={cn("transition-transform duration-200", mobileGroup === "Food Systems" && "rotate-180")}
+                />
+              </button>
+
+              {mobileGroup === "Food Systems" && (
+                <div className="mt-1 mb-2 flex flex-col gap-1 pl-2">
+                  {MEGA_MENU_GROUPS.map((family) => (
+                    <div key={family.family}>
+                      <p className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-icon-green">
+                        {family.label}
+                      </p>
+                      {family.items.map((item) => {
+                        const active = pathname === item.href || pathname.startsWith(item.href + "/")
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => setOpen(false)}
+                            className={cn(
+                              "flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors",
+                              active ? "bg-secondary/60 text-foreground" : "text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
+                            )}
+                          >
+                            <div
+                              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+                              style={{ background: item.gradient }}
+                            >
+                              <item.icon size={14} className="text-white" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="flex items-center gap-2 text-sm font-medium">
+                                {item.label}
+                                {item.comingSoon && (
+                                  <span className="rounded-full border border-border px-1.5 py-px text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                                    Soon
+                                  </span>
+                                )}
+                              </p>
+                              <p className="truncate text-xs text-muted-foreground">{item.description}</p>
+                            </div>
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  ))}
+                  <Link
+                    href="/food-systems"
+                    onClick={() => setOpen(false)}
+                    className="mt-2 flex items-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-icon-green"
+                  >
+                    Explore All Food Systems <ArrowRight size={14} />
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {HEADER_DROPDOWN_GROUPS.map((group) => {
               const isGroupOpen = mobileGroup === group.label
               const isActive = group.items.some(
                 (item) => pathname === item.href || pathname.startsWith(item.href + "/")
@@ -194,6 +280,7 @@ export function Nav() {
                   {/* Group header */}
                   <button
                     onClick={() => setMobileGroup(isGroupOpen ? null : group.label)}
+                    aria-expanded={isGroupOpen}
                     className={cn(
                       "flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-base font-semibold transition-colors",
                       isActive ? "text-foreground" : "text-muted-foreground",
