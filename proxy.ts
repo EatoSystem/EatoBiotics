@@ -36,6 +36,10 @@ function isEnterRoute(pathname: string): boolean {
   return (
     pathname === "/enter" ||
     pathname === "/preview-access" ||
+    pathname === "/privacy" ||         // legal pages linked from the waitlist footer
+    pathname === "/terms" ||
+    pathname === "/unsubscribe" ||     // email opt-out must work without site access
+    pathname.startsWith("/api/unsubscribe") ||
     pathname.startsWith("/discover") ||  // public shareable mini-report pages + OG
     pathname.startsWith("/c/") ||        // public per-country landing pages
     pathname.startsWith("/api/enter") ||
@@ -153,6 +157,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4|webm|mov)$).*)",
   ],
 }

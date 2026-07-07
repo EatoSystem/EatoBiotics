@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseServer } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"  // service role client for admin ops
 import { logServerEvent } from "@/lib/statsig-server"
+import { reconcileAccountAfterAuth } from "@/lib/auth/reconcile-account"
 
 function generateReferralCode(): string {
   return Math.random().toString(36).substring(2, 8).toUpperCase()
@@ -82,20 +83,6 @@ export async function GET(request: NextRequest) {
           referred: ref ? "true" : "false",
         })
 
-        // Link existing leads rows to this user_id
-        await adminSupabase
-          .from("leads")
-          .update({ user_id: user.id })
-          .eq("email", user.email!.toLowerCase())
-          .is("user_id", null)
-
-        // Link existing deep_assessments rows by email
-        await adminSupabase
-          .from("deep_assessments")
-          .update({ user_id: user.id })
-          .eq("email", user.email!.toLowerCase())
-          .is("user_id", null)
-
         // Record referral if ref code was provided
         if (ref) {
           await adminSupabase.from("referrals").upsert({
@@ -130,6 +117,11 @@ export async function GET(request: NextRequest) {
           }
         }
       }
+
+      // Always (new AND returning users): link prior anonymous assessments and
+      // activate the deferred 30-day report trial if they paid before signing up.
+      // Idempotent — safe to run on every callback.
+      await reconcileAccountAfterAuth(adminSupabase, user.id, user.email!.toLowerCase())
     } catch (err) {
       console.error("Profile creation error (non-fatal):", err)
       // Don't block the redirect — profile creation failure is not critical

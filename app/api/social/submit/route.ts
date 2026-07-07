@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { Resend } from "resend"
+import { sendEmail } from "@/lib/email/send"
 import { getUser } from "@/lib/supabase-server"
 
 /* ── UGC Submission Endpoint ─────────────────────────────────────────────
@@ -89,15 +89,10 @@ export async function POST(req: NextRequest) {
 
   if (resendKey) {
     try {
-      const resend = new Resend(resendKey)
-      const { error } = await resend.emails.send({
-        from: `EatoBiotics <${emailFrom}>`,
-        to: ownerEmail,
-        subject,
-        html,
-      })
-      if (error) {
-        console.error("[social/submit] Resend error:", error.message)
+      // Internal owner notification of an opt-in UGC share — bypasses opt-out.
+      const sent = await sendEmail({ from: `EatoBiotics <${emailFrom}>`, to: ownerEmail, subject, html, skipOptOutCheck: true })
+      if (!sent.ok && sent.error) {
+        console.error("[social/submit] send error:", sent.error)
       }
     } catch (err) {
       console.error("[social/submit] Failed to send notification:", err)

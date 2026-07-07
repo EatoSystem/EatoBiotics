@@ -16,7 +16,7 @@
  */
 
 import type { ScoreBand } from "@/lib/scoring"
-import type { FoundationKey, AddonKey } from "@/lib/assessment/registry"
+import type { FoundationKey, AssessedSystemKey } from "@/lib/assessment/registry"
 
 /* ── Stages ───────────────────────────────────────────────────────────────── */
 
@@ -44,11 +44,12 @@ export type SystemStatus = "live" | "planned"
 export type LoopSystemKey = "foundation" | SpecialisedKey
 
 /**
- * Specialised systems. The four `AddonKey`s are live today; the remaining four
- * are roadmap definitions (metadata only — never scored with fabricated data).
+ * Specialised systems. The four `AssessedSystemKey`s are live today; the
+ * remaining four are roadmap definitions (metadata only — never scored with
+ * fabricated data).
  */
 export type SpecialisedKey =
-  | AddonKey // "stability" | "glucose" | "mind" | "performance"
+  | AssessedSystemKey // "stability" | "glucose" | "mind" | "performance"
   | "recovery"
   | "longevity"
   | "sleep"

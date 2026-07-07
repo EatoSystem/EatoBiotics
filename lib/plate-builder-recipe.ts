@@ -144,7 +144,7 @@ function variationFromSeed(generatedSeed: number) {
     "warm ginger sesame",
     "peppery greens and lemon",
     "golden roast and yogurt",
-    "fresh garden crunch",
+    "fresh herb crunch",
     "zesty pickle and herb",
   ]
   return themes[generatedSeed % themes.length]

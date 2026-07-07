@@ -12,7 +12,7 @@
  */
 
 import type { AddOnSystem, LoopSystemKey, SpecialisedKey } from "./types"
-import { ADDON_KEYS } from "@/lib/assessment/registry"
+import { HEALTH_SYSTEM_KEYS } from "@/lib/assessment/registry"
 
 export const FOUNDATION_SYSTEM: AddOnSystem = {
   key: "foundation",
@@ -138,5 +138,5 @@ export function plannedSpecialisedSystems(): AddOnSystem[] {
 /** Sanity bridge: every live specialised system must have a registry add-on. */
 export function liveSystemsMatchRegistry(): boolean {
   const live = new Set(liveSpecialisedSystems().map((s) => s.key))
-  return ADDON_KEYS.every((k) => live.has(k)) && live.size === ADDON_KEYS.length
+  return HEALTH_SYSTEM_KEYS.every((k) => live.has(k)) && live.size === HEALTH_SYSTEM_KEYS.length
 }

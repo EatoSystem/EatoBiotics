@@ -1,5 +1,5 @@
 /**
- * lib/assessment/registry.ts — the bridge between the new foundation→add-on
+ * lib/assessment/registry.ts — the bridge between the new foundation→system
  * journey and the six existing (independent, localStorage-based) assessments.
  *
  * Each assessment keeps its own storage + scoring untouched. This module reads
@@ -12,14 +12,20 @@ import { GLUCOSE_PILLAR_IDS } from "@/lib/glucose-assessment-data"
 import { computeGlucoseResult } from "@/lib/glucose-assessment-scoring"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
 import type { StabilityAssessment } from "@/lib/stability/types"
+import type { PregnancyAssessment } from "@/lib/pregnancy/types"
 
 export type FoundationKey = "you" | "family"
-export type AddonKey = "stability" | "glucose" | "mind" | "performance"
-export type AssessmentKey = FoundationKey | AddonKey
+/** The Health systems that have a real assessment behind them (assessed today). */
+export type AssessedSystemKey = "stability" | "glucose" | "mind" | "performance"
+/** Life systems with a real (non-diagnostic, food-first) assessment. */
+export type LifeAssessedKey = "pregnancy"
+/** Any non-foundation system reachable via the add-gate / combined report. */
+export type AnyAssessedKey = AssessedSystemKey | LifeAssessedKey
+export type AssessmentKey = FoundationKey | AnyAssessedKey
 
 export interface AssessmentSummary {
   key: AssessmentKey
-  kind: "foundation" | "addon"
+  kind: "foundation" | "health" | "life"
   label: string // "You", "Family", "Stability", …
   scoreLabel: string // "Food System Score", "Stability Score", …
   score: number // 0–100
@@ -35,7 +41,7 @@ export interface AssessmentSummary {
 
 export interface AssessmentMeta {
   key: AssessmentKey
-  kind: "foundation" | "addon"
+  kind: "foundation" | "health" | "life"
   label: string
   /** User-facing route that runs this assessment. */
   route: string
@@ -46,16 +52,30 @@ export const FOUNDATIONS: Record<FoundationKey, AssessmentMeta> = {
   family: { key: "family", kind: "foundation", label: "Family", route: "/assessment/family" },
 }
 
-export const ADDONS: Record<AddonKey, AssessmentMeta> = {
-  stability: { key: "stability", kind: "addon", label: "Stability", route: "/stability/assessment" },
-  glucose: { key: "glucose", kind: "addon", label: "Glucose", route: "/glucose/assessment" },
-  mind: { key: "mind", kind: "addon", label: "Mind", route: "/assessment-mind" },
-  performance: { key: "performance", kind: "addon", label: "Performance", route: "/performance-assessment" },
+export const HEALTH_SYSTEMS: Record<AssessedSystemKey, AssessmentMeta> = {
+  stability: { key: "stability", kind: "health", label: "Stability", route: "/stability/assessment" },
+  glucose: { key: "glucose", kind: "health", label: "Glucose", route: "/glucose/assessment" },
+  mind: { key: "mind", kind: "health", label: "Mind", route: "/assessment-mind" },
+  performance: { key: "performance", kind: "health", label: "Performance", route: "/performance-assessment" },
 }
 
-export const ADDON_KEYS: AddonKey[] = ["stability", "glucose", "mind", "performance"]
-export function isAddonKey(v: string): v is AddonKey {
-  return (ADDON_KEYS as string[]).includes(v)
+export const HEALTH_SYSTEM_KEYS: AssessedSystemKey[] = ["stability", "glucose", "mind", "performance"]
+export function isHealthSystemKey(v: string): v is AssessedSystemKey {
+  return (HEALTH_SYSTEM_KEYS as string[]).includes(v)
+}
+
+/** Life systems with a real assessment (food-first, non-diagnostic). */
+export const LIFE_SYSTEMS: Record<LifeAssessedKey, AssessmentMeta> = {
+  pregnancy: { key: "pregnancy", kind: "life", label: "Pregnancy", route: "/pregnancy/assessment" },
+}
+export const LIFE_ASSESSED_KEYS: LifeAssessedKey[] = ["pregnancy"]
+
+/** Every assessed non-foundation system (health + life), for the add-gate,
+ *  foundation guard, journey, and combined report. Keeps `HEALTH_SYSTEMS` pure. */
+export const ASSESSED_SYSTEMS: Record<AnyAssessedKey, AssessmentMeta> = { ...HEALTH_SYSTEMS, ...LIFE_SYSTEMS }
+export const ANY_ASSESSED_KEYS: AnyAssessedKey[] = [...HEALTH_SYSTEM_KEYS, ...LIFE_ASSESSED_KEYS]
+export function isAssessedKey(v: string): v is AnyAssessedKey {
+  return (ANY_ASSESSED_KEYS as string[]).includes(v)
 }
 
 /* ── localStorage keys of the six existing assessments ─────────────────────── */
@@ -66,6 +86,7 @@ const LS = {
   stability: "eb_stability_assessment_v1",
   glucose: "eatobetics-glucose-assessment",
   performance: "performance-assessment",
+  pregnancy: "eb_pregnancy_assessment_v1",
 } as const
 
 function readLS<T>(key: string): T | null {
@@ -84,7 +105,7 @@ type ResultStateLike = { result?: AssessmentResult | null }
 
 function fromAssessmentResult(
   key: AssessmentKey,
-  kind: "foundation" | "addon",
+  kind: "foundation" | "health",
   label: string,
   scoreLabel: string,
   r: AssessmentResult,
@@ -116,7 +137,7 @@ function familySummary(): AssessmentSummary | null {
 
 function mindSummary(): AssessmentSummary | null {
   const r = readLS<ResultStateLike>(LS.mind)?.result
-  return r ? fromAssessmentResult("mind", "addon", "Mind", "Mind Score", r) : null
+  return r ? fromAssessmentResult("mind", "health", "Mind", "Mind Score", r) : null
 }
 
 function stabilitySummary(): AssessmentSummary | null {
@@ -125,7 +146,7 @@ function stabilitySummary(): AssessmentSummary | null {
   const s = a.score
   return {
     key: "stability",
-    kind: "addon",
+    kind: "health",
     label: "Stability",
     scoreLabel: "Stability Score",
     score: s.totalScore,
@@ -145,7 +166,7 @@ function glucoseSummary(): AssessmentSummary | null {
   const r = computeGlucoseResult(answers)
   return {
     key: "glucose",
-    kind: "addon",
+    kind: "health",
     label: "Glucose",
     scoreLabel: "Glucose Score",
     score: r.overall,
@@ -193,7 +214,7 @@ function performanceSummary(): AssessmentSummary | null {
   const ordered = Object.entries(PERF_PILLARS).sort((a, b) => sub[a[0]] - sub[b[0]])
   return {
     key: "performance",
-    kind: "addon",
+    kind: "health",
     label: "Performance",
     scoreLabel: "Performance Score",
     score: overall,
@@ -205,6 +226,23 @@ function performanceSummary(): AssessmentSummary | null {
   }
 }
 
+function pregnancySummary(): AssessmentSummary | null {
+  const a = readLS<PregnancyAssessment>(LS.pregnancy)
+  if (!a?.score) return null
+  const s = a.score
+  return {
+    key: "pregnancy",
+    kind: "life",
+    label: "Pregnancy",
+    scoreLabel: "Pregnancy Food Score",
+    score: s.totalScore,
+    bandLabel: s.band,
+    strengths: s.positiveFactors ?? [],
+    priorities: s.priorityFactors ?? [],
+    sevenDay: s.recommendedNextSteps ?? [],
+  }
+}
+
 const SUMMARY_FNS: Record<AssessmentKey, () => AssessmentSummary | null> = {
   you: youSummary,
   family: familySummary,
@@ -212,6 +250,7 @@ const SUMMARY_FNS: Record<AssessmentKey, () => AssessmentSummary | null> = {
   stability: stabilitySummary,
   glucose: glucoseSummary,
   performance: performanceSummary,
+  pregnancy: pregnancySummary,
 }
 
 /* ── Cross-device summary cache ──────────────────────────────────────────────
@@ -253,7 +292,7 @@ export function isComplete(key: AssessmentKey): boolean {
 /** All currently-available summaries (live preferred, cache fallback), keyed. */
 export function allSummaries(): Partial<Record<AssessmentKey, AssessmentSummary>> {
   const out: Partial<Record<AssessmentKey, AssessmentSummary>> = {}
-  for (const key of [...(Object.keys(FOUNDATIONS) as FoundationKey[]), ...ADDON_KEYS] as AssessmentKey[]) {
+  for (const key of [...(Object.keys(FOUNDATIONS) as FoundationKey[]), ...ANY_ASSESSED_KEYS] as AssessmentKey[]) {
     const s = getSummary(key)
     if (s) out[key] = s
   }

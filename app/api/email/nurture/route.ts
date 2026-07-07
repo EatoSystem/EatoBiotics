@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { Resend } from "resend"
 import { getSupabase } from "@/lib/supabase"
 import { verifyCronRequest } from "@/lib/cron-auth"
+import { sendEmail } from "@/lib/email/send"
+import { unsubscribeUrl } from "@/lib/email/unsubscribe"
 
 /* ── Nurture Email Sequence ──────────────────────────────────────────────
    Runs daily via Vercel Cron (see vercel.json: "0 9 * * *").
@@ -23,7 +24,8 @@ const SITE_URL    = process.env.NEXT_PUBLIC_SITE_URL ?? "https://eatobiotics.com
 
 /* ── Email HTML templates ────────────────────────────────────────────── */
 
-function baseTemplate(body: string): string {
+function baseTemplate(body: string, email?: string): string {
+  const unsubHref = email ? unsubscribeUrl(email) : `${SITE_URL}/unsubscribe`
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -53,7 +55,7 @@ function baseTemplate(body: string): string {
             <td style="padding:20px 40px;border-top:1px solid #f3f3f3;text-align:center;">
               <p style="margin:0;color:#9ca3af;font-size:11px;">
                 EatoBiotics &middot; <a href="${SITE_URL}/account" style="color:#4CB648;text-decoration:none;">View your account</a> &middot;
-                <a href="${SITE_URL}/unsubscribe" style="color:#9ca3af;text-decoration:none;">Unsubscribe</a>
+                <a href="${unsubHref}" style="color:#9ca3af;text-decoration:none;">Unsubscribe</a>
               </p>
             </td>
           </tr>
@@ -85,7 +87,7 @@ function pillarInsight(label: string, action: string, color: string): string {
 }
 
 /* Day 1 — What your score means */
-function day1Email(name: string, score: number | null, profileType: string | null, weakestPillar: string | null): string {
+function day1Email(name: string, score: number | null, profileType: string | null, weakestPillar: string | null, email: string): string {
   const greeting = name ? `Hi ${name.split(" ")[0]},` : "Hi there,"
   const scoreText = score != null ? `You scored <strong style="color:#4CB648;">${score}/100</strong>` : "You have a Biotics Score"
   const profileText = profileType ? ` — that makes you a <strong>${profileType}</strong>` : ""
@@ -117,11 +119,11 @@ function day1Email(name: string, score: number | null, profileType: string | nul
       Your account is ready. Log your first meal, check your pillar scores, and take one small action today.
     </p>
     ${ctaButton(`${SITE_URL}/account`, "Go to your account")}
-  `)
+  `, email)
 }
 
 /* Day 3 — Habit check-in */
-function day3Email(name: string, weakestPillar: string | null): string {
+function day3Email(name: string, weakestPillar: string | null, email: string): string {
   const greeting = name ? `Hi ${name.split(" ")[0]},` : "Hi there,"
 
   const PILLAR_DAY3: Record<string, { label: string; action: string }> = {
@@ -150,11 +152,11 @@ function day3Email(name: string, weakestPillar: string | null): string {
       Check in on your account — see your pillar scores and complete today&apos;s 7-day guide action.
     </p>
     ${ctaButton(`${SITE_URL}/account`, "Check in on your account")}
-  `)
+  `, email)
 }
 
 /* Day 7 — Starter complete */
-function day7Email(name: string, score: number | null): string {
+function day7Email(name: string, score: number | null, email: string): string {
   const greeting = name ? `Hi ${name.split(" ")[0]},` : "Hi there,"
   const scoreText = score != null ? `Your current score is <strong style="color:#4CB648;">${score}/100</strong>.` : ""
 
@@ -181,11 +183,11 @@ function day7Email(name: string, score: number | null): string {
     <a href="${SITE_URL}/pricing" style="display:inline-block;margin-top:8px;color:#4CB648;font-size:13px;font-weight:600;text-decoration:none;">
       See what Grow includes →
     </a>
-  `)
+  `, email)
 }
 
 /* Day 14 — Two-week check-in */
-function day14Email(name: string, score: number | null): string {
+function day14Email(name: string, score: number | null, email: string): string {
   const greeting = name ? `Hi ${name.split(" ")[0]},` : "Hi there,"
 
   return baseTemplate(`
@@ -213,7 +215,7 @@ function day14Email(name: string, score: number | null): string {
     <p style="margin:24px 0 4px;color:#5A6E50;font-size:13px;line-height:1.6;border-top:1px solid #f3f3f3;padding-top:20px;">
       Ready to track your meals, see your score move daily, and get a monthly gut plan? <a href="${SITE_URL}/pricing" style="color:#4CB648;font-weight:600;text-decoration:none;">See membership options →</a>
     </p>
-  `)
+  `, email)
 }
 
 /* ── Route handler ───────────────────────────────────────────────────── */
@@ -233,7 +235,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ skipped: true, reason: "Supabase not configured" })
   }
 
-  const resend = new Resend(resendKey)
   const now    = Date.now()
   const HOUR   = 3_600_000
 
@@ -296,26 +297,23 @@ export async function GET(req: NextRequest) {
 
         if (seq.dayLabel === "day1") {
           subject = "What your EatoBiotics score actually means"
-          html    = day1Email(profile.name ?? "", score, profileType, weakestPillar)
+          html    = day1Email(profile.name ?? "", score, profileType, weakestPillar, profile.email)
         } else if (seq.dayLabel === "day3") {
           subject = "Day 3 — your action for today"
-          html    = day3Email(profile.name ?? "", weakestPillar)
+          html    = day3Email(profile.name ?? "", weakestPillar, profile.email)
         } else if (seq.dayLabel === "day7") {
           subject = "You've completed your 7-day starter — what's next"
-          html    = day7Email(profile.name ?? "", score)
+          html    = day7Email(profile.name ?? "", score, profile.email)
         } else if (seq.dayLabel === "day14") {
           subject = "Two weeks in — your gut has been changing"
-          html    = day14Email(profile.name ?? "", score)
+          html    = day14Email(profile.name ?? "", score, profile.email)
         }
 
         if (subject && html) {
-          await resend.emails.send({
-            from: `EatoBiotics <${EMAIL_FROM}>`,
-            to:   profile.email,
-            subject,
-            html,
-          })
-          totalSent++
+          // sendEmail skips opted-out recipients and adds List-Unsubscribe headers.
+          const sent = await sendEmail({ to: profile.email, from: `EatoBiotics <${EMAIL_FROM}>`, subject, html })
+          if (sent.ok) totalSent++
+          else if (sent.error) errors.push(`${seq.dayLabel} for ${profile.email}: ${sent.error}`)
         }
       } catch (err) {
         errors.push(`${seq.dayLabel} for ${profile.email}: ${String(err)}`)

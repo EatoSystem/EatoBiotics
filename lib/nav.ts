@@ -1,11 +1,5 @@
 import type { ComponentType } from "react"
 import {
-  User,
-  Compass,
-  Activity,
-  Dumbbell,
-  Brain,
-  Users,
   UtensilsCrossed,
   ScanLine,
   Calendar,
@@ -14,20 +8,23 @@ import {
   Zap,
   Mic,
   Smartphone,
+  Orbit,
+  Route,
 } from "lucide-react"
+import { SYSTEMS, SYSTEM_KEYS, FAMILY_META, systemsByFamily, type SystemFamily } from "@/lib/systems"
 
 /**
  * lib/nav.ts — single source of truth for site navigation.
  *
- * Consumed by components/nav.tsx (header, desktop + mobile) and
- * components/footer.tsx so the two can never drift apart. Add or move a
- * destination here and both surfaces update together.
+ * Consumed by components/nav.tsx (header: mega menu + dropdowns) and
+ * components/footer.tsx (full NAV_GROUPS columns) so the two can never drift.
  *
- * Grouping model (intent-based):
- * - Programs → the product lines (what you can join / follow)
- * - Food     → daily-use tools
- * - Learn    → content and media
- * Pricing is a standalone top-level link — the money page is always visible.
+ * Grouping model (product architecture):
+ * - Food Systems → the platform itself, generated from the lib/systems.ts
+ *   catalog (Foundation / Health / Life) — never hand-listed here.
+ * - Food         → daily-use tools
+ * - Learn        → content, media, and the how-it-works spine
+ * Pricing and About are standalone top-level links; the CTA is always visible.
  */
 
 export interface NavItem {
@@ -42,17 +39,56 @@ export interface NavGroup {
   items: NavItem[]
 }
 
+/* ── Food Systems (catalog-driven — the mega menu + footer column) ────────── */
+
+/** A mega-menu entry: a NavItem plus the system's visual identity + status. */
+export interface MegaMenuItem extends NavItem {
+  accent: string
+  gradient: string
+  comingSoon: boolean
+}
+
+export interface MegaMenuGroup {
+  family: SystemFamily
+  label: string
+  blurb: string
+  items: MegaMenuItem[]
+}
+
+function toMegaItem(key: (typeof SYSTEM_KEYS)[number]): MegaMenuItem {
+  const s = SYSTEMS[key]
+  return {
+    href: s.href,
+    label: s.label,
+    description: s.tagline,
+    icon: s.icon,
+    accent: s.accent,
+    gradient: s.gradient,
+    comingSoon: s.status !== "live",
+  }
+}
+
+/** Foundation / Health / Life sections for the header mega menu. */
+export const MEGA_MENU_GROUPS: MegaMenuGroup[] = (
+  ["foundation", "health", "life"] as SystemFamily[]
+).map((family) => ({
+  family,
+  label: FAMILY_META[family].label,
+  blurb: FAMILY_META[family].blurb,
+  items: systemsByFamily(family).map((s) => toMegaItem(s.key)),
+}))
+
+/* ── Full group config (footer renders all of this) ───────────────────────── */
+
 export const NAV_GROUPS: NavGroup[] = [
   {
-    label: "Programs",
-    items: [
-      { href: "/you",        label: "You",             description: "The Food System Inside You",          icon: User },
-      { href: "/stability",  label: "Stability™",      description: "The Stability System Inside You",      icon: Compass },
-      { href: "/glucose",    label: "Glucose & GLP-1", description: "The Glucose System Inside You",        icon: Activity },
-      { href: "/family",     label: "Family",          description: "The Food System Inside Your Family",   icon: Users },
-      { href: "/mind",       label: "Mind",            description: "The Food System Inside Your Mind",     icon: Brain },
-      { href: "/performance", label: "Sports",         description: "The Performance System Inside You",    icon: Dumbbell },
-    ],
+    label: "Food Systems",
+    // Generated from the catalog so the footer and menus can never drift from
+    // the product architecture in lib/systems.ts.
+    items: SYSTEM_KEYS.map((k) => {
+      const s = SYSTEMS[k]
+      return { href: s.href, label: s.label, description: s.tagline, icon: s.icon }
+    }),
   },
   {
     label: "Food",
@@ -65,16 +101,23 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Learn",
     items: [
-      { href: "/book",      label: "The Book",          description: "Read EatoBiotics chapter by chapter",      icon: BookOpen },
-      { href: "/books",     label: "The Trilogy",       description: "Three books. One complete system.",        icon: Library },
-      { href: "/gut-brain", label: "Gut-Brain Science", description: "How your gut shapes your mind",            icon: Zap },
-      { href: "/podcast",   label: "The Podcast",       description: "Conversations about food & performance",   icon: Mic },
-      { href: "/app",       label: "The App",           description: "Your daily plate companion",               icon: Smartphone },
+      { href: "/digital-twin", label: "Your Food System",  description: "The living model behind EatoBiotics",      icon: Orbit },
+      { href: "/method",       label: "How It Works",      description: "The method, step by step",                  icon: Route },
+      { href: "/book",         label: "The Book",          description: "Read EatoBiotics chapter by chapter",      icon: BookOpen },
+      { href: "/books",        label: "The Trilogy",       description: "Three books. One complete system.",        icon: Library },
+      { href: "/gut-brain",    label: "Gut-Brain Science", description: "How your gut shapes your mind",            icon: Zap },
+      { href: "/podcast",      label: "The Podcast",       description: "Conversations about food & performance",   icon: Mic },
+      { href: "/app",          label: "The App",           description: "Your daily plate companion",               icon: Smartphone },
     ],
   },
 ]
 
-/** Standalone top-level header links (rendered after the dropdown groups). */
+/** The standard header dropdowns (the Food Systems group gets the mega menu). */
+export const HEADER_DROPDOWN_GROUPS: NavGroup[] = NAV_GROUPS.filter(
+  (g) => g.label === "Food" || g.label === "Learn",
+)
+
+/** Standalone top-level header links rendered after the menus. */
 export const NAV_LINKS: Array<{ href: string; label: string }> = [
   { href: "/pricing", label: "Pricing" },
   { href: "/about",   label: "About" },

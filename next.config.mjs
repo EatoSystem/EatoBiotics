@@ -3,6 +3,30 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Keep serverless functions lean: never bundle media/binary dirs into functions
+  // (they're served from the CDN). Fixes the api/plate-builder 250MB limit — the
+  // route reads style refs via a dynamic path, so the tracer conservatively pulls
+  // in whole media dirs unless we exclude them here.
+  outputFileTracingExcludes: {
+    "*": [
+      "public/videos/**",
+      "public/images/**",
+      "public/book/**",
+      "Food Images/**",
+      "remotion/**",
+    ],
+  },
+  // …but plate-builder DOES read these 5 small style refs at runtime, so force them
+  // back into that one function.
+  outputFileTracingIncludes: {
+    "/api/plate-builder": [
+      "public/plate-builder/food-1.webp",
+      "public/plate-builder/food-2.webp",
+      "public/plate-builder/food-3.webp",
+      "Food Images/Food 8.0.png",
+      "Food Images/Food 9.0.png",
+    ],
+  },
   async redirects() {
     return [
       { source: "/eatobetics", destination: "/glucose", permanent: true },
@@ -27,6 +51,8 @@ const nextConfig = {
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.posthog.com https://*.statsig.com https://js.stripe.com https://*.vercel-scripts.com",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
+      // data:/blob: media is needed by @remotion/player's silent-audio autoplay shim.
+      "media-src 'self' data: blob:",
       "font-src 'self' data:",
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.posthog.com https://*.statsig.com https://api.stripe.com https://*.anthropic.com https://*.elevenlabs.io wss://*.elevenlabs.io https://*.openai.com https://*.vercel-insights.com",
       "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",

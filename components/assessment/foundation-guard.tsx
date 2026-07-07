@@ -13,10 +13,10 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ArrowRight, Loader2 } from "lucide-react"
 import { hasAnyFoundation, patchJourney } from "@/lib/assessment/journey"
-import { isComplete, ADDONS, type AddonKey } from "@/lib/assessment/registry"
+import { isComplete, ASSESSED_SYSTEMS, type AnyAssessedKey } from "@/lib/assessment/registry"
 import { persist } from "@/lib/assessment/sync"
 
-export function FoundationGuard({ addon, children }: { addon: AddonKey; children: React.ReactNode }) {
+export function FoundationGuard({ addon, children }: { addon: AnyAssessedKey; children: React.ReactNode }) {
   const router = useRouter()
   const [status, setStatus] = useState<"checking" | "ok">("checking")
   const [addonDone, setAddonDone] = useState(false)
@@ -70,7 +70,7 @@ export function FoundationGuard({ addon, children }: { addon: AddonKey; children
             href="/assessment/results"
             className="brand-gradient mx-auto flex w-full max-w-md items-center justify-center gap-2 rounded-full py-4 text-base font-semibold text-white shadow-xl shadow-icon-green/30"
           >
-            View your combined report ({ADDONS[addon].label}) <ArrowRight size={18} />
+            View your combined report ({ASSESSED_SYSTEMS[addon].label}) <ArrowRight size={18} />
           </Link>
         </div>
       )}

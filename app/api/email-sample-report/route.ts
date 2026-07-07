@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { Resend } from "resend"
+import { sendEmail } from "@/lib/email/send"
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 
 // Map report titles to their demo URLs
@@ -145,16 +145,17 @@ export async function POST(req: NextRequest) {
     const ownerEmail = process.env.OWNER_EMAIL
 
     if (resendKey) {
-      const resend = new Resend(resendKey)
-      const { error } = await resend.emails.send({
+      // User-requested sample report (transactional) — bypasses the marketing opt-out.
+      const sent = await sendEmail({
         from: `EatoBiotics <${emailFrom}>`,
         to: email,
         bcc: ownerEmail ? [ownerEmail] : undefined,
         subject: `Your EatoBiotics Sample Report — ${title}`,
         html,
+        skipOptOutCheck: true,
       })
-      if (error) {
-        console.error("[email-sample-report] Resend error:", error.message)
+      if (!sent.ok && sent.error) {
+        console.error("[email-sample-report] send error:", sent.error)
         return NextResponse.json({ error: "Failed to send email" }, { status: 500 })
       }
     } else {

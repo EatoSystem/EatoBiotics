@@ -6,6 +6,7 @@ import type { DeepQuestion } from "@/lib/deep-assessment"
 import type { DeepReport } from "@/lib/claude-report"
 import { getPaidReportSummaryFromSession, isCheckoutSessionSettled } from "@/lib/paid-report-session"
 import { buildFallbackPaidReport } from "@/lib/fallback-paid-report"
+import { overallReportStatus } from "@/lib/report-status"
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -32,6 +33,8 @@ type FreeScores = {
   profile: { type: string; tagline: string; description: string }
   tier: "personal" | "starter" | "full" | "premium"
   email?: string | null
+  foundationType?: "you" | "family" | null
+  selectedAddon?: "stability" | "glucose" | "mind" | "performance" | null
 }
 
 type RequestBody = {
@@ -219,19 +222,31 @@ export async function POST(req: NextRequest) {
   const questions = rawQuestions as DeepQuestion[]
   const devMode = !process.env.STRIPE_SECRET_KEY
 
-  // Step 1: Check Supabase idempotency
+  // Step 1: Idempotency. Only short-circuit when the row is FULLY delivered
+  // (status === "complete", which is now only set when report + PDF + email all
+  // succeeded). For a partially-failed prior run we keep the row so we can reuse
+  // the work that did succeed and retry only the failed stages below.
   const supabase = getSupabase()
+  let existingRow: {
+    status?: string | null
+    report_json?: unknown
+    pdf_url?: string | null
+    pdf_status?: string | null
+    email_status?: string | null
+    email_sent_at?: string | null
+  } | null = null
   if (supabase) {
     try {
       const { data: existing } = await supabase
         .from("deep_assessments")
-        .select("status, pdf_url, report_json")
+        .select("status, pdf_url, report_json, pdf_status, email_status, email_sent_at")
         .eq("stripe_session_id", sessionId)
         .maybeSingle()
 
       if (existing?.status === "complete" && existing.report_json) {
         return NextResponse.json({ ok: true, pdfUrl: existing.pdf_url ?? null })
       }
+      existingRow = existing ?? null
     } catch (err) {
       console.error("[submit-deep-assessment] Supabase idempotency check error:", err)
     }
@@ -322,7 +337,13 @@ export async function POST(req: NextRequest) {
         {
           stripe_session_id: sessionId,
           tier,
-          free_scores: { overall, subScores, profile },
+          free_scores: {
+            overall,
+            subScores,
+            profile,
+            foundationType: freeScores.foundationType ?? null,
+            selectedAddon: freeScores.selectedAddon ?? null,
+          },
           email: freeScores.email ?? null,
           answers,
           status: "analysing",
@@ -335,11 +356,18 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Step 5: Call Claude for deep analysis. If AI generation is unavailable,
-  // use a deterministic report so a paid user never loses access after checkout.
+  // Step 5: Produce the report. Reuse a prior run's report_json if present (so a
+  // retry doesn't pay for Claude again). If AI generation is unavailable or
+  // fails, fall back to a deterministic report so a paid user never loses access
+  // — the report always exists, so report_status is effectively always
+  // "generated"; report_error records *why* a fallback was used for diagnostics.
   let report: DeepReport
-  if (!process.env.ANTHROPIC_API_KEY) {
+  let reportError: string | null = null
+  if (existingRow?.report_json) {
+    report = existingRow.report_json as DeepReport
+  } else if (!process.env.ANTHROPIC_API_KEY) {
     console.warn("[submit-deep-assessment] ANTHROPIC_API_KEY not set; using fallback paid report")
+    reportError = "ANTHROPIC_API_KEY not set — used deterministic fallback"
     report = buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers })
   } else {
     try {
@@ -368,11 +396,12 @@ export async function POST(req: NextRequest) {
       report = JSON.parse(cleaned) as DeepReport
     } catch (err) {
       console.error("[submit-deep-assessment] Claude error; using fallback paid report:", err)
+      reportError = `Claude generation failed — used fallback: ${err instanceof Error ? err.message : String(err)}`
       report = buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers })
     }
   }
 
-  // Step 6: Save report_json to DB
+  // Step 6: Persist report_json (stays "analysing" until delivery is verified)
   if (supabase) {
     try {
       await supabase.from("deep_assessments").upsert(
@@ -380,6 +409,8 @@ export async function POST(req: NextRequest) {
           stripe_session_id: sessionId,
           report_json: report,
           status: "analysing",
+          report_status: "generated",
+          report_error: reportError,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "stripe_session_id" }
@@ -389,131 +420,171 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Step 7: PDF generation
-  let pdfBuffer: Buffer | null = null
-  try {
-    const { generatePDF } = await import("@/lib/pdf/generate-pdf")
-    const pdfTier = tier === "personal" ? "full" : tier
-    pdfBuffer = await generatePDF({
-      tier: pdfTier,
-      leadName,
-      generatedAt: new Date().toLocaleDateString("en-IE", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      }),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      freeScores: { overall, subScores: subScores as any, profile: profile as any },
-      report,
-    })
-  } catch (err) {
-    console.error("[submit-deep-assessment] PDF generation error:", err)
-    pdfBuffer = null
+  // Step 7+8: PDF generation + upload. Reuse a prior run's uploaded PDF if there
+  // is one; otherwise generate and upload, recording the precise outcome so a
+  // failure is never hidden behind status="complete".
+  let pdfUrl: string | null = existingRow?.pdf_url ?? null
+  let pdfStatus: "uploaded" | "generated" | "upload_failed" | "failed" | "pending" =
+    pdfUrl && existingRow?.pdf_status === "uploaded" ? "uploaded" : "pending"
+  let pdfError: string | null = null
+
+  if (pdfStatus !== "uploaded") {
+    let pdfBuffer: Buffer | null = null
+    try {
+      const { generatePDF } = await import("@/lib/pdf/generate-pdf")
+      const pdfTier = tier === "personal" ? "full" : tier
+      pdfBuffer = await generatePDF({
+        tier: pdfTier,
+        leadName,
+        generatedAt: new Date().toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        freeScores: { overall, subScores: subScores as any, profile: profile as any },
+        report,
+      })
+      pdfStatus = "generated"
+    } catch (err) {
+      console.error("[submit-deep-assessment] PDF generation error:", err)
+      pdfStatus = "failed"
+      pdfError = err instanceof Error ? err.message : String(err)
+    }
+
+    if (pdfBuffer && supabase) {
+      try {
+        const { error: uploadError } = await supabase.storage
+          .from("pdf-reports")
+          .upload(`${sessionId}.pdf`, pdfBuffer, { contentType: "application/pdf", upsert: true })
+
+        if (uploadError) {
+          console.error("[submit-deep-assessment] Supabase Storage upload error:", uploadError.message)
+          pdfStatus = "upload_failed"
+          pdfError = uploadError.message
+        } else {
+          const { data: signedData } = await supabase.storage
+            .from("pdf-reports")
+            .createSignedUrl(`${sessionId}.pdf`, 60 * 60 * 24 * 7)
+          pdfUrl = signedData?.signedUrl ?? null
+          pdfStatus = pdfUrl ? "uploaded" : "upload_failed"
+          if (!pdfUrl) pdfError = "Signed URL not returned after upload"
+        }
+      } catch (err) {
+        console.error("[submit-deep-assessment] PDF upload exception:", err)
+        pdfStatus = "upload_failed"
+        pdfError = err instanceof Error ? err.message : String(err)
+      }
+    }
   }
 
-  // Step 8: Upload PDF to Supabase Storage
-  let pdfUrl: string | null = null
-  if (pdfBuffer && supabase) {
+  // Step 9: Send the report email. Skip if a prior run already delivered it.
+  let emailStatus: "sent" | "failed" | "pending" =
+    existingRow?.email_status === "sent" ? "sent" : "pending"
+  let emailSentAt: string | null = existingRow?.email_sent_at ?? null
+  let emailError: string | null = null
+
+  if (emailStatus !== "sent") {
     try {
-      const { error: uploadError } = await supabase.storage
-        .from("pdf-reports")
-        .upload(`${sessionId}.pdf`, pdfBuffer, {
-          contentType: "application/pdf",
-          upsert: true,
+      const { buildPaidReportEmail } = await import("@/lib/email/paid-report-email")
+      const { sendEmail } = await import("@/lib/email/send")
+      const resendKey = process.env.RESEND_API_KEY
+      const emailFrom = process.env.EMAIL_FROM ?? "reports@eatobiotics.com"
+
+      // Look up the lead email for sending
+      let leadEmail: string | null = freeScores.email ?? null
+      if (supabase) {
+        const { data: sessionRow } = await supabase
+          .from("deep_assessments")
+          .select("email")
+          .eq("stripe_session_id", sessionId)
+          .maybeSingle()
+        leadEmail = sessionRow?.email ?? leadEmail
+      }
+
+      if (resendKey && leadEmail) {
+        const anyReport = report as unknown as Record<string, unknown>
+        const { subject, html } = buildPaidReportEmail({
+          name: leadName,
+          tier,
+          overall,
+          profileType: profile.type,
+          tagline: profile.tagline,
+          profileDescription: profile.description,
+          subScores,
+          topTrigger: typeof anyReport.topTrigger === "string" ? anyReport.topTrigger : "",
+          topTriggerExplanation:
+            typeof anyReport.topTriggerExplanation === "string" ? anyReport.topTriggerExplanation : "",
+          sessionId,
+          pdfUrl: pdfUrl ?? null,
         })
 
-      if (uploadError) {
-        console.error("[submit-deep-assessment] Supabase Storage upload error:", uploadError.message)
-      } else {
-        const { data: signedData } = await supabase.storage
-          .from("pdf-reports")
-          .createSignedUrl(`${sessionId}.pdf`, 60 * 60 * 24 * 7)
+        const ownerEmail = process.env.OWNER_EMAIL
+        // Transactional (the user paid for this) — bypasses the marketing opt-out.
+        const sent = await sendEmail({
+          from: `EatoBiotics <${emailFrom}>`,
+          to: leadEmail,
+          bcc: ownerEmail ? [ownerEmail] : undefined,
+          subject,
+          html,
+          skipOptOutCheck: true,
+        })
 
-        pdfUrl = signedData?.signedUrl ?? null
+        if (!sent.ok) {
+          console.error("[submit-deep-assessment] report email send failed:", sent.error)
+          emailStatus = "failed"
+          emailError = sent.error ?? "send returned not-ok"
+        } else {
+          emailStatus = "sent"
+          emailSentAt = new Date().toISOString()
+        }
+      } else if (!resendKey) {
+        console.log("[submit-deep-assessment] RESEND_API_KEY not set — skipping email")
+        // leave emailStatus = "pending"
+      } else if (!leadEmail) {
+        emailError = "No recipient email on file"
       }
     } catch (err) {
-      console.error("[submit-deep-assessment] PDF upload exception:", err)
+      console.error("[submit-deep-assessment] Email step error:", err)
+      emailStatus = "failed"
+      emailError = err instanceof Error ? err.message : String(err)
     }
   }
 
-  // Step 9: Send paid email via Resend
-  let emailSentAt: string | null = null
-  try {
-    const { buildPaidReportEmail } = await import("@/lib/email/paid-report-email")
-    const resendKey = process.env.RESEND_API_KEY
-    const emailFrom = process.env.EMAIL_FROM ?? "reports@eatobiotics.com"
+  // Step 10: Finalise. The overall status is "complete" ONLY when the report,
+  // PDF, and email all succeeded — otherwise it stays "partial" so the failure
+  // is visible in the DB and a re-run retries just the failed stages.
+  const overall_status = overallReportStatus({
+    reportOk: true, // a report always exists (Claude or deterministic fallback)
+    pdfOk: pdfStatus === "uploaded",
+    emailOk: emailStatus === "sent",
+  })
 
-    // Look up the lead email for sending
-    let leadEmail: string | null = freeScores.email ?? null
-    if (supabase) {
-      const { data: sessionRow } = await supabase
-        .from("deep_assessments")
-        .select("email")
-        .eq("stripe_session_id", sessionId)
-        .maybeSingle()
-      leadEmail = sessionRow?.email ?? leadEmail
-    }
-
-    if (resendKey && leadEmail) {
-      const { Resend } = await import("resend")
-      const resend = new Resend(resendKey)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const anyReport = report as unknown as Record<string, unknown>
-      const { subject, html } = buildPaidReportEmail({
-        name: leadName,
-        tier,
-        overall,
-        profileType: profile.type,
-        tagline: profile.tagline,
-        profileDescription: profile.description,
-        subScores,
-        topTrigger: typeof anyReport.topTrigger === "string" ? anyReport.topTrigger : "",
-        topTriggerExplanation:
-          typeof anyReport.topTriggerExplanation === "string"
-            ? anyReport.topTriggerExplanation
-            : "",
-        sessionId,
-        pdfUrl: pdfUrl ?? null,
-      })
-
-      const ownerEmail = process.env.OWNER_EMAIL
-      const { error: emailError } = await resend.emails.send({
-        from: `EatoBiotics <${emailFrom}>`,
-        to: leadEmail,
-        bcc: ownerEmail ? [ownerEmail] : undefined,
-        subject,
-        html,
-      })
-
-      if (emailError) {
-        console.error("[submit-deep-assessment] Resend error:", emailError.message)
-      } else {
-        emailSentAt = new Date().toISOString()
-      }
-    } else if (!resendKey) {
-      console.log("[submit-deep-assessment] RESEND_API_KEY not set — skipping email")
-    }
-  } catch (err) {
-    console.error("[submit-deep-assessment] Email step error:", err)
-  }
-
-  // Step 10: Mark complete in Supabase
   if (supabase) {
     try {
       await supabase.from("deep_assessments").upsert(
         {
           stripe_session_id: sessionId,
-          status: "complete",
+          status: overall_status,
           pdf_url: pdfUrl,
+          pdf_status: pdfStatus,
+          pdf_error: pdfError,
+          email_status: emailStatus,
+          email_error: emailError,
           email_sent_at: emailSentAt,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "stripe_session_id" }
       )
     } catch (err) {
-      console.error("[submit-deep-assessment] Supabase complete status upsert error:", err)
+      console.error("[submit-deep-assessment] Supabase final status upsert error:", err)
     }
   }
 
-  return NextResponse.json({ ok: true, pdfUrl })
+  if (overall_status !== "complete") {
+    console.warn(
+      `[submit-deep-assessment] session ${sessionId} finished PARTIAL — pdf=${pdfStatus} email=${emailStatus}`
+    )
+  }
+
+  // The report itself is always available (PDF link + on-site view), so the
+  // client still gets ok:true; delivery problems are surfaced via DB status and
+  // retried on the next call rather than failing the user's request.
+  return NextResponse.json({ ok: true, pdfUrl, status: overall_status })
 }

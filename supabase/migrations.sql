@@ -843,3 +843,104 @@ CREATE UNIQUE INDEX IF NOT EXISTS leads_share_code_key ON leads (share_code) WHE
 -- referral unlock threshold (see app/api/waitlist/status). ADD-only, idempotent.
 
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS reward_code text;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 31: leads UTM attribution columns (waitlist ad tracking)
+-- ────────────────────────────────────────────────────────────
+-- First-touch campaign attribution for waitlist signups (captured from the
+-- /enter URL by the Discover flow). ADD-only and idempotent.
+
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_source   text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_medium   text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_campaign text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_content  text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_term     text;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 32: email_optouts (central email unsubscribe ledger)
+-- ────────────────────────────────────────────────────────────
+-- One row per opted-out address. Standalone (not a column on leads/profiles)
+-- because lifecycle email goes to both tables — a single lookup covers all
+-- senders. Service-role only; RLS on with no policies (no client access).
+
+CREATE TABLE IF NOT EXISTS email_optouts (
+  email      text        PRIMARY KEY,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  source     text
+);
+ALTER TABLE email_optouts ENABLE ROW LEVEL SECURITY;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 33: deep_assessments per-step status tracking
+-- ────────────────────────────────────────────────────────────
+-- The paid-report pipeline (generate report → PDF → upload → email) previously
+-- only had a single `status` column, so a row could be marked "complete" even if
+-- the PDF upload or the email send failed — a paying customer could silently get
+-- nothing. These per-step columns make each stage's outcome (and error) visible
+-- in the DB so the flow is diagnosable and retry-safe. ADD-only, idempotent.
+--   report_status: pending | generating | generated | failed
+--   pdf_status:    pending | generated | uploaded | upload_failed | failed
+--   email_status:  pending | sent | failed
+ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS report_status text;
+ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS pdf_status    text;
+ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS email_status  text;
+ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS report_error  text;
+ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS pdf_error     text;
+ALTER TABLE deep_assessments ADD COLUMN IF NOT EXISTS email_error   text;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 34: enable Supabase Realtime on `analyses` (Living Twin)
+-- ────────────────────────────────────────────────────────────
+-- The account Living Twin (/account/twin) subscribes to INSERTs on the member's
+-- own `analyses` rows so it updates live across devices as meals are logged. RLS
+-- already scopes `analyses` to `user_id = auth.uid()`, so the per-user Realtime
+-- subscription is safe. Idempotent: only adds the table if not already published.
+-- (The app degrades gracefully — a visibilitychange refresh keeps it live on the
+-- same device even if this isn't applied.)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'analyses'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.analyses;
+  END IF;
+END $$;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 35: profiles.sex (Living Twin figure personalisation)
+-- ────────────────────────────────────────────────────────────
+-- The account Living Twin figure is male/female to match the customer. Nullable
+-- (values 'male' | 'female', else null → the generic couple figure). ADD-only,
+-- idempotent. Set via My Account settings + onboarding.
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS sex text;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 36: twin_state (ritual + milestone sync across devices)
+-- ────────────────────────────────────────────────────────────
+-- The Digital Twin's Daily Ritual ticks and milestone seen-set are
+-- localStorage-first for instant taps; this table lets signed-in members keep
+-- them across devices. One row per user; the app merge-writes (union of
+-- milestone ids, per-day ritual merge) via /api/twin-state. Idempotent.
+CREATE TABLE IF NOT EXISTS twin_state (
+  user_id         uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  rituals         jsonb NOT NULL DEFAULT '{}'::jsonb,   -- { "YYYY-MM-DD": {fermented,plants,feeling} }
+  milestones_seen text[] NOT NULL DEFAULT '{}',
+  updated_at      timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE twin_state ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'twin_state' AND policyname = 'twin_state_own') THEN
+    CREATE POLICY twin_state_own ON twin_state
+      FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+  END IF;
+END $$;

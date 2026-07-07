@@ -6,7 +6,7 @@ import { ArrowRight, Sparkles, CheckCircle2, Target, CalendarDays } from "lucide
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { ScoreRing } from "@/components/assessment/score-ring"
 import { resolvedFoundation, getJourney, journeyType } from "@/lib/assessment/journey"
-import { getSummary, isComplete, type AssessmentSummary, type AddonKey } from "@/lib/assessment/registry"
+import { getSummary, isComplete, type AssessmentSummary, type AnyAssessedKey } from "@/lib/assessment/registry"
 import { ensureHydrated, persist } from "@/lib/assessment/sync"
 import { loadLeadData } from "@/lib/assessment-storage"
 import { buildCombinedResult } from "@/lib/combined-assessment-result"
@@ -32,11 +32,12 @@ function maybeEmailReport(foundation: AssessmentSummary | null, addon: Assessmen
   }).catch(() => {})
 }
 
-const ADDON_FOCUS: Record<AddonKey, string> = {
+const ADDON_FOCUS: Record<AnyAssessedKey, string> = {
   stability: "consistency and digestive comfort",
   glucose: "energy, cravings, and glucose rhythm",
   mind: "mood, focus, and mental clarity",
   performance: "energy, recovery, and output",
+  pregnancy: "food variety, meal rhythm, and general wellbeing",
 }
 
 function List({ title, items, icon: Icon, accent }: { title: string; items: string[]; icon: typeof Target; accent: string }) {
@@ -85,7 +86,7 @@ export function CombinedReport() {
   const [ready, setReady] = useState(false)
   const [foundation, setFoundation] = useState<AssessmentSummary | null>(null)
   const [addon, setAddon] = useState<AssessmentSummary | null>(null)
-  const [addonKey, setAddonKey] = useState<AddonKey | null>(null)
+  const [addonKey, setAddonKey] = useState<AnyAssessedKey | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -192,7 +193,7 @@ export function CombinedReport() {
           {addon ? (
             <ScrollReveal delay={180}>
               <div className="h-full rounded-[1.5rem] border border-border bg-card p-7">
-                <h2 className="font-serif text-xl font-semibold text-foreground">What your {addon.label} add-on tells us</h2>
+                <h2 className="font-serif text-xl font-semibold text-foreground">What your {addon.label} system tells us</h2>
                 {addon.bandDescription && <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{addon.bandDescription}</p>}
                 <Patterns items={addon.details} />
                 <div className="mt-6 space-y-5">
@@ -204,7 +205,7 @@ export function CombinedReport() {
           ) : (
             <ScrollReveal delay={180}>
               <div className="flex h-full flex-col rounded-[1.5rem] border border-dashed border-border bg-card/50 p-7">
-                <h2 className="font-serif text-xl font-semibold text-foreground">Go deeper with an add-on</h2>
+                <h2 className="font-serif text-xl font-semibold text-foreground">Go deeper with a system</h2>
                 <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
                   Add Stability, Glucose, Mind, or Performance to layer focused insights onto your foundation and create a deeper combined report.
                 </p>

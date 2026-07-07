@@ -1,18 +1,21 @@
 /**
- * lib/assessment/journey.ts — the foundation→add-on journey state machine.
+ * lib/assessment/journey.ts — the foundation→system journey state machine.
  *
  * localStorage-first (anonymous, no auth). It records the user's *intent*
- * (which foundation they're on, which add-on is selected/pending); actual
+ * (which foundation they're on, which Health system is selected/pending); actual
  * completion is always derived from the registry (single source of truth), so
  * status never drifts from the real assessment records.
+ *
+ * The persisted `eb_assessment_journey_v1` field names (`pendingAddon`,
+ * `selectedAddon`) are kept unchanged so in-flight journeys survive the rename.
  */
 
 import {
   isComplete,
   FOUNDATIONS,
-  ADDONS,
+  ASSESSED_SYSTEMS,
   type FoundationKey,
-  type AddonKey,
+  type AnyAssessedKey,
 } from "./registry"
 
 const JOURNEY_KEY = "eb_assessment_journey_v1"
@@ -20,10 +23,10 @@ const JOURNEY_KEY = "eb_assessment_journey_v1"
 export interface Journey {
   /** The foundation the current journey is built on. */
   foundationType: FoundationKey | null
-  /** An add-on chosen before a foundation existed — resumed after foundation completes. */
-  pendingAddon: AddonKey | null
-  /** The add-on being layered onto the foundation (once a foundation exists). */
-  selectedAddon: AddonKey | null
+  /** A system chosen before a foundation existed — resumed after foundation completes. */
+  pendingAddon: AnyAssessedKey | null
+  /** The system being layered onto the foundation (once a foundation exists). */
+  selectedAddon: AnyAssessedKey | null
 }
 
 function empty(): Journey {
@@ -96,11 +99,21 @@ export function reportType(): string | null {
   return t ? `${t}_report` : null
 }
 
+/* ── Post-foundation resume ────────────────────────────────────────────────
+   When a foundation is complete and the user had pre-selected an add-on
+   (pendingAddon), this is the route that resumes their journey: the add-on gate,
+   which forwards into the add-on assessment. Pure (takes the journey + completion
+   flag) so it's unit-testable; returns null when there's nothing to resume. */
+export function resumeAddonRoute(journey: Journey, foundationComplete: boolean): string | null {
+  if (!foundationComplete || !journey.pendingAddon) return null
+  return `/assessment/add/${journey.pendingAddon}`
+}
+
 /* ── Labels (for UI copy) ──────────────────────────────────────────────────── */
 
 export function foundationLabel(k: FoundationKey): string {
   return FOUNDATIONS[k].label
 }
-export function addonLabel(k: AddonKey): string {
-  return ADDONS[k].label
+export function addonLabel(k: AnyAssessedKey): string {
+  return ASSESSED_SYSTEMS[k].label
 }

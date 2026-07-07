@@ -17,7 +17,7 @@ export function StabilityCtaButton({
 }) {
   return (
     <Link
-      href="/stability/assessment"
+      href="/assessment/add/stability"
       onClick={() => posthog.capture("cta_clicked", { page: "stability", cta: "start_assessment", source })}
       className={className}
     >

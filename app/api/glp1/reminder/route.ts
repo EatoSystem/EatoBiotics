@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { Resend } from "resend"
 import { getSupabase } from "@/lib/supabase"
 import { verifyCronRequest } from "@/lib/cron-auth"
+import { sendEmail } from "@/lib/email/send"
 import { buildGlp1ReminderEmail } from "@/lib/email/glp1-reminder-email"
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://eatobiotics.com"
@@ -46,7 +46,6 @@ export async function GET(req: NextRequest) {
   const sb = getSupabase()
   if (!sb) return NextResponse.json({ error: "Database not configured" }, { status: 503 })
 
-  const resend = new Resend(resendKey)
   const todayStr = new Date().toISOString().slice(0, 10)
 
   // Members with GLP-1 Companion access (member/restore/transform, active).
@@ -96,13 +95,11 @@ export async function GET(req: NextRequest) {
         streak,
         baseUrl: BASE_URL,
       })
-      const { error } = await resend.emails.send({
-        from: `EatoBiotics <${emailFrom}>`,
-        to: m.email as string,
-        subject,
-        html,
-      })
-      if (error) throw new Error(error.message)
+      const sent = await sendEmail({ from: `EatoBiotics <${emailFrom}>`, to: m.email as string, subject, html })
+      if (!sent.ok) {
+        if (sent.error) throw new Error(sent.error)
+        continue // opted out — skip silently
+      }
       processed++
     } catch (err) {
       console.error(`[glp1-reminder] failed for ${m.id}:`, err)

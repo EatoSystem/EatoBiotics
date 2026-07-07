@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { Resend } from "resend"
 import { getSupabase } from "@/lib/supabase"
+import { sendEmail } from "@/lib/email/send"
 import { buildResultsEmail } from "@/lib/email/results-email"
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
@@ -69,16 +69,17 @@ export async function POST(req: NextRequest) {
     const ownerEmail = process.env.OWNER_EMAIL
 
     if (resendKey && shouldSendEmail) {
-      const resend = new Resend(resendKey)
-      const { error } = await resend.emails.send({
+      // User-requested results email (transactional) — bypasses the marketing opt-out.
+      const sent = await sendEmail({
         from: `EatoBiotics <${emailFrom}>`,
         to: lead.email,
         bcc: ownerEmail ? [ownerEmail] : undefined,
         subject,
         html,
+        skipOptOutCheck: true,
       })
-      if (error) {
-        console.error("[send-results-email] Resend error:", error.message)
+      if (!sent.ok && sent.error) {
+        console.error("[send-results-email] send error:", sent.error)
       }
     } else if (!resendKey) {
       console.log("[send-results-email] RESEND_API_KEY not set — skipping email for:", lead.email)

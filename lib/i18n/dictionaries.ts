@@ -85,6 +85,7 @@ export interface Dictionary {
       titleHighlight: string
       titleTail: string
       body: string
+      bioticsHeader: string
       cta: string
       meta: string
     }
@@ -101,9 +102,9 @@ export interface Dictionary {
       stepCount: string
     }
     engines: {
-      prebiotics: { label: string; verb: string; fact: string }
-      probiotics: { label: string; verb: string; fact: string }
-      postbiotics: { label: string; verb: string; fact: string }
+      prebiotics: { label: string; verb: string; fact: string; whatItIs: string; examples: string }
+      probiotics: { label: string; verb: string; fact: string; whatItIs: string; examples: string }
+      postbiotics: { label: string; verb: string; fact: string; whatItIs: string; examples: string }
     }
     reactions: {
       prebiotics: string[]
@@ -137,8 +138,8 @@ export interface Dictionary {
       biggestOpp: string
     }
     form: {
-      beFirstTitle: string
-      beFirstBody: string
+      gateTitle: string
+      gateBody: string
       joinCta: string
       firstName: string
       email: string
@@ -239,13 +240,14 @@ const en: Dictionary = {
   waitlist: {
     draftNotice: "Translation in progress — this page is shown in {language} as an automatic draft.",
     intro: {
-      eyebrow: "The Food System Inside You",
-      titleLead: "Meet the ",
-      titleHighlight: "living world",
-      titleTail: " inside you.",
-      body: "~38 trillion microbes form a food system that shapes your energy, mood, digestion and long-term health. Most people never meet it. In 60 seconds, discover the state of yours.",
-      cta: "Meet my food system",
-      meta: "Free · 60 seconds · No login",
+      eyebrow: "EATOBIOTICS",
+      titleLead: "Understand the Food System ",
+      titleHighlight: "Inside You",
+      titleTail: "",
+      body: "Your health, digestion, energy, cravings, gut comfort, and daily food choices are connected. EatoBiotics helps you assess your internal food system and gives you a personalised score, report, and plan to improve it — supporting your overall health and wellbeing.",
+      bioticsHeader: "3 Biotics",
+      cta: "Understand My Food System",
+      meta: "Join the Waitlist when complete.",
     },
     progress: {
       engineOf: "Engine {index} of 3 · {label}",
@@ -260,17 +262,23 @@ const en: Dictionary = {
       prebiotics: {
         label: "Prebiotics",
         verb: "Feed",
+        whatItIs: "The plant fibres that feed the good bacteria already living in your gut.",
         fact: "The fibre in plants is the primary fuel for your gut bacteria — variety is the single biggest driver of a diverse, resilient microbiome.",
+        examples: "Found in: vegetables, beans, oats, onions, garlic & fruit.",
       },
       probiotics: {
         label: "Probiotics",
         verb: "Seed",
+        whatItIs: "The living bacteria you send in to reseed and diversify your gut.",
         fact: "Fermented foods deliver living bacteria straight to your gut — the most direct, practical way to reseed and diversify it.",
+        examples: "Found in: yoghurt, kefir, kimchi, sauerkraut & miso.",
       },
       postbiotics: {
         label: "Postbiotics",
         verb: "Produce",
+        whatItIs: "What your gut makes from that food — the compounds that shape how you feel.",
         fact: "~90% of your body's serotonin is made in your gut — postbiotics are how the food you eat becomes how you feel.",
+        examples: "The payoff: steady energy, mood & immunity.",
       },
     },
     reactions: {
@@ -278,7 +286,7 @@ const en: Dictionary = {
         "Good to know — variety is the fastest lever you have here.",
         "A real base to build on.",
         "Nice — your bacteria are being well fed.",
-        "Brilliant — that's a thriving inner garden.",
+        "Brilliant — that’s a thriving inner ecosystem.",
       ],
       probiotics: [
         "Easy win ahead — one daily fermented food shifts this fast.",
@@ -362,8 +370,8 @@ const en: Dictionary = {
       biggestOpp: "Your biggest opportunity: {label}.",
     },
     form: {
-      beFirstTitle: "Be first through the door",
-      beFirstBody: "Join the waitlist for early access. You've got your snapshot — be first in line to unlock your full EatoBiotics report the moment we launch.",
+      gateTitle: "You're done! 🎉",
+      gateBody: "Join the waitlist to reveal your Food System Type and your three-engine score.",
       joinCta: "Join the waitlist",
       firstName: "First name",
       email: "you@email.com",
@@ -460,13 +468,14 @@ const es: Dictionary = {
   waitlist: {
     draftNotice: "Traducción en curso — esta página se muestra en {language} como borrador automático.",
     intro: {
-      eyebrow: "El sistema alimentario que llevas dentro",
-      titleLead: "Conoce el ",
-      titleHighlight: "mundo vivo",
-      titleTail: " que llevas dentro.",
-      body: "~38 billones de microbios forman un sistema alimentario que moldea tu energía, tu ánimo, tu digestión y tu salud a largo plazo. La mayoría nunca lo conoce. En 60 segundos, descubre el estado del tuyo.",
-      cta: "Conocer mi sistema alimentario",
-      meta: "Gratis · 60 segundos · Sin registro",
+      eyebrow: "EATOBIOTICS",
+      titleLead: "Comprende el sistema alimentario ",
+      titleHighlight: "que llevas dentro",
+      titleTail: "",
+      body: "Tu salud, digestión, energía, antojos, bienestar intestinal y tus decisiones alimentarias diarias están conectados. EatoBiotics te ayuda a evaluar tu sistema alimentario interno y te ofrece una puntuación, un informe y un plan personalizados para mejorarlo, apoyando tu salud y bienestar generales.",
+      bioticsHeader: "3 Biotics",
+      cta: "Comprender mi sistema alimentario",
+      meta: "Únete a la lista de espera al terminar.",
     },
     progress: {
       engineOf: "Motor {index} de 3 · {label}",
@@ -481,17 +490,23 @@ const es: Dictionary = {
       prebiotics: {
         label: "Prebióticos",
         verb: "Alimentar",
+        whatItIs: "Las fibras vegetales que alimentan a las bacterias buenas que ya viven en tu intestino.",
         fact: "La fibra de las plantas es el combustible principal de tus bacterias intestinales: la variedad es el mayor impulsor de un microbioma diverso y resiliente.",
+        examples: "Se encuentran en: verduras, legumbres, avena, cebolla, ajo y fruta.",
       },
       probiotics: {
         label: "Probióticos",
         verb: "Sembrar",
+        whatItIs: "Las bacterias vivas que envías para repoblar y diversificar tu intestino.",
         fact: "Los alimentos fermentados llevan bacterias vivas directamente a tu intestino: la forma más directa y práctica de repoblarlo y diversificarlo.",
+        examples: "Se encuentran en: yogur, kéfir, kimchi, chucrut y miso.",
       },
       postbiotics: {
         label: "Posbióticos",
         verb: "Producir",
+        whatItIs: "Lo que tu intestino produce con esa comida: los compuestos que moldean cómo te sientes.",
         fact: "~90 % de la serotonina de tu cuerpo se produce en tu intestino: los posbióticos son cómo lo que comes se convierte en cómo te sientes.",
+        examples: "El beneficio: energía estable, ánimo e inmunidad.",
       },
     },
     reactions: {
@@ -583,8 +598,8 @@ const es: Dictionary = {
       biggestOpp: "Tu mayor oportunidad: {label}.",
     },
     form: {
-      beFirstTitle: "Sé el primero en entrar",
-      beFirstBody: "Únete a la lista de espera para acceso anticipado. Ya tienes tu resumen — sé el primero en la fila para desbloquear tu informe completo de EatoBiotics en cuanto lancemos.",
+      gateTitle: "¡Listo! 🎉",
+      gateBody: "Únete a la lista de espera para revelar tu Tipo de Sistema Alimentario y la puntuación de tus tres motores.",
       joinCta: "Unirme a la lista de espera",
       firstName: "Nombre",
       email: "tu@email.com",
@@ -681,13 +696,14 @@ const fr: Dictionary = {
   waitlist: {
     draftNotice: "Traduction en cours — cette page est affichée en {language} sous forme de brouillon automatique.",
     intro: {
-      eyebrow: "Le système alimentaire en vous",
-      titleLead: "Découvrez le ",
-      titleHighlight: "monde vivant",
-      titleTail: " qui est en vous.",
-      body: "~38 000 milliards de microbes forment un système alimentaire qui façonne votre énergie, votre humeur, votre digestion et votre santé à long terme. La plupart des gens ne le rencontrent jamais. En 60 secondes, découvrez l'état du vôtre.",
-      cta: "Découvrir mon système alimentaire",
-      meta: "Gratuit · 60 secondes · Sans inscription",
+      eyebrow: "EATOBIOTICS",
+      titleLead: "Comprenez le système alimentaire ",
+      titleHighlight: "qui est en vous",
+      titleTail: "",
+      body: "Votre santé, votre digestion, votre énergie, vos envies, votre confort intestinal et vos choix alimentaires quotidiens sont liés. EatoBiotics vous aide à évaluer votre système alimentaire intérieur et vous donne un score, un rapport et un plan personnalisés pour l'améliorer — au service de votre santé et de votre bien-être globaux.",
+      bioticsHeader: "3 Biotics",
+      cta: "Comprendre mon système alimentaire",
+      meta: "Rejoignez la liste d'attente une fois terminé.",
     },
     progress: {
       engineOf: "Moteur {index} sur 3 · {label}",
@@ -702,17 +718,23 @@ const fr: Dictionary = {
       prebiotics: {
         label: "Prébiotiques",
         verb: "Nourrir",
+        whatItIs: "Les fibres végétales qui nourrissent les bonnes bactéries déjà présentes dans votre intestin.",
         fact: "Les fibres des plantes sont le carburant principal de vos bactéries intestinales — la variété est le plus grand moteur d'un microbiome diversifié et résilient.",
+        examples: "On les trouve dans : légumes, légumineuses, avoine, oignon, ail et fruits.",
       },
       probiotics: {
         label: "Probiotiques",
         verb: "Ensemencer",
+        whatItIs: "Les bactéries vivantes que vous envoyez pour réensemencer et diversifier votre intestin.",
         fact: "Les aliments fermentés apportent des bactéries vivantes directement à votre intestin — le moyen le plus direct et pratique de le réensemencer et de le diversifier.",
+        examples: "On les trouve dans : yaourt, kéfir, kimchi, choucroute et miso.",
       },
       postbiotics: {
         label: "Postbiotiques",
         verb: "Produire",
+        whatItIs: "Ce que votre intestin fabrique à partir de ces aliments — les composés qui façonnent ce que vous ressentez.",
         fact: "~90 % de la sérotonine de votre corps est produite dans votre intestin — les postbiotiques sont la façon dont ce que vous mangez devient ce que vous ressentez.",
+        examples: "Le bénéfice : énergie stable, humeur et immunité.",
       },
     },
     reactions: {
@@ -804,8 +826,8 @@ const fr: Dictionary = {
       biggestOpp: "Votre plus grande opportunité : {label}.",
     },
     form: {
-      beFirstTitle: "Soyez le premier à entrer",
-      beFirstBody: "Rejoignez la liste d'attente pour un accès anticipé. Vous avez votre aperçu — soyez le premier en ligne pour débloquer votre rapport EatoBiotics complet dès le lancement.",
+      gateTitle: "C'est terminé ! 🎉",
+      gateBody: "Rejoignez la liste d'attente pour révéler votre Type de Système Alimentaire et le score de vos trois moteurs.",
       joinCta: "Rejoindre la liste d'attente",
       firstName: "Prénom",
       email: "vous@email.com",
@@ -902,13 +924,14 @@ const de: Dictionary = {
   waitlist: {
     draftNotice: "Übersetzung in Arbeit — diese Seite wird auf {language} als automatischer Entwurf angezeigt.",
     intro: {
-      eyebrow: "Das Ernährungssystem in dir",
-      titleLead: "Entdecke die ",
-      titleHighlight: "lebendige Welt",
-      titleTail: " in dir.",
-      body: "~38 Billionen Mikroben bilden ein Ernährungssystem, das deine Energie, Stimmung, Verdauung und langfristige Gesundheit prägt. Die meisten Menschen lernen es nie kennen. Entdecke in 60 Sekunden den Zustand deines eigenen.",
-      cta: "Mein Ernährungssystem entdecken",
-      meta: "Kostenlos · 60 Sekunden · Ohne Anmeldung",
+      eyebrow: "EATOBIOTICS",
+      titleLead: "Verstehe das Ernährungssystem ",
+      titleHighlight: "in dir",
+      titleTail: "",
+      body: "Deine Gesundheit, Verdauung, Energie, Gelüste, dein Darmwohlbefinden und deine täglichen Essensentscheidungen hängen zusammen. EatoBiotics hilft dir, dein inneres Ernährungssystem einzuschätzen, und gibt dir einen personalisierten Score, einen Bericht und einen Plan, um es zu verbessern — für deine Gesundheit und dein Wohlbefinden insgesamt.",
+      bioticsHeader: "3 Biotics",
+      cta: "Mein Ernährungssystem verstehen",
+      meta: "Tritt nach Abschluss der Warteliste bei.",
     },
     progress: {
       engineOf: "Motor {index} von 3 · {label}",
@@ -923,17 +946,23 @@ const de: Dictionary = {
       prebiotics: {
         label: "Präbiotika",
         verb: "Nähren",
+        whatItIs: "Die Pflanzenfasern, die die guten Bakterien füttern, die bereits in deinem Darm leben.",
         fact: "Die Ballaststoffe in Pflanzen sind der wichtigste Treibstoff für deine Darmbakterien — Vielfalt ist der größte Antrieb für ein vielfältiges, widerstandsfähiges Mikrobiom.",
+        examples: "Enthalten in: Gemüse, Hülsenfrüchte, Hafer, Zwiebeln, Knoblauch & Obst.",
       },
       probiotics: {
         label: "Probiotika",
         verb: "Aussäen",
+        whatItIs: "Die lebenden Bakterien, die du hineinschickst, um deinen Darm neu zu besiedeln und zu diversifizieren.",
         fact: "Fermentierte Lebensmittel bringen lebende Bakterien direkt in deinen Darm — der direkteste, praktischste Weg, ihn neu zu besiedeln und zu diversifizieren.",
+        examples: "Enthalten in: Joghurt, Kefir, Kimchi, Sauerkraut & Miso.",
       },
       postbiotics: {
         label: "Postbiotika",
         verb: "Produzieren",
+        whatItIs: "Was dein Darm aus dieser Nahrung herstellt — die Stoffe, die bestimmen, wie du dich fühlst.",
         fact: "~90 % des Serotonins deines Körpers werden im Darm gebildet — Postbiotika sind der Weg, wie das, was du isst, zu dem wird, wie du dich fühlst.",
+        examples: "Der Gewinn: stabile Energie, Stimmung & Immunität.",
       },
     },
     reactions: {
@@ -1025,8 +1054,8 @@ const de: Dictionary = {
       biggestOpp: "Deine größte Chance: {label}.",
     },
     form: {
-      beFirstTitle: "Sei als Erste·r dabei",
-      beFirstBody: "Tritt der Warteliste für frühen Zugang bei. Du hast deinen Überblick — sei als Erste·r in der Reihe, um deinen vollständigen EatoBiotics-Bericht zum Start freizuschalten.",
+      gateTitle: "Geschafft! 🎉",
+      gateBody: "Tritt der Warteliste bei, um deinen Ernährungssystem-Typ und deinen Drei-Motoren-Score freizuschalten.",
       joinCta: "Der Warteliste beitreten",
       firstName: "Vorname",
       email: "du@email.com",
@@ -1122,13 +1151,14 @@ const ar: Dictionary = {
   waitlist: {
     draftNotice: "الترجمة قيد التنفيذ — تُعرض هذه الصفحة بـ{language} كمسودة تلقائية.",
     intro: {
-      eyebrow: "النظام الغذائي بداخلك",
-      titleLead: "تعرّف على ",
-      titleHighlight: "العالم الحي",
-      titleTail: " بداخلك.",
-      body: "تشكّل نحو 38 تريليون ميكروب نظامًا غذائيًا يحدد طاقتك ومزاجك وهضمك وصحتك على المدى الطويل. معظم الناس لا يتعرّفون عليه أبدًا. في 60 ثانية، اكتشف حالة نظامك.",
-      cta: "تعرّف على نظامي الغذائي",
-      meta: "مجاني · 60 ثانية · بدون تسجيل",
+      eyebrow: "EATOBIOTICS",
+      titleLead: "افهم النظام الغذائي ",
+      titleHighlight: "بداخلك",
+      titleTail: "",
+      body: "صحتك وهضمك وطاقتك والرغبة الشديدة في الطعام وراحة أمعائك وخياراتك الغذائية اليومية كلها مترابطة. يساعدك EatoBiotics على تقييم نظامك الغذائي الداخلي، ويمنحك درجة وتقريرًا وخطة مخصصة لتحسينه — لدعم صحتك وعافيتك بشكل عام.",
+      bioticsHeader: "3 Biotics",
+      cta: "افهم نظامي الغذائي",
+      meta: "انضم إلى قائمة الانتظار عند الانتهاء.",
     },
     progress: {
       engineOf: "المحرك {index} من 3 · {label}",
@@ -1143,17 +1173,23 @@ const ar: Dictionary = {
       prebiotics: {
         label: "بريبيوتيك",
         verb: "تغذية",
+        whatItIs: "ألياف النباتات التي تُغذّي البكتيريا النافعة الموجودة بالفعل في أمعائك.",
         fact: "الألياف في النباتات هي الوقود الأساسي لبكتيريا أمعائك — والتنوع هو أكبر محرك لميكروبيوم متنوع ومرن.",
+        examples: "توجد في: الخضروات والبقوليات والشوفان والبصل والثوم والفاكهة.",
       },
       probiotics: {
         label: "بروبيوتيك",
         verb: "بذر",
+        whatItIs: "البكتيريا الحيّة التي ترسلها لإعادة بذر أمعائك وتنويعها.",
         fact: "توصِل الأطعمة المخمّرة بكتيريا حيّة مباشرة إلى أمعائك — وهي أسرع وأعمل طريقة لإعادة بذرها وتنويعها.",
+        examples: "توجد في: الزبادي والكفير والكيمتشي والملفوف المخمّر والميسو.",
       },
       postbiotics: {
         label: "بوستبيوتيك",
         verb: "إنتاج",
+        whatItIs: "ما تصنعه أمعاؤك من هذا الطعام — المركّبات التي تُشكّل شعورك.",
         fact: "نحو 90٪ من السيروتونين في جسمك يُصنع في أمعائك — البوستبيوتيك هو كيف يتحوّل ما تأكله إلى ما تشعر به.",
+        examples: "الفائدة: طاقة ثابتة ومزاج جيد ومناعة.",
       },
     },
     reactions: {
@@ -1245,8 +1281,8 @@ const ar: Dictionary = {
       biggestOpp: "أكبر فرصة لديك: {label}.",
     },
     form: {
-      beFirstTitle: "كن أول من يدخل",
-      beFirstBody: "انضم إلى قائمة الانتظار للوصول المبكر. لديك لمحتك — كن أول من يفتح تقرير EatoBiotics الكامل لحظة إطلاقنا.",
+      gateTitle: "انتهيت! 🎉",
+      gateBody: "انضم إلى قائمة الانتظار للكشف عن نوع نظامك الغذائي ودرجات محرّكاتك الثلاثة.",
       joinCta: "الانضمام إلى قائمة الانتظار",
       firstName: "الاسم الأول",
       email: "you@email.com",

@@ -27,9 +27,11 @@ export interface BrandEmailOpts {
   contentHtml: string
   /** Optional small print shown under the card, above the footer (e.g. a disclaimer). */
   footerNote?: string
+  /** Optional unsubscribe link (marketing emails) — rendered in the footer. */
+  unsubscribeUrl?: string
 }
 
-export function renderBrandEmail({ subject, preheader, contentHtml, footerNote }: BrandEmailOpts): string {
+export function renderBrandEmail({ subject, preheader, contentHtml, footerNote, unsubscribeUrl }: BrandEmailOpts): string {
   const preheaderHtml = preheader
     ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;height:0;width:0;">${preheader}</div>`
     : ""
@@ -74,7 +76,11 @@ export function renderBrandEmail({ subject, preheader, contentHtml, footerNote }
               ${footerNoteHtml}
               <p style="margin:0 0 4px;font-size:12px;font-weight:bold;color:${BRAND_INK};font-family:${SERIF};">EatoBiotics</p>
               <p style="margin:0;font-size:11px;color:#9aa896;font-family:${SANS};">
-                The Food System Inside You &middot; <a href="${SITE_URL}" style="color:#9aa896;text-decoration:none;">eatobiotics.com</a>
+                The Food System Inside You &middot; <a href="${SITE_URL}" style="color:#9aa896;text-decoration:none;">eatobiotics.com</a>${
+                  unsubscribeUrl
+                    ? ` &middot; <a href="${unsubscribeUrl}" style="color:#9aa896;text-decoration:underline;">Unsubscribe</a>`
+                    : ""
+                }
               </p>
             </td>
           </tr>

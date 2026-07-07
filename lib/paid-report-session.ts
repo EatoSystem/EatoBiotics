@@ -2,6 +2,11 @@ import type Stripe from "stripe"
 
 export type PaidReportTier = "personal" | "starter" | "full" | "premium"
 
+/** Foundation/Health-system architecture carried through checkout (kept as local
+ *  unions so this payment helper stays decoupled from the assessment registry). */
+export type PaidReportFoundation = "you" | "family"
+export type PaidReportHealthSystem = "stability" | "glucose" | "mind" | "performance"
+
 export type PaidReportSummary = {
   tier: PaidReportTier
   overall: number
@@ -13,6 +18,26 @@ export type PaidReportSummary = {
     color?: string
   }
   email?: string | null
+  /** Which foundation assessment this report is built from ("you"/"family"). */
+  foundationType?: PaidReportFoundation | null
+  /** Optional deeper-support Health system selected at checkout (wire key kept
+   *  as `selectedAddon` for backward-compatible Stripe metadata / DB payloads). */
+  selectedAddon?: PaidReportHealthSystem | null
+}
+
+const VALID_FOUNDATIONS: PaidReportFoundation[] = ["you", "family"]
+const VALID_ADDONS: PaidReportHealthSystem[] = ["stability", "glucose", "mind", "performance"]
+
+function asFoundation(value: unknown): PaidReportFoundation | null {
+  return typeof value === "string" && VALID_FOUNDATIONS.includes(value as PaidReportFoundation)
+    ? (value as PaidReportFoundation)
+    : null
+}
+
+function asAddon(value: unknown): PaidReportHealthSystem | null {
+  return typeof value === "string" && VALID_ADDONS.includes(value as PaidReportHealthSystem)
+    ? (value as PaidReportHealthSystem)
+    : null
 }
 
 const VALID_TIERS: PaidReportTier[] = ["personal", "starter", "full", "premium"]
@@ -50,6 +75,9 @@ export function decodePaidReportSummary(encoded: string | null | undefined): Pai
         color: typeof parsed.profile.color === "string" ? parsed.profile.color : undefined,
       },
       email: typeof parsed.email === "string" ? parsed.email : null,
+      // Optional + backward compatible: legacy sessions simply omit these.
+      foundationType: asFoundation(parsed.foundationType),
+      selectedAddon: asAddon(parsed.selectedAddon),
     }
   } catch {
     return null

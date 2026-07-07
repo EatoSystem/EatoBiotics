@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { stripe } from "@/lib/stripe-server"
-import { encodePaidReportSummary, type PaidReportTier } from "@/lib/paid-report-session"
+import {
+  encodePaidReportSummary,
+  type PaidReportTier,
+  type PaidReportFoundation,
+  type PaidReportHealthSystem,
+} from "@/lib/paid-report-session"
 
 const TIER_CONFIG = {
   // The single one-time report offering. The legacy starter/full/premium tiers
@@ -8,13 +13,14 @@ const TIER_CONFIG = {
   // `personal` via the `tier in TIER_CONFIG` guard below.
   personal: {
     amount: 4900,
-    name: "EatoBiotics Personal Report",
+    name: "EatoBiotics Food System Report",
     description:
-      "Your full Feed · Seed · Heal analysis, 30-day gut reset plan, top 10 food recommendations, and a free 30-day EatoBiotics account.",
+      "Your personalised Food System score, report, and plan — built from your foundation assessment and, where selected, your deeper support assessment. Includes a free 30-day EatoBiotics account.",
   },
 } as const
 
-type Tier = keyof typeof TIER_CONFIG
+const FOUNDATIONS: PaidReportFoundation[] = ["you", "family"]
+const HEALTH_SYSTEMS: PaidReportHealthSystem[] = ["stability", "glucose", "mind", "performance"]
 
 export async function POST(req: NextRequest) {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -26,13 +32,24 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { overall, profile, subScores, email } = body as {
+    const { overall, profile, subScores, email, foundationType, selectedAddon } = body as {
       tier?: PaidReportTier
       overall?: number
       profile?: { type: string; tagline: string; description: string; color?: string }
       subScores?: Record<string, number>
       email?: string
+      foundationType?: string
+      selectedAddon?: string
     }
+
+    // Validate the new product-architecture context (ignored if absent/invalid so
+    // older clients and the anonymous free-assessment flow keep working).
+    const foundation = FOUNDATIONS.includes(foundationType as PaidReportFoundation)
+      ? (foundationType as PaidReportFoundation)
+      : null
+    const addon = HEALTH_SYSTEMS.includes(selectedAddon as PaidReportHealthSystem)
+      ? (selectedAddon as PaidReportHealthSystem)
+      : null
 
     // Only the €49 Personal Report is sold now; any legacy tier in the request
     // is ignored and falls back to `personal`.
@@ -54,6 +71,8 @@ export async function POST(req: NextRequest) {
       subScores,
       tier: reportTier,
       email: email?.toLowerCase().trim() || null,
+      foundationType: foundation,
+      selectedAddon: addon,
     })
 
     const origin = process.env.NEXT_PUBLIC_SITE_URL ?? req.headers.get("origin") ?? "http://localhost:3000"
@@ -75,8 +94,14 @@ export async function POST(req: NextRequest) {
         },
       ],
       // Store result summary in metadata (no length limit) instead of
-      // client_reference_id which has a 200-char Stripe limit
-      metadata: { result_summary: resultSummary },
+      // client_reference_id which has a 200-char Stripe limit. The flat
+      // foundation/add-on keys are duplicated for easy reading in the Stripe
+      // dashboard + webhooks (the canonical copy lives in result_summary).
+      metadata: {
+        result_summary: resultSummary,
+        ...(foundation ? { foundation_type: foundation } : {}),
+        ...(addon ? { selected_addon: addon } : {}),
+      },
       ...(email ? { customer_email: email.toLowerCase().trim() } : {}),
       allow_promotion_codes: true,
       success_url: `${origin}/assessment/deep?session_id={CHECKOUT_SESSION_ID}`,

@@ -38,7 +38,7 @@ function familySummary(over: Partial<AssessmentSummaryLike> = {}): AssessmentSum
 function glucoseSummary(over: Partial<AssessmentSummaryLike> = {}): AssessmentSummaryLike {
   return {
     key: "glucose",
-    kind: "addon",
+    kind: "health",
     label: "Glucose",
     scoreLabel: "Glucose Stability Support Score",
     score: 64,
@@ -55,7 +55,7 @@ function glucoseSummary(over: Partial<AssessmentSummaryLike> = {}): AssessmentSu
 function stabilitySummary(over: Partial<AssessmentSummaryLike> = {}): AssessmentSummaryLike {
   return {
     key: "stability",
-    kind: "addon",
+    kind: "health",
     label: "Stability",
     scoreLabel: "Digestive Stability Support Score",
     score: 40,

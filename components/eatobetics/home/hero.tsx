@@ -5,7 +5,7 @@ import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 
-const ASSESSMENT_HREF = "/glucose/assessment"
+const ASSESSMENT_HREF = "/assessment/add/glucose"
 
 export function EbHero() {
   return (
@@ -62,7 +62,7 @@ export function EbHero() {
           <ScrollReveal delay={220}>
             <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
               <Link href={ASSESSMENT_HREF} className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90">
-                Take the free assessment <ArrowRight size={16} />
+                Start Glucose Assessment <ArrowRight size={16} />
               </Link>
               <a href="#how-it-works" className="text-sm font-medium text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground">
                 See how it works

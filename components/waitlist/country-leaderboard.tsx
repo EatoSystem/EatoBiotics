@@ -7,7 +7,8 @@
  * demand is highest. Self-fetching from /api/waitlist/leaderboard.
  */
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import posthog from "posthog-js"
 import { Globe } from "lucide-react"
 import { useTranslations } from "@/components/i18n/locale-provider"
 import { interpolate } from "@/lib/i18n/config"
@@ -18,13 +19,21 @@ interface Board { total: number; entries: number; top: Entry[]; you: { name: str
 export function CountryLeaderboard({ shareCode }: { shareCode?: string }) {
   const t = useTranslations().waitlist.leaderboard
   const [board, setBoard] = useState<Board | null>(null)
+  const viewFired = useRef(false)
 
   useEffect(() => {
     let alive = true
     const qs = shareCode ? `?code=${encodeURIComponent(shareCode)}` : ""
     fetch(`/api/waitlist/leaderboard${qs}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (alive && d?.ok) setBoard(d as Board) })
+      .then((d) => {
+        if (!alive || !d?.ok) return
+        setBoard(d as Board)
+        if (!viewFired.current) {
+          viewFired.current = true
+          try { posthog.capture("waitlist_leaderboard_viewed", { your_rank: d.you?.rank }) } catch { /* analytics optional */ }
+        }
+      })
       .catch(() => {})
     return () => { alive = false }
   }, [shareCode])

@@ -1,7 +1,10 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { LiveDashboard } from "@/components/account/live-dashboard"
-import type { RealWeeklyReport } from "@/components/account/live-dashboard"
+import type { RealWeeklyReport, RealAnalysis } from "@/components/account/live-dashboard"
+import { buildAccountTwin } from "@/lib/agent-loop/account-twin"
+import { twinVisualState } from "@/lib/account/twin-visual"
+import { twinFigureSrc } from "@/lib/account/twin-figure"
 
 export const metadata: Metadata = {
   title: "Account Dev Sandbox — EatoBiotics",
@@ -131,11 +134,40 @@ const MOCK_WEEKLY_REPORTS: RealWeeklyReport[] = [
   },
 ]
 
+/* Recent analyses — a returning member with meals (exercises the inline logger
+   + the living Twin overview so photo/text logging routes to the Meal Reveal). */
+const MOCK_RECENT_ANALYSES: RealAnalysis[] = [
+  { id: "a1", meal_name: "Chicken, roasted veg & kefir", meal_type: "Dinner", image_url: "/food-7.webp", biotics_score: 81, prebiotic_score: 75, probiotic_score: 65, postbiotic_score: 58, quality_diversity: 78, quality_anti_inflammatory: 72, nutrition_json: { calories: 445, protein: 38, carbs: 28, fat: 14, fibre: 7 }, insight: "Best meal this week — kefir's live cultures plus diverse veg.", tags: ["Probiotics", "Diversity", "High protein"], created_at: new Date(Date.now() - 3 * 3_600_000).toISOString() },
+  { id: "a2", meal_name: "Lentil wrap with mixed greens", meal_type: "Lunch", image_url: "/food-6.webp", biotics_score: 74, prebiotic_score: 72, probiotic_score: 8, postbiotic_score: 42, quality_diversity: 65, quality_anti_inflammatory: 62, nutrition_json: { calories: 380, protein: 18, carbs: 58, fat: 7, fibre: 12 }, insight: "High-fibre and plant-diverse — lentils feed Bifidobacterium.", tags: ["High fibre", "Prebiotics", "Plant protein"], created_at: new Date(Date.now() - 26 * 3_600_000).toISOString() },
+]
+
 /* ────────────────────────────────────────────────────────────────────────
    Page
    ──────────────────────────────────────────────────────────────────────── */
 
-export default function AccountYouLivePage() {
+export default async function AccountYouLivePage({ searchParams }: { searchParams: Promise<{ state?: string }> }) {
+  // ?state=new drives the brand-new-member first-visit state (no Twin, no meals)
+  // so the MeetBodyHero "first 60 seconds" is testable without auth.
+  const { state } = await searchParams
+  const isNew = state === "new"
+
+  const { twin, feed } = await buildAccountTwin({
+    score: MOCK_ASSESSMENTS[0].overall_score,
+    previousScore: MOCK_ASSESSMENTS[1].overall_score,
+    profileType: MOCK_ASSESSMENTS[0].profile_type,
+    biotics: { prebiotic: MOCK_BIOTICS_PROFILE.prebiotic, probiotic: MOCK_BIOTICS_PROFILE.probiotic, postbiotic: MOCK_BIOTICS_PROFILE.postbiotic },
+    streak: 5,
+    meals: MOCK_RECENT_ANALYSES.map((a) => ({
+      name: a.meal_name ?? "Meal",
+      score: a.biotics_score ?? 0,
+      prebiotic: a.prebiotic_score ?? 0,
+      probiotic: a.probiotic_score ?? 0,
+      postbiotic: a.postbiotic_score ?? 0,
+      createdAt: a.created_at,
+    })),
+  })
+  const twinVisual = twinVisualState(twin)
+
   return (
     <div className="min-h-screen bg-background pt-[57px]">
 
@@ -181,6 +213,12 @@ export default function AccountYouLivePage() {
         weeklyCheckin={`This week your food system data showed a solid upward trend — your average meal score came in at 71, up from 64 the week before. You logged 5 analyses, which is exactly the consistency that drives meaningful change in your microbiome over time.\n\nWhat improved most was your plant diversity — you hit 9 different plants across the week, your best showing in a month. What still needs attention is your fermented food frequency: only 2 out of 7 days included a live food source.\n\nYour focus for next week: make fermented foods non-negotiable. Pick one — kefir in the morning, yoghurt as a snack, or kimchi with dinner — and lock it in before adding anything else.`}
         memberStartedAt={MOCK_PROFILE.membership_started_at}
         weeklyReports={MOCK_WEEKLY_REPORTS}
+        recentAnalyses={isNew ? [] : MOCK_RECENT_ANALYSES}
+        twin={isNew ? null : twin}
+        twinVisual={isNew ? null : twinVisual}
+        twinFeed={isNew ? null : feed}
+        twinFigureSrc={twinFigureSrc("female")}
+        streak={isNew ? 0 : 5}
       />
 
     </div>

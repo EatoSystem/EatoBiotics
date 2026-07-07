@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
-import { Resend } from "resend"
 import { getSupabase } from "@/lib/supabase"
 import { canAccess, PAID_TIERS, type MembershipTier } from "@/lib/membership"
 import { buildNudgeEmail } from "@/lib/email/nudge-email"
 import { verifyCronRequest } from "@/lib/cron-auth"
+import { sendEmail } from "@/lib/email/send"
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://eatobiotics.com"
 
@@ -37,7 +37,6 @@ async function sendNudge(
   email: string,
   name: string | null,
   membershipTier: string,
-  resend: Resend,
   emailFrom: string
 ): Promise<void> {
   const adminSupabase = getSupabase()
@@ -126,16 +125,12 @@ async function sendNudge(
     weakestPillarAction,
   })
 
-  const { error } = await resend.emails.send({
-    from: `EatoBiotics <${emailFrom}>`,
-    to:   email,
-    subject,
-    html,
-  })
-
-  if (error) {
-    console.error(`[weekly-nudge] Resend error for ${userId}:`, error.message)
-    throw new Error(error.message)
+  // sendEmail skips opted-out recipients (returns ok:false with no error) and
+  // attaches List-Unsubscribe headers.
+  const result = await sendEmail({ from: `EatoBiotics <${emailFrom}>`, to: email, subject, html })
+  if (!result.ok && result.error) {
+    console.error(`[weekly-nudge] send error for ${userId}:`, result.error)
+    throw new Error(result.error)
   }
 }
 
@@ -158,8 +153,6 @@ export async function GET(req: NextRequest) {
   if (!adminSupabase) {
     return NextResponse.json({ error: "Database not configured" }, { status: 503 })
   }
-
-  const resend = new Resend(resendKey)
 
   // Fetch all members with any subscription OR with at least one analysis (engaged free users)
   // We send to: active paid members + free users who have logged ≥1 meal
@@ -213,7 +206,6 @@ export async function GET(req: NextRequest) {
         member.email,
         member.name,
         member.membership_tier,
-        resend,
         emailFrom
       )
       sent++

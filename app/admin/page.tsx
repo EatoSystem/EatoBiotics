@@ -1,22 +1,13 @@
 import { cookies } from "next/headers"
 import { getSupabase } from "@/lib/supabase"
 import { ADMIN_COOKIE, verifyAdminCookie } from "@/lib/admin-auth"
+import { countBy } from "@/lib/admin-stats"
 import { AdminLogin } from "./admin-login"
 import { AdminDashboard } from "./admin-dashboard"
 
 export const metadata = {
   title: "Admin — EatoBiotics",
   robots: { index: false, follow: false },
-}
-
-// Group an array of objects by a key into a count map
-function countBy<T>(arr: T[], key: keyof T): Record<string, number> {
-  const result: Record<string, number> = {}
-  for (const item of arr) {
-    const val = String(item[key] ?? "unknown")
-    result[val] = (result[val] ?? 0) + 1
-  }
-  return result
 }
 
 export default async function AdminPage({

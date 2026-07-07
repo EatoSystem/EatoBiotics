@@ -2,9 +2,14 @@
  * Branded confirmation email sent when someone joins the EatoBiotics waitlist.
  * Mirrors the gradient-header style used by the magic-link / results emails.
  */
-export function waitlistConfirmationEmail(): { subject: string; html: string } {
+import { unsubscribeUrl } from "./unsubscribe"
+
+export function waitlistConfirmationEmail(email?: string): { subject: string; html: string } {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://eatobiotics.com"
   const subject = "You're on the EatoBiotics waitlist 🌱"
+  const unsubLink = email
+    ? ` &middot; <a href="${unsubscribeUrl(email)}" style="color:#9ca3af;text-decoration:underline;">Unsubscribe</a>`
+    : ""
 
   const html = `<!DOCTYPE html>
 <html>
@@ -73,7 +78,7 @@ export function waitlistConfirmationEmail(): { subject: string; html: string } {
               <p style="margin:0 0 4px;color:#6b7280;font-size:12px;font-weight:600;">EatoBiotics</p>
               <p style="margin:0;color:#9ca3af;font-size:11px;">
                 The Food System Inside You &middot;
-                <a href="${siteUrl}" style="color:#9ca3af;text-decoration:none;">eatobiotics.com</a>
+                <a href="${siteUrl}" style="color:#9ca3af;text-decoration:none;">eatobiotics.com</a>${unsubLink}
               </p>
             </td>
           </tr>

@@ -5,6 +5,8 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 import { GradientText } from "@/components/gradient-text"
 import { DiscoverFlow } from "@/components/waitlist/discover-flow"
 import { ArrowUpRight, BookOpen, Smartphone, GraduationCap, Check, Zap, Users, Star } from "lucide-react"
+import { HealthSystemCard, LifeSystemCard } from "@/components/food-systems/system-cards"
+import { healthSystems, lifeSystems, FAMILY_META } from "@/lib/systems"
 
 export const metadata: Metadata = {
   title: "Join the Waitlist",
@@ -95,6 +97,9 @@ const whyNowPoints = [
 ]
 
 export default function WaitlistPage() {
+  const health = healthSystems()
+  const life = lifeSystems()
+
   return (
     <>
       {/* Hero */}
@@ -299,6 +304,65 @@ export default function WaitlistPage() {
                 Subscribe on Substack — it&apos;s free
                 <ArrowUpRight size={16} />
               </a>
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      {/* Gradient divider */}
+      <div className="section-divider" />
+
+      {/* Health & Life Systems */}
+      <section className="px-6 py-24 md:py-32">
+        <div className="mx-auto max-w-[1200px]">
+          <ScrollReveal className="text-center">
+            <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
+              The Systems
+            </p>
+            <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
+              One Food System.{" "}
+              <GradientText>Many ways to support it.</GradientText>
+            </h2>
+          </ScrollReveal>
+
+          <div className="mt-14">
+            <ScrollReveal>
+              <p className="mx-auto mb-6 max-w-xl text-center text-sm leading-relaxed text-muted-foreground">
+                {FAMILY_META.health.blurb}
+              </p>
+            </ScrollReveal>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {health.map((s, i) => (
+                <ScrollReveal key={s.key} delay={i * 70}>
+                  <HealthSystemCard system={s} />
+                </ScrollReveal>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-14">
+            <ScrollReveal>
+              <p className="mx-auto mb-6 max-w-xl text-center text-sm leading-relaxed text-muted-foreground">
+                {FAMILY_META.life.blurb}
+              </p>
+            </ScrollReveal>
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+              {life.map((s, i) => (
+                <ScrollReveal key={s.key} delay={i * 80}>
+                  <LifeSystemCard system={s} />
+                </ScrollReveal>
+              ))}
+            </div>
+          </div>
+
+          <ScrollReveal>
+            <div className="mt-12 text-center">
+              <Link
+                href="/food-systems"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-icon-green underline underline-offset-4 transition-colors hover:text-icon-teal"
+              >
+                Explore all Food Systems <ArrowUpRight size={15} />
+              </Link>
             </div>
           </ScrollReveal>
         </div>

@@ -5,6 +5,9 @@ import {
   GLUCOSE_DISCLAIMER,
   STABILITY_DISCLAIMER,
   PERFORMANCE_DISCLAIMER,
+  PREGNANCY_DISCLAIMER,
+  SYSTEM_SUPPORT_DISCLAIMER,
+  LIFE_SYSTEM_DISCLAIMER,
   disclaimerFor,
 } from "@/lib/assessment-disclaimers"
 
@@ -36,6 +39,22 @@ describe("assessment disclaimers", () => {
     expect(disclaimerFor("glucose")).toContain(GLUCOSE_DISCLAIMER)
     expect(disclaimerFor("stability")).toContain(STABILITY_DISCLAIMER)
     expect(disclaimerFor("performance")).toContain(PERFORMANCE_DISCLAIMER)
+  })
+
+  it("exposes the exact food-first, non-diagnostic Pregnancy line", () => {
+    expect(PREGNANCY_DISCLAIMER).toBe(
+      "This is a food-pattern reflection for general wellbeing, not antenatal care, a medical assessment, or a substitute for your midwife or doctor. For pregnancy, birth, baby feeding or health concerns, always speak with a qualified healthcare professional.",
+    )
+    expect(disclaimerFor("pregnancy")).toContain(PREGNANCY_DISCLAIMER)
+  })
+
+  it("exposes the exact Systems landing safety copy", () => {
+    expect(SYSTEM_SUPPORT_DISCLAIMER).toBe(
+      "EatoBiotics systems offer food-first educational support. They are not medical advice, diagnosis, or treatment.",
+    )
+    expect(LIFE_SYSTEM_DISCLAIMER).toBe(
+      "For pregnancy, birth, baby feeding or child health concerns, always speak with a qualified healthcare professional.",
+    )
   })
 
   it("uses only the global framing for the foundations", () => {

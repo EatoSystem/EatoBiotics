@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
@@ -8,12 +8,30 @@ import { DailyLoopCard, type DailyLoopData } from "@/components/account/daily-lo
 import {
   Camera, ArrowRight, Check, ChevronRight, TrendingUp,
   FileText, UtensilsCrossed, MessageSquare, Download, ExternalLink, Flame,
-  Calendar, Target, Activity, User, Trash2, AlertTriangle,
+  Calendar, Target, Activity, User, Trash2, AlertTriangle, Plus,
 } from "lucide-react"
 import {
   Glp1CompanionCard, StabilityCard, AssessmentJourneyCard, VoiceConsultCard, ReferralCard, ScoreRing, MiniRing, ScoreBar,
   Tag, SectionLabel, GradientButton, ringColors,
 } from "@/components/account/dashboard-parts"
+import { TwinStage } from "@/components/account/twin/twin-stage"
+import { ExperienceNav } from "@/components/account/experience-nav"
+import { TodayStrip } from "@/components/account/twin/today-strip"
+import { TwinLearnedToday, TwinNextAction } from "@/components/account/twin/twin-sections"
+import { QuickLog, type QuickLogResult } from "@/components/account/twin/quick-log"
+import { InsideYouTeaser } from "@/components/account/twin/inside-you"
+import { DailyRitual } from "@/components/account/twin/daily-ritual"
+import { AskTwin } from "@/components/account/twin/ask-twin"
+import { SystemsExplorer } from "@/components/account/systems-explorer"
+import { MeetTwinChecklist } from "@/components/account/twin/meet-checklist"
+import { MeetBodyHero } from "@/components/account/twin/meet-body-hero"
+import { detectMilestones, unseenMilestones, loadSeen, saveSeen, type Milestone } from "@/lib/account/milestones"
+import { browserStore, dayKey as ritualDayKey, loadRitual, ritualSignals, type RitualDay } from "@/lib/account/ritual"
+import { pushTwinState } from "@/lib/account/twin-state-sync"
+import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
+import type { TwinVisualState } from "@/lib/account/twin-visual"
+import type { TwinFeedEntry } from "@/lib/agent-loop/account-twin"
+import type { TwinVideo } from "@/lib/account/twin-figure"
 
 
 function MealCard({ meal }: { meal: { image: string; name: string; time: string; type: string; score: number; insight: string; biotics: { prebiotic: number; probiotic: number; postbiotic: number }; quality: { diversity: number; antiInflammatory: number }; nutrition: { calories: number; protein: number; carbs: number; fat: number; fibre: number }; tags: string[] } }) {
@@ -287,6 +305,18 @@ export interface RealWeeklyReport {
 /* ─────────────────────────────────────────────────────────────────────────
    Component props — all optional, mock data used as fallback
    ───────────────────────────────────────────────────────────────────────── */
+/** A purchased one-time Food System Report (from `deep_assessments`). */
+export interface LivePaidReport {
+  sessionId:    string
+  tier:         string
+  createdAt:    string
+  profileType:  string | null
+  overall:      number | null
+  pdfUrl:       string | null
+  status:       string | null   // overall pipeline status
+  emailStatus:  string | null   // 'sent' | 'failed' | 'pending' | null
+}
+
 export interface LiveDashboardProps {
   name?:             string | null
   email?:            string | null
@@ -299,6 +329,7 @@ export interface LiveDashboardProps {
   profileType?:      string | null
   biotics?:          { prebiotic: number; probiotic: number; postbiotic: number }
   recentAnalyses?:   RealAnalysis[]
+  paidReports?:      LivePaidReport[]            // purchased one-time reports
   weeklyReport?:     RealWeeklyReport | null
   weeklyReports?:    RealWeeklyReport[]          // for Consultations tab
   monthlyPlan?:      string | null
@@ -307,6 +338,12 @@ export interface LiveDashboardProps {
   nextBillingDate?:  string | null
   referralCode?:     string | null
   dailyLoop?:        DailyLoopData | null
+  twin?:             FoodSystemDigitalTwin | null
+  twinVisual?:       TwinVisualState | null
+  twinFeed?:         TwinFeedEntry[] | null
+  twinFigureSrc?:    string
+  twinVideo?:        TwinVideo | null
+  sex?:              string | null
   // Sandbox pass-through
   [key: string]: unknown
 }
@@ -621,6 +658,48 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
 /* ─────────────────────────────────────────────────────────────────────────
    Component
    ───────────────────────────────────────────────────────────────────────── */
+/** Chapter heading — serif title + hairline; one consistent pt-12 rhythm so the
+    Overview reads as chapters of one page, not stacked fragments. */
+function GroupLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mx-auto max-w-5xl px-4 pt-12 md:px-8">
+      <div className="flex items-center gap-4">
+        <h2 className="shrink-0 font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>{children}</h2>
+        <span className="h-px flex-1" style={{ background: "var(--border)" }} />
+      </div>
+    </div>
+  )
+}
+
+/** What changed today — the twin's live trends as sentence chips (↑ growth in
+    green, ↓ dips in amber; changes, not levels — the daily return loop). */
+function WhatChangedToday({ twin }: { twin: FoodSystemDigitalTwin }) {
+  if (!twin.trends.length) return null
+  return (
+    <div className="mx-auto max-w-5xl px-4 pt-6 md:px-8">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: "var(--muted-foreground)" }}>What changed</span>
+        {twin.trends.slice(0, 4).map((t) => (
+          <span
+            key={t.label}
+            title={t.detail}
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
+            style={
+              t.direction === "up"
+                ? { background: "rgba(168,224,99,0.16)", border: "1px solid rgba(76,182,72,0.3)", color: "#2d7a24" }
+                : t.direction === "down"
+                  ? { background: "rgba(245,166,35,0.12)", border: "1px solid rgba(245,166,35,0.3)", color: "#a05a0a" }
+                  : { background: "var(--muted)", border: "1px solid var(--border)", color: "var(--muted-foreground)" }
+            }
+          >
+            {t.direction === "up" ? "↑" : t.direction === "down" ? "↓" : "→"} {t.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function LiveDashboard(props: LiveDashboardProps = {}) {
   const {
     name               = null,
@@ -634,6 +713,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
     profileType        = null,
     biotics:           propBiotics = null,
     recentAnalyses     = [],
+    paidReports        = [],
     weeklyReport       = null,
     weeklyReports      = [],
     monthlyPlan        = null,
@@ -641,6 +721,12 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
     nextBillingDate    = null,
     dailyLoop          = null,
     referralCode       = null,
+    twin               = null,
+    twinVisual         = null,
+    twinFeed           = null,
+    twinFigureSrc      = undefined,
+    twinVideo          = null,
+    sex                = null,
   } = props
 
   const [tab, setTab] = useState<Tab>("overview")
@@ -652,6 +738,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
   /* My Account tab state */
   const [acctName,       setAcctName]       = useState(name ?? "")
   const [acctAgeBracket, setAcctAgeBracket] = useState(propAgeBracket ?? "")
+  const [acctSex,        setAcctSex]        = useState(sex ?? "")
   const [acctSaving,     setAcctSaving]     = useState(false)
   const [acctSaved,      setAcctSaved]      = useState(false)
   const [acctError,      setAcctError]      = useState<string | null>(null)
@@ -673,11 +760,13 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       const res = await fetch("/api/account/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: acctName || null, age_bracket: acctAgeBracket || null }),
+        body: JSON.stringify({ name: acctName || null, age_bracket: acctAgeBracket || null, sex: acctSex || null }),
       })
       if (!res.ok) throw new Error("Save failed")
       setAcctSaved(true)
       setTimeout(() => setAcctSaved(false), 3000)
+      // Re-derive server data so the living Food System figure reflects the new sex.
+      router.refresh()
     } catch {
       setAcctError("Save failed — please try again")
     } finally {
@@ -741,6 +830,38 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
 
   const displayBiotics = propBiotics ?? { prebiotic: 71, probiotic: 23, postbiotic: 48 }
 
+  /* Milestone celebrations — fire once per milestone (localStorage seen-set):
+     burst over the stage orb + a celebration card at the top of the feed. */
+  const [celebration, setCelebration] = useState<Milestone | null>(null)
+  const [celebrationKey, setCelebrationKey] = useState(0)
+  const [quickLogOpen, setQuickLogOpen] = useState(false)
+  /* The Meal Reveal — a logged meal plays out on the stage. */
+  const [reveal, setReveal] = useState<QuickLogResult | null>(null)
+  /* Today's ritual signals — light the stage figure with the day's habits. */
+  const [todaySignals, setTodaySignals] = useState<RitualDay | null>(null)
+  useEffect(() => {
+    setTodaySignals(loadRitual(browserStore(), ritualDayKey()))
+  }, [])
+  useEffect(() => {
+    if (!twin) return
+    const store = browserStore()
+    const seen = loadSeen(store)
+    const fresh = unseenMilestones(detectMilestones(twin, propStreak || 0), seen)
+    if (fresh.length === 0) return
+    const m = fresh[0]
+    // Celebrate after the arrival choreography settles.
+    const t = setTimeout(() => {
+      setCelebration(m)
+      setCelebrationKey((k) => k + 1)
+    }, 1600)
+    saveSeen(store, [...seen, m.id])
+    // Sync the seen-set so milestones fire once across devices (real members
+    // always have an email prop; the static preview has none → no-op).
+    if (propEmail) pushTwinState(store)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [twin])
+
   /* Today's real meals */
   const todayStr = new Date().toISOString().slice(0, 10)
   const todayMeals = recentAnalyses.filter((a) => a.created_at.startsWith(todayStr))
@@ -786,6 +907,9 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       setLiveResult(data)
       setLoggerState("result")
       setMealInput("")
+      // Re-derive the living Food System server-side so it visibly updates with the new
+      // meal (score/biotics/feed). Client result state is preserved across refresh.
+      router.refresh()
     } catch (err) {
       console.error("[analyse-meal]", err)
       setAnalyseError("Analysis failed — please try again")
@@ -796,12 +920,19 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
   const hour = new Date().getHours()
   const timeOfDay = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening"
 
+  /* A brand-new member (no Twin, no meals) meets the living body first — so the
+     legacy greeting/score band is suppressed in favour of the MeetBodyHero. */
+  const newMemberFirstVisit = !twin && recentAnalyses.length === 0 && loggerState !== "result"
+
   return (
-    <div className="min-h-screen" style={{ background: "white" }}>
+    // one continuous warm canvas — cards float on the wash, no flat-white seams
+    <div className="min-h-screen" style={{ background: "#FDFBF7" }}>
 
       {/* ══════════════════════════════════════════════════════════════════
-          HERO — gradient band
+          HERO — gradient band (legacy greeting; the Twin's TodayStrip + stage
+          replace it, so it only renders for members without a Twin yet)
       ══════════════════════════════════════════════════════════════════ */}
+      {!twin && !newMemberFirstVisit && (<>
       <div style={{ background: "white" }}>
         <div className="mx-auto max-w-5xl px-5 pb-7 pt-6 md:px-8 md:pb-9 md:pt-8">
           <div className="flex items-start justify-between gap-4">
@@ -819,6 +950,11 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                 <Link href="/account/today" className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-bold transition-colors hover:bg-black/[0.03]" style={{ borderColor: "var(--icon-green)", color: "var(--icon-green)" }}>
                   <Calendar size={13} /> Today
                 </Link>
+                {twin && (
+                  <Link href="/account/twin" className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-bold transition-colors hover:bg-black/[0.03]" style={{ borderColor: "var(--icon-teal)", color: "var(--icon-teal)" }}>
+                    <Activity size={13} /> My Food System
+                  </Link>
+                )}
                 {displayStreak > 0 && (
                   <span className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold text-white"
                     style={{ background: "linear-gradient(135deg, #F5C518, #F5A623)", boxShadow: "0 2px 10px rgba(245,166,35,0.35)" }}>
@@ -895,23 +1031,48 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
           </div>
         </div>
       </div>
+      </>)}
+
+      {/* Quick-log — portalled modal; the analysed meal reveals on the stage. */}
+      {twin && (
+        <QuickLog
+          open={quickLogOpen}
+          onClose={() => setQuickLogOpen(false)}
+          onReveal={(r) => {
+            setCelebration(null)
+            setReveal(r)
+            document.getElementById("fs-stage")?.scrollIntoView({ behavior: "smooth" })
+          }}
+        />
+      )}
 
       {/* ══════════════════════════════════════════════════════════════════
-          TAB NAVIGATION — sticky
+          TAB NAVIGATION — sticky dark glass bar (bridges the dark stage and
+          the light content so the account reads as one product)
       ══════════════════════════════════════════════════════════════════ */}
-      <div className="sticky top-[57px] z-10 border-b" style={{ background: "white", borderColor: "var(--border)" }}>
+      <div className="sticky top-[57px] z-30 border-b" style={{ background: "rgba(11,22,7,0.92)", backdropFilter: "blur(10px)", borderColor: "rgba(253,251,247,0.1)" }}>
         <div className="mx-auto max-w-5xl">
-          <div className="flex gap-1.5 overflow-x-auto px-4 py-2 md:px-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <div className="flex items-center gap-1.5 overflow-x-auto px-4 py-2 md:px-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {TABS.map(({ id, label, icon }) => (
               <button key={id} onClick={() => setTab(id as Tab)}
                 className="flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition-all md:px-4 md:py-2.5 md:text-sm"
                 style={tab === id
-                  ? { background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", color: "white", boxShadow: "0 3px 10px rgba(45,170,110,0.28)" }
-                  : { background: "var(--muted)", color: "var(--muted-foreground)" }
+                  ? { background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", color: "white", boxShadow: "0 3px 10px rgba(45,170,110,0.35)" }
+                  : { background: "rgba(253,251,247,0.06)", color: "rgba(253,251,247,0.7)", border: "1px solid rgba(253,251,247,0.12)" }
                 }>
                 {icon}{label}
               </button>
             ))}
+            {twin && (
+              <button
+                type="button"
+                onClick={() => setQuickLogOpen(true)}
+                className="ml-auto flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold transition-transform hover:-translate-y-0.5 md:px-4 md:py-2.5 md:text-sm"
+                style={{ background: "linear-gradient(135deg, #F5C518, #F5A623)", color: "#3a2c05", boxShadow: "0 3px 12px rgba(245,166,35,0.4)" }}
+              >
+                <Plus size={14} strokeWidth={3} /> Log
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -919,10 +1080,91 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       {/* ══════════════════════════════════════════════════════════════════
           OVERVIEW TAB
       ══════════════════════════════════════════════════════════════════ */}
-      {tab === "overview" && dailyLoop && (
+      {/* ── The Digital Twin experience (shown whenever a Twin exists) ── */}
+      {tab === "overview" && twin && twinVisual && (
+        <>
+          <TodayStrip
+            twin={twin}
+            firstName={name?.split(" ")[0] ?? null}
+            streak={displayStreak}
+            onAddMeal={() => setQuickLogOpen(true)}
+            todayHref="/account/today"
+          />
+          <div style={{ background: "#0B1607" }}>
+            <div className="mx-auto max-w-6xl px-4 pb-3 md:px-8">
+              <ExperienceNav variant="dark" />
+            </div>
+          </div>
+          <TwinStage
+            twin={twin}
+            visual={twinVisual}
+            figureSrc={twinFigureSrc ?? "/images/couple-hero.png"}
+            video={twinVideo}
+            learning={loggerState === "analysing"}
+            onAddMeal={() => setQuickLogOpen(true)}
+            burstKey={celebrationKey}
+            burstMessage={celebration?.title}
+            reveal={reveal}
+            onRevealDone={() => setReveal(null)}
+            onLogAnother={() => {
+              setReveal(null)
+              setQuickLogOpen(true)
+            }}
+            signals={todaySignals ? ritualSignals(todaySignals) : []}
+            checklist={
+              twin.observations.length < 3 ? (
+                <MeetTwinChecklist twin={twin} addMealHref={recentAnalyses.length > 0 ? "#log-meal" : "#first-meal-logger"} />
+              ) : undefined
+            }
+          />
+          {/* dark→light bridge — the stage hands over to the cream canvas */}
+          <div aria-hidden style={{ height: 64, background: "linear-gradient(180deg, #16290F 0%, #E9F1DC 55%, #FDFBF7 100%)" }} />
+
+          {/* what changed today — the daily return loop, sentences not levels */}
+          <WhatChangedToday twin={twin} />
+
+          {/* [TODAY] — the daily ritual heartbeat + one clear priority */}
+          <GroupLabel>Today</GroupLabel>
+          <div className="mx-auto mt-4 grid max-w-5xl items-start gap-5 px-4 md:px-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+            <DailyRitual twin={twin} streak={displayStreak} authed={!!propEmail} bare figureSrc={twinFigureSrc ?? "/images/couple-hero.png"} onSignalsChange={setTodaySignals} />
+            <TwinNextAction twin={twin} bare />
+          </div>
+
+          {/* [THIS WEEK] — what the Twin has learned */}
+          <GroupLabel>This week</GroupLabel>
+          <TwinLearnedToday
+            feed={
+              celebration
+                ? [{ id: `milestone-${celebration.id}`, icon: "momentum" as const, title: celebration.title, detail: celebration.detail, at: null }, ...(twinFeed ?? [])]
+                : (twinFeed ?? [])
+            }
+          />
+
+          {/* [LEARN & ASK] — education + the AI bridge. Score/next-action live
+              on the stage and /account/twin — no duplicates here. */}
+          <GroupLabel>Learn &amp; ask</GroupLabel>
+          <div className="mx-auto mt-4 grid max-w-5xl items-start gap-5 px-4 md:px-8 lg:grid-cols-2">
+            <InsideYouTeaser twin={twin} bare />
+            <AskTwin twin={twin} consultHref="/account/consult" bare />
+          </div>
+
+          {/* [EXPLORE] — lenses into the same Food System (Foundation / Health / Life) */}
+          <GroupLabel>Explore your Food System</GroupLabel>
+          <SystemsExplorer />
+        </>
+      )}
+
+      {/* Daily loop nudge — only when there's no Twin yet (early users). */}
+      {tab === "overview" && !twin && dailyLoop && (
         <div className="pt-5">
           <DailyLoopCard data={dailyLoop} firstName={name?.split(" ")[0] ?? null} />
         </div>
+      )}
+
+      {/* First 60 seconds — a brand-new member meets the living body before any
+          numbers, then the first meal wakes it up. */}
+      {tab === "overview" && recentAnalyses.length === 0 && loggerState !== "result" && (
+        <MeetBodyHero firstName={name?.split(" ")[0] ?? null} figureSrc={twinFigureSrc ?? "/images/couple-hero.png"} />
       )}
 
       {tab === "overview" && recentAnalyses.length === 0 && (
@@ -1094,37 +1336,33 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
           {/* ── LEFT: Logger + Today's Meals ── */}
           <div className="space-y-5">
 
-            {/* Returning user context hook */}
-            <p className="text-center text-xs" style={{ color: "var(--muted-foreground)" }}>
-              Your last meal was logged yesterday. Ready to start today?
-            </p>
-
             {/* Logger */}
-            <div>
+            <div id="log-meal" className="scroll-mt-24">
 
-              {/* Empty state */}
+              {/* Empty state — standard white card language, same behaviour */}
               {loggerState === "empty" && (
                 <div className="overflow-hidden rounded-2xl" style={{
-                  background: "linear-gradient(135deg, var(--icon-green) 0%, var(--icon-teal) 45%, var(--icon-yellow) 80%, var(--icon-orange) 100%)",
-                  boxShadow: "0 8px 32px rgba(26,46,18,0.22)",
+                  background: "white",
+                  border: "1px solid var(--border)",
+                  boxShadow: "0 4px 20px rgba(26,46,18,0.07)",
                 }}>
                   {/* Top brand gradient strip */}
                   <div className="h-[3px]" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
 
                   {/* Decorative food image strip — context row, subordinate */}
-                  <div className="flex items-center px-5 pt-5 pb-3" style={{ opacity: 0.85 }}>
+                  <div className="flex items-center px-5 pt-5 pb-3">
                     {["/food-3.webp", "/food-5.webp", "/food-7.webp", "/food-2.webp"].map((src, i) => (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img key={i} src={src} alt=""
                         className="rounded-full object-cover"
                         style={{
                           width: 32, height: 32, flexShrink: 0,
-                          border: "2px solid rgba(255,255,255,0.22)",
+                          border: "2px solid white",
                           marginLeft: i > 0 ? -8 : 0,
-                          boxShadow: "0 2px 6px rgba(0,0,0,0.22)",
+                          boxShadow: "0 2px 6px rgba(26,46,18,0.18)",
                         }} />
                     ))}
-                    <span className="ml-3 text-xs font-semibold" style={{ color: "rgba(255,255,255,0.70)" }}>
+                    <span className="ml-3 text-xs font-semibold" style={{ color: "var(--muted-foreground)" }}>
                       7 meals analysed this week
                     </span>
                   </div>
@@ -1135,56 +1373,61 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                     <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full"
                       style={{
                         background: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
-                        boxShadow: "0 4px 20px rgba(245,166,35,0.45)",
+                        boxShadow: "0 4px 20px rgba(245,166,35,0.35)",
                       }}>
                       <Camera size={26} color="white" />
                     </div>
 
-                    <h2 className="font-serif text-xl font-bold text-white">
+                    <h2 className="font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>
                       Analyse your Meal
                     </h2>
-                    <p className="mt-2 max-w-xs text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.75)" }}>
+                    <p className="mt-2 max-w-xs text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
                       Take or upload a photo of your meal. EatoBiotics will analyse its biotics profile and teach you what&apos;s happening inside.
                     </p>
 
-                    {/* Primary CTA — Take photo, centred */}
+                    {/* Primary CTA — Take photo → opens the QuickLog, which
+                        captures the plate and plays the meal out on the stage.
+                        Falls back to focusing the describe box when no Twin. */}
                     <button
-                      className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold transition-opacity hover:opacity-90"
-                      style={{ background: "white", color: "var(--icon-green)", boxShadow: "0 4px 16px rgba(0,0,0,0.15)" }}>
+                      onClick={() => (twin ? setQuickLogOpen(true) : document.getElementById("inline-describe-meal")?.focus())}
+                      className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+                      style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", boxShadow: "0 4px 16px rgba(45,170,110,0.3)" }}>
                       <Camera size={16} /> Take photo
                     </button>
 
                     {/* Secondary — Upload, equal sibling to Take photo */}
                     <button
-                      className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-opacity hover:opacity-90"
-                      style={{ background: "white", color: "var(--icon-green)", boxShadow: "0 4px 16px rgba(0,0,0,0.15)" }}>
+                      onClick={() => (twin ? setQuickLogOpen(true) : document.getElementById("inline-describe-meal")?.focus())}
+                      className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-colors hover:bg-black/[0.03]"
+                      style={{ background: "white", border: "1px solid var(--icon-green)", color: "var(--icon-green)" }}>
                       ↑ Upload image
                     </button>
 
                     {/* Tertiary — describe, real API */}
                     <div className="mt-2.5 flex w-full items-center gap-2">
                       <input
+                        id="inline-describe-meal"
                         type="text"
                         placeholder="Or describe your meal…"
                         value={mealInput}
                         onChange={(e) => setMealInput(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter") void handleAnalyse() }}
-                        className="flex-1 rounded-xl px-4 py-2.5 text-sm outline-none placeholder:text-white/45"
+                        className="flex-1 rounded-xl px-4 py-2.5 text-sm outline-none transition-colors focus:border-[var(--icon-green)]"
                         style={{
-                          background: "rgba(255,255,255,0.10)",
-                          border: "1px solid rgba(255,255,255,0.18)",
-                          color: "white",
+                          background: "var(--muted)",
+                          border: "1px solid var(--border)",
+                          color: "var(--foreground)",
                         }} />
                       <button
                         onClick={() => void handleAnalyse()}
                         disabled={!mealInput.trim()}
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl disabled:opacity-40"
-                        style={{ background: "rgba(255,255,255,0.20)" }}>
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white disabled:opacity-40"
+                        style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
                         <ArrowRight size={16} color="white" />
                       </button>
                     </div>
                     {analyseError && (
-                      <p className="mt-2 text-center text-xs" style={{ color: "rgba(255,100,100,0.90)" }}>{analyseError}</p>
+                      <p className="mt-2 text-center text-xs" style={{ color: "#a05a0a" }}>{analyseError}</p>
                     )}
                   </div>
                 </div>
@@ -1741,9 +1984,69 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       {tab === "reports" && (
         <div className="mx-auto max-w-5xl px-4 pt-6 pb-16 md:px-8 md:pt-8">
           <div className="mb-5">
-            <h2 className="font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>My Reports</h2>
-            <p className="mt-0.5 text-sm" style={{ color: "var(--muted-foreground)" }}>{MOCK_REPORTS.length} assessments completed</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>Snapshots</p>
+            <h2 className="mt-1 font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>Moments your Food System remembers</h2>
+            <p className="mt-0.5 text-sm" style={{ color: "var(--muted-foreground)" }}>
+              {paidReports.length > 0
+                ? `${paidReports.length} Food System snapshot${paidReports.length === 1 ? "" : "s"} — each one a moment your Food System can look back on`
+                : `${MOCK_REPORTS.length} assessment snapshot${MOCK_REPORTS.length === 1 ? "" : "s"} of your Food System so far`}
+            </p>
           </div>
+
+          {/* Purchased Food System Reports — real data from deep_assessments */}
+          {paidReports.length > 0 && (
+            <div className="mb-6 space-y-4">
+              {paidReports.map((r) => {
+                const delivered = r.status === "complete"
+                const emailFailed = r.emailStatus === "failed"
+                return (
+                  <div key={r.sessionId} className="overflow-hidden rounded-2xl"
+                    style={{ border: "1px solid var(--border)", boxShadow: "0 2px 16px rgba(26,46,18,0.06)" }}>
+                    <div className="px-5 py-5" style={{ background: "linear-gradient(135deg, #1a4a14 0%, #0a5c44 100%)" }}>
+                      <div className="h-[2px] mb-4 rounded-full" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-yellow), var(--icon-orange))" }} />
+                      <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.40)" }}>
+                        Snapshot · Food System Report · {new Date(r.createdAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
+                      </p>
+                      <div className="mt-1 flex items-end justify-between gap-3">
+                        <div>
+                          <p className="font-serif text-lg font-bold text-white">Your Food System Report</p>
+                          {r.profileType && <p className="text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>{r.profileType}</p>}
+                        </div>
+                        {typeof r.overall === "number" && (
+                          <div className="text-right">
+                            <p className="font-mono text-3xl font-bold leading-none" style={{ color: "var(--icon-lime)" }}>{r.overall}</p>
+                            <p className="mt-0.5 text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>/100</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-t px-5 py-3.5"
+                      style={{ borderColor: "var(--border)", background: "white" }}>
+                      <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+                        {delivered
+                          ? (emailFailed ? "Ready to view here (email delivery retried)" : "Delivered to your inbox")
+                          : "Being prepared — we'll email it shortly"}
+                      </span>
+                      <div className="flex gap-2">
+                        {r.pdfUrl && (
+                          <a href={r.pdfUrl} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold transition-opacity hover:opacity-70"
+                            style={{ borderColor: "#d0d0d0", color: "var(--muted-foreground)" }}>
+                            <Download size={11} /> PDF
+                          </a>
+                        )}
+                        <Link href={`/assessment/report?session_id=${encodeURIComponent(r.sessionId)}`}
+                          className="flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-80"
+                          style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", boxShadow: "0 2px 8px rgba(45,170,110,0.25)" }}>
+                          View report <ExternalLink size={11} />
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
 
           <div className="space-y-4 md:grid md:grid-cols-2 md:gap-5 md:space-y-0">
             {MOCK_REPORTS.map((r) => (
@@ -2007,6 +2310,21 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                     <option key={b} value={b}>{b}</option>
                   ))}
                 </select>
+              </div>
+              {/* Sex — personalises your living Food System figure */}
+              <div>
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>Sex</label>
+                <select
+                  value={acctSex}
+                  onChange={(e) => setAcctSex(e.target.value)}
+                  className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition"
+                  style={{ borderColor: "var(--border)", background: "white", color: "var(--foreground)" }}
+                >
+                  <option value="">Prefer not to say</option>
+                  <option value="female">Female</option>
+                  <option value="male">Male</option>
+                </select>
+                <p className="mt-1 text-[11px]" style={{ color: "var(--muted-foreground)" }}>Personalises your Food System figure.</p>
               </div>
               {/* Member since */}
               {memberStartedAt && (

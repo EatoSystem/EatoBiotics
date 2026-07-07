@@ -1,5 +1,5 @@
-import { Resend } from "resend"
 import { rateLimit } from "@/lib/rate-limit"
+import { sendEmail } from "@/lib/email/send"
 
 /**
  * Server-side error reporter. Always logs; in production it also emails the
@@ -22,12 +22,13 @@ export async function reportError(context: string, error: unknown): Promise<void
   if (!rateLimit(`error-alert:${context}`, 3, 60 * 60_000).allowed) return
 
   try {
-    const resend = new Resend(resendKey)
-    await resend.emails.send({
+    // Internal monitoring alert to the owner — bypasses the marketing opt-out.
+    await sendEmail({
       from: from.includes("<") ? from : `EatoBiotics Monitoring <${from}>`,
       to,
       subject: `⚠️ EatoBiotics error: ${context}`,
       text: `Context: ${context}\nTime: ${new Date().toISOString()}\n\n${message}\n\n${stack ?? "(no stack)"}`,
+      skipOptOutCheck: true,
     })
   } catch (e) {
     console.error("[report-error] failed to send alert email:", e)

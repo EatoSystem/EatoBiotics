@@ -6,11 +6,14 @@ import { ownerOrFilter } from "@/lib/supabase-filters"
 import { stripe } from "@/lib/stripe-server"
 import { canAccess, type MembershipTier } from "@/lib/membership"
 import { LiveDashboard } from "@/components/account/live-dashboard"
-import type { RealAnalysis, RealWeeklyReport } from "@/components/account/live-dashboard"
+import type { RealAnalysis, RealWeeklyReport, LivePaidReport } from "@/components/account/live-dashboard"
 import { TrackConversion } from "@/components/analytics/track-conversion"
 import { computeStreak } from "@/lib/streak"
 import { dailyNudge } from "@/lib/habit"
 import type { DailyLoopData } from "@/components/account/daily-loop-card"
+import { buildAccountTwin } from "@/lib/agent-loop/account-twin"
+import { twinVisualState } from "@/lib/account/twin-visual"
+import { twinFigureSrc, twinVideo, normaliseSex } from "@/lib/account/twin-figure"
 
 export const metadata: Metadata = {
   title: "My Account — EatoBiotics",
@@ -38,7 +41,7 @@ export default async function AccountPage({
   if (adminSupabase) {
     const { data } = await adminSupabase
       .from("profiles")
-      .select("id, email, name, membership_tier, membership_status, stripe_customer_id, stripe_subscription_id, membership_started_at, referral_code")
+      .select("id, email, name, membership_tier, membership_status, stripe_customer_id, stripe_subscription_id, membership_started_at, referral_code, age_bracket, sex")
       .eq("id", user.id)
       .single()
     profile = data as Record<string, unknown> | null
@@ -59,6 +62,7 @@ export default async function AccountPage({
     monthlyPlan,
     nextBillingDate,
     streakInfo,
+    paidReports,
   ] = await Promise.all([
     /* Assessment scores (gut only — for overall score + profile type) */
     (async (): Promise<AssessmentRow[]> => {
@@ -193,6 +197,30 @@ export default async function AccountPage({
         .order("created_at", { ascending: false })
       return computeStreak((streakRows ?? []).map((r) => r.created_at as string))
     })(),
+
+    /* Purchased one-time Food System Reports (deep_assessments) */
+    (async (): Promise<LivePaidReport[]> => {
+      if (!adminSupabase) return []
+      const { data } = await adminSupabase
+        .from("deep_assessments")
+        .select("stripe_session_id, tier, created_at, pdf_url, status, email_status, free_scores")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(10)
+      return (data ?? []).map((r) => {
+        const fs = (r.free_scores ?? {}) as { overall?: number; profile?: { type?: string } }
+        return {
+          sessionId:   r.stripe_session_id as string,
+          tier:        (r.tier as string) ?? "personal",
+          createdAt:   r.created_at as string,
+          profileType: fs.profile?.type ?? null,
+          overall:     typeof fs.overall === "number" ? fs.overall : null,
+          pdfUrl:      (r.pdf_url as string | null) ?? null,
+          status:      (r.status as string | null) ?? null,
+          emailStatus: (r.email_status as string | null) ?? null,
+        }
+      })
+    })(),
   ])
 
   const streak = streakInfo.current
@@ -210,6 +238,31 @@ export default async function AccountPage({
           return { key: n.pillar.key, color: n.pillar.color, score: n.score }
         })()
       : null,
+  }
+
+  /* ── Living Digital Twin — assembled from real account data (score, biotics,
+       recent meals, streak) via the shared agent-loop read-model. Only built
+       when there's something to reflect. ── */
+  const twinScore = (assessments[0]?.overall_score as number | null) ?? null
+  let accountTwin: Awaited<ReturnType<typeof buildAccountTwin>> | null = null
+  let twinVisual: ReturnType<typeof twinVisualState> | null = null
+  if (twinScore != null || recentAnalyses.length > 0) {
+    accountTwin = await buildAccountTwin({
+      score: twinScore,
+      previousScore: (assessments[1]?.overall_score as number | null) ?? null,
+      profileType: (assessments[0]?.profile_type as string | null) ?? null,
+      biotics: bioticsProfile ?? null,
+      streak: streakInfo.current,
+      meals: recentAnalyses.map((a) => ({
+        name: a.meal_name ?? "Analysed meal",
+        score: a.biotics_score ?? 0,
+        prebiotic: a.prebiotic_score ?? 0,
+        probiotic: a.probiotic_score ?? 0,
+        postbiotic: a.postbiotic_score ?? 0,
+        createdAt: a.created_at,
+      })),
+    })
+    twinVisual = twinVisualState(accountTwin.twin)
   }
 
   /* ── Fallback profile if none exists yet ── */
@@ -249,6 +302,7 @@ export default async function AccountPage({
         profileType={(assessments[0]?.profile_type as string | null) ?? null}
         biotics={bioticsProfile}
         recentAnalyses={recentAnalyses}
+        paidReports={paidReports}
         weeklyReport={weeklyReport}
         weeklyReports={weeklyReports}
         monthlyPlan={monthlyPlan}
@@ -256,6 +310,12 @@ export default async function AccountPage({
         memberStartedAt={(profile.membership_started_at as string | null) ?? null}
         nextBillingDate={nextBillingDate}
         referralCode={(profile.referral_code as string | null) ?? null}
+        twin={accountTwin?.twin ?? null}
+        twinVisual={twinVisual}
+        twinFeed={accountTwin?.feed ?? null}
+        twinFigureSrc={twinFigureSrc(normaliseSex((profile.sex as string | null) ?? null))}
+        twinVideo={twinVideo(normaliseSex((profile.sex as string | null) ?? null))}
+        sex={(profile.sex as string | null) ?? null}
       />
     </div>
   )

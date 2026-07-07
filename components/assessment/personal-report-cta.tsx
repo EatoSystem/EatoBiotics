@@ -4,14 +4,15 @@ import { useState } from "react"
 import Link from "next/link"
 import { ArrowRight, Check } from "lucide-react"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
+import { resolvedFoundation, getJourney } from "@/lib/assessment/journey"
 
 interface PersonalReportCtaProps {
   result: AssessmentResult
 }
 
 const REPORT_FEATURES = [
-  "Full gut health score breakdown",
-  "Your 30-day gut reset plan",
+  "Your Food System Score breakdown",
+  "Your 30-day personalised plan",
   "Top 10 food recommendations",
   "Weekly shopping framework",
   "Meal timing guidance",
@@ -38,6 +39,10 @@ export function PersonalReportCta({ result }: PersonalReportCtaProps) {
           // string — sending the string fails validation and 500s.
           profile: result.profile,
           subScores: result.subScores,
+          // Carry the product architecture so the report knows its foundation +
+          // any selected add-on (null for the legacy standalone flow).
+          foundationType: resolvedFoundation(),
+          selectedAddon: getJourney().selectedAddon,
         }),
       })
 

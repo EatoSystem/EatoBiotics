@@ -436,7 +436,10 @@ html, body, main {
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    /* End on `none` (not translateY(0)): with fill-mode `both`, a retained
+       transform would make <main> the containing block for every
+       position:fixed descendant (overlays, bottom sheets) forever. */
+    transform: none;
   }
 }
 
@@ -451,4 +454,113 @@ main {
 }
 .animate-quiz-step {
   animation: quizStepIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Digital Twin section — faithful port of the Food System Loop design.
+   Layout (responsive) + motion-gated keyframes. */
+.dt-grid { display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 44px; align-items: center; }
+.dt-diagram-mobile { display: none; }
+.dt-features { display: grid; grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 1023px) {
+  .dt-grid { grid-template-columns: 1fr; gap: 32px; }
+  .dt-diagram { display: none; }       /* fixed 580px desktop diagram */
+  .dt-diagram-mobile { display: block; }
+  .dt-features { grid-template-columns: 1fr 1fr; gap: 20px; }
+}
+@media (max-width: 560px) {
+  .dt-features { grid-template-columns: 1fr; }
+}
+
+@keyframes ebDash { to { stroke-dashoffset: -1000; } }
+@keyframes ebDashRev { to { stroke-dashoffset: 1000; } }
+@keyframes ebGlow { 0%,100% { transform: translate(-50%,-50%) scale(1); opacity:.85 } 50% { transform: translate(-50%,-50%) scale(1.08); opacity:1 } }
+@keyframes ebBeam { 0%,100% { opacity:.30; transform:translate(-50%,-50%) scaleY(.94); } 50% { opacity:.7; transform:translate(-50%,-50%) scaleY(1.04); } }
+@keyframes ebRise {
+  0%   { transform: translateY(34px) scale(.5); opacity:0; }
+  18%  { opacity:1; }
+  78%  { opacity:.85; }
+  100% { transform: translateY(-184px) scale(1.15); opacity:0; }
+}
+@keyframes ebFlowLine { to { stroke-dashoffset: -120; } }
+@keyframes ebOrbit { to { transform: rotate(360deg); } }
+@keyframes ebOrbitRev { to { transform: rotate(-360deg); } }
+
+/* ── /digital-twin v3 (cinematic) ──────────────────────────── */
+/* Large, slow ambient hero particles wandering + breathing. */
+@keyframes ebFloatBig {
+  0%   { transform: translate(0,0) scale(1);      opacity: .35; }
+  50%  { transform: translate(14px,-22px) scale(1.18); opacity: .8; }
+  100% { transform: translate(0,0) scale(1);      opacity: .35; }
+}
+/* Slow spinning orbital rings (hero stage). */
+@keyframes ebRingSpin { to { transform: rotate(360deg); } }
+/* Vertical gradient flow along the You→Food-System connectors. */
+@keyframes ebFlowDown { to { background-position: 0 22px; } }
+/* Soft breathing pulse for the biotic ecosystem orbs. */
+@keyframes ebPulseSoft {
+  0%,100% { transform: scale(1);    opacity: .9; }
+  50%     { transform: scale(1.05); opacity: 1; }
+}
+/* Light travelling down the You→Food-System spine. */
+@keyframes ebSpineFlow { to { background-position: 0 -240px; } }
+/* Digital Twin System Map hotspot ping + meal-reaction burst. */
+@keyframes ebPing {
+  0%       { transform: scale(.6);  opacity: .8; }
+  70%,100% { transform: scale(1.7); opacity: 0; }
+}
+@keyframes ebAbsorb {
+  0%   { transform: translate(var(--eb-from-x, 0px), var(--eb-from-y, -120px)) scale(1); opacity: 0; }
+  15%  { opacity: 1; }
+  85%  { opacity: .9; }
+  100% { transform: translate(0, 0) scale(.35); opacity: 0; }
+}
+@keyframes ebBurstRing {
+  0%   { transform: translate(-50%,-50%) scale(.4); opacity: .75; }
+  100% { transform: translate(-50%,-50%) scale(1.8); opacity: 0; }
+}
+@keyframes ebPopIn {
+  0%   { transform: translateY(10px) scale(.92); opacity: 0; }
+  100% { transform: translateY(0)    scale(1);   opacity: 1; }
+}
+/* Twin Stage arrival choreography. Content stays visible without motion:
+   the reveal classes only animate inside the reduced-motion gate below. */
+@keyframes ebRevealUp {
+  0%   { transform: translateY(18px); opacity: 0; }
+  100% { transform: translateY(0);    opacity: 1; }
+}
+@keyframes ebOrbBloom {
+  0%   { transform: scale(.82); opacity: 0; }
+  60%  { opacity: 1; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+@keyframes ebShimmer { to { background-position: 200% 0; } }
+@keyframes ebDrawRing { to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: no-preference) {
+  .eb-arc { animation: ebDash 28s linear infinite; }
+  .eb-arc-rev { animation: ebDashRev 28s linear infinite; }
+  .eb-aura { animation: ebGlow 6s ease-in-out infinite; }
+  .eb-beam { animation: ebBeam 3.4s ease-in-out infinite; }
+  .eb-rise { animation-name: ebRise; animation-timing-function: ease-in; animation-iteration-count: infinite; }
+  .eb-flow { animation: ebFlowLine 3s linear infinite; }
+  .eb-orbit { animation: ebOrbit 44s linear infinite; }
+  .eb-orbit-rev { animation: ebOrbitRev 44s linear infinite; }
+  .eb-float-big { animation-name: ebFloatBig; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+  .eb-ring-spin { animation: ebRingSpin 60s linear infinite; }
+  .eb-ring-spin-rev { animation: ebRingSpin 80s linear infinite reverse; }
+  .eb-flow-down { animation: ebFlowDown 1.1s linear infinite; }
+  .eb-pulse-soft { animation: ebPulseSoft 5s ease-in-out infinite; }
+  .eb-spine-flow { animation: ebSpineFlow 5s linear infinite; }
+  .eb-ping { animation: ebPing 2.4s ease-in-out infinite; }
+  .eb-absorb { animation-name: ebAbsorb; animation-timing-function: ease-in; animation-fill-mode: both; }
+  .eb-burst-ring { animation: ebBurstRing 1.1s ease-out both; }
+  .eb-pop-in { animation: ebPopIn .45s ease-out both; }
+  .eb-reveal { animation: ebRevealUp .7s cubic-bezier(.22,.8,.3,1) both; }
+  .eb-orb-bloom { animation: ebOrbBloom 1.2s cubic-bezier(.22,.8,.3,1) both; }
+  .eb-shimmer {
+    background-image: linear-gradient(105deg, transparent 40%, rgba(255,255,255,.35) 50%, transparent 60%);
+    background-size: 200% 100%;
+    background-position: -100% 0;
+    animation: ebShimmer 2.6s ease-in-out 1s 2;
+  }
+  .eb-draw-ring { animation: ebDrawRing 1.4s cubic-bezier(.22,.8,.3,1) .3s both; }
 }

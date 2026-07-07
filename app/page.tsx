@@ -8,17 +8,17 @@ import { DEV_COOKIE, devPasswordToken, getDevPassword, isPasswordGateEnabled } f
 export const metadata: Metadata = {
   title: "EatoBiotics — The Food System Inside You",
   description:
-    "Discover your gut health score, analyse every meal with AI, and get a personalised weekly food system report. Build the microbiome that powers your energy, digestion, and immunity.",
+    "Discover your Food System Score, analyse every meal with AI, and get a personalised weekly food system report. Build the microbiome that powers your energy, digestion, and immunity.",
   openGraph: {
     title: "EatoBiotics — The Food System Inside You",
     description:
-      "Discover your gut health score, analyse every meal with AI, and get a personalised weekly food system report.",
+      "Discover your Food System Score, analyse every meal with AI, and get a personalised weekly food system report.",
     url: "https://eatobiotics.com",
   },
   twitter: {
     card: "summary_large_image",
     title: "EatoBiotics — The Food System Inside You",
-    description: "Discover your gut health score, analyse every meal with AI, and get a personalised weekly food system report.",
+    description: "Discover your Food System Score, analyse every meal with AI, and get a personalised weekly food system report.",
   },
   keywords: [
     "gut health", "microbiome", "prebiotic", "probiotic", "postbiotic",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 import { PowersEverything } from "@/components/home/powers-everything"
 import { TheFramework } from "@/components/home/the-framework"
 import { HowItWorks } from "@/components/home/how-it-works"
-import { FoodSystemLoopSection } from "@/components/home/food-system-loop-section"
+import { DigitalTwinSection } from "@/components/home/digital-twin-section"
 import { ScorePreview } from "@/components/home/score-preview"
 import { Ecosystem } from "@/components/home/ecosystem"
 import { MembershipTeaser } from "@/components/home/membership-teaser"
@@ -57,7 +57,7 @@ export default async function Home() {
       <SoftDivider />
       <PowersEverything />
       <HowItWorks />
-      <FoodSystemLoopSection />
+      <DigitalTwinSection />
       <TheFramework />
       <ScorePreview />
       <SoftDivider />

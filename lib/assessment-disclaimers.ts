@@ -22,6 +22,20 @@ export const STABILITY_DISCLAIMER =
 export const PERFORMANCE_DISCLAIMER =
   "This score reflects performance-fuelling support patterns. It does not measure athletic ability, recovery status, or injury risk."
 
+export const PREGNANCY_DISCLAIMER =
+  "This is a food-pattern reflection for general wellbeing, not antenatal care, a medical assessment, or a substitute for your midwife or doctor. For pregnancy, birth, baby feeding or health concerns, always speak with a qualified healthcare professional."
+
+/**
+ * Food-first framing for the Systems landing pages (no score involved). Shown on
+ * every system landing via `SystemDisclaimer`.
+ */
+export const SYSTEM_SUPPORT_DISCLAIMER =
+  "EatoBiotics systems offer food-first educational support. They are not medical advice, diagnosis, or treatment."
+
+/** Extra sensitive-safety line for the Life systems (Pregnancy, Birth, Baby). */
+export const LIFE_SYSTEM_DISCLAIMER =
+  "For pregnancy, birth, baby feeding or child health concerns, always speak with a qualified healthcare professional."
+
 /** Per-assessment extra line (added on top of the global disclaimer). */
 export const ASSESSMENT_DISCLAIMERS: Record<AssessmentKey, string | null> = {
   you: null,
@@ -30,6 +44,7 @@ export const ASSESSMENT_DISCLAIMERS: Record<AssessmentKey, string | null> = {
   glucose: GLUCOSE_DISCLAIMER,
   stability: STABILITY_DISCLAIMER,
   performance: PERFORMANCE_DISCLAIMER,
+  pregnancy: PREGNANCY_DISCLAIMER,
 }
 
 /**

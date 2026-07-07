@@ -15,6 +15,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import posthog from "posthog-js"
 import { ArrowRight, ArrowLeft, Sparkles, Check } from "lucide-react"
 import { ScoreRing } from "@/components/assessment/score-ring"
 import { WaitlistStatus } from "@/components/waitlist/waitlist-status"
@@ -38,6 +39,11 @@ import {
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://eatobiotics.com"
 
+/** Fire a PostHog funnel event (consent-gated; safely no-ops pre-consent). */
+function track(event: string, props?: Record<string, unknown>) {
+  try { posthog.capture(event, props) } catch { /* analytics optional */ }
+}
+
 const AGE_BRACKETS = ["Under 20", "20–29", "30–39", "40–49", "50–59", "60+"]
 
 const COUNTRIES = [
@@ -47,7 +53,11 @@ const COUNTRIES = [
 
 const ENGINE_ORDER: QuickPillar[] = ["prebiotics", "probiotics", "postbiotics"]
 
-type Phase = "intro" | "questions" | "reveal" | "form" | "done"
+/** Standard UTM params captured from the /enter URL for campaign attribution. */
+const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"] as const
+type Utm = Partial<Record<(typeof UTM_KEYS)[number], string>>
+
+type Phase = "intro" | "questions" | "form" | "done"
 
 const GOAL_STEP = QUICK_QUESTIONS.length
 const CHALLENGE_STEP = QUICK_QUESTIONS.length + 1
@@ -78,13 +88,39 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
   const [message, setMessage] = useState("")
   const [shareCode, setShareCode] = useState<string | null>(null)
   const [referredBy, setReferredBy] = useState<string | null>(null)
+  const [utm, setUtm] = useState<Utm>({})
   const [reaction, setReaction] = useState<string | null>(null)
   const [introsSeen, setIntrosSeen] = useState<Set<QuickPillar>>(new Set())
 
-  // Capture a referral code from the URL (?ref=CODE) for skip-the-line credit.
+  // Capture a referral code (?ref=CODE) + UTM campaign params from the URL.
+  // UTM is first-touch: read from the URL, else restore from sessionStorage, then
+  // persist so it survives the multi-step quiz. Fire a landing event so
+  // landing→signup conversion is measurable per campaign.
   useEffect(() => {
-    const ref = new URLSearchParams(window.location.search).get("ref")
-    if (ref) setReferredBy(ref.trim().slice(0, 16))
+    const params = new URLSearchParams(window.location.search)
+
+    const ref = params.get("ref")
+    if (ref) {
+      const code = ref.trim().slice(0, 16)
+      setReferredBy(code)
+      track("waitlist_referral_opened", { ref_code: code })
+    }
+
+    let captured: Utm = {}
+    for (const k of UTM_KEYS) {
+      const v = params.get(k)
+      if (v) captured[k] = v.trim().slice(0, 120)
+    }
+    if (Object.keys(captured).length === 0) {
+      try {
+        const saved = sessionStorage.getItem("eb_utm")
+        if (saved) captured = JSON.parse(saved) as Utm
+      } catch { /* sessionStorage optional */ }
+    } else {
+      try { sessionStorage.setItem("eb_utm", JSON.stringify(captured)) } catch { /* optional */ }
+    }
+    if (Object.keys(captured).length) setUtm(captured)
+    track("waitlist_landing", captured)
   }, [])
 
   // Localise by country: landing-page prop wins, else the eb_country geo cookie.
@@ -99,7 +135,7 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
   }, [defaultCountry])
 
   const result = useMemo(
-    () => (phase === "reveal" || phase === "form" || phase === "done" ? computeQuickResult(answers) : null),
+    () => (phase === "form" || phase === "done" ? computeQuickResult(answers) : null),
     [phase, answers]
   )
 
@@ -109,10 +145,19 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
     rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
   }, [phase, step])
 
-  // Trigger the reveal bar fill once we reach the result.
+  // Trigger the result bar fill once we reach the done screen.
   useEffect(() => {
-    if (phase === "reveal" || phase === "form" || phase === "done") setRevealMounted(true)
+    if (phase === "done") setRevealMounted(true)
   }, [phase])
+
+  // Funnel: the quiz is "completed" the moment the join form appears (fire once).
+  const quizCompletedFired = useRef(false)
+  useEffect(() => {
+    if (phase === "form" && result && !quizCompletedFired.current) {
+      quizCompletedFired.current = true
+      track("waitlist_quiz_completed", { profile_type: result.profile.type, score: result.overall })
+    }
+  }, [phase, result])
 
   function pickAnswer(id: string, value: number, pillar: QuickPillar) {
     if (reaction) return
@@ -124,7 +169,7 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
   function pickContext(setter: (v: string) => void, value: string, isLast: boolean) {
     setter(value)
     setTimeout(() => {
-      if (isLast) setPhase("reveal")
+      if (isLast) setPhase("form")
       else setStep((s) => s + 1)
     }, 180)
   }
@@ -143,13 +188,19 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
       const res = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name, ageBracket, country, diet, mainGoal, foodChallenge, referredBy, result }),
+        body: JSON.stringify({ email, name, ageBracket, country, diet, mainGoal, foodChallenge, referredBy, ...utm, result }),
       })
       const data = (await res.json()) as { ok?: boolean; error?: string; shareCode?: string }
-      if (res.ok && data.ok) { setShareCode(data.shareCode ?? null); setPhase("done") }
-      else { setStatus("error"); setMessage(data.error ?? tw.form.genericError) }
+      if (res.ok && data.ok) {
+        setShareCode(data.shareCode ?? null); setPhase("done")
+        track("waitlist_join_submitted", { profile_type: result.profile.type, score: result.overall, country: country || undefined, referred: !!referredBy })
+      } else {
+        setStatus("error"); setMessage(data.error ?? tw.form.genericError)
+        track("waitlist_join_failed", { reason: data.error ?? "unknown" })
+      }
     } catch {
       setStatus("error"); setMessage(tw.form.genericError)
+      track("waitlist_join_failed", { reason: "network" })
     }
   }
 
@@ -174,7 +225,7 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
               className="pointer-events-none absolute -inset-6 -z-10 rounded-full opacity-80 blur-3xl animate-pulse"
               style={{ background: "radial-gradient(60% 60% at 50% 45%, color-mix(in srgb, var(--icon-green) 38%, transparent), color-mix(in srgb, var(--icon-teal) 22%, transparent) 55%, transparent 78%)" }}
             />
-            <Image src="/images/hero-gut.png" alt="The living food system inside you" fill sizes="176px" className="object-contain" priority />
+            <Image src="/images/assessment-hero.png" alt="The food system inside you" fill sizes="176px" className="object-contain" priority />
           </div>
           <p className="mt-5 text-xs font-bold uppercase tracking-widest text-[var(--icon-green)]">
             {tw.intro.eyebrow}
@@ -185,7 +236,10 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
           <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
             {tw.intro.body}
           </p>
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-2.5">
+          <p className="mt-7 mb-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            {tw.intro.bioticsHeader}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2.5">
             {ENGINE_ORDER.map((p) => (
               <span
                 key={p}
@@ -197,7 +251,10 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
             ))}
           </div>
           <button
-            onClick={() => { setPhase("questions"); setStep(0) }}
+            onClick={() => {
+              track("waitlist_quiz_started", { referred: !!referredBy, country: country || undefined })
+              setPhase("questions"); setStep(0)
+            }}
             className="brand-gradient mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-4 text-base font-semibold text-white shadow-[0_14px_30px_-10px_rgba(45,170,110,0.6)] transition-transform hover:-translate-y-0.5"
           >
             {tw.intro.cta} <ArrowRight size={16} />
@@ -208,11 +265,66 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
     )
   }
 
-  /* ── Done ──────────────────────────────────────────────────────────── */
+  /* ── Done (join confirmed) → reveal the result here ─────────────────── */
   else if (phase === "done") {
     const reportUrl = shareCode ? `${SITE_URL}/discover/${shareCode}` : null
     content = (
       <div key="done" className="mx-auto max-w-md space-y-4">
+        {/* Personalised result — revealed only after joining */}
+        {result && (
+          <div className={`relative animate-quiz-step ${CARD}`}>
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-64 opacity-70 blur-2xl"
+              style={{ background: `radial-gradient(60% 80% at 50% 0%, color-mix(in srgb, ${result.profile.color} 28%, transparent), transparent 75%)` }}
+            />
+            <div className="h-2 w-full brand-gradient" />
+            <div className="relative p-7 text-center sm:p-9">
+              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: result.profile.color }}>
+                {tw.reveal.eyebrow}
+              </p>
+              <ScoreRing score={result.overall} color={result.profile.color} gradientId="discover-reveal-ring" className="relative mx-auto mt-3 h-40 w-40" />
+              <h2 className="mt-3 font-serif text-3xl font-bold sm:text-4xl" style={{ color: result.profile.color }}>
+                {result.profile.type}
+              </h2>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">{result.profile.tagline}</p>
+              <p className="mt-2 text-xs font-semibold text-muted-foreground">
+                {interpolate(tw.reveal.percentile, { pct: getPercentile(result.overall) })}
+              </p>
+
+              <div className="mt-6 space-y-3.5 text-left">
+                {ENGINE_ORDER.map((p) => {
+                  const eng = ENGINES[p]
+                  const value = result.subScores[p] ?? 0
+                  return (
+                    <div key={p}>
+                      <div className="mb-1 flex items-center justify-between text-xs font-bold">
+                        <span style={{ color: eng.color }}>{tw.engines[p].label}</span>
+                        <span className="tabular-nums text-muted-foreground">{value}</span>
+                      </div>
+                      <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full transition-[width] duration-1000 ease-out"
+                          style={{ width: revealMounted ? `${value}%` : "0%", background: eng.gradient }}
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {result.insights[0] && (
+                <p className="mx-auto mt-5 max-w-md rounded-2xl px-4 py-3 text-left text-sm leading-relaxed text-muted-foreground"
+                  style={{ background: "color-mix(in srgb, var(--icon-green) 7%, transparent)" }}>
+                  <span className="font-semibold text-foreground">{interpolate(tw.reveal.biggestOpp, { label: result.insights[0].label })}</span>{" "}
+                  {result.insights[0].action}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Join confirmation */}
         <div className={`animate-quiz-step ${CARD}`}>
           <div className="h-2 w-full brand-gradient" />
           <div className="p-8 text-center">
@@ -238,89 +350,28 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
     )
   }
 
-  /* ── Reveal + email gate ───────────────────────────────────────────── */
-  else if ((phase === "reveal" || phase === "form") && result) {
-    const { profile, overall, subScores, insights } = result
-    const weakest = insights[0]
+  /* ── Email gate (straight after the last question) ──────────────────── */
+  else if (phase === "form" && result) {
     content = (
-      <div key={phase} className="animate-quiz-step">
+      <div key="form" className="animate-quiz-step">
         <div className={`relative ${CARD}`}>
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-64 opacity-70 blur-2xl"
-            style={{ background: `radial-gradient(60% 80% at 50% 0%, color-mix(in srgb, ${profile.color} 28%, transparent), transparent 75%)` }}
+            className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-56 opacity-70 blur-2xl"
+            style={{ background: "radial-gradient(60% 80% at 50% 0%, color-mix(in srgb, var(--icon-green) 26%, transparent), transparent 75%)" }}
           />
           <div className="h-2 w-full brand-gradient" />
           <div className="relative p-7 text-center sm:p-9">
-            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: profile.color }}>
-              {tw.reveal.eyebrow}
-            </p>
-            <ScoreRing
-              score={overall}
-              color={profile.color}
-              gradientId="discover-reveal-ring"
-              className="relative mx-auto mt-3 h-40 w-40"
-            />
-            <h2 className="mt-3 font-serif text-3xl font-bold sm:text-4xl" style={{ color: profile.color }}>
-              {profile.type}
-            </h2>
-            <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
-              {profile.tagline}
-            </p>
-            <p className="mt-2 text-xs font-semibold text-muted-foreground">
-              {interpolate(tw.reveal.percentile, { pct: getPercentile(overall) })}
-            </p>
-
-            {/* Three engines — animated bars */}
-            <div className="mt-6 space-y-3.5 text-left">
-              {ENGINE_ORDER.map((p) => {
-                const eng = ENGINES[p]
-                const value = subScores[p] ?? 0
-                return (
-                  <div key={p}>
-                    <div className="mb-1 flex items-center justify-between text-xs font-bold">
-                      <span style={{ color: eng.color }}>{tw.engines[p].label}</span>
-                      <span className="tabular-nums text-muted-foreground">{value}</span>
-                    </div>
-                    <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full transition-[width] duration-1000 ease-out"
-                        style={{ width: revealMounted ? `${value}%` : "0%", background: eng.gradient }}
-                      />
-                    </div>
-                  </div>
-                )
-              })}
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full text-white brand-gradient shadow-[0_10px_24px_-8px_rgba(45,170,110,0.7)]">
+              <Sparkles size={22} />
             </div>
-
-            {weakest && (
-              <p className="mx-auto mt-5 max-w-md rounded-2xl px-4 py-3 text-left text-sm leading-relaxed text-muted-foreground"
-                style={{ background: "color-mix(in srgb, var(--icon-green) 7%, transparent)" }}>
-                <span className="font-semibold text-foreground">{interpolate(tw.reveal.biggestOpp, { label: weakest.label })}</span>{" "}
-                {weakest.action}
-              </p>
-            )}
+            <h2 className="font-serif text-2xl font-bold text-foreground sm:text-[1.7rem]">{tw.form.gateTitle}</h2>
+            <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">{tw.form.gateBody}</p>
           </div>
 
           {/* Email gate */}
           <div className="relative border-t border-border p-7 sm:p-9">
-            {phase === "reveal" ? (
-              <>
-                <p className="text-center font-serif text-xl font-bold text-foreground">
-                  {tw.form.beFirstTitle}
-                </p>
-                <p className="mt-1.5 text-center text-sm text-muted-foreground">
-                  {tw.form.beFirstBody}
-                </p>
-                <button
-                  onClick={() => setPhase("form")}
-                  className="brand-gradient mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-4 text-base font-semibold text-white shadow-[0_14px_30px_-10px_rgba(45,170,110,0.6)] transition-transform hover:-translate-y-0.5"
-                >
-                  {tw.form.joinCta} <ArrowRight size={16} />
-                </button>
-              </>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-3">
+            <form onSubmit={handleSubmit} className="space-y-3">
                 <input type="text" autoComplete="given-name" required value={name}
                   onChange={(e) => setName(e.target.value)} placeholder={tw.form.firstName} className={inputCls} style={inputStyle} />
                 <input type="email" inputMode="email" autoComplete="email" required value={email}
@@ -350,8 +401,7 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
                 </button>
                 {status === "error" && <p className="text-sm font-medium text-red-500">{message}</p>}
                 <p className="text-center text-xs text-muted-foreground">{tw.form.consent}</p>
-              </form>
-            )}
+            </form>
           </div>
         </div>
       </div>
@@ -410,16 +460,41 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
             style={{ background: `radial-gradient(60% 80% at 50% 0%, color-mix(in srgb, ${accent} 26%, transparent), transparent 75%)` }}
           />
           <div className="relative p-6 sm:p-8">
-            {/* "Meet this engine" interstitial */}
+            {/* "Meet this biotic" educational interstitial */}
             {q && engine && showEngineIntro && (
               <div className="text-center">
-                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-white shadow-sm" style={{ background: gradient }}>
+                {/* Gradient emblem with the engine number */}
+                <div
+                  className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl font-serif text-2xl font-bold text-white shadow-[0_12px_28px_-10px_rgba(45,170,110,0.6)]"
+                  style={{ background: gradient }}
+                >
+                  {engine.index}
+                </div>
+                <p className="mt-4 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
                   {interpolate(tw.progress.interstitialBadge, { index: engine.index })}
+                </p>
+                <h2 className="mt-2 font-serif text-3xl font-bold text-foreground">{tw.engines[q.pillar].label}</h2>
+                <span
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-white shadow-sm"
+                  style={{ background: gradient }}
+                >
+                  {tw.engines[q.pillar].verb}
                 </span>
-                <h2 className="mt-4 font-serif text-3xl font-bold text-foreground">
-                  {tw.engines[q.pillar].label} <span className="text-base font-semibold" style={{ color: accent }}>· {tw.engines[q.pillar].verb}</span>
-                </h2>
-                <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">{tw.engines[q.pillar].fact}</p>
+                <p className="mx-auto mt-4 max-w-md text-base font-semibold leading-snug text-foreground">
+                  {tw.engines[q.pillar].whatItIs}
+                </p>
+                <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
+                  {tw.engines[q.pillar].fact}
+                </p>
+                {/* Examples — probiotics uses the country-localised fermented foods */}
+                <p
+                  className="mx-auto mt-4 max-w-md rounded-2xl px-4 py-2.5 text-sm font-medium leading-relaxed"
+                  style={{ background: `color-mix(in srgb, ${accent} 9%, transparent)`, color: accent }}
+                >
+                  {q.pillar === "probiotics"
+                    ? interpolate(tw.probioticsSubtitle, { foods: fermentedExamples })
+                    : tw.engines[q.pillar].examples}
+                </p>
                 <button
                   onClick={() => setIntrosSeen((s) => new Set(s).add(q.pillar))}
                   className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-base font-semibold text-white shadow-lg transition-transform hover:-translate-y-0.5"

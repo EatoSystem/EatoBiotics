@@ -3,7 +3,8 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useState } from "react"
-import { Users, CheckCircle2, FileText, TrendingUp, Share2, UserCheck, LogOut, ChefHat } from "lucide-react"
+import { Users, CheckCircle2, FileText, TrendingUp, Share2, UserCheck, LogOut, ChefHat, Rocket } from "lucide-react"
+import { StatCard, ScoreBadge, timeAgo } from "./admin-ui"
 
 type Lead = {
   name: string | null
@@ -40,60 +41,6 @@ const PROFILE_COLORS = [
   "var(--icon-orange)",
 ]
 
-function timeAgo(dateStr: string) {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const days = Math.floor(diff / 86400000)
-  if (days === 0) return "Today"
-  if (days === 1) return "Yesterday"
-  if (days < 30) return `${days}d ago`
-  const months = Math.floor(days / 30)
-  if (months < 12) return `${months}mo ago`
-  return `${Math.floor(months / 12)}y ago`
-}
-
-function ScoreBadge({ score }: { score: number | null }) {
-  if (score === null) return <span className="text-muted-foreground text-xs">—</span>
-  const color = score >= 70 ? "var(--icon-green)" : score >= 45 ? "var(--icon-yellow)" : "var(--icon-orange)"
-  return (
-    <span
-      className="inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums"
-      style={{ background: `color-mix(in srgb, ${color} 15%, transparent)`, color }}
-    >
-      {score}
-    </span>
-  )
-}
-
-function StatCard({
-  icon: Icon,
-  value,
-  label,
-  sub,
-  color = "var(--icon-green)",
-}: {
-  icon: React.ElementType
-  value: string | number
-  label: string
-  sub?: string
-  color?: string
-}) {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-5">
-      <div className="flex items-start justify-between mb-3">
-        <div
-          className="flex h-9 w-9 items-center justify-center rounded-xl"
-          style={{ background: `color-mix(in srgb, ${color} 15%, transparent)` }}
-        >
-          <Icon size={16} style={{ color }} />
-        </div>
-      </div>
-      <p className="text-3xl font-bold tabular-nums">{value}</p>
-      <p className="mt-0.5 text-sm font-medium text-foreground/80">{label}</p>
-      {sub && <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>}
-    </div>
-  )
-}
-
 export function AdminDashboard({ stats }: { stats: AdminStats }) {
   const [signingOut, setSigningOut] = useState(false)
   const completionRate = stats.totalLeads > 0 ? Math.round((stats.completedAssessments / stats.totalLeads) * 100) : 0
@@ -123,6 +70,13 @@ export function AdminDashboard({ stats }: { stats: AdminStats }) {
             </span>
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              href="/admin/waitlist"
+              className="flex items-center gap-1.5 rounded-full border border-[var(--icon-green)]/30 px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-[var(--icon-green)]"
+            >
+              <Rocket size={12} />
+              Waitlist
+            </Link>
             <Link
               href="/admin/recipe-studio"
               className="flex items-center gap-1.5 rounded-full border border-[var(--icon-green)]/30 px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-[var(--icon-green)]"

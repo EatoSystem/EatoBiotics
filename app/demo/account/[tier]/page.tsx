@@ -1,9 +1,28 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { ArrowLeft } from "lucide-react"
 import { DashboardClient } from "@/components/account/dashboard-client"
 import { TIER_META } from "@/lib/membership"
+import { buildAccountTwin } from "@/lib/agent-loop/account-twin"
+import { twinVisualState } from "@/lib/account/twin-visual"
+import { twinFigureSrc, twinVideo } from "@/lib/account/twin-figure"
+import { DemoTwinHero } from "@/components/account/twin/demo-hero"
+import { TwinLearnedToday, TwinNextAction } from "@/components/account/twin/twin-sections"
+import { InsideYouSection } from "@/components/account/twin/inside-you"
+import { DailyRitual } from "@/components/account/twin/daily-ritual"
+import { AskTwin } from "@/components/account/twin/ask-twin"
+
+/** Chapter heading — mirrors the real Overview's one-canvas rhythm. */
+function GroupLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mx-auto max-w-5xl px-4 pt-12 md:px-8">
+      <div className="flex items-center gap-4">
+        <h2 className="shrink-0 font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>{children}</h2>
+        <span className="h-px flex-1" style={{ background: "var(--border)" }} />
+      </div>
+    </div>
+  )
+}
 
 export const metadata: Metadata = {
   title: "Account Preview — EatoBiotics",
@@ -97,20 +116,19 @@ function lastMonday() {
 
 /* ── Tier metadata ────────────────────────────────────────────────── */
 
-type DemoTier = "free" | "grow" | "restore" | "transform"
+// Single-membership model: the demo shows one account — Member. (Legacy
+// grow/restore/transform are retired; their URLs redirect to /demo/account/member.)
+type DemoTier = "member"
 
-// Presentation-only accent colours for the demo. Tier label/price come from the
+// Presentation-only accent colour for the demo. Label/price come from the
 // canonical TIER_META in lib/membership (single source of truth).
 const TIER_COLORS: Record<DemoTier, string> = {
-  free:      "var(--icon-lime)",
-  grow:      "var(--icon-green)",
-  restore:   "var(--icon-teal)",
-  transform: "var(--icon-orange)",
+  member: "var(--icon-teal)",
 }
 
 /* ── Mock profiles per tier ───────────────────────────────────────── */
 
-function getMockData(tier: DemoTier) {
+function getMockData() {
   const base = {
     id: "demo-user",
     email: "sarah@example.com",
@@ -125,68 +143,11 @@ function getMockData(tier: DemoTier) {
     trial_expires_at: null,
   }
 
-  if (tier === "free") {
-    return {
-      profile: {
-        ...base,
-        membership_tier: "free" as const,
-        membership_status: "inactive" as const,
-        membership_started_at: null,
-        is_founding_member: false,
-        health_goals: [] as string[],
-      },
-      nextBillingDate: null,
-      weeklyCheckin: null,
-      monthlyGutPlan: null,
-      dailyConsultCount: 0,
-      monthlyConsultCount: 0,
-      streak: 0,
-    }
-  }
-
-  if (tier === "grow") {
-    return {
-      profile: {
-        ...base,
-        membership_tier: "grow" as const,
-        membership_status: "active" as const,
-        membership_started_at: monthsAgo(2),
-        is_founding_member: false,
-        health_goals: [] as string[],
-      },
-      nextBillingDate: monthsFromNow(1),
-      weeklyCheckin: null,
-      monthlyGutPlan: null,
-      dailyConsultCount: 0,
-      monthlyConsultCount: 0,
-      streak: 5,
-    }
-  }
-
-  if (tier === "restore") {
-    return {
-      profile: {
-        ...base,
-        membership_tier: "restore" as const,
-        membership_status: "active" as const,
-        membership_started_at: monthsAgo(1),
-        is_founding_member: false,
-        health_goals: ["Digestive health and IBS management", "Energy and fatigue reduction"],
-      },
-      nextBillingDate: monthsFromNow(1),
-      weeklyCheckin: null,
-      monthlyGutPlan: { content: MOCK_PLAN_CONTENT, month: firstOfMonth() },
-      dailyConsultCount: 0,
-      monthlyConsultCount: 0,
-      streak: 5,
-    }
-  }
-
-  // transform
+  // The one paid account: Member — unlocks every feature.
   return {
     profile: {
       ...base,
-      membership_tier: "transform" as const,
+      membership_tier: "member" as const,
       membership_status: "active" as const,
       membership_started_at: monthsAgo(2),
       is_founding_member: true,
@@ -209,16 +170,34 @@ export default async function DemoAccountTierPage({
   params: Promise<{ tier: string }>
 }) {
   const { tier: tierParam } = await params
-  const validTiers: DemoTier[] = ["free", "grow", "restore", "transform"]
-  if (!validTiers.includes(tierParam as DemoTier)) {
-    redirect("/demo/account")
+  // Single-membership model: only the Member account exists. Legacy tier URLs
+  // (free/grow/restore/transform) and anything else collapse to it.
+  if (tierParam !== "member") {
+    redirect("/demo/account/member")
   }
 
-  const tier = tierParam as DemoTier
+  const tier: DemoTier = "member"
   const meta = TIER_META[tier]
   const { profile, nextBillingDate, weeklyCheckin, monthlyGutPlan, dailyConsultCount, monthlyConsultCount, streak } =
-    getMockData(tier)
+    getMockData()
   const dailyPromptIndex = new Date().getDay()
+
+  /* ── living Food System (demo) — assembled from Sarah M.'s sample data so the account
+       Twin can be previewed + tested on every tier. ── */
+  const { twin: demoTwin, feed: demoFeed } = await buildAccountTwin({
+    score: 62,
+    previousScore: 54,
+    profileType: "Emerging Balance",
+    biotics: { prebiotic: 71, probiotic: 52, postbiotic: 40 },
+    streak,
+    meals: [
+      { name: "Chicken, roasted veg & kefir", score: 81, prebiotic: 75, probiotic: 65, postbiotic: 58, createdAt: new Date(Date.now() - 3 * 3_600_000).toISOString() },
+      { name: "Lentil wrap with mixed greens", score: 74, prebiotic: 72, probiotic: 8, postbiotic: 42, createdAt: new Date(Date.now() - 26 * 3_600_000).toISOString() },
+      { name: "Greek yoghurt, berries & oats", score: 69, prebiotic: 55, probiotic: 58, postbiotic: 44, createdAt: new Date(Date.now() - 30 * 3_600_000).toISOString() },
+      { name: "Mackerel, kimchi & asparagus", score: 71, prebiotic: 72, probiotic: 18, postbiotic: 41, createdAt: new Date(Date.now() - 50 * 3_600_000).toISOString() },
+    ],
+  })
+  const demoTwinVisual = twinVisualState(demoTwin)
 
   return (
     <div className="min-h-screen bg-background pt-[57px]">
@@ -226,13 +205,13 @@ export default async function DemoAccountTierPage({
       <div className="border-b px-4 py-2.5" style={{ background: `color-mix(in srgb, ${TIER_COLORS[tier]} 10%, var(--background))`, borderColor: `color-mix(in srgb, ${TIER_COLORS[tier]} 25%, transparent)` }}>
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Link href="/demo/account" className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft size={12} /> All tiers
-            </Link>
-            <span className="text-muted-foreground/40 text-xs">·</span>
             <p className="text-xs font-semibold" style={{ color: TIER_COLORS[tier] }}>
-              Previewing <strong>{meta.label}</strong> ({meta.price}) — sample data for Sarah M.
+              Previewing the <strong>{meta.label}</strong> account ({meta.price}) — sample data for Sarah M.
             </p>
+            <span className="text-muted-foreground/40 text-xs">·</span>
+            <Link href="/demo/account/twin" className="flex items-center gap-1 text-xs font-semibold hover:underline" style={{ color: TIER_COLORS[tier] }}>
+              View My Food System →
+            </Link>
           </div>
           <Link
             href="/assessment"
@@ -245,6 +224,32 @@ export default async function DemoAccountTierPage({
       </div>
 
       <div className="pt-10">
+        <div className="pb-2">
+          {/* Sample data uses the female Digital Twin so the demo showcases the art.
+              DemoTwinHero adds the mock QuickLog so the log→learn loop is previewable. */}
+          <DemoTwinHero
+            twin={demoTwin}
+            visual={demoTwinVisual}
+            figureSrc={twinFigureSrc("female")}
+            video={twinVideo("female")}
+            streak={streak}
+            firstName="Sarah"
+            detailHref="/demo/account/twin"
+          />
+          {/* dark→light bridge — the stage hands over to the cream canvas */}
+          <div aria-hidden style={{ height: 64, background: "linear-gradient(180deg, #16290F 0%, #E9F1DC 55%, #FDFBF7 100%)" }} />
+          <GroupLabel>Today</GroupLabel>
+          <div className="mx-auto mt-4 grid max-w-5xl items-start gap-5 px-4 md:px-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+            <DailyRitual twin={demoTwin} streak={streak} bare figureSrc={twinFigureSrc("female")} />
+            <TwinNextAction twin={demoTwin} bare />
+          </div>
+          <GroupLabel>This week</GroupLabel>
+          <TwinLearnedToday feed={demoFeed} />
+          {/* Public showcase: the full personalized story plays right on the demo. */}
+          <InsideYouSection twin={demoTwin} figureSrc={twinFigureSrc("female")} />
+          <GroupLabel>Learn &amp; ask</GroupLabel>
+          <AskTwin twin={demoTwin} consultHref="/demo/account/consult" />
+        </div>
         <DashboardClient
           profile={profile}
           assessments={MOCK_ASSESSMENTS}
@@ -255,10 +260,10 @@ export default async function DemoAccountTierPage({
           monthlyGutPlan={monthlyGutPlan}
           dailyConsultCount={dailyConsultCount}
           monthlyConsultCount={monthlyConsultCount}
-          bioticsProfile={tier === "free" ? null : MOCK_BIOTICS_PROFILE}
+          bioticsProfile={MOCK_BIOTICS_PROFILE}
           streak={streak}
           dailyPromptIndex={dailyPromptIndex}
-          consultHref={tier === "transform" ? "/demo/account/consult" : undefined}
+          consultHref="/demo/account/consult"
         />
       </div>
     </div>

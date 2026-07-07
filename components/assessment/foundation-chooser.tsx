@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { User, Users, ArrowRight, Sparkles } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { patchJourney, getJourney, completedFoundations } from "@/lib/assessment/journey"
-import { ADDONS, FOUNDATIONS, type FoundationKey } from "@/lib/assessment/registry"
+import { ASSESSED_SYSTEMS, FOUNDATIONS, type FoundationKey } from "@/lib/assessment/registry"
 import { ensureHydrated } from "@/lib/assessment/sync"
 
 const FOUNDATION_CARDS: Array<{
@@ -52,7 +52,7 @@ export function FoundationChooser() {
     })()
   }, [])
 
-  const pendingLabel = pendingAddon && pendingAddon in ADDONS ? ADDONS[pendingAddon as keyof typeof ADDONS].label : null
+  const pendingLabel = pendingAddon && pendingAddon in ASSESSED_SYSTEMS ? ASSESSED_SYSTEMS[pendingAddon as keyof typeof ASSESSED_SYSTEMS].label : null
 
   function choose(key: FoundationKey) {
     patchJourney({ foundationType: key })

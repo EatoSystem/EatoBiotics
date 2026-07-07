@@ -207,7 +207,7 @@ standalone (`lib/agent-loop/systems.ts`). Each carries a `LoopConfig`
 | Sleep | planned | probiotics |
 | Heart | planned | prebiotics |
 
-Live systems map 1:1 to the existing assessment registry (`ADDON_KEYS`); a unit
+Live systems map 1:1 to the existing assessment registry (`HEALTH_SYSTEM_KEYS`); a unit
 test asserts they stay in sync. Planned systems are **metadata only** — never
 shown with fabricated scores ("Coming soon").
 
