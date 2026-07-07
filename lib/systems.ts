@@ -139,6 +139,7 @@ export const SYSTEMS: Record<SystemKey, SystemDef> = {
     href: "/recovery", status: "scaffold",
     requiresFoundation: true, allowedFoundations: BOTH, safetyLevel: "standard",
     icon: HeartPulse, accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-teal))",
+    image: "/images/EatoBiotics - Recovery.png",
   },
   longevity: {
     key: "longevity", family: "health", label: "Longevity", productName: "The Longevity Food System",
@@ -148,6 +149,7 @@ export const SYSTEMS: Record<SystemKey, SystemDef> = {
     href: "/longevity", status: "scaffold",
     requiresFoundation: true, allowedFoundations: BOTH, safetyLevel: "standard",
     icon: Sparkles, accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-lime))",
+    image: "/images/EatoBiotics - Longevity.png",
   },
 
   /* ── Life (education-only, sensitive) ── */
@@ -159,6 +161,7 @@ export const SYSTEMS: Record<SystemKey, SystemDef> = {
     href: "/pregnancy", assessmentRoute: "/pregnancy/assessment", status: "live",
     requiresFoundation: true, allowedFoundations: BOTH, futureBridge: "PregMonth", safetyLevel: "sensitive",
     icon: Flower2, accent: "var(--icon-lime)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
+    image: "/images/EatoBiotics - Pregnancy.png",
   },
   birth: {
     key: "birth", family: "life", label: "Birth", productName: "The Birth Food System",
@@ -168,6 +171,7 @@ export const SYSTEMS: Record<SystemKey, SystemDef> = {
     href: "/birth", status: "scaffold",
     requiresFoundation: true, allowedFoundations: BOTH, futureBridge: "PregMonth", safetyLevel: "sensitive",
     icon: Sun, accent: "var(--icon-yellow)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
+    image: "/images/EatoBiotics - Birth.png",
   },
   baby: {
     key: "baby", family: "life", label: "Baby", productName: "The Baby Food System",
@@ -177,6 +181,7 @@ export const SYSTEMS: Record<SystemKey, SystemDef> = {
     href: "/baby", status: "scaffold",
     requiresFoundation: true, allowedFoundations: BOTH, futureBridge: "DevelopMonth", safetyLevel: "sensitive",
     icon: Baby, accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-teal))",
+    image: "/images/EatoBiotics - Baby.png",
   },
 }
 

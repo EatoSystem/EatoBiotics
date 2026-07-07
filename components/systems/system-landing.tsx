@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { ArrowRight, Sparkles } from "lucide-react"
 import { SystemDisclaimer } from "@/components/systems/system-disclaimer"
+import { LivingImage } from "@/components/digital-twin/parts"
 import type { SystemDef } from "@/lib/systems"
 
 /**
@@ -36,7 +37,17 @@ export function SystemLanding({ system }: { system: SystemDef }) {
           <p className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
             <Sparkles size={12} style={{ color: system.accent }} /> {system.family === "life" ? "Life System" : "Health System"} · Coming soon
           </p>
-          <h1 className="mt-5 text-balance font-serif text-4xl font-bold leading-[1.1] text-foreground sm:text-5xl">
+          {system.image && (
+            <LivingImage
+              src={system.image}
+              alt={`${system.productName} illustration`}
+              width={480}
+              height={480}
+              className="mx-auto mt-8 w-[min(280px,60vw)]"
+              sizes="280px"
+            />
+          )}
+          <h1 className="mt-8 text-balance font-serif text-4xl font-bold leading-[1.1] text-foreground sm:text-5xl">
             {system.productName}
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground">{system.tagline}</p>

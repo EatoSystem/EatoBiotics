@@ -152,6 +152,17 @@ export function LifeSystemCard({ system }: { system: SystemDef }) {
   const Icon = system.icon
   return (
     <CardShell system={system} href={system.href} live={live} warm>
+      {system.image && (
+        <div className="relative aspect-[16/10] w-full overflow-hidden">
+          <Image
+            src={system.image}
+            alt={`${system.productName} illustration`}
+            fill
+            sizes="(max-width: 640px) 100vw, 380px"
+            className="object-contain p-4 transition-transform duration-300 group-hover:scale-105"
+          />
+        </div>
+      )}
       <div className="flex flex-1 flex-col p-7">
         <span className="flex h-14 w-14 items-center justify-center rounded-2xl shadow-sm" style={{ background: system.gradient }}>
           <Icon size={26} className="text-white" />
