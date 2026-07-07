@@ -29,12 +29,15 @@ function withPreviewNoStore(response: NextResponse): NextResponse {
 
 function isEnterRoute(pathname: string): boolean {
   // Routes reachable while the gate is on: the public waitlist landing page
-  // (/enter), the waitlist capture API, and the hidden founder/admin login.
+  // (/enter), the public "what's coming" waitlist destination (/waitlist —
+  // launches, pricing, systems catalog; /enter links here), the waitlist
+  // capture API, and the hidden founder/admin login.
   // The auth mechanics are also always allowed so that a customer's magic-link
   // sign-in can complete even if the waitlist gate is deliberately enabled —
   // otherwise /auth/callback would bounce back to /enter and break sign-in.
   return (
     pathname === "/enter" ||
+    pathname === "/waitlist" ||
     pathname === "/preview-access" ||
     pathname === "/privacy" ||         // legal pages linked from the waitlist footer
     pathname === "/terms" ||
