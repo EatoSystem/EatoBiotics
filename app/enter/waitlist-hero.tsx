@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { DiscoverFlow } from "@/components/waitlist/discover-flow"
 import { WaitlistSocialProof } from "@/components/waitlist/social-proof"
@@ -94,6 +95,15 @@ export function WaitlistHero() {
                 </div>
               ))}
             </div>
+          </ScrollReveal>
+
+          <ScrollReveal delay={340}>
+            <Link
+              href="/waitlist"
+              className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
+            >
+              See what&apos;s coming — Book, App &amp; Course
+            </Link>
           </ScrollReveal>
         </div>
       </div>

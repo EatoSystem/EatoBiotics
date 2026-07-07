@@ -3,7 +3,6 @@ import Image from "next/image"
 import Link from "next/link"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { GradientText } from "@/components/gradient-text"
-import { DiscoverFlow } from "@/components/waitlist/discover-flow"
 import { ArrowUpRight, BookOpen, Smartphone, GraduationCap, Check, Zap, Users, Star } from "lucide-react"
 import { HealthSystemCard, LifeSystemCard } from "@/components/food-systems/system-cards"
 import { healthSystems, lifeSystems, FAMILY_META } from "@/lib/systems"
@@ -117,22 +116,27 @@ export default function WaitlistPage() {
 
           <ScrollReveal delay={200}>
             <h1 className="mt-4 font-serif text-5xl font-semibold tracking-tight text-foreground sm:text-6xl md:text-7xl text-balance">
-              Discover your{" "}
-              <GradientText>Food System Type.</GradientText>
+              The Book, the App,{" "}
+              <GradientText>the Course.</GradientText>
             </h1>
           </ScrollReveal>
 
           <ScrollReveal delay={300}>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
-              Take the 60-second discovery to meet the living food system inside you, then join the
-              waitlist for early access when EatoBiotics launches in 2026.
+              One free Substack subscription unlocks early access, waitlist pricing, and beta slots
+              across all three launches — coming in 2026.
             </p>
           </ScrollReveal>
 
           <ScrollReveal delay={400}>
-            <div className="mt-10 w-full">
-              <DiscoverFlow />
-            </div>
+            <a
+              href="https://eatobiotics.substack.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="brand-gradient mt-10 inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:opacity-90"
+            >
+              Subscribe free <ArrowUpRight size={16} />
+            </a>
           </ScrollReveal>
 
           <ScrollReveal delay={500}>
