@@ -34,6 +34,9 @@ const nextConfig = {
       { source: "/eatosports", destination: "/performance", permanent: true },
       { source: "/eatosports-assessment", destination: "/performance-assessment", permanent: true },
       { source: "/eatosports-assessment/:path*", destination: "/performance-assessment/:path*", permanent: true },
+      // Legacy unguarded duplicate of the Mind assessment — send it through the
+      // real foundation-first gate instead of the raw scoring page.
+      { source: "/mind-assessment", destination: "/assessment/add/mind", permanent: true },
     ]
   },
   async headers() {
