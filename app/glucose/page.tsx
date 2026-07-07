@@ -102,7 +102,7 @@ const FOUNDATION = [
 const FAMILY = [
   { number: "01", name: "EatoBetics", icon: Activity, tagline: "The Glucose System Inside You", status: "You're here", here: true, href: null, accent: "var(--icon-orange)", gradient: EB_GRADIENT },
   { number: "02", name: "Stability™", icon: Compass, tagline: "The Stability System Inside You", status: "Explore", here: false, href: "/stability", accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" },
-  { number: "03", name: "EatoSports", icon: Dumbbell, tagline: "The Performance System Inside You", status: "Explore", here: false, href: "/performance", accent: "var(--icon-yellow)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" },
+  { number: "03", name: "Performance", icon: Dumbbell, tagline: "The Performance System Inside You", status: "Explore", here: false, href: "/performance", accent: "var(--icon-yellow)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" },
   { number: "04", name: "You", icon: User, tagline: "The Food System Inside You", status: "Explore", here: false, href: "/you", accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" },
 ]
 
@@ -549,7 +549,7 @@ export default function EatoBeticsPage() {
               <ScrollReveal delay={150}>
                 <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
                   <Link href={ASSESSMENT_HREF} className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:opacity-90 hover:shadow-xl">
-                    Take the free assessment <ArrowRight size={16} />
+                    Start Glucose Assessment <ArrowRight size={16} />
                   </Link>
                   <Link href="/glucose/glp1" className="inline-flex items-center gap-2 rounded-full border border-border px-8 py-4 text-base font-semibold text-foreground transition-all hover:border-icon-orange hover:text-icon-orange">
                     Explore the GLP-1 Companion

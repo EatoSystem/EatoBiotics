@@ -526,7 +526,7 @@ export default function YouPage() {
               <ScrollReveal delay={150}>
                 <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
                   <Link href={ASSESSMENT_HREF} className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:opacity-90 hover:shadow-xl">
-                    Take the free assessment <ArrowRight size={16} />
+                    Start Free Assessment <ArrowRight size={16} />
                   </Link>
                   <Link href="/biotics" className="inline-flex items-center gap-2 rounded-full border border-border px-8 py-4 text-base font-semibold text-foreground transition-all hover:border-icon-green hover:text-icon-green">
                     Explore the framework

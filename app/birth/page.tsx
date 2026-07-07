@@ -34,7 +34,7 @@ export default function BirthPage() {
         system={system}
         eyebrow="Life System · Coming Soon"
         intro="Birth is a Life System inside EatoBiotics — food-first support for nourishment, hydration and rhythm around birth and early recovery, built on your You or Family foundation."
-        primaryCta={{ label: "Notify me when it's ready", href: "/waitlist" }}
+        primaryCta={{ label: "Join the Birth waitlist", href: "/waitlist" }}
         secondaryCta={{ label: "Begin with You or Family", href: "/assessment" }}
       />
       <GradientRule />
@@ -89,7 +89,7 @@ export default function BirthPage() {
         system={system}
         heading="Birth starts with your foundation."
         body="Birth isn't live yet — but it will build directly on your You or Family Food System. Join the waitlist to hear when it launches."
-        primaryCta={{ label: "Notify me when it's ready", href: "/waitlist" }}
+        primaryCta={{ label: "Join the Birth waitlist", href: "/waitlist" }}
         metaLine="We'll let you know the moment it's ready."
       />
 

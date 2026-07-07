@@ -34,7 +34,7 @@ export default function BabyPage() {
         system={system}
         eyebrow="Life System · Coming Soon"
         intro="Baby is a Life System inside EatoBiotics — gentle, food-first education for the first years of life, built on your You or Family foundation."
-        primaryCta={{ label: "Notify me when it's ready", href: "/waitlist" }}
+        primaryCta={{ label: "Join the Baby waitlist", href: "/waitlist" }}
         secondaryCta={{ label: "Begin with You or Family", href: "/assessment" }}
       />
       <GradientRule />
@@ -89,7 +89,7 @@ export default function BabyPage() {
         system={system}
         heading="Baby starts with your family's foundation."
         body="Baby isn't live yet — but it will build directly on your You or Family Food System. Join the waitlist to hear when it launches."
-        primaryCta={{ label: "Notify me when it's ready", href: "/waitlist" }}
+        primaryCta={{ label: "Join the Baby waitlist", href: "/waitlist" }}
         metaLine="We'll let you know the moment it's ready."
       />
 

@@ -52,7 +52,7 @@ export default function PregnancyPage() {
         system={system}
         eyebrow="Life System · Live"
         intro="A gentle, food-first reflection of your everyday eating patterns for general wellbeing — never a diagnosis, and never a substitute for your midwife or doctor."
-        primaryCta={{ label: "Start the assessment", href: "/pregnancy/assessment" }}
+        primaryCta={{ label: "Start Pregnancy Assessment", href: "/assessment/add/pregnancy" }}
         metaLine="Free · a few minutes · food-first, not medical"
       />
       <GradientRule />
@@ -109,7 +109,7 @@ export default function PregnancyPage() {
         system={system}
         heading="Start your Pregnancy reflection."
         body="A few minutes, a gentle picture of your week, and next steps for general wellbeing — built on your You or Family foundation."
-        primaryCta={{ label: "Start the assessment", href: "/pregnancy/assessment" }}
+        primaryCta={{ label: "Start Pregnancy Assessment", href: "/assessment/add/pregnancy" }}
         metaLine="Free · a few minutes · food-first, not medical."
       />
 
