@@ -65,6 +65,7 @@ export const PREGNANCY_SECTIONS: PQSection[] = [
   {
     id: "hydration",
     title: "Hydration",
+    intro: "Fluid intake, food rhythm and gentle hydration habits that support day-to-day comfort during pregnancy.",
     questions: [
       { id: "hydration", label: "Fluids (mostly water) through the day", options: LOWHIGH },
     ],

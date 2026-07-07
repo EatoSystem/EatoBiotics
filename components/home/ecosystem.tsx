@@ -76,7 +76,7 @@ function SystemCard({ system, size }: { system: SystemDef; size: "large" | "smal
               {system.family === "foundation" ? "Foundation" : system.family === "health" ? "Health" : "Life"}
             </span>
             <h3 className={`font-serif font-semibold leading-tight text-foreground transition-colors group-hover:text-[color:var(--accent)] ${large ? "text-2xl" : "text-lg"}`}>{system.label}</h3>
-            <p className="truncate text-xs text-muted-foreground">{system.tagline}</p>
+            <p className="line-clamp-2 text-xs leading-snug text-muted-foreground">{system.tagline}</p>
           </div>
         </div>
 
