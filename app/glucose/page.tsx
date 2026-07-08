@@ -101,7 +101,7 @@ const FOUNDATION = [
 /* ── Section 10 — Part of EatoBiotics (real sibling programs) ───────── */
 const FAMILY = [
   { number: "01", name: "EatoBetics", icon: Activity, tagline: "The Glucose System Inside You", status: "You're here", here: true, href: null, accent: "var(--icon-orange)", gradient: EB_GRADIENT },
-  { number: "02", name: "Stability™", icon: Compass, tagline: "The Stability System Inside You", status: "Explore", here: false, href: "/stability", accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" },
+  { number: "02", name: "Stability™", icon: Compass, tagline: "The Stability System Inside You", status: "Explore", here: false, href: "/stability", accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" },
   { number: "03", name: "Performance", icon: Dumbbell, tagline: "The Performance System Inside You", status: "Explore", here: false, href: "/performance", accent: "var(--icon-yellow)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" },
   { number: "04", name: "You", icon: User, tagline: "The Food System Inside You", status: "Explore", here: false, href: "/you", accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" },
 ]

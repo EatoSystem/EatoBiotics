@@ -3,12 +3,17 @@ import Link from "next/link"
 import { ArrowUpRight } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import type { SystemDef } from "@/lib/systems"
+import { getSystemVisuals } from "@/lib/system-visuals"
+import { cn } from "@/lib/utils"
 
 /**
  * The /food-systems card kit — one shared chrome, three family variants, all
- * driven by SystemDef from the lib/systems.ts catalog. Foundation cards are the
- * biggest (everything begins here); Health cards are premium product cards;
- * Life cards are deliberately warmer and more human (soft wash, lifestyle tone).
+ * driven by SystemDef from the lib/systems.ts catalog and coloured via
+ * getSystemVisuals() (lib/system-visuals.ts), so a system's border, icon, and
+ * hover accent are always the same wherever this card renders. Foundation
+ * cards are the biggest (everything begins here); Health cards are premium
+ * product cards; Life cards are deliberately warmer and more human (soft
+ * wash, lifestyle tone, softer border).
  */
 
 function CardShell({
@@ -26,9 +31,15 @@ function CardShell({
   className?: string
   warm?: boolean
 }) {
+  const visuals = getSystemVisuals(system.key)
   const inner = (
     <div
-      className={`relative flex h-full flex-col overflow-hidden border border-border transition-transform duration-300 group-hover:-translate-y-1 ${warm ? "rounded-[2rem]" : "rounded-3xl bg-card"} ${className}`}
+      className={cn(
+        "relative flex h-full flex-col overflow-hidden border transition-transform duration-300 group-hover:-translate-y-1",
+        warm ? "rounded-[2rem]" : "rounded-3xl bg-card",
+        live ? visuals.borderClass : "border-border",
+        className,
+      )}
       style={warm ? { background: `linear-gradient(180deg, color-mix(in srgb, ${system.accent} 7%, #FDFBF7), #FFFFFF 70%)` } : undefined}
     >
       <div className="absolute top-0 left-0 right-0 z-20 h-1.5" style={{ background: system.gradient }} />
@@ -63,10 +74,14 @@ function CardShell({
 }
 
 function StatusLine({ system, live, large = false }: { system: SystemDef; live: boolean; large?: boolean }) {
+  const visuals = getSystemVisuals(system.key)
   return (
     <span
-      className={`flex items-center gap-1 font-semibold ${large ? "mt-6 text-sm" : "mt-4 text-xs"} ${live ? "opacity-80 transition-opacity group-hover:opacity-100" : "opacity-70"}`}
-      style={{ color: live ? system.accent : "var(--muted-foreground)" }}
+      className={cn(
+        "flex items-center gap-1 font-semibold",
+        large ? "mt-6 text-sm" : "mt-4 text-xs",
+        live ? cn(visuals.iconClass, "opacity-80 transition-opacity group-hover:opacity-100") : "text-muted-foreground opacity-70",
+      )}
     >
       {live ? (
         <>
@@ -117,6 +132,7 @@ export function FoundationSystemCard({ system }: { system: SystemDef }) {
 export function HealthSystemCard({ system }: { system: SystemDef }) {
   const live = system.status === "live"
   const Icon = system.icon
+  const visuals = getSystemVisuals(system.key)
   return (
     <CardShell system={system} href={system.href} live={live}>
       {system.image ? (
@@ -138,7 +154,7 @@ export function HealthSystemCard({ system }: { system: SystemDef }) {
       )}
       <div className="flex flex-1 flex-col p-6">
         <h3 className="font-serif text-xl font-semibold text-foreground transition-colors group-hover:text-[color:var(--accent)]">{system.label}</h3>
-        <p className="mt-0.5 text-xs font-semibold" style={{ color: system.accent }}>{system.productName}</p>
+        <p className={cn("mt-0.5 text-xs font-semibold", live ? visuals.iconClass : "text-muted-foreground")}>{system.productName}</p>
         <p className="mt-2.5 flex-1 text-sm leading-relaxed text-muted-foreground">{system.description}</p>
         <StatusLine system={system} live={live} />
       </div>
@@ -150,6 +166,7 @@ export function HealthSystemCard({ system }: { system: SystemDef }) {
 export function LifeSystemCard({ system }: { system: SystemDef }) {
   const live = system.status === "live"
   const Icon = system.icon
+  const visuals = getSystemVisuals(system.key)
   return (
     <CardShell system={system} href={system.href} live={live} warm>
       {system.image && (
@@ -168,7 +185,7 @@ export function LifeSystemCard({ system }: { system: SystemDef }) {
           <Icon size={26} className="text-white" />
         </span>
         <h3 className="mt-5 font-serif text-2xl font-semibold text-foreground transition-colors group-hover:text-[color:var(--accent)]">{system.label}</h3>
-        <p className="mt-0.5 text-sm font-semibold" style={{ color: system.accent }}>{system.productName}</p>
+        <p className={cn("mt-0.5 text-sm font-semibold", live ? visuals.iconClass : "text-muted-foreground")}>{system.productName}</p>
         <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">{system.description}</p>
         <StatusLine system={system} live={live} large />
       </div>

@@ -33,7 +33,7 @@ export function MindHero() {
         <div className="flex-1 text-left max-w-[560px]">
           <ScrollReveal delay={80}>
             <h1 className="mt-5 font-serif text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl text-balance">
-              <span style={{ color: "var(--icon-teal)" }}>The Food System</span>{" "}
+              <span style={{ color: "var(--icon-green)" }}>The Food System</span>{" "}
               <span className="brand-gradient-text">Inside Your Mind</span>
             </h1>
           </ScrollReveal>

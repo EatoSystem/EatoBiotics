@@ -9,6 +9,8 @@ import {
   FAMILY_META,
   type SystemDef,
 } from "@/lib/systems"
+import { getSystemVisuals } from "@/lib/system-visuals"
+import { cn } from "@/lib/utils"
 
 /**
  * The homepage Systems section — one living Food System, supported through
@@ -26,9 +28,15 @@ function SystemCard({ system, size }: { system: SystemDef; size: "large" | "smal
   const large = size === "large"
   const live = system.status === "live"
   const Icon = system.icon
+  const visuals = getSystemVisuals(system.key)
 
   const inner = (
-    <div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card transition-transform duration-300 group-hover:-translate-y-1">
+    <div
+      className={cn(
+        "relative flex h-full flex-col overflow-hidden rounded-2xl border bg-card transition-transform duration-300 group-hover:-translate-y-1",
+        live ? visuals.borderClass : "border-border",
+      )}
+    >
       {/* Top gradient bar */}
       <div className="absolute top-0 left-0 right-0 z-20 h-1.5" style={{ background: system.gradient }} />
       {/* Gradient ring on hover (live only) */}
@@ -83,8 +91,11 @@ function SystemCard({ system, size }: { system: SystemDef; size: "large" | "smal
         {large && <p className="mt-4 flex-1 text-sm leading-relaxed text-muted-foreground">{system.description}</p>}
 
         <span
-          className={`flex items-center gap-1 font-semibold transition-opacity ${large ? "mt-5 text-sm" : "mt-3 text-xs"} ${live ? "opacity-80 group-hover:opacity-100" : "opacity-70"}`}
-          style={{ color: live ? system.accent : "var(--muted-foreground)" }}
+          className={cn(
+            "flex items-center gap-1 font-semibold transition-opacity",
+            large ? "mt-5 text-sm" : "mt-3 text-xs",
+            live ? cn(visuals.iconClass, "opacity-80 group-hover:opacity-100") : "text-muted-foreground opacity-70",
+          )}
         >
           {live ? (
             <>

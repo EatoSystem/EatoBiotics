@@ -114,10 +114,10 @@ const FOUNDATION = [
 
 /* ── Section 10 — The Systems of EatoBiotics ────────────────────────── */
 const EB_SYSTEMS = [
-  { number: "01", name: "Stability™", icon: Compass, tagline: "The Stability System Inside You", status: "Available today", live: true, accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" },
+  { number: "01", name: "Stability™", icon: Compass, tagline: "The Stability System Inside You", status: "Available today", live: true, accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" },
   { number: "02", name: "Diversity™", icon: Sprout, tagline: "The Diversity System Inside You", status: "Coming soon", live: false, accent: "var(--icon-lime)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" },
-  { number: "03", name: "Recovery™", icon: HeartPulse, tagline: "The Recovery System Inside You", status: "Coming soon", live: false, accent: "var(--icon-orange)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-yellow))" },
-  { number: "04", name: "Longevity™", icon: InfinityIcon, tagline: "The Longevity System Inside You", status: "Coming soon", live: false, accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" },
+  { number: "03", name: "Recovery™", icon: HeartPulse, tagline: "The Recovery System Inside You", status: "Coming soon", live: false, accent: "var(--icon-lime)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-yellow))" },
+  { number: "04", name: "Longevity™", icon: InfinityIcon, tagline: "The Longevity System Inside You", status: "Coming soon", live: false, accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-yellow))" },
 ]
 
 export default function StabilityPage() {
@@ -545,7 +545,7 @@ export default function StabilityPage() {
             <div className="h-1.5 w-full brand-gradient" />
             <div className="p-10 md:p-16 text-center">
               <ScrollReveal>
-                <p className="text-xs font-bold uppercase tracking-widest text-icon-teal">EatoBiotics Stability™</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-icon-green">EatoBiotics Stability™</p>
                 <h2 className="mt-4 text-balance font-serif text-4xl font-semibold text-foreground sm:text-5xl">
                   Build your <span className="brand-gradient-text">Stability System</span>
                 </h2>

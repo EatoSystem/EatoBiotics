@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 }
 
 const ASSESSMENT_HREF = "/assessment"
-const YOU_GRADIENT = "linear-gradient(135deg, var(--icon-green), var(--icon-teal))"
+const YOU_GRADIENT = "linear-gradient(135deg, var(--icon-lime), var(--icon-green))"
 
 /* ── Section 3 — The 3 Biotics (the EatoBiotics Score pillars) ──────── */
 const BIOTICS = [
@@ -87,10 +87,10 @@ const PLATE = [
 /* ── Section 10 — The EatoBiotics System (ecosystem hub) ────────────── */
 const PROGRAMS = [
   { name: "You", icon: User, tagline: "The Food System Inside You", status: "You're here", here: true, href: null, accent: "var(--icon-green)", gradient: YOU_GRADIENT },
-  { name: "Stability™", icon: Compass, tagline: "The Stability System Inside You", status: "Explore", here: false, href: "/stability", accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" },
+  { name: "Stability™", icon: Compass, tagline: "The Stability System Inside You", status: "Explore", here: false, href: "/stability", accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" },
   { name: "EatoBetics", icon: Activity, tagline: "The Glucose System Inside You", status: "Explore", here: false, href: "/glucose", accent: "var(--icon-orange)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" },
-  { name: "Family", icon: Users, tagline: "The Food System Inside Your Family", status: "Explore", here: false, href: "/family", accent: "var(--icon-lime)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" },
-  { name: "Mind", icon: Brain, tagline: "The Food System Inside Your Mind", status: "Explore", here: false, href: "/mind", accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" },
+  { name: "Family", icon: Users, tagline: "The Food System Inside Your Family", status: "Explore", here: false, href: "/family", accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" },
+  { name: "Mind", icon: Brain, tagline: "The Food System Inside Your Mind", status: "Explore", here: false, href: "/mind", accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-yellow))" },
   { name: "Sports", icon: Dumbbell, tagline: "The Performance System Inside You", status: "Explore", here: false, href: "/performance", accent: "var(--icon-yellow)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" },
 ]
 

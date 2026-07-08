@@ -71,6 +71,8 @@ const BOTH: FoundationSystemKey[] = ["you", "family"]
 
 export const SYSTEMS: Record<SystemKey, SystemDef> = {
   /* ── Foundation ── */
+  // You and Family share one identity (green, soft lime glow) — see
+  // lib/system-visuals.ts for the full colour logic across every family.
   you: {
     key: "you", family: "foundation", label: "You", productName: "Your Food System",
     tagline: "The Food System Inside You.", focus: "Your personal Food System baseline.",
@@ -86,11 +88,11 @@ export const SYSTEMS: Record<SystemKey, SystemDef> = {
     description: "Your household Food System foundation — routines, habits, and shared priorities.",
     href: "/family", assessmentRoute: "/assessment/family", status: "live",
     requiresFoundation: false, allowedFoundations: [], safetyLevel: "standard",
-    icon: Users, accent: "var(--icon-lime)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
+    icon: Users, accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
     image: "/images/family-hero.png",
   },
 
-  /* ── Health ── */
+  /* ── Health — a connected green → gold → orange spectrum (lib/system-visuals.ts) ── */
   stability: {
     key: "stability", family: "health", label: "Stability", productName: "The Stability Food System",
     tagline: "Digestive comfort and rhythm, supported by food.",
@@ -98,7 +100,7 @@ export const SYSTEMS: Record<SystemKey, SystemDef> = {
     description: "Deeper support for digestive calm, consistency, and confidence.",
     href: "/stability", assessmentRoute: "/stability/assessment", status: "live",
     requiresFoundation: true, allowedFoundations: BOTH, safetyLevel: "standard",
-    icon: Compass, accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))",
+    icon: Compass, accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
     image: "/images/stability-hero.png",
   },
   glucose: {
@@ -118,7 +120,7 @@ export const SYSTEMS: Record<SystemKey, SystemDef> = {
     description: "Deeper support for food, gut, mood, focus, and mental clarity.",
     href: "/mind", assessmentRoute: "/assessment-mind", status: "live",
     requiresFoundation: true, allowedFoundations: BOTH, safetyLevel: "standard",
-    icon: Brain, accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
+    icon: Brain, accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-yellow))",
     image: "/images/mind-hero.png",
   },
   performance: {
@@ -138,7 +140,7 @@ export const SYSTEMS: Record<SystemKey, SystemDef> = {
     description: "Support for repair, replenishment, and rhythm after exertion.",
     href: "/recovery", status: "scaffold",
     requiresFoundation: true, allowedFoundations: BOTH, safetyLevel: "standard",
-    icon: HeartPulse, accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-teal))",
+    icon: HeartPulse, accent: "var(--icon-lime)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-yellow))",
     image: "/images/EatoBiotics - Recovery.png",
   },
   longevity: {
@@ -148,7 +150,7 @@ export const SYSTEMS: Record<SystemKey, SystemDef> = {
     description: "Support for long-term diversity and food patterns associated with ageing well.",
     href: "/longevity", status: "scaffold",
     requiresFoundation: true, allowedFoundations: BOTH, safetyLevel: "standard",
-    icon: Sparkles, accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-lime))",
+    icon: Sparkles, accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-yellow))",
     image: "/images/EatoBiotics - Longevity.png",
   },
 
@@ -185,7 +187,7 @@ export const SYSTEMS: Record<SystemKey, SystemDef> = {
     description: "Support your baby's early food journey with gentle education for parents and families.",
     href: "/baby", status: "scaffold",
     requiresFoundation: true, allowedFoundations: BOTH, futureBridge: "DevelopMonth", safetyLevel: "sensitive",
-    icon: Baby, accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-teal))",
+    icon: Baby, accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
     image: "/images/EatoBiotics - Baby.png",
   },
 }

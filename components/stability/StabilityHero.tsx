@@ -50,7 +50,7 @@ export function StabilityHero() {
 
           <ScrollReveal delay={80}>
             <h1 className="mt-5 font-serif text-4xl font-bold leading-tight text-balance sm:text-5xl lg:text-6xl">
-              <span style={{ color: "var(--icon-teal)" }}>The Stability System</span>{" "}
+              <span style={{ color: "var(--icon-green)" }}>The Stability System</span>{" "}
               <span className="brand-gradient-text">Inside You</span>
             </h1>
           </ScrollReveal>
