@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
+import { hasServerFoundation, payloadHasAddon, payloadHasFoundation } from "@/lib/assessment/foundation-server"
 
 /* ── GET: fetch the signed-in user's assessment journey + summaries ─────────── */
 
@@ -45,6 +46,17 @@ export async function POST(req: NextRequest) {
 
   const sb = getSupabase()
   if (!sb) return NextResponse.json({ error: "Database unavailable" }, { status: 503 })
+
+  // Foundation before Health/Life: an add-on summary (Mind, Glucose, Performance,
+  // Pregnancy, Stability) may only be persisted alongside — or after — a completed
+  // You/Family foundation. A foundation-only payload is always allowed; it's how
+  // the foundation itself gets established.
+  if (payloadHasAddon(body.summaries) && !payloadHasFoundation(body.summaries)) {
+    const hasFoundation = await hasServerFoundation(sb, { userId: user.id, email: user.email })
+    if (!hasFoundation) {
+      return NextResponse.json({ error: "Foundation assessment required before add-on assessment." }, { status: 403 })
+    }
+  }
 
   const { error } = await sb.from("assessment_journeys").upsert(
     { user_id: user.id, journey: body.journey, summaries: body.summaries, updated_at: new Date().toISOString() },

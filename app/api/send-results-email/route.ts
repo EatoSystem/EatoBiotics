@@ -3,6 +3,8 @@ import { getSupabase } from "@/lib/supabase"
 import { sendEmail } from "@/lib/email/send"
 import { buildResultsEmail } from "@/lib/email/results-email"
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
+import { getUser } from "@/lib/supabase-server"
+import { hasServerFoundation } from "@/lib/assessment/foundation-server"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
 import type { LeadData } from "@/lib/assessment-storage"
 
@@ -36,6 +38,23 @@ export async function POST(req: NextRequest) {
     }
     if (!isValidEmail(lead.email)) {
       return NextResponse.json({ error: "Invalid email address" }, { status: 400 })
+    }
+
+    const normalizedEmail = lead.email.toLowerCase().trim()
+
+    // Foundation before Health/Life: Mind is an add-on and, unlike gut/family,
+    // may only have its score recorded once a You/Family foundation is on file.
+    // This route is public (anonymous free-assessment flow), so there may be no
+    // session — check by email, and additionally by user_id when one is present.
+    if (assessmentType === "mind") {
+      const sbCheck = getSupabase()
+      if (sbCheck) {
+        const user = await getUser().catch(() => null)
+        const hasFoundation = await hasServerFoundation(sbCheck, { userId: user?.id, email: normalizedEmail })
+        if (!hasFoundation) {
+          return NextResponse.json({ error: "Foundation assessment required before add-on assessment." }, { status: 403 })
+        }
+      }
     }
 
     // Mind & Family present their five native pillars (carried on result.insights);
