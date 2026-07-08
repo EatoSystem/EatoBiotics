@@ -1,4 +1,7 @@
+"use client"
+
 import Image from "next/image"
+import { useEffect, useRef } from "react"
 
 /**
  * Drop-in replacement for the static hero illustration: an autoplaying, muted,
@@ -15,6 +18,12 @@ import Image from "next/image"
  * `mix-blend-mode: multiply` makes the video's white background dissolve into the
  * pure-white page (white × white = white), so there's no visible off-white tile —
  * only the figure and its glow show. Same pattern as components/home/eatosystem-teaser.
+ *
+ * React doesn't reliably reflect the `muted` JSX prop into the server-rendered
+ * HTML's `muted` attribute, so on a cold SSR load the browser can evaluate
+ * autoplay against markup that looks unmuted and silently block it — the video
+ * then sits frozen on the poster frame until something else nudges it. Setting
+ * `.muted` imperatively and re-requesting playback once mounted fixes that.
  */
 export function HeroVideo({
   posterSrc,
@@ -29,9 +38,21 @@ export function HeroVideo({
   alt: string
   className?: string
 }) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+    video.muted = true
+    video.play().catch(() => {
+      // Autoplay still blocked (e.g. a data-saver mode) — the poster stays visible.
+    })
+  }, [])
+
   return (
     <>
       <video
+        ref={videoRef}
         autoPlay
         loop
         muted
