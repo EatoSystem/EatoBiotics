@@ -119,7 +119,7 @@ export function isValidFoundationSummary(value: unknown, expectedKey: "you" | "f
 
 /**
  * True if a journey-sync `summaries` payload carries a *validated* foundation
- * summary — not just a `you`/`family` key. A caller-forged `{ you: {} }}` (or
+ * summary — not just a `you`/`family` key. A caller-forged `{ you: {} }` (or
  * any object missing the real AssessmentSummary fields) returns false here,
  * so it can never substitute for hasServerFoundation() proof.
  */
