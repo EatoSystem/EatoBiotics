@@ -153,12 +153,17 @@ export const SYSTEMS: Record<SystemKey, SystemDef> = {
   },
 
   /* ── Life (education-only, sensitive) ── */
+  // Pregnancy is under the same public-promotion hold as Birth/Baby (see
+  // docs/masterplan/MASTERPLAN.md §12.4: no broad promotion until clinical/legal
+  // review signs the copy). The page and assessment stay reachable by URL — only
+  // `status` changes, so cards show "Coming soon" instead of a live CTA. Flip
+  // back to "live" once that review is complete.
   pregnancy: {
     key: "pregnancy", family: "life", label: "Pregnancy", productName: "The Pregnancy Food System",
     tagline: "Food-first education and gentle guidance through pregnancy.",
     focus: "General wellbeing food patterns, education, and questions for your professional.",
     description: "Support your Food System through pregnancy with food-first education, gentle guidance and next steps for general wellbeing.",
-    href: "/pregnancy", assessmentRoute: "/pregnancy/assessment", status: "live",
+    href: "/pregnancy", assessmentRoute: "/pregnancy/assessment", status: "scaffold",
     requiresFoundation: true, allowedFoundations: BOTH, futureBridge: "PregMonth", safetyLevel: "sensitive",
     icon: Flower2, accent: "var(--icon-lime)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
     image: "/images/EatoBiotics - Pregnancy.png",
