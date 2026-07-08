@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { z } from "zod"
 
 /**
  * Server-side proof that a You or Family foundation assessment is complete —
@@ -15,6 +16,12 @@ import type { SupabaseClient } from "@supabase/supabase-js"
  *   2. `assessment_journeys.summaries` — the newer per-user sync record,
  *      checked for a `you` or `family` key. Only queryable for signed-in users
  *      (the table has no email column).
+ *
+ * A client-submitted journey payload (POST /api/assessment/journey) is a third,
+ * weaker signal: it's caller-controlled, so a bare key like `{ you: {} }` must
+ * never count as proof on its own — isValidFoundationSummary() below enforces
+ * the real AssessmentSummary shape (lib/assessment/registry.ts) before a
+ * payload-supplied foundation is trusted.
  *
  * Server-only: never import this from a client component.
  */
@@ -83,9 +90,44 @@ export async function hasServerFoundation(
   return journeyHasFoundation(sb, id)
 }
 
-/** True if a journey-sync `summaries` payload already carries a foundation key. */
+/**
+ * The real shape of a foundation AssessmentSummary (lib/assessment/registry.ts),
+ * strict enough that an empty or fabricated object (`{}`) can never pass.
+ * `key`/`kind` are pinned per-foundation by the caller via .extend() below.
+ */
+const foundationSummaryShape = z.object({
+  label: z.string().min(1),
+  scoreLabel: z.string().min(1),
+  score: z.number().min(0).max(100),
+  bandLabel: z.string().min(1),
+  bandDescription: z.string().optional(),
+  strengths: z.array(z.string()),
+  priorities: z.array(z.string()),
+  details: z.array(z.object({ label: z.string(), text: z.string() })).optional(),
+  sevenDay: z.array(z.string()),
+  thirtyDay: z.array(z.string()).optional(),
+})
+
+const youSummarySchema = foundationSummaryShape.extend({ key: z.literal("you"), kind: z.literal("foundation") })
+const familySummarySchema = foundationSummaryShape.extend({ key: z.literal("family"), kind: z.literal("foundation") })
+
+/** True if `value` is a real, complete `you` or `family` AssessmentSummary. */
+export function isValidFoundationSummary(value: unknown, expectedKey: "you" | "family"): boolean {
+  const schema = expectedKey === "you" ? youSummarySchema : familySummarySchema
+  return schema.safeParse(value).success
+}
+
+/**
+ * True if a journey-sync `summaries` payload carries a *validated* foundation
+ * summary — not just a `you`/`family` key. A caller-forged `{ you: {} }}` (or
+ * any object missing the real AssessmentSummary fields) returns false here,
+ * so it can never substitute for hasServerFoundation() proof.
+ */
 export function payloadHasFoundation(summaries: Record<string, unknown> | null | undefined): boolean {
-  return !!summaries && ("you" in summaries || "family" in summaries)
+  if (!summaries) return false
+  if ("you" in summaries && isValidFoundationSummary(summaries.you, "you")) return true
+  if ("family" in summaries && isValidFoundationSummary(summaries.family, "family")) return true
+  return false
 }
 
 const ADDON_SUMMARY_KEYS = ["mind", "glucose", "performance", "pregnancy", "stability"] as const

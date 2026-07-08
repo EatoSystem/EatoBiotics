@@ -46,14 +46,17 @@ export async function POST(req: NextRequest) {
     // may only have its score recorded once a You/Family foundation is on file.
     // This route is public (anonymous free-assessment flow), so there may be no
     // session — check by email, and additionally by user_id when one is present.
+    // Fails closed: if Supabase is unavailable the proof can't be verified, so
+    // Mind must not proceed to build/send the email or persist anything.
     if (assessmentType === "mind") {
       const sbCheck = getSupabase()
-      if (sbCheck) {
-        const user = await getUser().catch(() => null)
-        const hasFoundation = await hasServerFoundation(sbCheck, { userId: user?.id, email: normalizedEmail })
-        if (!hasFoundation) {
-          return NextResponse.json({ error: "Foundation assessment required before add-on assessment." }, { status: 403 })
-        }
+      if (!sbCheck) {
+        return NextResponse.json({ error: "Database unavailable" }, { status: 503 })
+      }
+      const user = await getUser().catch(() => null)
+      const hasFoundation = await hasServerFoundation(sbCheck, { userId: user?.id, email: normalizedEmail })
+      if (!hasFoundation) {
+        return NextResponse.json({ error: "Foundation assessment required before add-on assessment." }, { status: 403 })
       }
     }
 
