@@ -3,6 +3,7 @@ import { z } from "zod"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import type { StabilityAssessment, StabilityDailyLog } from "@/lib/stability/types"
+import { hasServerFoundation } from "@/lib/assessment/foundation-server"
 
 /* ── GET: fetch the signed-in user's assessment + logs ──────────────────── */
 
@@ -55,6 +56,11 @@ export async function POST(req: NextRequest) {
   const now = new Date().toISOString()
 
   if (body.assessment) {
+    // Foundation before Health/Life: the Stability assessment is an add-on and
+    // may only be persisted once a You/Family foundation is on file.
+    if (!(await hasServerFoundation(sb, { userId: user.id, email: user.email }))) {
+      return NextResponse.json({ error: "Foundation assessment required before add-on assessment." }, { status: 403 })
+    }
     const { error } = await sb.from("stability_assessments").upsert(
       { user_id: user.id, answers: body.assessment.answers, flags: body.assessment.flags, score: body.assessment.score, updated_at: now },
       { onConflict: "user_id" },
