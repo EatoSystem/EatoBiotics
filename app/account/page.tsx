@@ -204,7 +204,7 @@ export default async function AccountPage({
       const { data } = await adminSupabase
         .from("deep_assessments")
         .select("stripe_session_id, tier, created_at, pdf_url, status, email_status, free_scores")
-        .eq("user_id", user.id)
+        .or(ownerOrFilter(user.id, user.email))
         .order("created_at", { ascending: false })
         .limit(10)
       return (data ?? []).map((r) => {
