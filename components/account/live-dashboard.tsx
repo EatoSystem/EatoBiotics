@@ -743,6 +743,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
   const [acctSaved,      setAcctSaved]      = useState(false)
   const [acctError,      setAcctError]      = useState<string | null>(null)
   const [exportState,    setExportState]    = useState<"idle" | "downloading" | "done">("idle")
+  const [pdfLinkState,   setPdfLinkState]   = useState<Record<string, "loading" | "error">>({})
   const [deleteStage,    setDeleteStage]    = useState<DeleteStage>("closed")
   const [deleteInput,    setDeleteInput]    = useState("")
   const [deleteError,    setDeleteError]    = useState<string | null>(null)
@@ -790,6 +791,23 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
       setTimeout(() => setExportState("idle"), 4000)
     } catch {
       setExportState("idle")
+    }
+  }
+
+  async function handleDownloadPdf(sessionId: string) {
+    setPdfLinkState((s) => ({ ...s, [sessionId]: "loading" }))
+    try {
+      const res = await fetch(`/api/account/pdf-url?session=${encodeURIComponent(sessionId)}`)
+      if (!res.ok) throw new Error("PDF link refresh failed")
+      const { pdfUrl } = (await res.json()) as { pdfUrl: string }
+      window.open(pdfUrl, "_blank", "noopener")
+      setPdfLinkState((s) => {
+        const next = { ...s }
+        delete next[sessionId]
+        return next
+      })
+    } catch {
+      setPdfLinkState((s) => ({ ...s, [sessionId]: "error" }))
     }
   }
 
@@ -2029,11 +2047,12 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                       </span>
                       <div className="flex gap-2">
                         {r.pdfUrl && (
-                          <a href={r.pdfUrl} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold transition-opacity hover:opacity-70"
+                          <button type="button" onClick={() => handleDownloadPdf(r.sessionId)}
+                            disabled={pdfLinkState[r.sessionId] === "loading"}
+                            className="flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold transition-opacity hover:opacity-70 disabled:opacity-50"
                             style={{ borderColor: "#d0d0d0", color: "var(--muted-foreground)" }}>
-                            <Download size={11} /> PDF
-                          </a>
+                            <Download size={11} /> {pdfLinkState[r.sessionId] === "loading" ? "Preparing…" : "PDF"}
+                          </button>
                         )}
                         <Link href={`/assessment/report?session_id=${encodeURIComponent(r.sessionId)}`}
                           className="flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-80"
@@ -2042,6 +2061,13 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                         </Link>
                       </div>
                     </div>
+                    {pdfLinkState[r.sessionId] === "error" && (
+                      <div className="border-t px-5 py-2.5" style={{ borderColor: "var(--border)", background: "white" }}>
+                        <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+                          We couldn&apos;t refresh your PDF link. Please use View report or try again.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )
               })}
