@@ -1,3 +1,5 @@
+import { withSentryConfig } from "@sentry/nextjs"
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -57,7 +59,7 @@ const nextConfig = {
       // data:/blob: media is needed by @remotion/player's silent-audio autoplay shim.
       "media-src 'self' data: blob:",
       "font-src 'self' data:",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.posthog.com https://*.statsig.com https://api.stripe.com https://*.anthropic.com https://*.elevenlabs.io wss://*.elevenlabs.io https://*.openai.com https://*.vercel-insights.com",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.posthog.com https://*.statsig.com https://api.stripe.com https://*.anthropic.com https://*.elevenlabs.io wss://*.elevenlabs.io https://*.openai.com https://*.vercel-insights.com https://*.sentry.io",
       "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
       "worker-src 'self' blob:",
       "manifest-src 'self'",
@@ -104,4 +106,12 @@ const nextConfig = {
   },
 }
 
-export default nextConfig
+// Sentry: source-map upload only runs when SENTRY_AUTH_TOKEN is set (Vercel/CI
+// build env), so `next build` never requires it locally. org/project fall back
+// to the SENTRY_ORG/SENTRY_PROJECT env vars the SDK reads itself.
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  sourcemaps: {
+    disable: !process.env.SENTRY_AUTH_TOKEN,
+  },
+})

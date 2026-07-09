@@ -317,6 +317,15 @@ NEXT_PUBLIC_STATSIG_CLIENT_KEY # Statsig browser SDK (gates + client events)
 NEXT_PUBLIC_POSTHOG_KEY       # PostHog browser analytics + $exception error capture
 NEXT_PUBLIC_POSTHOG_HOST      # PostHog host (defaults to PostHog cloud)
 
+SENTRY_DSN                    # Server/edge error tracking (sentry.server.config.ts,
+                              # sentry.edge.config.ts, instrumentation.ts). Unset = fully
+                              # inert; next build/dev never require it.
+NEXT_PUBLIC_SENTRY_DSN         # Browser error tracking (instrumentation-client.ts). Same
+                              # unset-is-inert behaviour as SENTRY_DSN.
+SENTRY_AUTH_TOKEN              # Build-time source-map upload (next.config.mjs
+SENTRY_ORG                    # withSentryConfig). All three optional — upload is skipped,
+SENTRY_PROJECT                 # not failed, when SENTRY_AUTH_TOKEN is unset.
+
 NEXT_PUBLIC_SITE_URL          # Canonical site origin used in emails + redirects.
                               # Default: https://eatobiotics.com
 
