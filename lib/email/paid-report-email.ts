@@ -215,8 +215,9 @@ export function buildPaidReportEmail(opts: PaidReportEmailOpts): {
     : ""
 
   const pdfNoteHtml = pdfUrl
-    ? `<p style="margin: 0; font-size: 13px; color: #555555; font-family: Arial, sans-serif;">
-        📎 Your full PDF report is attached to this email.
+    ? `<p style="margin: 0; font-size: 13px; color: #555555; font-family: Arial, sans-serif; line-height: 1.6;">
+        📎 Your PDF report is ready. <a href="${pdfUrl}" style="color: #3ab0a0; font-weight: bold;">Download it here</a> for the next 7 days.
+        You can also use the "View Your Full Report" button above for permanent access.
       </p>`
     : `<p style="margin: 0; font-size: 13px; color: #555555; font-family: Arial, sans-serif;">
         📎 Your PDF report is being prepared and will be emailed to you shortly.
