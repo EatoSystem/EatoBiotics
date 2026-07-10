@@ -1,5 +1,11 @@
-import { Kicker, Section, SectionHeading, StatusBadge } from "./shared"
+import { ScrollReveal } from "@/components/scroll-reveal"
+import { Eyebrow, Section, SectionHeading, StatusBadge } from "./shared"
 
+/**
+ * Section 8 — global direction. Direction only; nothing here is live.
+ * Cards mirror the quadrant card idiom (the-framework.tsx): rounded-2xl,
+ * border-border, top gradient bar, gradient example chips.
+ */
 const EATING_STRUCTURES = ["Plate", "Bowl", "Thali", "Tiffin", "Mezze", "Mixed household meals"]
 
 const ADAPTS_TO = [
@@ -7,51 +13,80 @@ const ADAPTS_TO = [
   "Religious requirements", "Food availability", "Meal structure", "Local terminology",
 ]
 
-/** Section 8 — global direction. Direction only; nothing here is live. */
 export function GlobalDirection() {
   return (
-    <Section tinted>
-      <div className="max-w-3xl">
-        <Kicker>Global by philosophy, local by practice</Kicker>
-        <SectionHeading>The science is global. The food is local.</SectionHeading>
-        <div className="mt-4">
-          <StatusBadge status="direction" />
-        </div>
-        <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
-          The Food System Inside You is universal. How you feed it is personal, local, and
-          cultural. Kefir and lassi, sauerkraut and kimchi, oats and dal — different foods, same
-          Feed, Seed, and Heal. The future EatoBiotics platform is designed to adapt to how people
-          actually eat, wherever they are.
-        </p>
-      </div>
-
-      <div className="mt-10 grid gap-5 md:grid-cols-2">
-        <div className="rounded-3xl bg-white px-6 py-6" style={{ border: "1px solid rgba(26,46,18,0.10)" }}>
-          <h3 className="font-serif text-lg font-bold text-foreground">Designed to adapt to</h3>
-          <ul className="mt-4 flex flex-wrap gap-2">
-            {ADAPTS_TO.map((a) => (
-              <li key={a} className="rounded-full px-3.5 py-1.5 text-sm font-medium text-foreground"
-                style={{ background: "rgba(26,46,18,0.05)" }}>
-                {a}
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="rounded-3xl bg-white px-6 py-6" style={{ border: "1px solid rgba(26,46,18,0.10)" }}>
-          <h3 className="font-serif text-lg font-bold text-foreground">Every way the world eats</h3>
-          <ul className="mt-4 flex flex-wrap gap-2">
-            {EATING_STRUCTURES.map((s) => (
-              <li key={s} className="rounded-full px-3.5 py-1.5 text-sm font-medium text-white"
-                style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
-                {s}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-            One science, expressed through the meal structures people already use — not a Western
-            plate imposed on everyone.
+    <Section>
+      <ScrollReveal>
+        <div className="mx-auto mb-16 max-w-2xl text-center">
+          <Eyebrow>Global By Philosophy, Local By Practice</Eyebrow>
+          <SectionHeading>
+            The science is global. <span className="brand-gradient-text">The food is local.</span>
+          </SectionHeading>
+          <div className="mt-5 flex justify-center">
+            <StatusBadge status="direction" />
+          </div>
+          <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-muted-foreground">
+            The Food System Inside You is universal. How you feed it is personal, local, and
+            cultural. Kefir and lassi, sauerkraut and kimchi, oats and dal — different foods, same
+            Feed, Seed, and Heal. The future EatoBiotics platform is designed to adapt to how
+            people actually eat, wherever they are.
           </p>
         </div>
+      </ScrollReveal>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <ScrollReveal delay={80}>
+          <div className="relative h-full overflow-hidden rounded-2xl border border-border bg-background p-8 transition-shadow hover:shadow-lg">
+            <div
+              className="absolute left-0 right-0 top-0 h-1"
+              style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
+            />
+            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
+              Designed to adapt to
+            </p>
+            <div className="mt-4 flex flex-wrap gap-1.5">
+              {ADAPTS_TO.map((a) => (
+                <span
+                  key={a}
+                  className="inline-flex items-center rounded-full px-3.5 py-1.5 text-sm font-bold"
+                  style={{
+                    background: "color-mix(in srgb, var(--icon-green) 15%, transparent)",
+                    color: "color-mix(in srgb, var(--icon-green) 78%, var(--foreground))",
+                  }}
+                >
+                  {a}
+                </span>
+              ))}
+            </div>
+          </div>
+        </ScrollReveal>
+
+        <ScrollReveal delay={160}>
+          <div className="relative h-full overflow-hidden rounded-2xl border border-border bg-background p-8 transition-shadow hover:shadow-lg">
+            <div
+              className="absolute left-0 right-0 top-0 h-1"
+              style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}
+            />
+            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-teal)" }}>
+              Every way the world eats
+            </p>
+            <div className="mt-4 flex flex-wrap gap-1.5">
+              {EATING_STRUCTURES.map((s) => (
+                <span
+                  key={s}
+                  className="rounded-full px-3.5 py-1.5 text-sm font-medium text-white"
+                  style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}
+                >
+                  {s}
+                </span>
+              ))}
+            </div>
+            <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
+              One science, expressed through the meal structures people already use — not a Western
+              plate imposed on everyone.
+            </p>
+          </div>
+        </ScrollReveal>
       </div>
     </Section>
   )

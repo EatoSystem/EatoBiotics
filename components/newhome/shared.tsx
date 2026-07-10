@@ -1,5 +1,11 @@
 /*
- * Temporary /newhome concept primitives — status badges + section shell.
+ * Temporary /newhome concept primitives, composed strictly from the audited
+ * production design system (see components/home/*):
+ *   - Section wrapper:  <section class="px-6 py-24 md:py-32"> + max-w-[1200px]
+ *   - Eyebrow:          text-xs font-semibold uppercase tracking-widest text-icon-green
+ *   - H2:               font-serif text-4xl font-semibold sm:text-5xl text-balance
+ *   - Status pills:     gradient pill (what-were-building.tsx status) and
+ *                       color-mix tint pill (the-framework.tsx stat pill)
  * The whole components/newhome folder is deletable in one step.
  */
 import type { ReactNode } from "react"
@@ -11,55 +17,59 @@ export type Availability =
   | "direction"
   | "future"
 
-const BADGE_STYLES: Record<Availability, { label: string; bg: string; color: string; border: string }> = {
-  "available":      { label: "Available now",                          bg: "rgba(76,182,72,0.10)",  color: "#2e7d32", border: "rgba(76,182,72,0.35)" },
-  "verify":         { label: "Needs manual production verification",   bg: "rgba(245,166,35,0.10)", color: "#a06400", border: "rgba(245,166,35,0.40)" },
-  "in-development": { label: "In development",                         bg: "rgba(245,197,24,0.12)", color: "#8a6d00", border: "rgba(245,197,24,0.45)" },
-  "direction":      { label: "Our direction",                          bg: "rgba(45,170,110,0.08)", color: "#1b7a55", border: "rgba(45,170,110,0.30)" },
-  "future":         { label: "Future",                                 bg: "rgba(26,46,18,0.05)",   color: "#5a6b54", border: "rgba(26,46,18,0.15)" },
-}
-
 export function StatusBadge({ status }: { status: Availability }) {
-  const s = BADGE_STYLES[status]
+  // Gradient pill idiom (status pills in components/home/what-were-building.tsx)
+  if (status === "available") {
+    return (
+      <span className="inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-semibold text-white"
+        style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}>
+        Available now
+      </span>
+    )
+  }
+  if (status === "in-development") {
+    return (
+      <span className="inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-semibold text-white"
+        style={{ background: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" }}>
+        In development
+      </span>
+    )
+  }
+  // Tint pill idiom (stat pills in components/home/the-framework.tsx)
+  const tint =
+    status === "verify"
+      ? { c: "var(--icon-orange)", label: "Needs manual production verification" }
+      : status === "direction"
+        ? { c: "var(--icon-teal)", label: "Our direction" }
+        : { c: "var(--icon-teal)", label: "Future" }
   return (
-    <span
-      className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold leading-4"
-      style={{ background: s.bg, color: s.color, border: `1px solid ${s.border}` }}
-    >
-      {s.label}
+    <span className="inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-bold"
+      style={{
+        background: `color-mix(in srgb, ${tint.c} 15%, transparent)`,
+        color: `color-mix(in srgb, ${tint.c} 78%, var(--foreground))`,
+      }}>
+      {tint.label}
     </span>
   )
 }
 
-export function Section({
-  id,
-  children,
-  tinted = false,
-}: {
-  id?: string
-  children: ReactNode
-  tinted?: boolean
-}) {
+export function Section({ id, children }: { id?: string; children: ReactNode }) {
   return (
-    <section
-      id={id}
-      className="scroll-mt-28 px-4 py-16 sm:px-6 md:py-24"
-      style={tinted ? { background: "linear-gradient(180deg, rgba(168,224,99,0.06), rgba(45,170,110,0.04))" } : undefined}
-    >
-      <div className="mx-auto max-w-5xl">{children}</div>
+    <section id={id} className="scroll-mt-28 px-6 py-24 md:py-32">
+      <div className="mx-auto max-w-[1200px]">{children}</div>
     </section>
   )
 }
 
-export function Kicker({ children }: { children: ReactNode }) {
+export function Eyebrow({ children }: { children: ReactNode }) {
   return (
-    <p className="text-[11px] font-bold uppercase tracking-widest text-icon-teal">{children}</p>
+    <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">{children}</p>
   )
 }
 
 export function SectionHeading({ children }: { children: ReactNode }) {
   return (
-    <h2 className="mt-2 font-serif text-3xl font-bold leading-tight text-foreground sm:text-4xl">
+    <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
       {children}
     </h2>
   )

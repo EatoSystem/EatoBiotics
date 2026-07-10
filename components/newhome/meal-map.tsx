@@ -1,5 +1,5 @@
-import { Camera, GitBranch, Sparkles, Lightbulb, CalendarPlus } from "lucide-react"
-import { Kicker, Section, StatusBadge } from "./shared"
+import { ScrollReveal } from "@/components/scroll-reveal"
+import { Eyebrow, Section, StatusBadge } from "./shared"
 
 /*
  * "Meal Map" is a provisional working name for the concept only — keep the
@@ -7,60 +7,95 @@ import { Kicker, Section, StatusBadge } from "./shared"
  */
 const CONCEPT_NAME = "Meal Map"
 
+/**
+ * Section 7 — future signature interaction, presented as concept only.
+ * Flow steps use the production tinted step-card idiom (how-it-works.tsx).
+ */
 const FLOW = [
-  { icon: Camera,       text: "Photograph a meal" },
-  { icon: GitBranch,    text: "Map it through Feed, Seed, and Heal" },
-  { icon: Sparkles,     text: "See one strength" },
-  { icon: Lightbulb,    text: "Discover one practical opportunity" },
-  { icon: CalendarPlus, text: "Add it to your journey" },
+  {
+    number: "01",
+    text: "Photograph a meal",
+    color: "var(--icon-lime)",
+    bgGradient: "linear-gradient(160deg, color-mix(in srgb, var(--icon-lime) 10%, transparent), transparent 60%)",
+  },
+  {
+    number: "02",
+    text: "Map it through Feed, Seed, and Heal",
+    color: "var(--icon-green)",
+    bgGradient: "linear-gradient(160deg, color-mix(in srgb, var(--icon-green) 10%, transparent), transparent 60%)",
+  },
+  {
+    number: "03",
+    text: "See one strength",
+    color: "var(--icon-teal)",
+    bgGradient: "linear-gradient(160deg, color-mix(in srgb, var(--icon-teal) 10%, transparent), transparent 60%)",
+  },
+  {
+    number: "04",
+    text: "Discover one practical opportunity",
+    color: "var(--icon-yellow)",
+    bgGradient: "linear-gradient(160deg, color-mix(in srgb, var(--icon-yellow) 10%, transparent), transparent 60%)",
+  },
+  {
+    number: "05",
+    text: "Add it to your journey",
+    color: "var(--icon-orange)",
+    bgGradient: "linear-gradient(160deg, color-mix(in srgb, var(--icon-orange) 10%, transparent), transparent 60%)",
+  },
 ]
 
-/** Section 7 — future signature interaction, presented as concept only. */
 export function MealMap() {
   return (
     <Section>
-      <div className="max-w-3xl">
-        <Kicker>A future signature experience</Kicker>
-        <div className="mt-2 flex flex-wrap items-center gap-3">
-          <h2 className="font-serif text-3xl font-bold leading-tight text-foreground sm:text-4xl">{CONCEPT_NAME}</h2>
-          <StatusBadge status="in-development" />
+      <ScrollReveal>
+        <div className="max-w-2xl">
+          <Eyebrow>A Future Signature Experience</Eyebrow>
+          <div className="mt-4 flex flex-wrap items-center gap-4">
+            <h2 className="font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
+              {CONCEPT_NAME}
+            </h2>
+            <StatusBadge status="in-development" />
+          </div>
+          <p className="mt-5 text-base font-medium leading-relaxed text-foreground sm:text-lg">
+            See how this meal feeds the system inside you.
+          </p>
+          <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+            Today you can describe a plate in words and see how it feeds your system. {CONCEPT_NAME}{" "}
+            is where that is going: point your camera at any meal — a plate, a bowl, a thali, a
+            tiffin — and see its composition through Feed, Seed, and Heal. No calories, no
+            &ldquo;good&rdquo; or &ldquo;bad&rdquo; meals, no judgement — one strength, one
+            practical opportunity, and where uncertainty exists, you confirm what&apos;s on the
+            plate.
+          </p>
         </div>
-        <p className="mt-4 text-lg font-medium text-foreground">
-          See how this meal feeds the system inside you.
-        </p>
-        <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-          Today you can describe a plate in words and see how it feeds your system. {CONCEPT_NAME}{" "}
-          is where that is going: point your camera at any meal — a plate, a bowl, a thali, a
-          tiffin — and see its composition through Feed, Seed, and Heal. No calories, no
-          &ldquo;good&rdquo; or &ldquo;bad&rdquo; meals, no judgement — one strength, one
-          practical opportunity, and where uncertainty exists, you confirm what&apos;s on the
-          plate.
-        </p>
-      </div>
+      </ScrollReveal>
 
-      <ol className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        {FLOW.map((step, i) => {
-          const Icon = step.icon
-          return (
-            <li key={step.text} className="flex items-center gap-3 rounded-2xl bg-white px-4 py-4 lg:flex-col lg:items-start lg:gap-4 lg:py-5"
-              style={{ border: "1px solid rgba(26,46,18,0.10)" }}>
-              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-icon-teal"
-                style={{ background: "rgba(45,170,110,0.10)" }} aria-hidden="true">
-                <Icon size={16} />
+      <ol className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
+        {FLOW.map((step, i) => (
+          <ScrollReveal key={step.number} delay={i * 80}>
+            <li
+              className="flex h-full min-h-[150px] flex-col rounded-3xl p-6"
+              style={{
+                background: step.bgGradient,
+                border: `1.5px solid color-mix(in srgb, ${step.color} 30%, transparent)`,
+                borderLeft: `4px solid ${step.color}`,
+              }}
+            >
+              <span className="font-serif text-4xl font-bold leading-none" style={{ color: step.color }}>
+                {step.number}
               </span>
-              <p className="text-sm font-medium leading-snug text-foreground">
-                <span className="mr-1 font-mono text-xs text-muted-foreground">{i + 1}.</span>
-                {step.text}
-              </p>
+              <p className="mt-4 text-sm font-medium leading-relaxed text-foreground">{step.text}</p>
             </li>
-          )
-        })}
+          </ScrollReveal>
+        ))}
       </ol>
 
-      <p className="mt-6 text-xs leading-relaxed text-muted-foreground">
-        Concept preview — composition guidance, not medical advice. Image recognition will not
-        identify everything perfectly, so you stay in control of what counts.
-      </p>
+      <ScrollReveal delay={200}>
+        <p className="mt-6 text-xs leading-relaxed text-muted-foreground">
+          Concept preview — composition guidance, not medical advice. Image recognition will not
+          identify everything perfectly, so you stay in control of what counts.
+        </p>
+      </ScrollReveal>
     </Section>
   )
 }
