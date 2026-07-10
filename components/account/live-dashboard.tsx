@@ -236,11 +236,6 @@ const MOCK_MEALS: { date: string; meals: MealEntry[] }[] = [
   },
 ]
 
-const MOCK_REPORTS = [
-  { id: 1, title: "Full Biotics Assessment", profileType: "Emerging Balance",  month: "April 2025",   score: 62, delta: "+8 since January", positive: true,  pillars: { prebiotic: 71, probiotic: 23, postbiotic: 48 } },
-  { id: 2, title: "Full Biotics Assessment", profileType: "Developing System", month: "January 2025", score: 54, delta: "First assessment",  positive: null,  pillars: { prebiotic: 55, probiotic: 18, postbiotic: 38 } },
-]
-
 const MOCK_CONSULTATIONS = [
   {
     id: 1, date: "Sunday, 11 May 2025", week: "Week 8 of 30", avgScore: 73, delta: 5,
@@ -2007,7 +2002,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             <p className="mt-0.5 text-sm" style={{ color: "var(--muted-foreground)" }}>
               {paidReports.length > 0
                 ? `${paidReports.length} Food System snapshot${paidReports.length === 1 ? "" : "s"} — each one a moment your Food System can look back on`
-                : `${MOCK_REPORTS.length} assessment snapshot${MOCK_REPORTS.length === 1 ? "" : "s"} of your Food System so far`}
+                : "Your purchased Food System Reports will appear here."}
             </p>
           </div>
 
@@ -2074,57 +2069,21 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             </div>
           )}
 
-          <div className="space-y-4 md:grid md:grid-cols-2 md:gap-5 md:space-y-0">
-            {MOCK_REPORTS.map((r) => (
-              <div key={r.id} className="overflow-hidden rounded-2xl" style={{ border: "1px solid var(--border)", boxShadow: "0 2px 16px rgba(26,46,18,0.06)" }}>
-                {/* Full gradient header */}
-                <div className="px-5 py-5" style={{ background: "linear-gradient(135deg, #1a4a14 0%, #0a5c44 100%)" }}>
-                  <div className="h-[2px] mb-4 rounded-full" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-yellow), var(--icon-orange))" }} />
-                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.40)" }}>{r.month}</p>
-                  <div className="mt-1 flex items-end justify-between gap-3">
-                    <div>
-                      <p className="font-serif text-lg font-bold text-white">{r.title}</p>
-                      <p className="text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>{r.profileType}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-mono text-3xl font-bold leading-none" style={{ color: "var(--icon-lime)" }}>{r.score}</p>
-                      <p className="mt-0.5 text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>/100</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Pillar bars */}
-                <div className="space-y-2.5 px-5 py-4" style={{ background: "white" }}>
-                  <ScoreBar label="Prebiotic"  score={r.pillars.prebiotic} />
-                  <ScoreBar label="Probiotic"  score={r.pillars.probiotic} />
-                  <ScoreBar label="Postbiotic" score={r.pillars.postbiotic} />
-                </div>
-
-                {/* Footer */}
-                <div className="flex items-center justify-between gap-3 border-t px-5 py-3.5"
-                  style={{ borderColor: "var(--border)", background: "white" }}>
-                  {r.positive ? (
-                    <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                      style={{ background: "linear-gradient(135deg, rgba(168,224,99,0.18), rgba(76,182,72,0.12))", color: "var(--icon-green)", border: "1px solid rgba(76,182,72,0.25)" }}>
-                      <TrendingUp size={10} /> {r.delta}
-                    </span>
-                  ) : (
-                    <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>{r.delta}</span>
-                  )}
-                  <div className="flex gap-2">
-                    <Link href="#" className="flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold transition-opacity hover:opacity-70"
-                      style={{ borderColor: "#d0d0d0", color: "var(--muted-foreground)" }}>
-                      <Download size={11} /> PDF
-                    </Link>
-                    <Link href="#" className="flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-80"
-                      style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", boxShadow: "0 2px 8px rgba(45,170,110,0.25)" }}>
-                      View report <ExternalLink size={11} />
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          {/* Honest empty state — the real dashboard renders only real report data */}
+          {paidReports.length === 0 && (
+            <div className="rounded-2xl px-6 py-10 text-center"
+              style={{ border: "1px solid var(--border)", boxShadow: "0 2px 16px rgba(26,46,18,0.06)", background: "white" }}>
+              <p className="font-serif text-lg font-bold" style={{ color: "var(--foreground)" }}>No reports yet</p>
+              <p className="mx-auto mt-1.5 max-w-md text-sm" style={{ color: "var(--muted-foreground)" }}>
+                Your Food System Report will appear here after you complete your assessment and purchase your personalised report.
+              </p>
+              <Link href="/assessment"
+                className="mt-5 inline-flex items-center gap-1 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-80"
+                style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", boxShadow: "0 2px 8px rgba(45,170,110,0.25)" }}>
+                Get My Food System Score <ArrowRight size={13} />
+              </Link>
+            </div>
+          )}
         </div>
       )}
 
