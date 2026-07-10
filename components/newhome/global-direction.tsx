@@ -1,5 +1,11 @@
+import Image from "next/image"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { Eyebrow, Section, SectionHeading, StatusBadge } from "./shared"
+
+/* Illustrative mosaic — real food photography, food-first texture only.
+   (The photos are ingredient flat-lays, so no meal-structure labels are
+   overlaid — structure names stay in the chips card below.) */
+const MOSAIC = ["/food-2.webp", "/food-4.webp", "/food-10.webp", "/food-13.webp", "/food-16.webp", "/food-20.webp"]
 
 /**
  * Section 8 — global direction. Direction only; nothing here is live.
@@ -32,6 +38,26 @@ export function GlobalDirection() {
             people actually eat, wherever they are.
           </p>
         </div>
+      </ScrollReveal>
+
+      {/* Food mosaic — every way the world eats, in real food */}
+      <ScrollReveal delay={60}>
+        <div className="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
+          {MOSAIC.map((src) => (
+            <div key={src} className="relative h-40 overflow-hidden rounded-2xl border border-border sm:h-48">
+              <Image
+                src={src}
+                alt="Illustrative food photography — diverse whole foods"
+                fill
+                sizes="(max-width: 640px) 45vw, 380px"
+                className="object-cover"
+              />
+            </div>
+          ))}
+        </div>
+        <p className="mb-12 text-center text-xs text-muted-foreground">
+          Illustrative photography — the same Feed, Seed, and Heal, in any food culture.
+        </p>
       </ScrollReveal>
 
       <div className="grid gap-6 md:grid-cols-2">

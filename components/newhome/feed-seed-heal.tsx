@@ -8,6 +8,39 @@ import { Eyebrow, Section, SectionHeading } from "./shared"
  * the-framework.tsx): same images, top gradient bar, serif display numbers,
  * uppercase subtitle, stat pill, and bottom gradient strip.
  */
+/* How the three biotics land on a plate — mirrors the production framework's
+   plate sub-section (the-framework.tsx quadrants), reusing its exact copy. */
+const QUADRANTS = [
+  {
+    label: "Fiber Foundation",
+    color: "var(--icon-green)",
+    gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
+    examples: ["Leafy greens", "Broccoli", "Legumes", "Whole grains"],
+    biotic: "PREBIOTIC BASE",
+  },
+  {
+    label: "Fermented Foods",
+    color: "var(--icon-teal)",
+    gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
+    examples: ["Yogurt", "Kimchi", "Sauerkraut", "Kefir"],
+    biotic: "PROBIOTIC SIDE",
+  },
+  {
+    label: "Quality Protein",
+    color: "var(--icon-orange)",
+    gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
+    examples: ["Eggs", "Salmon", "Beans", "Tempeh"],
+    biotic: "PROTEIN BALANCE",
+  },
+  {
+    label: "Daily Support",
+    color: "var(--icon-yellow)",
+    gradient: "linear-gradient(135deg, var(--icon-orange), var(--icon-yellow))",
+    examples: ["Avocado", "Olive oil", "Nuts", "Seeds"],
+    biotic: "HEALTHY FATS",
+  },
+]
+
 const PILLARS = [
   {
     number: "01",
@@ -109,6 +142,59 @@ export function FeedSeedHeal() {
             </div>
           </ScrollReveal>
         ))}
+      </div>
+
+      {/* ── How it lands on a plate ── */}
+      <div className="mt-20 border-t border-border/60" />
+      <div className="mt-16 flex flex-col gap-12 lg:flex-row lg:items-center lg:gap-16">
+        <div className="lg:w-[420px] lg:shrink-0">
+          <ScrollReveal>
+            <Eyebrow>From Words To Plate</Eyebrow>
+            <h3 className="mt-4 font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
+              One plate.{" "}
+              <span className="brand-gradient-text">Feed, Seed, and Heal together.</span>
+            </h3>
+            <p className="mt-6 text-base leading-relaxed text-muted-foreground">
+              Feed, Seed, and Heal are not a diet — they are a way of seeing any plate, bowl, or
+              shared meal. Each part of the plate supports a different part of the food system
+              inside you.
+            </p>
+          </ScrollReveal>
+        </div>
+        <div className="flex-1">
+          <ScrollReveal delay={100}>
+            <div className="flex justify-center">
+              <Image
+                src="/images/eatobiotics/eatobiotics-plate.png"
+                alt="The EatoBiotics Plate showing prebiotic base, probiotic side, protein balance, and healthy fats"
+                width={1000}
+                height={1000}
+                sizes="(max-width: 1024px) 90vw, 600px"
+                className="h-auto w-full max-w-[560px] object-contain"
+              />
+            </div>
+          </ScrollReveal>
+          <ScrollReveal delay={200}>
+            <div className="mt-10 grid grid-cols-2 gap-4">
+              {QUADRANTS.map((q) => (
+                <div key={q.label} className="relative overflow-hidden rounded-2xl border border-border bg-background p-5 transition-shadow hover:shadow-lg">
+                  <div className="absolute left-0 right-0 top-0 h-1" style={{ background: q.gradient }} />
+                  <p className="text-xs font-bold uppercase tracking-widest" style={{ color: q.color }}>
+                    {q.biotic}
+                  </p>
+                  <h4 className="mt-1.5 font-serif text-base font-semibold text-foreground">{q.label}</h4>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {q.examples.map((ex) => (
+                      <span key={ex} className="rounded-full px-2 py-0.5 text-xs font-medium text-white" style={{ background: q.gradient }}>
+                        {ex}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollReveal>
+        </div>
       </div>
     </Section>
   )

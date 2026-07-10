@@ -1,7 +1,43 @@
+import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { HeroVideo } from "@/components/hero-video"
+
+/* Real food photography strip under the hero — the "food-first" moment.
+   Drifts slowly; static under prefers-reduced-motion. */
+const STRIP_FOODS = [1, 3, 5, 7, 9, 11, 14, 17, 19, 21].map((n) => `/food-${n}.webp`)
+
+function FoodStrip() {
+  const row = (suffix: string) => (
+    <div className="flex shrink-0 items-center gap-4 pr-4">
+      {STRIP_FOODS.map((src) => (
+        <div key={`${src}${suffix}`} className="relative h-28 w-44 shrink-0 overflow-hidden rounded-2xl border border-border">
+          <Image src={src} alt="" fill sizes="176px" className="object-cover" />
+        </div>
+      ))}
+    </div>
+  )
+  return (
+    <div aria-hidden className="mt-16">
+      <div
+        className="mx-auto mb-8 h-1 max-w-[1280px] rounded-full"
+        style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }}
+      />
+      <div className="relative overflow-hidden">
+        <style>{`
+          @keyframes newhome-food-drift { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+          .newhome-food-strip { animation: newhome-food-drift 70s linear infinite; }
+          @media (prefers-reduced-motion: reduce) { .newhome-food-strip { animation: none; } }
+        `}</style>
+        <div className="newhome-food-strip flex w-max">
+          {row("")}
+          {row("-b")}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 /**
  * /newhome concept hero — mirrors the production hero shell
@@ -103,6 +139,10 @@ export function ConceptHero() {
             </ScrollReveal>
           </div>
         </div>
+
+        <ScrollReveal delay={200}>
+          <FoodStrip />
+        </ScrollReveal>
       </div>
     </section>
   )

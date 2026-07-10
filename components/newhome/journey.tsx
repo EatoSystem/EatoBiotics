@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { ArrowRight } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { Eyebrow, Section, SectionHeading } from "./shared"
@@ -115,34 +116,49 @@ export function Journey() {
       {/* Direction, not judgement */}
       <ScrollReveal delay={200}>
         <div
-          className="mt-12 rounded-3xl p-8 md:p-10"
+          className="mt-12 overflow-hidden rounded-3xl"
           style={{
             background: "linear-gradient(160deg, color-mix(in srgb, var(--icon-green) 8%, transparent), transparent 60%)",
             border: "1.5px solid color-mix(in srgb, var(--icon-green) 30%, transparent)",
           }}
         >
-          <h3 className="font-serif text-2xl font-semibold text-foreground">
-            Every check-in gives direction, not judgement.
-          </h3>
-          <p className="mt-3 max-w-2xl text-base leading-relaxed text-muted-foreground">
-            Progress is rarely a straight line. A retest can come back four ways — and each one
-            tells you something useful about what to do next.
-          </p>
-          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {PROGRESS_STATES.map((p) => (
-              <div key={p.label}>
-                <span
-                  className="inline-flex w-fit items-center rounded-full px-3.5 py-1.5 text-sm font-bold"
-                  style={{
-                    background: `color-mix(in srgb, ${p.color} 15%, transparent)`,
-                    color: `color-mix(in srgb, ${p.color} 78%, var(--foreground))`,
-                  }}
-                >
-                  {p.label}
-                </span>
-                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{p.note}</p>
+          <div className="flex flex-col md:flex-row md:items-center">
+            <div className="flex-1 p-8 md:p-10">
+              <h3 className="font-serif text-2xl font-semibold text-foreground">
+                Every check-in gives direction, not judgement.
+              </h3>
+              <p className="mt-3 max-w-2xl text-base leading-relaxed text-muted-foreground">
+                Progress is rarely a straight line. A retest can come back four ways — and each one
+                tells you something useful about what to do next.
+              </p>
+              <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4">
+                {PROGRESS_STATES.map((p) => (
+                  <div key={p.label}>
+                    <span
+                      className="inline-flex w-fit items-center rounded-full px-3.5 py-1.5 text-sm font-bold"
+                      style={{
+                        background: `color-mix(in srgb, ${p.color} 15%, transparent)`,
+                        color: `color-mix(in srgb, ${p.color} 78%, var(--foreground))`,
+                      }}
+                    >
+                      {p.label}
+                    </span>
+                    <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{p.note}</p>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+            <div className="relative hidden w-[280px] shrink-0 self-stretch md:block">
+              <Image
+                src="/images/twin-female.png"
+                alt=""
+                aria-hidden
+                fill
+                sizes="280px"
+                className="object-contain object-bottom"
+                style={{ mixBlendMode: "multiply" }}
+              />
+            </div>
           </div>
         </div>
       </ScrollReveal>

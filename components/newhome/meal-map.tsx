@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { Eyebrow, Section, StatusBadge } from "./shared"
 
@@ -67,6 +68,77 @@ export function MealMap() {
             practical opportunity, and where uncertainty exists, you confirm what&apos;s on the
             plate.
           </p>
+        </div>
+      </ScrollReveal>
+
+      {/* Illustrative analysis card — the future interaction, made visible */}
+      <ScrollReveal delay={120}>
+        <div className="relative mx-auto mt-14 max-w-2xl">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -inset-6 -z-10 rounded-[2.5rem] opacity-70 blur-3xl"
+            style={{ background: "radial-gradient(60% 60% at 50% 45%, color-mix(in srgb, var(--icon-teal) 26%, transparent), transparent 75%)" }}
+          />
+          <div
+            className="relative overflow-hidden rounded-[2rem] border-2 bg-card shadow-[0_40px_80px_-32px_rgba(20,37,15,0.45)]"
+            style={{ borderColor: "color-mix(in srgb, var(--icon-teal) 40%, transparent)" }}
+          >
+            <div
+              className="h-1.5 w-full"
+              style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-orange))" }}
+            />
+            <div className="relative">
+              <div className="relative h-72 w-full sm:h-80">
+                <Image
+                  src="/food-3.webp"
+                  alt="A colourful meal of vegetables, legumes, fermented foods, and plant proteins"
+                  fill
+                  sizes="(max-width: 640px) 90vw, 672px"
+                  className="object-cover"
+                />
+                <span
+                  className="absolute left-4 top-4 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white"
+                  style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-teal))" }}
+                >
+                  Concept illustration — not a live feature
+                </span>
+              </div>
+              <div className="px-7 py-6 sm:px-9">
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { label: "Feed · 9 plant foods", color: "var(--icon-green)" },
+                    { label: "Seed · sauerkraut spotted", color: "var(--icon-teal)" },
+                    { label: "Heal · unhurried, balanced", color: "var(--icon-orange)" },
+                  ].map((chip) => (
+                    <span
+                      key={chip.label}
+                      className="inline-flex items-center rounded-full px-3.5 py-1.5 text-sm font-bold"
+                      style={{
+                        background: `color-mix(in srgb, ${chip.color} 15%, transparent)`,
+                        color: `color-mix(in srgb, ${chip.color} 78%, var(--foreground))`,
+                      }}
+                    >
+                      {chip.label}
+                    </span>
+                  ))}
+                </div>
+                <div
+                  className="mt-5 rounded-2xl px-5 py-4 text-base leading-relaxed text-muted-foreground"
+                  style={{ background: "color-mix(in srgb, var(--icon-green) 7%, var(--card))" }}
+                >
+                  <span className="font-semibold text-foreground">One strength: </span>
+                  Excellent plant variety — nine different plant foods in one meal.
+                </div>
+                <div
+                  className="mt-4 rounded-2xl px-5 py-4 text-base leading-relaxed text-muted-foreground"
+                  style={{ background: "color-mix(in srgb, var(--icon-orange) 7%, var(--card))" }}
+                >
+                  <span className="font-semibold text-foreground">One opportunity: </span>
+                  A spoonful of live yoghurt or kefir alongside would add a living-culture element.
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </ScrollReveal>
 

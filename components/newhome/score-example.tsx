@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import { Sprout } from "lucide-react"
@@ -88,6 +89,25 @@ export function ScoreExample() {
               className="pointer-events-none absolute -inset-6 -z-10 rounded-[2.5rem] opacity-70 blur-3xl"
               style={{ background: "radial-gradient(60% 60% at 50% 45%, color-mix(in srgb, var(--icon-green) 28%, transparent), transparent 75%)" }}
             />
+            {/* Floating food accents (decorative) */}
+            <div aria-hidden className="pointer-events-none absolute -left-40 top-16 hidden lg:block">
+              <div
+                className="absolute -inset-4 rounded-full opacity-60 blur-2xl"
+                style={{ background: "radial-gradient(circle, color-mix(in srgb, var(--icon-lime) 30%, transparent), transparent 70%)" }}
+              />
+              <div className="relative h-32 w-32 overflow-hidden rounded-full border-2" style={{ borderColor: "color-mix(in srgb, var(--icon-green) 35%, transparent)" }}>
+                <Image src="/food-8.webp" alt="" fill sizes="128px" className="object-cover" />
+              </div>
+            </div>
+            <div aria-hidden className="pointer-events-none absolute -right-36 bottom-24 hidden lg:block">
+              <div
+                className="absolute -inset-4 rounded-full opacity-60 blur-2xl"
+                style={{ background: "radial-gradient(circle, color-mix(in srgb, var(--icon-orange) 28%, transparent), transparent 70%)" }}
+              />
+              <div className="relative h-28 w-28 overflow-hidden rounded-full border-2" style={{ borderColor: "color-mix(in srgb, var(--icon-orange) 35%, transparent)" }}>
+                <Image src="/food-15.webp" alt="" fill sizes="112px" className="object-cover" />
+              </div>
+            </div>
             <div
               className="relative overflow-hidden rounded-[2rem] border-2 bg-card shadow-[0_40px_80px_-32px_rgba(20,37,15,0.45)]"
               style={{ borderColor: "color-mix(in srgb, var(--icon-teal) 40%, transparent)" }}
