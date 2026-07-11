@@ -15,6 +15,11 @@ export type CmsAuditAction =
   | "content_approved"
   | "changes_requested"
   | "content_archived"
+  | "media_uploaded"
+  | "media_updated"
+  | "media_archived"
+  | "media_attached"
+  | "media_detached"
 
 export async function recordCmsAudit(
   sb: SupabaseClient,
