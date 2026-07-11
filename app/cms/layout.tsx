@@ -24,6 +24,7 @@ export default async function CmsLayout({ children }: { children: React.ReactNod
     { href: "/cms", label: "Dashboard" },
     { href: "/cms/create", label: "Create" },
     { href: "/cms/library", label: "Library" },
+    { href: "/cms/media", label: "Media" },
   ]
 
   return (
@@ -39,12 +40,12 @@ export default async function CmsLayout({ children }: { children: React.ReactNod
               Private
             </span>
           </div>
-          <nav className="flex items-center gap-1">
+          <nav className="flex flex-wrap items-center justify-end gap-1">
             {nav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="rounded-full px-4 py-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-icon-green/5 hover:text-icon-green"
+                className="rounded-full px-3 py-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-icon-green/5 hover:text-icon-green"
               >
                 {item.label}
               </Link>
@@ -52,7 +53,7 @@ export default async function CmsLayout({ children }: { children: React.ReactNod
             <form action="/api/admin/logout" method="POST">
               <button
                 type="submit"
-                className="ml-2 rounded-full border border-border px-4 py-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                className="rounded-full border border-border px-3 py-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
               >
                 Sign out
               </button>

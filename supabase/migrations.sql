@@ -1049,3 +1049,64 @@ CREATE TABLE IF NOT EXISTS cms_audit_log (
 CREATE INDEX IF NOT EXISTS idx_cms_audit_log_created_at ON cms_audit_log (created_at DESC);
 
 ALTER TABLE cms_audit_log ENABLE ROW LEVEL SECURITY;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 38: Content Studio Phase 2A — media library
+-- ────────────────────────────────────────────────────────────
+-- Private asset storage for the CMS: a private `cms-media` bucket plus the
+-- cms_media catalogue and cms_content_media relationship table. Same
+-- service-role-only model as Migration 37 (RLS ENABLED, ZERO policies) — the
+-- CMS admin is not a Supabase user; all access is via the admin cookie +
+-- service-role server routes. Assets are served through short-TTL signed URLs
+-- (the app/api/account/pdf-url pattern) and are ARCHIVED, never hard-deleted,
+-- so anything referenced by published content always resolves. Idempotent.
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('cms-media', 'cms-media', false)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS cms_media (
+  id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  filename           text NOT NULL,
+  storage_bucket     text NOT NULL DEFAULT 'cms-media',
+  storage_path       text NOT NULL,               -- server-derived key, never a client path
+  media_type         text NOT NULL CHECK (media_type IN ('image','video','audio','document')),
+  mime_type          text NOT NULL,
+  width              integer,
+  height             integer,
+  duration_seconds   numeric(10,2),
+  file_size          bigint,
+  alt_text           text,
+  caption            text,
+  generation_prompt  text,
+  source             text,                         -- e.g. 'upload' | 'ai' | provider name
+  copyright_owner    text,
+  licence            text,
+  usage_restrictions text,
+  status             text NOT NULL DEFAULT 'ready' CHECK (status IN ('ready','archived')),
+  created_by         text NOT NULL DEFAULT 'admin',
+  created_at         timestamptz NOT NULL DEFAULT now(),
+  updated_at         timestamptz NOT NULL DEFAULT now(),
+  archived_at        timestamptz,
+  UNIQUE (storage_bucket, storage_path)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cms_media_media_type ON cms_media (media_type);
+CREATE INDEX IF NOT EXISTS idx_cms_media_status     ON cms_media (status);
+CREATE INDEX IF NOT EXISTS idx_cms_media_created_at ON cms_media (created_at DESC);
+
+ALTER TABLE cms_media ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS cms_content_media (
+  content_id uuid NOT NULL REFERENCES cms_content(id) ON DELETE CASCADE,
+  media_id   uuid NOT NULL REFERENCES cms_media(id) ON DELETE CASCADE,
+  role       text NOT NULL DEFAULT 'inline' CHECK (role IN (
+    'hero','thumbnail','inline','social','advert','video','audio','document')),
+  sort_order integer NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (content_id, media_id, role)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cms_content_media_media ON cms_content_media (media_id);
+
+ALTER TABLE cms_content_media ENABLE ROW LEVEL SECURITY;
