@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import { getSupabase } from "@/lib/supabase"
-import { MDXRemote } from "next-mdx-remote/rsc"
+import { compileMDX } from "next-mdx-remote/rsc"
 import { timeAgo } from "@/app/admin/admin-ui"
 import { readingTimeMinutes, wordCount } from "@/lib/cms/statuses"
 import { EditorClient } from "./editor-client"
@@ -15,16 +15,21 @@ interface Props {
 }
 
 async function SavedPreview({ body }: { body: string }) {
+  // AWAIT compileMDX inside the try so malformed MDX (free-text Markdown is
+  // frequently invalid MDX — `<3`, `{braces}`, unclosed `<tag`) is caught here
+  // and degrades to a fallback, instead of throwing during React's later async
+  // render of <MDXRemote>. A route-level error.tsx is the belt-and-suspenders.
   try {
+    const { content } = await compileMDX({ source: body })
     return (
       <div className="prose prose-sm max-w-none font-serif [&_h1]:font-serif [&_h2]:font-serif">
-        <MDXRemote source={body} />
+        {content}
       </div>
     )
   } catch {
     return (
       <p className="text-xs text-red-500">
-        Preview unavailable — the saved content contains markup MDX can&apos;t render. The raw text is safe and editable.
+        Preview unavailable — this isn&apos;t valid MDX yet. Your text is saved and safe to keep editing.
       </p>
     )
   }
