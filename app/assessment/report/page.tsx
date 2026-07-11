@@ -7,6 +7,7 @@ import { getSupabase } from "@/lib/supabase"
 import { getUser } from "@/lib/supabase-server"
 import { getUserMembershipTier } from "@/lib/membership"
 import type { DeepReport } from "@/lib/claude-report"
+import { reportViewState } from "@/lib/report-status"
 import {
   displayTierForReport,
   getPaidReportSummaryFromSession,
@@ -70,16 +71,38 @@ export default async function ReportPage({ searchParams }: Props) {
 
       const displayTier = displayTierForReport(summary.tier)
 
-      if (data?.status === "complete" && data.report_json) {
-        // Deep assessment done — render paid report from saved data (no new Claude call)
+      // A buyer whose report exists always sees their report — a "partial" row
+      // (report saved, PDF or email delivery failed) must never bounce them
+      // back into the questionnaire.
+      const viewState = reportViewState(data?.status, Boolean(data?.report_json))
+
+      if (viewState !== "resume_questionnaire") {
         return (
-          <PaidReportClient
-            tier={displayTier}
-            sessionId={session_id}
-            reportJson={data.report_json as DeepReport}
-            freeScores={freeScores as unknown as Parameters<typeof PaidReportClient>[0]["freeScores"]}
-            membershipTier={membershipTier}
-          />
+          <>
+            {viewState === "view_delivery_pending" && (
+              <div className="px-6 pt-6">
+                <div
+                  className="mx-auto max-w-3xl rounded-2xl px-5 py-4 text-sm leading-relaxed"
+                  style={{
+                    background: "color-mix(in srgb, var(--icon-orange) 8%, transparent)",
+                    border: "1px solid color-mix(in srgb, var(--icon-orange) 30%, transparent)",
+                    color: "var(--foreground)",
+                  }}
+                >
+                  <span className="font-semibold">Your report is ready below.</span>{" "}
+                  Your PDF download or email copy may still be on its way — everything is
+                  also available any time from your account.
+                </div>
+              </div>
+            )}
+            <PaidReportClient
+              tier={displayTier}
+              sessionId={session_id}
+              reportJson={data!.report_json as DeepReport}
+              freeScores={freeScores as unknown as Parameters<typeof PaidReportClient>[0]["freeScores"]}
+              membershipTier={membershipTier}
+            />
+          </>
         )
       }
 

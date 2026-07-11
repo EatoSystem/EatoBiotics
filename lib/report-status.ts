@@ -24,3 +24,19 @@ export type OverallReportStatus = "complete" | "partial"
 export function overallReportStatus(o: ReportStageOutcome): OverallReportStatus {
   return o.reportOk && o.pdfOk && o.emailOk ? "complete" : "partial"
 }
+
+/* ── What should a buyer see for a given row? ─────────────────────────────
+   A buyer whose report exists must always be shown their report — a "partial"
+   row (report saved, but PDF upload or email failed) must never bounce them
+   back into the intake questionnaire. Used by both /assessment/report (render
+   vs redirect) and /assessment/deep (redirect back vs resume). */
+
+export type ReportViewState = "view" | "view_delivery_pending" | "resume_questionnaire"
+
+export function reportViewState(
+  status: string | null | undefined,
+  hasReport: boolean
+): ReportViewState {
+  if (hasReport) return status === "complete" ? "view" : "view_delivery_pending"
+  return "resume_questionnaire"
+}
