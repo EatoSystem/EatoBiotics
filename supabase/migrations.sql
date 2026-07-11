@@ -944,3 +944,108 @@ BEGIN
       FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
   END IF;
 END $$;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 37: EatoBiotics Content Studio (/cms) — Phase 1 core tables
+-- ────────────────────────────────────────────────────────────
+-- Private CMS foundation: canonical content records with a full editorial
+-- lifecycle, append-only version history, reusable tags, and an append-only
+-- audit log. CMS access is via the admin cookie + service-role server routes
+-- only (the admin is not a Supabase user), so every table follows the
+-- service-role-only pattern: RLS ENABLED with ZERO policies (like ai_usage /
+-- email_sends / stripe_processed_events) — no anonymous or customer access.
+-- The editorial workflow `status` and the product-availability classification
+-- `availability_status` are deliberately separate columns. Idempotent.
+CREATE TABLE IF NOT EXISTS cms_content (
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  title               text NOT NULL,
+  slug                text NOT NULL UNIQUE,
+  content_type        text NOT NULL CHECK (content_type IN (
+    'book','book_chapter','chapter_extract','article','website_page','newsletter',
+    'substack_post','social_post','social_thread','social_carousel','image','video',
+    'audio','advertisement','campaign_brief','press_release','research_summary',
+    'country_adaptation')),
+  summary             text,
+  body                text,                    -- Markdown/MDX (matches the site's content pipeline)
+  status              text NOT NULL DEFAULT 'idea' CHECK (status IN (
+    'idea','outline','draft','in_review','changes_requested','approved','scheduled',
+    'publishing','published','failed','cancelled','archived')),
+  availability_status text NOT NULL DEFAULT 'our_direction' CHECK (availability_status IN (
+    'available_now','needs_manual_verification','in_development','our_direction','future')),
+  brand               text,                    -- EatoBiotics | EatoSystem | EatoBetics | EatoSports
+  audience            text,
+  pathway             text,
+  foundation          text,
+  country_code        text,
+  region              text,
+  food_culture        text,
+  language_code       text,
+  source_content_id   uuid REFERENCES cms_content(id) ON DELETE SET NULL,
+  campaign_id         uuid,                    -- FK added when cms_campaigns lands (later migration)
+  book_id             uuid,                    -- FK added when cms_books lands (later migration)
+  chapter_id          uuid,                    -- FK added when cms_chapters lands (later migration)
+  created_by          text NOT NULL DEFAULT 'admin',  -- shared-password admin: no per-user identity yet
+  updated_by          text NOT NULL DEFAULT 'admin',
+  approved_by         text,
+  scheduled_at        timestamptz,
+  published_at        timestamptz,
+  created_at          timestamptz NOT NULL DEFAULT now(),
+  updated_at          timestamptz NOT NULL DEFAULT now(),
+  archived_at         timestamptz
+);
+
+CREATE INDEX IF NOT EXISTS idx_cms_content_status       ON cms_content (status);
+CREATE INDEX IF NOT EXISTS idx_cms_content_content_type ON cms_content (content_type);
+CREATE INDEX IF NOT EXISTS idx_cms_content_updated_at   ON cms_content (updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_cms_content_source       ON cms_content (source_content_id) WHERE source_content_id IS NOT NULL;
+
+ALTER TABLE cms_content ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS cms_content_versions (
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  content_id     uuid NOT NULL REFERENCES cms_content(id) ON DELETE CASCADE,
+  version_number integer NOT NULL,
+  title          text NOT NULL,
+  summary        text,
+  body           text,
+  metadata_json  jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_by     text NOT NULL DEFAULT 'admin',
+  created_at     timestamptz NOT NULL DEFAULT now(),
+  change_note    text,
+  UNIQUE (content_id, version_number)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cms_content_versions_content ON cms_content_versions (content_id, version_number DESC);
+
+ALTER TABLE cms_content_versions ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS cms_tags (
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name       text NOT NULL UNIQUE,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE cms_tags ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS cms_content_tags (
+  content_id uuid NOT NULL REFERENCES cms_content(id) ON DELETE CASCADE,
+  tag_id     uuid NOT NULL REFERENCES cms_tags(id) ON DELETE CASCADE,
+  PRIMARY KEY (content_id, tag_id)
+);
+
+ALTER TABLE cms_content_tags ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS cms_audit_log (
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  actor_user_id  text NOT NULL DEFAULT 'admin',
+  action         text NOT NULL,
+  entity_type    text NOT NULL,
+  entity_id      uuid,
+  metadata_json  jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at     timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_cms_audit_log_created_at ON cms_audit_log (created_at DESC);
+
+ALTER TABLE cms_audit_log ENABLE ROW LEVEL SECURITY;
