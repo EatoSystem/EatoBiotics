@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
+import { linkErrorMessage } from "@/lib/auth-link-error"
 
 export function SignInClient() {
   const searchParams = useSearchParams()
@@ -10,7 +11,9 @@ export function SignInClient() {
   const [email, setEmail] = useState(emailParam)
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  // Seeded from the auth callback's ?error= code (expired/invalid link) so the
+  // user sees why they landed back here; cleared when they request a new link.
+  const [error, setError] = useState<string | null>(() => linkErrorMessage(searchParams.get("error")))
 
   // Auto-send the magic link if an email param was provided
   useEffect(() => {
