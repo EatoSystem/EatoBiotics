@@ -18,6 +18,10 @@ export const CONTENT_TYPES = [
   { value: "press_release",     label: "Press release",      phase1: true },
   { value: "research_summary",  label: "Research summary",   phase1: true },
   { value: "country_adaptation",label: "Country adaptation", phase1: true },
+  // book / book_chapter stay phase1:false deliberately — they're created only
+  // through the dedicated /cms/books flow (which collects the book_id /
+  // chapter_number context this generic wizard has no UI for), not via this
+  // type-picker.
   { value: "book",              label: "Book",               phase1: false },
   { value: "book_chapter",      label: "Book chapter",       phase1: false },
   { value: "image",             label: "Image",              phase1: false },
@@ -44,4 +48,14 @@ export function isContentType(v: unknown): v is ContentType {
 
 export function isPhase1ContentType(v: unknown): boolean {
   return typeof v === "string" && CONTENT_TYPES.some((t) => t.value === v && t.phase1)
+}
+
+/** Where a chapter is destined to appear — metadata only in this phase (no
+ *  rendering/export pipeline), mirroring the live site's /reedsy, /substack,
+ *  /print route-variant precedent for each chapter. */
+export const PUBLICATION_TARGETS = ["website", "substack", "reedsy", "print", "pdf"] as const
+export type PublicationTarget = (typeof PUBLICATION_TARGETS)[number]
+
+export function isPublicationTarget(v: unknown): v is PublicationTarget {
+  return typeof v === "string" && (PUBLICATION_TARGETS as readonly string[]).includes(v)
 }

@@ -4,6 +4,7 @@ import { compileMDX } from "next-mdx-remote/rsc"
 import { timeAgo } from "@/app/admin/admin-ui"
 import { readingTimeMinutes, wordCount } from "@/lib/cms/statuses"
 import { EditorClient } from "./editor-client"
+import { ChapterDetailsPanel } from "./chapter-details-panel"
 
 /* Content Studio editor page. The server component owns the record, the
    version list, and a rendered preview of the LAST SAVED body (via the site's
@@ -54,6 +55,34 @@ export default async function CmsEditorPage({ params }: Props) {
   const body = (item.body as string | null) ?? ""
   const words = wordCount(body)
 
+  // A chapter is a cms_content row (content_type 'book_chapter') plus a
+  // cms_chapters structural row for the fields that don't fit cms_content's
+  // generic shape (chapter_number/part/publication_target).
+  let chapterPanel = null
+  if (item.content_type === "book_chapter") {
+    const { data: chapter } = await sb
+      .from("cms_chapters")
+      .select("id, book_id, chapter_number, part, part_title, publication_target, cms_books(content_id)")
+      .eq("content_id", id)
+      .maybeSingle()
+    if (chapter) {
+      const bookRow = Array.isArray(chapter.cms_books) ? chapter.cms_books[0] : chapter.cms_books
+      chapterPanel = (
+        <ChapterDetailsPanel
+          chapterRowId={chapter.id as string}
+          chapterContentId={id}
+          bookContentId={(bookRow?.content_id as string | undefined) ?? null}
+          bookId={chapter.book_id as string}
+          chapterNumber={chapter.chapter_number as number}
+          part={(chapter.part as string | null) ?? ""}
+          partTitle={(chapter.part_title as string | null) ?? ""}
+          publicationTarget={(chapter.publication_target as string[]) ?? []}
+          title={item.title as string}
+        />
+      )
+    }
+  }
+
   return (
     <div className="space-y-6">
       <EditorClient
@@ -71,6 +100,8 @@ export default async function CmsEditorPage({ params }: Props) {
           foundation: (item.foundation as string | null) ?? "",
         }}
       />
+
+      {chapterPanel}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-2xl border border-border p-5">

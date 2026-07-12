@@ -3,16 +3,26 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import {
-  CONTENT_TYPES, BRANDS, AUDIENCES, PATHWAYS, FOUNDATIONS, type ContentType,
+  CONTENT_TYPES, BRANDS, AUDIENCES, PATHWAYS, FOUNDATIONS, isContentType, type ContentType,
 } from "@/lib/cms/taxonomy"
 import { AVAILABILITY_STATUSES } from "@/lib/cms/statuses"
 
 const labelFor = (v: string) => v.replace(/_/g, " ")
 
-export function CreateClient() {
+interface Initial {
+  type?: string
+  title?: string
+  source_content_id?: string
+  book_id?: string
+  chapter_id?: string
+}
+
+export function CreateClient({ initial }: { initial?: Initial } = {}) {
   const router = useRouter()
-  const [type, setType] = useState<ContentType | null>(null)
-  const [title, setTitle] = useState("")
+  const [type, setType] = useState<ContentType | null>(
+    initial?.type && isContentType(initial.type) ? initial.type : null
+  )
+  const [title, setTitle] = useState(initial?.title ?? "")
   const [summary, setSummary] = useState("")
   const [brand, setBrand] = useState("EatoBiotics")
   const [audience, setAudience] = useState("")
@@ -41,6 +51,9 @@ export function CreateClient() {
           audience: audience || null,
           pathway: pathway || null,
           foundation: foundation || null,
+          source_content_id: initial?.source_content_id || undefined,
+          book_id: initial?.book_id || undefined,
+          chapter_id: initial?.chapter_id || undefined,
         }),
       })
       const data = await res.json()
