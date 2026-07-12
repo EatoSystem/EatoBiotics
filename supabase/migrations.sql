@@ -1110,3 +1110,72 @@ CREATE TABLE IF NOT EXISTS cms_content_media (
 CREATE INDEX IF NOT EXISTS idx_cms_content_media_media ON cms_content_media (media_id);
 
 ALTER TABLE cms_content_media ENABLE ROW LEVEL SECURITY;
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 39: Content Studio Phase 2B — books & chapters
+-- ────────────────────────────────────────────────────────────
+-- Books and chapters are cms_content rows (content_type 'book' / 'book_chapter')
+-- so they inherit the full editorial lifecycle, version history, and audit
+-- trail for free. cms_books and cms_chapters are thin structural tables — the
+-- type-safe FK targets the cms_content.book_id / chapter_id columns have
+-- carried since Migration 37 ("FK added when cms_books/cms_chapters lands").
+-- Chapter ordering is a plain chapter_number on each chapter's own row (not an
+-- array on the book) so reordering never requires array surgery; there is
+-- deliberately no DB-level UNIQUE(book_id, chapter_number) — enforcing that
+-- with a non-deferrable constraint risks transient-violation failures on a
+-- two-step swap, so uniqueness stays a soft UI/API convention. Same
+-- service-role-only pattern as Migrations 37/38: RLS ENABLED, ZERO policies.
+-- Idempotent.
+CREATE TABLE IF NOT EXISTS cms_books (
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  content_id uuid NOT NULL UNIQUE REFERENCES cms_content(id) ON DELETE CASCADE,
+  subtitle   text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_cms_books_content ON cms_books (content_id);
+
+ALTER TABLE cms_books ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS cms_chapters (
+  id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  book_id            uuid NOT NULL REFERENCES cms_books(id) ON DELETE CASCADE,
+  content_id         uuid NOT NULL UNIQUE REFERENCES cms_content(id) ON DELETE CASCADE,
+  chapter_number     integer NOT NULL,
+  part               text,
+  part_title         text,
+  publication_target text[] NOT NULL DEFAULT '{}'::text[] CHECK (
+    publication_target <@ ARRAY['website','substack','reedsy','print','pdf']::text[]),
+  created_at         timestamptz NOT NULL DEFAULT now(),
+  updated_at         timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_cms_chapters_book_order ON cms_chapters (book_id, chapter_number);
+CREATE INDEX IF NOT EXISTS idx_cms_chapters_content    ON cms_chapters (content_id);
+
+ALTER TABLE cms_chapters ENABLE ROW LEVEL SECURITY;
+
+-- Attach the FK constraints Migration 37 reserved book_id/chapter_id for, now
+-- that their target tables exist. Postgres has no ADD CONSTRAINT IF NOT
+-- EXISTS, so guard idempotency via pg_constraint.
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'cms_content_book_id_fkey') THEN
+    ALTER TABLE cms_content
+      ADD CONSTRAINT cms_content_book_id_fkey
+      FOREIGN KEY (book_id) REFERENCES cms_books(id) ON DELETE SET NULL;
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'cms_content_chapter_id_fkey') THEN
+    ALTER TABLE cms_content
+      ADD CONSTRAINT cms_content_chapter_id_fkey
+      FOREIGN KEY (chapter_id) REFERENCES cms_chapters(id) ON DELETE SET NULL;
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_cms_content_book_id    ON cms_content (book_id)    WHERE book_id    IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_cms_content_chapter_id ON cms_content (chapter_id) WHERE chapter_id IS NOT NULL;

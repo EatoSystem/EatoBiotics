@@ -24,6 +24,8 @@ const createSchema = z.object({
   country_code: z.string().trim().length(2).nullish(),
   language_code: z.string().trim().min(2).max(10).nullish(),
   source_content_id: z.string().uuid().nullish(),
+  book_id: z.string().uuid().nullish(),
+  chapter_id: z.string().uuid().nullish(),
 })
 
 export async function POST(req: NextRequest) {
@@ -72,6 +74,8 @@ export async function POST(req: NextRequest) {
       country_code: input.country_code?.toUpperCase() ?? null,
       language_code: input.language_code ?? null,
       source_content_id: input.source_content_id ?? null,
+      book_id: input.book_id ?? null,
+      chapter_id: input.chapter_id ?? null,
     })
     .select("id, slug")
     .single()

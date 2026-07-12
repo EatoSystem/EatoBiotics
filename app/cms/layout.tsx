@@ -24,6 +24,7 @@ export default async function CmsLayout({ children }: { children: React.ReactNod
     { href: "/cms", label: "Dashboard" },
     { href: "/cms/create", label: "Create" },
     { href: "/cms/library", label: "Library" },
+    { href: "/cms/books", label: "Books" },
     { href: "/cms/media", label: "Media" },
   ]
 
