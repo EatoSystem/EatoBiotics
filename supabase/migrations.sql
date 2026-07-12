@@ -1179,3 +1179,65 @@ END $$;
 
 CREATE INDEX IF NOT EXISTS idx_cms_content_book_id    ON cms_content (book_id)    WHERE book_id    IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_cms_content_chapter_id ON cms_content (chapter_id) WHERE chapter_id IS NOT NULL;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 40: Content Studio Phase 2B — chapter integrity
+-- ────────────────────────────────────────────────────────────
+-- Two integrity guarantees for the books & chapters surface (Migration 39):
+--
+-- 1. ATOMIC REORDER. Moving a chapter up/down swaps two chapters'
+--    chapter_number values. The old flow was two independent client PATCHes —
+--    if the second failed, the book was left with a duplicate/gap. This
+--    function does the swap in a single transaction (its body), so it is all-
+--    or-nothing: a failure rolls back and the ordering is unchanged. It swaps
+--    through a temporary sentinel (chapter_number = -(id-derived)) so the
+--    operation stays valid even if a future UNIQUE(book_id, chapter_number)
+--    constraint is added, and locks both rows FOR UPDATE so concurrent swaps
+--    serialise. The API route (/api/cms/books/[id]/chapters/reorder) picks the
+--    two ids among the book's ACTIVE chapters and calls this once.
+--
+-- 2. ACTIVE-ONLY UNIQUENESS stays an application concern, deliberately. A
+--    partial UNIQUE(book_id, chapter_number) can't be expressed at the DB level
+--    here because "active" means the chapter's cms_content.status <> 'archived'
+--    — a column on a DIFFERENT table — and an archived chapter's number must be
+--    reusable. The books/chapters routes enforce it against active chapters
+--    only (see lib/cms/chapter-order.ts activeChapterNumbers).
+--
+-- NON-CASCADING BOOK ARCHIVE (unchanged, documented): archiving a book
+-- (DELETE /api/cms/books/[id]) archives only the book's own cms_content row.
+-- Its chapters are intentionally left as-is — there is no cascade-archive of
+-- chapters. This is a deliberate limitation, not an oversight.
+--
+-- SECURITY INVOKER (default): the CMS calls this via the service-role client,
+-- which bypasses RLS anyway; no anon/customer path can reach it. Idempotent.
+CREATE OR REPLACE FUNCTION cms_swap_chapter_order(a_id uuid, b_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  a_num  integer;
+  b_num  integer;
+  a_book uuid;
+  b_book uuid;
+BEGIN
+  IF a_id = b_id THEN
+    RETURN;
+  END IF;
+
+  SELECT chapter_number, book_id INTO a_num, a_book FROM cms_chapters WHERE id = a_id FOR UPDATE;
+  SELECT chapter_number, book_id INTO b_num, b_book FROM cms_chapters WHERE id = b_id FOR UPDATE;
+
+  IF a_num IS NULL OR b_num IS NULL THEN
+    RAISE EXCEPTION 'cms_swap_chapter_order: chapter not found';
+  END IF;
+  IF a_book IS DISTINCT FROM b_book THEN
+    RAISE EXCEPTION 'cms_swap_chapter_order: chapters belong to different books';
+  END IF;
+
+  -- Sentinel then swap — safe under a future unique constraint, atomic here.
+  UPDATE cms_chapters SET chapter_number = -1, updated_at = now() WHERE id = a_id;
+  UPDATE cms_chapters SET chapter_number = a_num, updated_at = now() WHERE id = b_id;
+  UPDATE cms_chapters SET chapter_number = b_num, updated_at = now() WHERE id = a_id;
+END;
+$$;

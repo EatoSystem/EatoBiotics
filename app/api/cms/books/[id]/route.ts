@@ -38,9 +38,11 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   const { data: chapters } = await sb
     .from("cms_chapters")
-    .select("id, chapter_number, part, part_title, publication_target, cms_content(id, title, status, slug)")
+    .select("id, chapter_number, part, part_title, publication_target, created_at, cms_content(id, title, status, slug)")
     .eq("book_id", book.id)
     .order("chapter_number", { ascending: true })
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true })
 
   return NextResponse.json({ item: content, book, chapters: chapters ?? [] })
 }

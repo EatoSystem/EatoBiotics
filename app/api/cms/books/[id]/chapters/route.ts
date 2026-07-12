@@ -5,6 +5,21 @@ import { requireCmsAdmin } from "@/lib/cms/auth"
 import { recordCmsAudit } from "@/lib/cms/audit"
 import { isPublicationTarget } from "@/lib/cms/taxonomy"
 import { slugify } from "@/lib/cms/statuses"
+import { activeChapterNumbers, type OrderableChapter } from "@/lib/cms/chapter-order"
+
+/* Normalise the sibling-chapter rows (each with its joined cms_content.status)
+   the duplicate-number check needs, from the shape supabase returns. */
+type ChapterStatusRow = {
+  id: string
+  chapter_number: number
+  cms_content: { status?: string | null } | { status?: string | null }[] | null
+}
+function toOrderable(rows: ChapterStatusRow[] | null): OrderableChapter[] {
+  return (rows ?? []).map((r) => {
+    const content = Array.isArray(r.cms_content) ? r.cms_content[0] : r.cms_content
+    return { id: r.id, chapter_number: r.chapter_number, status: content?.status ?? null }
+  })
+}
 
 /* Content Studio — a book's chapters. `id` is the book's cms_content id.
    GET lists the book's chapters in order. POST creates a chapter: a
@@ -35,9 +50,11 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   const { data: chapters } = await sb
     .from("cms_chapters")
-    .select("id, chapter_number, part, part_title, publication_target, cms_content(id, title, status, slug)")
+    .select("id, chapter_number, part, part_title, publication_target, created_at, cms_content(id, title, status, slug)")
     .eq("book_id", book.id)
     .order("chapter_number", { ascending: true })
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true })
 
   return NextResponse.json({ items: chapters ?? [] })
 }
@@ -62,6 +79,17 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const { data: book } = await sb.from("cms_books").select("id").eq("content_id", id).maybeSingle()
   if (!book) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+  // Reject a chapter_number already in use by an ACTIVE chapter of this book
+  // (archived chapters free their number). Checked before any insert so a
+  // rejection never leaves a partial content/chapter row behind.
+  const { data: siblings } = await sb
+    .from("cms_chapters")
+    .select("id, chapter_number, cms_content(status)")
+    .eq("book_id", book.id)
+  if (activeChapterNumbers(toOrderable(siblings)).includes(input.chapter_number)) {
+    return NextResponse.json({ error: "Chapter number already in use" }, { status: 409 })
+  }
 
   // Unique slug: base from title, suffixed on collision.
   const base = slugify(input.title)

@@ -4,12 +4,13 @@ import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { PUBLICATION_TARGETS } from "@/lib/cms/taxonomy"
-import { nextChapterNumber, swapChapterNumbers } from "@/lib/cms/chapter-order"
+import { nextChapterNumber, activeChaptersInOrder, isArchivedChapter } from "@/lib/cms/chapter-order"
 
 /* Book detail's chapter management panel: subtitle (the one cms_books-only
-   field), the ordered chapter list with Move Up/Down (two sequential PATCHes
-   built from swapChapterNumbers — no server-side reorder endpoint), and an
-   inline "Add chapter" form. */
+   field), the ordered chapter list with Move Up/Down (ONE atomic server-side
+   reorder request per move — POST …/chapters/reorder), and an inline "Add
+   chapter" form. Archived chapters show a badge, are excluded from the next
+   chapter number, and have their ordering controls disabled. */
 
 interface Chapter {
   id: string // cms_chapters.id
@@ -57,20 +58,16 @@ export function BookChaptersPanel({
     }
   }
 
-  async function move(index: number, direction: -1 | 1) {
-    const pair = swapChapterNumbers(chapters, index, index + direction)
-    if (!pair) return
-    setReordering(chapters[index].id)
+  async function move(chapterId: string, direction: -1 | 1) {
+    setReordering(chapterId)
     setError(null)
     try {
-      for (const { id, chapter_number } of pair) {
-        const res = await fetch(`/api/cms/chapters/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chapter_number }),
-        })
-        if (!res.ok) throw new Error("Reorder failed")
-      }
+      const res = await fetch(`/api/cms/books/${bookContentId}/chapters/reorder`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chapter_id: chapterId, direction }),
+      })
+      if (!res.ok) throw new Error("Reorder failed")
       router.refresh()
     } catch {
       setError("Failed to reorder — refresh and try again")
@@ -78,6 +75,9 @@ export function BookChaptersPanel({
       setReordering(null)
     }
   }
+
+  // Ordering acts on active chapters only; archived rows are pinned in place.
+  const activeOrder = activeChaptersInOrder(chapters).map((c) => c.id)
 
   return (
     <div className="space-y-6 rounded-2xl border border-border p-5">
@@ -119,7 +119,9 @@ export function BookChaptersPanel({
         {showAdd && (
           <AddChapterForm
             bookContentId={bookContentId}
-            nextNumber={nextChapterNumber(chapters.map((c) => c.chapter_number))}
+            nextNumber={nextChapterNumber(
+              chapters.filter((c) => !isArchivedChapter(c.status)).map((c) => c.chapter_number)
+            )}
             onCreated={() => {
               setShowAdd(false)
               router.refresh()
@@ -131,7 +133,12 @@ export function BookChaptersPanel({
           <p className="mt-3 text-sm text-muted-foreground">No chapters yet.</p>
         ) : (
           <ul className="mt-3 divide-y divide-border">
-            {chapters.map((c, i) => (
+            {chapters.map((c) => {
+              const archived = isArchivedChapter(c.status)
+              const activePos = activeOrder.indexOf(c.id)
+              const isFirstActive = activePos === 0
+              const isLastActive = activePos === activeOrder.length - 1
+              return (
               <li key={c.id} className="flex items-center justify-between gap-3 py-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -153,8 +160,8 @@ export function BookChaptersPanel({
                 <div className="flex shrink-0 items-center gap-1">
                   <button
                     type="button"
-                    disabled={i === 0 || reordering !== null}
-                    onClick={() => move(i, -1)}
+                    disabled={archived || isFirstActive || reordering !== null}
+                    onClick={() => move(c.id, -1)}
                     className="rounded-full border border-border px-2.5 py-1 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground disabled:opacity-30"
                     aria-label="Move up"
                   >
@@ -162,8 +169,8 @@ export function BookChaptersPanel({
                   </button>
                   <button
                     type="button"
-                    disabled={i === chapters.length - 1 || reordering !== null}
-                    onClick={() => move(i, 1)}
+                    disabled={archived || isLastActive || reordering !== null}
+                    onClick={() => move(c.id, 1)}
                     className="rounded-full border border-border px-2.5 py-1 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground disabled:opacity-30"
                     aria-label="Move down"
                   >
@@ -171,7 +178,8 @@ export function BookChaptersPanel({
                   </button>
                 </div>
               </li>
-            ))}
+              )
+            })}
           </ul>
         )}
       </div>

@@ -21,6 +21,7 @@ export type CmsAuditAction =
   | "media_attached"
   | "media_detached"
   | "chapter_updated"
+  | "chapters_reordered"
 
 export async function recordCmsAudit(
   sb: SupabaseClient,
