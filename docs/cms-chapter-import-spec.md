@@ -66,7 +66,7 @@ One `cms_content` (`content_type='book'`) + `cms_books` row represents the EatoB
 | `cms_content.title` | `EatoBiotics` |
 | `cms_content.content_type` | `book` |
 | `cms_content.status` | `draft` (never `published` — the CMS book is a workspace) |
-| `cms_books.subtitle` | (optional, from a chosen source or left null) |
+| `cms_books.subtitle` | `The Food System Inside You` — the official approved subtitle (§11.1); mirrors existing canonical publishing metadata, not new copy |
 
 If a book with slug `eatobiotics-book` already exists, reuse it; do not create a second.
 
@@ -96,30 +96,36 @@ MDX bodies reference images by path (`/images/book/chN/hero.svg`). v1 preserves 
 
 ### 3.5 New tracking table (proposed Migration 41 — applied only when import is greenlit)
 
-A dedicated table keeps `cms_chapters` clean and holds everything the mirror needs. **Not applied by this spec.**
+A dedicated table keeps `cms_chapters` clean and holds everything the mirror needs. **Not applied by this spec.** Approved in principle (§11.5) with the refinements folded into the shape below.
 
 ```sql
 -- Migration 41 (PROPOSED — do not apply until import is approved)
 CREATE TABLE IF NOT EXISTS cms_chapter_mirror (
   id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  chapter_id        uuid NOT NULL UNIQUE REFERENCES cms_chapters(id) ON DELETE CASCADE,
+  chapter_id        uuid NOT NULL UNIQUE REFERENCES cms_chapters(id) ON DELETE CASCADE,  -- one-to-one with the chapter
   book_id           uuid NOT NULL REFERENCES cms_books(id) ON DELETE CASCADE,
-  source_kind       text NOT NULL DEFAULT 'mdx',          -- future-proof for other sources
+  source_kind       text NOT NULL DEFAULT 'mdx' CHECK (source_kind = 'mdx'),  -- v1: MDX only (widen in a later migration when another source lands)
   source_path       text NOT NULL,                        -- 'content/book/chapter-1.mdx' (canonical pointer)
   source_slug       text NOT NULL,                        -- 'chapter-1'
   source_sha256     text NOT NULL,                        -- hash of MDX bytes at import
   body_sha256       text NOT NULL,                        -- hash of the snapshot written to cms_content.body
   meta_sha256       text NOT NULL,                        -- hash of the mapped lib/chapters.ts fields
-  source_published  boolean NOT NULL DEFAULT false,       -- carries chapter.status === 'published'
-  import_batch_id   uuid NOT NULL,                        -- scopes dry-run vs. real, and rollback
+  source_published  boolean NOT NULL DEFAULT false,       -- canonical MDX publication state (chapter.status === 'published'); the CMS row stays 'draft'
+  import_batch_id   uuid NOT NULL,                        -- identifies the actual APPLY batch that created this row (never a dry run); scopes rollback
   imported_at       timestamptz NOT NULL DEFAULT now(),
   last_checked_at   timestamptz,
   divergence_state  text NOT NULL DEFAULT 'in_sync'
     CHECK (divergence_state IN ('in_sync','source_changed','cms_changed','both_changed','missing_source')),
-  UNIQUE (book_id, source_path)                            -- one mirror row per canonical file per book
+  UNIQUE (source_kind, source_path)                        -- one mirror row per canonical source file
 );
 ALTER TABLE cms_chapter_mirror ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only, like all cms_*)
 ```
+
+Refinements applied (§11.5):
+- **`source_kind` constrained to `'mdx'`** for v1 via a `CHECK` (not just a default), so no non-MDX rows can be written before that path is designed.
+- **Uniqueness is `UNIQUE(source_kind, source_path)`** — a canonical source file maps to exactly one mirror row regardless of book, which is stronger than the earlier per-book key and prevents the same MDX file being mirrored twice.
+- **`import_batch_id` is only ever a real APPLY batch id.** Dry runs do **not** allocate or persist a batch id and write no mirror rows (see §4/§5); the column therefore always points at an actual import.
+- **Retained unchanged:** the one-to-one `chapter_id UNIQUE` FK, the three hashes, the five divergence states, `imported_at`/`last_checked_at` timestamps, `ON DELETE CASCADE` from both parents, and zero-policy RLS matching every other `cms_*` table.
 
 Rationale for a table over columns on `cms_chapters`: the mirror is a *relationship to an external artifact* with its own lifecycle (hashes, batches, divergence), and a `chapter_id UNIQUE` FK keeps it one-to-one without widening the core row.
 
@@ -131,9 +137,9 @@ The import is an **admin-gated, service-role operation** (a script or a `require
 
 - **Read-only on the filesystem.** It reads MDX + `lib/chapters.ts`; it never writes them.
 - **No public-route awareness.** It touches only `cms_*` tables.
-- **Dry-run first, always.** `mode='dry_run'` computes and returns the full plan and writes **nothing** (except, optionally, an audit "dry_run_previewed" line). `mode='apply'` performs the plan inside a single transaction.
+- **Dry-run first, always.** `mode='dry_run'` computes and returns the full plan, writes **no rows**, and **allocates no `import_batch_id`** (a batch id identifies an actual import only). At most it may emit a single optional audit "dry_run_previewed" line.
 - **Idempotent.** Re-running `apply` after a successful import produces `SKIP` (no-op) for unchanged chapters, never duplicates.
-- **Batch-scoped.** Every apply run gets an `import_batch_id`, stamped on every created row's mirror record and audit entry, so a run can be identified and rolled back as a unit.
+- **Batch-scoped.** Every *apply* run mints one `import_batch_id`, stamped on every created row's mirror record and audit entry, so a real import can be identified and rolled back as a unit. Dry runs never mint one (§3.5).
 - **Fail-closed & atomic.** Any per-chapter validation failure aborts the whole `apply` transaction (all-or-nothing); partial imports are never committed.
 
 ### 4.1 Per-chapter action resolution
@@ -142,7 +148,7 @@ For each of the 25 chapters, resolve exactly one action:
 
 | Action | Condition |
 |---|---|
-| `CREATE` | No `cms_chapter_mirror` row for `(book, source_path)` **and** no active `cms_chapters` row already holding `chapter_number` in this book. |
+| `CREATE` | No `cms_chapter_mirror` row for `(source_kind='mdx', source_path)` **and** no active `cms_chapters` row already holding `chapter_number` in this book. |
 | `SKIP` | Mirror row exists and `source_sha256` + `meta_sha256` match current file/metadata (nothing changed). |
 | `UPDATE_AVAILABLE` | Mirror row exists but source hashes differ → **reported only**; `apply` does **not** auto-overwrite a CMS body (see §6). Requires explicit `--refresh-source` intent. |
 | `CONFLICT` | `chapter_number` is already taken by an active, **non-mirror** chapter (someone hand-created it), or a slug collision on `mdx-chapter-N` maps to a different content id. **Aborts apply**; listed in dry-run. |
@@ -252,13 +258,21 @@ The import is accepted when **all** hold:
 
 ---
 
-## 11. Open questions for Jason (resolve before build)
+## 11. Decisions (resolved) — ready for implementation review
 
-1. **Book subtitle** for the CMS book record — provide one, or leave null?
-2. **`coming-soon`/`draft` MDX chapters** — all 25 are currently `published`; confirm the import should treat any future non-published chapter identically (mirror as `draft`, `source_published=false`).
-3. **Snapshot granularity** — store the raw MDX verbatim (recommended, exact) vs. a stripped/plain-text projection for search. Recommendation: store raw verbatim in `body`; derive search text later if needed.
-4. **Media** — confirm v1 leaves image references in-body and does **not** populate `cms_media` (recommended).
-5. **Migration 41** — approve the `cms_chapter_mirror` table shape (§3.5) before any implementation.
+All prior open questions are resolved as follows. These decisions are now the binding contract for the v1 build; they are reflected in §3–§10 above.
+
+1. **Book subtitle — RESOLVED.** Set `cms_books.subtitle = "The Food System Inside You"` in v1. This is the official approved subtitle, so the import mirrors existing canonical publishing metadata rather than inventing copy. (See §3.2.)
+2. **Future non-published MDX chapters — RESOLVED.** Include them in the mirror import. Always create the CMS record as `status='draft'`; record the canonical MDX publication state separately via `source_published` (`false` for non-published). The CMS editorial status never asserts publication. (See §3.3, §3.5.)
+3. **Snapshot granularity — RESOLVED.** Store the **raw MDX file verbatim** in `cms_content.body`. A plain/search-text projection may be derived later but must **not** replace the exact canonical snapshot. (See §3.3.)
+4. **Media — RESOLVED.** v1 preserves image/media references inside the MDX body and does **not** create `cms_media` or `cms_content_media` rows. (See §3.4.)
+5. **Migration 41 — APPROVED IN PRINCIPLE** with these refinements, now folded into §3.5:
+   - `source_kind` **constrained** to `'mdx'` for v1 (a `CHECK`, not just a default).
+   - Uniqueness is **`UNIQUE(source_kind, source_path)`**.
+   - `import_batch_id` applies **only to actual import batches, never dry runs**.
+   - Retain the one-to-one `chapter_id` FK, the hashes, the divergence states, the timestamps, the cascade behaviour, and zero-policy RLS.
+
+**Remaining gate before implementation:** review and approval of this specification as a whole (this PR). No import code is written and Migration 41 is not applied until that approval lands.
 
 ---
 
