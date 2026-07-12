@@ -16,7 +16,7 @@
 | **Public routes** | `app/book-chapter-N/`, `app/book/`, `app/{reedsy,substack,print}/*`, `components/book/**` | ✅ |
 | **Editorial planning / metadata / derivatives / media / status / workflow** | CMS (`cms_content` + `cms_chapters`) | — imported, editable as a *plan*, not published |
 
-The CMS becomes a **read-only mirror plus an editorial workspace**. It never feeds the public book. Any future flow that lets the CMS influence publication is a later, explicit phase (§7), gated on a separate decision.
+The CMS becomes a **publication-read-only mirror and editable editorial workspace** — "read-only" describes its relationship to the live MDX publication (it can never publish or alter the public book), not the CMS manuscript field, which remains fully editable as a draft. It never feeds the public book. Any future flow that lets the CMS influence publication is a later, explicit phase (§7), gated on a separate decision.
 
 ### 1.2 Why this is the safe near-term step
 
@@ -160,7 +160,7 @@ For each of the 25 chapters, resolve exactly one action:
 `mode='dry_run'` returns a deterministic plan. Example (abridged):
 
 ```
-IMPORT PLAN — book "EatoBiotics" (slug: eatobiotics-book)  [batch 7f3a…, DRY RUN]
+IMPORT PLAN — book "EatoBiotics" (slug: eatobiotics-book)  [DRY RUN]
 Book record:            FIND-OR-CREATE  (found: no → will CREATE)
 Source files scanned:   25 / 25 present   (missing: none)
 lib/chapters.ts entries: 25
@@ -222,7 +222,9 @@ Each transition is its own decision with its own spec. v1 must not pre-build for
 
 Because `apply` only **adds** rows and stamps them with `import_batch_id`:
 
-- **Scoped rollback:** given a `batch_id`, archive (soft, default) or delete (hard, for a failed/test batch) every `cms_content`/`cms_chapters`/`cms_chapter_mirror` row created by that batch. `ON DELETE CASCADE` from `cms_content` removes the dependent `cms_chapters` + mirror rows automatically; soft rollback sets chapter `status='archived'` and can null the mirror or mark `divergence_state='missing_source'`.
+- **Scoped rollback:** given an `import_batch_id`, roll back every row created by that batch in one of two explicit modes:
+  - **Soft rollback (default):** archives the imported `cms_content` records (sets chapter `status='archived'`) and **retains their `cms_chapter_mirror` rows** for audit and provenance, flagged with a rollback marker / divergence state (e.g. `divergence_state='missing_source'`). The one-to-one `chapter_id` FK is never nulled — the mirror is kept intact, not detached.
+  - **Hard rollback (for a failed/test batch):** deletes the imported `cms_content` rows; `ON DELETE CASCADE` then removes the dependent `cms_chapters` and `cms_chapter_mirror` rows automatically.
 - **Book record:** the find-or-create book is removed only if the rollback batch created it and it has no remaining chapters.
 - **Reversibility guarantee:** since MDX/routes are never touched, a full rollback returns the system to its exact pre-import state. The public book is unaffected at every step.
 - Every rollback writes its own audit entry (§9).
@@ -236,7 +238,7 @@ Uses the existing append-only `cms_audit_log` (Migration 37) + a new action valu
 - Add `CmsAuditAction`: `chapter_imported` (and reuse `content_created`, `content_archived`).
 - Per created chapter: `chapter_imported`, entity `cms_content`, metadata `{ batch_id, source_path, source_sha256, chapter_number }`.
 - Per batch: one summary line — `{ batch_id, mode, created, skipped, conflicts, book_id }`.
-- Dry-run: optional single `{ batch_id, mode:'dry_run', verdict }` line (no per-chapter spam).
+- Dry-run: optional single `{ mode:'dry_run', verdict, preview_id? }` line (no per-chapter spam). A dry run allocates **no** `import_batch_id` — `preview_id` is a non-persisted, in-memory identifier only, never implying a real import batch exists.
 - Rollback: `content_archived` per row + a batch summary `{ batch_id, action:'rollback' }`.
 
 ---
@@ -246,7 +248,7 @@ Uses the existing append-only `cms_audit_log` (Migration 37) + a new action valu
 The import is accepted when **all** hold:
 
 1. **Dry-run parity.** `dry_run` on a clean DB reports `CREATE 25, CONFLICT 0`, writes zero rows; verdict `READY`.
-2. **Apply correctness.** `apply` creates exactly 1 book + 25 `cms_content` + 25 `cms_chapters` + 25 `cms_chapter_mirror` rows, with the §3 mapping, all chapters `status='draft'`, `chapter_number` 1–25 unique.
+2. **Apply correctness.** `apply` **creates or reuses exactly one** EatoBiotics book record (find-or-create on slug `eatobiotics-book`) and creates exactly 25 `cms_content` + 25 `cms_chapters` + 25 `cms_chapter_mirror` rows, with the §3 mapping, all chapters `status='draft'`, `chapter_number` 1–25 unique.
 3. **Idempotency.** A second `apply` reports `SKIP 25`, writes zero rows, creates no duplicates.
 4. **No source mutation.** `git status` shows no change to `content/book/**`, `lib/chapters*.ts`, `app/book*`, `components/book/**` after apply. (CI/test asserts these paths are untouched.)
 5. **Public book unaffected.** All 25 `app/book-chapter-N` routes render identically before/after (build + spot render).
