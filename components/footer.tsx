@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { NAV_GROUPS } from "@/lib/nav"
+import { NAV_GROUPS, hidesSiteChrome } from "@/lib/nav"
 
 /** Footer link columns derive from the shared nav config so header and footer
  *  can never drift apart; only the Company column is footer-specific. */
@@ -144,6 +144,11 @@ function MinimalFooter() {
 
 export function Footer() {
   const pathname = usePathname()
+
+  // Content Studio (/cms) renders its own full application shell — no public
+  // marketing chrome. See lib/nav.ts hidesSiteChrome for why this is
+  // presentation-only, not a security boundary.
+  if (hidesSiteChrome(pathname)) return null
 
   // Waitlist page gets a stripped-down footer (no links into the gated site).
   if (pathname === "/enter") return <MinimalFooter />

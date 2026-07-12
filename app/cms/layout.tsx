@@ -61,7 +61,10 @@ export default async function CmsLayout({ children }: { children: React.ReactNod
           </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-[1200px] px-6 py-8">{children}</main>
+      {/* The root layout already renders <main>{children}</main> around every route
+          (including /cms) — use a <div> here, not a second <main>, to avoid a
+          nested-landmark violation. */}
+      <div className="mx-auto max-w-[1200px] px-6 py-8">{children}</div>
       <footer className="mx-auto max-w-[1200px] px-6 pb-8">
         <p className="text-xs text-muted-foreground">
           Create once. Adapt intelligently. Publish everywhere. — AI drafts, the founder
