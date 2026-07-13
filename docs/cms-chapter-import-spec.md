@@ -114,17 +114,34 @@ CREATE TABLE IF NOT EXISTS cms_chapter_mirror (
   import_batch_id   uuid NOT NULL,                        -- identifies the actual APPLY batch that created this row (never a dry run); scopes rollback
   imported_at       timestamptz NOT NULL DEFAULT now(),
   last_checked_at   timestamptz,
-  divergence_state  text NOT NULL DEFAULT 'in_sync'
+  divergence_state  text NOT NULL DEFAULT 'in_sync'        -- stays TRUTHFUL about MDX↔CMS; never overloaded for rollback
     CHECK (divergence_state IN ('in_sync','source_changed','cms_changed','both_changed','missing_source')),
+  rolled_back_at    timestamptz,                          -- set by a SOFT rollback (content archived, mirror retained)
+  rollback_batch_id uuid,                                 -- the rollback that soft-retired this mirror
   UNIQUE (source_kind, source_path)                        -- one mirror row per canonical source file
 );
 ALTER TABLE cms_chapter_mirror ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only, like all cms_*)
+
+-- Import-batch provenance so rollback can safely decide the book's fate.
+CREATE TABLE IF NOT EXISTS cms_import_batch (
+  batch_id        uuid PRIMARY KEY,
+  book_id         uuid NOT NULL REFERENCES cms_books(id) ON DELETE CASCADE,
+  book_content_id uuid NOT NULL REFERENCES cms_content(id) ON DELETE CASCADE,
+  book_created    boolean NOT NULL,                       -- true iff THIS batch created the book
+  created_count   integer NOT NULL DEFAULT 0,
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  rolled_back_at  timestamptz,
+  rollback_hard   boolean
+);
+ALTER TABLE cms_import_batch ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only)
 ```
 
 Refinements applied (§11.5):
 - **`source_kind` constrained to `'mdx'`** for v1 via a `CHECK` (not just a default), so no non-MDX rows can be written before that path is designed.
 - **Uniqueness is `UNIQUE(source_kind, source_path)`** — a canonical source file maps to exactly one mirror row regardless of book, which is stronger than the earlier per-book key and prevents the same MDX file being mirrored twice.
 - **`import_batch_id` is only ever a real APPLY batch id.** Dry runs do **not** allocate or persist a batch id and write no mirror rows (see §4/§5); the column therefore always points at an actual import.
+- **Soft-rollback state is separate from divergence.** `rolled_back_at` / `rollback_batch_id` carry rollback provenance; `divergence_state` is never repurposed as `missing_source` to mean "rolled back".
+- **Book-rollback safety needs provenance.** `cms_import_batch.book_created` records whether an apply created vs. reused the book, so `cms_rollback_import_batch()` can only ever affect a book this batch created (§8).
 - **Retained unchanged:** the one-to-one `chapter_id UNIQUE` FK, the three hashes, the five divergence states, `imported_at`/`last_checked_at` timestamps, `ON DELETE CASCADE` from both parents, and zero-policy RLS matching every other `cms_*` table.
 
 Rationale for a table over columns on `cms_chapters`: the mirror is a *relationship to an external artifact* with its own lifecycle (hashes, batches, divergence), and a `chapter_id UNIQUE` FK keeps it one-to-one without widening the core row.
@@ -140,7 +157,9 @@ The import is an **admin-gated, service-role operation** (a script or a `require
 - **Dry-run first, always.** `mode='dry_run'` computes and returns the full plan, writes **no rows**, and **allocates no `import_batch_id`** (a batch id identifies an actual import only). At most it may emit a single optional audit "dry_run_previewed" line.
 - **Idempotent.** Re-running `apply` after a successful import produces `SKIP` (no-op) for unchanged chapters, never duplicates.
 - **Batch-scoped.** Every *apply* run mints one `import_batch_id`, stamped on every created row's mirror record and audit entry, so a real import can be identified and rolled back as a unit. Dry runs never mint one (§3.5).
-- **Fail-closed & atomic.** Any per-chapter validation failure aborts the whole `apply` transaction (all-or-nothing); partial imports are never committed.
+- **Fail-closed on every DB read.** Every book / chapter / mirror / slug-owner / divergence read and update inspects its error. A failed state query is **never** interpreted as an empty result — it aborts the request with a `503`. If the Migration 41 schema is absent (`undefined_table` / `42P01`), every mode returns a clear **migration-required** `503` instead of a misleading plan.
+- **Complete-source gate.** Before any plan is trusted, the canonical source set is validated: no MDX file may be missing/unreadable, the metadata count must be exactly 25, chapter numbers and slugs must be unique, and the full `1–25` set must be present. Any failure makes `dry_run` report `BLOCKED` and makes `apply` **refuse before allocating a batch id or calling the RPC** — a missing file can never silently shrink the plan.
+- **Atomic apply.** The approved CREATE set is written in ONE transaction (`cms_import_chapters`), so a partial import can never commit.
 
 ### 4.1 Per-chapter action resolution
 
@@ -222,10 +241,13 @@ Each transition is its own decision with its own spec. v1 must not pre-build for
 
 Because `apply` only **adds** rows and stamps them with `import_batch_id`:
 
+Batch provenance is recorded at apply time in **`cms_import_batch`** (`batch_id`, `book_id`, `book_content_id`, `book_created`, `created_count`), so rollback can act safely without guessing.
+
 - **Scoped rollback:** given an `import_batch_id`, roll back every row created by that batch in one of two explicit modes:
-  - **Soft rollback (default):** archives the imported `cms_content` records (sets chapter `status='archived'`) and **retains their `cms_chapter_mirror` rows** for audit and provenance, flagged with a rollback marker / divergence state (e.g. `divergence_state='missing_source'`). The one-to-one `chapter_id` FK is never nulled — the mirror is kept intact, not detached.
+  - **Soft rollback (default):** archives the imported `cms_content` records (sets chapter `status='archived'`) and **retains their `cms_chapter_mirror` rows** for audit and provenance, marked with dedicated columns **`rolled_back_at` + `rollback_batch_id`**. It **does not** touch `divergence_state` — that stays truthful about the MDX↔CMS relationship (a soft rollback is *not* a missing source, so `missing_source` is never overloaded for this). The one-to-one `chapter_id` FK is never nulled — the mirror is kept intact, not detached.
   - **Hard rollback (for a failed/test batch):** deletes the imported `cms_content` rows; `ON DELETE CASCADE` then removes the dependent `cms_chapters` and `cms_chapter_mirror` rows automatically.
-- **Book record:** the find-or-create book is removed only if the rollback batch created it and it has no remaining chapters.
+- **Book record (safe):** the book is archived (soft) / deleted (hard) **only when `cms_import_batch.book_created` is true for this batch** and no qualifying chapters remain (soft: no non-archived chapters; hard: no chapters at all). A **reused manual book is never modified** by rollback. This decision is the pure `resolveRollbackBookAction()` helper, mirrored exactly by `cms_rollback_import_batch()`.
+- **Re-import after a soft rollback:** a soft-rolled-back mirror row is retained (provenance) but is **excluded from ordinary active matching** — the resolver classifies its source as `CONFLICT` (never a silent `SKIP` or silent re-create over the occupied `UNIQUE(source_kind, source_path)` slot). A deliberate re-import must first **hard-roll-back** to clear the retained mirror.
 - **Reversibility guarantee:** since MDX/routes are never touched, a full rollback returns the system to its exact pre-import state. The public book is unaffected at every step.
 - Every rollback writes its own audit entry (§9).
 

@@ -1269,8 +1269,13 @@ CREATE TABLE IF NOT EXISTS cms_chapter_mirror (
   import_batch_id   uuid NOT NULL,                        -- the actual APPLY batch that created this row (never a dry run)
   imported_at       timestamptz NOT NULL DEFAULT now(),
   last_checked_at   timestamptz,
+  -- divergence_state stays TRUTHFUL about the MDX↔CMS relationship; it is never
+  -- overloaded to mean "rolled back". Soft-rollback state lives in its own
+  -- columns below so provenance and divergence are not conflated.
   divergence_state  text NOT NULL DEFAULT 'in_sync'
     CHECK (divergence_state IN ('in_sync','source_changed','cms_changed','both_changed','missing_source')),
+  rolled_back_at    timestamptz,                          -- set by a SOFT rollback; content archived, mirror retained
+  rollback_batch_id uuid,                                 -- the rollback that soft-retired this mirror
   UNIQUE (source_kind, source_path)                        -- one mirror row per canonical source file
 );
 
@@ -1278,6 +1283,22 @@ CREATE INDEX IF NOT EXISTS idx_cms_chapter_mirror_book  ON cms_chapter_mirror (b
 CREATE INDEX IF NOT EXISTS idx_cms_chapter_mirror_batch ON cms_chapter_mirror (import_batch_id);
 
 ALTER TABLE cms_chapter_mirror ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only)
+
+-- Import-batch provenance: records whether an apply batch CREATED the target
+-- book or REUSED an existing one, so rollback can safely decide the book's fate
+-- (a reused manual book must never be touched). One row per apply batch.
+CREATE TABLE IF NOT EXISTS cms_import_batch (
+  batch_id        uuid PRIMARY KEY,
+  book_id         uuid NOT NULL REFERENCES cms_books(id) ON DELETE CASCADE,
+  book_content_id uuid NOT NULL REFERENCES cms_content(id) ON DELETE CASCADE,
+  book_created    boolean NOT NULL,                       -- true iff THIS batch created the book
+  created_count   integer NOT NULL DEFAULT 0,
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  rolled_back_at  timestamptz,
+  rollback_hard   boolean
+);
+
+ALTER TABLE cms_import_batch ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only)
 
 -- Atomic import. The route resolves the plan first (read-only) and refuses
 -- unless the verdict is READY; this function performs the approved CREATE set
@@ -1291,7 +1312,7 @@ ALTER TABLE cms_chapter_mirror ENABLE ROW LEVEL SECURITY;  -- zero policies (ser
 --                     "publication_target":[...], "source_path","source_slug",
 --                     "source_sha256","body_sha256","meta_sha256","source_published" } ]
 --   }
--- Returns { "book_id": uuid, "book_content_id": uuid, "created": int }.
+-- Returns { "book_id", "book_content_id", "book_created": bool, "created": int }.
 CREATE OR REPLACE FUNCTION cms_import_chapters(payload jsonb)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -1301,6 +1322,7 @@ DECLARE
   v_book       jsonb := payload->'book';
   v_book_id    uuid;
   v_book_cid   uuid;
+  v_created_bk boolean := false;
   v_ch         jsonb;
   v_content_id uuid;
   v_chapter_id uuid;
@@ -1317,6 +1339,7 @@ BEGIN
     INSERT INTO cms_books (content_id, subtitle)
     VALUES (v_book_cid, v_book->>'subtitle')
     RETURNING id INTO v_book_id;
+    v_created_bk := true;
   ELSE
     v_book_cid := (v_book->>'content_id')::uuid;
     SELECT id INTO v_book_id FROM cms_books WHERE content_id = v_book_cid;
@@ -1355,24 +1378,47 @@ BEGIN
     v_created := v_created + 1;
   END LOOP;
 
-  RETURN jsonb_build_object('book_id', v_book_id, 'book_content_id', v_book_cid, 'created', v_created);
+  -- Record batch provenance so rollback can safely decide the book's fate.
+  INSERT INTO cms_import_batch (batch_id, book_id, book_content_id, book_created, created_count)
+  VALUES (v_batch, v_book_id, v_book_cid, v_created_bk, v_created);
+
+  RETURN jsonb_build_object(
+    'book_id', v_book_id, 'book_content_id', v_book_cid,
+    'book_created', v_created_bk, 'created', v_created
+  );
 END;
 $$;
 
--- Reversible rollback of a single import batch (spec §8). Soft (default)
--- archives the imported chapter content and RETAINS the mirror rows for
--- provenance, flagged missing_source; hard deletes the imported content and
--- lets ON DELETE CASCADE remove the chapter + mirror rows. The find-or-create
--- book is archived (soft) / deleted (hard) only if this batch created it and it
--- has no remaining chapters. One transaction → all-or-nothing.
+-- Reversible rollback of a single import batch (spec §8). One transaction →
+-- all-or-nothing.
+--   SOFT (default): archives the imported chapter content and RETAINS the
+--     mirror rows, marking them rolled_back_at/rollback_batch_id. It does NOT
+--     touch divergence_state — that stays truthful about MDX↔CMS (soft rollback
+--     is not a missing source). Rolled-back mirrors are excluded from ordinary
+--     re-import matching in the resolver; a re-import must hard-roll-back first.
+--   HARD: deletes the imported content; ON DELETE CASCADE removes the chapter +
+--     mirror rows.
+-- The book is archived (soft) / deleted (hard) ONLY when THIS batch created it
+-- (per cms_import_batch.book_created) and no qualifying chapters remain — for
+-- soft, no ACTIVE (non-archived) chapters; for hard, no chapters at all. A
+-- REUSED manual book is never modified. Mirrors resolveRollbackBookAction().
 CREATE OR REPLACE FUNCTION cms_rollback_import_batch(p_batch uuid, p_hard boolean DEFAULT false)
 RETURNS jsonb
 LANGUAGE plpgsql
 AS $$
 DECLARE
-  v_content_ids uuid[];
-  v_affected    int;
+  v_content_ids  uuid[];
+  v_affected     int;
+  v_book_id      uuid;
+  v_book_cid     uuid;
+  v_book_created boolean;
+  v_remaining    int;
+  v_book_action  text := 'leave_book';
 BEGIN
+  SELECT book_id, book_content_id, book_created
+    INTO v_book_id, v_book_cid, v_book_created
+    FROM cms_import_batch WHERE batch_id = p_batch;
+
   SELECT array_agg(ch.content_id) INTO v_content_ids
   FROM cms_chapter_mirror m
   JOIN cms_chapters ch ON ch.id = m.chapter_id
@@ -1381,21 +1427,41 @@ BEGIN
   v_affected := COALESCE(array_length(v_content_ids, 1), 0);
 
   IF v_affected = 0 THEN
-    RETURN jsonb_build_object('batch', p_batch, 'affected', 0);
+    RETURN jsonb_build_object('batch', p_batch, 'affected', 0, 'book_action', 'leave_book');
   END IF;
 
   IF p_hard THEN
-    -- Cascade removes cms_chapters + cms_chapter_mirror for these content rows.
-    DELETE FROM cms_content WHERE id = ANY(v_content_ids);
+    DELETE FROM cms_content WHERE id = ANY(v_content_ids);  -- cascade drops chapters + mirror
   ELSE
     UPDATE cms_content
       SET status = 'archived', archived_at = now(), updated_at = now()
       WHERE id = ANY(v_content_ids);
     UPDATE cms_chapter_mirror
-      SET divergence_state = 'missing_source', last_checked_at = now()
+      SET rolled_back_at = now(), rollback_batch_id = p_batch, last_checked_at = now()
       WHERE import_batch_id = p_batch;
   END IF;
 
-  RETURN jsonb_build_object('batch', p_batch, 'affected', v_affected, 'hard', p_hard);
+  -- Decide the book's fate — only ever for a book THIS batch created.
+  IF v_book_created THEN
+    IF p_hard THEN
+      SELECT count(*) INTO v_remaining FROM cms_chapters WHERE book_id = v_book_id;
+      IF v_remaining = 0 THEN
+        DELETE FROM cms_content WHERE id = v_book_cid;  -- cascade drops cms_books
+        v_book_action := 'delete_book';
+      END IF;
+    ELSE
+      SELECT count(*) INTO v_remaining
+        FROM cms_chapters ch JOIN cms_content c ON c.id = ch.content_id
+        WHERE ch.book_id = v_book_id AND c.status <> 'archived';
+      IF v_remaining = 0 THEN
+        UPDATE cms_content SET status = 'archived', archived_at = now(), updated_at = now() WHERE id = v_book_cid;
+        v_book_action := 'archive_book';
+      END IF;
+    END IF;
+  END IF;
+
+  UPDATE cms_import_batch SET rolled_back_at = now(), rollback_hard = p_hard WHERE batch_id = p_batch;
+
+  RETURN jsonb_build_object('batch', p_batch, 'affected', v_affected, 'hard', p_hard, 'book_action', v_book_action);
 END;
 $$;

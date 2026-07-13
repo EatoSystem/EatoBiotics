@@ -58,6 +58,10 @@ export interface ExistingMirror {
   sourceSha256: string
   bodySha256: string
   metaSha256: string
+  /** True once this mirror's import batch was soft-rolled-back (content archived,
+   *  mirror retained for provenance). Such rows are excluded from ordinary
+   *  SKIP/UPDATE matching and block a silent re-create (see resolveOne). */
+  rolledBack: boolean
 }
 
 /** Snapshot of relevant CMS state, read before planning. */
@@ -131,9 +135,21 @@ function resolveOne(
   const base = { number: s.number, sourceSlug: s.sourceSlug }
   const mirror = mirrorByPath.get(s.sourcePath)
 
-  // Already imported (has a mirror row) → SKIP if unchanged, else UPDATE_AVAILABLE.
-  // apply never overwrites an existing body; updates are report-only (spec §6).
   if (mirror) {
+    // A soft-rolled-back mirror is retained for provenance but its content is
+    // archived. It is NOT a live mirror: it must not SKIP, and it must not be
+    // silently re-created over (the UNIQUE(source_kind, source_path) slot is
+    // still occupied). Re-import is a deliberate, blocked-by-default action —
+    // the retained mirror must be cleared (hard rollback) first.
+    if (mirror.rolledBack) {
+      return {
+        ...base,
+        action: "CONFLICT",
+        reason: "source was imported then soft-rolled-back; clear the retained mirror (hard rollback) to re-import",
+      }
+    }
+    // Already imported → SKIP if unchanged, else UPDATE_AVAILABLE. apply never
+    // overwrites an existing body; updates are report-only (spec §6).
     const unchanged = mirror.sourceSha256 === s.sourceSha256 && mirror.metaSha256 === s.metaSha256
     return unchanged
       ? { ...base, action: "SKIP", reason: "mirror in sync with MDX" }
@@ -163,6 +179,71 @@ function resolveOne(
   }
 
   return { ...base, action: "CREATE", reason: `new mirror; number ${s.number} free` }
+}
+
+/** A canonical source file that could not be read (missing or unreadable). */
+export interface SourceReadProblem {
+  sourcePath: string
+  reason: string
+}
+
+export interface SourceValidation {
+  ok: boolean
+  problems: string[]
+}
+
+/** Validate the canonical source set BEFORE any plan is trusted. An incomplete
+ *  or inconsistent source set must block the whole import — a missing MDX file
+ *  must never silently reduce a 25-chapter import to 24 (spec acceptance #2). */
+export function validateCanonicalSources(
+  loaded: { sources: SourceChapter[]; unreadable: SourceReadProblem[]; expected: number },
+  expectedCount = 25
+): SourceValidation {
+  const problems: string[] = []
+
+  for (const u of loaded.unreadable) {
+    problems.push(`canonical source unreadable: ${u.sourcePath} (${u.reason})`)
+  }
+  if (loaded.expected !== expectedCount) {
+    problems.push(`expected ${expectedCount} chapter metadata entries, found ${loaded.expected}`)
+  }
+
+  const numbers = loaded.sources.map((s) => s.number)
+  const slugs = loaded.sources.map((s) => s.sourceSlug)
+  const dupNumbers = duplicates(numbers)
+  const dupSlugs = duplicates(slugs)
+  if (dupNumbers.length) problems.push(`duplicate chapter numbers: ${dupNumbers.join(", ")}`)
+  if (dupSlugs.length) problems.push(`duplicate chapter slugs: ${dupSlugs.join(", ")}`)
+
+  const present = new Set(numbers)
+  const missingNumbers: number[] = []
+  for (let n = 1; n <= expectedCount; n++) if (!present.has(n)) missingNumbers.push(n)
+  if (missingNumbers.length) problems.push(`missing expected chapter numbers: ${missingNumbers.join(", ")}`)
+
+  return { ok: problems.length === 0, problems }
+}
+
+function duplicates<T>(xs: T[]): T[] {
+  const seen = new Set<T>()
+  const dup = new Set<T>()
+  for (const x of xs) {
+    if (seen.has(x)) dup.add(x)
+    seen.add(x)
+  }
+  return [...dup]
+}
+
+/** Pure decision for what a rollback does to the batch's book. The RPC mirrors
+ *  this: the book is only ever affected when THIS batch created it and no
+ *  chapters remain; a reused manual book is always left untouched. */
+export function resolveRollbackBookAction(args: {
+  bookCreatedByBatch: boolean
+  remainingChapterCount: number
+  hard: boolean
+}): "delete_book" | "archive_book" | "leave_book" {
+  if (!args.bookCreatedByBatch) return "leave_book"
+  if (args.remainingChapterCount > 0) return "leave_book"
+  return args.hard ? "delete_book" : "archive_book"
 }
 
 /** Divergence classification for the read-only `check` operation (spec §6).

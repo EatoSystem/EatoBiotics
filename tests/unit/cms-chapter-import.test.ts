@@ -4,11 +4,14 @@ import {
   resolveChapterImportPlan,
   renderPlanText,
   classifyDivergence,
+  validateCanonicalSources,
+  resolveRollbackBookAction,
   mirrorSlug,
   type SourceChapter,
   type ExistingState,
   type ExistingChapter,
   type ExistingMirror,
+  type SourceReadProblem,
 } from "@/lib/cms/chapter-import"
 
 /* Import-plan resolution + the non-empty-production safety requirement
@@ -51,12 +54,14 @@ const targetChapter = (num: number, status: string): ExistingChapter => ({
   mirrorSourcePath: null,
 })
 
-const syncedMirror = (n: number): ExistingMirror => ({
+const syncedMirror = (n: number, over: Partial<ExistingMirror> = {}): ExistingMirror => ({
   sourcePath: `content/book/chapter-${n}.mdx`,
   chapterId: `ch-${n}`,
   sourceSha256: `src-${n}`,
   bodySha256: `body-${n}`,
   metaSha256: `meta-${n}`,
+  rolledBack: false,
+  ...over,
 })
 
 describe("resolveChapterImportPlan — non-empty-production safety fixtures", () => {
@@ -202,9 +207,81 @@ describe("renderPlanText", () => {
   })
 })
 
-/* ── Route fail-closed gate ── */
+describe("validateCanonicalSources — incomplete/inconsistent sources block the import", () => {
+  const good = { sources: sources25, unreadable: [] as SourceReadProblem[], expected: 25 }
+
+  it("accepts a complete, consistent 25-chapter source set", () => {
+    expect(validateCanonicalSources(good).ok).toBe(true)
+  })
+
+  it("blocks when any MDX file is unreadable (never silently shrinks the plan)", () => {
+    const sources24 = sources25.filter((s) => s.number !== 25)
+    const v = validateCanonicalSources({
+      sources: sources24,
+      unreadable: [{ sourcePath: "content/book/chapter-25.mdx", reason: "file not found" }],
+      expected: 25,
+    })
+    expect(v.ok).toBe(false)
+    expect(v.problems.join(" ")).toMatch(/unreadable.*chapter-25/)
+    expect(v.problems.join(" ")).toMatch(/missing expected chapter numbers: 25/)
+  })
+
+  it("blocks on an unexpected metadata count", () => {
+    const v = validateCanonicalSources({ sources: sources25.slice(0, 20), unreadable: [], expected: 20 })
+    expect(v.ok).toBe(false)
+    expect(v.problems.join(" ")).toMatch(/expected 25 chapter metadata entries, found 20/)
+  })
+
+  it("blocks on duplicate chapter numbers", () => {
+    const dup = [...sources25, makeSource(5)] // number 5 twice
+    expect(validateCanonicalSources({ sources: dup, unreadable: [], expected: 26 }).ok).toBe(false)
+  })
+
+  it("blocks on duplicate slugs", () => {
+    const dup = [...sources25.filter((s) => s.number !== 6), makeSource(6, { sourceSlug: "chapter-5" })]
+    const v = validateCanonicalSources({ sources: dup, unreadable: [], expected: 25 })
+    expect(v.ok).toBe(false)
+    expect(v.problems.join(" ")).toMatch(/duplicate chapter slugs/)
+  })
+})
+
+describe("resolveRollbackBookAction — book affected only when this batch created it", () => {
+  it("created book, no chapters remain, soft → archive_book", () => {
+    expect(resolveRollbackBookAction({ bookCreatedByBatch: true, remainingChapterCount: 0, hard: false })).toBe("archive_book")
+  })
+  it("created book, no chapters remain, hard → delete_book", () => {
+    expect(resolveRollbackBookAction({ bookCreatedByBatch: true, remainingChapterCount: 0, hard: true })).toBe("delete_book")
+  })
+  it("created book but chapters remain → leave_book", () => {
+    expect(resolveRollbackBookAction({ bookCreatedByBatch: true, remainingChapterCount: 3, hard: true })).toBe("leave_book")
+  })
+  it("reused manual book → leave_book, even when empty", () => {
+    expect(resolveRollbackBookAction({ bookCreatedByBatch: false, remainingChapterCount: 0, hard: false })).toBe("leave_book")
+    expect(resolveRollbackBookAction({ bookCreatedByBatch: false, remainingChapterCount: 0, hard: true })).toBe("leave_book")
+  })
+})
+
+describe("resolver — soft-rolled-back mirror re-import behaviour", () => {
+  it("treats a rolled-back mirror as CONFLICT (no silent SKIP, no silent re-create)", () => {
+    const plan = resolveChapterImportPlan(
+      sources25,
+      emptyState({
+        book: { contentId: "bc", bookId: "bk" },
+        mirrors: [syncedMirror(1, { rolledBack: true })],
+      })
+    )
+    const item = plan.items.find((i) => i.number === 1)
+    expect(item?.action).toBe("CONFLICT")
+    expect(item?.reason).toMatch(/rolled-back/)
+    expect(plan.verdict).toBe("BLOCKED")
+  })
+})
+
+/* ── Route: fail-closed gate + DB-error handling + source blocking ── */
 const mockGetSupabase = vi.fn()
+const mockLoad = vi.fn()
 vi.mock("@/lib/supabase", () => ({ getSupabase: () => mockGetSupabase() }))
+vi.mock("@/lib/cms/chapter-import-source", () => ({ loadCanonicalChapters: () => mockLoad() }))
 
 beforeEach(() => {
   vi.resetModules()
@@ -251,5 +328,97 @@ describe("/api/cms/import/chapters fail-closed gate", () => {
     const res = await POST(req(adminCookieToken() as string, { mode: "dry_run" }))
     expect(res.status).toBe(503)
     expect(mockGetSupabase).toHaveBeenCalled()
+  })
+})
+
+// Minimal per-table Supabase query-builder mock (thenable + maybeSingle).
+function qb(result: { data?: unknown; error?: unknown }) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const b: any = {
+    select: () => b,
+    eq: () => b,
+    in: () => b,
+    update: () => b,
+    maybeSingle: () => Promise.resolve(result),
+    then: (f: (v: unknown) => unknown, r?: (e: unknown) => unknown) => Promise.resolve(result).then(f, r),
+  }
+  return b
+}
+function clientByTable(map: Record<string, { data?: unknown; error?: unknown }>, rpc?: ReturnType<typeof vi.fn>) {
+  return {
+    from: (t: string) => qb(map[t] ?? { data: null, error: null }),
+    rpc: rpc ?? vi.fn(() => Promise.resolve({ data: null, error: null })),
+  }
+}
+
+describe("/api/cms/import/chapters — fail closed on DB errors (never assume empty)", () => {
+  it("returns migration-required 503 when the mirror schema is absent (42P01)", async () => {
+    vi.stubEnv("ADMIN_SESSION_SECRET", "a-test-secret-value")
+    mockLoad.mockResolvedValue({ sources: sources25, unreadable: [], expected: 25, scanned: 25 })
+    mockGetSupabase.mockReturnValue(
+      clientByTable({
+        cms_content: { data: null, error: null },
+        cms_chapter_mirror: { data: null, error: { code: "42P01", message: 'relation "cms_chapter_mirror" does not exist' } },
+      })
+    )
+    const { adminCookieToken } = await import("@/lib/admin-auth")
+    const { POST } = await import("@/app/api/cms/import/chapters/route")
+    const res = await POST(req(adminCookieToken() as string, { mode: "dry_run" }))
+    expect(res.status).toBe(503)
+    const body = await res.json()
+    expect(body.migration_required).toBe(true)
+  })
+
+  it("returns a fail-closed 503 on any other DB read error (not an empty result)", async () => {
+    vi.stubEnv("ADMIN_SESSION_SECRET", "a-test-secret-value")
+    mockLoad.mockResolvedValue({ sources: sources25, unreadable: [], expected: 25, scanned: 25 })
+    mockGetSupabase.mockReturnValue(
+      clientByTable({
+        cms_content: { data: null, error: null },
+        cms_chapter_mirror: { data: null, error: { code: "XX000", message: "connection reset" } },
+      })
+    )
+    const { adminCookieToken } = await import("@/lib/admin-auth")
+    const { POST } = await import("@/app/api/cms/import/chapters/route")
+    const res = await POST(req(adminCookieToken() as string, { mode: "dry_run" }))
+    expect(res.status).toBe(503)
+    const body = await res.json()
+    expect(body.migration_required).toBeUndefined()
+    expect(String(body.error)).toMatch(/unavailable/i)
+  })
+})
+
+describe("/api/cms/import/chapters — incomplete canonical sources block the import", () => {
+  const partialLoad = {
+    sources: sources25.filter((s) => s.number !== 25),
+    unreadable: [{ sourcePath: "content/book/chapter-25.mdx", reason: "file not found" }],
+    expected: 25,
+    scanned: 24,
+  }
+  const okState = { cms_content: { data: null, error: null }, cms_chapter_mirror: { data: [], error: null } }
+
+  it("dry_run reports BLOCKED with the source problems (writes nothing)", async () => {
+    vi.stubEnv("ADMIN_SESSION_SECRET", "a-test-secret-value")
+    mockLoad.mockResolvedValue(partialLoad)
+    mockGetSupabase.mockReturnValue(clientByTable(okState))
+    const { adminCookieToken } = await import("@/lib/admin-auth")
+    const { POST } = await import("@/app/api/cms/import/chapters/route")
+    const res = await POST(req(adminCookieToken() as string, { mode: "dry_run" }))
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.verdict).toBe("BLOCKED")
+    expect(String(body.sourceProblems.join(" "))).toMatch(/chapter-25/)
+  })
+
+  it("apply refuses (409) before allocating a batch id or calling the import RPC", async () => {
+    vi.stubEnv("ADMIN_SESSION_SECRET", "a-test-secret-value")
+    mockLoad.mockResolvedValue(partialLoad)
+    const rpc = vi.fn(() => Promise.resolve({ data: null, error: null }))
+    mockGetSupabase.mockReturnValue(clientByTable(okState, rpc))
+    const { adminCookieToken } = await import("@/lib/admin-auth")
+    const { POST } = await import("@/app/api/cms/import/chapters/route")
+    const res = await POST(req(adminCookieToken() as string, { mode: "apply" }))
+    expect(res.status).toBe(409)
+    expect(rpc).not.toHaveBeenCalled()
   })
 })

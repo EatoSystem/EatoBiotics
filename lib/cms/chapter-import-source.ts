@@ -1,7 +1,7 @@
 import { promises as fs } from "fs"
 import path from "path"
 import { chapters as canonicalChapters } from "@/lib/chapters"
-import { sha256, mirrorSlug, type SourceChapter } from "@/lib/cms/chapter-import"
+import { sha256, mirrorSlug, type SourceChapter, type SourceReadProblem } from "@/lib/cms/chapter-import"
 
 /* Server-only: reads the canonical chapters (lib/chapters.ts metadata +
    content/book/chapter-N.mdx bodies) into the pure SourceChapter shape the
@@ -37,17 +37,18 @@ function metaHash(c: {
 
 export interface LoadedSources {
   sources: SourceChapter[]
-  scanned: number   // MDX files found
-  expected: number  // lib/chapters.ts entries
-  missing: string[] // source paths with no MDX file on disk
+  scanned: number                 // MDX files successfully read
+  expected: number                // lib/chapters.ts entries
+  unreadable: SourceReadProblem[] // source paths that could not be read (missing/unreadable), with reason
 }
 
-/** Load every canonical chapter. Missing MDX files are reported (not thrown)
- *  so the dry run can surface them; a chapter with no body is skipped from
- *  `sources` and listed in `missing`. */
+/** Load every canonical chapter. A file that cannot be read is reported (not
+ *  thrown) with a distinct reason so the dry run can surface it and the
+ *  validator can BLOCK the import; it is never silently dropped into a smaller
+ *  plan. */
 export async function loadCanonicalChapters(cwd: string = process.cwd()): Promise<LoadedSources> {
   const expected = canonicalChapters.length
-  const missing: string[] = []
+  const unreadable: SourceReadProblem[] = []
   const sources: SourceChapter[] = []
 
   for (const c of canonicalChapters) {
@@ -55,8 +56,10 @@ export async function loadCanonicalChapters(cwd: string = process.cwd()): Promis
     let body: string
     try {
       body = await fs.readFile(path.join(cwd, sourcePath), "utf8")
-    } catch {
-      missing.push(sourcePath)
+    } catch (err) {
+      const e = err as NodeJS.ErrnoException
+      const reason = e?.code === "ENOENT" ? "file not found" : `read error: ${e?.code ?? e?.message ?? "unknown"}`
+      unreadable.push({ sourcePath, reason })
       continue
     }
     const sourcePublished = c.status === "published"
@@ -88,5 +91,5 @@ export async function loadCanonicalChapters(cwd: string = process.cwd()): Promis
     })
   }
 
-  return { sources, scanned: sources.length, expected, missing }
+  return { sources, scanned: sources.length, expected, unreadable }
 }
