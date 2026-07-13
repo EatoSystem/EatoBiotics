@@ -118,8 +118,17 @@ export function resolveChapterImportPlan(sources: SourceChapter[], existing: Exi
   const counts: Record<ImportAction, number> = { CREATE: 0, SKIP: 0, UPDATE_AVAILABLE: 0, CONFLICT: 0 }
   for (const it of items) counts[it.action] += 1
 
+  // Three-verdict contract (spec §5 + review round 3):
+  //   BLOCKED — any CONFLICT, OR any UPDATE_AVAILABLE (MDX/metadata changed
+  //             since import; requires explicit human refresh/reconciliation,
+  //             so ordinary apply must not proceed past it).
+  //   READY   — one or more CREATE, with zero conflicts and zero pending updates.
+  //   NOOP    — every source chapter is SKIP; the mirror is genuinely in sync.
+  // UPDATE_AVAILABLE is deliberately NOT NOOP: reporting "already in sync" when
+  // MDX has diverged would be false, and silently proceeding with only the
+  // CREATE subset would partially import while masking pending updates.
   let verdict: ImportVerdict
-  if (counts.CONFLICT > 0) verdict = "BLOCKED"
+  if (counts.CONFLICT > 0 || counts.UPDATE_AVAILABLE > 0) verdict = "BLOCKED"
   else if (counts.CREATE > 0) verdict = "READY"
   else verdict = "NOOP"
 
@@ -223,6 +232,16 @@ export function validateCanonicalSources(
   return { ok: problems.length === 0, problems }
 }
 
+/** The single authoritative verdict, folding canonical-source validation into
+ *  the plan's verdict. Both the JSON response and renderPlanText MUST derive
+ *  their verdict from this function (never recompute independently) so they
+ *  can never disagree — an incomplete source set always wins and BLOCKS,
+ *  regardless of what the plan itself would otherwise say. */
+export function resolveFinalVerdict(plan: ImportPlan, sourceProblems: string[]): ImportVerdict {
+  if (sourceProblems.length > 0) return "BLOCKED"
+  return plan.verdict
+}
+
 function duplicates<T>(xs: T[]): T[] {
   const seen = new Set<T>()
   const dup = new Set<T>()
@@ -271,14 +290,33 @@ export function classifyDivergence(args: {
 }
 
 /** Render the deterministic dry-run plan text (spec §5). No identifier that
- *  implies a real import batch exists — dry runs allocate none. */
-export function renderPlanText(plan: ImportPlan, opts: { sourcesScanned: number; sourcesExpected: number }): string {
+ *  implies a real import batch exists — dry runs allocate none.
+ *
+ *  `sourceProblems` (from validateCanonicalSources) is REQUIRED input, not an
+ *  afterthought: the rendered text derives its verdict from
+ *  `resolveFinalVerdict(plan, sourceProblems)` — the exact same function the
+ *  route uses for the JSON response — so the human-readable approval artefact
+ *  can never say READY/NOOP while the API says BLOCKED, or vice versa. */
+export function renderPlanText(
+  plan: ImportPlan,
+  opts: { sourcesScanned: number; sourcesExpected: number; sourceProblems?: string[] }
+): string {
+  const sourceProblems = opts.sourceProblems ?? []
+  const finalVerdict = resolveFinalVerdict(plan, sourceProblems)
+
   const lines: string[] = []
   lines.push(`IMPORT PLAN — book "EatoBiotics" (slug: ${BOOK_SLUG})  [DRY RUN]`)
   lines.push(
     `Book record:            FIND-OR-CREATE  (${plan.bookAction === "REUSE" ? "found → REUSE" : "found: no → will CREATE"})`
   )
   lines.push(`Source files scanned:   ${opts.sourcesScanned} / ${opts.sourcesExpected} present`)
+
+  if (sourceProblems.length > 0) {
+    lines.push("")
+    lines.push("Source validation:")
+    for (const p of sourceProblems) lines.push(`- ${p}`)
+  }
+
   lines.push("")
   lines.push(" #   slug          action            reason")
   for (const it of plan.items) {
@@ -292,12 +330,27 @@ export function renderPlanText(plan: ImportPlan, opts: { sourcesScanned: number;
     `Summary:  CREATE ${plan.counts.CREATE}   SKIP ${plan.counts.SKIP}   ` +
       `UPDATE_AVAILABLE ${plan.counts.UPDATE_AVAILABLE}   CONFLICT ${plan.counts.CONFLICT}`
   )
-  const verdictLine =
-    plan.verdict === "BLOCKED"
-      ? `Result:   BLOCKED — resolve ${plan.counts.CONFLICT} conflict(s) first.  No rows written.`
-      : plan.verdict === "NOOP"
-        ? "Result:   NOOP — CMS mirror already in sync with MDX.  No rows written."
-        : `Result:   READY — ${plan.counts.CREATE} chapter(s) to create.  No rows written (dry run).`
+
+  let verdictLine: string
+  if (finalVerdict === "BLOCKED") {
+    if (sourceProblems.length > 0) {
+      verdictLine = "Result:   BLOCKED — canonical source set is incomplete.  No rows written."
+    } else if (plan.counts.CONFLICT > 0 && plan.counts.UPDATE_AVAILABLE > 0) {
+      verdictLine =
+        `Result:   BLOCKED — resolve ${plan.counts.CONFLICT} conflict(s) and review ` +
+        `${plan.counts.UPDATE_AVAILABLE} pending update(s) before apply.  No rows written.`
+    } else if (plan.counts.CONFLICT > 0) {
+      verdictLine = `Result:   BLOCKED — resolve ${plan.counts.CONFLICT} conflict(s) first.  No rows written.`
+    } else {
+      verdictLine =
+        `Result:   BLOCKED — ${plan.counts.UPDATE_AVAILABLE} chapter(s) require explicit review ` +
+        `(UPDATE_AVAILABLE — MDX or metadata changed since import) before apply.  No rows written.`
+    }
+  } else if (finalVerdict === "NOOP") {
+    verdictLine = "Result:   NOOP — CMS mirror already in sync with MDX.  No rows written."
+  } else {
+    verdictLine = `Result:   READY — ${plan.counts.CREATE} chapter(s) to create.  No rows written (dry run).`
+  }
   lines.push(verdictLine)
   return lines.join("\n")
 }

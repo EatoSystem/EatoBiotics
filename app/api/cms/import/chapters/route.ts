@@ -8,6 +8,7 @@ import { recordCmsAudit } from "@/lib/cms/audit"
 import { loadCanonicalChapters } from "@/lib/cms/chapter-import-source"
 import {
   resolveChapterImportPlan,
+  resolveFinalVerdict,
   renderPlanText,
   classifyDivergence,
   validateCanonicalSources,
@@ -218,11 +219,16 @@ export async function POST(req: NextRequest) {
     const mirrorSlugs = loaded.sources.map((s) => s.mirrorSlug)
     const existing = await readExistingState(sb, mirrorSlugs)
     const plan = resolveChapterImportPlan(loaded.sources, existing)
-    // An incomplete/inconsistent canonical source set blocks the whole import —
-    // a missing MDX file must never silently shrink the plan.
-    const blockedBySources = !sourceValidation.ok
-    const verdict = blockedBySources ? "BLOCKED" : plan.verdict
-    const planText = renderPlanText(plan, { sourcesScanned: loaded.scanned, sourcesExpected: loaded.expected })
+    // ONE authoritative verdict, derived once and handed to both the JSON
+    // response and the rendered text — they can never disagree. An incomplete
+    // canonical source set always blocks, regardless of what the plan says;
+    // UPDATE_AVAILABLE items already fold into plan.verdict as BLOCKED.
+    const verdict = resolveFinalVerdict(plan, sourceValidation.problems)
+    const planText = renderPlanText(plan, {
+      sourcesScanned: loaded.scanned,
+      sourcesExpected: loaded.expected,
+      sourceProblems: sourceValidation.problems,
+    })
 
     if (input.mode === "dry_run") {
       // Writes nothing; allocates no import_batch_id.

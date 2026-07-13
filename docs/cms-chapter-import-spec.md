@@ -168,9 +168,19 @@ For each of the 25 chapters, resolve exactly one action:
 | Action | Condition |
 |---|---|
 | `CREATE` | No `cms_chapter_mirror` row for `(source_kind='mdx', source_path)` **and** no active `cms_chapters` row already holding `chapter_number` in this book. |
-| `SKIP` | Mirror row exists and `source_sha256` + `meta_sha256` match current file/metadata (nothing changed). |
-| `UPDATE_AVAILABLE` | Mirror row exists but source hashes differ → **reported only**; `apply` does **not** auto-overwrite a CMS body (see §6). Requires explicit `--refresh-source` intent. |
-| `CONFLICT` | `chapter_number` is already taken by an active, **non-mirror** chapter (someone hand-created it), or a slug collision on `mdx-chapter-N` maps to a different content id. **Aborts apply**; listed in dry-run. |
+| `SKIP` | Mirror row exists, is not soft-rolled-back, and `source_sha256` + `meta_sha256` match current file/metadata (nothing changed). |
+| `UPDATE_AVAILABLE` | Mirror row exists but source hashes differ → **reported only**; `apply` does **not** auto-overwrite a CMS body (see §6). Requires explicit human review/reconciliation — **blocks ordinary apply** (see the verdict rule below; this is a review-round-3 correction from the original "report-only" wording, which under-specified how the overall verdict treats it). |
+| `CONFLICT` | `chapter_number` is already taken by an active, **non-mirror** chapter (someone hand-created it); a slug collision on `mdx-chapter-N` maps to a different content id; or the mirror row was **soft-rolled-back** (its retained provenance blocks a silent re-create — hard-roll-back first). **Aborts apply**; listed in dry-run. |
+
+### 4.2 The verdict rule — one authoritative verdict (review round 3)
+
+The overall verdict is **not** simply "any CREATE = READY." It is computed once, from the action counts, and that **same** verdict is used everywhere (the JSON response, the rendered plan text, and the apply gate) — the JSON and the human-readable dry-run text can never disagree, because both derive from one function:
+
+- **`BLOCKED`** — any `CONFLICT`, **or** any `UPDATE_AVAILABLE`, **or** the canonical source set itself failed validation (§4, complete-source gate). An `UPDATE_AVAILABLE` item means MDX or metadata changed since import and needs a human decision — reporting "ready" or silently importing only the `CREATE` subset while masking a pending update would be misleading and is explicitly disallowed.
+- **`READY`** — one or more `CREATE`, with **zero** `CONFLICT` and **zero** `UPDATE_AVAILABLE`.
+- **`NOOP`** — every chapter is `SKIP` (mirror genuinely, fully in sync) — this is the *only* condition for `NOOP`.
+
+A source-validation failure (a missing/unreadable MDX file, wrong metadata count, duplicate numbers/slugs, or an incomplete `1–25` set) always overrides the plan's own verdict to `BLOCKED`, regardless of what the per-chapter actions would otherwise say — the rendered dry-run plan text lists the specific source problems under a `Source validation:` heading so the blocking reason is visible in the same artefact a human approves.
 
 ---
 
@@ -196,14 +206,36 @@ Summary:  CREATE 24   SKIP 0   UPDATE_AVAILABLE 0   CONFLICT 1
 Result:   ⛔ APPLY BLOCKED — resolve 1 conflict first.  No rows written.
 ```
 
-On a clean second run after a successful import:
+A source-validation failure renders with the same BLOCKED verdict, plus the specific problems:
+
+```
+IMPORT PLAN — book "EatoBiotics" (slug: eatobiotics-book)  [DRY RUN]
+Source files scanned:   24 / 25 present
+
+Source validation:
+- canonical source unreadable: content/book/chapter-7.mdx (file not found)
+- missing expected chapter numbers: 7
+
+Summary:  CREATE 24   SKIP 0   UPDATE_AVAILABLE 0   CONFLICT 0
+Result:   BLOCKED — canonical source set is incomplete.  No rows written.
+```
+
+On a clean second run after a successful import (true NOOP — every chapter SKIP):
 
 ```
 Summary:  CREATE 0   SKIP 25   UPDATE_AVAILABLE 0   CONFLICT 0
 Result:   ✅ Nothing to do — CMS mirror is in sync with MDX.
 ```
 
-Requirements: totals per action; per-chapter reason; explicit "no rows written" for dry-run; a single machine-checkable overall verdict (`READY` / `BLOCKED` / `NOOP`).
+A plan with pending updates and no creates is **not** a NOOP — it renders BLOCKED:
+
+```
+Summary:  CREATE 0   SKIP 0   UPDATE_AVAILABLE 25   CONFLICT 0
+Result:   BLOCKED — 25 chapter(s) require explicit review (UPDATE_AVAILABLE — MDX or
+          metadata changed since import) before apply.  No rows written.
+```
+
+Requirements: totals per action; per-chapter reason; explicit "no rows written" for dry-run; a single machine-checkable overall verdict (`READY` / `BLOCKED` / `NOOP`) that the JSON response and the rendered text always agree on (§4.2).
 
 ---
 
@@ -287,6 +319,8 @@ The import is accepted when **all** hold:
     - reports all reuse, non-conflicting existing records, and blocking conflicts explicitly.
 
     Test fixtures assert at least: (1) existing target book, no chapters → reuse book, `CREATE 25`; (2) unrelated manual book with chapters 1–3 → no target-book conflict; (3) existing target book with active manual chapters 1–3 → `CONFLICT 3`, apply blocked; (4) archived manual chapters 1–3 in the target book → numbers free, no active conflict; (5) global `mdx-chapter-1` owned by unrelated content → conflict; (6) existing valid mirror rows → correct `SKIP` / `UPDATE_AVAILABLE`; (7) mixed production state → deterministic full plan, no partial assumptions.
+12. **Fail-closed reads.** Every book/chapter/mirror/slug-owner/divergence read and update inspects its error; a failed query aborts with `503` and is never treated as an empty result. If Migration 41's schema is absent (`42P01`), every mode returns an explicit `migration_required: true` `503` instead of proceeding on a false "empty database" plan.
+13. **One authoritative verdict (§4.2).** The JSON `verdict`, the rendered `planText`, and the `apply` gate always agree, because all three derive from the same `resolveFinalVerdict(plan, sourceProblems)` computation. Specifically: (a) a missing/unreadable MDX file, or any other source-validation failure, makes **both** the JSON verdict and the plan text say `BLOCKED`, with the specific problems listed under `Source validation:` in the text; (b) a plan containing any `UPDATE_AVAILABLE` is `BLOCKED` (never `READY` or `NOOP`) and `apply` refuses it, even when `CREATE` items are also present — no partial import proceeds while updates are pending; (c) `NOOP` is reported **only** when every chapter is `SKIP`.
 
 ---
 

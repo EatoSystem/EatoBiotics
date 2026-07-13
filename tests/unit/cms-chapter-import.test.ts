@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { NextRequest } from "next/server"
 import {
   resolveChapterImportPlan,
+  resolveFinalVerdict,
   renderPlanText,
   classifyDivergence,
   validateCanonicalSources,
@@ -139,7 +140,9 @@ describe("resolveChapterImportPlan — non-empty-production safety fixtures", ()
     expect(plan.items.find((i) => i.number === 1)?.action).toBe("SKIP")
     expect(plan.items.find((i) => i.number === 2)?.action).toBe("UPDATE_AVAILABLE")
     expect(plan.counts).toEqual({ CREATE: 23, SKIP: 1, UPDATE_AVAILABLE: 1, CONFLICT: 0 })
-    expect(plan.verdict).toBe("READY") // creates remain, updates are report-only
+    // Any UPDATE_AVAILABLE blocks ordinary apply, even with creates pending —
+    // it requires explicit human review/reconciliation, never a partial import.
+    expect(plan.verdict).toBe("BLOCKED")
   })
 
   // Fixture 7
@@ -159,7 +162,7 @@ describe("resolveChapterImportPlan — non-empty-production safety fixtures", ()
     expect(plan.items.find((i) => i.number === 4)?.action).toBe("CONFLICT")
     expect(plan.items.find((i) => i.number === 5)?.action).toBe("UPDATE_AVAILABLE")
     expect(plan.counts).toEqual({ CREATE: 21, SKIP: 1, UPDATE_AVAILABLE: 1, CONFLICT: 2 })
-    expect(plan.verdict).toBe("BLOCKED")
+    expect(plan.verdict).toBe("BLOCKED") // conflicts AND the pending update both block
     // Deterministic ordering by chapter number.
     expect(plan.items.map((i) => i.number)).toEqual(Array.from({ length: 25 }, (_, i) => i + 1))
   })
@@ -204,6 +207,70 @@ describe("renderPlanText", () => {
     expect(text).not.toMatch(/batch/i)
     expect(text).toContain("No rows written")
     expect(text).toContain("READY")
+  })
+})
+
+describe("resolveFinalVerdict + renderPlanText agree — one authoritative verdict (review round 3)", () => {
+  it("missing MDX file: plan.verdict READY alone, but final verdict AND plan text are both BLOCKED", () => {
+    const sources24 = sources25.filter((s) => s.number !== 7)
+    const plan = resolveChapterImportPlan(sources24, emptyState({ book: { contentId: "bc", bookId: "bk" } }))
+    // The plan itself has no conflicts/updates and would say READY...
+    expect(plan.verdict).toBe("READY")
+    const v = validateCanonicalSources({
+      sources: sources24,
+      unreadable: [{ sourcePath: "content/book/chapter-7.mdx", reason: "file not found" }],
+      expected: 25,
+    })
+    const text = renderPlanText(plan, { sourcesScanned: 24, sourcesExpected: 25, sourceProblems: v.problems })
+    // ...but the source set is incomplete, so BOTH the authoritative verdict and
+    // the rendered text must say BLOCKED — they can never disagree.
+    expect(resolveFinalVerdict(plan, v.problems)).toBe("BLOCKED")
+    expect(text).toMatch(/BLOCKED/)
+    expect(text).not.toMatch(/READY —/)
+    expect(text).toContain("Source validation:")
+    expect(text).toContain("chapter-7")
+    expect(text).toContain("No rows written")
+  })
+
+  it("metadata/source change only (all UPDATE_AVAILABLE): final verdict is BLOCKED, not NOOP", () => {
+    const plan = resolveChapterImportPlan(
+      sources25,
+      emptyState({
+        book: { contentId: "bc", bookId: "bk" },
+        mirrors: sources25.map((s) => ({ ...syncedMirror(s.number), sourceSha256: "OLD" })),
+      })
+    )
+    expect(plan.counts).toEqual({ CREATE: 0, SKIP: 0, UPDATE_AVAILABLE: 25, CONFLICT: 0 })
+    expect(resolveFinalVerdict(plan, [])).toBe("BLOCKED")
+    const text = renderPlanText(plan, { sourcesScanned: 25, sourcesExpected: 25 })
+    expect(text).toMatch(/BLOCKED/)
+    expect(text).not.toMatch(/in sync/i)
+    expect(text).toMatch(/UPDATE_AVAILABLE/)
+  })
+
+  it("all unchanged mirrors: true NOOP, text says in sync", () => {
+    const plan = resolveChapterImportPlan(
+      sources25,
+      emptyState({ book: { contentId: "bc", bookId: "bk" }, mirrors: sources25.map((s) => syncedMirror(s.number)) })
+    )
+    expect(plan.counts).toEqual({ CREATE: 0, SKIP: 25, UPDATE_AVAILABLE: 0, CONFLICT: 0 })
+    expect(resolveFinalVerdict(plan, [])).toBe("NOOP")
+    const text = renderPlanText(plan, { sourcesScanned: 25, sourcesExpected: 25 })
+    expect(text).toMatch(/NOOP/)
+    expect(text).toMatch(/in sync/i)
+  })
+
+  it("mixed CREATE + UPDATE_AVAILABLE: BLOCKED, never a partial create", () => {
+    const plan = resolveChapterImportPlan(
+      sources25,
+      emptyState({
+        book: { contentId: "bc", bookId: "bk" },
+        mirrors: [{ ...syncedMirror(1), sourceSha256: "OLD" }], // chapter 1 UPDATE_AVAILABLE, 2-25 CREATE
+      })
+    )
+    expect(plan.counts.CREATE).toBe(24)
+    expect(plan.counts.UPDATE_AVAILABLE).toBe(1)
+    expect(resolveFinalVerdict(plan, [])).toBe("BLOCKED")
   })
 })
 
@@ -397,7 +464,7 @@ describe("/api/cms/import/chapters — incomplete canonical sources block the im
   }
   const okState = { cms_content: { data: null, error: null }, cms_chapter_mirror: { data: [], error: null } }
 
-  it("dry_run reports BLOCKED with the source problems (writes nothing)", async () => {
+  it("dry_run reports BLOCKED in both the JSON verdict AND the rendered plan text (they cannot disagree)", async () => {
     vi.stubEnv("ADMIN_SESSION_SECRET", "a-test-secret-value")
     mockLoad.mockResolvedValue(partialLoad)
     mockGetSupabase.mockReturnValue(clientByTable(okState))
@@ -408,6 +475,11 @@ describe("/api/cms/import/chapters — incomplete canonical sources block the im
     const body = await res.json()
     expect(body.verdict).toBe("BLOCKED")
     expect(String(body.sourceProblems.join(" "))).toMatch(/chapter-25/)
+    // The human-readable approval artefact must say the same thing as the API.
+    expect(body.planText).toMatch(/BLOCKED/)
+    expect(body.planText).not.toMatch(/READY —/)
+    expect(body.planText).toContain("Source validation:")
+    expect(body.planText).toContain("chapter-25")
   })
 
   it("apply refuses (409) before allocating a batch id or calling the import RPC", async () => {
@@ -420,5 +492,31 @@ describe("/api/cms/import/chapters — incomplete canonical sources block the im
     const res = await POST(req(adminCookieToken() as string, { mode: "apply" }))
     expect(res.status).toBe(409)
     expect(rpc).not.toHaveBeenCalled()
+  })
+})
+
+describe("/api/cms/import/chapters — UPDATE_AVAILABLE blocks apply (never a partial/NOOP import)", () => {
+  it("apply refuses (409) when every mirror needs review, even though no conflicts exist", async () => {
+    vi.stubEnv("ADMIN_SESSION_SECRET", "a-test-secret-value")
+    mockLoad.mockResolvedValue({ sources: sources25, unreadable: [], expected: 25, scanned: 25 })
+    const changedMirrors = sources25.map((s) => ({
+      source_path: s.sourcePath,
+      chapter_id: `ch-${s.number}`,
+      source_sha256: "OLD",
+      body_sha256: `body-${s.number}`,
+      meta_sha256: `meta-${s.number}`,
+      rolled_back_at: null,
+    }))
+    const rpc = vi.fn(() => Promise.resolve({ data: null, error: null }))
+    mockGetSupabase.mockReturnValue(
+      clientByTable({ cms_content: { data: null, error: null }, cms_chapter_mirror: { data: changedMirrors, error: null } }, rpc)
+    )
+    const { adminCookieToken } = await import("@/lib/admin-auth")
+    const { POST } = await import("@/app/api/cms/import/chapters/route")
+    const res = await POST(req(adminCookieToken() as string, { mode: "apply" }))
+    expect(res.status).toBe(409)
+    expect(rpc).not.toHaveBeenCalled()
+    const body = await res.json()
+    expect(body.verdict).toBe("BLOCKED")
   })
 })
