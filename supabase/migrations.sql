@@ -1241,3 +1241,381 @@ BEGIN
   UPDATE cms_chapters SET chapter_number = b_num, updated_at = now() WHERE id = a_id;
 END;
 $$;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 41 (PROPOSED — DO NOT APPLY until the 25-chapter import is
+-- explicitly approved): CMS chapter mirror + atomic import/rollback
+-- ────────────────────────────────────────────────────────────
+-- Backs the MDX→CMS mirror import (docs/cms-chapter-import-spec.md). MDX stays
+-- the canonical publication source; these CMS rows are an editable editorial
+-- snapshot that never feeds the public book. This block is committed as
+-- reviewable migration code only — it is NOT applied to production by the
+-- implementation PR, and the real import is not run as part of any code merge.
+-- Same service-role-only pattern as every other cms_* object (RLS ENABLED,
+-- ZERO policies). Idempotent.
+
+CREATE TABLE IF NOT EXISTS cms_chapter_mirror (
+  id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  chapter_id        uuid NOT NULL UNIQUE REFERENCES cms_chapters(id) ON DELETE CASCADE,  -- one-to-one with the chapter
+  book_id           uuid NOT NULL REFERENCES cms_books(id) ON DELETE CASCADE,
+  source_kind       text NOT NULL DEFAULT 'mdx' CHECK (source_kind = 'mdx'),  -- v1: MDX only
+  source_path       text NOT NULL,                        -- 'content/book/chapter-1.mdx' (canonical pointer)
+  source_slug       text NOT NULL,                        -- 'chapter-1'
+  source_sha256     text NOT NULL,                        -- hash of MDX bytes at import
+  body_sha256       text NOT NULL,                        -- hash of the snapshot written to cms_content.body
+  meta_sha256       text NOT NULL,                        -- hash of the mapped lib/chapters.ts fields
+  source_published  boolean NOT NULL DEFAULT false,       -- canonical MDX publication state; the CMS row stays 'draft'
+  import_batch_id   uuid NOT NULL,                        -- the actual APPLY batch that created this row (never a dry run)
+  imported_at       timestamptz NOT NULL DEFAULT now(),
+  last_checked_at   timestamptz,
+  -- divergence_state stays TRUTHFUL about the MDX↔CMS relationship; it is never
+  -- overloaded to mean "rolled back". Soft-rollback state lives in its own
+  -- columns below so provenance and divergence are not conflated.
+  divergence_state  text NOT NULL DEFAULT 'in_sync'
+    CHECK (divergence_state IN ('in_sync','source_changed','cms_changed','both_changed','missing_source')),
+  rolled_back_at    timestamptz,                          -- set by a SOFT rollback; content archived, mirror retained
+  rollback_batch_id uuid,                                 -- the rollback that soft-retired this mirror
+  UNIQUE (source_kind, source_path)                        -- one mirror row per canonical source file
+);
+
+CREATE INDEX IF NOT EXISTS idx_cms_chapter_mirror_book  ON cms_chapter_mirror (book_id);
+CREATE INDEX IF NOT EXISTS idx_cms_chapter_mirror_batch ON cms_chapter_mirror (import_batch_id);
+
+ALTER TABLE cms_chapter_mirror ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only)
+
+-- Import-batch provenance: records whether an apply batch CREATED the target
+-- book or REUSED an existing one, so rollback can safely decide the book's fate
+-- (a reused manual book must never be touched). One row per apply batch.
+CREATE TABLE IF NOT EXISTS cms_import_batch (
+  batch_id        uuid PRIMARY KEY,
+  book_id         uuid NOT NULL REFERENCES cms_books(id) ON DELETE CASCADE,
+  book_content_id uuid NOT NULL REFERENCES cms_content(id) ON DELETE CASCADE,
+  book_created    boolean NOT NULL,                       -- true iff THIS batch created the book
+  created_count   integer NOT NULL DEFAULT 0,
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  rolled_back_at  timestamptz,
+  rollback_hard   boolean
+);
+
+ALTER TABLE cms_import_batch ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only)
+
+-- Atomic import. The route resolves a plan first (read-only) as a dry run and
+-- ONLY for producing the human-readable approval artefact — it is NEVER
+-- trusted as the final integrity check. There is a real time gap between that
+-- read and this call (another admin action, a manual chapter create, a second
+-- apply) during which the state the plan was computed from can go stale. This
+-- function is the actual integrity boundary: every invariant the plan claimed
+-- to hold is RE-VALIDATED here, under row locks, inside this one transaction,
+-- immediately before any insert — so a write that happened after the dry run
+-- (and therefore is already visible to this fresh transaction) is caught and
+-- the whole call aborts. All validation runs before any insert in a separate
+-- pass, and a RAISE EXCEPTION anywhere aborts the ENTIRE transaction — there
+-- is no exception handler here, so Postgres guarantees zero partial rows
+-- commit (cms_content / cms_chapters / cms_chapter_mirror / cms_books /
+-- cms_import_batch all-or-nothing). Locks are held until the transaction ends,
+-- so the target book cannot change out from under this call once acquired.
+--
+-- Filesystem boundary: this function has no access to the MDX files or
+-- lib/chapters.ts — it can only re-verify DATABASE state (books, chapters,
+-- slugs, mirrors, batch ids). Confirming the canonical source SET itself is
+-- complete and unreadable-free is the route's job (validateCanonicalSources,
+-- run immediately before this call, spec §4).
+--
+-- `payload` shape:
+--   {
+--     "batch_id": uuid,
+--     "book": { "create": bool, "content_id": uuid|null, "slug",
+--                "title"?, "subtitle"?, "summary"? },
+--     "chapters": [ { "title","slug","summary","body","chapter_number","part","part_title",
+--                     "publication_target":[...], "source_path","source_slug",
+--                     "source_sha256","body_sha256","meta_sha256","source_published" } ]
+--   }
+-- `book.slug` is ALWAYS the expected canonical book slug ('eatobiotics-book'),
+-- sent whether reusing or creating, so the reused-book identity can be
+-- re-verified against it under lock rather than trusted from the route's
+-- earlier read.
+-- Returns { "book_id", "book_content_id", "book_created": bool, "created": int }.
+CREATE OR REPLACE FUNCTION cms_import_chapters(payload jsonb)
+RETURNS jsonb
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_batch                  uuid := (payload->>'batch_id')::uuid;
+  v_book                   jsonb := payload->'book';
+  v_chapters               jsonb := payload->'chapters';
+  v_chapter_count          int;
+  v_distinct_numbers       int;
+  v_distinct_slugs         int;
+  v_distinct_paths         int;
+  v_distinct_source_slugs  int;
+  v_book_id                uuid;
+  v_book_cid               uuid;
+  v_created_bk             boolean := false;
+  v_book_slug              text;
+  v_book_type              text;
+  v_book_status            text;
+  v_ch                     jsonb;
+  v_n                      int;
+  v_content_id             uuid;
+  v_chapter_id             uuid;
+  v_created                int := 0;
+BEGIN
+  -- ── 0. Basic payload shape ────────────────────────────────────────────
+  IF v_batch IS NULL THEN
+    RAISE EXCEPTION 'cms_import_chapters: batch_id is required';
+  END IF;
+  IF v_chapters IS NULL OR jsonb_typeof(v_chapters) <> 'array' OR jsonb_array_length(v_chapters) = 0 THEN
+    RAISE EXCEPTION 'cms_import_chapters: chapters payload must be a non-empty array';
+  END IF;
+
+  -- ── 1. Batch id must not already have been used ─────────────────────────
+  -- Locks the row if a prior use already exists, so a concurrent duplicate
+  -- call blocks here rather than racing the final INSERT below.
+  PERFORM 1 FROM cms_import_batch WHERE batch_id = v_batch FOR UPDATE;
+  IF FOUND THEN
+    RAISE EXCEPTION 'cms_import_chapters: batch_id % has already been used', v_batch;
+  END IF;
+
+  -- ── 2. Payload internal consistency ──────────────────────────────────────
+  -- Never trust the caller's fields in isolation: every chapter_number/slug/
+  -- source_path/source_slug must be unique WITHIN the payload, and each
+  -- chapter's fields must relate to each other exactly as the canonical
+  -- naming convention requires. Pure data-shape checks — no DB access.
+  SELECT count(*) INTO v_chapter_count FROM jsonb_array_elements(v_chapters);
+  SELECT count(DISTINCT (x->>'chapter_number')) INTO v_distinct_numbers FROM jsonb_array_elements(v_chapters) x;
+  SELECT count(DISTINCT (x->>'slug'))           INTO v_distinct_slugs        FROM jsonb_array_elements(v_chapters) x;
+  SELECT count(DISTINCT (x->>'source_path'))    INTO v_distinct_paths        FROM jsonb_array_elements(v_chapters) x;
+  SELECT count(DISTINCT (x->>'source_slug'))    INTO v_distinct_source_slugs FROM jsonb_array_elements(v_chapters) x;
+  IF v_distinct_numbers <> v_chapter_count THEN
+    RAISE EXCEPTION 'cms_import_chapters: payload has duplicate chapter_number values';
+  END IF;
+  IF v_distinct_slugs <> v_chapter_count THEN
+    RAISE EXCEPTION 'cms_import_chapters: payload has duplicate slug values';
+  END IF;
+  IF v_distinct_paths <> v_chapter_count THEN
+    RAISE EXCEPTION 'cms_import_chapters: payload has duplicate source_path values';
+  END IF;
+  IF v_distinct_source_slugs <> v_chapter_count THEN
+    RAISE EXCEPTION 'cms_import_chapters: payload has duplicate source_slug values';
+  END IF;
+
+  FOR v_ch IN SELECT * FROM jsonb_array_elements(v_chapters)
+  LOOP
+    v_n := NULLIF(v_ch->>'chapter_number', '')::int;
+    IF v_n IS NULL OR v_n < 1 THEN
+      RAISE EXCEPTION 'cms_import_chapters: invalid or missing chapter_number in payload';
+    END IF;
+    IF v_ch->>'source_slug' IS DISTINCT FROM ('chapter-' || v_n) THEN
+      RAISE EXCEPTION 'cms_import_chapters: source_slug does not match chapter_number % (malformed payload)', v_n;
+    END IF;
+    IF v_ch->>'slug' IS DISTINCT FROM ('mdx-chapter-' || v_n) THEN
+      RAISE EXCEPTION 'cms_import_chapters: slug does not match chapter_number % (malformed payload)', v_n;
+    END IF;
+    IF v_ch->>'source_path' IS DISTINCT FROM ('content/book/chapter-' || v_n || '.mdx') THEN
+      RAISE EXCEPTION 'cms_import_chapters: source_path does not match chapter_number % (malformed payload)', v_n;
+    END IF;
+  END LOOP;
+
+  -- ── 3. Book: lock and re-verify identity ─────────────────────────────────
+  -- Never trust "this content_id is still the eatobiotics-book" from the
+  -- route's earlier (now possibly stale) read — re-derive and re-check under
+  -- lock. The lock is held until this transaction ends, so the book cannot
+  -- change out from under the rest of this function.
+  IF (v_book->>'create')::boolean THEN
+    v_created_bk := true;
+    -- No existing row to lock when truly free — the fast-path check above is
+    -- an early exit for the common case (a prior write already committed);
+    -- cms_content.slug's UNIQUE constraint is the final backstop against a
+    -- genuinely simultaneous "create book" race, since the loser's INSERT
+    -- below raises a constraint-violation exception that rolls back its
+    -- entire call, same atomic guarantee as every explicit check here.
+    PERFORM 1 FROM cms_content WHERE slug = v_book->>'slug' FOR UPDATE;
+    IF FOUND THEN
+      RAISE EXCEPTION 'cms_import_chapters: book slug % is no longer free (race since dry run)', v_book->>'slug';
+    END IF;
+    INSERT INTO cms_content (title, slug, content_type, summary, status)
+    VALUES (v_book->>'title', v_book->>'slug', 'book', v_book->>'summary', 'draft')
+    RETURNING id INTO v_book_cid;
+    INSERT INTO cms_books (content_id, subtitle)
+    VALUES (v_book_cid, v_book->>'subtitle')
+    RETURNING id INTO v_book_id;
+  ELSE
+    v_book_cid := (v_book->>'content_id')::uuid;
+    SELECT slug, content_type, status INTO v_book_slug, v_book_type, v_book_status
+      FROM cms_content WHERE id = v_book_cid FOR UPDATE;
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'cms_import_chapters: target book content % no longer exists (race since dry run)', v_book_cid;
+    END IF;
+    IF v_book_type <> 'book' THEN
+      RAISE EXCEPTION 'cms_import_chapters: target content % is no longer a book', v_book_cid;
+    END IF;
+    IF v_book_status = 'archived' THEN
+      RAISE EXCEPTION 'cms_import_chapters: target book % has been archived since the dry run', v_book_cid;
+    END IF;
+    IF v_book_slug IS DISTINCT FROM (v_book->>'slug') THEN
+      RAISE EXCEPTION 'cms_import_chapters: target book slug changed since the dry run (expected %, found %)', v_book->>'slug', v_book_slug;
+    END IF;
+    SELECT id INTO v_book_id FROM cms_books WHERE content_id = v_book_cid FOR UPDATE;
+    IF v_book_id IS NULL THEN
+      RAISE EXCEPTION 'cms_import_chapters: cms_books row for content_id % no longer exists', v_book_cid;
+    END IF;
+  END IF;
+
+  -- ── 4. Re-validate every chapter under lock — BEFORE any insert ──────────
+  -- Each check closes a specific time-of-check/time-of-use window between the
+  -- dry run and this apply. The RPC never trusts "this item was CREATE in the
+  -- plan" as a label — it independently re-derives that every item is still
+  -- genuinely free right now. Validation is a full, separate pass so nothing
+  -- is inserted before every chapter has cleared every check.
+  FOR v_ch IN SELECT * FROM jsonb_array_elements(v_chapters)
+  LOOP
+    v_n := (v_ch->>'chapter_number')::int;
+
+    -- (a) the global mirror slug (mdx-chapter-N) is still free.
+    PERFORM 1 FROM cms_content WHERE slug = v_ch->>'slug' FOR UPDATE;
+    IF FOUND THEN
+      RAISE EXCEPTION 'cms_import_chapters: slug % is no longer free (race since dry run)', v_ch->>'slug';
+    END IF;
+
+    -- (b) source_path has no mirror row of ANY kind yet — active, retained, or
+    --     soft-rolled-back all occupy the UNIQUE(source_kind, source_path) slot
+    --     and must all block equally (matches the resolver's CONFLICT rule for
+    --     a rolled-back source).
+    PERFORM 1 FROM cms_chapter_mirror WHERE source_kind = 'mdx' AND source_path = v_ch->>'source_path' FOR UPDATE;
+    IF FOUND THEN
+      RAISE EXCEPTION 'cms_import_chapters: source_path % already has a mirror row (race since dry run)', v_ch->>'source_path';
+    END IF;
+
+    -- (c) chapter_number is still free among ACTIVE (non-archived) chapters of
+    --     the target book — the exact race the review flagged: a manual
+    --     chapter could have claimed this number after the dry run.
+    PERFORM 1
+      FROM cms_chapters ch JOIN cms_content c ON c.id = ch.content_id
+      WHERE ch.book_id = v_book_id AND ch.chapter_number = v_n AND c.status <> 'archived'
+      FOR UPDATE OF ch, c;
+    IF FOUND THEN
+      RAISE EXCEPTION 'cms_import_chapters: chapter number % is no longer free in the target book (race since dry run)', v_n;
+    END IF;
+  END LOOP;
+
+  -- ── 5. Every invariant re-verified — perform the approved creates ────────
+  FOR v_ch IN SELECT * FROM jsonb_array_elements(v_chapters)
+  LOOP
+    INSERT INTO cms_content (title, slug, content_type, summary, body, status, book_id)
+    VALUES (
+      v_ch->>'title', v_ch->>'slug', 'book_chapter', v_ch->>'summary', v_ch->>'body',
+      'draft', v_book_id
+    )
+    RETURNING id INTO v_content_id;
+
+    INSERT INTO cms_chapters (book_id, content_id, chapter_number, part, part_title, publication_target)
+    VALUES (
+      v_book_id, v_content_id, (v_ch->>'chapter_number')::int,
+      v_ch->>'part', v_ch->>'part_title',
+      COALESCE((SELECT array_agg(x)::text[] FROM jsonb_array_elements_text(v_ch->'publication_target') x), '{}')
+    )
+    RETURNING id INTO v_chapter_id;
+
+    INSERT INTO cms_chapter_mirror (
+      chapter_id, book_id, source_kind, source_path, source_slug,
+      source_sha256, body_sha256, meta_sha256, source_published, import_batch_id
+    )
+    VALUES (
+      v_chapter_id, v_book_id, 'mdx', v_ch->>'source_path', v_ch->>'source_slug',
+      v_ch->>'source_sha256', v_ch->>'body_sha256', v_ch->>'meta_sha256',
+      (v_ch->>'source_published')::boolean, v_batch
+    );
+
+    v_created := v_created + 1;
+  END LOOP;
+
+  -- Record batch provenance so rollback can safely decide the book's fate.
+  -- The step-1 lock plus this PK guarantee batch_id can never be double-used
+  -- even under true concurrent apply calls.
+  INSERT INTO cms_import_batch (batch_id, book_id, book_content_id, book_created, created_count)
+  VALUES (v_batch, v_book_id, v_book_cid, v_created_bk, v_created);
+
+  RETURN jsonb_build_object(
+    'book_id', v_book_id, 'book_content_id', v_book_cid,
+    'book_created', v_created_bk, 'created', v_created
+  );
+END;
+$$;
+
+-- Reversible rollback of a single import batch (spec §8). One transaction →
+-- all-or-nothing.
+--   SOFT (default): archives the imported chapter content and RETAINS the
+--     mirror rows, marking them rolled_back_at/rollback_batch_id. It does NOT
+--     touch divergence_state — that stays truthful about MDX↔CMS (soft rollback
+--     is not a missing source). Rolled-back mirrors are excluded from ordinary
+--     re-import matching in the resolver; a re-import must hard-roll-back first.
+--   HARD: deletes the imported content; ON DELETE CASCADE removes the chapter +
+--     mirror rows.
+-- The book is archived (soft) / deleted (hard) ONLY when THIS batch created it
+-- (per cms_import_batch.book_created) and no qualifying chapters remain — for
+-- soft, no ACTIVE (non-archived) chapters; for hard, no chapters at all. A
+-- REUSED manual book is never modified. Mirrors resolveRollbackBookAction().
+CREATE OR REPLACE FUNCTION cms_rollback_import_batch(p_batch uuid, p_hard boolean DEFAULT false)
+RETURNS jsonb
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_content_ids  uuid[];
+  v_affected     int;
+  v_book_id      uuid;
+  v_book_cid     uuid;
+  v_book_created boolean;
+  v_remaining    int;
+  v_book_action  text := 'leave_book';
+BEGIN
+  SELECT book_id, book_content_id, book_created
+    INTO v_book_id, v_book_cid, v_book_created
+    FROM cms_import_batch WHERE batch_id = p_batch;
+
+  SELECT array_agg(ch.content_id) INTO v_content_ids
+  FROM cms_chapter_mirror m
+  JOIN cms_chapters ch ON ch.id = m.chapter_id
+  WHERE m.import_batch_id = p_batch;
+
+  v_affected := COALESCE(array_length(v_content_ids, 1), 0);
+
+  IF v_affected = 0 THEN
+    RETURN jsonb_build_object('batch', p_batch, 'affected', 0, 'book_action', 'leave_book');
+  END IF;
+
+  IF p_hard THEN
+    DELETE FROM cms_content WHERE id = ANY(v_content_ids);  -- cascade drops chapters + mirror
+  ELSE
+    UPDATE cms_content
+      SET status = 'archived', archived_at = now(), updated_at = now()
+      WHERE id = ANY(v_content_ids);
+    UPDATE cms_chapter_mirror
+      SET rolled_back_at = now(), rollback_batch_id = p_batch, last_checked_at = now()
+      WHERE import_batch_id = p_batch;
+  END IF;
+
+  -- Decide the book's fate — only ever for a book THIS batch created.
+  IF v_book_created THEN
+    IF p_hard THEN
+      SELECT count(*) INTO v_remaining FROM cms_chapters WHERE book_id = v_book_id;
+      IF v_remaining = 0 THEN
+        DELETE FROM cms_content WHERE id = v_book_cid;  -- cascade drops cms_books
+        v_book_action := 'delete_book';
+      END IF;
+    ELSE
+      SELECT count(*) INTO v_remaining
+        FROM cms_chapters ch JOIN cms_content c ON c.id = ch.content_id
+        WHERE ch.book_id = v_book_id AND c.status <> 'archived';
+      IF v_remaining = 0 THEN
+        UPDATE cms_content SET status = 'archived', archived_at = now(), updated_at = now() WHERE id = v_book_cid;
+        v_book_action := 'archive_book';
+      END IF;
+    END IF;
+  END IF;
+
+  UPDATE cms_import_batch SET rolled_back_at = now(), rollback_hard = p_hard WHERE batch_id = p_batch;
+
+  RETURN jsonb_build_object('batch', p_batch, 'affected', v_affected, 'hard', p_hard, 'book_action', v_book_action);
+END;
+$$;
