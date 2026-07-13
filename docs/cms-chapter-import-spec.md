@@ -122,11 +122,16 @@ CREATE TABLE IF NOT EXISTS cms_chapter_mirror (
 );
 ALTER TABLE cms_chapter_mirror ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only, like all cms_*)
 
--- Import-batch provenance so rollback can safely decide the book's fate.
+-- Import-batch provenance so rollback can safely decide the book's fate. Kept
+-- as a PERMANENT audit record independent of the book's own lifecycle:
+-- book_id / book_content_id are nullable with ON DELETE SET NULL (not
+-- CASCADE), so a hard rollback that deletes a batch-created book clears the
+-- reference but never removes this row — preserving both the batch's
+-- auditability and its batch_id's permanent reservation against reuse.
 CREATE TABLE IF NOT EXISTS cms_import_batch (
   batch_id        uuid PRIMARY KEY,
-  book_id         uuid NOT NULL REFERENCES cms_books(id) ON DELETE CASCADE,
-  book_content_id uuid NOT NULL REFERENCES cms_content(id) ON DELETE CASCADE,
+  book_id         uuid REFERENCES cms_books(id) ON DELETE SET NULL,
+  book_content_id uuid REFERENCES cms_content(id) ON DELETE SET NULL,
   book_created    boolean NOT NULL,                       -- true iff THIS batch created the book
   created_count   integer NOT NULL DEFAULT 0,
   created_at      timestamptz NOT NULL DEFAULT now(),
@@ -349,6 +354,7 @@ The import is accepted when **all** hold:
 13. **One authoritative verdict (§4.2).** The JSON `verdict`, the rendered `planText`, and the `apply` gate always agree, because all three derive from the same `resolveFinalVerdict(plan, sourceProblems)` computation. Specifically: (a) a missing/unreadable MDX file, or any other source-validation failure, makes **both** the JSON verdict and the plan text say `BLOCKED`, with the specific problems listed under `Source validation:` in the text; (b) a plan containing any `UPDATE_AVAILABLE` is `BLOCKED` (never `READY` or `NOOP`) and `apply` refuses it, even when `CREATE` items are also present — no partial import proceeds while updates are pending; (c) `NOOP` is reported **only** when every chapter is `SKIP`.
 14. **The RPC — not the route — is the final integrity boundary (§3.6).** `cms_import_chapters` re-validates, under locks inside its own transaction, that: the reused book still exists/is a book/is not archived/has the expected slug; a newly-created book's slug is still free; every incoming `mdx-chapter-N` slug is still free; every incoming `source_path` has no mirror row of any kind (active, retained, or soft-rolled-back); every incoming `chapter_number` is still free among active target-book chapters; the payload's numbers/slugs/paths/source-slugs are each internally unique and mutually consistent (`chapter-N`/`mdx-chapter-N`/`content/book/chapter-N.mdx`); and the `batch_id` has not already been used. Any failure raises an exception with **zero partial rows** committed (no exception handler; the whole transaction rolls back). A state change that occurred *after* the dry run but *before* apply (e.g. a manual chapter claiming a number) is caught and rejected — the route surfaces this as `409 { race_detected: true }`, distinct from a `503` infrastructure failure.
 15. **Metadata is part of divergence (§6).** `check` compares `meta_sha256` in addition to `source_sha256` and `body_sha256`. A metadata-only canonical change (title, description, part, part_title, `source_published`, `publication_target`) classifies as `source_changed`; combined with a CMS body edit, `both_changed`. It is never silently reported `in_sync`.
+16. **Batch provenance survives hard rollback (§3.5).** `cms_import_batch.book_id`/`book_content_id` use `ON DELETE SET NULL`, not `CASCADE`. A hard rollback that deletes a batch-created book (found via a local PostgreSQL verification exercise — see the corrective PR) clears those two columns to `NULL` but never deletes the `cms_import_batch` row itself: `batch_id`, `book_created`, `created_count`, `created_at`, `rolled_back_at`, and `rollback_hard` all survive permanently, so (a) the batch stays auditable and (b) its `batch_id` remains permanently reserved against reuse. A reused (not batch-created) book's references are never touched by any rollback, soft or hard.
 
 ---
 
