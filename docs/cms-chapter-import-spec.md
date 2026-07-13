@@ -257,6 +257,14 @@ The import is accepted when **all** hold:
 8. **Rollback works.** Rolling back the batch returns row counts to pre-import and leaves MDX/routes untouched; audit reflects it.
 9. **Security.** Import/check/rollback are `requireCmsAdmin`/service-role only; fail-closed (no admin → 404), matching every other `cms_*` route.
 10. **Gates green.** `npm run lint` (0 errors), `npx tsc --noEmit`, `npx vitest run`, `npm run build` all pass; new unit tests cover mapping, action resolution, hash/divergence logic, and idempotency.
+11. **Non-empty production safety.** The dry run actively inspects existing CMS books, chapters, and slugs — it **never assumes the CMS database is empty** — and writes no rows. Specifically it:
+    - reuses the existing book **only** when `cms_content.slug = 'eatobiotics-book'`;
+    - treats differently-slugged manual books as separate records, not implicit matches;
+    - evaluates chapter-number conflicts **within the target book only**;
+    - detects `mdx-chapter-N` slug collisions **globally** and classifies mismatched ownership as `CONFLICT`;
+    - reports all reuse, non-conflicting existing records, and blocking conflicts explicitly.
+
+    Test fixtures assert at least: (1) existing target book, no chapters → reuse book, `CREATE 25`; (2) unrelated manual book with chapters 1–3 → no target-book conflict; (3) existing target book with active manual chapters 1–3 → `CONFLICT 3`, apply blocked; (4) archived manual chapters 1–3 in the target book → numbers free, no active conflict; (5) global `mdx-chapter-1` owned by unrelated content → conflict; (6) existing valid mirror rows → correct `SKIP` / `UPDATE_AVAILABLE`; (7) mixed production state → deterministic full plan, no partial assumptions.
 
 ---
 

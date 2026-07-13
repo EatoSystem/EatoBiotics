@@ -1241,3 +1241,161 @@ BEGIN
   UPDATE cms_chapters SET chapter_number = b_num, updated_at = now() WHERE id = a_id;
 END;
 $$;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 41 (PROPOSED — DO NOT APPLY until the 25-chapter import is
+-- explicitly approved): CMS chapter mirror + atomic import/rollback
+-- ────────────────────────────────────────────────────────────
+-- Backs the MDX→CMS mirror import (docs/cms-chapter-import-spec.md). MDX stays
+-- the canonical publication source; these CMS rows are an editable editorial
+-- snapshot that never feeds the public book. This block is committed as
+-- reviewable migration code only — it is NOT applied to production by the
+-- implementation PR, and the real import is not run as part of any code merge.
+-- Same service-role-only pattern as every other cms_* object (RLS ENABLED,
+-- ZERO policies). Idempotent.
+
+CREATE TABLE IF NOT EXISTS cms_chapter_mirror (
+  id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  chapter_id        uuid NOT NULL UNIQUE REFERENCES cms_chapters(id) ON DELETE CASCADE,  -- one-to-one with the chapter
+  book_id           uuid NOT NULL REFERENCES cms_books(id) ON DELETE CASCADE,
+  source_kind       text NOT NULL DEFAULT 'mdx' CHECK (source_kind = 'mdx'),  -- v1: MDX only
+  source_path       text NOT NULL,                        -- 'content/book/chapter-1.mdx' (canonical pointer)
+  source_slug       text NOT NULL,                        -- 'chapter-1'
+  source_sha256     text NOT NULL,                        -- hash of MDX bytes at import
+  body_sha256       text NOT NULL,                        -- hash of the snapshot written to cms_content.body
+  meta_sha256       text NOT NULL,                        -- hash of the mapped lib/chapters.ts fields
+  source_published  boolean NOT NULL DEFAULT false,       -- canonical MDX publication state; the CMS row stays 'draft'
+  import_batch_id   uuid NOT NULL,                        -- the actual APPLY batch that created this row (never a dry run)
+  imported_at       timestamptz NOT NULL DEFAULT now(),
+  last_checked_at   timestamptz,
+  divergence_state  text NOT NULL DEFAULT 'in_sync'
+    CHECK (divergence_state IN ('in_sync','source_changed','cms_changed','both_changed','missing_source')),
+  UNIQUE (source_kind, source_path)                        -- one mirror row per canonical source file
+);
+
+CREATE INDEX IF NOT EXISTS idx_cms_chapter_mirror_book  ON cms_chapter_mirror (book_id);
+CREATE INDEX IF NOT EXISTS idx_cms_chapter_mirror_batch ON cms_chapter_mirror (import_batch_id);
+
+ALTER TABLE cms_chapter_mirror ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only)
+
+-- Atomic import. The route resolves the plan first (read-only) and refuses
+-- unless the verdict is READY; this function performs the approved CREATE set
+-- in ONE transaction, so a partial import can never commit. It only CREATES —
+-- it never mutates an existing cms_content.body (see the spec's divergence
+-- rules). `payload` shape:
+--   {
+--     "batch_id": uuid,
+--     "book": { "create": bool, "content_id": uuid|null, "title","slug","subtitle","summary" },
+--     "chapters": [ { "title","slug","summary","body","chapter_number","part","part_title",
+--                     "publication_target":[...], "source_path","source_slug",
+--                     "source_sha256","body_sha256","meta_sha256","source_published" } ]
+--   }
+-- Returns { "book_id": uuid, "book_content_id": uuid, "created": int }.
+CREATE OR REPLACE FUNCTION cms_import_chapters(payload jsonb)
+RETURNS jsonb
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_batch      uuid := (payload->>'batch_id')::uuid;
+  v_book       jsonb := payload->'book';
+  v_book_id    uuid;
+  v_book_cid   uuid;
+  v_ch         jsonb;
+  v_content_id uuid;
+  v_chapter_id uuid;
+  v_created    int := 0;
+BEGIN
+  IF v_batch IS NULL THEN
+    RAISE EXCEPTION 'cms_import_chapters: batch_id is required';
+  END IF;
+
+  IF (v_book->>'create')::boolean THEN
+    INSERT INTO cms_content (title, slug, content_type, summary, status)
+    VALUES (v_book->>'title', v_book->>'slug', 'book', v_book->>'summary', 'draft')
+    RETURNING id INTO v_book_cid;
+    INSERT INTO cms_books (content_id, subtitle)
+    VALUES (v_book_cid, v_book->>'subtitle')
+    RETURNING id INTO v_book_id;
+  ELSE
+    v_book_cid := (v_book->>'content_id')::uuid;
+    SELECT id INTO v_book_id FROM cms_books WHERE content_id = v_book_cid;
+    IF v_book_id IS NULL THEN
+      RAISE EXCEPTION 'cms_import_chapters: existing book not found for content_id %', v_book_cid;
+    END IF;
+  END IF;
+
+  FOR v_ch IN SELECT * FROM jsonb_array_elements(payload->'chapters')
+  LOOP
+    INSERT INTO cms_content (title, slug, content_type, summary, body, status, book_id)
+    VALUES (
+      v_ch->>'title', v_ch->>'slug', 'book_chapter', v_ch->>'summary', v_ch->>'body',
+      'draft', v_book_id
+    )
+    RETURNING id INTO v_content_id;
+
+    INSERT INTO cms_chapters (book_id, content_id, chapter_number, part, part_title, publication_target)
+    VALUES (
+      v_book_id, v_content_id, (v_ch->>'chapter_number')::int,
+      v_ch->>'part', v_ch->>'part_title',
+      COALESCE((SELECT array_agg(x)::text[] FROM jsonb_array_elements_text(v_ch->'publication_target') x), '{}')
+    )
+    RETURNING id INTO v_chapter_id;
+
+    INSERT INTO cms_chapter_mirror (
+      chapter_id, book_id, source_kind, source_path, source_slug,
+      source_sha256, body_sha256, meta_sha256, source_published, import_batch_id
+    )
+    VALUES (
+      v_chapter_id, v_book_id, 'mdx', v_ch->>'source_path', v_ch->>'source_slug',
+      v_ch->>'source_sha256', v_ch->>'body_sha256', v_ch->>'meta_sha256',
+      (v_ch->>'source_published')::boolean, v_batch
+    );
+
+    v_created := v_created + 1;
+  END LOOP;
+
+  RETURN jsonb_build_object('book_id', v_book_id, 'book_content_id', v_book_cid, 'created', v_created);
+END;
+$$;
+
+-- Reversible rollback of a single import batch (spec §8). Soft (default)
+-- archives the imported chapter content and RETAINS the mirror rows for
+-- provenance, flagged missing_source; hard deletes the imported content and
+-- lets ON DELETE CASCADE remove the chapter + mirror rows. The find-or-create
+-- book is archived (soft) / deleted (hard) only if this batch created it and it
+-- has no remaining chapters. One transaction → all-or-nothing.
+CREATE OR REPLACE FUNCTION cms_rollback_import_batch(p_batch uuid, p_hard boolean DEFAULT false)
+RETURNS jsonb
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_content_ids uuid[];
+  v_affected    int;
+BEGIN
+  SELECT array_agg(ch.content_id) INTO v_content_ids
+  FROM cms_chapter_mirror m
+  JOIN cms_chapters ch ON ch.id = m.chapter_id
+  WHERE m.import_batch_id = p_batch;
+
+  v_affected := COALESCE(array_length(v_content_ids, 1), 0);
+
+  IF v_affected = 0 THEN
+    RETURN jsonb_build_object('batch', p_batch, 'affected', 0);
+  END IF;
+
+  IF p_hard THEN
+    -- Cascade removes cms_chapters + cms_chapter_mirror for these content rows.
+    DELETE FROM cms_content WHERE id = ANY(v_content_ids);
+  ELSE
+    UPDATE cms_content
+      SET status = 'archived', archived_at = now(), updated_at = now()
+      WHERE id = ANY(v_content_ids);
+    UPDATE cms_chapter_mirror
+      SET divergence_state = 'missing_source', last_checked_at = now()
+      WHERE import_batch_id = p_batch;
+  END IF;
+
+  RETURN jsonb_build_object('batch', p_batch, 'affected', v_affected, 'hard', p_hard);
+END;
+$$;
