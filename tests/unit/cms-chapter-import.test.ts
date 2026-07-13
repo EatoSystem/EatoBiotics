@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { NextRequest } from "next/server"
+import { readFileSync } from "fs"
+import { join } from "path"
 import {
   resolveChapterImportPlan,
   resolveFinalVerdict,
@@ -635,5 +637,56 @@ describe("/api/cms/import/chapters — RPC-level race rejections (state changed 
     expect(res.status).toBe(409)
     expect(body.batch_id).toBeUndefined()
     expect(body.result).toBeUndefined()
+  })
+})
+
+/* ── Regression guard: cms_import_batch must survive hard rollback ─────────
+   A local PostgreSQL verification exercise found that the original DDL —
+   book_id/book_content_id as NOT NULL with ON DELETE CASCADE — let a hard
+   rollback of a batch-created (now-empty) book cascade-delete the
+   cms_import_batch row along with it, silently breaking two guarantees the
+   table exists to provide: the batch stays auditable, and its batch_id is
+   permanently reserved against reuse. The fix makes both columns nullable
+   with ON DELETE SET NULL instead. This is a real Postgres-engine behavior
+   (FK cascade semantics) that no amount of mocking can exercise — see the
+   corrective PR's local-Postgres re-verification for the actual runtime
+   proof (hard rollback ends with cms_import_batch count 1, not 0, with both
+   book references NULL). This test is a lightweight DDL-shape regression
+   guard only: it parses the migration SQL and asserts the columns stay
+   nullable + SET NULL, so a future edit can't silently revert the fix. */
+describe("Migration 41 — cms_import_batch DDL (regression guard for hard-rollback provenance)", () => {
+  const migrationsSql = readFileSync(join(process.cwd(), "supabase/migrations.sql"), "utf8")
+  const tableMatch = migrationsSql.match(/CREATE TABLE IF NOT EXISTS cms_import_batch \(([\s\S]*?)\n\);/)
+
+  it("the cms_import_batch table definition is present in the migration", () => {
+    expect(tableMatch).not.toBeNull()
+  })
+
+  const body = tableMatch ? tableMatch[1] : ""
+  const bookIdLine = body.match(/^\s*book_id\s+uuid.*$/m)?.[0] ?? ""
+  const bookContentIdLine = body.match(/^\s*book_content_id\s+uuid.*$/m)?.[0] ?? ""
+
+  it("book_id is nullable (no NOT NULL) and uses ON DELETE SET NULL, never CASCADE", () => {
+    expect(bookIdLine).not.toBe("")
+    expect(bookIdLine).toMatch(/ON DELETE SET NULL/)
+    expect(bookIdLine).not.toMatch(/NOT NULL/)
+    expect(bookIdLine).not.toMatch(/ON DELETE CASCADE/)
+  })
+
+  it("book_content_id is nullable (no NOT NULL) and uses ON DELETE SET NULL, never CASCADE", () => {
+    expect(bookContentIdLine).not.toBe("")
+    expect(bookContentIdLine).toMatch(/ON DELETE SET NULL/)
+    expect(bookContentIdLine).not.toMatch(/NOT NULL/)
+    expect(bookContentIdLine).not.toMatch(/ON DELETE CASCADE/)
+  })
+
+  it("retains batch_id, book_created, created_count, created_at, rolled_back_at, rollback_hard", () => {
+    for (const col of ["batch_id", "book_created", "created_count", "created_at", "rolled_back_at", "rollback_hard"]) {
+      expect(body).toMatch(new RegExp(`\\b${col}\\b`))
+    }
+  })
+
+  it("batch_id remains the PRIMARY KEY (the permanent reuse-prevention anchor)", () => {
+    expect(body).toMatch(/batch_id\s+uuid PRIMARY KEY/)
   })
 })

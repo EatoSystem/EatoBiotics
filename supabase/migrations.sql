@@ -1287,10 +1287,22 @@ ALTER TABLE cms_chapter_mirror ENABLE ROW LEVEL SECURITY;  -- zero policies (ser
 -- Import-batch provenance: records whether an apply batch CREATED the target
 -- book or REUSED an existing one, so rollback can safely decide the book's fate
 -- (a reused manual book must never be touched). One row per apply batch.
+--
+-- book_id / book_content_id are DELIBERATELY nullable with ON DELETE SET NULL,
+-- not CASCADE. This table is a permanent audit/provenance record for a
+-- batch_id, independent of whether the book it touched still exists. If these
+-- FKs cascaded (the earlier, incorrect design), hard-rolling-back a batch that
+-- created a now-empty book would DELETE this row along with the book,
+-- breaking two guarantees this table exists to provide: (1) the batch stays
+-- auditable after rollback, and (2) cms_import_chapters' batch_id-reuse check
+-- (`PERFORM 1 FROM cms_import_batch WHERE batch_id = ... FOR UPDATE`) has
+-- nothing left to find, silently allowing that batch_id to be reused. With
+-- ON DELETE SET NULL, the book reference clears but the row — and the
+-- batch_id's reservation — survives permanently.
 CREATE TABLE IF NOT EXISTS cms_import_batch (
   batch_id        uuid PRIMARY KEY,
-  book_id         uuid NOT NULL REFERENCES cms_books(id) ON DELETE CASCADE,
-  book_content_id uuid NOT NULL REFERENCES cms_content(id) ON DELETE CASCADE,
+  book_id         uuid REFERENCES cms_books(id) ON DELETE SET NULL,      -- nullable: may legitimately be NULL after a hard rollback deleted the book
+  book_content_id uuid REFERENCES cms_content(id) ON DELETE SET NULL,    -- nullable: same as above
   book_created    boolean NOT NULL,                       -- true iff THIS batch created the book
   created_count   integer NOT NULL DEFAULT 0,
   created_at      timestamptz NOT NULL DEFAULT now(),
@@ -1556,6 +1568,12 @@ $$;
 -- (per cms_import_batch.book_created) and no qualifying chapters remain — for
 -- soft, no ACTIVE (non-archived) chapters; for hard, no chapters at all. A
 -- REUSED manual book is never modified. Mirrors resolveRollbackBookAction().
+-- The cms_import_batch row itself is NEVER deleted by this function (nor by
+-- any cascade — see that table's ON DELETE SET NULL FKs): even a hard rollback
+-- that deletes a batch-created book only clears book_id/book_content_id to
+-- NULL on that row, leaving batch_id, book_created, created_count, created_at,
+-- rolled_back_at, and rollback_hard intact — permanently reserving the
+-- batch_id against reuse and keeping the batch auditable.
 CREATE OR REPLACE FUNCTION cms_rollback_import_batch(p_batch uuid, p_hard boolean DEFAULT false)
 RETURNS jsonb
 LANGUAGE plpgsql
