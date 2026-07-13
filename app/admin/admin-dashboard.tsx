@@ -102,25 +102,25 @@ export function AdminDashboard({ stats }: { stats: AdminStats }) {
         <section>
           <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Overview</h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            <StatCard icon={Users} value={stats.totalLeads} label="Total leads" color="var(--icon-green)" />
+            <StatCard icon={<Users size={16} style={{ color: "var(--icon-green)" }} />} value={stats.totalLeads} label="Total leads" color="var(--icon-green)" />
             <StatCard
-              icon={CheckCircle2}
+              icon={<CheckCircle2 size={16} style={{ color: "var(--icon-lime)" }} />}
               value={stats.completedAssessments}
               label="Assessments"
               sub={`${completionRate}% completion`}
               color="var(--icon-lime)"
             />
-            <StatCard icon={UserCheck} value={stats.accounts} label="Accounts" sub="Registered users" color="var(--icon-teal)" />
+            <StatCard icon={<UserCheck size={16} style={{ color: "var(--icon-teal)" }} />} value={stats.accounts} label="Accounts" sub="Registered users" color="var(--icon-teal)" />
             <StatCard
-              icon={FileText}
+              icon={<FileText size={16} style={{ color: "var(--icon-yellow)" }} />}
               value={stats.paidReports}
               label="Paid reports"
               sub={`${conversionRate}% of leads`}
               color="var(--icon-yellow)"
             />
-            <StatCard icon={Share2} value={stats.referrals} label="Referrals" color="var(--icon-orange)" />
+            <StatCard icon={<Share2 size={16} style={{ color: "var(--icon-orange)" }} />} value={stats.referrals} label="Referrals" color="var(--icon-orange)" />
             <StatCard
-              icon={TrendingUp}
+              icon={<TrendingUp size={16} style={{ color: "var(--icon-green)" }} />}
               value={`${conversionRate}%`}
               label="Conversion"
               sub="Leads → paid"

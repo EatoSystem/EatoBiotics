@@ -63,10 +63,10 @@ export default async function CmsDashboard() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="All content" value={total} icon={FileText} />
-        <StatCard label="Drafts" value={drafts} icon={FilePlus2} color="var(--icon-yellow)" />
-        <StatCard label="Awaiting review" value={inReview} icon={Eye} color="var(--icon-orange)" />
-        <StatCard label="Approved" value={approved} icon={CheckCircle2} color="var(--icon-teal)" />
+        <StatCard label="All content" value={total} icon={<FileText size={16} style={{ color: "var(--icon-green)" }} />} />
+        <StatCard label="Drafts" value={drafts} icon={<FilePlus2 size={16} style={{ color: "var(--icon-yellow)" }} />} color="var(--icon-yellow)" />
+        <StatCard label="Awaiting review" value={inReview} icon={<Eye size={16} style={{ color: "var(--icon-orange)" }} />} color="var(--icon-orange)" />
+        <StatCard label="Approved" value={approved} icon={<CheckCircle2 size={16} style={{ color: "var(--icon-teal)" }} />} color="var(--icon-teal)" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

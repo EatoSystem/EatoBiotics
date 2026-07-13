@@ -140,28 +140,28 @@ export function WaitlistOpsClient({ stats }: { stats: WaitlistStats }) {
         <section>
           <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Pre-launch funnel</h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            <StatCard icon={Users} value={stats.total} label="Signups" color="var(--icon-green)" />
+            <StatCard icon={<Users size={16} style={{ color: "var(--icon-green)" }} />} value={stats.total} label="Signups" color="var(--icon-green)" />
             <StatCard
-              icon={CheckCircle2}
+              icon={<CheckCircle2 size={16} style={{ color: "var(--icon-lime)" }} />}
               value={stats.completed}
               label="Completed quiz"
               sub={`${completionRate}% of signups`}
               color="var(--icon-lime)"
             />
             <StatCard
-              icon={Share2}
+              icon={<Share2 size={16} style={{ color: "var(--icon-teal)" }} />}
               value={stats.totalReferrals}
               label="Referrals credited"
               color="var(--icon-teal)"
             />
             <StatCard
-              icon={Trophy}
+              icon={<Trophy size={16} style={{ color: "var(--icon-yellow)" }} />}
               value={stats.unlocked}
               label="Founding unlocks"
               sub="Hit referral goal"
               color="var(--icon-yellow)"
             />
-            <StatCard icon={Globe} value={stats.countries.length} label="Countries" color="var(--icon-orange)" />
+            <StatCard icon={<Globe size={16} style={{ color: "var(--icon-orange)" }} />} value={stats.countries.length} label="Countries" color="var(--icon-orange)" />
           </div>
         </section>
 
