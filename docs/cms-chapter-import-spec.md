@@ -146,6 +146,27 @@ Refinements applied (§11.5):
 
 Rationale for a table over columns on `cms_chapters`: the mirror is a *relationship to an external artifact* with its own lifecycle (hashes, batches, divergence), and a `chapter_id UNIQUE` FK keeps it one-to-one without widening the core row.
 
+### 3.6 `cms_import_chapters` is the final integrity boundary, not the route (review round 4)
+
+The route's dry-run plan (§4.1) is read-only and produces the human-readable approval artefact — it is **never trusted** as the final integrity check. There is a real time-of-check/time-of-use gap between that read and the `apply` call (another admin action, a manual chapter create, a second `apply`) during which the state the plan was computed from can go stale — e.g. a manual chapter could claim an incoming chapter number between the dry run and the apply, since active chapter-number uniqueness is deliberately application-level (§3.5), not a DB constraint.
+
+`cms_import_chapters(payload)` therefore **re-validates every invariant itself**, under row locks, inside its own single transaction, immediately before any insert:
+
+- the reused book still exists, is still `content_type='book'`, is not archived, and its slug still matches the expected canonical book slug (locked `FOR UPDATE`);
+- for a newly-created book, its slug is still free;
+- every incoming `mdx-chapter-N` slug is still free;
+- every incoming `source_path` has no existing mirror row of **any** kind — active, retained, or soft-rolled-back all occupy the same `UNIQUE(source_kind, source_path)` slot and block equally;
+- every incoming `chapter_number` is still free among **active** (non-archived) chapters of the target book (locked `FOR UPDATE`) — this is the specific race described above;
+- the payload's chapter numbers, slugs, source paths, and source slugs are each internally unique;
+- every payload chapter's `chapter_number`/`source_slug`/`slug`/`source_path` relate to each other exactly as the canonical naming convention requires (`chapter-N` / `mdx-chapter-N` / `content/book/chapter-N.mdx`) — a malformed or tampered payload is rejected;
+- the `batch_id` has not already been used (locked `FOR UPDATE` against `cms_import_batch`).
+
+All validation runs in a full pass **before** any insert, and any `RAISE EXCEPTION` — with no exception handler in the function — aborts the **entire transaction**: Postgres guarantees zero partial `cms_content` / `cms_chapters` / `cms_chapter_mirror` / `cms_books` / `cms_import_batch` rows on any failure. Locks acquired on the book/chapter/content/mirror/batch rows are held until the transaction ends, so the target book cannot change out from under the call once validation begins. A genuinely simultaneous "create the same book twice" race that has nothing to lock beforehand is still caught atomically by `cms_content.slug`'s `UNIQUE` constraint, which raises its own exception and rolls back the loser's entire call the same way.
+
+**Filesystem boundary:** the RPC has no access to MDX files or `lib/chapters.ts` — it can only re-verify *database* state. Confirming the canonical source *set itself* is complete (no missing/unreadable files, no duplicate/missing numbers) remains the route's job via `validateCanonicalSources`, run immediately before every `apply` call (§4).
+
+The route surfaces an RPC rejection as `409 { race_detected: true }` (distinct from the `503` used for genuine database-unavailable/migration-required failures) — the caller should re-run `dry_run` and retry, since state has changed.
+
 ---
 
 ## 4. Import operation contract
@@ -241,15 +262,20 @@ Requirements: totals per action; per-chapter reason; explicit "no rows written" 
 
 ## 6. Divergence detection (never silently overwrite)
 
-Divergence is computed by comparing stored hashes against freshly recomputed ones. A separate, read-only **`check`** operation (no writes except `last_checked_at` / `divergence_state`) classifies each mirrored chapter:
+Divergence is computed by comparing stored hashes against freshly recomputed ones. A separate, read-only **`check`** operation (no writes except `last_checked_at` / `divergence_state`) classifies each mirrored chapter. **The canonical source side of the comparison is `source_sha256` OR `meta_sha256`** — a metadata-only change (title, description, part, part_title, `source_published`, `publication_target` in `lib/chapters.ts`) is just as much "the source changed" as an MDX body edit, and must never be silently reported `in_sync`:
+
+```
+sourceChanged = currentSourceSha !== storedSourceSha || currentMetaSha !== storedMetaSha
+cmsChanged    = currentBodySha   !== storedBodySha
+```
 
 | `divergence_state` | Meaning | Action taken |
 |---|---|---|
-| `in_sync` | `source_sha256` and `body_sha256` both match | none |
-| `source_changed` | MDX file edited since import (source hash differs); CMS body untouched | **report**; offer explicit "refresh snapshot from MDX" (operator-initiated) |
-| `cms_changed` | CMS body edited since import (body hash differs); MDX untouched | **report**; this is expected editorial work — never overwritten by import |
-| `both_changed` | both sides edited | **report loudly**; requires human reconciliation, no automated merge |
-| `missing_source` | MDX file no longer exists at `source_path` | **report**; mirror retained, flagged |
+| `in_sync` | MDX body **and** metadata unchanged, CMS body unchanged | none |
+| `source_changed` | MDX body **or** metadata changed since import; CMS body untouched | **report**; offer explicit "refresh snapshot from MDX" (operator-initiated) |
+| `cms_changed` | CMS body edited since import; MDX body and metadata both untouched | **report**; this is expected editorial work — never overwritten by import |
+| `both_changed` | MDX body or metadata changed, **and** the CMS body also changed | **report loudly**; requires human reconciliation, no automated merge |
+| `missing_source` | MDX file (or its `lib/chapters.ts` entry) no longer exists at `source_path` | **report**; mirror retained, flagged |
 
 Rules:
 - The import's `apply` mode **only creates**. It will not mutate an existing `cms_content.body`. Refreshing a snapshot from a changed MDX source is a **separate, explicit, operator-confirmed** action, logged distinctly.
@@ -321,6 +347,8 @@ The import is accepted when **all** hold:
     Test fixtures assert at least: (1) existing target book, no chapters → reuse book, `CREATE 25`; (2) unrelated manual book with chapters 1–3 → no target-book conflict; (3) existing target book with active manual chapters 1–3 → `CONFLICT 3`, apply blocked; (4) archived manual chapters 1–3 in the target book → numbers free, no active conflict; (5) global `mdx-chapter-1` owned by unrelated content → conflict; (6) existing valid mirror rows → correct `SKIP` / `UPDATE_AVAILABLE`; (7) mixed production state → deterministic full plan, no partial assumptions.
 12. **Fail-closed reads.** Every book/chapter/mirror/slug-owner/divergence read and update inspects its error; a failed query aborts with `503` and is never treated as an empty result. If Migration 41's schema is absent (`42P01`), every mode returns an explicit `migration_required: true` `503` instead of proceeding on a false "empty database" plan.
 13. **One authoritative verdict (§4.2).** The JSON `verdict`, the rendered `planText`, and the `apply` gate always agree, because all three derive from the same `resolveFinalVerdict(plan, sourceProblems)` computation. Specifically: (a) a missing/unreadable MDX file, or any other source-validation failure, makes **both** the JSON verdict and the plan text say `BLOCKED`, with the specific problems listed under `Source validation:` in the text; (b) a plan containing any `UPDATE_AVAILABLE` is `BLOCKED` (never `READY` or `NOOP`) and `apply` refuses it, even when `CREATE` items are also present — no partial import proceeds while updates are pending; (c) `NOOP` is reported **only** when every chapter is `SKIP`.
+14. **The RPC — not the route — is the final integrity boundary (§3.6).** `cms_import_chapters` re-validates, under locks inside its own transaction, that: the reused book still exists/is a book/is not archived/has the expected slug; a newly-created book's slug is still free; every incoming `mdx-chapter-N` slug is still free; every incoming `source_path` has no mirror row of any kind (active, retained, or soft-rolled-back); every incoming `chapter_number` is still free among active target-book chapters; the payload's numbers/slugs/paths/source-slugs are each internally unique and mutually consistent (`chapter-N`/`mdx-chapter-N`/`content/book/chapter-N.mdx`); and the `batch_id` has not already been used. Any failure raises an exception with **zero partial rows** committed (no exception handler; the whole transaction rolls back). A state change that occurred *after* the dry run but *before* apply (e.g. a manual chapter claiming a number) is caught and rejected — the route surfaces this as `409 { race_detected: true }`, distinct from a `503` infrastructure failure.
+15. **Metadata is part of divergence (§6).** `check` compares `meta_sha256` in addition to `source_sha256` and `body_sha256`. A metadata-only canonical change (title, description, part, part_title, `source_published`, `publication_target`) classifies as `source_changed`; combined with a CMS body edit, `both_changed`. It is never silently reported `in_sync`.
 
 ---
 

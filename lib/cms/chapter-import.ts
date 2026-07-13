@@ -266,7 +266,11 @@ export function resolveRollbackBookAction(args: {
 }
 
 /** Divergence classification for the read-only `check` operation (spec §6).
- *  `sourceMissing` means the canonical MDX file is gone. */
+ *  `sourceMissing` means the canonical MDX file is gone. A canonical-source
+ *  change is either the MDX body OR the mapped metadata (title, summary,
+ *  part, part_title, source_published, publication_target) — a metadata-only
+ *  edit in lib/chapters.ts is just as much a "the source changed" event as an
+ *  MDX body edit, so it must never be silently reported as in_sync. */
 export type DivergenceState =
   | "in_sync"
   | "source_changed"
@@ -276,12 +280,14 @@ export type DivergenceState =
 
 export function classifyDivergence(args: {
   storedSourceSha: string
+  storedMetaSha: string
   storedBodySha: string
-  currentSourceSha: string | null // null when the MDX file is missing
+  currentSourceSha: string | null // null when the MDX file (or its metadata entry) is missing
+  currentMetaSha: string | null   // null alongside currentSourceSha when the source is missing
   currentBodySha: string          // hash of the live cms_content.body
 }): DivergenceState {
   if (args.currentSourceSha === null) return "missing_source"
-  const sourceChanged = args.currentSourceSha !== args.storedSourceSha
+  const sourceChanged = args.currentSourceSha !== args.storedSourceSha || args.currentMetaSha !== args.storedMetaSha
   const cmsChanged = args.currentBodySha !== args.storedBodySha
   if (sourceChanged && cmsChanged) return "both_changed"
   if (sourceChanged) return "source_changed"

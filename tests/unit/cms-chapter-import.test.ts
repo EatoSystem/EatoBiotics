@@ -181,21 +181,38 @@ describe("resolveChapterImportPlan — non-empty-production safety fixtures", ()
 })
 
 describe("classifyDivergence", () => {
-  const base = { storedSourceSha: "s", storedBodySha: "b" }
-  it("in_sync when both match", () => {
-    expect(classifyDivergence({ ...base, currentSourceSha: "s", currentBodySha: "b" })).toBe("in_sync")
+  const base = { storedSourceSha: "s", storedMetaSha: "m", storedBodySha: "b" }
+  it("in_sync when body, metadata, and CMS body all match", () => {
+    expect(classifyDivergence({ ...base, currentSourceSha: "s", currentMetaSha: "m", currentBodySha: "b" })).toBe("in_sync")
   })
-  it("source_changed when only MDX differs", () => {
-    expect(classifyDivergence({ ...base, currentSourceSha: "s2", currentBodySha: "b" })).toBe("source_changed")
+  it("source_changed when only the MDX body differs", () => {
+    expect(classifyDivergence({ ...base, currentSourceSha: "s2", currentMetaSha: "m", currentBodySha: "b" })).toBe("source_changed")
   })
   it("cms_changed when only the CMS body differs", () => {
-    expect(classifyDivergence({ ...base, currentSourceSha: "s", currentBodySha: "b2" })).toBe("cms_changed")
+    expect(classifyDivergence({ ...base, currentSourceSha: "s", currentMetaSha: "m", currentBodySha: "b2" })).toBe("cms_changed")
   })
-  it("both_changed when both differ", () => {
-    expect(classifyDivergence({ ...base, currentSourceSha: "s2", currentBodySha: "b2" })).toBe("both_changed")
+  it("both_changed when MDX body and CMS body both differ", () => {
+    expect(classifyDivergence({ ...base, currentSourceSha: "s2", currentMetaSha: "m", currentBodySha: "b2" })).toBe("both_changed")
   })
   it("missing_source when the MDX file is gone", () => {
-    expect(classifyDivergence({ ...base, currentSourceSha: null, currentBodySha: "b" })).toBe("missing_source")
+    expect(classifyDivergence({ ...base, currentSourceSha: null, currentMetaSha: null, currentBodySha: "b" })).toBe("missing_source")
+  })
+
+  // Review round 4: a metadata-only canonical change (title, description, part,
+  // part_title, publication status/targets in lib/chapters.ts) is JUST AS MUCH
+  // a "the source changed" event as an MDX body edit — it must never be
+  // silently reported as in_sync.
+  it("metadata-only change (body unchanged) → source_changed, not in_sync", () => {
+    expect(classifyDivergence({ ...base, currentSourceSha: "s", currentMetaSha: "m2", currentBodySha: "b" })).toBe("source_changed")
+  })
+  it("metadata change plus a CMS body edit → both_changed", () => {
+    expect(classifyDivergence({ ...base, currentSourceSha: "s", currentMetaSha: "m2", currentBodySha: "b2" })).toBe("both_changed")
+  })
+  it("body-only source change (metadata unchanged) → source_changed", () => {
+    expect(classifyDivergence({ ...base, currentSourceSha: "s2", currentMetaSha: "m", currentBodySha: "b" })).toBe("source_changed")
+  })
+  it("unchanged body and metadata, unchanged CMS body → in_sync", () => {
+    expect(classifyDivergence({ ...base, currentSourceSha: "s", currentMetaSha: "m", currentBodySha: "b" })).toBe("in_sync")
   })
 })
 
@@ -518,5 +535,105 @@ describe("/api/cms/import/chapters — UPDATE_AVAILABLE blocks apply (never a pa
     expect(rpc).not.toHaveBeenCalled()
     const body = await res.json()
     expect(body.verdict).toBe("BLOCKED")
+  })
+})
+
+/* ── Review round 4: the route's dry run is NEVER the final integrity check —
+   cms_import_chapters (Migration 41) re-validates everything under locks
+   inside its own transaction and RAISEs (SQLSTATE P0001 — the default code
+   for a plain RAISE EXCEPTION) if state changed since the dry run. These
+   tests simulate the route reaching a clean READY plan (so it actually calls
+   the RPC) and then the RPC rejecting for each race scenario, verifying the
+   route surfaces it as a clean 409 (never a false success, never a partial
+   result) rather than crashing or reporting ok:true. The RPC's own atomicity
+   (zero partial rows on any RAISE EXCEPTION) is a property of running fully
+   inside one Postgres transaction with no exception handler — see the
+   Migration 41 comments for the full reasoning; it isn't independently
+   re-verifiable here without a live Postgres instance. */
+describe("/api/cms/import/chapters — RPC-level race rejections (state changed since dry run)", () => {
+  const readyState = { cms_content: { data: null, error: null }, cms_chapter_mirror: { data: [], error: null } }
+
+  async function applyWithRpcError(message: string) {
+    vi.stubEnv("ADMIN_SESSION_SECRET", "a-test-secret-value")
+    mockLoad.mockResolvedValue({ sources: sources25, unreadable: [], expected: 25, scanned: 25 })
+    const rpc = vi.fn(() => Promise.resolve({ data: null, error: { code: "P0001", message } }))
+    mockGetSupabase.mockReturnValue(clientByTable(readyState, rpc))
+    const { adminCookieToken } = await import("@/lib/admin-auth")
+    const { POST } = await import("@/app/api/cms/import/chapters/route")
+    const res = await POST(req(adminCookieToken() as string, { mode: "apply" }))
+    const body = await res.json()
+    return { res, body, rpc }
+  }
+
+  it("rejects when a manual active chapter has claimed an incoming chapter number", async () => {
+    const { res, body, rpc } = await applyWithRpcError(
+      "cms_import_chapters: chapter number 1 is no longer free in the target book (race since dry run)"
+    )
+    expect(rpc).toHaveBeenCalledTimes(1)
+    expect(res.status).toBe(409)
+    expect(body.race_detected).toBe(true)
+    expect(body.ok).not.toBe(true)
+    expect(String(body.detail)).toMatch(/chapter number 1 is no longer free/)
+  })
+
+  it("rejects when an incoming CMS slug has become occupied", async () => {
+    const { res, body, rpc } = await applyWithRpcError(
+      "cms_import_chapters: slug mdx-chapter-1 is no longer free (race since dry run)"
+    )
+    expect(rpc).toHaveBeenCalledTimes(1)
+    expect(res.status).toBe(409)
+    expect(body.race_detected).toBe(true)
+    expect(String(body.detail)).toMatch(/slug mdx-chapter-1 is no longer free/)
+  })
+
+  it("rejects when an incoming source path has become occupied by a mirror row", async () => {
+    const { res, body, rpc } = await applyWithRpcError(
+      "cms_import_chapters: source_path content/book/chapter-1.mdx already has a mirror row (race since dry run)"
+    )
+    expect(rpc).toHaveBeenCalledTimes(1)
+    expect(res.status).toBe(409)
+    expect(body.race_detected).toBe(true)
+    expect(String(body.detail)).toMatch(/already has a mirror row/)
+  })
+
+  it("rejects when the reused target book was changed or removed", async () => {
+    const { res, body, rpc } = await applyWithRpcError(
+      "cms_import_chapters: target book content 11111111-1111-1111-1111-111111111111 no longer exists (race since dry run)"
+    )
+    expect(rpc).toHaveBeenCalledTimes(1)
+    expect(res.status).toBe(409)
+    expect(body.race_detected).toBe(true)
+    expect(String(body.detail)).toMatch(/no longer exists/)
+  })
+
+  it("rejects a duplicate or malformed payload", async () => {
+    const { res, body, rpc } = await applyWithRpcError("cms_import_chapters: payload has duplicate chapter_number values")
+    expect(rpc).toHaveBeenCalledTimes(1)
+    expect(res.status).toBe(409)
+    expect(body.race_detected).toBe(true)
+    expect(String(body.detail)).toMatch(/duplicate chapter_number/)
+  })
+
+  it("rejects reuse of an already-used batch id", async () => {
+    const { res, body, rpc } = await applyWithRpcError(
+      "cms_import_chapters: batch_id 22222222-2222-2222-2222-222222222222 has already been used"
+    )
+    expect(rpc).toHaveBeenCalledTimes(1)
+    expect(res.status).toBe(409)
+    expect(body.race_detected).toBe(true)
+    expect(String(body.detail)).toMatch(/has already been used/)
+  })
+
+  it("a rejected apply never records a success audit entry", async () => {
+    // recordCmsAudit is only reached AFTER failOn returns without throwing —
+    // since failOn always throws for a P0001 error, the audit call for
+    // "chapters_imported" is structurally unreachable on this path. This is
+    // asserted by construction (failOn throws synchronously before the
+    // recordCmsAudit line), verified here by confirming the response is the
+    // clean 409 rejection with no batch_id/result echoed back as if it succeeded.
+    const { res, body } = await applyWithRpcError("cms_import_chapters: chapter number 3 is no longer free in the target book (race since dry run)")
+    expect(res.status).toBe(409)
+    expect(body.batch_id).toBeUndefined()
+    expect(body.result).toBeUndefined()
   })
 })

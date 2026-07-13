@@ -1300,55 +1300,207 @@ CREATE TABLE IF NOT EXISTS cms_import_batch (
 
 ALTER TABLE cms_import_batch ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only)
 
--- Atomic import. The route resolves the plan first (read-only) and refuses
--- unless the verdict is READY; this function performs the approved CREATE set
--- in ONE transaction, so a partial import can never commit. It only CREATES —
--- it never mutates an existing cms_content.body (see the spec's divergence
--- rules). `payload` shape:
+-- Atomic import. The route resolves a plan first (read-only) as a dry run and
+-- ONLY for producing the human-readable approval artefact — it is NEVER
+-- trusted as the final integrity check. There is a real time gap between that
+-- read and this call (another admin action, a manual chapter create, a second
+-- apply) during which the state the plan was computed from can go stale. This
+-- function is the actual integrity boundary: every invariant the plan claimed
+-- to hold is RE-VALIDATED here, under row locks, inside this one transaction,
+-- immediately before any insert — so a write that happened after the dry run
+-- (and therefore is already visible to this fresh transaction) is caught and
+-- the whole call aborts. All validation runs before any insert in a separate
+-- pass, and a RAISE EXCEPTION anywhere aborts the ENTIRE transaction — there
+-- is no exception handler here, so Postgres guarantees zero partial rows
+-- commit (cms_content / cms_chapters / cms_chapter_mirror / cms_books /
+-- cms_import_batch all-or-nothing). Locks are held until the transaction ends,
+-- so the target book cannot change out from under this call once acquired.
+--
+-- Filesystem boundary: this function has no access to the MDX files or
+-- lib/chapters.ts — it can only re-verify DATABASE state (books, chapters,
+-- slugs, mirrors, batch ids). Confirming the canonical source SET itself is
+-- complete and unreadable-free is the route's job (validateCanonicalSources,
+-- run immediately before this call, spec §4).
+--
+-- `payload` shape:
 --   {
 --     "batch_id": uuid,
---     "book": { "create": bool, "content_id": uuid|null, "title","slug","subtitle","summary" },
+--     "book": { "create": bool, "content_id": uuid|null, "slug",
+--                "title"?, "subtitle"?, "summary"? },
 --     "chapters": [ { "title","slug","summary","body","chapter_number","part","part_title",
 --                     "publication_target":[...], "source_path","source_slug",
 --                     "source_sha256","body_sha256","meta_sha256","source_published" } ]
 --   }
+-- `book.slug` is ALWAYS the expected canonical book slug ('eatobiotics-book'),
+-- sent whether reusing or creating, so the reused-book identity can be
+-- re-verified against it under lock rather than trusted from the route's
+-- earlier read.
 -- Returns { "book_id", "book_content_id", "book_created": bool, "created": int }.
 CREATE OR REPLACE FUNCTION cms_import_chapters(payload jsonb)
 RETURNS jsonb
 LANGUAGE plpgsql
 AS $$
 DECLARE
-  v_batch      uuid := (payload->>'batch_id')::uuid;
-  v_book       jsonb := payload->'book';
-  v_book_id    uuid;
-  v_book_cid   uuid;
-  v_created_bk boolean := false;
-  v_ch         jsonb;
-  v_content_id uuid;
-  v_chapter_id uuid;
-  v_created    int := 0;
+  v_batch                  uuid := (payload->>'batch_id')::uuid;
+  v_book                   jsonb := payload->'book';
+  v_chapters               jsonb := payload->'chapters';
+  v_chapter_count          int;
+  v_distinct_numbers       int;
+  v_distinct_slugs         int;
+  v_distinct_paths         int;
+  v_distinct_source_slugs  int;
+  v_book_id                uuid;
+  v_book_cid               uuid;
+  v_created_bk             boolean := false;
+  v_book_slug              text;
+  v_book_type              text;
+  v_book_status            text;
+  v_ch                     jsonb;
+  v_n                      int;
+  v_content_id             uuid;
+  v_chapter_id             uuid;
+  v_created                int := 0;
 BEGIN
+  -- ── 0. Basic payload shape ────────────────────────────────────────────
   IF v_batch IS NULL THEN
     RAISE EXCEPTION 'cms_import_chapters: batch_id is required';
   END IF;
+  IF v_chapters IS NULL OR jsonb_typeof(v_chapters) <> 'array' OR jsonb_array_length(v_chapters) = 0 THEN
+    RAISE EXCEPTION 'cms_import_chapters: chapters payload must be a non-empty array';
+  END IF;
 
+  -- ── 1. Batch id must not already have been used ─────────────────────────
+  -- Locks the row if a prior use already exists, so a concurrent duplicate
+  -- call blocks here rather than racing the final INSERT below.
+  PERFORM 1 FROM cms_import_batch WHERE batch_id = v_batch FOR UPDATE;
+  IF FOUND THEN
+    RAISE EXCEPTION 'cms_import_chapters: batch_id % has already been used', v_batch;
+  END IF;
+
+  -- ── 2. Payload internal consistency ──────────────────────────────────────
+  -- Never trust the caller's fields in isolation: every chapter_number/slug/
+  -- source_path/source_slug must be unique WITHIN the payload, and each
+  -- chapter's fields must relate to each other exactly as the canonical
+  -- naming convention requires. Pure data-shape checks — no DB access.
+  SELECT count(*) INTO v_chapter_count FROM jsonb_array_elements(v_chapters);
+  SELECT count(DISTINCT (x->>'chapter_number')) INTO v_distinct_numbers FROM jsonb_array_elements(v_chapters) x;
+  SELECT count(DISTINCT (x->>'slug'))           INTO v_distinct_slugs        FROM jsonb_array_elements(v_chapters) x;
+  SELECT count(DISTINCT (x->>'source_path'))    INTO v_distinct_paths        FROM jsonb_array_elements(v_chapters) x;
+  SELECT count(DISTINCT (x->>'source_slug'))    INTO v_distinct_source_slugs FROM jsonb_array_elements(v_chapters) x;
+  IF v_distinct_numbers <> v_chapter_count THEN
+    RAISE EXCEPTION 'cms_import_chapters: payload has duplicate chapter_number values';
+  END IF;
+  IF v_distinct_slugs <> v_chapter_count THEN
+    RAISE EXCEPTION 'cms_import_chapters: payload has duplicate slug values';
+  END IF;
+  IF v_distinct_paths <> v_chapter_count THEN
+    RAISE EXCEPTION 'cms_import_chapters: payload has duplicate source_path values';
+  END IF;
+  IF v_distinct_source_slugs <> v_chapter_count THEN
+    RAISE EXCEPTION 'cms_import_chapters: payload has duplicate source_slug values';
+  END IF;
+
+  FOR v_ch IN SELECT * FROM jsonb_array_elements(v_chapters)
+  LOOP
+    v_n := NULLIF(v_ch->>'chapter_number', '')::int;
+    IF v_n IS NULL OR v_n < 1 THEN
+      RAISE EXCEPTION 'cms_import_chapters: invalid or missing chapter_number in payload';
+    END IF;
+    IF v_ch->>'source_slug' IS DISTINCT FROM ('chapter-' || v_n) THEN
+      RAISE EXCEPTION 'cms_import_chapters: source_slug does not match chapter_number % (malformed payload)', v_n;
+    END IF;
+    IF v_ch->>'slug' IS DISTINCT FROM ('mdx-chapter-' || v_n) THEN
+      RAISE EXCEPTION 'cms_import_chapters: slug does not match chapter_number % (malformed payload)', v_n;
+    END IF;
+    IF v_ch->>'source_path' IS DISTINCT FROM ('content/book/chapter-' || v_n || '.mdx') THEN
+      RAISE EXCEPTION 'cms_import_chapters: source_path does not match chapter_number % (malformed payload)', v_n;
+    END IF;
+  END LOOP;
+
+  -- ── 3. Book: lock and re-verify identity ─────────────────────────────────
+  -- Never trust "this content_id is still the eatobiotics-book" from the
+  -- route's earlier (now possibly stale) read — re-derive and re-check under
+  -- lock. The lock is held until this transaction ends, so the book cannot
+  -- change out from under the rest of this function.
   IF (v_book->>'create')::boolean THEN
+    v_created_bk := true;
+    -- No existing row to lock when truly free — the fast-path check above is
+    -- an early exit for the common case (a prior write already committed);
+    -- cms_content.slug's UNIQUE constraint is the final backstop against a
+    -- genuinely simultaneous "create book" race, since the loser's INSERT
+    -- below raises a constraint-violation exception that rolls back its
+    -- entire call, same atomic guarantee as every explicit check here.
+    PERFORM 1 FROM cms_content WHERE slug = v_book->>'slug' FOR UPDATE;
+    IF FOUND THEN
+      RAISE EXCEPTION 'cms_import_chapters: book slug % is no longer free (race since dry run)', v_book->>'slug';
+    END IF;
     INSERT INTO cms_content (title, slug, content_type, summary, status)
     VALUES (v_book->>'title', v_book->>'slug', 'book', v_book->>'summary', 'draft')
     RETURNING id INTO v_book_cid;
     INSERT INTO cms_books (content_id, subtitle)
     VALUES (v_book_cid, v_book->>'subtitle')
     RETURNING id INTO v_book_id;
-    v_created_bk := true;
   ELSE
     v_book_cid := (v_book->>'content_id')::uuid;
-    SELECT id INTO v_book_id FROM cms_books WHERE content_id = v_book_cid;
+    SELECT slug, content_type, status INTO v_book_slug, v_book_type, v_book_status
+      FROM cms_content WHERE id = v_book_cid FOR UPDATE;
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'cms_import_chapters: target book content % no longer exists (race since dry run)', v_book_cid;
+    END IF;
+    IF v_book_type <> 'book' THEN
+      RAISE EXCEPTION 'cms_import_chapters: target content % is no longer a book', v_book_cid;
+    END IF;
+    IF v_book_status = 'archived' THEN
+      RAISE EXCEPTION 'cms_import_chapters: target book % has been archived since the dry run', v_book_cid;
+    END IF;
+    IF v_book_slug IS DISTINCT FROM (v_book->>'slug') THEN
+      RAISE EXCEPTION 'cms_import_chapters: target book slug changed since the dry run (expected %, found %)', v_book->>'slug', v_book_slug;
+    END IF;
+    SELECT id INTO v_book_id FROM cms_books WHERE content_id = v_book_cid FOR UPDATE;
     IF v_book_id IS NULL THEN
-      RAISE EXCEPTION 'cms_import_chapters: existing book not found for content_id %', v_book_cid;
+      RAISE EXCEPTION 'cms_import_chapters: cms_books row for content_id % no longer exists', v_book_cid;
     END IF;
   END IF;
 
-  FOR v_ch IN SELECT * FROM jsonb_array_elements(payload->'chapters')
+  -- ── 4. Re-validate every chapter under lock — BEFORE any insert ──────────
+  -- Each check closes a specific time-of-check/time-of-use window between the
+  -- dry run and this apply. The RPC never trusts "this item was CREATE in the
+  -- plan" as a label — it independently re-derives that every item is still
+  -- genuinely free right now. Validation is a full, separate pass so nothing
+  -- is inserted before every chapter has cleared every check.
+  FOR v_ch IN SELECT * FROM jsonb_array_elements(v_chapters)
+  LOOP
+    v_n := (v_ch->>'chapter_number')::int;
+
+    -- (a) the global mirror slug (mdx-chapter-N) is still free.
+    PERFORM 1 FROM cms_content WHERE slug = v_ch->>'slug' FOR UPDATE;
+    IF FOUND THEN
+      RAISE EXCEPTION 'cms_import_chapters: slug % is no longer free (race since dry run)', v_ch->>'slug';
+    END IF;
+
+    -- (b) source_path has no mirror row of ANY kind yet — active, retained, or
+    --     soft-rolled-back all occupy the UNIQUE(source_kind, source_path) slot
+    --     and must all block equally (matches the resolver's CONFLICT rule for
+    --     a rolled-back source).
+    PERFORM 1 FROM cms_chapter_mirror WHERE source_kind = 'mdx' AND source_path = v_ch->>'source_path' FOR UPDATE;
+    IF FOUND THEN
+      RAISE EXCEPTION 'cms_import_chapters: source_path % already has a mirror row (race since dry run)', v_ch->>'source_path';
+    END IF;
+
+    -- (c) chapter_number is still free among ACTIVE (non-archived) chapters of
+    --     the target book — the exact race the review flagged: a manual
+    --     chapter could have claimed this number after the dry run.
+    PERFORM 1
+      FROM cms_chapters ch JOIN cms_content c ON c.id = ch.content_id
+      WHERE ch.book_id = v_book_id AND ch.chapter_number = v_n AND c.status <> 'archived'
+      FOR UPDATE OF ch, c;
+    IF FOUND THEN
+      RAISE EXCEPTION 'cms_import_chapters: chapter number % is no longer free in the target book (race since dry run)', v_n;
+    END IF;
+  END LOOP;
+
+  -- ── 5. Every invariant re-verified — perform the approved creates ────────
+  FOR v_ch IN SELECT * FROM jsonb_array_elements(v_chapters)
   LOOP
     INSERT INTO cms_content (title, slug, content_type, summary, body, status, book_id)
     VALUES (
@@ -1379,6 +1531,8 @@ BEGIN
   END LOOP;
 
   -- Record batch provenance so rollback can safely decide the book's fate.
+  -- The step-1 lock plus this PK guarantee batch_id can never be double-used
+  -- even under true concurrent apply calls.
   INSERT INTO cms_import_batch (batch_id, book_id, book_content_id, book_created, created_count)
   VALUES (v_batch, v_book_id, v_book_cid, v_created_bk, v_created);
 

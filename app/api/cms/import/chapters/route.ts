@@ -43,6 +43,8 @@ const bodySchema = z.object({
 })
 
 const UNDEFINED_TABLE = "42P01" // Postgres: relation does not exist (Migration 41 not applied)
+const RAISE_EXCEPTION = "P0001" // Postgres: default SQLSTATE for a plain RAISE EXCEPTION — our own
+                                 // cms_import_chapters/cms_rollback_import_batch revalidation rejections
 
 /** Thrown by any state read/update that fails, so the handler can fail closed
  *  with a precise HTTP response instead of proceeding on partial data. */
@@ -55,14 +57,27 @@ class StateError extends Error {
   }
 }
 
-/** Turn any Postgrest error into a fail-closed StateError. A missing table
- *  (Migration 41 not deployed) becomes an explicit migration-required 503. */
+/** Turn any Postgrest error into a fail-closed StateError.
+ *  - A missing table (Migration 41 not deployed) → explicit migration-required 503.
+ *  - A RAISE EXCEPTION from cms_import_chapters/cms_rollback_import_batch → 409.
+ *    This is the RPC's own integrity boundary rejecting the call because state
+ *    changed since the dry run (see Migration 41's revalidation-under-locks) —
+ *    a real, expected outcome, not an infrastructure failure. The caller should
+ *    re-run dry_run and retry, not treat it as "the database is down".
+ *  - Anything else → generic fail-closed 503 (never silently treated as empty). */
 function failOn(error: PostgrestError | null, what: string): void {
   if (!error) return
   if (error.code === UNDEFINED_TABLE) {
     throw new StateError(503, {
       error: "Migration 41 required — the chapter-import schema is not deployed",
       migration_required: true,
+      detail: `${what}: ${error.message}`,
+    })
+  }
+  if (error.code === RAISE_EXCEPTION) {
+    throw new StateError(409, {
+      error: "Import rejected — state changed since the dry run. Re-run dry_run and retry.",
+      race_detected: true,
       detail: `${what}: ${error.message}`,
     })
   }
@@ -152,8 +167,12 @@ function toCreatePayload(sources: SourceChapter[], plan: ReturnType<typeof resol
     }))
   return {
     batch_id: batchId,
+    // `slug` is ALWAYS sent (reuse or create) — the RPC re-verifies the target
+    // content row's actual slug against it under lock, so it never trusts that
+    // "this content_id is still the eatobiotics-book" just because the route
+    // read it that way earlier (see cms_import_chapters, Migration 41).
     book: plan.bookContentId
-      ? { create: false, content_id: plan.bookContentId }
+      ? { create: false, content_id: plan.bookContentId, slug: BOOK_SLUG }
       : { create: true, content_id: null, title: "EatoBiotics", slug: BOOK_SLUG, subtitle: "The Food System Inside You", summary: null },
     chapters,
   }
@@ -187,9 +206,15 @@ export async function POST(req: NextRequest) {
     const sourceValidation = validateCanonicalSources(loaded)
 
     // ── check: recompute divergence for existing mirror rows (fail-closed) ──
+    // A canonical-source change is the MDX body OR the mapped metadata
+    // (title/summary/part/part_title/source_published/publication_target) —
+    // both hashes are compared, so a metadata-only edit in lib/chapters.ts is
+    // correctly classified as source_changed (never silently in_sync).
     if (input.mode === "check") {
       const sourceByPath = new Map(loaded.sources.map((s) => [s.sourcePath, s]))
-      const mirrorRes = await sb.from("cms_chapter_mirror").select("id, chapter_id, source_path, source_sha256, body_sha256")
+      const mirrorRes = await sb
+        .from("cms_chapter_mirror")
+        .select("id, chapter_id, source_path, source_sha256, meta_sha256, body_sha256")
       failOn(mirrorRes.error, "check: read mirrors")
       const report: Record<string, number> = {}
       for (const m of mirrorRes.data ?? []) {
@@ -204,8 +229,10 @@ export async function POST(req: NextRequest) {
         }
         const state = classifyDivergence({
           storedSourceSha: m.source_sha256 as string,
+          storedMetaSha: m.meta_sha256 as string,
           storedBodySha: m.body_sha256 as string,
           currentSourceSha: src ? src.sourceSha256 : null,
+          currentMetaSha: src ? src.metaSha256 : null,
           currentBodySha,
         })
         report[state] = (report[state] ?? 0) + 1
