@@ -1244,9 +1244,21 @@ $$;
 
 
 -- ────────────────────────────────────────────────────────────
--- Migration 41 (PROPOSED — DO NOT APPLY until the 25-chapter import is
--- explicitly approved): CMS chapter mirror + atomic import/rollback
+-- Migration 41 — APPLIED TO PRODUCTION (unintended — see REVIEW.md):
+-- CMS chapter mirror + atomic import/rollback
 -- ────────────────────────────────────────────────────────────
+-- This block was written and committed as "PROPOSED — DO NOT APPLY until
+-- the 25-chapter import is explicitly approved," but a live read of the
+-- production database on 2026-07-14 found cms_chapter_mirror and
+-- cms_import_batch already present in production. The schema below is
+-- therefore live regardless of the "do not apply" framing that follows —
+-- do not re-run it expecting a no-op decision point, and do not assume
+-- the 25-chapter import was explicitly approved just because the tables
+-- exist (they may have been applied without the data import ever running;
+-- confirm both independently). See REVIEW.md's Second Pass (Additions #5)
+-- and Implementation Status log for how this was discovered.
+--
+-- Original text, preserved for history:
 -- Backs the MDX→CMS mirror import (docs/cms-chapter-import-spec.md). MDX stays
 -- the canonical publication source; these CMS rows are an editable editorial
 -- snapshot that never feeds the public book. This block is committed as
