@@ -975,3 +975,11 @@ for a follow-up batch).
   `MembershipTeaser` with the "verify" ops-language rewritten out,
   `/enter` extended to match. PR #125 (`claude/newhome-concept`) not
   merged. Pending: your Vercel preview review.
+- ✅ **Glucose de-branding** (fix-list item 1, §3, full scope per Second
+  Pass) — PR #140 (`claude/glucose-pathway-rename` → `main`, draft). All
+  user-visible "EatoBetics" branding removed across `/glucose`,
+  `/glucose/assessment`, `/glucose/glp1`, `/glucose/glp1/check`,
+  `/account/glp1`, the assessment client/report components, and the
+  three cross-vertical nav cards. "EatoBetics Score™" → "Glucose Score".
+  `lib/cms/taxonomy.ts` left unchanged, confirmed safe to defer (no DB
+  CHECK constraint depends on it). Pending: your Vercel preview review.
