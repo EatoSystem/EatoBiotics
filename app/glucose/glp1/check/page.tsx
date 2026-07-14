@@ -5,7 +5,7 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 import { Glp1Check } from "@/components/eatobetics/glp1-check"
 
 export const metadata: Metadata = {
-  title: { absolute: "GLP-1 Muscle-Preservation Check — EatoBetics" },
+  title: { absolute: "GLP-1 Muscle-Preservation Check | EatoBiotics" },
   description:
     "A 90-second check for people on Ozempic, Wegovy, or Mounjaro. See how well you're set up to protect muscle while you lose weight, and get tailored next steps.",
 }
