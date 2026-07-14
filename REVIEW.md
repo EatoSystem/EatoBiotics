@@ -1015,3 +1015,117 @@ none merged. Deferred to a future batch, per direction: quick win #0
 (dev password), the `/account` default-tab decision, vertical/funnel
 consolidation, `lib/cms/taxonomy.ts`, and items #8/#11/#12/schema-parity
 diff.
+
+### Follow-up batch (deferred items from the closing note above)
+
+- ✅ **Unused dependencies** (fix-list item 9) — PR #143
+  (`claude/remove-unused-shadcn-deps` → `main`, draft). 34 packages
+  confirmed zero-usage via static + dynamic import search (26
+  `@radix-ui/react-*` + `class-variance-authority`, `cmdk`, `date-fns`,
+  `input-otp`, `react-day-picker`, `react-resizable-panels`, `recharts`,
+  `vaul` — `@radix-ui/react-slot` added beyond the original list, same
+  zero-usage finding). `components.json` (dead shadcn scaffold config)
+  also removed. `npm install` dropped 108 packages from `node_modules`.
+  PR body flags that the zero-usage check should be re-run once
+  #139–142 actually merge, since this PR doesn't depend on them but
+  shares no file overlap either. Pending: your review.
+- ✅ **Homepage social proof** (fix-list item 8, §1) — PR #144
+  (`claude/homepage-social-proof` → `main`, draft). Mounted the existing
+  `WaitlistSocialProof` component (already public, already used
+  identically on `/enter`) on the homepage hero, per the Second Pass's
+  own recommendation that this is cheaper than building new UI around
+  `/api/community-stats`. `community-stats` and
+  `community-pulse-card.tsx` untouched. Touches the same file as the
+  still-open PR #139 (`components/home/hero.tsx`) — no line overlap
+  expected, flagged for a trivial rebase whichever merges second.
+  Pending: your review.
+- ✅ **SEO canonicalization + CI guardrail** (fix-list items 11 and 12,
+  §7) — PR #145 (`claude/seo-canonical-and-ci-guardrail` → `main`,
+  draft), two commits. (1) Canonicalized the three family-assessment
+  URLs onto `/assessment/family` (the code-level canonical per
+  `lib/systems.ts`/`lib/assessment/registry.ts`): updated all 11 real
+  internal links from `/assessment-family`, added a literal 301 redirect
+  for both legacy paths in `proxy.ts` (Next's `redirects()` config only
+  supports 307/308, so a true 301 needed edge middleware), deleted the
+  two superseded route files, fixed `app/sitemap.ts`. (2) Added
+  `scripts/check-supabase-scoping.mjs` + a new CI step: flags
+  `app/api/**/route.ts` files calling both `getUser()` and `getSupabase()`
+  with no visible scoping. Dry-run found 3 false positives on the first
+  pass (`glp1/log`, `glp1/profile`, `plate/sync` — genuinely scoped via
+  `.upsert({ user_id: user.id }, ...)`, not `.eq()`), fixed by adding a
+  write-side scoping marker; then verified the check catches a real
+  regression by temporarily breaking `analyses/daily-count/route.ts` and
+  confirming it failed (restored after). Pending: your review.
+- ✅ **Schema-parity check** (Second Pass Additions #5) — documentation
+  only, no code/database change; commit `a24a29f` on PR #141
+  (`claude/claude-md-and-cleanup`). Ran a live, read-only check against
+  the production Supabase project (`ephmojiwlcebenholhpc`) via
+  `list_tables`/`execute_sql` and diffed the result against
+  `supabase/migrations.sql`. Found drift in **both directions**:
+  - **Migration 41** (`cms_chapter_mirror`, `cms_import_batch`) is
+    commented "PROPOSED — DO NOT APPLY," but both tables already exist
+    in production. Corrected the header comment in
+    `supabase/migrations.sql` itself (original text preserved below the
+    correction for history) and in `CLAUDE.md`, per your direction to
+    record the actual state rather than the intended one.
+  - **Migration 36** (`twin_state` table, `profiles.sex` column) is
+    written, idempotent, and assumed live by shipped code
+    (`/api/twin-state`, `lib/account/twin-state-sync.ts`), but **neither
+    exists in production**. That sync code is designed to fail silently
+    offline/unauthed, so the cross-device daily-ritual sync feature has
+    been silently non-functional — a real production bug, not a
+    documentation gap.
+
+  **Migration 36 — exact SQL to apply** (copied verbatim from
+  `supabase/migrations.sql`, already idempotent — safe to run as-is):
+
+  ```sql
+  -- Migration 35: profiles.sex
+  ALTER TABLE profiles ADD COLUMN IF NOT EXISTS sex text;
+
+  -- Migration 36: twin_state
+  CREATE TABLE IF NOT EXISTS twin_state (
+    user_id         uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    rituals         jsonb NOT NULL DEFAULT '{}'::jsonb,
+    milestones_seen text[] NOT NULL DEFAULT '{}',
+    updated_at      timestamptz NOT NULL DEFAULT now()
+  );
+
+  ALTER TABLE twin_state ENABLE ROW LEVEL SECURITY;
+
+  DO $$
+  BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'twin_state' AND policyname = 'twin_state_own') THEN
+      CREATE POLICY twin_state_own ON twin_state
+        FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+    END IF;
+  END $$;
+  ```
+
+  **Pre-checks before running**:
+  1. Confirm you're connected to the production project
+     (`ephmojiwlcebenholhpc`, region `eu-central-2`), not
+     `EatoSystem-Ireland` (`hwuzbxsaxsifpdzqhqaq`, currently `INACTIVE`) —
+     both showed up under the same Supabase org.
+  2. `profiles.sex` is a nullable `ADD COLUMN IF NOT EXISTS` — safe on a
+     live table with existing rows, no backfill needed.
+  3. `twin_state` is a new table with its own RLS policy scoped to
+     `user_id = auth.uid()` — no interaction with existing tables' RLS.
+  4. Both statements are idempotent (`IF NOT EXISTS` throughout) — safe
+     to re-run if a partial failure happens mid-way.
+  5. After applying, the daily-ritual cross-device sync should be
+     tested on two devices/browsers signed into the same account, per
+     your plan — `/api/twin-state` (GET to hydrate, PUT to push) is the
+     surface to watch in the network tab.
+  6. **Not applied as part of this session** — this is a production
+     database change and was intentionally left for you to run via the
+     Supabase dashboard SQL editor or CLI, per your instruction.
+
+**Follow-up batch summary**: PRs #143 (deps), #144 (social proof), #145
+(SEO + CI guardrail) all draft, all green on typecheck/build/lint/tests.
+PR #141 gained one more commit (schema-drift documentation). Still
+deferred, per direction: vertical/funnel consolidation,
+`lib/cms/taxonomy.ts`, the `/account` default-tab decision, the dev
+password gate, the design-system folder, and root PNGs. Migration 36 is
+a real, live production bug awaiting your manual apply — not merely
+paperwork.
