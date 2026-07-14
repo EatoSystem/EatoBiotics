@@ -995,3 +995,23 @@ for a follow-up batch).
   Design-system folder, root PNGs, and unused Radix/shadcn deps
   intentionally not touched. Pending: your review (no visible UI change
   expected on Vercel preview).
+- ✅ **Image optimization** (fix-list/structural item 15, §7, corrected
+  investigation pointer per Second Pass) — PR #142
+  (`claude/image-optimization` → `main`, draft). Two commits: (1) adds
+  `images.remotePatterns` for `*.supabase.co/storage/v1/object/**`
+  (inert — verified this is the only `next/image` usage backed by a
+  Supabase Storage URL, in the plate-builder's generated recipe images;
+  `recipe/[slug]` and the CMS media preview already use plain `<img>`,
+  unaffected); (2) flips `images.unoptimized` to `false`. Flagged as
+  needing an isolated Vercel preview review specifically — this is the
+  one PR in the batch with real regression risk, and Next's optimizer
+  can't be meaningfully exercised in a local build. Pending: your
+  preview review.
+
+**All four PRs from this batch are now up**: #139 (homepage), #140
+(glucose de-branding), #141 (CLAUDE.md + cleanup), #142 (image
+optimization) — all draft, all green on typecheck/build/lint/tests,
+none merged. Deferred to a future batch, per direction: quick win #0
+(dev password), the `/account` default-tab decision, vertical/funnel
+consolidation, `lib/cms/taxonomy.ts`, and items #8/#11/#12/schema-parity
+diff.
