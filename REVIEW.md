@@ -956,3 +956,22 @@ the implementer should look there first.
   otherwise the check gets deleted the first week it cries wolf.
 - Item 13/14 (consolidations): specific enough. Item 15: corrected
   pointer above. Remainder are implementable as written.
+
+---
+
+## Implementation Status
+
+Tracking actual delivery against this document's fix list, per the
+approved implementation batch (homepage → glucose → docs/cleanup → image
+optimization; vertical/funnel consolidation and quick win #0 out of
+scope for this batch; `/account` default tab deferred;
+`lib/cms/taxonomy.ts` left unchanged; #8/#11/#12/schema-parity-diff held
+for a follow-up batch).
+
+- ✅ **Homepage** (fix-list item 7, §1) — PR #139
+  (`claude/homepage-copy-refresh` → `main`, draft). Hero copy rewritten
+  platform-first, assessment-length fixed to 5 minutes (fix-list item 2),
+  `StateOfProduct` + `GlobalDirection` added between `Ecosystem` and
+  `MembershipTeaser` with the "verify" ops-language rewritten out,
+  `/enter` extended to match. PR #125 (`claude/newhome-concept`) not
+  merged. Pending: your Vercel preview review.
