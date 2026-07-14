@@ -4,6 +4,19 @@ import { withSentryConfig } from "@sentry/nextjs"
 const nextConfig = {
   images: {
     unoptimized: true,
+    // Supabase Storage serves generated recipe/media images (plate-builder
+    // outputs, CMS media library) from a *.supabase.co subdomain that
+    // varies per project/environment — next/image refuses to optimize any
+    // remote host that isn't explicitly allowlisted here. Added ahead of
+    // flipping `unoptimized` off (see the follow-up commit) so the two
+    // changes can be bisected independently on the Vercel preview.
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+        pathname: "/storage/v1/object/**",
+      },
+    ],
   },
   // Keep serverless functions lean: never bundle media/binary dirs into functions
   // (they're served from the CDN). Fixes the api/plate-builder 250MB limit — the
