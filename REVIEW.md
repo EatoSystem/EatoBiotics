@@ -983,3 +983,15 @@ for a follow-up batch).
   three cross-vertical nav cards. "EatoBetics Score™" → "Glucose Score".
   `lib/cms/taxonomy.ts` left unchanged, confirmed safe to defer (no DB
   CHECK constraint depends on it). Pending: your Vercel preview review.
+- ✅ **CLAUDE.md corrections + confirmed-safe cleanup** (fix-list items
+  3, 4, 5, §4/§5/§6) — PR #141 (`claude/claude-md-and-cleanup` → `main`,
+  draft). `live-dashboard.tsx` documented as the real 5-tab `/account`
+  dashboard, `dashboard-client.tsx` flagged demo-only; CMS/Twin/
+  assessment/plate tables added; Migration 41 flagged proposed-not-applied.
+  `components/gut-brain/`, `theme-provider.tsx`, `substack-card.tsx`, and
+  9 unused `components/home/*.tsx` files deleted (all re-verified
+  zero-importer against `main`). `lib/account/ritual.ts` docstring fixed
+  (5 checks, not 3; documents the twin-state-sync cross-device path).
+  Design-system folder, root PNGs, and unused Radix/shadcn deps
+  intentionally not touched. Pending: your review (no visible UI change
+  expected on Vercel preview).
