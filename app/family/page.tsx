@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   },
 }
 
-const ASSESSMENT_HREF = "/assessment-family"
+const ASSESSMENT_HREF = "/assessment/family"
 const FAMILY_GRADIENT = "linear-gradient(135deg, var(--icon-green), var(--icon-teal))"
 
 /* ── Section 3 — The 3 Systems of a Family Food System ──────────────── */

@@ -19,7 +19,7 @@ export function StickyCtagFamily() {
       style={{ background: "linear-gradient(to top, var(--background) 70%, transparent)" }}
     >
       <Link
-        href="/assessment-family"
+        href="/assessment/family"
         className="brand-gradient flex w-full items-center justify-center gap-2 rounded-full py-4 text-base font-semibold text-white shadow-xl shadow-icon-green/30"
       >
         Check your Family Food System Score <ArrowRight size={16} />
