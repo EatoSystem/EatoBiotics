@@ -738,3 +738,221 @@ Not covered by `ANALYSIS.md` — spot-checked in this pass:
     chapter format, the homepage, the account dashboard, one assessment
     flow, etc.), run in CI. Lower priority than the fixes above but the
     right long-term backstop given the page count.
+
+---
+
+## Second Pass
+
+Independent critique of the review above, with claims re-verified against
+the codebase where they carry weight. Summary: the messaging finding (§3),
+the duplication plan (§2), and the overall homepage direction (§1) hold
+up. But the review analyzed the wrong dashboard component in §6, missed
+the repo's one known hardcoded credential entirely, understated the
+`/glucose` fix scope, and gave a wrong investigation pointer for the
+image-optimization item. Details below.
+
+### Confirmations (no further action needed)
+
+- **§3 `/glucose` "EatoBetics" violation** — confirmed real and correctly
+  identified as the top messaging issue. `/performance` is indeed the
+  correct template. The `lib/systems.ts` catalog is clean as claimed.
+- **§2 consolidation architecture** — sound. Re-verified that
+  `adhd-hero.tsx` vs `anxiety-hero.tsx` differ only in icon/accent/copy;
+  the `chapter-page-factory` precedent is real and shipping. The "copy
+  prose verbatim into config" risk callout is the right one.
+- **§5 deletions** — `components/gut-brain/`, `theme-provider.tsx`,
+  `substack-card.tsx`, and the 9 unused `home/` files re-checked: zero
+  importers, including from `/enter` (which imports 5 *other* `home/`
+  sections — see Additions). Safe as listed.
+- **§1 overall verdict** (production IA + concept copy, don't merge
+  PR #125 as-is) — directionally right, with two porting corrections
+  below.
+- **CMS access control** — checked as a candidate miss and found solid:
+  `proxy.ts` edge default-deny (404), `app/cms/layout.tsx` second gate,
+  `requireCmsAdmin` on all 13 API routes, and `cms_*` tables are
+  RLS-enabled-with-zero-policies (deliberate fail-closed, service-role
+  only). Not a gap; confirming so nobody re-audits it.
+
+### Corrections
+
+**1. §6 and quick win #6 analyze the wrong component — the "10-tab
+dashboard" is demo-only.** Verified: `app/account/page.tsx` renders
+`LiveDashboard` (`components/account/live-dashboard.tsx`), which has
+**5 tabs** (`overview | meals | reports | consultations | account`),
+defaults to `"overview"` (line 727), and reaches the daily-habit surfaces
+via `ExperienceNav` links to the *separate routes* `/account/today`,
+`/account/this-week`, `/account/twin`. The 10-tab
+`dashboard-client.tsx` is imported only by `/account-you` and
+`/demo/account/[tier]` — mock/demo pages. Consequences:
+
+- **Quick win #6 is not implementable as written** — there is no "Today"
+  tab in the component `/account` renders. Replace it with: *decide
+  whether returning members should land on `/account` (overview) or
+  `/account/today` (habit loop), and if the latter, redirect or make
+  ExperienceNav's Today link the visually primary element of the overview
+  tab.* That's a product decision plus a small change, not a one-line
+  default-state flip.
+- **The §4.1 CLAUDE.md correction propagates the error.** Don't just
+  change "6-tab" to "10-tab" — the accurate correction is:
+  `live-dashboard.tsx` is the production account dashboard (5 tabs +
+  ExperienceNav to the Today/This Week/Twin routes);
+  `dashboard-client.tsx` is a 10-tab component now used **only** by the
+  demo/mock pages. ANALYSIS.md's headline fact carries the same
+  misleading implication and should be read with this caveat.
+- §6's UX critique of "10 co-equal tabs" therefore describes a demo page
+  no member sees. The underlying point (habit surface should be the
+  default landing) survives, but aimed at the `/account` overview vs
+  `/account/today` split instead.
+
+**2. Quick win #1 understates the `/glucose` fix scope — the file list is
+incomplete.** "EatoBetics" also appears in
+`components/eatobetics/EbFramework.tsx`, `EbScoreShowcase.tsx`,
+`glucose-assessment-client.tsx`, and `glucose-report.tsx` (14 occurrences
+— these are the **assessment flow and results screens users actually
+see**, not just the landing page), plus `lib/glucose-assessment-data.ts`,
+`lib/glucose-assessment-scoring.ts`, and `lib/glp1.ts`. An implementer
+following the review's list would fix the landing page while the
+assessment still awards an "EatoBetics Score." Correct instruction:
+`grep -rn "EatoBetics" app components lib`, fix every user-facing
+occurrence in one pass, with `lib/cms/taxonomy.ts` handled separately
+(see Additions #4). Reclassify from quick win to small-medium (~10
+files, includes copy decisions about the score name).
+
+**3. Structural item #15's investigation pointer is wrong.** The
+`outputFileTracingExcludes` comment in `next.config.mjs` is about
+serverless *function bundle size*, unrelated to `images.unoptimized`.
+The real origin is almost certainly the v0.dev scaffold default (the
+package is literally named `my-v0-project`; `unoptimized: true` is what
+v0 emits). The actual prerequisites for flipping it: (a) add
+`images.remotePatterns` for the Supabase Storage domain, since recipe
+images (`plate_recipes`, `/recipe/[slug]`) are served from Storage and
+`next/image` will refuse them otherwise; (b) account for Vercel image
+transformation quota/billing given the site's image volume. Still worth
+doing; the review's hedge pointed the investigation at the wrong file
+comment.
+
+**4. §7's RLS framing overstates.** "RLS is not a backstop" is only true
+for the service-role path. Migration 28 shows consolidated own-row
+policies (`FOR ALL TO authenticated USING (auth.uid() = ...)`) exist on
+`profiles`, `plate_data`, `journal_entries`, `analyses`, and the other
+user tables — so the anon/browser path *is* defended, which is exactly
+why the Realtime subscription in `use-twin-realtime.ts` is safe. The
+CI-grep recommendation (#12) stands unchanged, and gains a second
+justification: migration 28's stated invariant ("no client code writes
+these tables; all writes go through the service role") is exactly the
+kind of assumption a future dev breaks silently.
+
+**5. Don't port `StateOfProduct` verbatim (§1/item 7).** Its "verify"
+sub-column contains internal ops language — "live delivery depends on
+production configuration," "live cadence needs production confirmation."
+That was written for an internal concept review; publishing it verbatim
+puts deployment caveats on the public homepage. Port the three-column
+grid, delete or resolve the "verify" items first. Similarly, the concept
+hero's "New homepage concept" badge must be stripped, and its secondary
+CTA anchors to `#journey` — the ported production page needs a matching
+section `id` or the link should be re-targeted.
+
+**6. Quick win #2 said "pick one number" — the answer is determinable and
+is 5.** `components/assessment/assessment-intro.tsx` states "5 minutes"
+twice; the concept hero says "about 5 minutes"; only the production hero
+says 3. Fix the hero (and its "3-minute assessment" footer tag) to 5 —
+no decision required.
+
+### Additions (what the review missed)
+
+**1. The hardcoded site password — the repo's single known credential
+issue — is absent from the review and its fix list.** Verified:
+`lib/dev-password-gate.ts` line 3 still contains
+`const TEMPORARY_DEVELOPMENT_PASSWORD = "Monkstown"`, the gate is ON by
+default, and the password is additionally printed in plaintext in
+`LAUNCH_CHECKLIST.md` and `OPERATIONAL_AUDIT.md` — both committed to the
+repo. GO-LIVE.md tracks it, but a review "ranked by impact" that includes
+docstring fixes while omitting a hardcoded credential has its ranking
+wrong. Action, quick win #0: delete the fallback constant now, set
+`DEV_PASSWORD` in Vercel to keep the private-beta gate working, and scrub
+the plaintext value from the two markdown files. Related: note
+`ADMIN_SESSION_SECRET` falls back to `ADMIN_PASSWORD` as the cookie
+signing key (password doubling as signing secret) — set both distinctly
+at go-live, per GO-LIVE.md.
+
+**2. `/enter` mirrors five homepage sections and the review's homepage
+plan never mentions it.** `app/enter/page.tsx` imports
+`PowersEverything`, `HowItWorks`, `TheFramework`, `ScorePreview`, and
+`Ecosystem` directly, and carries a "keep in sync with app/page.tsx"
+comment. Item 7's homepage rebuild must state what `/enter` gets: the
+shared-section imports update automatically, but the new
+`StateOfProduct`/`GlobalDirection` sections and any hero copy change need
+a deliberate mirror-or-omit decision there, or the gate page and the real
+homepage drift.
+
+**3. Error handling — checked as a candidate miss; no glaring hole.**
+`global-error.tsx` reports to PostHog, Sentry is wired (inert without
+DSN), Stripe webhook is idempotent via `stripe_processed_events`, and the
+money paths have dedicated tests. The one fragile convention:
+`getSupabase()` returning `null` relies on 109 call sites remembering to
+null-check — an env-misconfiguration failure mode, not a production data
+risk. One sentence of awareness, no fix-list item warranted.
+
+**4. Question 4 (taxonomy deferral): safely deferrable, with a specific
+caveat.** `cms_content.brand` is free `text` in the DB — no CHECK
+constraint (migration 37 line 976 lists the four brands only in a
+comment). Enforcement is app-level: `z.enum(BRANDS)` in the CMS content
+POST *and* PATCH schemas. So deferring is safe — no data corruption
+possible — but two consequences accrue: (a) new content can continue to
+be tagged `EatoBetics`/`EatoSports` while deferred, growing the eventual
+cleanup; (b) when BRANDS is eventually trimmed, any PATCH that re-sends
+an existing row's old brand value will 400, so the enum change must ship
+together with a one-line data migration
+(`UPDATE cms_content SET brand = NULL /* or 'EatoBiotics' */ WHERE brand
+IN ('EatoBetics','EatoSports')`). Recommendation: defer, but do it as a
+named follow-up with that exact pairing, not an open-ended "decide
+deliberately."
+
+**5. Migrations 1–40 data-integrity — reviewed only at the edges.** The
+review covered migrations 40/41 but never carried ANALYSIS.md's finding
+about inline ad-hoc SQL comments in three route files
+(`analyse-meal`, `weekly-report/generate`, `consult`) into the fix list.
+The implied risk is schema drift: production may have been altered via
+the SQL editor in ways `migrations.sql` reconciled later or never.
+Cheap fix-list addition: run a one-time schema diff (Supabase
+`list_tables` / `generate_typescript_types` output vs. `migrations.sql`)
+and either confirm parity or backfill the migrations file. Medium
+effort, one-off.
+
+**6. The social-proof gap is real but overstated as "nothing exists."**
+`components/waitlist/social-proof.tsx` and `live-signups.tsx` already
+render live signup counts on `/enter`. Adapting one of these for the
+homepage (item 8) is cheaper than building from `community-stats` alone —
+the implementer should look there first.
+
+### Priority order changes
+
+- **Add quick win #0**: remove the hardcoded `"Monkstown"` fallback from
+  `lib/dev-password-gate.ts`, set `DEV_PASSWORD` in Vercel, scrub the
+  plaintext password from `LAUNCH_CHECKLIST.md`/`OPERATIONAL_AUDIT.md`.
+  Highest-impact item on the entire list.
+- **Reclassify quick win #1 (glucose rename) → medium**, with the
+  corrected ~10-file scope from Corrections #2.
+- **Replace quick win #6** with the `/account` vs `/account/today`
+  landing decision (Corrections #1). No longer a one-line change.
+- **Amend medium item #7** (homepage rebuild) with the `/enter` mirror
+  decision (Additions #2) and the `StateOfProduct` "verify"-column
+  rewrite (Corrections #5).
+- **Add to medium**: the schema-parity diff (Additions #5) and the
+  paired taxonomy enum change + data migration as a named deferred task
+  (Additions #4).
+- Everything else stands as ranked.
+
+### Vagueness check (items an implementer would have to guess at)
+
+- Item 2: resolved above — the number is 5.
+- Item 6: was unimplementable as written; replaced above.
+- Item 7: needed the `/enter` decision and the anchor-target detail; both
+  now specified.
+- Item 12 (CI grep for unscoped `getSupabase()`): still loosely specified
+  — "within N lines of `.eq(`" will false-positive on cron routes that
+  legitimately scan all rows. Suggest scoping the check to routes that
+  also call `getUser()` and allowlisting the cron/webhook paths;
+  otherwise the check gets deleted the first week it cries wolf.
+- Item 13/14 (consolidations): specific enough. Item 15: corrected
+  pointer above. Remainder are implementable as written.
