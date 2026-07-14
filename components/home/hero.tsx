@@ -4,6 +4,7 @@ import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { HeroVideo } from "@/components/hero-video"
+import { WaitlistSocialProof } from "@/components/waitlist/social-proof"
 
 export function Hero() {
   return (
@@ -76,6 +77,7 @@ export function Hero() {
               <span className="h-1 w-1 rounded-full bg-border" />
               <span>30-day action plan</span>
             </div>
+            <WaitlistSocialProof />
           </ScrollReveal>
         </div>
 
