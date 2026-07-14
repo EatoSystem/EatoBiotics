@@ -49,8 +49,18 @@ This file is the authoritative reference for Claude Code sessions. Read it befor
 - `app/api/stripe/create-portal-session/route.ts`
 
 ### Dashboard
-- `app/account/page.tsx` — server component, fetches all user data
-- `components/account/dashboard-client.tsx` — 6-tab client component
+- `app/account/page.tsx` — server component, fetches all user data, renders
+  `components/account/live-dashboard.tsx` — the real production dashboard.
+  5 tabs (`overview | meals | reports | consultations | account`), defaults
+  to "overview". Reaches the daily-habit surfaces via `ExperienceNav` links
+  to the separate routes `/account/today`, `/account/this-week`,
+  `/account/twin`.
+- `components/account/dashboard-client.tsx` — a **10-tab** client component
+  (Today, Overview, Reports, Membership, My Plate, My Meals, Refer,
+  EatoBiotic, Intelligence, Story), but it is **demo/mock-data only** —
+  used by `app/account-you/page.tsx` and `app/demo/account/[tier]/page.tsx`,
+  never by the real `/account` route. Do not confuse the two when reasoning
+  about what a signed-in member actually sees.
 - `app/demo/account/page.tsx` — demo mode with mock data (no auth required)
 
 ### AI Consultation (Transform only)
@@ -116,6 +126,12 @@ non-diagnostic + red-flag→GP guardrails baked into the cached knowledge base.
 ---
 
 ## Database Tables
+
+> As of Migration 40, 34 distinct tables exist across profiles/leads/
+> deep_assessments/subscriptions/analyses/family/GLP-1/stability
+> (documented individually below), plus the CMS subsystem and Living Twin
+> tables documented in their own subsections near the end of this section.
+> Migration 41 is proposed, not applied — see the CMS subsection below.
 
 ### profiles
 | Column | Type | Notes |
@@ -258,6 +274,42 @@ Captured on first run of the in-app tracker (`Glp1Onboarding`); upserted via `ap
 - `plate_data` — `user_id`, `plate`, `plants`, `updated_at`
 - `journal_entries` — `user_id`, `date`, `energy`, `digestion`, `mood`, `notes`, `plants_this_week`
 
+### CMS / Content Studio tables *(new — `/cms` admin tool)*
+`cms_content`, `cms_content_versions`, `cms_tags`, `cms_content_tags`,
+`cms_audit_log`, `cms_media`, `cms_content_media`, `cms_books`,
+`cms_chapters`. Service-role-only access (RLS enabled, zero policies) —
+gated entirely at the route/layout level via `lib/cms/auth.ts`'s
+`requireCmsAdmin`, not by row-level policies. See `app/cms/*` and
+`app/api/cms/*`.
+
+> `cms_chapter_mirror` and `cms_import_batch` (Migration 41) are defined
+> in `supabase/migrations.sql` but are explicitly marked **"PROPOSED — DO
+> NOT APPLY until the 25-chapter import is explicitly approved."** Do not
+> treat these two tables as live schema until that migration is
+> deliberately run.
+
+### Living Twin / daily ritual tables *(new)*
+- `twin_state` (Migration 36) — daily ritual taps + milestone seen-set,
+  synced cross-device via `/api/twin-state`
+  (localStorage-first, same pattern as Stability — see
+  `lib/account/twin-state-sync.ts`).
+- `profiles.sex` (Migration 35) — Twin figure personalisation.
+
+### Assessment / plate / review tables *(new)*
+- `assessment_journeys` (Migration 25) — foundation→add-on journey
+  persistence.
+- `plate_recipes` (Migration 16) — Plate Builder generated recipes
+  (`app/api/plate-builder`, surfaced at `/recipe/[slug]`).
+- `monthly_gut_plans`, `meal_plans`, `food_protocols`, `monthly_reviews`
+  (Migrations 10, 12, 13, 14) — Restore+/Transform monthly and meal
+  planning features.
+- `meal_scans` — guest (unauthenticated) meal-scan captures
+  (`app/api/guest-scan`).
+- `food_intelligence_reports` — deep pattern-analysis output
+  (`app/api/food-intelligence`, `app/api/gut-health-story`).
+- `email_optouts` (Migration 32) — central unsubscribe ledger, distinct
+  from `email_sends` (idempotency log).
+
 ---
 
 ## Environment Variables
@@ -388,6 +440,11 @@ The `getUserMembershipTier()` function enforces grace periods for `past_due` acc
 - `app/api/auth/` routes (auth flow)
 - Any existing Supabase table columns — only ADD, never modify or drop
 - The referral system (`membership` column, referral upgrade logic)
+- `app/api/cms/import/chapters/route.ts` and the `cms_import_chapters`
+  Postgres function (migration 40) — the atomic import/rollback logic has
+  hand-documented invariants about `ON DELETE SET NULL` vs `CASCADE` and
+  batch-id reuse; changes here need a full re-read of the migration's
+  inline comments, not a quick patch.
 
 > Nav + footer are maintained via the shared config in **`lib/nav.ts`** — edit
 > the config (not the components) to add or move destinations; header and
