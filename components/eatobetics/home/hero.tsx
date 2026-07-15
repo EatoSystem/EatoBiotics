@@ -54,7 +54,7 @@ export function EbHero() {
               Steady your glucose system in 30 days.
             </p>
             <p className="mt-4 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Take the free EatoBetics Assessment, discover your glucose score, and get a
+              Take the free Glucose Assessment, discover your glucose score, and get a
               personalised plan for steadier energy, fewer cravings, and better metabolic health.
             </p>
           </ScrollReveal>

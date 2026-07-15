@@ -6,8 +6,8 @@ const INPUTS = [
   { label: "Rhythm", accent: "var(--icon-teal)" },
 ]
 
-/* Product-framework diagram: the three EatoBetics pillars converge into the
-   EatoBetics Score™, which contributes to the overall Biotics Score™.
+/* Pathway-framework diagram: the three Glucose pillars converge into the
+   Glucose Score, which contributes to the overall Biotics Score™.
    Pure CSS/SVG — no image asset, fully responsive. */
 export function EbFramework() {
   return (
@@ -33,12 +33,12 @@ export function EbFramework() {
         <ChevronDown size={22} style={{ color: "var(--icon-orange)" }} />
       </div>
 
-      {/* Tier 2 — EatoBetics Score™ */}
+      {/* Tier 2 — Glucose Score */}
       <div
         className="rounded-2xl px-6 py-5 text-center text-white shadow-md"
         style={{ background: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" }}
       >
-        <p className="font-serif text-xl font-bold">EatoBetics Score™</p>
+        <p className="font-serif text-xl font-bold">Glucose Score</p>
         <p className="mt-1 text-sm text-white/85">How steady your glucose system runs</p>
       </div>
 

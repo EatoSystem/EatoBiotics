@@ -3,7 +3,7 @@
 /**
  * components/eatobetics/glucose-report.tsx
  *
- * The full EatoBetics Report rendered on assessment completion. Built from a
+ * The full Glucose Report rendered on assessment completion. Built from a
  * GlucoseResult (lib/glucose-assessment-scoring). Structured as a free preview
  * (score, pillars, energy stability, biggest opportunity) followed by a "Full
  * Report" block (GLP-1 focus, all insights, meal timing, 30-day protocol, key
@@ -54,7 +54,7 @@ export function GlucoseReport({ result, onRetake }: { result: GlucoseResult; onR
         {/* ── Report header ── */}
         <div className="mb-3 flex items-center justify-between">
           <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-orange)" }}>
-            <Sparkles size={14} /> EatoBetics Report
+            <Sparkles size={14} /> Glucose Report
           </span>
           <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>{date}</span>
         </div>
@@ -62,7 +62,7 @@ export function GlucoseReport({ result, onRetake }: { result: GlucoseResult; onR
         {/* ── Score card ── */}
         <div className="relative overflow-hidden rounded-[2rem] border-2 p-8 text-center shadow-2xl" style={{ borderColor: "color-mix(in srgb, var(--icon-orange) 35%, transparent)" }}>
           <div className="absolute inset-x-0 top-0 h-1.5" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))" }} />
-          <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-orange)" }}>Your EatoBetics Score</p>
+          <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-orange)" }}>Your Glucose Score</p>
           <div className="mt-6 flex justify-center">
             <ScoreRing score={overall} color={profile.color} gradientId="glucose-report-ring" profileType={profile.type} />
           </div>
@@ -238,7 +238,7 @@ export function GlucoseReport({ result, onRetake }: { result: GlucoseResult; onR
         </div>
 
         <p className="mt-6 flex items-center justify-center gap-2 text-center text-xs" style={{ color: "var(--muted-foreground)" }}>
-          <ShieldCheck size={13} /> EatoBetics is educational and does not diagnose, treat, or cure any condition.
+          <ShieldCheck size={13} /> This pathway is educational and does not diagnose, treat, or cure any condition.
         </p>
       </div>
     </main>

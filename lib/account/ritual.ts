@@ -1,10 +1,14 @@
 /**
- * EatoBiotics — Daily Ritual state (localStorage-first, no backend).
+ * EatoBiotics — Daily Ritual state (localStorage-first).
  *
- * Three one-tap daily check-ins that keep the Twin habit loop alive:
- * fermented food, plant variety, and how you feel. One record per day under
- * `eb_ritual_<YYYY-MM-DD>`. Pure functions take an injectable Store so they
- * are SSR-safe and unit-testable; `browserStore()` adapts localStorage.
+ * Five one-tap daily check-ins that keep the Twin habit loop alive:
+ * fermented food, plant variety, movement, sleep, and how you feel. One
+ * record per day under `eb_ritual_<YYYY-MM-DD>`. Pure functions take an
+ * injectable Store so they are SSR-safe and unit-testable; `browserStore()`
+ * adapts localStorage. Signed-in members also sync cross-device via
+ * `twin-state-sync.ts` (`/api/twin-state`, `twin_state` table) — local taps
+ * stay instant and this file's storage remains the source of truth; the
+ * sync layer just merges server state in and pushes local state out.
  */
 
 export interface RitualDay {

@@ -5,7 +5,7 @@ const SAMPLE_PROFILE = "Stabilising"
 const R = 112
 const CIRC = 2 * Math.PI * R
 
-/* The three EatoBetics Score pillars (mirrors the example in
+/* The three Glucose Score pillars (mirrors the example in
    components/eatobetics/home/score-preview.tsx). */
 const PILLARS = [
   { label: "Stability", score: 58, color: "var(--icon-orange)", gradient: "linear-gradient(90deg, var(--icon-yellow), var(--icon-orange))", description: "Glucose response to meals" },
@@ -13,9 +13,9 @@ const PILLARS = [
   { label: "Rhythm", score: 66, color: "var(--icon-teal)", gradient: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))", description: "Timing, spacing & movement" },
 ]
 
-/* Premium EatoBetics Score™ showcase: a large circular gauge plus the three
+/* Premium Glucose Score showcase: a large circular gauge plus the three
    score pillars (Stability / Energy / Rhythm). Mirrors StabilityScoreShowcase,
-   themed in the EatoBetics yellow→orange palette. */
+   themed in the Glucose yellow→orange palette. */
 export function EbScoreShowcase() {
   return (
     <div className="grid items-center gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
@@ -72,7 +72,7 @@ export function EbScoreShowcase() {
           </ScrollReveal>
         ))}
         <p className="pt-1 text-sm leading-relaxed text-muted-foreground">
-          After the free assessment you&apos;ll get your own EatoBetics Score™ across stability, energy,
+          After the free assessment you&apos;ll get your own Glucose Score across stability, energy,
           and rhythm — with the single biggest opportunity to focus on first.
         </p>
       </div>

@@ -4,6 +4,8 @@ import { HowItWorks } from "@/components/home/how-it-works"
 import { TheFramework } from "@/components/home/the-framework"
 import { ScorePreview } from "@/components/home/score-preview"
 import { Ecosystem } from "@/components/home/ecosystem"
+import { StateOfProduct } from "@/components/home/state-of-product"
+import { GlobalDirection } from "@/components/home/global-direction"
 import { PreviewGuard } from "@/components/waitlist/preview-guard"
 import { LiveSignups } from "@/components/waitlist/live-signups"
 
@@ -48,6 +50,9 @@ export default function WaitlistPage() {
         <ScorePreview />
         <SoftDivider />
         <Ecosystem />
+        <SoftDivider />
+        <StateOfProduct />
+        <GlobalDirection />
       </PreviewGuard>
 
       {/* Subtle "just joined" social-proof card (fixed, page-level so it escapes

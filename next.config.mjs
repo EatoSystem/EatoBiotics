@@ -3,7 +3,19 @@ import { withSentryConfig } from "@sentry/nextjs"
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    unoptimized: true,
+    // Was `unoptimized: true` (this project's original v0.dev scaffold
+    // default) — every image shipped at full source size with no resizing,
+    // format conversion (WebP/AVIF), or responsive srcset, on a site where
+    // the homepage, account dashboard, Digital Twin, and recipe pages are
+    // all image-heavy. Now optimized; Supabase Storage is allowlisted above
+    // for the plate-builder's generated recipe images.
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+        pathname: "/storage/v1/object/**",
+      },
+    ],
   },
   // Keep serverless functions lean: never bundle media/binary dirs into functions
   // (they're served from the CDN). Fixes the api/plate-builder 250MB limit — the
