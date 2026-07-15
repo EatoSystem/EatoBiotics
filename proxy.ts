@@ -95,6 +95,18 @@ export async function proxy(request: NextRequest) {
     return NextResponse.rewrite(url)
   }
 
+  // Legacy family-assessment URLs → the canonical /assessment/family (the
+  // route lib/systems.ts and lib/assessment/registry.ts treat as canonical).
+  // A literal 301 (not next.config.mjs's redirects(), which only emits
+  // 307/308) so search engines consolidate all three URLs' authority onto
+  // the one canonical page. Issued before the password gate so crawlers see
+  // the real redirect target instead of bouncing through /enter.
+  if (pathname === "/assessment-family" || pathname === "/family-assessment") {
+    const url = request.nextUrl.clone()
+    url.pathname = "/assessment/family"
+    return NextResponse.redirect(url, 301)
+  }
+
   // Site password check. During redevelopment, DEV_PASSWORD enables the gate.
   if (isPasswordGateEnabled()) {
     const password = getDevPassword()

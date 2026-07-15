@@ -21,6 +21,8 @@ jobs:
         run: npm test
       - name: Type check
         run: npx tsc --noEmit
+      - name: Supabase scoping check
+        run: node scripts/check-supabase-scoping.mjs
       - name: Production build
         run: npx next build
         # No secrets needed: SDK clients are constructed lazily (see lib/stripe-server.ts,

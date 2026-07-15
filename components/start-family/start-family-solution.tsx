@@ -58,7 +58,7 @@ export function StartFamilySolution() {
 
         <ScrollReveal delay={240}>
           <div className="mt-8 text-center">
-            <Link href="/assessment-family" className="inline-flex items-center gap-1.5 text-sm font-semibold text-icon-green transition-colors hover:text-foreground">
+            <Link href="/assessment/family" className="inline-flex items-center gap-1.5 text-sm font-semibold text-icon-green transition-colors hover:text-foreground">
               Check your Family Food System Score <ArrowRight size={14} />
             </Link>
           </div>
