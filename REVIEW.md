@@ -1154,3 +1154,54 @@ server-side. CLAUDE.md's now-stale "not live in production" passages
 corrected via PR #146 (merged). **Remaining human step: test the sync
 on two devices signed into the same account** — watch `/api/twin-state`
 (GET hydrate, PUT push) in the network tab.
+
+### Evolution batch (2026-07-15) — "execute all" on the eight growth ideas
+
+All PRs draft, unmerged, awaiting preview review. Verification on every
+one: tsc + eslint + full test suite + production build.
+
+- ✅ **A. Launch prep** — PR #147. Hardcoded gate fallback password
+  removed, plaintext scrubbed from the two audit docs. **Merge-gated on
+  a Vercel env check**: with no DEV_PASSWORD set, merging takes the
+  site public (silently, not a 503) — the PR body explains both safe
+  merge paths.
+- ✅ **B. GLP-1 front door** — PR #148. /glp1 vanity redirect, sitemap
+  entries, and lead capture on the free protein calculator (posts
+  { email, mainGoal: "glp1" } to the existing /api/waitlist — zero new
+  backend, segmentable leads).
+- ✅ **C. Day-75 retest** — PR #149. Migration 42 (leads.score_history,
+  **applied to production + verified**), history capture in
+  send-results-email with column-missing fallback, pure retest-state
+  lib (9 tests), RetestCard on the account overview (countdown → retake
+  CTA → before/after + share).
+- ✅ **D. Food System Pulse** — PR #150. Migration 43 (contributions,
+  **applied to production + verified**: RLS on, zero policies),
+  /api/contribute made real (was a console.log stub), /api/national-pulse
+  aggregate with honesty thresholds (25 total / 10 per country),
+  NationalPulse section on /eatosystem.
+- ✅ **E. Twin memory** — PR #151. lib/account/meal-memory.ts (7 tests):
+  repeat-meal / personal-best / weekly-rhythm callbacks rendered inside
+  the meal reveal. Pure derivation from already-fetched data.
+- ✅ **F. Market-aware foods** — PR #152. lib/local-foods.ts (5 tests)
+  bridges the eb_country cookie to the existing 8-profile cultural food
+  layer; assessment-results probiotics/recommendation copy localised
+  with a western_eu fallback identical to the previous hardcoded text
+  (no hydration mismatch, no change for IE/UK).
+- ✅ **G(a). A11y smoke suite** — PR #153. axe-core over 20
+  representative pages, critical=fail / serious=report-only; first run
+  20/20 green with one systemic serious finding surfaced
+  (color-contrast ×5 on shared chrome). Wired into CI.
+- ⚠️ **G(b). Migrations split — flagged, not implemented**: duplicating
+  1,700 lines of SQL alongside the historic file creates a NEW drift
+  surface; moving it breaks doc references. Migrations now go through
+  Supabase's tracked apply_migration. Adopting the CLI workflow should
+  be its own deliberate decision.
+- ✅ **H. Condition-vertical consolidation** — PR #154. Config + factory
+  (chapter-page-factory pattern), ADHD migrated first with copy
+  extracted verbatim and a **byte-identical rendered-HTML diff** as
+  proof; components/adhd/ deleted (app/adhd/page.tsx 42→4 lines).
+  anxiety/depression/bipolar follow one PR each with the same recipe.
+
+Production DB changes this batch (all ADD-only, idempotent, verified
+post-apply): Migration 42 (leads.score_history), Migration 43
+(contributions). Read-only checks throughout otherwise.
