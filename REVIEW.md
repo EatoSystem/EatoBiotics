@@ -1129,3 +1129,28 @@ deferred, per direction: vertical/funnel consolidation,
 password gate, the design-system folder, and root PNGs. Migration 36 is
 a real, live production bug awaiting your manual apply — not merely
 paperwork.
+
+### Batch merged + Migration 36 applied (2026-07-15)
+
+On explicit instruction, all seven PRs were merged to `main` in build
+order — #139 → #140 → #141 → #142 → #143 (after re-running the
+zero-usage grep against post-merge `main`: all 34 packages still clean)
+→ #144 (needed a `main` merge-back into its branch; the auto-merge
+placed `WaitlistSocialProof` correctly after the new "Built on the 3
+Biotics" tag row — verified by eye, typecheck, and build before
+merging) → #145. Vercel previews were not reviewable from this session
+(Deployment Protection 403); the merge gate was the explicit
+instruction plus each branch's green local verification. Post-merge
+`main` re-verified end-to-end: tsc clean (after clearing a stale `.next`
+type cache referencing the two deleted family-assessment routes),
+scoping check passes, 462/462 tests, production build green.
+
+**Migration 36 applied to production** (project `ephmojiwlcebenholhpc`)
+per the documented pre-checks: pre-verified both objects absent,
+applied Migrations 35+36 verbatim via `apply_migration`, post-verified
+`twin_state` + `profiles.sex` + `twin_state_own` policy present with
+RLS enabled. The cross-device daily-ritual sync is now unblocked
+server-side. CLAUDE.md's now-stale "not live in production" passages
+corrected via PR #146 (merged). **Remaining human step: test the sync
+on two devices signed into the same account** — watch `/api/twin-state`
+(GET hydrate, PUT push) in the network tab.
