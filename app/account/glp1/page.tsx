@@ -8,7 +8,7 @@ import { canAccess, getUserMembershipTier } from "@/lib/membership"
 import { Glp1Client, type Glp1Log, type Glp1Profile } from "./glp1-client"
 
 export const metadata: Metadata = {
-  title: "GLP-1 Companion — EatoBetics",
+  title: "GLP-1 Companion — EatoBiotics",
   description: "Track your protein and muscle-protecting habits while you're on a GLP-1.",
 }
 
