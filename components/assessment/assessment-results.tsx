@@ -30,6 +30,8 @@ import type { PillarKey } from "@/lib/assessment-data"
 import { getFoodBySlug } from "@/lib/foods"
 import { getPercentile } from "@/lib/percentile"
 import { getIdentityLabel } from "@/lib/identity-labels"
+import { browserCountry, localFoods, fermentedPair, prebioticTrio } from "@/lib/local-foods"
+import type { FoodSet } from "@/lib/foods-by-country"
 
 /* ── Gut Starter Pack config ─────────────────────────────────────────── */
 
@@ -58,7 +60,7 @@ const INTERPRETATIONS: Record<string, Record<"low" | "mid" | "high", string>> = 
     high: "Your Prebiotics score is strong — you're consistently nourishing your gut bacteria with the plant diversity and fibre they need to thrive.",
   },
   probiotics: {
-    low: "Your Probiotics score is your biggest opportunity. Adding even one fermented food daily — yoghurt, kefir, or miso — can transform your microbial diversity within weeks.",
+    low: "Your Probiotics score is your biggest opportunity. Adding even one fermented food daily — {FERMENTED} — can transform your microbial diversity within weeks.",
     mid: "You're introducing some live foods, but your Probiotics score suggests there's room to build a more consistent fermented food habit and broaden the variety.",
     high: "Your Probiotics score shows you're actively supporting your gut microbiome with fermented and live foods — one of the most targeted dietary inputs available.",
   },
@@ -72,9 +74,29 @@ const INTERPRETATIONS: Record<string, Record<"low" | "mid" | "high", string>> = 
 /* ── Weakest pillar free food recommendation ─────────────────────────── */
 
 const WEAKEST_FOOD_REC: Record<string, string> = {
-  prebiotics: "Adding oats, garlic, and lentils to just three meals this week could meaningfully move your Prebiotics score.",
-  probiotics: "One tablespoon of live yoghurt or kefir daily is one of the fastest ways to improve your Probiotics score — it takes seconds.",
+  prebiotics: "Adding {PREBIOTIC} to just three meals this week could meaningfully move your Prebiotics score.",
+  probiotics: "A daily spoonful of {FERMENTED} is one of the fastest ways to improve your Probiotics score — it takes seconds.",
   postbiotics: "Eating your main meal before 7pm and adding two colourful plant foods per day can improve your Postbiotics score within weeks.",
+}
+
+/* ── "The science is global. The food is local." ─────────────────────────
+   {FERMENTED}/{PREBIOTIC} placeholders are filled from the visitor's market
+   (eb_country cookie → lib/local-foods). SSR and first paint use the
+   western_eu set — identical to the previous hardcoded copy — and the local
+   examples swap in after mount, so there is no hydration mismatch. */
+function fillLocalFoods(template: string, set: FoodSet): string {
+  return template
+    .replaceAll("{FERMENTED}", fermentedPair(set))
+    .replaceAll("{PREBIOTIC}", prebioticTrio(set))
+}
+
+function useLocalFoodSet(): FoodSet {
+  const [set, setSet] = useState<FoodSet>(() => localFoods(null))
+  useEffect(() => {
+    const country = browserCountry()
+    if (country) setSet(localFoods(country))
+  }, [])
+  return set
 }
 
 /* ── Animated score counter ─────────────────────────────────────────── */
@@ -178,7 +200,8 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
   // Interpretation — keyed to weakest pillar's own score band
   const ws = weakestInsight.score
   const scoreBand: "low" | "mid" | "high" = ws >= 65 ? "high" : ws >= 40 ? "mid" : "low"
-  const interpretationText = INTERPRETATIONS[weakestPillar][scoreBand]
+  const foods = useLocalFoodSet()
+  const interpretationText = fillLocalFoods(INTERPRETATIONS[weakestPillar][scoreBand], foods)
 
   // Percentile + identity
   const percentile = getPercentile(overall)
@@ -337,7 +360,7 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
                     Your biggest opportunity — {weakestInsight.label}
                   </p>
                   <p className="mt-1 text-sm leading-relaxed text-foreground">
-                    <strong>{WEAKEST_FOOD_REC[weakestPillar]}</strong>
+                    <strong>{fillLocalFoods(WEAKEST_FOOD_REC[weakestPillar], foods)}</strong>
                   </p>
                   <p className="mt-1.5 text-xs text-muted-foreground">
                     This is a free insight — your full 30-day plan goes much deeper.
