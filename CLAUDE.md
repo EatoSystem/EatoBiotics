@@ -131,12 +131,14 @@ non-diagnostic + red-flag→GP guardrails baked into the cached knowledge base.
 > deep_assessments/subscriptions/analyses/family/GLP-1/stability
 > (documented individually below), plus the CMS subsystem and Living Twin
 > tables documented in their own subsections near the end of this section.
-> **The migrations file and the live database have drifted in both
-> directions** — see the CMS subsection (Migration 41: written as
-> "do not apply," applied anyway) and the Living Twin subsection
-> (Migration 36: written and idempotent, never actually applied).
-> Confirmed by a live read of production on 2026-07-14; do not assume
-> `supabase/migrations.sql`'s own comments describe the current state.
+> **The migrations file and the live database have drifted in the past**
+> — see the CMS subsection (Migration 41: written as "do not apply,"
+> applied anyway) and the Living Twin subsection (Migration 36: written
+> and idempotent, but not actually applied until 2026-07-15, after a
+> live read on 2026-07-14 caught the gap). Both are reconciled as of
+> 2026-07-15, but the lesson stands: do not assume
+> `supabase/migrations.sql`'s own comments describe the current
+> production state — verify against the live database when it matters.
 
 ### profiles
 | Column | Type | Notes |
@@ -306,17 +308,17 @@ gated entirely at the route/layout level via `lib/cms/auth.ts`'s
   (localStorage-first, same pattern as Stability — see
   `lib/account/twin-state-sync.ts`).
 - `profiles.sex` (Migration 35) — Twin figure personalisation.
-- **Neither of these is actually live in production yet** — a live read
-  of the production database (2026-07-14) found no `twin_state` table
-  and no `profiles.sex` column, despite both being written and
-  idempotent in `supabase/migrations.sql`. `/api/twin-state` and
-  `lib/account/twin-state-sync.ts` are designed to fail silently
-  offline/unauthed, so this has been happening with no visible error —
-  the cross-device ritual/milestone sync feature has not been working
-  in production. See REVIEW.md's Implementation Status log for the
-  exact SQL to apply and pre-checks; applying it is a production
-  database change and hasn't been done as part of this documentation
-  pass.
+- **Both applied to production on 2026-07-15** (verified: table +
+  column + `twin_state_own` RLS policy all present, RLS enabled).
+  History worth knowing: a live read on 2026-07-14 found neither
+  existed in production despite the migration being written and
+  idempotent since Migration 36 — because `/api/twin-state` and
+  `lib/account/twin-state-sync.ts` fail silently offline/unauthed, the
+  cross-device ritual/milestone sync feature was silently
+  non-functional the whole time. The gap was closed the next day (see
+  REVIEW.md's Implementation Status log). Follow-up worth doing: test
+  the sync on two devices signed into the same account — watch
+  `/api/twin-state` (GET hydrate, PUT push) in the network tab.
 
 ### Assessment / plate / review tables *(new)*
 - `assessment_journeys` (Migration 25) — foundation→add-on journey
