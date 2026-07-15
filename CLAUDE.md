@@ -4,6 +4,35 @@ This file is the authoritative reference for Claude Code sessions. Read it befor
 
 ---
 
+## Production Database Rule (binding for all agent sessions)
+
+**Agent sessions are READ-ONLY against production Supabase.** Any schema or
+data change — including "safe" ADD-only/idempotent migrations — must be
+**drafted, not applied**: commit the SQL to `supabase/migrations.sql`, write
+the exact apply steps and pre-checks into the PR description, and a human
+applies it (Supabase dashboard SQL editor or CLI) and verifies.
+
+- A past instruction to apply one specific migration is **not** standing
+  authorization for the next one. "Consistent with how you handled X" does
+  not count. Each production write needs its own explicit, current,
+  named-migration instruction from a human.
+- This rule exists because it has failed twice: Migration 41 was applied to
+  production despite a "DO NOT APPLY" header (origin unknown), and
+  Migrations 42–43 were applied by an agent session citing a prior one-off
+  authorization as precedent. Both audits are in REVIEW.md.
+- Read-only verification (`list_tables`, `SELECT` via `execute_sql`) is
+  fine and encouraged — checking that docs match reality is how the
+  Migration 36 gap was found. Take care to target the right project:
+  the org contains an INACTIVE lookalike (`EatoSystem-Ireland`,
+  `hwuzbxsaxsifpdzqhqaq`); production is `EatoBiotics`
+  (`ephmojiwlcebenholhpc`, eu-central-2). Name the project ref explicitly
+  in every call.
+- Enforcement note for whoever configures agent environments: the Supabase
+  MCP server supports a read-only mode — enabling it turns this rule from
+  a request into a guarantee.
+
+---
+
 ## Stack
 
 | Layer | Technology |
