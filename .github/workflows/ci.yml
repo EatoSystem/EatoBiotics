@@ -27,3 +27,10 @@ jobs:
         run: npx next build
         # No secrets needed: SDK clients are constructed lazily (see lib/stripe-server.ts,
         # lib/anthropic.ts). The build must succeed without any env configured.
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Accessibility smoke (axe-core over 20 representative pages)
+        run: npx playwright test
+        # Reuses the build above (playwright.config.ts webServer runs `next start`
+        # with the preview gate disabled). Critical violations fail; serious ones
+        # are report-only in the log until the existing backlog is cleared.
