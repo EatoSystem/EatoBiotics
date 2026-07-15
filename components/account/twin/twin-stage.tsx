@@ -205,6 +205,7 @@ export function TwinStage({
   checklist,
   onAddMeal,
   reveal = null,
+  revealMemory = null,
   onRevealDone,
   onLogAnother,
   signals = [],
@@ -231,6 +232,8 @@ export function TwinStage({
   /** The Meal Reveal — when set, the meal plays out on the stage: pathway
       nodes light on the figure, the story replaces the cockpit. */
   reveal?: QuickLogResult | null
+  /** One-line longitudinal callback shown inside the reveal panel. */
+  revealMemory?: string | null
   /** Called when the member finishes the reveal ("Done") — restores the cockpit. */
   onRevealDone?: () => void
   /** Called from the reveal's "Log another" — reopens the QuickLog. */
@@ -486,6 +489,7 @@ export function TwinStage({
               onLogAnother={onLogAnother}
               stage={mealStage}
               onStageChange={setMealStage}
+              memory={revealMemory}
             />
           ) : (
           /* ── score cockpit ── */

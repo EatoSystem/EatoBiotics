@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
@@ -15,6 +15,7 @@ import {
   Tag, SectionLabel, GradientButton, ringColors,
 } from "@/components/account/dashboard-parts"
 import { TwinStage } from "@/components/account/twin/twin-stage"
+import { mealMemory } from "@/lib/account/meal-memory"
 import { ExperienceNav } from "@/components/account/experience-nav"
 import { TodayStrip } from "@/components/account/twin/today-strip"
 import { TwinLearnedToday, TwinNextAction } from "@/components/account/twin/twin-sections"
@@ -850,6 +851,17 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
   const [quickLogOpen, setQuickLogOpen] = useState(false)
   /* The Meal Reveal — a logged meal plays out on the stage. */
   const [reveal, setReveal] = useState<QuickLogResult | null>(null)
+
+  // The Twin remembers: one-line longitudinal callback for the just-revealed
+  // meal, derived from server-fetched history (which never includes the meal
+  // being revealed — it was logged after this page rendered).
+  const revealMemory = useMemo(() => {
+    if (!reveal) return null
+    return mealMemory(
+      { name: reveal.meal_name ?? null, score: reveal.biotics_score ?? null },
+      recentAnalyses.map((a) => ({ name: a.meal_name, score: a.biotics_score, createdAt: a.created_at })),
+    )
+  }, [reveal, recentAnalyses])
   /* Today's ritual signals — light the stage figure with the day's habits. */
   const [todaySignals, setTodaySignals] = useState<RitualDay | null>(null)
   useEffect(() => {
@@ -1118,6 +1130,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             burstKey={celebrationKey}
             burstMessage={celebration?.title}
             reveal={reveal}
+            revealMemory={revealMemory}
             onRevealDone={() => setReveal(null)}
             onLogAnother={() => {
               setReveal(null)
