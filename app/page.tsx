@@ -32,6 +32,8 @@ import { HowItWorks } from "@/components/home/how-it-works"
 import { DigitalTwinSection } from "@/components/home/digital-twin-section"
 import { ScorePreview } from "@/components/home/score-preview"
 import { Ecosystem } from "@/components/home/ecosystem"
+import { StateOfProduct } from "@/components/home/state-of-product"
+import { GlobalDirection } from "@/components/home/global-direction"
 import { MembershipTeaser } from "@/components/home/membership-teaser"
 import { ClosingCta } from "@/components/home/closing-cta"
 
@@ -62,6 +64,9 @@ export default async function Home() {
       <ScorePreview />
       <SoftDivider />
       <Ecosystem />
+      <SoftDivider />
+      <StateOfProduct />
+      <GlobalDirection />
       <SoftDivider />
       <MembershipTeaser />
       <ClosingCta />
