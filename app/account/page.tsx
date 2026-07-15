@@ -14,6 +14,7 @@ import type { DailyLoopData } from "@/components/account/daily-loop-card"
 import { buildAccountTwin } from "@/lib/agent-loop/account-twin"
 import { twinVisualState } from "@/lib/account/twin-visual"
 import { twinFigureSrc, twinVideo, normaliseSex } from "@/lib/account/twin-figure"
+import { parseScoreHistory, retestState } from "@/lib/account/retest"
 
 export const metadata: Metadata = {
   title: "My Account — EatoBiotics",
@@ -50,7 +51,13 @@ export default async function AccountPage({
   /* ── Parallel data fetch — these queries are independent (they need only the
        authenticated user and the already-resolved profile), so run them
        concurrently instead of sequentially to cut the dashboard's load time. ── */
-  type AssessmentRow = { overall_score: number | null; profile_type: string | null; sub_scores: Record<string, number> | null }
+  type AssessmentRow = {
+    overall_score: number | null
+    profile_type: string | null
+    sub_scores: Record<string, number> | null
+    score_history?: unknown
+    created_at?: string | null
+  }
 
   const [
     assessments,
@@ -67,15 +74,20 @@ export default async function AccountPage({
     /* Assessment scores (gut only — for overall score + profile type) */
     (async (): Promise<AssessmentRow[]> => {
       if (!adminSupabase) return []
-      const { data } = await adminSupabase
-        .from("leads")
-        .select("overall_score, profile_type, sub_scores")
-        .or(ownerOrFilter(user.id, user.email))
-        .eq("assessment_type", "gut")
-        .not("overall_score", "is", null)
-        .order("created_at", { ascending: false })
-        .limit(2)
-      return (data ?? []) as AssessmentRow[]
+      const query = (columns: string) =>
+        adminSupabase
+          .from("leads")
+          .select(columns)
+          .or(ownerOrFilter(user.id, user.email))
+          .eq("assessment_type", "gut")
+          .not("overall_score", "is", null)
+          .order("created_at", { ascending: false })
+          .limit(2)
+      // score_history is Migration 42 — retry without it if unapplied.
+      const { data, error } = await query("overall_score, profile_type, sub_scores, score_history, created_at")
+      if (!error) return (data ?? []) as unknown as AssessmentRow[]
+      const { data: legacy } = await query("overall_score, profile_type, sub_scores, created_at")
+      return (legacy ?? []) as unknown as AssessmentRow[]
     })(),
 
     /* Biotics profile — averaged from last 5 analyses */
@@ -265,6 +277,12 @@ export default async function AccountPage({
     twinVisual = twinVisualState(accountTwin.twin)
   }
 
+  /* ── Day-75 retest state (baseline → countdown → retake → before/after) ── */
+  const retest = retestState(parseScoreHistory(assessments[0]?.score_history), {
+    score: (assessments[0]?.overall_score as number | null) ?? null,
+    at: (assessments[0]?.created_at as string | null) ?? null,
+  })
+
   /* ── Fallback profile if none exists yet ── */
   if (!profile) {
     profile = {
@@ -300,6 +318,7 @@ export default async function AccountPage({
         score={(assessments[0]?.overall_score as number | null) ?? null}
         previousScore={(assessments[1]?.overall_score as number | null) ?? null}
         profileType={(assessments[0]?.profile_type as string | null) ?? null}
+        retest={retest}
         biotics={bioticsProfile}
         recentAnalyses={recentAnalyses}
         paidReports={paidReports}
