@@ -49,8 +49,18 @@ This file is the authoritative reference for Claude Code sessions. Read it befor
 - `app/api/stripe/create-portal-session/route.ts`
 
 ### Dashboard
-- `app/account/page.tsx` — server component, fetches all user data
-- `components/account/dashboard-client.tsx` — 6-tab client component
+- `app/account/page.tsx` — server component, fetches all user data, renders
+  `components/account/live-dashboard.tsx` — the real production dashboard.
+  5 tabs (`overview | meals | reports | consultations | account`), defaults
+  to "overview". Reaches the daily-habit surfaces via `ExperienceNav` links
+  to the separate routes `/account/today`, `/account/this-week`,
+  `/account/twin`.
+- `components/account/dashboard-client.tsx` — a **10-tab** client component
+  (Today, Overview, Reports, Membership, My Plate, My Meals, Refer,
+  EatoBiotic, Intelligence, Story), but it is **demo/mock-data only** —
+  used by `app/account-you/page.tsx` and `app/demo/account/[tier]/page.tsx`,
+  never by the real `/account` route. Do not confuse the two when reasoning
+  about what a signed-in member actually sees.
 - `app/demo/account/page.tsx` — demo mode with mock data (no auth required)
 
 ### AI Consultation (Transform only)
@@ -116,6 +126,17 @@ non-diagnostic + red-flag→GP guardrails baked into the cached knowledge base.
 ---
 
 ## Database Tables
+
+> As of Migration 40, 34 distinct tables exist across profiles/leads/
+> deep_assessments/subscriptions/analyses/family/GLP-1/stability
+> (documented individually below), plus the CMS subsystem and Living Twin
+> tables documented in their own subsections near the end of this section.
+> **The migrations file and the live database have drifted in both
+> directions** — see the CMS subsection (Migration 41: written as
+> "do not apply," applied anyway) and the Living Twin subsection
+> (Migration 36: written and idempotent, never actually applied).
+> Confirmed by a live read of production on 2026-07-14; do not assume
+> `supabase/migrations.sql`'s own comments describe the current state.
 
 ### profiles
 | Column | Type | Notes |
@@ -258,6 +279,60 @@ Captured on first run of the in-app tracker (`Glp1Onboarding`); upserted via `ap
 - `plate_data` — `user_id`, `plate`, `plants`, `updated_at`
 - `journal_entries` — `user_id`, `date`, `energy`, `digestion`, `mood`, `notes`, `plants_this_week`
 
+### CMS / Content Studio tables *(new — `/cms` admin tool)*
+`cms_content`, `cms_content_versions`, `cms_tags`, `cms_content_tags`,
+`cms_audit_log`, `cms_media`, `cms_content_media`, `cms_books`,
+`cms_chapters`. Service-role-only access (RLS enabled, zero policies) —
+gated entirely at the route/layout level via `lib/cms/auth.ts`'s
+`requireCmsAdmin`, not by row-level policies. See `app/cms/*` and
+`app/api/cms/*`.
+
+> `cms_chapter_mirror` and `cms_import_batch` (Migration 41) are still
+> commented in `supabase/migrations.sql` as **"PROPOSED — DO NOT APPLY
+> until the 25-chapter import is explicitly approved,"** but a live
+> read of the production database (2026-07-14) found both tables
+> **already present in production — APPLIED TO PRODUCTION
+> (unintended; see REVIEW.md's "Second Pass" → Additions #5 and the
+> Implementation Status log for how this was found).** Treat the
+> migration-file comment as stale, not as the current gate: the schema
+> exists live regardless of what the comment says. This drift is
+> exactly the failure mode that section of REVIEW.md warns about —
+> confirm with whoever has deploy access how/when this was applied
+> before writing any code that assumes either state.
+
+### Living Twin / daily ritual tables *(new)*
+- `twin_state` (Migration 36) — daily ritual taps + milestone seen-set,
+  synced cross-device via `/api/twin-state`
+  (localStorage-first, same pattern as Stability — see
+  `lib/account/twin-state-sync.ts`).
+- `profiles.sex` (Migration 35) — Twin figure personalisation.
+- **Neither of these is actually live in production yet** — a live read
+  of the production database (2026-07-14) found no `twin_state` table
+  and no `profiles.sex` column, despite both being written and
+  idempotent in `supabase/migrations.sql`. `/api/twin-state` and
+  `lib/account/twin-state-sync.ts` are designed to fail silently
+  offline/unauthed, so this has been happening with no visible error —
+  the cross-device ritual/milestone sync feature has not been working
+  in production. See REVIEW.md's Implementation Status log for the
+  exact SQL to apply and pre-checks; applying it is a production
+  database change and hasn't been done as part of this documentation
+  pass.
+
+### Assessment / plate / review tables *(new)*
+- `assessment_journeys` (Migration 25) — foundation→add-on journey
+  persistence.
+- `plate_recipes` (Migration 16) — Plate Builder generated recipes
+  (`app/api/plate-builder`, surfaced at `/recipe/[slug]`).
+- `monthly_gut_plans`, `meal_plans`, `food_protocols`, `monthly_reviews`
+  (Migrations 10, 12, 13, 14) — Restore+/Transform monthly and meal
+  planning features.
+- `meal_scans` — guest (unauthenticated) meal-scan captures
+  (`app/api/guest-scan`).
+- `food_intelligence_reports` — deep pattern-analysis output
+  (`app/api/food-intelligence`, `app/api/gut-health-story`).
+- `email_optouts` (Migration 32) — central unsubscribe ledger, distinct
+  from `email_sends` (idempotency log).
+
 ---
 
 ## Environment Variables
@@ -388,6 +463,11 @@ The `getUserMembershipTier()` function enforces grace periods for `past_due` acc
 - `app/api/auth/` routes (auth flow)
 - Any existing Supabase table columns — only ADD, never modify or drop
 - The referral system (`membership` column, referral upgrade logic)
+- `app/api/cms/import/chapters/route.ts` and the `cms_import_chapters`
+  Postgres function (migration 40) — the atomic import/rollback logic has
+  hand-documented invariants about `ON DELETE SET NULL` vs `CASCADE` and
+  batch-id reuse; changes here need a full re-read of the migration's
+  inline comments, not a quick patch.
 
 > Nav + footer are maintained via the shared config in **`lib/nav.ts`** — edit
 > the config (not the components) to add or move destinations; header and
