@@ -930,7 +930,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS sex text;
 -- milestone ids, per-day ritual merge) via /api/twin-state. Idempotent.
 CREATE TABLE IF NOT EXISTS twin_state (
   user_id         uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  rituals         jsonb NOT NULL DEFAULT '{}'::jsonb,   -- { "YYYY-MM-DD": {fermented,plants,feeling} }
+  rituals         jsonb NOT NULL DEFAULT '{}'::jsonb,   -- { "YYYY-MM-DD": {fermented,plants,moved,slept,feeling} }
   milestones_seen text[] NOT NULL DEFAULT '{}',
   updated_at      timestamptz NOT NULL DEFAULT now()
 );

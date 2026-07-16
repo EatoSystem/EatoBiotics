@@ -10,20 +10,9 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { z } from "zod"
 import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
-
-const ritualDay = z.object({
-  fermented: z.boolean(),
-  plants: z.boolean(),
-  feeling: z.boolean(),
-})
-
-const putSchema = z.object({
-  rituals: z.record(z.string().regex(/^\d{4}-\d{2}-\d{2}$/), ritualDay).default({}),
-  milestonesSeen: z.array(z.string().max(60)).max(200).default([]),
-})
+import { twinStatePutSchema, type TwinStatePut } from "@/lib/account/twin-state-schema"
 
 function pruneRituals(rituals: Record<string, unknown>): Record<string, unknown> {
   const cutoff = new Date()
@@ -56,9 +45,9 @@ export async function PUT(req: NextRequest) {
   const supabase = getSupabase()
   if (!supabase) return NextResponse.json({ error: "Service unavailable" }, { status: 503 })
 
-  let body: z.infer<typeof putSchema>
+  let body: TwinStatePut
   try {
-    body = putSchema.parse(await req.json())
+    body = twinStatePutSchema.parse(await req.json())
   } catch {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 })
   }
