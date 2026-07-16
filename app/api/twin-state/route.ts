@@ -7,10 +7,15 @@
  *        truth for today's taps). Rituals are pruned to the last 35 days so the
  *        row stays tiny. Auth-gated; service-role client (RLS-equivalent scope
  *        enforced by the user id from the session).
+ *
+ * Auth accepts either surface (getUserFromRequest): the web app's session
+ * cookie, or `Authorization: Bearer <supabase access token>` from the mobile
+ * companion app — merge/prune semantics stay server-side in this one route
+ * for every client.
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { getUser } from "@/lib/supabase-server"
+import { getUserFromRequest } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { twinStatePutSchema, type TwinStatePut } from "@/lib/account/twin-state-schema"
 
@@ -21,8 +26,8 @@ function pruneRituals(rituals: Record<string, unknown>): Record<string, unknown>
   return Object.fromEntries(Object.entries(rituals).filter(([day]) => day >= cutoffKey))
 }
 
-export async function GET() {
-  const user = await getUser()
+export async function GET(req: NextRequest) {
+  const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: "Unauthorised" }, { status: 401 })
   const supabase = getSupabase()
   if (!supabase) return NextResponse.json({ error: "Service unavailable" }, { status: 503 })
@@ -40,7 +45,7 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
-  const user = await getUser()
+  const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: "Unauthorised" }, { status: 401 })
   const supabase = getSupabase()
   if (!supabase) return NextResponse.json({ error: "Service unavailable" }, { status: 503 })
