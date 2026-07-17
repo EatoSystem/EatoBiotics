@@ -64,14 +64,20 @@ const CLAUDE_RESULT = {
   tags: ["Plant Diversity"],
 }
 
+/** Settable per test — what the mocked Claude call returns. */
+let claudeOutput: unknown = CLAUDE_RESULT
+
 vi.mock("@/lib/anthropic", () => ({
   CLAUDE_MODEL: "claude-test",
   anthropic: {
     messages: {
-      create: async () => ({ content: [{ type: "text", text: JSON.stringify(CLAUDE_RESULT) }] }),
+      create: async () => ({ content: [{ type: "text", text: JSON.stringify(claudeOutput) }] }),
     },
   },
 }))
+
+/** Spy: counts analyses inserts so tests can assert nothing was persisted. */
+const insertSpy = vi.fn()
 
 vi.mock("@/lib/supabase", () => ({
   getSupabase: () => {
@@ -82,7 +88,10 @@ vi.mock("@/lib/supabase", () => ({
       select: () => builder,
       eq: () => builder,
       gte: () => builder,
-      insert: () => builder,
+      insert: (...args: unknown[]) => {
+        insertSpy(...args)
+        return builder
+      },
       single: async () => ({ data: { id: "row-1", created_at: "2026-07-16T00:00:00Z" }, error: null }),
       then: (resolve: (v: unknown) => unknown) => Promise.resolve({ count: 0 }).then(resolve),
     })
@@ -107,6 +116,8 @@ function request(headers: Record<string, string> = {}) {
 
 beforeEach(() => {
   cookieUser = null
+  claudeOutput = CLAUDE_RESULT
+  insertSpy.mockClear()
 })
 
 describe("/api/analyse-meal auth surfaces", () => {
@@ -136,5 +147,26 @@ describe("/api/analyse-meal auth surfaces", () => {
     const res = await post(request())
     expect(res.status).toBe(200)
     expect((await res.json()).meal_name).toBe("Test bowl")
+  })
+})
+
+describe("/api/analyse-meal graceful ambiguity", () => {
+  it("422s on an unreadable input, persists nothing, and consumes no cap slot", async () => {
+    cookieUser = { id: "cookie-user-1" }
+    claudeOutput = { error: "Could not identify foods in this image. Please try a clearer photo of your meal." }
+    const res = await post(request())
+    expect(res.status).toBe(422)
+    expect(await res.json()).toEqual({
+      error: "Could not identify foods in this image. Please try a clearer photo of your meal.",
+      unreadable: true,
+    })
+    expect(insertSpy).not.toHaveBeenCalled() // no analyses row → no daily-cap slot consumed
+  })
+
+  it("still persists a row on a readable input (regression guard for the spy wiring)", async () => {
+    cookieUser = { id: "cookie-user-1" }
+    const res = await post(request())
+    expect(res.status).toBe(200)
+    expect(insertSpy).toHaveBeenCalledTimes(1)
   })
 })
