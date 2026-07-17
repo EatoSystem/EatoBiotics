@@ -3,6 +3,7 @@ import { z } from "zod"
 import Anthropic from "@anthropic-ai/sdk"
 import { getUser } from "@/lib/supabase-server"
 import { getUserMembershipTier, canAccess } from "@/lib/membership"
+import { guardAiUsage } from "@/lib/ai-guard"
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 
 /* ── Validation ─────────────────────────────────────────────────────── */
@@ -191,6 +192,9 @@ export async function POST(req: NextRequest) {
   if (!canAccess(tier, "create_my_plate")) {
     return NextResponse.json({ error: "A paid EatoBiotics plan is required to use Create My Plate" }, { status: 403 })
   }
+
+  const blocked = await guardAiUsage(user.id, "create_plate")
+  if (blocked) return blocked
 
   // 2. Validate body
   let body: z.infer<typeof bodySchema>

@@ -4,6 +4,7 @@ import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { ownerOrFilter } from "@/lib/supabase-filters"
 import { getUserMembershipTier, isPaidTier } from "@/lib/membership"
+import { guardAiUsage } from "@/lib/ai-guard"
 
 
 export async function POST(req: NextRequest) {
@@ -12,6 +13,9 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorised" }, { status: 401 })
   const tier = await getUserMembershipTier(user.id)
   if (!isPaidTier(tier)) return NextResponse.json({ error: "Active membership required" }, { status: 403 })
+
+  const blocked = await guardAiUsage(user.id, "doctor_report")
+  if (blocked) return blocked
 
   const adminSupabase = getSupabase()
   if (!adminSupabase) return NextResponse.json({ error: "DB unavailable" }, { status: 500 })
