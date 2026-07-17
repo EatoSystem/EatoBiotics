@@ -229,6 +229,7 @@ export function MealRevealPanel({
   onLogAnother,
   stage = 0,
   onStageChange,
+  memory = null,
 }: {
   result: QuickLogResult
   onDone: () => void
@@ -236,6 +237,8 @@ export function MealRevealPanel({
   /** Active stage of the 24h body-journey (0–3), shared with the figure. */
   stage?: number
   onStageChange?: (i: number) => void
+  /** One-line longitudinal callback from lib/account/meal-memory. */
+  memory?: string | null
 }) {
   const rows: MealImpactRow[] = useMemo(() => mealImpact(result), [result])
   const afterDelay = REVEAL_ROW_BASE_MS + rows.length * REVEAL_ROW_STEP_MS
@@ -263,6 +266,13 @@ export function MealRevealPanel({
       {result.insight && (
         <p className="eb-reveal mt-4 max-w-xl rounded-xl px-4 py-3 text-sm leading-relaxed" style={{ background: "rgba(253,251,247,0.06)", border: "1px solid rgba(253,251,247,0.14)", color: "rgba(253,251,247,0.85)", animationDelay: `${afterDelay + 100}ms` }}>
           {result.insight}
+        </p>
+      )}
+
+      {/* the Twin remembers — longitudinal callback for this exact meal */}
+      {memory && (
+        <p className="eb-reveal mt-3 max-w-xl rounded-xl px-4 py-3 text-sm leading-relaxed" style={{ background: "rgba(168,224,99,0.08)", border: "1px solid rgba(168,224,99,0.25)", color: "#D8EFC0", animationDelay: `${afterDelay + 150}ms` }}>
+          {memory}
         </p>
       )}
 
