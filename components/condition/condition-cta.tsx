@@ -1,8 +1,9 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
+import type { ConditionDef } from "@/lib/conditions"
 
-export function AdhdCta() {
+export function ConditionCta({ condition }: { condition: ConditionDef }) {
   return (
     <section className="bg-foreground px-6 py-20 md:py-28">
       <div className="mx-auto max-w-[720px] text-center">
@@ -19,18 +20,16 @@ export function AdhdCta() {
                 backgroundClip: "text",
               }}
             >
-              See how well your food system
+              {condition.cta.gradientLine}
             </span>
             <br />
-            is supporting your focus.
+            {condition.cta.plainLine}
           </h2>
         </ScrollReveal>
 
         <ScrollReveal delay={100}>
           <p className="mx-auto mt-6 max-w-md text-base leading-relaxed text-white/60">
-            The Mind Assessment reveals how well your food habits are supporting gut diversity,
-            omega-3 nourishment, daily rhythm, and mental clarity. In five minutes, you&apos;ll get
-            a clear picture of where your system is already working — and where to start.
+            {condition.cta.body}
           </p>
         </ScrollReveal>
 
@@ -47,7 +46,7 @@ export function AdhdCta() {
               href="/food"
               className="inline-flex items-center gap-2 rounded-full border-2 border-white/20 px-8 py-4 text-base font-semibold text-white transition-colors hover:border-white/50"
             >
-              Explore Brain Foods
+              {condition.hero.secondaryCtaLabel}
             </Link>
           </div>
           <p className="mt-4 text-xs text-white/30">Free · 5 minutes · Results sent to your inbox</p>

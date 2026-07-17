@@ -2,18 +2,10 @@ import Link from "next/link"
 import { ArrowUpRight } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { getFoodBySlug, bioticLabels } from "@/lib/foods"
+import type { ConditionDef } from "@/lib/conditions"
 
-const FOOD_SLUGS_WITH_BENEFIT = [
-  { slug: "wild-salmon", benefit: "The richest whole-food source of EPA and DHA omega-3s" },
-  { slug: "oats", benefit: "Slow-release carbs that support steady glucose and sustained focus" },
-  { slug: "blueberries", benefit: "Polyphenols that support brain circulation and cognitive health" },
-  { slug: "kefir", benefit: "Live cultures that diversify the gut microbiome" },
-  { slug: "kimchi", benefit: "Fermented food linked to microbial diversity and gut resilience" },
-  { slug: "yogurt", benefit: "Probiotic bacteria that may support dopamine precursor pathways" },
-]
-
-export function AdhdFoods() {
-  const foods = FOOD_SLUGS_WITH_BENEFIT
+export function ConditionFoods({ condition }: { condition: ConditionDef }) {
+  const foods = condition.foods.spotlights
     .map(({ slug, benefit }) => {
       const food = getFoodBySlug(slug)
       return food ? { ...food, benefit } : null
@@ -29,11 +21,10 @@ export function AdhdFoods() {
               Food Spotlight
             </p>
             <h2 className="font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-              Foods that feed focus
+              {condition.foods.heading}
             </h2>
             <p className="mt-4 max-w-xl text-base text-muted-foreground leading-relaxed">
-              These foods support the gut, dopamine, and anti-inflammatory pathways most connected
-              to focus and cognitive function. A starting point, not a protocol.
+              {condition.foods.intro}
             </p>
           </div>
         </ScrollReveal>
@@ -78,7 +69,7 @@ export function AdhdFoods() {
               href="/food"
               className="inline-flex items-center gap-2 rounded-full border-2 border-icon-teal px-8 py-4 text-base font-semibold text-foreground transition-colors hover:bg-icon-teal hover:text-white"
             >
-              See all brain foods in the library
+              {condition.foods.libraryCtaLabel}
               <ArrowUpRight size={16} />
             </Link>
           </div>

@@ -1,23 +1,8 @@
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { Check, Minus } from "lucide-react"
+import type { ConditionDef } from "@/lib/conditions"
 
-const INCREASE = [
-  "Omega-3 rich foods — oily fish, walnuts, flaxseed, chia seeds",
-  "Protein-rich meals — support dopamine and norepinephrine production",
-  "Plant diversity — 30+ different plants weekly for microbiome depth",
-  "Fermented foods — kefir, yogurt, kimchi, sauerkraut",
-  "Structured, regular meal timing — reduces glucose variability",
-]
-
-const REDUCE = [
-  "Food additives and artificial colours — some linked to hyperactivity in children",
-  "Excess sugar and refined carbohydrates — spikes and crashes impair focus",
-  "Ultra-processed snacks — low in fibre, disruptive to the gut microbiome",
-  "Skipping breakfast — impairs morning cognitive function and glucose stability",
-  "Highly inflammatory dietary patterns — may worsen neuroinflammation",
-]
-
-export function AdhdFoodSupport() {
+export function ConditionFoodSupport({ condition }: { condition: ConditionDef }) {
   return (
     <section className="px-6 py-16 md:py-24">
       <div className="mx-auto max-w-[1000px]">
@@ -30,9 +15,7 @@ export function AdhdFoodSupport() {
               How food can support your system
             </h2>
             <p className="mt-4 mx-auto max-w-xl text-base text-muted-foreground leading-relaxed">
-              Food is not a treatment for ADHD. But building a diet rich in omega-3s, plant
-              diversity, and structured eating patterns may support the neurological and gut
-              systems connected to focus, attention, and cognitive flexibility.
+              {condition.foodSupport.intro}
             </p>
           </div>
         </ScrollReveal>
@@ -49,7 +32,7 @@ export function AdhdFoodSupport() {
                   What to increase
                 </p>
                 <ul className="space-y-3.5">
-                  {INCREASE.map((item) => (
+                  {condition.foodSupport.increase.map((item) => (
                     <li key={item} className="flex items-start gap-3">
                       <span
                         className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
@@ -76,7 +59,7 @@ export function AdhdFoodSupport() {
                   What to reduce
                 </p>
                 <ul className="space-y-3.5">
-                  {REDUCE.map((item) => (
+                  {condition.foodSupport.reduce.map((item) => (
                     <li key={item} className="flex items-start gap-3">
                       <span
                         className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full"

@@ -1,10 +1,10 @@
-"use client"
-
 import Link from "next/link"
-import { ArrowRight, Zap } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
+import type { ConditionDef } from "@/lib/conditions"
 
-export function AdhdHero() {
+export function ConditionHero({ condition }: { condition: ConditionDef }) {
+  const Badge = condition.badgeIcon
   return (
     <section className="relative overflow-hidden px-6 pt-32 pb-20 md:pt-40 md:pb-28">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -21,12 +21,12 @@ export function AdhdHero() {
       <div className="relative mx-auto max-w-[760px] text-center">
         <ScrollReveal>
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-background/80 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground backdrop-blur-sm">
-            <Zap size={12} className="text-[var(--icon-teal)]" />
+            <Badge size={12} className="text-[var(--icon-teal)]" />
             Mental Health & The Gut
           </div>
 
           <h1 className="font-serif text-5xl font-semibold leading-tight text-foreground sm:text-6xl md:text-7xl text-balance">
-            ADHD &{" "}
+            {condition.label} &{" "}
             <span
               style={{
                 background: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))",
@@ -42,11 +42,7 @@ export function AdhdHero() {
 
         <ScrollReveal delay={100}>
           <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
-            ADHD is shaped by genetics, brain development, environment, and many other factors.
-            Emerging research suggests the gut-brain axis may also play a role — influencing
-            dopamine pathways, neuroinflammation, and the microbial diversity linked to cognitive
-            function. Food is not a treatment, but it can be one part of building a more
-            supportive internal environment for focus and attention.
+            {condition.hero.body}
           </p>
         </ScrollReveal>
 
@@ -63,7 +59,7 @@ export function AdhdHero() {
               href="/food"
               className="inline-flex items-center gap-2 rounded-full border-2 border-icon-teal px-8 py-4 text-base font-semibold text-foreground transition-colors hover:bg-icon-teal hover:text-white"
             >
-              Explore Brain Foods
+              {condition.hero.secondaryCtaLabel}
             </Link>
           </div>
           <p className="mt-4 text-xs text-muted-foreground">Educational content only · Not medical advice</p>
