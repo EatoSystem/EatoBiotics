@@ -306,7 +306,14 @@ gated entirely at the route/layout level via `lib/cms/auth.ts`'s
 - `twin_state` (Migration 36) — daily ritual taps + milestone seen-set,
   synced cross-device via `/api/twin-state`
   (localStorage-first, same pattern as Stability — see
-  `lib/account/twin-state-sync.ts`).
+  `lib/account/twin-state-sync.ts`). The route serves two clients: the
+  web app (session cookie) and the mobile companion app
+  (`Authorization: Bearer <supabase access token>`, via
+  `getUserFromRequest` in `lib/supabase-server.ts`; also allowlisted
+  through the pre-launch password gate in `proxy.ts`). PUT validation
+  lives in `lib/account/twin-state-schema.ts` and must list every
+  `RitualDay` key — zod strips unknown keys, which once silently
+  dropped `moved`/`slept` from cross-device sync.
 - `profiles.sex` (Migration 35) — Twin figure personalisation.
 - **Both applied to production on 2026-07-15** (verified: table +
   column + `twin_state_own` RLS policy all present, RLS enabled).
