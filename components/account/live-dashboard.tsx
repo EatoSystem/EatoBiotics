@@ -915,6 +915,14 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ description: mealInput.trim() }),
       })
+      if (res.status === 422) {
+        // Honest refusal — the input couldn't be read as food. Show the
+        // server's message (retake/rewrite guidance) instead of a generic error.
+        const err = (await res.json().catch(() => null)) as { error?: string } | null
+        setAnalyseError(err?.error ?? "Couldn't identify foods — try a clearer description")
+        setLoggerState("empty")
+        return
+      }
       if (!res.ok) throw new Error("Analysis failed")
       const data = await res.json() as LiveResult
       setLiveResult(data)
