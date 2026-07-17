@@ -1652,6 +1652,18 @@ $$;
 
 
 -- ────────────────────────────────────────────────────────────
+-- Migration 42: leads.score_history (Day-75 retest ritual)
+-- ────────────────────────────────────────────────────────────
+-- The foundation assessment upserts a single row per (email, assessment_type),
+-- so retakes silently overwrote the previous overall_score and no before/after
+-- was possible. This jsonb array of { score, at } entries (appended by
+-- app/api/send-results-email each time results are computed, capped at 24)
+-- preserves the trajectory. ADD-only, idempotent; the app degrades gracefully
+-- when the column is absent (history features simply stay hidden).
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS score_history jsonb NOT NULL DEFAULT '[]'::jsonb;
+
+
+-- ────────────────────────────────────────────────────────────
 -- Migration 43: contributions (anonymised score contributions → national pulse)
 -- ────────────────────────────────────────────────────────────
 -- Backs the "participate outward" loop: members who opt in on the assessment
