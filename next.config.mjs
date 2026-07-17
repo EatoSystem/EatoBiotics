@@ -43,6 +43,8 @@ const nextConfig = {
   },
   async redirects() {
     return [
+      // Short, ad-ready front door for the GLP-1 Companion acquisition funnel.
+      { source: "/glp1", destination: "/glucose/glp1", permanent: true },
       { source: "/eatobetics", destination: "/glucose", permanent: true },
       { source: "/eatobetics/:path*", destination: "/glucose/:path*", permanent: true },
       { source: "/eatosports", destination: "/performance", permanent: true },
