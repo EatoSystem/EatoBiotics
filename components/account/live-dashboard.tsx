@@ -16,6 +16,8 @@ import {
 } from "@/components/account/dashboard-parts"
 import { TwinStage } from "@/components/account/twin/twin-stage"
 import { ExperienceNav } from "@/components/account/experience-nav"
+import { RetestCard } from "@/components/account/retest-card"
+import type { RetestState } from "@/lib/account/retest"
 import { TodayStrip } from "@/components/account/twin/today-strip"
 import { TwinLearnedToday, TwinNextAction } from "@/components/account/twin/twin-sections"
 import { QuickLog, type QuickLogResult } from "@/components/account/twin/quick-log"
@@ -339,6 +341,7 @@ export interface LiveDashboardProps {
   twinFigureSrc?:    string
   twinVideo?:        TwinVideo | null
   sex?:              string | null
+  retest?:           RetestState | null          // Day-75 retest ritual state
   // Sandbox pass-through
   [key: string]: unknown
 }
@@ -722,6 +725,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
     twinFigureSrc      = undefined,
     twinVideo          = null,
     sex                = null,
+    retest             = null,
   } = props
 
   const [tab, setTab] = useState<Tab>("overview")
@@ -1168,6 +1172,16 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             <InsideYouTeaser twin={twin} bare />
             <AskTwin twin={twin} consultHref="/account/consult" bare />
           </div>
+
+          {/* [PROGRESS] — the Day-75 retest ritual: countdown, retake, before/after */}
+          {retest && (
+            <div className="mt-8">
+              <GroupLabel>Your progress</GroupLabel>
+              <div className="mt-4">
+                <RetestCard state={retest} />
+              </div>
+            </div>
+          )}
 
           {/* [EXPLORE] — lenses into the same Food System (Foundation / Health / Life) */}
           <GroupLabel>Explore your Food System</GroupLabel>

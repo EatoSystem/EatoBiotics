@@ -1649,3 +1649,15 @@ BEGIN
   RETURN jsonb_build_object('batch', p_batch, 'affected', v_affected, 'hard', p_hard, 'book_action', v_book_action);
 END;
 $$;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 42: leads.score_history (Day-75 retest ritual)
+-- ────────────────────────────────────────────────────────────
+-- The foundation assessment upserts a single row per (email, assessment_type),
+-- so retakes silently overwrote the previous overall_score and no before/after
+-- was possible. This jsonb array of { score, at } entries (appended by
+-- app/api/send-results-email each time results are computed, capped at 24)
+-- preserves the trajectory. ADD-only, idempotent; the app degrades gracefully
+-- when the column is absent (history features simply stay hidden).
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS score_history jsonb NOT NULL DEFAULT '[]'::jsonb;

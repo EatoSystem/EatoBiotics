@@ -7,6 +7,7 @@ import { getUser } from "@/lib/supabase-server"
 import { hasServerFoundation } from "@/lib/assessment/foundation-server"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
 import type { LeadData } from "@/lib/assessment-storage"
+import { appendScore, parseScoreHistory } from "@/lib/account/retest"
 
 /** Lightweight email shape check — rejects obviously invalid/garbage addresses. */
 function isValidEmail(email: string): boolean {
@@ -113,16 +114,42 @@ export async function POST(req: NextRequest) {
     // Update Supabase lead with scores (filter by assessment_type to avoid overwriting other assessment rows)
     const supabase = getSupabase()
     if (supabase) {
-      const { error } = await supabase
-        .from("leads")
-        .update({
-          overall_score: result.overall,
-          profile_type: result.profile.type,
-          sub_scores: result.subScores,
-          email_sent: shouldSendEmail && !!resendKey,
-        })
-        .eq("email", lead.email.toLowerCase().trim())
-        .eq("assessment_type", assessmentType ?? "gut")
+      const email = lead.email.toLowerCase().trim()
+      const type = assessmentType ?? "gut"
+
+      // Score history (Migration 42) — retakes used to silently overwrite the
+      // single leads row; appending here is what makes the Day-75 before/after
+      // possible. Read-then-append is best-effort: on any failure (e.g. the
+      // column isn't applied yet) fall back to the legacy update shape.
+      let scoreHistory: unknown = undefined
+      try {
+        const { data: existing, error: readError } = await supabase
+          .from("leads")
+          .select("score_history")
+          .eq("email", email)
+          .eq("assessment_type", type)
+          .maybeSingle()
+        if (!readError) {
+          scoreHistory = appendScore(parseScoreHistory(existing?.score_history), result.overall)
+        }
+      } catch {
+        /* history stays undefined — legacy update below */
+      }
+
+      const update: Record<string, unknown> = {
+        overall_score: result.overall,
+        profile_type: result.profile.type,
+        sub_scores: result.subScores,
+        email_sent: shouldSendEmail && !!resendKey,
+      }
+      if (scoreHistory !== undefined) update.score_history = scoreHistory
+
+      let { error } = await supabase.from("leads").update(update).eq("email", email).eq("assessment_type", type)
+      if (error && scoreHistory !== undefined) {
+        // Column may not exist yet (Migration 42 unapplied) — retry without it.
+        delete update.score_history
+        ;({ error } = await supabase.from("leads").update(update).eq("email", email).eq("assessment_type", type))
+      }
       if (error) {
         console.error("[send-results-email] Supabase update error:", error.message)
       }
