@@ -156,6 +156,14 @@ export function QuickLog({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ description: description || undefined, image: photo ?? undefined }),
         })
+        if (res.status === 422) {
+          // Honest refusal — unreadable input. Surface the server's
+          // retake/rewrite guidance instead of the generic failure copy.
+          const err = (await res.json().catch(() => null)) as { error?: string } | null
+          setError(err?.error ?? "Couldn't identify foods — try a clearer photo")
+          setPhase("idle")
+          return
+        }
         if (!res.ok) throw new Error("Analysis failed")
         data = (await res.json()) as QuickLogResult
       }

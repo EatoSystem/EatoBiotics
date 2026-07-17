@@ -62,7 +62,9 @@ JSON structure (return ONLY this):
   "tags": ["<tag>", ...]
 }
 
-Valid tags (use 2–4 most relevant): Omega-3s, Probiotics, Prebiotics, Postbiotics, Anti-inflammatory, High Fibre, Plant Diversity, Fermented Foods, Quick Win, Needs Work, Protein Rich, Low Biotics, Polyphenols`
+Valid tags (use 2–4 most relevant): Omega-3s, Probiotics, Prebiotics, Postbiotics, Anti-inflammatory, High Fibre, Plant Diversity, Fermented Foods, Quick Win, Needs Work, Protein Rich, Low Biotics, Polyphenols
+
+If you cannot confidently identify any actual foods in the description or photo (blurry image, not food, unreadable), do NOT guess scores — return exactly: {"error": "Could not identify foods in this image. Please try a clearer photo of your meal."}`
 
 /* ── Analysis result type ────────────────────────────────────────────── */
 
@@ -177,6 +179,9 @@ export async function POST(req: NextRequest) {
     const response = await anthropic.messages.create({
       model:      CLAUDE_MODEL,
       max_tokens: 800,
+      // Deterministic sampling: this is a rubric-scoring task — the same meal
+      // must score the same on every run (analysis credibility; issue #157).
+      temperature: 0,
       system:     [{ type: "text", text: ANALYSIS_SYSTEM, cache_control: { type: "ephemeral" } }],
       messages:   [{ role: "user", content: msgContent }],
     })
@@ -184,6 +189,12 @@ export async function POST(req: NextRequest) {
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) throw new Error("No JSON found in Claude response")
     const parsed = JSON.parse(jsonMatch[0])
+    // Graceful ambiguity (issue #157): an unreadable input gets an honest
+    // refusal, not fabricated scores. Return before the insert — no analyses
+    // row, so it doesn't consume a daily-cap slot.
+    if (typeof parsed.error === "string") {
+      return NextResponse.json({ error: parsed.error, unreadable: true }, { status: 422 })
+    }
     result = { id: null, ...parsed }
   } catch (err) {
     console.error("[analyse-meal] Claude error:", err)
