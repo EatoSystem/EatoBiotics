@@ -177,6 +177,9 @@ export async function POST(req: NextRequest) {
     const response = await anthropic.messages.create({
       model:      CLAUDE_MODEL,
       max_tokens: 800,
+      // Deterministic sampling: this is a rubric-scoring task — the same meal
+      // must score the same on every run (analysis credibility; issue #157).
+      temperature: 0,
       system:     [{ type: "text", text: ANALYSIS_SYSTEM, cache_control: { type: "ephemeral" } }],
       messages:   [{ role: "user", content: msgContent }],
     })
