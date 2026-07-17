@@ -1661,3 +1661,27 @@ $$;
 -- preserves the trajectory. ADD-only, idempotent; the app degrades gracefully
 -- when the column is absent (history features simply stay hidden).
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS score_history jsonb NOT NULL DEFAULT '[]'::jsonb;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 43: contributions (anonymised score contributions → national pulse)
+-- ────────────────────────────────────────────────────────────
+-- Backs the "participate outward" loop: members who opt in on the assessment
+-- results page (components/assessment/privacy-opt-in.tsx → POST /api/contribute)
+-- donate their anonymised score to an aggregate, surfaced as the national
+-- Food System Pulse (GET /api/national-pulse, shown on /eatosystem). No
+-- personal identifiers — score, sub-scores, profile type, and a best-effort
+-- ISO-3166 country code from the eb_country cookie. RLS enabled with zero
+-- policies (service-role only), same pattern as the cms_* tables. Idempotent.
+CREATE TABLE IF NOT EXISTS contributions (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  overall_score integer NOT NULL CHECK (overall_score BETWEEN 0 AND 100),
+  sub_scores    jsonb,
+  profile_type  text,
+  country       text,   -- ISO-3166 alpha-2 (best effort, may be null)
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE contributions ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only)
+
+CREATE INDEX IF NOT EXISTS idx_contributions_country ON contributions (country);

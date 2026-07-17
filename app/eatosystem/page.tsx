@@ -4,6 +4,7 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 import { GradientText } from "@/components/gradient-text"
 import { MapPin, Users, Leaf, ArrowUpRight, Brain, Globe, Database, Cpu, MessageSquare, BarChart3 } from "lucide-react"
 import { CountyTags } from "@/components/eatosystem/county-tags"
+import { NationalPulse } from "@/components/eatosystem/national-pulse"
 
 export const metadata: Metadata = {
   title: "EatoSystem",
@@ -188,6 +189,10 @@ export default function EatosystemPage() {
 
       {/* Gradient divider */}
       <div className="section-divider" />
+
+      {/* The Food System Pulse — aggregate of anonymised contributed scores.
+          Renders nothing until the contribution thresholds are met. */}
+      <NationalPulse />
 
       {/* AI Agent Network */}
       <section className="px-6 py-32 md:py-40">
