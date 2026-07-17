@@ -15,7 +15,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
-import { getUser } from "@/lib/supabase-server"
+import { getUserFromRequest } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { getUserMembershipTier } from "@/lib/membership"
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
@@ -85,7 +85,9 @@ export interface MealAnalysisResult {
 /* ── Route handler ───────────────────────────────────────────────────── */
 
 export async function POST(req: NextRequest) {
-  const user = await getUser()
+  // Web session cookie OR `Authorization: Bearer <supabase access token>`
+  // (mobile companion app) — same dual-surface auth as /api/twin-state.
+  const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: "Unauthorised" }, { status: 401 })
 
   /* Per-IP rate limit — cheap abuse guard before the expensive AI call */

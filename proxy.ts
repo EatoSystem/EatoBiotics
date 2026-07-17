@@ -48,10 +48,11 @@ function isEnterRoute(pathname: string): boolean {
     pathname.startsWith("/c/") ||        // public per-country landing pages
     pathname.startsWith("/api/enter") ||
     pathname.startsWith("/api/waitlist") ||
-    // Mobile companion app sync — a native client can't hold the gate cookie.
-    // Safe to expose: the route 401s without a valid Supabase bearer token /
+    // Mobile companion app routes — a native client can't hold the gate cookie.
+    // Safe to expose: both routes 401 without a valid Supabase bearer token /
     // session, so the gate would only add a redirect, not protection.
     pathname === "/api/twin-state" ||
+    pathname === "/api/analyse-meal" ||
     pathname.startsWith("/auth/callback") ||
     pathname.startsWith("/api/auth/")
   )
