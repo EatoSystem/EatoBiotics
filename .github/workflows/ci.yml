@@ -23,6 +23,8 @@ jobs:
         run: npx tsc --noEmit
       - name: Supabase scoping check
         run: node scripts/check-supabase-scoping.mjs
+      - name: AI cost-guard check
+        run: node scripts/check-ai-guard.mjs
       - name: Production build
         run: npx next build
         # No secrets needed: SDK clients are constructed lazily (see lib/stripe-server.ts,
