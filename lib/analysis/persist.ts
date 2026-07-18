@@ -37,6 +37,9 @@ export async function persistAnalysis(
       nutrition_json:            result.nutrition,
       insight:                   result.insight,
       tags:                      result.tags,
+      // Full result (incl. the foods[] evidence) into the existing jsonb —
+      // no schema change; makes the "why" queryable alongside the columns.
+      analysis_output:           result,
       tier_at_time_of_analysis:  opts.tier,
     })
     .select("id, created_at")

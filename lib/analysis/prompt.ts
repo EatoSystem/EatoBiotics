@@ -33,8 +33,13 @@ JSON structure (return ONLY this):
     "fibre": <integer grams>
   },
   "insight": "<2–3 sentences: what this meal does for the gut specifically, which biotic is strongest and why, one concrete swap that would improve the overall score and by roughly how many points>",
-  "tags": ["<tag>", ...]
+  "tags": ["<tag>", ...],
+  "foods": [
+    { "name": "<food item>", "biotic": "prebiotic|probiotic|postbiotic|protein", "confidence": "high|medium|low" }
+  ]
 }
+
+foods: list every distinct food item you identified (4–8 typical), each classified as ONE of prebiotic (fibrous plants, wholegrains, legumes, seeds, garlic/onion/asparagus, banana, avocado), probiotic (live/fermented: yogurt, kefir, kimchi, sauerkraut, miso, tempeh, kombucha), postbiotic (aged cheese, sourdough, EVOO, dark chocolate, polyphenol-rich foods), or protein (meat, fish, eggs, or legumes when the main protein). Set confidence to how sure you are the item is present and correctly classified. This is the evidence behind the scores — the foods must justify the biotic scores you gave.
 
 Valid tags (use 2–4 most relevant): Omega-3s, Probiotics, Prebiotics, Postbiotics, Anti-inflammatory, High Fibre, Plant Diversity, Fermented Foods, Quick Win, Needs Work, Protein Rich, Low Biotics, Polyphenols
 

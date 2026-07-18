@@ -33,7 +33,10 @@ function findRouteFilesUnder(dir) {
   return out
 }
 
-const AI_CALL_MARKERS = ["anthropic.messages", "messages.create(", "messages.stream("]
+// A route "calls Claude" if it uses the SDK directly, OR delegates to the
+// shared analysis core (lib/analysis/analyse.ts's runAnalysis) — otherwise the
+// consolidation would hide capped routes from this check.
+const AI_CALL_MARKERS = ["anthropic.messages", "messages.create(", "messages.stream(", "runAnalysis("]
 const PASS_MARKERS = ["guardAiUsage(", "verifyCronRequest"]
 
 /**
@@ -44,7 +47,7 @@ const PASS_MARKERS = ["guardAiUsage(", "verifyCronRequest"]
 const EQUIVALENT_CAP_ALLOWLIST = {
   "app/api/analyse/route.ts":              "per-tier daily cap counted from the analyses table",
   "app/api/analyse/stream/route.ts":       "per-tier daily cap counted from the analyses table (shared with /api/analyse)",
-  "app/api/analyse-meal/route.ts":         "per-IP burst limit + per-tier daily cap counted from the analyses table",
+  "app/api/analyse-meal/route.ts":         "per-IP burst limit + per-tier daily cap counted from the analyses table (scores via lib/analysis core)",
   "app/api/analyse-plate/route.ts":        "public scan route — per-IP rateLimit burst cap",
   "app/api/consult/route.ts":              "own table-count cap (consultations table)",
   "app/api/food-intelligence/route.ts":    "own table-count cap (food_intelligence_reports table)",

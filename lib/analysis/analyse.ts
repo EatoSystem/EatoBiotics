@@ -38,7 +38,8 @@ export async function runAnalysis(input: AnalysisInput): Promise<AnalysisOutcome
   try {
     const response = await anthropic.messages.create({
       model:      CLAUDE_MODEL,
-      max_tokens: 800,
+      // Room for the foods[] evidence list on top of scores + insight + tags.
+      max_tokens: 1000,
       // Deterministic sampling: this is a rubric-scoring task — the same meal
       // must score the same on every run (analysis credibility; issue #157).
       temperature: 0,
