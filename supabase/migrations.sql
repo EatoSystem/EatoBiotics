@@ -1688,6 +1688,23 @@ CREATE INDEX IF NOT EXISTS idx_contributions_country ON contributions (country);
 
 
 -- ────────────────────────────────────────────────────────────
+-- Migration 44: drop meal_scans public-read policy (PII leak fix)
+-- ────────────────────────────────────────────────────────────
+-- meal_scans stores guest scan captures INCLUDING email + name. Its only RLS
+-- policy was `meal_scans_public_read` — SELECT USING (true) for all roles —
+-- which let anyone holding the public anon key (it ships in the browser
+-- bundle) read every guest's email and name via the Supabase REST API
+-- (GET /rest/v1/meal_scans?select=email,name). No code needs that access:
+-- the insert (app/api/guest-scan) and both reads (app/analyse/result/[hash]
+-- page + opengraph-image) all use the service-role client, scoped by hash,
+-- which bypasses RLS. Dropping the policy leaves RLS enabled with zero
+-- policies = deny-all to anon/authenticated, service-role unaffected — the
+-- same service-role-only pattern as email_sends / contributions / cms_*.
+-- Idempotent.
+DROP POLICY IF EXISTS meal_scans_public_read ON meal_scans;
+
+
+-- ────────────────────────────────────────────────────────────
 -- Migration 45: reviews (member feedback / testimonial loop → Loyalty)
 -- ────────────────────────────────────────────────────────────
 -- Closes the Loyalty gap: capture a light "how's it going?" rating + optional
@@ -1696,10 +1713,8 @@ CREATE INDEX IF NOT EXISTS idx_contributions_country ON contributions (country);
 -- (public aggregate + APPROVED quotes only). `approved` defaults false so a
 -- quote is never shown publicly until a human clears it — no unmoderated user
 -- text on the marketing surface. Service-role only (RLS on, zero policies),
--- same pattern as contributions/email_sends. Idempotent.
---
--- NUMBERING NOTE: this is 45 to avoid colliding with the unmerged Migration 44
--- (meal_scans policy drop, PR #162). If #162 does not land, renumber to 44.
+-- same pattern as contributions/email_sends. Idempotent. Follows Migration 44
+-- (meal_scans) which precedes it in this stacked branch.
 CREATE TABLE IF NOT EXISTS reviews (
   id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id    uuid NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
