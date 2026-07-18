@@ -48,7 +48,7 @@ export function PhoneFrame({
           {/* Status bar */}
           <div
             className="absolute inset-x-0 top-0 z-20 flex items-center justify-between"
-            style={{ height: 44 * scale, paddingInline: 24 * scale, color: APP.cream }}
+            style={{ height: 44 * scale, paddingInline: 24 * scale, color: APP.ink }}
           >
             <span style={{ fontSize: 13 * scale, fontWeight: 600 }}>9:41</span>
             <span style={{ fontSize: 11 * scale, letterSpacing: 1, opacity: 0.85 }}>
@@ -81,7 +81,7 @@ export function PhoneFrame({
               bottom: 8 * scale,
               width: (platform === "ios" ? 128 : 96) * scale,
               height: 5 * scale,
-              background: "rgba(253,251,247,0.5)",
+              background: "rgba(27,42,32,0.35)",
             }}
           />
         </div>

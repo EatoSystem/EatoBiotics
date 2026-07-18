@@ -1,32 +1,37 @@
 /**
- * Shared design tokens for the mobile-app concept mockups (/app + /app-*).
- * Mirror the real companion app's dark "stage" language — the same palette
- * used by components/account/twin/* and lib/account/ritual.ts — so these
- * mockups read as the actual product, not an invention. Concept-only:
- * nothing here is imported by production surfaces.
+ * Shared design tokens for the mobile-app concept mockups (/app-preview + /app-*).
+ * LIGHT theme — mirrors the REAL iOS app's kickoff design spec (relayed by the
+ * EatoBiotics-App session): light background, forest-green primary, apricot for
+ * the streak chip only, white cards. The per-check + biotic colours are the
+ * app's real accent palette. Concept-only; nothing here touches production.
+ *
+ * Fonts approximate the app's Fraunces (display) + Inter (UI) with graceful
+ * fallbacks — exact font loading is a tracked fidelity item, not done here.
  */
 
 export const APP = {
-  /** The dark stage the living Food System sits on. */
-  bg: "linear-gradient(175deg, #10200A 0%, #0B1607 70%)",
-  /** The five-stop biotic hairline that tops every real app surface. */
-  hairline: "linear-gradient(90deg, #A8E063, #4CB648, #2DAA6E, #F5C518, #F5A623)",
-  cream: "#FDFBF7",
-  lime: "#A8E063",
-  green: "#4CB648",
-  teal: "#2DAA6E",
-  yellow: "#F5C518",
-  orange: "#F5A623",
-  /** Translucent creams used for text/among the dark. */
-  ink: "rgba(253,251,247,0.92)",
-  inkDim: "rgba(253,251,247,0.6)",
-  inkFaint: "rgba(253,251,247,0.35)",
-  line: "rgba(253,251,247,0.14)",
-  fill: "rgba(253,251,247,0.06)",
+  /** App screen background. */
+  bg: "#F2F5EE",
+  /** Primary text. */
+  ink: "#1B2A20",
+  inkDim: "rgba(27,42,32,0.62)",
+  inkFaint: "rgba(27,42,32,0.4)",
+  /** Forest-green primary (buttons, active states, scores). */
+  green: "#2E5B3F",
+  /** Apricot accent — STREAK CHIP ONLY per the app spec. */
+  apricot: "#E8A055",
+  card: "#FFFFFF",
+  border: "#E4E9E2",
+  /** Subtle fill for inactive tiles. */
+  fill: "#EAEEE4",
+  display: "'Fraunces', 'Lora', Georgia, serif",
+  ui: "'Inter', system-ui, -apple-system, sans-serif",
 } as const
 
-/** The five daily-ritual checks — keys, labels, colours and body-node
-    positions all match lib/account/ritual.ts's RITUAL_CHECKS. */
+/** The five daily-ritual checks — keys, labels and colours match the real app
+    (fermented #2DAA6E, plants #A8E063, moved #4CB648, slept #F5C518,
+    feeling #F5A623). In the app these colour the culture-ring segments + check
+    dots. Node positions retained for the alternate figure visualisation. */
 export const RITUAL_CHECKS = [
   { key: "fermented", label: "Fermented food", short: "Fermented", color: "#2DAA6E", node: { x: 54, y: 56 } },
   { key: "plants", label: "5+ plants", short: "5+ plants", color: "#A8E063", node: { x: 47, y: 62 } },
@@ -41,12 +46,22 @@ export const BIOTICS = [
   { label: "Postbiotics", color: "#F5C518" },
 ] as const
 
-/** The four mocked screens — drives the landing gallery + per-screen pages. */
+/**
+ * The mocked screens (drives the landing gallery + per-screen pages).
+ * Reconciled to the REAL app: there is no separate Home — the home IS the
+ * Today/ritual screen — and onboarding exists. So: Onboarding, Today, Meal,
+ * Progress. (/app-ritual redirects to /app-home, the Today screen.)
+ */
 export const SCREENS = [
-  { slug: "app-home", name: "Home", tagline: "Your living Food System", blurb: "Open the app to a body that's alive with everything you've fed it — today's score, this week's rhythm, one tap from the next meal." },
-  { slug: "app-ritual", name: "Daily Ritual", tagline: "Five taps, one minute", blurb: "Fermented, plants, movement, sleep, mood. Each tap lights up where it lands inside you — the habit loop that keeps the Twin awake." },
-  { slug: "app-meal", name: "Meal", tagline: "Snap it, see it", blurb: "Photograph or describe a meal and watch the Biotics score count up — three pillars, one honest insight, the Twin learning in real time." },
-  { slug: "app-scores", name: "Progress", tagline: "Watch it climb", blurb: "Your score over time, your streak, your weekly shape — proof the small daily things are compounding into a healthier gut." },
+  { slug: "app-onboarding", name: "Sign in", tagline: "One account, everywhere", blurb: "Native email + password, on the same EatoBiotics system as the website — sign in or create your account and your food-system history follows you." },
+  { slug: "app-home", name: "Today", tagline: "Five taps, one living day", blurb: "The home screen IS the ritual: your culture ring fills as you check off fermented, plants, movement, sleep and mood — today's score and streak right there." },
+  { slug: "app-meal", name: "Meal", tagline: "Snap it, see it", blurb: "Photograph or describe a meal and watch the Biotics score count up — three pillars, one honest insight, or an honest 'couldn't read that' when the photo won't scan." },
+  { slug: "app-scores", name: "Progress", tagline: "Watch it climb", blurb: "Your score over time, your streak, your weekly shape — proof the small daily things compound into a healthier gut." },
 ] as const
 
 export type ScreenSlug = (typeof SCREENS)[number]["slug"]
+
+/** Which centrepiece the Today screen shows. Per the human's D2 ruling both
+    the app's real culture ring and the concept's living figure are supported,
+    switchable, so the two can be compared before one is locked in. */
+export type TodayViz = "ring" | "figure"

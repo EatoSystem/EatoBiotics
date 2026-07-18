@@ -6,6 +6,7 @@
  * landing is ever promoted, wire onSubmit to POST /api/waitlist. Concept-only.
  */
 import { useState } from "react"
+import { APP } from "./theme"
 
 export function NotifyMe() {
   const [email, setEmail] = useState("")
@@ -14,7 +15,7 @@ export function NotifyMe() {
   if (done) {
     return (
       <div className="flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold"
-        style={{ background: "rgba(168,224,99,0.14)", border: "1px solid rgba(168,224,99,0.4)", color: "#A8E063" }}>
+        style={{ background: "rgba(46,91,63,0.1)", border: `1px solid ${APP.green}`, color: APP.green }}>
         ✓ You&apos;re on the list — we&apos;ll email you the moment it lands.
       </div>
     )
@@ -32,13 +33,9 @@ export function NotifyMe() {
         onChange={(e) => setEmail(e.target.value)}
         placeholder="you@example.com"
         className="flex-1 rounded-full px-5 py-3 text-sm outline-none"
-        style={{ background: "rgba(253,251,247,0.08)", border: "1px solid rgba(253,251,247,0.2)", color: "#FDFBF7" }}
+        style={{ background: APP.card, border: `1.5px solid ${APP.border}`, color: APP.ink }}
       />
-      <button
-        type="submit"
-        className="rounded-full px-6 py-3 text-sm font-bold text-white"
-        style={{ background: "linear-gradient(135deg, #4CB648, #2DAA6E)" }}
-      >
+      <button type="submit" className="rounded-full px-6 py-3 text-sm font-bold text-white" style={{ background: APP.green }}>
         Notify me
       </button>
     </form>

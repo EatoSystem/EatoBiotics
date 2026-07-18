@@ -1,11 +1,7 @@
-import type { Metadata } from "next"
-import { ScreenShowcase } from "@/components/app-concept/ScreenShowcase"
+import { redirect } from "next/navigation"
 
-export const metadata: Metadata = {
-  title: "App Concept — Daily Ritual",
-  robots: { index: false, follow: false },
-}
-
-export default function AppRitualConceptPage() {
-  return <ScreenShowcase slug="app-ritual" />
+// Reconciled with the real app: the home IS the Today/ritual screen. The
+// separate ritual route now points at the unified Today mock.
+export default function AppRitualRedirect() {
+  redirect("/app-home")
 }

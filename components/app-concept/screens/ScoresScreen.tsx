@@ -1,6 +1,7 @@
-/** Concept mock: progress — score trend, streak, weekly rhythm. */
+/** Concept mock: progress — score trend, streak, weekly rhythm, ritual
+    consistency (light). */
 import { APP, RITUAL_CHECKS } from "../theme"
-import { TabBar } from "./HomeScreen"
+import { TabBar } from "../TabBar"
 
 const TREND = [52, 55, 51, 60, 63, 61, 68, 72, 70, 75, 78]
 const WEEK = [
@@ -21,59 +22,56 @@ function Sparkline() {
     <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h} preserveAspectRatio="none" aria-hidden>
       <defs>
         <linearGradient id="sc-area" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="rgba(168,224,99,0.35)" />
-          <stop offset="100%" stopColor="rgba(168,224,99,0)" />
+          <stop offset="0%" stopColor="rgba(46,91,63,0.22)" />
+          <stop offset="100%" stopColor="rgba(46,91,63,0)" />
         </linearGradient>
       </defs>
       <path d={area} fill="url(#sc-area)" />
-      <path d={line} fill="none" stroke={APP.lime} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="4" fill={APP.lime} stroke="#0B1607" strokeWidth="2" />
+      <path d={line} fill="none" stroke={APP.green} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="4" fill={APP.green} stroke={APP.card} strokeWidth="2" />
     </svg>
   )
 }
 
 export function ScoresScreen() {
   return (
-    <div className="flex h-full flex-col" style={{ color: APP.ink }}>
-      <div className="h-[3px] w-full shrink-0" style={{ background: APP.hairline }} />
-      <div className="flex-1 overflow-y-auto px-6 pt-5">
-        <p className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: APP.lime }}>Progress</p>
+    <div className="flex h-full flex-col" style={{ color: APP.ink, fontFamily: APP.ui }}>
+      <div className="flex-1 overflow-y-auto px-6 pt-4">
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: APP.green }}>Progress</p>
 
         <div className="mt-2 flex items-end justify-between">
           <div>
-            <p className="font-serif text-5xl font-bold leading-none" style={{ color: APP.lime }}>78</p>
+            <p className="font-bold leading-none" style={{ fontFamily: APP.display, fontSize: 46, color: APP.green }}>78</p>
             <p className="mt-1 text-[11px] font-semibold" style={{ color: APP.green }}>▲ +26 in 75 days</p>
           </div>
           <div className="flex items-center gap-2 rounded-full px-3 py-1.5"
-            style={{ background: "rgba(245,166,35,0.12)", border: "1px solid rgba(245,166,35,0.4)" }}>
+            style={{ background: "rgba(232,160,85,0.14)", border: `1px solid ${APP.apricot}` }}>
             <span style={{ fontSize: 16 }}>🔥</span>
             <div>
-              <p className="text-sm font-bold leading-none" style={{ color: APP.orange }}>12</p>
+              <p className="text-sm font-bold leading-none" style={{ color: APP.apricot }}>12</p>
               <p className="text-[8px] font-semibold uppercase tracking-widest" style={{ color: APP.inkFaint }}>day streak</p>
             </div>
           </div>
         </div>
 
-        <div className="mt-4 rounded-2xl p-4" style={{ background: APP.fill, border: `1px solid ${APP.line}` }}>
+        <div className="mt-4 rounded-2xl p-4" style={{ background: APP.card, border: `1px solid ${APP.border}` }}>
           <p className="mb-2 text-[10px] font-bold uppercase tracking-widest" style={{ color: APP.inkDim }}>Score · last 11 weeks</p>
           <Sparkline />
         </div>
 
-        {/* Weekly rhythm */}
-        <div className="mt-4 rounded-2xl p-4" style={{ background: APP.fill, border: `1px solid ${APP.line}` }}>
+        <div className="mt-4 rounded-2xl p-4" style={{ background: APP.card, border: `1px solid ${APP.border}` }}>
           <p className="mb-3 text-[10px] font-bold uppercase tracking-widest" style={{ color: APP.inkDim }}>This week&apos;s shape</p>
           <div className="flex items-end justify-between" style={{ height: 84 }}>
             {WEEK.map((d, i) => (
               <div key={i} className="flex flex-1 flex-col items-center gap-1.5">
-                <div className="w-5 rounded-full" style={{ height: `${d.v}%`, background: APP.hairline, opacity: 0.85 }} />
+                <div className="w-5 rounded-full" style={{ height: `${d.v}%`, background: APP.green, opacity: 0.85 }} />
                 <span className="text-[9px] font-semibold" style={{ color: APP.inkFaint }}>{d.d}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Ritual consistency */}
-        <div className="mt-4 rounded-2xl p-4" style={{ background: APP.fill, border: `1px solid ${APP.line}` }}>
+        <div className="mt-4 rounded-2xl p-4" style={{ background: APP.card, border: `1px solid ${APP.border}` }}>
           <p className="mb-3 text-[10px] font-bold uppercase tracking-widest" style={{ color: APP.inkDim }}>Ritual consistency</p>
           <div className="space-y-2">
             {RITUAL_CHECKS.map((c, i) => {
@@ -81,7 +79,7 @@ export function ScoresScreen() {
               return (
                 <div key={c.key} className="flex items-center gap-2">
                   <span className="w-16 text-[10px] font-semibold" style={{ color: APP.inkDim }}>{c.short}</span>
-                  <div className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: "rgba(253,251,247,0.08)" }}>
+                  <div className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: APP.fill }}>
                     <div className="h-full rounded-full" style={{ width: `${v}%`, background: c.color }} />
                   </div>
                   <span className="w-7 text-right text-[10px] font-bold" style={{ color: c.color }}>{v}%</span>
