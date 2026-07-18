@@ -164,6 +164,13 @@ export function QuickLog({
           setPhase("idle")
           return
         }
+        if (res.status === 429) {
+          // Daily cap — show the real allowance message, not a generic retry prompt.
+          const err = (await res.json().catch(() => null)) as { error?: string } | null
+          setError(err?.error ?? "You've reached today's meal-analysis limit.")
+          setPhase("idle")
+          return
+        }
         if (!res.ok) throw new Error("Analysis failed")
         data = (await res.json()) as QuickLogResult
       }

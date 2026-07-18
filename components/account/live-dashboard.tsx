@@ -366,41 +366,6 @@ interface LiveResult {
   created_at?: string
 }
 
-/* ─────────────────────────────────────────────────────────────────────────
-   Map the real /api/analyse response → LiveResult. The API returns
-   { score, foods[], whatThisMealDoes, overallAssessment, nutrition:
-   { protein_g, … } } — NOT LiveResult's keys — so casting it directly
-   renders zeros. Component scores mirror the server-side rubric in
-   app/api/analyse/route.ts.
-   ───────────────────────────────────────────────────────────────────────── */
-function mapAnalyseResponse(p: Record<string, unknown>, mealText: string): LiveResult {
-  const foods = Array.isArray(p.foods) ? (p.foods as Array<{ name?: string; biotic?: string }>) : []
-  const count = (b: string) => foods.filter((f) => f.biotic === b).length
-  const pre = count("prebiotic"), pro = count("probiotic"), post = count("postbiotic")
-  const n = (p.nutrition ?? {}) as Record<string, number | undefined>
-  const hour = new Date().getHours()
-  return {
-    id: null,
-    meal_name: mealText.length > 64 ? mealText.slice(0, 61) + "…" : mealText,
-    meal_type: hour < 11 ? "Breakfast" : hour < 15 ? "Lunch" : hour < 21 ? "Dinner" : "Snack",
-    biotics_score: typeof p.score === "number" ? p.score : 0,
-    prebiotic_score:  pre >= 4 ? 45 : pre === 3 ? 40 : pre === 2 ? 32 : pre === 1 ? 20 : 0,
-    probiotic_score:  pro >= 2 ? 25 : pro === 1 ? 20 : 10,
-    postbiotic_score: post >= 1 ? 15 : 5,
-    // Display proxies — derived from the foods breakdown, not Claude-scored.
-    quality_diversity:         Math.min(95, foods.length * 15),
-    quality_anti_inflammatory: post >= 1 ? 70 : 40,
-    nutrition: {
-      calories: n.calories ?? 0,
-      protein:  n.protein_g ?? 0,
-      carbs:    n.carbs_g   ?? 0,
-      fat:      n.fat_g     ?? 0,
-      fibre:    n.fibre_g   ?? 0,
-    },
-    insight: (p.whatThisMealDoes as string | undefined) ?? (p.overallAssessment as string | undefined) ?? "",
-    tags: foods.slice(0, 4).map((f) => f.name ?? "").filter(Boolean),
-  }
-}
 
 /* ─────────────────────────────────────────────────────────────────────────
    First-meal celebration — the activation moment. Shown in the first-visit
@@ -939,6 +904,15 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
         setLoggerState("empty")
         return
       }
+      if (res.status === 429) {
+        // Daily cap reached — surface the real limit message (which names the
+        // plan's allowance) rather than a generic error that invites a retry
+        // that can't succeed.
+        const err = (await res.json().catch(() => null)) as { error?: string } | null
+        setAnalyseError(err?.error ?? "You've reached today's meal-analysis limit.")
+        setLoggerState("empty")
+        return
+      }
       if (!res.ok) throw new Error("Analysis failed")
       const data = await res.json() as LiveResult
       setLiveResult(data)
@@ -1290,19 +1264,12 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                 <button
                   disabled={!mealInput.trim() || loggerState === "analysing"}
                   onClick={async () => {
-                    if (!mealInput.trim() || loggerState === "analysing") return
-                    setLoggerState("analysing"); setAnalyseError(null)
-                    try {
-                      const res = await fetch("/api/analyse", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ meal: mealInput }),
-                      })
-                      const data = await res.json() as Record<string, unknown> & { error?: string }
-                      if (!res.ok || data.error) { setAnalyseError(data.error ?? "Analysis failed"); setLoggerState("empty"); return }
-                      setLiveResult(mapAnalyseResponse(data, mealInput)); setLoggerState("result")
-                      window.scrollTo({ top: 0, behavior: "smooth" })
-                    } catch { setAnalyseError("Something went wrong — please try again"); setLoggerState("empty") }
+                    // The first-meal activation path — use the same working
+                    // /api/analyse-meal handler as every other logger (this
+                    // previously POSTed text to /api/analyse, which only accepts
+                    // an image body, so it failed 100% of the time for new members).
+                    await handleAnalyse()
+                    window.scrollTo({ top: 0, behavior: "smooth" })
                   }}
                   className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                   style={{ background: "rgba(255,255,255,0.20)", border: "1px solid rgba(255,255,255,0.30)" }}
