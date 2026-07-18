@@ -31,7 +31,14 @@ export const APP = {
 /** The five daily-ritual checks — keys, labels and colours match the real app
     (fermented #2DAA6E, plants #A8E063, moved #4CB648, slept #F5C518,
     feeling #F5A623). In the app these colour the culture-ring segments + check
-    dots. Node positions retained for the alternate figure visualisation. */
+    dots.
+
+    ⚠️ DO NOT SIMPLIFY AWAY the `node` coordinates. They look unused when the
+    culture ring is the default centrepiece, but they are the anchor for the
+    ALTERNATE living-figure visualisation, which the D2 ruling deliberately
+    kept switchable (see TodayShowcase's ring/figure toggle). Deleting them as
+    "dead data" would quietly foreclose that choice. Mirrors the same guard on
+    the app side (lib/ritual/checks.ts). */
 export const RITUAL_CHECKS = [
   { key: "fermented", label: "Fermented food", short: "Fermented", color: "#2DAA6E", node: { x: 54, y: 56 } },
   { key: "plants", label: "5+ plants", short: "5+ plants", color: "#A8E063", node: { x: 47, y: 62 } },
