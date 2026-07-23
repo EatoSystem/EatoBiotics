@@ -9,6 +9,7 @@ import { PwaRegister } from '@/components/pwa-register'
 import { LocaleProvider } from '@/components/i18n/locale-provider'
 import { PwaInstallPrompt } from '@/components/pwa-install-prompt'
 import { CookieConsent } from '@/components/cookie-consent'
+import { FeedbackWidget } from '@/components/feedback/feedback-widget'
 import { Toaster } from 'sonner'
 import { PHProvider } from '@/components/providers/posthog-provider'
 import { PostHogPageview } from '@/components/providers/posthog-pageview'
@@ -93,6 +94,7 @@ export default function RootLayout({
           <PwaRegister />
           <PwaInstallPrompt />
           <CookieConsent />
+          <FeedbackWidget />
         </body>
         </StatsigClientProvider>
       </PHProvider>

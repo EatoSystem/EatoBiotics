@@ -1685,3 +1685,44 @@ CREATE TABLE IF NOT EXISTS contributions (
 ALTER TABLE contributions ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only)
 
 CREATE INDEX IF NOT EXISTS idx_contributions_country ON contributions (country);
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 46: feedback (customer feedback bot → owner digests)
+-- ────────────────────────────────────────────────────────────
+-- Captures free-text customer feedback from the site-wide feedback bot. One
+-- row per submission (NOT one-per-user — a customer can send feedback many
+-- times). `user_id` is nullable so anonymous visitors can be heard too, and
+-- ON DELETE SET NULL so a submission survives account deletion (feedback is
+-- product signal, not personal account data) while unlinking the identity.
+-- The AI-derived triage fields (category/sentiment/severity/feature_area/
+-- summary/suggested_improvement) are filled by a single Claude extraction call
+-- at submit time; they're all nullable so a submission is never lost if that
+-- call fails. Service-role only (RLS on, zero policies) — same pattern as
+-- contributions/email_sends; read back only by the admin dashboard and the
+-- weekly owner digest, both server-side.
+--
+-- Numbering: 46 to sit after the queued-but-unmerged Migration 44 (PR #162,
+-- meal_scans) and Migration 45 (PR #168, reviews). If either doesn't land,
+-- renumber down accordingly.
+CREATE TABLE IF NOT EXISTS feedback (
+  id                    uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id               uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  source_page           text,                                   -- where it was sent from (path)
+  rating                integer CHECK (rating IS NULL OR rating BETWEEN 1 AND 5),
+  message               text NOT NULL CHECK (char_length(message) <= 4000),
+  category              text,          -- bug | feature | ux | pricing | content | praise | other
+  sentiment             text,          -- positive | neutral | negative
+  severity              text,          -- low | medium | high  (bugs/UX only)
+  feature_area          text,          -- e.g. 'meal analysis', 'assessment', 'glp-1'
+  summary               text,          -- one-line AI summary for scanning
+  suggested_improvement text,          -- AI's one-line "what would fix this"
+  status                text NOT NULL DEFAULT 'new',            -- new | triaged | resolved | archived
+  created_at            timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE feedback ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only)
+
+CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_feedback_status  ON feedback (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_feedback_category ON feedback (category);
