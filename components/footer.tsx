@@ -125,6 +125,9 @@ function MinimalFooter() {
             © 2025 EatoBiotics. All rights reserved.
           </p>
           <div className="flex items-center gap-5">
+            <Link href="/help" className="text-xs text-muted-foreground transition-colors hover:text-foreground">
+              Help
+            </Link>
             <Link href="/privacy" className="text-xs text-muted-foreground transition-colors hover:text-foreground">
               Privacy Policy
             </Link>
@@ -224,6 +227,9 @@ export function Footer() {
             © 2025 EatoBiotics. All rights reserved.
           </p>
           <div className="flex items-center gap-5">
+            <Link href="/help" className="text-xs text-muted-foreground transition-colors hover:text-foreground">
+              Help
+            </Link>
             <Link href="/privacy" className="text-xs text-muted-foreground transition-colors hover:text-foreground">
               Privacy Policy
             </Link>

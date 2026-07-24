@@ -3,7 +3,11 @@ import { getSupabase } from "@/lib/supabase"
 import type { AnalysisResult } from "@/components/analyse/result-builder"
 import { OG_ICON_BASE64 } from "@/lib/og-icon"
 
-export const runtime = "edge"
+// nodejs, not edge: this route bundles @supabase/supabase-js (via getSupabase),
+// which pushes the edge function past Vercel's 1 MB edge-bundle limit and fails
+// the build. Node functions have no such limit. Matches the sibling Supabase OG
+// route (app/discover/[code]/opengraph-image.tsx), which runs on nodejs too.
+export const runtime = "nodejs"
 export const alt = "EatoBiotics Meal Score"
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
