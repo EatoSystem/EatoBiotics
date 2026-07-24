@@ -19,6 +19,7 @@ import { GutTrend } from "@/components/account/gut-trend"
 import { mealMemory } from "@/lib/account/meal-memory"
 import { ExperienceNav } from "@/components/account/experience-nav"
 import { RetestCard } from "@/components/account/retest-card"
+import { FeedbackPrompt } from "@/components/account/feedback-prompt"
 import type { RetestState } from "@/lib/account/retest"
 import { TodayStrip } from "@/components/account/twin/today-strip"
 import { TwinLearnedToday, TwinNextAction } from "@/components/account/twin/twin-sections"
@@ -1356,6 +1357,10 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
 
             {/* Gut trend — progress over time (renders once ≥3 days logged) */}
             <GutTrend history={scoreHistory} />
+
+            {/* Loyalty: ask engaged members how it's going (self-hides once
+                answered/dismissed; only shown after a few logged meals). */}
+            {recentAnalyses.length >= 3 && <FeedbackPrompt source="account" />}
 
             {/* Logger */}
             <div id="log-meal" className="scroll-mt-24">
