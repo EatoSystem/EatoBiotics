@@ -1685,3 +1685,84 @@ CREATE TABLE IF NOT EXISTS contributions (
 ALTER TABLE contributions ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only)
 
 CREATE INDEX IF NOT EXISTS idx_contributions_country ON contributions (country);
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 44: drop meal_scans public-read policy (PII leak fix)
+-- ────────────────────────────────────────────────────────────
+-- meal_scans stores guest scan captures INCLUDING email + name. Its only RLS
+-- policy was `meal_scans_public_read` — SELECT USING (true) for all roles —
+-- which let anyone holding the public anon key (it ships in the browser
+-- bundle) read every guest's email and name via the Supabase REST API
+-- (GET /rest/v1/meal_scans?select=email,name). No code needs that access:
+-- the insert (app/api/guest-scan) and both reads (app/analyse/result/[hash]
+-- page + opengraph-image) all use the service-role client, scoped by hash,
+-- which bypasses RLS. Dropping the policy leaves RLS enabled with zero
+-- policies = deny-all to anon/authenticated, service-role unaffected — the
+-- same service-role-only pattern as email_sends / contributions / cms_*.
+-- Idempotent.
+DROP POLICY IF EXISTS meal_scans_public_read ON meal_scans;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 45: reviews (member feedback / testimonial loop → Loyalty)
+-- ────────────────────────────────────────────────────────────
+-- Closes the Loyalty gap: capture a light "how's it going?" rating + optional
+-- quote after a good moment, and feed approved quotes back as social proof.
+-- POST /api/reviews (auth, one row per member, upserted) → GET /api/reviews
+-- (public aggregate + APPROVED quotes only). `approved` defaults false so a
+-- quote is never shown publicly until a human clears it — no unmoderated user
+-- text on the marketing surface. Service-role only (RLS on, zero policies),
+-- same pattern as contributions/email_sends. Idempotent. Follows Migration 44
+-- (meal_scans) which precedes it in this stacked branch.
+CREATE TABLE IF NOT EXISTS reviews (
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    uuid NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+  rating     integer NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  quote      text CHECK (quote IS NULL OR char_length(quote) <= 500),
+  source     text,          -- where it was captured: 'account' | 'meal' | 'retest' | 'milestone'
+  approved   boolean NOT NULL DEFAULT false,  -- moderation gate for public display
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only)
+
+CREATE INDEX IF NOT EXISTS idx_reviews_approved ON reviews (approved, created_at DESC) WHERE approved = true;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 46: feedback (customer feedback bot → owner digests)
+-- ────────────────────────────────────────────────────────────
+-- Captures free-text customer feedback from the site-wide feedback bot. One
+-- row per submission (NOT one-per-user — a customer can send feedback many
+-- times). `user_id` is nullable so anonymous visitors can be heard too, and
+-- ON DELETE SET NULL so a submission survives account deletion (feedback is
+-- product signal, not personal account data) while unlinking the identity.
+-- The AI-derived triage fields (category/sentiment/severity/feature_area/
+-- summary/suggested_improvement) are filled by a single Claude extraction call
+-- at submit time; they're all nullable so a submission is never lost if that
+-- call fails. Service-role only (RLS on, zero policies) — same pattern as
+-- contributions/email_sends; read back only by the admin dashboard and the
+-- weekly owner digest, both server-side.
+CREATE TABLE IF NOT EXISTS feedback (
+  id                    uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id               uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  source_page           text,
+  rating                integer CHECK (rating IS NULL OR rating BETWEEN 1 AND 5),
+  message               text NOT NULL CHECK (char_length(message) <= 4000),
+  category              text,          -- bug | feature | ux | pricing | content | praise | other
+  sentiment             text,          -- positive | neutral | negative
+  severity              text,          -- low | medium | high  (bugs/UX only)
+  feature_area          text,          -- e.g. 'meal analysis', 'assessment', 'glp-1'
+  summary               text,
+  suggested_improvement text,
+  status                text NOT NULL DEFAULT 'new',            -- new | triaged | resolved | archived
+  created_at            timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE feedback ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only)
+
+CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_feedback_status  ON feedback (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_feedback_category ON feedback (category);

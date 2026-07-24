@@ -136,22 +136,33 @@ export async function POST(req: NextRequest) {
         /* history stays undefined — legacy update below */
       }
 
-      const update: Record<string, unknown> = {
+      // UPSERT, not UPDATE: the lead row is normally created by /api/submit-lead
+      // at assessment start, but that call is fire-and-forget from the client —
+      // if it failed (mobile network blip) or hasn't landed yet, a plain UPDATE
+      // matches zero rows and the score silently vanishes, so the member's
+      // /account shows no result after they complete the assessment. Upserting
+      // on the (email, assessment_type) key persists the score regardless, and
+      // carries name/age_bracket so the row can be created if it's missing.
+      const row: Record<string, unknown> = {
+        email,
+        assessment_type: type,
+        name: lead.name,
+        age_bracket: lead.ageBracket,
         overall_score: result.overall,
         profile_type: result.profile.type,
         sub_scores: result.subScores,
         email_sent: shouldSendEmail && !!resendKey,
       }
-      if (scoreHistory !== undefined) update.score_history = scoreHistory
+      if (scoreHistory !== undefined) row.score_history = scoreHistory
 
-      let { error } = await supabase.from("leads").update(update).eq("email", email).eq("assessment_type", type)
+      let { error } = await supabase.from("leads").upsert(row, { onConflict: "email,assessment_type" })
       if (error && scoreHistory !== undefined) {
         // Column may not exist yet (Migration 42 unapplied) — retry without it.
-        delete update.score_history
-        ;({ error } = await supabase.from("leads").update(update).eq("email", email).eq("assessment_type", type))
+        delete row.score_history
+        ;({ error } = await supabase.from("leads").upsert(row, { onConflict: "email,assessment_type" }))
       }
       if (error) {
-        console.error("[send-results-email] Supabase update error:", error.message)
+        console.error("[send-results-email] Supabase upsert error:", error.message)
       }
     }
 

@@ -70,6 +70,7 @@ export default async function AccountPage({
     nextBillingDate,
     streakInfo,
     paidReports,
+    scoreHistory,
   ] = await Promise.all([
     /* Assessment scores (gut only — for overall score + profile type) */
     (async (): Promise<AssessmentRow[]> => {
@@ -233,6 +234,22 @@ export default async function AccountPage({
         }
       })
     })(),
+
+    /* Score history — last 90 days of biotics scores for the Gut Trend chart.
+       Lightweight (2 columns) and separate from recentAnalyses (7-day detail). */
+    (async (): Promise<{ score: number; date: string }[]> => {
+      if (!adminSupabase) return []
+      const ninetyDaysAgo = new Date()
+      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
+      const { data } = await adminSupabase
+        .from("analyses")
+        .select("biotics_score, created_at")
+        .eq("user_id", user.id)
+        .not("biotics_score", "is", null)
+        .gte("created_at", ninetyDaysAgo.toISOString())
+        .order("created_at", { ascending: true })
+      return (data ?? []).map((r) => ({ score: r.biotics_score as number, date: r.created_at as string }))
+    })(),
   ])
 
   const streak = streakInfo.current
@@ -321,6 +338,7 @@ export default async function AccountPage({
         retest={retest}
         biotics={bioticsProfile}
         recentAnalyses={recentAnalyses}
+        scoreHistory={scoreHistory}
         paidReports={paidReports}
         weeklyReport={weeklyReport}
         weeklyReports={weeklyReports}

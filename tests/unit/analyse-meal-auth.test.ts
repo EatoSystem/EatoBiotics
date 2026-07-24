@@ -62,6 +62,10 @@ const CLAUDE_RESULT = {
   nutrition: { calories: 500, protein: 30, carbs: 40, fat: 20, fibre: 10 },
   insight: "Strong prebiotic base.",
   tags: ["Plant Diversity"],
+  foods: [
+    { name: "quinoa", biotic: "prebiotic", confidence: "high" },
+    { name: "kimchi", biotic: "probiotic", confidence: "high" },
+  ],
 }
 
 /** Settable per test — what the mocked Claude call returns. */
@@ -134,6 +138,15 @@ describe("/api/analyse-meal auth surfaces", () => {
     expect(body.meal_name).toBe("Test bowl")
     expect(body.biotics_score).toBe(80)
     expect(body.id).toBe("row-1") // persisted row id round-trips
+    // Explainability: the foods[] evidence round-trips in the response…
+    expect(body.foods).toEqual([
+      { name: "quinoa", biotic: "prebiotic", confidence: "high" },
+      { name: "kimchi", biotic: "probiotic", confidence: "high" },
+    ])
+    // …and is persisted into analysis_output for later querying.
+    expect(insertSpy).toHaveBeenCalledTimes(1)
+    const row = insertSpy.mock.calls[0][0] as { analysis_output?: { foods?: unknown } }
+    expect(row.analysis_output?.foods).toHaveLength(2)
   })
 
   it("401s with an invalid bearer token (no silent cookie fallback for bad tokens)", async () => {

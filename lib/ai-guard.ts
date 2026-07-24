@@ -43,6 +43,7 @@ export const AI_LIMITS = {
   doctor_report:     { burstLimit: 3,  burstWindowMs: 60 * 60 * 1000, dailyLimit: 3 },
   create_plate:      { burstLimit: 4,  burstWindowMs: 60 * 60 * 1000, dailyLimit: 5 },
   story_update:      { burstLimit: 6,  burstWindowMs: 60 * 60 * 1000, dailyLimit: 10 },
+  feedback:          { burstLimit: 6,  burstWindowMs: 60 * 60 * 1000, dailyLimit: 15 },
 } as const satisfies Record<string, AiLimit>
 
 export type AiFeature = keyof typeof AI_LIMITS
