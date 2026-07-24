@@ -15,6 +15,7 @@ import {
   Tag, SectionLabel, GradientButton, ringColors,
 } from "@/components/account/dashboard-parts"
 import { TwinStage } from "@/components/account/twin/twin-stage"
+import { GutTrend } from "@/components/account/gut-trend"
 import { mealMemory } from "@/lib/account/meal-memory"
 import { ExperienceNav } from "@/components/account/experience-nav"
 import { RetestCard } from "@/components/account/retest-card"
@@ -328,6 +329,7 @@ export interface LiveDashboardProps {
   profileType?:      string | null
   biotics?:          { prebiotic: number; probiotic: number; postbiotic: number }
   recentAnalyses?:   RealAnalysis[]
+  scoreHistory?:     { score: number; date: string }[]  // 90-day biotics history → Gut Trend
   paidReports?:      LivePaidReport[]            // purchased one-time reports
   weeklyReport?:     RealWeeklyReport | null
   weeklyReports?:    RealWeeklyReport[]          // for Consultations tab
@@ -678,6 +680,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
     profileType        = null,
     biotics:           propBiotics = null,
     recentAnalyses     = [],
+    scoreHistory       = [],
     paidReports        = [],
     weeklyReport       = null,
     weeklyReports      = [],
@@ -1351,6 +1354,9 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
 
           {/* ── LEFT: Logger + Today's Meals ── */}
           <div className="space-y-5">
+
+            {/* Gut trend — progress over time (renders once ≥3 days logged) */}
+            <GutTrend history={scoreHistory} />
 
             {/* Loyalty: ask engaged members how it's going (self-hides once
                 answered/dismissed; only shown after a few logged meals). */}
