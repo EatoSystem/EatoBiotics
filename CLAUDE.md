@@ -115,6 +115,29 @@ applies it (Supabase dashboard SQL editor or CLI) and verifies.
   `app/api/stripe/webhook/route.ts`: `report_purchased` (with amount/currency),
   `trial_started`, and amount/interval added to `subscription_started`.
 
+### Customer Feedback Bot (feedback capture → weekly owner digest)
+Site-wide feedback capture + AI triage + a weekly synthesised report emailed to
+the owner. Built for the pre-customer-testing loop (Loyalty/Support touchpoints).
+- `components/feedback/feedback-widget.tsx` — dismissible floating launcher
+  (mounted in `app/layout.tsx`, hidden on `/admin` + `/cms`). Optional 1–5 rating
+  + free-text; on submit shows one AI-generated follow-up question. Fails soft.
+- `app/api/feedback/route.ts` — POST capture. **Auth-optional** (anonymous
+  visitors welcome). One Claude extraction call → `category | sentiment |
+  severity | feature_area | summary | suggested_improvement | follow_up`; the
+  raw message is stored even if extraction/DB fails. Cost cap: authed →
+  `guardAiUsage(user.id, "feedback")`; anon → per-IP `rateLimit`.
+- `app/api/feedback/digest/route.ts` — **weekly cron** (`0 7 * * 1`,
+  `verifyCronRequest`). Pulls 7 days of feedback, Claude synthesises a
+  decision-ready report (themes ranked by frequency×impact, sentiment, verbatims,
+  journey-mapped next moves), emails it to `OWNER_EMAIL` via `sendEmail`. Fails
+  safe (quiet-week note / raw fallback if AI or key absent).
+- `app/admin/feedback/page.tsx` — admin-gated dashboard (aggregate tiles +
+  category/sentiment breakdowns + latest 300 submissions with triage).
+- `lib/feedback/{types,prompts}.ts` — shared types/coercion + pure prompt & email
+  builders (Claude calls live in the routes so the AI-guard check sees them).
+- Table `feedback` (**Migration 46**, drafted); AI limit `feedback` in
+  `AI_LIMITS` (`lib/ai-guard.ts`).
+
 ### Pricing
 - `app/pricing/page.tsx` — server component (public)
 - `app/pricing/pricing-client.tsx` — interactive pricing cards
@@ -304,6 +327,24 @@ All GLP-1 protein/muscle assumptions (factors, target math) live in **`lib/glp1.
 | created_at / updated_at | timestamptz | |
 
 Captured on first run of the in-app tracker (`Glp1Onboarding`); upserted via `app/api/glp1/profile/route.ts`. One row per user.
+
+### feedback *(new — Customer Feedback Bot)*
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid PK | |
+| user_id | uuid | nullable, FK auth.users `ON DELETE SET NULL` (anon feedback allowed) |
+| source_page | text | nullable — path it was sent from |
+| rating | integer | nullable — 1–5 |
+| message | text | required, ≤ 4000 chars |
+| category | text | AI-derived: `bug \| feature \| ux \| pricing \| content \| praise \| other` |
+| sentiment | text | AI-derived: `positive \| neutral \| negative` |
+| severity | text | AI-derived: `low \| medium \| high` (bugs/UX) |
+| feature_area | text | AI-derived area label |
+| summary / suggested_improvement | text | AI-derived one-liners |
+| status | text | `new \| triaged \| resolved \| archived` (default `new`) |
+| created_at | timestamptz | |
+
+Service-role only (RLS on, zero policies). One row **per submission** (not per user). Migration 46 (drafted).
 
 ### Other tables
 - `referrals` — `referrer_code`, `referred_email`, `referred_id`
