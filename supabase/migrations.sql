@@ -1685,3 +1685,20 @@ CREATE TABLE IF NOT EXISTS contributions (
 ALTER TABLE contributions ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only)
 
 CREATE INDEX IF NOT EXISTS idx_contributions_country ON contributions (country);
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 44: drop meal_scans public-read policy (PII leak fix)
+-- ────────────────────────────────────────────────────────────
+-- meal_scans stores guest scan captures INCLUDING email + name. Its only RLS
+-- policy was `meal_scans_public_read` — SELECT USING (true) for all roles —
+-- which let anyone holding the public anon key (it ships in the browser
+-- bundle) read every guest's email and name via the Supabase REST API
+-- (GET /rest/v1/meal_scans?select=email,name). No code needs that access:
+-- the insert (app/api/guest-scan) and both reads (app/analyse/result/[hash]
+-- page + opengraph-image) all use the service-role client, scoped by hash,
+-- which bypasses RLS. Dropping the policy leaves RLS enabled with zero
+-- policies = deny-all to anon/authenticated, service-role unaffected — the
+-- same service-role-only pattern as email_sends / contributions / cms_*.
+-- Idempotent.
+DROP POLICY IF EXISTS meal_scans_public_read ON meal_scans;
