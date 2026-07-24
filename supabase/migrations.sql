@@ -1702,3 +1702,30 @@ CREATE INDEX IF NOT EXISTS idx_contributions_country ON contributions (country);
 -- same service-role-only pattern as email_sends / contributions / cms_*.
 -- Idempotent.
 DROP POLICY IF EXISTS meal_scans_public_read ON meal_scans;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 45: reviews (member feedback / testimonial loop → Loyalty)
+-- ────────────────────────────────────────────────────────────
+-- Closes the Loyalty gap: capture a light "how's it going?" rating + optional
+-- quote after a good moment, and feed approved quotes back as social proof.
+-- POST /api/reviews (auth, one row per member, upserted) → GET /api/reviews
+-- (public aggregate + APPROVED quotes only). `approved` defaults false so a
+-- quote is never shown publicly until a human clears it — no unmoderated user
+-- text on the marketing surface. Service-role only (RLS on, zero policies),
+-- same pattern as contributions/email_sends. Idempotent. Follows Migration 44
+-- (meal_scans) which precedes it in this stacked branch.
+CREATE TABLE IF NOT EXISTS reviews (
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    uuid NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+  rating     integer NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  quote      text CHECK (quote IS NULL OR char_length(quote) <= 500),
+  source     text,          -- where it was captured: 'account' | 'meal' | 'retest' | 'milestone'
+  approved   boolean NOT NULL DEFAULT false,  -- moderation gate for public display
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only)
+
+CREATE INDEX IF NOT EXISTS idx_reviews_approved ON reviews (approved, created_at DESC) WHERE approved = true;
