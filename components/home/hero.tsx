@@ -64,20 +64,23 @@ export function Hero() {
             <div className="mt-8">
               <div className="flex flex-wrap items-center gap-4">
                 <Link
-                  href="/assessment"
+                  href="/analyse"
                   className="brand-gradient inline-flex items-center gap-2.5 rounded-full px-10 py-5 text-lg font-semibold text-white shadow-xl shadow-icon-green/25 transition-all hover:shadow-2xl hover:shadow-icon-green/35 hover:opacity-90"
                 >
-                  Get My Food System Score <ArrowRight size={18} />
+                  Analyse a Meal Free <ArrowRight size={18} />
                 </Link>
-                <a
-                  href="#how-it-works"
-                  className="inline-flex w-fit items-center gap-1.5 rounded-full border border-icon-green/30 bg-icon-green/5 px-5 py-2.5 text-sm font-semibold text-icon-green transition-all hover:border-icon-green/50 hover:bg-icon-green/10"
+                <Link
+                  href="/assessment"
+                  className="inline-flex w-fit items-center gap-1.5 rounded-full border border-icon-green/30 bg-icon-green/5 px-6 py-4 text-base font-semibold text-icon-green transition-all hover:border-icon-green/50 hover:bg-icon-green/10"
                 >
-                  See How It Works
-                </a>
+                  Get My Food System Score
+                </Link>
               </div>
-              <p className="mt-3.5 text-sm text-muted-foreground">
-                Takes about 5 minutes. Educational, food-first, and non-diagnostic.
+              <p className="mt-3.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-muted-foreground">
+                <span>Scan a meal in ~30 seconds — no account needed.</span>
+                <a href="#how-it-works" className="underline decoration-icon-green/40 underline-offset-2 hover:text-foreground">
+                  See how it works
+                </a>
               </p>
             </div>
           </ScrollReveal>
