@@ -15,6 +15,7 @@ import {
   Tag, SectionLabel, GradientButton, ringColors,
 } from "@/components/account/dashboard-parts"
 import { TwinStage } from "@/components/account/twin/twin-stage"
+import { PlantsThisWeek } from "@/components/account/plants-this-week"
 import { GutTrend } from "@/components/account/gut-trend"
 import { mealMemory } from "@/lib/account/meal-memory"
 import { ExperienceNav } from "@/components/account/experience-nav"
@@ -1732,6 +1733,9 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
 
           {/* ── RIGHT: Biotics + Consultation + Monthly Focus ── */}
           <div className="mt-5 space-y-4 md:mt-0">
+
+            {/* 30 plants a week — detected from this week's logged meals */}
+            <PlantsThisWeek mealNames={recentAnalyses.map((a) => a.meal_name)} />
 
             {/* Biotics Profile */}
             <div>
