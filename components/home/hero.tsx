@@ -4,6 +4,7 @@ import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { HeroVideo } from "@/components/hero-video"
+import { WaitlistSocialProof } from "@/components/waitlist/social-proof"
 
 export function Hero() {
   return (
@@ -50,32 +51,51 @@ export function Hero() {
 
           <ScrollReveal delay={100}>
             <p className="mt-4 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Discover what your gut is actually doing — and get a plan to improve it in 30 days.
+              Your digestion, energy, cravings, gut comfort, mood, daily rhythm, and relationship
+              with food are connected. EatoBiotics helps you understand your own food system, see
+              how it is being fed, and take practical steps to improve it over time.
+            </p>
+            <p className="mt-4 max-w-md text-base font-medium leading-relaxed text-foreground">
+              Understand the Food System Inside You. Learn how to feed it better. Watch it improve.
             </p>
           </ScrollReveal>
 
           <ScrollReveal delay={200}>
             <div className="mt-8">
-              <Link
-                href="/assessment"
-                className="brand-gradient inline-flex items-center gap-2.5 rounded-full px-10 py-5 text-lg font-semibold text-white shadow-xl shadow-icon-green/25 transition-all hover:shadow-2xl hover:shadow-icon-green/35 hover:opacity-90"
-              >
-                Understand My Food System <ArrowRight size={18} />
-              </Link>
-              <p className="mt-3.5 text-sm text-muted-foreground">
-                Takes about 3 minutes. No account required.
+              <div className="flex flex-wrap items-center gap-4">
+                <Link
+                  href="/analyse"
+                  className="brand-gradient inline-flex items-center gap-2.5 rounded-full px-10 py-5 text-lg font-semibold text-white shadow-xl shadow-icon-green/25 transition-all hover:shadow-2xl hover:shadow-icon-green/35 hover:opacity-90"
+                >
+                  Analyse a Meal Free <ArrowRight size={18} />
+                </Link>
+                <Link
+                  href="/assessment"
+                  className="inline-flex w-fit items-center gap-1.5 rounded-full border border-icon-green/30 bg-icon-green/5 px-6 py-4 text-base font-semibold text-icon-green transition-all hover:border-icon-green/50 hover:bg-icon-green/10"
+                >
+                  Get My Food System Score
+                </Link>
+              </div>
+              <p className="mt-3.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-muted-foreground">
+                <span>Scan a meal in ~30 seconds — no account needed.</span>
+                <a href="#how-it-works" className="underline decoration-icon-green/40 underline-offset-2 hover:text-foreground">
+                  See how it works
+                </a>
               </p>
             </div>
           </ScrollReveal>
 
           <ScrollReveal delay={320}>
             <div className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm font-medium text-muted-foreground">
-              <span>3-minute assessment</span>
+              <span>Built on the 3 Biotics</span>
               <span className="h-1 w-1 rounded-full bg-border" />
-              <span>Personalised Food System Score</span>
+              <span>Prebiotics</span>
               <span className="h-1 w-1 rounded-full bg-border" />
-              <span>30-day action plan</span>
+              <span>Probiotics</span>
+              <span className="h-1 w-1 rounded-full bg-border" />
+              <span>Postbiotics</span>
             </div>
+            <WaitlistSocialProof />
           </ScrollReveal>
         </div>
 

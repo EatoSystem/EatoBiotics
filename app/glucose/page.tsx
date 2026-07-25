@@ -11,20 +11,20 @@ import { EbFramework } from "@/components/eatobetics/EbFramework"
 import { EbScoreShowcase } from "@/components/eatobetics/EbScoreShowcase"
 
 export const metadata: Metadata = {
-  title: { absolute: "EatoBetics | The Glucose System Inside You" },
+  title: { absolute: "The Glucose Food System | EatoBiotics" },
   description:
-    "EatoBetics is a glucose intelligence platform that helps people understand how food affects energy, cravings, glucose stability, and long-term metabolic health. Take the free assessment, get your EatoBetics Score, and follow a personalised 30-day plan.",
+    "The Glucose Food System is EatoBiotics' pathway for understanding how food affects energy, cravings, glucose stability, and long-term metabolic health. Take the free assessment, get your Glucose Score, and follow a personalised 30-day plan.",
   openGraph: {
-    title: "EatoBetics | The Glucose System Inside You",
+    title: "The Glucose Food System | EatoBiotics",
     description:
-      "Understand how food affects your energy, cravings, glucose stability, and long-term metabolic health.",
+      "Understand how food affects your energy, cravings, glucose stability, and long-term metabolic health — one pathway within EatoBiotics.",
   },
 }
 
 const ASSESSMENT_HREF = "/assessment/add/glucose"
 const EB_GRADIENT = "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))"
 
-/* ── Section 3 — The 3 Systems of EatoBetics (the Score pillars) ─────── */
+/* ── Section 3 — The 3 Pillars of the Glucose pathway (the Score pillars) ─────── */
 const SYSTEMS = [
   {
     number: "01", title: "Stability", label: "STEADY", icon: Activity,
@@ -46,7 +46,7 @@ const SYSTEMS = [
   },
 ]
 
-/* ── Section 5 — Why EatoBetics (contrast cards) ────────────────────── */
+/* ── Section 5 — Why This Pathway (contrast cards) ────────────────────── */
 const CONTRASTS = [
   { icon: Calculator, old: "Instead of counting calories", neu: "Understand your glucose response.", accent: "var(--icon-orange)" },
   { icon: Salad, old: "Instead of restrictive diets", neu: "Build better versions of your meals.", accent: "var(--icon-green)" },
@@ -54,7 +54,7 @@ const CONTRASTS = [
   { icon: CalendarCheck, old: "Instead of one-off advice", neu: "Follow a 30-day plan, one pattern at a time.", accent: "var(--icon-yellow)" },
 ]
 
-/* ── Section 6 — Three ways to use EatoBetics (pathways) ────────────── */
+/* ── Section 6 — Three ways to use the Glucose pathway ────────────── */
 const PATHWAYS = [
   {
     label: "ENERGY", title: "Steady energy, fewer crashes", icon: Zap,
@@ -77,10 +77,10 @@ const PATHWAYS = [
   },
 ]
 
-/* ── Section 7 — How EatoBetics works (flow + mock report) ──────────── */
+/* ── Section 7 — How the Glucose pathway works (flow + mock report) ──────────── */
 const FLOW = [
   { step: "01", icon: ClipboardCheck, label: "Assess", detail: "A short, free assessment maps how your meals affect your glucose system. No account needed." },
-  { step: "02", icon: Gauge, label: "Score", detail: "Get your EatoBetics Score across stability, energy, and rhythm — and where to focus first." },
+  { step: "02", icon: Gauge, label: "Score", detail: "Get your Glucose Score across stability, energy, and rhythm — and where to focus first." },
   { step: "03", icon: FileText, label: "Report", detail: "A personal glucose profile with your biggest opportunity and meal-by-meal guidance." },
   { step: "04", icon: CalendarCheck, label: "30-Day Plan", detail: "Improve one pattern at a time, with daily actions and weekly check-ins." },
 ]
@@ -94,19 +94,19 @@ const MOCK_PILLARS = [
 /* ── Section 9 — EatoBiotics Foundation (dark) ──────────────────────── */
 const FOUNDATION = [
   { number: "01", title: "Food System", accent: "var(--icon-lime)", gradient: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))", body: "It starts with understanding how your Food System responds to food, habits, and daily life — the same philosophy at the heart of EatoBiotics." },
-  { number: "02", title: "EatoBetics Score™", accent: "var(--icon-yellow)", gradient: "linear-gradient(90deg, var(--icon-yellow), var(--icon-orange))", body: "Your score translates everyday glucose patterns into a clear, single measure of how steadily your food system runs." },
-  { number: "03", title: "Biotics Score™", accent: "var(--icon-teal)", gradient: "linear-gradient(90deg, var(--icon-teal), var(--icon-yellow))", body: "Your EatoBetics Score contributes to your overall Biotics Score™ — the core score at the heart of EatoBiotics." },
+  { number: "02", title: "Glucose Score", accent: "var(--icon-yellow)", gradient: "linear-gradient(90deg, var(--icon-yellow), var(--icon-orange))", body: "Your score translates everyday glucose patterns into a clear, single measure of how steadily your food system runs." },
+  { number: "03", title: "Biotics Score™", accent: "var(--icon-teal)", gradient: "linear-gradient(90deg, var(--icon-teal), var(--icon-yellow))", body: "Your Glucose Score contributes to your overall Biotics Score™ — the core score at the heart of EatoBiotics." },
 ]
 
-/* ── Section 10 — Part of EatoBiotics (real sibling programs) ───────── */
+/* ── Section 10 — Part of EatoBiotics (real sibling pathways) ───────── */
 const FAMILY = [
-  { number: "01", name: "EatoBetics", icon: Activity, tagline: "The Glucose System Inside You", status: "You're here", here: true, href: null, accent: "var(--icon-orange)", gradient: EB_GRADIENT },
+  { number: "01", name: "Glucose", icon: Activity, tagline: "The Glucose System Inside You", status: "You're here", here: true, href: null, accent: "var(--icon-orange)", gradient: EB_GRADIENT },
   { number: "02", name: "Stability™", icon: Compass, tagline: "The Stability System Inside You", status: "Explore", here: false, href: "/stability", accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" },
   { number: "03", name: "Performance", icon: Dumbbell, tagline: "The Performance System Inside You", status: "Explore", here: false, href: "/performance", accent: "var(--icon-yellow)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" },
   { number: "04", name: "You", icon: User, tagline: "The Food System Inside You", status: "Explore", here: false, href: "/you", accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" },
 ]
 
-export default function EatoBeticsPage() {
+export default function GlucosePage() {
   return (
     <main className="overflow-hidden bg-white">
       {/* ── 1. HERO ── */}
@@ -135,7 +135,7 @@ export default function EatoBeticsPage() {
                 </p>
                 <p className="mt-4 text-base leading-relaxed text-muted-foreground">
                   Over time, those swings shape your long-term metabolic health too. Most people are never
-                  shown what drives them. <span className="font-semibold text-foreground">EatoBetics helps reveal those patterns</span> — so you can
+                  shown what drives them. <span className="font-semibold text-foreground">EatoBiotics helps reveal those patterns</span> — so you can
                   build steadier energy, fewer cravings, and better metabolic health.
                 </p>
               </div>
@@ -152,8 +152,8 @@ export default function EatoBeticsPage() {
           <ScrollReveal className="max-w-2xl">
             <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-icon-green">The Framework</p>
             <h2 className="font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-              The 3 Systems{" "}
-              <span className="brand-gradient-text">of EatoBetics</span>
+              The 3 Pillars{" "}
+              <span className="brand-gradient-text">of Glucose</span>
             </h2>
             <p className="mt-4 text-base leading-relaxed text-muted-foreground">
               Three pillars that shape how steady, energised, and resilient your glucose system feels
@@ -212,7 +212,7 @@ export default function EatoBeticsPage() {
                   work together across your most-repeated meals.
                 </p>
                 <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-                  Together, the three pillars shape your EatoBetics Score™ — which contributes to your overall
+                  Together, the three pillars shape your Glucose Score — which contributes to your overall
                   Biotics Score™, the core score of EatoBiotics.
                 </p>
               </ScrollReveal>
@@ -226,7 +226,7 @@ export default function EatoBeticsPage() {
               <ScrollReveal delay={100}><EbFramework /></ScrollReveal>
               <ScrollReveal delay={200}>
                 <p className="mt-4 text-center text-xs text-muted-foreground">
-                  A connected system where each pillar supports the next — measured as one EatoBetics Score™.
+                  A connected system where each pillar supports the next — measured as one Glucose Score.
                 </p>
               </ScrollReveal>
             </div>
@@ -241,12 +241,12 @@ export default function EatoBeticsPage() {
         <div className="mx-auto max-w-[1200px]">
           <div className="grid gap-16 lg:grid-cols-2 lg:items-start lg:gap-24">
             <ScrollReveal>
-              <p className="text-xs font-bold uppercase tracking-widest text-icon-orange">Why EatoBetics</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-icon-orange">Why This Pathway</p>
               <h2 className="mt-4 text-pretty font-serif text-3xl font-semibold text-foreground sm:text-4xl md:text-5xl">
-                Most food apps count. EatoBetics understands.
+                Most food apps count. EatoBiotics understands.
               </h2>
               <p className="mt-6 text-base leading-relaxed text-muted-foreground">
-                Most apps count calories or macros. EatoBetics focuses on your glucose system — how each meal
+                Most apps count calories or macros. This pathway focuses on your glucose system — how each meal
                 affects your energy, cravings, and long-term metabolic health.
               </p>
               <p className="mt-4 text-base leading-relaxed text-muted-foreground">
@@ -289,7 +289,7 @@ export default function EatoBeticsPage() {
             <h2 className="mt-4 text-pretty font-serif text-4xl font-semibold text-foreground sm:text-5xl md:text-6xl">
               Three ways
               <br />
-              <span className="brand-gradient-text">to use EatoBetics.</span>
+              <span className="brand-gradient-text">to use the Glucose pathway.</span>
             </h2>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
               Whether you&apos;re chasing steadier energy, getting ahead of your numbers, or making the most of
@@ -342,12 +342,12 @@ export default function EatoBeticsPage() {
           <ScrollReveal>
             <p className="text-xs font-bold uppercase tracking-widest text-icon-orange">The Tool</p>
             <h2 className="mt-4 text-pretty font-serif text-4xl font-semibold text-foreground sm:text-5xl md:text-6xl">
-              How EatoBetics
+              How the Glucose pathway
               <br />
               <span className="brand-gradient-text">works</span>
             </h2>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
-              A simple loop that turns your everyday meals into a clear EatoBetics Score™ — and a 30-day plan
+              A simple loop that turns your everyday meals into a clear Glucose Score — and a 30-day plan
               to steady it.
             </p>
           </ScrollReveal>
@@ -384,7 +384,7 @@ export default function EatoBeticsPage() {
                     <Gauge size={16} className="text-white" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-foreground">EatoBetics Report</p>
+                    <p className="text-sm font-semibold text-foreground">Glucose Report</p>
                     <p className="text-xs text-muted-foreground">Stability · Energy · Rhythm</p>
                   </div>
                 </div>
@@ -415,7 +415,7 @@ export default function EatoBeticsPage() {
                     </p>
                   </div>
                 </div>
-                <p className="mt-5 text-center text-xs text-muted-foreground/60">An illustrative example — your own EatoBetics Score is built from your free assessment.</p>
+                <p className="mt-5 text-center text-xs text-muted-foreground/60">An illustrative example — your own Glucose Score is built from your free assessment.</p>
               </div>
             </div>
           </ScrollReveal>
@@ -424,16 +424,16 @@ export default function EatoBeticsPage() {
 
       <div className="section-divider" />
 
-      {/* ── 8. YOUR EATOBETICS SCORE™ ── */}
+      {/* ── 8. YOUR GLUCOSE SCORE ── */}
       <section className="px-6 py-24 md:py-32">
         <div className="mx-auto max-w-[1100px]">
           <ScrollReveal className="mx-auto max-w-2xl text-center">
             <p className="text-xs font-bold uppercase tracking-widest text-icon-orange">The Score</p>
-            <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">Your EatoBetics Score™</h2>
+            <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">Your Glucose Score</h2>
             <p className="mt-6 text-base leading-relaxed text-muted-foreground">
               A single score designed to measure how steadily your glucose system runs, day to day.
             </p>
-            <p className="mt-3 font-semibold text-foreground">Your EatoBetics Score™ contributes to your overall Biotics Score™.</p>
+            <p className="mt-3 font-semibold text-foreground">Your Glucose Score contributes to your overall Biotics Score™.</p>
           </ScrollReveal>
           <div className="mt-16">
             <EbScoreShowcase />
@@ -451,10 +451,10 @@ export default function EatoBeticsPage() {
             <h2 className="mt-4 text-pretty font-serif text-4xl font-semibold text-background sm:text-5xl md:text-6xl">
               EatoBiotics.
               <br />
-              <span className="brand-gradient-text">The foundation EatoBetics is built on.</span>
+              <span className="brand-gradient-text">The foundation the Glucose pathway is built on.</span>
             </h2>
             <p className="mt-6 max-w-2xl text-base leading-relaxed text-background/70">
-              EatoBetics is the metabolic expression of EatoBiotics — The Food System Inside You. It measures
+              Glucose is the metabolic pathway inside EatoBiotics — The Food System Inside You. It measures
               how steadily your glucose system runs, and contributes to your overall Biotics Score™.
             </p>
           </ScrollReveal>
@@ -492,7 +492,7 @@ export default function EatoBeticsPage() {
               <span className="brand-gradient-text">EatoBiotics.</span>
             </h2>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
-              EatoBetics is one expression of EatoBiotics — the food system inside you. Each program is a new
+              Glucose is one pathway within EatoBiotics — the food system inside you. Each pathway is a new
               way to understand and steady it.
             </p>
           </ScrollReveal>
@@ -537,12 +537,12 @@ export default function EatoBeticsPage() {
             <div className="h-1.5 w-full brand-gradient" />
             <div className="p-10 md:p-16 text-center">
               <ScrollReveal>
-                <p className="text-xs font-bold uppercase tracking-widest text-icon-orange">EatoBetics</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-icon-orange">Glucose</p>
                 <h2 className="mt-4 text-balance font-serif text-4xl font-semibold text-foreground sm:text-5xl">
                   Meet the <span className="brand-gradient-text">glucose system inside you.</span>
                 </h2>
                 <p className="mx-auto mt-6 max-w-lg text-base leading-relaxed text-muted-foreground">
-                  Take the free EatoBetics Assessment and begin building steadier energy, fewer cravings, and
+                  Take the free Glucose Assessment and begin building steadier energy, fewer cravings, and
                   better metabolic health — in 30 days.
                 </p>
               </ScrollReveal>
@@ -567,7 +567,7 @@ export default function EatoBeticsPage() {
         <div className="mx-auto flex max-w-3xl items-start gap-3">
           <ShieldCheck size={18} className="mt-0.5 shrink-0" style={{ color: "var(--muted-foreground)" }} />
           <p className="text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
-            EatoBetics is an educational food intelligence platform. It does not diagnose, treat, cure, or prevent diabetes or any medical condition. The information provided is for general education and lifestyle support only. Always consult a qualified healthcare professional for medical advice, diagnosis, testing, or treatment, especially if you have diabetes, prediabetes, use medication, or have concerns about your blood glucose.
+            The Glucose pathway is educational food intelligence within EatoBiotics. It does not diagnose, treat, cure, or prevent diabetes or any medical condition. The information provided is for general education and lifestyle support only. Always consult a qualified healthcare professional for medical advice, diagnosis, testing, or treatment, especially if you have diabetes, prediabetes, use medication, or have concerns about your blood glucose.
           </p>
         </div>
       </section>

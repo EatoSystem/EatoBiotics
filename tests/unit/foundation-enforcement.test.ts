@@ -396,7 +396,7 @@ describe("POST /api/send-results-email", () => {
     const body = await res.json()
     expect(body).toEqual({ error: "Foundation assessment required before add-on assessment." })
     expect(mockSendEmail).not.toHaveBeenCalled()
-    expect(writes.find((w) => w.table === "leads" && w.method === "update")).toBeUndefined()
+    expect(writes.find((w) => w.table === "leads" && w.method === "upsert")).toBeUndefined()
   })
 
   it("accepts a Mind submission once a foundation is on file for that email", async () => {
@@ -416,7 +416,7 @@ describe("POST /api/send-results-email", () => {
     )
     expect(res.status).toBe(200)
     expect(mockSendEmail).toHaveBeenCalled()
-    expect(writes.some((w) => w.table === "leads" && w.method === "update")).toBe(true)
+    expect(writes.some((w) => w.table === "leads" && w.method === "upsert")).toBe(true)
   })
 
   it("does not gate gut/family submissions — foundation check only runs for mind", async () => {
@@ -434,7 +434,7 @@ describe("POST /api/send-results-email", () => {
     )
     expect(res.status).toBe(200)
     expect(mockSendEmail).toHaveBeenCalled()
-    expect(writes.some((w) => w.table === "leads" && w.method === "update")).toBe(true)
+    expect(writes.some((w) => w.table === "leads" && w.method === "upsert")).toBe(true)
   })
 
   it("does not gate family submissions either", async () => {
@@ -451,7 +451,7 @@ describe("POST /api/send-results-email", () => {
       }),
     )
     expect(res.status).toBe(200)
-    expect(writes.some((w) => w.table === "leads" && w.method === "update")).toBe(true)
+    expect(writes.some((w) => w.table === "leads" && w.method === "upsert")).toBe(true)
   })
 
   it("fails closed with 503 for Mind when Supabase is unavailable — no email sent, nothing persisted", async () => {

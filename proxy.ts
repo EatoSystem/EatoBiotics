@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 import { DEV_COOKIE, OLD_DEV_COOKIES, devPasswordToken, getDevPassword, isPasswordGateEnabled } from "@/lib/dev-password-gate"
+import { verifyAdminCookieEdge } from "@/lib/admin-auth-edge"
 import { LANDING_SLUGS, resolveMarket } from "@/lib/market"
 import { isLocale, LOCALE_COOKIE } from "@/lib/i18n/config"
 
@@ -47,6 +48,11 @@ function isEnterRoute(pathname: string): boolean {
     pathname.startsWith("/c/") ||        // public per-country landing pages
     pathname.startsWith("/api/enter") ||
     pathname.startsWith("/api/waitlist") ||
+    // Mobile companion app routes — a native client can't hold the gate cookie.
+    // Safe to expose: both routes 401 without a valid Supabase bearer token /
+    // session, so the gate would only add a redirect, not protection.
+    pathname === "/api/twin-state" ||
+    pathname === "/api/analyse-meal" ||
     pathname.startsWith("/auth/callback") ||
     pathname.startsWith("/api/auth/")
   )
@@ -71,6 +77,20 @@ function isProtectedAccountRoute(pathname: string): boolean {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // ── Content Studio default-deny ─────────────────────────────────────────
+  // /cms and /api/cms are admin-only. Deny here (before anything else) so a
+  // page or handler that ever forgot its own gate still can't leak: without a
+  // valid admin cookie the routes simply don't exist (404). Fails closed —
+  // verifyAdminCookieEdge returns false when no admin secret is configured.
+  // The per-layout and per-route verifyAdminCookie checks remain as depth.
+  if (pathname === "/cms" || pathname.startsWith("/cms/") || pathname.startsWith("/api/cms")) {
+    const authed = await verifyAdminCookieEdge(request.cookies.get("admin_auth")?.value)
+    if (!authed) {
+      return new NextResponse("Not Found", { status: 404 })
+    }
+  }
+  // ────────────────────────────────────────────────────────────────────────
+
   // Pretty per-country URLs: /ie, /uk, /us… → the canonical /c/<slug> landing page.
   // Public ad/SEO entry points; rewrite before the gate so they're reachable.
   const seg = pathname.slice(1).toLowerCase()
@@ -78,6 +98,18 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = `/c/${seg}`
     return NextResponse.rewrite(url)
+  }
+
+  // Legacy family-assessment URLs → the canonical /assessment/family (the
+  // route lib/systems.ts and lib/assessment/registry.ts treat as canonical).
+  // A literal 301 (not next.config.mjs's redirects(), which only emits
+  // 307/308) so search engines consolidate all three URLs' authority onto
+  // the one canonical page. Issued before the password gate so crawlers see
+  // the real redirect target instead of bouncing through /enter.
+  if (pathname === "/assessment-family" || pathname === "/family-assessment") {
+    const url = request.nextUrl.clone()
+    url.pathname = "/assessment/family"
+    return NextResponse.redirect(url, 301)
   }
 
   // Site password check. During redevelopment, DEV_PASSWORD enables the gate.

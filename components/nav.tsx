@@ -7,7 +7,7 @@ import { Menu, X, ChevronDown, ArrowRight } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { AccountNavItem } from "@/components/account/account-nav-item"
-import { HEADER_DROPDOWN_GROUPS, MEGA_MENU_GROUPS, NAV_LINKS, type NavGroup } from "@/lib/nav"
+import { HEADER_DROPDOWN_GROUPS, MEGA_MENU_GROUPS, NAV_LINKS, hidesSiteChrome, type NavGroup } from "@/lib/nav"
 import { MegaMenu, useDisclosureMenu } from "@/components/nav/mega-menu"
 
 function DropdownMenu({ group, pathname }: { group: NavGroup; pathname: string }) {
@@ -92,6 +92,13 @@ export function Nav() {
     setOpen(false)
     setMobileGroup(null)
   }, [pathname])
+
+  // Content Studio (/cms) renders its own full application shell — no public
+  // marketing chrome. See lib/nav.ts hidesSiteChrome for why this is
+  // presentation-only, not a security boundary.
+  if (hidesSiteChrome(pathname)) {
+    return null
+  }
 
   // Waitlist page: render a minimal brand-only header (no main-site nav) so the
   // gated pre-launch page doesn't expose links into the still-gated site. Every

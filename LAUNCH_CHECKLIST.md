@@ -3,7 +3,7 @@
 ## Password Gate
 
 - During redevelopment, set `DEV_PASSWORD` to enable the temporary site password screen.
-- The current temporary fallback password is `Monkstown` so the preview lock remains active during redevelopment.
+- The temporary hardcoded fallback password has been REMOVED — the gate now requires `DEV_PASSWORD` in the deploy env to stay in private-beta mode. With neither `DEV_PASSWORD` nor `EATOBIOTICS_PASSWORD_GATE=true` set, the site is public.
 - Before public launch, remove the temporary fallback from `lib/dev-password-gate.ts`, then remove `DEV_PASSWORD` or set `EATOBIOTICS_PASSWORD_GATE_DISABLED=true`.
 - Do not leave the temporary fallback in the launch build.
 

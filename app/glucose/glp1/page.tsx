@@ -19,11 +19,11 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 import { ProteinCalculator } from "@/components/eatobetics/protein-calculator"
 
 export const metadata: Metadata = {
-  title: { absolute: "EatoBetics GLP-1 Companion — Keep the Muscle, Build the Habit" },
+  title: { absolute: "GLP-1 Companion — Keep the Muscle, Build the Habit | EatoBiotics" },
   description:
-    "On Ozempic, Wegovy, or Mounjaro? Losing weight isn't the same as getting healthier. The EatoBetics GLP-1 Companion helps you protect muscle with the right protein, strength, and food habits while your appetite is low.",
+    "On Ozempic, Wegovy, or Mounjaro? Losing weight isn't the same as getting healthier. The EatoBiotics GLP-1 Companion helps you protect muscle with the right protein, strength, and food habits while your appetite is low.",
   openGraph: {
-    title: "EatoBetics GLP-1 Companion — Keep the Muscle, Build the Habit",
+    title: "GLP-1 Companion — Keep the Muscle, Build the Habit | EatoBiotics",
     description:
       "Protect muscle and build lasting food habits while you're on a GLP-1. Estimate your protein target and get a glucose- and muscle-smart plan.",
   },
@@ -73,7 +73,7 @@ export default function Glp1CompanionPage() {
         <div className="relative z-10 mx-auto max-w-3xl text-center">
           <ScrollReveal>
             <span className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
-              <Sparkles size={14} style={{ color: "var(--icon-yellow)" }} /> EatoBetics · GLP-1 Companion
+              <Sparkles size={14} style={{ color: "var(--icon-yellow)" }} /> Glucose · GLP-1 Companion
             </span>
             <h1 className="mt-5 font-serif text-4xl font-bold leading-[1.08] text-balance sm:text-5xl lg:text-6xl">
               <span style={{ color: "var(--foreground)" }}>Keep the </span>
@@ -83,7 +83,7 @@ export default function Glp1CompanionPage() {
             </h1>
             <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
               On Ozempic, Wegovy, or Mounjaro? Losing weight isn&apos;t the same as getting
-              healthier. EatoBetics helps you protect muscle and rebuild your relationship
+              healthier. EatoBiotics helps you protect muscle and rebuild your relationship
               with food while your appetite is low — so the results last.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -325,7 +325,7 @@ export default function Glp1CompanionPage() {
                 <span style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-yellow))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>appetite window.</span>
               </h2>
               <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-white/70 sm:text-lg">
-                Take the free EatoBetics assessment — it tailors your report and 30-day
+                Take the free Glucose assessment — it tailors your report and 30-day
                 protocol for protecting muscle while you&apos;re on a GLP-1.
               </p>
               <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -333,7 +333,7 @@ export default function Glp1CompanionPage() {
                   Take the free assessment <ArrowRight size={16} />
                 </Link>
                 <Link href="/glucose" className="inline-flex items-center gap-2 rounded-full border border-white/25 px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-white/10">
-                  About EatoBetics
+                  About the Glucose pathway
                 </Link>
               </div>
             </ScrollReveal>
@@ -346,7 +346,7 @@ export default function Glp1CompanionPage() {
         <div className="mx-auto flex max-w-3xl items-start gap-3">
           <ShieldCheck size={18} className="mt-0.5 shrink-0" style={{ color: "var(--muted-foreground)" }} />
           <p className="text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
-            EatoBetics is an educational food intelligence platform and is not affiliated with
+            This pathway is educational food intelligence within EatoBiotics and is not affiliated with
             any medication or manufacturer. It does not diagnose, treat, cure, or prevent any
             condition, and does not provide medical or dietetic advice. GLP-1 medications should
             only be started, changed, or stopped under the care of a qualified healthcare

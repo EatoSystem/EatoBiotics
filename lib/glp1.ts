@@ -1,5 +1,5 @@
 /**
- * lib/glp1.ts — EatoBetics GLP-1 Companion: the science in one place.
+ * lib/glp1.ts — EatoBiotics GLP-1 Companion: the science in one place.
  *
  * ⚕️  CLINICAL TUNING POINT
  * Every protein/muscle assumption used by the GLP-1 Companion (the public

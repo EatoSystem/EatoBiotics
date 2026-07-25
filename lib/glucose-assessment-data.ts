@@ -1,6 +1,6 @@
 // lib/glucose-assessment-data.ts
 //
-// EatoBetics (glucose) assessment — modelled on the EatoBiotics framework
+// Glucose assessment — modelled on the EatoBiotics framework
 // (lib/assessment-data.ts), built around the Glucose Intelligence Lens.
 //
 // 1 context question (not scored) + 18 scored questions across 4 pillars:

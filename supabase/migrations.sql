@@ -930,7 +930,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS sex text;
 -- milestone ids, per-day ritual merge) via /api/twin-state. Idempotent.
 CREATE TABLE IF NOT EXISTS twin_state (
   user_id         uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  rituals         jsonb NOT NULL DEFAULT '{}'::jsonb,   -- { "YYYY-MM-DD": {fermented,plants,feeling} }
+  rituals         jsonb NOT NULL DEFAULT '{}'::jsonb,   -- { "YYYY-MM-DD": {fermented,plants,moved,slept,feeling} }
   milestones_seen text[] NOT NULL DEFAULT '{}',
   updated_at      timestamptz NOT NULL DEFAULT now()
 );
@@ -944,3 +944,825 @@ BEGIN
       FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
   END IF;
 END $$;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 37: EatoBiotics Content Studio (/cms) — Phase 1 core tables
+-- ────────────────────────────────────────────────────────────
+-- Private CMS foundation: canonical content records with a full editorial
+-- lifecycle, append-only version history, reusable tags, and an append-only
+-- audit log. CMS access is via the admin cookie + service-role server routes
+-- only (the admin is not a Supabase user), so every table follows the
+-- service-role-only pattern: RLS ENABLED with ZERO policies (like ai_usage /
+-- email_sends / stripe_processed_events) — no anonymous or customer access.
+-- The editorial workflow `status` and the product-availability classification
+-- `availability_status` are deliberately separate columns. Idempotent.
+CREATE TABLE IF NOT EXISTS cms_content (
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  title               text NOT NULL,
+  slug                text NOT NULL UNIQUE,
+  content_type        text NOT NULL CHECK (content_type IN (
+    'book','book_chapter','chapter_extract','article','website_page','newsletter',
+    'substack_post','social_post','social_thread','social_carousel','image','video',
+    'audio','advertisement','campaign_brief','press_release','research_summary',
+    'country_adaptation')),
+  summary             text,
+  body                text,                    -- Markdown/MDX (matches the site's content pipeline)
+  status              text NOT NULL DEFAULT 'idea' CHECK (status IN (
+    'idea','outline','draft','in_review','changes_requested','approved','scheduled',
+    'publishing','published','failed','cancelled','archived')),
+  availability_status text NOT NULL DEFAULT 'our_direction' CHECK (availability_status IN (
+    'available_now','needs_manual_verification','in_development','our_direction','future')),
+  brand               text,                    -- EatoBiotics | EatoSystem | EatoBetics | EatoSports
+  audience            text,
+  pathway             text,
+  foundation          text,
+  country_code        text,
+  region              text,
+  food_culture        text,
+  language_code       text,
+  source_content_id   uuid REFERENCES cms_content(id) ON DELETE SET NULL,
+  campaign_id         uuid,                    -- FK added when cms_campaigns lands (later migration)
+  book_id             uuid,                    -- FK added when cms_books lands (later migration)
+  chapter_id          uuid,                    -- FK added when cms_chapters lands (later migration)
+  created_by          text NOT NULL DEFAULT 'admin',  -- shared-password admin: no per-user identity yet
+  updated_by          text NOT NULL DEFAULT 'admin',
+  approved_by         text,
+  scheduled_at        timestamptz,
+  published_at        timestamptz,
+  created_at          timestamptz NOT NULL DEFAULT now(),
+  updated_at          timestamptz NOT NULL DEFAULT now(),
+  archived_at         timestamptz
+);
+
+CREATE INDEX IF NOT EXISTS idx_cms_content_status       ON cms_content (status);
+CREATE INDEX IF NOT EXISTS idx_cms_content_content_type ON cms_content (content_type);
+CREATE INDEX IF NOT EXISTS idx_cms_content_updated_at   ON cms_content (updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_cms_content_source       ON cms_content (source_content_id) WHERE source_content_id IS NOT NULL;
+
+ALTER TABLE cms_content ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS cms_content_versions (
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  content_id     uuid NOT NULL REFERENCES cms_content(id) ON DELETE CASCADE,
+  version_number integer NOT NULL,
+  title          text NOT NULL,
+  summary        text,
+  body           text,
+  metadata_json  jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_by     text NOT NULL DEFAULT 'admin',
+  created_at     timestamptz NOT NULL DEFAULT now(),
+  change_note    text,
+  UNIQUE (content_id, version_number)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cms_content_versions_content ON cms_content_versions (content_id, version_number DESC);
+
+ALTER TABLE cms_content_versions ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS cms_tags (
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name       text NOT NULL UNIQUE,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE cms_tags ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS cms_content_tags (
+  content_id uuid NOT NULL REFERENCES cms_content(id) ON DELETE CASCADE,
+  tag_id     uuid NOT NULL REFERENCES cms_tags(id) ON DELETE CASCADE,
+  PRIMARY KEY (content_id, tag_id)
+);
+
+ALTER TABLE cms_content_tags ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS cms_audit_log (
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  actor_user_id  text NOT NULL DEFAULT 'admin',
+  action         text NOT NULL,
+  entity_type    text NOT NULL,
+  entity_id      uuid,
+  metadata_json  jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at     timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_cms_audit_log_created_at ON cms_audit_log (created_at DESC);
+
+ALTER TABLE cms_audit_log ENABLE ROW LEVEL SECURITY;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 38: Content Studio Phase 2A — media library
+-- ────────────────────────────────────────────────────────────
+-- Private asset storage for the CMS: a private `cms-media` bucket plus the
+-- cms_media catalogue and cms_content_media relationship table. Same
+-- service-role-only model as Migration 37 (RLS ENABLED, ZERO policies) — the
+-- CMS admin is not a Supabase user; all access is via the admin cookie +
+-- service-role server routes. Assets are served through short-TTL signed URLs
+-- (the app/api/account/pdf-url pattern) and are ARCHIVED, never hard-deleted,
+-- so anything referenced by published content always resolves. Idempotent.
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('cms-media', 'cms-media', false)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS cms_media (
+  id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  filename           text NOT NULL,
+  storage_bucket     text NOT NULL DEFAULT 'cms-media',
+  storage_path       text NOT NULL,               -- server-derived key, never a client path
+  media_type         text NOT NULL CHECK (media_type IN ('image','video','audio','document')),
+  mime_type          text NOT NULL,
+  width              integer,
+  height             integer,
+  duration_seconds   numeric(10,2),
+  file_size          bigint,
+  alt_text           text,
+  caption            text,
+  generation_prompt  text,
+  source             text,                         -- e.g. 'upload' | 'ai' | provider name
+  copyright_owner    text,
+  licence            text,
+  usage_restrictions text,
+  status             text NOT NULL DEFAULT 'ready' CHECK (status IN ('ready','archived')),
+  created_by         text NOT NULL DEFAULT 'admin',
+  created_at         timestamptz NOT NULL DEFAULT now(),
+  updated_at         timestamptz NOT NULL DEFAULT now(),
+  archived_at        timestamptz,
+  UNIQUE (storage_bucket, storage_path)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cms_media_media_type ON cms_media (media_type);
+CREATE INDEX IF NOT EXISTS idx_cms_media_status     ON cms_media (status);
+CREATE INDEX IF NOT EXISTS idx_cms_media_created_at ON cms_media (created_at DESC);
+
+ALTER TABLE cms_media ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS cms_content_media (
+  content_id uuid NOT NULL REFERENCES cms_content(id) ON DELETE CASCADE,
+  media_id   uuid NOT NULL REFERENCES cms_media(id) ON DELETE CASCADE,
+  role       text NOT NULL DEFAULT 'inline' CHECK (role IN (
+    'hero','thumbnail','inline','social','advert','video','audio','document')),
+  sort_order integer NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (content_id, media_id, role)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cms_content_media_media ON cms_content_media (media_id);
+
+ALTER TABLE cms_content_media ENABLE ROW LEVEL SECURITY;
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 39: Content Studio Phase 2B — books & chapters
+-- ────────────────────────────────────────────────────────────
+-- Books and chapters are cms_content rows (content_type 'book' / 'book_chapter')
+-- so they inherit the full editorial lifecycle, version history, and audit
+-- trail for free. cms_books and cms_chapters are thin structural tables — the
+-- type-safe FK targets the cms_content.book_id / chapter_id columns have
+-- carried since Migration 37 ("FK added when cms_books/cms_chapters lands").
+-- Chapter ordering is a plain chapter_number on each chapter's own row (not an
+-- array on the book) so reordering never requires array surgery; there is
+-- deliberately no DB-level UNIQUE(book_id, chapter_number) — enforcing that
+-- with a non-deferrable constraint risks transient-violation failures on a
+-- two-step swap, so uniqueness stays a soft UI/API convention. Same
+-- service-role-only pattern as Migrations 37/38: RLS ENABLED, ZERO policies.
+-- Idempotent.
+CREATE TABLE IF NOT EXISTS cms_books (
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  content_id uuid NOT NULL UNIQUE REFERENCES cms_content(id) ON DELETE CASCADE,
+  subtitle   text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_cms_books_content ON cms_books (content_id);
+
+ALTER TABLE cms_books ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS cms_chapters (
+  id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  book_id            uuid NOT NULL REFERENCES cms_books(id) ON DELETE CASCADE,
+  content_id         uuid NOT NULL UNIQUE REFERENCES cms_content(id) ON DELETE CASCADE,
+  chapter_number     integer NOT NULL,
+  part               text,
+  part_title         text,
+  publication_target text[] NOT NULL DEFAULT '{}'::text[] CHECK (
+    publication_target <@ ARRAY['website','substack','reedsy','print','pdf']::text[]),
+  created_at         timestamptz NOT NULL DEFAULT now(),
+  updated_at         timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_cms_chapters_book_order ON cms_chapters (book_id, chapter_number);
+CREATE INDEX IF NOT EXISTS idx_cms_chapters_content    ON cms_chapters (content_id);
+
+ALTER TABLE cms_chapters ENABLE ROW LEVEL SECURITY;
+
+-- Attach the FK constraints Migration 37 reserved book_id/chapter_id for, now
+-- that their target tables exist. Postgres has no ADD CONSTRAINT IF NOT
+-- EXISTS, so guard idempotency via pg_constraint.
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'cms_content_book_id_fkey') THEN
+    ALTER TABLE cms_content
+      ADD CONSTRAINT cms_content_book_id_fkey
+      FOREIGN KEY (book_id) REFERENCES cms_books(id) ON DELETE SET NULL;
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'cms_content_chapter_id_fkey') THEN
+    ALTER TABLE cms_content
+      ADD CONSTRAINT cms_content_chapter_id_fkey
+      FOREIGN KEY (chapter_id) REFERENCES cms_chapters(id) ON DELETE SET NULL;
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_cms_content_book_id    ON cms_content (book_id)    WHERE book_id    IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_cms_content_chapter_id ON cms_content (chapter_id) WHERE chapter_id IS NOT NULL;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 40: Content Studio Phase 2B — chapter integrity
+-- ────────────────────────────────────────────────────────────
+-- Two integrity guarantees for the books & chapters surface (Migration 39):
+--
+-- 1. ATOMIC REORDER. Moving a chapter up/down swaps two chapters'
+--    chapter_number values. The old flow was two independent client PATCHes —
+--    if the second failed, the book was left with a duplicate/gap. This
+--    function does the swap in a single transaction (its body), so it is all-
+--    or-nothing: a failure rolls back and the ordering is unchanged. It swaps
+--    through a temporary sentinel (chapter_number = -(id-derived)) so the
+--    operation stays valid even if a future UNIQUE(book_id, chapter_number)
+--    constraint is added, and locks both rows FOR UPDATE so concurrent swaps
+--    serialise. The API route (/api/cms/books/[id]/chapters/reorder) picks the
+--    two ids among the book's ACTIVE chapters and calls this once.
+--
+-- 2. ACTIVE-ONLY UNIQUENESS stays an application concern, deliberately. A
+--    partial UNIQUE(book_id, chapter_number) can't be expressed at the DB level
+--    here because "active" means the chapter's cms_content.status <> 'archived'
+--    — a column on a DIFFERENT table — and an archived chapter's number must be
+--    reusable. The books/chapters routes enforce it against active chapters
+--    only (see lib/cms/chapter-order.ts activeChapterNumbers).
+--
+-- NON-CASCADING BOOK ARCHIVE (unchanged, documented): archiving a book
+-- (DELETE /api/cms/books/[id]) archives only the book's own cms_content row.
+-- Its chapters are intentionally left as-is — there is no cascade-archive of
+-- chapters. This is a deliberate limitation, not an oversight.
+--
+-- SECURITY INVOKER (default): the CMS calls this via the service-role client,
+-- which bypasses RLS anyway; no anon/customer path can reach it. Idempotent.
+CREATE OR REPLACE FUNCTION cms_swap_chapter_order(a_id uuid, b_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  a_num  integer;
+  b_num  integer;
+  a_book uuid;
+  b_book uuid;
+BEGIN
+  IF a_id = b_id THEN
+    RETURN;
+  END IF;
+
+  SELECT chapter_number, book_id INTO a_num, a_book FROM cms_chapters WHERE id = a_id FOR UPDATE;
+  SELECT chapter_number, book_id INTO b_num, b_book FROM cms_chapters WHERE id = b_id FOR UPDATE;
+
+  IF a_num IS NULL OR b_num IS NULL THEN
+    RAISE EXCEPTION 'cms_swap_chapter_order: chapter not found';
+  END IF;
+  IF a_book IS DISTINCT FROM b_book THEN
+    RAISE EXCEPTION 'cms_swap_chapter_order: chapters belong to different books';
+  END IF;
+
+  -- Sentinel then swap — safe under a future unique constraint, atomic here.
+  UPDATE cms_chapters SET chapter_number = -1, updated_at = now() WHERE id = a_id;
+  UPDATE cms_chapters SET chapter_number = a_num, updated_at = now() WHERE id = b_id;
+  UPDATE cms_chapters SET chapter_number = b_num, updated_at = now() WHERE id = a_id;
+END;
+$$;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 41 — APPLIED TO PRODUCTION (unintended — see REVIEW.md):
+-- CMS chapter mirror + atomic import/rollback
+-- ────────────────────────────────────────────────────────────
+-- This block was written and committed as "PROPOSED — DO NOT APPLY until
+-- the 25-chapter import is explicitly approved," but a live read of the
+-- production database on 2026-07-14 found cms_chapter_mirror and
+-- cms_import_batch already present in production. The schema below is
+-- therefore live regardless of the "do not apply" framing that follows —
+-- do not re-run it expecting a no-op decision point, and do not assume
+-- the 25-chapter import was explicitly approved just because the tables
+-- exist (they may have been applied without the data import ever running;
+-- confirm both independently). See REVIEW.md's Second Pass (Additions #5)
+-- and Implementation Status log for how this was discovered.
+--
+-- Original text, preserved for history:
+-- Backs the MDX→CMS mirror import (docs/cms-chapter-import-spec.md). MDX stays
+-- the canonical publication source; these CMS rows are an editable editorial
+-- snapshot that never feeds the public book. This block is committed as
+-- reviewable migration code only — it is NOT applied to production by the
+-- implementation PR, and the real import is not run as part of any code merge.
+-- Same service-role-only pattern as every other cms_* object (RLS ENABLED,
+-- ZERO policies). Idempotent.
+
+CREATE TABLE IF NOT EXISTS cms_chapter_mirror (
+  id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  chapter_id        uuid NOT NULL UNIQUE REFERENCES cms_chapters(id) ON DELETE CASCADE,  -- one-to-one with the chapter
+  book_id           uuid NOT NULL REFERENCES cms_books(id) ON DELETE CASCADE,
+  source_kind       text NOT NULL DEFAULT 'mdx' CHECK (source_kind = 'mdx'),  -- v1: MDX only
+  source_path       text NOT NULL,                        -- 'content/book/chapter-1.mdx' (canonical pointer)
+  source_slug       text NOT NULL,                        -- 'chapter-1'
+  source_sha256     text NOT NULL,                        -- hash of MDX bytes at import
+  body_sha256       text NOT NULL,                        -- hash of the snapshot written to cms_content.body
+  meta_sha256       text NOT NULL,                        -- hash of the mapped lib/chapters.ts fields
+  source_published  boolean NOT NULL DEFAULT false,       -- canonical MDX publication state; the CMS row stays 'draft'
+  import_batch_id   uuid NOT NULL,                        -- the actual APPLY batch that created this row (never a dry run)
+  imported_at       timestamptz NOT NULL DEFAULT now(),
+  last_checked_at   timestamptz,
+  -- divergence_state stays TRUTHFUL about the MDX↔CMS relationship; it is never
+  -- overloaded to mean "rolled back". Soft-rollback state lives in its own
+  -- columns below so provenance and divergence are not conflated.
+  divergence_state  text NOT NULL DEFAULT 'in_sync'
+    CHECK (divergence_state IN ('in_sync','source_changed','cms_changed','both_changed','missing_source')),
+  rolled_back_at    timestamptz,                          -- set by a SOFT rollback; content archived, mirror retained
+  rollback_batch_id uuid,                                 -- the rollback that soft-retired this mirror
+  UNIQUE (source_kind, source_path)                        -- one mirror row per canonical source file
+);
+
+CREATE INDEX IF NOT EXISTS idx_cms_chapter_mirror_book  ON cms_chapter_mirror (book_id);
+CREATE INDEX IF NOT EXISTS idx_cms_chapter_mirror_batch ON cms_chapter_mirror (import_batch_id);
+
+ALTER TABLE cms_chapter_mirror ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only)
+
+-- Import-batch provenance: records whether an apply batch CREATED the target
+-- book or REUSED an existing one, so rollback can safely decide the book's fate
+-- (a reused manual book must never be touched). One row per apply batch.
+--
+-- book_id / book_content_id are DELIBERATELY nullable with ON DELETE SET NULL,
+-- not CASCADE. This table is a permanent audit/provenance record for a
+-- batch_id, independent of whether the book it touched still exists. If these
+-- FKs cascaded (the earlier, incorrect design), hard-rolling-back a batch that
+-- created a now-empty book would DELETE this row along with the book,
+-- breaking two guarantees this table exists to provide: (1) the batch stays
+-- auditable after rollback, and (2) cms_import_chapters' batch_id-reuse check
+-- (`PERFORM 1 FROM cms_import_batch WHERE batch_id = ... FOR UPDATE`) has
+-- nothing left to find, silently allowing that batch_id to be reused. With
+-- ON DELETE SET NULL, the book reference clears but the row — and the
+-- batch_id's reservation — survives permanently.
+CREATE TABLE IF NOT EXISTS cms_import_batch (
+  batch_id        uuid PRIMARY KEY,
+  book_id         uuid REFERENCES cms_books(id) ON DELETE SET NULL,      -- nullable: may legitimately be NULL after a hard rollback deleted the book
+  book_content_id uuid REFERENCES cms_content(id) ON DELETE SET NULL,    -- nullable: same as above
+  book_created    boolean NOT NULL,                       -- true iff THIS batch created the book
+  created_count   integer NOT NULL DEFAULT 0,
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  rolled_back_at  timestamptz,
+  rollback_hard   boolean
+);
+
+ALTER TABLE cms_import_batch ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only)
+
+-- Atomic import. The route resolves a plan first (read-only) as a dry run and
+-- ONLY for producing the human-readable approval artefact — it is NEVER
+-- trusted as the final integrity check. There is a real time gap between that
+-- read and this call (another admin action, a manual chapter create, a second
+-- apply) during which the state the plan was computed from can go stale. This
+-- function is the actual integrity boundary: every invariant the plan claimed
+-- to hold is RE-VALIDATED here, under row locks, inside this one transaction,
+-- immediately before any insert — so a write that happened after the dry run
+-- (and therefore is already visible to this fresh transaction) is caught and
+-- the whole call aborts. All validation runs before any insert in a separate
+-- pass, and a RAISE EXCEPTION anywhere aborts the ENTIRE transaction — there
+-- is no exception handler here, so Postgres guarantees zero partial rows
+-- commit (cms_content / cms_chapters / cms_chapter_mirror / cms_books /
+-- cms_import_batch all-or-nothing). Locks are held until the transaction ends,
+-- so the target book cannot change out from under this call once acquired.
+--
+-- Filesystem boundary: this function has no access to the MDX files or
+-- lib/chapters.ts — it can only re-verify DATABASE state (books, chapters,
+-- slugs, mirrors, batch ids). Confirming the canonical source SET itself is
+-- complete and unreadable-free is the route's job (validateCanonicalSources,
+-- run immediately before this call, spec §4).
+--
+-- `payload` shape:
+--   {
+--     "batch_id": uuid,
+--     "book": { "create": bool, "content_id": uuid|null, "slug",
+--                "title"?, "subtitle"?, "summary"? },
+--     "chapters": [ { "title","slug","summary","body","chapter_number","part","part_title",
+--                     "publication_target":[...], "source_path","source_slug",
+--                     "source_sha256","body_sha256","meta_sha256","source_published" } ]
+--   }
+-- `book.slug` is ALWAYS the expected canonical book slug ('eatobiotics-book'),
+-- sent whether reusing or creating, so the reused-book identity can be
+-- re-verified against it under lock rather than trusted from the route's
+-- earlier read.
+-- Returns { "book_id", "book_content_id", "book_created": bool, "created": int }.
+CREATE OR REPLACE FUNCTION cms_import_chapters(payload jsonb)
+RETURNS jsonb
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_batch                  uuid := (payload->>'batch_id')::uuid;
+  v_book                   jsonb := payload->'book';
+  v_chapters               jsonb := payload->'chapters';
+  v_chapter_count          int;
+  v_distinct_numbers       int;
+  v_distinct_slugs         int;
+  v_distinct_paths         int;
+  v_distinct_source_slugs  int;
+  v_book_id                uuid;
+  v_book_cid               uuid;
+  v_created_bk             boolean := false;
+  v_book_slug              text;
+  v_book_type              text;
+  v_book_status            text;
+  v_ch                     jsonb;
+  v_n                      int;
+  v_content_id             uuid;
+  v_chapter_id             uuid;
+  v_created                int := 0;
+BEGIN
+  -- ── 0. Basic payload shape ────────────────────────────────────────────
+  IF v_batch IS NULL THEN
+    RAISE EXCEPTION 'cms_import_chapters: batch_id is required';
+  END IF;
+  IF v_chapters IS NULL OR jsonb_typeof(v_chapters) <> 'array' OR jsonb_array_length(v_chapters) = 0 THEN
+    RAISE EXCEPTION 'cms_import_chapters: chapters payload must be a non-empty array';
+  END IF;
+
+  -- ── 1. Batch id must not already have been used ─────────────────────────
+  -- Locks the row if a prior use already exists, so a concurrent duplicate
+  -- call blocks here rather than racing the final INSERT below.
+  PERFORM 1 FROM cms_import_batch WHERE batch_id = v_batch FOR UPDATE;
+  IF FOUND THEN
+    RAISE EXCEPTION 'cms_import_chapters: batch_id % has already been used', v_batch;
+  END IF;
+
+  -- ── 2. Payload internal consistency ──────────────────────────────────────
+  -- Never trust the caller's fields in isolation: every chapter_number/slug/
+  -- source_path/source_slug must be unique WITHIN the payload, and each
+  -- chapter's fields must relate to each other exactly as the canonical
+  -- naming convention requires. Pure data-shape checks — no DB access.
+  SELECT count(*) INTO v_chapter_count FROM jsonb_array_elements(v_chapters);
+  SELECT count(DISTINCT (x->>'chapter_number')) INTO v_distinct_numbers FROM jsonb_array_elements(v_chapters) x;
+  SELECT count(DISTINCT (x->>'slug'))           INTO v_distinct_slugs        FROM jsonb_array_elements(v_chapters) x;
+  SELECT count(DISTINCT (x->>'source_path'))    INTO v_distinct_paths        FROM jsonb_array_elements(v_chapters) x;
+  SELECT count(DISTINCT (x->>'source_slug'))    INTO v_distinct_source_slugs FROM jsonb_array_elements(v_chapters) x;
+  IF v_distinct_numbers <> v_chapter_count THEN
+    RAISE EXCEPTION 'cms_import_chapters: payload has duplicate chapter_number values';
+  END IF;
+  IF v_distinct_slugs <> v_chapter_count THEN
+    RAISE EXCEPTION 'cms_import_chapters: payload has duplicate slug values';
+  END IF;
+  IF v_distinct_paths <> v_chapter_count THEN
+    RAISE EXCEPTION 'cms_import_chapters: payload has duplicate source_path values';
+  END IF;
+  IF v_distinct_source_slugs <> v_chapter_count THEN
+    RAISE EXCEPTION 'cms_import_chapters: payload has duplicate source_slug values';
+  END IF;
+
+  FOR v_ch IN SELECT * FROM jsonb_array_elements(v_chapters)
+  LOOP
+    v_n := NULLIF(v_ch->>'chapter_number', '')::int;
+    IF v_n IS NULL OR v_n < 1 THEN
+      RAISE EXCEPTION 'cms_import_chapters: invalid or missing chapter_number in payload';
+    END IF;
+    IF v_ch->>'source_slug' IS DISTINCT FROM ('chapter-' || v_n) THEN
+      RAISE EXCEPTION 'cms_import_chapters: source_slug does not match chapter_number % (malformed payload)', v_n;
+    END IF;
+    IF v_ch->>'slug' IS DISTINCT FROM ('mdx-chapter-' || v_n) THEN
+      RAISE EXCEPTION 'cms_import_chapters: slug does not match chapter_number % (malformed payload)', v_n;
+    END IF;
+    IF v_ch->>'source_path' IS DISTINCT FROM ('content/book/chapter-' || v_n || '.mdx') THEN
+      RAISE EXCEPTION 'cms_import_chapters: source_path does not match chapter_number % (malformed payload)', v_n;
+    END IF;
+  END LOOP;
+
+  -- ── 3. Book: lock and re-verify identity ─────────────────────────────────
+  -- Never trust "this content_id is still the eatobiotics-book" from the
+  -- route's earlier (now possibly stale) read — re-derive and re-check under
+  -- lock. The lock is held until this transaction ends, so the book cannot
+  -- change out from under the rest of this function.
+  IF (v_book->>'create')::boolean THEN
+    v_created_bk := true;
+    -- No existing row to lock when truly free — the fast-path check above is
+    -- an early exit for the common case (a prior write already committed);
+    -- cms_content.slug's UNIQUE constraint is the final backstop against a
+    -- genuinely simultaneous "create book" race, since the loser's INSERT
+    -- below raises a constraint-violation exception that rolls back its
+    -- entire call, same atomic guarantee as every explicit check here.
+    PERFORM 1 FROM cms_content WHERE slug = v_book->>'slug' FOR UPDATE;
+    IF FOUND THEN
+      RAISE EXCEPTION 'cms_import_chapters: book slug % is no longer free (race since dry run)', v_book->>'slug';
+    END IF;
+    INSERT INTO cms_content (title, slug, content_type, summary, status)
+    VALUES (v_book->>'title', v_book->>'slug', 'book', v_book->>'summary', 'draft')
+    RETURNING id INTO v_book_cid;
+    INSERT INTO cms_books (content_id, subtitle)
+    VALUES (v_book_cid, v_book->>'subtitle')
+    RETURNING id INTO v_book_id;
+  ELSE
+    v_book_cid := (v_book->>'content_id')::uuid;
+    SELECT slug, content_type, status INTO v_book_slug, v_book_type, v_book_status
+      FROM cms_content WHERE id = v_book_cid FOR UPDATE;
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'cms_import_chapters: target book content % no longer exists (race since dry run)', v_book_cid;
+    END IF;
+    IF v_book_type <> 'book' THEN
+      RAISE EXCEPTION 'cms_import_chapters: target content % is no longer a book', v_book_cid;
+    END IF;
+    IF v_book_status = 'archived' THEN
+      RAISE EXCEPTION 'cms_import_chapters: target book % has been archived since the dry run', v_book_cid;
+    END IF;
+    IF v_book_slug IS DISTINCT FROM (v_book->>'slug') THEN
+      RAISE EXCEPTION 'cms_import_chapters: target book slug changed since the dry run (expected %, found %)', v_book->>'slug', v_book_slug;
+    END IF;
+    SELECT id INTO v_book_id FROM cms_books WHERE content_id = v_book_cid FOR UPDATE;
+    IF v_book_id IS NULL THEN
+      RAISE EXCEPTION 'cms_import_chapters: cms_books row for content_id % no longer exists', v_book_cid;
+    END IF;
+  END IF;
+
+  -- ── 4. Re-validate every chapter under lock — BEFORE any insert ──────────
+  -- Each check closes a specific time-of-check/time-of-use window between the
+  -- dry run and this apply. The RPC never trusts "this item was CREATE in the
+  -- plan" as a label — it independently re-derives that every item is still
+  -- genuinely free right now. Validation is a full, separate pass so nothing
+  -- is inserted before every chapter has cleared every check.
+  FOR v_ch IN SELECT * FROM jsonb_array_elements(v_chapters)
+  LOOP
+    v_n := (v_ch->>'chapter_number')::int;
+
+    -- (a) the global mirror slug (mdx-chapter-N) is still free.
+    PERFORM 1 FROM cms_content WHERE slug = v_ch->>'slug' FOR UPDATE;
+    IF FOUND THEN
+      RAISE EXCEPTION 'cms_import_chapters: slug % is no longer free (race since dry run)', v_ch->>'slug';
+    END IF;
+
+    -- (b) source_path has no mirror row of ANY kind yet — active, retained, or
+    --     soft-rolled-back all occupy the UNIQUE(source_kind, source_path) slot
+    --     and must all block equally (matches the resolver's CONFLICT rule for
+    --     a rolled-back source).
+    PERFORM 1 FROM cms_chapter_mirror WHERE source_kind = 'mdx' AND source_path = v_ch->>'source_path' FOR UPDATE;
+    IF FOUND THEN
+      RAISE EXCEPTION 'cms_import_chapters: source_path % already has a mirror row (race since dry run)', v_ch->>'source_path';
+    END IF;
+
+    -- (c) chapter_number is still free among ACTIVE (non-archived) chapters of
+    --     the target book — the exact race the review flagged: a manual
+    --     chapter could have claimed this number after the dry run.
+    PERFORM 1
+      FROM cms_chapters ch JOIN cms_content c ON c.id = ch.content_id
+      WHERE ch.book_id = v_book_id AND ch.chapter_number = v_n AND c.status <> 'archived'
+      FOR UPDATE OF ch, c;
+    IF FOUND THEN
+      RAISE EXCEPTION 'cms_import_chapters: chapter number % is no longer free in the target book (race since dry run)', v_n;
+    END IF;
+  END LOOP;
+
+  -- ── 5. Every invariant re-verified — perform the approved creates ────────
+  FOR v_ch IN SELECT * FROM jsonb_array_elements(v_chapters)
+  LOOP
+    INSERT INTO cms_content (title, slug, content_type, summary, body, status, book_id)
+    VALUES (
+      v_ch->>'title', v_ch->>'slug', 'book_chapter', v_ch->>'summary', v_ch->>'body',
+      'draft', v_book_id
+    )
+    RETURNING id INTO v_content_id;
+
+    INSERT INTO cms_chapters (book_id, content_id, chapter_number, part, part_title, publication_target)
+    VALUES (
+      v_book_id, v_content_id, (v_ch->>'chapter_number')::int,
+      v_ch->>'part', v_ch->>'part_title',
+      COALESCE((SELECT array_agg(x)::text[] FROM jsonb_array_elements_text(v_ch->'publication_target') x), '{}')
+    )
+    RETURNING id INTO v_chapter_id;
+
+    INSERT INTO cms_chapter_mirror (
+      chapter_id, book_id, source_kind, source_path, source_slug,
+      source_sha256, body_sha256, meta_sha256, source_published, import_batch_id
+    )
+    VALUES (
+      v_chapter_id, v_book_id, 'mdx', v_ch->>'source_path', v_ch->>'source_slug',
+      v_ch->>'source_sha256', v_ch->>'body_sha256', v_ch->>'meta_sha256',
+      (v_ch->>'source_published')::boolean, v_batch
+    );
+
+    v_created := v_created + 1;
+  END LOOP;
+
+  -- Record batch provenance so rollback can safely decide the book's fate.
+  -- The step-1 lock plus this PK guarantee batch_id can never be double-used
+  -- even under true concurrent apply calls.
+  INSERT INTO cms_import_batch (batch_id, book_id, book_content_id, book_created, created_count)
+  VALUES (v_batch, v_book_id, v_book_cid, v_created_bk, v_created);
+
+  RETURN jsonb_build_object(
+    'book_id', v_book_id, 'book_content_id', v_book_cid,
+    'book_created', v_created_bk, 'created', v_created
+  );
+END;
+$$;
+
+-- Reversible rollback of a single import batch (spec §8). One transaction →
+-- all-or-nothing.
+--   SOFT (default): archives the imported chapter content and RETAINS the
+--     mirror rows, marking them rolled_back_at/rollback_batch_id. It does NOT
+--     touch divergence_state — that stays truthful about MDX↔CMS (soft rollback
+--     is not a missing source). Rolled-back mirrors are excluded from ordinary
+--     re-import matching in the resolver; a re-import must hard-roll-back first.
+--   HARD: deletes the imported content; ON DELETE CASCADE removes the chapter +
+--     mirror rows.
+-- The book is archived (soft) / deleted (hard) ONLY when THIS batch created it
+-- (per cms_import_batch.book_created) and no qualifying chapters remain — for
+-- soft, no ACTIVE (non-archived) chapters; for hard, no chapters at all. A
+-- REUSED manual book is never modified. Mirrors resolveRollbackBookAction().
+-- The cms_import_batch row itself is NEVER deleted by this function (nor by
+-- any cascade — see that table's ON DELETE SET NULL FKs): even a hard rollback
+-- that deletes a batch-created book only clears book_id/book_content_id to
+-- NULL on that row, leaving batch_id, book_created, created_count, created_at,
+-- rolled_back_at, and rollback_hard intact — permanently reserving the
+-- batch_id against reuse and keeping the batch auditable.
+CREATE OR REPLACE FUNCTION cms_rollback_import_batch(p_batch uuid, p_hard boolean DEFAULT false)
+RETURNS jsonb
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_content_ids  uuid[];
+  v_affected     int;
+  v_book_id      uuid;
+  v_book_cid     uuid;
+  v_book_created boolean;
+  v_remaining    int;
+  v_book_action  text := 'leave_book';
+BEGIN
+  SELECT book_id, book_content_id, book_created
+    INTO v_book_id, v_book_cid, v_book_created
+    FROM cms_import_batch WHERE batch_id = p_batch;
+
+  SELECT array_agg(ch.content_id) INTO v_content_ids
+  FROM cms_chapter_mirror m
+  JOIN cms_chapters ch ON ch.id = m.chapter_id
+  WHERE m.import_batch_id = p_batch;
+
+  v_affected := COALESCE(array_length(v_content_ids, 1), 0);
+
+  IF v_affected = 0 THEN
+    RETURN jsonb_build_object('batch', p_batch, 'affected', 0, 'book_action', 'leave_book');
+  END IF;
+
+  IF p_hard THEN
+    DELETE FROM cms_content WHERE id = ANY(v_content_ids);  -- cascade drops chapters + mirror
+  ELSE
+    UPDATE cms_content
+      SET status = 'archived', archived_at = now(), updated_at = now()
+      WHERE id = ANY(v_content_ids);
+    UPDATE cms_chapter_mirror
+      SET rolled_back_at = now(), rollback_batch_id = p_batch, last_checked_at = now()
+      WHERE import_batch_id = p_batch;
+  END IF;
+
+  -- Decide the book's fate — only ever for a book THIS batch created.
+  IF v_book_created THEN
+    IF p_hard THEN
+      SELECT count(*) INTO v_remaining FROM cms_chapters WHERE book_id = v_book_id;
+      IF v_remaining = 0 THEN
+        DELETE FROM cms_content WHERE id = v_book_cid;  -- cascade drops cms_books
+        v_book_action := 'delete_book';
+      END IF;
+    ELSE
+      SELECT count(*) INTO v_remaining
+        FROM cms_chapters ch JOIN cms_content c ON c.id = ch.content_id
+        WHERE ch.book_id = v_book_id AND c.status <> 'archived';
+      IF v_remaining = 0 THEN
+        UPDATE cms_content SET status = 'archived', archived_at = now(), updated_at = now() WHERE id = v_book_cid;
+        v_book_action := 'archive_book';
+      END IF;
+    END IF;
+  END IF;
+
+  UPDATE cms_import_batch SET rolled_back_at = now(), rollback_hard = p_hard WHERE batch_id = p_batch;
+
+  RETURN jsonb_build_object('batch', p_batch, 'affected', v_affected, 'hard', p_hard, 'book_action', v_book_action);
+END;
+$$;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 42: leads.score_history (Day-75 retest ritual)
+-- ────────────────────────────────────────────────────────────
+-- The foundation assessment upserts a single row per (email, assessment_type),
+-- so retakes silently overwrote the previous overall_score and no before/after
+-- was possible. This jsonb array of { score, at } entries (appended by
+-- app/api/send-results-email each time results are computed, capped at 24)
+-- preserves the trajectory. ADD-only, idempotent; the app degrades gracefully
+-- when the column is absent (history features simply stay hidden).
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS score_history jsonb NOT NULL DEFAULT '[]'::jsonb;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 43: contributions (anonymised score contributions → national pulse)
+-- ────────────────────────────────────────────────────────────
+-- Backs the "participate outward" loop: members who opt in on the assessment
+-- results page (components/assessment/privacy-opt-in.tsx → POST /api/contribute)
+-- donate their anonymised score to an aggregate, surfaced as the national
+-- Food System Pulse (GET /api/national-pulse, shown on /eatosystem). No
+-- personal identifiers — score, sub-scores, profile type, and a best-effort
+-- ISO-3166 country code from the eb_country cookie. RLS enabled with zero
+-- policies (service-role only), same pattern as the cms_* tables. Idempotent.
+CREATE TABLE IF NOT EXISTS contributions (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  overall_score integer NOT NULL CHECK (overall_score BETWEEN 0 AND 100),
+  sub_scores    jsonb,
+  profile_type  text,
+  country       text,   -- ISO-3166 alpha-2 (best effort, may be null)
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE contributions ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only)
+
+CREATE INDEX IF NOT EXISTS idx_contributions_country ON contributions (country);
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 44: drop meal_scans public-read policy (PII leak fix)
+-- ────────────────────────────────────────────────────────────
+-- meal_scans stores guest scan captures INCLUDING email + name. Its only RLS
+-- policy was `meal_scans_public_read` — SELECT USING (true) for all roles —
+-- which let anyone holding the public anon key (it ships in the browser
+-- bundle) read every guest's email and name via the Supabase REST API
+-- (GET /rest/v1/meal_scans?select=email,name). No code needs that access:
+-- the insert (app/api/guest-scan) and both reads (app/analyse/result/[hash]
+-- page + opengraph-image) all use the service-role client, scoped by hash,
+-- which bypasses RLS. Dropping the policy leaves RLS enabled with zero
+-- policies = deny-all to anon/authenticated, service-role unaffected — the
+-- same service-role-only pattern as email_sends / contributions / cms_*.
+-- Idempotent.
+DROP POLICY IF EXISTS meal_scans_public_read ON meal_scans;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 45: reviews (member feedback / testimonial loop → Loyalty)
+-- ────────────────────────────────────────────────────────────
+-- Closes the Loyalty gap: capture a light "how's it going?" rating + optional
+-- quote after a good moment, and feed approved quotes back as social proof.
+-- POST /api/reviews (auth, one row per member, upserted) → GET /api/reviews
+-- (public aggregate + APPROVED quotes only). `approved` defaults false so a
+-- quote is never shown publicly until a human clears it — no unmoderated user
+-- text on the marketing surface. Service-role only (RLS on, zero policies),
+-- same pattern as contributions/email_sends. Idempotent. Follows Migration 44
+-- (meal_scans) which precedes it in this stacked branch.
+CREATE TABLE IF NOT EXISTS reviews (
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    uuid NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+  rating     integer NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  quote      text CHECK (quote IS NULL OR char_length(quote) <= 500),
+  source     text,          -- where it was captured: 'account' | 'meal' | 'retest' | 'milestone'
+  approved   boolean NOT NULL DEFAULT false,  -- moderation gate for public display
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only)
+
+CREATE INDEX IF NOT EXISTS idx_reviews_approved ON reviews (approved, created_at DESC) WHERE approved = true;
+
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 46: feedback (customer feedback bot → owner digests)
+-- ────────────────────────────────────────────────────────────
+-- Captures free-text customer feedback from the site-wide feedback bot. One
+-- row per submission (NOT one-per-user — a customer can send feedback many
+-- times). `user_id` is nullable so anonymous visitors can be heard too, and
+-- ON DELETE SET NULL so a submission survives account deletion (feedback is
+-- product signal, not personal account data) while unlinking the identity.
+-- The AI-derived triage fields (category/sentiment/severity/feature_area/
+-- summary/suggested_improvement) are filled by a single Claude extraction call
+-- at submit time; they're all nullable so a submission is never lost if that
+-- call fails. Service-role only (RLS on, zero policies) — same pattern as
+-- contributions/email_sends; read back only by the admin dashboard and the
+-- weekly owner digest, both server-side.
+CREATE TABLE IF NOT EXISTS feedback (
+  id                    uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id               uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  source_page           text,
+  rating                integer CHECK (rating IS NULL OR rating BETWEEN 1 AND 5),
+  message               text NOT NULL CHECK (char_length(message) <= 4000),
+  category              text,          -- bug | feature | ux | pricing | content | praise | other
+  sentiment             text,          -- positive | neutral | negative
+  severity              text,          -- low | medium | high  (bugs/UX only)
+  feature_area          text,          -- e.g. 'meal analysis', 'assessment', 'glp-1'
+  summary               text,
+  suggested_improvement text,
+  status                text NOT NULL DEFAULT 'new',            -- new | triaged | resolved | archived
+  created_at            timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE feedback ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only)
+
+CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_feedback_status  ON feedback (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_feedback_category ON feedback (category);

@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
+import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 
 /* ── Validation ─────────────────────────────────────────────────────── */
 
@@ -119,6 +120,15 @@ Your next step: [one clear, specific, and personalised action]`
 /* ── Route handler ──────────────────────────────────────────────────── */
 
 export async function POST(req: NextRequest) {
+  // Unauthenticated public endpoint that streams Claude output — without a
+  // cap it's an open relay for anyone's prompts on our API bill. Per-IP
+  // burst limit: generous for a human trying the demo, hostile to scripts.
+  const rl = rateLimit(`demo-consult:${getClientIp(req)}`, 10, 10 * 60_000)
+  if (!rl.allowed) {
+    const { body: rlBody, init } = rateLimitResponse(rl)
+    return NextResponse.json(rlBody, init)
+  }
+
   // Validate body
   let body: z.infer<typeof bodySchema>
   try {

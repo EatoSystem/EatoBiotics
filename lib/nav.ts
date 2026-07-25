@@ -122,3 +122,20 @@ export const NAV_LINKS: Array<{ href: string; label: string }> = [
   { href: "/pricing", label: "Pricing" },
   { href: "/about",   label: "About" },
 ]
+
+/* ── Chromeless routes ─────────────────────────────────────────────────────
+ * Routes that render their own full application shell and must NOT show the
+ * public marketing header/footer. Currently the private Content Studio (/cms),
+ * which supplies its own header, nav, and footer via app/cms/layout.tsx —
+ * without this, /cms would show doubled chrome (marketing nav/footer wrapping
+ * the CMS shell).
+ *
+ * PRESENTATION ONLY — this is NOT a security control. CMS access is enforced
+ * server-side and fail-closed by the proxy.ts default-deny (bare 404 without a
+ * valid admin cookie), the app/cms/layout.tsx admin gate, and requireCmsAdmin
+ * on every /api/cms route. Hiding the marketing chrome changes nothing about
+ * who can reach /cms.
+ */
+export function hidesSiteChrome(pathname: string): boolean {
+  return pathname === "/cms" || pathname.startsWith("/cms/")
+}

@@ -3,18 +3,18 @@ import { GlucoseAssessmentClient } from "@/components/eatobetics/glucose-assessm
 import { FoundationGuard } from "@/components/assessment/foundation-guard"
 
 export const metadata: Metadata = {
-  title: { absolute: "EatoBetics Assessment — Your Glucose Intelligence Score" },
+  title: { absolute: "Glucose Assessment — Your Glucose Intelligence Score" },
   description:
-    "A free EatoBetics assessment of how your meals, rhythm, strength habits, and daily routine support steady energy and glucose. Get your EatoBetics Score and full report in about 4 minutes.",
+    "A free EatoBiotics assessment of how your meals, rhythm, strength habits, and daily routine support steady energy and glucose. Get your Glucose Score and full report in about 4 minutes.",
   robots: { index: false },
   openGraph: {
-    title: "EatoBetics Assessment — Your Glucose Intelligence Score",
+    title: "Glucose Assessment — Your Glucose Intelligence Score",
     description:
       "See how your meals, rhythm, and daily habits support steady energy and glucose. Free, about 3 minutes.",
   },
 }
 
-export default function EatoBeticsAssessmentPage() {
+export default function GlucoseAssessmentPage() {
   return (
     <FoundationGuard addon="glucose">
       <GlucoseAssessmentClient />

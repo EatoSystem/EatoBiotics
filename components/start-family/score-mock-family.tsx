@@ -75,7 +75,7 @@ export function ScoreMockFamily() {
       <div className="relative mt-5 overflow-hidden rounded-2xl">
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/70 backdrop-blur-[3px]" />
         <div className="relative z-20 flex items-center justify-center py-3">
-          <Link href="/assessment-family" className="text-sm font-semibold" style={{ color: "var(--icon-yellow)" }}>
+          <Link href="/assessment/family" className="text-sm font-semibold" style={{ color: "var(--icon-yellow)" }}>
             See your family&apos;s actual score →
           </Link>
         </div>

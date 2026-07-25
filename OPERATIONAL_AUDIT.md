@@ -20,7 +20,7 @@ changed — only operational/functional code.
 | 5 | Verify full flow operational | **Done** | End-to-end flow traced and repaired; test plan in §9. |
 
 ### The single biggest root cause
-`lib/dev-password-gate.ts` contained a **hardcoded fallback password (`"Monkstown"`)**.
+`lib/dev-password-gate.ts` contained a **hardcoded fallback password** (since removed; the gate now requires `DEV_PASSWORD` in the deploy env).
 Because of it, `isPasswordGateEnabled()` returned `true` **unconditionally**,
 regardless of environment variables. `proxy.ts` therefore redirected **every**
 route — `/assessment`, the Stripe success URL `/assessment/deep`, `/auth/callback`,

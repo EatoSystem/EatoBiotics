@@ -3,7 +3,7 @@
 /**
  * components/eatobetics/glucose-assessment-client.tsx
  *
- * Self-contained EatoBetics (glucose) assessment flow, modelled on the
+ * Self-contained Glucose assessment flow, modelled on the
  * EatoBiotics assessment framework but built for the Glucose Intelligence
  * Lens. Three views: intro → questions → results. Scoring runs client-side
  * (lib/glucose-assessment-scoring); progress persists to localStorage.
@@ -193,7 +193,7 @@ function Intro({ onStart }: { onStart: () => void }) {
     <main className="bg-white px-6 pb-24 pt-28 md:pt-32">
       <div className="mx-auto max-w-3xl text-center">
         <span className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
-          <Sparkles size={14} style={{ color: "var(--icon-yellow)" }} /> EatoBetics Assessment
+          <Sparkles size={14} style={{ color: "var(--icon-yellow)" }} /> Glucose Assessment
         </span>
         <h1 className="mt-5 font-serif text-4xl font-bold leading-[1.1] text-balance sm:text-5xl">
           <span style={{ color: "var(--foreground)" }}>What&apos;s your </span>

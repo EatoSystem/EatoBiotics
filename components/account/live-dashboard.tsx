@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
@@ -15,7 +15,13 @@ import {
   Tag, SectionLabel, GradientButton, ringColors,
 } from "@/components/account/dashboard-parts"
 import { TwinStage } from "@/components/account/twin/twin-stage"
+import { PlantsThisWeek } from "@/components/account/plants-this-week"
+import { GutTrend } from "@/components/account/gut-trend"
+import { mealMemory } from "@/lib/account/meal-memory"
 import { ExperienceNav } from "@/components/account/experience-nav"
+import { RetestCard } from "@/components/account/retest-card"
+import { FeedbackPrompt } from "@/components/account/feedback-prompt"
+import type { RetestState } from "@/lib/account/retest"
 import { TodayStrip } from "@/components/account/twin/today-strip"
 import { TwinLearnedToday, TwinNextAction } from "@/components/account/twin/twin-sections"
 import { QuickLog, type QuickLogResult } from "@/components/account/twin/quick-log"
@@ -324,6 +330,7 @@ export interface LiveDashboardProps {
   profileType?:      string | null
   biotics?:          { prebiotic: number; probiotic: number; postbiotic: number }
   recentAnalyses?:   RealAnalysis[]
+  scoreHistory?:     { score: number; date: string }[]  // 90-day biotics history → Gut Trend
   paidReports?:      LivePaidReport[]            // purchased one-time reports
   weeklyReport?:     RealWeeklyReport | null
   weeklyReports?:    RealWeeklyReport[]          // for Consultations tab
@@ -339,6 +346,7 @@ export interface LiveDashboardProps {
   twinFigureSrc?:    string
   twinVideo?:        TwinVideo | null
   sex?:              string | null
+  retest?:           RetestState | null          // Day-75 retest ritual state
   // Sandbox pass-through
   [key: string]: unknown
 }
@@ -362,41 +370,6 @@ interface LiveResult {
   created_at?: string
 }
 
-/* ─────────────────────────────────────────────────────────────────────────
-   Map the real /api/analyse response → LiveResult. The API returns
-   { score, foods[], whatThisMealDoes, overallAssessment, nutrition:
-   { protein_g, … } } — NOT LiveResult's keys — so casting it directly
-   renders zeros. Component scores mirror the server-side rubric in
-   app/api/analyse/route.ts.
-   ───────────────────────────────────────────────────────────────────────── */
-function mapAnalyseResponse(p: Record<string, unknown>, mealText: string): LiveResult {
-  const foods = Array.isArray(p.foods) ? (p.foods as Array<{ name?: string; biotic?: string }>) : []
-  const count = (b: string) => foods.filter((f) => f.biotic === b).length
-  const pre = count("prebiotic"), pro = count("probiotic"), post = count("postbiotic")
-  const n = (p.nutrition ?? {}) as Record<string, number | undefined>
-  const hour = new Date().getHours()
-  return {
-    id: null,
-    meal_name: mealText.length > 64 ? mealText.slice(0, 61) + "…" : mealText,
-    meal_type: hour < 11 ? "Breakfast" : hour < 15 ? "Lunch" : hour < 21 ? "Dinner" : "Snack",
-    biotics_score: typeof p.score === "number" ? p.score : 0,
-    prebiotic_score:  pre >= 4 ? 45 : pre === 3 ? 40 : pre === 2 ? 32 : pre === 1 ? 20 : 0,
-    probiotic_score:  pro >= 2 ? 25 : pro === 1 ? 20 : 10,
-    postbiotic_score: post >= 1 ? 15 : 5,
-    // Display proxies — derived from the foods breakdown, not Claude-scored.
-    quality_diversity:         Math.min(95, foods.length * 15),
-    quality_anti_inflammatory: post >= 1 ? 70 : 40,
-    nutrition: {
-      calories: n.calories ?? 0,
-      protein:  n.protein_g ?? 0,
-      carbs:    n.carbs_g   ?? 0,
-      fat:      n.fat_g     ?? 0,
-      fibre:    n.fibre_g   ?? 0,
-    },
-    insight: (p.whatThisMealDoes as string | undefined) ?? (p.overallAssessment as string | undefined) ?? "",
-    tags: foods.slice(0, 4).map((f) => f.name ?? "").filter(Boolean),
-  }
-}
 
 /* ─────────────────────────────────────────────────────────────────────────
    First-meal celebration — the activation moment. Shown in the first-visit
@@ -708,6 +681,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
     profileType        = null,
     biotics:           propBiotics = null,
     recentAnalyses     = [],
+    scoreHistory       = [],
     paidReports        = [],
     weeklyReport       = null,
     weeklyReports      = [],
@@ -722,6 +696,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
     twinFigureSrc      = undefined,
     twinVideo          = null,
     sex                = null,
+    retest             = null,
   } = props
 
   const [tab, setTab] = useState<Tab>("overview")
@@ -850,6 +825,17 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
   const [quickLogOpen, setQuickLogOpen] = useState(false)
   /* The Meal Reveal — a logged meal plays out on the stage. */
   const [reveal, setReveal] = useState<QuickLogResult | null>(null)
+
+  // The Twin remembers: one-line longitudinal callback for the just-revealed
+  // meal, derived from server-fetched history (which never includes the meal
+  // being revealed — it was logged after this page rendered).
+  const revealMemory = useMemo(() => {
+    if (!reveal) return null
+    return mealMemory(
+      { name: reveal.meal_name ?? null, score: reveal.biotics_score ?? null },
+      recentAnalyses.map((a) => ({ name: a.meal_name, score: a.biotics_score, createdAt: a.created_at })),
+    )
+  }, [reveal, recentAnalyses])
   /* Today's ritual signals — light the stage figure with the day's habits. */
   const [todaySignals, setTodaySignals] = useState<RitualDay | null>(null)
   useEffect(() => {
@@ -915,6 +901,23 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ description: mealInput.trim() }),
       })
+      if (res.status === 422) {
+        // Honest refusal — the input couldn't be read as food. Show the
+        // server's message (retake/rewrite guidance) instead of a generic error.
+        const err = (await res.json().catch(() => null)) as { error?: string } | null
+        setAnalyseError(err?.error ?? "Couldn't identify foods — try a clearer description")
+        setLoggerState("empty")
+        return
+      }
+      if (res.status === 429) {
+        // Daily cap reached — surface the real limit message (which names the
+        // plan's allowance) rather than a generic error that invites a retry
+        // that can't succeed.
+        const err = (await res.json().catch(() => null)) as { error?: string } | null
+        setAnalyseError(err?.error ?? "You've reached today's meal-analysis limit.")
+        setLoggerState("empty")
+        return
+      }
       if (!res.ok) throw new Error("Analysis failed")
       const data = await res.json() as LiveResult
       setLiveResult(data)
@@ -1118,6 +1121,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             burstKey={celebrationKey}
             burstMessage={celebration?.title}
             reveal={reveal}
+            revealMemory={revealMemory}
             onRevealDone={() => setReveal(null)}
             onLogAnother={() => {
               setReveal(null)
@@ -1160,6 +1164,16 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             <InsideYouTeaser twin={twin} bare />
             <AskTwin twin={twin} consultHref="/account/consult" bare />
           </div>
+
+          {/* [PROGRESS] — the Day-75 retest ritual: countdown, retake, before/after */}
+          {retest && (
+            <div className="mt-8">
+              <GroupLabel>Your progress</GroupLabel>
+              <div className="mt-4">
+                <RetestCard state={retest} />
+              </div>
+            </div>
+          )}
 
           {/* [EXPLORE] — lenses into the same Food System (Foundation / Health / Life) */}
           <GroupLabel>Explore your Food System</GroupLabel>
@@ -1255,19 +1269,12 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                 <button
                   disabled={!mealInput.trim() || loggerState === "analysing"}
                   onClick={async () => {
-                    if (!mealInput.trim() || loggerState === "analysing") return
-                    setLoggerState("analysing"); setAnalyseError(null)
-                    try {
-                      const res = await fetch("/api/analyse", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ meal: mealInput }),
-                      })
-                      const data = await res.json() as Record<string, unknown> & { error?: string }
-                      if (!res.ok || data.error) { setAnalyseError(data.error ?? "Analysis failed"); setLoggerState("empty"); return }
-                      setLiveResult(mapAnalyseResponse(data, mealInput)); setLoggerState("result")
-                      window.scrollTo({ top: 0, behavior: "smooth" })
-                    } catch { setAnalyseError("Something went wrong — please try again"); setLoggerState("empty") }
+                    // The first-meal activation path — use the same working
+                    // /api/analyse-meal handler as every other logger (this
+                    // previously POSTed text to /api/analyse, which only accepts
+                    // an image body, so it failed 100% of the time for new members).
+                    await handleAnalyse()
+                    window.scrollTo({ top: 0, behavior: "smooth" })
                   }}
                   className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                   style={{ background: "rgba(255,255,255,0.20)", border: "1px solid rgba(255,255,255,0.30)" }}
@@ -1348,6 +1355,13 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
 
           {/* ── LEFT: Logger + Today's Meals ── */}
           <div className="space-y-5">
+
+            {/* Gut trend — progress over time (renders once ≥3 days logged) */}
+            <GutTrend history={scoreHistory} />
+
+            {/* Loyalty: ask engaged members how it's going (self-hides once
+                answered/dismissed; only shown after a few logged meals). */}
+            {recentAnalyses.length >= 3 && <FeedbackPrompt source="account" />}
 
             {/* Logger */}
             <div id="log-meal" className="scroll-mt-24">
@@ -1719,6 +1733,9 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
 
           {/* ── RIGHT: Biotics + Consultation + Monthly Focus ── */}
           <div className="mt-5 space-y-4 md:mt-0">
+
+            {/* 30 plants a week — detected from this week's logged meals */}
+            <PlantsThisWeek mealNames={recentAnalyses.map((a) => a.meal_name)} />
 
             {/* Biotics Profile */}
             <div>

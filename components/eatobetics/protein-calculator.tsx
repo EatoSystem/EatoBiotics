@@ -9,7 +9,7 @@
  */
 
 import { useState } from "react"
-import { Dumbbell, Utensils } from "lucide-react"
+import { Check, Dumbbell, Mail, Utensils } from "lucide-react"
 import {
   type Activity,
   ACTIVITY_LABELS,
@@ -26,6 +26,24 @@ export function ProteinCalculator() {
   const [unit, setUnit] = useState<Unit>("kg")
   const [activity, setActivity] = useState<Activity>("strength")
   const [meals, setMeals] = useState<number>(3)
+  const [email, setEmail] = useState("")
+  const [leadState, setLeadState] = useState<"idle" | "sending" | "done" | "error">("idle")
+
+  async function captureLead(e: React.FormEvent) {
+    e.preventDefault()
+    if (leadState === "sending" || leadState === "done") return
+    setLeadState("sending")
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, mainGoal: "glp1" }),
+      })
+      setLeadState(res.ok ? "done" : "error")
+    } catch {
+      setLeadState("error")
+    }
+  }
 
   const w = parseFloat(weight)
   const valid = !isNaN(w) && w > 0
@@ -124,6 +142,41 @@ export function ProteinCalculator() {
             </div>
             <p className="mt-1 text-xs text-white/60">at each of your {meals} meals</p>
           </div>
+
+          {/* Lead capture — keep the target + get the follow-up habits by email */}
+          {leadState === "done" ? (
+            <p className="mt-6 flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-semibold text-white">
+              <Check size={15} style={{ color: "var(--icon-lime)" }} /> Sent — check your inbox.
+            </p>
+          ) : (
+            <form onSubmit={captureLead} className="mt-6">
+              <label htmlFor="glp1-lead-email" className="sr-only">Email address</label>
+              <div className="flex gap-2">
+                <input
+                  id="glp1-lead-email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="w-full rounded-xl border border-white/15 bg-white/[0.06] px-4 py-2.5 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/40"
+                />
+                <button
+                  type="submit"
+                  disabled={leadState === "sending"}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                  style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}
+                >
+                  <Mail size={14} /> {leadState === "sending" ? "Sending…" : "Email me my target"}
+                </button>
+              </div>
+              <p className="mt-2 text-[11px] text-white/45">
+                {leadState === "error"
+                  ? "That didn't send — please try again."
+                  : "Get your target plus the muscle-protecting food habits that go with it. No spam."}
+              </p>
+            </form>
+          )}
 
           <p className="mt-6 text-[11px] leading-relaxed text-white/45">
             An educational estimate (~{PROTEIN_FACTORS[activity]} g per kg). Protein needs vary —

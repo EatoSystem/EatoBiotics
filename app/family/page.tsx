@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   },
 }
 
-const ASSESSMENT_HREF = "/assessment-family"
+const ASSESSMENT_HREF = "/assessment/family"
 const FAMILY_GRADIENT = "linear-gradient(135deg, var(--icon-green), var(--icon-teal))"
 
 /* ── Section 3 — The 3 Systems of a Family Food System ──────────────── */
@@ -104,7 +104,7 @@ const BIOTICS = [
 const FAMILY_PROGRAMS = [
   { number: "01", name: "Family", icon: Users, tagline: "The Food System Inside Your Family", status: "You're here", here: true, href: null, accent: "var(--icon-green)", gradient: FAMILY_GRADIENT },
   { number: "02", name: "Stability™", icon: Compass, tagline: "The Stability System Inside You", status: "Explore", here: false, href: "/stability", accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" },
-  { number: "03", name: "EatoBetics", icon: Activity, tagline: "The Glucose System Inside You", status: "Explore", here: false, href: "/glucose", accent: "var(--icon-orange)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" },
+  { number: "03", name: "Glucose", icon: Activity, tagline: "The Glucose System Inside You", status: "Explore", here: false, href: "/glucose", accent: "var(--icon-orange)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" },
   { number: "04", name: "You", icon: User, tagline: "The Food System Inside You", status: "Explore", here: false, href: "/you", accent: "var(--icon-lime)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" },
 ]
 

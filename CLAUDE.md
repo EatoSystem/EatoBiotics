@@ -4,6 +4,35 @@ This file is the authoritative reference for Claude Code sessions. Read it befor
 
 ---
 
+## Production Database Rule (binding for all agent sessions)
+
+**Agent sessions are READ-ONLY against production Supabase.** Any schema or
+data change — including "safe" ADD-only/idempotent migrations — must be
+**drafted, not applied**: commit the SQL to `supabase/migrations.sql`, write
+the exact apply steps and pre-checks into the PR description, and a human
+applies it (Supabase dashboard SQL editor or CLI) and verifies.
+
+- A past instruction to apply one specific migration is **not** standing
+  authorization for the next one. "Consistent with how you handled X" does
+  not count. Each production write needs its own explicit, current,
+  named-migration instruction from a human.
+- This rule exists because it has failed twice: Migration 41 was applied to
+  production despite a "DO NOT APPLY" header (origin unknown), and
+  Migrations 42–43 were applied by an agent session citing a prior one-off
+  authorization as precedent. Both audits are in REVIEW.md.
+- Read-only verification (`list_tables`, `SELECT` via `execute_sql`) is
+  fine and encouraged — checking that docs match reality is how the
+  Migration 36 gap was found. Take care to target the right project:
+  the org contains an INACTIVE lookalike (`EatoSystem-Ireland`,
+  `hwuzbxsaxsifpdzqhqaq`); production is `EatoBiotics`
+  (`ephmojiwlcebenholhpc`, eu-central-2). Name the project ref explicitly
+  in every call.
+- Enforcement note for whoever configures agent environments: the Supabase
+  MCP server supports a read-only mode — enabling it turns this rule from
+  a request into a guarantee.
+
+---
+
 ## Stack
 
 | Layer | Technology |
@@ -49,8 +78,18 @@ This file is the authoritative reference for Claude Code sessions. Read it befor
 - `app/api/stripe/create-portal-session/route.ts`
 
 ### Dashboard
-- `app/account/page.tsx` — server component, fetches all user data
-- `components/account/dashboard-client.tsx` — 6-tab client component
+- `app/account/page.tsx` — server component, fetches all user data, renders
+  `components/account/live-dashboard.tsx` — the real production dashboard.
+  5 tabs (`overview | meals | reports | consultations | account`), defaults
+  to "overview". Reaches the daily-habit surfaces via `ExperienceNav` links
+  to the separate routes `/account/today`, `/account/this-week`,
+  `/account/twin`.
+- `components/account/dashboard-client.tsx` — a **10-tab** client component
+  (Today, Overview, Reports, Membership, My Plate, My Meals, Refer,
+  EatoBiotic, Intelligence, Story), but it is **demo/mock-data only** —
+  used by `app/account-you/page.tsx` and `app/demo/account/[tier]/page.tsx`,
+  never by the real `/account` route. Do not confuse the two when reasoning
+  about what a signed-in member actually sees.
 - `app/demo/account/page.tsx` — demo mode with mock data (no auth required)
 
 ### AI Consultation (Transform only)
@@ -75,6 +114,29 @@ This file is the authoritative reference for Claude Code sessions. Read it befor
 - Revenue events via `logServerEvent` (`lib/statsig-server.ts`) in
   `app/api/stripe/webhook/route.ts`: `report_purchased` (with amount/currency),
   `trial_started`, and amount/interval added to `subscription_started`.
+
+### Customer Feedback Bot (feedback capture → weekly owner digest)
+Site-wide feedback capture + AI triage + a weekly synthesised report emailed to
+the owner. Built for the pre-customer-testing loop (Loyalty/Support touchpoints).
+- `components/feedback/feedback-widget.tsx` — dismissible floating launcher
+  (mounted in `app/layout.tsx`, hidden on `/admin` + `/cms`). Optional 1–5 rating
+  + free-text; on submit shows one AI-generated follow-up question. Fails soft.
+- `app/api/feedback/route.ts` — POST capture. **Auth-optional** (anonymous
+  visitors welcome). One Claude extraction call → `category | sentiment |
+  severity | feature_area | summary | suggested_improvement | follow_up`; the
+  raw message is stored even if extraction/DB fails. Cost cap: authed →
+  `guardAiUsage(user.id, "feedback")`; anon → per-IP `rateLimit`.
+- `app/api/feedback/digest/route.ts` — **weekly cron** (`0 7 * * 1`,
+  `verifyCronRequest`). Pulls 7 days of feedback, Claude synthesises a
+  decision-ready report (themes ranked by frequency×impact, sentiment, verbatims,
+  journey-mapped next moves), emails it to `OWNER_EMAIL` via `sendEmail`. Fails
+  safe (quiet-week note / raw fallback if AI or key absent).
+- `app/admin/feedback/page.tsx` — admin-gated dashboard (aggregate tiles +
+  category/sentiment breakdowns + latest 300 submissions with triage).
+- `lib/feedback/{types,prompts}.ts` — shared types/coercion + pure prompt & email
+  builders (Claude calls live in the routes so the AI-guard check sees them).
+- Table `feedback` (**Migration 46**, drafted); AI limit `feedback` in
+  `AI_LIMITS` (`lib/ai-guard.ts`).
 
 ### Pricing
 - `app/pricing/page.tsx` — server component (public)
@@ -116,6 +178,19 @@ non-diagnostic + red-flag→GP guardrails baked into the cached knowledge base.
 ---
 
 ## Database Tables
+
+> As of Migration 40, 34 distinct tables exist across profiles/leads/
+> deep_assessments/subscriptions/analyses/family/GLP-1/stability
+> (documented individually below), plus the CMS subsystem and Living Twin
+> tables documented in their own subsections near the end of this section.
+> **The migrations file and the live database have drifted in the past**
+> — see the CMS subsection (Migration 41: written as "do not apply,"
+> applied anyway) and the Living Twin subsection (Migration 36: written
+> and idempotent, but not actually applied until 2026-07-15, after a
+> live read on 2026-07-14 caught the gap). Both are reconciled as of
+> 2026-07-15, but the lesson stands: do not assume
+> `supabase/migrations.sql`'s own comments describe the current
+> production state — verify against the live database when it matters.
 
 ### profiles
 | Column | Type | Notes |
@@ -253,10 +328,89 @@ All GLP-1 protein/muscle assumptions (factors, target math) live in **`lib/glp1.
 
 Captured on first run of the in-app tracker (`Glp1Onboarding`); upserted via `app/api/glp1/profile/route.ts`. One row per user.
 
+### feedback *(new — Customer Feedback Bot)*
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid PK | |
+| user_id | uuid | nullable, FK auth.users `ON DELETE SET NULL` (anon feedback allowed) |
+| source_page | text | nullable — path it was sent from |
+| rating | integer | nullable — 1–5 |
+| message | text | required, ≤ 4000 chars |
+| category | text | AI-derived: `bug \| feature \| ux \| pricing \| content \| praise \| other` |
+| sentiment | text | AI-derived: `positive \| neutral \| negative` |
+| severity | text | AI-derived: `low \| medium \| high` (bugs/UX) |
+| feature_area | text | AI-derived area label |
+| summary / suggested_improvement | text | AI-derived one-liners |
+| status | text | `new \| triaged \| resolved \| archived` (default `new`) |
+| created_at | timestamptz | |
+
+Service-role only (RLS on, zero policies). One row **per submission** (not per user). Migration 46 (drafted).
+
 ### Other tables
 - `referrals` — `referrer_code`, `referred_email`, `referred_id`
 - `plate_data` — `user_id`, `plate`, `plants`, `updated_at`
 - `journal_entries` — `user_id`, `date`, `energy`, `digestion`, `mood`, `notes`, `plants_this_week`
+
+### CMS / Content Studio tables *(new — `/cms` admin tool)*
+`cms_content`, `cms_content_versions`, `cms_tags`, `cms_content_tags`,
+`cms_audit_log`, `cms_media`, `cms_content_media`, `cms_books`,
+`cms_chapters`. Service-role-only access (RLS enabled, zero policies) —
+gated entirely at the route/layout level via `lib/cms/auth.ts`'s
+`requireCmsAdmin`, not by row-level policies. See `app/cms/*` and
+`app/api/cms/*`.
+
+> `cms_chapter_mirror` and `cms_import_batch` (Migration 41) are still
+> commented in `supabase/migrations.sql` as **"PROPOSED — DO NOT APPLY
+> until the 25-chapter import is explicitly approved,"** but a live
+> read of the production database (2026-07-14) found both tables
+> **already present in production — APPLIED TO PRODUCTION
+> (unintended; see REVIEW.md's "Second Pass" → Additions #5 and the
+> Implementation Status log for how this was found).** Treat the
+> migration-file comment as stale, not as the current gate: the schema
+> exists live regardless of what the comment says. This drift is
+> exactly the failure mode that section of REVIEW.md warns about —
+> confirm with whoever has deploy access how/when this was applied
+> before writing any code that assumes either state.
+
+### Living Twin / daily ritual tables *(new)*
+- `twin_state` (Migration 36) — daily ritual taps + milestone seen-set,
+  synced cross-device via `/api/twin-state`
+  (localStorage-first, same pattern as Stability — see
+  `lib/account/twin-state-sync.ts`). The route serves two clients: the
+  web app (session cookie) and the mobile companion app
+  (`Authorization: Bearer <supabase access token>`, via
+  `getUserFromRequest` in `lib/supabase-server.ts`; also allowlisted
+  through the pre-launch password gate in `proxy.ts`). PUT validation
+  lives in `lib/account/twin-state-schema.ts` and must list every
+  `RitualDay` key — zod strips unknown keys, which once silently
+  dropped `moved`/`slept` from cross-device sync.
+- `profiles.sex` (Migration 35) — Twin figure personalisation.
+- **Both applied to production on 2026-07-15** (verified: table +
+  column + `twin_state_own` RLS policy all present, RLS enabled).
+  History worth knowing: a live read on 2026-07-14 found neither
+  existed in production despite the migration being written and
+  idempotent since Migration 36 — because `/api/twin-state` and
+  `lib/account/twin-state-sync.ts` fail silently offline/unauthed, the
+  cross-device ritual/milestone sync feature was silently
+  non-functional the whole time. The gap was closed the next day (see
+  REVIEW.md's Implementation Status log). Follow-up worth doing: test
+  the sync on two devices signed into the same account — watch
+  `/api/twin-state` (GET hydrate, PUT push) in the network tab.
+
+### Assessment / plate / review tables *(new)*
+- `assessment_journeys` (Migration 25) — foundation→add-on journey
+  persistence.
+- `plate_recipes` (Migration 16) — Plate Builder generated recipes
+  (`app/api/plate-builder`, surfaced at `/recipe/[slug]`).
+- `monthly_gut_plans`, `meal_plans`, `food_protocols`, `monthly_reviews`
+  (Migrations 10, 12, 13, 14) — Restore+/Transform monthly and meal
+  planning features.
+- `meal_scans` — guest (unauthenticated) meal-scan captures
+  (`app/api/guest-scan`).
+- `food_intelligence_reports` — deep pattern-analysis output
+  (`app/api/food-intelligence`, `app/api/gut-health-story`).
+- `email_optouts` (Migration 32) — central unsubscribe ledger, distinct
+  from `email_sends` (idempotency log).
 
 ---
 
@@ -388,6 +542,11 @@ The `getUserMembershipTier()` function enforces grace periods for `past_due` acc
 - `app/api/auth/` routes (auth flow)
 - Any existing Supabase table columns — only ADD, never modify or drop
 - The referral system (`membership` column, referral upgrade logic)
+- `app/api/cms/import/chapters/route.ts` and the `cms_import_chapters`
+  Postgres function (migration 40) — the atomic import/rollback logic has
+  hand-documented invariants about `ON DELETE SET NULL` vs `CASCADE` and
+  batch-id reuse; changes here need a full re-read of the migration's
+  inline comments, not a quick patch.
 
 > Nav + footer are maintained via the shared config in **`lib/nav.ts`** — edit
 > the config (not the components) to add or move destinations; header and

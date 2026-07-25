@@ -1,8 +1,8 @@
 // lib/glucose-assessment-scoring.ts
 //
-// Scoring + report model for the EatoBetics (glucose) assessment. Mirrors the
+// Scoring + report model for the Glucose assessment. Mirrors the
 // EatoBiotics scoring approach (lib/assessment-scoring.ts) but across 4 glucose
-// pillars, and additionally derives the pieces the full EatoBetics Report
+// pillars, and additionally derives the pieces the full Glucose Report
 // renders (energy-stability sub-metric, meal-timing pattern, GLP-1 focus, a
 // tailored 30-day protocol). Educational only — not a medical assessment.
 
