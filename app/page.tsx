@@ -1,9 +1,7 @@
 import type { Metadata } from "next"
-import { cookies } from "next/headers"
-import { redirect } from "next/navigation"
 import { Suspense } from "react"
 import { Hero } from "@/components/home/hero"
-import { DEV_COOKIE, devPasswordToken, getDevPassword, isPasswordGateEnabled } from "@/lib/dev-password-gate"
+import { requirePreviewAccess } from "@/lib/preview-access"
 
 export const metadata: Metadata = {
   title: "EatoBiotics — The Food System Inside You",
@@ -37,21 +35,8 @@ import { GlobalDirection } from "@/components/home/global-direction"
 import { MembershipTeaser } from "@/components/home/membership-teaser"
 import { ClosingCta } from "@/components/home/closing-cta"
 
-async function requirePreviewAccess() {
-  if (!isPasswordGateEnabled()) return
-
-  const password = getDevPassword()
-  if (!password) redirect("/enter?from=%2F")
-
-  const cookieStore = await cookies()
-  const expectedToken = await devPasswordToken(password)
-  const hasAccess = cookieStore.get(DEV_COOKIE)?.value === expectedToken
-
-  if (!hasAccess) redirect("/enter?from=%2F")
-}
-
 export default async function Home() {
-  await requirePreviewAccess()
+  await requirePreviewAccess("/")
 
   return (
     <>
