@@ -1,27 +1,22 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import Image from "next/image"
+import { ArrowUpRight, Calendar } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { GradientText } from "@/components/gradient-text"
-import { foods, getTodaysFood, getBrainHealthFoods, bioticLabels, type BioticType } from "@/lib/foods"
+import { FoodImage } from "@/components/food/food-image"
+import { FoodCard, type FoodCardData } from "@/components/food/food-card"
+import { FoodIndex } from "@/components/food/food-index"
+import { BioticQuiz } from "@/components/food/biotic-quiz"
+import { FoodMyths } from "@/components/food/food-myths"
+import { BIOTIC_META, BIOTIC_ORDER } from "@/lib/biotic-meta"
+import { getFoodPairings } from "@/lib/food-education"
 import { GOALS, FOOD_GOAL_SLUGS } from "@/lib/food-goals"
-import { ArrowUpRight, Calendar } from "lucide-react"
-
-/** Short, card-friendly teasers for the "find foods by goal" grid. */
-const GOAL_TEASE: Record<string, string> = {
-  digestion: "Prebiotic + probiotic foods to improve gut function",
-  energy: "Protein + postbiotic foods that power your metabolism",
-  immunity: "Prebiotic + postbiotic foods that strengthen your defences",
-  mood: "Gut-brain foods linked to serotonin and cognitive health",
-  recovery: "Protein + postbiotic foods for repair and inflammation",
-  sleep: "Prebiotic-rich foods that support the gut-sleep axis",
-  "gut-health": "All three biotics for a diverse microbiome",
-  bloating: "Gentle prebiotic + probiotic foods for a calmer gut",
-  inflammation: "Postbiotic + prebiotic foods that calm inflammation",
-  skin: "Gut-skin axis foods for clearer, calmer skin",
-  weight: "High-fibre + protein foods for satiety and balance",
-  stability: "Soluble-fibre foods for steadier digestion",
-}
+import {
+  foods,
+  getTodaysFood,
+  getBrainHealthFoods,
+  type Food,
+} from "@/lib/foods"
 
 export const metadata: Metadata = {
   title: "Food Library",
@@ -33,145 +28,96 @@ export const metadata: Metadata = {
   },
 }
 
-const categories: {
-  biotic: BioticType
-  label: string
-  accent: string
-  gradient: string
-  description: string
-}[] = [
-  {
-    biotic: "prebiotic",
-    label: "Prebiotic Foods",
-    accent: "var(--icon-lime)",
-    gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
-    description: "Foods that feed and nourish your beneficial gut bacteria.",
-  },
-  {
-    biotic: "probiotic",
-    label: "Probiotic Foods",
-    accent: "var(--icon-teal)",
-    gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
-    description: "Fermented foods that add live cultures to your microbiome.",
-  },
-  {
-    biotic: "postbiotic",
-    label: "Postbiotic Foods",
-    accent: "var(--icon-orange)",
-    gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
-    description: "Foods whose compounds directly repair the gut lining and reduce inflammation.",
-  },
-  {
-    biotic: "protein",
-    label: "Protein Foods",
-    accent: "var(--icon-yellow)",
-    gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-lime))",
-    description: "Complete proteins that rebuild the gut lining and support microbiome function.",
-  },
-]
+/**
+ * Slim a Food down to what the cards and index actually render.
+ *
+ * `lib/foods.ts` is ~98KB of source; `FoodIndex` is a client component, so shipping
+ * whole Food objects would send every description, science note and benefit list to
+ * the browser. This keeps the client payload to roughly a fifth.
+ */
+function toCardData(food: Food): FoodCardData {
+  return {
+    slug: food.slug,
+    name: food.name,
+    emoji: food.emoji,
+    category: food.category,
+    biotic: food.biotic,
+    tagline: food.tagline,
+    county: food.county,
+  }
+}
 
 export default function FoodLibraryPage() {
   const todaysFood = getTodaysFood()
-  const now = new Date()
-  const dateString = now.toLocaleDateString("en-IE", {
+  const dateString = new Date().toLocaleDateString("en-IE", {
     weekday: "long",
     day: "numeric",
     month: "long",
   })
 
+  const ferments = foods.filter((food) => food.category === "Fermented").slice(0, 4)
+  const irish = foods.filter((food) => food.county)
+  const brainFoods = getBrainHealthFoods().slice(0, 6)
+  const pairings = getFoodPairings(6)
+  const indexData = foods.map(toCardData)
+
   return (
     <>
-      {/* Hero */}
-      <section className="relative px-6 pt-32 pb-16 md:pt-40 md:pb-20">
-        <div className="mx-auto max-w-[680px]">
+      {/* ── Hero ─────────────────────────────────────────────────── */}
+      <section className="px-6 pt-32 pb-16 md:pt-40 md:pb-24">
+        <div className="mx-auto max-w-[1180px]">
           <ScrollReveal>
-            <Image
-              src="/eatobiotics-icon.webp"
-              alt="EatoBiotics"
-              width={64}
-              height={64}
-              className="mb-6 h-14 w-14"
-            />
-            <p className="text-xs font-semibold uppercase tracking-widest text-icon-green">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-icon-green">
               The Food Library
             </p>
-            <h1 className="mt-4 font-serif text-5xl font-semibold text-foreground sm:text-6xl md:text-7xl text-balance">
-              Every food.{" "}
-              <GradientText>Profiled.</GradientText>
+            <h1 className="mt-5 max-w-[16ch] font-serif text-5xl font-semibold text-balance text-foreground sm:text-6xl md:text-7xl">
+              A field guide to the food system <GradientText>inside you.</GradientText>
             </h1>
-            <p className="mt-6 text-base leading-relaxed text-muted-foreground md:text-lg">
-              The EatoBiotics food library — every food examined for its microbiome impact.
-              What it does, why it matters, how to eat it, and what the science says.
-              One food at a time. Growing every week.
+            <p className="mt-6 max-w-[46ch] text-lg leading-relaxed text-muted-foreground">
+              {foods.length} foods, each examined for what it actually does to your
+              microbiome — what it feeds, what it seeds, and how to eat it.
             </p>
-            <div className="mt-6 flex items-center gap-1.5">
-              <span className="biotic-pill bg-icon-lime" />
-              <span className="biotic-pill bg-icon-green" />
-              <span className="biotic-pill bg-icon-teal" />
-              <span className="biotic-pill bg-icon-yellow" />
-              <span className="biotic-pill bg-icon-orange" />
-            </div>
           </ScrollReveal>
         </div>
       </section>
 
-      {/* Gradient divider */}
-      <div className="section-divider" />
-
-      {/* Today's food highlight */}
-      <section className="bg-secondary/40 px-6 py-10 md:py-14">
-        <div className="mx-auto max-w-[1200px]">
+      {/* ── Today's food: the cover moment ───────────────────────── */}
+      <section className="px-6 pb-20 md:pb-28">
+        <div className="mx-auto max-w-[1180px]">
           <ScrollReveal>
-            <Link
-              href="/today"
-              className="group flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between"
-            >
-              {/* Left: label + food info */}
-              <div className="flex items-center gap-5">
-                {/* Emoji badge */}
-                <div
-                  className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-4xl shadow-md"
-                  style={{ background: todaysFood.gradient }}
-                >
-                  <span>{todaysFood.emoji}</span>
+            <Link href="/today" className="group grid items-center gap-8 md:grid-cols-2 md:gap-14">
+              <FoodImage
+                food={todaysFood}
+                priority
+                sizes="(max-width: 768px) 100vw, 50vw"
+                emojiClassName="text-8xl"
+                className="aspect-[4/3] rounded-3xl transition-transform duration-500 ease-out group-hover:scale-[1.01]"
+              />
+
+              <div>
+                <div className="flex items-center gap-2">
+                  <Calendar size={13} className="text-icon-orange" />
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-icon-orange">
+                    Today — {dateString}
+                  </p>
                 </div>
 
-                {/* Text */}
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Calendar size={12} className="text-icon-orange" />
-                    <p className="text-xs font-semibold uppercase tracking-widest text-icon-orange">
-                      Updated Daily — {dateString}
-                    </p>
-                  </div>
-                  <h2 className="mt-0.5 font-serif text-xl font-semibold text-foreground">
-                    Today&apos;s featured food:{" "}
-                    <span
-                      className="transition-colors"
-                      style={{ color: todaysFood.accentColor }}
-                    >
-                      {todaysFood.name}
-                    </span>
-                  </h2>
-                  <div className="mt-1.5 flex items-center gap-2">
-                    <span
-                      className="rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider text-white"
-                      style={{ background: todaysFood.gradient }}
-                    >
-                      {bioticLabels[todaysFood.biotic]}
-                    </span>
-                    <span className="text-xs text-muted-foreground italic">
-                      {todaysFood.tagline}
-                    </span>
-                  </div>
-                </div>
-              </div>
+                <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground md:text-5xl">
+                  {todaysFood.name}
+                </h2>
+                <p className="mt-3 font-serif text-xl italic text-muted-foreground">
+                  {todaysFood.tagline}
+                </p>
+                <p className="mt-5 max-w-[52ch] leading-relaxed text-muted-foreground">
+                  {todaysFood.description.split(". ").slice(0, 2).join(". ")}.
+                </p>
 
-              {/* Right: CTA */}
-              <div className="shrink-0">
-                <span className="brand-gradient inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-icon-green/20 transition-all group-hover:opacity-90">
-                  See today&apos;s profile
-                  <ArrowUpRight size={14} />
+                <span className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-foreground">
+                  Read today&apos;s profile
+                  <ArrowUpRight
+                    size={15}
+                    className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                  />
                 </span>
               </div>
             </Link>
@@ -179,248 +125,283 @@ export default function FoodLibraryPage() {
         </div>
       </section>
 
-      {/* Gradient divider */}
       <div className="section-divider" />
 
-      {/* Foods by biotic type */}
-      {(() => {
-        const renderedCategories = categories.filter(
-          (cat) => foods.filter((f) => f.biotic === cat.biotic).length > 0
-        )
-        return renderedCategories.map((cat, renderedIndex) => {
-          const categoryFoods = foods.filter((f) => f.biotic === cat.biotic)
-          const isLast = renderedIndex === renderedCategories.length - 1
-          return (
-            <section
-              key={cat.biotic}
-              className={`px-6 py-16 md:py-24 ${renderedIndex % 2 === 1 ? "bg-secondary/40" : ""}`}
-            >
-              <div className="mx-auto max-w-[1200px]">
-                <ScrollReveal>
-                  <div className="flex items-center gap-4">
+      {/* ── Collection: The Ferment Shelf ────────────────────────── */}
+      {ferments.length > 0 && (
+        <section className="px-6 py-20 md:py-28">
+          <div className="mx-auto max-w-[1180px]">
+            <ScrollReveal>
+              <CollectionHead
+                eyebrow="Collection"
+                title="The Ferment Shelf"
+                body="Live cultures, arriving in the food they were made in. The fastest way to widen the range of bacteria you're eating."
+              />
+            </ScrollReveal>
+            <div className="mt-12 grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4">
+              {ferments.map((food, index) => (
+                <ScrollReveal key={food.slug} delay={index * 60}>
+                  <FoodCard food={toCardData(food)} />
+                </ScrollReveal>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── The four biotics, in sequence ────────────────────────── */}
+      <section className="bg-foreground px-6 py-20 md:py-28">
+        <div className="mx-auto max-w-[1180px]">
+          <ScrollReveal>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-icon-lime">
+              The framework
+            </p>
+            <h2 className="mt-4 max-w-[20ch] font-serif text-3xl font-semibold text-balance text-background sm:text-4xl">
+              Four biotics, in order.
+            </h2>
+            <p className="mt-4 max-w-[54ch] leading-relaxed text-background/70">
+              These aren&apos;t four categories sitting side by side — they&apos;re stages of
+              one process. Each hands off to the next.
+            </p>
+          </ScrollReveal>
+
+          <div className="mt-14 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+            {BIOTIC_ORDER.map((biotic, index) => {
+              const meta = BIOTIC_META[biotic]
+              return (
+                <ScrollReveal key={biotic} delay={index * 70}>
+                  <div>
                     <div
-                      className="h-1 w-12 rounded-full"
-                      style={{ background: cat.gradient }}
+                      className="h-0.5 w-10 rounded-full"
+                      style={{ backgroundColor: meta.color }}
                     />
                     <p
-                      className="text-xs font-semibold uppercase tracking-widest"
-                      style={{ color: cat.accent }}
+                      className="mt-5 text-[11px] font-semibold uppercase tracking-[0.14em]"
+                      style={{ color: meta.color }}
                     >
-                      {cat.label}
+                      {meta.verb}
+                    </p>
+                    <h3 className="mt-2 font-serif text-2xl font-semibold text-background">
+                      {meta.label}
+                    </h3>
+                    <p className="mt-3 text-sm leading-relaxed text-background/70">
+                      {meta.body}
                     </p>
                   </div>
-                  <p className="mt-2 text-sm text-muted-foreground">{cat.description}</p>
                 </ScrollReveal>
+              )
+            })}
+          </div>
+        </div>
+      </section>
 
-                <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  {categoryFoods.map((food, index) => (
-                    <ScrollReveal key={food.slug} delay={index * 80}>
-                      <Link href={`/food/${food.slug}`} className="group block h-full">
-                        <div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-background p-6 transition-all hover:shadow-lg">
-                          <div
-                            className="absolute top-0 left-0 right-0 h-1"
-                            style={{ background: food.gradient }}
-                          />
-                          <span className="text-5xl">{food.emoji}</span>
-                          <div className="mt-4 flex-1">
-                            <p
-                              className="text-xs font-bold uppercase tracking-widest"
-                              style={{ color: food.accentColor }}
-                            >
-                              {food.category}
-                            </p>
-                            <h3 className="mt-1 font-serif text-xl font-semibold text-foreground">
-                              {food.name}
-                            </h3>
-                            <p className="mt-2 text-xs italic leading-relaxed text-muted-foreground">
-                              {food.tagline}
-                            </p>
-                          </div>
-                          <div className="mt-4 flex items-center justify-between">
-                            <div
-                              className="h-0.5 w-8 rounded-full"
-                              style={{ backgroundColor: food.accentColor }}
-                            />
-                            <span
-                              className="flex items-center gap-1 text-xs font-semibold opacity-0 transition-opacity group-hover:opacity-100"
-                              style={{ color: food.accentColor }}
-                            >
-                              Read profile <ArrowUpRight size={11} />
-                            </span>
-                          </div>
-                        </div>
-                      </Link>
-                    </ScrollReveal>
-                  ))}
-                </div>
-              </div>
-              {!isLast && (
-                <div className="section-divider mt-16 md:mt-24" />
-              )}
-            </section>
-          )
-        })
-      })()}
+      {/* ── The index ────────────────────────────────────────────── */}
+      <section id="library" className="scroll-mt-24 px-6 py-20 md:py-28">
+        <div className="mx-auto max-w-[1180px]">
+          {/* Not wrapped in ScrollReveal: it renders opacity-0 until an observer
+              fires, and the index is the page's primary content. */}
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-icon-teal">
+            Browse everything
+          </p>
+          <h2 className="mt-4 font-serif text-3xl font-semibold text-foreground sm:text-4xl">
+            The complete library.
+          </h2>
+          <p className="mt-4 max-w-[52ch] leading-relaxed text-muted-foreground">
+            Every food profiled so far. Search it, filter by biotic, or sort by category.
+          </p>
 
-      {/* Gradient divider */}
-      <div className="section-divider" />
+          <div className="mt-10">
+            <FoodIndex foods={indexData} />
+          </div>
+        </div>
+      </section>
 
-      {/* Brain Foods section */}
-      {(() => {
-        const brainFoods = getBrainHealthFoods()
-        return (
-          <section className="bg-secondary/40 px-6 py-16 md:py-24">
-            <div className="mx-auto max-w-[1200px]">
-              <ScrollReveal>
-                <div className="flex items-center gap-4">
-                  <div
-                    className="h-1 w-12 rounded-full"
-                    style={{ background: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" }}
-                  />
-                  <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--icon-teal)" }}>
-                    Brain Foods
-                  </p>
-                </div>
-                <h2 className="mt-3 font-serif text-2xl font-semibold text-foreground sm:text-3xl">
-                  Foods that support the gut-brain connection
-                </h2>
-                <p className="mt-2 text-sm text-muted-foreground max-w-xl">
-                  Your gut produces 90–95% of your body&apos;s serotonin. These foods directly nourish the microbiome-brain axis — supporting mood, focus, and mental clarity.{" "}
-                  <Link href="/gut-brain" className="underline underline-offset-2 hover:text-foreground transition-colors">
-                    Learn the science →
-                  </Link>
-                </p>
-              </ScrollReveal>
-
-              <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {brainFoods.map((food, index) => (
-                  <ScrollReveal key={food.slug} delay={index * 60}>
-                    <Link href={`/food/${food.slug}`} className="group block h-full">
-                      <div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-background p-6 transition-all hover:shadow-lg">
-                        <div
-                          className="absolute top-0 left-0 right-0 h-1"
-                          style={{ background: food.gradient }}
-                        />
-                        <span className="text-5xl">{food.emoji}</span>
-                        <div className="mt-4 flex-1">
-                          <p className="text-xs font-bold uppercase tracking-widest" style={{ color: food.accentColor }}>
-                            {food.category}
-                          </p>
-                          <h3 className="mt-1 font-serif text-xl font-semibold text-foreground">{food.name}</h3>
-                          <p className="mt-2 text-xs italic leading-relaxed text-muted-foreground">{food.tagline}</p>
-                        </div>
-                        <div className="mt-4 flex items-center justify-between">
-                          <div className="h-0.5 w-8 rounded-full" style={{ backgroundColor: food.accentColor }} />
-                          <span className="flex items-center gap-1 text-xs font-semibold opacity-0 transition-opacity group-hover:opacity-100" style={{ color: food.accentColor }}>
-                            Read profile <ArrowUpRight size={11} />
-                          </span>
-                        </div>
-                      </div>
-                    </Link>
-                  </ScrollReveal>
-                ))}
-              </div>
-            </div>
-          </section>
-        )
-      })()}
-
-      {/* Gradient divider */}
-      <div className="section-divider" />
-
-      {/* Stats strip */}
-      <section className="bg-secondary/40 px-6 py-12 md:py-16">
-        <div className="mx-auto max-w-[1200px]">
+      {/* ── Quiz ─────────────────────────────────────────────────── */}
+      <section className="px-6 pb-20 md:pb-28">
+        <div className="mx-auto max-w-[1180px]">
           <ScrollReveal>
-            <div className="grid gap-6 sm:grid-cols-3 text-center">
-              {[
-                { value: `${foods.length}`, label: "Foods profiled", color: "var(--icon-lime)" },
-                { value: "4", label: "Biotic categories", color: "var(--icon-teal)" },
-                { value: "Growing", label: "New foods weekly", color: "var(--icon-orange)" },
-              ].map((stat) => (
-                <div key={stat.label}>
-                  <p
-                    className="font-serif text-4xl font-semibold"
-                    style={{ color: stat.color }}
-                  >
-                    {stat.value}
-                  </p>
-                  <p className="mt-1 text-sm text-muted-foreground">{stat.label}</p>
-                </div>
-              ))}
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-icon-orange">
+              Two-minute check
+            </p>
+            <h2 className="mt-4 font-serif text-3xl font-semibold text-foreground sm:text-4xl">
+              Which biotic are you missing?
+            </h2>
+            <p className="mt-4 max-w-[52ch] leading-relaxed text-muted-foreground">
+              Most people are strong in one stage and blind to another. Three questions finds
+              the gap.
+            </p>
+          </ScrollReveal>
+          <ScrollReveal delay={80}>
+            <div className="mt-10">
+              <BioticQuiz />
             </div>
           </ScrollReveal>
         </div>
       </section>
 
-      {/* Gradient divider */}
+      {/* ── Collection: Grown in Ireland ─────────────────────────── */}
+      {irish.length > 0 && (
+        <section className="px-6 pb-20 md:pb-28">
+          <div className="mx-auto max-w-[1180px]">
+            <ScrollReveal>
+              <CollectionHead
+                eyebrow="Collection"
+                title={`Grown here — the Irish ${irish.length}`}
+                body="Foods in the library with an Irish county behind them."
+              />
+            </ScrollReveal>
+            <div className="mt-12 flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4">
+              {irish.map((food) => (
+                <div key={food.slug} className="w-44 shrink-0 snap-start sm:w-52">
+                  <FoodCard food={toCardData(food)} sizes="208px" />
+                  <p className="mt-2 text-xs text-muted-foreground">Co. {food.county}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       <div className="section-divider" />
 
-      {/* Best For section */}
-      <section className="px-6 py-16 md:py-24">
-        <div className="mx-auto max-w-[1200px]">
+      {/* ── Better together ──────────────────────────────────────── */}
+      {pairings.length > 0 && (
+        <section className="px-6 py-20 md:py-28">
+          <div className="mx-auto max-w-[1180px]">
+            <ScrollReveal>
+              <CollectionHead
+                eyebrow="Better together"
+                title="Some foods work harder in pairs."
+                body="A prebiotic arriving with the culture that ferments it does more than either does alone."
+              />
+            </ScrollReveal>
+
+            <div className="mt-12 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+              {pairings.map(({ a, b, reason }, index) => (
+                <ScrollReveal key={`${a.slug}-${b.slug}`} delay={index * 60}>
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <FoodImage
+                        food={a}
+                        sizes="72px"
+                        emojiClassName="text-3xl"
+                        className="h-[72px] w-[72px] shrink-0 rounded-2xl"
+                      />
+                      <span className="font-serif text-lg text-muted-foreground">+</span>
+                      <FoodImage
+                        food={b}
+                        sizes="72px"
+                        emojiClassName="text-3xl"
+                        className="h-[72px] w-[72px] shrink-0 rounded-2xl"
+                      />
+                    </div>
+                    <h3 className="mt-5 font-serif text-lg font-semibold text-foreground">
+                      {a.name} + {b.name}
+                    </h3>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                      {reason}
+                    </p>
+                  </div>
+                </ScrollReveal>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── Gut–brain ────────────────────────────────────────────── */}
+      {brainFoods.length > 0 && (
+        <section className="bg-secondary/50 px-6 py-20 md:py-28">
+          <div className="mx-auto max-w-[1180px]">
+            <ScrollReveal>
+              <CollectionHead
+                eyebrow="Collection"
+                title="Foods for the gut–brain axis"
+                body="Your gut produces most of your body's serotonin. These foods feed the microbiome-brain connection."
+                href="/gut-brain"
+                hrefLabel="Learn the science"
+              />
+            </ScrollReveal>
+            <div className="mt-12 grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-6">
+              {brainFoods.map((food, index) => (
+                <ScrollReveal key={food.slug} delay={index * 50}>
+                  <FoodCard
+                    food={toCardData(food)}
+                    sizes="(max-width: 640px) 50vw, 16vw"
+                  />
+                </ScrollReveal>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── Myths ────────────────────────────────────────────────── */}
+      <section className="px-6 py-20 md:py-28">
+        <div className="mx-auto max-w-[760px]">
           <ScrollReveal>
-            <p className="text-xs font-semibold uppercase tracking-widest text-icon-green mb-3">
-              Best Foods For…
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-icon-orange">
+              Myth-busting
             </p>
-            <h2 className="font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
-              Find foods by goal.
+            <h2 className="mt-4 font-serif text-3xl font-semibold text-balance text-foreground sm:text-4xl">
+              Eight things you&apos;ve been told that aren&apos;t quite right.
             </h2>
-            <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
-              Not sure where to start? Browse foods filtered by what you want to improve.
-            </p>
           </ScrollReveal>
-          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {FOOD_GOAL_SLUGS.map((slug) => ({ goal: slug, label: GOALS[slug].label, emoji: GOALS[slug].emoji, color: GOALS[slug].color, desc: GOAL_TEASE[slug] ?? GOALS[slug].metaDesc })).map((g, i) => (
-              <ScrollReveal key={g.goal} delay={i * 60}>
-                <Link href={`/food/for/${g.goal}`} className="group flex items-center gap-4 rounded-2xl border border-border bg-background p-5 transition-all hover:shadow-md">
-                  <div
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl"
-                    style={{ background: `color-mix(in srgb, ${g.color} 12%, var(--background))` }}
-                  >
-                    {g.emoji}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-foreground">{g.label}</p>
-                    <p className="text-xs text-muted-foreground leading-snug mt-0.5">{g.desc}</p>
-                  </div>
-                  <ArrowUpRight size={14} className="shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
-                </Link>
-              </ScrollReveal>
+          <div className="mt-10">
+            <FoodMyths />
+          </div>
+        </div>
+      </section>
+
+      {/* ── Find by goal ─────────────────────────────────────────── */}
+      <section className="px-6 pb-20 md:pb-28">
+        <div className="mx-auto max-w-[1180px]">
+          <ScrollReveal>
+            <CollectionHead
+              eyebrow="Best foods for…"
+              title="Find foods by goal."
+              body="Browse the library filtered by what you want to improve."
+            />
+          </ScrollReveal>
+          <div className="mt-10 flex flex-wrap gap-2.5">
+            {FOOD_GOAL_SLUGS.map((slug) => (
+              <Link
+                key={slug}
+                href={`/food/for/${slug}`}
+                className="rounded-full bg-secondary px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-foreground hover:text-background"
+              >
+                {GOALS[slug].label}
+              </Link>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Gradient divider */}
-      <div className="section-divider" />
-
-      {/* CTA */}
-      <section className="px-6 py-16 md:py-24">
+      {/* ── CTA ──────────────────────────────────────────────────── */}
+      <section className="px-6 pb-24 md:pb-32">
         <div className="mx-auto max-w-[720px] text-center">
           <ScrollReveal>
-            <h2 className="font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
+            <h2 className="font-serif text-3xl font-semibold text-balance text-foreground sm:text-4xl">
               The library is <GradientText>growing every week.</GradientText>
             </h2>
-            <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-muted-foreground">
-              New food profiles are published to the Substack first — then added here.
-              Subscribe to get every new food profile delivered to your inbox.
+            <p className="mx-auto mt-4 max-w-[46ch] leading-relaxed text-muted-foreground">
+              New food profiles go to the Substack first, then land here.
             </p>
           </ScrollReveal>
-          <ScrollReveal delay={100}>
-            <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+          <ScrollReveal delay={80}>
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <a
                 href="https://eatobiotics.substack.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:opacity-90"
+                className="brand-gradient inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-base font-semibold text-white transition-opacity hover:opacity-90"
               >
                 Subscribe on Substack
                 <ArrowUpRight size={16} />
               </a>
               <Link
                 href="/biotics"
-                className="inline-flex items-center gap-2 rounded-full border-2 border-icon-green px-8 py-4 text-base font-semibold text-foreground transition-colors hover:bg-icon-green hover:text-white"
+                className="inline-flex items-center gap-2 rounded-full border-2 border-icon-green px-7 py-3.5 text-base font-semibold text-foreground transition-colors hover:bg-icon-green hover:text-white"
               >
                 Learn the framework
               </Link>
@@ -429,5 +410,42 @@ export default function FoodLibraryPage() {
         </div>
       </section>
     </>
+  )
+}
+
+function CollectionHead({
+  eyebrow,
+  title,
+  body,
+  href,
+  hrefLabel,
+}: {
+  eyebrow: string
+  title: string
+  body: string
+  href?: string
+  hrefLabel?: string
+}) {
+  return (
+    <div className="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-icon-green">
+          {eyebrow}
+        </p>
+        <h2 className="mt-3 font-serif text-3xl font-semibold text-balance text-foreground sm:text-4xl">
+          {title}
+        </h2>
+        <p className="mt-3 max-w-[52ch] leading-relaxed text-muted-foreground">{body}</p>
+      </div>
+      {href && hrefLabel && (
+        <Link
+          href={href}
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground transition-colors hover:text-icon-green"
+        >
+          {hrefLabel}
+          <ArrowUpRight size={14} />
+        </Link>
+      )}
+    </div>
   )
 }

@@ -3,7 +3,9 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { ArrowUpRight, ArrowLeft } from "lucide-react"
-import { foods } from "@/lib/foods"
+import { FoodCard } from "@/components/food/food-card"
+import { BIOTIC_META } from "@/lib/biotic-meta"
+import { foods, type BioticType } from "@/lib/foods"
 import { GOALS } from "@/lib/food-goals"
 
 const ALL_GOALS = Object.keys(GOALS)
@@ -45,180 +47,147 @@ export default async function FoodForGoalPage({
   const config = GOALS[goal]
   if (!config) notFound()
 
-  // Filter foods for this goal
   const goalFoods = config.brainHealthOnly
     ? foods.filter((f) => f.brainHealth)
     : foods.filter((f) => config.types.includes(f.biotic))
 
-  // Related goals (all except current)
   const relatedGoals = ALL_GOALS.filter((g) => g !== goal).slice(0, 3)
+
+  // The biotic stages this goal draws on — explains *why* these foods.
+  const stages = (
+    config.brainHealthOnly
+      ? (["prebiotic", "probiotic", "postbiotic"] as const)
+      : config.types.filter((t): t is Exclude<BioticType, "all"> => t !== "all")
+  ).filter((t) => t in BIOTIC_META)
 
   return (
     <>
       {/* ── Hero ─────────────────────────────────────────────────── */}
-      <section className="relative px-6 pt-28 pb-16 md:pt-36 md:pb-20">
-        <div className="mx-auto max-w-[1200px]">
+      <section className="px-6 pt-28 pb-14 md:pt-36 md:pb-20">
+        <div className="mx-auto max-w-[1180px]">
           <ScrollReveal>
-            {/* Breadcrumb */}
             <Link
               href="/food"
-              className="mb-6 inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-              <ArrowLeft size={12} />
+              <ArrowLeft size={13} />
               Food Library
             </Link>
 
-            <div className="flex items-center gap-4">
-              <span className="text-5xl">{config.emoji}</span>
-              <div>
-                <p
-                  className="text-xs font-semibold uppercase tracking-widest"
-                  style={{ color: config.color }}
-                >
-                  Best For
-                </p>
-                <h1 className="font-serif text-4xl font-bold text-foreground sm:text-5xl md:text-6xl">
-                  {config.label}
-                </h1>
-              </div>
-            </div>
-
-            <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
+            <p className="mt-8 text-[11px] font-semibold uppercase tracking-[0.14em] text-icon-green">
+              Best foods for
+            </p>
+            <h1 className="mt-4 max-w-[18ch] font-serif text-5xl font-semibold text-balance text-foreground sm:text-6xl">
+              {config.label}
+            </h1>
+            <p className="mt-5 max-w-[52ch] text-lg leading-relaxed text-muted-foreground">
               {config.description}
             </p>
-
-            {/* Biotic type pills */}
-            <div className="mt-5 flex flex-wrap gap-2">
-              {config.types.map((t) => (
-                <span
-                  key={t}
-                  className="rounded-full px-3 py-1 text-xs font-semibold capitalize text-white"
-                  style={{ background: config.gradient }}
-                >
-                  {t}
-                </span>
-              ))}
-            </div>
           </ScrollReveal>
         </div>
       </section>
 
-      {/* Rainbow divider */}
-      <div
-        className="h-0.5 w-full"
-        style={{
-          background:
-            "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))",
-        }}
-      />
+      {/* ── Why these foods ──────────────────────────────────────── */}
+      {stages.length > 0 && (
+        <section className="px-6 pb-16 md:pb-20">
+          <div className="mx-auto max-w-[1180px]">
+            <ScrollReveal>
+              <div className="border-t border-border pt-8">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  Why these foods
+                </p>
+                <div className="mt-6 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                  {stages.map((stage) => {
+                    const meta = BIOTIC_META[stage]
+                    return (
+                      <div key={stage}>
+                        <div
+                          className="h-0.5 w-8 rounded-full"
+                          style={{ backgroundColor: meta.color }}
+                        />
+                        <h2 className="mt-3 font-serif text-lg font-semibold text-foreground">
+                          {meta.label}
+                        </h2>
+                        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                          {meta.body}
+                        </p>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </ScrollReveal>
+          </div>
+        </section>
+      )}
 
-      {/* ── Food Grid ─────────────────────────────────────────────── */}
+      <div className="section-divider" />
+
+      {/* ── The foods ────────────────────────────────────────────── */}
       <section className="px-6 py-16 md:py-24">
-        <div className="mx-auto max-w-[1200px]">
-          <ScrollReveal>
-            <p className="text-sm text-muted-foreground mb-8">
-              <span className="font-semibold text-foreground">{goalFoods.length} foods</span>{" "}
-              matched for {config.label.toLowerCase()}
-            </p>
-          </ScrollReveal>
-
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mx-auto max-w-[1180px]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground tabular-nums">
+            {goalFoods.length} foods
+          </p>
+          <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4">
             {goalFoods.map((food, index) => (
-              <ScrollReveal key={food.slug} delay={index * 60}>
-                <Link href={`/food/${food.slug}`} className="group block h-full">
-                  <div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-background p-6 transition-all hover:shadow-lg">
-                    <div
-                      className="absolute top-0 left-0 right-0 h-1"
-                      style={{ background: food.gradient }}
-                    />
-                    <span className="text-5xl">{food.emoji}</span>
-                    <div className="mt-4 flex-1">
-                      <p
-                        className="text-xs font-bold uppercase tracking-widest"
-                        style={{ color: food.accentColor }}
-                      >
-                        {food.category}
-                      </p>
-                      <h3 className="mt-1 font-serif text-xl font-semibold text-foreground">
-                        {food.name}
-                      </h3>
-                      <p className="mt-2 text-xs italic leading-relaxed text-muted-foreground">
-                        {food.tagline}
-                      </p>
-                    </div>
-                    <div className="mt-4 flex items-center justify-between">
-                      <div
-                        className="h-0.5 w-8 rounded-full"
-                        style={{ backgroundColor: food.accentColor }}
-                      />
-                      <span
-                        className="flex items-center gap-1 text-xs font-semibold opacity-0 transition-opacity group-hover:opacity-100"
-                        style={{ color: food.accentColor }}
-                      >
-                        Read profile <ArrowUpRight size={11} />
-                      </span>
-                    </div>
-                  </div>
-                </Link>
+              <ScrollReveal key={food.slug} delay={Math.min(index, 8) * 50}>
+                <FoodCard food={food} />
               </ScrollReveal>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Related Goals ─────────────────────────────────────────── */}
-      <section className="bg-secondary/40 px-6 py-12 md:py-16">
-        <div className="mx-auto max-w-[1200px]">
+      {/* ── Also explore ─────────────────────────────────────────── */}
+      <section className="px-6 pb-20 md:pb-28">
+        <div className="mx-auto max-w-[1180px]">
           <ScrollReveal>
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-6">
-              Also explore
-            </p>
-            <div className="flex flex-wrap gap-3">
-              {relatedGoals.map((g) => {
-                const c = GOALS[g]
-                return (
+            <div className="border-t border-border pt-8">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Also explore
+              </p>
+              <div className="mt-5 flex flex-wrap gap-2.5">
+                {relatedGoals.map((slug) => (
                   <Link
-                    key={g}
-                    href={`/food/for/${g}`}
-                    className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-5 py-2.5 text-sm font-semibold text-foreground transition-all hover:shadow-md"
+                    key={slug}
+                    href={`/food/for/${slug}`}
+                    className="rounded-full bg-secondary px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-foreground hover:text-background"
                   >
-                    <span>{c.emoji}</span>
-                    Best for {c.label}
-                    <ArrowUpRight size={13} className="text-muted-foreground" />
+                    {GOALS[slug].label}
                   </Link>
-                )
-              })}
+                ))}
+              </div>
             </div>
           </ScrollReveal>
         </div>
       </section>
 
-      {/* ── CTA ───────────────────────────────────────────────────── */}
-      <section className="px-6 py-16 md:py-24">
+      {/* ── CTA ──────────────────────────────────────────────────── */}
+      <section className="px-6 pb-24 md:pb-32">
         <div className="mx-auto max-w-[720px] text-center">
           <ScrollReveal>
-            <h2 className="font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
-              Know what your meals score.
+            <h2 className="font-serif text-3xl font-semibold text-balance text-foreground sm:text-4xl">
+              Not sure where you stand?
             </h2>
-            <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-muted-foreground">
-              Take the free assessment and find out where you stand across all 5 microbiome
-              pillars — in under 3 minutes.
+            <p className="mx-auto mt-4 max-w-[46ch] leading-relaxed text-muted-foreground">
+              Take the free assessment and find out which biotic your plate is missing.
             </p>
           </ScrollReveal>
-          <ScrollReveal delay={100}>
-            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+          <ScrollReveal delay={80}>
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
                 href="/assessment"
-                className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:opacity-90"
+                className="brand-gradient inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-base font-semibold text-white transition-opacity hover:opacity-90"
               >
-                Get My Free Biotics Score
+                Take the assessment
                 <ArrowUpRight size={16} />
               </Link>
               <Link
                 href="/food"
-                className="inline-flex items-center gap-2 rounded-full border border-border px-8 py-4 text-base font-semibold text-foreground transition-all hover:bg-muted"
+                className="inline-flex items-center gap-2 rounded-full border-2 border-icon-green px-7 py-3.5 text-base font-semibold text-foreground transition-colors hover:bg-icon-green hover:text-white"
               >
-                Back to Food Library
+                Back to the library
               </Link>
             </div>
           </ScrollReveal>
