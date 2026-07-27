@@ -134,13 +134,16 @@ export function PowersEverything() {
             </svg>
 
             {/* Centre illustration */}
-            <div className="absolute left-1/2 top-1/2 h-[78%] w-[78%] -translate-x-1/2 -translate-y-1/2">
+            {/* Landscape artwork (3:2) in a square slot, so the box is wider than
+                it is tall to give the figure comparable visual mass to the portrait
+                image it replaced. */}
+            <div className="absolute left-1/2 top-1/2 h-[78%] w-[94%] -translate-x-1/2 -translate-y-1/2">
               <div aria-hidden className="absolute inset-0 -z-10 blur-3xl" style={{ background: "radial-gradient(58% 58% at 50% 50%, rgba(245,197,24,0.24), rgba(76,182,72,0.12) 55%, transparent 78%)" }} />
               <Image
-                src="/images/couple-hero.png"
-                alt="The food system inside you — two figures with a glowing digestive system"
+                src="/images/hero-gut.png"
+                alt="Two silhouetted figures with a glowing digestive pathway running through them"
                 fill
-                sizes="480px"
+                sizes="560px"
                 className="object-contain"
               />
             </div>
@@ -172,13 +175,13 @@ export function PowersEverything() {
         {/* ── Tablet / mobile: illustration on top + orb grid ─────────── */}
         <div className="mt-14 xl:hidden">
           <ScrollReveal>
-            <div className="relative mx-auto mb-12 max-w-[320px]">
+            <div className="relative mx-auto mb-12 max-w-[420px]">
               <div aria-hidden className="absolute inset-0 -z-10 blur-3xl" style={{ background: "radial-gradient(58% 58% at 50% 50%, rgba(245,197,24,0.24), rgba(76,182,72,0.12) 55%, transparent 78%)" }} />
               <Image
-                src="/images/couple-hero.png"
-                alt="The food system inside you — two figures with a glowing digestive system"
-                width={640}
-                height={640}
+                src="/images/hero-gut.png"
+                alt="Two silhouetted figures with a glowing digestive pathway running through them"
+                width={1536}
+                height={1024}
                 className="h-auto w-full object-contain"
               />
             </div>

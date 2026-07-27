@@ -7,9 +7,10 @@
  *
  * Copy keeps the approved Digital Twin framing (eyebrow / headline / CTA); the
  * rest of the design's wording is retained verbatim. Centerpiece is the in-repo
- * couple figure (`/images/couple-hero.png`) with `mix-blend-mode: multiply`, so
- * its white background dissolves into the page. CSS animations live in
- * app/globals.css (`eb-*`), gated behind prefers-reduced-motion.
+ * single twin figure (`/images/twin-female.png`) with `mix-blend-mode: multiply`,
+ * so its white background dissolves into the page. A single figure rather than
+ * the site-wide couple: this section is about *your* twin. CSS animations live
+ * in app/globals.css (`eb-*`), gated behind prefers-reduced-motion.
  *
  * Server component; brand palette only (green/lime/teal + yellow/orange).
  */
@@ -69,8 +70,12 @@ function CentreStage() {
       <div className="eb-aura" style={{ position: "absolute", left: "50%", top: "50%", width: 340, height: 340, transform: "translate(-50%,-50%)", borderRadius: "50%", background: "radial-gradient(circle, rgba(168,224,99,0.55) 0%, rgba(245,197,24,0.42) 44%, rgba(245,166,35,0.20) 64%, rgba(255,255,255,0) 74%)" }} />
       {/* central energy beam */}
       <div className="eb-beam" style={{ position: "absolute", left: "50%", top: "50%", width: 40, height: 250, transform: "translate(-50%,-50%)", borderRadius: 9999, background: "linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(245,197,24,0.55) 30%, rgba(255,255,255,0.9) 50%, rgba(168,224,99,0.55) 70%, rgba(255,255,255,0) 100%)", filter: "blur(7px)" }} />
-      {/* the figure */}
-      <Image src="/images/couple-hero.png" alt="Your Food System Digital Twin" width={240} height={300} style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 240, height: "auto", mixBlendMode: "multiply" }} />
+      {/* The figure — a single twin, not the couple used elsewhere on the site:
+          this section is about *your* twin. The artwork is landscape (1402×1122),
+          so it is sized wider than the portrait image it replaced to keep a
+          comparable visual mass against the 340px aura. Transform-centred, so
+          the change in height does not shift it off the beam. */}
+      <Image src="/images/twin-female.png" alt="Your Food System Digital Twin" width={1402} height={1122} style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 340, height: "auto", mixBlendMode: "multiply" }} />
       {/* rising energy particles */}
       {PARTICLES.map((p, i) => (
         <span key={i} className="eb-rise" style={{ position: "absolute", left: p.l, bottom: p.b, width: p.s, height: p.s, borderRadius: "50%", background: p.c, boxShadow: `0 0 ${p.s + 3}px 2px ${p.g}`, animationDuration: `${p.d}s`, animationDelay: `${p.de}s` }} />
@@ -184,7 +189,7 @@ export function DigitalTwinSection() {
           {/* RIGHT: diagram (mobile fallback) */}
           <div className="dt-diagram-mobile">
             <div style={{ position: "relative", width: "70%", maxWidth: 280, aspectRatio: "1", margin: "0 auto" }}>
-              <Image src="/images/couple-hero.png" alt="Your Food System Digital Twin" width={280} height={350} style={{ width: "100%", height: "auto", mixBlendMode: "multiply" }} />
+              <Image src="/images/twin-female.png" alt="Your Food System Digital Twin" width={1402} height={1122} style={{ width: "100%", height: "auto", mixBlendMode: "multiply" }} />
             </div>
             <div style={{ marginTop: 8, textAlign: "center", fontFamily: "var(--font-lora), Georgia, serif", fontWeight: 700, fontSize: 40, color: "#4CB648", lineHeight: 1 }}>74<span style={{ display: "block", fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", color: "#5A6E50" }}>SYSTEM SCORE</span></div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginTop: 24 }}>
