@@ -164,7 +164,7 @@ function TodayTab({
   const PILLAR_META: Record<string, { label: string; color: string; foods: string[]; icon: string }> = {
     feed: { label: "Feed — Prebiotic & Fibre", color: "var(--icon-lime)", icon: "🌿", foods: ["Oats", "Lentils", "Garlic", "Asparagus", "Leeks"] },
     seed: { label: "Seed — Fermented & Live", color: "var(--icon-teal)", icon: "🧬", foods: ["Kefir", "Kimchi", "Miso", "Sauerkraut", "Kombucha"] },
-    heal: { label: "Heal — Recovery & Rhythm", color: "var(--icon-yellow)", icon: "⚡", foods: ["Blueberries", "Dark Chocolate", "Turmeric", "Walnuts", "Olive Oil"] },
+    heal: { label: "Regenerate — Recovery & Rhythm", color: "var(--icon-yellow)", icon: "⚡", foods: ["Blueberries", "Dark Chocolate", "Turmeric", "Walnuts", "Olive Oil"] },
   }
   const focus = PILLAR_META[weakestPillar] ?? PILLAR_META.seed
 
@@ -209,7 +209,7 @@ function TodayTab({
           )}
           {feedScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Feed: {feedScore}</span>}
           {seedScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Seed: {seedScore}</span>}
-          {healScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Heal: {healScore}</span>}
+          {healScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Regenerate: {healScore}</span>}
           <span className="rounded-full border px-3 py-1 text-xs text-muted-foreground">Day {dayInPlan} of 30</span>
         </div>
       </div>

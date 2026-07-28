@@ -20,10 +20,11 @@ interface PaidReportEmailOpts {
 /* ── Constants ──────────────────────────────────────────────────────── */
 
 const PILLAR_LABELS: Record<string, string> = {
-  // New Feed/Seed/Heal pillars
+  // Current pillars. The `heal` key stays — it is what stored reports contain —
+  // but it displays as "Regenerate".
   feed: "Feed",
   seed: "Seed",
-  heal: "Heal",
+  heal: "Regenerate",
   // Legacy pillars
   diversity: "Plant Diversity",
   feeding: "Feeding",
@@ -63,7 +64,7 @@ const TIER_LABELS: Record<string, string> = {
 
 const TIER_HIGHLIGHTS: Record<string, string[]> = {
   personal: [
-    "Full Feed · Seed · Heal analysis",
+    "Full Feed · Seed · Regenerate analysis",
     "Your 30-day personalised plan",
     "Top 10 food recommendations",
     "Weekly shopping framework",
@@ -295,7 +296,7 @@ export function buildPaidReportEmail(opts: PaidReportEmailOpts): {
           <!-- Your Pillar Scores -->
           <tr>
             <td style="padding: 24px 40px 0;">
-              <p style="margin: 0 0 12px; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: #999999; font-family: Arial, sans-serif;">${tier === "personal" ? "Feed · Seed · Heal" : "Your 5 Pillars"}</p>
+              <p style="margin: 0 0 12px; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: #999999; font-family: Arial, sans-serif;">${tier === "personal" ? "Feed · Seed · Regenerate" : "Your 5 Pillars"}</p>
               <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 ${pillarsHtml}
               </table>

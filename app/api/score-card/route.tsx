@@ -20,7 +20,13 @@ export async function GET(req: NextRequest) {
   const pillars = [
     { label: "Feed",  score: feed,  color: "#7fc47e", gradient: "linear-gradient(90deg, #7fc47e, #4caf7d)" },
     { label: "Seed",  score: seed,  color: "#3ab0a0", gradient: "linear-gradient(90deg, #4caf7d, #3ab0a0)" },
-    { label: "Heal",  score: heal,  color: "#e6b84a", gradient: "linear-gradient(90deg, #e6b84a, #e07b4a)" },
+    // Displayed as "Regenerate"; the `heal` query param is kept, because cards
+    // shared before 68f1f94 link with `?heal=` and must keep working.
+    // PRE-EXISTING BUG, untouched by the rename: 68f1f94 changed the only caller
+    // (components/assessment/score-card.tsx) to send prebiotics/probiotics/
+    // postbiotics without updating the reads below, so current cards render 0/0/0.
+    // This route also 500s in Satori before any of that matters.
+    { label: "Regenerate", score: heal, color: "#e6b84a", gradient: "linear-gradient(90deg, #e6b84a, #e07b4a)" },
   ]
 
   // Score band colour
