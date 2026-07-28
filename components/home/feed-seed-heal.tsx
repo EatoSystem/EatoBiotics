@@ -3,7 +3,13 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 import { Eyebrow, Section, SectionHeading } from "./section-shared"
 
 /**
- * Feed. Seed. Heal. — the homepage's foundation section.
+ * Feed. Seed. Regenerate. — the homepage's foundation section.
+ *
+ * The third pillar reads "Regenerate" here, positioning the brand around continuous
+ * biological renewal rather than healing. NOTE: "Heal" remains the label of the third
+ * *scoring* dimension elsewhere (app/api/score-card, lib/pillars.ts, lib/cms/taxonomy.ts,
+ * lib/email/paid-report-email.ts). Renaming those touches the score model, emails and
+ * CMS taxonomy, so it is deliberately out of scope for this copy change.
  *
  * Accessible language first, scientific foundation beneath. Replaced
  * `the-framework.tsx` ("Three biotics. One plate.") on the homepage; that
@@ -75,7 +81,7 @@ const PILLARS = [
   },
   {
     number: "03",
-    title: "Heal",
+    title: "Regenerate",
     science: "Postbiotics",
     color: "var(--icon-orange)",
     gradientFrom: "var(--icon-yellow)",
@@ -93,13 +99,19 @@ export function FeedSeedHeal() {
     <Section>
       <ScrollReveal>
         <div className="mx-auto mb-16 max-w-2xl text-center">
-          <Eyebrow>The Foundation</Eyebrow>
+          <Eyebrow>The Foundation of EatoBiotics</Eyebrow>
           <SectionHeading>
-            Feed. Seed. <span className="brand-gradient-text">Heal.</span>
+            Feed. Seed. <span className="brand-gradient-text">Regenerate.</span>
           </SectionHeading>
+          {/* Primary explanatory sentence — carries the progression. */}
+          <p className="mx-auto mt-6 max-w-xl text-lg font-medium leading-relaxed text-foreground">
+            Feed your body. Seed your microbiome. Regenerate the{" "}
+            <span className="font-semibold text-icon-green">Food System Inside You</span>.
+          </p>
+          {/* Scientific foundation — quieter, supporting line. */}
           <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-muted-foreground">
-            Three everyday words, built on the 3 Biotics — Prebiotics, Probiotics, and Postbiotics.
-            The everyday language is how you act; the science is why it works.
+            Three simple actions inspired by the science of Prebiotics, Probiotics, and
+            Postbiotics.
           </p>
         </div>
       </ScrollReveal>
@@ -157,12 +169,12 @@ export function FeedSeedHeal() {
             <Eyebrow>From Words To Plate</Eyebrow>
             <h3 className="mt-4 font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
               One plate.{" "}
-              <span className="brand-gradient-text">Feed, Seed, and Heal together.</span>
+              <span className="brand-gradient-text">Feed, Seed, and Regenerate together.</span>
             </h3>
             <p className="mt-6 text-base leading-relaxed text-muted-foreground">
-              Feed, Seed, and Heal are not a diet — they are a way of seeing any plate, bowl, or
-              shared meal. Each part of the plate supports a different part of the food system
-              inside you.
+              Feed, Seed, and Regenerate are not a diet — they are a way of seeing any plate,
+              bowl, or shared meal. Each part of the plate supports a different part of the food
+              system inside you.
             </p>
           </ScrollReveal>
         </div>
