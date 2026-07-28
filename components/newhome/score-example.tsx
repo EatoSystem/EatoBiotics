@@ -6,13 +6,20 @@ import { useEffect, useRef, useState } from "react"
 import { Sprout } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { ScoreRing } from "@/components/assessment/score-ring"
+import { PrimaryCta } from "./cta"
 
 /**
- * Section 2 — the Food System Score through a clearly-labelled example.
- * Mirrors the production score card (components/home/score-preview.tsx):
- * same rounded-[2rem] bordered card, gradient hairline, Sprout watermark,
- * ScoreRing with in-view count-up, and pillar bars — with the concept's
- * Feed/Seed/Heal-first labelling and example insight/action.
+ * Chapter 3 — the Biotics Score through a clearly-labelled example.
+ *
+ * This is the page's principal proof moment, so it sits high: a visitor should
+ * understand what they receive within seconds of arriving. Mirrors the
+ * production score card (components/home/score-preview.tsx): rounded-[2rem]
+ * bordered card, gradient hairline, Sprout watermark, ScoreRing with in-view
+ * count-up, and pillar bars.
+ *
+ * The third pillar reads "Regenerate" — the brand word. The underlying scoring
+ * key is still `heal` (see lib/pillars.ts), but nothing here reads from it;
+ * these are display strings for an illustrative example.
  */
 const EXAMPLE = {
   overall: 64,
@@ -33,7 +40,7 @@ const EXAMPLE = {
       gradient: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))",
     },
     {
-      label: "Heal",
+      label: "Regenerate",
       science: "Postbiotics",
       score: 58,
       color: "var(--icon-orange)",
@@ -63,21 +70,37 @@ export function ScoreExample() {
   }, [])
 
   return (
-    <section className="px-6 py-20 md:py-28">
+    <section id="sample-score" className="scroll-mt-24 px-6 py-20 md:py-28">
       <div className="mx-auto max-w-[1100px]">
         <ScrollReveal>
           <div className="mb-12 text-center">
             <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-icon-green">
-              The Food System Score
+              What You Receive
             </p>
             <h2 className="font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-              See the Food System Inside You
+              Your Biotics Score, <span className="brand-gradient-text">explained.</span>
             </h2>
-            <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-muted-foreground">
-              Every person has an internal food system shaped by food, routine, culture, household,
-              environment, and daily life. EatoBiotics helps make those patterns understandable —
-              starting with one number you can watch change.
-            </p>
+            {/* Three outputs, stated plainly. The brief asks for the interface to
+                be the focus, so this stays short rather than framing the card
+                with explanation. */}
+            <ul className="mx-auto mt-6 flex max-w-2xl flex-wrap justify-center gap-x-3 gap-y-2">
+              {[
+                "Your overall Biotics Score",
+                "Your strengths and the areas needing support",
+                "Practical actions to improve",
+              ].map((item) => (
+                <li
+                  key={item}
+                  className="inline-flex items-center rounded-full px-3.5 py-1.5 text-sm font-semibold"
+                  style={{
+                    background: "color-mix(in srgb, var(--icon-green) 12%, transparent)",
+                    color: "color-mix(in srgb, var(--icon-green) 82%, var(--foreground))",
+                  }}
+                >
+                  {item}
+                </li>
+              ))}
+            </ul>
           </div>
         </ScrollReveal>
 
@@ -203,7 +226,10 @@ export function ScoreExample() {
         </ScrollReveal>
 
         <ScrollReveal delay={180}>
-          <p className="mx-auto mt-8 max-w-lg text-center text-sm leading-relaxed text-muted-foreground">
+          <div className="mt-10 flex justify-center">
+            <PrimaryCta placement="sample_score" size="md" />
+          </div>
+          <p className="mx-auto mt-6 max-w-lg text-center text-sm leading-relaxed text-muted-foreground">
             The score is based on your self-reported food patterns and behaviours. It is an
             educational reflection of how you are feeding your system — not a biological
             measurement, and not a diagnosis.{" "}

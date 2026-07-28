@@ -1,8 +1,7 @@
 import Image from "next/image"
-import Link from "next/link"
-import { ArrowRight } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { HeroVideo } from "@/components/hero-video"
+import { PrimaryCta, SampleResultLink } from "./cta"
 
 /* Real food photography strip under the hero — the "food-first" moment.
    Drifts slowly; static under prefers-reduced-motion. */
@@ -49,13 +48,6 @@ export function ConceptHero() {
   return (
     <section className="relative overflow-hidden px-6 pt-10 pb-20 md:pt-12 md:pb-28">
       <div className="relative z-10 mx-auto max-w-[1280px]">
-        {/* Internal review marker — not part of the public proposition */}
-        <ScrollReveal>
-          <p className="mb-10 inline-flex items-center gap-2 rounded-full border border-dashed border-border px-3 py-1 text-xs font-medium text-muted-foreground">
-            New homepage concept
-          </p>
-        </ScrollReveal>
-
         <div className="flex flex-col items-center justify-center gap-12 md:flex-row md:gap-16 lg:gap-24">
           {/* ── Left: the production hero figure ── */}
           <ScrollReveal delay={60} className="flex w-full max-w-[660px] flex-1 items-center justify-center">
@@ -93,49 +85,24 @@ export function ConceptHero() {
               </h1>
             </ScrollReveal>
 
+            {/* One concise statement. The previous version ran two paragraphs and
+                a six-item biotics list before the fold; the brief asks for compact
+                copy and a CTA visible without scrolling. */}
             <ScrollReveal delay={100}>
-              <p className="mt-4 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg">
-                Your digestion, energy, cravings, gut comfort, mood, daily rhythm, and relationship
-                with food are connected. EatoBiotics helps you understand your own food system, see
-                how it is being fed, and take practical steps to improve it over time.
-              </p>
-              <p className="mt-4 max-w-md text-base font-medium leading-relaxed text-foreground">
-                Understand the Food System Inside You. Learn how to feed it better. Watch it improve.
+              <p className="mt-5 max-w-md text-lg leading-relaxed text-muted-foreground">
+                Discover how your food, habits and everyday life support the living system
+                inside you — and the practical steps that help it thrive.
               </p>
             </ScrollReveal>
 
             <ScrollReveal delay={200}>
-              <div className="mt-8">
-                <div className="flex flex-wrap items-center gap-4">
-                  <Link
-                    href="/assessment"
-                    className="brand-gradient inline-flex items-center gap-2.5 rounded-full px-10 py-5 text-lg font-semibold text-white shadow-xl shadow-icon-green/25 transition-all hover:shadow-2xl hover:shadow-icon-green/35 hover:opacity-90"
-                  >
-                    Get My Food System Score <ArrowRight size={18} />
-                  </Link>
-                  <a
-                    href="#journey"
-                    className="inline-flex w-fit items-center gap-1.5 rounded-full border border-icon-green/30 bg-icon-green/5 px-5 py-2.5 text-sm font-semibold text-icon-green transition-all hover:border-icon-green/50 hover:bg-icon-green/10"
-                  >
-                    See How It Works
-                  </a>
-                </div>
-                <p className="mt-3.5 text-sm text-muted-foreground">
-                  Takes about 5 minutes. Educational, food-first, and non-diagnostic.
-                </p>
+              <div className="mt-8 flex flex-wrap items-center gap-4">
+                <PrimaryCta placement="hero" />
+                <SampleResultLink />
               </div>
-            </ScrollReveal>
-
-            <ScrollReveal delay={320}>
-              <div className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm font-medium text-muted-foreground">
-                <span>Built on the 3 Biotics</span>
-                <span className="h-1 w-1 rounded-full bg-border" />
-                <span>Prebiotics</span>
-                <span className="h-1 w-1 rounded-full bg-border" />
-                <span>Probiotics</span>
-                <span className="h-1 w-1 rounded-full bg-border" />
-                <span>Postbiotics</span>
-              </div>
+              <p className="mt-4 text-sm text-muted-foreground">
+                Takes about 5 minutes. Free, educational and non-diagnostic.
+              </p>
             </ScrollReveal>
           </div>
         </div>
