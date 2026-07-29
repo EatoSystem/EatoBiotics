@@ -8,7 +8,7 @@ import { SystemFoundationTieback } from "@/components/systems/system-foundation"
 import { SystemEcosystemGrid } from "@/components/systems/system-ecosystem"
 import { SystemFinalCta } from "@/components/systems/system-final-cta"
 import { SystemDisclaimer } from "@/components/systems/system-disclaimer"
-import { SYSTEMS } from "@/lib/systems"
+import { SYSTEMS, systemEyebrow } from "@/lib/systems"
 
 const system = SYSTEMS.performance
 
@@ -30,7 +30,7 @@ export default function PerformancePage() {
     <main className="overflow-hidden bg-white">
       <SystemPageHero
         system={system}
-        eyebrow="Health System · Live"
+        eyebrow={systemEyebrow(system)}
         intro="Performance is a Health System inside EatoBiotics — food-first fuel, recovery, and training support, built on your You or Family foundation."
         primaryCta={{ label: "Start Performance Assessment", href: "/assessment/add/performance" }}
         metaLine="Free · a few minutes · food-first, not medical"

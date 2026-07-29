@@ -79,7 +79,7 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
         subject: `Your ${pillarLabel} score is holding you back`,
         headline: `Your ${pillarLabel} score: the gap worth closing`,
         body: `${PILLAR_INSIGHT[weakestPillar]}<br /><br />The fastest way to move your ${pillarLabel} score is a single daily habit — not a complete overhaul. Here's the one that makes the most difference:<br /><br /><strong>${PILLAR_ACTIONS[weakestPillar]}</strong><br /><br />Most people notice a difference within 2 weeks of making this consistent.`,
-        cta: "Get My Personal Report — €49",
+        cta: "Get My Food System Report — €49",
         ctaUrl: `${baseUrl}/pricing`,
         showScores: false,
       }
@@ -108,8 +108,8 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
       return {
         subject: `${firstName}, one week in — are you making progress?`,
         headline: "Week one check-in",
-        body: `It's been a week since you got your EatoBiotics Score of <strong>${score}</strong>. If you've been working on your ${pillarLabel} score, you're already in the top 20% of people who actually act on their results.<br /><br />Your Personal Report takes everything further — a full 30-day plan built around your specific scores, your top 10 foods, and a week-by-week guide that adapts to where you are in the process. Most people who get it see a score improvement of 8–18 points within 30 days.`,
-        cta: "Get My Personal Report — €49",
+        body: `It's been a week since you got your EatoBiotics Score of <strong>${score}</strong>. If you've been working on your ${pillarLabel} score, you're already in the top 20% of people who actually act on their results.<br /><br />Your Food System Report takes everything further — a full 30-day plan built around your specific scores, your top 10 foods, and a week-by-week guide that adapts to where you are in the process. Most people who get it see a score improvement of 8–18 points within 30 days.`,
+        cta: "Get My Food System Report — €49",
         ctaUrl: `${baseUrl}/pricing`,
         showScores: true,
       }
@@ -118,7 +118,7 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
       return {
         subject: `${firstName}, your gut health window is open`,
         headline: "The gut-brain connection rewards early action",
-        body: `Your gut microbiome has a renewal window. The bacteria that drive your energy, mood, and immunity are constantly turning over — the ones you feed survive, the ones you don't are replaced.<br /><br />That's why the next 30 days are your highest-leverage moment. The changes you make now compound. The Personal Report gives you exactly what to do, when — so none of that momentum is wasted.`,
+        body: `Your gut microbiome has a renewal window. The bacteria that drive your energy, mood, and immunity are constantly turning over — the ones you feed survive, the ones you don't are replaced.<br /><br />That's why the next 30 days are your highest-leverage moment. The changes you make now compound. The Food System Report gives you exactly what to do, when — so none of that momentum is wasted.`,
         cta: "Get My 30-Day Plan — €49",
         ctaUrl: `${baseUrl}/pricing`,
         showScores: false,
@@ -128,8 +128,8 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
       return {
         subject: "What happens to your gut after 14 days of change",
         headline: "14 days of consistent input — what's happening inside",
-        body: `At the 14-day mark, your gut microbiome has had enough consistent input to start shifting its bacterial composition. The species you're feeding are multiplying. The species you're not feeding are declining.<br /><br />This is the window where people start noticing: clearer energy in the afternoon, less bloating, more stable mood. Not dramatic — just less friction.<br /><br />Your Personal Report maps this process specifically for your Prebiotics, Probiotics, and Postbiotics scores — so you know exactly what's happening and what to do next.`,
-        cta: "Get My Personal Report — €49",
+        body: `At the 14-day mark, your gut microbiome has had enough consistent input to start shifting its bacterial composition. The species you're feeding are multiplying. The species you're not feeding are declining.<br /><br />This is the window where people start noticing: clearer energy in the afternoon, less bloating, more stable mood. Not dramatic — just less friction.<br /><br />Your Food System Report maps this process specifically for your Prebiotics, Probiotics, and Postbiotics scores — so you know exactly what's happening and what to do next.`,
+        cta: "Get My Food System Report — €49",
         ctaUrl: `${baseUrl}/pricing`,
         showScores: false,
       }
@@ -138,7 +138,7 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
       return {
         subject: "Three weeks in: the EatoBiotics way",
         headline: "What three consistent weeks does for your gut",
-        body: `By week three, the gut microbiome changes are measurable. Microbial diversity has increased. Short-chain fatty acid production is up. The gut-brain signalling pathways are more active.<br /><br />The people making the most progress right now are the ones with a Personal Report — a concrete 30-day plan that tells them exactly what to do each week, with their specific food recommendations and score targets.<br /><br />Your score of ${score} has real room to move. The next version of it is 8–18 points higher — and it's available in 30 days.`,
+        body: `By week three, the gut microbiome changes are measurable. Microbial diversity has increased. Short-chain fatty acid production is up. The gut-brain signalling pathways are more active.<br /><br />The people making the most progress right now are the ones with a Food System Report — a concrete 30-day plan that tells them exactly what to do each week, with their specific food recommendations and score targets.<br /><br />Your score of ${score} has real room to move. The next version of it is 8–18 points higher — and it's available in 30 days.`,
         cta: "Get My Plan Now — €49",
         ctaUrl: `${baseUrl}/pricing`,
         showScores: false,
@@ -148,8 +148,8 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
       return {
         subject: "Last chance: your 30-day plan is waiting",
         headline: `${firstName}, your gut health window is closing`,
-        body: `This is the last email in your EatoBiotics sequence. Your score of <strong>${score}</strong> — and everything it tells you about your ${pillarLabel} gap — stays relevant as long as you act on it.<br /><br />The Personal Report is €49. It gives you a full 30-day plan, your top 10 foods, a weekly shopping framework, and a free 30-day account to follow the plan. Most people who get it improve their score by 8–18 points within a month.<br /><br />If €49 isn't right for you today, the Starter Insights (€19) gives you your key action and a 7-day kickstart — a meaningful step for a smaller commitment.`,
-        cta: "Get My Personal Report — €49",
+        body: `This is the last email in your EatoBiotics sequence. Your score of <strong>${score}</strong> — and everything it tells you about your ${pillarLabel} gap — stays relevant as long as you act on it.<br /><br />The Food System Report is €49. It gives you a full 30-day plan, your top 10 foods, a weekly shopping framework, and a free 30-day account to follow the plan. Most people who get it improve their score by 8–18 points within a month.<br /><br />If €49 isn't right for you today, the Starter Insights (€19) gives you your key action and a 7-day kickstart — a meaningful step for a smaller commitment.`,
+        cta: "Get My Food System Report — €49",
         ctaUrl: `${baseUrl}/pricing`,
         showScores: true,
       }
@@ -159,7 +159,7 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
         subject: `Your EatoBiotics Score: ${score}/100`,
         headline: `${firstName}, your gut health update`,
         body: `Your EatoBiotics Score is <strong>${score}/100</strong>. Your ${pillarLabel} score is your biggest opportunity. ${PILLAR_ACTIONS[weakestPillar]}`,
-        cta: "Get My Personal Report — €49",
+        cta: "Get My Food System Report — €49",
         ctaUrl: `${baseUrl}/pricing`,
         showScores: false,
       }

@@ -320,7 +320,7 @@ function TodayTab({
           href={`/assessment/report?session_id=${latestReport.stripe_session_id}`}
           className="flex items-center justify-between rounded-2xl border bg-card px-5 py-4 text-sm transition-colors hover:bg-muted"
         >
-          <span className="font-medium text-foreground">View your full Personal Report</span>
+          <span className="font-medium text-foreground">View your full Food System Report</span>
           <ArrowRight size={14} className="text-muted-foreground" />
         </Link>
       )}
@@ -2671,7 +2671,7 @@ function MembershipTab({
       title: "Free Account",
       price: "Included with report",
       perks: [
-        "Permanent access to your Personal Report",
+        "Permanent access to your Food System Report",
         "EatoBiotics Biotics Score (today)",
         "7-day food system guide",
         "Food library access",
