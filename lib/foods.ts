@@ -535,7 +535,10 @@ export const foods: Food[] = [
     brainHealth: true,
   },
 
-  // ─── POSTBIOTIC FOODS ──────────────────────────────────────────────────────
+  // ─── POSTBIOTIC-SUPPORTING FOODS ───────────────────────────────────────────
+  // Nothing here IS a postbiotic. These are the polyphenol, resistant-starch and
+  // fermentation-acid foods that give bacteria what they need to produce them.
+  // The `biotic: "postbiotic"` value is the scoring bucket key and must not change.
 
   {
     slug: "cooked-cooled-potato",
@@ -547,7 +550,7 @@ export const foods: Food[] = [
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     tagline: "Cooling transforms starch into gut medicine.",
     description:
-      "Cooking a potato and then cooling it completely triggers a remarkable transformation — the digestible starch crystallises into resistant starch type 3, which escapes digestion in the small intestine and reaches the colon intact. There, gut bacteria ferment it into butyrate — the most important short-chain fatty acid for colon health. Reheating briefly preserves most of this benefit. This makes the humble potato one of the most powerful postbiotic foods available.",
+      "Cooking a potato and then cooling it completely triggers a remarkable transformation — the digestible starch crystallises into resistant starch type 3, which escapes digestion in the small intestine and reaches the colon intact. There, gut bacteria ferment it into butyrate — the most important short-chain fatty acid for colon health. Reheating briefly preserves most of this benefit. This makes the humble potato one of the most powerful ways to drive postbiotic production — you never eat the butyrate, you make it.",
     howToEat:
       "Boil or steam potatoes, then refrigerate overnight before eating. Eat cold in salads, or reheat gently — reheating doesn't destroy the resistant starch completely. Potato salad with olive oil and apple cider vinegar is an ideal preparation. New potatoes and waxy varieties (Charlotte, Jersey Royals) retain more resistant starch than floury types. Eat skin-on for additional prebiotic fibre.",
     science:
@@ -975,7 +978,7 @@ export const foods: Food[] = [
     publishedDay: 64,
   },
 
-  // ─── NEW POSTBIOTIC FOODS ─────────────────────────────────────────────────
+  // ─── MORE POSTBIOTIC-SUPPORTING FOODS ─────────────────────────────────────
 
   {
     slug: "turmeric",

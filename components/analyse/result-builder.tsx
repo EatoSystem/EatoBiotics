@@ -83,7 +83,7 @@ const TRIFECTA_CONFIG: Record<string, { add: string; examples: string[]; icon: s
     border: "color-mix(in srgb, var(--icon-green) 30%, transparent)",
   },
   postbiotic: {
-    add: "Add a postbiotic source",
+    add: "Add a food that supports postbiotic production",
     examples: ["sourdough", "aged cheese", "ACV dressing"],
     icon: "✨",
     color: "var(--icon-teal)",

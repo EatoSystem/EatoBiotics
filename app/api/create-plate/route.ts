@@ -5,6 +5,7 @@ import { getUser } from "@/lib/supabase-server"
 import { getUserMembershipTier, canAccess } from "@/lib/membership"
 import { guardAiUsage } from "@/lib/ai-guard"
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
+import { BIOTICS_FOR_PLANNING } from "@/lib/biotics-prompt"
 
 /* ── Validation ─────────────────────────────────────────────────────── */
 
@@ -115,10 +116,7 @@ Rules:
 - Fibre is the most important nutrient for food system health — target 30–40g total per day
 - All 7 days must be included: Monday through Sunday
 
-THE 3 BIOTICS (EatoBiotics framework):
-- PREBIOTIC foods: garlic, onion, leeks, asparagus, oats, bananas (slightly underripe), chicory, Jerusalem artichoke, flaxseeds, apples, legumes, barley
-- PROBIOTIC foods: natural yogurt, kefir, sauerkraut, kimchi, miso, tempeh, kombucha, live cheese
-- POSTBIOTIC foods: wholegrains, resistant starch (cooled potato/rice), pulses, fermented foods after cooking, high-fibre vegetables, extra-virgin olive oil, dark chocolate (70%+), berries
+${BIOTICS_FOR_PLANNING}
 
 Return ONLY this exact JSON structure, no markdown fences, no extra text:
 
@@ -139,10 +137,7 @@ Rules:
 - Include realistic, achievable everyday foods
 - Fibre is the most important nutrient for food system health — target 30–40g total
 
-THE 3 BIOTICS (EatoBiotics framework):
-- PREBIOTIC foods: garlic, onion, leeks, asparagus, oats, bananas (slightly underripe), chicory, Jerusalem artichoke, flaxseeds, apples, legumes, barley
-- PROBIOTIC foods: natural yogurt, kefir, sauerkraut, kimchi, miso, tempeh, kombucha, live cheese
-- POSTBIOTIC foods: wholegrains, resistant starch (cooled potato/rice), pulses, fermented foods after cooking, high-fibre vegetables, extra-virgin olive oil, dark chocolate (70%+), berries
+${BIOTICS_FOR_PLANNING}
 
 Return ONLY this exact JSON structure, no markdown fences, no extra text:
 

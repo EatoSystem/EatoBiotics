@@ -164,7 +164,10 @@ function TodayTab({
   const PILLAR_META: Record<string, { label: string; color: string; foods: string[]; icon: string }> = {
     feed: { label: "Feed — Prebiotic & Fibre", color: "var(--icon-lime)", icon: "🌿", foods: ["Oats", "Lentils", "Garlic", "Asparagus", "Leeks"] },
     seed: { label: "Seed — Fermented & Live", color: "var(--icon-teal)", icon: "🧬", foods: ["Kefir", "Kimchi", "Miso", "Sauerkraut", "Kombucha"] },
-    heal: { label: "Heal — Recovery & Rhythm", color: "var(--icon-yellow)", icon: "⚡", foods: ["Blueberries", "Dark Chocolate", "Turmeric", "Walnuts", "Olive Oil"] },
+    // Blueberries and Olive Oil were listed here but lib/foods.ts classifies both
+    // as `prebiotic` (:100, :126). Swapped for foods that are actually in the
+    // postbiotic-supporting bucket, so the dashboard agrees with the food library.
+    heal: { label: "Heal — Recovery & Rhythm", color: "var(--icon-yellow)", icon: "⚡", foods: ["Dark Chocolate", "Turmeric", "Walnuts", "Green Tea", "Cooled Potato"] },
   }
   const focus = PILLAR_META[weakestPillar] ?? PILLAR_META.seed
 

@@ -10,14 +10,14 @@ import { ArrowUpRight, Calendar } from "lucide-react"
 /** Short, card-friendly teasers for the "find foods by goal" grid. */
 const GOAL_TEASE: Record<string, string> = {
   digestion: "Prebiotic + probiotic foods to improve gut function",
-  energy: "Protein + postbiotic foods that power your metabolism",
-  immunity: "Prebiotic + postbiotic foods that strengthen your defences",
+  energy: "Protein + postbiotic-supporting foods that power your metabolism",
+  immunity: "Prebiotic + postbiotic-supporting foods that strengthen your defences",
   mood: "Gut-brain foods linked to serotonin and cognitive health",
-  recovery: "Protein + postbiotic foods for repair and inflammation",
+  recovery: "Protein + postbiotic-supporting foods for repair and inflammation",
   sleep: "Prebiotic-rich foods that support the gut-sleep axis",
   "gut-health": "All three biotics for a diverse microbiome",
   bloating: "Gentle prebiotic + probiotic foods for a calmer gut",
-  inflammation: "Postbiotic + prebiotic foods that calm inflammation",
+  inflammation: "Postbiotic-supporting + prebiotic foods that calm inflammation",
   skin: "Gut-skin axis foods for clearer, calmer skin",
   weight: "High-fibre + protein foods for satiety and balance",
   stability: "Soluble-fibre foods for steadier digestion",
@@ -26,7 +26,7 @@ const GOAL_TEASE: Record<string, string> = {
 export const metadata: Metadata = {
   title: "Food Library",
   description:
-    "The EatoBiotics food library — every food profiled for its microbiome impact. Prebiotics, probiotics, postbiotic and protein foods with science-backed explanations and practical eating advice.",
+    "The EatoBiotics food library — every food profiled for its microbiome impact. Prebiotic, probiotic, postbiotic-supporting and protein foods with science-backed explanations and practical eating advice.",
   openGraph: {
     title: "Food Library — EatoBiotics",
     description: "Every food profiled for its microbiome impact.",
@@ -56,7 +56,7 @@ const categories: {
   },
   {
     biotic: "postbiotic",
-    label: "Postbiotic Foods",
+    label: "Postbiotic-Supporting",
     accent: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     description: "Foods whose compounds directly repair the gut lining and reduce inflammation.",

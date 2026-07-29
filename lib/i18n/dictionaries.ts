@@ -213,7 +213,7 @@ const en: Dictionary = {
   pillarNudges: {
     prebiotics: "Add a prebiotic food like garlic, onions, or oats to feed your good bacteria.",
     probiotics: "Try a fermented food like yoghurt, kimchi, or kombucha for live probiotics.",
-    postbiotics: "Include a postbiotic-rich food like turmeric, dark chocolate, or green tea.",
+    postbiotics: "Support postbiotic production with polyphenol-rich foods like turmeric, dark chocolate, or green tea.",
   },
   relationships: { self: "Self", child: "Child", partner: "Partner", parent: "Parent", sibling: "Sibling", other: "Other" },
   ageBands: { child: "Child", teen: "Teen", adult: "Adult" },
@@ -441,7 +441,7 @@ const es: Dictionary = {
   pillarNudges: {
     prebiotics: "Añade un alimento prebiótico como ajo, cebolla o avena para alimentar tus bacterias buenas.",
     probiotics: "Prueba un alimento fermentado como yogur, kimchi o kombucha para probióticos vivos.",
-    postbiotics: "Incluye un alimento rico en posbióticos como cúrcuma, chocolate negro o té verde.",
+    postbiotics: "Favorece la producción de posbióticos con alimentos ricos en polifenoles como la cúrcuma, el chocolate negro o el té verde.",
   },
   relationships: { self: "Yo", child: "Hijo/a", partner: "Pareja", parent: "Padre/Madre", sibling: "Hermano/a", other: "Otro" },
   ageBands: { child: "Niño/a", teen: "Adolescente", adult: "Adulto/a" },
@@ -669,7 +669,7 @@ const fr: Dictionary = {
   pillarNudges: {
     prebiotics: "Ajoutez un aliment prébiotique comme l'ail, l'oignon ou l'avoine pour nourrir vos bonnes bactéries.",
     probiotics: "Essayez un aliment fermenté comme le yaourt, le kimchi ou le kombucha pour des probiotiques vivants.",
-    postbiotics: "Incluez un aliment riche en postbiotiques comme le curcuma, le chocolat noir ou le thé vert.",
+    postbiotics: "Favorisez la production de postbiotiques avec des aliments riches en polyphénols comme le curcuma, le chocolat noir ou le thé vert.",
   },
   relationships: { self: "Moi", child: "Enfant", partner: "Partenaire", parent: "Parent", sibling: "Frère/Sœur", other: "Autre" },
   ageBands: { child: "Enfant", teen: "Adolescent", adult: "Adulte" },
@@ -897,7 +897,7 @@ const de: Dictionary = {
   pillarNudges: {
     prebiotics: "Füge ein präbiotisches Lebensmittel wie Knoblauch, Zwiebeln oder Hafer hinzu, um deine guten Bakterien zu nähren.",
     probiotics: "Probiere ein fermentiertes Lebensmittel wie Joghurt, Kimchi oder Kombucha für lebende Probiotika.",
-    postbiotics: "Iss ein postbiotikareiches Lebensmittel wie Kurkuma, dunkle Schokolade oder grünen Tee.",
+    postbiotics: "Unterstütze die Postbiotika-Produktion mit polyphenolreichen Lebensmitteln wie Kurkuma, dunkler Schokolade oder grünem Tee.",
   },
   relationships: { self: "Ich", child: "Kind", partner: "Partner/in", parent: "Elternteil", sibling: "Geschwister", other: "Andere" },
   ageBands: { child: "Kind", teen: "Teenager", adult: "Erwachsen" },
@@ -1125,7 +1125,7 @@ const ar: Dictionary = {
   pillarNudges: {
     prebiotics: "أضِف طعامًا بريبيوتيك مثل الثوم أو البصل أو الشوفان لتغذية بكتيريا أمعائك النافعة.",
     probiotics: "جرّب طعامًا مخمّرًا مثل الزبادي أو الكيمتشي أو الكمبوتشا للحصول على بروبيوتيك حي.",
-    postbiotics: "أدرِج طعامًا غنيًا بالبوستبيوتيك مثل الكركم أو الشوكولاتة الداكنة أو الشاي الأخضر.",
+    postbiotics: "ادعم إنتاج البوستبيوتيك بأطعمة غنية بالبوليفينولات مثل الكركم أو الشوكولاتة الداكنة أو الشاي الأخضر.",
   },
   relationships: { self: "أنا", child: "ابن/ابنة", partner: "شريك", parent: "أحد الوالدين", sibling: "أخ/أخت", other: "آخر" },
   ageBands: { child: "طفل", teen: "مراهق", adult: "بالغ" },
