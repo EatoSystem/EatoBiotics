@@ -59,7 +59,7 @@ const categories: {
     label: "Postbiotic-Supporting",
     accent: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
-    description: "Foods whose compounds directly repair the gut lining and reduce inflammation.",
+    description: "Fibres, resistant starch, and polyphenols that may support microbial metabolite production and gut-lining resilience.",
   },
   {
     biotic: "protein",
