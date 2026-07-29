@@ -14,8 +14,19 @@ interface ScoreCardProps {
 export function ScoreCard({ score, feed, seed, heal, profile }: ScoreCardProps) {
   const [copied, setCopied] = useState(false)
 
-  const shareUrl = `https://eatobiotics.com/score?score=${score}&prebiotics=${feed}&probiotics=${seed}&postbiotics=${heal}&profile=${encodeURIComponent(profile)}`
-  const ogImageUrl = `https://eatobiotics.com/api/score-card?score=${score}&prebiotics=${feed}&probiotics=${seed}&postbiotics=${heal}&profile=${encodeURIComponent(profile)}`
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://eatobiotics.com"
+
+  // Was https://eatobiotics.com/score?… — a route that has never existed, with no
+  // rewrite pointing at it, so every score anyone shared led to a 404. The score
+  // itself travels in the share text and the card image; the link's job is to send
+  // the recipient somewhere they can get their own.
+  const shareUrl = `${siteUrl}/assessment`
+
+  // The parameter names here must match what app/api/score-card/route.tsx reads.
+  // They did not: this sent prebiotics/probiotics/postbiotics while the route read
+  // feed/seed/heal, so every generated card rendered 0 / 0 / 0. The route now
+  // accepts both spellings, which also repairs cards shared before this fix.
+  const ogImageUrl = `${siteUrl}/api/score-card?score=${score}&feed=${feed}&seed=${seed}&heal=${heal}&profile=${encodeURIComponent(profile)}`
 
   async function handleShare() {
     try {
