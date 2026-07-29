@@ -574,7 +574,7 @@ export const foods: Food[] = [
     biotic: "postbiotic",
     accentColor: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-orange), var(--icon-yellow))",
-    tagline: "Acetic acid — the postbiotic hiding in your pantry.",
+    tagline: "Acetic acid — what fermentation leaves behind.",
     description:
       "Raw, unfiltered apple cider vinegar with 'the mother' contains acetic acid — the primary postbiotic compound produced when bacteria ferment ethanol. Acetic acid directly inhibits the growth of pathogenic bacteria, lowers post-meal blood glucose, and acts as a mild antimicrobial in the gut. The 'mother' — the cloudy sediment — contains beneficial bacteria, enzymes, and proteins from the fermentation process.",
     howToEat:
@@ -625,7 +625,7 @@ export const foods: Food[] = [
     biotic: "postbiotic",
     accentColor: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
-    tagline: "EGCG — the postbiotic compound in every cup.",
+    tagline: "EGCG — the polyphenol your bacteria turn into postbiotics.",
     description:
       "Green tea is one of the most researched plants on earth. Its primary polyphenol, EGCG (epigallocatechin gallate), is metabolised by gut bacteria into postbiotic compounds — specifically valerolactones and valeric acids — that have potent anti-inflammatory, anti-cancer, and neuroprotective effects. Regular green tea consumption is one of the strongest dietary correlates of longevity across multiple epidemiological studies in Japan.",
     howToEat:
