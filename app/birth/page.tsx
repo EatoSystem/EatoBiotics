@@ -8,7 +8,7 @@ import { SystemFoundationTieback } from "@/components/systems/system-foundation"
 import { SystemEcosystemGrid } from "@/components/systems/system-ecosystem"
 import { SystemFinalCta } from "@/components/systems/system-final-cta"
 import { SystemDisclaimer } from "@/components/systems/system-disclaimer"
-import { SYSTEMS } from "@/lib/systems"
+import { SYSTEMS, systemEyebrow } from "@/lib/systems"
 
 const system = SYSTEMS.birth
 
@@ -32,7 +32,7 @@ export default function BirthPage() {
     <main className="overflow-hidden bg-white">
       <SystemPageHero
         system={system}
-        eyebrow="Life System · Coming Soon"
+        eyebrow={systemEyebrow(system)}
         intro="Birth is a Life System inside EatoBiotics — food-first support for nourishment, hydration and rhythm around birth and early recovery, built on your You or Family foundation."
         primaryCta={{ label: "Join the Birth waitlist", href: "/waitlist" }}
         secondaryCta={{ label: "Begin with You or Family", href: "/assessment" }}

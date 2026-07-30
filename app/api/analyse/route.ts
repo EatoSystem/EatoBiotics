@@ -5,6 +5,7 @@ import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { getUserMembershipTier, canAccess, isPaidTier, type MembershipTier } from "@/lib/membership"
 import { logServerEvent } from "@/lib/statsig-server"
+import { BIOTIC_CLASSIFICATION } from "@/lib/biotics-prompt"
 
 /* ── Base analysis prompt (same content as /api/analyse-plate) ─────── */
 
@@ -12,19 +13,7 @@ const BASE_PROMPT = `You are a food system nutrition analyst using the EatoBioti
 
 Look at this meal photo carefully and identify EVERY distinct food item visible — including garnishes, seeds, dressings, sauces, and side items. Aim to identify 4–8 items typically visible in a meal photo. Don't miss small items like seeds on avocado, dressing, or herbs.
 
-For each food, classify it as ONE of:
-- prebiotic: fibrous plant foods that feed good gut bacteria (ALL vegetables, fruits, wholegrains, legumes, garlic, onion, leeks, asparagus, peas, oats, bananas, seeds like hemp/flax/chia, avocado, etc.)
-- probiotic: live cultures / fermented foods (yogurt, kefir, kimchi, sauerkraut, miso, tempeh, kombucha, live-culture cheese, etc.)
-- postbiotic: health compounds from fermentation (aged hard cheese, sourdough bread, apple cider vinegar, certain fermented products)
-- protein: meat, fish, eggs, or legumes when serving as the primary protein source
-
-Classification notes:
-- Avocado = prebiotic (excellent fibre)
-- Asparagus, peas, edamame = prebiotic (high in FOSs and resistant starch)
-- Seeds (hemp, flax, sesame, pumpkin, sunflower) = prebiotic
-- Legumes like lentils/chickpeas = prebiotic (if a side dish) or protein (if the main protein)
-- Greek yogurt = probiotic (live cultures)
-- Aged cheddar/parmesan = postbiotic
+${BIOTIC_CLASSIFICATION}
 
 Score this meal from 0–100 using this calibrated rubric for a SINGLE MEAL (most single meals won't have all 3 biotics — that's normal):
 
@@ -40,8 +29,8 @@ PROBIOTIC presence — up to 25 points:
   1 fermented food: 20 pts
   None: 10 pts (floor — single meals commonly skip fermented food; this is not a failure)
 
-POSTBIOTIC presence — up to 15 points:
-  1+ postbiotic source: 15 pts
+POSTBIOTIC support — up to 15 points:
+  1+ food that supports postbiotic production: 15 pts
   None: 5 pts (floor)
 
 PROTEIN quality for gut lining — up to 15 points:

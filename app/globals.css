@@ -564,3 +564,29 @@ main {
   }
   .eb-draw-ring { animation: ebDrawRing 1.4s cubic-bezier(.22,.8,.3,1) .3s both; }
 }
+
+/* ── ScrollReveal (components/scroll-reveal.tsx) ────────────────────────
+   Used by ~136 files, i.e. nearly every marketing page.
+
+   The reveal starts hidden and is shown by an IntersectionObserver. That used
+   to be expressed with Tailwind's opacity-0 on the server-rendered markup,
+   which meant the HTML shipped invisible: if the bundle failed to load, was
+   blocked, or JavaScript was off, the page rendered blank rather than
+   unanimated.
+
+   So the hidden state is scoped to `.js`, a class the inline script in
+   app/layout.tsx adds before first paint. No JavaScript, no `.js`, and the
+   content is simply visible — while a working browser still gets the reveal
+   with no flash of content, because that script runs before paint. */
+.js .sr-reveal { opacity: 0; transform: translateY(1.25rem); }
+.js .sr-reveal[data-revealed="true"] { opacity: 1; transform: none; }
+
+/* Reduced motion: show it, don't move it. */
+@media (prefers-reduced-motion: reduce) {
+  .js .sr-reveal,
+  .js .sr-reveal[data-revealed="true"] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

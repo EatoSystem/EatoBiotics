@@ -32,7 +32,7 @@ const features = [
     color: "var(--icon-teal)",
     gradientTo: "var(--icon-green)",
     description:
-      "Log meals with auto-tagging for prebiotic, probiotic, and postbiotic foods. See your biotic balance at a glance.",
+      "Log meals with auto-tagging for prebiotic, probiotic, and postbiotic-supporting foods. See your biotic balance at a glance.",
     anchor: "#plate-tracker",
   },
   {
@@ -221,7 +221,7 @@ export default function AppPage() {
         title="Discover What Each Food Does"
         description="Every food in the EatoBiotics library comes with a detailed breakdown of its biotic properties, key benefits, science-backed notes, and pairing suggestions."
         bullets={[
-          "50+ foods with prebiotic, probiotic, and postbiotic ratings",
+          "50+ foods with prebiotic, probiotic, and postbiotic-support ratings",
           "Evidence-based science notes with linked source studies",
           "Pairing suggestions to maximise biotic absorption",
           "Organised by category — from vegetables and grains to fermented foods",

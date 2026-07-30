@@ -11,10 +11,14 @@ export const runtime = "edge"
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
-  const score    = Number(searchParams.get("score")   ?? 0)
-  const feed     = Number(searchParams.get("feed")    ?? 0)
-  const seed     = Number(searchParams.get("seed")    ?? 0)
-  const heal     = Number(searchParams.get("heal")    ?? 0)
+  // Two spellings are accepted for each pillar. The route was written to read
+  // feed/seed/heal, but its only caller has always sent the canonical pillar
+  // names — so every card rendered 0 / 0 / 0. Reading both repairs the live
+  // path and keeps any card URL already shared in the wild working.
+  const score    = Number(searchParams.get("score") ?? 0)
+  const feed     = Number(searchParams.get("feed") ?? searchParams.get("prebiotics")  ?? 0)
+  const seed     = Number(searchParams.get("seed") ?? searchParams.get("probiotics")  ?? 0)
+  const heal     = Number(searchParams.get("heal") ?? searchParams.get("postbiotics") ?? 0)
   const profile  = searchParams.get("profile") ?? "EatoBiotics Score"
 
   const pillars = [
@@ -70,6 +74,7 @@ export async function GET(req: NextRequest) {
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div
               style={{
+                display: "flex",
                 background: "rgba(76,175,125,0.15)",
                 border: "1px solid rgba(76,175,125,0.4)",
                 borderRadius: 20,
@@ -146,7 +151,7 @@ export async function GET(req: NextRequest) {
             ))}
 
             {/* Tagline */}
-            <div style={{ marginTop: 8 }}>
+            <div style={{ display: "flex", marginTop: 8 }}>
               <span
                 style={{
                   fontSize: 16,

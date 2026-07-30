@@ -22,7 +22,7 @@ import { ScoreRing } from "@/components/assessment/score-ring"
 export const metadata: Metadata = {
   title: "Your Food System — EatoBiotics",
   description:
-    "Build the Food System Inside You. Watch it learn. See it improve. Feel the difference. A living picture of your Food System — powered by a Food System Digital Twin.",
+    "Build the Food System Inside You. Watch it learn. See it improve. Feel the difference. A living picture of the Food System Inside You — one that learns from every meal.",
   openGraph: {
     title: "Your Food System — EatoBiotics",
     description: "Build the Food System Inside You. Watch it learn. See it improve. Feel the difference.",
@@ -86,7 +86,7 @@ export default function DigitalTwinPage() {
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
             Watch it learn. See it improve. Feel the difference. A living picture of your Food
-            System — powered by a Food System Digital Twin.
+            System — one that learns from every meal.
           </p>
           <div className="mt-9 flex justify-center"><CtaButton>Build My Food System</CtaButton></div>
         </ScrollReveal>
@@ -404,7 +404,7 @@ export default function DigitalTwinPage() {
               <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
                 One Food System. Connected to everything.
               </h2>
-              <p className="mt-5 text-lg text-muted-foreground">Every capability orbits a single intelligent core — your Food System, powered by its Digital Twin.</p>
+              <p className="mt-5 text-lg text-muted-foreground">Every capability orbits a single intelligent core — Your Food System.</p>
             </div>
           </ScrollReveal>
           <ScrollReveal><OrbitHub /></ScrollReveal>

@@ -77,16 +77,42 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" style={{ backgroundColor: "#FFFFFF" }}>
+      <head>
+        {/*
+          Marks the document as JavaScript-capable before first paint, so CSS can
+          scope JS-dependent hidden states to `.js` (see `.js .sr-reveal` in
+          globals.css). Without it, ScrollReveal's server-rendered markup is
+          invisible, and a blocked or failed bundle leaves the page blank rather
+          than merely unanimated. Inline and synchronous on purpose: it must run
+          before paint or the reveal animations flash.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `document.documentElement.classList.add('js')`,
+          }}
+        />
+      </head>
       <PHProvider>
         <StatsigClientProvider>
         <body className={`${dmSans.variable} ${lora.variable} bg-white font-sans antialiased`}>
+          {/*
+            First focusable element on every page. Without it the only way past
+            the header and its mega-menu is to tab through all of it, on all 236
+            routes. Visually hidden until focused.
+          */}
+          <a
+            href="#main"
+            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:border focus:border-border focus:bg-background focus:px-5 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-foreground focus:shadow-lg focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-icon-green"
+          >
+            Skip to main content
+          </a>
           <Suspense fallback={null}>
             <PostHogPageview />
           </Suspense>
           <JsonLd data={generateOrganizationSchema()} />
           <Nav />
           <LocaleProvider>
-            <main>{children}</main>
+            <main id="main" tabIndex={-1}>{children}</main>
           </LocaleProvider>
           <Footer />
           <Analytics />

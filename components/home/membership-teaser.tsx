@@ -21,7 +21,7 @@ export function MembershipTeaser() {
         {/* Two sequential steps */}
         <div className="grid items-stretch gap-6 sm:grid-cols-2 lg:gap-7">
 
-          {/* Step 1 — Gut Report */}
+          {/* Step 1 — Food System Report */}
           <ScrollReveal delay={60}>
             <div
               className="relative flex h-full flex-col rounded-3xl border-2 bg-card p-8 shadow-lg"
@@ -35,7 +35,7 @@ export function MembershipTeaser() {
                 className="mb-1 text-[10px] font-bold uppercase tracking-widest"
                 style={{ color: "var(--icon-teal)" }}
               >
-                Step 1 · Gut Report
+                Step 1 · Food System Report
               </p>
               <p className="mb-1 font-serif text-3xl font-bold text-foreground">
                 €49 <span className="text-base font-normal text-muted-foreground">one-time</span>
@@ -61,7 +61,7 @@ export function MembershipTeaser() {
                 className="flex items-center justify-center gap-2 rounded-full py-4 text-base font-semibold text-white transition-all hover:opacity-90 hover:shadow-lg"
                 style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-teal))" }}
               >
-                Get my Gut Report <ArrowRight size={16} />
+                Get my Food System Report <ArrowRight size={16} />
               </Link>
             </div>
           </ScrollReveal>
@@ -126,7 +126,7 @@ export function MembershipTeaser() {
         <ScrollReveal delay={220}>
           <p className="mt-6 flex items-center justify-center gap-2 text-center text-xs font-medium text-muted-foreground">
             <ShieldCheck size={14} style={{ color: "var(--icon-green)" }} />
-            30-day money-back guarantee on the Gut Report.
+            30-day money-back guarantee on the Food System Report.
           </p>
         </ScrollReveal>
 

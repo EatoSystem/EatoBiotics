@@ -1,12 +1,19 @@
 /**
- * "Your Digital Twin" homepage section — a faithful port of the Claude Design
+ * "Your Food System" homepage section — a faithful port of the Claude Design
  * source (Food System Loop.dc.html): a two-column layout with an animated
- * digital-twin loop diagram (five green input nodes → the living twin → five
- * orange output nodes), a system-score card, a "next best action" card, and a
+ * loop diagram (five green input nodes → the living system → five orange
+ * output nodes), a system-score card, a "next best action" card, and a
  * 4-up feature strip.
  *
- * Copy keeps the approved Digital Twin framing (eyebrow / headline / CTA); the
- * rest of the design's wording is retained verbatim. Centerpiece is the in-repo
+ * This comment used to claim the customer-facing "Digital Twin" framing was
+ * approved. It was not: PRODUCT_CONSTITUTION.md Art. II.4 ("technology names
+ * never appear in customer copy") and PRODUCT_EXPERIENCE.md ("Digital Twin
+ * stays in the engine room") both say the opposite, and they are the
+ * authorities. Customer copy here now says Your Food System. The Digital Twin
+ * remains the internal name for the same machinery — keep using it in code,
+ * file names and docs, never in anything a member reads.
+ *
+ * The rest of the design's wording is retained verbatim. Centerpiece is the in-repo
  * couple figure (`/images/couple-hero.png`) with `mix-blend-mode: multiply`, so
  * its white background dissolves into the page. CSS animations live in
  * app/globals.css (`eb-*`), gated behind prefers-reduced-motion.
@@ -70,7 +77,7 @@ function CentreStage() {
       {/* central energy beam */}
       <div className="eb-beam" style={{ position: "absolute", left: "50%", top: "50%", width: 40, height: 250, transform: "translate(-50%,-50%)", borderRadius: 9999, background: "linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(245,197,24,0.55) 30%, rgba(255,255,255,0.9) 50%, rgba(168,224,99,0.55) 70%, rgba(255,255,255,0) 100%)", filter: "blur(7px)" }} />
       {/* the figure */}
-      <Image src="/images/couple-hero.png" alt="Your Food System Digital Twin" width={240} height={300} style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 240, height: "auto", mixBlendMode: "multiply" }} />
+      <Image src="/images/couple-hero.png" alt="The Food System Inside You" width={240} height={300} style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 240, height: "auto", mixBlendMode: "multiply" }} />
       {/* rising energy particles */}
       {PARTICLES.map((p, i) => (
         <span key={i} className="eb-rise" style={{ position: "absolute", left: p.l, bottom: p.b, width: p.s, height: p.s, borderRadius: "50%", background: p.c, boxShadow: `0 0 ${p.s + 3}px 2px ${p.g}`, animationDuration: `${p.d}s`, animationDelay: `${p.de}s` }} />
@@ -117,7 +124,7 @@ export function DigitalTwinSection() {
           <div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "7px 16px", border: "1px solid #E5E5E5", borderRadius: 9999, background: "#fff" }}>
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#4CB648" }} />
-              <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", color: "#4CB648" }}>Your Digital Twin</span>
+              <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", color: "#4CB648" }}>Your Food System</span>
             </div>
 
             <h2 style={{ fontFamily: "var(--font-lora), Georgia, serif", fontWeight: 700, fontSize: "clamp(2.4rem,3.6vw,3.5rem)", lineHeight: 1.04, letterSpacing: "-0.02em", margin: "28px 0 0" }}>
@@ -129,17 +136,17 @@ export function DigitalTwinSection() {
             <div style={{ width: 64, height: 3, borderRadius: 9999, background: "#4CB648", margin: "28px 0" }} />
 
             <p style={{ fontSize: 18, lineHeight: 1.65, color: "#5A6E50", maxWidth: 380, margin: 0 }}>
-              Every meal, symptom, habit and update feeds your Food System Digital Twin, which learns, adapts and guides you to feel your best.
+              Every meal, symptom, habit and update feeds the Food System Inside You, which learns, adapts and guides you to feel your best.
             </p>
 
             <Link href="/assessment" style={{ display: "inline-flex", alignItems: "center", gap: 12, marginTop: 36, padding: "18px 30px", borderRadius: 9999, background: CTA_GRADIENT, color: "#fff", fontSize: 17, fontWeight: 600, textDecoration: "none", boxShadow: "0 10px 30px rgba(76,182,72,0.25)" }}>
-              Build My Digital Twin
+              Build My Food System
               <ArrowRight size={20} strokeWidth={2.2} />
             </Link>
 
             <div style={{ display: "flex", alignItems: "center", gap: 9, marginTop: 20, color: "#5A6E50", fontSize: 15 }}>
               <Lock size={16} strokeWidth={2} color="#4CB648" />
-              Takes 5 minutes. No account required.
+              Takes about 3 minutes. No account required.
             </div>
           </div>
 
@@ -166,7 +173,7 @@ export function DigitalTwinSection() {
 
             {/* score card */}
             <div style={{ position: "absolute", left: "50%", top: "62%", transform: "translateX(-50%)", background: "#fff", border: "1px solid #EFEFEF", borderRadius: 16, boxShadow: "0 12px 32px rgba(26,46,18,0.12)", padding: "16px 26px", textAlign: "center", minWidth: 158 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "#1A2E12", lineHeight: 1.3 }}>YOUR FOOD SYSTEM<br />DIGITAL TWIN</div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "#1A2E12", lineHeight: 1.3 }}>THE FOOD SYSTEM<br />INSIDE YOU</div>
               <div style={{ fontFamily: "var(--font-lora), Georgia, serif", fontWeight: 700, fontSize: 50, lineHeight: 1, color: "#4CB648", margin: "8px 0 4px" }}>74</div>
               <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", color: "#5A6E50" }}>SYSTEM SCORE</div>
             </div>
@@ -184,7 +191,7 @@ export function DigitalTwinSection() {
           {/* RIGHT: diagram (mobile fallback) */}
           <div className="dt-diagram-mobile">
             <div style={{ position: "relative", width: "70%", maxWidth: 280, aspectRatio: "1", margin: "0 auto" }}>
-              <Image src="/images/couple-hero.png" alt="Your Food System Digital Twin" width={280} height={350} style={{ width: "100%", height: "auto", mixBlendMode: "multiply" }} />
+              <Image src="/images/couple-hero.png" alt="The Food System Inside You" width={280} height={350} style={{ width: "100%", height: "auto", mixBlendMode: "multiply" }} />
             </div>
             <div style={{ marginTop: 8, textAlign: "center", fontFamily: "var(--font-lora), Georgia, serif", fontWeight: 700, fontSize: 40, color: "#4CB648", lineHeight: 1 }}>74<span style={{ display: "block", fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", color: "#5A6E50" }}>SYSTEM SCORE</span></div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginTop: 24 }}>

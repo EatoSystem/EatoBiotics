@@ -345,7 +345,7 @@ const DEMO_DATA: SingleDayPlate = {
       name: "Prebiotic Grain Bowl",
       foods: ["Brown rice", "Roasted garlic chickpeas", "Leek", "Kimchi"],
       biotics: ["prebiotic", "probiotic", "postbiotic"],
-      tip: "Cooled brown rice develops resistant starch — a postbiotic powerhouse.",
+      tip: "Cooled brown rice develops resistant starch — prime fuel for postbiotic production.",
       nutrition: { calories: 560, fibre_g: 14, protein_g: 22, carbs_g: 78, fat_g: 16 },
     },
     {

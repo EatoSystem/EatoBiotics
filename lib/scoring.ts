@@ -1,4 +1,5 @@
 import type { BioticType, Food } from "./foods"
+import { PILLARS } from "./pillars"
 
 /* ── Score bands ──────────────────────────────────────────────────────── */
 
@@ -154,19 +155,20 @@ function generateSuggestions(
   // Priority 1: Nudge toward missing biotic types (balance is the biggest driver)
   const missingTypes: string[] = []
 
+  // Nudges come from lib/pillars.ts rather than being restated here. They used
+  // to be duplicated verbatim, which is how the postbiotic wording drifted out
+  // of sync with the rest of the product.
   if (counts.prebiotic === 0) {
     missingTypes.push("prebiotic")
-    tips.push("Add a prebiotic food like garlic, onions, or oats to feed your good bacteria.")
+    tips.push(PILLARS.prebiotics.nudge)
   }
   if (counts.probiotic === 0) {
     missingTypes.push("probiotic")
-    tips.push("Try a fermented food like yoghurt, kimchi, or kombucha for live probiotics.")
+    tips.push(PILLARS.probiotics.nudge)
   }
   if (counts.postbiotic === 0) {
     missingTypes.push("postbiotic")
-    tips.push(
-      "Include a postbiotic-rich food like turmeric, dark chocolate, or green tea."
-    )
+    tips.push(PILLARS.postbiotics.nudge)
   }
   if (counts.protein === 0) {
     missingTypes.push("protein")

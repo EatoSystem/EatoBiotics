@@ -535,7 +535,10 @@ export const foods: Food[] = [
     brainHealth: true,
   },
 
-  // ─── POSTBIOTIC FOODS ──────────────────────────────────────────────────────
+  // ─── POSTBIOTIC-SUPPORTING FOODS ───────────────────────────────────────────
+  // Nothing here IS a postbiotic. These are the polyphenol, resistant-starch and
+  // fermentation-acid foods that give bacteria what they need to produce them.
+  // The `biotic: "postbiotic"` value is the scoring bucket key and must not change.
 
   {
     slug: "cooked-cooled-potato",
@@ -547,7 +550,7 @@ export const foods: Food[] = [
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     tagline: "Cooling transforms starch into gut medicine.",
     description:
-      "Cooking a potato and then cooling it completely triggers a remarkable transformation — the digestible starch crystallises into resistant starch type 3, which escapes digestion in the small intestine and reaches the colon intact. There, gut bacteria ferment it into butyrate — the most important short-chain fatty acid for colon health. Reheating briefly preserves most of this benefit. This makes the humble potato one of the most powerful postbiotic foods available.",
+      "Cooking a potato and then cooling it completely triggers a remarkable transformation — the digestible starch crystallises into resistant starch type 3, which escapes digestion in the small intestine and reaches the colon intact. There, gut bacteria ferment it into butyrate — the most important short-chain fatty acid for colon health. Reheating briefly preserves most of this benefit. This makes the humble potato one of the most powerful ways to drive postbiotic production — you never eat the butyrate, you make it.",
     howToEat:
       "Boil or steam potatoes, then refrigerate overnight before eating. Eat cold in salads, or reheat gently — reheating doesn't destroy the resistant starch completely. Potato salad with olive oil and apple cider vinegar is an ideal preparation. New potatoes and waxy varieties (Charlotte, Jersey Royals) retain more resistant starch than floury types. Eat skin-on for additional prebiotic fibre.",
     science:
@@ -571,7 +574,7 @@ export const foods: Food[] = [
     biotic: "postbiotic",
     accentColor: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-orange), var(--icon-yellow))",
-    tagline: "Acetic acid — the postbiotic hiding in your pantry.",
+    tagline: "Acetic acid — what fermentation leaves behind.",
     description:
       "Raw, unfiltered apple cider vinegar with 'the mother' contains acetic acid — the primary postbiotic compound produced when bacteria ferment ethanol. Acetic acid directly inhibits the growth of pathogenic bacteria, lowers post-meal blood glucose, and acts as a mild antimicrobial in the gut. The 'mother' — the cloudy sediment — contains beneficial bacteria, enzymes, and proteins from the fermentation process.",
     howToEat:
@@ -622,7 +625,7 @@ export const foods: Food[] = [
     biotic: "postbiotic",
     accentColor: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
-    tagline: "EGCG — the postbiotic compound in every cup.",
+    tagline: "EGCG — the polyphenol your bacteria turn into postbiotics.",
     description:
       "Green tea is one of the most researched plants on earth. Its primary polyphenol, EGCG (epigallocatechin gallate), is metabolised by gut bacteria into postbiotic compounds — specifically valerolactones and valeric acids — that have potent anti-inflammatory, anti-cancer, and neuroprotective effects. Regular green tea consumption is one of the strongest dietary correlates of longevity across multiple epidemiological studies in Japan.",
     howToEat:
@@ -975,7 +978,7 @@ export const foods: Food[] = [
     publishedDay: 64,
   },
 
-  // ─── NEW POSTBIOTIC FOODS ─────────────────────────────────────────────────
+  // ─── MORE POSTBIOTIC-SUPPORTING FOODS ─────────────────────────────────────
 
   {
     slug: "turmeric",

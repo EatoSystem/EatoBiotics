@@ -2,24 +2,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import type { MessageParam } from "@anthropic-ai/sdk/resources/messages"
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
+import { BIOTIC_CLASSIFICATION } from "@/lib/biotics-prompt"
 
 const ANALYSIS_PROMPT = `You are a food system nutrition analyst using the EatoBiotics framework (prebiotics, probiotics, postbiotics).
 
 Look at this meal carefully and identify EVERY distinct food item visible — including garnishes, seeds, dressings, sauces, and side items. Aim to identify 4–8 items typically visible in a meal photo. Don't miss small items like seeds on avocado, dressing, or herbs.
 
-For each food, classify it as ONE of:
-- prebiotic: fibrous plant foods that feed good gut bacteria (ALL vegetables, fruits, wholegrains, legumes, garlic, onion, leeks, asparagus, peas, oats, bananas, seeds like hemp/flax/chia, avocado, etc.)
-- probiotic: live cultures / fermented foods (yogurt, kefir, kimchi, sauerkraut, miso, tempeh, kombucha, live-culture cheese, etc.)
-- postbiotic: health compounds from fermentation (aged hard cheese, sourdough bread, apple cider vinegar, certain fermented products)
-- protein: meat, fish, eggs, or legumes when serving as the primary protein source
-
-Classification notes:
-- Avocado = prebiotic (excellent fibre)
-- Asparagus, peas, edamame = prebiotic (high in FOSs and resistant starch)
-- Seeds (hemp, flax, sesame, pumpkin, sunflower) = prebiotic
-- Legumes like lentils/chickpeas = prebiotic (if a side dish) or protein (if the main protein)
-- Greek yogurt = probiotic (live cultures)
-- Aged cheddar/parmesan = postbiotic
+${BIOTIC_CLASSIFICATION}
 
 Score this meal from 0–100 using this calibrated rubric for a SINGLE MEAL (most single meals won't have all 3 biotics — that's normal):
 
@@ -114,7 +103,7 @@ mealName: A short descriptive name for this meal (e.g. "Salmon + Kimchi Bowl", "
 
 prebioticScore: 0–100 numeric score for prebiotics specifically (not the overall score)
 probioticScore: 0–100 numeric score for probiotics specifically
-postbioticScore: 0–100 score for the meal's POSTBIOTIC PRODUCTION CAPACITY — how much the prebiotic fibre + probiotic bacteria will generate SCFAs, vitamins, and neurotransmitters in the gut. Score as follows: prebiotic richness up to 50 pts (4+ plants=50, 3=40, 2=28, 1=15, 0=5); probiotic synergy up to 30 pts (2+ fermented=30, 1 fermented=22, none=8); high-fermentability bonus: +15 if 2+ of (oats, garlic, onion, leeks, asparagus, banana, chicory) present, +8 if 1; direct postbiotic sources (sourdough, aged cheese, ACV, miso) add +5. Cap total at 100.
+postbioticScore: 0–100 score for the meal's POSTBIOTIC PRODUCTION CAPACITY — how much the prebiotic fibre + probiotic bacteria will generate SCFAs, vitamins, and neurotransmitters in the gut. Score as follows: prebiotic richness up to 50 pts (4+ plants=50, 3=40, 2=28, 1=15, 0=5); probiotic synergy up to 30 pts (2+ fermented=30, 1 fermented=22, none=8); high-fermentability bonus: +15 if 2+ of (oats, garlic, onion, leeks, asparagus, banana, chicory) present, +8 if 1; polyphenol and resistant-starch sources that further support postbiotic production (dark chocolate 70%+, green tea, berries, turmeric, walnuts, cooked-and-cooled potato or rice, apple cider vinegar) add +5. Cap total at 100. Note that postbiotics are produced by bacteria, never eaten — do not describe any food as "a postbiotic" in the text you return.
 
 plantDiversityCount: Count of distinct plant foods visible (each vegetable, fruit, grain, legume, herb, seed counts as 1)
 

@@ -59,7 +59,11 @@ export function DigitalTwinFigure({
   className = "",
   showParticles = true,
   src = "/images/assessment-hero.png",
-  alt = "Your Food System Digital Twin",
+  // Customer-facing text, including for screen readers. The public /digital-twin
+  // subcomponents (orbit-hub, flow-diagram) render this figure without passing
+  // `alt`, so the default is what those visitors actually hear — it must not say
+  // "Digital Twin". See PRODUCT_EXPERIENCE.md; engine-room naming stays in code.
+  alt = "The Food System Inside You",
   priority = false,
 }: {
   size?: number

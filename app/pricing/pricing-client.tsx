@@ -130,7 +130,7 @@ const FAQS = [
   },
   {
     q: "Is this a subscription?",
-    a: "The Personal Report is a one-time €49 purchase. The monthly plan is completely optional and only starts if you choose it after your free 30-day account ends.",
+    a: "The Food System Report is a one-time €49 purchase. The monthly plan is completely optional and only starts if you choose it after your free 30-day account ends.",
   },
   {
     q: "What's in the report?",
@@ -312,7 +312,7 @@ export function PricingClient({
               icon: FileText,
               step: "03",
               label: "Report",
-              desc: "Unlock your Personal Report and 30-day plan for €49.",
+              desc: "Unlock your Food System Report and 30-day plan for €49.",
               color: "var(--icon-teal)",
             },
             {
@@ -370,10 +370,10 @@ export function PricingClient({
                 className="mb-1 text-xs font-bold uppercase tracking-widest"
                 style={{ color: "var(--icon-teal)" }}
               >
-                Personal Report
+                Food System Report
               </p>
               <h2 className="font-serif text-3xl font-bold text-foreground">
-                EatoBiotics Personal Report
+                EatoBiotics Food System Report
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 Everything you need to understand and improve your inner food system in 30 days.

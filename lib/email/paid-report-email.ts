@@ -55,7 +55,7 @@ const PILLAR_BG: Record<string, string> = {
 }
 
 const TIER_LABELS: Record<string, string> = {
-  personal: "Personal Report",
+  personal: "Food System Report",
   starter: "Starter Insights",
   full: "Full Report",
   premium: "Premium Report",
