@@ -133,15 +133,32 @@
    light surface by breaking every dark one — eyebrows, pills and hover CTAs in
    the dark bands on /biotics, /family, /book, /books, /waitlist and /weekly.
 
-   There is no CSS that resolves this: a utility cannot know its own background,
-   and the dark sections are not identifiable by class either — they use
-   bg-foreground, bg-black, arbitrary hex, and translucent tints over dark
-   parents. Reach for the variant explicitly at the call site, where the ground
-   is known.
+   No CSS resolves this on its own: a utility cannot know its own background. So
+   reach for the variant explicitly at the call site, where the ground is known.
 
-   The fix that does work, when someone does the sweep: mark dark sections with
-   a class, then remap globally with `.on-dark .text-icon-* { color: <raw> }`
-   overriding it. Marking the sections is the actual work. */
+   ── Correction to an earlier version of this note ────────────────────────────
+   This comment used to say the dark sections "are not identifiable by class"
+   and that marking them is "the actual work". Both were wrong, and wrong in the
+   same way — they came from a script that walked ancestors for a background
+   colour and mis-parsed it. Chromium serialises color-mix() results as
+   `color(srgb 0.97 0.98 0.97)` with 0–1 floats; read as 0–255 those look
+   near-black, so pale tints were counted as dark sections.
+
+   Measured properly with axe (which composites alpha and understands every
+   colour syntax), over 20 pages:
+
+     colour-contrast violations   793
+       on light ground            762   (96%)
+       on dark ground              31   ( 4%)  — /you 13, /family 8, /book 5,
+                                                 /books 2, /weekly 1, /about 1,
+                                                 /start 1
+
+   So the sweep is overwhelmingly a light-ground problem, and the dark tail is
+   small, bounded, and concentrated in bg-foreground bands.
+
+   Use axe for any measurement here. Three hand-rolled colour scripts have given
+   wrong answers in this codebase, and one of them reached a published PR body
+   before being caught. */
 
 /* Large text only — 24px+, or 18.66px+ bold. Opt in by hand; these clear 3:1,
    not 4.5:1, and are illegal on body copy. All calibrated on white — see above
