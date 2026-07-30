@@ -2,7 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { Clock, BookOpen, Calendar, ArrowUpRight } from "lucide-react"
 import type { Chapter } from "@/lib/chapters"
-import { PART_COLORS, partIndex } from "@/lib/chapters"
+import { PART_COLORS, PART_TEXT_COLORS, partIndex } from "@/lib/chapters"
 import { GradientText } from "@/components/gradient-text"
 
 interface ChapterTemplateProps {
@@ -13,6 +13,9 @@ interface ChapterTemplateProps {
 export function ChapterTemplate({ chapter, children }: ChapterTemplateProps) {
   const pIdx = partIndex(chapter.part)
   const color = PART_COLORS[pIdx] ?? "var(--icon-green)"
+  // Anywhere the part colour touches text — as ink, or as a ground under
+  // white — it has to be the readable variant. The raw hue fails both ways.
+  const textColor = PART_TEXT_COLORS[pIdx] ?? "var(--icon-green-text)"
 
   // Last 1–2 words of title get the gradient; rest is plain foreground
   const titleWords = chapter.title.split(" ")
@@ -31,7 +34,7 @@ export function ChapterTemplate({ chapter, children }: ChapterTemplateProps) {
               The Book
             </Link>
             <span>/</span>
-            <span className="font-semibold" style={{ color }}>
+            <span className="font-semibold" style={{ color: textColor }}>
               Part {chapter.part} — {chapter.partTitle}
             </span>
           </nav>
@@ -48,7 +51,7 @@ export function ChapterTemplate({ chapter, children }: ChapterTemplateProps) {
             <div className="h-5 w-px bg-border" />
             <span
               className="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-white"
-              style={{ backgroundColor: color }}
+              style={{ backgroundColor: textColor }}
             >
               Chapter {chapter.number}
             </span>

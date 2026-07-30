@@ -208,7 +208,7 @@ export default async function DemoAccountTierPage({
             <p className="text-xs font-semibold" style={{ color: TIER_COLORS[tier] }}>
               Previewing the <strong>{meta.label}</strong> account ({meta.price}) — sample data for Sarah M.
             </p>
-            <span className="text-muted-foreground/40 text-xs">·</span>
+            <span className="text-muted-foreground text-xs">·</span>
             <Link href="/demo/account/twin" className="flex items-center gap-1 text-xs font-semibold hover:underline" style={{ color: TIER_COLORS[tier] }}>
               View My Food System →
             </Link>

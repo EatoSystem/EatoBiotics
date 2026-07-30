@@ -29,7 +29,7 @@ export default function DemoAnalysePage() {
             >
               <ArrowLeft size={12} /> Demo hub
             </Link>
-            <span className="text-muted-foreground/40 text-xs">·</span>
+            <span className="text-muted-foreground text-xs">·</span>
             <p className="text-xs font-semibold" style={{ color: "var(--icon-teal)" }}>
               Demo mode — no account needed. Analysis uses the public endpoint.
             </p>
