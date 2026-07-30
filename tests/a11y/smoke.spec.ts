@@ -27,21 +27,35 @@ import AxeBuilder from "@axe-core/playwright"
  * ScrollReveal (used across ~136 files) renders its children at `opacity: 0`
  * until they scroll into view, and axe correctly skips invisible elements. A
  * scan at load therefore covers the hero and little else. Measured over these
- * same 20 pages:
+ * same 20 pages, all of it colour-contrast:
  *
  *     as scanned here (no motion preference) ...........   0 violations
- *     with content actually rendered (reducedMotion) ... 425 violations
+ *     with content actually rendered (reducedMotion) ... see PR #184 for the
+ *                                                        current figure
  *
- * All 425 are colour-contrast, and nearly all trace to one root cause: roughly
- * 1,100 call sites that set text colour to a raw brand hue via inline
- * `style={{ color: "var(--icon-*)" }}` or `text-[var(--icon-*)]`, which bypasses
- * the `.text-icon-*` → `--icon-*-text` remap in app/globals.css. The raw hues
- * run 1.55:1–2.96:1 on white and fail AA in every one of those positions.
+ * The cause is roughly 1,100 call sites that set text colour to a raw brand hue,
+ * via `text-icon-*`, inline `style={{ color: "var(--icon-*)" }}`, or
+ * `text-[var(--icon-*)]`. On white the raw hues run 1.55:1–2.96:1 and fail AA.
  *
- * Setting `reducedMotion: "reduce"` in playwright.config.ts turns this suite
- * from shallow-and-green to deep-and-red in one line. Do that as part of the
- * sweep that fixes the call sites, not before — the gate should go deep and
- * stay green on the same commit.
+ * ── Why the obvious fix is wrong ───────────────────────────────────────────
+ *
+ * Remapping `.text-icon-*` to the AA-safe `--icon-*-text` variants looks like a
+ * one-line win and is not: those variants are calibrated on white, and on
+ * --foreground the polarity inverts — raw passes (4.91:1–9.36:1), -text fails
+ * (2.96:1–3.02:1). A blanket remap fixes every light surface by breaking every
+ * dark band. It was tried in #184 and reverted; app/globals.css carries the
+ * table.
+ *
+ * The sweep therefore has to be ground-aware, and that is its hard part:
+ *
+ *   1. Mark dark sections with a class. They cannot be detected any other way —
+ *      they use bg-foreground, bg-black, arbitrary hex, and translucent tints
+ *      over dark parents. This is the real work.
+ *   2. Then remap globally, with `.on-dark .text-icon-*` overriding back to raw.
+ *   3. Verify with axe on both light and dark surfaces — axe composites alpha
+ *      correctly, which hand-rolled background-walking does not.
+ *   4. Only then set `reducedMotion: "reduce"` in playwright.config.ts and move
+ *      color-contrast into the gate above. Deep and green on the same commit.
  *
  * Until then: a green run here means "no critical or serious violations in the
  * content axe could see", which is a weaker claim than it looks.

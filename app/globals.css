@@ -117,28 +117,35 @@
   }
 }
 
-/* ── Readable brand colour ──────────────────────────────────────────────────
-   text-icon-* is remapped to the AA-safe -text variants. There are ~400 call
-   sites and they are overwhelmingly eyebrows, labels and links on white, all
-   of which were failing AA; remapping the utility fixes them where they stand
-   instead of editing 400 lines.
+/* ── Do NOT remap text-icon-* to the -text variants ─────────────────────────
+   This was tried and reverted, and the reason is not obvious, so: the -text
+   variants are calibrated against WHITE. On --foreground (#1A2E12) the raw hues
+   are the ones that pass and the -text variants are the ones that fail:
 
-   bg-icon-*, border-icon-*, ring-icon-*, from/via/to-icon-* are deliberately
-   untouched — they still resolve to the raw hues via @theme, because the
-   contrast requirement is about text and the brand's surfaces should not shift.
+                    on white        on --foreground
+     lime     raw    1.55  ✗          9.36  ✓
+              text   4.83  ✓          3.01  ✗
+     yellow   raw    1.63  ✗          8.92  ✓
+              text   4.90  ✓          2.97  ✗   (below even the 3:1 large floor)
 
-   Declared after `@import 'tailwindcss'`, so at equal specificity these win on
-   source order within the utilities layer. */
-@layer utilities {
-  .text-icon-lime   { color: var(--icon-lime-text); }
-  .text-icon-green  { color: var(--icon-green-text); }
-  .text-icon-teal   { color: var(--icon-teal-text); }
-  .text-icon-yellow { color: var(--icon-yellow-text); }
-  .text-icon-orange { color: var(--icon-orange-text); }
-}
+   …and the same inversion for green, teal and orange. A blanket
+   `.text-icon-green { color: var(--icon-green-text) }` therefore fixes every
+   light surface by breaking every dark one — eyebrows, pills and hover CTAs in
+   the dark bands on /biotics, /family, /book, /books, /waitlist and /weekly.
+
+   There is no CSS that resolves this: a utility cannot know its own background,
+   and the dark sections are not identifiable by class either — they use
+   bg-foreground, bg-black, arbitrary hex, and translucent tints over dark
+   parents. Reach for the variant explicitly at the call site, where the ground
+   is known.
+
+   The fix that does work, when someone does the sweep: mark dark sections with
+   a class, then remap globally with `.on-dark .text-icon-* { color: <raw> }`
+   overriding it. Marking the sections is the actual work. */
 
 /* Large text only — 24px+, or 18.66px+ bold. Opt in by hand; these clear 3:1,
-   not 4.5:1, and are illegal on body copy. */
+   not 4.5:1, and are illegal on body copy. All calibrated on white — see above
+   before using one on a dark band. */
 @utility text-icon-lime-display   { color: var(--icon-lime-display); }
 @utility text-icon-green-display  { color: var(--icon-green-display); }
 @utility text-icon-teal-display   { color: var(--icon-teal-display); }
