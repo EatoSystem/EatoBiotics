@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { ChefHat, Camera, FlaskConical, Landmark, Users, MapPin } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { Eyebrow, Section, SectionHeading } from "./section-shared"
@@ -11,21 +12,31 @@ import { Eyebrow, Section, SectionHeading } from "./section-shared"
  * pricing asks for anything. Above the product explanation it would be a
  * non-sequitur; after pricing nobody reads it.
  *
- * ── Two deliberate absences ──────────────────────────────────────────────────
+ * ── The image carries this section ───────────────────────────────────────────
  *
- * No photograph. The concept render exists as a design mockup but not as a
- * production asset, and a building-only crop could not be taken from it cleanly
- * — the plaza and the people are one continuous scene with the EatoX wordmark
- * baked in beneath. Rather than ship a flat mockup as a homepage image, the
- * visual here is CSS: stacked curved terraces and an orbit, in the brand
- * gradient, decorative and aria-hidden. Same call global-direction.tsx made for
- * the same reason, and its header comment says so.
+ * The first version used an abstract SVG motif, because no clean render existed.
+ * It was correct about the narrative position and too quiet to hold it — an
+ * ambition this size needs to look real, not diagrammatic. The concept render
+ * replaced it.
  *
- * No CTA. /eatox does not exist. Pointing "Discover EatoX" at /eatosystem would
- * send people somewhere that is not about EatoX, and inventing a thin route to
- * catch one link is worse. The section ends on its closing line until there is
- * a real destination — and the page already carries its primary assessment CTA
- * elsewhere, so this section adding a second one would compete with it.
+ * Sized with `fill` inside an aspect-[4/3] box and `object-cover` rather than
+ * fixed width/height: at a matching ratio that crops nothing, which is what
+ * keeps the entrance, the public space and the human scale in frame. Those three
+ * are the whole argument of the picture — a tighter crop of just the building
+ * would make it architecture rather than a place people go.
+ *
+ * The caption and the alt text both say what this is. "Concept vision" is
+ * visible; "a proposed public-facing" is in the alt, so the conceptual status
+ * reaches the accessibility tree too and does not live only in sighted copy.
+ *
+ * ── No CTA, and it was asked for ─────────────────────────────────────────────
+ *
+ * A "Discover EatoX" CTA was requested and deliberately left out: /eatox does
+ * not exist. Pointing it at /eatosystem would send people somewhere that is not
+ * about EatoX, and inventing a thin route to catch one link is worse. This is a
+ * decision, not an oversight — add the CTA when the destination is real. The
+ * page already carries its primary assessment CTA elsewhere, so a second one
+ * here would compete with it regardless.
  *
  * ── Claims ───────────────────────────────────────────────────────────────────
  *
@@ -85,62 +96,40 @@ const STATUS = [
   { Icon: MapPin, label: "Location", value: "Dublin, Ireland" },
 ]
 
-/** Decorative stand-in for the concept render: curved terraces under an orbit. */
-function ConceptMotif() {
+/**
+ * The concept render. Not decorative — it is the section's argument, so it takes
+ * real alt text rather than aria-hidden.
+ *
+ * fill + aspect-[4/3] + object-cover: the committed asset's exact intrinsic size
+ * is not fixed here, and at a matching ratio object-cover crops nothing. That
+ * keeps the entrance, the plaza and the people in frame, which is the point of
+ * the picture.
+ *
+ * w-full on the figure is load-bearing: its parent is a centred flex column,
+ * which sizes children to their content, so without it the aspect box collapses
+ * and the render shrinks to a 232px thumbnail.
+ */
+function ConceptImage() {
   return (
-    <div aria-hidden className="relative mx-auto aspect-square w-full max-w-[380px]">
-      <svg viewBox="0 0 400 400" className="h-full w-full" role="presentation">
-        <defs>
-          <linearGradient id="eatox-terrace" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="var(--icon-lime)" />
-            <stop offset="45%" stopColor="var(--icon-green)" />
-            <stop offset="100%" stopColor="var(--icon-teal)" />
-          </linearGradient>
-          <linearGradient id="eatox-warm" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="var(--icon-yellow)" />
-            <stop offset="100%" stopColor="var(--icon-orange)" />
-          </linearGradient>
-          <radialGradient id="eatox-glow">
-            <stop offset="0%" stopColor="var(--icon-lime)" stopOpacity="0.30" />
-            <stop offset="100%" stopColor="var(--icon-lime)" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-
-        <circle cx="200" cy="205" r="165" fill="url(#eatox-glow)" />
-        <ellipse
-          cx="200" cy="205" rx="175" ry="120"
-          fill="none" stroke="var(--icon-lime)" strokeOpacity="0.45" strokeWidth="1"
+    <figure className="m-0 w-full">
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border bg-muted shadow-[0_30px_60px_-30px_rgba(20,37,15,0.35)]">
+        <Image
+          src="/images/eatox/eatox-dublin-concept.webp"
+          alt="Concept illustration of EatoX Dublin, a proposed public-facing Kitchen, Studio and Lab with curved architecture, greenery, and people gathering outside."
+          fill
+          sizes="(max-width: 1024px) 100vw, 620px"
+          className="object-cover"
         />
-        <circle cx="352" cy="150" r="4" fill="var(--icon-orange)" />
-        <circle cx="52" cy="243" r="3.5" fill="var(--icon-green)" />
-
-        {/* Four stacked terraces, each narrower than the one below it. */}
-        {[
-          { y: 300, w: 210, h: 30 },
-          { y: 258, w: 178, h: 28 },
-          { y: 218, w: 146, h: 26 },
-          { y: 180, w: 112, h: 24 },
-        ].map((t) => (
-          <rect
-            key={t.y}
-            x={200 - t.w / 2}
-            y={t.y}
-            width={t.w}
-            height={t.h}
-            rx={t.h / 2}
-            fill="url(#eatox-terrace)"
-            opacity="0.92"
-          />
-        ))}
-
-        {/* The spine the terraces cantilever from. */}
-        <rect x="192" y="150" width="16" height="180" rx="8" fill="url(#eatox-terrace)" />
-        {/* A warm crown, echoing the lit upper floors in the concept. */}
-        <rect x="176" y="140" width="48" height="12" rx="6" fill="url(#eatox-warm)" />
-        {/* Ground line. */}
-        <rect x="70" y="336" width="260" height="3" rx="1.5" fill="var(--icon-green)" opacity="0.28" />
-      </svg>
-    </div>
+        <div
+          aria-hidden
+          className="absolute left-0 right-0 top-0 h-1.5"
+          style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-orange))" }}
+        />
+      </div>
+      <figcaption className="mt-3 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        Concept vision — EatoX Dublin
+      </figcaption>
+    </figure>
   )
 }
 
@@ -159,9 +148,11 @@ export function EatoxMissionSection() {
         </div>
       </ScrollReveal>
 
-      <div className="mt-14 grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+      {/* Image column is the wider of the two: the render is what makes EatoX
+          feel like a real place, so it leads and the copy supports it. */}
+      <div className="mt-14 grid items-start gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
         <ScrollReveal>
-          <div>
+          <div className="lg:pt-6">
             <p className="text-lg leading-relaxed text-muted-foreground">
               EatoBiotics helps you improve your health, diet, and the Food System Inside You.
             </p>
@@ -178,11 +169,10 @@ export function EatoxMissionSection() {
 
         <ScrollReveal delay={120}>
           <div className="flex flex-col items-center">
-            <ConceptMotif />
-            <p className="mt-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Concept vision — EatoX Dublin
-            </p>
-            <h3 className="mt-6 font-serif text-5xl font-semibold text-foreground">EatoX</h3>
+            <ConceptImage />
+            <h3 className="mt-8 font-serif text-5xl font-semibold text-foreground sm:text-6xl">
+              EatoX
+            </h3>
             <p className="mt-2 font-serif text-xl">
               <span style={{ color: "var(--icon-green-text)" }}>Kitchen</span>
               <span className="text-muted-foreground">, </span>
