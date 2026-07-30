@@ -117,10 +117,9 @@
   }
 }
 
-/* ── Do NOT remap text-icon-* to the -text variants ─────────────────────────
-   This was tried and reverted, and the reason is not obvious, so: the -text
-   variants are calibrated against WHITE. On --foreground (#1A2E12) the raw hues
-   are the ones that pass and the -text variants are the ones that fail:
+/* ── text-icon-* is remapped to the AA-safe variants, EXCEPT on dark bands ───
+   The -text variants are calibrated against WHITE. On --foreground (#1A2E12)
+   the polarity inverts: the raw hues pass and the -text variants fail.
 
                     on white        on --foreground
      lime     raw    1.55  ✗          9.36  ✓
@@ -128,37 +127,50 @@
      yellow   raw    1.63  ✗          8.92  ✓
               text   4.90  ✓          2.97  ✗   (below even the 3:1 large floor)
 
-   …and the same inversion for green, teal and orange. A blanket
-   `.text-icon-green { color: var(--icon-green-text) }` therefore fixes every
-   light surface by breaking every dark one — eyebrows, pills and hover CTAs in
-   the dark bands on /biotics, /family, /book, /books, /waitlist and /weekly.
+   …and the same inversion for green, teal and orange. So a *blanket* remap is
+   wrong — it buys every light surface at the cost of every dark one. That is
+   what #184 shipped and Codex caught.
 
-   No CSS resolves this on its own: a utility cannot know its own background. So
-   reach for the variant explicitly at the call site, where the ground is known.
+   The fix is the remap plus a dark-band override, which is what is below. The
+   override wins on specificity (0,2,0 vs 0,1,0), so inside .bg-foreground or
+   .bg-black the raw hue is restored.
 
-   ── Correction to an earlier version of this note ────────────────────────────
-   This comment used to say the dark sections "are not identifiable by class"
-   and that marking them is "the actual work". Both were wrong, and wrong in the
-   same way — they came from a script that walked ancestors for a background
-   colour and mis-parsed it. Chromium serialises color-mix() results as
-   `color(srgb 0.97 0.98 0.97)` with 0–1 floats; read as 0–255 those look
-   near-black, so pale tints were counted as dark sections.
+   Measured with axe before writing this — 26 pages:
 
-   Measured properly with axe (which composites alpha and understands every
-   colour syntax), over 20 pages:
+     text-icon-* text nodes site-wide .............. 979
+       currently failing, on light ground .......... 275   ← the remap fixes these
+       sitting inside a dark band .................. 13    ← the override protects these
 
-     colour-contrast violations   793
-       on light ground            762   (96%)
-       on dark ground              31   ( 4%)  — /you 13, /family 8, /book 5,
-                                                 /books 2, /weekly 1, /about 1,
-                                                 /start 1
+   Thirteen. One or two per page across /book, /books, /you, /family, /glucose,
+   /stability, /about, /biotics, /waitlist, /weekly, /mind — and every one is
+   inside .bg-foreground or .bg-black, which is why no marker class is needed.
 
-   So the sweep is overwhelmingly a light-ground problem, and the dark tail is
-   small, bounded, and concentrated in bg-foreground bands.
+   ── What an earlier version of this note got wrong ───────────────────────────
+   It said the dark sections "are not identifiable by class", that marking them
+   was "the actual work", and therefore that no scoped override could work. All
+   three were false, and all three came from a script that mis-parsed colours:
+   Chromium serialises color-mix() results as `color(srgb 0.97 0.98 0.97)` with
+   0–1 floats, and read as 0–255 those look near-black, so pale tints were
+   counted as dark sections. The real dark set is 13 nodes and fully covered by
+   two class selectors.
 
    Use axe for any measurement here. Three hand-rolled colour scripts have given
    wrong answers in this codebase, and one of them reached a published PR body
    before being caught. */
+@layer utilities {
+  .text-icon-lime   { color: var(--icon-lime-text); }
+  .text-icon-green  { color: var(--icon-green-text); }
+  .text-icon-teal   { color: var(--icon-teal-text); }
+  .text-icon-yellow { color: var(--icon-yellow-text); }
+  .text-icon-orange { color: var(--icon-orange-text); }
+
+  /* Dark bands: restore the raw hue, which is the one that passes there. */
+  .bg-foreground .text-icon-lime,   .bg-black .text-icon-lime   { color: var(--icon-lime); }
+  .bg-foreground .text-icon-green,  .bg-black .text-icon-green  { color: var(--icon-green); }
+  .bg-foreground .text-icon-teal,   .bg-black .text-icon-teal   { color: var(--icon-teal); }
+  .bg-foreground .text-icon-yellow, .bg-black .text-icon-yellow { color: var(--icon-yellow); }
+  .bg-foreground .text-icon-orange, .bg-black .text-icon-orange { color: var(--icon-orange); }
+}
 
 /* Large text only — 24px+, or 18.66px+ bold. Opt in by hand; these clear 3:1,
    not 4.5:1, and are illegal on body copy. All calibrated on white — see above
