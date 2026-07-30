@@ -8,7 +8,7 @@ import { ReadingProgress } from "@/components/reading-progress"
 export const metadata: Metadata = {
   title: "The 3 Biotics | EatoBiotics",
   description:
-    "Prebiotics, Probiotics, and Postbiotics — the three pillars of the EatoBiotics food system. Learn how to Feed, Add, and Produce your way to a stronger microbiome.",
+    "Prebiotics, Probiotics, and Postbiotics — the three pillars of the EatoBiotics food system. Learn how to Feed, Seed, and Regenerate your way to a stronger microbiome.",
 }
 
 /* ── Data ──────────────────────────────────────────────────────────────── */
@@ -32,7 +32,7 @@ const BIOTICS = [
   {
     number: "02",
     title: "Probiotics",
-    action: "Add",
+    action: "Seed",
     color: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
     image: "/probiotics-1.png",
@@ -47,7 +47,7 @@ const BIOTICS = [
   {
     number: "03",
     title: "Postbiotics",
-    action: "Produce",
+    action: "Regenerate",
     color: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     image: "/postbiotics-1.png",
@@ -102,13 +102,13 @@ export default function BioticsPage() {
                   className="absolute top-4 right-2 rounded-full border border-border bg-background/90 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm"
                   style={{ color: "var(--icon-teal)" }}
                 >
-                  Probiotics — Add
+                  Probiotics — Seed
                 </div>
                 <div
                   className="absolute bottom-10 left-2 rounded-full border border-border bg-background/90 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm"
                   style={{ color: "var(--icon-orange)" }}
                 >
-                  Postbiotics — Produce
+                  Postbiotics — Regenerate
                 </div>
               </div>
             </ScrollReveal>
@@ -121,13 +121,13 @@ export default function BioticsPage() {
                 </p>
                 <h1 className="font-serif text-5xl font-bold text-foreground sm:text-6xl lg:text-7xl leading-tight text-balance">
                   Feed.{" "}
-                  <span className="brand-gradient-text">Add.</span>
+                  <span className="brand-gradient-text">Seed.</span>
                   <br />
-                  Produce.
+                  Regenerate.
                 </h1>
                 <p className="mt-6 max-w-lg text-lg leading-relaxed text-muted-foreground">
                   Three types of biotics. One connected system. Every plate you build either
-                  feeds it, adds to it, or harvests from it.
+                  feeds it, seeds it, or harvests from it.
                 </p>
               </ScrollReveal>
 

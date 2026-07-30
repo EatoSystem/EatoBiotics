@@ -19,7 +19,7 @@ const biotics = [
   {
     number: "02",
     title: "Probiotics",
-    subtitle: "Add",
+    subtitle: "Seed",
     color: "var(--icon-teal)",
     gradientFrom: "var(--icon-green)",
     gradientTo: "var(--icon-teal)",
@@ -31,7 +31,7 @@ const biotics = [
   {
     number: "03",
     title: "Postbiotics",
-    subtitle: "Produce",
+    subtitle: "Regenerate",
     color: "var(--icon-orange)",
     gradientFrom: "var(--icon-yellow)",
     gradientTo: "var(--icon-orange)",

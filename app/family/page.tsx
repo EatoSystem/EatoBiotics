@@ -96,8 +96,8 @@ const MOCK_MEMBERS = [
 /* ── Section 9 — The 3 Biotics (dark foundation) ────────────────────── */
 const BIOTICS = [
   { number: "01", title: "Prebiotics", verb: "Feed", accent: "var(--icon-lime)", gradient: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))", body: "The fibres and compounds in everyday foods that feed your family's gut bacteria — foods kids already know and adults can build every meal around.", examples: ["Oats", "Bananas", "Garlic", "Beans"] },
-  { number: "02", title: "Probiotics", verb: "Add", accent: "var(--icon-green)", gradient: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))", body: "Living microorganisms in fermented foods like yogurt, kefir, and cheese — one of the most powerful ways to diversify gut bacteria at any age.", examples: ["Yogurt", "Kefir", "Cheese", "Kimchi"] },
-  { number: "03", title: "Postbiotics", verb: "Produce", accent: "var(--icon-teal)", gradient: "linear-gradient(90deg, var(--icon-teal), var(--icon-yellow))", body: "The compounds your family's gut bacteria produce — driving better energy, immunity, mood, and sleep. Feed the system right, and it produces the results.", examples: ["SCFAs", "B vitamins", "Butyrate"] },
+  { number: "02", title: "Probiotics", verb: "Seed", accent: "var(--icon-green)", gradient: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))", body: "Living microorganisms in fermented foods like yogurt, kefir, and cheese — one of the most powerful ways to diversify gut bacteria at any age.", examples: ["Yogurt", "Kefir", "Cheese", "Kimchi"] },
+  { number: "03", title: "Postbiotics", verb: "Regenerate", accent: "var(--icon-teal)", gradient: "linear-gradient(90deg, var(--icon-teal), var(--icon-yellow))", body: "The compounds your family's gut bacteria produce — driving better energy, immunity, mood, and sleep. Feed the system right, and it produces the results.", examples: ["SCFAs", "B vitamins", "Butyrate"] },
 ]
 
 /* ── Section 10 — Part of EatoBiotics (real sibling programs) ───────── */

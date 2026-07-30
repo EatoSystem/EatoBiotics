@@ -2,8 +2,8 @@ import { ChevronDown } from "lucide-react"
 
 const BIOTICS = [
   { label: "Prebiotics", verb: "Feed", accent: "var(--icon-lime)" },
-  { label: "Probiotics", verb: "Add", accent: "var(--icon-teal)" },
-  { label: "Postbiotics", verb: "Produce", accent: "var(--icon-orange)" },
+  { label: "Probiotics", verb: "Seed", accent: "var(--icon-teal)" },
+  { label: "Postbiotics", verb: "Regenerate", accent: "var(--icon-orange)" },
 ]
 
 const OUTPUTS = ["Energy", "Immunity", "Mood", "Longevity"]
