@@ -307,7 +307,7 @@ export default function DigitalTwinPage() {
             <div className="mx-auto mb-12 max-w-2xl text-center">
               <Eyebrow>Many dimensions</Eyebrow>
               <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-                One system. Many lenses.
+                One Food System. Many lenses.
               </h2>
               <p className="mt-5 text-lg text-muted-foreground">
                 The same living system, seen through every part of your health and life.

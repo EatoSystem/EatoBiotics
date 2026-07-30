@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * TwinLenses — "one Twin, many lenses."
+ * TwinLenses — "one system, many lenses."
  *
  * A chip row (Foundation + the live specialised systems) that lets a member view
  * their single living Food System through each lens. Selecting a lens re-tints the Twin

@@ -154,6 +154,25 @@ while headings, prose and a UI label were not. A claim that a sweep is complete
 should name the pattern used, so the next reader can judge what it could not
 have matched.
 
+**A fourth shape: comments that quote copy.** Several file-header comments
+quote the heading their component renders, in quotation marks. When the copy
+moves and the comment does not, the comment becomes false rather than merely
+dated — `system-dimensions.tsx` described a "Twin-score pill" it no longer
+rendered, and `orbit-hub.tsx` quoted "One Twin. Connected to everything." long
+after #179 had changed that heading to "One Food System." Engine-room
+*naming* in comments is fine and expected; a comment *quoting customer copy*
+is a second copy of that string and has to move with it. Worth including
+quoted headings in any copy sweep.
+
+Chasing that turned up a genuine inconsistency in this branch's own work.
+`/digital-twin` carries three parallel section headings, and the replacement
+for "One Twin. Many lenses." was first written as "One system. Many lenses."
+— echoing the section's body line but breaking the pattern its two siblings
+already set ("One Food System. A lifetime of learning.", "One Food System.
+Connected to everything."). Corrected to **"One Food System. Many lenses."**
+Page-local consistency beats a local echo, and reading the neighbours is how
+you see it.
+
 ### Accepted decisions
 
 Confirmed by the founder on 2026-07-29/30. These replace the corresponding

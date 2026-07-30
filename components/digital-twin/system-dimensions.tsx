@@ -1,7 +1,7 @@
 /**
- * "One Twin. Many lenses." — premium product cards on /digital-twin. Each card has
+ * "One Food System. Many lenses." — premium product cards on /digital-twin. Each card has
  * a consistent structure (top gradient accent bar · fixed-aspect image area ·
- * title + line · footer row with a Twin-score pill and an Explore link) so all
+ * title + line · footer row with a system-score pill and an Explore link) so all
  * four align regardless of their source image's aspect ratio. Each real system
  * illustration (white-bg, dissolved via multiply) gets a light CSS "alive" glow.
  * Data-driven; server component. Brand palette only.

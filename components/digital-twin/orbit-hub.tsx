@@ -1,5 +1,5 @@
 /**
- * OrbitHub — "One Twin. Connected to everything." The Digital Twin sits at the
+ * OrbitHub — "One Food System. Connected to everything." The Digital Twin sits at the
  * centre; capability nodes orbit around it on two counter-rotating rings, with
  * counter-spinning labels so they stay upright (the memory-ring pattern). Server
  * component; CSS-only motion (eb-orbit / eb-orbit-rev, reduced-motion gated).
