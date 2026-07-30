@@ -168,3 +168,18 @@ scoped them out of the correctness gate:
    (`lib/foods.ts:551`), "The oldest medicine in your kitchen" (`:51`). Judged
    brand voice rather than health claims. Historical prose such as "eaten for
    centuries as a digestive medicine" describes history and is fine as-is.
+4. **Deterministic postbiotic-effect prose**, raised by Codex while reviewing
+   #181 and correctly not treated as a blocker — it is pre-existing and #181
+   did not introduce it. Three sites assert effects rather than describing what
+   the evidence supports, which is the same register `/food` was corrected out
+   of in #179 (`5988f92`):
+   - `app/biotics/page.tsx:57` — postbiotics "reduce inflammation, strengthen
+     the gut lining, regulate immune response, and directly influence how you
+     feel."
+   - `app/biotics/page.tsx:294` — "Postbiotics strengthen the gut lining."
+   - `lib/pillars.ts:94` — `whatItDoes`: "they calm inflammation and strengthen
+     the gut lining."
+
+   `lib/pillars.ts` is the canonical vocabulary module, so whatever wording is
+   chosen there should lead and the two page strings should follow it rather
+   than being reworded independently.
