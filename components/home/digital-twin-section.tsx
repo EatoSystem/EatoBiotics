@@ -135,9 +135,12 @@ export function DigitalTwinSection() {
             </div>
 
             <h2 style={{ fontFamily: "var(--font-lora), Georgia, serif", fontWeight: 700, fontSize: "clamp(2.4rem,3.6vw,3.5rem)", lineHeight: 1.04, letterSpacing: "-0.02em", margin: "28px 0 0" }}>
-              <span style={{ color: "#1A2E12" }}>Build your</span><br />
-              <span style={{ color: "#4CB648" }}>Digital</span><br />
-              <span style={{ color: "#F5A623" }}>Twin.</span>
+              {/* Customer copy — the phrase is split across spans for the colour
+                  treatment, which is how "Digital Twin" survived two sweeps that
+                  searched for the contiguous string. Grep `\bTwin\b`, not the phrase. */}
+              <span style={{ color: "#1A2E12" }}>The food system</span><br />
+              <span style={{ color: "#4CB648" }}>inside</span><br />
+              <span style={{ color: "#F5A623" }}>you.</span>
             </h2>
 
             <div style={{ width: 64, height: 3, borderRadius: 9999, background: "#4CB648", margin: "28px 0" }} />
