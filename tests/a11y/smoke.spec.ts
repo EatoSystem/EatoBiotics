@@ -30,8 +30,7 @@ import AxeBuilder from "@axe-core/playwright"
  * same 20 pages, all of it colour-contrast:
  *
  *     as scanned here (no motion preference) ...........   0 violations
- *     with content actually rendered (reducedMotion) ... see PR #184 for the
- *                                                        current figure
+ *     with content actually rendered (reducedMotion) ... ~610 violations
  *
  * The cause is roughly 1,100 call sites that set text colour to a raw brand hue,
  * via `text-icon-*`, inline `style={{ color: "var(--icon-*)" }}`, or
