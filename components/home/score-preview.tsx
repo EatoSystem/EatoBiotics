@@ -13,21 +13,21 @@ const EXAMPLE = {
     {
       label: "Prebiotics",
       score: 71,
-      color: "var(--icon-lime)",
+      color: "var(--icon-lime-text)",
       gradient: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))",
       description: "Plant diversity & fibre",
     },
     {
       label: "Probiotics",
       score: 38,
-      color: "var(--icon-teal)",
+      color: "var(--icon-teal-text)",
       gradient: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))",
       description: "Fermented & live foods",
     },
     {
       label: "Postbiotics",
       score: 67,
-      color: "var(--icon-orange)",
+      color: "var(--icon-orange-text)",
       gradient: "linear-gradient(90deg, var(--icon-yellow), var(--icon-orange))",
       description: "Consistency & rhythm",
     },
@@ -68,7 +68,7 @@ export function ScorePreview() {
           <div className="mb-12 text-center">
             <p
               className="mb-3 text-xs font-bold uppercase tracking-widest"
-              style={{ color: "var(--icon-green)" }}
+              style={{ color: "var(--icon-green-text)" }}
             >
               Your free EatoBiotics Score
             </p>
@@ -116,7 +116,7 @@ export function ScorePreview() {
               <div className="mb-7 flex items-center justify-between">
                 <p
                   className="text-xs font-bold uppercase tracking-widest"
-                  style={{ color: "var(--icon-teal)" }}
+                  style={{ color: "var(--icon-teal-text)" }}
                 >
                   EatoBiotics Score — Example
                 </p>
