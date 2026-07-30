@@ -94,7 +94,7 @@ export default function MethodPage() {
         </h2>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed md:text-base" style={{ color: "var(--muted-foreground)" }}>
           Your score (0–100) starts from your assessment across five food-first pillars, then
-          moves as your Twin learns from what you actually eat. It measures your <em>food
+          moves as your Food System learns from what you actually eat. It measures your <em>food
           patterns</em> — not your body, and not a medical status.
         </p>
 
@@ -171,9 +171,9 @@ export default function MethodPage() {
         <div className="mt-6 flex items-start gap-3 rounded-2xl p-4" style={{ background: "color-mix(in srgb, var(--icon-teal) 7%, white)", border: "1px solid color-mix(in srgb, var(--icon-teal) 30%, transparent)" }}>
           <Eye size={15} className="mt-0.5 shrink-0" style={{ color: "var(--icon-teal)" }} />
           <p className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
-            Your Twin combines a deterministic model (the same inputs always produce the same
+            Your Food System combines a deterministic model (the same inputs always produce the same
             score — you can trust the number to be stable) with AI-assisted meal analysis.
-            <span className="font-semibold"> Your data powers your Twin — it is never sold and never used for advertising.</span>
+            <span className="font-semibold"> Your data powers your Food System — it is never sold and never used for advertising.</span>
           </p>
         </div>
       </SectionShell>

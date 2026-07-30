@@ -111,7 +111,7 @@ export function SystemDimensions() {
                 style={{ background: `linear-gradient(135deg, ${d.from}, ${d.to})` }}
               >
                 <span className="tabular-nums">{d.score}</span>
-                <span className="font-semibold opacity-80">Twin score</span>
+                <span className="font-semibold opacity-80">System score</span>
               </span>
               <span className="inline-flex items-center gap-1 text-xs font-semibold" style={{ color: d.to }}>
                 Explore

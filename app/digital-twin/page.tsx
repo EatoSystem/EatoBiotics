@@ -130,7 +130,7 @@ export default function DigitalTwinPage() {
                 Three living ecosystems inside you.
               </h2>
               <p className="mt-5 text-lg text-muted-foreground">
-                Feed them, add to them, harvest the benefits — that&apos;s how your Twin grows.
+                Feed them, add to them, harvest the benefits — that&apos;s how your Food System grows.
               </p>
             </div>
           </ScrollReveal>
@@ -183,7 +183,7 @@ export default function DigitalTwinPage() {
                 Watch it grow, <span className="brand-gradient-text">day by day</span>.
               </h2>
               <p className="mt-5 text-lg text-muted-foreground">
-                Every meal makes your Twin smarter — your score climbs, your guidance adapts,
+                Every meal makes your Food System smarter — your score climbs, your guidance adapts,
                 and momentum builds.
               </p>
             </div>
@@ -307,7 +307,7 @@ export default function DigitalTwinPage() {
             <div className="mx-auto mb-12 max-w-2xl text-center">
               <Eyebrow>Many dimensions</Eyebrow>
               <h2 style={lora} className="text-4xl font-semibold text-foreground sm:text-5xl text-balance">
-                One Twin. Many lenses.
+                One system. Many lenses.
               </h2>
               <p className="mt-5 text-lg text-muted-foreground">
                 The same living system, seen through every part of your health and life.

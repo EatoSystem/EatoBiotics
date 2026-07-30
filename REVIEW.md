@@ -122,6 +122,38 @@ shapes. The re-run used `add|provide|contain|deliver|give|boost|supply|…` near
 Merged as `86db4c5` (merge commit, per repo convention — the last 30 commits on
 `main` are all `Merge pull request …`, none squashed).
 
+### The sweep lesson, three times over
+
+The postbiotic case above was not a one-off. The same failure recurred twice
+more after this pass merged, each time because a search pattern assumed a shape
+the content did not have:
+
+1. **Noun phrase vs verb phrase** — `is a postbiotic` could not match "add more
+   postbiotic compounds".
+2. **Predicate vs prose** — the follow-up pattern was built around foods being
+   *described as* postbiotics, and missed a dashboard line that simply told
+   members to add them.
+3. **Contiguous phrase vs element-split** (#176, `8c2cc72`) — the homepage H2
+   read "Build your / Digital / Twin." across three coloured `<span>`s, so the
+   string `"Digital Twin"` never appeared in the file. No substring grep could
+   have found it. Both the original sweep and the merge-time alt-text guard
+   searched for exactly that phrase, and the heading shipped in #179 and stayed
+   live on `main` until #176.
+
+**The rule.** Sweep for the *rarest single token* — `Twin`, `postbiotic` — and
+read every hit, rather than for the phrase you expect to find. The token sweep
+is noisier (104 hits for `\bTwin\b`, 91 of them comments) but it is the only
+form that survives the content being split, reworded or inflected. Applying it
+is what found both the H2 and, immediately after, seven further bare-"Twin"
+strings on `/method` and `/digital-twin`.
+
+**Also worth recording honestly:** #179's description claimed Digital Twin had
+been removed from customer copy on the homepage, `/method` and `/digital-twin`.
+For all three it was partial — alt text, eyebrows, body and CTAs were corrected
+while headings, prose and a UI label were not. A claim that a sweep is complete
+should name the pattern used, so the next reader can judge what it could not
+have matched.
+
 ### Accepted decisions
 
 Confirmed by the founder on 2026-07-29/30. These replace the corresponding
