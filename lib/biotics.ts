@@ -30,7 +30,7 @@ export const BIOTICS_CARDS: BioticCard[] = [
   {
     number: "02",
     title: "Probiotics",
-    verb: "Add",
+    verb: "Seed",
     accent: "var(--icon-green)",
     gradient: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))",
     body: "Living microorganisms from fermented foods — one of the most powerful ways to diversify your gut bacteria.",
@@ -39,7 +39,7 @@ export const BIOTICS_CARDS: BioticCard[] = [
   {
     number: "03",
     title: "Postbiotics",
-    verb: "Produce",
+    verb: "Regenerate",
     accent: "var(--icon-teal)",
     gradient: "linear-gradient(90deg, var(--icon-teal), var(--icon-yellow))",
     body: "The compounds your gut bacteria produce in return — driving energy, immunity, mood, and long-term health.",
