@@ -26,12 +26,10 @@ export const metadata: Metadata = {
     "digestive health", "gut bacteria", "biotics",
   ],
 }
-import { PowersEverything } from "@/components/home/powers-everything"
 import { FeedSeedHeal } from "@/components/home/feed-seed-heal"
 import { HowItWorks } from "@/components/home/how-it-works"
 import { DigitalTwinSection } from "@/components/home/digital-twin-section"
 import { ScorePreview } from "@/components/home/score-preview"
-import { Ecosystem } from "@/components/home/ecosystem"
 import { GlobalDirection } from "@/components/home/global-direction"
 import { MembershipTeaser } from "@/components/home/membership-teaser"
 import { ClosingCta } from "@/components/home/closing-cta"
@@ -54,18 +52,25 @@ export default async function Home() {
 
   return (
     <>
+      {/* Seven sections, in the order #177 and #178 independently arrived at:
+          the score and the global/local difference move above the fold, the
+          platform explanation moves below it, and the tail is one block.
+
+          PowersEverything and Ecosystem are dropped from the homepage — both
+          still render on /c/[country] and /enter, so they leave this page, not
+          the codebase. */}
       <Suspense fallback={null}><Hero /></Suspense>
       <SoftDivider />
-      <PowersEverything />
       <HowItWorks />
-      <DigitalTwinSection />
-      <FeedSeedHeal />
       <ScorePreview />
-      <SoftDivider />
-      <Ecosystem />
       <SoftDivider />
       <GlobalDirection />
       <SoftDivider />
+      <FeedSeedHeal />
+      <DigitalTwinSection />
+      <SoftDivider />
+      {/* The closing block: pricing then the final CTA, deliberately with no
+          divider between them so they read as one. */}
       <MembershipTeaser />
       <ClosingCta />
     </>

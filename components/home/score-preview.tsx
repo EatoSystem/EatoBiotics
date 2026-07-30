@@ -32,8 +32,13 @@ const EXAMPLE = {
       description: "Consistency & rhythm",
     },
   ],
+  // No quantified outcome, no timeframe. This used to tell the reader that one
+  // fermented food a day "could measurably shift your gut diversity within
+  // weeks" — a specific result on a specific schedule, which a sample score card
+  // is in no position to promise. The advice itself is unchanged and still
+  // concrete; only the guarantee attached to it is gone.
   insight:
-    "Prebiotics and Postbiotics are working well — your gut has a solid fibre base and eating rhythm. The opportunity is Probiotics: adding one fermented food daily could measurably shift your gut diversity within weeks.",
+    "Prebiotics and Postbiotics are working well — your gut has a solid fibre base and eating rhythm. The opportunity is Probiotics: adding one fermented food a day is the most direct way to build on it.",
 }
 
 export function ScorePreview() {
