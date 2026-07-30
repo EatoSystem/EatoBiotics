@@ -8,7 +8,7 @@ import { SystemFoundationTieback } from "@/components/systems/system-foundation"
 import { SystemEcosystemGrid } from "@/components/systems/system-ecosystem"
 import { SystemFinalCta } from "@/components/systems/system-final-cta"
 import { SystemDisclaimer } from "@/components/systems/system-disclaimer"
-import { SYSTEMS } from "@/lib/systems"
+import { SYSTEMS, systemEyebrow } from "@/lib/systems"
 
 const system = SYSTEMS.recovery
 
@@ -30,7 +30,7 @@ export default function RecoveryPage() {
     <main className="overflow-hidden bg-white">
       <SystemPageHero
         system={system}
-        eyebrow="Health System · Coming Soon"
+        eyebrow={systemEyebrow(system)}
         intro="Recovery is a Health System inside EatoBiotics — food-first support for replenishment, repair, and rhythm after exertion, built on your You or Family foundation."
         primaryCta={{ label: "Start with your foundation", href: "/assessment" }}
         metaLine="Recovery layers on once your You or Family foundation is in place."

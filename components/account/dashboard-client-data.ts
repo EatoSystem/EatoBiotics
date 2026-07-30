@@ -140,7 +140,7 @@ export const BIOTICS_TIPS: Record<string, Record<string, string>> = {
   },
   postbiotic: {
     Strong:   "Your gut bacteria are producing healthy compounds",
-    Good:     "Sourdough or aged cheese add more postbiotic compounds",
+    Good:     "Add polyphenols — berries, green tea or cooked-and-cooled potato",
     Building: "Focus on prebiotics — postbiotics follow from fibre",
     Low:      "Postbiotics come from fermentation — prioritise prebiotics first",
   },

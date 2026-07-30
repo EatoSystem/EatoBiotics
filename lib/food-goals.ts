@@ -39,24 +39,24 @@ export const GOALS: Record<string, GoalConfig> = {
     emoji: "⚡",
     headline: "Best foods for energy",
     description:
-      "Sustainable energy doesn't come from caffeine — it comes from a well-functioning metabolism and a microbiome that extracts maximum nutrition from every meal. Protein and postbiotic foods are the foundation.",
+      "Sustainable energy doesn't come from caffeine — it comes from a well-functioning metabolism and a microbiome that extracts maximum nutrition from every meal. Protein and the polyphenol-rich foods that drive postbiotic production are the foundation.",
     types: ["protein", "postbiotic"],
     color: "var(--icon-yellow)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     metaDesc:
-      "The best protein and postbiotic foods for sustained energy and metabolic health.",
+      "The best protein and postbiotic-supporting foods for sustained energy and metabolic health.",
   },
   immunity: {
     label: "Immunity",
     emoji: "🛡️",
     headline: "Best foods for immunity",
     description:
-      "70% of your immune system lives in your gut. Prebiotic and postbiotic foods directly feed the bacterial colonies that regulate your immune response — reducing inflammation and increasing your resilience.",
+      "70% of your immune system lives in your gut. Prebiotic and postbiotic-supporting foods directly feed the bacterial colonies that regulate your immune response — reducing inflammation and increasing your resilience.",
     types: ["prebiotic", "postbiotic"],
     color: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
     metaDesc:
-      "The best prebiotic and postbiotic foods to strengthen your immune system through the gut microbiome.",
+      "The best prebiotic and postbiotic-supporting foods to strengthen your immune system through the gut microbiome.",
   },
   mood: {
     label: "Mood",
@@ -81,7 +81,7 @@ export const GOALS: Record<string, GoalConfig> = {
     color: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     metaDesc:
-      "The best protein and postbiotic foods for faster recovery and reduced inflammation.",
+      "The best protein and postbiotic-supporting foods for faster recovery and reduced inflammation.",
   },
   sleep: {
     label: "Sleep",
@@ -131,19 +131,19 @@ export const GOALS: Record<string, GoalConfig> = {
     color: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-orange), var(--icon-green))",
     metaDesc:
-      "The best anti-inflammatory foods — prebiotic and postbiotic foods that calm inflammation through the gut.",
+      "The best anti-inflammatory foods — prebiotic and postbiotic-supporting foods that calm inflammation through the gut.",
   },
   skin: {
     label: "Skin",
     emoji: "✨",
     headline: "Best foods for healthy skin",
     description:
-      "The gut-skin axis is real: a balanced microbiome and lower systemic inflammation show up in clearer, calmer skin. Prebiotic fibres and polyphenol-rich postbiotic foods support the bacteria and short-chain fatty acids that keep skin resilient from within.",
+      "The gut-skin axis is real: a balanced microbiome and lower systemic inflammation show up in clearer, calmer skin. Prebiotic fibres and polyphenol-rich foods support the bacteria and short-chain fatty acids that keep skin resilient from within.",
     types: ["prebiotic", "postbiotic"],
     color: "var(--icon-yellow)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-lime))",
     metaDesc:
-      "The best foods for healthy skin through the gut-skin axis — prebiotic and postbiotic foods that support skin from within.",
+      "The best foods for healthy skin through the gut-skin axis — prebiotic and postbiotic-supporting foods that support skin from within.",
   },
   weight: {
     label: "Weight Balance",

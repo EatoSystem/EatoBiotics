@@ -213,7 +213,7 @@ const en: Dictionary = {
   pillarNudges: {
     prebiotics: "Add a prebiotic food like garlic, onions, or oats to feed your good bacteria.",
     probiotics: "Try a fermented food like yoghurt, kimchi, or kombucha for live probiotics.",
-    postbiotics: "Include a postbiotic-rich food like turmeric, dark chocolate, or green tea.",
+    postbiotics: "Support postbiotic production with polyphenol-rich foods like turmeric, dark chocolate, or green tea.",
   },
   relationships: { self: "Self", child: "Child", partner: "Partner", parent: "Parent", sibling: "Sibling", other: "Other" },
   ageBands: { child: "Child", teen: "Teen", adult: "Adult" },
@@ -275,7 +275,7 @@ const en: Dictionary = {
       },
       postbiotics: {
         label: "Postbiotics",
-        verb: "Produce",
+        verb: "Regenerate",
         whatItIs: "What your gut makes from that food — the compounds that shape how you feel.",
         fact: "~90% of your body's serotonin is made in your gut — postbiotics are how the food you eat becomes how you feel.",
         examples: "The payoff: steady energy, mood & immunity.",
@@ -441,7 +441,7 @@ const es: Dictionary = {
   pillarNudges: {
     prebiotics: "Añade un alimento prebiótico como ajo, cebolla o avena para alimentar tus bacterias buenas.",
     probiotics: "Prueba un alimento fermentado como yogur, kimchi o kombucha para probióticos vivos.",
-    postbiotics: "Incluye un alimento rico en posbióticos como cúrcuma, chocolate negro o té verde.",
+    postbiotics: "Favorece la producción de posbióticos con alimentos ricos en polifenoles como la cúrcuma, el chocolate negro o el té verde.",
   },
   relationships: { self: "Yo", child: "Hijo/a", partner: "Pareja", parent: "Padre/Madre", sibling: "Hermano/a", other: "Otro" },
   ageBands: { child: "Niño/a", teen: "Adolescente", adult: "Adulto/a" },
@@ -503,7 +503,7 @@ const es: Dictionary = {
       },
       postbiotics: {
         label: "Posbióticos",
-        verb: "Producir",
+        verb: "Regenerar",
         whatItIs: "Lo que tu intestino produce con esa comida: los compuestos que moldean cómo te sientes.",
         fact: "~90 % de la serotonina de tu cuerpo se produce en tu intestino: los posbióticos son cómo lo que comes se convierte en cómo te sientes.",
         examples: "El beneficio: energía estable, ánimo e inmunidad.",
@@ -669,7 +669,7 @@ const fr: Dictionary = {
   pillarNudges: {
     prebiotics: "Ajoutez un aliment prébiotique comme l'ail, l'oignon ou l'avoine pour nourrir vos bonnes bactéries.",
     probiotics: "Essayez un aliment fermenté comme le yaourt, le kimchi ou le kombucha pour des probiotiques vivants.",
-    postbiotics: "Incluez un aliment riche en postbiotiques comme le curcuma, le chocolat noir ou le thé vert.",
+    postbiotics: "Favorisez la production de postbiotiques avec des aliments riches en polyphénols comme le curcuma, le chocolat noir ou le thé vert.",
   },
   relationships: { self: "Moi", child: "Enfant", partner: "Partenaire", parent: "Parent", sibling: "Frère/Sœur", other: "Autre" },
   ageBands: { child: "Enfant", teen: "Adolescent", adult: "Adulte" },
@@ -731,7 +731,7 @@ const fr: Dictionary = {
       },
       postbiotics: {
         label: "Postbiotiques",
-        verb: "Produire",
+        verb: "Régénérer",
         whatItIs: "Ce que votre intestin fabrique à partir de ces aliments — les composés qui façonnent ce que vous ressentez.",
         fact: "~90 % de la sérotonine de votre corps est produite dans votre intestin — les postbiotiques sont la façon dont ce que vous mangez devient ce que vous ressentez.",
         examples: "Le bénéfice : énergie stable, humeur et immunité.",
@@ -897,7 +897,7 @@ const de: Dictionary = {
   pillarNudges: {
     prebiotics: "Füge ein präbiotisches Lebensmittel wie Knoblauch, Zwiebeln oder Hafer hinzu, um deine guten Bakterien zu nähren.",
     probiotics: "Probiere ein fermentiertes Lebensmittel wie Joghurt, Kimchi oder Kombucha für lebende Probiotika.",
-    postbiotics: "Iss ein postbiotikareiches Lebensmittel wie Kurkuma, dunkle Schokolade oder grünen Tee.",
+    postbiotics: "Unterstütze die Postbiotika-Produktion mit polyphenolreichen Lebensmitteln wie Kurkuma, dunkler Schokolade oder grünem Tee.",
   },
   relationships: { self: "Ich", child: "Kind", partner: "Partner/in", parent: "Elternteil", sibling: "Geschwister", other: "Andere" },
   ageBands: { child: "Kind", teen: "Teenager", adult: "Erwachsen" },
@@ -959,7 +959,7 @@ const de: Dictionary = {
       },
       postbiotics: {
         label: "Postbiotika",
-        verb: "Produzieren",
+        verb: "Regenerieren",
         whatItIs: "Was dein Darm aus dieser Nahrung herstellt — die Stoffe, die bestimmen, wie du dich fühlst.",
         fact: "~90 % des Serotonins deines Körpers werden im Darm gebildet — Postbiotika sind der Weg, wie das, was du isst, zu dem wird, wie du dich fühlst.",
         examples: "Der Gewinn: stabile Energie, Stimmung & Immunität.",
@@ -1125,7 +1125,7 @@ const ar: Dictionary = {
   pillarNudges: {
     prebiotics: "أضِف طعامًا بريبيوتيك مثل الثوم أو البصل أو الشوفان لتغذية بكتيريا أمعائك النافعة.",
     probiotics: "جرّب طعامًا مخمّرًا مثل الزبادي أو الكيمتشي أو الكمبوتشا للحصول على بروبيوتيك حي.",
-    postbiotics: "أدرِج طعامًا غنيًا بالبوستبيوتيك مثل الكركم أو الشوكولاتة الداكنة أو الشاي الأخضر.",
+    postbiotics: "ادعم إنتاج البوستبيوتيك بأطعمة غنية بالبوليفينولات مثل الكركم أو الشوكولاتة الداكنة أو الشاي الأخضر.",
   },
   relationships: { self: "أنا", child: "ابن/ابنة", partner: "شريك", parent: "أحد الوالدين", sibling: "أخ/أخت", other: "آخر" },
   ageBands: { child: "طفل", teen: "مراهق", adult: "بالغ" },
@@ -1186,7 +1186,7 @@ const ar: Dictionary = {
       },
       postbiotics: {
         label: "بوستبيوتيك",
-        verb: "إنتاج",
+        verb: "تجديد",
         whatItIs: "ما تصنعه أمعاؤك من هذا الطعام — المركّبات التي تُشكّل شعورك.",
         fact: "نحو 90٪ من السيروتونين في جسمك يُصنع في أمعائك — البوستبيوتيك هو كيف يتحوّل ما تأكله إلى ما تشعر به.",
         examples: "الفائدة: طاقة ثابتة ومزاج جيد ومناعة.",

@@ -11,10 +11,14 @@ export const runtime = "edge"
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
-  const score    = Number(searchParams.get("score")   ?? 0)
-  const feed     = Number(searchParams.get("feed")    ?? 0)
-  const seed     = Number(searchParams.get("seed")    ?? 0)
-  const heal     = Number(searchParams.get("heal")    ?? 0)
+  // Two spellings are accepted for each pillar. The route was written to read
+  // feed/seed/heal, but its only caller has always sent the canonical pillar
+  // names — so every card rendered 0 / 0 / 0. Reading both repairs the live
+  // path and keeps any card URL already shared in the wild working.
+  const score    = Number(searchParams.get("score") ?? 0)
+  const feed     = Number(searchParams.get("feed") ?? searchParams.get("prebiotics")  ?? 0)
+  const seed     = Number(searchParams.get("seed") ?? searchParams.get("probiotics")  ?? 0)
+  const heal     = Number(searchParams.get("heal") ?? searchParams.get("postbiotics") ?? 0)
   const profile  = searchParams.get("profile") ?? "EatoBiotics Score"
 
   const pillars = [
@@ -22,10 +26,9 @@ export async function GET(req: NextRequest) {
     { label: "Seed",  score: seed,  color: "#3ab0a0", gradient: "linear-gradient(90deg, #4caf7d, #3ab0a0)" },
     // Displayed as "Regenerate"; the `heal` query param is kept, because cards
     // shared before 68f1f94 link with `?heal=` and must keep working.
-    // PRE-EXISTING BUG, untouched by the rename: 68f1f94 changed the only caller
-    // (components/assessment/score-card.tsx) to send prebiotics/probiotics/
-    // postbiotics without updating the reads below, so current cards render 0/0/0.
-    // This route also 500s in Satori before any of that matters.
+    // The two bugs previously noted here — the Satori 500 and the caller/route
+    // parameter mismatch that rendered every card 0/0/0 — were fixed in #179.
+    // See the dual-spelling reads above and the explicit `display` below.
     { label: "Regenerate", score: heal, color: "#e6b84a", gradient: "linear-gradient(90deg, #e6b84a, #e07b4a)" },
   ]
 
@@ -76,6 +79,7 @@ export async function GET(req: NextRequest) {
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div
               style={{
+                display: "flex",
                 background: "rgba(76,175,125,0.15)",
                 border: "1px solid rgba(76,175,125,0.4)",
                 borderRadius: 20,
@@ -152,7 +156,7 @@ export async function GET(req: NextRequest) {
             ))}
 
             {/* Tagline */}
-            <div style={{ marginTop: 8 }}>
+            <div style={{ display: "flex", marginTop: 8 }}>
               <span
                 style={{
                   fontSize: 16,

@@ -6,7 +6,7 @@ import { SCORE_BANDS } from "@/lib/scoring"
 export const metadata: Metadata = {
   title: "Our Method — How EatoBiotics Works",
   description:
-    "How the Food System Score, the three biotics, and your Digital Twin actually work — in plain language, with honest limits.",
+    "How the Food System Score, the three biotics, and Your Food System actually work — in plain language, with honest limits.",
 }
 
 /* The five assessment pillars behind the Food System Score. */
@@ -80,7 +80,7 @@ export default function MethodPage() {
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed md:text-lg" style={{ color: "rgba(253,251,247,0.65)" }}>
             No black box. Here is exactly what your Food System Score measures, how the three
-            biotics are scored, what your Digital Twin learns from — and what we deliberately
+            biotics are scored, what Your Food System learns from — and what we deliberately
             don&apos;t claim.
           </p>
         </div>
@@ -151,7 +151,7 @@ export default function MethodPage() {
 
       {/* ── What your Twin learns from ── */}
       <SectionShell>
-        <Eyebrow>Your Digital Twin</Eyebrow>
+        <Eyebrow>Your Food System</Eyebrow>
         <h2 className="mt-2 font-serif text-2xl font-bold md:text-3xl" style={{ color: "var(--foreground)" }}>
           What it learns from — and what it does with it.
         </h2>
@@ -213,7 +213,7 @@ export default function MethodPage() {
             See your own Food System Score.
           </h2>
           <p className="mx-auto mt-2 max-w-xl text-sm" style={{ color: "rgba(253,251,247,0.6)" }}>
-            Two minutes, five pillars, and your Digital Twin starts learning.
+            Two minutes, five pillars, and Your Food System starts learning.
           </p>
           <Link
             href="/assessment"

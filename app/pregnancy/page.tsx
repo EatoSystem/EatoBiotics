@@ -9,7 +9,7 @@ import { SystemEcosystemGrid } from "@/components/systems/system-ecosystem"
 import { SystemFinalCta } from "@/components/systems/system-final-cta"
 import { SystemDisclaimer } from "@/components/systems/system-disclaimer"
 import { PregnancyRedFlags } from "@/components/pregnancy/PregnancyRedFlags"
-import { SYSTEMS } from "@/lib/systems"
+import { SYSTEMS, systemEyebrow } from "@/lib/systems"
 import { PREGNANCY_SECTIONS } from "@/lib/pregnancy/questions"
 
 const system = SYSTEMS.pregnancy
@@ -50,7 +50,7 @@ export default function PregnancyPage() {
     <main className="overflow-hidden bg-white">
       <SystemPageHero
         system={system}
-        eyebrow="Life System · Live"
+        eyebrow={systemEyebrow(system)}
         intro="A gentle, food-first reflection of your everyday eating patterns for general wellbeing — never a diagnosis, and never a substitute for your midwife or doctor."
         primaryCta={{ label: "Start Pregnancy Assessment", href: "/assessment/add/pregnancy" }}
         metaLine="Free · a few minutes · food-first, not medical"

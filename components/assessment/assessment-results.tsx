@@ -507,7 +507,7 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
                     </>
                   ) : (
                     <>
-                      Generate My Personal Report
+                      Generate My Food System Report
                       <ArrowRight size={16} />
                     </>
                   )}

@@ -34,13 +34,14 @@ export function ScrollReveal({ children, className, delay = 0 }: ScrollRevealPro
   return (
     <div
       ref={ref}
-      className={cn(
-        "transition-all duration-700 ease-out",
-        isVisible
-          ? "translate-y-0 opacity-100"
-          : "translate-y-5 opacity-0",
-        className
-      )}
+      // The hidden/revealed states live in app/globals.css under `.js .sr-reveal`
+      // rather than in Tailwind classes here, so that the server-rendered HTML is
+      // visible by default and only hides once the inline script in
+      // app/layout.tsx has confirmed JavaScript is running. Expressing the hidden
+      // state in the markup meant a failed or blocked bundle rendered a blank
+      // page across the ~136 files that use this component.
+      className={cn("sr-reveal transition-all duration-700 ease-out", className)}
+      data-revealed={isVisible}
       style={{ transitionDelay: `${delay}ms` }}
     >
       {children}

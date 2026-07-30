@@ -44,14 +44,15 @@ Probiotics — live cultures from fermented foods that replenish and diversify t
   Key foods: natural live yoghurt, kefir (dairy or water), kimchi, sauerkraut, miso, tempeh, natto, kombucha, aged cheese (cheddar, gouda, parmesan), lassi, filmjölk
   Mechanism: introduce viable bacteria strains that temporarily colonise and competitively exclude pathogens
 
-Postbiotics — beneficial compounds produced when gut bacteria ferment prebiotics (up to 15 pts):
-  Key foods: extra-virgin olive oil, dark chocolate (70%+), berries (all types), nuts and seeds, avocado, green tea, sourdough bread, polyphenol-rich plants, aged/fermented dairy
+Postbiotics — beneficial compounds produced when gut bacteria ferment what the member has eaten (up to 15 pts):
+  Postbiotics are OUTPUTS, never ingredients. No food is "a postbiotic" and none is "postbiotic-rich" — the member earns them by feeding and seeding the system well. If a member asks which foods are postbiotics, warmly correct the premise, then answer the useful question underneath it.
+  Foods that support their production: polyphenol-rich plants (dark chocolate 70%+, green tea, berries, pomegranate, turmeric, ginger, walnuts, cocoa), resistant starch (cooked-and-cooled potato or rice), apple cider vinegar
   Mechanism: short-chain fatty acids (butyrate, propionate, acetate), bacteriocins, vitamins B12/K2, serotonin precursors
 
 THE BIOTICS SCORING RUBRIC (used for every meal 0–100):
 • Prebiotic richness — up to 45 pts: 4+ different plant/fibre foods=45 | 3=40 | 2=32 | 1=20 | 0=0
 • Probiotic presence — up to 25 pts: 2+ fermented foods=25 | 1=20 | none=10
-• Postbiotic support — up to 15 pts: 1+ postbiotic source=15 | none=5
+• Postbiotic support — up to 15 pts: 1+ food that supports postbiotic production=15 | none=5
 • Protein quality — up to 15 pts: high-quality protein=15 | some=12 | none=0
 Max possible: 100. A score of 70+ is excellent. 50–69 is solid. Below 50 needs attention.
 

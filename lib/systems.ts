@@ -207,10 +207,28 @@ export const healthSystems = (): SystemDef[] => systemsByFamily("health")
 export const lifeSystems = (): SystemDef[] => systemsByFamily("life")
 export const liveSystems = (): SystemDef[] => SYSTEM_KEYS.map((k) => SYSTEMS[k]).filter((s) => s.status === "live")
 
-export const FAMILY_META: Record<SystemFamily, { label: string; blurb: string }> = {
-  foundation: { label: "Foundation Systems", blurb: "Create your Food System baseline. Everything else builds on it." },
-  health: { label: "Health Systems", blurb: "Strengthen a specific area of your Food System." },
-  life: { label: "Life Systems", blurb: "Food-first support through major life transitions." },
+/**
+ * The hero eyebrow for a system's landing page, e.g. "Life System · Coming Soon".
+ *
+ * Derived rather than written by hand on each page. /pregnancy used to hardcode
+ * "Life System · Live" while its status here was `scaffold` and the page itself
+ * was noindexed — so the homepage card said "Coming soon" and the page it linked
+ * to said "Live". Reading the status means that cannot happen again.
+ */
+export function systemEyebrow(system: SystemDef): string {
+  return `${FAMILY_META[system.family].singular} · ${STATUS_LABELS[system.status]}`
+}
+
+const STATUS_LABELS: Record<SystemStatus, string> = {
+  live: "Live",
+  planned: "Coming Soon",
+  scaffold: "Coming Soon",
+}
+
+export const FAMILY_META: Record<SystemFamily, { label: string; blurb: string; singular: string }> = {
+  foundation: { label: "Foundation Systems", singular: "Foundation System", blurb: "Create your Food System baseline. Everything else builds on it." },
+  health: { label: "Health Systems", singular: "Health System", blurb: "Strengthen a specific area of your Food System." },
+  life: { label: "Life Systems", singular: "Life System", blurb: "Food-first support through major life transitions." },
 }
 
 /**

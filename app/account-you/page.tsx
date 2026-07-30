@@ -163,7 +163,7 @@ export default function AccountYouPage() {
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
           <p className="text-xs text-muted-foreground">
             <span className="font-semibold" style={{ color: "var(--icon-green)" }}>Sample account</span>
-            {" "}— yours is created automatically when you purchase your Personal Report.
+            {" "}— yours is created automatically when you purchase your Food System Report.
           </p>
           <Link
             href="/assessment"

@@ -95,3 +95,11 @@ card; maybe brought family in.
 The Food System speaks in first person about itself and second person about the member:
 "I noticed…", "Your fibre diversity grew". Warm, precise, never clinical, never cheerleader-y.
 Externally it is only ever **Your Food System** — "Digital Twin" stays in the engine room.
+
+> This drifted once and was corrected in July 2026. "Digital Twin" had reached the homepage,
+> `/method` and `/digital-twin` — all indexable — and the homepage component's own comment
+> claimed the framing was "approved", contradicting this line and Art. II.4 of the Product
+> Constitution. Customer copy on those surfaces now reads Your Food System. The route,
+> component and file names deliberately still say digital-twin: that is engine-room
+> vocabulary, and renaming the URL would break links for no gain. If you are adding a
+> surface, the test is simply whether a member reads the words.

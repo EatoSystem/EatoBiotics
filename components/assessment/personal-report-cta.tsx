@@ -75,7 +75,7 @@ export function PersonalReportCta({ result }: PersonalReportCtaProps) {
           Unlock your full 30-day plan
         </h3>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground max-w-md mx-auto">
-          Your free score is the starting point. Your Personal Report is where the real change begins.
+          Your free score is the starting point. Your Food System Report is where the real change begins.
         </p>
       </div>
 
@@ -132,7 +132,7 @@ export function PersonalReportCta({ result }: PersonalReportCtaProps) {
               </>
             ) : (
               <>
-                Generate My Personal Report <ArrowRight size={16} />
+                Generate My Food System Report <ArrowRight size={16} />
               </>
             )}
           </button>

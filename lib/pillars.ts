@@ -10,6 +10,22 @@
    nudges, and — soon — translations) should read pillar vocabulary from here
    rather than redefining it. Historically the pillar label map was copy-pasted
    in ~9 places with subtle drift; this is the canonical replacement.
+
+   ── HOUSE RULE ON POSTBIOTIC LANGUAGE ──────────────────────────────────
+   Postbiotics are OUTPUTS, not ingredients. They are what your bacteria make
+   when they ferment what you eat. No food is "a postbiotic" and no food is
+   "postbiotic-rich", however convenient the shorthand.
+
+   Copy may say a food SUPPORTS postbiotic production, or that it provides the
+   fibre, resistant starch or polyphenols bacteria turn into postbiotics.
+   Copy must never call a food a postbiotic. `/biotics` already states this
+   correctly ("Postbiotics are not eaten — they are earned"); this module and
+   everything reading from it must not contradict that page.
+
+   Note the split this creates: `"postbiotic"` remains a scoring bucket and a
+   persisted value (lib/foods.ts `BioticType`, the `postbiotic_score` column),
+   so the KEY stays while the PROSE changes. Renaming the key would silently
+   zero historical scores — see the alias-key note below.
    ════════════════════════════════════════════════════════════════════════ */
 
 /** The three biotics — the canonical pillar keys of the current model. */
@@ -83,8 +99,14 @@ export const PILLARS: Record<PillarKey, Pillar> = {
     tagline: "Regenerate and renew.",
     whatItDoes:
       "The beneficial compounds your gut bacteria produce when they ferment prebiotic fibre — they calm inflammation and strengthen the gut lining.",
-    nudge: "Include a postbiotic-rich food like turmeric, dark chocolate, or green tea.",
-    foodExamples: ["turmeric", "green tea", "dark chocolate", "sourdough", "aged cheese"],
+    // Postbiotics are produced, never eaten — so this nudge names foods that give
+    // your bacteria the polyphenols and resistant starch they need, rather than
+    // calling any food "a postbiotic". See the note above PILLARS.
+    nudge: "Support postbiotic production with polyphenol-rich foods like turmeric, dark chocolate, or green tea.",
+    // Aligned with lib/foods.ts, the classifier of record: sourdough (:383) and
+    // aged cheese (:931) are classified `probiotic` there, so they were dropped
+    // from this list rather than contradicting it.
+    foodExamples: ["turmeric", "green tea", "dark chocolate", "cooled potato", "walnuts"],
   },
 }
 

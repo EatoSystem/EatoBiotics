@@ -6,10 +6,16 @@ import { Eyebrow, Section, SectionHeading } from "./section-shared"
  * Feed. Seed. Regenerate. — the homepage's foundation section.
  *
  * The third pillar reads "Regenerate" here, positioning the brand around continuous
- * biological renewal rather than healing. NOTE: "Heal" remains the label of the third
- * *scoring* dimension elsewhere (app/api/score-card, lib/pillars.ts, lib/cms/taxonomy.ts,
- * lib/email/paid-report-email.ts). Renaming those touches the score model, emails and
- * CMS taxonomy, so it is deliberately out of scope for this copy change.
+ * biological renewal rather than healing. That label is now consistent everywhere —
+ * this branch renames it in lib/pillars.ts, app/api/score-card, paid-report-email and
+ * the dashboard, and #181 did the same for the surfaces that read "Produce".
+ *
+ * What stays "heal" is the KEY, never the label: `aliasKey: "heal"`, the
+ * `PillarAliasKey` union, `PILLAR_LABELS.heal`, the `?heal=` score-card parameter that
+ * already-shared cards depend on, the `"Heal — …"` localStorage titles in
+ * lib/assessment-data.ts, and the deprecated-but-required `"Heal"` member of the
+ * FOUNDATIONS enum in lib/cms/taxonomy.ts. Renaming any of those would silently zero
+ * historical scores or invalidate stored CMS rows.
  *
  * Accessible language first, scientific foundation beneath. Replaced
  * `the-framework.tsx` ("Three biotics. One plate.") on the homepage; that
