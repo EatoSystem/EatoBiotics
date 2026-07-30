@@ -96,26 +96,75 @@ the skip link is the first tab stop.
 
 No database changes. Nothing here touches Supabase.
 
+### Review rounds and merge
+
+Codex reviewed the branch twice before merge.
+
+- **Round one** raised two findings: a deterministic health claim on `/food`
+  ("directly repair the gut lining and reduce inflammation"), and the twin
+  figure's default `alt` still reading "Your Food System Digital Twin" —
+  meaning the rename had been true for sighted users only, since the three
+  public `/digital-twin` call sites all omit `alt`. Both fixed in `5988f92`.
+- **Verifying those fixes** surfaced a third problem the original pass missed:
+  three taglines still asserting a food *is* a postbiotic (`lib/foods.ts:577`,
+  `:628`, `plate-creator-client.tsx:348`). Fixed in `d48defc`.
+- **Round two** found a fourth: `dashboard-client-data.ts:143` told members
+  "Sourdough or aged cheese add more postbiotic compounds" — naming the two
+  foods this very branch reclassified as *probiotic*. Fixed in `ec25b5c`.
+
+**Lesson worth keeping.** The sweep after `d48defc` used a noun-phrase pattern
+(`is a postbiotic`, `postbiotic-rich`), which cannot match a verb phrase like
+"add more postbiotic compounds" — which is exactly how the round-two line
+survived it. Any future correctness sweep over this vocabulary needs both
+shapes. The re-run used `add|provide|contain|deliver|give|boost|supply|…` near
+"postbiotic" and came back clean for app surfaces.
+
+Merged as `86db4c5` (merge commit, per repo convention — the last 30 commits on
+`main` are all `Merge pull request …`, none squashed).
+
+### Accepted decisions
+
+Confirmed by the founder on 2026-07-29/30. These replace the corresponding
+entries that were previously open questions.
+
+1. **Third-pillar verb → `Regenerate`.** `Regenerate` is the word for public
+   brand and action copy; explanatory science copy reads "your system produces
+   microbial metabolites and postbiotic outputs" rather than adopting `Produce`
+   as the label. **Persisted keys do not move** — `aliasKey: "heal"`,
+   `PillarAliasKey`, the `?heal=` OG contract and the `sub_scores` JSON all stay
+   exactly as they are. The rule already documented in `lib/pillars.ts`
+   ("Rename `aliasLabel`, never this") governs the unification.
+2. **Condition pages stay indexed**, pending legal/science review. No code
+   change. The asymmetry with `/pregnancy`'s noindex is now recorded as
+   deliberate policy rather than inherited by accident.
+3. **`/pregnancy` stays "Coming Soon" with the CTA in place.** Noindexed,
+   homepage card reads "Coming soon", and the assessment remains usable by
+   direct URL. This is the state already shipped — no follow-up work.
+4. **Homepage direction: deferred.** Codex has since reported on merge order
+   (Phase 0 before #176, which is what happened), so the blocker on this
+   decision is cleared and it can be taken whenever the founder is ready.
+   #177 / #178 / #125 remain non-blocking preview routes.
+
 ### Open questions for a human
 
-1. **Third-pillar verb.** After #176 lands, the third pillar reads `Regenerate`
-   (homepage, pricing, emails), `Heal` (`lib/pillars.ts`, CMS taxonomy) and
-   `Produce` (`lib/biotics.ts`, `/biotics`, `/family`, i18n); the second reads
-   `Seed` vs `Add`. Worth knowing before choosing: **`Produce` is the
-   scientifically accurate verb** — the system produces postbiotics — while
-   `Regenerate` is the brand ask. Unifying is a small copy change once the word
-   is chosen, and is deliberately not done here.
-2. **Condition pages and Article V.14.** The constitution keeps sensitive
-   surfaces out of search until clinical/legal review, which is why
-   `/pregnancy` is noindexed. `/anxiety`, `/adhd`, `/depression` and `/bipolar`
-   are indexed and sitemapped. They carry disclaimers, and the decision was to
-   leave them indexed — but the asymmetry with pregnancy is deliberate policy
-   now, and should be confirmed with legal rather than inherited by accident.
-3. **`/pregnancy` CTA.** The eyebrow now reads "Coming Soon" while the page
-   still offers "Start Pregnancy Assessment". That is arguably correct — not
-   publicly promoted, but usable by anyone given the URL — but it is a choice
-   worth making explicitly.
-4. **`lib/foods.ts` internal inconsistency**, noticed but out of scope: Mixed
+1. **`lib/foods.ts` internal inconsistency**, noticed but out of scope: Mixed
    Berries is classified `postbiotic` while Blueberries is `prebiotic`.
-5. **`SystemStatus` declares `"planned"`** with zero usages, and `pregnancy` is
+2. **`SystemStatus` declares `"planned"`** with zero usages, and `pregnancy` is
    the only `scaffold` system that still carries an `assessmentRoute`.
+
+### Deferred to the evidence-language pass (Workstream E)
+
+Found during the Phase 0 sweeps, deliberately not changed — these are
+evidence/legal judgements rather than factual corrections, and the founder
+scoped them out of the correctness gate:
+
+1. **`lib/foods.ts:630`** — green tea metabolites described as having
+   "anti-inflammatory, **anti-cancer**, and neuroprotective effects". The
+   strongest claim remaining in the food catalogue.
+2. **`content/book/chapter-11.mdx:377`** — "Fermented foods contain postbiotic
+   compounds even before you eat them." Defensible (fermentation does produce
+   metabolites in the jar) but close to the line the rest of the product holds.
+3. **Medical-metaphor taglines** — "Cooling transforms starch into gut medicine"
+   (`lib/foods.ts:551`), "The oldest medicine in your kitchen" (`:51`). Judged
+   brand voice rather than health claims. Historical prose such as "eaten for
+   centuries as a digestive medicine" describes history and is fine as-is.
