@@ -134,7 +134,7 @@ const FAQS = [
   },
   {
     q: "What's in the report?",
-    a: "Your report is generated personally for you by AI, based on your assessment and deep-dive answers. It includes your full Feed · Seed · Heal analysis, a 30-day plan, your top 10 food recommendations, a weekly shopping framework, meal timing guidance, food swaps, and a 7-day kickstart.",
+    a: "Your report is generated personally for you by AI, based on your assessment and deep-dive answers. It includes your full Feed · Seed · Regenerate analysis, a 30-day plan, your top 10 food recommendations, a weekly shopping framework, meal timing guidance, food swaps, and a 7-day kickstart.",
   },
 ]
 
@@ -278,7 +278,7 @@ export function PricingClient({
           </span>
         </h1>
         <p className="mt-4 text-base text-muted-foreground sm:text-lg">
-          Take the free EatoBiotics Assessment, discover your Feed · Seed · Heal scores, and get a
+          Take the free EatoBiotics Assessment, discover your Feed · Seed · Regenerate scores, and get a
           personalised plan to improve your gut health — starting today.
         </p>
       </div>
@@ -305,7 +305,7 @@ export function PricingClient({
               icon: BarChart2,
               step: "02",
               label: "Score",
-              desc: "Get your EatoBiotics Score across Feed · Seed · Heal — free.",
+              desc: "Get your EatoBiotics Score across Feed · Seed · Regenerate — free.",
               color: "var(--icon-green)",
             },
             {
@@ -389,7 +389,7 @@ export function PricingClient({
           <div className="mb-8 grid gap-2.5 sm:grid-cols-2">
             {[
               "Your EatoBiotics Score analysis",
-              "Full Feed · Seed · Heal breakdown",
+              "Full Feed · Seed · Regenerate breakdown",
               "Your top 10 food recommendations",
               "30-day personalised plan",
               "Weekly shopping framework",

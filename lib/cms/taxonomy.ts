@@ -32,7 +32,11 @@ export const CONTENT_TYPES = [
 export type ContentType = (typeof CONTENT_TYPES)[number]["value"]
 
 export const BRANDS = ["EatoBiotics", "EatoSystem", "EatoBetics", "EatoSports"] as const
-export const FOUNDATIONS = ["Feed", "Seed", "Heal", "Prebiotics", "Probiotics", "Postbiotics"] as const
+// "Heal" is deprecated in favour of "Regenerate" but MUST stay listed: FOUNDATIONS
+// is a z.enum validating cms_content.foundation (app/api/cms/content/route.ts), so
+// removing it would invalidate existing rows on next edit and drop the stored value
+// from the editor dropdown. Retag-and-remove needs a human-applied SQL migration.
+export const FOUNDATIONS = ["Feed", "Seed", "Regenerate", "Heal", "Prebiotics", "Probiotics", "Postbiotics"] as const
 export const JOURNEY_STAGES = [
   "Assessment", "Food System Score", "Personal Insight", "Weekly Action", "Check-in", "Retest", "Progress",
 ] as const

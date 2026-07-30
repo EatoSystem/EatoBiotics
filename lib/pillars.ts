@@ -31,13 +31,20 @@
 /** The three biotics — the canonical pillar keys of the current model. */
 export type PillarKey = "prebiotics" | "probiotics" | "postbiotics"
 
-/** Feed / Seed / Heal — the brand-facing alias keys for the same three pillars. */
+/**
+ * The brand-facing alias keys for the same three pillars.
+ *
+ * NOTE the split between key and label: the brand words are Feed / Seed /
+ * **Regenerate**, but the third *key* stays `"heal"` because it is written into
+ * stored assessment records and shared score-card URLs (`?heal=67`). Renaming
+ * the key would silently zero historical scores. Rename `aliasLabel`, never this.
+ */
 export type PillarAliasKey = "feed" | "seed" | "heal"
 
 export interface Pillar {
   /** Canonical key used in scoring and storage. */
   key: PillarKey
-  /** Feed/Seed/Heal alias key for the same pillar. */
+  /** Brand alias key for the same pillar. Legacy — `"heal"` is displayed as "Regenerate". */
   aliasKey: PillarAliasKey
   /** Canonical display label, e.g. "Prebiotics". */
   label: string
@@ -87,9 +94,9 @@ export const PILLARS: Record<PillarKey, Pillar> = {
     key: "postbiotics",
     aliasKey: "heal",
     label: "Postbiotics",
-    aliasLabel: "Heal",
+    aliasLabel: "Regenerate",
     color: "var(--icon-yellow)",
-    tagline: "Heal and strengthen.",
+    tagline: "Regenerate and renew.",
     whatItDoes:
       "The beneficial compounds your gut bacteria produce when they ferment prebiotic fibre — they calm inflammation and strengthen the gut lining.",
     // Postbiotics are produced, never eaten — so this nudge names foods that give
@@ -104,8 +111,8 @@ export const PILLARS: Record<PillarKey, Pillar> = {
 }
 
 /**
- * Maps every pillar key ever used in the codebase — canonical keys and
- * Feed/Seed/Heal aliases — to its canonical pillar. Returns `null` for keys
+ * Maps every pillar key ever used in the codebase — canonical keys and the
+ * feed/seed/heal alias keys — to its canonical pillar. Returns `null` for keys
  * that don't belong to the current 3-biotic model (e.g. legacy 5-pillar keys).
  */
 export function resolvePillar(key: string): Pillar | null {
@@ -117,8 +124,8 @@ export function resolvePillar(key: string): Pillar | null {
 }
 
 /**
- * Canonical label map for the current 3-biotic model, including Feed/Seed/Heal
- * aliases. Drop-in replacement for the duplicated `PILLAR_LABELS` constants
+ * Canonical label map for the current 3-biotic model, including the
+ * feed/seed/heal alias keys. Drop-in replacement for the duplicated `PILLAR_LABELS` constants
  * that used the prebiotics/probiotics/postbiotics scheme.
  */
 export const PILLAR_LABELS: Record<string, string> = {

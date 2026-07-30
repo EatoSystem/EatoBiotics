@@ -15,7 +15,7 @@ const COLUMNS: Array<{ status: Availability; title: string; color: string; items
     color: "var(--icon-green)",
     items: [
       { name: "Free Food System Assessment", note: "About 5 minutes, no account required" },
-      { name: "Food System Score", note: "With Feed, Seed, and Heal breakdown" },
+      { name: "Food System Score", note: "With Feed, Seed, and Regenerate breakdown" },
       { name: "Personalised Food System Report", note: "One-time purchase, yours to keep" },
       { name: "Online report access + PDF download", note: "From your account, whenever you return" },
       { name: "Meal scoring", note: "Describe a plate or photograph a meal, see how it feeds your system" },

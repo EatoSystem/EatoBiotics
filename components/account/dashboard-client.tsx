@@ -167,7 +167,9 @@ function TodayTab({
     // Blueberries and Olive Oil were listed here but lib/foods.ts classifies both
     // as `prebiotic` (:100, :126). Swapped for foods that are actually in the
     // postbiotic-supporting bucket, so the dashboard agrees with the food library.
-    heal: { label: "Heal — Recovery & Rhythm", color: "var(--icon-yellow)", icon: "⚡", foods: ["Dark Chocolate", "Turmeric", "Walnuts", "Green Tea", "Cooled Potato"] },
+    // The `heal` key stays — it is what stored records contain — but displays as
+    // "Regenerate".
+    heal: { label: "Regenerate — Recovery & Rhythm", color: "var(--icon-yellow)", icon: "⚡", foods: ["Dark Chocolate", "Turmeric", "Walnuts", "Green Tea", "Cooled Potato"] },
   }
   const focus = PILLAR_META[weakestPillar] ?? PILLAR_META.seed
 
@@ -212,7 +214,7 @@ function TodayTab({
           )}
           {feedScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Feed: {feedScore}</span>}
           {seedScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Seed: {seedScore}</span>}
-          {healScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Heal: {healScore}</span>}
+          {healScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Regenerate: {healScore}</span>}
           <span className="rounded-full border px-3 py-1 text-xs text-muted-foreground">Day {dayInPlan} of 30</span>
         </div>
       </div>

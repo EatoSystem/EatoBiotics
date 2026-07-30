@@ -24,7 +24,12 @@ export async function GET(req: NextRequest) {
   const pillars = [
     { label: "Feed",  score: feed,  color: "#7fc47e", gradient: "linear-gradient(90deg, #7fc47e, #4caf7d)" },
     { label: "Seed",  score: seed,  color: "#3ab0a0", gradient: "linear-gradient(90deg, #4caf7d, #3ab0a0)" },
-    { label: "Heal",  score: heal,  color: "#e6b84a", gradient: "linear-gradient(90deg, #e6b84a, #e07b4a)" },
+    // Displayed as "Regenerate"; the `heal` query param is kept, because cards
+    // shared before 68f1f94 link with `?heal=` and must keep working.
+    // The two bugs previously noted here — the Satori 500 and the caller/route
+    // parameter mismatch that rendered every card 0/0/0 — were fixed in #179.
+    // See the dual-spelling reads above and the explicit `display` below.
+    { label: "Regenerate", score: heal, color: "#e6b84a", gradient: "linear-gradient(90deg, #e6b84a, #e07b4a)" },
   ]
 
   // Score band colour
