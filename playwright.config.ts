@@ -18,6 +18,9 @@ export default defineConfig({
   reporter: process.env.CI ? "line" : "list",
   use: {
     baseURL: "http://127.0.0.1:3000",
+    // NOT set: reducedMotion: "reduce" — deliberately, and it is the single
+    // biggest limitation of this suite. See the coverage note in
+    // tests/a11y/smoke.spec.ts before changing it.
     // In environments with a preinstalled Chromium (PLAYWRIGHT_BROWSERS_PATH),
     // point at it directly instead of downloading a version-pinned build.
     // CI installs its own via `npx playwright install chromium`, where this

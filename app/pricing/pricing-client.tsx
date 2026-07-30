@@ -213,7 +213,7 @@ export function PricingClient({
             border: "1px solid color-mix(in srgb, var(--icon-green) 25%, transparent)",
           }}
         >
-          <p className="font-semibold" style={{ color: "var(--icon-green)" }}>
+          <p className="font-semibold" style={{ color: "var(--icon-green-text)" }}>
             You&apos;re on an active{" "}
             {currentTier.charAt(0).toUpperCase() + currentTier.slice(1)} plan.
           </p>
@@ -243,7 +243,7 @@ export function PricingClient({
             <Dumbbell size={18} />
           </span>
           <div className="flex-1">
-            <p className="text-sm font-semibold" style={{ color: "var(--icon-green)" }}>
+            <p className="text-sm font-semibold" style={{ color: "var(--icon-green-text)" }}>
               The GLP-1 Companion is included with EatoBiotics membership.
             </p>
             <p className="text-xs text-muted-foreground">
@@ -259,8 +259,12 @@ export function PricingClient({
         <div
           className="mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold"
           style={{
+            // The -text tokens are calibrated against white. This pill sits on a
+            // lime tint (~#F2FAE8), which costs it the margin — #398133 lands on
+            // exactly 4.50:1 there and fails rounding. Darker green for this one
+            // ground: 5.27:1 on the tint, 5.64:1 if the tint ever goes.
             background: "color-mix(in srgb, var(--icon-lime) 15%, transparent)",
-            color: "var(--icon-green)",
+            color: "#33752E",
           }}
         >
           One clear path to a healthier food system
@@ -300,6 +304,7 @@ export function PricingClient({
               label: "Assess",
               desc: "Take the free 15-question assessment — no account needed.",
               color: "var(--icon-lime)",
+              text: "var(--icon-lime-text)",
             },
             {
               icon: BarChart2,
@@ -307,6 +312,7 @@ export function PricingClient({
               label: "Score",
               desc: "Get your EatoBiotics Score across Feed · Seed · Regenerate — free.",
               color: "var(--icon-green)",
+              text: "var(--icon-green-text)",
             },
             {
               icon: FileText,
@@ -314,6 +320,7 @@ export function PricingClient({
               label: "Report",
               desc: "Unlock your Food System Report and 30-day plan for €49.",
               color: "var(--icon-teal)",
+              text: "var(--icon-teal-text)",
             },
             {
               icon: Calendar,
@@ -321,8 +328,9 @@ export function PricingClient({
               label: "30 Days",
               desc: "Follow your plan with a free 30-day EatoBiotics account.",
               color: "var(--icon-orange)",
+              text: "var(--icon-orange-text)",
             },
-          ].map(({ icon: Icon, step, label, desc, color }) => (
+          ].map(({ icon: Icon, step, label, desc, color, text }) => (
             <div key={step} className="flex gap-3 p-5">
               <div className="mt-0.5 shrink-0">
                 <div
@@ -335,7 +343,7 @@ export function PricingClient({
               <div>
                 <p
                   className="mb-0.5 text-[10px] font-bold uppercase tracking-widest"
-                  style={{ color }}
+                  style={{ color: text }}
                 >
                   {step} — {label}
                 </p>
@@ -368,7 +376,7 @@ export function PricingClient({
             <div>
               <p
                 className="mb-1 text-xs font-bold uppercase tracking-widest"
-                style={{ color: "var(--icon-teal)" }}
+                style={{ color: "var(--icon-teal-text)" }}
               >
                 Food System Report
               </p>
@@ -424,7 +432,7 @@ export function PricingClient({
       >
         <p
           className="mb-1 text-xs font-bold uppercase tracking-widest"
-          style={{ color: "var(--icon-green)" }}
+          style={{ color: "var(--icon-green-text)" }}
         >
           Included with your report
         </p>
@@ -461,7 +469,7 @@ export function PricingClient({
         <div className="px-6 py-7 sm:px-10">
           <p
             className="mb-1 text-xs font-bold uppercase tracking-widest"
-            style={{ color: "var(--icon-green)" }}
+            style={{ color: "var(--icon-green-text)" }}
           >
             After 30 days — optional
           </p>

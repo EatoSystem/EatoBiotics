@@ -274,7 +274,7 @@ export function MindAssessmentIntro({ onStart }: MindAssessmentIntroProps) {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs text-muted-foreground/50">Your score</span>
-                    <span className="text-xs font-bold text-muted-foreground/40">??</span>
+                    <span className="text-xs font-bold text-muted-foreground">??</span>
                   </div>
                   <div className="h-1.5 w-full rounded-full bg-border overflow-hidden">
                     <div className="h-full w-0 rounded-full opacity-30" style={{ background: pillar.gradient }} />
@@ -364,7 +364,7 @@ export function MindAssessmentIntro({ onStart }: MindAssessmentIntroProps) {
               <ArrowRight size={18} />
             </button>
           </div>
-          <p className="mt-4 text-xs text-muted-foreground/40">
+          <p className="mt-4 text-xs text-muted-foreground">
             This assessment is for educational purposes and is not medical advice or a diagnosis.
           </p>
         </div>

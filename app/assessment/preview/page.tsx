@@ -37,7 +37,7 @@ function PreviewCard({
         <span className={`text-[11px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full ${badgeColor}`}>
           {badge}
         </span>
-        <span className="text-muted-foreground/40 group-hover:text-[var(--icon-green)] transition-colors text-lg leading-none">→</span>
+        <span className="text-muted-foreground group-hover:text-[var(--icon-green)] transition-colors text-lg leading-none">→</span>
       </div>
       <h3 className="font-semibold text-base mb-1">{title}</h3>
       <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>

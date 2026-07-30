@@ -128,7 +128,7 @@ export function ReportReframe({ result }: ReportReframeProps) {
 
       {/* Arrow down to tier cards */}
       <div className="flex justify-center">
-        <div className="flex flex-col items-center gap-1 text-muted-foreground/40">
+        <div className="flex flex-col items-center gap-1 text-muted-foreground">
           <p className="text-xs font-medium">Choose your report below</p>
           <ArrowDown size={16} />
         </div>

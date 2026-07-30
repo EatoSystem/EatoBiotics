@@ -29,7 +29,7 @@ export default function DemoConsultPage() {
             >
               <ArrowLeft size={12} /> Back to Transform
             </Link>
-            <span className="text-muted-foreground/40 text-xs">·</span>
+            <span className="text-muted-foreground text-xs">·</span>
             <p className="text-xs font-semibold" style={{ color: "var(--icon-orange)" }}>
               Live demo — sample data for <strong>Sarah M.</strong> Score: 62/100
             </p>

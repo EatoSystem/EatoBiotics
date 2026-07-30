@@ -232,7 +232,7 @@ export function SevenDayGuide({
         </p>
         <button
           onClick={dismiss}
-          className="text-xs text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+          className="text-xs text-muted-foreground hover:text-muted-foreground transition-colors"
         >
           Dismiss
         </button>

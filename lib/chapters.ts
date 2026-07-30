@@ -14,6 +14,7 @@ export interface Chapter {
 }
 
 // Part colours — index matches part order (0-based)
+/** Raw brand hues — for decoration: rules, pills, gradients, icon fills. */
 export const PART_COLORS = [
   "var(--icon-lime)",
   "var(--icon-green)",
@@ -21,6 +22,21 @@ export const PART_COLORS = [
   "var(--icon-yellow)",
   "var(--icon-orange)",
   "var(--icon-lime)",    // Part VI — full circle
+]
+
+/**
+ * The same six, AA-safe. Use wherever the part colour meets text — as the
+ * colour of the text itself, or as a background carrying white text (each
+ * clears 4.5:1 against white, so it works in both directions).
+ * The raw hues above are 1.55:1–2.96:1 and fail either way.
+ */
+export const PART_TEXT_COLORS = [
+  "var(--icon-lime-text)",
+  "var(--icon-green-text)",
+  "var(--icon-teal-text)",
+  "var(--icon-yellow-text)",
+  "var(--icon-orange-text)",
+  "var(--icon-lime-text)",
 ]
 
 export const chapters: Chapter[] = [

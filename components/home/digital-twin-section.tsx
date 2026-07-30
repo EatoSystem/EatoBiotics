@@ -49,11 +49,14 @@ const OUTPUTS: NodeDef[] = [
   { label: "LEARN", sub: "The loop continues", Icon: InfinityIcon, tx: -16 },
 ]
 
+/* `color` sets the 15px bold title, so it must clear 4.5:1 — hence the -text
+   variants. `iconColor` keeps the raw brand hue for the glyph, which is not
+   text and should not shift. */
 const FEATURES = [
-  { Icon: Shield, title: "Built on science.", sub: "Rooted in the three biotics.", tint: "rgba(76,182,72,0.12)", color: "#4CB648" },
-  { Icon: User, title: "Personal to you.", sub: "Your data. Your system. Your journey.", tint: "rgba(76,182,72,0.12)", color: "#4CB648" },
-  { Icon: Leaf, title: "Designed to improve.", sub: "Small steps. Big change. Every day.", tint: "rgba(245,197,24,0.16)", color: "#E0A800", iconColor: "#F5C518" },
-  { Icon: RefreshCw, title: "Always learning.", sub: "Your Food System never stands still.", tint: "rgba(245,166,35,0.14)", color: "#F5A623" },
+  { Icon: Shield, title: "Built on science.", sub: "Rooted in the three biotics.", tint: "rgba(76,182,72,0.12)", color: "var(--icon-green-text)", iconColor: "#4CB648" },
+  { Icon: User, title: "Personal to you.", sub: "Your data. Your system. Your journey.", tint: "rgba(76,182,72,0.12)", color: "var(--icon-green-text)", iconColor: "#4CB648" },
+  { Icon: Leaf, title: "Designed to improve.", sub: "Small steps. Big change. Every day.", tint: "rgba(245,197,24,0.16)", color: "var(--icon-yellow-text)", iconColor: "#F5C518" },
+  { Icon: RefreshCw, title: "Always learning.", sub: "Your Food System never stands still.", tint: "rgba(245,166,35,0.14)", color: "var(--icon-orange-text)", iconColor: "#F5A623" },
 ]
 
 // Rising-particle definitions (left%, bottom%, size, color, glow, duration s, delay s)
@@ -100,7 +103,7 @@ function InputNode({ n }: { n: NodeDef }) {
         <n.Icon size={24} strokeWidth={2} />
       </span>
       <span>
-        <span style={{ display: "block", fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", color: "#4CB648" }}>{n.label}</span>
+        <span style={{ display: "block", fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", color: "var(--icon-green-text)" }}>{n.label}</span>
         <span style={{ display: "block", fontSize: 14, color: "#5A6E50" }}>{n.sub}</span>
       </span>
     </div>
@@ -114,7 +117,7 @@ function OutputNode({ n }: { n: NodeDef }) {
         <n.Icon size={24} strokeWidth={2} />
       </span>
       <span>
-        <span style={{ display: "block", fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", color: "#F5A623" }}>{n.label}</span>
+        <span style={{ display: "block", fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", color: "var(--icon-orange-text)" }}>{n.label}</span>
         <span style={{ display: "block", fontSize: 14, color: "#5A6E50" }}>{n.sub}</span>
       </span>
     </div>
@@ -131,7 +134,7 @@ export function DigitalTwinSection() {
           <div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "7px 16px", border: "1px solid #E5E5E5", borderRadius: 9999, background: "#fff" }}>
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#4CB648" }} />
-              <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", color: "#4CB648" }}>Your Food System</span>
+              <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--icon-green-text)" }}>Your Food System</span>
             </div>
 
             <h2 style={{ fontFamily: "var(--font-lora), Georgia, serif", fontWeight: 700, fontSize: "clamp(2.4rem,3.6vw,3.5rem)", lineHeight: 1.04, letterSpacing: "-0.02em", margin: "28px 0 0" }}>
@@ -139,8 +142,8 @@ export function DigitalTwinSection() {
                   treatment, which is how "Digital Twin" survived two sweeps that
                   searched for the contiguous string. Grep `\bTwin\b`, not the phrase. */}
               <span style={{ color: "#1A2E12" }}>The food system</span><br />
-              <span style={{ color: "#4CB648" }}>inside</span><br />
-              <span style={{ color: "#F5A623" }}>you.</span>
+              <span style={{ color: "var(--icon-green-display)" }}>inside</span><br />
+              <span style={{ color: "var(--icon-orange-display)" }}>you.</span>
             </h2>
 
             <div style={{ width: 64, height: 3, borderRadius: 9999, background: "#4CB648", margin: "28px 0" }} />
@@ -184,7 +187,7 @@ export function DigitalTwinSection() {
             {/* score card */}
             <div style={{ position: "absolute", left: "50%", top: "62%", transform: "translateX(-50%)", background: "#fff", border: "1px solid #EFEFEF", borderRadius: 16, boxShadow: "0 12px 32px rgba(26,46,18,0.12)", padding: "16px 26px", textAlign: "center", minWidth: 158 }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "#1A2E12", lineHeight: 1.3 }}>THE FOOD SYSTEM<br />INSIDE YOU</div>
-              <div style={{ fontFamily: "var(--font-lora), Georgia, serif", fontWeight: 700, fontSize: 50, lineHeight: 1, color: "#4CB648", margin: "8px 0 4px" }}>74</div>
+              <div style={{ fontFamily: "var(--font-lora), Georgia, serif", fontWeight: 700, fontSize: 50, lineHeight: 1, color: "var(--icon-green-display)", margin: "8px 0 4px" }}>74</div>
               <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", color: "#5A6E50" }}>SYSTEM SCORE</div>
             </div>
 
@@ -203,7 +206,7 @@ export function DigitalTwinSection() {
             <div style={{ position: "relative", width: "70%", maxWidth: 280, aspectRatio: "1", margin: "0 auto" }}>
               <Image src="/images/twin-female.png" alt="The Food System Inside You" width={1402} height={1122} style={{ width: "100%", height: "auto", mixBlendMode: "multiply" }} />
             </div>
-            <div style={{ marginTop: 8, textAlign: "center", fontFamily: "var(--font-lora), Georgia, serif", fontWeight: 700, fontSize: 40, color: "#4CB648", lineHeight: 1 }}>74<span style={{ display: "block", fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", color: "#5A6E50" }}>SYSTEM SCORE</span></div>
+            <div style={{ marginTop: 8, textAlign: "center", fontFamily: "var(--font-lora), Georgia, serif", fontWeight: 700, fontSize: 40, color: "var(--icon-green-display)", lineHeight: 1 }}>74<span style={{ display: "block", fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", color: "#5A6E50" }}>SYSTEM SCORE</span></div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginTop: 24 }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>{INPUTS.map((n) => <InputNode key={n.label} n={{ ...n, tx: 0 }} />)}</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>{OUTPUTS.map((n) => <OutputNode key={n.label} n={{ ...n, tx: 0 }} />)}</div>
@@ -218,7 +221,7 @@ export function DigitalTwinSection() {
               <Leaf size={28} strokeWidth={2} />
             </span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#4CB648" }}>Your Next Best Action</div>
+              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--icon-green-text)" }}>Your Next Best Action</div>
               <div style={{ fontSize: 19, fontWeight: 700, color: "#1A2E12", lineHeight: 1.3, marginTop: 4 }}>Add one fermented food to your next meal.</div>
             </div>
             <Link href="/assessment" aria-label="Start" style={{ flex: "none", width: 46, height: 46, borderRadius: "50%", border: "1.5px solid #F5A623", display: "flex", alignItems: "center", justifyContent: "center", color: "#F5A623", textDecoration: "none" }}>

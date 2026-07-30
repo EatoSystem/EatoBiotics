@@ -26,12 +26,50 @@
   --ring: #4CB648;
   --radius: 0.75rem;
 
-  /* Icon palette — extracted from the biotic shapes */
+  /* Icon palette — extracted from the biotic shapes.
+     These are the raw brand hues. They are correct for backgrounds, gradients,
+     borders, rings and icon fills, and WRONG for text: measured on white they
+     run 1.55:1 (lime) to 2.96:1 (teal), so every one of them fails WCAG AA as
+     copy. Use the -text / -display variants below for anything readable. */
   --icon-lime: #A8E063;
   --icon-green: #4CB648;
   --icon-teal: #2DAA6E;
   --icon-yellow: #F5C518;
   --icon-orange: #F5A623;
+
+  /* AA-safe text variants of the same five hues.
+     No new colours: each is its brand hue blended toward --foreground (#1A2E12)
+     at the lowest ratio that clears the threshold with margin, so the hue shifts
+     as little as possible. The blend percentage is noted per line.
+
+     -text    ≥ 4.5:1 on white — body copy, labels, links, eyebrows, captions.
+     -display ≥ 3:1   on white — large text ONLY (24px+, or 18.66px+ bold).
+
+     These are literal hex, not color-mix(), deliberately. The first cut used
+     `color-mix(in srgb, var(--icon-green) 61%, var(--foreground))`, which should
+     resolve to #398133 (4.82:1) — the browser computed #458940 (4.36:1) and axe
+     failed it. Something between authoring and paint resolves the mix in a
+     different space, and a contrast floor that depends on that is not a floor.
+     A literal is measurable and cannot drift.
+
+     If a hue changes, recompute these — they are derived values, not free
+     choices. Ratios below are measured against #FFFFFF.
+
+     Calibrated on white, so a tinted ground eats the margin: --icon-green-text
+     is 4.81:1 on white but exactly 4.50:1 on the 15%-lime pill in
+     app/pricing/pricing-client.tsx, which fails on rounding. On a tint, check
+     the real ratio rather than assuming the token carries. */
+  --icon-lime-text:    #587C36;  /* 44% lime   — 4.80:1 */
+  --icon-green-text:   #398133;  /* 61% green  — 4.82:1 */
+  --icon-teal-text:    #278150;  /* 67% teal   — 4.83:1 */
+  --icon-yellow-text:  #7D7215;  /* 45% yellow — 4.91:1 */
+  --icon-orange-text:  #8C6C1B;  /* 52% orange — 4.89:1 */
+
+  --icon-lime-display:   #719B43;  /* 61% lime   — 3.26:1 */
+  --icon-green-display:  #44A03F;  /* 84% green  — 3.30:1 */
+  --icon-teal-display:   #2CA168;  /* 93% teal   — 3.27:1 */
+  --icon-yellow-display: #A48D16;  /* 63% yellow — 3.28:1 */
+  --icon-orange-display: #B8841E;  /* 72% orange — 3.30:1 */
 }
 
 @theme inline {
@@ -78,6 +116,41 @@
     @apply text-foreground;
   }
 }
+
+/* ── Do NOT remap text-icon-* to the -text variants ─────────────────────────
+   This was tried and reverted, and the reason is not obvious, so: the -text
+   variants are calibrated against WHITE. On --foreground (#1A2E12) the raw hues
+   are the ones that pass and the -text variants are the ones that fail:
+
+                    on white        on --foreground
+     lime     raw    1.55  ✗          9.36  ✓
+              text   4.83  ✓          3.01  ✗
+     yellow   raw    1.63  ✗          8.92  ✓
+              text   4.90  ✓          2.97  ✗   (below even the 3:1 large floor)
+
+   …and the same inversion for green, teal and orange. A blanket
+   `.text-icon-green { color: var(--icon-green-text) }` therefore fixes every
+   light surface by breaking every dark one — eyebrows, pills and hover CTAs in
+   the dark bands on /biotics, /family, /book, /books, /waitlist and /weekly.
+
+   There is no CSS that resolves this: a utility cannot know its own background,
+   and the dark sections are not identifiable by class either — they use
+   bg-foreground, bg-black, arbitrary hex, and translucent tints over dark
+   parents. Reach for the variant explicitly at the call site, where the ground
+   is known.
+
+   The fix that does work, when someone does the sweep: mark dark sections with
+   a class, then remap globally with `.on-dark .text-icon-* { color: <raw> }`
+   overriding it. Marking the sections is the actual work. */
+
+/* Large text only — 24px+, or 18.66px+ bold. Opt in by hand; these clear 3:1,
+   not 4.5:1, and are illegal on body copy. All calibrated on white — see above
+   before using one on a dark band. */
+@utility text-icon-lime-display   { color: var(--icon-lime-display); }
+@utility text-icon-green-display  { color: var(--icon-green-display); }
+@utility text-icon-teal-display   { color: var(--icon-teal-display); }
+@utility text-icon-yellow-display { color: var(--icon-yellow-display); }
+@utility text-icon-orange-display { color: var(--icon-orange-display); }
 
 /* Force true white across all primary surfaces — overrides any CSS variable drift */
 html, body, main {
