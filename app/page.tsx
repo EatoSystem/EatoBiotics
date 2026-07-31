@@ -31,7 +31,6 @@ import { HowItWorks } from "@/components/home/how-it-works"
 import { DigitalTwinSection } from "@/components/home/digital-twin-section"
 import { EatoxMissionSection } from "@/components/home/eatox-mission-section"
 import { ScorePreview } from "@/components/home/score-preview"
-import { GlobalDirection } from "@/components/home/global-direction"
 import { MembershipTeaser } from "@/components/home/membership-teaser"
 import { ClosingCta } from "@/components/home/closing-cta"
 
@@ -53,19 +52,21 @@ export default async function Home() {
 
   return (
     <>
-      {/* Seven sections, in the order #177 and #178 independently arrived at:
-          the score and the global/local difference move above the fold, the
-          platform explanation moves below it, and the tail is one block.
+      {/* Eight sections, built on the order #177 and #178 independently arrived
+          at: the score moves above the fold, the platform explanation below it,
+          and the tail is one block. Two changes since: EatoX (#188) was added
+          before the tail, and the global/local section was dropped.
 
-          PowersEverything and Ecosystem are dropped from the homepage — both
-          still render on /c/[country] and /enter, so they leave this page, not
-          the codebase. */}
+          PowersEverything, Ecosystem and GlobalDirection are all off the
+          homepage but still render on /c/[country] and /enter — they left this
+          page, not the codebase. */}
       <Suspense fallback={null}><Hero /></Suspense>
       <SoftDivider />
       <HowItWorks />
       <ScorePreview />
-      <SoftDivider />
-      <GlobalDirection />
+      {/* One divider, not two: GlobalDirection sat between these with a divider
+          on each side, and keeping both would stack two rules with nothing in
+          between. It still renders on /enter, so the component stays. */}
       <SoftDivider />
       <FeedSeedHeal />
       <DigitalTwinSection />
