@@ -1,7 +1,6 @@
 import Image from "next/image"
 import { ChefHat, Camera, FlaskConical, Landmark, Users, MapPin } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
-import { Eyebrow, Section, SectionHeading } from "./section-shared"
 
 /**
  * Homepage section — the EatoX mission.
@@ -12,53 +11,56 @@ import { Eyebrow, Section, SectionHeading } from "./section-shared"
  * pricing asks for anything. Above the product explanation it would be a
  * non-sequitur; after pricing nobody reads it.
  *
- * ── The image carries this section ───────────────────────────────────────────
+ * ── Why this is the page's one dark band ─────────────────────────────────────
  *
- * The first version used an abstract SVG motif, because no clean render existed.
- * It was correct about the narrative position and too quiet to hold it — an
- * ambition this size needs to look real, not diagrammatic. The concept render
- * replaced it.
+ * The concept renders are dark twilight and the homepage is warm white. An
+ * earlier pass tried to manage that with framing; adopting it works better. The
+ * site already has the idiom — /you, /family, /book and /biotics all carry
+ * bg-foreground bands — and giving the page a single dark moment exactly where
+ * the story turns outward is what stops this section reading as a quiet
+ * footnote. It is the mission, so it should feel like a pause.
  *
- * Sized with `fill` inside an aspect-[4/3] box and `object-cover` rather than
- * fixed width/height: at a matching ratio that crops nothing, which is what
- * keeps the entrance, the public space and the human scale in frame. Those three
- * are the whole argument of the picture — a tighter crop of just the building
- * would make it architecture rather than a place people go.
+ * The renders do the arguing. The exterior establishes that EatoX is a place;
+ * Kitchen, Studio and Lab put the actual room inside each of the three cards,
+ * which previously carried an icon and a line of text. The exterior's KITCHEN /
+ * STUDIO / LAB signage is not duplication — it previews the three cards
+ * directly beneath it.
  *
- * The caption and the alt text both say what this is. "Concept vision" is
- * visible; "a proposed public-facing" is in the alt, so the conceptual status
- * reaches the accessibility tree too and does not live only in sighted copy.
+ * A fifth render (the lobby) was supplied and deliberately not used: its wall
+ * screen carries garbled generated text and the wordmark is malformed, which is
+ * legible at homepage scale and works against the credibility this section is
+ * trying to build.
  *
- * ── No CTA, and it was asked for ─────────────────────────────────────────────
+ * ── Contrast on dark, measured ───────────────────────────────────────────────
  *
- * A "Discover EatoX" CTA was requested and deliberately left out: /eatox does
- * not exist. Pointing it at /eatosystem would send people somewhere that is not
- * about EatoX, and inventing a thin route to catch one link is worse. This is a
- * decision, not an oversight — add the CTA when the destination is real. The
- * page already carries its primary assessment CTA elsewhere, so a second one
- * here would compete with it regardless.
+ *   text-background (white)   14.55:1
+ *   text-background/70         7.87:1     ← body copy
+ *   text-background/50         4.76:1     margin too thin
+ *   text-background/40         3.58:1     FAILS
+ *
+ * So: solid white for headings, /70 for body, never /50 or below. The
+ * alpha-reduced light text on /book, /books, /weekly, /about and /start is
+ * precisely what makes up the known dark-ground violations; this section must
+ * not add to them.
+ *
+ * Brand hues all pass on --foreground (lime 9.36, green 5.61, teal 4.91,
+ * yellow 8.92, orange 7.18), so accents use the raw hues here — NOT the -text
+ * or -display tokens, which are calibrated for white grounds and invert on
+ * dark. text-icon-* is safe because #187's `.bg-foreground .text-icon-*`
+ * override restores the raw hue inside exactly this kind of band.
  *
  * ── Claims ───────────────────────────────────────────────────────────────────
  *
- * Every future-state phrase here is deliberate. "We intend to reinvest", not
- * "we reinvest". "Are intended for", not "are dedicated to". Nothing implies
- * land, planning permission, funding or a construction timetable, because none
- * of that exists — the status strip says Concept development for the same
- * reason. Treat this copy the way lib/pillars.ts treats the biotics vocabulary:
- * it is the wording that was signed off, so change it deliberately or not at
- * all.
+ * Every future-state phrase is deliberate. "We intend to reinvest", not "we
+ * reinvest". "Are intended for", not "are dedicated to". Nothing implies land,
+ * planning permission, funding or a build timetable, because none of that
+ * exists — the status strip says Concept development for the same reason, and
+ * each alt text says "proposed". Change this wording deliberately or not at all.
  *
- * ── Contrast ─────────────────────────────────────────────────────────────────
- *
- * Brand colour reaches text only through text-icon-* (remapped to the AA-safe
- * --icon-*-text variants in #187) or those tokens directly. Raw hues appear
- * only on gradient bars, borders and icon glyphs, which are not text.
- *
- * Note what is NOT copied from feed-seed-heal.tsx: its tint pill sets text to
- * `color-mix(in srgb, <hue> 78%, var(--foreground))` on a 15% tint, which axe
- * measures at 3.49:1 — a known failure awaiting the contrast sweep. The pills
- * here keep the shape and take an AA-safe colour instead, so this section does
- * not add to that backlog.
+ * A "Discover EatoX" CTA was requested and left out: /eatox does not exist,
+ * pointing it at /eatosystem would send people somewhere that is not about
+ * EatoX, and a thin route invented to catch one link is worse. A decision, not
+ * an oversight.
  *
  * Server component.
  */
@@ -68,25 +70,28 @@ const PLACES = [
     Icon: ChefHat,
     title: "Kitchen",
     line: "Create, test, and share better food.",
-    hue: "var(--icon-green)",
-    text: "var(--icon-green-text)",
-    to: "var(--icon-teal)",
+    hue: "var(--icon-lime)",
+    to: "var(--icon-green)",
+    image: "/images/eatox/eatox-kitchen.webp",
+    alt: "Concept illustration of the proposed EatoX Kitchen — a long counter with induction hobs and prepared dishes, open to a window wall at dusk.",
   },
   {
     Icon: Camera,
     title: "Studio",
     line: "Capture and share the stories of the system.",
-    hue: "var(--icon-orange)",
-    text: "var(--icon-orange-text)",
-    to: "var(--icon-yellow)",
+    hue: "var(--icon-yellow)",
+    to: "var(--icon-orange)",
+    image: "/images/eatox/eatox-studio.webp",
+    alt: "Concept illustration of the proposed EatoX Studio — editing desks with food photography on screen, beside a lit shooting set.",
   },
   {
     Icon: FlaskConical,
     title: "Lab",
     line: "Develop ideas, tools, and future food-system solutions.",
     hue: "var(--icon-teal)",
-    text: "var(--icon-teal-text)",
     to: "var(--icon-green)",
+    image: "/images/eatox/eatox-lab.webp",
+    alt: "Concept illustration of the proposed EatoX Lab — people working around shared tables under suspended data screens.",
   },
 ]
 
@@ -96,191 +101,187 @@ const STATUS = [
   { Icon: MapPin, label: "Location", value: "Dublin, Ireland" },
 ]
 
-/**
- * The concept render. Not decorative — it is the section's argument, so it takes
- * real alt text rather than aria-hidden.
- *
- * fill + aspect-[4/3] + object-cover: the committed asset's exact intrinsic size
- * is not fixed here, and at a matching ratio object-cover crops nothing. That
- * keeps the entrance, the plaza and the people in frame, which is the point of
- * the picture.
- *
- * w-full on the figure is load-bearing: its parent is a centred flex column,
- * which sizes children to their content, so without it the aspect box collapses
- * and the render shrinks to a 232px thumbnail.
- */
-function ConceptImage() {
-  return (
-    <figure className="m-0 w-full">
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border bg-muted shadow-[0_30px_60px_-30px_rgba(20,37,15,0.35)]">
-        <Image
-          src="/images/eatox/eatox-dublin-concept.webp"
-          alt="Concept illustration of EatoX Dublin, a proposed public-facing Kitchen, Studio and Lab with curved architecture, greenery, and people gathering outside."
-          fill
-          sizes="(max-width: 1024px) 100vw, 620px"
-          className="object-cover"
-        />
-        <div
-          aria-hidden
-          className="absolute left-0 right-0 top-0 h-1.5"
-          style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-orange))" }}
-        />
-      </div>
-      <figcaption className="mt-3 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-        Concept vision — EatoX Dublin
-      </figcaption>
-    </figure>
-  )
-}
-
 export function EatoxMissionSection() {
   return (
-    <Section id="eatox">
-      <ScrollReveal>
-        <div className="max-w-3xl">
-          <Eyebrow>A bigger mission. Together.</Eyebrow>
-          <SectionHeading>
-            Build the food system{" "}
-            <span style={{ color: "var(--icon-green-display)" }}>inside you</span> — and help
-            build the food system{" "}
-            <span style={{ color: "var(--icon-orange-display)" }}>around you</span>.
-          </SectionHeading>
-        </div>
-      </ScrollReveal>
-
-      {/* Image column is the wider of the two: the render is what makes EatoX
-          feel like a real place, so it leads and the copy supports it. */}
-      <div className="mt-14 grid items-start gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
+    <section id="eatox" className="scroll-mt-28 bg-foreground px-6 py-24 md:py-32">
+      <div className="mx-auto max-w-[1200px]">
         <ScrollReveal>
-          <div className="lg:pt-6">
-            <p className="text-lg leading-relaxed text-muted-foreground">
-              EatoBiotics helps you improve your health, diet, and the Food System Inside You.
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-widest text-icon-lime">
+              A bigger mission. Together.
             </p>
-            <div
-              className="mt-7 h-1 w-20 rounded-full"
-              style={{ background: "linear-gradient(90deg, var(--icon-green), var(--icon-orange))" }}
-            />
-            <p className="mt-7 text-lg leading-relaxed text-foreground">
-              We intend to reinvest 50% of annual distributable profits into building EatoX in
-              Dublin — the Kitchen, Studio &amp; Lab at the heart of the EatoSystem.
-            </p>
+            <h2 className="mt-4 font-serif text-4xl font-semibold text-background sm:text-5xl text-balance">
+              Build the food system{" "}
+              <span style={{ color: "var(--icon-lime)" }}>inside you</span> — and help build the
+              food system <span style={{ color: "var(--icon-orange)" }}>around you</span>.
+            </h2>
           </div>
         </ScrollReveal>
 
-        <ScrollReveal delay={120}>
-          <div className="flex flex-col items-center">
-            <ConceptImage />
-            <h3 className="mt-8 font-serif text-5xl font-semibold text-foreground sm:text-6xl">
-              EatoX
-            </h3>
-            <p className="mt-2 font-serif text-xl">
-              <span style={{ color: "var(--icon-green-text)" }}>Kitchen</span>
-              <span className="text-muted-foreground">, </span>
-              <span style={{ color: "var(--icon-orange-text)" }}>Studio</span>
-              <span className="text-muted-foreground"> &amp; </span>
-              <span style={{ color: "var(--icon-teal-text)" }}>Lab</span>
-            </p>
-            <p className="mt-4 max-w-md text-center text-base leading-relaxed text-muted-foreground">
-              A place where chefs, scientists, creators, communities, and developers come
-              together to build better food systems.
-            </p>
-            <p className="mt-3 max-w-md text-center text-sm leading-relaxed text-muted-foreground">
-              The headquarters of the EatoSystem — where food is created, stories are told, and
-              the future of the food system is built.
-            </p>
-          </div>
-        </ScrollReveal>
-      </div>
-
-      <div className="mt-14 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
-        {/* Commitment. Deliberately not a ring: the Biotics Score already owns
-            that shape, and this is a pledge, not a measurement. */}
-        <ScrollReveal>
-          <div className="relative h-full overflow-hidden rounded-2xl border border-border bg-background p-7">
-            <div
-              className="absolute left-0 right-0 top-0 h-1.5"
-              style={{ background: "linear-gradient(90deg, var(--icon-green), var(--icon-orange))" }}
-            />
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-              Our commitment
-            </p>
-            <p
-              className="mt-3 font-sans text-6xl font-bold leading-none tracking-tight"
-              style={{ color: "var(--icon-green-display)" }}
-            >
-              50%
-            </p>
-            <div className="mt-5 h-2.5 w-full overflow-hidden rounded-full bg-muted">
+        {/* The exterior leads: it establishes that EatoX is a place, and its
+            signage previews the three rooms in the cards below. */}
+        <ScrollReveal delay={80}>
+          <figure className="m-0 mt-12">
+            <div className="relative aspect-[3/2] w-full overflow-hidden rounded-2xl border border-white/15">
+              <Image
+                src="/images/eatox/eatox-exterior.webp"
+                alt="Concept illustration of EatoX Dublin, a proposed public-facing Kitchen, Studio and Lab with curved architecture, greenery, and people gathering outside."
+                fill
+                sizes="(max-width: 1024px) 100vw, 1160px"
+                className="object-cover"
+                priority={false}
+              />
               <div
-                className="h-full w-1/2 rounded-full"
-                style={{ background: "linear-gradient(90deg, var(--icon-green), var(--icon-orange))" }}
+                aria-hidden
+                className="absolute left-0 right-0 top-0 h-1.5"
+                style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-orange))" }}
               />
             </div>
-            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-              50% of annual distributable profits are intended for building EatoX.
-            </p>
-          </div>
+            <figcaption className="mt-3 text-center text-xs font-semibold uppercase tracking-widest text-background/70">
+              Concept vision — EatoX Dublin
+            </figcaption>
+          </figure>
         </ScrollReveal>
 
-        <ScrollReveal delay={100}>
-          <div className="grid h-full gap-4 rounded-2xl border border-border bg-background p-7 sm:grid-cols-3">
-            {STATUS.map(({ Icon, label, value }) => (
-              <div key={label} className="flex items-start gap-3">
-                <span
-                  className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-                  style={{
-                    background: "color-mix(in srgb, var(--icon-green) 12%, transparent)",
-                    color: "var(--icon-green)",
-                  }}
-                >
-                  <Icon size={17} aria-hidden strokeWidth={2} />
-                </span>
-                <span>
-                  <span className="block text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                    {label}
-                  </span>
-                  <span className="mt-1 block text-sm font-semibold leading-snug text-foreground">
-                    {value}
-                  </span>
-                </span>
-              </div>
-            ))}
-          </div>
-        </ScrollReveal>
-      </div>
-
-      <div className="mt-8 grid gap-6 md:grid-cols-3 md:gap-8">
-        {PLACES.map(({ Icon, title, line, hue, text, to }, i) => (
-          <ScrollReveal key={title} delay={i * 120}>
-            <div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-background p-7 transition-all hover:shadow-lg">
-              <div
-                className="absolute left-0 right-0 top-0 h-1.5"
-                style={{ background: `linear-gradient(90deg, ${hue}, ${to})` }}
-              />
-              <span
-                className="flex h-11 w-11 items-center justify-center rounded-xl"
-                style={{
-                  background: `color-mix(in srgb, ${hue} 12%, transparent)`,
-                  color: hue,
-                }}
-              >
-                <Icon size={21} aria-hidden strokeWidth={2} />
-              </span>
-              <h3 className="mt-5 font-serif text-2xl font-semibold" style={{ color: text }}>
-                {title}
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{line}</p>
+        <div className="mt-14 grid items-start gap-12 lg:grid-cols-2 lg:gap-16">
+          <ScrollReveal>
+            <div>
+              <h3 className="font-serif text-4xl font-semibold text-background sm:text-5xl">EatoX</h3>
+              <p className="mt-2 font-serif text-xl">
+                <span style={{ color: "var(--icon-lime)" }}>Kitchen</span>
+                <span className="text-background/70">, </span>
+                <span style={{ color: "var(--icon-orange)" }}>Studio</span>
+                <span className="text-background/70"> &amp; </span>
+                <span style={{ color: "var(--icon-teal)" }}>Lab</span>
+              </p>
+              <p className="mt-5 text-base leading-relaxed text-background/70">
+                A place where chefs, scientists, creators, communities, and developers come
+                together to build better food systems.
+              </p>
+              <p className="mt-3 text-sm leading-relaxed text-background/70">
+                The headquarters of the EatoSystem — where food is created, stories are told, and
+                the future of the food system is built.
+              </p>
             </div>
           </ScrollReveal>
-        ))}
-      </div>
 
-      <ScrollReveal delay={120}>
-        <p className="mt-14 text-center font-serif text-2xl font-semibold text-foreground sm:text-3xl">
-          Built with <span style={{ color: "var(--icon-green-display)" }}>people</span>, not just
-          for <span style={{ color: "var(--icon-orange-display)" }}>them</span>.
-        </p>
-      </ScrollReveal>
-    </Section>
+          <ScrollReveal delay={100}>
+            <div>
+              <p className="text-base leading-relaxed text-background/70">
+                EatoBiotics helps you improve your health, diet, and the Food System Inside You.
+              </p>
+              <div
+                className="mt-6 h-1 w-20 rounded-full"
+                style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-orange))" }}
+              />
+              <p className="mt-6 text-lg leading-relaxed text-background">
+                We intend to reinvest 50% of annual distributable profits into building EatoX in
+                Dublin — the Kitchen, Studio &amp; Lab at the heart of the EatoSystem.
+              </p>
+            </div>
+          </ScrollReveal>
+        </div>
+
+        <div className="mt-12 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
+          {/* Commitment. Deliberately not a ring: the Biotics Score already owns
+              that shape, and this is a pledge, not a measurement. */}
+          <ScrollReveal>
+            <div className="relative h-full overflow-hidden rounded-2xl border border-white/15 bg-white/[0.04] p-7">
+              <div
+                className="absolute left-0 right-0 top-0 h-1.5"
+                style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-orange))" }}
+              />
+              <p className="text-xs font-bold uppercase tracking-widest text-background/70">
+                Our commitment
+              </p>
+              <p
+                className="mt-3 font-sans text-6xl font-bold leading-none tracking-tight"
+                style={{ color: "var(--icon-lime)" }}
+              >
+                50%
+              </p>
+              <div className="mt-5 h-2.5 w-full overflow-hidden rounded-full bg-white/15">
+                <div
+                  className="h-full w-1/2 rounded-full"
+                  style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-orange))" }}
+                />
+              </div>
+              <p className="mt-4 text-sm leading-relaxed text-background/70">
+                50% of annual distributable profits are intended for building EatoX.
+              </p>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal delay={100}>
+            {/* content-center matters: this card is stretched to the commitment
+                card's height, and without it the three items pin to the top and
+                leave a visible empty half. */}
+            <div className="grid h-full content-center gap-4 rounded-2xl border border-white/15 bg-white/[0.04] p-7 sm:grid-cols-3">
+              {STATUS.map(({ Icon, label, value }) => (
+                <div key={label} className="flex items-start gap-3">
+                  <span
+                    className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10"
+                    style={{ color: "var(--icon-lime)" }}
+                  >
+                    <Icon size={17} aria-hidden strokeWidth={2} />
+                  </span>
+                  <span>
+                    <span className="block text-xs font-bold uppercase tracking-widest text-background/70">
+                      {label}
+                    </span>
+                    <span className="mt-1 block text-sm font-semibold leading-snug text-background">
+                      {value}
+                    </span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </ScrollReveal>
+        </div>
+
+        {/* Each room gets its own render. This is what turns three icon cards
+            into three places. */}
+        <div className="mt-8 grid gap-6 md:grid-cols-3 md:gap-8">
+          {PLACES.map(({ Icon, title, line, hue, to, image, alt }, i) => (
+            <ScrollReveal key={title} delay={i * 120}>
+              <div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/15 bg-white/[0.04]">
+                <div
+                  className="absolute left-0 right-0 top-0 z-10 h-1.5"
+                  style={{ background: `linear-gradient(90deg, ${hue}, ${to})` }}
+                />
+                <div className="relative aspect-[3/2] w-full overflow-hidden">
+                  <Image
+                    src={image}
+                    alt={alt}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 370px"
+                    className="object-cover"
+                  />
+                </div>
+                <div className="flex flex-1 flex-col p-7">
+                  <span
+                    className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10"
+                    style={{ color: hue }}
+                  >
+                    <Icon size={21} aria-hidden strokeWidth={2} />
+                  </span>
+                  <h3 className="mt-5 font-serif text-2xl font-semibold" style={{ color: hue }}>
+                    {title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-background/70">{line}</p>
+                </div>
+              </div>
+            </ScrollReveal>
+          ))}
+        </div>
+
+        <ScrollReveal delay={120}>
+          <p className="mt-14 text-center font-serif text-2xl font-semibold text-background sm:text-3xl">
+            Built with <span style={{ color: "var(--icon-lime)" }}>people</span>, not just for{" "}
+            <span style={{ color: "var(--icon-orange)" }}>them</span>.
+          </p>
+        </ScrollReveal>
+      </div>
+    </section>
   )
 }
