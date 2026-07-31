@@ -3,6 +3,12 @@
 > **Provenance.** Recreated in-repo from the text pasted into the Claude Code
 > session of 2026-07-31, not copied from a local working file. If the original
 > has been edited since, diff before treating this as authoritative.
+>
+> That risk has already materialised once: the first commit of this file opened
+> with a paragraph belonging to a different task ("Please make a focused update
+> to the current homepage only…"), which contradicted the whole document. It was
+> caught by diffing against the original and removed. Worth re-checking the rest
+> against your copy rather than assuming this one is faithful.
 
 Use this prompt in Claude Code.
 
@@ -11,12 +17,6 @@ Required attachment/context file:
 - `docs/assessment-report-improvement-brief-for-claude.md`
 
 ## Prompt
-
-You are working in the existing **EatoBiotics repository**.
-
-Please make a focused update to the current homepage only. Do not redesign unrelated
-sections and do not alter the underlying assessment flow unless required to preserve
-the existing destination.
 
 You are working in the EatoBiotics repo. Your task is to upgrade the assessment
 and report experience so it becomes a premium, highly educational Food System
