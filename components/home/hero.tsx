@@ -60,40 +60,53 @@ export function Hero() {
             </p>
           </ScrollReveal>
 
+          {/* One action, not two. This previously offered "Analyse a Meal Free"
+              (→ /analyse) beside "Get My Food System Score" (→ /assessment),
+              which left the hero with no dominant next step and led with the
+              tool rather than the thing the rest of the page is about.
+
+              /assessment is unchanged — it was already the second button's
+              target and is where every other "Understand My Food System" on the
+              site points (nav, score-preview, closing-cta, how-it-works,
+              start/sticky-cta, method). It renders the You/Family chooser.
+
+              The arrow is an aria-hidden icon, not a literal "→": the accessible
+              name has to be exactly "Understand My Food System", and a literal
+              arrow glyph inside the link text gets announced by several screen
+              readers. */}
           <ScrollReveal delay={200}>
             <div className="mt-8">
-              <div className="flex flex-wrap items-center gap-4">
-                <Link
-                  href="/analyse"
-                  className="brand-gradient inline-flex items-center gap-2.5 rounded-full px-10 py-5 text-lg font-semibold text-white shadow-xl shadow-icon-green/25 transition-all hover:shadow-2xl hover:shadow-icon-green/35 hover:opacity-90"
-                >
-                  Analyse a Meal Free <ArrowRight size={18} />
-                </Link>
-                <Link
-                  href="/assessment"
-                  className="inline-flex w-fit items-center gap-1.5 rounded-full border border-icon-green/30 bg-icon-green/5 px-6 py-4 text-base font-semibold text-icon-green transition-all hover:border-icon-green/50 hover:bg-icon-green/10"
-                >
-                  Get My Food System Score
-                </Link>
-              </div>
-              <p className="mt-3.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-muted-foreground">
-                <span>Scan a meal in ~30 seconds — no account needed.</span>
-                <a href="#how-it-works" className="underline decoration-icon-green/40 underline-offset-2 hover:text-foreground">
-                  See how it works
-                </a>
+              <Link
+                href="/assessment"
+                className="brand-gradient inline-flex items-center gap-2.5 rounded-full px-10 py-5 text-lg font-semibold text-white shadow-xl shadow-icon-green/25 transition-all hover:shadow-2xl hover:shadow-icon-green/35 hover:opacity-90"
+              >
+                Understand My Food System <ArrowRight size={20} aria-hidden />
+              </Link>
+              <p className="mt-3.5 text-base leading-relaxed text-muted-foreground">
+                Begin with your personal assessment.
               </p>
             </div>
           </ScrollReveal>
 
+          {/* Credibility, not a feature list. The three terms are deliberately
+              one colour: tinting them with the lime/teal/orange pillar hues
+              would draw a one-to-one Feed = Prebiotics mapping, and Regenerate
+              is defined in feed-seed-heal.tsx as rhythm, pace and rest rather
+              than as postbiotic foods. The dots are decorative elements, not
+              text, so they carry no contrast obligation and screen readers read
+              the three terms in order with nothing between them. */}
           <ScrollReveal delay={320}>
-            <div className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm font-medium text-muted-foreground">
-              <span>Built on the 3 Biotics</span>
-              <span className="h-1 w-1 rounded-full bg-border" />
-              <span>Prebiotics</span>
-              <span className="h-1 w-1 rounded-full bg-border" />
-              <span>Probiotics</span>
-              <span className="h-1 w-1 rounded-full bg-border" />
-              <span>Postbiotics</span>
+            <div className="mt-8">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Built on the 3 Biotics
+              </p>
+              <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-sm font-medium text-foreground">
+                <span>Prebiotics</span>
+                <span aria-hidden className="h-1 w-1 shrink-0 rounded-full bg-border" />
+                <span>Probiotics</span>
+                <span aria-hidden className="h-1 w-1 shrink-0 rounded-full bg-border" />
+                <span>Postbiotics</span>
+              </div>
             </div>
             <WaitlistSocialProof />
           </ScrollReveal>
