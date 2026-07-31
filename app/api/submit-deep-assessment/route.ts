@@ -445,8 +445,10 @@ export async function POST(req: NextRequest) {
         tier: pdfTier,
         leadName,
         generatedAt: new Date().toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" }),
+        // subScores is no longer cast: ReportPDFProps now accepts the shapes the
+        // assessments actually emit, so this argument is type-checked.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        freeScores: { overall, subScores: subScores as any, profile: profile as any },
+        freeScores: { overall, subScores, profile: profile as any },
         report,
       })
       pdfStatus = "generated"

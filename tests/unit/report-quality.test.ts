@@ -12,6 +12,16 @@ const root = process.cwd()
 const read = (p: string) => readFileSync(join(root, p), "utf8")
 
 /**
+ * Source with comments stripped. Assertions about what the code *does* must not
+ * trip over prose that explains what it used to do — several of these fixes
+ * document the bug they removed, and that documentation is worth keeping.
+ */
+const readCode = (p: string) =>
+  read(p)
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "")
+
+/**
  * Guards for the report quality regressions fixed alongside these tests.
  * Each one failed before the fix — they are not decoration.
  */
@@ -242,5 +252,140 @@ describe("family household context", () => {
     const shaped = computeResult(scored, { pickyEating: 0, budget: 0, cookingTime: 0 })
     expect(shaped.overall).toBe(plain.overall)
     expect(shaped.subScores).toEqual(plain.subScores)
+  })
+})
+
+/* ── 6. Legacy pillar keys must not reach report surfaces ─────────────
+ * Phase 1 fixed this in /api/generate-report but the same mistake existed in
+ * two more places. Both are the same root cause: code keyed on the five legacy
+ * pillars that the You assessment stopped producing. */
+describe("no surface is still keyed on the legacy five pillars", () => {
+  const youAnswers: Record<string, number> = {}
+  for (let i = 1; i <= 15; i++) youAnswers[`q${i}`] = 2
+  const youScores = computeSubScores(youAnswers)
+
+  const familyAnswers: Record<string, number> = {}
+  for (const q of FAMILY_QUESTIONS) familyAnswers[q.id] = 2
+  const familyScores = computeResult(familyAnswers).subScores
+
+  it("normalizes both flows to three real pathways", async () => {
+    const { normalizeToBiotics } = await import("@/lib/report/subscores")
+    for (const [name, scores] of [
+      ["you", youScores],
+      ["family", familyScores],
+    ] as const) {
+      const biotics = normalizeToBiotics(scores)
+      expect(biotics, name).not.toBeNull()
+      for (const v of Object.values(biotics!)) {
+        expect(Number.isFinite(v), name).toBe(true)
+      }
+    }
+  })
+
+  it("the paid PDF score panel labels every row, for both flows", async () => {
+    // Walks the rendered element tree rather than grepping source or the PDF
+    // bytes: react-pdf hex-encodes text with subset fonts, so searching the
+    // output for "Prebiotics" always misses and would pass a broken panel.
+    const React = (await import("react")).default
+    const { ReportPDF } = await import("@/lib/pdf/report-pdf")
+
+    const strings = (node: unknown, acc: string[] = []): string[] => {
+      if (node == null || typeof node === "boolean") return acc
+      if (typeof node === "string" || typeof node === "number") {
+        acc.push(String(node))
+        return acc
+      }
+      if (Array.isArray(node)) {
+        node.forEach((n) => strings(n, acc))
+        return acc
+      }
+      const el = node as { type?: unknown; props?: { children?: unknown } }
+      if (el.props?.children !== undefined) strings(el.props.children, acc)
+      if (typeof el.type === "function") {
+        try {
+          strings((el.type as (p: unknown) => unknown)(el.props), acc)
+        } catch {
+          /* component needs a render context; its children are covered above */
+        }
+      }
+      return acc
+    }
+
+    for (const [flow, sub] of [
+      ["you", youScores],
+      ["family", familyScores],
+    ] as const) {
+      const overall = computeOverall(sub)
+      const profile = getProfile(overall, sub)
+      const report = buildFallbackPaidReport({
+        tier: "starter",
+        overall,
+        subScores: sub,
+        profile,
+        answers: {},
+        questions: [],
+      } as never)
+      const rendered = strings(
+        React.createElement(ReportPDF, {
+          tier: "starter",
+          leadName: "T",
+          generatedAt: "1 Aug",
+          freeScores: { overall, subScores: sub, profile },
+          report,
+        } as never),
+      )
+
+      expect(rendered, flow).toContain("Your 3 Biotics")
+      expect(rendered, flow).toContain("Prebiotics")
+      expect(rendered, flow).toContain("Probiotics")
+      expect(rendered, flow).toContain("Postbiotics")
+      expect(rendered, flow).not.toContain("Your 5 Pillars")
+      // The symptom of the bug: rows whose label resolved to undefined.
+      expect(rendered.some((v) => v.includes("undefined")), flow).toBe(false)
+    }
+  })
+
+  it("the paid PDF source no longer keys on legacy pillars", async () => {
+    // The panel used to Object.entries() the raw sub-scores and look each key up
+    // in maps covering only the legacy five. You-flow data has six keys, none of
+    // them present, so it rendered six rows with undefined label and colour
+    // under a heading reading "Your 5 Pillars".
+    const src = readCode("lib/pdf/report-pdf.tsx")
+    expect(src).not.toContain("Your 5 Pillars")
+    expect(src).not.toMatch(/Object\.entries\(subScores\)/)
+    // Labels must come from the shared pathway map, not a local legacy one.
+    expect(src).not.toMatch(/PILLAR_LABELS\s*[:=]/)
+    expect(src).toContain("normalizeToBiotics")
+  })
+
+  it("food swaps differ by pathway instead of always returning 'feeding'", async () => {
+    // deepDives[0].pillar is always feed | seed | heal, but FOOD_SWAPS was keyed
+    // diversity | feeding | adding | consistency | feeling, so the lookup never
+    // hit and the ?? FOOD_SWAPS.feeding fallback fired on every single request.
+    const { swapsForPathway, FOOD_SWAP_KEYS_FOR_PATHWAY } = await import(
+      "@/lib/report/food-swaps"
+    )
+    const feed = swapsForPathway("feed")
+    const seed = swapsForPathway("seed")
+    const heal = swapsForPathway("heal")
+
+    for (const [name, set] of [["feed", feed], ["seed", seed], ["heal", heal]] as const) {
+      expect(set.length, name).toBeGreaterThan(0)
+    }
+    // The assertion that fails on 4f5b482: all three were identical.
+    expect(feed).not.toEqual(seed)
+    expect(seed).not.toEqual(heal)
+    expect(feed).not.toEqual(heal)
+
+    // Canonical names resolve the same as the aliases.
+    expect(swapsForPathway("prebiotics")).toEqual(feed)
+    expect(swapsForPathway("probiotics")).toEqual(seed)
+    expect(swapsForPathway("postbiotics")).toEqual(heal)
+
+    // Every authored swap set stays reachable — 20 of 25 were dead before.
+    const reachable = new Set<string>(Object.values(FOOD_SWAP_KEYS_FOR_PATHWAY).flat())
+    for (const key of ["diversity", "feeding", "adding", "consistency", "feeling"]) {
+      expect(reachable.has(key), key).toBe(true)
+    }
   })
 })

@@ -5,38 +5,16 @@
  * files may only export HTTP handlers, and the `undefined/100` regression this
  * fixes is exactly the kind of bug a test on the built prompt would have caught.
  */
-/**
- * Incoming sub-scores, in any shape this app has ever produced.
- *
- * This route used to type `subScores` as the five legacy pillars and interpolate
- * all five into the prompt. The You assessment stopped producing them:
- * `computeSubScores` (lib/assessment-scoring.ts) returns only the 3-Biotics keys
- * plus the feed/seed/heal aliases, and the legacy five are optional on the
- * interface and never assigned. The free full report was therefore sending
- * Claude five literal "undefined/100" lines on every request, and
- * `getWeakestAndStrongest` was sorting on undefined (a[1]-b[1] → NaN), so the
- * weakest and strongest pillars were arbitrary too.
- *
- * Everything is now normalized to the three canonical pathways before the
- * prompt is built, and a score that cannot be resolved fails the request rather
- * than reaching Claude as "undefined".
- */
-export type IncomingSubScores = {
-  prebiotics?: number
-  probiotics?: number
-  postbiotics?: number
-  feed?: number
-  seed?: number
-  heal?: number
-  // Legacy five, still sent by the Family flow.
-  diversity?: number
-  feeding?: number
-  adding?: number
-  consistency?: number
-  feeling?: number
-}
+import {
+  normalizeToBiotics,
+  orderedByNeed,
+  PATHWAY_LABEL,
+  type BioticScores,
+  type IncomingSubScores,
+} from "./subscores"
 
-export type BioticScores = { prebiotics: number; probiotics: number; postbiotics: number }
+export { normalizeToBiotics }
+export type { BioticScores, IncomingSubScores }
 
 export type RequestBody = {
   tier: "starter" | "full" | "premium"
@@ -45,51 +23,11 @@ export type RequestBody = {
   profile: { type: string; tagline: string; description: string }
 }
 
-const PATHWAY_LABEL: Record<keyof BioticScores, string> = {
-  prebiotics: "Prebiotics",
-  probiotics: "Probiotics",
-  postbiotics: "Postbiotics",
-}
-
-/**
- * Canonical key first, then the feed/seed/heal alias — the same precedence
- * lib/assessment-scoring.ts uses. Returns null when neither is a real number so
- * the caller can fail closed instead of interpolating undefined.
- */
-export function normalizeToBiotics(sub: IncomingSubScores): BioticScores | null {
-  const pick = (canonical?: number, alias?: number): number | null => {
-    const v = canonical ?? alias
-    return typeof v === "number" && Number.isFinite(v) ? v : null
-  }
-  const prebiotics = pick(sub.prebiotics, sub.feed)
-  const probiotics = pick(sub.probiotics, sub.seed)
-  const postbiotics = pick(sub.postbiotics, sub.heal)
-  if (prebiotics === null || probiotics === null || postbiotics === null) return null
-  return { prebiotics, probiotics, postbiotics }
-}
-
-function getWeakestAndStrongest(sub: BioticScores): {
-  weakest: string
-  weakestScore: number
-  strongest: string
-  strongestScore: number
-} {
-  const entries = Object.entries(sub) as [keyof BioticScores, number][]
-  entries.sort((a, b) => a[1] - b[1])
-  const [weakKey, weakScore] = entries[0]
-  const [strongKey, strongScore] = entries[entries.length - 1]
-  return {
-    weakest: PATHWAY_LABEL[weakKey],
-    weakestScore: weakScore,
-    strongest: PATHWAY_LABEL[strongKey],
-    strongestScore: strongScore,
-  }
-}
-
 export function buildPrompt(body: RequestBody, biotics: BioticScores): string {
   const { tier, overall, profile } = body
-  const { weakest, weakestScore, strongest, strongestScore } =
-    getWeakestAndStrongest(biotics)
+  const ranked = orderedByNeed(biotics)
+  const [weakestKey, weakestScore] = ranked[0]
+  const [strongestKey, strongestScore] = ranked[ranked.length - 1]
 
   const scoreBlock = `
 THEIR ASSESSMENT SCORES:
@@ -101,8 +39,8 @@ Pillar scores (3 Biotics):
 - Prebiotics (what feeds their microbes): ${biotics.prebiotics}/100
 - Probiotics (live-culture exposure): ${biotics.probiotics}/100
 - Postbiotics (recovery, rhythm, resilience): ${biotics.postbiotics}/100
-- Weakest pathway: ${weakest} (${weakestScore}/100)
-- Strongest pathway: ${strongest} (${strongestScore}/100)`
+- Weakest pathway: ${PATHWAY_LABEL[weakestKey]} (${weakestScore}/100)
+- Strongest pathway: ${PATHWAY_LABEL[strongestKey]} (${strongestScore}/100)`
 
   const toneBlock = `
 TONE AND STYLE:

@@ -19,17 +19,15 @@ import type {
   DeepPremiumReport,
 } from "@/lib/claude-report"
 import { bioticLabel, type BioticKey } from "@/lib/report/visual-token"
+import {
+  normalizeToBiotics,
+  orderedByNeed,
+  PATHWAY_LABEL,
+  type IncomingSubScores,
+} from "@/lib/report/subscores"
 import type { AssessmentProfile } from "@/lib/assessment-scoring"
 
 /* ── Types ────────────────────────────────────────────────────────────── */
-
-interface SubScores {
-  diversity: number
-  feeding: number
-  adding: number
-  consistency: number
-  feeling: number
-}
 
 export interface ReportPDFProps {
   tier: "starter" | "full" | "premium"
@@ -37,7 +35,7 @@ export interface ReportPDFProps {
   generatedAt: string
   freeScores: {
     overall: number
-    subScores: SubScores
+    subScores: IncomingSubScores
     profile: AssessmentProfile
   }
   report: DeepReport
@@ -66,22 +64,6 @@ const PATHWAY_PDF_COLOR: Record<BioticKey, string> = {
   probiotics: BRAND.teal,
   postbiotics: BRAND.orange,
   synbiotic: BRAND.green,
-}
-
-const PILLAR_COLORS: Record<keyof SubScores, string> = {
-  diversity: BRAND.lime,
-  feeding: BRAND.green,
-  adding: BRAND.teal,
-  consistency: BRAND.yellow,
-  feeling: BRAND.orange,
-}
-
-const PILLAR_LABELS: Record<keyof SubScores, string> = {
-  diversity: "Plant Diversity",
-  feeding: "Feeding",
-  adding: "Live Foods",
-  consistency: "Consistency",
-  feeling: "Feeling",
 }
 
 /* ── Styles ──────────────────────────────────────────────────────────── */
@@ -549,20 +531,28 @@ function CoverPage({
 
 /* ── PillarScoresSection ─────────────────────────────────────────────── */
 
-function PillarScoresSection({ subScores }: { subScores: SubScores }) {
-  const pillars = Object.entries(subScores) as [keyof SubScores, number][]
+function PillarScoresSection({ subScores }: { subScores: IncomingSubScores }) {
+  // Was: Object.entries(subScores) looked up in maps covering only the five
+  // legacy pillars. You-flow data has six keys (the canonical three plus the
+  // feed/seed/heal aliases) and none of them were in those maps, so the panel
+  // rendered six rows with no label and no colour. Normalizing first means one
+  // panel that is correct for both the You and Family flows.
+  const biotics = normalizeToBiotics(subScores)
+  // Render nothing rather than a broken panel — the PDF must still generate.
+  if (!biotics) return null
+
+  const rows = orderedByNeed(biotics)
 
   return (
     <View style={styles.spacer}>
-      <Text style={styles.sectionHeading}>Your 5 Pillars</Text>
-      {pillars.map(([key, score]) => {
-        const color = PILLAR_COLORS[key]
-        const label = PILLAR_LABELS[key]
+      <Text style={styles.sectionHeading}>Your 3 Biotics</Text>
+      {rows.map(([key, score]) => {
+        const color = PATHWAY_PDF_COLOR[key]
         const barWidth = `${score}%` as `${number}%`
         return (
           <View key={key} style={styles.pillarRow}>
             <View style={[styles.pillarAccent, { backgroundColor: color }]} />
-            <Text style={styles.pillarLabel}>{label}</Text>
+            <Text style={styles.pillarLabel}>{PATHWAY_LABEL[key]}</Text>
             <View style={styles.pillarBarBg}>
               <View
                 style={[
