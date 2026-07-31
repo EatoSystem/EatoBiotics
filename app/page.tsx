@@ -29,6 +29,7 @@ export const metadata: Metadata = {
 import { FeedSeedHeal } from "@/components/home/feed-seed-heal"
 import { HowItWorks } from "@/components/home/how-it-works"
 import { DigitalTwinSection } from "@/components/home/digital-twin-section"
+import { EatoxMissionSection } from "@/components/home/eatox-mission-section"
 import { ScorePreview } from "@/components/home/score-preview"
 import { GlobalDirection } from "@/components/home/global-direction"
 import { MembershipTeaser } from "@/components/home/membership-teaser"
@@ -68,6 +69,11 @@ export default async function Home() {
       <SoftDivider />
       <FeedSeedHeal />
       <DigitalTwinSection />
+      <SoftDivider />
+      {/* Turns "this helps me" into "this helps build something bigger", while
+          the reader is still in the product story and before pricing asks for
+          anything. */}
+      <EatoxMissionSection />
       <SoftDivider />
       {/* The closing block: pricing then the final CTA, deliberately with no
           divider between them so they read as one. */}
