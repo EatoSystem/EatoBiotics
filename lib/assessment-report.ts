@@ -7,7 +7,6 @@ import type { PillarKey } from "./assessment-data"
 
 export interface FoodRecommendation {
   food: string
-  emoji: string
   why: string
   howToUse: string
 }
@@ -26,7 +25,6 @@ export interface PillarDeepDive {
 
 export interface PersonalisedFood {
   food: string
-  emoji: string
   pillars: PillarKey[]
   impact: string
   priority: "high" | "medium"
@@ -67,37 +65,31 @@ const PILLAR_DEEP_DIVES: Record<
     foods: [
       {
         food: "Leeks",
-        emoji: "🌿",
         why: "Rich in inulin-type fructans that selectively feed Bifidobacterium — one of the most researched beneficial gut bacteria.",
         howToUse: "Add to soups, stir-fries, or roast alongside other vegetables.",
       },
       {
         food: "Black beans",
-        emoji: "🫘",
         why: "Exceptionally high in resistant starch and soluble fibre — the combination that fuels the highest short-chain fatty acid production in the colon.",
         howToUse: "Use in stews, tacos, grain bowls, or blend into dips. Canned is fine.",
       },
       {
         food: "Oats (rolled or steel-cut)",
-        emoji: "🌾",
         why: "Beta-glucan in oats has some of the strongest evidence for increasing beneficial Lactobacillus and Bifidobacterium populations.",
         howToUse: "Overnight oats, warm porridge, or blended into smoothies. Cook, then cool for extra resistant starch.",
       },
       {
         food: "Lentils",
-        emoji: "🍲",
         why: "High protein, high fibre, low glycaemic — one of the best-studied legumes for increasing Faecalibacterium prausnitzii, a butyrate producer linked to reduced inflammation.",
         howToUse: "Red lentil soup, dal, lentil bolognese, or cold in salads.",
       },
       {
         food: "Jerusalem artichoke",
-        emoji: "🌻",
         why: "One of the highest natural sources of inulin — a fibre your gut bacteria ferment into beneficial short-chain fatty acids.",
         howToUse: "Roast or steam. Introduce gradually — it's potent at first.",
       },
       {
         food: "Sweet potato",
-        emoji: "🍠",
         why: "Rich in soluble fibre and beta-carotene, with a fibre profile that feeds multiple microbial strains simultaneously.",
         howToUse: "Roast, steam, or mash. Cooled sweet potato has higher resistant starch.",
       },
@@ -122,37 +114,31 @@ const PILLAR_DEEP_DIVES: Record<
     foods: [
       {
         food: "Live natural yoghurt",
-        emoji: "🥛",
         why: "Contains Lactobacillus bulgaricus and Streptococcus thermophilus — well-studied strains that survive digestion and measurably shift microbial composition.",
         howToUse: "Breakfast with fruit and seeds, as a sauce base, or with spices as a dip.",
       },
       {
         food: "Kefir",
-        emoji: "🍶",
         why: "The most extensively studied fermented food for gut health — contains 30+ bacterial and yeast strains, with evidence for effects on anxiety, inflammation, and lactose tolerance.",
         howToUse: "Drink 150–200ml daily or use as a base for smoothies and overnight oats.",
       },
       {
         food: "Sauerkraut (unpasteurised)",
-        emoji: "🥬",
         why: "Naturally fermented cabbage contains hundreds of millions of live bacteria per gram — including Lactobacillus plantarum, linked to immune modulation.",
         howToUse: "1–2 tablespoons alongside meals. Refrigerated, unpasteurised versions only.",
       },
       {
         food: "Kimchi",
-        emoji: "🌶️",
         why: "Traditional Korean fermented vegetables — contains Leuconostoc mesenteroides and Lactobacillus kimchii, with emerging evidence for metabolic and immune benefits.",
         howToUse: "Add to grain bowls, eggs, noodles, or eat as a side dish.",
       },
       {
         food: "Miso paste",
-        emoji: "🍜",
         why: "Fermented soy with a diverse microbial profile, plus glutamate that supports gut barrier function. Also contains B vitamins produced during fermentation.",
         howToUse: "Dissolve in warm (not boiling) water for broth. Add to dressings or marinades.",
       },
       {
         food: "Kombucha (low sugar)",
-        emoji: "🍵",
         why: "Fermented tea containing organic acids and live cultures. Lower-sugar versions provide the microbial benefit without the glycaemic spike.",
         howToUse: "Drink 150–200ml with or between meals. Choose brands with <5g sugar per 100ml.",
       },
@@ -177,37 +163,31 @@ const PILLAR_DEEP_DIVES: Record<
     foods: [
       {
         food: "Porridge oats (morning anchor)",
-        emoji: "🥣",
         why: "A reliable breakfast that feeds the morning microbial peak and stabilises blood sugar — reducing cravings that break later meal patterns.",
         howToUse: "Make the same way each morning to build an automatic habit.",
       },
       {
         food: "Ginger root",
-        emoji: "🫚",
         why: "Gingerols have well-documented effects on gastric motility — helping food move through the digestive tract more efficiently and reducing bloating and discomfort.",
         howToUse: "Fresh in hot water, grated into stir-fries, or blended into smoothies.",
       },
       {
         food: "Walnuts",
-        emoji: "🫘",
         why: "Polyphenols in walnuts feed Lactobacillus and Bifidobacterium — strains strongly linked to reduced anxiety, improved mood, and gut-brain axis signalling.",
         howToUse: "6–8 whole walnuts as a daily snack or scattered over breakfast.",
       },
       {
         food: "Dark chocolate (85%+)",
-        emoji: "🍫",
         why: "Flavanols in high-percentage dark chocolate feed beneficial bacteria and support nitric oxide production, which improves blood flow to the gut lining.",
         howToUse: "2–3 squares after a meal. Focus on 85%+ to maximise polyphenol content.",
       },
       {
         food: "Turmeric (with black pepper)",
-        emoji: "🌿",
         why: "Curcumin has strong evidence for reducing gut inflammation markers. Black pepper increases bioavailability by 2,000%. The combination targets the gut-immune interface.",
         howToUse: "Golden milk, curries, or a pinch in any warm dish. Always with pepper.",
       },
       {
         food: "Frozen vegetables",
-        emoji: "🥦",
         why: "Flash-frozen within hours of harvest — often nutritionally superior to fresh produce in transit. Removes the planning barrier that leads to skipped vegetables.",
         howToUse: "Keep a variety in the freezer for instant additions to any meal.",
       },
@@ -228,22 +208,22 @@ const PILLAR_DEEP_DIVES: Record<
 /* ── Top food pool (all foods with pillar tags) ─────────────────────── */
 
 const ALL_FOODS: PersonalisedFood[] = [
-  { food: "Kefir",              emoji: "🍶", pillars: ["seed", "heal"], impact: "Most studied fermented food for gut microbiome diversity and gut-brain axis benefits.", priority: "high" },
-  { food: "Black beans",        emoji: "🫘", pillars: ["feed"],         impact: "Top fibre and resistant starch source — maximises short-chain fatty acid production.", priority: "high" },
-  { food: "Sauerkraut",         emoji: "🥬", pillars: ["seed"],         impact: "Hundreds of millions of live bacteria per gram; direct seeding of the microbiome.", priority: "high" },
-  { food: "Oats",               emoji: "🌾", pillars: ["feed", "heal"], impact: "Beta-glucan fibre with the strongest evidence for Bifidobacterium growth.", priority: "high" },
-  { food: "Leeks",              emoji: "🌿", pillars: ["feed"],         impact: "Inulin-rich prebiotic that selectively feeds the most beneficial gut bacteria.", priority: "high" },
-  { food: "Walnuts",            emoji: "🥜", pillars: ["heal", "feed"], impact: "Polyphenols that feed beneficial bacteria and support gut-brain axis function.", priority: "high" },
-  { food: "Live yoghurt",       emoji: "🥛", pillars: ["seed", "heal"], impact: "Easy daily fermented food with well-studied strains and high palatability.", priority: "high" },
-  { food: "Lentils",            emoji: "🍲", pillars: ["feed"],         impact: "Best-studied legume for increasing butyrate-producing bacteria.", priority: "high" },
-  { food: "Ginger",             emoji: "🫚", pillars: ["heal"],         impact: "Clinically supported effects on gastric motility and gut comfort.", priority: "medium" },
-  { food: "Sweet potato",       emoji: "🍠", pillars: ["feed", "heal"], impact: "Feeds multiple microbial populations simultaneously with diverse fibre types.", priority: "medium" },
-  { food: "Kimchi",             emoji: "🌶️", pillars: ["seed", "feed"], impact: "Diverse bacterial profile; emerging evidence for metabolic and immune benefits.", priority: "medium" },
-  { food: "Miso",               emoji: "🍜", pillars: ["seed", "heal"], impact: "Fermented with diverse organisms; glutamate supports gut barrier directly.", priority: "medium" },
-  { food: "Dark chocolate 85%+",emoji: "🍫", pillars: ["heal", "feed"], impact: "Flavanols feed Lactobacillus and Bifidobacterium; also enjoyable to eat.", priority: "medium" },
-  { food: "Flaxseeds",          emoji: "🌾", pillars: ["feed", "heal"], impact: "Dual soluble/insoluble fibre plus lignans for gut barrier integrity.", priority: "medium" },
-  { food: "Whole grain rye",    emoji: "🍞", pillars: ["feed"],         impact: "Arabinoxylans outperform wheat fibre for measurable microbial diversity gains.", priority: "medium" },
-  { food: "Fennel",             emoji: "🌿", pillars: ["heal"],         impact: "Antispasmodic properties — reduces cramping, bloating, and post-meal discomfort.", priority: "medium" },
+  { food: "Kefir", pillars: ["seed", "heal"], impact: "Most studied fermented food for gut microbiome diversity and gut-brain axis benefits.", priority: "high" },
+  { food: "Black beans", pillars: ["feed"],         impact: "Top fibre and resistant starch source — maximises short-chain fatty acid production.", priority: "high" },
+  { food: "Sauerkraut", pillars: ["seed"],         impact: "Hundreds of millions of live bacteria per gram; direct seeding of the microbiome.", priority: "high" },
+  { food: "Oats", pillars: ["feed", "heal"], impact: "Beta-glucan fibre with the strongest evidence for Bifidobacterium growth.", priority: "high" },
+  { food: "Leeks", pillars: ["feed"],         impact: "Inulin-rich prebiotic that selectively feeds the most beneficial gut bacteria.", priority: "high" },
+  { food: "Walnuts", pillars: ["heal", "feed"], impact: "Polyphenols that feed beneficial bacteria and support gut-brain axis function.", priority: "high" },
+  { food: "Live yoghurt", pillars: ["seed", "heal"], impact: "Easy daily fermented food with well-studied strains and high palatability.", priority: "high" },
+  { food: "Lentils", pillars: ["feed"],         impact: "Best-studied legume for increasing butyrate-producing bacteria.", priority: "high" },
+  { food: "Ginger", pillars: ["heal"],         impact: "Clinically supported effects on gastric motility and gut comfort.", priority: "medium" },
+  { food: "Sweet potato", pillars: ["feed", "heal"], impact: "Feeds multiple microbial populations simultaneously with diverse fibre types.", priority: "medium" },
+  { food: "Kimchi", pillars: ["seed", "feed"], impact: "Diverse bacterial profile; emerging evidence for metabolic and immune benefits.", priority: "medium" },
+  { food: "Miso", pillars: ["seed", "heal"], impact: "Fermented with diverse organisms; glutamate supports gut barrier directly.", priority: "medium" },
+  { food: "Dark chocolate 85%+", pillars: ["heal", "feed"], impact: "Flavanols feed Lactobacillus and Bifidobacterium; also enjoyable to eat.", priority: "medium" },
+  { food: "Flaxseeds", pillars: ["feed", "heal"], impact: "Dual soluble/insoluble fibre plus lignans for gut barrier integrity.", priority: "medium" },
+  { food: "Whole grain rye", pillars: ["feed"],         impact: "Arabinoxylans outperform wheat fibre for measurable microbial diversity gains.", priority: "medium" },
+  { food: "Fennel", pillars: ["heal"],         impact: "Antispasmodic properties — reduces cramping, bloating, and post-meal discomfort.", priority: "medium" },
 ]
 
 /* ── 30-day plan template (pillar-aware) ────────────────────────────── */
@@ -357,7 +337,7 @@ export function generateFullReport(result: AssessmentResult): FullReport {
 
 export interface StarterFood {
   food: string
-  emoji: string
+  pillars: PillarKey[]
   impact: string
 }
 
@@ -383,7 +363,7 @@ export function generateStarterReport(result: AssessmentResult): StarterReport {
     return { ...f, _score: pillarHits * 2 + priorityScore }
   })
   scored.sort((a, b) => b._score - a._score)
-  const top5Foods: StarterFood[] = scored.slice(0, 5).map(({ food, emoji, impact }) => ({ food, emoji, impact }))
+  const top5Foods: StarterFood[] = scored.slice(0, 5).map(({ food, pillars, impact }) => ({ food, pillars, impact }))
 
   // 7-day starter plan — one action per day cycling through weakest pillars
   const DAY_LABELS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
@@ -434,7 +414,8 @@ export interface MealTimingRule {
 
 export interface SeasonalFood {
   food: string
-  emoji: string
+  /** Seasonal picks are all plant/fibre foods, so they render on the prebiotic accent. */
+  pillars: PillarKey[]
   why: string
 }
 
@@ -518,12 +499,12 @@ export function generatePremiumAddons(result: AssessmentResult): PremiumAddons {
 
   // Seasonal foods
   const seasonalFoods: SeasonalFood[] = [
-    { food: "Purple sprouting broccoli", emoji: "🥦", why: "Peak season in late winter/early spring. Cruciferous vegetables contain glucosinolates that fuel sulphur-metabolising gut bacteria — a distinct microbial population often overlooked." },
-    { food: "Wild garlic (ramsons)", emoji: "🌿", why: "Foraged spring green, available March–May. Contains allicin compounds that have prebiotic and antimicrobial properties — supporting beneficial bacteria while keeping pathogens in check." },
-    { food: "Watercress", emoji: "🌱", why: "Spring's most nutrient-dense leaf. Polyphenols and nitrates support gut blood flow and feed Lactobacillus strains. Use raw to preserve heat-sensitive compounds." },
-    { food: "Spring onions (scallions)", emoji: "🧅", why: "Rich in inulin-type fructans — the same prebiotic fibre found in leeks and garlic. Available year-round but at their sweetest in spring." },
-    { food: "New season asparagus", emoji: "🌿", why: "British asparagus season begins in April. One of the richest dietary sources of inulin, with 2–3g of prebiotic fibre per 100g serving." },
-    { food: "Radishes", emoji: "🌸", why: "Spring radishes contain sulphoraphane precursors and raffinose — a prebiotic oligosaccharide that specifically increases Bifidobacterium. Eat raw for maximum benefit." },
+    { food: "Purple sprouting broccoli", pillars: ["feed"], why: "Peak season in late winter/early spring. Cruciferous vegetables contain glucosinolates that fuel sulphur-metabolising gut bacteria — a distinct microbial population often overlooked." },
+    { food: "Wild garlic (ramsons)", pillars: ["feed"], why: "Foraged spring green, available March–May. Contains allicin compounds that have prebiotic and antimicrobial properties — supporting beneficial bacteria while keeping pathogens in check." },
+    { food: "Watercress", pillars: ["feed"], why: "Spring's most nutrient-dense leaf. Polyphenols and nitrates support gut blood flow and feed Lactobacillus strains. Use raw to preserve heat-sensitive compounds." },
+    { food: "Spring onions (scallions)", pillars: ["feed"], why: "Rich in inulin-type fructans — the same prebiotic fibre found in leeks and garlic. Available year-round but at their sweetest in spring." },
+    { food: "New season asparagus", pillars: ["feed"], why: "British asparagus season begins in April. One of the richest dietary sources of inulin, with 2–3g of prebiotic fibre per 100g serving." },
+    { food: "Radishes", pillars: ["feed"], why: "Spring radishes contain sulphoraphane precursors and raffinose — a prebiotic oligosaccharide that specifically increases Bifidobacterium. Eat raw for maximum benefit." },
   ]
 
   // Shopping list — 30 items across 4 categories

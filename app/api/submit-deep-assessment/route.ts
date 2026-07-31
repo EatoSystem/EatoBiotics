@@ -128,7 +128,7 @@ function buildDeepAnalysisPrompt(
   "topTrigger": "the single most impactful finding from their deep answers (1 sentence)",
   "topTriggerExplanation": "why this matters specifically for them (2-3 sentences)",
   "deepInsight": "2 paragraphs connecting their deep answers to their gut pattern",
-  "specificFoodList": [{"food": "...", "emoji": "...", "whyForThem": "references their specific answers", "howToUse": "..."}, {"food": "...", "emoji": "...", "whyForThem": "...", "howToUse": "..."}, {"food": "...", "emoji": "...", "whyForThem": "...", "howToUse": "..."}, {"food": "...", "emoji": "...", "whyForThem": "...", "howToUse": "..."}, {"food": "...", "emoji": "...", "whyForThem": "...", "howToUse": "..."}],
+  "specificFoodList": [{"food": "...", "biotic": "prebiotics|probiotics|postbiotics|synbiotic", "mechanism": "what this food does inside the system, in plain English", "whyForThem": "references their specific answers", "howToUse": "..."}, {"food": "...", "biotic": "prebiotics|probiotics|postbiotics|synbiotic", "mechanism": "what this food does inside the system, in plain English", "whyForThem": "...", "howToUse": "..."}, {"food": "...", "biotic": "prebiotics|probiotics|postbiotics|synbiotic", "mechanism": "what this food does inside the system, in plain English", "whyForThem": "...", "howToUse": "..."}, {"food": "...", "biotic": "prebiotics|probiotics|postbiotics|synbiotic", "mechanism": "what this food does inside the system, in plain English", "whyForThem": "...", "howToUse": "..."}, {"food": "...", "biotic": "prebiotics|probiotics|postbiotics|synbiotic", "mechanism": "what this food does inside the system, in plain English", "whyForThem": "...", "howToUse": "..."}],
   "scoreProjection": {
     "low": [conservative target score, e.g. current + 8],
     "high": [optimistic target score, e.g. current + 18],
@@ -161,7 +161,7 @@ function buildDeepAnalysisPrompt(
   "topTrigger": "the single most impactful finding from their deep answers (1 sentence)",
   "topTriggerExplanation": "why this matters specifically for them (2-3 sentences)",
   "deepInsight": "2 paragraphs connecting their deep answers to their gut pattern",
-  "specificFoodList": [{"food": "...", "emoji": "...", "whyForThem": "references their specific answers", "howToUse": "..."}, {"food": "...", "emoji": "...", "whyForThem": "...", "howToUse": "..."}, {"food": "...", "emoji": "...", "whyForThem": "...", "howToUse": "..."}, {"food": "...", "emoji": "...", "whyForThem": "...", "howToUse": "..."}, {"food": "...", "emoji": "...", "whyForThem": "...", "howToUse": "..."}],
+  "specificFoodList": [{"food": "...", "biotic": "prebiotics|probiotics|postbiotics|synbiotic", "mechanism": "what this food does inside the system, in plain English", "whyForThem": "references their specific answers", "howToUse": "..."}, {"food": "...", "biotic": "prebiotics|probiotics|postbiotics|synbiotic", "mechanism": "what this food does inside the system, in plain English", "whyForThem": "...", "howToUse": "..."}, {"food": "...", "biotic": "prebiotics|probiotics|postbiotics|synbiotic", "mechanism": "what this food does inside the system, in plain English", "whyForThem": "...", "howToUse": "..."}, {"food": "...", "biotic": "prebiotics|probiotics|postbiotics|synbiotic", "mechanism": "what this food does inside the system, in plain English", "whyForThem": "...", "howToUse": "..."}, {"food": "...", "biotic": "prebiotics|probiotics|postbiotics|synbiotic", "mechanism": "what this food does inside the system, in plain English", "whyForThem": "...", "howToUse": "..."}],
   "scoreProjection": {
     "low": [conservative target score, e.g. current + 10],
     "high": [optimistic target score, e.g. current + 22],
@@ -194,6 +194,14 @@ WRITING RULES:
 - Be specific, not generic — every sentence must be earned by their actual answers
 - Warm, intelligent, non-clinical tone
 - Short paragraphs (3–4 sentences max each)
+- Never output emoji or any pictographic character, anywhere in the JSON
+- For every food, teach before you recommend: "mechanism" says what the food
+  does inside the Food System in plain English, and "biotic" names the pathway
+  it feeds. Set "biotic" to "synbiotic" only when a food genuinely does both
+  (e.g. a live yoghurt eaten with oats)
+- Keep health language educational and non-diagnostic: prefer "your answers
+  suggest", "may support", "is associated with". Never claim a food treats,
+  cures, or directly fixes a condition
 
 ${tierSchemaInstructions}
 

@@ -20,6 +20,8 @@ import { SaveResultsCard } from "@/components/assessment/save-results-card"
 import type { AssessmentResult, PillarInsight } from "@/lib/assessment-scoring"
 import { MIND_DISCLAIMER } from "@/lib/assessment-disclaimers"
 import { getFoodBySlug } from "@/lib/foods"
+import { BioticIcon } from "@/components/report/food-tool"
+import { bioticFromFoodType } from "@/lib/report/visual-token"
 
 /* ── Brain Starter Pack ──────────────────────────────────────────────── */
 
@@ -326,7 +328,7 @@ export function MindAssessmentResults({ result, onRetake, leadEmail }: MindAsses
                     className="relative overflow-hidden rounded-2xl border border-border bg-background p-4 transition-all hover:shadow-md"
                     style={{ borderTopColor: food.accentColor, borderTopWidth: "3px" }}
                   >
-                    <span className="text-3xl">{food.emoji}</span>
+                    <BioticIcon food={food.name} biotic={bioticFromFoodType(food.biotic)} size={18} />
                     <p className="mt-2 text-[10px] font-bold uppercase tracking-widest" style={{ color: food.accentColor }}>
                       {food.biotic === "prebiotic" ? "Prebiotic" :
                        food.biotic === "probiotic" ? "Probiotic" :

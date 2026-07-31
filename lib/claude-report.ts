@@ -1,6 +1,12 @@
 /* ── Claude Report Types ─────────────────────────────────────────────── */
-// Pure TypeScript interfaces for Claude JSON output — no imports needed.
+// TypeScript interfaces for Claude JSON output.
 // Used by: app/api/generate-report/route.ts and all report display components.
+//
+// specificFoodList carries `biotic` + `mechanism` rather than the `emoji` it
+// used to. The schema drives what Claude returns, so leaving emoji here would
+// have kept emoji flowing into reports no matter how the UI was redesigned.
+
+import type { BioticKey } from "@/lib/report/visual-token"
 
 export interface ClaudeStarterReport {
   /** 2–3 sentence personalised intro based on their specific scores */
@@ -99,7 +105,10 @@ export interface DeepFullReport extends ClaudeFullReport {
   /** 5 foods chosen specifically for this person based on their deep answers */
   specificFoodList: Array<{
     food: string
-    emoji: string
+    /** Which pathway this food feeds — drives the card's accent and badge. */
+    biotic: BioticKey
+    /** What it does inside the system, e.g. "beta-glucan fibre gut microbes ferment". */
+    mechanism: string
     /** References their actual answers — e.g. "Since you mentioned eating at your desk..." */
     whyForThem: string
     howToUse: string
@@ -119,7 +128,8 @@ export interface DeepPremiumReport extends ClaudePremiumReport {
   topTriggerExplanation: string
   specificFoodList: Array<{
     food: string
-    emoji: string
+    biotic: BioticKey
+    mechanism: string
     whyForThem: string
     howToUse: string
   }>

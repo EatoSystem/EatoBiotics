@@ -10,6 +10,8 @@ import { generateStarterReport } from "@/lib/assessment-report"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
 import type { StarterReport } from "@/lib/assessment-report"
 import type { ClaudeStarterReport } from "@/lib/claude-report"
+import { BioticIcon, PathwayIcon } from "@/components/report/food-tool"
+import { bioticFromPillar, type PillarAlias } from "@/lib/report/visual-token"
 
 interface ReportStarterProps {
   result: AssessmentResult
@@ -94,7 +96,7 @@ export function ReportStarter({ result, isDemo, claudeReport }: ReportStarterPro
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full brand-gradient text-sm font-bold text-white">
                     {i + 1}
                   </div>
-                  <span className="text-2xl">{food.emoji}</span>
+                  <BioticIcon food={food.food} biotic={bioticFromPillar((food.pillars[0] ?? "feed") as PillarAlias)} size={18} />
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-foreground">{food.food}</p>
                     <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{food.impact}</p>
@@ -210,7 +212,7 @@ export function ReportStarter({ result, isDemo, claudeReport }: ReportStarterPro
             {[
               {
                 name: "Prebiotics",
-                emoji: "🌱",
+                biotic: "prebiotics" as const,
                 definition:
                   "The fibre-rich plant foods that feed your gut bacteria. Without them, your microbiome starves.",
                 pillars: "Diversity · Feeding",
@@ -219,7 +221,7 @@ export function ReportStarter({ result, isDemo, claudeReport }: ReportStarterPro
               },
               {
                 name: "Probiotics",
-                emoji: "🧬",
+                biotic: "probiotics" as const,
                 definition:
                   "The live bacteria in fermented foods — kefir, yoghurt, sauerkraut — that directly seed your microbiome.",
                 pillars: "Adding",
@@ -228,7 +230,7 @@ export function ReportStarter({ result, isDemo, claudeReport }: ReportStarterPro
               },
               {
                 name: "Postbiotics",
-                emoji: "⚡",
+                biotic: "postbiotics" as const,
                 definition:
                   "The compounds your gut bacteria produce when they digest fibre — including butyrate, which fuels your gut lining.",
                 pillars: "Consistency · Feeling",
@@ -239,10 +241,10 @@ export function ReportStarter({ result, isDemo, claudeReport }: ReportStarterPro
               <ScrollReveal key={biotic.name} delay={i * 70}>
                 <div className="flex flex-col rounded-2xl border border-border bg-background p-5">
                   <div
-                    className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl text-lg"
+                    className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl text-white"
                     style={{ background: biotic.gradient }}
                   >
-                    <span>{biotic.emoji}</span>
+                    <PathwayIcon biotic={biotic.biotic} size={19} />
                   </div>
                   <p className="text-sm font-semibold text-foreground">{biotic.name}</p>
                   <p className="mt-1.5 flex-1 text-xs leading-relaxed text-muted-foreground">

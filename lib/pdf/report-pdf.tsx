@@ -18,6 +18,7 @@ import type {
   DeepFullReport,
   DeepPremiumReport,
 } from "@/lib/claude-report"
+import { bioticLabel, type BioticKey } from "@/lib/report/visual-token"
 import type { AssessmentProfile } from "@/lib/assessment-scoring"
 
 /* ── Types ────────────────────────────────────────────────────────────── */
@@ -58,6 +59,14 @@ const BRAND = {
   darkText: "#222222",
   subText: "#666666",
 } as const
+
+/** Pathway -> swatch. Uses this file's palette so the badge matches its page. */
+const PATHWAY_PDF_COLOR: Record<BioticKey, string> = {
+  prebiotics: BRAND.lime,
+  probiotics: BRAND.teal,
+  postbiotics: BRAND.orange,
+  synbiotic: BRAND.green,
+}
 
 const PILLAR_COLORS: Record<keyof SubScores, string> = {
   diversity: BRAND.lime,
@@ -321,9 +330,15 @@ const styles = StyleSheet.create({
   },
   pullQuoteText: {
     fontSize: 14,
-    fontFamily: "Helvetica-Bold",
+    // Helvetica-BoldOblique, not Helvetica-Bold + fontStyle: "italic". This file
+    // registers no fonts, so it can only use react-pdf's base-14 built-ins, and
+    // there is no italic variant registered under the "Helvetica-Bold" family —
+    // asking for one threw "Could not resolve font for Helvetica-Bold,
+    // fontWeight 400, fontStyle italic" and failed the render of every paid PDF.
+    // submit-deep-assessment catches that and marks pdf_status "failed", so the
+    // report was delivered with no PDF attached rather than erroring loudly.
+    fontFamily: "Helvetica-BoldOblique",
     color: BRAND.darkText,
-    fontStyle: "italic",
     lineHeight: 1.5,
     marginBottom: 6,
   },
@@ -346,9 +361,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 6,
   },
-  foodCardEmoji: {
-    fontSize: 16,
-    marginRight: 8,
+  foodCardBadge: {
+    fontSize: 7,
+    letterSpacing: 0.8,
+    fontFamily: "Helvetica-Bold",
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    marginLeft: 8,
+  },
+  foodCardMechanism: {
+    fontSize: 9,
+    lineHeight: 1.5,
+    marginBottom: 3,
+    color: BRAND.darkText,
   },
   foodCardName: {
     fontSize: 12,
@@ -702,23 +729,35 @@ function PullQuote({
 
 /* ── FoodCard ────────────────────────────────────────────────────────── */
 
+/**
+ * The emoji this used to render is replaced by a pathway badge. react-pdf has no
+ * lucide, so the badge carries the meaning the icon carries on the web: which
+ * biotic pathway the food feeds, in that pathway's brand colour. `mechanism`
+ * renders above `whyForThem` so the card teaches before it recommends.
+ */
 function FoodCard({
   food,
-  emoji,
+  biotic,
+  mechanism,
   whyForThem,
   howToUse,
 }: {
   food: string
-  emoji: string
+  biotic: BioticKey
+  mechanism?: string
   whyForThem: string
   howToUse: string
 }) {
+  const accent = PATHWAY_PDF_COLOR[biotic]
   return (
     <View style={styles.foodCardWrapper}>
       <View style={styles.foodCardHeader}>
-        <Text style={styles.foodCardEmoji}>{emoji}</Text>
-        <Text style={styles.foodCardName}>{food}</Text>
+        <Text style={{ ...styles.foodCardName, color: accent }}>{food}</Text>
+        <Text style={{ ...styles.foodCardBadge, color: accent, borderColor: accent }}>
+          {bioticLabel(biotic).toUpperCase()}
+        </Text>
       </View>
+      {mechanism ? <Text style={styles.foodCardMechanism}>{mechanism}</Text> : null}
       <Text style={styles.foodCardWhy}>{whyForThem}</Text>
       <Text style={styles.foodCardHow}>How to use: {howToUse}</Text>
     </View>
@@ -931,7 +970,8 @@ export function ReportPDF({
               <FoodCard
                 key={i}
                 food={item.food}
-                emoji={item.emoji}
+                biotic={item.biotic}
+                mechanism={item.mechanism}
                 whyForThem={item.whyForThem}
                 howToUse={item.howToUse}
               />

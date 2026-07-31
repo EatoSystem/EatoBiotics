@@ -9,13 +9,23 @@ import {
   type AssessmentState,
   type LeadData,
 } from "@/lib/assessment-storage"
-import { FAMILY_QUESTIONS } from "@/lib/family-assessment-data"
-import { computeResult } from "@/lib/family-assessment-scoring"
+import { FAMILY_QUESTIONS, FAMILY_CONTEXT_QUESTIONS } from "@/lib/family-assessment-data"
+import { computeResult, contextFromAnswers } from "@/lib/family-assessment-scoring"
 import { FamilyAssessmentIntro } from "./family-assessment-intro"
 import { AssessmentProgress } from "@/components/assessment/assessment-progress"
 import { AssessmentQuestionView } from "@/components/assessment/assessment-question"
 import { FamilyAssessmentResults } from "./family-assessment-results"
 import { PrivacyOptIn } from "@/components/assessment/privacy-opt-in"
+
+/**
+ * Scored questions first, then the unscored household-context questions.
+ *
+ * The context questions were defined but never rendered, so computeResult ran
+ * without them and every family report was generic. Appending them to the same
+ * list means the existing index-based flow, progress bar and back/next handle
+ * them with no extra state machine.
+ */
+const ALL_FAMILY_QUESTIONS = [...FAMILY_QUESTIONS, ...FAMILY_CONTEXT_QUESTIONS]
 
 /* ── Family-specific localStorage helpers ───────────────────────────── */
 
@@ -101,10 +111,10 @@ export function FamilyAssessmentClient() {
   function handleNext() {
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior })
     const { currentIndex, answers } = state
-    if (currentIndex < FAMILY_QUESTIONS.length - 1) {
+    if (currentIndex < ALL_FAMILY_QUESTIONS.length - 1) {
       setState((s) => ({ ...s, currentIndex: s.currentIndex + 1 }))
     } else {
-      const computed = computeResult(answers)
+      const computed = computeResult(answers, contextFromAnswers(answers))
       const privacyAlreadyChosen = loadPrivacyChoice() !== null
 
       const currentLead = lead ?? loadLeadData()
@@ -155,7 +165,7 @@ export function FamilyAssessmentClient() {
   }
 
   if (state.view === "questions") {
-    const currentQuestion = FAMILY_QUESTIONS[state.currentIndex]
+    const currentQuestion = ALL_FAMILY_QUESTIONS[state.currentIndex]
     if (!currentQuestion) return null
 
     const currentAnswer = state.answers[currentQuestion.id]
@@ -168,7 +178,7 @@ export function FamilyAssessmentClient() {
       <div className="min-h-screen bg-background pt-[57px]">
         <AssessmentProgress
           currentIndex={state.currentIndex}
-          total={FAMILY_QUESTIONS.length}
+          total={ALL_FAMILY_QUESTIONS.length}
           sectionTitle={currentQuestion.sectionTitle}
         />
         <AssessmentQuestionView
@@ -178,7 +188,7 @@ export function FamilyAssessmentClient() {
           onBack={handleBack}
           onNext={handleNext}
           canNext={hasAnswered}
-          isLast={state.currentIndex === FAMILY_QUESTIONS.length - 1}
+          isLast={state.currentIndex === ALL_FAMILY_QUESTIONS.length - 1}
         />
       </div>
     )

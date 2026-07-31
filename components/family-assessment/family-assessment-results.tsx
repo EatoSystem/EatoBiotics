@@ -20,7 +20,10 @@ import { PersonalReportCta } from "@/components/assessment/personal-report-cta"
 import { JourneyNextStep } from "@/components/assessment/journey-next-step"
 import { SaveResultsCard } from "@/components/assessment/save-results-card"
 import type { AssessmentResult, PillarInsight } from "@/lib/assessment-scoring"
+import type { FamilyResult } from "@/lib/family-assessment-scoring"
 import { getFoodBySlug } from "@/lib/foods"
+import { BioticIcon } from "@/components/report/food-tool"
+import { bioticFromFoodType } from "@/lib/report/visual-token"
 
 /* ── Family Starter Pack config ──────────────────────────────────────── */
 
@@ -44,7 +47,11 @@ const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: 
 }
 
 interface FamilyAssessmentResultsProps {
-  result: AssessmentResult
+  /**
+   * Shared assessment state stores an AssessmentResult, so the family extras
+   * arrive optionally rather than by widening the type every assessment uses.
+   */
+  result: AssessmentResult & Partial<Pick<FamilyResult, "contextTips">>
   onRetake: () => void
   leadEmail?: string
 }
@@ -93,7 +100,7 @@ function PillarMiniBar({ insight, index }: { insight: PillarInsight; index: numb
 /* ── Main component ──────────────────────────────────────────────────── */
 
 export function FamilyAssessmentResults({ result, onRetake, leadEmail }: FamilyAssessmentResultsProps) {
-  const { overall, profile, insights, nextActions } = result
+  const { overall, profile, insights, nextActions, contextTips } = result
   const strengths = insights.filter((i) => i.strength)
   const opportunities = insights.filter((i) => i.opportunity)
 
@@ -329,6 +336,34 @@ export function FamilyAssessmentResults({ result, onRetake, leadEmail }: FamilyA
               </ScrollReveal>
             ))}
           </div>
+
+          {/* Household context — only rendered when the context questions were
+              answered. These shape advice, never the score: a tight budget or a
+              picky eater changes what we suggest, not how the family is doing. */}
+          {contextTips && contextTips.length > 0 && (
+            <ScrollReveal delay={120}>
+              <div className="mt-10 rounded-2xl border border-[var(--icon-teal)]/25 bg-[var(--icon-teal)]/5 p-6">
+                <h3 className="font-serif text-lg font-semibold text-foreground">
+                  Shaped around your household
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Based on what you told us about ages, time, budget and routines.
+                </p>
+                <ul className="mt-4 space-y-3">
+                  {contextTips.map((tip: string, i: number) => (
+                    <li key={i} className="flex gap-3">
+                      <span
+                        aria-hidden
+                        className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full"
+                        style={{ background: "var(--icon-teal)" }}
+                      />
+                      <p className="text-sm leading-relaxed text-foreground">{tip}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </ScrollReveal>
+          )}
         </div>
       </section>
 
@@ -360,7 +395,7 @@ export function FamilyAssessmentResults({ result, onRetake, leadEmail }: FamilyA
                       borderTopWidth: "3px",
                     }}
                   >
-                    <span className="text-3xl">{food.emoji}</span>
+                    <BioticIcon food={food.name} biotic={bioticFromFoodType(food.biotic)} size={18} />
                     <p className="mt-2 text-[10px] font-bold uppercase tracking-widest" style={{ color: food.accentColor }}>
                       {food.biotic === "prebiotic" ? "Prebiotic" :
                        food.biotic === "probiotic" ? "Probiotic" :

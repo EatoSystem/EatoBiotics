@@ -11,9 +11,12 @@ import {
   ChevronDown,
   TrendingDown,
   Star,
+  CalendarDays,
 } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { BioticIcon } from "@/components/report/food-tool"
+import { bioticFromPillar, type PillarAlias } from "@/lib/report/visual-token"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { ScoreRing } from "./score-ring"
 import { ReportStarter } from "./report-starter"
@@ -138,7 +141,7 @@ function DeepDiveCard({ dive }: { dive: PillarDeepDive }) {
             {dive.foods.map((food) => (
               <div key={food.food} className="rounded-2xl border border-border bg-background p-4 hover:bg-secondary/20 transition-colors">
                 <div className="mb-2 flex items-center gap-3">
-                  <span className="text-3xl">{food.emoji}</span>
+                  <BioticIcon food={food.food} biotic={bioticFromPillar(dive.pillar as PillarAlias)} size={18} />
                   <p className="text-sm font-bold text-foreground">{food.food}</p>
                 </div>
                 <p className="text-xs leading-relaxed text-muted-foreground">{food.why}</p>
@@ -287,7 +290,13 @@ function FullReportSections({
                   <div className="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full brand-gradient text-[10px] font-bold text-white">
                     {i + 1}
                   </div>
-                  <span className="text-4xl mb-2">{food.emoji}</span>
+                  <span className="mb-2">
+                    <BioticIcon
+                      food={food.food}
+                      biotic={bioticFromPillar((food.pillars[0] ?? "feed") as PillarAlias)}
+                      size={20}
+                    />
+                  </span>
                   <div className="flex items-center gap-1.5 mb-1">
                     <p className="text-sm font-bold text-foreground">{food.food}</p>
                     {food.priority === "high" && (
@@ -361,10 +370,10 @@ function FullReportSections({
               style={{ background: "color-mix(in srgb, var(--icon-teal) 8%, transparent)" }}
             >
               <div
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white text-base"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white"
                 style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}
               >
-                📅
+                <CalendarDays size={17} aria-hidden strokeWidth={2} />
               </div>
               <div>
                 <p className="text-sm font-semibold text-foreground">Your recommended retest date</p>
