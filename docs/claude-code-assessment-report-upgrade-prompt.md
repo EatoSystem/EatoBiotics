@@ -297,7 +297,7 @@ body visuals, pathway graphics, brand swatches, and precise typography.
 The live PDF renderer is `lib/pdf/report-pdf.tsx`.
 
 Use `components/report/report-pdf.tsx` as the stronger prototype, but remove
-its emoji before porting.
+its emoji before porting ideas.
 
 The live PDF should:
 
