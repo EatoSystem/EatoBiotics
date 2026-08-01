@@ -5,6 +5,11 @@ import { ChevronDown, Search, TriangleAlert, CalendarDays } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { BioticIcon, BioticBadge } from "@/components/report/food-tool"
+import { CARD_SHADOW, SectionHeader } from "@/components/report/report-section"
+import {
+  FoodSystemSection,
+  FoodSystemClosing,
+} from "@/components/report/food-system-section"
 import { coerceBiotic } from "@/lib/report/visual-token"
 import { ScoreRing } from "./score-ring"
 import { MissionNote } from "./mission-note"
@@ -30,35 +35,9 @@ interface PaidReportClientProps {
 }
 
 /* ── Sub-components ──────────────────────────────────────────────── */
-
-/** Unified soft card shadow (matches the account dashboard + homepage). */
-const CARD_SHADOW = "0 2px 12px rgba(26,46,18,0.05)"
-
-function SectionHeader({
-  eyebrow,
-  title,
-  subtitle,
-}: {
-  eyebrow?: string
-  title: string
-  subtitle?: string
-}) {
-  return (
-    <div className="mb-6">
-      {eyebrow && (
-        <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[var(--icon-green)]">
-          {eyebrow}
-        </p>
-      )}
-      <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl text-balance">
-        {title}
-      </h2>
-      {subtitle && (
-        <p className="mt-2 leading-relaxed text-muted-foreground">{subtitle}</p>
-      )}
-    </div>
-  )
-}
+/* SectionHeader + CARD_SHADOW moved to components/report/report-section.tsx so
+ * the educational Food System sections share them rather than defining a second,
+ * slightly-different heading style. The markup is unchanged. */
 
 function TopTriggerCard({ trigger, explanation }: { trigger: string; explanation: string }) {
   return (
@@ -98,6 +77,11 @@ export function PaidReportClient({
   const r = reportJson as DeepStarterReport
   const rFull = tier === "full" || tier === "premium" ? (reportJson as DeepFullReport) : null
   const rPremium = tier === "premium" ? (reportJson as DeepPremiumReport) : null
+
+  // The educational Food System block (Phase 2). Optional by design: reports
+  // persisted before it shipped do not carry one, and those must render exactly
+  // as they did before — hence every use below is guarded rather than defaulted.
+  const foodSystem = reportJson.foodSystem
 
   return (
     <div className="min-h-screen bg-background">
@@ -562,6 +546,9 @@ export function PaidReportClient({
           </>
         )}
 
+        {/* ── The educational Food System report ───────────────────── */}
+        {foodSystem && <FoodSystemSection report={foodSystem} />}
+
         {/* ── Closing ──────────────────────────────────────────────── */}
         <section>
           <ScrollReveal>
@@ -615,13 +602,22 @@ export function PaidReportClient({
           </ScrollReveal>
         </section>
 
+        {/* ── Closing mission page ─────────────────────────────────── */}
+        {foodSystem && <FoodSystemClosing report={foodSystem} />}
+
         {/* ── Mission note ─────────────────────────────────────────── */}
         <section>
           <ScrollReveal>
             <MissionNote variant="inline" />
-            <p className="mt-4 text-center text-xs text-muted-foreground/60">
-              This report is for educational purposes and is not medical advice or a diagnosis.
-            </p>
+            {/* The short disclaimer is superseded by the report's fixed
+             * SAFETY_FOOTER, which FoodSystemClosing renders just above. Showing
+             * both would give the reader two different disclaimers, so this one
+             * only appears on reports that predate the foodSystem block. */}
+            {!foodSystem && (
+              <p className="mt-4 text-center text-xs text-muted-foreground/60">
+                This report is for educational purposes and is not medical advice or a diagnosis.
+              </p>
+            )}
           </ScrollReveal>
         </section>
 
