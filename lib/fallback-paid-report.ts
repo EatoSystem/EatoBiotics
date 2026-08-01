@@ -6,6 +6,8 @@ import type {
   DeepStarterReport,
 } from "@/lib/claude-report"
 import type { PaidReportTier } from "@/lib/paid-report-session"
+import { buildFoodSystemReport } from "@/lib/report/build-food-system-report"
+import type { ReportMode } from "@/lib/report/food-system-report-types"
 
 type SubScores = {
   prebiotics?: number
@@ -28,6 +30,8 @@ type FallbackInput = {
   profile: { type: string; tagline: string; description: string }
   questions: DeepQuestion[]
   answers: Record<string, unknown>
+  /** Which assessment produced this. Defaults to "you". */
+  mode?: ReportMode
 }
 
 function clampScore(score: number): number {
@@ -304,7 +308,23 @@ function buildPremiumReport(input: FallbackInput): DeepPremiumReport {
 export function buildFallbackPaidReport(input: FallbackInput): DeepReport {
   const effectiveTier = input.tier === "personal" ? "full" : input.tier
 
-  if (effectiveTier === "premium") return buildPremiumReport(input)
-  if (effectiveTier === "full") return buildFullReport(input)
-  return buildStarterReport(input)
+  const base =
+    effectiveTier === "premium"
+      ? buildPremiumReport(input)
+      : effectiveTier === "full"
+      ? buildFullReport(input)
+      : buildStarterReport(input)
+
+  // The educational report is derived, so the fallback carries a complete one
+  // too — a customer whose generation failed still gets the full structure,
+  // just with rule-based copy instead of personalised narrative.
+  return {
+    ...base,
+    foodSystem: buildFoodSystemReport({
+      mode: input.mode ?? "you",
+      subScores: input.subScores,
+      overall: input.overall,
+      profile: input.profile,
+    }),
+  }
 }

@@ -7,6 +7,7 @@
 // have kept emoji flowing into reports no matter how the UI was redesigned.
 
 import type { BioticKey } from "@/lib/report/visual-token"
+import type { FoodSystemReport } from "@/lib/report/food-system-report-types"
 
 export interface ClaudeStarterReport {
   /** 2–3 sentence personalised intro based on their specific scores */
@@ -137,4 +138,22 @@ export interface DeepPremiumReport extends ClaudePremiumReport {
   membershipBridge: string
 }
 
-export type DeepReport = DeepStarterReport | DeepFullReport | DeepPremiumReport
+/**
+ * The educational Food System report (Phase 2).
+ *
+ * Optional and additive: every existing consumer of DeepReport
+ * (paid-report-client, lib/pdf/report-pdf, app/assessment/report) keeps working
+ * untouched, while generated and fallback reports start carrying the richer
+ * structure the web/PDF redesign will render. Reports persisted before this
+ * shipped simply do not have it.
+ *
+ * It is built by lib/report/build-food-system-report.ts rather than taken
+ * wholesale from a model, so it is always complete and its scores are always
+ * the real ones.
+ */
+export interface WithFoodSystem {
+  foodSystem?: FoodSystemReport
+}
+
+export type DeepReport = (DeepStarterReport | DeepFullReport | DeepPremiumReport) &
+  WithFoodSystem
