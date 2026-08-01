@@ -6,6 +6,8 @@ import type { DeepQuestion } from "@/lib/deep-assessment"
 import type { DeepReport } from "@/lib/claude-report"
 import { getPaidReportSummaryFromSession, isCheckoutSessionSettled } from "@/lib/paid-report-session"
 import { buildFallbackPaidReport } from "@/lib/fallback-paid-report"
+import { buildFoodSystemReport, mergeGeneratedNarrative } from "@/lib/report/build-food-system-report"
+import { parseFoodSystemReport } from "@/lib/report/food-system-report-types"
 import { overallReportStatus } from "@/lib/report-status"
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -135,6 +137,14 @@ function buildDeepAnalysisPrompt(
     "timeline": "[X–Y weeks]",
     "keyDrivers": ["[specific habit change 1]", "[specific habit change 2]", "[specific habit change 3]"]
   },
+  "foodSystem": {
+    "systemSnapshot": {"oneLine": "one sentence naming what their answers suggest is working and what to change first", "dominantPattern": "the pattern their answers describe, in one or two sentences", "mainLever": "the single change with most leverage, in one sentence"},
+    "educationModules": [{"plainEnglish": "what Prebiotics are, in plain English", "whyItMatters": "why this pathway matters", "whatYourAnswersSuggest": "what THEIR answers suggest about it", "actionBridge": "the one action that follows"}, {"plainEnglish": "same for Probiotics", "whyItMatters": "...", "whatYourAnswersSuggest": "...", "actionBridge": "..."}, {"plainEnglish": "same for Postbiotics", "whyItMatters": "...", "whatYourAnswersSuggest": "...", "actionBridge": "..."}],
+    "bodySignalMap": [{"id": "gut-comfort", "explanation": "what their answers suggest is worth watching here, framed as a food-pattern clue and never as a diagnosis"}, {"id": "energy", "explanation": "..."}, {"id": "immune-recovery", "explanation": "..."}],
+    "priorityLever": {"title": "short name for the one thing to do first", "whyThisFirst": "why this before anything else, referencing their answers", "firstStep": "the smallest version they could start tomorrow", "whatToNotice": "what they may notice over 2-3 weeks — use 'may notice', never 'will'"},
+    "foodTools": [{"food": "...", "biotic": "prebiotics|probiotics|postbiotics|synbiotic", "mechanism": "what it does inside the system, in plain English", "whyForThisCustomer": "why it suits THIS person's answers", "howToUse": "...", "swap": "an alternative if it does not suit them"}],
+    "closingMissionPage": {"insideYou": "2-3 sentences on what this report covered inside them", "aroundYou": "2-3 sentences connecting their habits outward to household, community and the wider food system", "nextAction": "one realistic next action inside their account"}
+  },
   "membershipBridge": "[One sentence connecting their top finding to what consistent daily tracking enables]"
 }`
       : /* premium */ `Return this JSON schema:
@@ -167,6 +177,14 @@ function buildDeepAnalysisPrompt(
     "high": [optimistic target score, e.g. current + 22],
     "timeline": "[X–Y weeks]",
     "keyDrivers": ["[specific habit change 1]", "[specific habit change 2]", "[specific habit change 3]"]
+  },
+  "foodSystem": {
+    "systemSnapshot": {"oneLine": "one sentence naming what their answers suggest is working and what to change first", "dominantPattern": "the pattern their answers describe, in one or two sentences", "mainLever": "the single change with most leverage, in one sentence"},
+    "educationModules": [{"plainEnglish": "what Prebiotics are, in plain English", "whyItMatters": "why this pathway matters", "whatYourAnswersSuggest": "what THEIR answers suggest about it", "actionBridge": "the one action that follows"}, {"plainEnglish": "same for Probiotics", "whyItMatters": "...", "whatYourAnswersSuggest": "...", "actionBridge": "..."}, {"plainEnglish": "same for Postbiotics", "whyItMatters": "...", "whatYourAnswersSuggest": "...", "actionBridge": "..."}],
+    "bodySignalMap": [{"id": "gut-comfort", "explanation": "what their answers suggest is worth watching here, framed as a food-pattern clue and never as a diagnosis"}, {"id": "energy", "explanation": "..."}, {"id": "immune-recovery", "explanation": "..."}],
+    "priorityLever": {"title": "short name for the one thing to do first", "whyThisFirst": "why this before anything else, referencing their answers", "firstStep": "the smallest version they could start tomorrow", "whatToNotice": "what they may notice over 2-3 weeks — use 'may notice', never 'will'"},
+    "foodTools": [{"food": "...", "biotic": "prebiotics|probiotics|postbiotics|synbiotic", "mechanism": "what it does inside the system, in plain English", "whyForThisCustomer": "why it suits THIS person's answers", "howToUse": "...", "swap": "an alternative if it does not suit them"}],
+    "closingMissionPage": {"insideYou": "2-3 sentences on what this report covered inside them", "aroundYou": "2-3 sentences connecting their habits outward to household, community and the wider food system", "nextAction": "one realistic next action inside their account"}
   },
   "membershipBridge": "[One sentence connecting their top finding to what consistent daily tracking enables]"
 }`
@@ -202,6 +220,12 @@ WRITING RULES:
 - Keep health language educational and non-diagnostic: prefer "your answers
   suggest", "may support", "is associated with". Never claim a food treats,
   cures, or directly fixes a condition
+- The "foodSystem" block is the educational report: teach the mechanism, then
+  say what THEIR answers suggest, and only then recommend. Its scores, pathway
+  ranking, colours, closing headline and safety footer are filled in by the
+  application — write the prose only, and do not invent numbers
+- In "bodySignalMap", keep the given "id" values and write only the
+  explanations. These are food-pattern clues, never findings about the body
 
 ${tierSchemaInstructions}
 
@@ -376,7 +400,7 @@ export async function POST(req: NextRequest) {
   } else if (!process.env.ANTHROPIC_API_KEY) {
     console.warn("[submit-deep-assessment] ANTHROPIC_API_KEY not set; using fallback paid report")
     reportError = "ANTHROPIC_API_KEY not set — used deterministic fallback"
-    report = buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers })
+    report = buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers, mode: freeScores.foundationType === "family" ? "family" : "you" })
   } else {
     try {
       const effectiveTier = tier === "personal" ? "full" : tier
@@ -401,11 +425,45 @@ export async function POST(req: NextRequest) {
         .replace(/\s*```\s*$/, "")
         .trim()
 
-      report = JSON.parse(cleaned) as DeepReport
+      const parsed: unknown = JSON.parse(cleaned)
+      if (!parsed || typeof parsed !== "object") {
+        throw new Error("Claude returned non-object JSON")
+      }
+
+      // The educational block is DERIVED, not taken from the response: scores,
+      // pathway ranking, visual tokens, the closing headline, evidence notes and
+      // the safety footer all come from the assessment result, and only prose is
+      // overlaid. So a model that omits the block, half-fills it, or invents a
+      // score cannot put any of that in front of a customer.
+      const foodSystemBase = buildFoodSystemReport({
+        mode: freeScores.foundationType === "family" ? "family" : "you",
+        subScores,
+        overall,
+        profile,
+      })
+      const foodSystem = mergeGeneratedNarrative(
+        foodSystemBase,
+        (parsed as { foodSystem?: unknown }).foodSystem,
+      )
+
+      // Validate what we assembled rather than trusting it. This used to be a
+      // bare `as DeepReport` cast, so a malformed response was persisted to
+      // report_json and rendered unchecked.
+      const validFoodSystem = parseFoodSystemReport(foodSystem)
+      if (!validFoodSystem) {
+        console.warn(
+          "[submit-deep-assessment] foodSystem failed validation after merge; using derived base",
+        )
+      }
+
+      report = {
+        ...(parsed as DeepReport),
+        foodSystem: validFoodSystem ?? foodSystemBase,
+      }
     } catch (err) {
       console.error("[submit-deep-assessment] Claude error; using fallback paid report:", err)
       reportError = `Claude generation failed — used fallback: ${err instanceof Error ? err.message : String(err)}`
-      report = buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers })
+      report = buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers, mode: freeScores.foundationType === "family" ? "family" : "you" })
     }
   }
 
