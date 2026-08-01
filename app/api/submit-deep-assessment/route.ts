@@ -6,7 +6,12 @@ import type { DeepQuestion } from "@/lib/deep-assessment"
 import type { DeepReport } from "@/lib/claude-report"
 import { getPaidReportSummaryFromSession, isCheckoutSessionSettled } from "@/lib/paid-report-session"
 import { buildFallbackPaidReport } from "@/lib/fallback-paid-report"
-import { buildFoodSystemReport, mergeGeneratedNarrative } from "@/lib/report/build-food-system-report"
+import {
+  buildFoodSystemReport,
+  ensureFoodSystem,
+  mergeGeneratedNarrative,
+  resolveReportMode,
+} from "@/lib/report/build-food-system-report"
 import { parseFoodSystemReport } from "@/lib/report/food-system-report-types"
 import { overallReportStatus } from "@/lib/report-status"
 
@@ -395,12 +400,20 @@ export async function POST(req: NextRequest) {
   // "generated"; report_error records *why* a fallback was used for diagnostics.
   let report: DeepReport
   let reportError: string | null = null
+
+  const reportMode = resolveReportMode(freeScores)
+  const foodSystemInput = { mode: reportMode, subScores, overall, profile }
+
   if (existingRow?.report_json) {
-    report = existingRow.report_json as DeepReport
+    // Reports persisted before the educational block existed come back without
+    // one, and this path returns them verbatim — so enrich rather than reuse
+    // blind. Derived only: no regeneration, so a retry costs nothing extra and
+    // the report keeps whatever narrative it already had.
+    report = ensureFoodSystem(existingRow.report_json as DeepReport, foodSystemInput)
   } else if (!process.env.ANTHROPIC_API_KEY) {
     console.warn("[submit-deep-assessment] ANTHROPIC_API_KEY not set; using fallback paid report")
     reportError = "ANTHROPIC_API_KEY not set — used deterministic fallback"
-    report = buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers, mode: freeScores.foundationType === "family" ? "family" : "you" })
+    report = buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers, mode: reportMode })
   } else {
     try {
       const effectiveTier = tier === "personal" ? "full" : tier
@@ -435,12 +448,7 @@ export async function POST(req: NextRequest) {
       // the safety footer all come from the assessment result, and only prose is
       // overlaid. So a model that omits the block, half-fills it, or invents a
       // score cannot put any of that in front of a customer.
-      const foodSystemBase = buildFoodSystemReport({
-        mode: freeScores.foundationType === "family" ? "family" : "you",
-        subScores,
-        overall,
-        profile,
-      })
+      const foodSystemBase = buildFoodSystemReport(foodSystemInput)
       const foodSystem = mergeGeneratedNarrative(
         foodSystemBase,
         (parsed as { foodSystem?: unknown }).foodSystem,
@@ -463,7 +471,7 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       console.error("[submit-deep-assessment] Claude error; using fallback paid report:", err)
       reportError = `Claude generation failed — used fallback: ${err instanceof Error ? err.message : String(err)}`
-      report = buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers, mode: freeScores.foundationType === "family" ? "family" : "you" })
+      report = buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers, mode: reportMode })
     }
   }
 

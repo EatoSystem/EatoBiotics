@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest"
 
 import {
   buildFoodSystemReport,
+  ensureFoodSystem,
   mergeGeneratedNarrative,
+  resolveReportMode,
 } from "@/lib/report/build-food-system-report"
 import {
   CLOSING_HEADLINE_LINES,
@@ -385,5 +387,104 @@ describe("parseFoodSystemReport", () => {
 
   it("accepts a report the builder produced", () => {
     expect(parseFoodSystemReport(buildYou())).not.toBeNull()
+  })
+})
+
+/* ── 7. Report mode resolution ───────────────────────────────────────────
+ * The route resolved mode with a repeated `foundationType === "family"`
+ * ternary that ignored selectedAddon entirely, so a paid report combining a
+ * foundation with an add-on described itself as a plain "you" report. */
+describe("resolveReportMode", () => {
+  it("calls a foundation with an add-on 'combined'", () => {
+    for (const addon of ["stability", "glucose", "mind", "performance"] as const) {
+      expect(resolveReportMode({ foundationType: "you", selectedAddon: addon }), addon).toBe(
+        "combined",
+      )
+      // Add-on wins over foundation: a Family + Glucose report covers both.
+      expect(resolveReportMode({ foundationType: "family", selectedAddon: addon }), addon).toBe(
+        "combined",
+      )
+    }
+  })
+
+  it("never returns 'mind' for a Mind add-on", () => {
+    // "mind" is for the standalone Mind assessment, which does not route
+    // through the paid deep flow. A Mind add-on sits on a foundation, so
+    // labelling it "mind" would drop the foundation from the report's own
+    // description of itself.
+    expect(resolveReportMode({ foundationType: "you", selectedAddon: "mind" })).toBe("combined")
+  })
+
+  it("falls back to foundation when there is no add-on", () => {
+    expect(resolveReportMode({ foundationType: "family", selectedAddon: null })).toBe("family")
+    expect(resolveReportMode({ foundationType: "you", selectedAddon: null })).toBe("you")
+  })
+
+  it("defaults to 'you' when nothing is known", () => {
+    expect(resolveReportMode({})).toBe("you")
+    expect(resolveReportMode({ foundationType: null, selectedAddon: null })).toBe("you")
+  })
+
+  it("produces a mode the schema accepts, for every combination", () => {
+    const { subScores, overall, profile } = youResult()
+    for (const foundationType of ["you", "family", null] as const) {
+      for (const selectedAddon of ["stability", "glucose", "mind", "performance", null] as const) {
+        const mode = resolveReportMode({ foundationType, selectedAddon })
+        const report = buildFoodSystemReport({ mode, subScores, overall, profile })
+        expect(
+          foodSystemReportSchema.safeParse(report).success,
+          `${foundationType}/${selectedAddon}`,
+        ).toBe(true)
+      }
+    }
+  })
+})
+
+/* ── 8. Reused reports get the block ─────────────────────────────────────
+ * submit-deep-assessment reuses existingRow.report_json verbatim on a retry.
+ * Reports persisted before Phase 2 have no foodSystem, so without enrichment
+ * they would never gain one — a customer retrying delivery would keep getting
+ * the older shape forever. */
+describe("ensureFoodSystem", () => {
+  const { subScores, overall, profile } = youResult()
+  const input = { mode: "you" as const, subScores, overall, profile }
+
+  // Shaped like a persisted report_json row: arbitrary legacy fields plus the
+  // optional block. `as never` would collapse the generic and hide the result
+  // type, so the fixture is typed properly instead.
+  type LegacyRow = Record<string, unknown> & {
+    foodSystem?: ReturnType<typeof buildFoodSystemReport>
+  }
+
+  it("attaches a valid block to a report that has none", () => {
+    const legacy: LegacyRow = { opening: "An older report.", closing: "…" }
+    const enriched = ensureFoodSystem(legacy, input)
+    expect(enriched.foodSystem).toBeDefined()
+    expect(foodSystemReportSchema.safeParse(enriched.foodSystem).success).toBe(true)
+  })
+
+  it("preserves the existing report's own fields", () => {
+    const legacy: LegacyRow = { opening: "An older report.", topTrigger: "Something specific." }
+    const enriched = ensureFoodSystem(legacy, input)
+    expect(enriched.opening).toBe("An older report.")
+    expect(enriched.topTrigger).toBe("Something specific.")
+  })
+
+  it("leaves an existing block untouched rather than regenerating it", () => {
+    const existing = buildFoodSystemReport({ ...input, mode: "family" })
+    const report: LegacyRow = { opening: "x", foodSystem: existing }
+    const result = ensureFoodSystem(report, input)
+    // Same object identity: no rebuild, so a reused report keeps whatever
+    // narrative it already had.
+    expect(result.foodSystem).toBe(existing)
+    expect(result.foodSystem?.mode).toBe("family")
+  })
+
+  it("carries the resolved mode into the derived block", () => {
+    const enriched = ensureFoodSystem({} as LegacyRow, {
+      ...input,
+      mode: resolveReportMode({ foundationType: "family", selectedAddon: "glucose" }),
+    })
+    expect(enriched.foodSystem?.mode).toBe("combined")
   })
 })

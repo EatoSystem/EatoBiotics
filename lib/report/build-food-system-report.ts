@@ -61,6 +61,46 @@ export interface BuildReportInput {
 
 const GRADIENT: VisualAccent[] = ["lime", "green", "teal", "yellow", "orange"]
 
+/**
+ * Which report mode a paid deep assessment produced.
+ *
+ * The deep assessment always starts from a foundation (You or Family) and may
+ * add one focused lens — Stability, Glucose, Mind or Performance. When an add-on
+ * is present the report genuinely covers both, so it is "combined".
+ *
+ * "mind" is in ReportMode for the standalone Mind assessment surface, which
+ * does not route through here. A Mind ADD-ON on a foundation is still a combined
+ * report, not a Mind one — calling it "mind" would drop the foundation from the
+ * report's own description of itself.
+ */
+export function resolveReportMode(input: {
+  foundationType?: "you" | "family" | null
+  selectedAddon?: "stability" | "glucose" | "mind" | "performance" | null
+}): ReportMode {
+  if (input.selectedAddon) return "combined"
+  if (input.foundationType === "family") return "family"
+  return "you"
+}
+
+/**
+ * Attaches a derived foodSystem block to a report that has none.
+ *
+ * Reports persisted before Phase 2 — and any reused report_json from a retry —
+ * carry no educational block, and the reuse path returns them verbatim. Without
+ * this they would never gain one, so a customer retrying delivery would keep
+ * getting the older shape forever.
+ *
+ * Derived only: this never re-runs generation. A reused report keeps whatever
+ * narrative it already had, and gains the structural block around it.
+ */
+export function ensureFoodSystem<T extends { foodSystem?: FoodSystemReport }>(
+  report: T,
+  input: BuildReportInput,
+): T {
+  if (report.foodSystem) return report
+  return { ...report, foodSystem: buildFoodSystemReport(input) }
+}
+
 /* ── Bands ───────────────────────────────────────────────────────────────────
  * Deliberately three, with wide ranges. A questionnaire cannot support finer
  * gradations, and a "62 vs 64" distinction would imply precision that is not
