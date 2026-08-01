@@ -79,8 +79,14 @@ export function PaidReportClient({
   const rPremium = tier === "premium" ? (reportJson as DeepPremiumReport) : null
 
   // The educational Food System block (Phase 2). Optional by design: reports
-  // persisted before it shipped do not carry one, and those must render exactly
-  // as they did before — hence every use below is guarded rather than defaulted.
+  // persisted before it shipped do not carry one, so every use below is guarded
+  // rather than defaulted, and those reports keep the same sections, copy and
+  // order they had.
+  //
+  // Not "exactly as before", though: the shared AA fixes that came with this
+  // work — the section eyebrow moving to --icon-green-text, and BioticBadge
+  // moving to accentTextOnTint — change colour tokens on every report,
+  // deliberately, because both were failing WCAG AA on the live report already.
   const foodSystem = reportJson.foodSystem
 
   return (
@@ -602,24 +608,27 @@ export function PaidReportClient({
           </ScrollReveal>
         </section>
 
-        {/* ── Closing mission page ─────────────────────────────────── */}
-        {foodSystem && <FoodSystemClosing report={foodSystem} />}
-
-        {/* ── Mission note ─────────────────────────────────────────── */}
-        <section>
-          <ScrollReveal>
-            <MissionNote variant="inline" />
-            {/* The short disclaimer is superseded by the report's fixed
-             * SAFETY_FOOTER, which FoodSystemClosing renders just above. Showing
-             * both would give the reader two different disclaimers, so this one
-             * only appears on reports that predate the foodSystem block. */}
-            {!foodSystem && (
+        {/* ── Mission note ─────────────────────────────────────────────
+         * Only for reports that predate the educational block. An enriched
+         * report gets the mission message and the fixed SAFETY_FOOTER from
+         * FoodSystemClosing below, so rendering this as well would repeat the
+         * mission and show two different disclaimers. */}
+        {!foodSystem && (
+          <section>
+            <ScrollReveal>
+              <MissionNote variant="inline" />
               <p className="mt-4 text-center text-xs text-muted-foreground/60">
                 This report is for educational purposes and is not medical advice or a diagnosis.
               </p>
-            )}
-          </ScrollReveal>
-        </section>
+            </ScrollReveal>
+          </section>
+        )}
+
+        {/* ── Closing mission page ─────────────────────────────────────
+         * Last, deliberately. The brief's whole point is that the report ends
+         * on "Build the Food System inside you — and help build the Food System
+         * around you"; anything after it takes that ending away. */}
+        {foodSystem && <FoodSystemClosing report={foodSystem} />}
 
       </div>
     </div>

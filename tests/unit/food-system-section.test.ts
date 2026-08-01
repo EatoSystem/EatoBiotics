@@ -15,7 +15,12 @@ import {
   type FoodSystemReport,
 } from "@/lib/report/food-system-report-types"
 import { computeSubScores, computeOverall, getProfile } from "@/lib/assessment-scoring"
+import { MISSION } from "@/lib/mission-content"
 import type { DeepReport } from "@/lib/claude-report"
+
+/** The pre-Phase-2 disclaimer, kept only for reports without a foodSystem block. */
+const LEGACY_DISCLAIMER =
+  "This report is for educational purposes and is not medical advice or a diagnosis."
 
 /**
  * Phase 3 renders the educational foodSystem block in the paid web report.
@@ -284,7 +289,7 @@ describe("PaidReportClient without a foodSystem block", () => {
     }
   })
 
-  it("keeps every existing section and the original disclaimer", () => {
+  it("keeps every existing section, the mission note and the original disclaimer", () => {
     const withFs = paidReport()
     const withoutFs: DeepReport = { ...withFs }
     delete withoutFs.foodSystem
@@ -307,19 +312,19 @@ describe("PaidReportClient without a foodSystem block", () => {
       expect(legacy).toContain(heading)
     }
 
-    expect(legacy).toContain(
-      "This report is for educational purposes and is not medical advice or a diagnosis.",
-    )
+    expect(legacy).toContain(MISSION.shortLine)
+    expect(legacy).toContain(LEGACY_DISCLAIMER)
   })
 
-  it("shows one disclaimer, not two, once the block is present", () => {
+  it("shows one disclaimer and one mission message once the block is present", () => {
     const enriched = text(renderPaid(paidReport()))
 
     expect(enriched).toContain(SAFETY_FOOTER)
-    // The weaker one-liner is superseded rather than stacked.
-    expect(enriched).not.toContain(
-      "This report is for educational purposes and is not medical advice or a diagnosis.",
-    )
+    // Both are superseded by the closing mission page rather than stacked: the
+    // weaker disclaimer, and the inline mission note that would otherwise repeat
+    // the mission the closing page just made.
+    expect(enriched).not.toContain(LEGACY_DISCLAIMER)
+    expect(enriched).not.toContain(MISSION.shortLine)
   })
 
   it("adds the new sections when the block is present", () => {
@@ -334,5 +339,29 @@ describe("PaidReportClient without a foodSystem block", () => {
     ]) {
       expect(enriched).toContain(marker)
     }
+  })
+
+  it("ends an enriched report on the closing mission page", () => {
+    const enriched = text(renderPaid(paidReport()))
+
+    // The bug this pins: FoodSystemClosing rendered, and then the inline mission
+    // note rendered after it, so the report did not actually end on "Build the
+    // Food System…". A not.toContain assertion would have passed with that bug
+    // present — only position catches it.
+    const footerAt = enriched.indexOf(SAFETY_FOOTER)
+    expect(footerAt).toBeGreaterThan(-1)
+
+    for (const earlier of [
+      "Your 30-Day Improvement Loop",
+      "Where This Comes From",
+      "Final Thoughts",
+      "Recommended retest: in 75 days",
+      CLOSING_HEADLINE_LINES[0],
+    ]) {
+      expect(enriched.indexOf(earlier)).toBeLessThan(footerAt)
+    }
+
+    // Nothing at all follows it.
+    expect(enriched.slice(footerAt + SAFETY_FOOTER.length).trim()).toBe("")
   })
 })
