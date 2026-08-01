@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { TriangleAlert, Mail } from "lucide-react"
 
 type SendStatus = "sending" | "sent" | "failed"
 
@@ -60,7 +61,13 @@ export function SaveResultsCard({
         className="w-10 h-10 rounded-full flex items-center justify-center mx-auto"
         style={{ backgroundColor: `color-mix(in srgb, var(${accentVar}) 10%, transparent)` }}
       >
-        <span className="text-xl">{status === "failed" ? "⚠️" : "📧"}</span>
+        <span style={{ color: `var(${accentVar}-text)` }}>
+          {status === "failed" ? (
+            <TriangleAlert size={19} aria-hidden strokeWidth={2} />
+          ) : (
+            <Mail size={19} aria-hidden strokeWidth={2} />
+          )}
+        </span>
       </div>
 
       {status === "failed" ? (

@@ -1,9 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, Search, TriangleAlert, CalendarDays } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ScrollReveal } from "@/components/scroll-reveal"
+import { BioticIcon, BioticBadge } from "@/components/report/food-tool"
+import { coerceBiotic } from "@/lib/report/visual-token"
 import { ScoreRing } from "./score-ring"
 import { MissionNote } from "./mission-note"
 import { ReportMembershipCTA } from "./report-membership-cta"
@@ -64,8 +66,8 @@ function TopTriggerCard({ trigger, explanation }: { trigger: string; explanation
       className="rounded-3xl border border-[var(--icon-teal)]/20 border-l-4 border-l-[var(--icon-teal)] p-6"
       style={{ background: "color-mix(in srgb, var(--icon-teal) 8%, transparent)" }}
     >
-      <p className="text-xs font-bold uppercase tracking-widest text-[var(--icon-teal)] mb-3">
-        🔍 Your Key Insight
+      <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-[var(--icon-teal)] mb-3">
+        <Search size={13} aria-hidden strokeWidth={2.5} /> Your Key Insight
       </p>
       <p className="text-lg font-semibold font-serif mb-3">"{trigger}"</p>
       <p className="text-muted-foreground leading-relaxed">{explanation}</p>
@@ -336,9 +338,13 @@ export function PaidReportClient({
                       style={{ boxShadow: CARD_SHADOW }}
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-4xl">{food.emoji}</span>
+                        <BioticIcon food={food.food} biotic={coerceBiotic(food.biotic)} size={20} />
                         <p className="text-sm font-bold text-foreground">{food.food}</p>
+                        <BioticBadge biotic={coerceBiotic(food.biotic)} />
                       </div>
+                      {food.mechanism && (
+                        <p className="text-xs leading-relaxed text-foreground">{food.mechanism}</p>
+                      )}
                       <p className="text-xs leading-relaxed text-muted-foreground">
                         {food.whyForThem}
                       </p>
@@ -433,8 +439,8 @@ export function PaidReportClient({
                     className="rounded-2xl border border-destructive/20 border-l-4 border-l-destructive p-5"
                     style={{ background: "color-mix(in srgb, var(--destructive) 8%, transparent)" }}
                   >
-                    <p className="text-xs font-bold uppercase tracking-widest text-destructive/70 mb-3">
-                      🚧 Biggest Blocker
+                    <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-destructive/70 mb-3">
+                      <TriangleAlert size={13} aria-hidden strokeWidth={2.5} /> Biggest Blocker
                     </p>
                     <p className="text-base font-semibold font-serif text-foreground mb-2">
                       {rPremium.priorityMap.biggestBlocker}
@@ -578,12 +584,12 @@ export function PaidReportClient({
               style={{ background: "color-mix(in srgb, var(--icon-teal) 8%, transparent)" }}
             >
               <div
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white text-base"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white"
                 style={{
                   background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
                 }}
               >
-                📅
+                <CalendarDays size={17} aria-hidden strokeWidth={2} />
               </div>
               <div>
                 <p className="text-sm font-semibold text-foreground">

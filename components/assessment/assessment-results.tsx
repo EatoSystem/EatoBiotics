@@ -16,6 +16,7 @@ import {
   ShoppingCart,
   BarChart3,
   Copy,
+  Trophy,
 } from "lucide-react"
 import posthog from "posthog-js"
 import { ScrollReveal } from "@/components/scroll-reveal"
@@ -32,6 +33,8 @@ import { getPercentile } from "@/lib/percentile"
 import { getIdentityLabel } from "@/lib/identity-labels"
 import { browserCountry, localFoods, fermentedPair, prebioticTrio } from "@/lib/local-foods"
 import type { FoodSet } from "@/lib/foods-by-country"
+import { BioticIcon } from "@/components/report/food-tool"
+import { bioticFromFoodType } from "@/lib/report/visual-token"
 
 /* ── Gut Starter Pack config ─────────────────────────────────────────── */
 
@@ -288,7 +291,6 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
               {/* Identity badge */}
               <div className="mt-4 flex flex-col items-center gap-1.5">
                 <div className="flex items-center gap-2 rounded-full border border-border bg-secondary/40 px-4 py-1.5">
-                  <span className="text-base">{identityLabel.emoji}</span>
                   <span className="text-sm font-bold text-foreground">{identityLabel.word}</span>
                 </div>
                 <p className="text-xs text-muted-foreground text-center">
@@ -390,7 +392,7 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
         </div>
       </section>
 
-      {/* ── Lottery winner 🏆 ─────────────────────────────────────────── */}
+      {/* ── Lottery winner ────────────────────────────────────────────── */}
       {winnerCode && (
         <section className="px-6 pb-10">
           <div className="mx-auto max-w-3xl">
@@ -404,7 +406,7 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
                 <div className="px-6 py-6 md:px-8">
                   {/* Trophy + headline */}
                   <div className="mb-1 flex items-center gap-3">
-                    <span className="text-4xl" aria-hidden>🏆</span>
+                    <Trophy size={32} aria-hidden strokeWidth={1.8} className="text-white" />
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.65)" }}>
                         You&apos;re a milestone taker
@@ -415,7 +417,7 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
                     </div>
                   </div>
                   <p className="mt-3 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.80)" }}>
-                    Every 100th person to take the EatoBiotics assessment wins a free first month on any plan. Today, that&apos;s you 🎉 Use the code below at checkout — it&apos;s yours alone and can only be used once.
+                    Every 100th person to take the EatoBiotics assessment wins a free first month on any plan. Today, that&apos;s you. Use the code below at checkout — it&apos;s yours alone and can only be used once.
                   </p>
                   {/* Code box */}
                   <div className="mt-5 flex items-center gap-2">
@@ -739,7 +741,7 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
                     className="relative overflow-hidden rounded-2xl border border-border bg-background p-4 transition-all hover:shadow-md"
                     style={{ borderTopColor: food.accentColor, borderTopWidth: "3px" }}
                   >
-                    <span className="text-3xl">{food.emoji}</span>
+                    <BioticIcon food={food.name} biotic={bioticFromFoodType(food.biotic)} size={18} />
                     <p
                       className="mt-2 text-[10px] font-bold uppercase tracking-widest"
                       style={{ color: food.accentColor }}

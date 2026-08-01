@@ -1,11 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { Clock, Leaf, ShoppingCart, Target, ChefHat, Check } from "lucide-react"
+import { Clock, Leaf, ShoppingCart, Target, ChefHat, Check, Pill, Brain, CalendarDays } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { cn } from "@/lib/utils"
 import type { PremiumAddons } from "@/lib/assessment-report"
 import type { ClaudePremiumReport } from "@/lib/claude-report"
+import { BioticIcon, PathwayIcon } from "@/components/report/food-tool"
 
 const SEASONAL_CALENDAR = [
   { month: "January", season: "winter", foods: ["Celeriac", "Kale", "Jerusalem artichoke", "Leeks"] },
@@ -25,21 +26,21 @@ const SEASONAL_CALENDAR = [
 const SUPPLEMENT_CARDS = {
   high: [
     {
-      emoji: "🌾",
+      biotic: "prebiotics" as const,
       title: "Prebiotic fibre (inulin / FOS)",
       detail:
         "With a strong base, supplemental prebiotics can extend what your food is already doing. Inulin-type fructans (e.g. chicory root extract) selectively increase Bifidobacterium. Most useful if your diversity score is 70+ but your adding score is lower.",
       look_for: "Look for: inulin, FOS, or galacto-oligosaccharides (GOS) on the label.",
     },
     {
-      emoji: "🧬",
+      biotic: "probiotics" as const,
       title: "Multi-strain probiotic",
       detail:
         "At higher overall scores, a multi-strain probiotic can add microbial diversity beyond what fermented foods deliver. Look for products with 8+ strains including Lactobacillus rhamnosus and Bifidobacterium longum — the two most studied strains for gut barrier function.",
       look_for: "Look for: ≥10 billion CFU, refrigerated, with a mix of Lactobacillus and Bifidobacterium strains.",
     },
     {
-      emoji: "⚡",
+      biotic: "postbiotics" as const,
       title: "Butyrate (as a postbiotic)",
       detail:
         "If digestive discomfort persists despite a strong diet, tributyrin or sodium butyrate supplements deliver the postbiotic your gut bacteria would otherwise produce from fibre. Useful for gut lining support.",
@@ -48,21 +49,21 @@ const SUPPLEMENT_CARDS = {
   ],
   low: [
     {
-      emoji: "🌾",
+      biotic: "prebiotics" as const,
       title: "Prebiotic fibre — start here",
       detail:
         "At lower overall scores, the most impactful supplement is prebiotic fibre — specifically inulin or psyllium husk. These directly feed your gut bacteria when dietary fibre intake is still building. Start with a low dose (2–3g/day) to avoid bloating.",
       look_for: "Look for: psyllium husk powder, inulin, or chicory root extract.",
     },
     {
-      emoji: "🧬",
+      biotic: "probiotics" as const,
       title: "Single-strain probiotic (targeted)",
       detail:
         "When the gut ecosystem is underdeveloped, a single high-dose strain is more targeted than a multi-strain blend. Lactobacillus rhamnosus GG is the most studied strain for rebuilding gut populations after disruption.",
       look_for: "Look for: L. rhamnosus GG specifically, ≥10 billion CFU, with third-party testing.",
     },
     {
-      emoji: "⚡",
+      biotic: "postbiotics" as const,
       title: "Glutamine for gut lining",
       detail:
         "L-glutamine is the primary fuel for enterocytes — the cells lining your gut wall. At lower scores where gut barrier integrity may be compromised, 5g/day of L-glutamine can support lining repair while your dietary habits build.",
@@ -316,7 +317,7 @@ export function ReportPremiumAddons({ addons, claudeReport }: ReportPremiumAddon
             {addons.seasonalFoods.map((food, i) => (
               <ScrollReveal key={food.food} delay={i * 50}>
                 <div className="flex flex-col rounded-2xl border border-[var(--icon-lime)]/20 bg-[var(--icon-lime)]/5 p-4">
-                  <span className="text-3xl mb-2">{food.emoji}</span>
+                  <span className="mb-2"><BioticIcon food={food.food} biotic="prebiotics" size={18} /></span>
                   <p className="text-sm font-bold text-foreground">{food.food}</p>
                   <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{food.why}</p>
                 </div>
@@ -496,7 +497,7 @@ export function ReportPremiumAddons({ addons, claudeReport }: ReportPremiumAddon
                 className="flex h-10 w-10 items-center justify-center rounded-xl"
                 style={{ background: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))" }}
               >
-                <span className="text-base">💊</span>
+                <Pill size={15} aria-hidden strokeWidth={2.5} />
               </div>
               <div>
                 <h2 className="font-serif text-2xl font-semibold text-foreground">
@@ -511,7 +512,9 @@ export function ReportPremiumAddons({ addons, claudeReport }: ReportPremiumAddon
               <ScrollReveal key={card.title} delay={i * 60}>
                 <div className="rounded-2xl border border-border bg-background p-5">
                   <div className="flex items-start gap-3">
-                    <span className="text-xl shrink-0">{card.emoji}</span>
+                    <span className="shrink-0" style={{ color: "var(--icon-green-text)" }}>
+                      <PathwayIcon biotic={card.biotic} size={19} />
+                    </span>
                     <div>
                       <p className="text-sm font-semibold text-foreground">{card.title}</p>
                       <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{card.detail}</p>
@@ -539,7 +542,7 @@ export function ReportPremiumAddons({ addons, claudeReport }: ReportPremiumAddon
                 className="flex h-10 w-10 items-center justify-center rounded-xl"
                 style={{ background: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" }}
               >
-                <span className="text-base">🧠</span>
+                <Brain size={15} aria-hidden strokeWidth={2.5} />
               </div>
               <div>
                 <h2 className="font-serif text-2xl font-semibold text-foreground">
@@ -576,7 +579,7 @@ export function ReportPremiumAddons({ addons, claudeReport }: ReportPremiumAddon
                 className="flex h-10 w-10 items-center justify-center rounded-xl"
                 style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-teal))" }}
               >
-                <span className="text-base">📅</span>
+                <CalendarDays size={15} aria-hidden strokeWidth={2.5} />
               </div>
               <div>
                 <h2 className="font-serif text-2xl font-semibold text-foreground">

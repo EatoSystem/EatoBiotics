@@ -46,6 +46,35 @@ export interface FamilyContext {
   mainGoal?: number
 }
 
+/**
+ * Maps the `ctx_*` answers from FAMILY_CONTEXT_QUESTIONS onto FamilyContext.
+ *
+ * These questions existed but were never asked — the client only ever rendered
+ * FAMILY_QUESTIONS, so `computeResult` was always called without context and
+ * `getContextTips` below could never fire. That is why family reports read as
+ * generic: nothing knew the household's ages, budget, time or picky eaters.
+ *
+ * Context shapes advice only. It never touches the pillar scores — a tight
+ * budget changes what we suggest, not how the family is doing.
+ */
+export function contextFromAnswers(
+  answers: Record<string, number | string[]>,
+): FamilyContext {
+  const num = (id: string): number | undefined => {
+    const v = answers[id]
+    return typeof v === "number" ? v : undefined
+  }
+  return {
+    householdSize: num("ctx_household"),
+    ages: num("ctx_ages"),
+    pickyEating: num("ctx_picky"),
+    budget: num("ctx_budget"),
+    cookingTime: num("ctx_time"),
+    schoolMeals: num("ctx_schoolmeals"),
+    mainGoal: num("ctx_goal"),
+  }
+}
+
 export interface FamilyResult extends AssessmentResult {
   /** The primary, family-native pillar scores (0–100 each). */
   pillarScores: FamilyPillarScores
