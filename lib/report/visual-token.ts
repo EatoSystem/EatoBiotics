@@ -85,6 +85,21 @@ export function accentText(accent: VisualAccent): string {
 }
 
 /**
+ * AA-safe on a tinted ground — badges, capsules, callout labels.
+ *
+ * The -text variants are calibrated on white (see app/globals.css:58), so a
+ * tinted background eats the margin: --icon-orange-text on an 8–15% orange tint
+ * measures ~4.3:1 and fails. Darkening the same hue keeps the colour coding and
+ * restores the ratio; measured with axe against every accent on the 8% and 15%
+ * tints this codebase uses, the worst case lands at 6.4:1.
+ *
+ * Use accentText() on white and this on anything tinted.
+ */
+export function accentTextOnTint(accent: VisualAccent): string {
+  return `color-mix(in srgb, var(--icon-${accent}-text) 78%, #000)`
+}
+
+/**
  * Icon for a pathway itself (as opposed to a food on that pathway).
  * Used by the 3-Biotics explainer cards and the supplement cards.
  */

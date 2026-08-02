@@ -4,6 +4,7 @@ import * as Icons from "lucide-react"
 import {
   accentFill,
   accentText,
+  accentTextOnTint,
   bioticAccent,
   bioticLabel,
   foodIcon,
@@ -86,7 +87,9 @@ export function BioticBadge({ biotic }: { biotic: BioticKey }) {
       className="inline-flex w-fit items-center rounded-full px-2.5 py-0.5 text-xs font-bold"
       style={{
         background: `color-mix(in srgb, ${accentFill(accent)} 15%, transparent)`,
-        color: accentText(accent),
+        // On a tinted ground, not white — see accentTextOnTint. axe measured the
+        // -text variant here at 4.3:1 against the capsule's own background.
+        color: accentTextOnTint(accent),
       }}
     >
       {bioticLabel(biotic)}
@@ -101,6 +104,7 @@ export function FoodTool({
   mechanism,
   why,
   howToUse,
+  headingLevel = "h4",
   className = "",
 }: {
   food: string
@@ -112,15 +116,25 @@ export function FoodTool({
   /** Why it suits this reader. */
   why?: string
   howToUse?: string
+  /**
+   * The food name is a heading. Callers place these under different section
+   * levels, and skipping one (h2 -> h4) is a real heading-order failure that
+   * axe flags, so the level is the caller's to set. Defaults to the level every
+   * existing caller already renders at.
+   */
+  headingLevel?: "h3" | "h4"
   className?: string
 }) {
   const key: BioticKey = biotic ?? (pillar ? bioticFromPillar(pillar) : "prebiotics")
+  const Heading = headingLevel
   return (
     <div className={`flex gap-4 ${className}`}>
       <BioticIcon food={food} biotic={key} />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-          <h4 className="font-serif text-base font-semibold text-foreground">{food}</h4>
+          <Heading className="font-serif text-base font-semibold text-foreground">
+            {food}
+          </Heading>
           <BioticBadge biotic={key} />
         </div>
         {mechanism && (
