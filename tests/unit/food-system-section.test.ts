@@ -15,6 +15,7 @@ import {
   type FoodSystemReport,
 } from "@/lib/report/food-system-report-types"
 import { computeSubScores, computeOverall, getProfile } from "@/lib/assessment-scoring"
+import { PATHWAY_LABEL } from "@/lib/report/subscores"
 import { MISSION } from "@/lib/mission-content"
 import type { DeepReport } from "@/lib/claude-report"
 
@@ -203,6 +204,64 @@ describe("FoodSystemSection", () => {
   })
 })
 
+/* ── Phase 4: the body-led architecture ──────────────────────────────────── */
+
+describe("body-led chapter", () => {
+  it("uses the report's own body asset as the spine, not a hardcoded image", () => {
+    const report = youReport()
+    const markup = renderSection(report)
+
+    // next/image rewrites src into an optimiser URL, so the asset path arrives
+    // encoded. Asserting on the encoded form is what actually proves the wiring.
+    expect(report.visualTheme.bodyAssetPath).toBeTruthy()
+    expect(markup).toContain(encodeURIComponent(report.visualTheme.bodyAssetPath))
+
+    const family: FoodSystemReport = {
+      ...report,
+      mode: "family",
+      visualTheme: { ...report.visualTheme, bodyAssetPath: "/images/family-hero.png" },
+    }
+    expect(renderSection(family)).toContain(encodeURIComponent("/images/family-hero.png"))
+  })
+
+  it("writes every ring node's pathway and state as text", () => {
+    const report = youReport()
+    const body = text(renderSection(report))
+
+    // The ring encodes state by accent and position. Neither survives a screen
+    // reader or a printed page, so both must also be words.
+    for (const node of report.foodSystemMap) {
+      const label = PATHWAY_LABEL[node.id as keyof typeof PATHWAY_LABEL]
+      if (label) expect(body).toContain(label)
+    }
+    const stateWords = ["Well supported", "Building", "Room to grow", "Not enough to say"]
+    expect(stateWords.some((w) => body.includes(w))).toBe(true)
+  })
+
+  it("numbers the chapters sequentially, and renumbers when the family chapter appears", () => {
+    const plain = text(renderSection(youReport()))
+    for (const n of ["01", "02", "03", "04", "05", "06"]) {
+      expect(plain).toContain(n)
+    }
+    // Evidence is the last chapter on a non-family report.
+    expect(plain.indexOf("07")).toBeGreaterThan(-1)
+    expect(plain).not.toContain("08")
+
+    const family: FoodSystemReport = {
+      ...youReport(),
+      mode: "family",
+      familyContext: {
+        householdPattern: "Two adults and two children.",
+        constraints: [],
+        memberNotes: [],
+        sharedLever: "Anchor one shared meal a week.",
+      },
+    }
+    // The family chapter slots in before Evidence, so there is one more numeral.
+    expect(text(renderSection(family))).toContain("08")
+  })
+})
+
 /* ── The closing mission page ────────────────────────────────────────────── */
 
 describe("FoodSystemClosing", () => {
@@ -221,6 +280,21 @@ describe("FoodSystemClosing", () => {
     // Each line is its own block, so the break points survive any line length.
     for (const line of CLOSING_HEADLINE_LINES) {
       expect(markup).toContain(`<span class="block text-balance">${line}</span>`)
+    }
+  })
+
+  it("draws the inside-out levels and writes each one out", () => {
+    const markup = renderClosing(youReport())
+    const body = text(markup)
+
+    // The rings are decoration; these six words are the argument. They must be
+    // present and in order regardless of whether the diagram is visible.
+    const levels = ["You", "Family", "Community", "County", "Country", "The Food System"]
+    let cursor = -1
+    for (const level of levels) {
+      const at = body.indexOf(level, cursor + 1)
+      expect(at, `missing inside-out level: ${level}`).toBeGreaterThan(cursor)
+      cursor = at
     }
   })
 
