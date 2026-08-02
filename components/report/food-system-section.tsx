@@ -215,7 +215,13 @@ function RingNode({
   const accent = bioticAccent(pathway)
   return (
     <li
-      className="flex items-center gap-2.5 sm:absolute sm:left-[var(--x)] sm:top-[var(--y)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:flex-col sm:gap-1.5 sm:text-center"
+      // sm:w-28 is what keeps the three nodes symmetrical. Without a fixed
+      // width each node sizes to its own state string, so the widest one hits
+      // the container edge and wraps while the others do not — which is exactly
+      // how "Probiotics / Room to / grow" appeared next to two single-line
+      // siblings. Equal width means all three break the same way, or none do,
+      // whatever state the report happens to produce.
+      className="flex items-center gap-2.5 sm:absolute sm:left-[var(--x)] sm:top-[var(--y)] sm:w-28 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:flex-col sm:gap-1.5 sm:text-center"
       style={{ "--x": x, "--y": y } as CSSProperties}
     >
       <span
@@ -254,10 +260,15 @@ function FoodSystemHero({ report }: { report: FoodSystemReport }) {
     n.id === "prebiotics" || n.id === "probiotics" || n.id === "postbiotics",
   )
   // Evenly spaced from the top: 12 o'clock, 4 o'clock, 8 o'clock.
+  //
+  // The outer two sit at 84/16 rather than 90/10 because each node is w-28
+  // (112px) centred on its position: at 90% of the 420px container the right
+  // edge landed at ~425px, past the container, and the text wrapped. 84% puts
+  // it at 409px, and 16% leaves 11px on the left.
   const positions = [
     { x: "50%", y: "4%" },
-    { x: "90%", y: "72%" },
-    { x: "10%", y: "72%" },
+    { x: "84%", y: "72%" },
+    { x: "16%", y: "72%" },
   ]
 
   return (
@@ -710,8 +721,9 @@ const INSIDE_OUT_LEVELS = [
 ] as const
 
 function InsideOutRings({ assetPath, alt }: { assetPath: string; alt: string }) {
-  // Widest ring first so the figure sits on top; the gradient walks the brand
-  // ramp outward, lime through orange.
+  // Five rings for six levels: the figure at the centre IS "You", so the rings
+  // are Family outward to The Food System. Widest first so the figure sits on
+  // top; the gradient walks the brand ramp outward, lime through orange.
   const rings = [
     { inset: "0%", accent: "orange" },
     { inset: "8%", accent: "yellow" },
@@ -721,7 +733,7 @@ function InsideOutRings({ assetPath, alt }: { assetPath: string; alt: string }) 
   ] as const
 
   return (
-    <div className="mx-auto w-full max-w-[360px]">
+    <div className="mx-auto w-full max-w-[420px]">
       <div className="relative aspect-square">
         {rings.map((r) => (
           <div
@@ -735,8 +747,14 @@ function InsideOutRings({ assetPath, alt }: { assetPath: string; alt: string }) 
             }}
           />
         ))}
-        <div className="absolute left-1/2 top-1/2 w-[46%] -translate-x-1/2 -translate-y-1/2">
-          <DigitalTwinFigure size={150} src={assetPath} alt={alt} showParticles={false} />
+        {/* DigitalTwinFigure draws the figure at size*0.66 inside an aura at
+         * size*0.95, so at size={150} a 99px figure sat inside a 142px glow and
+         * read as a glow with something in it. Scaling the whole diagram up and
+         * damping the aura here — rather than in DigitalTwinFigure, which
+         * /digital-twin and OrbitHub also render — puts the figure at 139px and
+         * lets "you at the centre" actually land. */}
+        <div className="absolute left-1/2 top-1/2 w-[56%] -translate-x-1/2 -translate-y-1/2 [&_.eb-aura]:opacity-40">
+          <DigitalTwinFigure size={210} src={assetPath} alt={alt} showParticles={false} />
         </div>
       </div>
 
