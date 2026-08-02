@@ -40,6 +40,20 @@ const nextConfig = {
       "Food Images/Food 8.0.png",
       "Food Images/Food 9.0.png",
     ],
+    // The paid PDF registers Lora + DM Sans at runtime (lib/pdf/pdf-fonts.ts),
+    // reading them through a path built from process.cwd() — which the tracer
+    // cannot resolve statically, exactly like the plate-builder case above. Four
+    // small .ttf files, not the whole directory.
+    //
+    // pdf-fonts falls back to the base-14 faces if these are missing, so a
+    // tracing miss degrades the typography rather than breaking the render. This
+    // entry is what keeps it from silently degrading.
+    "/api/submit-deep-assessment": [
+      "public/fonts/Lora.ttf",
+      "public/fonts/Lora-Italic.ttf",
+      "public/fonts/DMSans.ttf",
+      "public/fonts/DMSans-Italic.ttf",
+    ],
   },
   async redirects() {
     return [

@@ -389,3 +389,209 @@ describe("no surface is still keyed on the legacy five pillars", () => {
     }
   })
 })
+
+/**
+ * Phase 5 — the educational Food System chapters in the live paid PDF.
+ *
+ * The live path is app/api/submit-deep-assessment -> lib/pdf/generate-pdf.ts ->
+ * lib/pdf/report-pdf.tsx. `/api/report-pdf` and components/report/report-pdf.tsx
+ * are a separate prototype with no caller and are deliberately untouched.
+ *
+ * These assertions walk the rendered element tree and render real PDFs. They do
+ * NOT search the PDF bytes for text: once brand fonts are registered react-pdf
+ * subsets them and hex-encodes the strings, so a byte search silently misses and
+ * would pass a report that rendered nothing.
+ */
+describe("paid PDF: Food System chapters", () => {
+  /** Every string in a React element tree, evaluating function components. */
+  const strings = (node: unknown, acc: string[] = []): string[] => {
+    if (node == null || typeof node === "boolean") return acc
+    if (typeof node === "string" || typeof node === "number") {
+      acc.push(String(node))
+      return acc
+    }
+    if (Array.isArray(node)) {
+      node.forEach((n) => strings(n, acc))
+      return acc
+    }
+    const el = node as { type?: unknown; props?: { children?: unknown } }
+    if (el.props?.children !== undefined) strings(el.props.children, acc)
+    if (typeof el.type === "function") {
+      try {
+        strings((el.type as (p: unknown) => unknown)(el.props), acc)
+      } catch {
+        /* needs a render context; children are covered above */
+      }
+    }
+    return acc
+  }
+
+  async function fixture(withFoodSystem = true) {
+    const answers: Record<string, number> = {}
+    for (let i = 1; i <= 15; i++) answers[`q${i}`] = i % 3
+    const subScores = computeSubScores(answers)
+    const overall = computeOverall(subScores)
+    const profile = getProfile(overall, subScores)
+    const report = buildFallbackPaidReport({
+      tier: "premium",
+      overall,
+      subScores,
+      profile,
+      questions: [],
+      answers: {},
+    } as never)
+    if (!withFoodSystem) delete (report as { foodSystem?: unknown }).foodSystem
+    return { report, freeScores: { overall, subScores, profile } }
+  }
+
+  async function tree(withFoodSystem = true) {
+    const React = (await import("react")).default
+    const { ReportPDF } = await import("@/lib/pdf/report-pdf")
+    const { report, freeScores } = await fixture(withFoodSystem)
+    return strings(
+      React.createElement(ReportPDF, {
+        tier: "premium",
+        leadName: "T",
+        generatedAt: "2 Aug",
+        freeScores,
+        report,
+      } as never),
+    )
+  }
+
+  it("registers the brand fonts, so these tests exercise the real path", async () => {
+    const { fontsRegistered, FONT } = await import("@/lib/pdf/pdf-fonts")
+    // If this ever goes false the fallback is being tested instead, and the
+    // brand typography would be silently absent from production PDFs.
+    expect(fontsRegistered).toBe(true)
+    expect(FONT.serif).toBe("Lora")
+    expect(FONT.sans).toBe("DMSans")
+  })
+
+  it("never synthesises an italic from a family that has none", async () => {
+    // The Phase 1 outage: `fontStyle: "italic"` on a family with only a normal
+    // face throws and fails the entire render. Registering real fonts re-arms
+    // that trap, so no style may set fontStyle at all — italics come from a
+    // dedicated family.
+    for (const f of ["lib/pdf/report-pdf.tsx", "lib/pdf/food-system-pdf.tsx"]) {
+      expect(readCode(f), f).not.toContain("fontStyle")
+    }
+  })
+
+  it("renders every Food System chapter into the document", async () => {
+    const rendered = await tree()
+    const joined = rendered.join(" | ")
+
+    const { report } = await fixture()
+    const fs = report.foodSystem!
+
+    expect(joined).toContain(fs.title)
+    expect(joined).toContain(fs.systemSnapshot.oneLine)
+    expect(joined).toContain(fs.systemSnapshot.dominantPattern)
+    expect(joined).toContain(fs.systemSnapshot.mainLever)
+
+    for (const mod of fs.educationModules) {
+      expect(joined).toContain(mod.title)
+      expect(joined).toContain(mod.plainEnglish)
+      expect(joined).toContain(mod.whatYourAnswersSuggest)
+    }
+    for (const node of [...fs.foodSystemMap, ...fs.bodySignalMap]) {
+      expect(joined).toContain(node.label)
+      expect(joined).toContain(node.explanation)
+    }
+    expect(joined).toContain(fs.priorityLever.title)
+    expect(joined).toContain(fs.priorityLever.firstStep)
+    for (const tool of fs.foodTools) {
+      expect(joined).toContain(tool.food)
+      expect(joined).toContain(tool.mechanism)
+    }
+    expect(fs.thirtyDayLoop).toHaveLength(4)
+    for (const week of fs.thirtyDayLoop) {
+      expect(joined).toContain(week.focus)
+      expect(joined).toContain(week.action)
+    }
+    for (const note of fs.evidenceNotes) {
+      expect(joined).toContain(note.claim)
+      expect(joined).toContain(note.sourceTitle)
+    }
+    for (const line of fs.closingMissionPage.headlineLines) {
+      expect(rendered).toContain(line)
+    }
+    expect(joined).toContain(fs.closingMissionPage.insideYou)
+    expect(joined).toContain(fs.safetyFooter)
+
+    // States are words in print too — colour and ring position carry nothing on
+    // paper, and nothing at all in monochrome.
+    expect(
+      ["Well supported", "Building", "Room to grow", "Not enough to say"].some((w) =>
+        joined.includes(w),
+      ),
+    ).toBe(true)
+
+    // The inside-out levels are spelled out; the rings alone say nothing.
+    for (const level of ["You", "Family", "Community", "County", "Country"]) {
+      expect(joined).toContain(level)
+    }
+  })
+
+  it("leaves a report without a foodSystem block exactly as it was", async () => {
+    const legacy = (await tree(false)).join(" | ")
+    const { report } = await fixture()
+    const fs = report.foodSystem!
+
+    for (const marker of [
+      fs.title,
+      "Your 3-Biotics Engine",
+      "Your Priority Lever",
+      "Where This Comes From",
+      fs.safetyFooter,
+      ...fs.closingMissionPage.headlineLines,
+    ]) {
+      expect(legacy).not.toContain(marker)
+    }
+
+    // …while every legacy section still renders.
+    for (const heading of [
+      "Your Assessment",
+      "Your Top Trigger",
+      "Your Deep Insight",
+      "Closing Thoughts",
+      "Your Priority Map",
+    ]) {
+      expect(legacy).toContain(heading)
+    }
+  })
+
+  it("produces a valid PDF for every tier, with and without the block", async () => {
+    const { generatePDF } = await import("@/lib/pdf/generate-pdf")
+    const { freeScores } = await fixture()
+
+    let withBlockBytes = 0
+    for (const tier of ["starter", "full", "premium"] as const) {
+      const { report } = await fixture()
+      const buf = await generatePDF({
+        tier,
+        leadName: "T",
+        generatedAt: "2 Aug",
+        freeScores,
+        report,
+      } as never)
+      expect(buf.subarray(0, 5).toString(), tier).toBe("%PDF-")
+      if (tier === "premium") withBlockBytes = buf.length
+    }
+
+    const { report: legacy } = await fixture(false)
+    const legacyBuf = await generatePDF({
+      tier: "premium",
+      leadName: "T",
+      generatedAt: "2 Aug",
+      freeScores,
+      report: legacy,
+    } as never)
+    expect(legacyBuf.subarray(0, 5).toString()).toBe("%PDF-")
+
+    // The block adds pages rather than replacing them: a real render, not just
+    // an element tree, so a layout-time throw would fail here.
+    expect(withBlockBytes).toBeGreaterThan(legacyBuf.length)
+  }, 120_000)
+})
