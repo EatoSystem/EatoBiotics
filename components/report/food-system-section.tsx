@@ -1,7 +1,9 @@
 "use client"
 
+import type { CSSProperties } from "react"
 import * as Icons from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
+import { DigitalTwinFigure } from "@/components/digital-twin/parts"
 import { FoodTool, PathwayIcon } from "@/components/report/food-tool"
 import { CARD_SHADOW, SectionHeader } from "@/components/report/report-section"
 import {
@@ -24,16 +26,18 @@ import type {
  *
  * ── Why this is a separate component ─────────────────────────────────────────
  *
- * The `foodSystem` block has been built, validated and persisted since Phase 2
- * (#192) and nothing rendered it — every paid report carried the data and showed
- * the reader none of it. This closes that with the smallest change that proves
- * the data end-to-end: the existing report keeps its structure and these sections
- * are appended, in the existing visual language.
+ * Phase 2 (#192) built the `foodSystem` block and nothing rendered it. Phase 3
+ * (#193) surfaced it in the existing card idiom. Phase 4 — this — gives it a
+ * visual architecture: the body figure is the spine of the chapter, the three
+ * pathways sit on a ring around it, chapters are numbered so the block reads as
+ * one report, and it closes on the brief's inside-out mission diagram.
  *
- * It is NOT the body-led redesign. The brief's inside-out ring diagram, the
- * chapter reordering and the PDF rewrite are later phases. Keeping the new markup
- * in one file means those phases restyle here rather than unpicking it from a
- * 600-line report component.
+ * Everything the Phase 3 version showed is still shown. The redesign changes how
+ * the same data is arranged and framed, not how much of it the reader gets.
+ *
+ * Still not in scope: the legacy paid-report chapters keep their order, and the
+ * PDF renderer is untouched — it still renders the legacy DeepReport shape and
+ * knows nothing about this block.
  *
  * ── Colour ───────────────────────────────────────────────────────────────────
  *
@@ -180,12 +184,201 @@ function PathwayScores({ scores }: { scores: Record<BioticScoreKey, number> }) {
   )
 }
 
+/* ── The body as the spine ───────────────────────────────────────────────────
+ *
+ * The figure is the chapter's organising visual, not a header image: the three
+ * pathways sit on a ring around it, so the reader sees the system before they
+ * read about it.
+ *
+ * Two deliberate departures from OrbitHub (components/digital-twin/orbit-hub.tsx),
+ * which is otherwise the reference for this layout:
+ *
+ *  - No rotation. Orbiting labels are fine on a marketing page; in a report the
+ *    reader is comparing three states, and moving text makes that harder.
+ *  - The nodes are one DOM list, not a desktop ring plus a mobile copy. Below
+ *    `sm` they lay out in normal flow under the figure; from `sm` up the same
+ *    elements take their ring position from the --x/--y custom properties. A
+ *    second copy would read every label twice to a screen reader.
+ */
+
+function RingNode({
+  pathway,
+  state,
+  x,
+  y,
+}: {
+  pathway: BioticScoreKey
+  state: FoodSystemNode["state"]
+  x: string
+  y: string
+}) {
+  const accent = bioticAccent(pathway)
+  return (
+    <li
+      // sm:w-28 is what keeps the three nodes symmetrical. Without a fixed
+      // width each node sizes to its own state string, so the widest one hits
+      // the container edge and wraps while the others do not — which is exactly
+      // how "Probiotics / Room to / grow" appeared next to two single-line
+      // siblings. Equal width means all three break the same way, or none do,
+      // whatever state the report happens to produce.
+      className="flex items-center gap-2.5 sm:absolute sm:left-[var(--x)] sm:top-[var(--y)] sm:w-28 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:flex-col sm:gap-1.5 sm:text-center"
+      style={{ "--x": x, "--y": y } as CSSProperties}
+    >
+      <span
+        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border bg-background"
+        style={{
+          borderColor: `color-mix(in srgb, ${accentFill(accent)} 45%, transparent)`,
+          color: accentText(accent),
+          boxShadow: CARD_SHADOW,
+        }}
+      >
+        <PathwayIcon biotic={pathway} size={19} />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm font-bold text-foreground">
+          {PATHWAY_LABEL[pathway]}
+        </span>
+        {/* State reaches the reader here as words, and only as words. The
+         * accent on this node is bioticAccent(pathway) — it marks which pathway
+         * the node is, not how that pathway is doing, and its position on the
+         * ring is orientation rather than meaning. (StateBadge, further up, is
+         * the one that colours by state.) So this text is not a caption for a
+         * colour: remove it and the state is simply gone. */}
+        <span
+          className="block text-xs font-semibold"
+          style={{ color: accentText(accent) }}
+        >
+          {STATE_LABEL[state]}
+        </span>
+      </span>
+    </li>
+  )
+}
+
+function FoodSystemHero({ report }: { report: FoodSystemReport }) {
+  const nodes = report.foodSystemMap.filter((n): n is FoodSystemNode & { id: BioticScoreKey } =>
+    n.id === "prebiotics" || n.id === "probiotics" || n.id === "postbiotics",
+  )
+  // Evenly spaced from the top: 12 o'clock, 4 o'clock, 8 o'clock.
+  //
+  // The outer two sit at 84/16 rather than 90/10 because each node is w-28
+  // (112px) centred on its position: at 90% of the 420px container the right
+  // edge landed at ~425px, past the container, and the text wrapped. 84% puts
+  // it at 409px, and 16% leaves 11px on the left.
+  const positions = [
+    { x: "50%", y: "4%" },
+    { x: "84%", y: "72%" },
+    { x: "16%", y: "72%" },
+  ]
+
+  return (
+    <div className="relative">
+      {/* The glow is w-full, not the wider box it wants to be: an oversized
+       * absolute child still counts toward document scrollWidth, and a 120%
+       * version pushed the page into horizontal overflow at every width up to
+       * 768px. blur-3xl spreads the paint past the box anyway, so the visual is
+       * unchanged. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 opacity-50 blur-3xl"
+        style={{
+          background:
+            "radial-gradient(50% 50% at 50% 40%, color-mix(in srgb, var(--icon-lime) 30%, transparent), transparent 72%)",
+        }}
+      />
+
+      <div className="relative mx-auto w-full max-w-[420px] sm:aspect-square">
+        {/* Guide rings — decoration. Everything they imply is written below. */}
+        <div
+          aria-hidden
+          className="absolute inset-[6%] hidden rounded-full sm:block"
+          style={{ border: "1.5px dashed color-mix(in srgb, var(--icon-green) 26%, transparent)" }}
+        />
+        <div
+          aria-hidden
+          className="absolute inset-[20%] hidden rounded-full sm:block"
+          style={{ border: "1.5px dashed color-mix(in srgb, var(--icon-orange) 22%, transparent)" }}
+        />
+
+        <div className="sm:absolute sm:left-1/2 sm:top-1/2 sm:w-[52%] sm:-translate-x-1/2 sm:-translate-y-1/2">
+          <DigitalTwinFigure
+            size={240}
+            src={report.visualTheme.bodyAssetPath}
+            alt={report.title}
+            showParticles={false}
+          />
+        </div>
+
+        <ul className="mt-6 space-y-3 sm:mt-0 sm:space-y-0">
+          {nodes.map((node, i) => (
+            <RingNode
+              key={node.id}
+              pathway={node.id}
+              state={node.state}
+              x={positions[i]?.x ?? "50%"}
+              y={positions[i]?.y ?? "50%"}
+            />
+          ))}
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+/* ── Chapter framing ─────────────────────────────────────────────────────────
+ * A numeral per chapter, so the block reads as one report rather than a stack
+ * of unrelated cards.
+ *
+ * The body-led opener is deliberately NOT numbered — it is the chapter's cover,
+ * and numbering it would make the first teaching chapter read as the second.
+ * So the numerals run 01–07, or 01–08 on a family report, where the household
+ * chapter slots in before Evidence. The count is derived at render time for
+ * exactly that reason. */
+
+function ChapterHeader({
+  number,
+  eyebrow,
+  title,
+  subtitle,
+}: {
+  number: string
+  eyebrow: string
+  title: string
+  subtitle?: string
+}) {
+  return (
+    <div className="mb-6">
+      <div className="mb-3 flex items-center gap-3">
+        <span
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-serif text-sm font-semibold text-white"
+          style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}
+        >
+          {number}
+        </span>
+        <p className="text-xs font-semibold uppercase tracking-widest text-[var(--icon-green-text)]">
+          {eyebrow}
+        </p>
+      </div>
+      <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl text-balance">
+        {title}
+      </h2>
+      {subtitle && <p className="mt-2 leading-relaxed text-muted-foreground">{subtitle}</p>}
+    </div>
+  )
+}
+
 /* ── Chapters 1–9 ────────────────────────────────────────────────────────── */
 
 export function FoodSystemSection({ report }: { report: FoodSystemReport }) {
+  // JSX evaluates top-down, so a counter gives stable numbering that closes
+  // over the conditional family chapter without hand-maintaining an index.
+  // Starts at 01 on the first chapter AFTER the opener; the opener is unnumbered.
+  let n = 0
+  const ch = () => String(++n).padStart(2, "0")
+
   return (
     <>
-      {/* Chapter 1 — Your Food System snapshot */}
+      {/* Chapter 1 — the body-led opener */}
       <section>
         <ScrollReveal>
           <SectionHeader
@@ -193,7 +386,8 @@ export function FoodSystemSection({ report }: { report: FoodSystemReport }) {
             title={report.title}
             subtitle={report.systemSnapshot.oneLine}
           />
-          <div className="space-y-4">
+          <div className="space-y-8">
+            <FoodSystemHero report={report} />
             <PathwayScores scores={report.bioticScores} />
             <div
               className="rounded-3xl border border-border bg-background p-6 space-y-4"
@@ -219,7 +413,8 @@ export function FoodSystemSection({ report }: { report: FoodSystemReport }) {
       {/* Chapters 2–4 — the 3-Biotics engine, taught before anything is recommended */}
       <section>
         <ScrollReveal>
-          <SectionHeader
+          <ChapterHeader
+            number={ch()}
             eyebrow="How It Works"
             title="Your 3-Biotics Engine"
             subtitle="What each pathway does, and what your answers suggest about yours."
@@ -281,7 +476,8 @@ export function FoodSystemSection({ report }: { report: FoodSystemReport }) {
       {/* Chapter 2 (map) — the system, part by part */}
       <section>
         <ScrollReveal>
-          <SectionHeader
+          <ChapterHeader
+            number={ch()}
             eyebrow="The Map"
             title="Your Food System, Part by Part"
             subtitle="Where each pathway stands right now."
@@ -297,7 +493,8 @@ export function FoodSystemSection({ report }: { report: FoodSystemReport }) {
       {/* Chapter 5 — body signals, as clues rather than findings */}
       <section>
         <ScrollReveal>
-          <SectionHeader
+          <ChapterHeader
+            number={ch()}
             eyebrow="Body Signals"
             title="What To Notice"
             subtitle="Food-pattern clues, not diagnoses. Treat them as feedback on what you changed."
@@ -313,7 +510,7 @@ export function FoodSystemSection({ report }: { report: FoodSystemReport }) {
       {/* Chapter 6 — the one thing to do first */}
       <section>
         <ScrollReveal>
-          <SectionHeader eyebrow="Start Here" title="Your Priority Lever" />
+          <ChapterHeader number={ch()} eyebrow="Start Here" title="Your Priority Lever" />
           <div
             className="rounded-3xl border border-[var(--icon-green)]/20 border-l-4 border-l-[var(--icon-green)] p-6 space-y-4"
             style={{ background: "color-mix(in srgb, var(--icon-green) 8%, transparent)" }}
@@ -333,7 +530,8 @@ export function FoodSystemSection({ report }: { report: FoodSystemReport }) {
       {/* Chapter 7 — foods as tools, with mechanisms */}
       <section>
         <ScrollReveal>
-          <SectionHeader
+          <ChapterHeader
+            number={ch()}
             eyebrow="Food Tools"
             title="Foods As Tools, Not A Shopping List"
             subtitle="What each one does inside your system — and why it suits your answers."
@@ -378,7 +576,8 @@ export function FoodSystemSection({ report }: { report: FoodSystemReport }) {
       {/* Chapter 8 — the 30-day loop */}
       <section>
         <ScrollReveal>
-          <SectionHeader
+          <ChapterHeader
+            number={ch()}
             eyebrow="The Loop"
             title="Your 30-Day Improvement Loop"
             subtitle="Four weeks, one focus each — built to survive an ordinary week."
@@ -412,7 +611,8 @@ export function FoodSystemSection({ report }: { report: FoodSystemReport }) {
       {report.familyContext && (
         <section>
           <ScrollReveal>
-            <SectionHeader
+            <ChapterHeader
+              number={ch()}
               eyebrow="Your Household"
               title="The Family Table"
               subtitle="How this applies where more than one person eats."
@@ -467,7 +667,8 @@ export function FoodSystemSection({ report }: { report: FoodSystemReport }) {
       {/* Evidence — the claims above, with something a reader can check */}
       <section>
         <ScrollReveal>
-          <SectionHeader
+          <ChapterHeader
+            number={ch()}
             eyebrow="Evidence"
             title="Where This Comes From"
             subtitle="The sources behind the general claims in this report."
@@ -499,6 +700,80 @@ export function FoodSystemSection({ report }: { report: FoodSystemReport }) {
 
 /* ── Chapter 10 — the closing mission page ───────────────────────────────── */
 
+/**
+ * The inside-out visual the brief asks for: the reader at the centre, then the
+ * widening circles their eating actually touches.
+ *
+ * The rings themselves are aria-hidden decoration. The six levels render as a
+ * written ordered list underneath, which is what carries the meaning — a reader
+ * on a screen reader, a printed page, or a 320px phone gets the same argument
+ * as someone looking at the diagram. Labelling each ring in place looked better
+ * at 1440px and fell apart everywhere else.
+ */
+
+const INSIDE_OUT_LEVELS = [
+  "You",
+  "Family",
+  "Community",
+  "County",
+  "Country",
+  "The Food System",
+] as const
+
+function InsideOutRings({ assetPath, alt }: { assetPath: string; alt: string }) {
+  // Five rings for six levels: the figure at the centre IS "You", so the rings
+  // are Family outward to The Food System. Widest first so the figure sits on
+  // top; the gradient walks the brand ramp outward, lime through orange.
+  const rings = [
+    { inset: "0%", accent: "orange" },
+    { inset: "8%", accent: "yellow" },
+    { inset: "17%", accent: "teal" },
+    { inset: "26%", accent: "green" },
+    { inset: "35%", accent: "lime" },
+  ] as const
+
+  return (
+    <div className="mx-auto w-full max-w-[420px]">
+      <div className="relative aspect-square">
+        {rings.map((r) => (
+          <div
+            key={r.inset}
+            aria-hidden
+            className="absolute rounded-full"
+            style={{
+              inset: r.inset,
+              border: `1.5px solid color-mix(in srgb, ${accentFill(r.accent)} 38%, transparent)`,
+              background: `color-mix(in srgb, ${accentFill(r.accent)} 4%, transparent)`,
+            }}
+          />
+        ))}
+        {/* DigitalTwinFigure draws the figure at size*0.66 inside an aura at
+         * size*0.95, so at size={150} a 99px figure sat inside a 142px glow and
+         * read as a glow with something in it. Scaling the whole diagram up and
+         * damping the aura here — rather than in DigitalTwinFigure, which
+         * /digital-twin and OrbitHub also render — puts the figure at 139px and
+         * lets "you at the centre" actually land. */}
+        <div className="absolute left-1/2 top-1/2 w-[56%] -translate-x-1/2 -translate-y-1/2 [&_.eb-aura]:opacity-40">
+          <DigitalTwinFigure size={210} src={assetPath} alt={alt} showParticles={false} />
+        </div>
+      </div>
+
+      <ol className="mt-5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5">
+        {INSIDE_OUT_LEVELS.map((level, i) => (
+          <li key={level} className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-foreground">{level}</span>
+            {i < INSIDE_OUT_LEVELS.length - 1 && (
+              <span aria-hidden className="text-xs text-muted-foreground">
+                →
+              </span>
+            )}
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
+}
+
 export function FoodSystemClosing({ report }: { report: FoodSystemReport }) {
   const { closingMissionPage: closing } = report
   return (
@@ -520,7 +795,13 @@ export function FoodSystemClosing({ report }: { report: FoodSystemReport }) {
                 "radial-gradient(50% 50% at 50% 50%, color-mix(in srgb, var(--icon-green) 30%, transparent), transparent 70%)",
             }}
           />
-          <h2 className="font-serif text-3xl font-semibold leading-snug text-foreground sm:text-4xl">
+
+          <InsideOutRings
+            assetPath={closing.visualToken.assetPath ?? report.visualTheme.bodyAssetPath}
+            alt="You at the centre of a widening food system"
+          />
+
+          <h2 className="mt-8 font-serif text-3xl font-semibold leading-snug text-foreground sm:text-4xl">
             {closing.headlineLines.map((line) => (
               <span key={line} className="block text-balance">
                 {line}
