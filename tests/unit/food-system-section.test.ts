@@ -228,8 +228,10 @@ describe("body-led chapter", () => {
     const report = youReport()
     const body = text(renderSection(report))
 
-    // The ring encodes state by accent and position. Neither survives a screen
-    // reader or a printed page, so both must also be words.
+    // On the ring, state is carried by this text alone: the node's accent marks
+    // the pathway (bioticAccent), not its state, and ring position is
+    // orientation. Drop the words and the state is not conveyed at all — which
+    // is what this assertion is here to prevent.
     for (const node of report.foodSystemMap) {
       const label = PATHWAY_LABEL[node.id as keyof typeof PATHWAY_LABEL]
       if (label) expect(body).toContain(label)
@@ -238,7 +240,9 @@ describe("body-led chapter", () => {
     expect(stateWords.some((w) => body.includes(w))).toBe(true)
   })
 
-  it("numbers the chapters sequentially, and renumbers when the family chapter appears", () => {
+  it("numbers the chapters 01-07, adding 08 only for a family report", () => {
+    // The body-led opener is the cover and carries no numeral, so the first
+    // teaching chapter is 01.
     const plain = text(renderSection(youReport()))
     for (const n of ["01", "02", "03", "04", "05", "06"]) {
       expect(plain).toContain(n)

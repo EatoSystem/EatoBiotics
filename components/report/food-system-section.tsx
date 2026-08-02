@@ -232,9 +232,12 @@ function RingNode({
         <span className="block text-sm font-bold text-foreground">
           {PATHWAY_LABEL[pathway]}
         </span>
-        {/* The state is written out here as well as encoded by the accent —
-         * position and colour on their own would fail WCAG 1.4.1 and vanish in
-         * print. */}
+        {/* State reaches the reader here as words, and only as words. The
+         * accent on this node is bioticAccent(pathway) — it marks which pathway
+         * the node is, not how that pathway is doing, and its position on the
+         * ring is orientation rather than meaning. (StateBadge, further up, is
+         * the one that colours by state.) So this text is not a caption for a
+         * colour: remove it and the state is simply gone. */}
         <span
           className="block text-xs font-semibold"
           style={{ color: accentText(accent) }}
@@ -313,8 +316,13 @@ function FoodSystemHero({ report }: { report: FoodSystemReport }) {
 
 /* ── Chapter framing ─────────────────────────────────────────────────────────
  * A numeral per chapter, so the block reads as one report rather than a stack
- * of unrelated cards. The count is derived at render time because the family
- * chapter only exists on family reports. */
+ * of unrelated cards.
+ *
+ * The body-led opener is deliberately NOT numbered — it is the chapter's cover,
+ * and numbering it would make the first teaching chapter read as the second.
+ * So the numerals run 01–07, or 01–08 on a family report, where the household
+ * chapter slots in before Evidence. The count is derived at render time for
+ * exactly that reason. */
 
 function ChapterHeader({
   number,
@@ -353,6 +361,7 @@ function ChapterHeader({
 export function FoodSystemSection({ report }: { report: FoodSystemReport }) {
   // JSX evaluates top-down, so a counter gives stable numbering that closes
   // over the conditional family chapter without hand-maintaining an index.
+  // Starts at 01 on the first chapter AFTER the opener; the opener is unnumbered.
   let n = 0
   const ch = () => String(++n).padStart(2, "0")
 
