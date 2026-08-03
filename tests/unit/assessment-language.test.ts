@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest"
 
 import { getProfile, getInsights, computeSubScores } from "@/lib/assessment-scoring"
+import { getMindProfile, getMindInsights } from "@/lib/mind-assessment-scoring"
+import { getFamilyProfile, getFamilyInsights } from "@/lib/family-assessment-scoring"
+import { getGlucoseProfile } from "@/lib/glucose-assessment-scoring"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 
 /**
  * Phase 6 — health-language guard for live assessment copy.
@@ -136,6 +141,116 @@ describe("assessment copy stays educational and non-diagnostic", () => {
       /your answers suggest|this pattern may indicate|is associated with|may support|a useful place to (start|begin)|tends to/i
     for (const profile of allProfiles()) {
       expect(profile.description, profile.type).toMatch(hedges)
+    }
+  })
+})
+
+/**
+ * Phase 6.1 — the same standard, extended to the other assessment families.
+ *
+ * Mind, Family and Glucose each have their own scoring module and their own
+ * results page (mind-assessment-results:177, family-assessment-results:192,
+ * glucose-report:70). None of them feed a prompt or an email — I traced that
+ * before editing — so the blast radius is smaller than the You flow's, but the
+ * copy is just as customer-facing.
+ *
+ * Glucose carried the strongest claims of the three, because it named a
+ * physiological measure: "Your glucose rhythm is working in your favour" and
+ * "supporting steadier glucose" assert something about blood glucose that a
+ * questionnaire cannot see.
+ */
+describe("other assessment families hold the same language standard", () => {
+  const BANDS = [85, 70, 60, 45, 30, 20]
+
+  function familyCopy(): string[] {
+    const out: string[] = []
+    for (const overall of BANDS) {
+      for (const p of [getMindProfile(overall), getFamilyProfile(overall), getGlucoseProfile(overall)]) {
+        out.push(p.tagline, p.description)
+      }
+    }
+    return out
+  }
+
+  it("makes no body claim, timeline or outcome promise", () => {
+    for (const line of familyCopy()) {
+      expect(line, line).not.toMatch(/\bYou have\b/)
+      expect(line, line).not.toMatch(/\bYou(&#39;|'|\u2019)ve built\b/i)
+      expect(line, line).not.toMatch(/within (a few )?(days|weeks|months)/i)
+      expect(line, line).not.toMatch(/\bwill \w+/i)
+      expect(line, line).not.toMatch(/measurable difference/i)
+      expect(line, line).not.toMatch(/\b(guarantee|guaranteed|proven to)\b/i)
+      expect(line, line).not.toMatch(/\b(treat|treats|cure|cures|prevents?)\b/i)
+      expect(line, line).not.toMatch(/your (gut|body|microbiome|system) (needs|is missing|requires)\b/i)
+      expect(line, line).not.toMatch(/your gut is (waiting|craving|hungry)/i)
+    }
+  })
+
+  it("does not claim to know the reader's glucose", () => {
+    // A 15-question survey cannot measure blood glucose. Habits may be
+    // "associated with" steadier energy; the reading itself is not knowable.
+    for (const overall of BANDS) {
+      const p = getGlucoseProfile(overall)
+      for (const line of [p.tagline, p.description]) {
+        expect(line, line).not.toMatch(/your glucose (rhythm|response|curve|level)/i)
+        expect(line, line).not.toMatch(/(support|supporting|supports) (steady|steadier|stable) glucose/i)
+      }
+    }
+  })
+
+  it("anchors every profile in the answers", () => {
+    for (const overall of BANDS) {
+      for (const [name, p] of [
+        ["mind", getMindProfile(overall)],
+        ["family", getFamilyProfile(overall)],
+        ["glucose", getGlucoseProfile(overall)],
+      ] as const) {
+        expect(`${p.tagline} ${p.description}`, `${name} @ ${overall}`).toMatch(
+          /your answers|is associated with|are associated with|a useful place to (start|begin)|may support/i,
+        )
+      }
+    }
+  })
+
+  it("keeps the pillar insight copy hedged too", () => {
+    const insightCopy = [
+      ...getMindInsights({ nourish: 40, steady: 40, protect: 40, recover: 40 } as never),
+      ...getFamilyInsights({ variety: 40, rhythm: 40, together: 40, calm: 40 } as never),
+    ].flatMap((i) => [i.strength, i.opportunity, i.action].filter(Boolean) as string[])
+
+    for (const line of insightCopy) {
+      expect(line, line).not.toMatch(/\bYou have\b/)
+      expect(line, line).not.toMatch(/within (a few )?(days|weeks|months)/i)
+      expect(line, line).not.toMatch(/\bwill \w+/i)
+      expect(line, line).not.toMatch(/measurable difference/i)
+    }
+  })
+
+  it("holds the glucose pillar copy to the same rule, read from source", () => {
+    // getGlucoseInsights is not exported, so the copy table is checked at
+    // source rather than through a call — the alternative is exporting an
+    // internal purely to test it.
+    const src = readFileSync(join(process.cwd(), "lib/glucose-assessment-scoring.ts"), "utf8")
+    const strings = [...src.matchAll(/(strength|opportunity|actionLow|actionHigh):\s*"([^"]+)"/g)].map(
+      (m) => m[2],
+    )
+    expect(strings.length).toBeGreaterThan(8)
+    for (const line of strings) {
+      expect(line, line).not.toMatch(/\bYou(&#39;|'|\u2019)re protecting\b/i)
+      expect(line, line).not.toMatch(/within (a few )?(days|weeks|months)/i)
+      expect(line, line).not.toMatch(/\bwill \w+/i)
+      expect(line, line).not.toMatch(/(support|supporting|supports) (steady|steadier|stable) glucose/i)
+      expect(line, line).not.toMatch(/steadier glucose (curve|response)/i)
+    }
+  })
+
+  it("confirms performance and lib/scoring.ts remain clean", () => {
+    // Measured at 0 in Phase 6 and left untouched; this pins that.
+    for (const f of ["lib/performance-assessment-scoring.ts", "lib/scoring.ts"]) {
+      const src = readFileSync(join(process.cwd(), f), "utf8")
+      expect(src, f).not.toMatch(/\bYou have\b/)
+      expect(src, f).not.toMatch(/within (a few )?(days|weeks|months)/i)
+      expect(src, f).not.toMatch(/measurable difference/i)
     }
   })
 })

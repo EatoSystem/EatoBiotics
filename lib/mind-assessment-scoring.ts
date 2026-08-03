@@ -188,44 +188,44 @@ export function getMindProfile(overall: number): AssessmentProfile {
   if (overall >= 75) {
     return {
       type: "Sharp & Steady",
-      tagline: "Your food patterns are working in your mind's favour.",
+      tagline: "Your answers point to patterns that support steady focus.",
       description:
-        "Your eating patterns line up well with steady mental energy and clarity — variety, reliable fuel, live foods, a good rhythm, and a mind that responds well. This is a snapshot of patterns that are serving you; the opportunity now is to protect them.",
+        "Your answers describe patterns that are associated with steady mental energy — variety, reliable fuel, live foods and a good rhythm. This is a snapshot of what you reported, not a measure of how your mind works; from here the useful work is protecting what already holds.",
       color: "var(--icon-green)",
     }
   }
   if (overall >= 58) {
     return {
       type: "Clear Foundation",
-      tagline: "Solid food patterns — a small tweak or two could sharpen things further.",
+      tagline: "Your answers point to solid patterns, with room to sharpen one or two.",
       description:
-        "Your patterns give your mind a good base. One or two areas, tightened up, may support even steadier energy and focus. This is a starting point, not a verdict — small changes tend to compound.",
+        "Your answers suggest a good base. One or two areas, tightened up, may support steadier energy and focus. This is a starting point, not a verdict — small changes tend to add up.",
       color: "var(--icon-teal)",
     }
   }
   if (overall >= 42) {
     return {
       type: "Emerging Clarity",
-      tagline: "The building blocks are there — consistency is the next step.",
+      tagline: "Your answers show the building blocks; consistency is the next step.",
       description:
-        "You have real strengths and some areas still finding their rhythm. Steady, repeatable changes may support how clear and even you feel. You're closer than it might seem.",
+        "Your answers suggest real strengths alongside areas still finding their rhythm. Steady, repeatable changes may support how clear and even you feel — this pattern is a useful place to start rather than a problem.",
       color: "var(--icon-lime)",
     }
   }
   if (overall >= 28) {
     return {
       type: "Finding Your Rhythm",
-      tagline: "A few steady anchors could make a real difference.",
+      tagline: "Your answers suggest a few steady anchors would help most.",
       description:
-        "Some current patterns may be working against steady energy and focus. This is a kind starting point — choosing one or two anchors (a reliable breakfast, a steadier rhythm) often lifts several areas at once.",
+        "Your answers suggest some current patterns may be pulling against steady energy and focus. This is a kind starting point — choosing one or two anchors, such as a reliable breakfast or a steadier rhythm, is a useful place to begin and often lifts several areas at once.",
       color: "var(--icon-yellow)",
     }
   }
   return {
     type: "Early Builder",
-    tagline: "You're at the start of something worthwhile.",
+    tagline: "Your answers suggest an early starting point.",
     description:
-      "Every small change from here can help. The easiest place to begin is a simple, repeatable base — a steady breakfast, regular meals, and a little more variety — and to notice how you feel as you go.",
+      "Your answers suggest an early starting point, which is a useful position to build from. A simple, repeatable base is a good place to begin — a steady breakfast, regular meals, a little more variety — noticing how you feel as you go.",
     color: "var(--icon-orange)",
   }
 }
