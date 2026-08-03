@@ -21,11 +21,11 @@ import { ProteinCalculator } from "@/components/eatobetics/protein-calculator"
 export const metadata: Metadata = {
   title: { absolute: "GLP-1 Companion — Keep the Muscle, Build the Habit | EatoBiotics" },
   description:
-    "On Ozempic, Wegovy, or Mounjaro? Losing weight isn't the same as getting healthier. The EatoBiotics GLP-1 Companion helps you protect muscle with the right protein, strength, and food habits while your appetite is low.",
+    "On Ozempic, Wegovy, or Mounjaro? Losing weight isn't the same as getting healthier. The EatoBiotics GLP-1 Companion is an educational guide to protein, strength, and food habits that support muscle while your appetite is low.",
   openGraph: {
     title: "GLP-1 Companion — Keep the Muscle, Build the Habit | EatoBiotics",
     description:
-      "Protect muscle and build lasting food habits while you're on a GLP-1. Estimate your protein target and get a glucose- and muscle-smart plan.",
+      "Support muscle and build food habits while you're on a GLP-1. Estimate your protein target and get an educational, muscle-aware plan.",
   },
 }
 
@@ -40,28 +40,28 @@ const G = {
 }
 
 const PROBLEMS = [
-  { icon: TrendingDown, gradient: G.amber, title: "Muscle goes with the fat", body: "When weight falls fast on low appetite, a large share of what's lost can be muscle — not just fat. Muscle is what keeps you strong, mobile, and metabolically healthy." },
-  { icon: RefreshCw, gradient: G.teal, title: "The rebound risk", body: "Less muscle means a lower metabolism, which makes weight easier to regain if the medication stops. Protecting muscle now protects your results later." },
+  { icon: TrendingDown, gradient: G.amber, title: "Muscle goes with the fat", body: "When weight falls fast on low appetite, a large share of what's lost can be muscle — not just fat. Muscle is a big part of staying strong, mobile, and metabolically healthy." },
+  { icon: RefreshCw, gradient: G.teal, title: "The rebound risk", body: "Less muscle is associated with a lower resting metabolism, which is one reason weight can be easier to regain if the medication stops. Looking after muscle now is worth the effort." },
   { icon: Salad, gradient: G.green, title: "Eating less ≠ eating well", body: "A smaller appetite is a powerful window — but eating less of the same food can leave you short on protein, fibre, and nutrients. Every bite has to count." },
 ]
 
 const FRAMEWORK = [
-  { icon: Dumbbell, gradient: G.amber, title: "Protein first", body: "Lead every meal with protein and aim for a steady daily total. It's the single biggest lever for keeping muscle while you lose fat." },
+  { icon: Dumbbell, gradient: G.amber, title: "Protein first", body: "Lead every meal with protein and aim for a steady daily total. Adequate protein is strongly associated with holding on to muscle during weight loss." },
   { icon: Dumbbell, gradient: G.teal, title: "Resistance training", body: "Two to three short strength sessions a week tell your body to hold on to muscle. Even bodyweight or bands count." },
-  { icon: Leaf, gradient: G.green, title: "Fibre for fullness", body: "Vegetables, legumes, and wholegrains stretch a small appetite further, steady your glucose, and ease constipation." },
-  { icon: Droplets, gradient: G.mix, title: "Hydrate & steady rhythm", body: "Sip through the day and keep meals at regular times. Hydration and rhythm soften side effects and support energy." },
+  { icon: Leaf, gradient: G.green, title: "Fibre for fullness", body: "Vegetables, legumes, and wholegrains stretch a small appetite further, and are associated with steadier energy and easier digestion." },
+  { icon: Droplets, gradient: G.mix, title: "Hydrate & steady rhythm", body: "Sip through the day and keep meals at regular times. Many people find hydration and rhythm make side effects easier to live with." },
 ]
 
 const SIDE_EFFECTS = [
   { icon: Soup, title: "Nausea", body: "Smaller, slower meals. Lean on bland, protein-rich options — eggs, yoghurt, chicken, fish. Avoid greasy, very sweet, or heavy meals." },
   { icon: Apple, title: "Early fullness", body: "Eat protein and vegetables first while you have room, and drink between meals rather than during, so liquid doesn't crowd out food." },
-  { icon: Leaf, title: "Constipation", body: "Build up fibre gradually, keep fluids high, and move daily. A short walk after meals helps digestion and glucose alike." },
+  { icon: Leaf, title: "Constipation", body: "Build up fibre gradually, keep fluids high, and move daily. A short walk after meals is a habit many people find helps digestion." },
 ]
 
 const SWAPS = [
   { from: "Tea & toast", to: "Greek yoghurt + berries + nuts", note: "~20g protein, fibre, and fullness instead of a fast carb." },
   { from: "Half-eaten big pasta", to: "Smaller pasta + chicken + side salad", note: "Protein and fibre first so the few bites you manage count." },
-  { from: "Skipping lunch", to: "Protein-forward small plate", note: "Even on low appetite, a protein anchor protects muscle." },
+  { from: "Skipping lunch", to: "Protein-forward small plate", note: "Even on low appetite, a protein anchor supports muscle." },
 ]
 
 export default function Glp1CompanionPage() {
@@ -83,8 +83,8 @@ export default function Glp1CompanionPage() {
             </h1>
             <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
               On Ozempic, Wegovy, or Mounjaro? Losing weight isn&apos;t the same as getting
-              healthier. EatoBiotics helps you protect muscle and rebuild your relationship
-              with food while your appetite is low — so the results last.
+              healthier. EatoBiotics helps you focus on muscle and rebuild your relationship
+              with food while your appetite is low.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link href={ASSESSMENT_HREF} className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:opacity-90 hover:shadow-xl">
@@ -142,8 +142,8 @@ export default function Glp1CompanionPage() {
               How much protein do you actually need?
             </h2>
             <p className="mt-5 text-base leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
-              Protein is your number-one muscle-protecting lever on a GLP-1. Get a quick,
-              personalised estimate — then aim to hit it across your meals.
+              Protein is one of the habits most consistently associated with holding on to muscle
+              on a GLP-1. Get a quick, personalised estimate — then aim to hit it across your meals.
             </p>
           </ScrollReveal>
           <ScrollReveal delay={100}>
@@ -160,7 +160,7 @@ export default function Glp1CompanionPage() {
           <ScrollReveal className="mx-auto max-w-3xl text-center">
             <p className="mb-4 text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--icon-teal)" }}>The Companion Framework</p>
             <h2 className="font-serif text-3xl font-bold leading-tight text-balance sm:text-4xl lg:text-5xl" style={{ color: "var(--foreground)" }}>
-              Four habits that protect your results
+              Four habits worth building
             </h2>
             <p className="mt-6 text-lg leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
               Make the appetite window work for you — not against you.
@@ -198,13 +198,13 @@ export default function Glp1CompanionPage() {
               <p className="mt-4 text-base leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
                 The free calculator gives you the target. Members get the full GLP-1 Companion:
                 log your protein against it each day, track weight and strength sessions, and
-                watch your muscle-protecting streak build week to week.
+                watch your streak build week to week.
               </p>
               <ul className="mt-5 space-y-2.5">
                 {[
                   "Daily protein target with a live progress ring",
                   "Weight trend & strength-session tracking",
-                  "Weekly summary of the days you protected muscle",
+                  "Weekly summary of the days you hit your protein target",
                 ].map((t) => (
                   <li key={t} className="flex items-start gap-2.5 text-sm" style={{ color: "var(--foreground)" }}>
                     <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-white" style={{ background: "var(--icon-green)" }}><Check size={12} /></span>
@@ -285,7 +285,7 @@ export default function Glp1CompanionPage() {
           <ScrollReveal className="mx-auto max-w-3xl text-center">
             <p className="mb-4 text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--icon-orange)" }}>Make Every Bite Count</p>
             <h2 className="font-serif text-3xl font-bold leading-tight text-balance sm:text-4xl" style={{ color: "var(--foreground)" }}>
-              Small swaps, big difference
+              Small swaps, worth building on
             </h2>
           </ScrollReveal>
           <div className="mt-14 space-y-4">
@@ -326,7 +326,7 @@ export default function Glp1CompanionPage() {
               </h2>
               <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-white/70 sm:text-lg">
                 Take the free Glucose assessment — it tailors your report and 30-day
-                protocol for protecting muscle while you&apos;re on a GLP-1.
+                protocol around muscle-supporting habits while you&apos;re on a GLP-1.
               </p>
               <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <Link href={ASSESSMENT_HREF} className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-xl shadow-black/30 transition-all hover:opacity-90">

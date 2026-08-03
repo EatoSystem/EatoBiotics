@@ -51,11 +51,12 @@ export function EbHero() {
 
           <ScrollReveal delay={140}>
             <p className="mt-4 max-w-md text-xl font-medium text-foreground sm:text-2xl">
-              Steady your glucose system in 30 days.
+              Understand the habits behind steady energy.
             </p>
             <p className="mt-4 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Take the free Glucose Assessment, discover your glucose score, and get a
-              personalised plan for steadier energy, fewer cravings, and better metabolic health.
+              Take the free Glucose Assessment, get your Glucose Score, and follow a
+              personalised 30-day plan built around habits associated with steadier energy
+              and fewer cravings.
             </p>
           </ScrollReveal>
 
@@ -75,7 +76,7 @@ export function EbHero() {
               {[
                 { num: "Free", label: "To start" },
                 { num: "3 min", label: "Takes about" },
-                { num: "30 days", label: "To results" },
+                { num: "30 days", label: "Your plan" },
               ].map((s, i) => (
                 <div key={s.label} className="flex items-center gap-5">
                   {i > 0 && <div className="h-5 w-px bg-border" />}

@@ -39,7 +39,7 @@ export function EbFramework() {
         style={{ background: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))" }}
       >
         <p className="font-serif text-xl font-bold">Glucose Score</p>
-        <p className="mt-1 text-sm text-white/85">How steady your glucose system runs</p>
+        <p className="mt-1 text-sm text-white/85">How strongly your habits support steady energy</p>
       </div>
 
       <div className="flex justify-center py-2" aria-hidden>

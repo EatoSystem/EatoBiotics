@@ -13,11 +13,11 @@ import { EbScoreShowcase } from "@/components/eatobetics/EbScoreShowcase"
 export const metadata: Metadata = {
   title: { absolute: "The Glucose Food System | EatoBiotics" },
   description:
-    "The Glucose Food System is EatoBiotics' pathway for understanding how food affects energy, cravings, glucose stability, and long-term metabolic health. Take the free assessment, get your Glucose Score, and follow a personalised 30-day plan.",
+    "The Glucose Food System is EatoBiotics' pathway for understanding how food habits relate to energy, cravings, and meal rhythm. Take the free assessment, get your Glucose Score, and follow a personalised 30-day plan. It is an educational score, not a measure of blood glucose.",
   openGraph: {
     title: "The Glucose Food System | EatoBiotics",
     description:
-      "Understand how food affects your energy, cravings, glucose stability, and long-term metabolic health — one pathway within EatoBiotics.",
+      "Understand how your food habits relate to energy, cravings, and meal rhythm — one pathway within EatoBiotics. An educational score, not a measure of blood glucose.",
   },
 }
 
@@ -29,28 +29,28 @@ const SYSTEMS = [
   {
     number: "01", title: "Stability", label: "STEADY", icon: Activity,
     accent: "var(--icon-orange)", gradientFrom: "var(--icon-yellow)", gradientTo: "var(--icon-orange)",
-    description: "How sharply your glucose rises and falls after meals. Shaped by fibre, protein, the order you eat in, and the quality of your carbs — the levers that flatten the curve.",
+    description: "The habits that shape how steadily a meal lands — fibre, protein, the order you eat in, and the quality of your carbs. Each one is associated with a gentler rise after eating.",
     support: "Fibre · Protein · Order",
   },
   {
     number: "02", title: "Energy", label: "SUSTAIN", icon: Zap,
     accent: "var(--icon-green)", gradientFrom: "var(--icon-lime)", gradientTo: "var(--icon-green)",
-    description: "Whether your meals leave you energised or crashing. Steadier glucose means steadier focus, fewer cravings, and no afternoon slump — the daily feeling of a balanced food system.",
+    description: "Whether your meals tend to leave you energised or flat. Steadier eating patterns are associated with steadier focus and fewer cravings — the daily feeling of a balanced food system.",
     support: "Focus · Cravings · Slump",
   },
   {
     number: "03", title: "Rhythm", label: "SUSTAIN", icon: Clock,
     accent: "var(--icon-teal)", gradientFrom: "var(--icon-green)", gradientTo: "var(--icon-teal)",
-    description: "The timing, spacing, and movement around your meals. When you eat — and a short walk after — shapes your whole day, and builds long-term metabolic resilience.",
+    description: "The timing, spacing, and movement around your meals. When you eat — and a short walk after — is one of the patterns most often linked with steadier energy through the day.",
     support: "Timing · Spacing · Movement",
   },
 ]
 
 /* ── Section 5 — Why This Pathway (contrast cards) ────────────────────── */
 const CONTRASTS = [
-  { icon: Calculator, old: "Instead of counting calories", neu: "Understand your glucose response.", accent: "var(--icon-orange)" },
+  { icon: Calculator, old: "Instead of counting calories", neu: "Understand the habits behind your meals.", accent: "var(--icon-orange)" },
   { icon: Salad, old: "Instead of restrictive diets", neu: "Build better versions of your meals.", accent: "var(--icon-green)" },
-  { icon: LineChart, old: "Instead of guessing", neu: "See your patterns across stability, energy & rhythm.", accent: "var(--icon-teal)" },
+  { icon: LineChart, old: "Instead of guessing", neu: "See the patterns in what you reported.", accent: "var(--icon-teal)" },
   { icon: CalendarCheck, old: "Instead of one-off advice", neu: "Follow a 30-day plan, one pattern at a time.", accent: "var(--icon-yellow)" },
 ]
 
@@ -63,10 +63,10 @@ const PATHWAYS = [
     copy: "For people who feel foggy, tired, or hungry soon after meals — understand the patterns behind your afternoon slump and craving cycles.",
   },
   {
-    label: "PREVENTION", title: "Get ahead of the curve", icon: ShieldCheck,
+    label: "PREVENTION", title: "Get ahead of your habits", icon: ShieldCheck,
     accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-green))",
     pillars: ["Stability", "Rhythm"], href: ASSESSMENT_HREF,
-    copy: "For people watching fasting glucose, HbA1c, or family risk who want to understand their metabolic health before a diagnosis ever appears.",
+    copy: "For people watching fasting glucose, HbA1c, or family risk who want to understand their everyday food patterns alongside the care of their clinician.",
   },
   {
     label: "GLP-1", title: "Make the most of your medication", icon: Pill,
@@ -79,9 +79,9 @@ const PATHWAYS = [
 
 /* ── Section 7 — How the Glucose pathway works (flow + mock report) ──────────── */
 const FLOW = [
-  { step: "01", icon: ClipboardCheck, label: "Assess", detail: "A short, free assessment maps how your meals affect your glucose system. No account needed." },
+  { step: "01", icon: ClipboardCheck, label: "Assess", detail: "A short, free assessment on how you eat day to day. No account needed." },
   { step: "02", icon: Gauge, label: "Score", detail: "Get your Glucose Score across stability, energy, and rhythm — and where to focus first." },
-  { step: "03", icon: FileText, label: "Report", detail: "A personal glucose profile with your biggest opportunity and meal-by-meal guidance." },
+  { step: "03", icon: FileText, label: "Report", detail: "A profile built from your answers, with your biggest opportunity and meal-by-meal guidance." },
   { step: "04", icon: CalendarCheck, label: "30-Day Plan", detail: "Improve one pattern at a time, with daily actions and weekly check-ins." },
 ]
 
@@ -94,7 +94,7 @@ const MOCK_PILLARS = [
 /* ── Section 9 — EatoBiotics Foundation (dark) ──────────────────────── */
 const FOUNDATION = [
   { number: "01", title: "Food System", accent: "var(--icon-lime)", gradient: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))", body: "It starts with understanding how your Food System responds to food, habits, and daily life — the same philosophy at the heart of EatoBiotics." },
-  { number: "02", title: "Glucose Score", accent: "var(--icon-yellow)", gradient: "linear-gradient(90deg, var(--icon-yellow), var(--icon-orange))", body: "Your score translates everyday glucose patterns into a clear, single measure of how steadily your food system runs." },
+  { number: "02", title: "Glucose Score", accent: "var(--icon-yellow)", gradient: "linear-gradient(90deg, var(--icon-yellow), var(--icon-orange))", body: "Your score translates the everyday food habits you reported into one clear number. It is a behaviour score, not a measure of blood glucose." },
   { number: "03", title: "Biotics Score™", accent: "var(--icon-teal)", gradient: "linear-gradient(90deg, var(--icon-teal), var(--icon-yellow))", body: "Your Glucose Score contributes to your overall Biotics Score™ — the core score at the heart of EatoBiotics." },
 ]
 
@@ -120,23 +120,23 @@ export default function GlucosePage() {
             <ScrollReveal>
               <p className="text-xs font-bold uppercase tracking-widest text-icon-orange">The Problem</p>
               <h2 className="mt-4 text-pretty font-serif text-3xl font-semibold text-foreground sm:text-4xl md:text-5xl">
-                When your glucose is unstable,{" "}
+                When energy swings through the day,{" "}
                 <span className="brand-gradient-text">everything feels harder.</span>
               </h2>
               <blockquote className="mt-8 border-l-2 pl-6 font-serif text-xl font-medium italic text-foreground" style={{ borderColor: "var(--icon-orange)" }}>
-                &ldquo;Steady your glucose, and your whole day steadies with it.&rdquo;
+                &ldquo;Steady the habits, and the day tends to steady with them.&rdquo;
               </blockquote>
             </ScrollReveal>
             <ScrollReveal delay={150}>
               <div className="rounded-3xl border border-border bg-secondary/40 p-8 md:p-10">
                 <p className="text-base leading-relaxed text-muted-foreground">
-                  Energy crashes, cravings, brain fog, low mood, and stubborn weight often trace back to one
-                  thing: a glucose system that spikes and dips through the day.
+                  Energy crashes, cravings, brain fog, and low mood are patterns many people notice, and
+                  they are often bound up with how meals are built and spaced through the day.
                 </p>
                 <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-                  Over time, those swings shape your long-term metabolic health too. Most people are never
-                  shown what drives them. <span className="font-semibold text-foreground">EatoBiotics helps reveal those patterns</span> — so you can
-                  build steadier energy, fewer cravings, and better metabolic health.
+                  Most people are never shown what sits behind them.{" "}
+                  <span className="font-semibold text-foreground">EatoBiotics helps reveal those patterns</span> — so you can
+                  work on the habits associated with steadier energy and fewer cravings.
                 </p>
               </div>
             </ScrollReveal>
@@ -156,8 +156,8 @@ export default function GlucosePage() {
               <span className="brand-gradient-text">of Glucose</span>
             </h2>
             <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-              Three pillars that shape how steady, energised, and resilient your glucose system feels
-              day to day — Stability, Energy, and Rhythm.
+              Three pillars that shape how steady and energised your days tend to feel — Stability,
+              Energy, and Rhythm.
             </p>
           </ScrollReveal>
 
@@ -208,7 +208,7 @@ export default function GlucosePage() {
                   <span className="brand-gradient-text">Built on glucose.</span>
                 </h2>
                 <p className="mt-6 text-base leading-relaxed text-muted-foreground">
-                  Glucose stability is not one habit. It is the result of how Stability, Energy, and Rhythm
+                  Steady eating is not one habit. It is the result of how Stability, Energy, and Rhythm
                   work together across your most-repeated meals.
                 </p>
                 <p className="mt-4 text-base leading-relaxed text-muted-foreground">
@@ -226,7 +226,7 @@ export default function GlucosePage() {
               <ScrollReveal delay={100}><EbFramework /></ScrollReveal>
               <ScrollReveal delay={200}>
                 <p className="mt-4 text-center text-xs text-muted-foreground">
-                  A connected system where each pillar supports the next — measured as one Glucose Score.
+                  A connected system where each pillar supports the next — summarised as one Glucose Score.
                 </p>
               </ScrollReveal>
             </div>
@@ -246,8 +246,8 @@ export default function GlucosePage() {
                 Most food apps count. EatoBiotics understands.
               </h2>
               <p className="mt-6 text-base leading-relaxed text-muted-foreground">
-                Most apps count calories or macros. This pathway focuses on your glucose system — how each meal
-                affects your energy, cravings, and long-term metabolic health.
+                Most apps count calories or macros. This pathway focuses on your food habits — how each meal
+                is built, ordered, and timed, and how that relates to energy and cravings.
               </p>
               <p className="mt-4 text-base leading-relaxed text-muted-foreground">
                 It isn&apos;t a restrictive diet. It helps you rebuild your most-repeated meals so they work
@@ -292,8 +292,8 @@ export default function GlucosePage() {
               <span className="brand-gradient-text">to use the Glucose pathway.</span>
             </h2>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
-              Whether you&apos;re chasing steadier energy, getting ahead of your numbers, or making the most of
-              a GLP-1 — it starts with one free assessment.
+              Whether you&apos;re chasing steadier energy, building habits alongside your clinician&apos;s care, or
+              making the most of a GLP-1 — it starts with one free assessment.
             </p>
           </ScrollReveal>
 
@@ -347,8 +347,8 @@ export default function GlucosePage() {
               <span className="brand-gradient-text">works</span>
             </h2>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
-              A simple loop that turns your everyday meals into a clear Glucose Score — and a 30-day plan
-              to steady it.
+              A simple loop that turns the meals you reported into a clear Glucose Score — and a 30-day
+              plan to build on.
             </p>
           </ScrollReveal>
 
@@ -407,11 +407,11 @@ export default function GlucosePage() {
                 <div className="mt-7 flex items-start gap-4 rounded-2xl p-5" style={{ background: "color-mix(in srgb, var(--icon-orange) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--icon-orange) 25%, transparent)" }}>
                   <Sparkles size={18} style={{ color: "var(--icon-orange)", flexShrink: 0, marginTop: 2 }} />
                   <div>
-                    <p className="text-sm font-semibold text-foreground">Steady your stability first</p>
+                    <p className="text-sm font-semibold text-foreground">Start with stability</p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      Energy and rhythm are working in your favour. The biggest opportunity is stability — a
-                      little more fibre and protein on your most-repeated meals, plus eating vegetables first,
-                      could steady your curve within weeks.
+                      These answers point to energy and rhythm as the stronger areas. The biggest opportunity
+                      is stability — a little more fibre and protein on your most-repeated meals, plus eating
+                      vegetables first, are habits associated with a gentler rise after eating.
                     </p>
                   </div>
                 </div>
@@ -431,7 +431,8 @@ export default function GlucosePage() {
             <p className="text-xs font-bold uppercase tracking-widest text-icon-orange">The Score</p>
             <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">Your Glucose Score</h2>
             <p className="mt-6 text-base leading-relaxed text-muted-foreground">
-              A single score designed to measure how steadily your glucose system runs, day to day.
+              A single score reflecting how strongly your reported habits support steady energy, day to
+              day. It is a behaviour score — it does not measure blood glucose.
             </p>
             <p className="mt-3 font-semibold text-foreground">Your Glucose Score contributes to your overall Biotics Score™.</p>
           </ScrollReveal>
@@ -454,8 +455,8 @@ export default function GlucosePage() {
               <span className="brand-gradient-text">The foundation the Glucose pathway is built on.</span>
             </h2>
             <p className="mt-6 max-w-2xl text-base leading-relaxed text-background/70">
-              Glucose is the metabolic pathway inside EatoBiotics — The Food System Inside You. It measures
-              how steadily your glucose system runs, and contributes to your overall Biotics Score™.
+              Glucose is the metabolic pathway inside EatoBiotics — The Food System Inside You. It reflects
+              how strongly your habits support steady energy, and contributes to your overall Biotics Score™.
             </p>
           </ScrollReveal>
           <ScrollReveal delay={150}>
@@ -493,7 +494,7 @@ export default function GlucosePage() {
             </h2>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
               Glucose is one pathway within EatoBiotics — the food system inside you. Each pathway is a new
-              way to understand and steady it.
+              way to understand it.
             </p>
           </ScrollReveal>
 
@@ -542,8 +543,8 @@ export default function GlucosePage() {
                   Meet the <span className="brand-gradient-text">glucose system inside you.</span>
                 </h2>
                 <p className="mx-auto mt-6 max-w-lg text-base leading-relaxed text-muted-foreground">
-                  Take the free Glucose Assessment and begin building steadier energy, fewer cravings, and
-                  better metabolic health — in 30 days.
+                  Take the free Glucose Assessment and start building the habits associated with steadier
+                  energy and fewer cravings, one 30-day plan at a time.
                 </p>
               </ScrollReveal>
               <ScrollReveal delay={150}>
