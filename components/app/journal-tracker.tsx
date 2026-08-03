@@ -418,7 +418,10 @@ export function JournalTracker() {
   }, [today])
 
   useEffect(() => {
-    getSupabaseBrowser().auth.getUser().then(({ data }) => {
+    // No env means no session — leave isAuthed false, same as signed out.
+    const supabase = getSupabaseBrowser()
+    if (!supabase) return
+    supabase.auth.getUser().then(({ data }) => {
       setIsAuthed(!!data.user)
     })
   }, [])

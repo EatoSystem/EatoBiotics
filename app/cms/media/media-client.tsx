@@ -54,6 +54,9 @@ export function MediaLibraryClient({
 
     // 2. Upload bytes directly to the private bucket via the signed URL.
     const supabase = getSupabaseBrowser()
+    // An upload cannot degrade quietly — surface it through the existing error
+    // path rather than reporting a success that never happened.
+    if (!supabase) throw new Error("Supabase is not configured — cannot upload.")
     const { error: upErr } = await supabase.storage
       .from("cms-media")
       .uploadToSignedUrl(slot.storagePath, slot.token, file, { contentType: file.type })

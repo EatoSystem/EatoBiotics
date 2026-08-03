@@ -27,6 +27,9 @@ export function useTwinRealtime(userId: string | null, onNewMeal?: () => void) {
     let cleanup: (() => void) | undefined
     try {
       const supabase = getSupabaseBrowser()
+      // Realtime is best-effort by design (see above); no env is just another
+      // reason it is unavailable.
+      if (!supabase) return
       const channel = supabase
         .channel("twin-analyses")
         .on(

@@ -82,7 +82,11 @@ function StatsigEnabledProvider({
   // so gates, experiments, and subscription analytics key to the logged-in user.
   useEffect(() => {
     if (!client) return
+    // Without Supabase env there is no session to sync; Statsig keeps the
+    // anonymous identity. This provider wraps the whole app, so throwing here
+    // would take down every page wherever the Statsig key is set.
     const supabase = getSupabaseBrowser()
+    if (!supabase) return
     const sync = (userId?: string, email?: string | null) => {
       if (userId) client.updateUserSync({ userID: userId, email: email ?? undefined })
     }
