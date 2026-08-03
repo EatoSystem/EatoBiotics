@@ -89,7 +89,9 @@ describe("assessment copy stays educational and non-diagnostic", () => {
   it("makes no efficacy or outcome guarantee", () => {
     for (const line of copy) {
       expect(line, line).not.toMatch(/measurable difference/i)
-      expect(line, line).not.toMatch(/\bwill (improve|fix|heal|cure|boost|unlock|create)\b/i)
+      // "will accelerate" slipped past the first version of this guard, which
+      // only listed a handful of verbs. Any "will <verb>" is a promise.
+      expect(line, line).not.toMatch(/\bwill \w+/i)
       expect(line, line).not.toMatch(/\b(guarantee|guaranteed|proven to)\b/i)
       expect(line, line).not.toMatch(/\b(treat|treats|cure|cures|prevents?)\b/i)
     }
@@ -100,8 +102,28 @@ describe("assessment copy stays educational and non-diagnostic", () => {
     // facts about a body from a fifteen-question survey.
     for (const line of copy) {
       expect(line, line).not.toMatch(/\bYou have\b/)
+      expect(line, line).not.toMatch(/\bYou(&#39;|'|\u2019)ve built\b/i)
       expect(line, line).not.toMatch(/your gut health is\b/i)
       expect(line, line).not.toMatch(/your (scores )?reflect an? .*(system|microbiome)/i)
+      // Claims about the reader's body or its wants, rather than their answers.
+      expect(line, line).not.toMatch(/your gut is (waiting|craving|crying|starving|hungry)/i)
+      expect(line, line).not.toMatch(/your gut bacteria are (hungry|starving|waiting)/i)
+      expect(line, line).not.toMatch(/inner food system is (working|thriving|struggling)/i)
+      expect(line, line).not.toMatch(/your (gut|body|microbiome|system) (needs|is missing|requires)\b/i)
+    }
+  })
+
+  it("keeps every tagline about the answers, not the body", () => {
+    // The first version of this file put taglines into allCopy() and then only
+    // asserted patterns that happened not to appear in them — so five claim-y
+    // taglines passed a guard that looked like it covered them. This rule is
+    // specific to taglines so that cannot recur silently.
+    const grounded =
+      /your answers|the pieces|a solid base|some habits|an early starting point|thinnest part/i
+    for (const profile of allProfiles()) {
+      expect(profile.tagline, `${profile.type}: ${profile.tagline}`).toMatch(grounded)
+      // Short is still the point — these render as a single line under the score.
+      expect(profile.tagline.length, profile.type).toBeLessThanOrEqual(90)
     }
   })
 

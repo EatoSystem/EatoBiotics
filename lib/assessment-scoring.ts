@@ -108,7 +108,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
   if (overall >= 80) {
     return {
       type: "Thriving Food System",
-      tagline: "Your inner food system is working hard in your favour.",
+      tagline: "Your answers point to all three pathways being well supported.",
       description:
         "Your answers suggest all three pathways — prebiotic, probiotic and postbiotic — are being supported with real consistency. That pattern is associated with a varied, well-fed microbiome. From here the useful work is protecting what already holds rather than rebuilding.",
       color: "var(--icon-green)",
@@ -118,7 +118,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
   if (overall >= 65) {
     return {
       type: "Strong Foundation",
-      tagline: "You've built something real — now it's time to sharpen it.",
+      tagline: "A solid base in your answers, with one pathway thinner than the rest.",
       description:
         "Your answers suggest a solid base, with one or two pathways — often Probiotics or Postbiotics — thinner than the rest. That is a useful place to start: an uneven pattern is easier to work with than a uniformly low one, because the stronger pathway is already doing work the weaker one can build on.",
       color: "var(--icon-teal)",
@@ -128,7 +128,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
   if (overall >= 50) {
     return {
       type: "Emerging Balance",
-      tagline: "The building blocks are there. Consistency is the next step.",
+      tagline: "The pieces show up in your answers; the pattern is not yet steady.",
       description:
         "Your answers suggest the pieces are present but not yet settled into a daily rhythm. This pattern may indicate that repetition, rather than knowledge, is the gap. Small repeatable changes to any of the three pathways are a useful place to begin.",
       color: "var(--icon-lime)",
@@ -139,7 +139,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
     if (weakest === "probiotics") {
       return {
         type: "Developing System",
-        tagline: "Your gut is waiting for the live foods it needs to thrive.",
+        tagline: "Live and fermented foods are the thinnest part of your answers.",
         description:
           "Your answers suggest real strengths in fibre and meal rhythm, with live and fermented foods appearing less often — your Probiotics score. That makes this pathway the most focused place to start. Adding one fermented food to a meal you already eat is a small, repeatable change; notice how it settles before adding more.",
         color: "var(--icon-yellow)",
@@ -148,7 +148,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
     if (weakest === "postbiotics") {
       return {
         type: "Developing System",
-        tagline: "Your food rhythm and recovery need more attention.",
+        tagline: "Meal rhythm and recovery are the thinnest part of your answers.",
         description:
           "Your answers suggest care around food, reflected in your Prebiotics and Probiotics scores, with rhythm and recovery thinner. Irregular meal timing and few colourful, polyphenol-rich foods are associated with a system that gets less from the same ingredients. Rhythm is a useful place to start here.",
         color: "var(--icon-yellow)",
@@ -156,7 +156,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
     }
     return {
       type: "Developing System",
-      tagline: "Progress is underway — targeted effort will accelerate it.",
+      tagline: "Some habits are in place, with clear gaps between them.",
       description:
         "Your answers suggest some habits are in place, with clear gaps where support is not yet consistent. Starting with the thinnest pathway is a useful way to focus the effort, and small changes that survive an ordinary week tend to matter more than ambitious ones that do not.",
       color: "var(--icon-yellow)",
@@ -165,7 +165,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
 
   return {
     type: "Early Builder",
-    tagline: "You're at the beginning of something important.",
+    tagline: "An early starting point — a useful place to build from.",
     description:
       "Your answers suggest this is an early starting point, which is a useful position rather than a problem — one repeatable habit tends to move several scores at once. A simple base is a good place to begin: whole plants, one fermented food, and a steadier meal rhythm. Complexity can come later.",
     color: "var(--icon-orange)",
