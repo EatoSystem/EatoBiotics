@@ -110,7 +110,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
       type: "Thriving Food System",
       tagline: "Your inner food system is working hard in your favour.",
       description:
-        "You're doing something genuinely rare — supporting your prebiotic, probiotic, and postbiotic systems with intention and consistency. Your scores reflect an inner food system that is well-nourished, diverse, and resilient. The opportunity now is to refine the edges and deepen what's already working.",
+        "Your answers suggest all three pathways — prebiotic, probiotic and postbiotic — are being supported with real consistency. That pattern is associated with a varied, well-fed microbiome. From here the useful work is protecting what already holds rather than rebuilding.",
       color: "var(--icon-green)",
     }
   }
@@ -120,7 +120,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
       type: "Strong Foundation",
       tagline: "You've built something real — now it's time to sharpen it.",
       description:
-        "You have solid food habits and your gut health is benefiting from your effort. One or two biotic scores — often Probiotics or Postbiotics — are where a targeted shift would unlock noticeably better results. The good news: you don't need a transformation, just a refinement.",
+        "Your answers suggest a solid base, with one or two pathways — often Probiotics or Postbiotics — thinner than the rest. That is a useful place to start: an uneven pattern is easier to work with than a uniformly low one, because the stronger pathway is already doing work the weaker one can build on.",
       color: "var(--icon-teal)",
     }
   }
@@ -130,7 +130,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
       type: "Emerging Balance",
       tagline: "The building blocks are there. Consistency is the next step.",
       description:
-        "You have awareness and some strong habits, but they haven't fully integrated into a reliable daily rhythm yet. Your gut responds to consistency — even small, repeatable improvements in your Prebiotics, Probiotics, or Postbiotics scores compound quickly from here.",
+        "Your answers suggest the pieces are present but not yet settled into a daily rhythm. This pattern may indicate that repetition, rather than knowledge, is the gap. Small repeatable changes to any of the three pathways are a useful place to begin.",
       color: "var(--icon-lime)",
     }
   }
@@ -141,7 +141,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
         type: "Developing System",
         tagline: "Your gut is waiting for the live foods it needs to thrive.",
         description:
-          "Your eating habits have real strengths in fibre and food rhythm. What your microbiome is missing is direct microbial input from fermented and live foods — your Probiotics score. This is the most targeted gap to close, and the fastest one to act on. Adding even one fermented food daily can shift things meaningfully within weeks.",
+          "Your answers suggest real strengths in fibre and meal rhythm, with live and fermented foods appearing less often — your Probiotics score. That makes this pathway the most focused place to start. Adding one fermented food to a meal you already eat is a small, repeatable change; notice how it settles before adding more.",
         color: "var(--icon-yellow)",
       }
     }
@@ -150,7 +150,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
         type: "Developing System",
         tagline: "Your food rhythm and recovery need more attention.",
         description:
-          "You have intention around food — it shows in your Prebiotics and Probiotics scores. What your gut is missing right now is consistency and recovery support. When meal timing is unpredictable and colourful, polyphenol-rich foods are absent, even good food choices deliver less benefit.",
+          "Your answers suggest care around food, reflected in your Prebiotics and Probiotics scores, with rhythm and recovery thinner. Irregular meal timing and few colourful, polyphenol-rich foods are associated with a system that gets less from the same ingredients. Rhythm is a useful place to start here.",
         color: "var(--icon-yellow)",
       }
     }
@@ -158,7 +158,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
       type: "Developing System",
       tagline: "Progress is underway — targeted effort will accelerate it.",
       description:
-        "You have some good habits in place, but there are clear gaps where your food system isn't yet consistently supporting your gut. Focusing on your weakest pillar first will create the fastest momentum. Small changes, consistently applied, compound quickly.",
+        "Your answers suggest some habits are in place, with clear gaps where support is not yet consistent. Starting with the thinnest pathway is a useful way to focus the effort, and small changes that survive an ordinary week tend to matter more than ambitious ones that do not.",
       color: "var(--icon-yellow)",
     }
   }
@@ -167,7 +167,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
     type: "Early Builder",
     tagline: "You're at the beginning of something important.",
     description:
-      "Your food system health journey is just beginning, and that means every improvement from here creates a meaningful impact. The most effective place to start is building a simple, repeatable base — whole plants, one fermented food, and a steady meal rhythm. Complexity comes later.",
+      "Your answers suggest this is an early starting point, which is a useful position rather than a problem — one repeatable habit tends to move several scores at once. A simple base is a good place to begin: whole plants, one fermented food, and a steadier meal rhythm. Complexity can come later.",
     color: "var(--icon-orange)",
   }
 }
@@ -193,13 +193,13 @@ const PILLAR_META: Record<
     color: "var(--icon-lime)",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
     strength:
-      "You're consistently nourishing your gut bacteria with the plant diversity and fibre they need — one of the strongest predictors of a healthy, resilient microbiome.",
+      "Your answers suggest plant variety and fibre appear consistently. A wider range of plants is associated with a wider range of microbes, which is one of the more consistent findings in microbiome research.",
     opportunity:
-      "Your gut bacteria are hungry for more plant variety and fibre. A simple anchor at each meal — legumes, wholegrains, or vegetables — creates the consistent fuel your microbiome needs to do its best work.",
+      "Your answers suggest there is room for more plant variety and fibre. Anchoring each meal with one fibre source — legumes, wholegrains or vegetables — is a useful place to start, because it adds to meals you already eat rather than replacing them.",
     actionLow:
-      "This week: anchor every main meal with one fibre source. Lentils, oats, vegetables, wholegrains, or beans all count — even a small portion makes a difference.",
+      "This week: anchor every main meal with one fibre source. Lentils, oats, vegetables, wholegrains or beans all count, and a small portion kept up across the week does more than an occasional large one.",
     actionHigh:
-      "Diversify your fibre sources. Add resistant starch (cooled potato, green banana) or new legumes to feed different microbial populations and push your Prebiotics score higher.",
+      "Rotate your fibre sources. Resistant starch (cooled potato, green banana) or a legume you do not usually eat gives different microbial populations something to work on — variety is the lever here rather than volume.",
   },
   probiotics: {
     label: "Probiotics",
@@ -207,13 +207,13 @@ const PILLAR_META: Record<
     color: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
     strength:
-      "You're regularly introducing live, fermented foods that directly seed your microbiome with beneficial bacteria — one of the most targeted and powerful dietary inputs available.",
+      "Your answers suggest live and fermented foods appear regularly. These add microbial exposure rather than only feeding what is already there, which is a distinct contribution — and worth keeping steady rather than intensifying.",
     opportunity:
-      "Fermented and live foods are the most direct way to introduce new bacteria to your gut. Even one serving a day — yoghurt, miso, or a tablespoon of sauerkraut — makes a measurable difference within weeks and doesn't require big changes to your existing meals.",
+      "Fermented and live foods are the most direct way to introduce new microbes rather than only feeding existing ones. Small, regular amounts — yoghurt, miso, or a tablespoon of sauerkraut — are associated with more benefit than occasional large ones, and need no change to the rest of the meal.",
     actionLow:
-      "This week: add one fermented food to at least one meal each day — live yoghurt with breakfast, miso broth with lunch, or a tablespoon of sauerkraut with dinner.",
+      "This week: add one fermented food to a meal you already eat — live yoghurt with breakfast, miso broth with lunch, or a tablespoon of sauerkraut with dinner. Start small if these are new to you.",
     actionHigh:
-      "Rotate your fermented food sources. Each carries a different bacterial profile — alternate between at least three types across the week for broader microbiome coverage.",
+      "Rotate your fermented food sources. Each carries a different bacterial profile, and probiotic effects are strain-specific, so alternating between three or more types across the week widens what you are exposed to.",
   },
   postbiotics: {
     label: "Postbiotics",
@@ -221,13 +221,13 @@ const PILLAR_META: Record<
     color: "var(--icon-yellow)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     strength:
-      "Your food rhythm and recovery support are excellent — your gut has the consistency and polyphenol-rich foods it needs to produce beneficial compounds and maintain resilience.",
+      "Your answers suggest meal rhythm and recovery are well supported. Regular timing and polyphenol-rich foods are associated with the conditions your microbes need to produce beneficial compounds from what you eat.",
     opportunity:
-      "Your gut's postbiotic system needs more consistent rhythm and colourful, polyphenol-rich foods. Even rough consistency in meal timing — within a 30-minute window — combined with two to three colourful plants per day can significantly improve your Postbiotics score.",
+      "Your answers suggest rhythm and colourful, polyphenol-rich foods are the thinner part here. Rough consistency in meal timing, plus two or three colourful plants a day, is a useful place to start — the lever is predictability rather than any single food.",
     actionLow:
-      "This week: set three anchor meal times and protect them. Then add one colourful plant food per meal — berries, tomatoes, dark greens, or herbs. Small and consistent beats sporadic and perfect.",
+      "This week: pick three anchor meal times and protect them. Then add one colourful plant food per meal — berries, tomatoes, dark greens or herbs. Small and repeatable tends to hold better than ambitious and occasional.",
     actionHigh:
-      "Identify conditions that break your rhythm and pre-plan simple solutions. Add one polyphenol-rich food you don't currently eat — dark chocolate, walnuts, or extra-virgin olive oil — to push your Postbiotics score further.",
+      "Notice what breaks your rhythm on a busy week and plan around it. Adding one polyphenol-rich food you do not currently eat — dark chocolate, walnuts, or extra-virgin olive oil — is a small way to widen what reaches your gut.",
   },
 }
 
@@ -300,7 +300,7 @@ export function resultSections(
   return {
     whatThisMeans: result.profile.description,
     whyItMatters:
-      "Your inner food system shapes how the rest of your body is supported — energy, digestion, immunity, and resilience all build on it. This is a behaviour snapshot you can move, not a fixed trait.",
+      "What you eat is associated with how the rest of your body is supported — energy, digestion, immunity and resilience are all shaped by many things, food among them. Treat this as a snapshot of a pattern you can change, not a fixed trait or a finding about your health.",
     whatToDoThisWeek:
       result.nextActions[0] ?? weakest?.action ?? "Pick one small, repeatable change for this week.",
     strongestArea: strongest?.label ?? "—",
