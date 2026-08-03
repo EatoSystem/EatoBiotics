@@ -12,7 +12,7 @@ import {
   Path,
   Link,
 } from "@react-pdf/renderer"
-import { BRAND, accentFill, accentText, type BrandAccent } from "./pdf-brand"
+import { BRAND, accentFill, accentText, withAlpha, type BrandAccent } from "./pdf-brand"
 import { FONT } from "./pdf-fonts"
 import { PATHWAY_LABEL, type BioticScoreKey } from "@/lib/report/subscores"
 import type {
@@ -291,7 +291,7 @@ function StateBadge({ state }: { state: FoodSystemNode["state"] }) {
     <Text
       style={[
         s.badge,
-        { color: accentText(accent), backgroundColor: `${accentFill(accent)}26` },
+        { color: accentText(accent), backgroundColor: withAlpha(accentFill(accent), 0.15) },
       ]}
     >
       {STATE_LABEL[state]}
@@ -420,7 +420,7 @@ export function FoodSystemPages({ report }: { report: FoodSystemReport }) {
         <BodyFigure scores={report.bioticScores} states={states} family={family} />
         <View style={s.divider} />
         <Text style={s.body}>{report.systemSnapshot.dominantPattern}</Text>
-        <View style={[s.tint, { backgroundColor: `${BRAND.green}14`, marginTop: 12 }]}>
+        <View style={[s.tint, { backgroundColor: withAlpha(BRAND.green, 0.08), marginTop: 12 }]}>
           <Text style={s.fieldLabel}>Your main lever</Text>
           <Text style={s.body}>{report.systemSnapshot.mainLever}</Text>
         </View>
@@ -447,7 +447,7 @@ export function FoodSystemPages({ report }: { report: FoodSystemReport }) {
                   label="What your answers suggest"
                   value={mod.whatYourAnswersSuggest}
                 />
-                <View style={[s.tint, { backgroundColor: `${accentFill(accent)}14` }]}>
+                <View style={[s.tint, { backgroundColor: withAlpha(accentFill(accent), 0.08) }]}>
                   <Text style={[s.body, { color: accentText(accent) }]}>
                     Try this: {mod.actionBridge}
                   </Text>
@@ -498,7 +498,7 @@ export function FoodSystemPages({ report }: { report: FoodSystemReport }) {
           style={[
             s.card,
             s.spacer,
-            { backgroundColor: `${BRAND.green}0f`, borderColor: `${BRAND.green}40` },
+            { backgroundColor: withAlpha(BRAND.green, 0.06), borderColor: "#BFE3BE" },
           ]}
         >
           <Text style={s.cardTitle}>{report.priorityLever.title}</Text>
@@ -529,9 +529,10 @@ export function FoodSystemPages({ report }: { report: FoodSystemReport }) {
                     s.badge,
                     {
                       color: accentText(tool.visualToken.accent as BrandAccent),
-                      backgroundColor: `${accentFill(
-                        tool.visualToken.accent as BrandAccent,
-                      )}26`,
+                      backgroundColor: withAlpha(
+                        accentFill(tool.visualToken.accent as BrandAccent),
+                        0.15,
+                      ),
                     },
                   ]}
                 >
@@ -597,7 +598,7 @@ export function FoodSystemPages({ report }: { report: FoodSystemReport }) {
             title="The Family Table"
             subtitle="How this applies where more than one person eats."
           />
-          <View style={[s.card, s.spacer, { backgroundColor: `${BRAND.teal}0f` }]}>
+          <View style={[s.card, s.spacer, { backgroundColor: withAlpha(BRAND.teal, 0.06) }]}>
             <Text style={s.body}>{report.familyContext.householdPattern}</Text>
             {report.familyContext.constraints.length > 0 && (
               <View style={{ marginTop: 8 }}>
@@ -685,7 +686,7 @@ export function FoodSystemPages({ report }: { report: FoodSystemReport }) {
           </Text>
         </View>
 
-        <View style={[s.tint, { backgroundColor: `${BRAND.green}14`, marginTop: 16 }]}>
+        <View style={[s.tint, { backgroundColor: withAlpha(BRAND.green, 0.08), marginTop: 16 }]}>
           <Text style={s.fieldLabel}>Your next step</Text>
           <Text style={s.body}>{report.closingMissionPage.nextAction}</Text>
         </View>

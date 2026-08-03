@@ -1080,8 +1080,14 @@ export function ReportPDF({
        * mission page had been rendering second-to-last.
        *
        * Optional by design: reports persisted before Phase 2 carry no
-       * foodSystem block and must still produce exactly the PDF they always
-       * did, so this is guarded rather than defaulted. */}
+       * foodSystem block, so this is guarded rather than defaulted. Those
+       * reports keep the same content, the same sections, the same order, and
+       * no Food System pages.
+       *
+       * Not pixel-identical, though, and deliberately so: this change also
+       * registers the brand fonts and corrects the drifted palette, and both
+       * are shared by every page of the document. A legacy report is the same
+       * report, restyled — not the same PDF. */}
       {report.foodSystem && <FoodSystemPages report={report.foodSystem} />}
     </Document>
   )

@@ -46,3 +46,23 @@ export function accentFill(accent: BrandAccent): string {
 export function accentText(accent: BrandAccent): string {
   return BRAND[`${accent}Text` as const]
 }
+
+/**
+ * A translucent brand tint, as `rgba()` — for BACKGROUNDS ONLY.
+ *
+ * **Never use a translucent colour on a border.** react-pdf renders it as an
+ * unrelated hue: the priority-lever card's faint green border came out salmon,
+ * first with `${BRAND.green}40` and again with the equivalent rgba(). Only a
+ * solid colour fixed it. Backgrounds honour alpha correctly.
+ *
+ * Both attempts were caught by rasterising the pages with pdftoppm. The element
+ * tree, the tests, and a valid %PDF- header all looked identical either way —
+ * this class of defect is invisible to everything except looking at the page.
+ */
+export function withAlpha(hex: string, alpha: number): string {
+  const h = hex.replace("#", "")
+  const r = parseInt(h.slice(0, 2), 16)
+  const g = parseInt(h.slice(2, 4), 16)
+  const b = parseInt(h.slice(4, 6), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}

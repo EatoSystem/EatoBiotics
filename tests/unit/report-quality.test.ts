@@ -478,6 +478,18 @@ describe("paid PDF: Food System chapters", () => {
     }
   })
 
+  it("never puts a translucent colour on a PDF border", async () => {
+    // react-pdf renders alpha borders as an unrelated hue — a faint green came
+    // out salmon. Backgrounds are fine; borders must be solid. Caught only by
+    // rasterising the page, so this guard exists to keep it caught.
+    for (const f of ["lib/pdf/report-pdf.tsx", "lib/pdf/food-system-pdf.tsx"]) {
+      const src = readCode(f)
+      for (const m of src.matchAll(/border[A-Za-z]*Color:\s*([^,\n]+)/g)) {
+        expect(m[1], `${f}: ${m[0]}`).not.toMatch(/rgba|withAlpha/)
+      }
+    }
+  })
+
   it("renders every Food System chapter into the document", async () => {
     const rendered = await tree()
     const joined = rendered.join(" | ")
@@ -534,7 +546,10 @@ describe("paid PDF: Food System chapters", () => {
     }
   })
 
-  it("leaves a report without a foodSystem block exactly as it was", async () => {
+  it("leaves a report without a foodSystem block structurally unchanged", async () => {
+    // Same content, same sections, same order, and no Food System pages. NOT
+    // pixel-identical: the brand fonts and the corrected palette are shared by
+    // the whole document, so legacy reports are restyled on purpose.
     const legacy = (await tree(false)).join(" | ")
     const { report } = await fixture()
     const fs = report.foodSystem!
