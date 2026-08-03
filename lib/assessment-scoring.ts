@@ -156,7 +156,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
     }
     return {
       type: "Developing System",
-      tagline: "Some habits are in place, with clear gaps between them.",
+      tagline: "Your answers show some habits in place, with clear gaps between them.",
       description:
         "Your answers suggest some habits are in place, with clear gaps where support is not yet consistent. Starting with the thinnest pathway is a useful way to focus the effort, and small changes that survive an ordinary week tend to matter more than ambitious ones that do not.",
       color: "var(--icon-yellow)",
@@ -165,7 +165,7 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
 
   return {
     type: "Early Builder",
-    tagline: "An early starting point — a useful place to build from.",
+    tagline: "Your answers suggest an early starting point to build from.",
     description:
       "Your answers suggest this is an early starting point, which is a useful position rather than a problem — one repeatable habit tends to move several scores at once. A simple base is a good place to begin: whole plants, one fermented food, and a steadier meal rhythm. Complexity can come later.",
     color: "var(--icon-orange)",

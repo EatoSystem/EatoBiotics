@@ -118,10 +118,14 @@ describe("assessment copy stays educational and non-diagnostic", () => {
     // asserted patterns that happened not to appear in them — so five claim-y
     // taglines passed a guard that looked like it covered them. This rule is
     // specific to taglines so that cannot recur silently.
-    const grounded =
-      /your answers|the pieces|a solid base|some habits|an early starting point|thinnest part/i
+    // The anchor must be explicit. An earlier version of this list also allowed
+    // "some habits", "a solid base" and "an early starting point" — phrases that
+    // describe a state without attributing it to anything, which let two
+    // unanchored taglines through a guard whose name said otherwise. Requiring
+    // the words "your answers" removes the escape hatch.
+    const answerAnchor = /your answers/i
     for (const profile of allProfiles()) {
-      expect(profile.tagline, `${profile.type}: ${profile.tagline}`).toMatch(grounded)
+      expect(profile.tagline, `${profile.type}: ${profile.tagline}`).toMatch(answerAnchor)
       // Short is still the point — these render as a single line under the score.
       expect(profile.tagline.length, profile.type).toBeLessThanOrEqual(90)
     }
