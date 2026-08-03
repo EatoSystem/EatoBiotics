@@ -22,6 +22,20 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     const supabase = getSupabaseBrowser()
 
+    // Unlike the other callers, this one cannot degrade quietly: a real user is
+    // sitting on this page waiting to be signed in, and without a client that
+    // can never happen. Fail the same way a bad link does rather than leaving
+    // them on a spinner forever. Reachable only where env is absent by design.
+    if (!supabase) {
+      console.error("[auth/callback] Supabase env is not configured; cannot complete sign-in.")
+      router.replace("/account/signin?error=link_invalid")
+      return
+    }
+    // Captured after the guard so the narrowing survives into completeSignIn:
+    // TS will not carry an outer narrowing into a hoisted function body, and
+    // reaching for `!` here is precisely the assertion that caused this bug.
+    const client = supabase
+
     async function completeSignIn() {
       const url = new URL(window.location.href)
       const hash = new URLSearchParams(window.location.hash.slice(1))
@@ -43,18 +57,18 @@ export default function AuthCallbackPage() {
       try {
         if (accessToken && refreshToken) {
           // Implicit flow — tokens already present in the hash.
-          const { error } = await supabase.auth.setSession({
+          const { error } = await client.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
           })
           if (error) throw error
         } else if (code) {
           // PKCE flow — exchange the authorization code for a session.
-          const { error } = await supabase.auth.exchangeCodeForSession(code)
+          const { error } = await client.auth.exchangeCodeForSession(code)
           if (error) throw error
         } else if (tokenHash) {
           // Email OTP link.
-          const { error } = await supabase.auth.verifyOtp({
+          const { error } = await client.auth.verifyOtp({
             token_hash: tokenHash,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             type: (otpType as any) ?? "magiclink",

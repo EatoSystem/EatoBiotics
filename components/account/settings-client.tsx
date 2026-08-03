@@ -56,8 +56,9 @@ export function SettingsClient({ profile }: SettingsClientProps) {
   }
 
   const handleSignOut = async () => {
+    // With no env there is no session to end; still leave the account area.
     const supabase = getSupabaseBrowser()
-    await supabase.auth.signOut()
+    if (supabase) await supabase.auth.signOut()
     router.push("/assessment")
   }
 

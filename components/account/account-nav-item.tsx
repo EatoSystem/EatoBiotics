@@ -9,6 +9,14 @@ export function AccountNavItem() {
 
   useEffect(() => {
     const supabase = getSupabaseBrowser()
+    // No Supabase env means no session, which is indistinguishable from a
+    // signed-out visitor — so render the signed-out branch rather than throwing.
+    // This component sits in the global nav, so throwing here took down every
+    // page on the site during hydration.
+    if (!supabase) {
+      setLoaded(true)
+      return
+    }
     // Check current session
     supabase.auth.getUser().then(({ data: { user } }) => {
       setIsSignedIn(!!user)
