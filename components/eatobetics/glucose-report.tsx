@@ -38,9 +38,9 @@ const ICONS: Record<string, LucideIcon> = { Salad, Clock, Dumbbell, HeartPulse }
 
 const LEVERS = [
   { icon: Wheat, title: "Fibre first", body: "Lead meals with vegetables and fibre to slow absorption." },
-  { icon: Dumbbell, title: "Protein & muscle", body: "A palm of protein each meal protects muscle and steadies glucose." },
-  { icon: ListOrdered, title: "Food order", body: "Vegetables and protein before starch flattens the curve." },
-  { icon: Footprints, title: "Move after meals", body: "A 10-minute walk helps your body handle the glucose." },
+  { icon: Dumbbell, title: "Protein & muscle", body: "A palm of protein each meal helps protect muscle, which is where most glucose is used." },
+  { icon: ListOrdered, title: "Food order", body: "Eating vegetables and protein before starch is associated with a steadier response to the meal." },
+  { icon: Footprints, title: "Move after meals", body: "A short walk after eating is associated with a steadier response to the meal." },
 ]
 
 export function GlucoseReport({ result, onRetake }: { result: GlucoseResult; onRetake: () => void }) {
@@ -131,7 +131,7 @@ export function GlucoseReport({ result, onRetake }: { result: GlucoseResult; onR
             </h3>
             <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
               {glp1 === "active"
-                ? "A smaller appetite is a powerful window — but eating less of the same food can cost you muscle. Make every bite count: prioritise protein first at each meal (aim for a palm-sized portion), keep fibre high for fullness, and add resistance training to protect the muscle that keeps you strong and insulin-sensitive."
+                ? "A smaller appetite is a useful window, though eating less of the same food is associated with losing muscle alongside fat. Making each meal count is a practical place to start: protein first (about a palm-sized portion), fibre kept high for fullness, and some resistance training to help protect muscle — which is where most glucose is used."
                 : "If you start a GLP-1, the goal isn't simply to eat less — it's to rebuild your relationship with food. Going in with strong protein, fibre, and resistance-training habits helps you preserve muscle and get far more from the appetite window."}
             </p>
             <p className="mt-4 text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>

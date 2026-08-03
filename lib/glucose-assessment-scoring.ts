@@ -109,18 +109,18 @@ export function getMealTimingPattern(rhythmScore: number): MealTimingPattern {
     return {
       label: "Steady",
       description:
-        "Your meals land at fairly predictable times and you rarely eat late or skip-then-overeat. A consistent rhythm helps your body anticipate food and keeps energy even.",
+        "Your answers suggest meals land at fairly predictable times, with late eating and skip-then-overeat patterns rare. A consistent rhythm is associated with steadier energy across the day.",
     }
   if (rhythmScore >= 45)
     return {
       label: "Variable",
       description:
-        "Your timing shifts from day to day — some structure, some scatter. Nudging meals toward more regular times, and easing off late-night eating, will smooth your curve.",
+        "Your answers suggest timing shifts from day to day — some structure, some scatter. Nudging meals toward more regular times, and easing off late-night eating, is a useful place to start.",
     }
   return {
     label: "Irregular",
     description:
-      "Your meal timing is unpredictable, with late meals or long gaps followed by large ones. Building a steadier daily rhythm is one of the fastest ways to steady your energy.",
+      "Your answers suggest meal timing is unpredictable, with late meals or long gaps followed by large ones. Building a steadier daily rhythm is a useful place to start.",
   }
 }
 
@@ -253,13 +253,13 @@ const WEEK1_FOCUS: Record<GlucosePillarKey, string> = {
 
 export function buildProtocol(weakest: GlucosePillarKey, glp1: Glp1Status): ProtocolWeek[] {
   const week2 = glp1 === "active"
-    ? "Protect muscle on your appetite window: prioritise protein first at every meal and keep up resistance training."
+    ? "Protect muscle while appetite is lower: prioritise protein first at every meal and keep up resistance training."
     : "Build better plates: increase protein, fibre, and food quality across your most repeated meals."
   return [
     { week: "Week 1", title: "Stabilise", body: WEEK1_FOCUS[weakest], gradient: WEEK_GRADIENTS[0] },
     { week: "Week 2", title: "Build Better Plates", body: week2, gradient: WEEK_GRADIENTS[1] },
-    { week: "Week 3", title: "Flatten the Curve", body: "Use food order, a post-meal walk, and smarter carbohydrate choices to soften your glucose response.", gradient: WEEK_GRADIENTS[2] },
-    { week: "Week 4", title: "Sustain the System", body: "Lock in a few repeatable meals and habits that keep your energy and glucose steady for the long run.", gradient: WEEK_GRADIENTS[3] },
+    { week: "Week 3", title: "Steady the Response", body: "Food order, a post-meal walk and carbohydrate quality are each associated with how steadily a meal lands. Try them one at a time.", gradient: WEEK_GRADIENTS[2] },
+    { week: "Week 4", title: "Sustain the System", body: "Settle on a few repeatable meals and habits — what survives an ordinary week is the part that has actually changed.", gradient: WEEK_GRADIENTS[3] },
   ]
 }
 

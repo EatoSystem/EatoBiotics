@@ -3,7 +3,11 @@ import { describe, it, expect } from "vitest"
 import { getProfile, getInsights, computeSubScores } from "@/lib/assessment-scoring"
 import { getMindProfile, getMindInsights } from "@/lib/mind-assessment-scoring"
 import { getFamilyProfile, getFamilyInsights } from "@/lib/family-assessment-scoring"
-import { getGlucoseProfile } from "@/lib/glucose-assessment-scoring"
+import {
+  getGlucoseProfile,
+  getMealTimingPattern,
+  buildProtocol,
+} from "@/lib/glucose-assessment-scoring"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
@@ -252,5 +256,87 @@ describe("other assessment families hold the same language standard", () => {
       expect(src, f).not.toMatch(/within (a few )?(days|weeks|months)/i)
       expect(src, f).not.toMatch(/measurable difference/i)
     }
+  })
+})
+
+/**
+ * Phase 6.1 follow-up — the rest of the glucose result surface.
+ *
+ * The first version of these guards covered getGlucoseProfile and PILLAR_COPY
+ * and stopped there, which read as covering "the glucose copy" while leaving
+ * getMealTimingPattern, buildProtocol and the static JSX in glucose-report.tsx
+ * unchecked. All three render on the same page, and all three still claimed to
+ * know or change the reader's glucose:
+ *
+ *   "will smooth your curve"                      (mealTiming, Variable)
+ *   "one of the fastest ways to steady your energy" (mealTiming, Irregular)
+ *   "soften your glucose response"                (protocol, week 3)
+ *   "keep your energy and glucose steady"         (protocol, week 4)
+ *   "steadies glucose" / "flattens the curve"     (report page tiles)
+ *   "helps your body handle the glucose"          (report page tile)
+ *
+ * Same lesson as the tagline gap in #196: partial coverage under a general name
+ * is what lets the next miss through.
+ */
+describe("the whole glucose result surface, not just the profile", () => {
+  const GLUCOSE_CLAIMS = [
+    /your glucose (rhythm|response|curve|level)/i,
+    /(smooth|flatten|steady|soften)(s|ing)? (your|the) (curve|glucose)/i,
+    /(support|supporting|supports) (steady|steadier|stable) glucose/i,
+    /steadies glucose/i,
+    /handle the glucose/i,
+    /\bwill \w+/i,
+    /within (a few )?(days|weeks|months)/i,
+    /fastest way/i,
+    /measurable difference/i,
+  ]
+
+  function assertClean(line: string, where: string) {
+    for (const claim of GLUCOSE_CLAIMS) {
+      expect(line, `${where}: ${line}`).not.toMatch(claim)
+    }
+  }
+
+  it("holds every meal-timing description", () => {
+    // All three bands, driven by rhythm score.
+    for (const rhythm of [90, 70, 55, 45, 30, 0]) {
+      const p = getMealTimingPattern(rhythm)
+      assertClean(p.description, `mealTiming@${rhythm}`)
+      expect(p.description, `mealTiming@${rhythm}`).toMatch(
+        /your answers|is associated with|are associated with|a useful place to (start|begin)/i,
+      )
+    }
+  })
+
+  it("holds every protocol week, across weakest pillars and GLP-1 states", () => {
+    const pillars = ["plate", "rhythm", "strength", "recovery"] as const
+    const states = ["active", "considering", "none"] as const
+    let checked = 0
+    for (const pillar of pillars) {
+      for (const glp1 of states) {
+        for (const week of buildProtocol(pillar, glp1)) {
+          assertClean(week.body, `protocol ${pillar}/${glp1}/${week.week}`)
+          assertClean(week.title, `protocol title ${pillar}/${glp1}`)
+          checked++
+        }
+      }
+    }
+    // 4 pillars x 3 GLP-1 states x 4 weeks — proves the loop actually ran.
+    expect(checked).toBe(48)
+  })
+
+  it("holds the static copy on the glucose result page", () => {
+    // Read from source: this copy lives in JSX, and rendering the component
+    // needs a full GlucoseResult plus client hooks. The source read is the
+    // honest option — it checks the strings that actually ship.
+    const src = readFileSync(
+      join(process.cwd(), "components/eatobetics/glucose-report.tsx"),
+      "utf8",
+    )
+    const strings = [...src.matchAll(/(?:body|title|children):\s*"([^"]{20,})"/g)].map((m) => m[1])
+    const longQuoted = [...src.matchAll(/"([^"]{60,})"/g)].map((m) => m[1])
+    const all = [...strings, ...longQuoted]
+    expect(all.length).toBeGreaterThan(3)
+    for (const line of all) assertClean(line, "glucose-report.tsx")
   })
 })
