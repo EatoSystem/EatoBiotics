@@ -394,8 +394,12 @@ describe("no surface is still keyed on the legacy five pillars", () => {
  * Phase 5 — the educational Food System chapters in the live paid PDF.
  *
  * The live path is app/api/submit-deep-assessment -> lib/pdf/generate-pdf.ts ->
- * lib/pdf/report-pdf.tsx. `/api/report-pdf` and components/report/report-pdf.tsx
- * are a separate prototype with no caller and are deliberately untouched.
+ * lib/pdf/report-pdf.tsx, which is now the only PDF renderer. A second, uncalled
+ * prototype (`/api/report-pdf` + components/report/report-pdf.tsx) shared both the
+ * basename and the `ReportPDF` export name and has been removed. Note that
+ * generate-pdf.ts imports "./report-pdf" relatively, so that specifier resolves
+ * inside lib/pdf/ — worth remembering before acting on any future grep for
+ * "report-pdf".
  *
  * These assertions walk the rendered element tree and render real PDFs. They do
  * NOT search the PDF bytes for text: once brand fonts are registered react-pdf
