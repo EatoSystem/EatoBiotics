@@ -235,44 +235,44 @@ export function getFamilyProfile(overall: number, _biotics?: SubScores): Assessm
   if (overall >= 75) {
     return {
       type: "Thriving Food Culture",
-      tagline: "Your family's food culture is working hard in everyone's favour.",
+      tagline: "Your answers point to a food culture that is working well.",
       description:
-        "You're feeding your family with variety, rhythm, and a calm, shared table. That mix — what's eaten and how it feels — is exactly what supports every gut in the house. The opportunity now is to keep doing what's working and explore new foods together.",
+        "Your answers describe variety, rhythm and a calm shared table. That combination — what is eaten and how it feels — is associated with a household that supports everyone eating well. From here the useful work is protecting what already holds, and exploring new foods together.",
       color: "var(--icon-green)",
     }
   }
   if (overall >= 58) {
     return {
       type: "Strong Foundation",
-      tagline: "Your family has built something real — now sharpen the edges.",
+      tagline: "Your answers point to a solid base, with one or two thinner areas.",
       description:
-        "Your family has solid habits across the table. There are one or two pillars where a small, kind change would make things noticeably easier for everyone — not a transformation, just a refinement.",
+        "Your answers suggest solid habits across the table, with one or two pillars thinner than the rest. A small, kind change in those is a useful place to start — a refinement rather than a rebuild.",
       color: "var(--icon-teal)",
     }
   }
   if (overall >= 42) {
     return {
       type: "Emerging Balance",
-      tagline: "The building blocks are there — consistency is the next step.",
+      tagline: "Your answers show the building blocks; consistency is the next step.",
       description:
-        "Your family has real strengths and some areas still finding their rhythm. Small, repeatable changes — protected mealtimes, reliable defaults, a calmer table — compound quickly. You're closer than it might feel.",
+        "Your answers suggest real strengths alongside areas still finding their rhythm. Small, repeatable changes — protected mealtimes, reliable defaults, a calmer table — tend to add up, and this pattern is a useful place to start.",
       color: "var(--icon-lime)",
     }
   }
   if (overall >= 28) {
     return {
       type: "Finding Your Rhythm",
-      tagline: "A few steady anchors will make everything easier.",
+      tagline: "Your answers suggest a few steady anchors would help most.",
       description:
-        "Feeding a family is genuinely hard, and this is a starting point, not a verdict. Choosing one or two anchors — a reliable meal, a calmer mealtime — tends to lift several areas at once.",
+        "Feeding a family is genuinely hard, and your answers are a starting point rather than a verdict. Choosing one or two anchors — a reliable meal, a calmer mealtime — is a useful place to begin and tends to lift several areas at once.",
       color: "var(--icon-yellow)",
     }
   }
   return {
     type: "Early Builder",
-    tagline: "Your family is at the beginning of something good.",
+    tagline: "Your answers suggest an early starting point for the household.",
     description:
-      "Every small change from here makes a real difference. The easiest place to start is a simple, repeatable base — a couple of reliable meals, eaten together when you can, with the pressure turned down. Complexity comes later.",
+      "Your answers suggest an early starting point, which is a useful position rather than a problem. A simple, repeatable base is a good place to begin — a couple of reliable meals, eaten together when you can, with the pressure turned down. Complexity can come later.",
     color: "var(--icon-orange)",
   }
 }

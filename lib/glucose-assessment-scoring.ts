@@ -109,18 +109,18 @@ export function getMealTimingPattern(rhythmScore: number): MealTimingPattern {
     return {
       label: "Steady",
       description:
-        "Your meals land at fairly predictable times and you rarely eat late or skip-then-overeat. A consistent rhythm helps your body anticipate food and keeps energy even.",
+        "Your answers suggest meals land at fairly predictable times, with late eating and skip-then-overeat patterns rare. A consistent rhythm is associated with steadier energy across the day.",
     }
   if (rhythmScore >= 45)
     return {
       label: "Variable",
       description:
-        "Your timing shifts from day to day — some structure, some scatter. Nudging meals toward more regular times, and easing off late-night eating, will smooth your curve.",
+        "Your answers suggest timing shifts from day to day — some structure, some scatter. Nudging meals toward more regular times, and easing off late-night eating, is a useful place to start.",
     }
   return {
     label: "Irregular",
     description:
-      "Your meal timing is unpredictable, with late meals or long gaps followed by large ones. Building a steadier daily rhythm is one of the fastest ways to steady your energy.",
+      "Your answers suggest meal timing is unpredictable, with late meals or long gaps followed by large ones. Building a steadier daily rhythm is a useful place to start.",
   }
 }
 
@@ -137,40 +137,40 @@ export function getGlucoseProfile(overall: number): GlucoseProfile {
   if (overall >= 80)
     return {
       type: "Steady System",
-      tagline: "Your glucose rhythm is working in your favour.",
+      tagline: "Your answers point to habits associated with steadier energy.",
       description:
-        "Your meals, timing, strength habits, and recovery already support stable energy and steady glucose. The focus now is protecting and fine-tuning what's working.",
+        "Your answers describe meals, timing, strength habits and recovery that are associated with steadier energy through the day. This is a snapshot of what you reported, not a measure of your blood glucose. From here the useful work is protecting what already holds.",
       color: "var(--icon-green)",
     }
   if (overall >= 65)
     return {
       type: "Balanced Rhythm",
-      tagline: "Strong foundations — now to sharpen them.",
+      tagline: "Your answers point to strong foundations, with room to sharpen.",
       description:
-        "You've built real habits that support a steadier food system. A few targeted tweaks could noticeably smooth out your energy, cravings, and post-meal dips.",
+        "Your answers suggest real habits already in place. A few targeted changes are a useful place to start, and are commonly associated with steadier energy and fewer post-meal dips.",
       color: "var(--icon-teal)",
     }
   if (overall >= 50)
     return {
       type: "Emerging Stability",
-      tagline: "The building blocks are there.",
+      tagline: "Your answers show the building blocks are there.",
       description:
-        "Some of your habits already support stable glucose; others send mixed signals. Consistency is your next step — small, repeatable changes will move the needle.",
+        "Your answers suggest some habits already point one way and others another. Consistency is a useful place to start — small, repeatable changes tend to matter more than large ones that do not last.",
       color: "var(--icon-yellow)",
     }
   if (overall >= 35)
     return {
       type: "Variable Pattern",
-      tagline: "Mixed signals you can steady.",
+      tagline: "Your answers point to a mixed pattern you can steady.",
       description:
-        "Your current meals and rhythm likely create swings in energy and cravings. The good news: a handful of foundational changes can bring real stability, fast.",
+        "Your answers describe meals and rhythm that are often associated with swings in energy and cravings. A handful of foundational changes is a useful place to start.",
       color: "var(--icon-orange)",
     }
   return {
     type: "Spike-Prone Start",
-    tagline: "You're at the beginning of something good.",
+    tagline: "Your answers suggest an early starting point.",
     description:
-      "Right now your food system probably runs on peaks and crashes. That's a clear starting point — a few simple, foundational habits can make a big difference.",
+      "Your answers describe a pattern often associated with peaks and crashes through the day. That is a clear starting point rather than a problem — a few simple, foundational habits are a useful place to begin.",
     color: "var(--icon-orange)",
   }
 }
@@ -186,26 +186,26 @@ interface PillarCopy {
 
 const PILLAR_COPY: Record<GlucosePillarKey, PillarCopy> = {
   plate: {
-    strength: "Your plates are well-built — fibre, protein, and carbohydrate quality are supporting steadier glucose.",
-    opportunity: "How your meals are built is your biggest lever. Fibre, protein, and food order shape the glucose response of every plate.",
+    strength: "Your answers suggest well-built plates — fibre, protein and carbohydrate quality are associated with a steadier response to a meal.",
+    opportunity: "How a meal is built is a useful place to start. Fibre, protein and food order are associated with how steadily the body handles that plate.",
     actionLow: "Add a fist of vegetables or a protein source to your most-repeated meal, and eat it before the starch.",
     actionHigh: "Keep building balanced plates — try swapping one refined carbohydrate a day for a wholegrain or legume.",
   },
   rhythm: {
-    strength: "Your eating rhythm is consistent — regular timing and spacing support a steadier glucose curve.",
-    opportunity: "Your timing and spacing are sending mixed signals. When you eat matters as much as what you eat.",
+    strength: "Your answers suggest a consistent eating rhythm. Regular timing and spacing are associated with steadier energy across the day.",
+    opportunity: "Your answers suggest timing and spacing vary. When you eat is associated with how a meal lands, alongside what you eat.",
     actionLow: "Aim for roughly consistent meal times and avoid eating within two hours of bed for one week.",
     actionHigh: "Protect your rhythm — keep meals evenly spaced so you're not skipping then overeating.",
   },
   strength: {
-    strength: "You're protecting muscle well — protein and resistance habits support stronger, more insulin-sensitive tissue.",
-    opportunity: "Muscle is where glucose gets used. More protein and a little resistance work make your whole system more stable.",
+    strength: "Your answers suggest protein and resistance habits are in place. Both are associated with maintaining muscle, which is where most glucose is used.",
+    opportunity: "Muscle is where most glucose is used. More protein and some resistance work are a useful place to start.",
     actionLow: "Aim for a palm of protein at each main meal, and add two short resistance sessions a week (even bodyweight).",
     actionHigh: "Keep training and eating for strength — protein at each meal plus regular resistance work protects your metabolism.",
   },
   recovery: {
-    strength: "Your energy, sleep, and stress are supporting your metabolic resilience and steady day-to-day glucose.",
-    opportunity: "Sleep, stress, and energy quietly shape your glucose response. This is where steady energy is won or lost.",
+    strength: "Your answers suggest energy, sleep and stress are well supported. All three are associated with how steadily the body handles food day to day.",
+    opportunity: "Sleep, stress and energy are all associated with how food lands. Your answers suggest this is a useful place to start.",
     actionLow: "Protect a consistent sleep window and take a 10-minute walk after your largest meal to steady energy.",
     actionHigh: "Keep up the recovery habits — consistent sleep and stress management protect your stability.",
   },
@@ -253,13 +253,13 @@ const WEEK1_FOCUS: Record<GlucosePillarKey, string> = {
 
 export function buildProtocol(weakest: GlucosePillarKey, glp1: Glp1Status): ProtocolWeek[] {
   const week2 = glp1 === "active"
-    ? "Protect muscle on your appetite window: prioritise protein first at every meal and keep up resistance training."
+    ? "Protect muscle while appetite is lower: prioritise protein first at every meal and keep up resistance training."
     : "Build better plates: increase protein, fibre, and food quality across your most repeated meals."
   return [
     { week: "Week 1", title: "Stabilise", body: WEEK1_FOCUS[weakest], gradient: WEEK_GRADIENTS[0] },
     { week: "Week 2", title: "Build Better Plates", body: week2, gradient: WEEK_GRADIENTS[1] },
-    { week: "Week 3", title: "Flatten the Curve", body: "Use food order, a post-meal walk, and smarter carbohydrate choices to soften your glucose response.", gradient: WEEK_GRADIENTS[2] },
-    { week: "Week 4", title: "Sustain the System", body: "Lock in a few repeatable meals and habits that keep your energy and glucose steady for the long run.", gradient: WEEK_GRADIENTS[3] },
+    { week: "Week 3", title: "Steady the Response", body: "Food order, a post-meal walk and carbohydrate quality are each associated with how steadily a meal lands. Try them one at a time.", gradient: WEEK_GRADIENTS[2] },
+    { week: "Week 4", title: "Sustain the System", body: "Settle on a few repeatable meals and habits — what survives an ordinary week is the part that has actually changed.", gradient: WEEK_GRADIENTS[3] },
   ]
 }
 
