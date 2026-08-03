@@ -26,6 +26,9 @@ import {
   type IncomingSubScores,
 } from "@/lib/report/subscores"
 import type { AssessmentProfile } from "@/lib/assessment-scoring"
+import { BRAND } from "./pdf-brand"
+import { FONT } from "./pdf-fonts"
+import { FoodSystemPages } from "./food-system-pdf"
 
 /* ── Types ────────────────────────────────────────────────────────────── */
 
@@ -43,20 +46,10 @@ export interface ReportPDFProps {
 
 /* ── Brand constants ─────────────────────────────────────────────────── */
 
-const BRAND = {
-  lime: "#7fc47e",
-  green: "#4caf7d",
-  teal: "#3ab0a0",
-  yellow: "#e6b84a",
-  orange: "#e07b4a",
-  white: "#ffffff",
-  offWhite: "#f9f9f9",
-  lightGrey: "#eeeeee",
-  mutedGrey: "#999999",
-  bodyText: "#444444",
-  darkText: "#222222",
-  subText: "#666666",
-} as const
+/* BRAND now comes from ./pdf-brand — the real --icon-* hues. The palette this
+ * file used to carry had drifted (#7fc47e for #A8E063, #4caf7d for #4CB648),
+ * and with the Food System chapters joining the same document two different
+ * greens would have sat on facing pages. */
 
 /** Pathway -> swatch. Uses this file's palette so the badge matches its page. */
 const PATHWAY_PDF_COLOR: Record<BioticKey, string> = {
@@ -75,7 +68,7 @@ const styles = StyleSheet.create({
     paddingBottom: 60,
     paddingLeft: 40,
     paddingRight: 40,
-    fontFamily: "Helvetica",
+    fontFamily: FONT.sans,
   },
 
   // Cover
@@ -90,13 +83,13 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.85)",
     letterSpacing: 2,
     textTransform: "uppercase",
-    fontFamily: "Helvetica-Bold",
+    fontFamily: FONT.sansBold,
     marginBottom: 6,
   },
   coverTitle: {
     fontSize: 22,
     color: BRAND.white,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: FONT.serifBold,
   },
   coverHeaderContent: {
     paddingTop: 28,
@@ -118,7 +111,7 @@ const styles = StyleSheet.create({
   },
   scoreBadgeNumber: {
     fontSize: 56,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: FONT.serifBold,
     color: BRAND.white,
     textAlign: "center",
   },
@@ -126,14 +119,14 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "rgba(255,255,255,0.75)",
     textAlign: "center",
-    fontFamily: "Helvetica",
+    fontFamily: FONT.sans,
     letterSpacing: 1,
     textTransform: "uppercase",
     marginTop: 4,
   },
   coverName: {
     fontSize: 24,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: FONT.sansBold,
     color: BRAND.darkText,
     textAlign: "center",
     marginTop: 24,
@@ -146,24 +139,28 @@ const styles = StyleSheet.create({
   },
   coverProfileType: {
     fontSize: 18,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: FONT.serifBold,
     color: BRAND.green,
     textAlign: "center",
     marginTop: 18,
   },
   coverTagline: {
     fontSize: 12,
-    fontFamily: "Helvetica",
+    // FONT.sansItalic, not FONT.sans + fontStyle: "italic". Under base-14 the
+    // latter happened to resolve (Helvetica -> Helvetica-Oblique). Now that
+    // DMSans is registered as a family with only a normal face, asking it for
+    // an italic throws and fails the whole render — the identical shape of the
+    // bug Phase 1 fixed on pullQuoteText, re-armed by registering fonts.
+    fontFamily: FONT.sansItalic,
     color: BRAND.subText,
     textAlign: "center",
     marginTop: 8,
-    fontStyle: "italic",
   },
 
   // Section headings
   sectionHeading: {
     fontSize: 11,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: FONT.serifBold,
     color: BRAND.mutedGrey,
     letterSpacing: 1.5,
     textTransform: "uppercase",
@@ -173,13 +170,13 @@ const styles = StyleSheet.create({
   // Text sections
   textSectionHeading: {
     fontSize: 14,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: FONT.sansBold,
     color: BRAND.darkText,
     marginBottom: 8,
   },
   textSectionBody: {
     fontSize: 11,
-    fontFamily: "Helvetica",
+    fontFamily: FONT.sans,
     color: BRAND.bodyText,
     lineHeight: 1.6,
   },
@@ -210,7 +207,7 @@ const styles = StyleSheet.create({
   },
   pillarLabel: {
     fontSize: 11,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: FONT.sansBold,
     color: BRAND.darkText,
     width: 100,
   },
@@ -227,7 +224,7 @@ const styles = StyleSheet.create({
   },
   pillarScore: {
     fontSize: 11,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: FONT.sansBold,
     width: 36,
     textAlign: "right",
   },
@@ -247,13 +244,13 @@ const styles = StyleSheet.create({
   },
   twoColItemLabel: {
     fontSize: 11,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: FONT.sansBold,
     color: BRAND.darkText,
     marginBottom: 3,
   },
   twoColItemText: {
     fontSize: 10,
-    fontFamily: "Helvetica",
+    fontFamily: FONT.sans,
     color: BRAND.bodyText,
     lineHeight: 1.5,
   },
@@ -271,7 +268,7 @@ const styles = StyleSheet.create({
   },
   tableHeaderCell: {
     fontSize: 10,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: FONT.sansBold,
     color: BRAND.white,
   },
   tableRow: {
@@ -286,13 +283,13 @@ const styles = StyleSheet.create({
   tableDayCell: {
     width: 80,
     fontSize: 10,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: FONT.sansBold,
     color: BRAND.darkText,
   },
   tableActionCell: {
     flex: 1,
     fontSize: 10,
-    fontFamily: "Helvetica",
+    fontFamily: FONT.sans,
     color: BRAND.bodyText,
     lineHeight: 1.5,
   },
@@ -312,21 +309,22 @@ const styles = StyleSheet.create({
   },
   pullQuoteText: {
     fontSize: 14,
-    // Helvetica-BoldOblique, not Helvetica-Bold + fontStyle: "italic". This file
-    // registers no fonts, so it can only use react-pdf's base-14 built-ins, and
-    // there is no italic variant registered under the "Helvetica-Bold" family —
-    // asking for one threw "Could not resolve font for Helvetica-Bold,
-    // fontWeight 400, fontStyle italic" and failed the render of every paid PDF.
-    // submit-deep-assessment catches that and marks pdf_status "failed", so the
-    // report was delivered with no PDF attached rather than erroring loudly.
-    fontFamily: "Helvetica-BoldOblique",
+    // A real italic family, never "<bold family> + fontStyle: italic". Asking
+    // for a style that is not registered under the named family throws and
+    // fails the whole render — that is how every paid PDF was silently
+    // delivered without one before Phase 1 ("Could not resolve font for
+    // Helvetica-Bold, fontWeight 400, fontStyle italic"; submit-deep-assessment
+    // catches it and marks pdf_status "failed"). FONT.serifItalic resolves to
+    // Lora-Italic when the fonts registered and Helvetica-Oblique when they did
+    // not, so both paths name a family that exists.
+    fontFamily: FONT.serifItalic,
     color: BRAND.darkText,
     lineHeight: 1.5,
     marginBottom: 6,
   },
   pullQuoteSubtext: {
     fontSize: 10,
-    fontFamily: "Helvetica",
+    fontFamily: FONT.sans,
     color: BRAND.bodyText,
     lineHeight: 1.6,
   },
@@ -346,7 +344,7 @@ const styles = StyleSheet.create({
   foodCardBadge: {
     fontSize: 7,
     letterSpacing: 0.8,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: FONT.sansBold,
     borderWidth: 1,
     borderRadius: 6,
     paddingHorizontal: 5,
@@ -361,19 +359,19 @@ const styles = StyleSheet.create({
   },
   foodCardName: {
     fontSize: 12,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: FONT.sansBold,
     color: BRAND.darkText,
   },
   foodCardWhy: {
     fontSize: 10,
-    fontFamily: "Helvetica",
+    fontFamily: FONT.sans,
     color: BRAND.bodyText,
     lineHeight: 1.5,
     marginBottom: 4,
   },
   foodCardHow: {
     fontSize: 10,
-    fontFamily: "Helvetica",
+    fontFamily: FONT.sans,
     color: BRAND.subText,
     lineHeight: 1.5,
   },
@@ -392,7 +390,7 @@ const styles = StyleSheet.create({
   },
   weekBoxWeekLabel: {
     fontSize: 10,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: FONT.sansBold,
     color: BRAND.white,
     letterSpacing: 1,
     textTransform: "uppercase",
@@ -400,7 +398,7 @@ const styles = StyleSheet.create({
   },
   weekBoxFocus: {
     fontSize: 13,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: FONT.serifBold,
     color: BRAND.white,
   },
   weekBoxBody: {
@@ -412,9 +410,9 @@ const styles = StyleSheet.create({
   },
   weekBoxTheme: {
     fontSize: 11,
-    fontFamily: "Helvetica",
+    // Same reason as coverTagline: name an italic family, never synthesise one.
+    fontFamily: FONT.sansItalic,
     color: BRAND.bodyText,
-    fontStyle: "italic",
     marginBottom: 8,
   },
   weekBoxAction: {
@@ -425,11 +423,11 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: BRAND.teal,
     marginRight: 6,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: FONT.sansBold,
   },
   weekBoxActionText: {
     fontSize: 10,
-    fontFamily: "Helvetica",
+    fontFamily: FONT.sans,
     color: BRAND.bodyText,
     flex: 1,
     lineHeight: 1.5,
@@ -450,12 +448,12 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 8,
-    fontFamily: "Helvetica",
+    fontFamily: FONT.sans,
     color: BRAND.mutedGrey,
   },
   footerPageNumber: {
     fontSize: 8,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: FONT.sansBold,
     color: BRAND.mutedGrey,
   },
 
@@ -804,10 +802,10 @@ function RetestNote({ retestDate }: { retestDate: string }) {
         marginBottom: 16,
       }}
     >
-      <Text style={{ fontSize: 11, fontFamily: "Helvetica-Bold", color: BRAND.darkText, marginBottom: 4 }}>
+      <Text style={{ fontSize: 11, fontFamily: FONT.sansBold, color: BRAND.darkText, marginBottom: 4 }}>
         Recommended Retest
       </Text>
-      <Text style={{ fontSize: 10, fontFamily: "Helvetica", color: BRAND.bodyText, lineHeight: 1.5 }}>
+      <Text style={{ fontSize: 10, fontFamily: FONT.sans, color: BRAND.bodyText, lineHeight: 1.5 }}>
         Retest on {retestDate} to measure your progress after 75 days of consistent change.
       </Text>
     </View>
@@ -1075,6 +1073,22 @@ export function ReportPDF({
           </Page>
         </>
       )}
+
+      {/* ── The educational Food System chapters ─────────────────────────
+       * Last in the document, so it ends on the closing mission page — the
+       * same ordering Phase 3.1 established for the web report, where the
+       * mission page had been rendering second-to-last.
+       *
+       * Optional by design: reports persisted before Phase 2 carry no
+       * foodSystem block, so this is guarded rather than defaulted. Those
+       * reports keep the same content, the same sections, the same order, and
+       * no Food System pages.
+       *
+       * Not pixel-identical, though, and deliberately so: this change also
+       * registers the brand fonts and corrects the drifted palette, and both
+       * are shared by every page of the document. A legacy report is the same
+       * report, restyled — not the same PDF. */}
+      {report.foodSystem && <FoodSystemPages report={report.foodSystem} />}
     </Document>
   )
 }
