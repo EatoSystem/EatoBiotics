@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest"
 
 import {
+  CLAIMS,
   DISCLAIMER_SECTION,
   assertClean,
   assertExtractionFloor,
@@ -109,6 +110,56 @@ describe("You marketing pages hold the Phase 6 language standard", () => {
     )
     // ...and the same words are present where they belong.
     expect(`${SYSTEM_SUPPORT_DISCLAIMER} ${GLOBAL_DISCLAIMER}`).toMatch(MEDICAL)
+  })
+
+  /**
+   * The three claims #204 reported but did not fix, and the rules now covering
+   * them. All three were invisible to every rule that existed at the time:
+   * "Food is mood — directly and measurably" is an identity claim plus an
+   * adverb, and "the measure at the heart of EatoBiotics" is a noun, so the
+   * verb-shaped measurement rules never saw any of them.
+   *
+   * The identity claim is the one worth being precise about. It sits directly
+   * after "90–95% of your serotonin is made in your gut, not your brain", and
+   * invites the reader to draw a causal line the science does not support: gut
+   * serotonin does not cross the blood-brain barrier. The number is accurate;
+   * the three words after it were doing the overclaiming.
+   */
+  const rule = (name: string) => CLAIMS.find(([n]) => n === name)![1]
+
+  it.each([
+    ["claims measurability", "Food is mood — directly and measurably."],
+    ["claims measurability", "a measurable difference in how you feel"],
+    ["food-as-body-state identity claim", "Food is mood."],
+    ["food-as-body-state identity claim", "Diet is health."],
+    ["food-as-body-state identity claim", "What you eat is your energy."],
+    ["food-as-body-state identity claim", "Food is medicine."],
+    ["score described as a measure", "the measure at the heart of EatoBiotics"],
+    ["score described as a measure", "the measure of how well-fed your system is"],
+  ])("[%s] flags: %s", (name, line) => {
+    expect(line).toMatch(rule(name))
+  })
+
+  it.each([
+    // Denials, which must stay legal — the same lookbehind reasoning as #204.
+    ["claims measurability", "This is not measurably different."],
+    ["score described as a measure", "it is not the measure of anything clinical"],
+    // Constructions that merely start the same way. "Food is the most powerful
+    // lever you have" is on /you today and is not a claim about the body; a
+    // rule that caught it would be unusable.
+    ["food-as-body-state identity claim", "Food is the most powerful lever you have."],
+    ["food-as-body-state identity claim", "Food is associated with mood."],
+  ])("[%s] leaves alone: %s", (name, line) => {
+    expect(line).not.toMatch(rule(name))
+  })
+
+  it("states the serotonin fact without drawing a causal line from it", () => {
+    const page = marketingCopy("app/you/page.tsx")
+    // The fact stays — it is accurate and it is the reason the section exists.
+    expect(page).toMatch(/serotonin is made in your gut, not your brain/i)
+    // Both pages now cite the same range. /you said a flat "95%" while /mind
+    // said "90–95%" for the same fact; that inconsistency is itself a claim.
+    expect(page).toMatch(/90–95% of your serotonin/i)
   })
 
   it("keeps the microbiome framed as shaped by many things, not by food alone", () => {

@@ -60,7 +60,7 @@ const CONTRASTS = [
 const SHAPES = [
   { title: "Energy", stat: "All day", icon: Zap, accent: "var(--icon-lime)", gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))", description: "A well-fed microbiome means steadier energy and fewer crashes — the daily feeling of a balanced food system." },
   { title: "Immunity", stat: "70%", icon: ShieldCheck, accent: "var(--icon-green)", gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", description: "70% of your immune system lives in your gut. What you feed it shapes how well it protects you — every day." },
-  { title: "Mood", stat: "95%", icon: Smile, accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-yellow))", description: "95% of your serotonin is made in your gut, not your brain. Food is mood — directly and measurably." },
+  { title: "Mood", stat: "95%", icon: Smile, accent: "var(--icon-teal)", gradient: "linear-gradient(135deg, var(--icon-teal), var(--icon-yellow))", description: "90–95% of your serotonin is made in your gut, not your brain. What you eat and how you feel are closely connected." },
   { title: "Longevity", stat: "Decades", icon: HeartPulse, accent: "var(--icon-orange)", gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))", description: "Gut diversity is one of the strongest predictors of long-term health. The habits you build now compound for decades." },
 ]
 
@@ -404,7 +404,7 @@ export default function YouPage() {
               A single score for how well-fed your food system is — built from your intake across the three
               biotics.
             </p>
-            <p className="mt-3 font-semibold text-foreground">Your EatoBiotics Score™ is your Biotics Score™ — the measure at the heart of EatoBiotics.</p>
+            <p className="mt-3 font-semibold text-foreground">Your EatoBiotics Score™ is your Biotics Score™ — the score at the heart of EatoBiotics.</p>
           </ScrollReveal>
           <div className="mt-16">
             <YouScoreShowcase />
