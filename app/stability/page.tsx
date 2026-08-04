@@ -439,7 +439,8 @@ export default function StabilityPage() {
             <p className="text-xs font-bold uppercase tracking-widest text-icon-teal">The Score</p>
             <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground sm:text-5xl text-balance">Your Stability Score™</h2>
             <p className="mt-6 text-base leading-relaxed text-muted-foreground">
-              A single score designed to measure how reliably your Food System performs day to day.
+              A single score reflecting how consistently your reported patterns support digestive
+              stability, day to day.
             </p>
             <p className="mt-3 font-semibold text-foreground">Your Stability Score™ contributes to your overall Biotics Score™.</p>
           </ScrollReveal>
@@ -462,8 +463,9 @@ export default function StabilityPage() {
               <span className="brand-gradient-text">The foundation Stability™ is built on.</span>
             </h2>
             <p className="mt-6 max-w-2xl text-base leading-relaxed text-background/70">
-              Stability™ is part of EatoBiotics — The Food System Inside You. It helps measure how reliably
-              your Food System performs, and contributes to your overall Biotics Score™.
+              Stability™ is part of EatoBiotics — The Food System Inside You. It reflects how strongly
+              your reported habits support digestive stability, and contributes to your overall
+              Biotics Score™.
             </p>
           </ScrollReveal>
           <ScrollReveal delay={150}>

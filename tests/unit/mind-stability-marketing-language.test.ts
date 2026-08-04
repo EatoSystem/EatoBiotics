@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest"
 
 import {
+  CLAIMS,
   assertClean,
   assertExtractionFloor,
   marketingCopy,
@@ -87,5 +88,35 @@ describe("Mind and Stability marketing surfaces hold the Phase 6 standard", () =
 
   it("still frames the Stability score as a behaviour score", () => {
     expect(marketingCopy("app/stability/page.tsx")).toMatch(/not a clinical measurement/i)
+  })
+
+  /**
+   * The "claims to measure" rule must catch claims without catching denials.
+   *
+   * Both halves matter. The claims half is the regression: "designed to
+   * measure" and "helps measure" shipped on /stability because the earlier rule
+   * only knew "single measure of". The denials half protects the safest
+   * sentences on these pages — a rule that flagged "it does not measure blood
+   * glucose" would pressure an author into deleting exactly the wording that
+   * makes the score honest.
+   */
+  const MEASURE_RULE = CLAIMS.find(([name]) => name === "claims to measure")![1]
+
+  it.each([
+    "A single score designed to measure how reliably your Food System performs day to day.",
+    "It helps measure how reliably your Food System performs.",
+    "A tool built to measure your gut health.",
+    "This is intended to measure how your body responds.",
+  ])("flags the measurement claim: %s", (line) => {
+    expect(line).toMatch(MEASURE_RULE)
+  })
+
+  it.each([
+    "It is a behaviour score — it does not measure blood glucose.",
+    "It is an educational score, not a measure of blood glucose.",
+    "It is a behaviour score, not a clinical measurement.",
+    "This does not measure how your body responds.",
+  ])("leaves the disclaimer wording alone: %s", (line) => {
+    expect(line).not.toMatch(MEASURE_RULE)
   })
 })
