@@ -40,7 +40,7 @@ export function MindHero() {
 
           <ScrollReveal delay={140}>
             <p className="mt-4 max-w-md text-xl font-medium text-foreground sm:text-2xl">
-              What you eat shapes your mood, focus, and mental clarity.
+              What you eat is associated with mood, focus, and mental clarity.
             </p>
             <p className="mt-4 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg">
               Your gut and your brain are in constant conversation. Take the free Mind Assessment,

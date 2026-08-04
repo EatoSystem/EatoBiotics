@@ -108,7 +108,7 @@ const MOCK_SCORES = [
 /* ── Section 9 — EatoBiotics Foundation (dark) ──────────────────────── */
 const FOUNDATION = [
   { number: "01", title: "Food System", accent: "var(--icon-lime)", gradient: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))", body: "Stability begins with understanding how your Food System responds to food, habits, and the realities of daily life." },
-  { number: "02", title: "Stability Score™", accent: "var(--icon-green)", gradient: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))", body: "Your score translates everyday patterns into a clear, single measure of how reliably your Food System performs." },
+  { number: "02", title: "Stability Score™", accent: "var(--icon-green)", gradient: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))", body: "Your score translates the everyday patterns you reported into one clear number. It is a behaviour score, not a clinical measurement." },
   { number: "03", title: "Biotics Score™", accent: "var(--icon-teal)", gradient: "linear-gradient(90deg, var(--icon-teal), var(--icon-yellow))", body: "Stability contributes to your overall Biotics Score™ — the core score at the heart of EatoBiotics." },
 ]
 
