@@ -13,11 +13,11 @@ import { YouScoreShowcase } from "@/components/you/YouScoreShowcase"
 export const metadata: Metadata = {
   title: { absolute: "The Food System Inside You | EatoBiotics" },
   description:
-    "Your gut is home to 100 trillion microbes — a living system shaped entirely by what you eat. Learn how to build the food system inside you.",
+    "Your gut is home to 100 trillion microbes — a living system shaped by many things, what you eat among them. Learn how to build the food system inside you.",
   openGraph: {
     title: "The Food System Inside You | EatoBiotics",
     description:
-      "Your gut is home to 100 trillion microbes — a living system shaped entirely by what you eat. Learn how to build the food system inside you.",
+      "Your gut is home to 100 trillion microbes — a living system shaped by many things, what you eat among them. Learn how to build the food system inside you.",
   },
 }
 
@@ -122,8 +122,8 @@ export default function YouPage() {
                   shaped by every meal you eat. Most of us were never taught how it actually works.
                 </p>
                 <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-                  Feed it well and it powers your energy, immunity, and mood. Neglect it and everything
-                  downstream suffers. <span className="font-semibold text-foreground">EatoBiotics helps you understand and build it</span> — one meal at a time.
+                  How you feed it is associated with how you feel day to day — energy, digestion, mood.{" "}
+                  <span className="font-semibold text-foreground">EatoBiotics helps you understand and build it</span> — one meal at a time.
                 </p>
               </div>
             </ScrollReveal>
@@ -199,8 +199,8 @@ export default function YouPage() {
                   you add to them, and they produce the compounds that make you feel good.
                 </p>
                 <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-                  Together they shape your Biotics Score™ — the single measure of how well your food system
-                  is running.
+                  Together they shape your Biotics Score™ — one clear number, built from the habits you
+                  report.
                 </p>
               </ScrollReveal>
               <ScrollReveal delay={150}>
@@ -233,7 +233,7 @@ export default function YouPage() {
                 Food is the most powerful tool you have.
               </h2>
               <p className="mt-6 text-base leading-relaxed text-muted-foreground">
-                Not a diet. Not a supplement shelf. EatoBiotics treats food as a system — and gives you a
+                Not a diet. Not a supplement shelf. EatoBiotics approaches food as a system — and gives you a
                 clear way to understand how every meal feeds the life inside you.
               </p>
               <p className="mt-4 text-base leading-relaxed text-muted-foreground">
@@ -278,8 +278,8 @@ export default function YouPage() {
               <span className="brand-gradient-text">shapes everything.</span>
             </h2>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
-              Your microbiome influences your energy, immunity, mood, and long-term health more than almost
-              any other factor you can control.
+              Your microbiome is one of the systems most closely associated with how you feel day to
+              day — energy, digestion, mood — and what you eat is one of the things that shapes it.
             </p>
           </ScrollReveal>
 
@@ -519,8 +519,8 @@ export default function YouPage() {
                   Build the food system <span className="brand-gradient-text">inside you.</span>
                 </h2>
                 <p className="mx-auto mt-6 max-w-lg text-base leading-relaxed text-muted-foreground">
-                  Take the free assessment, discover your EatoBiotics Score, and start building the
-                  microbiome that powers your energy, immunity, and mood.
+                  Take the free assessment, get your EatoBiotics Score, and start building the habits
+                  that support your gut microbiome.
                 </p>
               </ScrollReveal>
               <ScrollReveal delay={150}>

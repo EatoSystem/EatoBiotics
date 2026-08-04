@@ -40,11 +40,12 @@ export function YouHero() {
 
           <ScrollReveal delay={140}>
             <p className="mt-4 max-w-md text-xl font-medium text-foreground sm:text-2xl">
-              Build the microbiome that powers your energy, digestion, and immunity.
+              Build the habits that support your gut microbiome.
             </p>
             <p className="mt-4 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Your gut is home to 100 trillion microbes — a living system shaped entirely by what you
-              eat. Take the free assessment, discover your EatoBiotics Score, and start building it.
+              Your gut is home to 100 trillion microbes — a living system shaped by many things, what
+              you eat among them. Take the free assessment, get your EatoBiotics Score, and start
+              building.
             </p>
           </ScrollReveal>
 
@@ -64,7 +65,7 @@ export function YouHero() {
               {[
                 { num: "Free", label: "To start" },
                 { num: "3 min", label: "Takes about" },
-                { num: "30 days", label: "To results" },
+                { num: "30 days", label: "Your plan" },
               ].map((s, i) => (
                 <div key={s.label} className="flex items-center gap-5">
                   {i > 0 && <div className="h-5 w-px bg-border" />}
