@@ -6,6 +6,8 @@ import {
   Calculator, Salad, Pill, LineChart, Gauge, User, Compass, Users, Brain, Dumbbell,
 } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
+import { SystemDisclaimer } from "@/components/systems/system-disclaimer"
+import { GLOBAL_DISCLAIMER } from "@/lib/assessment-disclaimers"
 import { YouHero } from "@/components/you/you-hero"
 import { YouFramework } from "@/components/you/YouFramework"
 import { YouScoreShowcase } from "@/components/you/YouScoreShowcase"
@@ -538,6 +540,9 @@ export default function YouPage() {
           </div>
         </div>
       </section>
+
+      {/* ── Medical disclaimer — last section, as on the glucose pages ── */}
+      <SystemDisclaimer level="standard" note={GLOBAL_DISCLAIMER} />
     </main>
   )
 }
