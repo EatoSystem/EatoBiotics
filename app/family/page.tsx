@@ -6,6 +6,8 @@ import {
   Baby, Backpack, Users, User, Sparkles, Compass, Activity,
 } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
+import { SystemDisclaimer } from "@/components/systems/system-disclaimer"
+import { disclaimerFor } from "@/lib/assessment-disclaimers"
 import { FamilyHero } from "@/components/family/family-hero"
 import { FamilyFramework } from "@/components/family/FamilyFramework"
 import { FamilyScoreShowcase } from "@/components/family/FamilyScoreShowcase"
@@ -552,6 +554,9 @@ export default function FamilyPage() {
           </div>
         </div>
       </section>
+
+      {/* ── Medical disclaimer ── */}
+      <SystemDisclaimer level="standard" note={disclaimerFor("family")} />
     </main>
   )
 }

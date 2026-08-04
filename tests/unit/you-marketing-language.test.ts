@@ -84,7 +84,9 @@ describe("You marketing pages hold the Phase 6 language standard", () => {
     // The text lives in constants, so the section references the component and
     // the constant rather than containing prose.
     expect(section).toMatch(/SystemDisclaimer/)
-    expect(section).toMatch(/GLOBAL_DISCLAIMER/)
+    // disclaimerFor("you") resolves to GLOBAL_DISCLAIMER — the per-surface
+    // decision stays in lib/assessment-disclaimers.ts rather than the page.
+    expect(section).toMatch(/disclaimerFor\("you"\)/)
     // Nothing markets after the warning.
     expect(source.indexOf(match![0])).toBeGreaterThan(source.length * 0.8)
   })

@@ -29,8 +29,8 @@ import { join } from "node:path"
  * exempted by a pattern — an exemption pattern would also excuse those words
  * anywhere else on the page.
  *
- * Optional by design: the glucose pages carry a disclaimer section, the You
- * page does not. A file without one simply keeps its whole body.
+ * Optional by design: some pages carry a disclaimer section, and a file without
+ * one simply keeps its whole body.
  */
 export const DISCLAIMER_SECTION = /\{\/\*[^*]*disclaimer[\s\S]*$/i
 
