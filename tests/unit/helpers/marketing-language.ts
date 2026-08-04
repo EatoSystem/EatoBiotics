@@ -50,12 +50,24 @@ export function readSource(relPath: string): string {
  * them in would force the general `will <verb>` rule to be narrowed to a verb
  * list to tolerate a CSS `will-change`. Narrowing a general rule to a list is
  * exactly what let claims through in #196 and #197.
+ *
+ * Block comments go too, for the same reason. Developer notes are not copy, and
+ * leaving them in produced two false positives on the /mind and /stability
+ * sweep: a `MindFramework` comment describing the gut-brain axis, and a
+ * `StabilityScoreShowcase` comment saying the bands are "driven entirely by the
+ * shared scoring constant" — a sentence about code, matched by a rule about
+ * bodies. Nothing had failed because of this yet, which is the point of fixing
+ * it before something does.
+ *
+ * Only block comments: a naive `//` strip would eat the rest of any line
+ * containing a URL.
  */
 export function copyOf(source: string): string {
   return source
     .split("\n")
     .filter((line) => !/^\s*import\s/.test(line))
     .join(" ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
     .replace(/style=\{\{[\s\S]*?\}\}/g, " ")
     .replace(/className=(?:"[^"]*"|\{[^}]*\})/g, " ")
     .replace(/\s+/g, " ")
@@ -99,6 +111,18 @@ export const CLAIMS: Array<[string, RegExp]> = [
   ["absolute attribution", /\b(entirely|solely|purely) (by|from|shaped|determined|driven)\b/i],
   // Claimed measurement — of a physiological value, or of the reader's system.
   ["claims to be a measurement", /\b(single|one) measure of\b/i],
+  // The rule above only caught one phrasing, so "designed to measure how
+  // reliably your Food System performs" and "helps measure how..." shipped on
+  // /stability under a rule whose name says it covers measurement claims.
+  //
+  // The lookbehind is load-bearing: these surfaces legitimately *deny*
+  // measurement — "it does not measure blood glucose" on /glucose, "not a
+  // clinical measurement" on /stability — and a rule that flagged the denial
+  // would push authors to delete the safest sentence on the page.
+  [
+    "claims to measure",
+    /(?<!\bnot )\b(?:(?:designed|built|intended|made) to measure|helps? (?:you )?measure|measures? how)\b/i,
+  ],
   ["claims to measure glucose", /measures? how steadily your glucose/i],
   ["glucose as a measured quantity", /your glucose (rhythm|response|curve|level)/i],
   ["acts on the curve", /(smooth|flatten|steady|soften)(s|ing)? (your|the) (curve|glucose)/i],

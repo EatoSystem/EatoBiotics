@@ -14,7 +14,7 @@ import { MindScoreShowcase } from "@/components/mind/MindScoreShowcase"
 export const metadata: Metadata = {
   title: { absolute: "The Food System Inside Your Mind | EatoBiotics" },
   description:
-    "Your gut produces 90–95% of your body's serotonin. Learn how the microbiome-brain axis works and how what you eat shapes your mood, focus, and mental clarity.",
+    "Your gut produces 90–95% of your body's serotonin. Learn how the microbiome-brain axis works, and how what you eat is associated with mood, focus, and mental clarity.",
   openGraph: {
     title: "The Food System Inside Your Mind — EatoBiotics",
     description:
@@ -125,8 +125,8 @@ export default function MindPage() {
             <ScrollReveal delay={150}>
               <div className="rounded-3xl border border-border bg-secondary/40 p-8 md:p-10">
                 <p className="text-base leading-relaxed text-muted-foreground">
-                  The food you eat shapes your mood, focus, mental clarity, and resilience — through
-                  gut-brain pathways most people have never been told about.
+                  The food you eat is associated with mood, focus, mental clarity, and resilience —
+                  through gut-brain pathways most people have never been told about.
                 </p>
                 <p className="mt-4 text-base leading-relaxed text-muted-foreground">
                   When the gut is well-fed, the mind feels it. When it isn&apos;t, the mind feels that too.
@@ -192,7 +192,7 @@ export default function MindPage() {
                   <span className="brand-gradient-text">talks to your brain.</span>
                 </h2>
                 <p className="mt-6 text-base leading-relaxed text-muted-foreground">
-                  The gut-brain axis is a two-way line. What you eat feeds your microbiome, which produces
+                  The gut-brain axis is a two-way line. What you eat feeds the gut microbiome, which produces
                   the neurotransmitters — serotonin, GABA, dopamine — that shape how you think and feel.
                 </p>
                 <p className="mt-4 text-base leading-relaxed text-muted-foreground">
@@ -437,7 +437,7 @@ export default function MindPage() {
               <span className="brand-gradient-text">talks to the brain.</span>
             </h2>
             <p className="mt-6 max-w-2xl text-base leading-relaxed text-background/70">
-              The conversation runs on three channels — the neurotransmitters your gut produces and the
+              The conversation runs on three channels — the neurotransmitters produced in the gut and the
               nerve that carries them. All of it is shaped by what you eat.
             </p>
           </ScrollReveal>
@@ -528,8 +528,8 @@ export default function MindPage() {
                   Feed the system <span className="brand-gradient-text">inside your mind.</span>
                 </h2>
                 <p className="mx-auto mt-6 max-w-lg text-base leading-relaxed text-muted-foreground">
-                  Take the free Mind Assessment, discover your Mind Score, and start building the gut-brain
-                  axis that powers your mood, focus, and clarity.
+                  Take the free Mind Assessment, get your Mind Score, and start building the habits
+                  associated with steadier mood, focus, and clarity.
                 </p>
               </ScrollReveal>
               <ScrollReveal delay={150}>
