@@ -6,6 +6,7 @@ import {
   Smile, Wind, Activity, ArrowRight, ArrowUpRight, Sparkles, User, Compass, Gauge,
 } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
+import { MIND_DISCLAIMER } from "@/lib/assessment-disclaimers"
 import { MindHero } from "@/components/mind/MindHero"
 import { MindFramework } from "@/components/mind/MindFramework"
 import { MindScoreShowcase } from "@/components/mind/MindScoreShowcase"
@@ -551,12 +552,18 @@ export default function MindPage() {
       <section className="px-6 py-12" style={{ background: "#f7f7f5" }}>
         <div className="mx-auto flex max-w-3xl items-start gap-3">
           <Brain size={18} className="mt-0.5 shrink-0" style={{ color: "var(--muted-foreground)" }} />
-          <p className="text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
-            The Food System Inside Your Mind is educational and is not a substitute for medical care. It does
-            not diagnose, treat, or cure any mental-health condition. The gut-brain connection is one factor
-            among many — always consult a qualified healthcare professional for mental-health concerns,
-            especially if symptoms are new, worsening, or severe.
-          </p>
+          <div className="flex flex-col gap-2">
+            <p className="text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
+              The Food System Inside Your Mind is educational and is not a substitute for medical care. It does
+              not diagnose, treat, or cure any mental-health condition. The gut-brain connection is one factor
+              among many — always consult a qualified healthcare professional for mental-health concerns,
+              especially if symptoms are new, worsening, or severe.
+            </p>
+            {/* The exact Mind assessment string — lib/assessment-disclaimers.ts asserts it. */}
+            <p className="text-xs font-medium leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
+              {MIND_DISCLAIMER}
+            </p>
+          </div>
         </div>
       </section>
     </main>

@@ -7,7 +7,7 @@ import {
 } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { SystemDisclaimer } from "@/components/systems/system-disclaimer"
-import { GLOBAL_DISCLAIMER } from "@/lib/assessment-disclaimers"
+import { disclaimerFor } from "@/lib/assessment-disclaimers"
 import { YouHero } from "@/components/you/you-hero"
 import { YouFramework } from "@/components/you/YouFramework"
 import { YouScoreShowcase } from "@/components/you/YouScoreShowcase"
@@ -542,7 +542,7 @@ export default function YouPage() {
       </section>
 
       {/* ── Medical disclaimer — last section, as on the glucose pages ── */}
-      <SystemDisclaimer level="standard" note={GLOBAL_DISCLAIMER} />
+      <SystemDisclaimer level="standard" note={disclaimerFor("you")} />
     </main>
   )
 }

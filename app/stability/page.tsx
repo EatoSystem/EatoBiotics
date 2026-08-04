@@ -568,7 +568,7 @@ export default function StabilityPage() {
         </div>
       </section>
 
-      {/* ── Compliance (clean, de-emphasized) ── */}
+      {/* ── Compliance / medical disclaimer (clean, de-emphasized) ── */}
       <section className="px-6 pb-12">
         <div className="mx-auto max-w-3xl">
           <ScrollReveal><RedFlagWarning compact /></ScrollReveal>
