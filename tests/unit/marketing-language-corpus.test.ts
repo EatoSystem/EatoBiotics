@@ -1,0 +1,217 @@
+import { describe, it, expect } from "vitest"
+import fs from "node:fs"
+import path from "node:path"
+
+import { CLAIMS, copyOf, marketingCopy } from "./helpers/marketing-language"
+
+/**
+ * Corpus guard — the whole public marketing surface, not the tuned slice.
+ *
+ * The five per-page guards cover 17 hand-picked files. An audit of the other
+ * 188 public pages found the claims those PRs kept removing were still live on
+ * pages nobody guarded — "powers your energy" in the homepage's own metadata,
+ * "measures how well your diet supports your microbiome" on /biotics.
+ *
+ * It also found the rules could not simply be pointed at the rest of the site:
+ * they were tuned against those 17 files, and on ordinary pages they fired on
+ * code, on developer comments, on legal boilerplate, and on the ordinary
+ * English verb "treats". A guard that cries wolf gets deleted, so the extractor
+ * was hardened first (see copyOf and DENIAL_BOILERPLATE) and this file is the
+ * proof that it worked.
+ *
+ * This test asserts the *exact* set of claim hits across the corpus. Two
+ * properties are worth the maintenance cost:
+ *
+ *   - any NEW hit fails the build, on any public page, guarded or not;
+ *   - the real claims below stop being a note in a PR body and become an
+ *     asserted list. The copy PR that follows deletes entries as it fixes
+ *     lines, and is only green when the copy is genuinely fixed.
+ *
+ * Adding an entry here is not the same as exempting a file. Each entry pins one
+ * rule and one matched fragment on one page; anything else on that page still
+ * fails.
+ */
+
+/**
+ * Pages that sell. Legal, support and transactional routes are deliberately
+ * out of scope: the CLAIMS rules are about health marketing, and a privacy
+ * policy saying "We will respond within 30 days" or a test-mode banner saying
+ * "No real charge will be made" is not making a claim about anybody's body.
+ * Excluding them is scoping, not an exemption — the alternative is narrowing
+ * general rules like `will <verb>` to a verb list, which is exactly what let
+ * claims through in #196 and #197.
+ */
+const NON_MARKETING =
+  /^app\/(account|admin|cms|api|demo|auth|privacy|terms|help|live|login|enter|offline|unsubscribe|preview-access|share)\b/
+
+/** Book chapters are long-form book content, not marketing copy. */
+const BOOK_CHAPTER = /^app\/book-chapter-/
+
+function publicPages(dir = "app"): string[] {
+  return fs
+    .readdirSync(dir, { withFileTypes: true })
+    .flatMap((e) => {
+      const p = path.join(dir, e.name)
+      return e.isDirectory() ? publicPages(p) : e.name === "page.tsx" ? [p] : []
+    })
+    .filter((p) => !NON_MARKETING.test(p) && !BOOK_CHAPTER.test(p))
+    .sort()
+}
+
+/**
+ * Known hits, as `page|rule|fragment`.
+ *
+ * REAL — live claims, to be fixed by the copy PR that follows this one. They
+ * are listed rather than fixed here because this PR is infrastructure-only:
+ * mixing a rule change with the copy it flags makes it impossible to tell
+ * which one a later regression came from.
+ */
+const REAL_CLAIMS = [
+  // The homepage's own metadata description. Same `powers your <body noun>`
+  // shape removed from /mind in #204.
+  "app/page.tsx|acts on the body|powers your energy",
+  // Same "measures how well" shape reframed on /stability in #204.
+  "app/app/page.tsx|claims to measure|measures how",
+  "app/biotics/page.tsx|claims to measure|measures how",
+  "app/biotics/page.tsx|acts on the body|supports your microbiome",
+  "app/biotics/page.tsx|claims measurability|measurable",
+  "app/digital-twin/page.tsx|claims measurability|measurably",
+  "app/eatosystem/page.tsx|claims measurability|measurable",
+  "app/books/page.tsx|acts on the body|shapes your health",
+  // A decades-long outcome promise, on a page whose guard checks only its
+  // disclaimer — /family is in disclaimer-coverage.test.ts but no CLAIMS guard
+  // ever ran against it.
+  "app/family/page.tsx|promise|will shape",
+  // Sample report copy: timeline promises, the #198 pattern.
+  "app/report/page.tsx|promise|will create",
+  "app/report/page.tsx|result in N days/weeks|in 30 days",
+  "app/report/page.tsx|result within a timeframe|within weeks",
+  "app/report/page.tsx|superlative|single biggest",
+  "app/report-you/page.tsx|promise|will lift",
+  "app/report-you/page.tsx|claims measurability|measurable",
+  "app/report-you/page.tsx|superlative|single biggest",
+  "app/report-mind/page.tsx|result within a timeframe|within weeks",
+  "app/report-mind/page.tsx|claims measurability|measurable",
+  "app/report-mind/page.tsx|states a fact about the body|You have",
+  "app/report-family/page.tsx|promise|will create",
+  "app/report-family/page.tsx|result in N days/weeks|in 30 days",
+  "app/report-family/page.tsx|claims measurability|measurable",
+]
+
+/**
+ * NOT CLAIMS — rule limitations, measured and left in place deliberately.
+ * Each one was tried and the fix rejected for a stated reason.
+ */
+const KNOWN_FALSE_POSITIVES = [
+  // `\w+s your <body noun>` cannot tell a verb from a plural noun. Here
+  // "compounds" is a noun: "the beneficial compounds your microbiome produces".
+  //
+  // A lookahead excluding a following verb was built and measured: it silences
+  // this one and loses three real claim shapes — "boosts your immunity levels",
+  // "improves your health outcomes", "transforms your energy levels" — because
+  // separating "produces" from "outcomes" needs a verb list. That is the
+  // narrowing that let claims through in #196/#197, so the false positive stays
+  // and the rule keeps its reach. Same limitation documented in #204 when
+  // widening the noun list to gut|brain was measured and rejected.
+  "app/about/page.tsx|acts on the body|compounds your microbiome",
+  // Product roadmap, not a body promise: "Baby isn't live yet — but it will
+  // build directly on your You or Family Food System." The object is a product,
+  // not the reader. Left as an entry rather than a weakened `will <verb>` rule.
+  "app/baby/page.tsx|promise|will build",
+  "app/birth/page.tsx|promise|will build",
+  "app/longevity/page.tsx|promise|will build",
+  "app/recovery/page.tsx|promise|will build",
+  // "Waitlist pricing guaranteed" — a price promise, not a health guarantee.
+  "app/course/page.tsx|guarantee|guaranteed",
+  // "You have awareness and some strong habits" — describes the reader's
+  // habits from their own answers, not a fact asserted about their body.
+  "app/assessment/deep/page.tsx|states a fact about the body|You have",
+]
+
+const ALLOWED = new Set([...REAL_CLAIMS, ...KNOWN_FALSE_POSITIVES])
+
+function corpusHits(): string[] {
+  const hits: string[] = []
+  for (const p of publicPages()) {
+    let copy: string
+    try {
+      copy = marketingCopy(p)
+    } catch {
+      continue // a page that cannot be read is the extraction floors' problem
+    }
+    for (const [name, re] of CLAIMS) {
+      const m = copy.match(re)
+      if (m) hits.push(`${p}|${name}|${m[0]}`)
+    }
+  }
+  return hits.sort()
+}
+
+/**
+ * Direct proof for the extractor strips.
+ *
+ * Three of the four hardening fixes are provable by reverting them and watching
+ * a corpus false positive come back. The line-comment strip is not: the
+ * "treats X as Y" lookahead independently silences the case it was written for,
+ * so on today's corpus it removes zero hits. These assertions are how it is
+ * verified rather than assumed — including the ordering bug that makes it
+ * non-obvious, and the URL case that constrains it.
+ */
+describe("copyOf strips what is not customer copy", () => {
+  it("strips line comments", () => {
+    expect(copyOf(`const a = 1 // treat as free\n<p>Real copy</p>`)).not.toMatch(/treat/)
+  })
+
+  it("keeps URLs, which contain the same slashes", () => {
+    // The reason the strip is colon-guarded rather than a plain //.* — a naive
+    // version eats the rest of any line containing a link.
+    const out = copyOf(`<a href="https://eatobiotics.com/you">Your food system</a>`)
+    expect(out).toMatch(/eatobiotics\.com/)
+    expect(out).toMatch(/Your food system/)
+  })
+
+  it("strips comments per line, so one // cannot eat the file", () => {
+    // The ordering trap: copyOf joins lines with a space, and a strip applied
+    // after that join would delete everything following the first //.
+    const out = copyOf(`// a comment\n<p>Copy that must survive</p>\n// another`)
+    expect(out).toMatch(/Copy that must survive/)
+    expect(out).not.toMatch(/comment|another/)
+  })
+
+  it("strips method calls, which are code and not copy", () => {
+    // [...SCORE_BANDS].reverse() read as the medical claim "reverse".
+    expect(copyOf(`const bands = [...SCORE_BANDS].reverse()`)).not.toMatch(/reverse/)
+  })
+
+  it("does not strip ordinary prose that merely contains a full stop", () => {
+    // Over-correction guard for the method-call strip: `.\w+(` must not eat
+    // sentences. Nothing here is code.
+    expect(copyOf(`<p>Small steps. Every day. That is the method.</p>`)).toMatch(
+      /Small steps\. Every day\. That is the method\./,
+    )
+  })
+})
+
+describe("the public marketing corpus holds no unknown claims", () => {
+  it("finds a corpus worth checking", () => {
+    // Floor, for the same reason every per-page guard has one: a walk that
+    // silently returns nothing would make every assertion below vacuous.
+    const pages = publicPages()
+    expect(pages.length).toBeGreaterThan(60)
+    expect(pages).toContain("app/page.tsx")
+    expect(marketingCopy("app/page.tsx").length).toBeGreaterThan(500)
+  })
+
+  it("produces no claim hit that is not already known", () => {
+    const unknown = corpusHits().filter((h) => !ALLOWED.has(h))
+    expect(unknown, `unknown claim hits:\n${unknown.join("\n")}`).toEqual([])
+  })
+
+  it("still finds every known hit — the list does not rot", () => {
+    // The other direction. Without this, a fixed line or an over-eager strip
+    // would leave a stale entry sitting here looking like coverage.
+    const hits = new Set(corpusHits())
+    const stale = [...ALLOWED].filter((a) => !hits.has(a)).sort()
+    expect(stale, `allowlist entries that no longer match:\n${stale.join("\n")}`).toEqual([])
+  })
+})
