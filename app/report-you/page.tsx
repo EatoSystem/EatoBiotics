@@ -16,6 +16,7 @@ const YOU_DATA: DemoReportData = {
     title: "The Food System Inside You",
   },
   heroImage: "/images/hero-gut.png",
+  assessmentKey: "you",
   score: 68,
   profile: "Emerging Balance",
   tagline:
@@ -51,23 +52,22 @@ const YOU_DATA: DemoReportData = {
     {
       icon: "⚡",
       title: "Energy levels",
-      body: "Your mid-afternoon energy dip is directly linked to your Probiotics gap. A low-diversity microbiome produces less butyrate — the short-chain fatty acid that stabilises blood sugar and sustains energy between meals.",
+      body: "If you notice a mid-afternoon energy dip, your Probiotics gap is worth looking at. A low-diversity microbiome produces less butyrate — the short-chain fatty acid studied for its role in steady energy between meals.",
     },
     {
       icon: "🫁",
       title: "Digestive comfort",
-      body: "Occasional bloating or sluggish digestion after meals is a common signal of an under-seeded gut. Adding fermented foods reduces this noticeably within 2–3 weeks for most people.",
+      body: "Occasional bloating or sluggish digestion after meals is commonly reported alongside a low Probiotics score. Adding fermented foods is the usual first thing to try.",
     },
     {
       icon: "😴",
       title: "Sleep quality",
-      body: "Your gut produces 90% of your body's serotonin — the precursor to melatonin. A stronger Probiotics score means better serotonin production, better melatonin, and deeper sleep.",
+      body: "Your gut produces 90–95% of your body's serotonin — the precursor to melatonin. That pathway is why gut health and sleep quality are so often studied together.",
     },
   ],
   scoreProjection: {
     projected: 83,
-    timeline: "30 days",
-    note: "This projection is based on your current pattern. Scores are recalculated from your actual assessment answers — this is an estimate based on typical improvement rates for your profile type.",
+    note: "An illustrative estimate based on typical patterns for this profile, not a result to expect by a date. Scores are recalculated from your actual assessment answers whenever you retake it.",
     drivers: ["Daily fermented food habit", "Prebiotic vegetable at every meal", "Consistent meal timing"],
   },
   pullQuote:
@@ -76,7 +76,7 @@ const YOU_DATA: DemoReportData = {
     {
       title: "Strong plant variety",
       explanation:
-        "You consistently eat a wide range of plant foods across the week. Diversity is the single most important driver of a healthy microbiome, and you're already doing this well.",
+        "You consistently eat a wide range of plant foods across the week. Diversity is one of the most consistent findings in microbiome research, and you're already doing this well.",
     },
     {
       title: "Consistent meal timing",
@@ -110,7 +110,7 @@ const YOU_DATA: DemoReportData = {
     trigger:
       "Your plant diversity is a genuine foundation — fermented foods are a clear next lever.",
     explanation:
-      "Most people with a Probiotics score below 50 also score low on Prebiotics, which makes the fix harder and slower. You don't have that problem. You already eat the plant foods that create the environment for beneficial bacteria to thrive — you just need to start introducing them. The effect of adding fermented foods to an already fibre-rich diet is amplified compared to someone starting from zero. You're in a particularly strong position to see rapid improvement.",
+      "Most people with a Probiotics score below 50 also score low on Prebiotics, which makes the fix harder and slower. You don't have that problem. You already eat the plant foods that create the environment for beneficial bacteria to thrive — you just need to start introducing them. Adding fermented foods to an already fibre-rich diet builds on what is there rather than starting from zero. That is a good position to be starting from.",
   },
   deepInsight:
     "What your scores reveal is a food system that's doing the right things structurally but missing a key biological input. Think of your gut as a living ecosystem: the habitat is well kept and well fed (Prebiotics + Postbiotics), but new residents rarely arrive (Probiotics). The structure is there — the community just needs to be populated.\n\nThis pattern is more common than you might think, especially in people who eat healthily but have grown up in cultures or households where fermented foods aren't a staple. It's not a sign of poor habits overall — it's a specific blind spot. The encouraging truth is that this is the easiest gap to close. Unlike fibre intake or meal timing (which require sustained habit change), fermented foods can be added as a simple daily addition to what you already eat.",
@@ -207,7 +207,7 @@ const YOU_DATA: DemoReportData = {
       food2: "Jerusalem Artichoke",
       emoji1: "🥛",
       emoji2: "🌱",
-      reason: "Probiotic + prebiotic — a clinical synbiotic pairing. The bacteria in kefir feed on the inulin in artichoke, multiplying and diversifying your microbiome far beyond what either food achieves alone.",
+      reason: "Probiotic + prebiotic — a synbiotic pairing. The bacteria in kefir feed on the inulin in artichoke, which is why the two are more useful together than either is alone.",
     },
     {
       food1: "Chickpeas",
@@ -264,7 +264,7 @@ const YOU_DATA: DemoReportData = {
     },
   ],
   closing:
-    "Your starting point is genuinely strong. A score of 68 with high Prebiotics and Postbiotics scores means you're not starting from scratch — you're filling a specific gap in an otherwise functional system. The 30-day roadmap above is designed to close that gap methodically, without overhauling everything you're already doing well. Focus on the Probiotics pillar first.",
+    "Your starting point is genuinely strong. A score of 68 with high Prebiotics and Postbiotics scores means you're not starting from scratch — you're filling a specific gap in an otherwise functional system. The roadmap above is designed to close that gap methodically, without overhauling everything you're already doing well. Focus on the Probiotics pillar first, keep the habits you already have, and retake the assessment when you're ready to see what has changed.",
 }
 
 export default function ReportYouPage() {

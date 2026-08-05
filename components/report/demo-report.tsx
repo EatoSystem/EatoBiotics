@@ -5,6 +5,10 @@ import Image from "next/image"
 import { Check, ArrowRight, TrendingUp, Mail, Loader2, CheckCircle2 } from "lucide-react"
 import { useState } from "react"
 
+import { SystemDisclaimer } from "@/components/systems/system-disclaimer"
+import { disclaimerFor } from "@/lib/assessment-disclaimers"
+import type { AssessmentKey } from "@/lib/assessment-types"
+
 const DAY_COLORS = [
   "var(--icon-lime)",
   "var(--icon-green)",
@@ -180,9 +184,17 @@ export interface DemoReportData {
     title: string
     body: string
   }[]
+  /** Which disclaimer this report carries. Required, so a new report type
+      cannot ship without one. */
+  assessmentKey: AssessmentKey
   scoreProjection: {
     projected: number
-    timeline: string
+    /** No `timeline`. The projection used to promise a specific score in
+        30 days ("Where you could be in 30 days", you 68→83, mind 59→74,
+        family 64→79) — a dated numeric outcome, and one the claim rules could
+        not see because they match `in 30 days`, not `timeline: "30 days"`.
+        The number stays as an illustration of where the plan aims; the
+        deadline is gone. */
     drivers: string[]
     note: string
   }
@@ -996,7 +1008,7 @@ export function DemoReport({ data }: { data: DemoReportData }) {
                   Your Projection
                 </p>
                 <h2 className="font-serif text-xl font-bold text-foreground">
-                  Where you could be in {data.scoreProjection.timeline}
+                  Where this plan aims
                 </h2>
               </div>
             </div>
@@ -1021,7 +1033,7 @@ export function DemoReport({ data }: { data: DemoReportData }) {
                     {data.scoreProjection.projected}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {data.scoreProjection.timeline}
+                    estimate
                   </div>
                 </div>
               </div>
@@ -2296,6 +2308,15 @@ function ReportActions({ data }: { data: DemoReportData }) {
         </div>
 
       </div>
+
+      {/* Medical disclaimer — last thing on the page, nothing markets after it.
+          These sample reports are the most clinical-looking surfaces on the
+          site (numeric scores, named bacterial strains, a 30-day protocol) and
+          until now carried no safety copy at all: the sticky banner above says
+          only that the report is a sample, which is commercial framing rather
+          than a disclaimer. Rendered here rather than per page so all four
+          inherit it and a fifth cannot be added without one. */}
+      <SystemDisclaimer level="standard" note={disclaimerFor(data.assessmentKey)} />
     </div>
   )
 }

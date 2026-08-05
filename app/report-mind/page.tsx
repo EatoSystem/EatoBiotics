@@ -16,14 +16,15 @@ const MIND_DATA: DemoReportData = {
     title: "The Food System Inside Your Mind",
   },
   heroImage: "/images/mind-hero.png",
+  assessmentKey: "mind",
   score: 59,
   profile: "Foggy Foundations",
   tagline:
     "Your gut-brain connection is sending signals — tune in to the right foods and your mood, clarity, and energy can shift noticeably.",
   opening:
-    "A Mind score of 59 tells a specific story: a gut system that is partially functional but not yet producing the neurochemical output your brain and mood depend on. Your answers show awareness of the food-mood link and some consistent eating habits — but the foods associated with serotonin, dopamine, and GABA production through the gut are largely absent from what you reported. That is the gap worth working on first.",
+    "A Mind score of 59 tells a specific story: habits that are partly in place, but missing the inputs the gut-brain pathway is built on. Your answers show awareness of the food-mood link and some consistent eating habits — but the foods associated with serotonin, dopamine, and GABA production through the gut are largely absent from what you reported. That is the gap worth working on first.",
   scoreInterpretation:
-    "Your score of 59 reflects a gut-brain axis that is underperforming relative to its potential. Approximately 90–95% of the body's serotonin is produced in the gut — by bacteria that require specific prebiotic and probiotic inputs to function. Your Prebiotics score (62) suggests your diet includes some of the right plant foods, but not with enough variety or consistency. Your Probiotics score (38) indicates that the bacterial populations responsible for serotonin and GABA synthesis are not being actively supported. Your Postbiotics score (64) points to a gut environment that's under low-level inflammatory stress — a common finding in people who report mood instability, afternoon energy crashes, or difficulty concentrating. The good news is that the gut-brain axis is an active area of research, and diets richer in gut microbial diversity are among the most studied.",
+    "Your score of 59 reflects reported habits with clear room to move. Approximately 90–95% of the body's serotonin is produced in the gut — by bacteria that depend on specific prebiotic and probiotic inputs. Your Prebiotics score (62) suggests your diet includes some of the right plant foods, but not with enough variety or consistency. Your Probiotics score (38) reflects how rarely you reported eating the fermented foods associated with those bacterial populations. Your Postbiotics score (64) reflects irregular meal timing and eating under time pressure — patterns commonly reported alongside mood instability, afternoon energy dips, or difficulty concentrating. The good news is that the gut-brain axis is an active area of research, and diets richer in gut microbial diversity are among the most studied.",
   pillarScores: [
     {
       name: "Prebiotics",
@@ -44,7 +45,7 @@ const MIND_DATA: DemoReportData = {
       score: 64,
       color: "var(--icon-teal)",
       description:
-        "Your gut shows signs of low-level chronic stress — likely driven by irregular eating patterns and elevated cortisol. Gut barrier integrity affects brain inflammation, mood regulation, and sleep quality.",
+        "You reported irregular eating patterns and frequently eating under time pressure — the habits this pillar scores. Gut barrier integrity is studied in relation to mood regulation and sleep quality.",
     },
   ],
   dailyImpact: [
@@ -56,22 +57,21 @@ const MIND_DATA: DemoReportData = {
     {
       icon: "🌊",
       title: "Mood stability",
-      body: "Your gut produces 90–95% of your body's serotonin. A Probiotics score of 38 means that production is significantly below optimal. Closing this gap reduces mood volatility — not through willpower, but biology.",
+      body: "Your gut produces 90–95% of your body's serotonin, and the bacteria involved depend on foods you reported eating rarely. A Probiotics score of 38 reflects that gap. Diets richer in these foods are associated with steadier mood.",
     },
     {
       icon: "🌙",
       title: "Sleep depth",
-      body: "Serotonin is the precursor to melatonin. When gut serotonin production is low, sleep onset is slower and deep-sleep phases are shorter. Improving your Probiotics score is one of the most direct routes to better sleep.",
+      body: "Serotonin is the precursor to melatonin, which is part of why gut health and sleep are so often studied together. Your Probiotics score of 38 is the pillar with the most room to move here.",
     },
   ],
   scoreProjection: {
     projected: 74,
-    timeline: "30 days",
-    note: "Mind scores tend to improve more gradually than You scores because the gut-brain axis requires consistent bacterial repopulation over several weeks. This projection assumes daily adherence to the plan.",
+    note: "An illustrative estimate based on typical patterns for this profile, not a result to expect by a date. Mind scores tend to move more gradually than You scores.",
     drivers: ["Daily fermented food (kefir/yoghurt)", "Omega-3 rich foods 3× per week", "Screens-off meals daily"],
   },
   pullQuote:
-    "90% of your serotonin is produced in your gut — not your brain. Mood, clarity, and mental energy begin at the dinner table, not the pharmacy.",
+    "90–95% of your serotonin is produced in your gut — not your brain. That makes the dinner table one of the places worth paying attention to.",
   strengths: [
     {
       title: "Awareness of the food-mood link",
@@ -93,17 +93,17 @@ const MIND_DATA: DemoReportData = {
     {
       title: "Serotonin-pathway foods",
       explanation:
-        "Your diet is low in foods that support the tryptophan → serotonin pathway: eggs, oily fish, dark leafy greens, walnuts, and bananas. These provide the raw materials your gut bacteria need to produce the neurotransmitters that directly affect mood and sleep.",
+        "Your diet is low in foods that support the tryptophan → serotonin pathway: eggs, oily fish, dark leafy greens, walnuts, and bananas. These provide the raw materials your gut bacteria use to produce neurotransmitters, the pathway most studied in relation to mood and sleep.",
     },
     {
       title: "Stress and eating rhythm",
       explanation:
-        "Your cortisol patterns appear elevated at mealtimes — you frequently eat in high-stress conditions or rush meals. Elevated cortisol suppresses the parasympathetic nervous system needed for optimal digestion and nutrient absorption.",
+        "You reported frequently eating in high-stress conditions or rushing meals. Eating under stress keeps the body out of the parasympathetic state that digestion works best in.",
     },
     {
       title: "Sleep-gut connection",
       explanation:
-        "Your sleep and gut health are in a feedback loop. Poor gut microbiome diversity reduces melatonin precursor production; poor sleep degrades gut barrier integrity. You need to address both together rather than treating them as separate issues.",
+        "Sleep and gut health are studied as a feedback loop: microbial diversity is linked to melatonin precursor availability, and poor sleep is linked to gut barrier integrity. They are worth addressing together rather than separately.",
     },
   ],
   keyInsight: {
@@ -113,7 +113,7 @@ const MIND_DATA: DemoReportData = {
       "The gut produces roughly 90–95% of your body's serotonin. This serotonin doesn't cross the blood-brain barrier directly — but it regulates gut motility, influences the vagus nerve, and affects the systemic inflammatory state that your brain is bathed in. Your Probiotics score of 38 means the bacterial populations most associated with this production — Lactobacillus rhamnosus, Bifidobacterium longum, and Lactobacillus helveticus — are not being regularly introduced through your diet. These strains are among the most studied in gut-brain research, including work on anxiety, sleep onset and mood stability. You don't need to understand the mechanism — you just need to eat the foods.",
   },
   deepInsight:
-    "What makes the gut-brain connection both compelling and practical is that it operates on a two-way street. The brain influences what and how you eat (stress eating, appetite suppression, cravings) — but the gut equally influences how your brain functions. The vagus nerve, which carries 80% of signals upward from gut to brain rather than the other way around, is the primary highway. The quality of your microbiome determines the quality of those signals.\n\nYour score pattern — low Probiotics, moderate Prebiotics, moderate Postbiotics — is characteristic of someone who has the dietary intention but not yet the microbial diversity. You're eating reasonably but not providing your gut with the specific bacterial inputs that the brain pathway depends on. This isn't a failure of effort; it's a knowledge gap. The five foods in this report, and the 30-day plan, are designed specifically to close it. The expected experience: fewer afternoon energy dips, improved sleep quality, and a more stable baseline mood — not a dramatic transformation, but a meaningful, sustainable shift.",
+    "What makes the gut-brain connection both compelling and practical is that it operates on a two-way street. The brain influences what and how you eat (stress eating, appetite suppression, cravings) — but the gut equally influences how your brain functions. The vagus nerve, which is largely afferent — most of its fibres carry signals upward from gut to brain rather than the other way — is the primary highway. The quality of your microbiome determines the quality of those signals.\n\nYour score pattern — low Probiotics, moderate Prebiotics, moderate Postbiotics — is characteristic of someone who has the dietary intention but not yet the microbial diversity. You're eating reasonably but not providing your gut with the specific bacterial inputs that the brain pathway depends on. This isn't a failure of effort; it's a knowledge gap. The five foods in this report, and the plan that follows, are designed specifically to close it — by adding the foods, not by overhauling how you eat.",
   sevenDayPlan: [
     {
       day: "Monday",
@@ -148,7 +148,7 @@ const MIND_DATA: DemoReportData = {
     {
       emoji: "🍫",
       food: "Dark Chocolate (70%+)",
-      why: "Dark chocolate is one of the most polyphenol-rich foods available. It feeds Lactobacillus and Bifidobacterium strains, reduces cortisol levels, and contains theobromine and magnesium — both linked to improved mood and reduced anxiety.",
+      why: "Dark chocolate is one of the most polyphenol-rich foods available. It feeds Lactobacillus and Bifidobacterium strains, and contains theobromine and magnesium — both well studied in relation to mood.",
       howTo:
         "20–30g of 70%+ dark chocolate daily. The higher the percentage, the lower the sugar and the stronger the prebiotic effect. Keep it as an afternoon snack rather than after dinner to avoid affecting sleep.",
       pillars: ["Prebiotics", "Postbiotics"],
@@ -159,7 +159,7 @@ const MIND_DATA: DemoReportData = {
     {
       emoji: "🥜",
       food: "Walnuts",
-      why: "Walnuts are uniquely high in ALA (plant-based omega-3) and contain serotonin itself — one of the few foods that does. They also contain ellagitannins, which gut bacteria convert into urolithins — potent anti-inflammatory compounds that reduce brain inflammation.",
+      why: "Walnuts are uniquely high in ALA (plant-based omega-3) and contain serotonin itself — one of the few foods that does. They also contain ellagitannins, which gut bacteria convert into urolithins — compounds studied for their anti-inflammatory properties.",
       howTo:
         "A small handful (6–8 walnuts) as an afternoon snack, or added to porridge and salads. Don't roast them — heat degrades the ALA content. Raw or lightly toasted is best.",
       pillars: ["Prebiotics", "Postbiotics"],
@@ -192,7 +192,7 @@ const MIND_DATA: DemoReportData = {
     {
       emoji: "🥬",
       food: "Spinach",
-      why: "Spinach is one of the highest dietary sources of folate — a B vitamin essential for the methylation cycle that produces serotonin, dopamine, and norepinephrine. Low folate is directly correlated with depression risk.",
+      why: "Spinach is one of the highest dietary sources of folate — a B vitamin the methylation cycle depends on, which is how the body makes serotonin, dopamine, and norepinephrine.",
       howTo:
         "A large handful (60–80g) in meals — wilts down considerably when cooked. Add to eggs, pasta, soups, or blend into smoothies where it's essentially undetectable in flavour.",
       pillars: ["Prebiotics", "Postbiotics"],
@@ -259,12 +259,12 @@ const MIND_DATA: DemoReportData = {
         "Maintain all habits from weeks 1–3 without exception",
         "Notice and log any changes in afternoon energy, sleep onset, or mood baseline",
         "Try one entirely new fermented food you haven't eaten before",
-        "Retake the assessment — your Mind score should have shifted meaningfully",
+        "Retake the assessment and compare your Mind score with where you started",
       ],
     },
   ],
   closing:
-    "The gut-brain connection is not a metaphor or a wellness trend — it is a biological fact, and your score reflects where yours currently sits. A score of 59 is not a diagnosis of anything; it is a measurement of a correctable gap. The five foods in this report directly address the bacterial and nutritional deficit your gut-brain axis is experiencing. The 30-day plan provides the structure. The expected outcome is not a transformation — it's a recalibration. More stable energy. Better sleep. A mood baseline that feels a little more solid. That is what closing a Probiotics score gap of this kind tends to produce. Follow the plan, retake the assessment, and see for yourself.",
+    "The gut-brain axis is a real and active field of research, and your score reflects the habits you reported, not a diagnosis. A score of 59 is a behaviour score with a clear gap in it: the foods associated with these bacterial populations are largely missing from what you described. The five foods in this report address that gap directly, and the plan provides the structure. Follow it, retake the assessment, and see how your answers change.",
 }
 
 export default function ReportMindPage() {
