@@ -8,7 +8,7 @@ import { DEV_COOKIE, devPasswordToken, getDevPassword, isPasswordGateEnabled } f
 export const metadata: Metadata = {
   title: "EatoBiotics — The Food System Inside You",
   description:
-    "Discover your Food System Score, analyse every meal with AI, and get a personalised weekly food system report. Build the microbiome that powers your energy, digestion, and immunity.",
+    "Discover your Food System Score, analyse every meal with AI, and get a personalised weekly food system report. Build habits associated with steadier energy, digestion, and immunity.",
   openGraph: {
     title: "EatoBiotics — The Food System Inside You",
     description:

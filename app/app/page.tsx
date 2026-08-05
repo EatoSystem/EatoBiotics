@@ -23,7 +23,7 @@ const features = [
     color: "var(--icon-lime)",
     gradientTo: "var(--icon-green)",
     description:
-      "A daily 0-100 score that measures how well your food choices support your microbiome across all three biotic types.",
+      "A daily 0-100 score reflecting how closely your logged food choices match the patterns associated with a well-fed microbiome, across all three biotic types.",
     anchor: "#score-calculator",
   },
   {

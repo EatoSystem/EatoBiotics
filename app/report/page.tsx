@@ -14,7 +14,7 @@ const REPORTS = [
     label: "YOUR REPORT",
     title: "The Food System Inside You",
     tagline: "Your gut system is developing real momentum — you have genuine strengths to build on and clear levers to pull.",
-    insight: "Your plant diversity is a genuine foundation — fermented foods are your single biggest lever.",
+    insight: "Your plant diversity is a genuine foundation — fermented foods are a clear next lever.",
     copy: "A complete personal gut health analysis — your Prebiotics · Probiotics · Postbiotics scores, what they mean for your daily energy, and a personalised 30-day plan to improve your food system.",
     score: 68,
     profile: "Emerging Balance",
@@ -34,7 +34,7 @@ const REPORTS = [
   {
     label: "FAMILY REPORT",
     title: "The Food System Inside Your Family",
-    tagline: "Your family's food system has real shared strengths — a few targeted shifts will create compound benefits for everyone at the table.",
+    tagline: "Your family's food system has real shared strengths — a few targeted shifts can add up for everyone at the table.",
     insight: "Shared mealtimes are your family's biggest asset — the next step is what's on the plate.",
     copy: "A collective family food system analysis — shared habits, children's nutrition, and a practical family plan to build better gut health together.",
     score: 64,
@@ -56,7 +56,7 @@ const REPORTS = [
     label: "MIND REPORT",
     title: "The Food System Inside Your Mind",
     tagline: "Your gut-brain connection is sending signals — tune in to the right foods and your mood, clarity, and energy can shift noticeably.",
-    insight: "Your gut is producing significantly less serotonin than it could — targeted food choices can change this within weeks.",
+    insight: "Your reported diet is low in the foods associated with gut serotonin production — a targeted place to start.",
     copy: "A focused gut-brain analysis — how your food system affects mood, focus, and mental clarity, with targeted foods and habits to support your mind.",
     score: 59,
     profile: "Foggy Foundations",
@@ -91,7 +91,7 @@ const REPORT_SECTIONS = [
   {
     icon: "📈",
     name: "Score Projection",
-    description: "Where your score could reach in 30 days with consistent adherence to your personalised plan",
+    description: "Where your score could go with consistent adherence to your personalised plan",
     color: "var(--icon-teal)",
   },
   {
