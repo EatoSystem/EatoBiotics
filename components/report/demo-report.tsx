@@ -1368,45 +1368,49 @@ export function DemoReport({ data }: { data: DemoReportData }) {
         >
           <div className="px-6 pt-6 pb-2">
             <p className="text-xs font-bold uppercase tracking-widest" style={{ color: data.theme.accent }}>
-              What you&apos;ll notice and when
+              How the plan is staged
             </p>
             <h3 className="mt-1 font-serif text-xl font-bold text-foreground">
-              Your change timeline
+              Your plan, stage by stage
             </h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              What the plan focuses on at each stage, and the things people often keep an eye
+              on — not results promised by a date.
+            </p>
           </div>
           <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             {[
               {
                 period: "Days 1–7",
                 icon: "⚡",
-                title: "First effects",
+                title: "Getting started",
                 color: "var(--icon-lime)",
                 points: [
-                  "Digestive rhythm begins to improve",
-                  "Reduced bloating after meals",
-                  "Slightly better energy on waking",
+                  "A steady daily eating rhythm",
+                  "How you feel after meals",
+                  "Morning energy",
                 ],
               },
               {
                 period: "Weeks 2–4",
                 icon: "🌱",
-                title: "Microbiome shift",
+                title: "Building variety",
                 color: "var(--icon-green)",
                 points: [
-                  "Measurable bacterial diversity increase",
-                  "Energy levels stabilise across the day",
-                  "Fewer cravings for ultra-processed foods",
+                  "More plant variety across the week",
+                  "Energy through the day",
+                  "Snacking and craving patterns",
                 ],
               },
               {
                 period: "Month 2+",
                 icon: "🧠",
-                title: "Brain-gut recalibration",
+                title: "Settling into a routine",
                 color: "var(--icon-teal)",
                 points: [
-                  "Mood baseline shifts noticeably",
-                  "Sleep depth and onset improves",
-                  "Sharper focus and mental clarity",
+                  "Mood and stress patterns",
+                  "Sleep quality",
+                  "Focus and concentration",
                 ],
               },
             ].map((stage) => (
