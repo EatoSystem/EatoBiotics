@@ -59,24 +59,64 @@ export function readSource(relPath: string): string {
  * bodies. Nothing had failed because of this yet, which is the point of fixing
  * it before something does.
  *
- * Only block comments: a naive `//` strip would eat the rest of any line
- * containing a URL.
+ * Line comments go too, but they have to be stripped *per line, before the
+ * join* — after the join a single `//` would eat the rest of the file. The
+ * #204 note about URLs still stands, so `//` only counts as a comment when it
+ * is not preceded by a colon: `https://…` survives, `// treat as free` does not.
+ *
+ * Honest note on this one: it currently removes zero hits from the corpus. It
+ * was added for `// Fail closed: … treat as free` in
+ * app/stability/insights/page.tsx, but the "treats X as Y" lookahead below
+ * silences that independently — measured by reverting each fix separately. It
+ * stays because a `//` comment is definitionally not customer copy, the same
+ * reasoning that added the block-comment strip in #204 before anything had
+ * failed. Proved directly in marketing-language-corpus.test.ts instead, since
+ * the corpus cannot prove it.
+ *
+ * Method calls go as well. `[...SCORE_BANDS].reverse()` in app/method/page.tsx
+ * registered as the medical claim "reverse": code, matched by a rule about
+ * bodies. Stripping `.word(` kills the class rather than the instance, and
+ * prose effectively never contains that shape.
+ *
+ * All three strips exist because the rules were tuned against 17 hand-picked
+ * marketing files. Pointed at the rest of the site they fire on ordinary code
+ * and ordinary English, and a guard that cries wolf gets deleted.
  */
 export function copyOf(source: string): string {
   return source
     .split("\n")
     .filter((line) => !/^\s*import\s/.test(line))
+    .map((line) => line.replace(/(?<!:)\/\/.*$/, " "))
     .join(" ")
     .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/\.\w+\(/g, " ")
     .replace(/style=\{\{[\s\S]*?\}\}/g, " ")
     .replace(/className=(?:"[^"]*"|\{[^}]*\})/g, " ")
     .replace(/\s+/g, " ")
     .trim()
 }
 
+/**
+ * The fixed legal denial string, which is a denial and not a claim.
+ *
+ * /help carries it in an FAQ answer — "It does not diagnose, treat, cure, or
+ * prevent any medical condition" — outside any disclaimer section, so
+ * DISCLAIMER_SECTION does not reach it. Neither does a `(?<!\bnot )`
+ * lookbehind, because the "not" sits three words before "treat".
+ *
+ * Handled as a fixed phrase rather than a rule narrowing, which is honest: it
+ * *is* a fixed phrase, the standard four-verb formula, and it appears only as
+ * boilerplate. Flagging it would push an author to delete the clearest
+ * non-claim on the page — the same reasoning as the #204 lookbehinds.
+ */
+export const DENIAL_BOILERPLATE =
+  /\bdiagnose,?\s+treat,?(?:\s+cure,?)?(?:\s+(?:or\s+)?cure,?)?(?:\s+(?:or\s+)?prevent)?\b/gi
+
 /** Everything before the medical disclaimer — the copy the rules apply to. */
 export function marketingCopy(relPath: string): string {
-  return copyOf(readSource(relPath).replace(DISCLAIMER_SECTION, ""))
+  return copyOf(
+    readSource(relPath).replace(DISCLAIMER_SECTION, "").replace(DENIAL_BOILERPLATE, " "),
+  )
 }
 
 /**
@@ -101,7 +141,17 @@ export const CLAIMS: Array<[string, RegExp]> = [
   // would catch "prevents diabetes" — the disclaimer is split off above, so
   // these words are illegal everywhere the reader is being sold to.
   // ("PREVENTION" as a section label survives: \b fails before "ion".)
-  ["medical claim", /\b(treats?|cures?|prevents?|reverses?)\b/i],
+  // "treats" also means "regards as", and that is the house style on every
+  // Health System page — "Longevity, as a Health System, treats ageing well as
+  // an extension of the Food System you're already building". Four pages use
+  // it (longevity, recovery, baby, performance) and none of them is making a
+  // medical claim. The same-sentence lookahead for a following "as" excludes
+  // that sense only; cures/prevents/reverses are unaffected, and "treats IBS"
+  // still fires.
+  [
+    "medical claim",
+    /\b(?:treats?(?![^.]{0,60}\bas\b)|cures?|prevents?|reverses?)\b/i,
+  ],
   ["measurable difference", /measurable difference/i],
   ["outcome ownership", /(protects?|protecting) your results/i],
   ["durability promise", /so the results last/i],
