@@ -9,8 +9,14 @@ const BIOTICS = [
 const OUTPUTS = ["Energy", "Immunity", "Mood", "Longevity"]
 
 /* Product-framework diagram: the three Biotics build your EatoBiotics Score™ —
-   the measurable output that shapes energy, immunity, mood, and long-term
-   health. Pure CSS/SVG — no image asset, fully responsive. */
+   the score built from intake, shown here alongside the outcomes it is
+   associated with. Pure CSS/SVG — no image asset, fully responsive.
+
+   Keep this note in the page's own vocabulary. copyOf() strips block comments,
+   so no guard will ever catch a claim written here — and a developer note is
+   exactly what a future author copies into live copy. This one used to read
+   "the measurable output that shapes energy, immunity, mood", which is the
+   framing the pages themselves no longer use. */
 export function YouFramework() {
   return (
     <div className="rounded-3xl border border-border bg-background p-6 shadow-sm sm:p-8">

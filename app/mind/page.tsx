@@ -88,7 +88,7 @@ const MOCK_PILLARS = [
 
 /* ── Section 9 — The gut-brain axis (dark foundation) ───────────────── */
 const AXIS = [
-  { number: "01", title: "Serotonin", icon: Smile, accent: "var(--icon-lime)", gradient: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))", body: "90–95% of your body's serotonin — the neurotransmitter most linked to mood and wellbeing — is made in your gut, not your brain. Food is mood." },
+  { number: "01", title: "Serotonin", icon: Smile, accent: "var(--icon-lime)", gradient: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))", body: "90–95% of your body's serotonin — the neurotransmitter most linked to mood and wellbeing — is made in your gut, not your brain — one reason diet and mood are so closely linked." },
   { number: "02", title: "GABA", icon: Wind, accent: "var(--icon-teal)", gradient: "linear-gradient(90deg, var(--icon-green), var(--icon-teal))", body: "Specific probiotic bacteria produce GABA, the brain's primary calming neurotransmitter. A well-fed gut helps regulate the calm signals your mind relies on." },
   { number: "03", title: "The Vagus Nerve", icon: Activity, accent: "var(--icon-orange)", gradient: "linear-gradient(90deg, var(--icon-teal), var(--icon-yellow))", body: "The vagus nerve is the gut-brain highway — a direct line carrying signals both ways. Its strength (vagal tone) is shaped by the health of your microbiome." },
 ]

@@ -123,6 +123,26 @@ export const CLAIMS: Array<[string, RegExp]> = [
     "claims to measure",
     /(?<!\bnot )\b(?:(?:designed|built|intended|made) to measure|helps? (?:you )?measure|measures? how)\b/i,
   ],
+  // "measurable difference" above is one phrase; the adverb is the general
+  // form, and it is the stronger claim — "Food is mood — directly and
+  // measurably" asserted on /you that the link is both causal and quantified.
+  // Same lookbehind, for the same reason: "not measurably" is a denial, and
+  // the honest version of a claim like this is exactly where it would appear.
+  ["claims measurability", /(?<!\bnot )\bmeasurabl[ey]\b/i],
+  // Identity claims: food *is* a body state. Shorter than any hedge and read
+  // as literal, so "Food is mood" outruns the science it sits next to — gut
+  // serotonin does not cross the blood-brain barrier, which is precisely what
+  // the sentence implies. Bounded to a noun list so the far more common
+  // "Food is the most powerful lever..." construction stays legal.
+  [
+    "food-as-body-state identity claim",
+    /\b(?:food|diet|what you eat) is (?:your )?(?:mood|health|energy|immunity|medicine)\b/i,
+  ],
+  // Product vocabulary, and the other half of the /stability rework: if a
+  // behaviour score is "not a clinical measurement", it cannot also be "the
+  // measure at the heart of EatoBiotics". Noun form, so the verb rules above
+  // never saw it.
+  ["score described as a measure", /(?<!\bnot )\bthe measure (?:at|of|behind)\b/i],
   ["claims to measure glucose", /measures? how steadily your glucose/i],
   ["glucose as a measured quantity", /your glucose (rhythm|response|curve|level)/i],
   ["acts on the curve", /(smooth|flatten|steady|soften)(s|ing)? (your|the) (curve|glucose)/i],
