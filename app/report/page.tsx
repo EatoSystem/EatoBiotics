@@ -2,6 +2,8 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
+import { SystemDisclaimer } from "@/components/systems/system-disclaimer"
+import { disclaimerFor } from "@/lib/assessment-disclaimers"
 
 export const metadata: Metadata = {
   title: "EatoBiotics Reports — See What's Inside",
@@ -408,6 +410,11 @@ export default function ReportPage() {
         </div>
       </section>
 
+      {/* Medical disclaimer — this page shows sample report insights ("your
+          Probiotics score is the widest gap"), so it reads as a report even
+          though it is an index. The three full samples inherit theirs from
+          DemoReport. */}
+      <SystemDisclaimer level="standard" note={disclaimerFor("you")} />
     </div>
   )
 }

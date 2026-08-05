@@ -16,6 +16,7 @@ const FAMILY_DATA: DemoReportData = {
     title: "The Food System Inside Your Family",
   },
   heroImage: "/images/family-hero.png",
+  assessmentKey: "family",
   score: 64,
   profile: "Growing Together",
   tagline:
@@ -51,27 +52,26 @@ const FAMILY_DATA: DemoReportData = {
     {
       icon: "👧",
       title: "Children's development",
-      body: "Children's microbiomes are still forming. The bacterial diversity established before age 12 shapes immune function, mood regulation, and metabolic health for decades. What your family eats now has a long tail.",
+      body: "Children's microbiomes are still forming. Bacterial diversity established in childhood is studied for its links to immune function, mood regulation and metabolic health later on. What your family eats now has a long tail.",
     },
     {
       icon: "🧠",
       title: "Concentration & behaviour",
-      body: "The gut-brain axis is especially active in children. A fibre-rich, fermented-food diet is directly associated with better focus, more stable mood, and reduced anxiety in school-age children.",
+      body: "The gut-brain axis in children is an active area of research. Fibre-rich, fermented-food diets are among the most studied in relation to focus and mood in school-age children.",
     },
     {
       icon: "🛡️",
       title: "Shared immunity",
-      body: "70% of the immune system lives in the gut. A family that eats a diverse, probiotic-rich diet together builds shared microbial resilience — fewer illnesses, faster recovery, lower antibiotic need.",
+      body: "Around 70% of immune tissue sits in the gut. A family that eats a diverse, probiotic-rich diet together shares a more varied microbial environment — which is what the research on household microbiomes looks at.",
     },
   ],
   scoreProjection: {
     projected: 79,
-    timeline: "30 days",
-    note: "Family scores reflect collective habits. Even one or two consistent changes across the whole household produce compound results for every family member simultaneously.",
+    note: "An illustrative estimate based on typical patterns for this profile, not a result to expect by a date. Family scores reflect collective habits, so a single change reaches everyone at the table.",
     drivers: ["Daily live-culture yoghurt for all", "Legumes 4× per week", "25+ plant foods per week"],
   },
   pullQuote:
-    "The habits children form before age 12 shape their microbiome for decades. What you put on the family table today is an investment in every family member's long-term health.",
+    "The habits children form early shape how they eat for years afterwards. What you put on the family table today is where those habits come from.",
   strengths: [
     {
       title: "Regular shared mealtimes",
@@ -103,7 +103,7 @@ const FAMILY_DATA: DemoReportData = {
     {
       title: "Reducing ultra-processed snacks",
       explanation:
-        "Your household relies on ultra-processed snacks more than 4 times per week. These displace prebiotic-rich alternatives and contain emulsifiers and additives that can disrupt the gut lining over time.",
+        "You reported ultra-processed snacks more than 4 times per week. These displace prebiotic-rich alternatives, and their emulsifiers and additives are an active area of gut research.",
     },
   ],
   keyInsight: {
