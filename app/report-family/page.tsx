@@ -19,11 +19,11 @@ const FAMILY_DATA: DemoReportData = {
   score: 64,
   profile: "Growing Together",
   tagline:
-    "Your family's food system has real shared strengths — a few targeted shifts will create compound benefits for everyone at the table.",
+    "Your family's food system has real shared strengths — a few targeted shifts can add up for everyone at the table.",
   opening:
     "A family food score of 64 is a genuinely positive starting point. Your household eats together, maintains breakfast habits, and includes a reasonable variety of fruit and vegetables. The primary opportunity is in what's missing from the shared plate — fermented and prebiotic-rich foods that would strengthen each family member's microbiome individually, while building a food culture that protects the next generation.",
   scoreInterpretation:
-    "A family score of 64 reflects a household where the structural habits are in place but the nutritional depth needs expanding. You share mealtimes (a powerful determinant of children's long-term eating patterns), you eat fruit and vegetables regularly, and breakfast is consistent — these are the hardest habits to build and you already have them. The gap is in diversity and fermented foods. Most family diets rely on a core rotation of 10–15 foods; broadening this to 25–30 plant foods per week, and adding 1–2 fermented foods daily, will have a measurable impact on every family member's gut diversity within 30 days.",
+    "A family score of 64 reflects a household where the structural habits are in place but the nutritional depth needs expanding. You share mealtimes (a powerful determinant of children's long-term eating patterns), you eat fruit and vegetables regularly, and breakfast is consistent — these are the hardest habits to build and you already have them. The gap is in diversity and fermented foods. Most family diets rely on a core rotation of 10–15 foods; broadening this to 25–30 plant foods per week, and adding 1–2 fermented foods daily, is the shift most associated with greater gut diversity across a household.",
   pillarScores: [
     {
       name: "Prebiotics",
@@ -110,7 +110,7 @@ const FAMILY_DATA: DemoReportData = {
     trigger:
       "Shared mealtimes are your family's biggest asset — the next step is what's on the plate.",
     explanation:
-      "The research on family eating is clear: families who eat together have children with healthier gut microbiomes, better dietary diversity, and lower rates of digestive issues in adolescence. Your family already does this. What this means is that any change you make to the family meal — adding a fermented food, swapping a processed snack, introducing a new vegetable — will benefit every person at the table simultaneously. Your shared habit structure means your impact multiplier is higher than in households where members eat separately. One change, four people, four times the effect.",
+      "The research on family eating is clear: families who eat together have children with healthier gut microbiomes, better dietary diversity, and lower rates of digestive issues in adolescence. Your family already does this. What this means is that any change you make to the family meal — adding a fermented food, swapping a processed snack, introducing a new vegetable — reaches every person at the table at once. Your shared habit structure means one change lands with the whole household rather than one person.",
   },
   deepInsight:
     "Family food systems are different from individual ones in one important way: the habits compound across people and across time. When a parent adds kefir to breakfast, a child who sees that daily becomes a teenager who considers fermented foods normal — and an adult who maintains the habit. The gut microbiome is partially inherited and partially shaped by shared food environments. What you eat together shapes your family's collective microbial community in ways that matter well beyond the dinner table.\n\nYour scores show a family that has the right architecture in place. The Postbiotics score of 74 tells us your household has consistent enough rhythms to support gut repair. The Prebiotics score of 68 tells us you're already giving your microbiomes something to work with. The gap — your Probiotics score of 41 — is the most specific and correctable. It's not about eating less or changing everything; it's about adding the missing biological inputs to a system that's otherwise functioning well.",
@@ -264,7 +264,7 @@ const FAMILY_DATA: DemoReportData = {
     },
   ],
   closing:
-    "What makes family gut health work is that you're not changing individual habits in isolation — you're changing the shared food environment that shapes everyone's relationship with food. Every fermented food you introduce, every new vegetable that appears at the table, every processed snack you replace becomes a quiet norm that children absorb and carry forward. Your family's food score of 64 is a foundation, not a ceiling. The plan above is designed to move you toward 75+ in 30 days by adding to what you already do well, not by dismantling it.",
+    "What makes family gut health work is that you're not changing individual habits in isolation — you're changing the shared food environment that shapes everyone's relationship with food. Every fermented food you introduce, every new vegetable that appears at the table, every processed snack you replace becomes a quiet norm that children absorb and carry forward. Your family's food score of 64 is a foundation, not a ceiling. The plan above is designed to move you toward 75+ by adding to what you already do well, not by dismantling it.",
 }
 
 export default function ReportFamilyPage() {

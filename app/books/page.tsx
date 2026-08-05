@@ -199,8 +199,8 @@ export default function TrilogyPage() {
             <ScrollReveal delay={200}>
               <p>
                 Three books. The same 3 Biotics pillars. The same honesty about what food can
-                and cannot do. One complete picture of how food shapes your health, your family,
-                and your mind — written for real people living real lives.
+                and cannot do. One complete picture of how food connects to health, family,
+                and mind — written for real people living real lives.
               </p>
             </ScrollReveal>
           </div>

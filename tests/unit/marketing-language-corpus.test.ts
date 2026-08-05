@@ -61,42 +61,18 @@ function publicPages(dir = "app"): string[] {
 /**
  * Known hits, as `page|rule|fragment`.
  *
- * REAL — live claims, to be fixed by the copy PR that follows this one. They
- * are listed rather than fixed here because this PR is infrastructure-only:
- * mixing a rule change with the copy it flags makes it impossible to tell
- * which one a later regression came from.
+ * REAL — live claims awaiting a copy fix. **Empty, and that is the goal state:**
+ * every entry #206 recorded has been rewritten. Anything added here is a claim
+ * someone has decided to ship while it waits to be fixed, so an entry should be
+ * short-lived and carry a reason.
+ *
+ * Note what this list counts. `corpusHits` records the *first* match per rule
+ * per file, so one entry can hide others behind it — #206's "22 claims" were 22
+ * rule×file pairs, and clearing them surfaced further instances in the same
+ * paragraphs. The list shrinking to zero is what proves the corpus clean, not
+ * the entry count.
  */
-const REAL_CLAIMS = [
-  // The homepage's own metadata description. Same `powers your <body noun>`
-  // shape removed from /mind in #204.
-  "app/page.tsx|acts on the body|powers your energy",
-  // Same "measures how well" shape reframed on /stability in #204.
-  "app/app/page.tsx|claims to measure|measures how",
-  "app/biotics/page.tsx|claims to measure|measures how",
-  "app/biotics/page.tsx|acts on the body|supports your microbiome",
-  "app/biotics/page.tsx|claims measurability|measurable",
-  "app/digital-twin/page.tsx|claims measurability|measurably",
-  "app/eatosystem/page.tsx|claims measurability|measurable",
-  "app/books/page.tsx|acts on the body|shapes your health",
-  // A decades-long outcome promise, on a page whose guard checks only its
-  // disclaimer — /family is in disclaimer-coverage.test.ts but no CLAIMS guard
-  // ever ran against it.
-  "app/family/page.tsx|promise|will shape",
-  // Sample report copy: timeline promises, the #198 pattern.
-  "app/report/page.tsx|promise|will create",
-  "app/report/page.tsx|result in N days/weeks|in 30 days",
-  "app/report/page.tsx|result within a timeframe|within weeks",
-  "app/report/page.tsx|superlative|single biggest",
-  "app/report-you/page.tsx|promise|will lift",
-  "app/report-you/page.tsx|claims measurability|measurable",
-  "app/report-you/page.tsx|superlative|single biggest",
-  "app/report-mind/page.tsx|result within a timeframe|within weeks",
-  "app/report-mind/page.tsx|claims measurability|measurable",
-  "app/report-mind/page.tsx|states a fact about the body|You have",
-  "app/report-family/page.tsx|promise|will create",
-  "app/report-family/page.tsx|result in N days/weeks|in 30 days",
-  "app/report-family/page.tsx|claims measurability|measurable",
-]
+const REAL_CLAIMS: string[] = []
 
 /**
  * NOT CLAIMS — rule limitations, measured and left in place deliberately.

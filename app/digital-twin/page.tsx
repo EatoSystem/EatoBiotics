@@ -277,7 +277,7 @@ export default function DigitalTwinPage() {
                       <span className="rounded-full px-2.5 py-0.5 text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#4CB648,#2DAA6E)" }}>+6</span>
                     </div>
                     <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                      Six weeks of small, guided steps — and a measurably stronger Food System.
+                      Six weeks of small, guided steps towards a stronger Food System.
                     </p>
                     <Sparkline />
                   </div>

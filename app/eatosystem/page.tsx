@@ -426,7 +426,7 @@ export default function EatosystemPage() {
                 color: "var(--icon-orange)",
                 gradientTo: "var(--icon-yellow)",
                 description:
-                  "Swap 32 Irish counties for 50 US states, 16 German Bundesl\u00E4nder, or 47 Japanese prefectures. Every licensed instance inherits biotic-aware food categorisation, community empowerment, and measurable outcomes.",
+                  "Swap 32 Irish counties for 50 US states, 16 German Bundesl\u00E4nder, or 47 Japanese prefectures. Every licensed instance inherits biotic-aware food categorisation, community empowerment, and outcomes the region can track for itself.",
               },
             ].map((item, index) => (
               <ScrollReveal key={item.title} delay={index * 150}>

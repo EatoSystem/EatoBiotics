@@ -21,9 +21,9 @@ const MIND_DATA: DemoReportData = {
   tagline:
     "Your gut-brain connection is sending signals — tune in to the right foods and your mood, clarity, and energy can shift noticeably.",
   opening:
-    "A Mind score of 59 tells a specific story: a gut system that is partially functional but not yet producing the neurochemical output your brain and mood depend on. You have awareness of the food-mood link and some consistent eating habits — but the key biological inputs that drive serotonin, dopamine, and GABA production through the gut are largely absent from your diet. This is correctable, and the shift can be felt within weeks.",
+    "A Mind score of 59 tells a specific story: a gut system that is partially functional but not yet producing the neurochemical output your brain and mood depend on. Your answers show awareness of the food-mood link and some consistent eating habits — but the foods associated with serotonin, dopamine, and GABA production through the gut are largely absent from what you reported. That is the gap worth working on first.",
   scoreInterpretation:
-    "Your score of 59 reflects a gut-brain axis that is underperforming relative to its potential. Approximately 90–95% of the body's serotonin is produced in the gut — by bacteria that require specific prebiotic and probiotic inputs to function. Your Prebiotics score (62) suggests your diet includes some of the right plant foods, but not with enough variety or consistency. Your Probiotics score (38) indicates that the bacterial populations responsible for serotonin and GABA synthesis are not being actively supported. Your Postbiotics score (64) points to a gut environment that's under low-level inflammatory stress — a common finding in people who report mood instability, afternoon energy crashes, or difficulty concentrating. The good news is that the gut-brain axis is highly responsive to targeted dietary change. Studies consistently show measurable mood improvements within 3–4 weeks of a diet optimised for gut microbial diversity.",
+    "Your score of 59 reflects a gut-brain axis that is underperforming relative to its potential. Approximately 90–95% of the body's serotonin is produced in the gut — by bacteria that require specific prebiotic and probiotic inputs to function. Your Prebiotics score (62) suggests your diet includes some of the right plant foods, but not with enough variety or consistency. Your Probiotics score (38) indicates that the bacterial populations responsible for serotonin and GABA synthesis are not being actively supported. Your Postbiotics score (64) points to a gut environment that's under low-level inflammatory stress — a common finding in people who report mood instability, afternoon energy crashes, or difficulty concentrating. The good news is that the gut-brain axis is an active area of research, and diets richer in gut microbial diversity are among the most studied.",
   pillarScores: [
     {
       name: "Prebiotics",
@@ -51,7 +51,7 @@ const MIND_DATA: DemoReportData = {
     {
       icon: "🌫️",
       title: "Brain fog & focus",
-      body: "The inflammatory signals produced by a low-diversity gut directly cross the blood-brain barrier and impair cognitive clarity. A stronger Probiotics score correlates with measurably sharper focus and faster recall.",
+      body: "Low gut microbial diversity is associated with higher inflammatory signalling, and how that relates to cognitive clarity is an active research question. A stronger Probiotics score reflects a diet richer in the foods involved.",
     },
     {
       icon: "🌊",
@@ -108,9 +108,9 @@ const MIND_DATA: DemoReportData = {
   ],
   keyInsight: {
     trigger:
-      "Your gut is producing significantly less serotonin than it could — targeted food choices can change this within weeks.",
+      "Your reported diet is low in the foods associated with gut serotonin production — a targeted place to start.",
     explanation:
-      "The gut produces roughly 90% of your body's serotonin. This serotonin doesn't cross the blood-brain barrier directly — but it regulates gut motility, influences the vagus nerve, and affects the systemic inflammatory state that your brain is bathed in. Your Probiotics score of 38 means the bacterial populations most responsible for this production — Lactobacillus rhamnosus, Bifidobacterium longum, and Lactobacillus helveticus — are not being regularly introduced through your diet. The clinical research on this is unusually consistent: supplementing these strains (or eating foods that contain them) for 4 weeks produces measurable reductions in anxiety, improvements in sleep onset, and better mood stability. You don't need to understand the mechanism — you just need to eat the foods.",
+      "The gut produces roughly 90–95% of your body's serotonin. This serotonin doesn't cross the blood-brain barrier directly — but it regulates gut motility, influences the vagus nerve, and affects the systemic inflammatory state that your brain is bathed in. Your Probiotics score of 38 means the bacterial populations most associated with this production — Lactobacillus rhamnosus, Bifidobacterium longum, and Lactobacillus helveticus — are not being regularly introduced through your diet. These strains are among the most studied in gut-brain research, including work on anxiety, sleep onset and mood stability. You don't need to understand the mechanism — you just need to eat the foods.",
   },
   deepInsight:
     "What makes the gut-brain connection both compelling and practical is that it operates on a two-way street. The brain influences what and how you eat (stress eating, appetite suppression, cravings) — but the gut equally influences how your brain functions. The vagus nerve, which carries 80% of signals upward from gut to brain rather than the other way around, is the primary highway. The quality of your microbiome determines the quality of those signals.\n\nYour score pattern — low Probiotics, moderate Prebiotics, moderate Postbiotics — is characteristic of someone who has the dietary intention but not yet the microbial diversity. You're eating reasonably but not providing your gut with the specific bacterial inputs that the brain pathway depends on. This isn't a failure of effort; it's a knowledge gap. The five foods in this report, and the 30-day plan, are designed specifically to close it. The expected experience: fewer afternoon energy dips, improved sleep quality, and a more stable baseline mood — not a dramatic transformation, but a meaningful, sustainable shift.",

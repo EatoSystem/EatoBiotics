@@ -128,7 +128,7 @@ export default function FamilyPage() {
                 <span className="brand-gradient-text">cooking three dinners.</span>
               </h2>
               <blockquote className="mt-8 border-l-2 pl-6 font-serif text-xl font-medium italic text-foreground" style={{ borderColor: "var(--icon-green)" }}>
-                &ldquo;The habits your children build at the table today will shape how they feel for decades.&rdquo;
+                &ldquo;The habits your children build at the table today are habits they can carry for life.&rdquo;
               </blockquote>
             </ScrollReveal>
             <ScrollReveal delay={150}>

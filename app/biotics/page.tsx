@@ -56,7 +56,7 @@ const BIOTICS = [
       "The beneficial compounds your gut bacteria produce — short-chain fatty acids, vitamins, and neurotransmitters. The output that makes you feel better every day.",
     body: "Postbiotics are the metabolic byproducts your gut bacteria produce as they ferment prebiotics. These include short-chain fatty acids like butyrate and propionate, vitamins B12 and K2, amino acids, and serotonin precursors. Postbiotics are not eaten — they are earned. They are the output of a system that is well-fed and well-populated. They reduce inflammation, strengthen the gut lining, regulate immune response, and directly influence how you feel.",
     whyItMatters:
-      "90% of your body's serotonin is produced in your gut. Postbiotics are the bridge between what you eat and how you feel — the measurable output of everything the biotic system produces.",
+      "90–95% of your body's serotonin is produced in your gut. Postbiotics are the bridge between what you eat and how you feel — the compounds the biotic system produces when it is well fed.",
     foods: ["Butyrate", "Short-chain Fatty Acids", "Vitamin K2", "Vitamin B12", "Serotonin Precursors", "Acetate", "Propionate", "Lactate"],
   },
 ]
@@ -416,8 +416,9 @@ export default function BioticsPage() {
                 <span className="brand-gradient-text">you stand.</span>
               </h2>
               <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-muted-foreground">
-                Your free Biotics Score measures how well your current diet supports your
-                microbiome — across all three biotic types, five pillars, and every meal.
+                Your free Biotics Score reflects how closely your current diet matches the
+                patterns associated with a well-fed microbiome — across all three biotic
+                types, five pillars, and every meal.
               </p>
             </ScrollReveal>
             <ScrollReveal delay={100}>

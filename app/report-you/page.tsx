@@ -21,9 +21,9 @@ const YOU_DATA: DemoReportData = {
   tagline:
     "Your gut system is developing real momentum — you have genuine strengths to build on and clear levers to pull.",
   opening:
-    "Your food system is further along than most. A score of 68 places you in the top third of people who take this assessment, and your Prebiotics and Postbiotics scores are particularly strong. The opportunity ahead is focused and specific: your Probiotics score is the single biggest gap, and closing it will lift everything else.",
+    "Your food system is further along than most. A score of 68 places you in the top third of people who take this assessment, and your Prebiotics and Postbiotics scores are particularly strong. The opportunity ahead is focused and specific: your Probiotics score is the widest gap, and closing it supports the rest.",
   scoreInterpretation:
-    "A score of 68 reflects a gut system that functions reasonably well day-to-day but is operating below its potential. You eat a good variety of plant foods (Prebiotics: 72) and your body shows signs of recovery and rhythm (Postbiotics: 78), but your intake of fermented and probiotic-rich foods is noticeably low (Probiotics: 45). This creates a one-sided system — you're feeding the microbiome but not actively seeding it with the bacterial diversity it needs to thrive. The good news is that Probiotics is the most responsive pillar to targeted dietary change. Small, consistent additions can produce measurable shifts within 2–4 weeks.",
+    "A score of 68 reflects a gut system that functions reasonably well day-to-day but is operating below its potential. You eat a good variety of plant foods (Prebiotics: 72) and your body shows signs of recovery and rhythm (Postbiotics: 78), but your intake of fermented and probiotic-rich foods is noticeably low (Probiotics: 45). This creates a one-sided system — you're feeding the microbiome but not actively seeding it with the bacterial diversity it needs to thrive. The good news is that Probiotics is the most responsive pillar to targeted dietary change. Small, consistent additions are the usual place to start.",
   pillarScores: [
     {
       name: "Prebiotics",
@@ -71,7 +71,7 @@ const YOU_DATA: DemoReportData = {
     drivers: ["Daily fermented food habit", "Prebiotic vegetable at every meal", "Consistent meal timing"],
   },
   pullQuote:
-    "Your gut system is more responsive to change than most people realise. The right inputs, consistently applied, produce results that are both measurable and felt.",
+    "Your gut system is more responsive to change than most people realise. The right inputs, consistently applied, are what the habit is built on.",
   strengths: [
     {
       title: "Strong plant variety",
@@ -108,7 +108,7 @@ const YOU_DATA: DemoReportData = {
   ],
   keyInsight: {
     trigger:
-      "Your plant diversity is a genuine foundation — fermented foods are your single biggest lever.",
+      "Your plant diversity is a genuine foundation — fermented foods are a clear next lever.",
     explanation:
       "Most people with a Probiotics score below 50 also score low on Prebiotics, which makes the fix harder and slower. You don't have that problem. You already eat the plant foods that create the environment for beneficial bacteria to thrive — you just need to start introducing them. The effect of adding fermented foods to an already fibre-rich diet is amplified compared to someone starting from zero. You're in a particularly strong position to see rapid improvement.",
   },
@@ -264,7 +264,7 @@ const YOU_DATA: DemoReportData = {
     },
   ],
   closing:
-    "Your starting point is genuinely strong. A score of 68 with high Prebiotics and Postbiotics scores means you're not starting from scratch — you're filling a specific gap in an otherwise functional system. The 30-day roadmap above is designed to close that gap methodically, without overhauling everything you're already doing well. Focus on the Probiotics pillar first. Your gut will respond faster than you expect.",
+    "Your starting point is genuinely strong. A score of 68 with high Prebiotics and Postbiotics scores means you're not starting from scratch — you're filling a specific gap in an otherwise functional system. The 30-day roadmap above is designed to close that gap methodically, without overhauling everything you're already doing well. Focus on the Probiotics pillar first.",
 }
 
 export default function ReportYouPage() {
