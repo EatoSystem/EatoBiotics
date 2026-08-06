@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { stripe } from "@/lib/stripe-server"
 import { FullReportClient } from "@/components/assessment/full-report-client"
 import { PaidReportClient } from "@/components/assessment/paid-report-client"
+import { DeliveryPendingNotice } from "@/components/assessment/delivery-pending-notice"
 import { getSupabase } from "@/lib/supabase"
 import { getUser } from "@/lib/supabase-server"
 import { getUserMembershipTier } from "@/lib/membership"
@@ -74,31 +75,23 @@ export default async function ReportPage({ searchParams }: Props) {
       // A buyer whose report exists always sees their report — a "partial" row
       // (report saved, PDF or email delivery failed) must never bounce them
       // back into the questionnaire.
-      const viewState = reportViewState(data?.status, Boolean(data?.report_json))
+      //
+      // `reportJson` is hoisted so the truthiness check narrows it for the cast
+      // below. `viewState !== "resume_questionnaire"` already implies it exists,
+      // so the extra condition is a runtime no-op — but TS cannot see that, and
+      // the alternative is a `!` assertion. app/auth/callback/page.tsx carries
+      // the note explaining why that shortcut is not worth taking here.
+      const reportJson = data?.report_json
+      const viewState = reportViewState(data?.status, Boolean(reportJson))
 
-      if (viewState !== "resume_questionnaire") {
+      if (reportJson && viewState !== "resume_questionnaire") {
         return (
           <>
-            {viewState === "view_delivery_pending" && (
-              <div className="px-6 pt-6">
-                <div
-                  className="mx-auto max-w-3xl rounded-2xl px-5 py-4 text-sm leading-relaxed"
-                  style={{
-                    background: "color-mix(in srgb, var(--icon-orange) 8%, transparent)",
-                    border: "1px solid color-mix(in srgb, var(--icon-orange) 30%, transparent)",
-                    color: "var(--foreground)",
-                  }}
-                >
-                  <span className="font-semibold">Your report is ready below.</span>{" "}
-                  Your PDF download or email copy may still be on its way — everything is
-                  also available any time from your account.
-                </div>
-              </div>
-            )}
+            <DeliveryPendingNotice viewState={viewState} />
             <PaidReportClient
               tier={displayTier}
               sessionId={session_id}
-              reportJson={data!.report_json as DeepReport}
+              reportJson={reportJson as DeepReport}
               freeScores={freeScores as unknown as Parameters<typeof PaidReportClient>[0]["freeScores"]}
               membershipTier={membershipTier}
             />
