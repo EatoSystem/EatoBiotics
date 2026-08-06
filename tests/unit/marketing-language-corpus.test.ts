@@ -96,29 +96,13 @@ const CORPUS = () => [...publicPages(), ...MARKETING_COMPONENTS]
  * per file, so one entry can hide others behind it — #206's "22 claims" were 22
  * rule×file pairs, and clearing them surfaced further instances in the same
  * paragraphs. The list shrinking to zero is what proves the corpus clean, not
- * the entry count. The three below are 8 instances.
+ * the entry count.
+ *
+ * Empty again as of the demo-report copy pass: the three entries #210 recorded
+ * were 8 instances, and all 8 are rewritten. One of the three was reclassified
+ * rather than softened — see the retake note in KNOWN_FALSE_POSITIVES below.
  */
-const REAL_CLAIMS: string[] = [
-  // Adding demo-report.tsx to the corpus exposed claims no rule had ever run
-  // against. Recorded rather than rewritten so the guard change stays separately
-  // reviewable from the copy judgement — the #206 → #207 split. The follow-up
-  // deletes these, and the staleness assertion below means it is green only when
-  // the copy is genuinely fixed.
-  //
-  // "these five foods will have the highest impact on your gut system", plus
-  // "consistency here will compound quickly" and "your retake will show you
-  // exactly what moved" behind it. The third may be legitimate — it describes
-  // what the retake does, not what the reader's body will do.
-  "components/report/demo-report.tsx|promise|will have",
-  // The serious one, and the same shape #209 removed from the timeline block a
-  // few lines away: "30 days for targeted diet changes to measurably shift your
-  // microbiome". Behind it sits "Clinical research consistently shows measurable
-  // changes in gut bacterial diversity within 3-4 weeks" — an uncited research
-  // claim, flagged in #207 and still live.
-  "components/report/demo-report.tsx|claims measurability|measurably",
-  // "The single biggest discovery" — section heading.
-  "components/report/demo-report.tsx|superlative|single biggest",
-]
+const REAL_CLAIMS: string[] = []
 
 /**
  * NOT CLAIMS — rule limitations, measured and left in place deliberately.
@@ -143,6 +127,20 @@ const KNOWN_FALSE_POSITIVES = [
   "app/birth/page.tsx|promise|will build",
   "app/longevity/page.tsx|promise|will build",
   "app/recovery/page.tsx|promise|will build",
+  // Same shape as the four above, and reclassified for the same reason: "Set a
+  // reminder for 30 days from today. Your retake will show you exactly what
+  // moved — and where to focus next." The object is the retake, a product
+  // function, not the reader's body — it says the retake shows changed scores,
+  // which is what it does. The sentence that *was* a claim ("Gut microbiome
+  // composition can shift measurably in 3-4 weeks") sat in the same paragraph
+  // and was removed with the rest of the demo-report copy pass.
+  //
+  // Note the fragment is `will show`, not the `will have` #210 recorded. Both
+  // lived in this file; once "these five foods will have the highest impact" was
+  // rewritten, the first `promise` match moved to this line. corpusHits records
+  // first-match-per-rule, so carrying the old fragment across would have left a
+  // stale entry AND produced an unknown hit.
+  "components/report/demo-report.tsx|promise|will show",
   // "Waitlist pricing guaranteed" — a price promise, not a health guarantee.
   "app/course/page.tsx|guarantee|guaranteed",
   // "You have awareness and some strong habits" — describes the reader's
