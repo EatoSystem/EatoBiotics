@@ -59,10 +59,36 @@ function publicPages(dir = "app"): string[] {
 }
 
 /**
+ * Marketing copy that lives in components rather than pages — named explicitly.
+ *
+ * `publicPages` collects `page.tsx` only, so a component holding customer-facing
+ * copy was invisible to every rule. That is not hypothetical:
+ * `components/report/demo-report.tsx` renders /report-you, /report-mind and
+ * /report-family, and it carried eleven dated outcome promises — "Measurable
+ * bacterial diversity increase", "Mood baseline shifts noticeably" — until #209
+ * rewrote them by hand. Nothing would have caught them, and nothing stopped that
+ * fix regressing afterwards.
+ *
+ * **Explicit list, not a walk.** There are 324 files under components/, and most
+ * are UI primitives, dashboards and admin surfaces that no health-claim rule
+ * should ever run against. Sweeping them all is how this guard starts crying wolf,
+ * and a guard that cries wolf gets deleted — the same argument the header makes
+ * for excluding legal and transactional routes.
+ *
+ * Keep this disjoint from the components already covered by the per-page guards
+ * (you-, glucose-, mind-stability-marketing-language). Those call `assertClean`,
+ * which permits nothing at all; listing a file in both places would let an
+ * allowlist entry here silently contradict a hard assertion there.
+ */
+const MARKETING_COMPONENTS = ["components/report/demo-report.tsx"]
+
+const CORPUS = () => [...publicPages(), ...MARKETING_COMPONENTS]
+
+/**
  * Known hits, as `page|rule|fragment`.
  *
- * REAL — live claims awaiting a copy fix. **Empty, and that is the goal state:**
- * every entry #206 recorded has been rewritten. Anything added here is a claim
+ * REAL — live claims awaiting a copy fix. Empty is the goal state, and it *was*
+ * empty from #207 until this file joined the corpus. Anything here is a claim
  * someone has decided to ship while it waits to be fixed, so an entry should be
  * short-lived and carry a reason.
  *
@@ -70,9 +96,29 @@ function publicPages(dir = "app"): string[] {
  * per file, so one entry can hide others behind it — #206's "22 claims" were 22
  * rule×file pairs, and clearing them surfaced further instances in the same
  * paragraphs. The list shrinking to zero is what proves the corpus clean, not
- * the entry count.
+ * the entry count. The three below are 8 instances.
  */
-const REAL_CLAIMS: string[] = []
+const REAL_CLAIMS: string[] = [
+  // Adding demo-report.tsx to the corpus exposed claims no rule had ever run
+  // against. Recorded rather than rewritten so the guard change stays separately
+  // reviewable from the copy judgement — the #206 → #207 split. The follow-up
+  // deletes these, and the staleness assertion below means it is green only when
+  // the copy is genuinely fixed.
+  //
+  // "these five foods will have the highest impact on your gut system", plus
+  // "consistency here will compound quickly" and "your retake will show you
+  // exactly what moved" behind it. The third may be legitimate — it describes
+  // what the retake does, not what the reader's body will do.
+  "components/report/demo-report.tsx|promise|will have",
+  // The serious one, and the same shape #209 removed from the timeline block a
+  // few lines away: "30 days for targeted diet changes to measurably shift your
+  // microbiome". Behind it sits "Clinical research consistently shows measurable
+  // changes in gut bacterial diversity within 3-4 weeks" — an uncited research
+  // claim, flagged in #207 and still live.
+  "components/report/demo-report.tsx|claims measurability|measurably",
+  // "The single biggest discovery" — section heading.
+  "components/report/demo-report.tsx|superlative|single biggest",
+]
 
 /**
  * NOT CLAIMS — rule limitations, measured and left in place deliberately.
@@ -108,7 +154,7 @@ const ALLOWED = new Set([...REAL_CLAIMS, ...KNOWN_FALSE_POSITIVES])
 
 function corpusHits(): string[] {
   const hits: string[] = []
-  for (const p of publicPages()) {
+  for (const p of CORPUS()) {
     let copy: string
     try {
       copy = marketingCopy(p)
@@ -176,6 +222,47 @@ describe("the public marketing corpus holds no unknown claims", () => {
     expect(pages.length).toBeGreaterThan(60)
     expect(pages).toContain("app/page.tsx")
     expect(marketingCopy("app/page.tsx").length).toBeGreaterThan(500)
+  })
+
+  it("still extracts real copy from each named component", () => {
+    // The components need their own floor, and one hazard makes it load-bearing
+    // rather than ceremonial: marketingCopy strips DISCLAIMER_SECTION — the
+    // `{/* …disclaimer… */}` marker **to end of file**. #208 added a disclaimer
+    // to demo-report.tsx. It sits at line 2316 of 2358, so 1% is dropped and the
+    // scan is honest; move that marker up the file and the guard would quietly
+    // scan a fraction of the component and still pass.
+    //
+    // A rename or deletion has the same shape: marketingCopy would throw,
+    // corpusHits would `continue`, and the file would leave the corpus in
+    // silence. Assert the extraction instead of trusting it.
+    expect(MARKETING_COMPONENTS.length).toBeGreaterThan(0)
+    for (const c of MARKETING_COMPONENTS) {
+      const copy = marketingCopy(c)
+      expect(copy.length, `${c} extracted only ${copy.length} chars`).toBeGreaterThan(5_000)
+    }
+    // Anchor: prose from the far end of the file, after the last section the
+    // rules care about. Its presence is what proves the disclaimer split did not
+    // eat the body.
+    expect(marketingCopy("components/report/demo-report.tsx")).toContain(
+      "Your plan, stage by stage",
+    )
+  })
+
+  it("keeps the component list disjoint from the per-page guards", () => {
+    // Those guards call assertClean, which permits nothing. A file in both places
+    // could carry an allowlist entry here while being asserted clean there — two
+    // guards disagreeing about the same file, with the stricter one winning by
+    // accident rather than by decision.
+    const asserted = fs
+      .readdirSync("tests/unit")
+      .filter((f) => f.endsWith("-marketing-language.test.ts"))
+      .flatMap((f) =>
+        [...fs.readFileSync(path.join("tests/unit", f), "utf8").matchAll(/"(components\/[^"]+\.tsx)"/g)].map(
+          (m) => m[1],
+        ),
+      )
+    const overlap = MARKETING_COMPONENTS.filter((c) => asserted.includes(c))
+    expect(overlap, `also asserted clean by a per-page guard:\n${overlap.join("\n")}`).toEqual([])
   })
 
   it("produces no claim hit that is not already known", () => {
