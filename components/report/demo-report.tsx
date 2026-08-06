@@ -1181,7 +1181,7 @@ export function DemoReport({ data }: { data: DemoReportData }) {
         <section>
           <SectionLabel label="Your Key Insight" accent={data.theme.accent} />
           <h2 className="mb-6 font-serif text-2xl font-bold text-foreground sm:text-3xl">
-            The single biggest discovery
+            What stands out most
           </h2>
           <div
             className="rounded-2xl border bg-background p-6"
@@ -1484,8 +1484,8 @@ export function DemoReport({ data }: { data: DemoReportData }) {
       <StatCallout
         stat="30"
         unit="days"
-        headline="for targeted diet changes to measurably shift your microbiome"
-        body="Clinical research consistently shows measurable changes in gut bacterial diversity within 3–4 weeks of applying targeted dietary changes. Your plan below is built precisely around this window."
+        headline="of consistent changes in the plan below"
+        body="That is the length of the plan below: four weeks of small, repeatable changes, not a date by which to expect a change."
       />
 
       <div className="section-divider" />
@@ -1567,7 +1567,7 @@ export function DemoReport({ data }: { data: DemoReportData }) {
             5 foods chosen specifically for you
           </h2>
           <p className="mb-8 text-base text-muted-foreground">
-            Based on your pillar scores, these five foods will have the highest impact on your gut system. Each one is chosen for a specific biological reason — not general health advice.
+            Based on your pillar scores, these five foods target the pillars with the most room to improve. Each one is chosen for a specific biological reason — not general health advice.
           </p>
 
           {/* At-a-glance quick strip */}
@@ -2047,7 +2047,7 @@ export function DemoReport({ data }: { data: DemoReportData }) {
                   p.score >= 70
                     ? `Your ${p.name} score of ${p.score} is a genuine strength — protect and build on it.`
                     : p.score >= 50
-                    ? `Your ${p.name} score of ${p.score} is developing — consistency here will compound quickly.`
+                    ? `Your ${p.name} score of ${p.score} is developing — consistency here is where the plan focuses.`
                     : `Your ${p.name} score of ${p.score} is your biggest opportunity — this is where your effort should focus first.`
                 return (
                   <div
@@ -2103,7 +2103,7 @@ export function DemoReport({ data }: { data: DemoReportData }) {
                 {
                   number: "02",
                   label: "Stay consistent for 30 days",
-                  detail: `The gut microbiome doesn't respond to occasional efforts. Consistency across 30 days is what produces the measurable shift your projection is based on. Small daily additions beat occasional big efforts every time.`,
+                  detail: `The gut microbiome doesn't respond to occasional efforts. Consistency across 30 days is what the plan is built around. Small daily additions beat occasional big efforts every time.`,
                   color: "var(--icon-teal)",
                 },
                 {
@@ -2153,7 +2153,7 @@ export function DemoReport({ data }: { data: DemoReportData }) {
               <div className="flex-1 border-l px-6 py-5" style={{ borderColor: `color-mix(in srgb, var(--icon-teal) 20%, transparent)` }}>
                 <p className="font-semibold text-foreground">Mark your retest date</p>
                 <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                  Set a reminder for 30 days from today. Gut microbiome composition can shift measurably in 3–4 weeks with consistent dietary changes. Your retake will show you exactly what moved — and where to focus next.
+                  Set a reminder for 30 days from today. Your retake will show you exactly what moved — and where to focus next.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {["Energy", "Sleep", "Digestion", "Mood", "Focus"].map((metric) => (
