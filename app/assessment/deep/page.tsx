@@ -5,6 +5,7 @@ import { getSupabase } from "@/lib/supabase"
 import { DeepAssessmentClient } from "@/components/assessment/deep/deep-assessment-client"
 import type { DeepQuestion, DeepAnswers } from "@/lib/deep-assessment"
 import { getPaidReportSummaryFromSession, isCheckoutSessionSettled } from "@/lib/paid-report-session"
+import { reportViewState } from "@/lib/report-status"
 import { TrackConversion } from "@/components/analytics/track-conversion"
 
 export const metadata: Metadata = {
@@ -101,12 +102,14 @@ export default async function DeepAssessmentPage({ searchParams }: Props) {
     if (supabase) {
       const { data } = await supabase
         .from("deep_assessments")
-        .select("status, questions, answers")
+        .select("status, questions, answers, report_json")
         .eq("stripe_session_id", session_id)
         .single()
 
       if (data) {
-        if (data.status === "complete") {
+        // A buyer whose report already exists (complete OR partial-delivery)
+        // goes to their report — never back into the questionnaire.
+        if (reportViewState(data.status, Boolean(data.report_json)) !== "resume_questionnaire") {
           redirect(`/assessment/report?session_id=${session_id}`)
         }
         if (data.questions) {

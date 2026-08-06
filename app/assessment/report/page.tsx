@@ -3,10 +3,12 @@ import { redirect } from "next/navigation"
 import { stripe } from "@/lib/stripe-server"
 import { FullReportClient } from "@/components/assessment/full-report-client"
 import { PaidReportClient } from "@/components/assessment/paid-report-client"
+import { DeliveryPendingNotice } from "@/components/assessment/delivery-pending-notice"
 import { getSupabase } from "@/lib/supabase"
 import { getUser } from "@/lib/supabase-server"
 import { getUserMembershipTier } from "@/lib/membership"
 import type { DeepReport } from "@/lib/claude-report"
+import { reportViewState } from "@/lib/report-status"
 import {
   displayTierForReport,
   getPaidReportSummaryFromSession,
@@ -70,16 +72,30 @@ export default async function ReportPage({ searchParams }: Props) {
 
       const displayTier = displayTierForReport(summary.tier)
 
-      if (data?.status === "complete" && data.report_json) {
-        // Deep assessment done — render paid report from saved data (no new Claude call)
+      // A buyer whose report exists always sees their report — a "partial" row
+      // (report saved, PDF or email delivery failed) must never bounce them
+      // back into the questionnaire.
+      //
+      // `reportJson` is hoisted so the truthiness check narrows it for the cast
+      // below. `viewState !== "resume_questionnaire"` already implies it exists,
+      // so the extra condition is a runtime no-op — but TS cannot see that, and
+      // the alternative is a `!` assertion. app/auth/callback/page.tsx carries
+      // the note explaining why that shortcut is not worth taking here.
+      const reportJson = data?.report_json
+      const viewState = reportViewState(data?.status, Boolean(reportJson))
+
+      if (reportJson && viewState !== "resume_questionnaire") {
         return (
-          <PaidReportClient
-            tier={displayTier}
-            sessionId={session_id}
-            reportJson={data.report_json as DeepReport}
-            freeScores={freeScores as unknown as Parameters<typeof PaidReportClient>[0]["freeScores"]}
-            membershipTier={membershipTier}
-          />
+          <>
+            <DeliveryPendingNotice viewState={viewState} />
+            <PaidReportClient
+              tier={displayTier}
+              sessionId={session_id}
+              reportJson={reportJson as DeepReport}
+              freeScores={freeScores as unknown as Parameters<typeof PaidReportClient>[0]["freeScores"]}
+              membershipTier={membershipTier}
+            />
+          </>
         )
       }
 
