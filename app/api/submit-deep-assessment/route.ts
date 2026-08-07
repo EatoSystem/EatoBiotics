@@ -14,6 +14,8 @@ import {
 } from "@/lib/report/build-food-system-report"
 import { parseFoodSystemReport } from "@/lib/report/food-system-report-types"
 import { overallReportStatus } from "@/lib/report-status"
+// Aliased: the route already has a local `reportError` string (the report_error column value).
+import { reportError as alertOwner } from "@/lib/report-error"
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -653,9 +655,16 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // A partial delivery must never be silent: alert the owner (alertOwner logs
+  // always, emails in production, throttles itself, and never throws). Only the
+  // session id and stage statuses are included — no answers, report content, or
+  // customer email.
   if (overall_status !== "complete") {
-    console.warn(
-      `[submit-deep-assessment] session ${sessionId} finished PARTIAL — pdf=${pdfStatus} email=${emailStatus}`
+    await alertOwner(
+      "submit-deep-assessment-partial",
+      `session=${sessionId} tier=${tier} status=${overall_status} ` +
+        `pdf=${pdfStatus} email=${emailStatus} ` +
+        `pdfError=${(pdfError ?? "none").slice(0, 300)} emailError=${(emailError ?? "none").slice(0, 300)}`
     )
   }
 
