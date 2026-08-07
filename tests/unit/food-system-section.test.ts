@@ -385,7 +385,7 @@ describe("PaidReportClient without a foodSystem block", () => {
       "Your System Story",
       "Phased Strategy",
       "Final Thoughts",
-      "Recommended retest: in 75 days",
+      "Your 30-day cycle",
     ]) {
       expect(legacy).toContain(heading)
     }
@@ -433,7 +433,7 @@ describe("PaidReportClient without a foodSystem block", () => {
       "Your 30-Day Improvement Loop",
       "Where This Comes From",
       "Final Thoughts",
-      "Recommended retest: in 75 days",
+      "Your 30-day cycle",
       CLOSING_HEADLINE_LINES[0],
     ]) {
       expect(enriched.indexOf(earlier)).toBeLessThan(footerAt)

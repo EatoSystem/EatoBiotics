@@ -107,7 +107,7 @@ const TIER_HIGHLIGHTS: Record<string, string[]> = {
 
 function retestDate(): string {
   const d = new Date()
-  d.setDate(d.getDate() + 75)
+  d.setDate(d.getDate() + 30)
   return d.toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" })
 }
 
@@ -354,7 +354,7 @@ export function buildPaidReportEmail(opts: PaidReportEmailOpts): {
                 <tr>
                   <td style="padding: 14px 18px;">
                     <p style="margin: 0; font-size: 13px; color: #666666; font-family: Arial, sans-serif;">
-                      📅 <strong style="color: #333333;">Recommended retest:</strong> ${retestDateStr} — give your habits 75 days to compound, then measure your progress.
+                      📅 <strong style="color: #333333;">Your 30-day cycle:</strong> follow the plan for 30 days, then retake the assessment on ${retestDateStr}. Individual outcomes vary — the cycle is the commitment, not a result by a date.
                     </p>
                   </td>
                 </tr>

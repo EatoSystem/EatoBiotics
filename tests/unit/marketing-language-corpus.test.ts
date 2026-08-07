@@ -80,9 +80,38 @@ function publicPages(dir = "app"): string[] {
  * which permits nothing at all; listing a file in both places would let an
  * allowlist entry here silently contradict a hard assertion there.
  */
-const MARKETING_COMPONENTS = ["components/report/demo-report.tsx"]
+/**
+ * Per-component extraction floors and anchors, so a moved disclaimer marker, a
+ * rename, or an over-eager strip cannot quietly empty a file out of the corpus
+ * while every assertion below passes on nothing.
+ *
+ * The two paid-report components joined after the €49 audit found the LIVE
+ * report carrying exactly the claims this suite had scrubbed from the sample
+ * pages — "will show meaningful, measurable change", "You could reach 74–84 in
+ * 8–10 weeks" — invisible to every rule because nothing under
+ * components/assessment/ was in the corpus.
+ *
+ * One extraction subtlety, measured: paid-report-client.tsx's mission-note
+ * comment contains the word "disclaimers", so DISCLAIMER_SECTION strips from
+ * that comment to end of file. Everything the rules need sits before it, and
+ * the anchor below proves that stays true.
+ */
+const MARKETING_COMPONENTS: Record<string, { minChars: number; anchor: string }> = {
+  "components/report/demo-report.tsx": {
+    minChars: 5_000,
+    anchor: "Your plan, stage by stage",
+  },
+  "components/assessment/paid-report-client.tsx": {
+    minChars: 2_000,
+    anchor: "Your 30-day cycle",
+  },
+  "components/assessment/report-membership-cta.tsx": {
+    minChars: 1_000,
+    anchor: "Choose the plan that fits your journey",
+  },
+}
 
-const CORPUS = () => [...publicPages(), ...MARKETING_COMPONENTS]
+const CORPUS = () => [...publicPages(), ...Object.keys(MARKETING_COMPONENTS)]
 
 /**
  * Known hits, as `page|rule|fragment`.
@@ -233,17 +262,17 @@ describe("the public marketing corpus holds no unknown claims", () => {
     // A rename or deletion has the same shape: marketingCopy would throw,
     // corpusHits would `continue`, and the file would leave the corpus in
     // silence. Assert the extraction instead of trusting it.
-    expect(MARKETING_COMPONENTS.length).toBeGreaterThan(0)
-    for (const c of MARKETING_COMPONENTS) {
+    expect(Object.keys(MARKETING_COMPONENTS).length).toBeGreaterThan(0)
+    for (const [c, floor] of Object.entries(MARKETING_COMPONENTS)) {
       const copy = marketingCopy(c)
-      expect(copy.length, `${c} extracted only ${copy.length} chars`).toBeGreaterThan(5_000)
+      expect(copy.length, `${c} extracted only ${copy.length} chars`).toBeGreaterThan(
+        floor.minChars,
+      )
+      // Anchors are copy from beyond the point where an extraction failure
+      // would truncate — their presence proves the disclaimer split and the
+      // strips did not eat the body of that specific file.
+      expect(copy, `${c} is missing its anchor phrase`).toContain(floor.anchor)
     }
-    // Anchor: prose from the far end of the file, after the last section the
-    // rules care about. Its presence is what proves the disclaimer split did not
-    // eat the body.
-    expect(marketingCopy("components/report/demo-report.tsx")).toContain(
-      "Your plan, stage by stage",
-    )
   })
 
   it("keeps the component list disjoint from the per-page guards", () => {
@@ -259,7 +288,7 @@ describe("the public marketing corpus holds no unknown claims", () => {
           (m) => m[1],
         ),
       )
-    const overlap = MARKETING_COMPONENTS.filter((c) => asserted.includes(c))
+    const overlap = Object.keys(MARKETING_COMPONENTS).filter((c) => asserted.includes(c))
     expect(overlap, `also asserted clean by a per-page guard:\n${overlap.join("\n")}`).toEqual([])
   })
 
