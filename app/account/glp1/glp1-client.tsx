@@ -350,7 +350,7 @@ export function Glp1Client({
           >
             {saving ? <><Loader2 size={15} className="animate-spin" /> Saving…</> : saved ? <><Check size={15} /> Saved</> : "Save today's log"}
           </button>
-          {error && <p className="mt-2 text-center text-sm text-red-500">{error}</p>}
+          {error && <p className="mt-2 text-center text-sm text-red-600">{error}</p>}
         </div>
       </div>
 
@@ -742,7 +742,7 @@ function Glp1Onboarding({
       >
         {saving ? <><Loader2 size={15} className="animate-spin" /> Saving…</> : canCancel ? "Save setup" : "Start tracking"}
       </button>
-      {error && <p className="mt-2 text-center text-sm text-red-500">{error}</p>}
+      {error && <p className="mt-2 text-center text-sm text-red-600">{error}</p>}
 
       <div className="mt-3 text-center">
         {canCancel ? (

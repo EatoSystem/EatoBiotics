@@ -157,7 +157,7 @@ export function EditorClient({ item }: { item: Item }) {
           {saveState === "saving" && "Saving…"}
           {saveState === "saved" && !dirty && "All changes saved"}
           {dirty && saveState !== "saving" && "Unsaved changes"}
-          {saveState === "error" && <span className="text-red-500">Save failed — retrying on next edit</span>}
+          {saveState === "error" && <span className="text-red-600">Save failed — retrying on next edit</span>}
         </div>
       </div>
 
@@ -254,7 +254,7 @@ export function EditorClient({ item }: { item: Item }) {
         </button>
       </div>
 
-      {actionError && <p className="text-xs text-red-500">{actionError}</p>}
+      {actionError && <p className="text-xs text-red-600">{actionError}</p>}
     </div>
   )
 }

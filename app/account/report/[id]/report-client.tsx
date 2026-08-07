@@ -166,7 +166,7 @@ function ReportChat({ reportId }: { reportId: string }) {
           </div>
         ))}
 
-        {error && <p className="text-center text-xs text-red-500">{error}</p>}
+        {error && <p className="text-center text-xs text-red-600">{error}</p>}
         <div ref={bottomRef} />
       </div>
 

@@ -29,7 +29,7 @@ async function SavedPreview({ body }: { body: string }) {
     )
   } catch {
     return (
-      <p className="text-xs text-red-500">
+      <p className="text-xs text-red-600">
         Preview unavailable — this isn&apos;t valid MDX yet. Your text is saved and safe to keep editing.
       </p>
     )

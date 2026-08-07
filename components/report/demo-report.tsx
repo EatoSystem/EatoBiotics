@@ -2294,7 +2294,7 @@ function ReportActions({ data }: { data: DemoReportData }) {
                 disabled={emailStatus === "sending"}
               />
               {emailStatus === "error" && (
-                <p className="text-xs text-red-500 px-1">Something went wrong — please try again.</p>
+                <p className="text-xs text-red-600 px-1">Something went wrong — please try again.</p>
               )}
               <button
                 type="submit"

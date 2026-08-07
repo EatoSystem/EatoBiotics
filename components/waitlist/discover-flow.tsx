@@ -399,7 +399,7 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
                   className="brand-gradient inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-4 text-base font-semibold text-white shadow-[0_14px_30px_-10px_rgba(45,170,110,0.6)] transition-transform hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0">
                   {status === "loading" ? tw.form.joining : <>{tw.form.joinCta} <ArrowRight size={16} /></>}
                 </button>
-                {status === "error" && <p className="text-sm font-medium text-red-500">{message}</p>}
+                {status === "error" && <p className="text-sm font-medium text-red-600">{message}</p>}
                 <p className="text-center text-xs text-muted-foreground">{tw.form.consent}</p>
             </form>
           </div>

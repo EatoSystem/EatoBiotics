@@ -117,7 +117,7 @@ export function MediaDetailClient({ detail }: { detail: MediaDetail }) {
       {values.media_type === "image" && !values.alt_text && (
         <p className="mt-3 text-xs font-semibold text-icon-orange">Add alt text before this image is published anywhere.</p>
       )}
-      {error && <p className="mt-3 text-xs text-red-500">{error}</p>}
+      {error && <p className="mt-3 text-xs text-red-600">{error}</p>}
 
       <div className="mt-5 flex items-center gap-3">
         <button

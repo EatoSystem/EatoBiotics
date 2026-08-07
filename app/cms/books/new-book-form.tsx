@@ -71,7 +71,7 @@ export function NewBookForm() {
             className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
           />
         </div>
-        {error && <p className="text-xs text-red-500">{error}</p>}
+        {error && <p className="text-xs text-red-600">{error}</p>}
         <div className="flex items-center gap-2">
           <button
             type="submit"
