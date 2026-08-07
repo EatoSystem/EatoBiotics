@@ -1984,7 +1984,7 @@ export function DemoReport({ data }: { data: DemoReportData }) {
                       <span className="w-8 text-xs font-bold text-muted-foreground">{data.score}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="w-16 shrink-0 text-right text-xs text-muted-foreground">30 days</span>
+                      <span className="w-16 shrink-0 text-right text-xs text-muted-foreground">Potential</span>
                       <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-muted">
                         <div
                           className="h-full rounded-full"
@@ -2013,7 +2013,7 @@ export function DemoReport({ data }: { data: DemoReportData }) {
                       color: data.theme.accent,
                     }}
                   >
-                    After 30 days
+                    Illustrative estimate
                   </span>
                 </div>
               </div>

@@ -119,6 +119,57 @@ export function marketingCopy(relPath: string): string {
   )
 }
 
+/* ── Result-by-a-deadline ─────────────────────────────────────────────────
+ * Built from parts because the assembled expression is long, and a long
+ * literal is a place bugs hide.
+ *
+ * This replaces two narrower rules that between them missed every numeric
+ * form. `within (a few )?(days|weeks|months)` required the unit to follow
+ * "within" immediately, so `within 3–4 weeks` walked past it; `in (just )?\d+
+ * (days|weeks)` knew no months and no ranges. The gap was reported four times
+ * — #198, #208, #210, #211 — and never closed. #211 made it *less* visible by
+ * removing two instances as copy, which is why it is being fixed at the rule.
+ *
+ * The two removed rules are fully subsumed: their exact historical catches
+ * ("could steady your curve within weeks", "in just 30 days") are asserted as
+ * fixtures in marketing-language-timeframes.test.ts, so the merge cannot
+ * quietly lose coverage.
+ *
+ * ── Why a negative guard rather than a positive one
+ *
+ * The obvious design is to require an outcome word near the deadline. It was
+ * built and measured, and it is worse: it missed "you'll be transformed within
+ * 6 weeks" and "could steady your curve within weeks" — the #198 claim —
+ * because neither contains a noun any reasonable list would hold. A positive
+ * list fails toward the false negative, which for a safety guard is the
+ * expensive direction.
+ *
+ * So the rule fires on any deadline-shaped span and excludes the small closed
+ * set of verbs whose deadline is administrative or a product function. That
+ * keeps the general shape the house style asks for, and a surprise shows up as
+ * a flag to classify rather than as silence.
+ *
+ * ── Three structural details, each load-bearing
+ *
+ * 1. Unnumbered spans must be PLURAL. "week after week" and "day after day"
+ *    are reduplication idioms, not deadlines, and `after week` is not English
+ *    as a deadline. Requiring plurality kills the class without naming it.
+ * 2. Compounds like `30-day plan` never match: the hyphen binds the number to
+ *    a singular noun, and the unnumbered branch demands a plural.
+ * 3. The guard allows up to three words between verb and deadline, so
+ *    "retake the assessment in 30 days" is as quiet as "retake in 30 days".
+ */
+const SPAN = String.raw`(?:(?:a few\s+|\d+\s*(?:[-–—]|\s+to\s+)\s*\d+\s*|\d+\s*)(?:days?|weeks?|months?)|(?:days|weeks|months))`
+const INTENSIFIER = String.raw`(?:just|only|barely|as little as)\s+`
+/** Deadlines that belong to an action, not to the reader's body or score. */
+const NOT_A_CLAIM = String.raw`(?:cancel\w*|unsubscrib\w*|respond\w*|repl(?:y|ies|ying)|deliver\w*|ship\w*|arriv\w*|refund\w*|notif\w*|expir\w*|renew\w*|retest\w*|retake\w*|re-?test\w*|re-?take\w*|remind\w*|process\w*|dispatch\w*)`
+const GUARD = String.raw`(?<!${NOT_A_CLAIM}\s)(?<!${NOT_A_CLAIM}\s(?:\w+\s){1,3})`
+export const RESULT_DEADLINE = new RegExp(
+  `${GUARD}\\b(?:within|in|after|by)\\s+(?:${INTENSIFIER})?${SPAN}` +
+    `|${GUARD}\\bby\\s+day\\s+\\d+\\b`,
+  "i",
+)
+
 /**
  * One list, applied to every marketing surface. Per-file exemptions are how a
  * guard drifts into covering less than its name says.
@@ -130,9 +181,9 @@ export function marketingCopy(relPath: string): string {
  */
 export const CLAIMS: Array<[string, RegExp]> = [
   // Timelines. "30-day plan" is a product fact and stays legal; "in 30 days"
-  // and "within weeks" attached to a result do not.
-  ["result within a timeframe", /within (a few )?(days|weeks|months)/i],
-  ["result in N days/weeks", /\bin (just )?\d+ (days|weeks)\b/i],
+  // and "within weeks" attached to a result do not. See RESULT_DEADLINE above
+  // for why this one rule replaced the two narrower ones it grew out of.
+  ["result within a timeframe", RESULT_DEADLINE],
   ["results by a deadline", /\b(to|for) results\b/i],
   // Promises.
   ["promise", /\bwill \w+/i],
