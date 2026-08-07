@@ -1,11 +1,16 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowRight, Check, TrendingUp } from "lucide-react"
-import type { ScoreProjection } from "@/lib/claude-report"
+import { ArrowRight, Check, Compass } from "lucide-react"
 
 interface ReportMembershipCTAProps {
-  scoreProjection?: ScoreProjection
+  /** The customer's current overall score — the one real number this report
+   *  produced. No future score is shown anywhere: a questionnaire cannot
+   *  honestly forecast one, and the old projection card once promised a
+   *  98/100 customer they could reach "100–100". */
+  overall?: number
+  /** Display label of the pathway the report chose to start with. */
+  priorityLabel?: string
   membershipBridge?: string
   membershipTier?: string
 }
@@ -59,12 +64,19 @@ const TIERS = [
   },
 ]
 
-function ScoreProjectionCard({ projection }: { projection: ScoreProjection }) {
-  const r = 44
-  const circ = 2 * Math.PI * r
-  const lowOffset = circ * (1 - projection.low / 100)
-  const highOffset = circ * (1 - projection.high / 100)
-
+/* The score-projection card that used to live here rendered a predicted
+ * future score with a deadline ("You could reach 74–84 in 8–10 weeks") — a
+ * result-by-date forecast a questionnaire cannot honestly make, and one that
+ * degenerated to "100–100" for high scorers. Replaced by ContinuationCard:
+ * the real current score, the report's own priority pathway, and what
+ * membership is actually for — practising the plan, not receiving a number. */
+function ContinuationCard({
+  overall,
+  priorityLabel,
+}: {
+  overall: number
+  priorityLabel?: string
+}) {
   return (
     <div
       className="rounded-2xl border-2 border-transparent p-5"
@@ -74,59 +86,32 @@ function ScoreProjectionCard({ projection }: { projection: ScoreProjection }) {
       }}
     >
       <div className="flex items-center gap-2 mb-4">
-        <TrendingUp size={15} style={{ color: "var(--icon-green)" }} />
+        <Compass size={15} aria-hidden style={{ color: "var(--icon-green)" }} />
         <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-green)" }}>
-          Your score potential
+          Where your report hands over
         </p>
       </div>
 
       <div className="flex items-center gap-6">
-        {/* Score range rings */}
-        <div className="relative flex shrink-0 items-center justify-center h-24 w-24">
-          {/* Low ring (background) */}
-          <svg width="96" height="96" className="-rotate-90 absolute inset-0">
-            <circle cx="48" cy="48" r={r} fill="none" strokeWidth="7" stroke="var(--border)" />
-            <circle
-              cx="48" cy="48" r={r} fill="none" strokeWidth="7"
-              stroke="color-mix(in srgb, var(--icon-green) 30%, transparent)"
-              strokeLinecap="round"
-              strokeDasharray={circ}
-              strokeDashoffset={lowOffset}
-            />
-            <circle
-              cx="48" cy="48" r={r} fill="none" strokeWidth="7"
-              stroke="var(--icon-green)"
-              strokeLinecap="round"
-              strokeDasharray={circ}
-              strokeDashoffset={highOffset}
-            />
-          </svg>
-          <div className="relative text-center">
-            <p className="font-serif text-lg font-bold leading-none" style={{ color: "var(--icon-green)" }}>
-              {projection.low}–{projection.high}
-            </p>
-            <p className="text-[9px] font-bold tracking-widest text-muted-foreground mt-0.5">/100</p>
-          </div>
+        <div className="shrink-0 text-center">
+          <p className="font-serif text-3xl font-bold leading-none text-foreground">{overall}</p>
+          <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+            Today&apos;s score
+          </p>
         </div>
 
-        {/* Text */}
         <div className="flex-1">
           <p className="font-serif text-base font-bold text-foreground leading-snug">
-            You could reach {projection.low}–{projection.high} in {projection.timeline}
+            {priorityLabel
+              ? `Your plan starts with ${priorityLabel} — membership is where you practise it.`
+              : "Your plan is set — membership is where you practise it."}
           </p>
-          <div className="mt-3 space-y-1.5">
-            {projection.keyDrivers.map((driver, i) => (
-              <div key={i} className="flex items-start gap-2">
-                <span
-                  className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white"
-                  style={{ background: "var(--icon-green)" }}
-                >
-                  {i + 1}
-                </span>
-                <p className="text-xs text-muted-foreground leading-snug">{driver}</p>
-              </div>
-            ))}
-          </div>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+            Log what you actually eat, watch your{" "}
+            {priorityLabel ? `${priorityLabel} habits` : "new habits"} hold through ordinary
+            weeks, and retake the assessment after your 30-day cycle. Your score is
+            recalculated from your answers each time — individual outcomes vary.
+          </p>
         </div>
       </div>
     </div>
@@ -134,7 +119,8 @@ function ScoreProjectionCard({ projection }: { projection: ScoreProjection }) {
 }
 
 export function ReportMembershipCTA({
-  scoreProjection,
+  overall,
+  priorityLabel,
   membershipBridge,
   membershipTier,
 }: ReportMembershipCTAProps) {
@@ -152,8 +138,10 @@ export function ReportMembershipCTA({
         <div className="h-px flex-1 bg-border" />
       </div>
 
-      {/* Score projection */}
-      {scoreProjection && <ScoreProjectionCard projection={scoreProjection} />}
+      {/* Continuation — current score + priority, never a forecast */}
+      {typeof overall === "number" && (
+        <ContinuationCard overall={overall} priorityLabel={priorityLabel} />
+      )}
 
       {/* Membership bridge */}
       {membershipBridge && (

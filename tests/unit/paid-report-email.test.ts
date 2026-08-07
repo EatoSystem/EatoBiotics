@@ -26,10 +26,12 @@ describe("buildPaidReportEmail — PDF note copy", () => {
     expect(html).toContain("View Your Full Report")
   })
 
-  it("pdfUrl null: keeps the existing 'being prepared' copy, no attached/download wording", () => {
+  it("pdfUrl null: points to the durable report page instead of promising a re-email", () => {
     const { html } = buildPaidReportEmail({ ...base, pdfUrl: null })
 
-    expect(html).toContain("Your PDF report is being prepared and will be emailed to you shortly.")
+    expect(html).toContain("Your PDF is still being prepared. Your full report is already available on your report page")
+    // The old copy promised a re-email that nothing ever sends — that lie is gone.
+    expect(html).not.toContain("will be emailed to you shortly")
     expect(html).not.toContain("attached to this email")
     expect(html).not.toContain("Download it here")
   })

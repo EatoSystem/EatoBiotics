@@ -11,9 +11,11 @@ import {
   FoodSystemClosing,
 } from "@/components/report/food-system-section"
 import { coerceBiotic } from "@/lib/report/visual-token"
+import { PATHWAY_LABEL } from "@/lib/report/subscores"
 import { ScoreRing } from "./score-ring"
 import { MissionNote } from "./mission-note"
 import { ReportMembershipCTA } from "./report-membership-cta"
+import { ReportPdfDownload } from "./report-pdf-download"
 import type {
   DeepReport,
   DeepStarterReport,
@@ -32,6 +34,12 @@ interface PaidReportClientProps {
     profile: AssessmentProfile
   }
   membershipTier?: string
+  /** Fresh short-lived signed URL, minted server-side per authorised view.
+   *  Never the persisted delivery-time URL — that one expires. */
+  pdfUrl?: string | null
+  /** The row's pdf_status, so the download area can be honest when the PDF
+   *  is pending or failed rather than showing nothing or a dead link. */
+  pdfStatus?: string | null
 }
 
 /* ── Sub-components ──────────────────────────────────────────────── */
@@ -71,6 +79,8 @@ export function PaidReportClient({
   reportJson,
   freeScores,
   membershipTier,
+  pdfUrl = null,
+  pdfStatus = null,
 }: PaidReportClientProps) {
   const [openWeek, setOpenWeek] = useState<number>(1)
 
@@ -135,6 +145,9 @@ export function PaidReportClient({
 
           </div>
         </section>
+
+        {/* ── PDF download / delivery status ───────────────────────── */}
+        <ReportPdfDownload pdfUrl={pdfUrl} pdfStatus={pdfStatus} />
 
         {/* ── Your Pattern ─────────────────────────────────────────── */}
         <section>
@@ -422,7 +435,7 @@ export function PaidReportClient({
                 <SectionHeader
                   eyebrow="Priorities"
                   title="Priority Map"
-                  subtitle="Your single biggest blocker and biggest builder right now."
+                  subtitle="The blocker and the builder your answers point to right now."
                 />
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div
@@ -586,11 +599,13 @@ export function PaidReportClient({
               </div>
               <div>
                 <p className="text-sm font-semibold text-foreground">
-                  Recommended retest: in 75 days
+                  Your 30-day cycle
                 </p>
                 <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  We recommend retesting in 75 days to measure your progress. Retesting after
-                  60–90 days will show meaningful, measurable change from the habits you build now.
+                  Follow the plan for 30 days, then review: which changes were practical on an
+                  ordinary week, and which signals — digestion, comfort, energy — you noticed.
+                  Then retake the assessment to reset your snapshot. Individual outcomes vary;
+                  the cycle is the commitment, not a result by a date.
                 </p>
               </div>
             </div>
@@ -601,7 +616,12 @@ export function PaidReportClient({
         <section>
           <ScrollReveal>
             <ReportMembershipCTA
-              scoreProjection={(reportJson as DeepStarterReport).scoreProjection}
+              overall={freeScores?.overall}
+              priorityLabel={
+                foodSystem
+                  ? PATHWAY_LABEL[foodSystem.systemSnapshot.priorityPathway]
+                  : undefined
+              }
               membershipBridge={(reportJson as DeepStarterReport).membershipBridge}
               membershipTier={membershipTier}
             />
