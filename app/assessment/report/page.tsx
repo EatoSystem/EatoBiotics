@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { redirect } from "next/navigation"
+import { redirect, unstable_rethrow } from "next/navigation"
 import { stripe } from "@/lib/stripe-server"
 import { FullReportClient } from "@/components/assessment/full-report-client"
 import { PaidReportClient } from "@/components/assessment/paid-report-client"
@@ -106,7 +106,13 @@ export default async function ReportPage({ searchParams }: Props) {
     // Supabase not configured (dev mode without DB) — fall through to existing client
     const displayTier2 = displayTierForReport(summary.tier)
     return <FullReportClient tier={displayTier2} />
-  } catch {
+  } catch (error) {
+    // redirect() interrupts rendering by throwing a NEXT_REDIRECT-digest Error.
+    // A bare `catch {}` swallowed that silently and ran the fallback below
+    // instead — so the redirect above (the #129 resume-questionnaire redirect)
+    // never actually happened. unstable_rethrow lets Next's own control-flow
+    // errors through untouched; only a genuine error reaches the fallback.
+    unstable_rethrow(error)
     redirect("/assessment")
   }
 }
