@@ -217,11 +217,12 @@ export function buildPaidReportEmail(opts: PaidReportEmailOpts): {
 
   const pdfNoteHtml = pdfUrl
     ? `<p style="margin: 0; font-size: 13px; color: #555555; font-family: Arial, sans-serif; line-height: 1.6;">
-        📎 Your PDF report is ready. <a href="${pdfUrl}" style="color: #3ab0a0; font-weight: bold;">Download it here</a> for the next 7 days.
-        You can also use the "View Your Full Report" button above for permanent access.
+        📎 Your PDF report is ready. <a href="${pdfUrl}" style="color: #3ab0a0; font-weight: bold;">Download it here</a> — this direct link lasts 7 days,
+        and your report page (the button above) always has a fresh download link, permanently.
       </p>`
-    : `<p style="margin: 0; font-size: 13px; color: #555555; font-family: Arial, sans-serif;">
-        📎 Your PDF report is being prepared and will be emailed to you shortly.
+    : `<p style="margin: 0; font-size: 13px; color: #555555; font-family: Arial, sans-serif; line-height: 1.6;">
+        📎 Your PDF is still being prepared. Your full report is already available on your report page
+        (the button above), and the PDF download will appear there as soon as it is ready.
       </p>`
 
   const retestDateStr = retestDate()

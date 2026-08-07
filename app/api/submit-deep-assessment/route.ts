@@ -16,6 +16,7 @@ import { parseFoodSystemReport } from "@/lib/report/food-system-report-types"
 import { overallReportStatus } from "@/lib/report-status"
 // Aliased: the route already has a local `reportError` string (the report_error column value).
 import { reportError as alertOwner } from "@/lib/report-error"
+import { PDF_BUCKET, pdfObjectPath } from "@/lib/report/pdf-access"
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -529,17 +530,20 @@ export async function POST(req: NextRequest) {
     if (pdfBuffer && supabase) {
       try {
         const { error: uploadError } = await supabase.storage
-          .from("pdf-reports")
-          .upload(`${sessionId}.pdf`, pdfBuffer, { contentType: "application/pdf", upsert: true })
+          .from(PDF_BUCKET)
+          .upload(pdfObjectPath(sessionId), pdfBuffer, { contentType: "application/pdf", upsert: true })
 
         if (uploadError) {
           console.error("[submit-deep-assessment] Supabase Storage upload error:", uploadError.message)
           pdfStatus = "upload_failed"
           pdfError = uploadError.message
         } else {
+          // Delivery-time convenience link for the email — 7 days. Durable
+          // access does not depend on it: the report page mints a fresh URL
+          // from the same object path on every authorised view.
           const { data: signedData } = await supabase.storage
-            .from("pdf-reports")
-            .createSignedUrl(`${sessionId}.pdf`, 60 * 60 * 24 * 7)
+            .from(PDF_BUCKET)
+            .createSignedUrl(pdfObjectPath(sessionId), 60 * 60 * 24 * 7)
           pdfUrl = signedData?.signedUrl ?? null
           pdfStatus = pdfUrl ? "uploaded" : "upload_failed"
           if (!pdfUrl) pdfError = "Signed URL not returned after upload"

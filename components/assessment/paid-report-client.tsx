@@ -14,6 +14,7 @@ import { coerceBiotic } from "@/lib/report/visual-token"
 import { ScoreRing } from "./score-ring"
 import { MissionNote } from "./mission-note"
 import { ReportMembershipCTA } from "./report-membership-cta"
+import { ReportPdfDownload } from "./report-pdf-download"
 import type {
   DeepReport,
   DeepStarterReport,
@@ -32,6 +33,12 @@ interface PaidReportClientProps {
     profile: AssessmentProfile
   }
   membershipTier?: string
+  /** Fresh short-lived signed URL, minted server-side per authorised view.
+   *  Never the persisted delivery-time URL — that one expires. */
+  pdfUrl?: string | null
+  /** The row's pdf_status, so the download area can be honest when the PDF
+   *  is pending or failed rather than showing nothing or a dead link. */
+  pdfStatus?: string | null
 }
 
 /* ── Sub-components ──────────────────────────────────────────────── */
@@ -71,6 +78,8 @@ export function PaidReportClient({
   reportJson,
   freeScores,
   membershipTier,
+  pdfUrl = null,
+  pdfStatus = null,
 }: PaidReportClientProps) {
   const [openWeek, setOpenWeek] = useState<number>(1)
 
@@ -135,6 +144,9 @@ export function PaidReportClient({
 
           </div>
         </section>
+
+        {/* ── PDF download / delivery status ───────────────────────── */}
+        <ReportPdfDownload pdfUrl={pdfUrl} pdfStatus={pdfStatus} />
 
         {/* ── Your Pattern ─────────────────────────────────────────── */}
         <section>
