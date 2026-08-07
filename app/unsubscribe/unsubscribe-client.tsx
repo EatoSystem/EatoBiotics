@@ -76,7 +76,7 @@ export function UnsubscribeClient({
         className="mt-6 w-full rounded-full border border-border bg-card px-5 py-3 text-center text-sm text-foreground outline-none focus:border-icon-green"
       />
 
-      {state === "error" && <p className="mt-3 text-sm text-red-500">{message}</p>}
+      {state === "error" && <p className="mt-3 text-sm text-red-600">{message}</p>}
 
       <button
         onClick={submit}

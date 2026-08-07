@@ -549,7 +549,7 @@ function SportsIntro({ state, update }: { state: AssessmentState; update: (p: Pa
           </div>
 
           {/* Error */}
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {error && <p className="text-sm text-red-600">{error}</p>}
 
           {/* Submit */}
           <button

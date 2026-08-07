@@ -2338,7 +2338,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                 </div>
               )}
               {/* Save button */}
-              {acctError && <p className="text-xs text-red-500">{acctError}</p>}
+              {acctError && <p className="text-xs text-red-600">{acctError}</p>}
               <button
                 onClick={handleSaveProfile}
                 disabled={acctSaving}
@@ -2408,7 +2408,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                         </p>
                       )}
                     </div>
-                    {cancelError && <p className="text-xs text-red-500">{cancelError}</p>}
+                    {cancelError && <p className="text-xs text-red-600">{cancelError}</p>}
                     <div className="flex gap-3">
                       <button
                         onClick={() => { setCancelStage("idle"); setCancelError(null) }}
@@ -2597,7 +2597,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                   className="w-full rounded-xl border px-4 py-2.5 text-sm font-mono outline-none"
                   style={{ borderColor: "#fca5a5", background: "#fff5f5", color: "var(--foreground)" }}
                 />
-                {deleteError && <p className="text-xs text-red-500">{deleteError}</p>}
+                {deleteError && <p className="text-xs text-red-600">{deleteError}</p>}
                 <div className="flex gap-3">
                   <button
                     onClick={() => { setDeleteStage("closed"); setDeleteInput(""); setDeleteError(null) }}

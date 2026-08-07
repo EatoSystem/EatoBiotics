@@ -138,7 +138,7 @@ export function MediaLibraryClient({
           Images 15MB · audio 50MB · documents 25MB · video 500MB. SVG is not accepted.
         </p>
         {progress && <p className="mt-2 text-xs text-icon-teal">{progress}</p>}
-        {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
+        {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
       </div>
 
       {/* Filters */}

@@ -95,7 +95,7 @@ export function SignInClient() {
             className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-[var(--icon-green)] focus:outline-none focus:ring-1 focus:ring-[var(--icon-green)]"
           />
           {error && (
-            <p className="text-xs text-red-500">{error}</p>
+            <p className="text-xs text-red-600">{error}</p>
           )}
           <button
             type="submit"
