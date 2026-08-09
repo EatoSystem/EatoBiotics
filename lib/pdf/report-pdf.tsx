@@ -729,12 +729,14 @@ function FoodCard({
   mechanism,
   whyForThem,
   howToUse,
+  swap,
 }: {
   food: string
   biotic: BioticKey
   mechanism?: string
   whyForThem: string
   howToUse: string
+  swap?: string
 }) {
   const accent = PATHWAY_PDF_COLOR[biotic]
   return (
@@ -748,6 +750,7 @@ function FoodCard({
       {mechanism ? <Text style={styles.foodCardMechanism}>{mechanism}</Text> : null}
       <Text style={styles.foodCardWhy}>{whyForThem}</Text>
       <Text style={styles.foodCardHow}>How to use: {howToUse}</Text>
+      {swap ? <Text style={styles.foodCardHow}>Swap: {swap}</Text> : null}
     </View>
   )
 }
@@ -964,6 +967,7 @@ export function ReportPDF({
                 mechanism={item.mechanism}
                 whyForThem={item.whyForThem}
                 howToUse={item.howToUse}
+                swap={item.swap}
               />
             ))}
             <Footer />

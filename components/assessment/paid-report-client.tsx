@@ -357,6 +357,12 @@ export function PaidReportClient({
                           {food.howToUse}
                         </p>
                       </div>
+                      {food.swap && (
+                        <p className="text-[11px] leading-relaxed text-muted-foreground">
+                          <span className="font-semibold text-foreground">Swap: </span>
+                          {food.swap}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
