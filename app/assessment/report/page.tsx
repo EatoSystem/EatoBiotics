@@ -9,6 +9,7 @@ import { getUser } from "@/lib/supabase-server"
 import { getUserMembershipTier } from "@/lib/membership"
 import type { DeepReport } from "@/lib/claude-report"
 import { reportViewState } from "@/lib/report-status"
+import { freshPdfUrl } from "@/lib/report/pdf-access"
 import {
   displayTierForReport,
   getPaidReportSummaryFromSession,
@@ -66,7 +67,7 @@ export default async function ReportPage({ searchParams }: Props) {
     if (supabase) {
       const { data } = await supabase
         .from("deep_assessments")
-        .select("status, report_json, pdf_url")
+        .select("status, report_json, pdf_url, pdf_status")
         .eq("stripe_session_id", session_id)
         .single()
 
@@ -85,6 +86,14 @@ export default async function ReportPage({ searchParams }: Props) {
       const viewState = reportViewState(data?.status, Boolean(reportJson))
 
       if (reportJson && viewState !== "resume_questionnaire") {
+        // Minted fresh on every authorised view — this branch is only reachable
+        // after Stripe confirmed the checkout session is settled, so the signed
+        // URL never exists for an unauthorised or mismatched session. The
+        // persisted pdf_url is deliberately NOT reused: it is a 7-day signed
+        // URL from delivery time and may be long expired; the object path is
+        // deterministic, so freshPdfUrl re-signs it instead.
+        const pdfUrl = await freshPdfUrl(supabase, session_id, data)
+
         return (
           <>
             <DeliveryPendingNotice viewState={viewState} />
@@ -94,6 +103,8 @@ export default async function ReportPage({ searchParams }: Props) {
               reportJson={reportJson as DeepReport}
               freeScores={freeScores as unknown as Parameters<typeof PaidReportClient>[0]["freeScores"]}
               membershipTier={membershipTier}
+              pdfUrl={pdfUrl}
+              pdfStatus={data?.pdf_status ?? null}
             />
           </>
         )

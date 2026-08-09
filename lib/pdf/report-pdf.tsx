@@ -803,10 +803,12 @@ function RetestNote({ retestDate }: { retestDate: string }) {
       }}
     >
       <Text style={{ fontSize: 11, fontFamily: FONT.sansBold, color: BRAND.darkText, marginBottom: 4 }}>
-        Recommended Retest
+        Your 30-day cycle
       </Text>
       <Text style={{ fontSize: 10, fontFamily: FONT.sans, color: BRAND.bodyText, lineHeight: 1.5 }}>
-        Retest on {retestDate} to measure your progress after 75 days of consistent change.
+        Follow the plan for 30 days, then review what was practical and which signals you
+        noticed, and retake the assessment on {retestDate}. Individual outcomes vary; the cycle
+        is the commitment, not a result by a date.
       </Text>
     </View>
   )
@@ -816,7 +818,7 @@ function RetestNote({ retestDate }: { retestDate: string }) {
 
 function getRetestDate(): string {
   const d = new Date()
-  d.setDate(d.getDate() + 75)
+  d.setDate(d.getDate() + 30)
   return d.toLocaleDateString("en-IE", {
     day: "numeric",
     month: "long",

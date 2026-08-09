@@ -107,7 +107,7 @@ const TIER_HIGHLIGHTS: Record<string, string[]> = {
 
 function retestDate(): string {
   const d = new Date()
-  d.setDate(d.getDate() + 75)
+  d.setDate(d.getDate() + 30)
   return d.toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" })
 }
 
@@ -217,11 +217,12 @@ export function buildPaidReportEmail(opts: PaidReportEmailOpts): {
 
   const pdfNoteHtml = pdfUrl
     ? `<p style="margin: 0; font-size: 13px; color: #555555; font-family: Arial, sans-serif; line-height: 1.6;">
-        📎 Your PDF report is ready. <a href="${pdfUrl}" style="color: #3ab0a0; font-weight: bold;">Download it here</a> for the next 7 days.
-        You can also use the "View Your Full Report" button above for permanent access.
+        📎 Your PDF report is ready. <a href="${pdfUrl}" style="color: #3ab0a0; font-weight: bold;">Download it here</a> — this direct link lasts 7 days,
+        and your report page (the button above) always has a fresh download link, permanently.
       </p>`
-    : `<p style="margin: 0; font-size: 13px; color: #555555; font-family: Arial, sans-serif;">
-        📎 Your PDF report is being prepared and will be emailed to you shortly.
+    : `<p style="margin: 0; font-size: 13px; color: #555555; font-family: Arial, sans-serif; line-height: 1.6;">
+        📎 Your PDF is still being prepared. Your full report is already available on your report page
+        (the button above), and the PDF download will appear there as soon as it is ready.
       </p>`
 
   const retestDateStr = retestDate()
@@ -353,7 +354,7 @@ export function buildPaidReportEmail(opts: PaidReportEmailOpts): {
                 <tr>
                   <td style="padding: 14px 18px;">
                     <p style="margin: 0; font-size: 13px; color: #666666; font-family: Arial, sans-serif;">
-                      📅 <strong style="color: #333333;">Recommended retest:</strong> ${retestDateStr} — give your habits 75 days to compound, then measure your progress.
+                      📅 <strong style="color: #333333;">Your 30-day cycle:</strong> follow the plan for 30 days, then retake the assessment on ${retestDateStr}. Individual outcomes vary — the cycle is the commitment, not a result by a date.
                     </p>
                   </td>
                 </tr>
