@@ -345,7 +345,7 @@ function FullReportSections({
                   {formatRetestDate(result.completedAt)}
                 </p>
                 <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  Retesting in 60–90 days will show meaningful, measurable progress from the habits you build now. Save this date and come back to see how far you&rsquo;ve come.
+                  Retesting after this window can show whether the habits you build now have shifted your pattern. Save this date and come back to see how far you&rsquo;ve come.
                 </p>
               </div>
             </div>
