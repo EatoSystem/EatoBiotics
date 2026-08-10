@@ -127,9 +127,17 @@ export function PaidReportClient({
 
             {freeScores && (
               <div className="relative flex justify-center">
+                {/* Vertical bleed only. -inset-6 put this 24px past its parent
+                  * on both axes, and an oversized absolute child still counts
+                  * toward document scrollWidth even though it is decorative and
+                  * -z-10 — that was the whole of the 4px horizontal scroll at
+                  * 390px (#218). blur-3xl spreads the paint well past the box, so
+                  * constraining the horizontal edges costs nothing visually. Same
+                  * reasoning, and the same fix, as the ring glow in
+                  * components/report/food-system-section.tsx. */}
                 <div
                   aria-hidden
-                  className="pointer-events-none absolute -inset-6 -z-10 rounded-full opacity-70 blur-3xl"
+                  className="pointer-events-none absolute -inset-y-6 inset-x-0 -z-10 rounded-full opacity-70 blur-3xl"
                   style={{
                     background:
                       "radial-gradient(60% 60% at 50% 45%, color-mix(in srgb, var(--icon-green) 28%, transparent), transparent 75%)",
