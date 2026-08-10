@@ -19,6 +19,7 @@ import type {
   DeepPremiumReport,
 } from "@/lib/claude-report"
 import { bioticLabel, type BioticKey } from "@/lib/report/visual-token"
+import { FOOD_TOOL_COUNT } from "@/lib/report/build-food-system-report"
 import {
   normalizeToBiotics,
   orderedByNeed,
@@ -729,12 +730,14 @@ function FoodCard({
   mechanism,
   whyForThem,
   howToUse,
+  swap,
 }: {
   food: string
   biotic: BioticKey
   mechanism?: string
   whyForThem: string
   howToUse: string
+  swap?: string
 }) {
   const accent = PATHWAY_PDF_COLOR[biotic]
   return (
@@ -748,6 +751,7 @@ function FoodCard({
       {mechanism ? <Text style={styles.foodCardMechanism}>{mechanism}</Text> : null}
       <Text style={styles.foodCardWhy}>{whyForThem}</Text>
       <Text style={styles.foodCardHow}>How to use: {howToUse}</Text>
+      {swap ? <Text style={styles.foodCardHow}>Swap: {swap}</Text> : null}
     </View>
   )
 }
@@ -955,7 +959,9 @@ export function ReportPDF({
           </Page>
 
           <Page size="A4" style={styles.page}>
-            <Text style={styles.sectionHeading}>Your 5 Priority Foods</Text>
+            {/* Count interpolated, not written out: it is a contract with
+                buildFoodSystemReport, which guarantees FOOD_TOOL_COUNT tools. */}
+            <Text style={styles.sectionHeading}>Your {FOOD_TOOL_COUNT} Priority Foods</Text>
             {fullReport.specificFoodList.map((item, i) => (
               <FoodCard
                 key={i}
@@ -964,6 +970,7 @@ export function ReportPDF({
                 mechanism={item.mechanism}
                 whyForThem={item.whyForThem}
                 howToUse={item.howToUse}
+                swap={item.swap}
               />
             ))}
             <Footer />

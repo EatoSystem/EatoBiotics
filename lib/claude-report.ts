@@ -113,6 +113,9 @@ export interface DeepFullReport extends ClaudeFullReport {
     /** References their actual answers — e.g. "Since you mentioned eating at your desk..." */
     whyForThem: string
     howToUse: string
+    /** A realistic alternative if this food doesn't suit them. Optional so
+     *  older stored/generated reports without it keep rendering. */
+    swap?: string
   }>
   scoreProjection: ScoreProjection
   membershipBridge: string
@@ -133,6 +136,9 @@ export interface DeepPremiumReport extends ClaudePremiumReport {
     mechanism: string
     whyForThem: string
     howToUse: string
+    /** A realistic alternative if this food doesn't suit them. Optional so
+     *  older stored/generated reports without it keep rendering. */
+    swap?: string
   }>
   scoreProjection: ScoreProjection
   membershipBridge: string

@@ -109,6 +109,15 @@ const MARKETING_COMPONENTS: Record<string, { minChars: number; anchor: string }>
     minChars: 1_000,
     anchor: "Choose the plan that fits your journey",
   },
+  // Joined after the PR #215 review flagged a live "will show meaningful,
+  // measurable progress" claim here — pre-existing, not introduced by that PR,
+  // and not on the production paid-report path (this component only renders
+  // via the dev-fallback branches of /assessment/report and the demo surface),
+  // but still real customer-facing copy that deserves the same guard.
+  "components/assessment/full-report-client.tsx": {
+    minChars: 2_000,
+    anchor: "Your recommended retest date",
+  },
 }
 
 const CORPUS = () => [...publicPages(), ...Object.keys(MARKETING_COMPONENTS)]

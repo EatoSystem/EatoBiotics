@@ -106,9 +106,12 @@ export function ensureFoodSystem<T extends { foodSystem?: FoodSystemReport }>(
  * gradations, and a "62 vs 64" distinction would imply precision that is not
  * there. */
 
-type Band = "strong" | "building" | "strained"
+export type Band = "strong" | "building" | "strained"
 
-function band(score: number): Band {
+/** Exported so other report builders (the fallback report, notably) classify
+ *  scores the same way this file does, rather than inventing a second set of
+ *  thresholds that can drift from these. */
+export function band(score: number): Band {
   if (score >= 65) return "strong"
   if (score >= 40) return "building"
   return "strained"
@@ -254,9 +257,24 @@ const EVIDENCE: EvidenceNote[] = [
 /* ── Food tools ─────────────────────────────────────────────────────────────
  * A small, deliberately boring starter set per pathway. These are the fallback
  * when nothing better is generated: unglamorous, widely available, and each one
- * carries the mechanism that earns its place. */
+ * carries the mechanism that earns its place.
+ *
+ * Exported so lib/fallback-paid-report.ts's specificFoodList reads from the
+ * same dataset rather than carrying a second, hand-authored one — the €49
+ * audit's finding was that the legacy fallback's five foods never varied with
+ * the customer's answers at all, because they were a static array unrelated
+ * to this one. Every entry has a `swap`: the fallback's per-recommendation
+ * requirement needs a realistic alternative on all five, not just some. */
 
-const TOOLS: Record<BioticScoreKey, ReportFoodTool[]> = {
+/**
+ * How many food tools a report shows. Exported because the legacy paid report
+ * renders this list under a literal "5 Foods" heading in two places
+ * (lib/pdf/report-pdf.tsx and components/assessment/paid-report-client.tsx),
+ * so the count is a contract rather than a local slice length.
+ */
+export const FOOD_TOOL_COUNT = 5
+
+export const TOOLS: Record<BioticScoreKey, ReportFoodTool[]> = {
   prebiotics: [
     {
       food: "Oats",
@@ -291,6 +309,7 @@ const TOOLS: Record<BioticScoreKey, ReportFoodTool[]> = {
       whyForThisCustomer:
         "Variety is the lever here, and rotating leaves is the cheapest way to get it.",
       howToUse: "Rotate three or more kinds across a week rather than buying the same bag.",
+      swap: "Frozen spinach or kale works the same way and keeps longer.",
     },
   ],
   probiotics: [
@@ -316,6 +335,7 @@ const TOOLS: Record<BioticScoreKey, ReportFoodTool[]> = {
         "A forkful beside a meal you already eat is enough — this does not need to become a dish.",
       howToUse:
         "Start with a tablespoon beside lunch or dinner. Buy refrigerated and unpasteurised; shelf-stable jars are usually not live.",
+      swap: "Live yoghurt or kefir if fermented vegetables do not suit you.",
       familyAdaptation: "Strong flavours often land better alongside something familiar.",
     },
   ],
@@ -329,6 +349,7 @@ const TOOLS: Record<BioticScoreKey, ReportFoodTool[]> = {
       whyForThisCustomer:
         "Rhythm tends to be the constraint before food choice is. A default breakfast removes one decision from every morning.",
       howToUse: "Pick one breakfast you can repeat on a bad week, and keep its ingredients in stock.",
+      swap: "A packed lunch works the same way if mornings are not the constraint.",
       familyAdaptation: "One shared default is easier to protect than several individual ones.",
     },
     {
@@ -340,6 +361,7 @@ const TOOLS: Record<BioticScoreKey, ReportFoodTool[]> = {
       whyForThisCustomer:
         "Changes nothing about what you cook — only what you finish it with.",
       howToUse: "Use raw as a finishing oil over vegetables, grains or soup.",
+      swap: "Avocado oil is a reasonable alternative if the flavour does not suit you.",
     },
   ],
 }
@@ -445,7 +467,32 @@ export function buildFoodSystemReport(input: BuildReportInput): FoodSystemReport
       ? `Your answers suggest ${who} food system is working well across all three pathways, with ${PATHWAY_LABEL[priorityPathway]} the one with most room left.`
       : `Your answers suggest ${PATHWAY_LABEL[strongestPathway]} is ${who} strongest pathway, and that ${PATHWAY_LABEL[priorityPathway]} is where a change would show up fastest.`
 
-  const foodTools = [...TOOLS[priorityPathway], ...TOOLS[strongestPathway]].slice(0, 5)
+  // Five unique tools, priority pathway first.
+  //
+  // This used to be `[...TOOLS[priority], ...TOOLS[strongest]].slice(0, 5)`,
+  // which silently returned FOUR whenever priority and strongest were the two
+  // 2-item pathways (probiotics + postbiotics) — i.e. whenever prebiotics was
+  // the MIDDLE score, roughly a third of real orderings. The legacy report
+  // renders that list under a hard-coded "5 Foods" heading, so those customers
+  // saw a five-food promise with four cards. Topping up from the remaining
+  // pathway keeps the priority-first ordering and makes the count total:
+  // the catalogue holds 3 + 2 + 2 = 7 unique tools, so five is always reachable.
+  const toolOrder: BioticScoreKey[] = [
+    priorityPathway,
+    strongestPathway,
+    ...(Object.keys(TOOLS) as BioticScoreKey[]),
+  ]
+  const foodTools: ReportFoodTool[] = []
+  const seenFood = new Set<string>()
+  for (const pathway of toolOrder) {
+    for (const tool of TOOLS[pathway]) {
+      if (seenFood.has(tool.food)) continue
+      seenFood.add(tool.food)
+      foodTools.push(tool)
+      if (foodTools.length === FOOD_TOOL_COUNT) break
+    }
+    if (foodTools.length === FOOD_TOOL_COUNT) break
+  }
 
   return {
     mode: input.mode,

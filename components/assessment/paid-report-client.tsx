@@ -12,6 +12,8 @@ import {
 } from "@/components/report/food-system-section"
 import { coerceBiotic } from "@/lib/report/visual-token"
 import { PATHWAY_LABEL } from "@/lib/report/subscores"
+import { heroTaglineFor } from "@/lib/report/framing"
+import { FOOD_TOOL_COUNT } from "@/lib/report/build-food-system-report"
 import { ScoreRing } from "./score-ring"
 import { MissionNote } from "./mission-note"
 import { ReportMembershipCTA } from "./report-membership-cta"
@@ -60,6 +62,13 @@ function TopTriggerCard({ trigger, explanation }: { trigger: string; explanation
       <p className="text-muted-foreground leading-relaxed">{explanation}</p>
     </div>
   )
+}
+
+/** Tier display names, shared by the eyebrow badge and the hero fallback title. */
+const TIER_LABEL: Record<"starter" | "full" | "premium", string> = {
+  starter: "Starter Insights",
+  full: "Full Report",
+  premium: "Premium Report",
 }
 
 const DAY_COLORS = [
@@ -113,11 +122,7 @@ export function PaidReportClient({
                   style={{ backgroundColor: freeScores.profile.color }}
                 />
               )}
-              {tier === "starter"
-                ? "Starter Insights"
-                : tier === "full"
-                ? "Full Report"
-                : "Premium Report"}
+              {TIER_LABEL[tier]}
             </div>
 
             {freeScores && (
@@ -139,8 +144,27 @@ export function PaidReportClient({
               </div>
             )}
 
+            {/* Structurally distinct from the report body on purpose.
+              *
+              * This used to render `r.opening.split(".")[0]`, so the hero showed
+              * the opening's first sentence and the "Your Pattern" card below
+              * then repeated the whole opening — the same sentence twice, a few
+              * hundred pixels apart. It was also brittle: any full stop in the
+              * profile type or a decimal in the copy truncated the headline.
+              *
+              * The tagline is a different string from a different source, so the
+              * hero states the profile and the chapter carries the full
+              * educational opening, exactly once.
+              *
+              * It goes through heroTaglineFor rather than reading
+              * freeScores.profile.tagline directly because getProfile keys purely
+              * on the OVERALL score: its >= 80 branch claims "all three pathways
+              * being well supported", which is reachable with a strained pathway
+              * (pre 95 / pro 25 / post 95 = 81) and would contradict the opening
+              * a few hundred pixels below. heroTaglineFor applies the same
+              * Framing the report body uses. */}
             <h1 className="font-serif text-3xl font-semibold sm:text-4xl leading-snug text-balance">
-              {r.opening.split(".")[0]}.
+              {(freeScores && heroTaglineFor(freeScores)) ?? `Your ${TIER_LABEL[tier]}`}
             </h1>
 
           </div>
@@ -325,13 +349,21 @@ export function PaidReportClient({
               </ScrollReveal>
             </section>
 
-            {/* 5 Foods Chosen For You */}
+            {/* Priority foods — count comes from FOOD_TOOL_COUNT, see below */}
             <section>
               <ScrollReveal>
+                {/* Subtitle is honest about the mechanism. The previous one —
+                  * "Selected specifically based on your answers — not generic
+                  * recommendations" — implied per-person selection, but these come
+                  * from a fixed catalogue ordered by the reader's priority pathway.
+                  * That IS answer-driven, and it is not bespoke. */}
                 <SectionHeader
-                  eyebrow="Personalised Foods"
-                  title="5 Foods Chosen For You"
-                  subtitle="Selected specifically based on your answers — not generic recommendations."
+                  eyebrow="Your Priority Foods"
+                  // The count is a contract with buildFoodSystemReport, not a
+                  // prose choice — interpolated so the heading cannot promise a
+                  // number the builder does not produce.
+                  title={`${FOOD_TOOL_COUNT} Foods Chosen For You`}
+                  subtitle="A practical starting set chosen to support your current priority pathway."
                 />
                 <div className="grid gap-4 sm:grid-cols-2">
                   {rFull.specificFoodList.map((food, i) => (
@@ -357,6 +389,12 @@ export function PaidReportClient({
                           {food.howToUse}
                         </p>
                       </div>
+                      {food.swap && (
+                        <p className="text-[11px] leading-relaxed text-muted-foreground">
+                          <span className="font-semibold text-foreground">Swap: </span>
+                          {food.swap}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
