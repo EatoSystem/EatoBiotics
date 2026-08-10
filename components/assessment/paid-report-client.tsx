@@ -62,6 +62,13 @@ function TopTriggerCard({ trigger, explanation }: { trigger: string; explanation
   )
 }
 
+/** Tier display names, shared by the eyebrow badge and the hero fallback title. */
+const TIER_LABEL: Record<"starter" | "full" | "premium", string> = {
+  starter: "Starter Insights",
+  full: "Full Report",
+  premium: "Premium Report",
+}
+
 const DAY_COLORS = [
   "var(--icon-lime)",
   "var(--icon-green)",
@@ -113,11 +120,7 @@ export function PaidReportClient({
                   style={{ backgroundColor: freeScores.profile.color }}
                 />
               )}
-              {tier === "starter"
-                ? "Starter Insights"
-                : tier === "full"
-                ? "Full Report"
-                : "Premium Report"}
+              {TIER_LABEL[tier]}
             </div>
 
             {freeScores && (
@@ -139,8 +142,20 @@ export function PaidReportClient({
               </div>
             )}
 
+            {/* Structurally distinct from the report body on purpose.
+              *
+              * This used to render `r.opening.split(".")[0]`, so the hero showed
+              * the opening's first sentence and the "Your Pattern" card below
+              * then repeated the whole opening — the same sentence twice, a few
+              * hundred pixels apart. It was also brittle: any full stop in the
+              * profile type or a decimal in the copy truncated the headline.
+              *
+              * The tagline is a different string from a different source
+              * (getProfile in lib/assessment-scoring.ts), so the hero states the
+              * profile and the chapter carries the full educational opening,
+              * exactly once. */}
             <h1 className="font-serif text-3xl font-semibold sm:text-4xl leading-snug text-balance">
-              {r.opening.split(".")[0]}.
+              {freeScores?.profile?.tagline ?? `Your ${TIER_LABEL[tier]}`}
             </h1>
 
           </div>
@@ -328,10 +343,15 @@ export function PaidReportClient({
             {/* 5 Foods Chosen For You */}
             <section>
               <ScrollReveal>
+                {/* Subtitle is honest about the mechanism. The previous one —
+                  * "Selected specifically based on your answers — not generic
+                  * recommendations" — implied per-person selection, but these come
+                  * from a fixed catalogue ordered by the reader's priority pathway.
+                  * That IS answer-driven, and it is not bespoke. */}
                 <SectionHeader
-                  eyebrow="Personalised Foods"
+                  eyebrow="Your Priority Foods"
                   title="5 Foods Chosen For You"
-                  subtitle="Selected specifically based on your answers — not generic recommendations."
+                  subtitle="A practical starting set chosen to support your current priority pathway."
                 />
                 <div className="grid gap-4 sm:grid-cols-2">
                   {rFull.specificFoodList.map((food, i) => (

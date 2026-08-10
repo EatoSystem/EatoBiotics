@@ -266,6 +266,14 @@ const EVIDENCE: EvidenceNote[] = [
  * to this one. Every entry has a `swap`: the fallback's per-recommendation
  * requirement needs a realistic alternative on all five, not just some. */
 
+/**
+ * How many food tools a report shows. Exported because the legacy paid report
+ * renders this list under a literal "5 Foods" heading in two places
+ * (lib/pdf/report-pdf.tsx and components/assessment/paid-report-client.tsx),
+ * so the count is a contract rather than a local slice length.
+ */
+export const FOOD_TOOL_COUNT = 5
+
 export const TOOLS: Record<BioticScoreKey, ReportFoodTool[]> = {
   prebiotics: [
     {
@@ -459,7 +467,32 @@ export function buildFoodSystemReport(input: BuildReportInput): FoodSystemReport
       ? `Your answers suggest ${who} food system is working well across all three pathways, with ${PATHWAY_LABEL[priorityPathway]} the one with most room left.`
       : `Your answers suggest ${PATHWAY_LABEL[strongestPathway]} is ${who} strongest pathway, and that ${PATHWAY_LABEL[priorityPathway]} is where a change would show up fastest.`
 
-  const foodTools = [...TOOLS[priorityPathway], ...TOOLS[strongestPathway]].slice(0, 5)
+  // Five unique tools, priority pathway first.
+  //
+  // This used to be `[...TOOLS[priority], ...TOOLS[strongest]].slice(0, 5)`,
+  // which silently returned FOUR whenever priority and strongest were the two
+  // 2-item pathways (probiotics + postbiotics) — i.e. whenever prebiotics was
+  // the MIDDLE score, roughly a third of real orderings. The legacy report
+  // renders that list under a hard-coded "5 Foods" heading, so those customers
+  // saw a five-food promise with four cards. Topping up from the remaining
+  // pathway keeps the priority-first ordering and makes the count total:
+  // the catalogue holds 3 + 2 + 2 = 7 unique tools, so five is always reachable.
+  const toolOrder: BioticScoreKey[] = [
+    priorityPathway,
+    strongestPathway,
+    ...(Object.keys(TOOLS) as BioticScoreKey[]),
+  ]
+  const foodTools: ReportFoodTool[] = []
+  const seenFood = new Set<string>()
+  for (const pathway of toolOrder) {
+    for (const tool of TOOLS[pathway]) {
+      if (seenFood.has(tool.food)) continue
+      seenFood.add(tool.food)
+      foodTools.push(tool)
+      if (foodTools.length === FOOD_TOOL_COUNT) break
+    }
+    if (foodTools.length === FOOD_TOOL_COUNT) break
+  }
 
   return {
     mode: input.mode,

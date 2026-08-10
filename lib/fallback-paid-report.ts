@@ -74,6 +74,36 @@ function findAnswerText(questions: DeepQuestion[], answers: Record<string, unkno
 }
 
 /**
+ * How the report should talk to this customer.
+ *
+ * Deliberately NOT the same thing as the overall band. `computeOverall`
+ * (lib/assessment-scoring.ts) is `0.4·pre + 0.2·pro + 0.4·post` with a floor of
+ * 20 per pillar, so a customer who eats no fermented food at all — probiotics
+ * 0, floored to 20 — still scores ~72 with decent fibre and rhythm and lands in
+ * the "strong" band. Keying the maintenance copy on the overall band alone told
+ * that customer their 20/100 pathway was "well supported", "not a weakness to
+ * fix" and "doesn't need fixing", on a page that prints Probiotics 20/100 three
+ * sections later. The report contradicted itself.
+ *
+ *   protect  — strong overall AND no strained pathway. Maintenance framing.
+ *   mixed    — strong overall BUT the priority pathway is strained. Names the
+ *              strong foundation AND the under-supported pathway. Never claims
+ *              everything is fine.
+ *   building — middling overall.
+ *   early    — low overall. One manageable starting point.
+ *
+ * `mixed` exists so that no branch anywhere in this file can be reached by a
+ * profile whose weakest pathway contradicts the sentence it is about to read.
+ */
+type Framing = "protect" | "mixed" | "building" | "early"
+
+function framingFor(overallBand: Band, priorityBand: Band): Framing {
+  if (overallBand === "strong") return priorityBand === "strained" ? "mixed" : "protect"
+  if (overallBand === "building") return "building"
+  return "early"
+}
+
+/**
  * The shared context every section below reads from — computed once so the
  * opening, the food list, the plans and the priority map cannot disagree
  * about which pathway is the priority or how "good" the overall score is.
@@ -82,6 +112,9 @@ interface FallbackContext {
   input: FallbackInput
   foodSystem: FoodSystemReport
   overallBand: Band
+  /** Band of the weakest pathway — the guard against `protect` copy on a gap. */
+  priorityBand: Band
+  framing: Framing
   priority: BioticScoreKey
   strongest: BioticScoreKey
   priorityLabel: string
@@ -108,11 +141,15 @@ function buildContext(input: FallbackInput): FallbackContext {
   const ranked = orderedByNeed(biotics)
   const priority = ranked[0][0]
   const strongest = ranked[ranked.length - 1][0]
+  const overallBand = band(input.overall)
+  const priorityBand = band(ranked[0][1])
 
   return {
     input,
     foodSystem,
-    overallBand: band(input.overall),
+    overallBand,
+    priorityBand,
+    framing: framingFor(overallBand, priorityBand),
     priority,
     strongest,
     priorityLabel: PATHWAY_LABEL[priority],
@@ -129,31 +166,51 @@ function buildContext(input: FallbackInput): FallbackContext {
 }
 
 /* ── Opening ──────────────────────────────────────────────────────────────
- * Band-aware by construction: the lead sentence branches on the OVERALL band,
- * so a strong profile can never be told it has "clear pressure points" and a
- * strained one is never praised as "a strong foundation". The detail sentence
- * always names the priority pathway using "your answers suggest" framing.
- * This is deliberately NOT what the hero renders — paid-report-client.tsx's
- * hero uses freeScores.profile.tagline instead, so the hero and this card
- * never repeat the same sentence. */
+ * Framing-aware by construction (see Framing above): the lead sentence reads
+ * the OVERALL band and the PRIORITY pathway's band together, so a strong
+ * profile can never be told it has "clear pressure points", a strained one is
+ * never praised as "a strong foundation", and a strong-overall profile with one
+ * strained pathway is told about BOTH rather than being told everything is fine.
+ *
+ * The hero does not render any part of this. paid-report-client.tsx's <h1> uses
+ * freeScores.profile.tagline (a different string from a different source), and
+ * this opening appears once, in full, in the "Your Pattern" card. */
 function openingFor(ctx: FallbackContext): string {
   const who = ctx.isFamily ? "your household's" : "your"
+  const scoreLead = `Your ${ctx.input.profile.type} score of ${ctx.input.overall}/100 suggests ${who} food system`
 
-  const lead =
-    ctx.overallBand === "strong"
-      ? `Your ${ctx.input.profile.type} score of ${ctx.input.overall}/100 suggests ${who} food system is well supported across the board.`
-      : ctx.overallBand === "building"
-      ? `Your ${ctx.input.profile.type} score of ${ctx.input.overall}/100 suggests ${who} food system has real strengths and one area still settling.`
-      : `Your ${ctx.input.profile.type} score of ${ctx.input.overall}/100 suggests ${who} food system is early in its development.`
-
-  const detail =
-    ctx.overallBand === "strong"
-      ? `${ctx.strongestLabel} and ${ctx.priorityLabel} both look well supported in your answers — the useful work now is protecting what already holds rather than rebuilding it.`
-      : ctx.priority === ctx.strongest
-      ? `Your answers suggest ${ctx.priorityLabel} is the pathway with the most room to grow.`
-      : `The strongest signal is that ${ctx.strongestLabel} is already working for you, while ${ctx.priorityLabel} is where your answers suggest a change would show up fastest.`
-
-  return `${lead} ${detail}`
+  switch (ctx.framing) {
+    case "protect":
+      return (
+        `${scoreLead} is well supported across the board. ` +
+        `${ctx.strongestLabel} and ${ctx.priorityLabel} both look well supported in your answers — ` +
+        `the useful work now is protecting what already holds rather than rebuilding it.`
+      )
+    case "mixed":
+      // Strong overall, one strained pathway. Both facts, in that order, with
+      // the weak pathway named and its score stated so the sentence cannot be
+      // read as "everything is fine".
+      return (
+        `${scoreLead} has a strong overall foundation, with one pathway clearly under-supported. ` +
+        `${ctx.strongestLabel} is well supported in your answers at ${ctx.strongestScore}/100, ` +
+        `while ${ctx.priorityLabel} sits well below the rest at ${ctx.priorityScore}/100 — ` +
+        `that gap is worth prioritising before anything else.`
+      )
+    case "building":
+      return (
+        `${scoreLead} has real strengths and one area still settling. ` +
+        (ctx.priority === ctx.strongest
+          ? `Your answers suggest ${ctx.priorityLabel} is the pathway with the most room to grow.`
+          : `The strongest signal is that ${ctx.strongestLabel} is already working for you, while ${ctx.priorityLabel} is where your answers suggest a change would show up fastest.`)
+      )
+    case "early":
+      return (
+        `${scoreLead} is early in its development. ` +
+        (ctx.priority === ctx.strongest
+          ? `Your answers suggest ${ctx.priorityLabel} is the pathway with the most room to grow.`
+          : `The strongest signal is that ${ctx.strongestLabel} is already working for you, while ${ctx.priorityLabel} is where your answers suggest a change would show up fastest.`)
+      )
+  }
 }
 
 function scoreInterpretationFor(ctx: FallbackContext): string {
@@ -166,15 +223,21 @@ function strengthsFor(ctx: FallbackContext): { strengths: string[]; strengthExpl
     strengths: [
       `${ctx.strongestLabel} foundation`,
       "Useful self-awareness",
-      ctx.overallBand === "strong" ? "A pattern worth protecting" : "Clear improvement target",
+      ctx.framing === "protect"
+        ? "A pattern worth protecting"
+        : ctx.framing === "mixed"
+        ? "A strong base to build from"
+        : "Clear improvement target",
     ],
     strengthExplanations: [
       `Your ${ctx.strongestLabel} score of ${ctx.strongestScore}/100 suggests there is already something in your food system worth protecting and repeating.`,
       ctx.goal
         ? `Your answer about success gives the plan a practical direction: ${ctx.goal}.`
         : "Completing the deeper questions gives the plan more context than a simple score alone.",
-      ctx.overallBand === "strong"
+      ctx.framing === "protect"
         ? "With all three pathways well supported, the priority is consistency — keeping what already works rather than searching for something to fix."
+        : ctx.framing === "mixed"
+        ? `Two pathways are already carrying real weight, so the work on ${ctx.priorityLabel} starts from a strong base rather than from nothing.`
         : `Because ${ctx.priorityLabel} is the lowest signal, your first changes can be focused instead of scattered.`,
     ],
   }
@@ -186,7 +249,23 @@ function strengthsFor(ctx: FallbackContext): { strengths: string[]; strengthExpl
  * Everyone else keeps the priority-pathway-led framing.
  */
 function opportunitiesFor(ctx: FallbackContext): { opportunities: string[]; opportunityExplanations: string[] } {
-  if (ctx.overallBand === "strong") {
+  if (ctx.framing === "mixed") {
+    // Strong overall, one strained pathway: this is a real gap, so it is named
+    // as one. None of the "watch-point rather than a weakness" copy below is
+    // reachable from here.
+    return {
+      opportunities: [`${ctx.priorityLabel} support`, "Keeping the rest steady", "Symptom feedback"],
+      opportunityExplanations: [
+        `${ctx.priorityLabel} at ${ctx.priorityScore}/100 is the clear gap in an otherwise well-supported system, and closing it is the highest-value change available to you.`,
+        `Your other two pathways are already doing real work — the aim is to add ${ctx.priorityLabel.toLowerCase()} support without disturbing what is working.`,
+        ctx.symptoms
+          ? `You flagged ${ctx.symptoms}, so build the new pathway in gradually and watch how your body responds.`
+          : "Add the new pathway gradually and let your own comfort set the pace.",
+      ],
+    }
+  }
+
+  if (ctx.framing === "protect") {
     return {
       opportunities: ["Protecting variety", "Steady rhythm", "Noticing early"],
       opportunityExplanations: [
@@ -218,16 +297,22 @@ function opportunitiesFor(ctx: FallbackContext): { opportunities: string[]; oppo
  * maintenance rather than a "fix this" pitch.
  */
 function topTriggerFor(ctx: FallbackContext): { topTrigger: string; topTriggerExplanation: string } {
-  if (ctx.overallBand === "strong") {
+  if (ctx.framing === "protect") {
     return {
-      topTrigger: `Keep ${ctx.priorityLabel.toLowerCase()} steady — it doesn't need fixing, just protecting.`,
+      topTrigger: `Keep ${ctx.priorityLabel.toLowerCase()} steady — the pattern is working, so protect it.`,
       topTriggerExplanation: `Your score pattern suggests every pathway is already working. The highest-value move from here is consistency, not correction: repeat what is already working rather than adding intensity it does not need.`,
+    }
+  }
+  if (ctx.framing === "mixed") {
+    return {
+      topTrigger: `${ctx.priorityLabel} is the one pathway holding the rest back.`,
+      topTriggerExplanation: `Your overall score is strong, but ${ctx.priorityLabel.toLowerCase()} at ${ctx.priorityScore}/100 sits well below your other two pathways. That single gap is where a change would show up fastest, and it is worth prioritising ahead of anything else in this report.`,
     }
   }
   return {
     topTrigger: `${ctx.priorityLabel} looks like the highest-impact place to begin.`,
     topTriggerExplanation:
-      ctx.overallBand === "strained"
+      ctx.framing === "early"
         ? `Your answers point clearly to ${ctx.priorityLabel.toLowerCase()} as the one place to focus for now. One small, repeatable change here is worth more than several partial changes elsewhere — start with this and let the rest wait.`
         : `Your score pattern suggests that improving ${ctx.priorityLabel.toLowerCase()} should create the clearest early progress. Start with consistency before intensity: small daily inputs are more valuable than an ambitious reset that only lasts a few days.`,
   }
@@ -241,13 +326,13 @@ function sevenDayPlanFor(ctx: FallbackContext): DeepStarterReport["sevenDayPlan"
   const tool = ctx.foodSystem.foodTools[0]
   const tool2 = ctx.foodSystem.foodTools[1] ?? tool
   const label = ctx.priorityLabel.toLowerCase()
-  const isStrained = ctx.overallBand === "strained"
+  const isEarly = ctx.framing === "early"
 
   return [
     { day: "Monday", action: `Add ${tool.food.toLowerCase()} to a meal you already eat. ${tool.howToUse}` },
     {
       day: "Tuesday",
-      action: isStrained
+      action: isEarly
         ? "Repeat Monday's change again today — one habit repeated beats several new ones started at once."
         : `Include ${tool2.food.toLowerCase()} once today the same way: ${tool2.howToUse}`,
     },
@@ -282,7 +367,7 @@ function buildStarterReport(ctx: FallbackContext): DeepStarterReport {
     opportunityExplanations,
     sevenDayPlan: sevenDayPlanFor(ctx),
     closing: "The aim is not a perfect food system. It is a food system you can understand, repeat, and improve without losing the pleasure and practicality of eating.",
-    deepInsight: `Your deeper answers show that the most useful plan is a practical one: work with the meals and rhythms you already have, then improve the parts that create the most friction.\n\nThe biggest opportunity is to connect your symptoms, energy, and daily routine to a few repeatable food actions${ctx.overallBand === "strong" ? ", and protect the ones that already work" : ""}. That creates a stronger internal food system without turning every meal into a project.`,
+    deepInsight: `Your deeper answers show that the most useful plan is a practical one: work with the meals and rhythms you already have, then improve the parts that create the most friction.\n\nThe biggest opportunity is to connect your symptoms, energy, and daily routine to a few repeatable food actions${ctx.framing === "protect" ? ", and protect the ones that already work" : ""}. That creates a stronger internal food system without turning every meal into a project.`,
     topTrigger,
     topTriggerExplanation,
     scoreProjection: {
@@ -331,10 +416,14 @@ function buildFullReport(ctx: FallbackContext): DeepFullReport {
   return {
     ...starter,
     habitAnalysis:
-      ctx.overallBand === "strong"
+      ctx.framing === "protect"
         ? `Your current pattern looks well established across all three pathways. ${ctx.priorityLabel} has the most room of the three, but "most room" here means fine-tuning, not rebuilding.\n\nThe strongest practical move is to keep your best meals as easy to repeat as they are now — a reliable breakfast, a plant-rich base, and a live-food habit are worth protecting exactly as they are.`
+        : ctx.framing === "mixed"
+        ? `Your current pattern is two-thirds established: ${ctx.strongestLabel} is carrying real weight, while ${ctx.priorityLabel} at ${ctx.priorityScore}/100 is thin enough to be the limiting factor.\n\nThe strongest practical move is to add one repeatable ${label} habit and leave everything else alone. The pathways that already work do not need changing, and changing them would only make the new habit harder to keep.`
         : `Your current pattern looks less like a need for a dramatic reset and more like a need for better weekly structure. The lowest signal is ${ctx.priorityLabel}, so your plan should prioritise foods and habits that feed and stabilise the gut environment over time.\n\nThe strongest practical move is to make your best meals easier to repeat. A reliable breakfast, one prepared plant-rich base, and one fermented or live food option can do more than a complicated list of rules.`,
-    rhythmInsight: "Your food system will respond best to rhythm. Aim for regular meals, enough protein, and repeated plant variety before chasing novelty.",
+    // "responds", not "will respond": the fallback claims guard runs the real
+    // CLAIMS rules over this copy, and `\bwill \w+` is the promise rule.
+    rhythmInsight: "Your food system responds best to rhythm. Aim for regular meals, enough protein, and repeated plant variety before chasing novelty.",
     energyBreakdown: ctx.energy
       ? `You rated or described your energy as ${ctx.energy}. That makes steady blood sugar, fibre, hydration, and meal timing especially important, because gut comfort and energy often move together across the day.`
       : "Energy is one of the clearest feedback signals for this plan. Notice whether meals leave you steady, heavy, bloated, hungry, or clear-headed.",
@@ -396,12 +485,14 @@ function buildPremiumReport(ctx: FallbackContext): DeepPremiumReport {
     ...full,
     priorityMap: {
       biggestBlocker:
-        ctx.overallBand === "strong"
+        ctx.framing === "protect"
           ? `Drift on busy weeks, not a missing pathway`
           : `Inconsistent support for ${ctx.priorityLabel}`,
       blockerExplanation:
-        ctx.overallBand === "strong"
-          ? "With every pathway already supported, the realistic risk is not a gap — it is an ordinary system-you'll drift on a busy week rather than a food you are missing."
+        ctx.framing === "protect"
+          ? "With every pathway already supported, the realistic risk is drift — on a busy week you lose the pattern, rather than being short of any particular food."
+          : ctx.framing === "mixed"
+          ? `The blocker is specific rather than general: ${ctx.priorityLabel.toLowerCase()} is the one pathway your answers leave thin, and the rest of the system cannot compensate for it indefinitely.`
           : "The main blocker is not a lack of effort. It is that the gut gets mixed signals when supportive meals, rhythm, fibre, and recovery vary too much across the week.",
       biggestBuilder: `Your ${ctx.strongestLabel} habits`,
       builderExplanation: `${ctx.strongestLabel} is already working in your answers. Building the rest of the plan around what is already reliable makes the whole system easier to sustain than starting from nothing.`,
@@ -429,12 +520,14 @@ function buildPremiumReport(ctx: FallbackContext): DeepPremiumReport {
     systemInterpretation:
       "Your food system is best understood as a living pattern, not a fixed score. The assessment points to a system that can improve through regular inputs, gentler experimentation, and better feedback.\n\nThe practical priority is to build meals that are varied enough for the microbiome but familiar enough for real life. When that balance is right, improvement becomes easier to sustain.\n\nThis report should be treated as educational guidance, not medical advice. If symptoms are severe, persistent, unexplained, or worsening, it is important to speak with a qualified health professional.",
     systemStory:
-      ctx.overallBand === "strong"
+      ctx.framing === "protect"
         ? "You are protecting a food system that is already giving your body clear, consistent signals. The next step is simply to keep it that way through ordinary weeks."
+        : ctx.framing === "mixed"
+        ? `Most of your food system is already working, with one pathway still to fill in. The next step is to give ${label} the same steady attention the rest already gets.`
         : "You are building a food system that gives your body clearer signals. The next step is to make the helpful choices visible, repeatable, and calm enough to last.",
     gutDiagnosticSummary:
       "Your diagnostic answers add context to the score by showing how symptoms, history, and lifestyle may be interacting. The pattern is most useful when tracked over time rather than judged from one day.",
-    symptomPattern: `The symptom pattern should be interpreted alongside the ${ctx.overallBand === "strong" ? `${ctx.priorityLabel} signal, which has the most room of the three` : `lower ${ctx.priorityLabel} signal`}. Watch for meals that repeatedly create bloating, energy dips, irregularity, or brain fog, then adjust one variable at a time.`,
+    symptomPattern: `The symptom pattern should be interpreted alongside the ${ctx.framing === "protect" ? `${ctx.priorityLabel} signal, which has the most room of the three` : `lower ${ctx.priorityLabel} signal`}. Watch for meals that repeatedly create bloating, energy dips, irregularity, or brain fog, then adjust one variable at a time.`,
   }
 }
 
