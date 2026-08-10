@@ -165,9 +165,12 @@ function FullReportSections({
             The Food System Inside You
           </h1>
           <div className="relative mt-8 flex justify-center">
+            {/* Vertical bleed only — see the identical glow in
+              * paid-report-client.tsx for why the horizontal edges are pinned
+              * to the parent (#218). */}
             <div
               aria-hidden
-              className="pointer-events-none absolute -inset-6 -z-10 rounded-full opacity-70 blur-3xl print:hidden"
+              className="pointer-events-none absolute -inset-y-6 inset-x-0 -z-10 rounded-full opacity-70 blur-3xl print:hidden"
               style={{
                 background:
                   "radial-gradient(60% 60% at 50% 45%, color-mix(in srgb, var(--icon-green) 28%, transparent), transparent 75%)",
