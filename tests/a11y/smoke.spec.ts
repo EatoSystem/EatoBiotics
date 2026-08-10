@@ -32,13 +32,25 @@ import AxeBuilder from "@axe-core/playwright"
  *     as scanned here (no motion preference) ...........   0 violations
  *     with content actually rendered (reducedMotion) ... ~610 violations
  *
- * The cause is roughly 1,100 call sites that set text colour to a raw brand hue,
- * via `text-icon-*`, inline `style={{ color: "var(--icon-*)" }}`, or
- * `text-[var(--icon-*)]`. On white the raw hues run 1.55:1–2.96:1 and fail AA.
+ * The cause is roughly 1,100 call sites that set text colour to a raw brand hue.
+ * Three forms, all equivalent for our purposes: the `text-icon-…` utilities, an
+ * inline style setting `color` to a raw `--icon-…` custom property, and the
+ * arbitrary-value form of that same thing (a `text-` class wrapping the custom
+ * property in square brackets). On white the raw hues run 1.55:1–2.96:1 and
+ * fail AA.
+ *
+ * A note on how those names are written here, because it bit us: Tailwind v4's
+ * scanner reads comments, and an earlier version of this paragraph spelled the
+ * arbitrary-value form out literally with a `*` wildcard inside the brackets.
+ * The scanner lifted it as a real class and emitted `color: var(--icon-*)`,
+ * which is not valid CSS — that broke `next dev` for every page while leaving
+ * `next build` green, so CI never saw it (#217). Hence `…` rather than `*`, and
+ * hence the bracket form described in words instead of written out. If you need
+ * a literal example, put it somewhere the scanner does not read.
  *
  * ── Why the obvious fix is wrong ───────────────────────────────────────────
  *
- * Remapping `.text-icon-*` to the AA-safe `--icon-*-text` variants looks like a
+ * Remapping `.text-icon-…` to the AA-safe `--icon-…-text` variants looks like a
  * one-line win and is not: those variants are calibrated on white, and on
  * --foreground the polarity inverts — raw passes (4.91:1–9.36:1), -text fails
  * (2.96:1–3.02:1). A blanket remap fixes every light surface by breaking every
@@ -50,7 +62,7 @@ import AxeBuilder from "@axe-core/playwright"
  *   1. Mark dark sections with a class. They cannot be detected any other way —
  *      they use bg-foreground, bg-black, arbitrary hex, and translucent tints
  *      over dark parents. This is the real work.
- *   2. Then remap globally, with `.on-dark .text-icon-*` overriding back to raw.
+ *   2. Then remap globally, with `.on-dark .text-icon-…` overriding back to raw.
  *   3. Verify with axe on both light and dark surfaces — axe composites alpha
  *      correctly, which hand-rolled background-walking does not.
  *   4. Only then set `reducedMotion: "reduce"` in playwright.config.ts and move
