@@ -19,6 +19,7 @@ import type {
   DeepPremiumReport,
 } from "@/lib/claude-report"
 import { bioticLabel, type BioticKey } from "@/lib/report/visual-token"
+import { FOOD_TOOL_COUNT } from "@/lib/report/build-food-system-report"
 import {
   normalizeToBiotics,
   orderedByNeed,
@@ -958,7 +959,9 @@ export function ReportPDF({
           </Page>
 
           <Page size="A4" style={styles.page}>
-            <Text style={styles.sectionHeading}>Your 5 Priority Foods</Text>
+            {/* Count interpolated, not written out: it is a contract with
+                buildFoodSystemReport, which guarantees FOOD_TOOL_COUNT tools. */}
+            <Text style={styles.sectionHeading}>Your {FOOD_TOOL_COUNT} Priority Foods</Text>
             {fullReport.specificFoodList.map((item, i) => (
               <FoodCard
                 key={i}

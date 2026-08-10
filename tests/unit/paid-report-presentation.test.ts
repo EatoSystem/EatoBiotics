@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server"
 
 import { PaidReportClient } from "@/components/assessment/paid-report-client"
 import { buildFallbackPaidReport } from "@/lib/fallback-paid-report"
+import { heroTaglineFor } from "@/lib/report/framing"
 import type { DeepPremiumReport } from "@/lib/claude-report"
 
 /**
@@ -108,13 +109,32 @@ describe("paid report: the opening is not duplicated", () => {
     expect(body).toContain(text(reportFor(name).opening))
   })
 
-  it("the hero shows the profile tagline, not a slice of the opening", () => {
-    const body = text(renderPaid("strongWithStrained"))
-    expect(body).toContain(PROFILE.tagline)
+  it.each(NAMES)("%s — the hero shows a tagline, not a slice of the opening", (name) => {
+    const p = PROFILES[name]
+    const body = text(renderPaid(name))
+
+    // Whatever heroTaglineFor decides for these scores is what must render:
+    // the authored tagline normally, the framing-aware override when the
+    // priority pathway is strained. Asserted through the helper rather than a
+    // literal so this test cannot drift from the component.
+    const expected = heroTaglineFor({
+      overall: p.overall,
+      subScores: p.subScores,
+      profile: PROFILE,
+    })!
+    expect(body).toContain(expected)
+
     // The brittle construction that caused the duplication.
-    expect(renderPaid("strongWithStrained")).not.toContain(
-      reportFor("strongWithStrained").opening.split(".")[0] + ".</h1>",
-    )
+    expect(renderPaid(name)).not.toContain(reportFor(name).opening.split(".")[0] + ".</h1>")
+  })
+
+  it("a strong overall score with a strained pathway gets the framing-aware hero", () => {
+    // The regression from the PR #216 review fix: pointing the hero at
+    // getProfile's tagline exposed its score-only >= 80 branch. See
+    // tests/unit/hero-tagline-agreement.test.ts for the full argument.
+    const body = text(renderPaid("strongWithStrained"))
+    expect(body).toContain("A strong overall base, with Probiotics the thinnest part of your answers.")
+    expect(body).not.toContain("all three pathways being well supported")
   })
 })
 

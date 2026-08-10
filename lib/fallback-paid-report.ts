@@ -8,6 +8,9 @@ import type {
 import type { PaidReportTier } from "@/lib/paid-report-session"
 import { band, buildFoodSystemReport, type Band } from "@/lib/report/build-food-system-report"
 import { normalizeToBiotics, orderedByNeed, PATHWAY_LABEL, type BioticScoreKey } from "@/lib/report/subscores"
+// The framing rule is shared with the paid report's hero headline so the two
+// cannot drift — see lib/report/framing.ts for why it is not `getProfile`.
+import { framingFor, type Framing } from "@/lib/report/framing"
 import type { FoodSystemReport, ReportMode } from "@/lib/report/food-system-report-types"
 
 /* ── Why this file exists ──────────────────────────────────────────────────
@@ -71,36 +74,6 @@ function formatAnswer(question: DeepQuestion, raw: unknown): string | null {
 function findAnswerText(questions: DeepQuestion[], answers: Record<string, unknown>, matcher: RegExp): string | null {
   const question = questions.find((q) => matcher.test(q.text))
   return question ? formatAnswer(question, answers[question.id]) : null
-}
-
-/**
- * How the report should talk to this customer.
- *
- * Deliberately NOT the same thing as the overall band. `computeOverall`
- * (lib/assessment-scoring.ts) is `0.4·pre + 0.2·pro + 0.4·post` with a floor of
- * 20 per pillar, so a customer who eats no fermented food at all — probiotics
- * 0, floored to 20 — still scores ~72 with decent fibre and rhythm and lands in
- * the "strong" band. Keying the maintenance copy on the overall band alone told
- * that customer their 20/100 pathway was "well supported", "not a weakness to
- * fix" and "doesn't need fixing", on a page that prints Probiotics 20/100 three
- * sections later. The report contradicted itself.
- *
- *   protect  — strong overall AND no strained pathway. Maintenance framing.
- *   mixed    — strong overall BUT the priority pathway is strained. Names the
- *              strong foundation AND the under-supported pathway. Never claims
- *              everything is fine.
- *   building — middling overall.
- *   early    — low overall. One manageable starting point.
- *
- * `mixed` exists so that no branch anywhere in this file can be reached by a
- * profile whose weakest pathway contradicts the sentence it is about to read.
- */
-type Framing = "protect" | "mixed" | "building" | "early"
-
-function framingFor(overallBand: Band, priorityBand: Band): Framing {
-  if (overallBand === "strong") return priorityBand === "strained" ? "mixed" : "protect"
-  if (overallBand === "building") return "building"
-  return "early"
 }
 
 /**
