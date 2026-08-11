@@ -202,7 +202,14 @@ export interface FoodSystemLens {
    * leave the reader with two calendars and no idea which to follow.
    */
   loopAdditions: Array<{ week: number; action: string }>
-  evidenceNotes: EvidenceNote[]
+  /**
+   * Optional, and currently never populated — see the note above ADDON_SAFETY
+   * in lib/report/addon-lens.ts. The lens ships without citations until its
+   * sources can actually be opened and checked against the sentences they sit
+   * beside. Absent is fine; present-but-empty is not, because that renders an
+   * "Evidence" heading with nothing under it.
+   */
+  evidenceNotes?: EvidenceNote[]
   /** Fixed per-add-on safety wording. Never model-generated, never paraphrased. */
   safetyNote: string
   /** Accent token, reused from the system's own branding. */
@@ -448,7 +455,9 @@ export const foodSystemReportSchema = z.object({
         .array(z.object({ week: z.number().int().min(1).max(4), action: z.string().min(20) }))
         .min(2)
         .max(3),
-      evidenceNotes: z.array(evidenceNoteSchema).min(1),
+      // Optional, but never empty when present — an empty array would render a
+      // bare "Evidence" heading.
+      evidenceNotes: z.array(evidenceNoteSchema).min(1).optional(),
       safetyNote: z.string().min(20),
       accent: z.string().min(1),
     })

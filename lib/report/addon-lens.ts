@@ -1,7 +1,7 @@
 import type { AddonType } from "@/lib/addon-types"
 import { SYSTEMS } from "@/lib/systems"
 import { PATHWAY_LABEL, type BioticScoreKey } from "@/lib/report/subscores"
-import type { EvidenceNote, FoodSystemLens, FoodSystemReport } from "@/lib/report/food-system-report-types"
+import type { FoodSystemLens, FoodSystemReport } from "@/lib/report/food-system-report-types"
 
 /**
  * The deterministic lens chapter — what a purchased add-on actually produces.
@@ -74,71 +74,52 @@ export const ADDON_SAFETY: Record<AddonType, string> = {
     "nutrition is a significant part of the picture, work with a qualified professional.",
 }
 
-/* ── Evidence ────────────────────────────────────────────────────────────────
+/* ── Evidence: deliberately absent ──────────────────────────────────────────
  *
- * Established bodies and consensus statements only. Two notes are shared with
- * the core report's own EVIDENCE list (ISAPP on prebiotics, WHO on diet
- * pattern) because they carry the same claim and there is no reason to cite a
- * second source for it. */
-const EV_ISAPP: EvidenceNote = {
-  claim:
-    "Prebiotic fibres are food components that gut microbes ferment, and are defined by the benefit that fermentation confers.",
-  sourceTitle: "Gibson et al., ISAPP consensus statement on the definition and scope of prebiotics (2017)",
-  sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/28611480/",
-}
-
-const EV_WHO_DIET: EvidenceNote = {
-  claim:
-    "General healthy-diet guidance emphasises overall pattern — variety of plants, limited free sugars and salt — rather than single foods.",
-  sourceTitle: "WHO, Healthy diet fact sheet",
-  sourceUrl: "https://www.who.int/news-room/fact-sheets/detail/healthy-diet",
-}
-
-const EV_FERMENTED: EvidenceNote = {
-  claim:
-    "In a controlled trial, a fermented-food diet increased microbiome diversity and decreased markers of inflammation; a high-fibre diet did not show the same effect over the same period.",
-  sourceTitle: "Wastyk et al., Gut-microbiota-targeted diets modulate human immune status, Cell (2021)",
-  sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/34256014/",
-}
-
-const ADDON_EVIDENCE: Record<AddonType, EvidenceNote[]> = {
-  stability: [
-    EV_ISAPP,
-    {
-      claim:
-        "NHS guidance on irritable bowel syndrome describes food, stress and routine as things people can adjust, and lists the symptoms that should be checked by a GP.",
-      sourceTitle: "NHS, Irritable bowel syndrome (IBS)",
-      sourceUrl: "https://www.nhs.uk/conditions/irritable-bowel-syndrome-ibs/",
-    },
-  ],
-  glucose: [
-    EV_WHO_DIET,
-    {
-      claim:
-        "Dietary fibre intake is associated with a range of health outcomes across large observational and trial data, and most populations eat less than recommended.",
-      sourceTitle: "Reynolds et al., Carbohydrate quality and human health, The Lancet (2019)",
-      sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/30638909/",
-    },
-  ],
-  mind: [
-    EV_FERMENTED,
-    {
-      claim:
-        "The gut–brain axis is an active area of research; reviews describe associations between diet, the microbiome and mood rather than established cause and effect.",
-      sourceTitle: "NIH NCCIH, Probiotics: What You Need To Know",
-      sourceUrl: "https://www.nccih.nih.gov/health/probiotics-what-you-need-to-know",
-    },
-  ],
-  performance: [
-    EV_WHO_DIET,
-    {
-      claim:
-        "NHS guidance frames everyday physical activity and eating as mutually supporting habits, without prescribing performance targets.",
-      sourceTitle: "NHS, Physical activity guidelines for adults aged 19 to 64",
-      sourceUrl: "https://www.nhs.uk/live-well/exercise/physical-activity-guidelines-for-adults-aged-19-to-64/",
-    },
-  ],
-}
+ * The lens chapter ships with NO citations, and that is a decision rather than
+ * an omission.
+ *
+ * An earlier revision of this file carried two sources per lens. They could not
+ * be verified: every candidate domain is blocked by this environment's egress
+ * policy — pubmed.ncbi.nlm.nih.gov returns a 403 policy denial, and who.int,
+ * nhs.uk, nccih.nih.gov, isappscience.org and nature.com do not connect. A
+ * citation printed beside a health statement in a paid report is exactly the
+ * thing that must not be published on remembered identifiers, so the block is
+ * respected rather than worked around.
+ *
+ * Two of those pairings were also wrong on their merits, and would have had to
+ * change even with full network access:
+ *
+ *   - Mind cited Wastyk et al. 2021, a microbiome and inflammation trial. It
+ *     says nothing about mood, focus or cognition, so it cannot sit beside a
+ *     gut–brain sentence.
+ *   - Performance cited NHS physical-activity guidance, which is about how much
+ *     to move, not about fuelling or recovery.
+ *
+ * WHAT THE FOLLOW-UP NEEDS. Each lens needs 2–3 sources that support its
+ * specific adjacent sentence, from primary research, a recognised consensus
+ * statement, or a public-health body. Candidates worth checking first — ALL
+ * UNVERIFIED, none to be used until opened and read:
+ *
+ *   Stability   ISAPP prebiotics consensus (Gibson et al., Nat Rev Gastro
+ *               Hepatol 2017) for the fibre-substrate line; an authoritative
+ *               clinical source (NHS or NICE on IBS) for the red-flag wording,
+ *               which is the one place this chapter points at urgent care.
+ *   Glucose     A carbohydrate-quality/fibre source for the meal-composition
+ *               line (Reynolds et al., Lancet 2019 was the candidate). Must NOT
+ *               be a source about glucose measurement — the questionnaire does
+ *               not measure it.
+ *   Mind        A cautious diet-and-mental-health review, e.g. Firth et al.,
+ *               "Food and mood", BMJ 2020. Microbiome evidence alone does not
+ *               support a mental-health framing.
+ *   Performance A sports-nutrition position stand covering fuelling and
+ *               recovery, e.g. the ACSM / Academy of Nutrition and Dietetics /
+ *               Dietitians of Canada joint stand on Nutrition and Athletic
+ *               Performance.
+ *
+ * The core report's own EVIDENCE list in build-food-system-report.ts is
+ * untouched: those four are already live in production and are not in scope.
+ */
 
 /* ── Per-lens metadata, reusing the site's own system definitions ─────────── */
 function lensMeta(addon: AddonType) {
@@ -615,7 +596,6 @@ export function buildAddonLens(input: BuildLensInput): FoodSystemLens {
       why: `${PATHWAY_LABEL[priority]} is where this lens meets your Food System score. ${body.priorityWhy}`,
     },
     loopAdditions: body.loopAdditions.slice(0, 3),
-    evidenceNotes: ADDON_EVIDENCE[addon],
     safetyNote: ADDON_SAFETY[addon],
     accent: meta.accent,
   }
