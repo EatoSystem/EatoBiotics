@@ -7,9 +7,12 @@ import type { DeepReport } from "@/lib/claude-report"
 import {
   getPaidReportSummaryFromSession,
   isCheckoutSessionSettled,
+  asAddon,
   type PaidReportFoundation,
   type PaidReportHealthSystem,
 } from "@/lib/paid-report-session"
+import { buildAddonLens, ensureAddonLens, mergeGeneratedLens } from "@/lib/report/addon-lens"
+import { lensAnswers } from "@/lib/assessment/addon-questions"
 import { buildFallbackPaidReport } from "@/lib/fallback-paid-report"
 import {
   buildFoodSystemReport,
@@ -95,7 +98,8 @@ function getBioticScores(sub: SubScores): Record<"prebiotics" | "probiotics" | "
 function buildDeepAnalysisPrompt(
   freeScores: FreeScores,
   questions: DeepQuestion[],
-  answers: Record<string, unknown>
+  answers: Record<string, unknown>,
+  lens?: { addon: PaidReportHealthSystem; answers: Record<string, unknown> } | null,
 ): string {
   const { overall, subScores, profile, tier } = freeScores
   const qaBlock = buildQABlock(questions, answers)
@@ -203,6 +207,43 @@ function buildDeepAnalysisPrompt(
   "membershipBridge": "[One sentence connecting their top finding to what consistent daily tracking enables]"
 }`
 
+  // The lens block. Only the three prose fields are requested: everything else
+  // in the chapter is derived and would be overwritten anyway, so asking for it
+  // would waste tokens and invite the model to believe it owns those fields.
+  const lensBlock = lens
+    ? `
+
+THE CUSTOMER ALSO PURCHASED A FOCUSED LENS: ${lens.addon.toUpperCase()}.
+Their lens answers:
+${Object.entries(lens.answers)
+        .map(([k, v]) => `  ${k}: ${Array.isArray(v) ? v.join(", ") : String(v)}`)
+        .join("\n") || "  (none answered)"}
+
+Add a "lens" object INSIDE "foodSystem" with exactly these three fields:
+{
+  "lens": {
+    "patternSummary": "2-3 sentences describing what THEIR lens answers show, in 'your answers suggest' language",
+    "pathwayConnections": [
+      {"pathway": "prebiotics", "connection": "one sentence linking this lens to prebiotics"},
+      {"pathway": "probiotics", "connection": "one sentence linking this lens to probiotics"},
+      {"pathway": "postbiotics", "connection": "one sentence linking this lens to postbiotics"}
+    ],
+    "signals": [{"label": "must match a label we supply", "whatToNotice": "one observation prompt"}]
+  }
+}
+
+RULES FOR THE LENS — these are enforced after you respond, so breaking them only
+loses your text:
+- Do NOT invent a score for this lens. It has none.
+- Do NOT state or imply any measurement. For glucose in particular: this
+  questionnaire does not measure blood glucose.
+- Do NOT diagnose, or claim that food will change a symptom, mood or condition.
+- Use "your answers suggest", "is associated with", "may". Never "you have",
+  "this will fix", or a deadline.
+- Safety wording, evidence, the priority connection and the actions are fixed by
+  us and will replace anything you write for them.`
+    : ""
+
   return `You are EatoBiotics — a food system health expert writing a deeply personalised paid report.
 
 FREE ASSESSMENT RESULTS:
@@ -240,6 +281,8 @@ WRITING RULES:
   application — write the prose only, and do not invent numbers
 - In "bodySignalMap", keep the given "id" values and write only the
   explanations. These are food-pattern clues, never findings about the body
+
+${lensBlock}
 
 ${tierSchemaInstructions}
 
@@ -413,16 +456,37 @@ export async function POST(req: NextRequest) {
   const reportMode = resolveReportMode(freeScores)
   const foodSystemInput = { mode: reportMode, subScores, overall, profile }
 
+  // ── Entitlement ───────────────────────────────────────────────────────────
+  // Taken from `freeScores`, which is decoded from the SETTLED Stripe session a
+  // few steps above — not from the request body. The submitted payload carries
+  // only sessionId, questions and answers, so a client cannot claim a lens it
+  // did not buy, and re-validating through asAddon means a tampered or
+  // unrecognised value becomes null rather than an unrenderable string.
+  const entitledAddon = asAddon(freeScores.selectedAddon)
+  const isFamilyReport = freeScores.foundationType === "family"
+  // Only the answers belonging to THIS lens. A payload stuffed with another
+  // lens's ids contributes nothing.
+  const lensAnswerSet = lensAnswers(entitledAddon, answers)
+
+  /** Attach the derived lens to a freshly built report. No-op without one. */
+  const withLens = (r: DeepReport): DeepReport =>
+    ensureAddonLens(r, { addon: entitledAddon, answers: lensAnswerSet, isFamily: isFamilyReport })
+
   if (existingRow?.report_json) {
     // Reports persisted before the educational block existed come back without
     // one, and this path returns them verbatim — so enrich rather than reuse
     // blind. Derived only: no regeneration, so a retry costs nothing extra and
     // the report keeps whatever narrative it already had.
-    report = ensureFoodSystem(existingRow.report_json as DeepReport, foodSystemInput)
+    report = ensureAddonLens(
+      ensureFoodSystem(existingRow.report_json as DeepReport, foodSystemInput),
+      { addon: entitledAddon, answers: lensAnswerSet, isFamily: isFamilyReport },
+    )
   } else if (!process.env.ANTHROPIC_API_KEY) {
     console.warn("[submit-deep-assessment] ANTHROPIC_API_KEY not set; using fallback paid report")
     reportError = "ANTHROPIC_API_KEY not set — used deterministic fallback"
-    report = buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers, mode: reportMode })
+    report = withLens(
+      buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers, mode: reportMode }),
+    )
   } else {
     try {
       const effectiveTier = tier === "personal" ? "full" : tier
@@ -434,7 +498,12 @@ export async function POST(req: NextRequest) {
         messages: [
           {
             role: "user",
-            content: buildDeepAnalysisPrompt(freeScores, questions, answers),
+            content: buildDeepAnalysisPrompt(
+              freeScores,
+              questions,
+              answers,
+              entitledAddon ? { addon: entitledAddon, answers: lensAnswerSet } : null,
+            ),
           },
         ],
       })
@@ -457,11 +526,31 @@ export async function POST(req: NextRequest) {
       // the safety footer all come from the assessment result, and only prose is
       // overlaid. So a model that omits the block, half-fills it, or invents a
       // score cannot put any of that in front of a customer.
-      const foodSystemBase = buildFoodSystemReport(foodSystemInput)
-      const foodSystem = mergeGeneratedNarrative(
-        foodSystemBase,
-        (parsed as { foodSystem?: unknown }).foodSystem,
-      )
+      const derivedBase = buildFoodSystemReport(foodSystemInput)
+      // The lens is DERIVED here for the same reason the block around it is:
+      // identity, priority connection, actions and safety wording must come
+      // from the assessment, not from the response.
+      const foodSystemBase: typeof derivedBase = entitledAddon
+        ? {
+            ...derivedBase,
+            lens: buildAddonLens({
+              addon: entitledAddon,
+              answers: lensAnswerSet,
+              foodSystem: derivedBase,
+              isFamily: isFamilyReport,
+            }),
+          }
+        : derivedBase
+
+      const generatedFoodSystem = (parsed as { foodSystem?: unknown }).foodSystem
+      const foodSystem = mergeGeneratedNarrative(foodSystemBase, generatedFoodSystem)
+      if (foodSystemBase.lens) {
+        // Prose only — see mergeGeneratedLens for the exact list it may touch.
+        foodSystem.lens = mergeGeneratedLens(
+          foodSystemBase.lens,
+          (generatedFoodSystem as { lens?: unknown } | undefined)?.lens,
+        )
+      }
 
       // Validate what we assembled rather than trusting it. This used to be a
       // bare `as DeepReport` cast, so a malformed response was persisted to
@@ -480,7 +569,9 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       console.error("[submit-deep-assessment] Claude error; using fallback paid report:", err)
       reportError = `Claude generation failed — used fallback: ${err instanceof Error ? err.message : String(err)}`
-      report = buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers, mode: reportMode })
+      report = withLens(
+      buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers, mode: reportMode }),
+    )
     }
   }
 

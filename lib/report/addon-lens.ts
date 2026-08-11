@@ -568,6 +568,85 @@ const BUILDERS: Record<AddonType, (a: Answers, p: BioticScoreKey, v: Voice) => L
  * formed chapter for any known add-on, so the fallback path is never a
  * placeholder.
  */
+/**
+ * Attach a lens to a report that is entitled to one but does not have it.
+ *
+ * Mirrors `ensureFoodSystem`, and exists for the same reason: the reuse path
+ * returns a stored `report_json` verbatim, so a report generated before the
+ * lens shipped — or one whose generation predated the customer's entitlement
+ * being readable — would never gain a chapter the customer paid for. Derived
+ * only; no regeneration, so a retry costs nothing.
+ *
+ * A report that already has a lens keeps it. No add-on means no change at all,
+ * which is what keeps legacy and no-add-on reports byte-identical.
+ */
+export function ensureAddonLens<T extends { foodSystem?: FoodSystemReport }>(
+  report: T,
+  input: { addon: AddonType | null; answers: Answers; isFamily?: boolean },
+): T {
+  if (!input.addon) return report
+  if (!report.foodSystem) return report
+  if (report.foodSystem.lens) return report
+
+  return {
+    ...report,
+    foodSystem: {
+      ...report.foodSystem,
+      lens: buildAddonLens({
+        addon: input.addon,
+        answers: input.answers,
+        foodSystem: report.foodSystem,
+        isFamily: input.isFamily,
+      }),
+    },
+  }
+}
+
+/**
+ * Overlay generated prose onto a derived lens.
+ *
+ * The model may rewrite only three things — the pattern summary, the pathway
+ * explanations and what to notice for each signal. Everything else is taken
+ * from the derived chapter, whatever the response says:
+ *
+ *   key, name, shortLabel, examines   lens identity — a model renaming the
+ *                                     purchased lens is a billing problem
+ *   priorityConnection                derived from the core score ranking
+ *   loopAdditions                     the actions, derived from answers
+ *   safetyNote                        fixed, per-lens, non-negotiable
+ *   evidenceNotes                     never model-supplied
+ *   accent                            a brand token, not a colour to invent
+ *
+ * Signals are matched by label and count is capped by the derived list, so a
+ * model cannot add a fifth signal or drop one.
+ */
+export function mergeGeneratedLens(base: FoodSystemLens, generated: unknown): FoodSystemLens {
+  if (!generated || typeof generated !== "object") return base
+  const g = generated as {
+    patternSummary?: unknown
+    pathwayConnections?: Array<{ pathway?: unknown; connection?: unknown }>
+    signals?: Array<{ label?: unknown; whatToNotice?: unknown }>
+  }
+
+  const text = (v: unknown, min = 20): string | null =>
+    typeof v === "string" && v.trim().length >= min ? v.trim() : null
+
+  return {
+    ...base,
+    patternSummary: text(g.patternSummary, 40) ?? base.patternSummary,
+    pathwayConnections: base.pathwayConnections.map((pc) => {
+      const gen = Array.isArray(g.pathwayConnections)
+        ? g.pathwayConnections.find((x) => x?.pathway === pc.pathway)
+        : undefined
+      return { ...pc, connection: text(gen?.connection) ?? pc.connection }
+    }),
+    signals: base.signals.map((s) => {
+      const gen = Array.isArray(g.signals) ? g.signals.find((x) => x?.label === s.label) : undefined
+      return { ...s, whatToNotice: text(gen?.whatToNotice) ?? s.whatToNotice }
+    }),
+  }
+}
+
 export function buildAddonLens(input: BuildLensInput): FoodSystemLens {
   const { addon, answers, foodSystem, isFamily = false } = input
   const priority = foodSystem.systemSnapshot.priorityPathway
