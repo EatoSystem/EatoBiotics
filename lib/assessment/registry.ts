@@ -8,6 +8,7 @@
  * Read-only: it never writes to the underlying assessment stores.
  */
 
+import { ADDON_KEYS, isAddon, type AddonType } from "@/lib/addon-types"
 import { GLUCOSE_PILLAR_IDS } from "@/lib/glucose-assessment-data"
 import { computeGlucoseResult } from "@/lib/glucose-assessment-scoring"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
@@ -15,8 +16,10 @@ import type { StabilityAssessment } from "@/lib/stability/types"
 import type { PregnancyAssessment } from "@/lib/pregnancy/types"
 
 export type FoundationKey = "you" | "family"
-/** The Health systems that have a real assessment behind them (assessed today). */
-export type AssessedSystemKey = "stability" | "glucose" | "mind" | "performance"
+/** The Health systems that have a real assessment behind them (assessed today).
+ *  Alias of the single add-on definition — the purchasable lenses and the
+ *  assessed Health systems are the same set, and were drifting as two lists. */
+export type AssessedSystemKey = AddonType
 /** Life systems with a real (non-diagnostic, food-first) assessment. */
 export type LifeAssessedKey = "pregnancy"
 /** Any non-foundation system reachable via the add-gate / combined report. */
@@ -59,10 +62,8 @@ export const HEALTH_SYSTEMS: Record<AssessedSystemKey, AssessmentMeta> = {
   performance: { key: "performance", kind: "health", label: "Performance", route: "/performance-assessment" },
 }
 
-export const HEALTH_SYSTEM_KEYS: AssessedSystemKey[] = ["stability", "glucose", "mind", "performance"]
-export function isHealthSystemKey(v: string): v is AssessedSystemKey {
-  return (HEALTH_SYSTEM_KEYS as string[]).includes(v)
-}
+export const HEALTH_SYSTEM_KEYS: readonly AssessedSystemKey[] = ADDON_KEYS
+export const isHealthSystemKey = isAddon
 
 /** Life systems with a real assessment (food-first, non-diagnostic). */
 export const LIFE_SYSTEMS: Record<LifeAssessedKey, AssessmentMeta> = {

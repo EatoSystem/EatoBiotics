@@ -1,11 +1,13 @@
 import type Stripe from "stripe"
+import { ADDON_KEYS as CANONICAL_ADDON_KEYS, asAddonType, type AddonType } from "@/lib/addon-types"
 
 export type PaidReportTier = "personal" | "starter" | "full" | "premium"
 
-/** Foundation/Health-system architecture carried through checkout (kept as local
- *  unions so this payment helper stays decoupled from the assessment registry). */
+/** Foundation/Health-system architecture carried through checkout. The add-on
+ *  union is an alias of the single definition in lib/addon-types.ts — this name
+ *  is kept because it is the wire vocabulary used in Stripe metadata. */
 export type PaidReportFoundation = "you" | "family"
-export type PaidReportHealthSystem = "stability" | "glucose" | "mind" | "performance"
+export type PaidReportHealthSystem = AddonType
 
 export type PaidReportSummary = {
   tier: PaidReportTier
@@ -26,19 +28,27 @@ export type PaidReportSummary = {
 }
 
 const VALID_FOUNDATIONS: PaidReportFoundation[] = ["you", "family"]
-const VALID_ADDONS: PaidReportHealthSystem[] = ["stability", "glucose", "mind", "performance"]
 
-function asFoundation(value: unknown): PaidReportFoundation | null {
+/**
+ * The ONLY validators for these two values.
+ *
+ * Exported because they were being re-implemented at every boundary — checkout
+ * carried its own `HEALTH_SYSTEMS` array and submit-deep-assessment its own
+ * inline union, so "which add-ons exist" was stated in three places and could
+ * drift. Anything accepting a foundation or add-on from a request body, a
+ * Stripe payload or a stored row must funnel through these: unknown values
+ * become `null` rather than flowing on as an unrecognised string.
+ */
+export function asFoundation(value: unknown): PaidReportFoundation | null {
   return typeof value === "string" && VALID_FOUNDATIONS.includes(value as PaidReportFoundation)
     ? (value as PaidReportFoundation)
     : null
 }
 
-function asAddon(value: unknown): PaidReportHealthSystem | null {
-  return typeof value === "string" && VALID_ADDONS.includes(value as PaidReportHealthSystem)
-    ? (value as PaidReportHealthSystem)
-    : null
-}
+export const asAddon = asAddonType
+
+/** Every add-on, in a stable order — for iteration in UI and tests. */
+export const ADDON_KEYS = CANONICAL_ADDON_KEYS
 
 const VALID_TIERS: PaidReportTier[] = ["personal", "starter", "full", "premium"]
 

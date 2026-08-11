@@ -4,7 +4,12 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSupabase } from "@/lib/supabase"
 import type { DeepQuestion } from "@/lib/deep-assessment"
 import type { DeepReport } from "@/lib/claude-report"
-import { getPaidReportSummaryFromSession, isCheckoutSessionSettled } from "@/lib/paid-report-session"
+import {
+  getPaidReportSummaryFromSession,
+  isCheckoutSessionSettled,
+  type PaidReportFoundation,
+  type PaidReportHealthSystem,
+} from "@/lib/paid-report-session"
 import { buildFallbackPaidReport } from "@/lib/fallback-paid-report"
 import {
   buildFoodSystemReport,
@@ -43,8 +48,9 @@ type FreeScores = {
   profile: { type: string; tagline: string; description: string }
   tier: "personal" | "starter" | "full" | "premium"
   email?: string | null
-  foundationType?: "you" | "family" | null
-  selectedAddon?: "stability" | "glucose" | "mind" | "performance" | null
+  foundationType?: PaidReportFoundation | null
+  /** Canonical union — never re-declare the add-on list here. */
+  selectedAddon?: PaidReportHealthSystem | null
 }
 
 type RequestBody = {

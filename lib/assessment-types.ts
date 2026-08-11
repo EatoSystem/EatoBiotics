@@ -9,8 +9,13 @@
  * final report always = one foundation + an optional Health system.
  */
 
+import type { AddonType } from "@/lib/addon-types"
+
 export type FoundationKey = "you" | "family"
-export type AssessedSystemKey = "mind" | "glucose" | "stability" | "performance"
+/** Alias of the single add-on definition. This file and lib/assessment/registry.ts
+ *  both export a type by this name; they were two independent literal unions
+ *  until they were collapsed onto lib/addon-types.ts. */
+export type AssessedSystemKey = AddonType
 /** Life systems with a real (non-diagnostic, food-first) assessment. */
 export type LifeAssessedKey = "pregnancy"
 export type AnyAssessedKey = AssessedSystemKey | LifeAssessedKey

@@ -45,6 +45,7 @@ import {
   type IncomingSubScores,
 } from "./subscores"
 import { bioticAccent, foodIcon, pathwayIcon, type BioticKey, type VisualAccent } from "./visual-token"
+import type { PaidReportFoundation, PaidReportHealthSystem } from "@/lib/paid-report-session"
 
 export interface BuildReportInput {
   mode: ReportMode
@@ -74,8 +75,8 @@ const GRADIENT: VisualAccent[] = ["lime", "green", "teal", "yellow", "orange"]
  * report's own description of itself.
  */
 export function resolveReportMode(input: {
-  foundationType?: "you" | "family" | null
-  selectedAddon?: "stability" | "glucose" | "mind" | "performance" | null
+  foundationType?: PaidReportFoundation | null
+  selectedAddon?: PaidReportHealthSystem | null
 }): ReportMode {
   if (input.selectedAddon) return "combined"
   if (input.foundationType === "family") return "family"

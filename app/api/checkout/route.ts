@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { stripe } from "@/lib/stripe-server"
 import {
   encodePaidReportSummary,
+  asFoundation,
+  asAddon,
   type PaidReportTier,
-  type PaidReportFoundation,
-  type PaidReportHealthSystem,
 } from "@/lib/paid-report-session"
 
 const TIER_CONFIG = {
@@ -18,9 +18,6 @@ const TIER_CONFIG = {
       "Your personalised Food System score, report, and plan — built from your foundation assessment and, where selected, your deeper support assessment. Includes a free 30-day EatoBiotics account.",
   },
 } as const
-
-const FOUNDATIONS: PaidReportFoundation[] = ["you", "family"]
-const HEALTH_SYSTEMS: PaidReportHealthSystem[] = ["stability", "glucose", "mind", "performance"]
 
 export async function POST(req: NextRequest) {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -42,14 +39,13 @@ export async function POST(req: NextRequest) {
       selectedAddon?: string
     }
 
-    // Validate the new product-architecture context (ignored if absent/invalid so
-    // older clients and the anonymous free-assessment flow keep working).
-    const foundation = FOUNDATIONS.includes(foundationType as PaidReportFoundation)
-      ? (foundationType as PaidReportFoundation)
-      : null
-    const addon = HEALTH_SYSTEMS.includes(selectedAddon as PaidReportHealthSystem)
-      ? (selectedAddon as PaidReportHealthSystem)
-      : null
+    // Validate the new product-architecture context through the canonical
+    // validators (ignored if absent/invalid so older clients and the anonymous
+    // free-assessment flow keep working). An unknown add-on becomes null here
+    // and never reaches Stripe metadata, so it cannot resurface downstream as
+    // an unrecognised lens key.
+    const foundation = asFoundation(foundationType)
+    const addon = asAddon(selectedAddon)
 
     // Only the €49 Personal Report is sold now; any legacy tier in the request
     // is ignored and falls back to `personal`.
