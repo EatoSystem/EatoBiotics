@@ -310,39 +310,16 @@ describe("safety wording is fixed and lens-appropriate", () => {
   })
 })
 
-describe("evidence is deferred, not silently empty", () => {
-  /**
-   * The lens ships without citations because none could be verified: every
-   * source domain is blocked by this environment's egress policy. Publishing a
-   * citation beside a health statement on the strength of a remembered
-   * identifier is the failure this avoids. See the note above ADDON_SAFETY.
-   */
-  it.each(ADDON_KEYS)("%s carries no unverified evidence", (addon) => {
-    expect(lensFor(addon).evidenceNotes).toBeUndefined()
-  })
-
-  it("an empty evidence array is rejected, so the field cannot render a bare heading", () => {
-    const core = coreFor(SCORES.probioticsWeak)
-    const withEmpty = { ...core, lens: { ...lensFor("mind"), evidenceNotes: [] } }
-    expect(foodSystemReportSchema.safeParse(withEmpty).success).toBe(false)
-  })
-
-  it("a lens with well-formed evidence still validates, for when sources are verified", () => {
-    const core = coreFor(SCORES.probioticsWeak)
-    const withEvidence = {
-      ...core,
-      lens: {
-        ...lensFor("mind"),
-        evidenceNotes: [
-          {
-            claim: "A claim long enough to be a real sentence about diet and the gut.",
-            sourceTitle: "Some Verified Source, Journal (2024)",
-            sourceUrl: "https://www.who.int/example",
-          },
-        ],
-      },
+describe("every lens carries its verified evidence", () => {
+  // Full coverage of the source pack lives in tests/unit/addon-evidence.test.ts.
+  // This is the shape check that belongs beside the builder.
+  it.each(ADDON_KEYS)("%s cites at least two sources, each with a limitation", (addon) => {
+    const notes = lensFor(addon).evidenceNotes
+    expect(notes.length).toBeGreaterThanOrEqual(2)
+    for (const n of notes) {
+      expect(n.title.length).toBeGreaterThan(10)
+      expect(n.limitation.length).toBeGreaterThan(40)
     }
-    expect(foodSystemReportSchema.safeParse(withEvidence).success).toBe(true)
   })
 })
 

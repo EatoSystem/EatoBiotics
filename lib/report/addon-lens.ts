@@ -1,7 +1,7 @@
 import type { AddonType } from "@/lib/addon-types"
 import { SYSTEMS } from "@/lib/systems"
 import { PATHWAY_LABEL, type BioticScoreKey } from "@/lib/report/subscores"
-import type { FoodSystemLens, FoodSystemReport } from "@/lib/report/food-system-report-types"
+import type { FoodSystemLens, FoodSystemReport, LensEvidenceNote } from "@/lib/report/food-system-report-types"
 
 /**
  * The deterministic lens chapter — what a purchased add-on actually produces.
@@ -74,52 +74,137 @@ export const ADDON_SAFETY: Record<AddonType, string> = {
     "nutrition is a significant part of the picture, work with a qualified professional.",
 }
 
-/* ── Evidence: deliberately absent ──────────────────────────────────────────
+/* ── Evidence ────────────────────────────────────────────────────────────────
  *
- * The lens chapter ships with NO citations, and that is a decision rather than
- * an omission.
+ * Every source here was verified out-of-band and supplied with its exact title,
+ * publisher, year, URL, what it supports and what it does not show. It was NOT
+ * verified from inside this session: the container's egress policy blocks every
+ * one of these domains (pubmed returns a 403 policy denial), so nothing here
+ * rests on a remembered identifier, and the blocked domains are not retried.
  *
- * An earlier revision of this file carried two sources per lens. They could not
- * be verified: every candidate domain is blocked by this environment's egress
- * policy — pubmed.ncbi.nlm.nih.gov returns a 403 policy denial, and who.int,
- * nhs.uk, nccih.nih.gov, isappscience.org and nature.com do not connect. A
- * citation printed beside a health statement in a paid report is exactly the
- * thing that must not be published on remembered identifiers, so the block is
- * respected rather than worked around.
+ * Two rules this pack encodes, both learned from getting it wrong first:
  *
- * Two of those pairings were also wrong on their merits, and would have had to
- * change even with full network access:
+ *  1. A source must support the SENTENCE it sits beside, not the topic. An
+ *     earlier version cited Wastyk 2021 — a microbiome and inflammation trial —
+ *     next to gut–brain copy, and NHS physical-activity guidance next to
+ *     fuelling advice. Neither supported the adjacent claim. Both are now
+ *     explicitly banned by test.
  *
- *   - Mind cited Wastyk et al. 2021, a microbiome and inflammation trial. It
- *     says nothing about mood, focus or cognition, so it cannot sit beside a
- *     gut–brain sentence.
- *   - Performance cited NHS physical-activity guidance, which is about how much
- *     to move, not about fuelling or recovery.
- *
- * WHAT THE FOLLOW-UP NEEDS. Each lens needs 2–3 sources that support its
- * specific adjacent sentence, from primary research, a recognised consensus
- * statement, or a public-health body. Candidates worth checking first — ALL
- * UNVERIFIED, none to be used until opened and read:
- *
- *   Stability   ISAPP prebiotics consensus (Gibson et al., Nat Rev Gastro
- *               Hepatol 2017) for the fibre-substrate line; an authoritative
- *               clinical source (NHS or NICE on IBS) for the red-flag wording,
- *               which is the one place this chapter points at urgent care.
- *   Glucose     A carbohydrate-quality/fibre source for the meal-composition
- *               line (Reynolds et al., Lancet 2019 was the candidate). Must NOT
- *               be a source about glucose measurement — the questionnaire does
- *               not measure it.
- *   Mind        A cautious diet-and-mental-health review, e.g. Firth et al.,
- *               "Food and mood", BMJ 2020. Microbiome evidence alone does not
- *               support a mental-health framing.
- *   Performance A sports-nutrition position stand covering fuelling and
- *               recovery, e.g. the ACSM / Academy of Nutrition and Dietetics /
- *               Dietitians of Canada joint stand on Nutrition and Athletic
- *               Performance.
- *
- * The core report's own EVIDENCE list in build-food-system-report.ts is
- * untouched: those four are already live in production and are not in scope.
+ *  2. Every note carries a `limitation`, rendered to the customer. Population
+ *     evidence cannot tell an individual what their body is doing, and a
+ *     citation that omits that gap makes a report look more authoritative
+ *     without making it more true. No source here may be presented as showing
+ *     that the questionnaire measures a biological value or predicts an
+ *     individual outcome.
  */
+const LENS_EVIDENCE: Record<AddonType, LensEvidenceNote[]> = {
+  stability: [
+    {
+      title: "Irritable bowel syndrome in adults: diagnosis and management",
+      organisation: "NICE",
+      year: "2017, reviewed 2025",
+      url: "https://www.nice.org.uk/guidance/cg61",
+      whatItSupports:
+        "Regular meals, avoiding skipped meals or long gaps, and professionally guided diet and lifestyle review are recognised parts of IBS management.",
+      limitation:
+        "This is clinical guidance for suspected or diagnosed IBS. It does not validate this questionnaire, identify IBS, or show that a food pattern caused a symptom.",
+    },
+    {
+      title: "Symptoms of IBS (irritable bowel syndrome)",
+      organisation: "NHS",
+      year: "2025",
+      url: "https://www.nhs.uk/conditions/irritable-bowel-syndrome-ibs/symptoms/",
+      whatItSupports:
+        "Common digestive-pattern descriptions, and the safety advice to seek medical help for unexplained weight loss, rectal bleeding or bloody diarrhoea.",
+      limitation:
+        "Symptom overlap between causes is broad. This lens does not identify a symptom pattern as IBS, and it is not a reason to delay clinical assessment.",
+    },
+  ],
+
+  glucose: [
+    {
+      title: "Healthy diet",
+      organisation: "World Health Organization",
+      year: "2026",
+      url: "https://www.who.int/news-room/fact-sheets/detail/healthy-diet",
+      whatItSupports:
+        "Balanced and diverse diets; whole grains, vegetables, fruit and pulses as carbohydrate sources; adequate dietary fibre; limiting free sugars.",
+      limitation:
+        "This is population guidance. It does not establish any individual's glucose response, and it does not validate conclusions about glucose drawn from a questionnaire.",
+    },
+    {
+      title:
+        "Carbohydrate quality and human health: a series of systematic reviews and meta-analyses",
+      organisation: "The Lancet",
+      year: "2019",
+      url: "https://pubmed.ncbi.nlm.nih.gov/30638909/",
+      whatItSupports:
+        "The broader importance of carbohydrate quality, dietary fibre and whole-grain food patterns for long-term health.",
+      limitation:
+        "Population and trial evidence cannot reveal your current blood glucose, and cannot predict your own response to any one meal.",
+    },
+    {
+      title:
+        "The Effect of Adding Protein to a Carbohydrate Meal on Postprandial Glucose and Insulin Responses",
+      organisation: "The Journal of Nutrition",
+      year: "2024",
+      url: "https://pubmed.ncbi.nlm.nih.gov/39019167/",
+      whatItSupports:
+        "Acute controlled-feeding evidence that adding protein to a carbohydrate meal can alter post-meal glucose and insulin responses.",
+      limitation:
+        "Effects vary by protein source and by health status, are less consistent in diabetes, and differ again in type 1 diabetes. This is not a rule that pairing carbohydrate with protein flattens glucose for everyone.",
+    },
+  ],
+
+  mind: [
+    {
+      title: "Food and mood: how do diet and nutrition affect mental wellbeing?",
+      organisation: "BMJ",
+      year: "2020",
+      url: "https://pubmed.ncbi.nlm.nih.gov/32601102/",
+      whatItSupports:
+        "A cautious account of diet and mental wellbeing being studied through several possible pathways, with the evidence still developing.",
+      limitation:
+        "It does not allow this lens to infer mood, focus, anxiety, sleep or mental-health status from food answers.",
+    },
+    {
+      title:
+        "The Effects of Dietary Improvement on Symptoms of Depression and Anxiety: A Meta-Analysis of Randomized Controlled Trials",
+      organisation: "Psychosomatic Medicine",
+      year: "2019",
+      url: "https://pubmed.ncbi.nlm.nih.gov/30720698/",
+      whatItSupports:
+        "Across the included trials, dietary interventions showed a small average reduction in depressive symptoms.",
+      limitation:
+        "The same review found no significant effect for anxiety, most samples were nonclinical, and group averages do not predict an individual outcome.",
+    },
+  ],
+
+  performance: [
+    {
+      title: "Nutrition and Athletic Performance",
+      organisation:
+        "Academy of Nutrition and Dietetics, Dietitians of Canada and American College of Sports Medicine",
+      year: "2016",
+      url: "https://pubmed.ncbi.nlm.nih.gov/26891166/",
+      whatItSupports:
+        "The type, amount and timing of food and fluid can be planned around training and recovery demands.",
+      limitation:
+        "Needs vary with activity, training load, health and goals. This lens is not a sports-dietitian assessment and cannot forecast performance.",
+    },
+    {
+      title:
+        "The Effect of Consuming Carbohydrate With and Without Protein on the Rate of Muscle Glycogen Re-synthesis During Short-Term Post-exercise Recovery",
+      organisation: "Sports Medicine - Open",
+      year: "2021",
+      url: "https://pubmed.ncbi.nlm.nih.gov/33507402/",
+      whatItSupports:
+        "For athletes facing consecutive strenuous sessions with limited recovery time, carbohydrate intake supports short-term glycogen restoration.",
+      limitation:
+        "This concerns specialised short recovery windows, and adding protein did not improve glycogen restoration beyond adequate carbohydrate alone. It does not generalise to every reader, and it is not a promise of better performance.",
+    },
+  ],
+}
 
 /* ── Per-lens metadata, reusing the site's own system definitions ─────────── */
 function lensMeta(addon: AddonType) {
@@ -447,13 +532,13 @@ function mindBody(a: Answers, priority: BioticScoreKey, v: Voice): LensBody {
     loopAdditions,
     priorityWhy:
       priority === "probiotics"
-        ? "Live-culture exposure is the thinnest pathway underneath this lens, and fermented foods are the most studied dietary factor in gut–brain research — which is an area of association, not established cause."
+        ? "Live-culture exposure is the thinnest pathway underneath this lens. Diet and mental wellbeing are studied through several possible pathways, and the evidence is still developing — this is a place to notice patterns, not to expect an effect."
         : priority === "prebiotics"
         ? "Fibre variety is the thinnest pathway underneath this lens, and it is the substrate the rest of the system depends on."
         : "Rhythm and recovery are the thinnest pathway underneath this lens, which is the same thing the busy-day pattern keeps pointing at.",
     pathwayCopy: {
       prebiotics: "Plant variety is the base the rest runs on, and it is the least dependent on any single ingredient.",
-      probiotics: "Fermented foods are the most studied dietary factor here, in research that describes associations rather than effects you should expect.",
+      probiotics: "Live foods are one part of overall diet quality. Trials of dietary improvement have shown a small average reduction in depressive symptoms, with no significant effect for anxiety — and a group average says nothing about any one person.",
       postbiotics: "Meal rhythm and rest are the part of this pattern that food can genuinely support, which is why timing appears in every action above.",
     },
   }
@@ -675,6 +760,7 @@ export function buildAddonLens(input: BuildLensInput): FoodSystemLens {
       why: `${PATHWAY_LABEL[priority]} is where this lens meets your Food System score. ${body.priorityWhy}`,
     },
     loopAdditions: body.loopAdditions.slice(0, 3),
+    evidenceNotes: LENS_EVIDENCE[addon],
     safetyNote: ADDON_SAFETY[addon],
     accent: meta.accent,
   }

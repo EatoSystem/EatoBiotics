@@ -79,6 +79,7 @@ describe("the generated lens may only rewrite prose", () => {
     "loopAdditions",
     "safetyNote",
     "accent",
+    "evidenceNotes",
   ] as const
 
   it.each(ADDON_KEYS)("%s: a hostile response cannot move anything derived", (addon) => {
@@ -110,7 +111,9 @@ describe("the generated lens may only rewrite prose", () => {
       expect(JSON.stringify(merged[field]), `${addon}.${field}`).toBe(JSON.stringify(base[field]))
     }
     expect(merged.safetyNote).toBe(ADDON_SAFETY[addon])
-    expect(merged.evidenceNotes).toBeUndefined()
+    // Evidence is derived and verified; a model-supplied list is discarded.
+    expect(JSON.stringify(merged.evidenceNotes)).toBe(JSON.stringify(base.evidenceNotes))
+    expect(JSON.stringify(merged.evidenceNotes)).not.toContain("Invented")
     expect(merged.key).toBe(addon)
   })
 

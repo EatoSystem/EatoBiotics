@@ -134,6 +134,37 @@ export interface EvidenceNote {
 }
 
 /**
+ * A lens citation.
+ *
+ * Deliberately richer than `EvidenceNote` above, and deliberately separate from
+ * it. The core report's notes are a claim and a source; a lens note additionally
+ * carries the publishing body, the year, and — the field that matters most —
+ * an explicit `limitation`.
+ *
+ * The limitation is not a disclaimer bolted on afterwards. Every source in this
+ * product sits next to a statement about someone's body, and the honest gap
+ * between "population evidence exists" and "this applies to you" is exactly
+ * where a reader is most likely to over-read. Printing what a source does NOT
+ * show, beside what it does, is the only way a citation makes a paid report
+ * more trustworthy rather than merely more decorated.
+ *
+ * `EvidenceNote` is left untouched: it is consumed by the core report in
+ * components/report/food-system-section.tsx and lib/pdf/food-system-pdf.tsx.
+ */
+export interface LensEvidenceNote {
+  title: string
+  /** Publishing body or journal. */
+  organisation: string
+  /** Free text — "2017, reviewed 2025" is as valid as "2019". */
+  year: string
+  url: string
+  /** What this source actually supports, in the lens's context. */
+  whatItSupports: string
+  /** What it does not show. Rendered to the customer, never omitted. */
+  limitation: string
+}
+
+/**
  * The closing mission page headline. Fixed copy, fixed line breaks — it is the
  * brand's closing statement, not a field to paraphrase. Typed as a readonly
  * 4-tuple so a well-meaning edit to three or five lines fails to compile.
@@ -203,13 +234,11 @@ export interface FoodSystemLens {
    */
   loopAdditions: Array<{ week: number; action: string }>
   /**
-   * Optional, and currently never populated — see the note above ADDON_SAFETY
-   * in lib/report/addon-lens.ts. The lens ships without citations until its
-   * sources can actually be opened and checked against the sentences they sit
-   * beside. Absent is fine; present-but-empty is not, because that renders an
-   * "Evidence" heading with nothing under it.
+   * At least two verified sources, each with its own limitation. Required
+   * whenever a lens exists — a lens chapter making health-adjacent statements
+   * with no citation is exactly what the evidence contract exists to prevent.
    */
-  evidenceNotes?: EvidenceNote[]
+  evidenceNotes: LensEvidenceNote[]
   /** Fixed per-add-on safety wording. Never model-generated, never paraphrased. */
   safetyNote: string
   /** Accent token, reused from the system's own branding. */
@@ -358,6 +387,17 @@ const evidenceNoteSchema = z.object({
   sourceUrl: z.string().url(),
 })
 
+const lensEvidenceNoteSchema = z.object({
+  title: z.string().min(10),
+  organisation: z.string().min(3),
+  year: z.string().min(4),
+  url: z.string().url(),
+  whatItSupports: z.string().min(40),
+  // Enforced as substantial: a one-word limitation would satisfy the shape
+  // while defeating the point of having the field.
+  limitation: z.string().min(40),
+})
+
 export const foodSystemReportSchema = z.object({
   mode: z.enum(["you", "family", "mind", "combined"]),
   title: z.string().min(1).max(200),
@@ -455,9 +495,9 @@ export const foodSystemReportSchema = z.object({
         .array(z.object({ week: z.number().int().min(1).max(4), action: z.string().min(20) }))
         .min(2)
         .max(3),
-      // Optional, but never empty when present — an empty array would render a
-      // bare "Evidence" heading.
-      evidenceNotes: z.array(evidenceNoteSchema).min(1).optional(),
+      // Required, and at least two. The lens is optional as a whole; a lens
+      // that exists without evidence is not.
+      evidenceNotes: z.array(lensEvidenceNoteSchema).min(2),
       safetyNote: z.string().min(20),
       accent: z.string().min(1),
     })
