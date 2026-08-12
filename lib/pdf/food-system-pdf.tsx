@@ -136,6 +136,29 @@ const s = StyleSheet.create({
     padding: 12,
     marginBottom: 10,
   },
+  /* Lens safety. A callout, not a footnote: for Glucose and Mind this is the
+   * most important text on the page, and it must not read as small print. */
+  safetyCallout: {
+    borderWidth: 1,
+    borderColor: BRAND.teal,
+    borderLeftWidth: 3,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 14,
+  },
+  safetyCalloutLabel: {
+    fontSize: 8,
+    fontFamily: FONT.sansBold,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    color: BRAND.tealText,
+    marginBottom: 5,
+  },
+  safetyCalloutBody: {
+    fontSize: 10,
+    lineHeight: 1.5,
+    color: BRAND.darkText,
+  },
   cardTitle: {
     fontSize: 12,
     fontFamily: FONT.serifBold,
@@ -691,11 +714,21 @@ export function FoodSystemPages({ report }: { report: FoodSystemReport }) {
         <Page size="A4" style={s.page}>
           <ChapterHeading
             number={ch()}
-            eyebrow="Evidence"
-            title={`Behind ${report.lens.shortLabel}`}
-            subtitle="What each source supports — and what it does not show."
+            eyebrow="Evidence & Safety"
+            title="Evidence & Safety"
+            subtitle={`The sources behind ${report.lens.shortLabel} — what each supports, and what it does not show.`}
           />
           <View style={s.spacer}>
+            {/* Safety FIRST, above the citations. Placing it after the source
+              * list buries the single most important sentence in the chapter —
+              * for Glucose, that this does not measure blood glucose; for Mind,
+              * that it does not diagnose. wrap={false} so it can never split
+              * across a page break or be orphaned from its label. */}
+            <View style={s.safetyCallout} wrap={false}>
+              <Text style={s.safetyCalloutLabel}>What this lens does not do</Text>
+              <Text style={s.safetyCalloutBody}>{report.lens.safetyNote}</Text>
+            </View>
+
             {report.lens.evidenceNotes.map((note) => (
               <View key={note.url} style={s.card} wrap={false}>
                 <Link src={note.url}>
@@ -708,9 +741,6 @@ export function FoodSystemPages({ report }: { report: FoodSystemReport }) {
                 <Text style={s.evidenceClaim}>What it does not show: {note.limitation}</Text>
               </View>
             ))}
-            <View style={[s.card, { marginTop: 10 }]}>
-              <Text style={s.evidenceClaim}>{report.lens.safetyNote}</Text>
-            </View>
           </View>
           <PdfFooter />
         </Page>

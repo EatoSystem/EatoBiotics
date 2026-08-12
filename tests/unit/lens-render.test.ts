@@ -222,3 +222,110 @@ describe("family wording reaches the rendered chapter", () => {
     expect(body).toMatch(/household/i)
   })
 })
+
+/**
+ * PDF page 2 — Evidence & Safety.
+ *
+ * The safety note used to render AFTER the source list. For Glucose that put
+ * "does not measure blood glucose" below three citations, and for Mind it put
+ * the non-diagnostic wording there — which is exactly the sentence a reader
+ * most needs to reach. Order is therefore asserted, not just presence.
+ */
+describe("PDF page 2 puts safety before citations", () => {
+  async function pdfOrdered(report: FoodSystemReport): Promise<string[]> {
+    const React = (await import("react")).default
+    const { FoodSystemPages } = await import("@/lib/pdf/food-system-pdf")
+    return pdfStrings(React.createElement(FoodSystemPages, { report } as never))
+  }
+
+  it.each(ADDON_KEYS)("%s: the page is headed Evidence & Safety", async (addon) => {
+    const pdf = (await pdfOrdered(reportFor(addon))).join(" ")
+    expect(pdf).toContain("Evidence & Safety")
+    expect(pdf).toContain("What this lens does not do")
+  })
+
+  it.each(ADDON_KEYS)("%s: safety text precedes the first citation title", async (addon) => {
+    const report = reportFor(addon)
+    const strings = await pdfOrdered(report)
+    const joined = strings.join("\u0000")
+
+    const safetyAt = joined.indexOf(report.lens!.safetyNote)
+    const firstCitationAt = joined.indexOf(report.lens!.evidenceNotes[0].title)
+
+    expect(safetyAt, "safety note missing").toBeGreaterThan(-1)
+    expect(firstCitationAt, "citation missing").toBeGreaterThan(-1)
+    expect(safetyAt, `${addon}: safety must come first`).toBeLessThan(firstCitationAt)
+  })
+
+  it("glucose leads with 'does not measure blood glucose'", async () => {
+    const report = reportFor("glucose")
+    const joined = (await pdfOrdered(report)).join("\u0000")
+    const phraseAt = joined.indexOf("does not measure blood glucose")
+    const firstCitationAt = joined.indexOf(report.lens!.evidenceNotes[0].title)
+    expect(phraseAt).toBeGreaterThan(-1)
+    expect(phraseAt).toBeLessThan(firstCitationAt)
+  })
+
+  it("mind leads with its non-diagnostic wording", async () => {
+    const report = reportFor("mind")
+    const joined = (await pdfOrdered(report)).join("\u0000")
+    const phraseAt = joined.indexOf("does not diagnose, treat, cure, or prevent")
+    const firstCitationAt = joined.indexOf(report.lens!.evidenceNotes[0].title)
+    expect(phraseAt).toBeGreaterThan(-1)
+    expect(phraseAt).toBeLessThan(firstCitationAt)
+  })
+
+  it.each(ADDON_KEYS)("%s: each source keeps its support and limitation", async (addon) => {
+    const report = reportFor(addon)
+    const joined = (await pdfOrdered(report)).join("\u0000")
+    for (const n of report.lens!.evidenceNotes) {
+      const t = joined.indexOf(n.title)
+      const sup = joined.indexOf(n.whatItSupports)
+      const lim = joined.indexOf(n.limitation)
+      // Title, then its support, then its limitation — contiguous per source.
+      expect(t).toBeLessThan(sup)
+      expect(sup).toBeLessThan(lim)
+    }
+  })
+})
+
+/**
+ * Page count. A no-add-on PDF must be byte-for-byte the same shape it was
+ * before add-ons existed; a lens adds exactly two pages and no more.
+ */
+describe("PDF page count", () => {
+  async function pageCount(report: FoodSystemReport): Promise<number> {
+    const React = (await import("react")).default
+    const { FoodSystemPages } = await import("@/lib/pdf/food-system-pdf")
+    const tree = React.createElement(FoodSystemPages, { report } as never)
+
+    let pages = 0
+    const walk = (node: unknown): void => {
+      if (!node || typeof node !== "object") return
+      if (Array.isArray(node)) return void node.forEach(walk)
+      const el = node as { type?: unknown; props?: { children?: unknown } }
+      // react-pdf compiles <Page> to the host element type "PAGE" — not a
+      // function component, which is what the first version of this walker
+      // looked for, and why it counted zero.
+      if (el.type === "PAGE") pages++
+      if (el.props?.children !== undefined) walk(el.props.children)
+      if (typeof el.type === "function") {
+        try {
+          walk((el.type as (p: unknown) => unknown)(el.props))
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+    walk(tree)
+    return pages
+  }
+
+  it("a lens adds exactly two pages", async () => {
+    const without = await pageCount(reportFor(null))
+    expect(without).toBeGreaterThan(3)
+    for (const addon of ADDON_KEYS) {
+      expect(await pageCount(reportFor(addon)), addon).toBe(without + 2)
+    }
+  })
+})
