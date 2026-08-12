@@ -135,6 +135,29 @@ export function LensSection({ lens, chapterNumber }: { lens: FoodSystemLens; cha
           </ol>
         </div>
 
+        {/* Fixed per-lens safety wording. Never generated, never paraphrased.
+          *
+          * Above the citations, deliberately. This used to be the last thing on
+          * the page, set small and grey — which put "this lens does not measure
+          * blood glucose" underneath three journal citations, exactly where a
+          * reader stops. The sentence that says what the lens CANNOT tell you
+          * is the most important sentence in the chapter, so it gets read
+          * before the sources, not after them, and it is styled as a callout
+          * rather than as small print. The PDF orders it the same way. */}
+        <div
+          className="mt-6 rounded-3xl border p-6"
+          style={{
+            borderColor: "color-mix(in srgb, var(--icon-teal) 30%, transparent)",
+            borderLeftWidth: 4,
+            borderLeftColor: "var(--icon-teal)",
+          }}
+        >
+          <p className="text-xs font-bold uppercase tracking-widest text-[var(--icon-teal-text)]">
+            What this lens does not do
+          </p>
+          <p className="mt-3 text-sm leading-relaxed text-foreground">{lens.safetyNote}</p>
+        </div>
+
         {/* Evidence. Rendered only when a lens exists — which is the only way
           * this component is reached — and every source shows BOTH what it
           * supports and what it does not show. A citation that prints only the
@@ -172,10 +195,6 @@ export function LensSection({ lens, chapterNumber }: { lens: FoodSystemLens; cha
           </ol>
         </div>
 
-        {/* Fixed per-lens safety wording. Never generated, never paraphrased. */}
-        <p className="mt-6 rounded-2xl border border-border bg-secondary/30 p-5 text-xs leading-relaxed text-muted-foreground">
-          {lens.safetyNote}
-        </p>
       </ScrollReveal>
     </section>
   )

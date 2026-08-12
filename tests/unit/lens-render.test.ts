@@ -191,6 +191,34 @@ describe("chapter order and accessibility", () => {
     expect(evidence).toBeGreaterThan(lens)
   })
 
+  /**
+   * Safety before citations — on the web too, not only in the PDF.
+   *
+   * The web chapter used to close with the safety note, set small and grey
+   * below the source list. For Glucose that put "does not measure blood
+   * glucose" underneath three journal citations, which is past the point most
+   * readers stop. Both renderers now lead with it, and both are asserted, so
+   * neither can drift back on its own.
+   */
+  it.each(ADDON_KEYS)("%s: web safety note precedes the first citation", (addon) => {
+    const report = reportFor(addon)
+    const body = text(web(report))
+    const safetyAt = body.indexOf(text(report.lens!.safetyNote))
+    const firstCitationAt = body.indexOf(text(report.lens!.evidenceNotes[0].title))
+
+    expect(safetyAt, "safety note missing from the web chapter").toBeGreaterThan(-1)
+    expect(firstCitationAt, "citation missing from the web chapter").toBeGreaterThan(-1)
+    expect(safetyAt, `${addon}: safety must come first`).toBeLessThan(firstCitationAt)
+  })
+
+  it("web glucose leads with 'does not measure blood glucose'", () => {
+    const report = reportFor("glucose")
+    const body = text(web(report))
+    expect(body.indexOf("does not measure blood glucose")).toBeLessThan(
+      body.indexOf(text(report.lens!.evidenceNotes[0].title)),
+    )
+  })
+
   it.each(ADDON_KEYS)("%s: chapter numbering stays continuous", (addon) => {
     const body = text(web(reportFor(addon)))
     // Numbers are zero-padded and rendered in order; with a lens present the
