@@ -630,6 +630,92 @@ export function FoodSystemPages({ report }: { report: FoodSystemReport }) {
         </Page>
       )}
 
+      {/* The purchased lens. Same position as the web report — after the loop,
+        * before Evidence, with the closing mission page still last — and it
+        * shares the ch() counter so numbering matches the web exactly. */}
+      {report.lens && (
+        <Page size="A4" style={s.page}>
+          <ChapterHeading
+            number={ch()}
+            eyebrow="Your Focus Area"
+            title={report.lens.name}
+            subtitle={`What this looks at: ${report.lens.examines}`}
+          />
+
+          <View style={s.spacer}>
+            <View style={s.card} wrap={false}>
+              <Text style={s.cardTitle}>What your answers describe</Text>
+              <Text style={s.body}>{report.lens.patternSummary}</Text>
+            </View>
+
+            <Text style={[s.cardTitle, { marginTop: 14 }]}>
+              How this connects to your Food System
+            </Text>
+            {report.lens.pathwayConnections.map((pc) => (
+              <View key={pc.pathway} style={s.card} wrap={false}>
+                <Text style={s.cardTitle}>{PATHWAY_LABEL[pc.pathway]}</Text>
+                <Text style={s.body}>{pc.connection}</Text>
+              </View>
+            ))}
+
+            <View style={[s.card, { marginTop: 14 }]} wrap={false}>
+              <Text style={s.cardTitle}>
+                Where it matters most: {PATHWAY_LABEL[report.lens.priorityConnection.pathway]}
+              </Text>
+              <Text style={s.body}>{report.lens.priorityConnection.why}</Text>
+            </View>
+
+            <Text style={[s.cardTitle, { marginTop: 14 }]}>What to notice</Text>
+            {report.lens.signals.map((sig) => (
+              <View key={sig.label} style={s.card} wrap={false}>
+                <Text style={s.cardTitle}>{sig.label}</Text>
+                <Text style={s.body}>{sig.whatToNotice}</Text>
+              </View>
+            ))}
+
+            <Text style={[s.cardTitle, { marginTop: 14 }]}>Added to your 30-day loop</Text>
+            {report.lens.loopAdditions.map((l) => (
+              <View key={l.week} style={s.card} wrap={false}>
+                <Text style={s.cardTitle}>Week {l.week}</Text>
+                <Text style={s.body}>{l.action}</Text>
+              </View>
+            ))}
+          </View>
+          <PdfFooter />
+        </Page>
+      )}
+
+      {/* Lens evidence — its own page so a long source list cannot push the
+        * safety note onto an orphan page. */}
+      {report.lens && (
+        <Page size="A4" style={s.page}>
+          <ChapterHeading
+            number={ch()}
+            eyebrow="Evidence"
+            title={`Behind ${report.lens.shortLabel}`}
+            subtitle="What each source supports — and what it does not show."
+          />
+          <View style={s.spacer}>
+            {report.lens.evidenceNotes.map((note) => (
+              <View key={note.url} style={s.card} wrap={false}>
+                <Link src={note.url}>
+                  <Text style={s.evidenceSource}>{note.title}</Text>
+                </Link>
+                <Text style={s.evidenceClaim}>
+                  {note.organisation} · {note.year}
+                </Text>
+                <Text style={s.body}>What it supports: {note.whatItSupports}</Text>
+                <Text style={s.evidenceClaim}>What it does not show: {note.limitation}</Text>
+              </View>
+            ))}
+            <View style={[s.card, { marginTop: 10 }]}>
+              <Text style={s.evidenceClaim}>{report.lens.safetyNote}</Text>
+            </View>
+          </View>
+          <PdfFooter />
+        </Page>
+      )}
+
       {/* Evidence */}
       <Page size="A4" style={s.page}>
         <ChapterHeading

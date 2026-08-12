@@ -3,6 +3,7 @@
 import type { CSSProperties } from "react"
 import * as Icons from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
+import { LensSection } from "@/components/report/lens-section"
 import { DigitalTwinFigure } from "@/components/digital-twin/parts"
 import { FoodTool, PathwayIcon } from "@/components/report/food-tool"
 import { CARD_SHADOW, SectionHeader } from "@/components/report/report-section"
@@ -663,6 +664,12 @@ export function FoodSystemSection({ report }: { report: FoodSystemReport }) {
           </ScrollReveal>
         </section>
       )}
+
+      {/* The purchased lens, if any. Placed here on purpose: after the system
+        * has been explained and the loop given, before Evidence and the closing
+        * mission page. It shares the `ch()` counter, so the chapter numbering
+        * stays continuous whether or not a lens exists. */}
+      {report.lens && <LensSection lens={report.lens} chapterNumber={ch()} />}
 
       {/* Evidence — the claims above, with something a reader can check */}
       <section>
