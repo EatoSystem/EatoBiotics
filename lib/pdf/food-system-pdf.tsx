@@ -136,6 +136,57 @@ const s = StyleSheet.create({
     padding: 12,
     marginBottom: 10,
   },
+  /* Lens rows. The pathway connections, signals and loop additions were one
+   * bordered card each, which put eleven boxes on page 1 and overflowed it onto
+   * a third physical page — breaking the deliberate two-page structure. A tight
+   * label+text row carries the same content in roughly a third of the height.
+   * Scoped to the lens; the shared `card` style is untouched.
+   *
+   * The measurements here are load-bearing, not taste: lens page 1 fits with
+   * about a third of a row to spare, so raising any of these margins puts the
+   * last loop addition back onto a third page. `tests/unit/lens-render.test.ts`
+   * renders the real PDF and counts physical pages, so that regression fails
+   * the suite rather than being found by eye. */
+  lensRow: {
+    marginBottom: 5,
+    paddingLeft: 8,
+    borderLeftWidth: 2,
+    borderLeftColor: BRAND.lightGrey,
+  },
+  lensRowLabel: {
+    fontSize: 10,
+    fontFamily: FONT.sansBold,
+    color: BRAND.darkText,
+    marginBottom: 2,
+  },
+  /* Loop additions put the week inline with its action. They are the shortest
+   * rows on the page and the least in need of a heading of their own, so this
+   * is where the remaining overflow was recovered. */
+  lensLoopRow: {
+    marginBottom: 5,
+    paddingLeft: 8,
+    borderLeftWidth: 2,
+    borderLeftColor: BRAND.lightGrey,
+  },
+  lensLoopWeek: { fontFamily: FONT.sansBold, color: BRAND.darkText },
+  /* Same size and colour as `body`, one notch tighter in leading. 10pt on 14.5
+   * is still comfortably inside normal reading leading, and across the ~25
+   * lines of lens page 1 it buys back the last row. */
+  lensBody: {
+    fontSize: 10,
+    fontFamily: FONT.sans,
+    color: BRAND.bodyText,
+    lineHeight: 1.45,
+  },
+  lensGroupLabel: {
+    fontSize: 8,
+    fontFamily: FONT.sansBold,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    color: BRAND.subText,
+    marginTop: 9,
+    marginBottom: 4,
+  },
   /* Lens safety. A callout, not a footnote: for Glucose and Mind this is the
    * most important text on the page, and it must not read as small print. */
   safetyCallout: {
@@ -666,41 +717,41 @@ export function FoodSystemPages({ report }: { report: FoodSystemReport }) {
           />
 
           <View style={s.spacer}>
-            <View style={s.card} wrap={false}>
+            <View style={[s.card, { padding: 10, marginBottom: 0 }]} wrap={false}>
               <Text style={s.cardTitle}>What your answers describe</Text>
-              <Text style={s.body}>{report.lens.patternSummary}</Text>
+              <Text style={s.lensBody}>{report.lens.patternSummary}</Text>
             </View>
 
-            <Text style={[s.cardTitle, { marginTop: 14 }]}>
-              How this connects to your Food System
-            </Text>
+            <Text style={s.lensGroupLabel}>How this connects to your Food System</Text>
             {report.lens.pathwayConnections.map((pc) => (
-              <View key={pc.pathway} style={s.card} wrap={false}>
-                <Text style={s.cardTitle}>{PATHWAY_LABEL[pc.pathway]}</Text>
-                <Text style={s.body}>{pc.connection}</Text>
+              <View key={pc.pathway} style={s.lensRow} wrap={false}>
+                <Text style={s.lensRowLabel}>{PATHWAY_LABEL[pc.pathway]}</Text>
+                <Text style={s.lensBody}>{pc.connection}</Text>
               </View>
             ))}
 
-            <View style={[s.card, { marginTop: 14 }]} wrap={false}>
+            <View style={[s.card, { marginTop: 10, padding: 10, marginBottom: 0 }]} wrap={false}>
               <Text style={s.cardTitle}>
                 Where it matters most: {PATHWAY_LABEL[report.lens.priorityConnection.pathway]}
               </Text>
-              <Text style={s.body}>{report.lens.priorityConnection.why}</Text>
+              <Text style={s.lensBody}>{report.lens.priorityConnection.why}</Text>
             </View>
 
-            <Text style={[s.cardTitle, { marginTop: 14 }]}>What to notice</Text>
+            <Text style={s.lensGroupLabel}>What to notice</Text>
             {report.lens.signals.map((sig) => (
-              <View key={sig.label} style={s.card} wrap={false}>
-                <Text style={s.cardTitle}>{sig.label}</Text>
-                <Text style={s.body}>{sig.whatToNotice}</Text>
+              <View key={sig.label} style={s.lensRow} wrap={false}>
+                <Text style={s.lensRowLabel}>{sig.label}</Text>
+                <Text style={s.lensBody}>{sig.whatToNotice}</Text>
               </View>
             ))}
 
-            <Text style={[s.cardTitle, { marginTop: 14 }]}>Added to your 30-day loop</Text>
+            <Text style={s.lensGroupLabel}>Added to your 30-day loop</Text>
             {report.lens.loopAdditions.map((l) => (
-              <View key={l.week} style={s.card} wrap={false}>
-                <Text style={s.cardTitle}>Week {l.week}</Text>
-                <Text style={s.body}>{l.action}</Text>
+              <View key={l.week} style={s.lensLoopRow} wrap={false}>
+                <Text style={s.lensBody}>
+                  <Text style={s.lensLoopWeek}>Week {l.week} · </Text>
+                  {l.action}
+                </Text>
               </View>
             ))}
           </View>
@@ -715,8 +766,8 @@ export function FoodSystemPages({ report }: { report: FoodSystemReport }) {
           <ChapterHeading
             number={ch()}
             eyebrow="Evidence & Safety"
-            title="Evidence & Safety"
-            subtitle={`The sources behind ${report.lens.shortLabel} — what each supports, and what it does not show.`}
+            title={`What the ${report.lens.shortLabel} Lens Can and Cannot Tell You`}
+            subtitle="The limits of this lens, and the sources behind it — what each one supports, and what it does not show."
           />
           <View style={s.spacer}>
             {/* Safety FIRST, above the citations. Placing it after the source

@@ -290,10 +290,58 @@ describe("PDF page 2 puts safety before citations", () => {
 })
 
 /**
- * Page count. A no-add-on PDF must be byte-for-byte the same shape it was
- * before add-ons existed; a lens adds exactly two pages and no more.
+ * Page count, measured two ways — and both are needed.
+ *
+ * The declared count walks the element tree and counts <Page> elements. It is
+ * cheap, but it is also structurally blind: it returns "+2" whether or not the
+ * content fits, because the lens is written as two <Page> elements regardless.
+ * That is precisely how lens page 1 came to overflow onto a third PHYSICAL page
+ * — three bordered cards per group put eleven boxes on one page — while this
+ * suite stayed green and the defect was found by counting pages in a viewer.
+ *
+ * So the second test renders the real PDF and counts the pages the reader
+ * actually gets. It is the slower of the two (about a second per render) and
+ * worth every millisecond: the two-page lens structure is a deliberate design
+ * decision, and the spacing on lens page 1 now fits with roughly a third of a
+ * row to spare. Any future copy change or margin bump that pushes it over will
+ * fail here by name instead of shipping.
  */
 describe("PDF page count", () => {
+  /** Physical pages in the rendered PDF, read from its page tree. */
+  async function renderedPageCount(report: FoodSystemReport): Promise<number> {
+    const React = (await import("react")).default
+    const { Document, renderToBuffer } = await import("@react-pdf/renderer")
+    const { FoodSystemPages } = await import("@/lib/pdf/food-system-pdf")
+
+    const doc = React.createElement(
+      Document,
+      null,
+      React.createElement(FoodSystemPages, { report } as never),
+    )
+    const buffer = await renderToBuffer(doc as never)
+    // "/Count N" on the page-tree node is the page total; take the largest,
+    // since nested Pages nodes each carry their own subtree count.
+    const counts = [...buffer.toString("latin1").matchAll(/\/Count\s+(\d+)/g)].map((m) =>
+      Number(m[1]),
+    )
+    expect(counts.length, "no /Count in the rendered PDF").toBeGreaterThan(0)
+    return Math.max(...counts)
+  }
+
+  it("a lens adds exactly two PHYSICAL pages — nothing overflows", async () => {
+    const without = await renderedPageCount(reportFor(null))
+    expect(without).toBeGreaterThan(1)
+    for (const addon of ADDON_KEYS) {
+      expect(
+        await renderedPageCount(reportFor(addon)),
+        `${addon}: lens page 1 has overflowed onto a third page`,
+      ).toBe(without + 2)
+    }
+    // Family copy is longer than the individual voice in every lens, so it is
+    // the case most likely to spill first.
+    expect(await renderedPageCount(reportFor("mind", true)), "family mind").toBe(without + 2)
+  }, 60_000)
+
   async function pageCount(report: FoodSystemReport): Promise<number> {
     const React = (await import("react")).default
     const { FoodSystemPages } = await import("@/lib/pdf/food-system-pdf")
@@ -321,7 +369,7 @@ describe("PDF page count", () => {
     return pages
   }
 
-  it("a lens adds exactly two pages", async () => {
+  it("a lens declares exactly two pages", async () => {
     const without = await pageCount(reportFor(null))
     expect(without).toBeGreaterThan(3)
     for (const addon of ADDON_KEYS) {
