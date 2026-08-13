@@ -42,9 +42,31 @@ import type { DeepQuestion } from "@/lib/deep-assessment"
  * documentation cannot drift away from the questions it describes.
  */
 
+/** Position within a lens's own bank. The wire id is derived from it. */
+export type LensSlot = 1 | 2 | 3 | 4
+
+/**
+ * The wire id for a lens question.
+ *
+ * Namespaced per add-on, and computed in exactly one place. The four banks
+ * originally all used `lens1`–`lens4`, which meant an answer set carried no
+ * evidence of which lens it belonged to: a Glucose answer submitted under a
+ * Mind entitlement was indistinguishable from a real Mind answer, and the
+ * "answers for another lens are discarded" property could not actually hold.
+ *
+ * Deriving the id here — rather than writing `mind_lens1` into each spec —
+ * keeps a fifth add-on from being half-renamed.
+ */
+export function lensQuestionId(addon: AddonType, slot: LensSlot): string {
+  return `${addon}_lens${slot}`
+}
+
 export interface AddonQuestionSpec {
-  /** Stable id. `lens<n>` — never `dq<n>`, which is the core generated set. */
-  id: string
+  /**
+   * Position in this add-on's bank. NOT the wire id — see `lensQuestionId`.
+   * Never `dq<n>`, which is the core generated set.
+   */
+  slot: LensSlot
   type: DeepQuestion["type"]
   /** Which pathway this question informs, for the existing DeepPillar typing. */
   pillar: DeepQuestion["pillar"]
@@ -83,7 +105,7 @@ const FREQ5 = [
  * chapter actually reads. */
 const STABILITY: AddonQuestionSpec[] = [
   {
-    id: "lens1",
+    slot: 1,
     type: "single",
     pillar: "consistency",
     text: "How predictable is your digestion from day to day?",
@@ -101,7 +123,7 @@ const STABILITY: AddonQuestionSpec[] = [
     whyNeeded: "Without it the chapter cannot tell a steady system from an erratic one, and would give both the same advice.",
   },
   {
-    id: "lens2",
+    slot: 2,
     type: "single",
     pillar: "feeling",
     text: "When digestive discomfort shows up, when does it usually happen?",
@@ -120,7 +142,7 @@ const STABILITY: AddonQuestionSpec[] = [
     whyNeeded: "Post-meal, evening and stress-linked patterns each point at a different practical change.",
   },
   {
-    id: "lens3",
+    slot: 3,
     type: "multi",
     pillar: "prebiotics",
     text: "Which of these are already a regular part of your week?",
@@ -139,7 +161,7 @@ const STABILITY: AddonQuestionSpec[] = [
     whyNeeded: "Recommending fermented foods to someone already eating them daily wastes the one action they will read.",
   },
   {
-    id: "lens4",
+    slot: 4,
     type: "single",
     pillar: "postbiotics",
     text: "How often do meals happen at roughly the same times?",
@@ -159,7 +181,7 @@ const STABILITY: AddonQuestionSpec[] = [
  * timing — and never for a reading, a diagnosis or a medication. */
 const GLUCOSE: AddonQuestionSpec[] = [
   {
-    id: "lens1",
+    slot: 1,
     type: "single",
     pillar: "feeling",
     text: "How does your energy usually behave in the two hours after a main meal?",
@@ -178,7 +200,7 @@ const GLUCOSE: AddonQuestionSpec[] = [
     whyNeeded: "A steady pattern and a crash pattern deserve opposite framing — protect versus adjust.",
   },
   {
-    id: "lens2",
+    slot: 2,
     type: "single",
     pillar: "feeding",
     text: "What does a typical breakfast look like on a workday?",
@@ -196,7 +218,7 @@ const GLUCOSE: AddonQuestionSpec[] = [
     whyNeeded: "Generic 'balance your meals' advice is unusable; the action has to name the meal they actually eat.",
   },
   {
-    id: "lens3",
+    slot: 3,
     type: "single",
     pillar: "feeling",
     text: "When do cravings for something sweet most often turn up?",
@@ -214,7 +236,7 @@ const GLUCOSE: AddonQuestionSpec[] = [
     whyNeeded: "The prompt has to point at a time of day the reader can actually watch.",
   },
   {
-    id: "lens4",
+    slot: 4,
     type: "multi",
     pillar: "prebiotics",
     text: "Which of these usually appear alongside your carbohydrates?",
@@ -239,7 +261,7 @@ const GLUCOSE: AddonQuestionSpec[] = [
  * routine and what the reader notices. */
 const MIND: AddonQuestionSpec[] = [
   {
-    id: "lens1",
+    slot: 1,
     type: "single",
     pillar: "consistency",
     text: "How steady is your eating rhythm on a busy day?",
@@ -257,7 +279,7 @@ const MIND: AddonQuestionSpec[] = [
     whyNeeded: "Rhythm under pressure is the part of the pattern most connected to how food and focus interact.",
   },
   {
-    id: "lens2",
+    slot: 2,
     type: "single",
     pillar: "feeling",
     text: "When during the day do you most often notice your focus dropping?",
@@ -275,7 +297,7 @@ const MIND: AddonQuestionSpec[] = [
     whyNeeded: "An observation prompt with no time attached is not something anyone can act on.",
   },
   {
-    id: "lens3",
+    slot: 3,
     type: "multi",
     pillar: "probiotics",
     text: "Which of these show up in a typical week?",
@@ -294,7 +316,7 @@ const MIND: AddonQuestionSpec[] = [
     whyNeeded: "Without it the chapter cannot tell whether the useful move is adding or protecting.",
   },
   {
-    id: "lens4",
+    slot: 4,
     type: "single",
     pillar: "postbiotics",
     text: "How often does the last meal of the day land close to bedtime?",
@@ -313,7 +335,7 @@ const MIND: AddonQuestionSpec[] = [
  * body-composition goals, no promises about output. */
 const PERFORMANCE: AddonQuestionSpec[] = [
   {
-    id: "lens1",
+    slot: 1,
     type: "single",
     pillar: "consistency",
     text: "How does eating usually fit around the active parts of your day?",
@@ -331,7 +353,7 @@ const PERFORMANCE: AddonQuestionSpec[] = [
     whyNeeded: "Someone already fuelling on both sides needs protection advice, not a new routine.",
   },
   {
-    id: "lens2",
+    slot: 2,
     type: "single",
     pillar: "feeling",
     text: "How do you usually feel the day after a demanding day?",
@@ -349,7 +371,7 @@ const PERFORMANCE: AddonQuestionSpec[] = [
     whyNeeded: "Recovery is the observation that makes the rest of the chapter concrete.",
   },
   {
-    id: "lens3",
+    slot: 3,
     type: "multi",
     pillar: "prebiotics",
     text: "Which of these are usually part of your main meals?",
@@ -368,7 +390,7 @@ const PERFORMANCE: AddonQuestionSpec[] = [
     whyNeeded: "The action has to name what is absent from their plate, not describe an ideal one.",
   },
   {
-    id: "lens4",
+    slot: 4,
     type: "single",
     pillar: "postbiotics",
     text: "How consistent is your sleep and wind-down routine across a week?",
@@ -407,7 +429,7 @@ export function addonQuestionsFor(
   const family = foundation === "family"
 
   return specs.map((spec) => ({
-    id: spec.id,
+    id: lensQuestionId(addon, spec.slot),
     type: spec.type,
     pillar: spec.pillar,
     section: "lens" as const,
@@ -422,12 +444,61 @@ export function addonQuestionsFor(
   }))
 }
 
-/** The lens answers only, keyed by question id — what the lens builder reads. */
-export function lensAnswers(
+/** The declared option values for one question. Empty when it has no options. */
+export function lensOptionValues(addon: AddonType, slot: LensSlot): ReadonlySet<string> {
+  const spec = ADDON_QUESTIONS[addon]?.find((q) => q.slot === slot)
+  return new Set((spec?.options ?? []).map((o) => o.value))
+}
+
+/**
+ * The ONE sanitizer for submitted lens answers.
+ *
+ * ── Why an id filter was not enough ──────────────────────────────────────────
+ *
+ * The previous version filtered by id alone. That let any string through as
+ * long as it arrived under a known key, and two builders interpolated the
+ * result straight into customer prose — so a crafted payload could put
+ * arbitrary text into a paid report, and an absent answer produced a sentence
+ * with a hole in it ("Focus most often dips , which gives…").
+ *
+ * So this validates on both axes:
+ *
+ *   id     must be a wire id belonging to THIS add-on. Iteration is over the
+ *          entitled specs, so another lens's namespaced ids, unknown ids and
+ *          core `dq*` ids are structurally unreachable — not filtered out
+ *          afterwards, simply never looked at.
+ *   value  must be a value the question itself declares. A valid id carrying
+ *          another question's option is rejected exactly like a random string.
+ *
+ * Anything rejected is OMITTED rather than blanked, so downstream builders see
+ * "unanswered" — a state every branch already has grammatical copy for — and
+ * never a value they must decide whether to trust.
+ */
+export function sanitizeLensAnswers(
   addon: AddonType | null | undefined,
   answers: Record<string, unknown>,
 ): Record<string, unknown> {
   if (!addon) return {}
-  const ids = new Set(ADDON_QUESTIONS[addon]?.map((q) => q.id) ?? [])
-  return Object.fromEntries(Object.entries(answers).filter(([k]) => ids.has(k)))
+  const specs = ADDON_QUESTIONS[addon]
+  if (!specs) return {}
+
+  const out: Record<string, unknown> = {}
+  for (const spec of specs) {
+    const id = lensQuestionId(addon, spec.slot)
+    const raw = answers?.[id]
+    const allowed = lensOptionValues(addon, spec.slot)
+
+    if (spec.type === "multi") {
+      if (!Array.isArray(raw)) continue
+      const kept = raw.filter((v): v is string => typeof v === "string" && allowed.has(v))
+      // An array that survives with nothing in it is not an answer.
+      if (kept.length > 0) out[id] = kept
+      continue
+    }
+
+    if (typeof raw !== "string") continue
+    if (!allowed.has(raw)) continue
+    out[id] = raw
+  }
+  return out
 }

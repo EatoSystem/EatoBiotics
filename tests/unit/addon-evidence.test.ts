@@ -6,6 +6,7 @@ import { buildFoodSystemReport } from "@/lib/report/build-food-system-report"
 import { foodSystemReportSchema } from "@/lib/report/food-system-report-types"
 import { computeOverall, getProfile } from "@/lib/assessment-scoring"
 import { CLAIMS, DENIAL_BOILERPLATE } from "./helpers/marketing-language"
+import { ANSWERS_B } from "./helpers/lens-fixtures"
 
 /**
  * The lens evidence contract.
@@ -26,10 +27,10 @@ function core() {
 }
 
 const ANSWERS: Record<AddonType, Record<string, unknown>> = {
-  stability: { lens1: "unpredictable", lens2: "stress-linked", lens3: ["none"], lens4: "rarely" },
-  glucose: { lens1: "lift-then-dip", lens2: "skipped", lens3: "mid-afternoon", lens4: ["alone"] },
-  mind: { lens1: "skipped", lens2: "early-afternoon", lens3: ["none"], lens4: "daily" },
-  performance: { lens1: "neither", lens2: "depleted", lens3: ["variable"], lens4: "rarely" },
+  stability: ANSWERS_B["stability"],
+  glucose: ANSWERS_B["glucose"],
+  mind: ANSWERS_B["mind"],
+  performance: ANSWERS_B["performance"],
 }
 
 const lensFor = (addon: AddonType) =>

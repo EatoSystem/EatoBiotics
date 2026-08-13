@@ -11,8 +11,8 @@ import {
   type PaidReportFoundation,
   type PaidReportHealthSystem,
 } from "@/lib/paid-report-session"
-import { buildAddonLens, ensureAddonLens, mergeGeneratedLens } from "@/lib/report/addon-lens"
-import { lensAnswers } from "@/lib/assessment/addon-questions"
+import { buildAddonLens, reconcileAddonLens, mergeGeneratedLens } from "@/lib/report/addon-lens"
+import { sanitizeLensAnswers } from "@/lib/assessment/addon-questions"
 import { buildFallbackPaidReport } from "@/lib/fallback-paid-report"
 import {
   buildFoodSystemReport,
@@ -466,18 +466,18 @@ export async function POST(req: NextRequest) {
   const isFamilyReport = freeScores.foundationType === "family"
   // Only the answers belonging to THIS lens. A payload stuffed with another
   // lens's ids contributes nothing.
-  const lensAnswerSet = lensAnswers(entitledAddon, answers)
+  const lensAnswerSet = sanitizeLensAnswers(entitledAddon, answers)
 
   /** Attach the derived lens to a freshly built report. No-op without one. */
   const withLens = (r: DeepReport): DeepReport =>
-    ensureAddonLens(r, { addon: entitledAddon, answers: lensAnswerSet, isFamily: isFamilyReport })
+    reconcileAddonLens(r, { addon: entitledAddon, answers: lensAnswerSet, isFamily: isFamilyReport })
 
   if (existingRow?.report_json) {
     // Reports persisted before the educational block existed come back without
     // one, and this path returns them verbatim — so enrich rather than reuse
     // blind. Derived only: no regeneration, so a retry costs nothing extra and
     // the report keeps whatever narrative it already had.
-    report = ensureAddonLens(
+    report = reconcileAddonLens(
       ensureFoodSystem(existingRow.report_json as DeepReport, foodSystemInput),
       { addon: entitledAddon, answers: lensAnswerSet, isFamily: isFamilyReport },
     )

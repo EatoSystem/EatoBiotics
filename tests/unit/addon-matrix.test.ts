@@ -5,13 +5,14 @@ import { renderToStaticMarkup } from "react-dom/server"
 
 import { ADDON_KEYS, type AddonType } from "@/lib/addon-types"
 import { asAddon, encodePaidReportSummary, decodePaidReportSummary } from "@/lib/paid-report-session"
-import { addonQuestionsFor, lensAnswers, ADDON_QUESTIONS } from "@/lib/assessment/addon-questions"
-import { buildAddonLens, ensureAddonLens, mergeGeneratedLens, ADDON_SAFETY } from "@/lib/report/addon-lens"
-import { buildFoodSystemReport, resolveReportMode } from "@/lib/report/build-food-system-report"
-import { foodSystemReportSchema, type FoodSystemReport } from "@/lib/report/food-system-report-types"
+import { addonQuestionsFor, sanitizeLensAnswers, ADDON_QUESTIONS, lensQuestionId } from "@/lib/assessment/addon-questions"
+import { buildAddonLens, reconcileAddonLens, mergeGeneratedLens, ADDON_SAFETY } from "@/lib/report/addon-lens"
+import { buildFoodSystemReport, resolveReportMode} from "@/lib/report/build-food-system-report"
+import { foodSystemReportSchema, type FoodSystemReport, parseFoodSystemReport } from "@/lib/report/food-system-report-types"
 import { FoodSystemSection } from "@/components/report/food-system-section"
 import { computeOverall, getProfile } from "@/lib/assessment-scoring"
 import { CLAIMS, DENIAL_BOILERPLATE } from "./helpers/marketing-language"
+import { ANSWERS_A, ANSWERS_B, nsAnswers } from "./helpers/lens-fixtures"
 
 /**
  * The end-to-end matrix.
@@ -25,18 +26,18 @@ const SUB = { prebiotics: 85, probiotics: 20, postbiotics: 85 }
 const CORE_ANSWERS = { dq1: "core-a", dq2: "core-b" }
 
 const LENS_ANSWERS: Record<AddonType, Record<string, unknown>> = {
-  stability: { lens1: "unpredictable", lens2: "stress-linked", lens3: ["none"], lens4: "rarely" },
-  glucose: { lens1: "lift-then-dip", lens2: "skipped", lens3: "mid-afternoon", lens4: ["alone"] },
-  mind: { lens1: "skipped", lens2: "early-afternoon", lens3: ["none"], lens4: "daily" },
-  performance: { lens1: "neither", lens2: "depleted", lens3: ["variable"], lens4: "rarely" },
+  stability: ANSWERS_B["stability"],
+  glucose: ANSWERS_B["glucose"],
+  mind: ANSWERS_B["mind"],
+  performance: ANSWERS_B["performance"],
 }
 
 /** The contrasting set, for "same lens, different answers". */
 const CONTRAST: Record<AddonType, Record<string, unknown>> = {
-  stability: { lens1: "predictable", lens2: "none", lens3: ["veg-variety", "fermented"], lens4: "daily" },
-  glucose: { lens1: "steady", lens2: "protein-led", lens3: "no-pattern", lens4: ["veg", "protein"] },
-  mind: { lens1: "steady", lens2: "no-pattern", lens3: ["fermented", "oily-fish"], lens4: "rarely" },
-  performance: { lens1: "both", lens2: "recovered", lens3: ["protein", "colour"], lens4: "daily" },
+  stability: ANSWERS_A["stability"],
+  glucose: ANSWERS_A["glucose"],
+  mind: ANSWERS_A["mind"],
+  performance: ANSWERS_A["performance"],
 }
 
 interface Scenario {
@@ -97,7 +98,7 @@ function resolve(scenario: Scenario) {
   const addon = asAddon(scenario.summary.selectedAddon)
   const isFamily = scenario.summary.foundationType === "family"
   const submitted = scenario.submitted ?? { ...CORE_ANSWERS, ...(addon ? LENS_ANSWERS[addon] : {}) }
-  return { addon, isFamily, submitted, lens: lensAnswers(addon, submitted) }
+  return { addon, isFamily, submitted, lens: sanitizeLensAnswers(addon, submitted) }
 }
 
 function coreReport(isFamily: boolean, addon: AddonType | null): FoodSystemReport {
@@ -139,11 +140,12 @@ describe("entitlement is the settled session, and survives every stage", () => {
     const { addon, lens } = resolve(s)
     expect(addon).toBe("stability")
     // Glucose's answers were submitted; none of them survive the filter,
-    // because glucose ids are not stability ids… except where ids overlap by
-    // design (lens1..lens4 are per-lens slots), so assert the LENS is right and
-    // the report is a Stability one.
+    // because glucose ids are not stability ids. That used to be untrue — every
+    // bank shared lens1..lens4 — so the ids are now namespaced per add-on and
+    // this assertion means what it says.
     expect(fullReport(s).lens!.key).toBe("stability")
-    expect(Object.keys(lens).every((k) => ADDON_QUESTIONS.stability.some((q) => q.id === k))).toBe(true)
+    const stabilityIds = ADDON_QUESTIONS.stability.map((q) => lensQuestionId("stability", q.slot))
+    expect(Object.keys(lens).every((k) => stabilityIds.includes(k))).toBe(true)
   })
 
   /**
@@ -156,7 +158,7 @@ describe("entitlement is the settled session, and survives every stage", () => {
     const src = readFileSync("app/api/submit-deep-assessment/route.ts", "utf8")
     expect(src).toContain("const entitledAddon = asAddon(freeScores.selectedAddon)")
     // The submitted answers are filtered, never trusted wholesale.
-    expect(src).toContain("lensAnswers(entitledAddon, answers)")
+    expect(src).toContain("sanitizeLensAnswers(entitledAddon, answers)")
     // And no path reads an add-on off the request body.
     expect(src).not.toMatch(/body\.selectedAddon|answers\.selectedAddon/)
   })
@@ -213,7 +215,7 @@ describe("question sets", () => {
   it.each(ADDON_KEYS)("%s adds exactly its own four questions", (addon) => {
     const qs = addonQuestionsFor(addon)
     expect(qs).toHaveLength(4)
-    expect(qs.map((q) => q.id)).toEqual(["lens1", "lens2", "lens3", "lens4"])
+    expect(qs.map((q) => q.id)).toEqual([1, 2, 3, 4].map((n) => `${addon}_lens${n}`))
     expect(qs.every((q) => q.section === "lens")).toBe(true)
   })
 })
@@ -398,13 +400,13 @@ describe("reuse and retry", () => {
   it("an existing valid lens is preserved, not rebuilt", () => {
     const lens = buildAddonLens({ addon: "stability", answers: LENS_ANSWERS.stability, foodSystem: coreReport(false, "stability") })
     const report = { foodSystem: { ...coreReport(false, "stability"), lens } }
-    const again = ensureAddonLens(report, { addon: "stability", answers: LENS_ANSWERS.stability })
+    const again = reconcileAddonLens(report, { addon: "stability", answers: LENS_ANSWERS.stability })
     expect(again.foodSystem!.lens).toBe(lens)
   })
 
   it("an entitled report missing its lens is enriched deterministically", () => {
-    const a = ensureAddonLens(stored(), { addon: "stability", answers: LENS_ANSWERS.stability })
-    const b = ensureAddonLens(stored(), { addon: "stability", answers: LENS_ANSWERS.stability })
+    const a = reconcileAddonLens(stored(), { addon: "stability", answers: LENS_ANSWERS.stability })
+    const b = reconcileAddonLens(stored(), { addon: "stability", answers: LENS_ANSWERS.stability })
     expect(a.foodSystem!.lens?.key).toBe("stability")
     expect(JSON.stringify(a.foodSystem!.lens)).toBe(JSON.stringify(b.foodSystem!.lens))
     expect(a.opening).toBe("the stored narrative")
@@ -412,12 +414,71 @@ describe("reuse and retry", () => {
 
   it("a legacy or no-add-on report gains nothing", () => {
     const legacy = stored()
-    expect(ensureAddonLens(legacy, { addon: null, answers: {} })).toBe(legacy)
-    expect(ensureAddonLens(legacy, { addon: asAddon("recovery"), answers: {} })).toBe(legacy)
+    expect(reconcileAddonLens(legacy, { addon: null, answers: {} })).toBe(legacy)
+    expect(reconcileAddonLens(legacy, { addon: asAddon("recovery"), answers: {} })).toBe(legacy)
   })
 
   /**
-   * Reuse must not pay for Claude again. ensureAddonLens is synchronous and
+   * The settled session is authoritative — the stored lens is not trusted.
+   *
+   * Both cases below were previously no-ops: any existing lens was kept, and a
+   * null entitlement returned early. A stored report could therefore present a
+   * chapter the session had not paid for.
+   */
+  it("a wrong-key lens is replaced with the entitled one", () => {
+    const wrong = buildAddonLens({
+      addon: "glucose",
+      answers: LENS_ANSWERS.glucose,
+      foodSystem: coreReport(false, "glucose"),
+    })
+    const report = { foodSystem: { ...coreReport(false, "mind"), lens: wrong } }
+
+    const fixed = reconcileAddonLens(report, { addon: "mind", answers: LENS_ANSWERS.mind })
+
+    expect(fixed.foodSystem!.lens!.key).toBe("mind")
+    expect(fixed.foodSystem!.lens).not.toBe(wrong)
+    // No trace of the lens that was not bought.
+    const json = JSON.stringify(fixed.foodSystem!.lens)
+    expect(json).not.toContain("Glucose")
+    expect(json).not.toContain("does not measure blood glucose")
+    // Deterministic: the same replacement every time.
+    const twice = reconcileAddonLens(report, { addon: "mind", answers: LENS_ANSWERS.mind })
+    expect(JSON.stringify(twice.foodSystem!.lens)).toBe(json)
+  })
+
+  it("a stale lens is removed when the entitlement has none", () => {
+    const lens = buildAddonLens({
+      addon: "stability",
+      answers: LENS_ANSWERS.stability,
+      foodSystem: coreReport(false, "stability"),
+    })
+    const report = { foodSystem: { ...coreReport(false, "stability"), lens } }
+
+    const stripped = reconcileAddonLens(report, { addon: null, answers: {} })
+
+    expect(stripped.foodSystem!.lens).toBeUndefined()
+    expect("lens" in stripped.foodSystem!).toBe(false)
+    // An unknown entitlement behaves exactly like no entitlement.
+    const unknown = reconcileAddonLens(report, { addon: asAddon("recovery"), answers: {} })
+    expect(unknown.foodSystem!.lens).toBeUndefined()
+  })
+
+  it("reconciliation output still validates, so it can be re-persisted", () => {
+    const wrong = buildAddonLens({
+      addon: "glucose",
+      answers: LENS_ANSWERS.glucose,
+      foodSystem: coreReport(false, "glucose"),
+    })
+    const report = { foodSystem: { ...coreReport(false, "mind"), lens: wrong } }
+    const fixed = reconcileAddonLens(report, { addon: "mind", answers: LENS_ANSWERS.mind })
+    expect(parseFoodSystemReport(fixed.foodSystem!)).not.toBeNull()
+
+    const stripped = reconcileAddonLens(report, { addon: null, answers: {} })
+    expect(parseFoodSystemReport(stripped.foodSystem!)).not.toBeNull()
+  })
+
+  /**
+   * Reuse must not pay for Claude again. reconcileAddonLens is synchronous and
    * pulls in nothing from the AI client; the route's reuse branch is asserted
    * separately because that is where a regression would actually appear.
    */
@@ -437,7 +498,7 @@ describe("reuse and retry", () => {
     // Non-trivial slice, or the assertions below would pass on nothing.
     expect(reuseBranch.length).toBeGreaterThan(100)
     expect(reuseBranch).not.toContain("anthropic.messages.create")
-    expect(reuseBranch).toContain("ensureAddonLens")
+    expect(reuseBranch).toContain("reconcileAddonLens")
   })
 })
 

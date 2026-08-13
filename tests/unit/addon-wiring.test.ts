@@ -2,10 +2,11 @@ import { describe, it, expect } from "vitest"
 
 import { ADDON_KEYS, type AddonType } from "@/lib/addon-types"
 import { asAddon } from "@/lib/paid-report-session"
-import { buildAddonLens, ensureAddonLens, mergeGeneratedLens, ADDON_SAFETY } from "@/lib/report/addon-lens"
+import { buildAddonLens, reconcileAddonLens, mergeGeneratedLens, ADDON_SAFETY } from "@/lib/report/addon-lens"
 import { buildFoodSystemReport } from "@/lib/report/build-food-system-report"
 import { computeOverall, getProfile } from "@/lib/assessment-scoring"
-import { ADDON_QUESTIONS, addonQuestionsFor, lensAnswers } from "@/lib/assessment/addon-questions"
+import { ADDON_QUESTIONS, addonQuestionsFor, sanitizeLensAnswers } from "@/lib/assessment/addon-questions"
+import { ANSWERS_B, nsAnswers } from "./helpers/lens-fixtures"
 
 /**
  * Wiring: entitlement, safe merge, and reuse enrichment.
@@ -24,10 +25,10 @@ function core() {
 }
 
 const ANSWERS: Record<AddonType, Record<string, unknown>> = {
-  stability: { lens1: "unpredictable", lens2: "stress-linked", lens3: ["none"], lens4: "rarely" },
-  glucose: { lens1: "lift-then-dip", lens2: "skipped", lens3: "mid-afternoon", lens4: ["alone"] },
-  mind: { lens1: "skipped", lens2: "early-afternoon", lens3: ["none"], lens4: "daily" },
-  performance: { lens1: "neither", lens2: "depleted", lens3: ["variable"], lens4: "rarely" },
+  stability: ANSWERS_B["stability"],
+  glucose: ANSWERS_B["glucose"],
+  mind: ANSWERS_B["mind"],
+  performance: ANSWERS_B["performance"],
 }
 
 const lensFor = (addon: AddonType) =>
@@ -35,24 +36,34 @@ const lensFor = (addon: AddonType) =>
 
 describe("entitlement comes from the settled payment, not the payload", () => {
   it("a tampered payload cannot smuggle another lens's answers in", () => {
-    // The customer bought Stability. Their submission also carries Glucose ids.
+    // The customer bought Stability. Their submission also carries a full set
+    // of Glucose answers, an unknown id, a core id, and — the case the old id
+    // filter could not see — a Stability id carrying a value that belongs to a
+    // different question.
     const submitted = {
       dq1: "core",
-      lens1: "unpredictable", // legitimately theirs
-      lens2: "stress-linked",
+      ...nsAnswers("stability", { 1: "unpredictable", 2: "stress-linked" }),
+      ...nsAnswers("glucose", { 1: "lift-then-dip", 2: "skipped", 3: "mid-afternoon" }),
+      stability_lens4: "mid-afternoon", // a real id, another question's value
+      lens1: "unpredictable", // the old un-namespaced id
       glucoseOnly: "x",
       lens99: "not a real id",
     }
-    const filtered = lensAnswers("stability", submitted)
+    const filtered = sanitizeLensAnswers("stability", submitted)
 
-    expect(Object.keys(filtered).sort()).toEqual(["lens1", "lens2"])
+    expect(Object.keys(filtered).sort()).toEqual(["stability_lens1", "stability_lens2"])
+    // Nothing Glucose-shaped survives, by id or by value.
+    for (const k of Object.keys(filtered)) expect(k.startsWith("stability_")).toBe(true)
+    expect(Object.values(filtered)).not.toContain("mid-afternoon")
+    expect(Object.values(filtered)).not.toContain("lift-then-dip")
     expect(filtered).not.toHaveProperty("glucoseOnly")
     expect(filtered).not.toHaveProperty("lens99")
+    expect(filtered).not.toHaveProperty("lens1")
     expect(filtered).not.toHaveProperty("dq1")
   })
 
   it("an unentitled payload yields no lens answers at all", () => {
-    expect(lensAnswers(null, { lens1: "unpredictable", lens2: "x" })).toEqual({})
+    expect(sanitizeLensAnswers(null, nsAnswers("stability", { 1: "unpredictable" }))).toEqual({})
   })
 
   it("an unknown add-on on the payment record is rejected, not passed through", () => {
@@ -165,7 +176,7 @@ describe("reuse and retry gain a missing lens without regenerating", () => {
     const stored = { foodSystem: core(), opening: "stored narrative" }
     expect(stored.foodSystem.lens).toBeUndefined()
 
-    const enriched = ensureAddonLens(stored, { addon: "stability", answers: ANSWERS.stability })
+    const enriched = reconcileAddonLens(stored, { addon: "stability", answers: ANSWERS.stability })
 
     expect(enriched.foodSystem!.lens?.key).toBe("stability")
     // The stored narrative is untouched — this is derivation, not regeneration.
@@ -174,24 +185,24 @@ describe("reuse and retry gain a missing lens without regenerating", () => {
 
   it("a report that already has a lens keeps the one it has", () => {
     const withLens = { foodSystem: { ...core(), lens: lensFor("mind") } }
-    const again = ensureAddonLens(withLens, { addon: "mind", answers: ANSWERS.mind })
+    const again = reconcileAddonLens(withLens, { addon: "mind", answers: ANSWERS.mind })
     expect(again.foodSystem!.lens).toBe(withLens.foodSystem.lens)
   })
 
   it("no add-on means the report is returned untouched", () => {
     const stored = { foodSystem: core() }
-    expect(ensureAddonLens(stored, { addon: null, answers: {} })).toBe(stored)
+    expect(reconcileAddonLens(stored, { addon: null, answers: {} })).toBe(stored)
   })
 
   it("a legacy report with no foodSystem block at all is left alone", () => {
     const legacy = { opening: "old report" } as { foodSystem?: never; opening: string }
-    expect(ensureAddonLens(legacy, { addon: "glucose", answers: ANSWERS.glucose })).toBe(legacy)
+    expect(reconcileAddonLens(legacy, { addon: "glucose", answers: ANSWERS.glucose })).toBe(legacy)
   })
 
   it("enrichment does not disturb the core scores", () => {
     const stored = { foodSystem: core() }
     const before = JSON.stringify(stored.foodSystem.bioticScores)
-    const after = ensureAddonLens(stored, { addon: "performance", answers: ANSWERS.performance })
+    const after = reconcileAddonLens(stored, { addon: "performance", answers: ANSWERS.performance })
     expect(JSON.stringify(after.foodSystem!.bioticScores)).toBe(before)
   })
 })

@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest"
 
 import { ADDON_KEYS, type AddonType } from "@/lib/addon-types"
-import { ADDON_QUESTIONS, addonQuestionsFor, lensAnswers } from "@/lib/assessment/addon-questions"
+import { ADDON_QUESTIONS, addonQuestionsFor, sanitizeLensAnswers } from "@/lib/assessment/addon-questions"
 import { FALLBACK_DEEP_QUESTIONS } from "@/lib/deep-assessment"
+import { nsAnswers } from "./helpers/lens-fixtures"
 
 /**
  * The lens question banks.
@@ -63,7 +64,9 @@ describe("every add-on changes the question set", () => {
 describe("ids and sections stay disciplined", () => {
   it.each(ADDON_KEYS)("%s uses lens ids and the lens section only", (addon) => {
     for (const q of addonQuestionsFor(addon)) {
-      expect(q.id, `${addon} ${q.id}`).toMatch(/^lens\d+$/)
+      // Namespaced per add-on: a Glucose answer can no longer masquerade as a
+      // Mind one because both banks used `lens1`.
+      expect(q.id, `${addon} ${q.id}`).toMatch(new RegExp(`^${addon}_lens[1-4]$`))
       expect(q.section, `${addon} ${q.id}`).toBe("lens")
       expect(q.id.startsWith("dq")).toBe(false)
     }
@@ -100,9 +103,9 @@ describe("ids and sections stay disciplined", () => {
 describe("documentation is carried as data and stays complete", () => {
   it.each(ADDON_KEYS)("%s specs document intent, field and necessity", (addon) => {
     for (const spec of ADDON_QUESTIONS[addon]) {
-      expect(spec.intent.trim().length, `${addon} ${spec.id} intent`).toBeGreaterThan(20)
-      expect(spec.answerField.trim().length, `${addon} ${spec.id} answerField`).toBeGreaterThan(3)
-      expect(spec.whyNeeded.trim().length, `${addon} ${spec.id} whyNeeded`).toBeGreaterThan(20)
+      expect(spec.intent.trim().length, `${addon} slot${spec.slot} intent`).toBeGreaterThan(20)
+      expect(spec.answerField.trim().length, `${addon} slot${spec.slot} answerField`).toBeGreaterThan(3)
+      expect(spec.whyNeeded.trim().length, `${addon} slot${spec.slot} whyNeeded`).toBeGreaterThan(20)
     }
   })
 })
@@ -117,7 +120,7 @@ describe("family wording", () => {
     const specs = ADDON_QUESTIONS[addon]
     specs.forEach((spec, i) => {
       if (!spec.familyText) return
-      expect(family[i].text, `${addon} ${spec.id}`).not.toBe(you[i].text)
+      expect(family[i].text, `${addon} slot${spec.slot}`).not.toBe(you[i].text)
       expect(family[i].text).toBe(spec.familyText)
     })
 
@@ -165,7 +168,7 @@ describe("no medical measurements, no diagnosis language", () => {
           .filter(Boolean)
           .join("\n")
         const m = blob.match(pattern)
-        if (m) hits.push(`${addon}/${spec.id}: "${m[0]}"`)
+        if (m) hits.push(`${addon}/slot${spec.slot}: "${m[0]}"`)
       }
     }
     expect(hits, hits.join("\n")).toEqual([])
@@ -202,13 +205,20 @@ describe("no medical measurements, no diagnosis language", () => {
   })
 })
 
-describe("lensAnswers extracts only the lens answers", () => {
+describe("sanitizeLensAnswers extracts only the lens answers", () => {
   it("filters core answers out", () => {
-    const answers = { dq1: "a", dq2: "b", lens1: "predictable", lens2: "after-meals", stray: "x" }
-    expect(lensAnswers("stability", answers)).toEqual({ lens1: "predictable", lens2: "after-meals" })
+    const answers = {
+      dq1: "a",
+      dq2: "b",
+      ...nsAnswers("stability", { 1: "predictable", 2: "after-meals" }),
+      stray: "x",
+    }
+    expect(sanitizeLensAnswers("stability", answers)).toEqual(
+      nsAnswers("stability", { 1: "predictable", 2: "after-meals" }),
+    )
   })
 
   it("returns nothing when there is no add-on", () => {
-    expect(lensAnswers(null, { lens1: "x" })).toEqual({})
+    expect(sanitizeLensAnswers(null, nsAnswers("stability", { 1: "predictable" }))).toEqual({})
   })
 })

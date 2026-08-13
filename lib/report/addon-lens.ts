@@ -1,4 +1,5 @@
 import type { AddonType } from "@/lib/addon-types"
+import { lensQuestionId, type LensSlot } from "@/lib/assessment/addon-questions"
 import { SYSTEMS } from "@/lib/systems"
 import { PATHWAY_LABEL, type BioticScoreKey } from "@/lib/report/subscores"
 import type { FoodSystemLens, FoodSystemReport, LensEvidenceNote } from "@/lib/report/food-system-report-types"
@@ -215,20 +216,41 @@ function lensMeta(addon: AddonType) {
 type Answers = Record<string, unknown>
 
 /** Reads a single-choice answer as a string. */
-function pick(answers: Answers, id: string): string {
-  const v = answers[id]
-  return typeof v === "string" ? v : ""
+/**
+ * Slot-addressed access to an already-sanitized answer set.
+ *
+ * Builders take one of these instead of the raw map, so no wire id is written
+ * anywhere in this file — namespacing the ids cannot leave a builder reading a
+ * key that no longer exists.
+ *
+ * `one()` returns `""` for an unanswered slot, and every branch that consumes
+ * it has copy for that case. It does NOT re-validate: by the time a reader is
+ * built, `sanitizeLensAnswers` has already dropped every undeclared value, so
+ * a non-empty string here is always one of the question's own options.
+ */
+export interface SlotReader {
+  one(slot: LensSlot): string
+  many(slot: LensSlot): Set<string>
 }
 
-/** Reads a multi-choice answer as a set of values. */
-function picks(answers: Answers, id: string): Set<string> {
-  const v = answers[id]
-  return new Set(Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [])
+function slotReader(addon: AddonType, answers: Answers): SlotReader {
+  const at = (slot: LensSlot) => answers[lensQuestionId(addon, slot)]
+  return {
+    one(slot) {
+      const v = at(slot)
+      return typeof v === "string" ? v : ""
+    },
+    many(slot) {
+      const v = at(slot)
+      return new Set(Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [])
+    },
+  }
 }
 
 export interface BuildLensInput {
   addon: AddonType
-  /** The lens answers only — see lensAnswers() in lib/assessment/addon-questions.ts. */
+  /** Sanitized lens answers, keyed by wire id — see sanitizeLensAnswers()
+   *  in lib/assessment/addon-questions.ts. Never the raw request body. */
   answers: Answers
   /** The already-built core report. Read-only here. */
   foodSystem: Pick<FoodSystemReport, "systemSnapshot" | "bioticScores">
@@ -271,11 +293,11 @@ interface LensBody {
   pathwayCopy: Record<BioticScoreKey, string>
 }
 
-function stabilityBody(a: Answers, priority: BioticScoreKey, v: Voice): LensBody {
-  const rhythm = pick(a, "lens1")
-  const timing = pick(a, "lens2")
-  const have = picks(a, "lens3")
-  const mealTiming = pick(a, "lens4")
+function stabilityBody(r: SlotReader, priority: BioticScoreKey, v: Voice): LensBody {
+  const rhythm = r.one(1)
+  const timing = r.one(2)
+  const have = r.many(3)
+  const mealTiming = r.one(4)
 
   const rhythmLine =
     rhythm === "predictable"
@@ -363,11 +385,11 @@ function stabilityBody(a: Answers, priority: BioticScoreKey, v: Voice): LensBody
   }
 }
 
-function glucoseBody(a: Answers, priority: BioticScoreKey, v: Voice): LensBody {
-  const energy = pick(a, "lens1")
-  const breakfast = pick(a, "lens2")
-  const craving = pick(a, "lens3")
-  const alongside = picks(a, "lens4")
+function glucoseBody(r: SlotReader, priority: BioticScoreKey, v: Voice): LensBody {
+  const energy = r.one(1)
+  const breakfast = r.one(2)
+  const craving = r.one(3)
+  const alongside = r.many(4)
 
   const energyLine =
     energy === "steady"
@@ -437,7 +459,12 @@ function glucoseBody(a: Answers, priority: BioticScoreKey, v: Voice): LensBody {
   }
   loopAdditions.push({
     week: 3,
-    action: `Notice whether the ${craving === "no-pattern" ? "craving" : craving.replace("-", " ")} window moves after two weeks of the change above.`,
+    // `craving` is either a declared option or absent — the sanitizer admits
+    // nothing else. Both the "no clear pattern" answer and an unanswered slot
+    // take the bare noun, so this sentence can never render with a hole in it.
+    action: `Notice whether the ${
+      !craving || craving === "no-pattern" ? "craving" : craving.replace("-", " ")
+    } window moves after two weeks of the change above.`,
   })
 
   return {
@@ -458,11 +485,11 @@ function glucoseBody(a: Answers, priority: BioticScoreKey, v: Voice): LensBody {
   }
 }
 
-function mindBody(a: Answers, priority: BioticScoreKey, v: Voice): LensBody {
-  const rhythm = pick(a, "lens1")
-  const focusDip = pick(a, "lens2")
-  const have = picks(a, "lens3")
-  const lateMeal = pick(a, "lens4")
+function mindBody(r: SlotReader, priority: BioticScoreKey, v: Voice): LensBody {
+  const rhythm = r.one(1)
+  const focusDip = r.one(2)
+  const have = r.many(3)
+  const lateMeal = r.one(4)
 
   const rhythmLine =
     rhythm === "steady"
@@ -473,8 +500,12 @@ function mindBody(a: Answers, priority: BioticScoreKey, v: Voice): LensBody {
       ? `${v.who} answers describe meals being skipped or replaced by snacks on busy days, which is the clearest food-side pattern in this lens.`
       : `${v.who} answers describe a rhythm that varies a lot, so the useful first step is noticing which days it holds.`
 
+  // An unanswered slot reads the same as "no clear pattern": both mean there is
+  // no window to point at, and the honest move in either case is to watch for
+  // one. Interpolating an empty value here produced "Focus most often dips ,
+  // which gives…" in a paid report.
   const focusLine =
-    focusDip === "no-pattern"
+    !focusDip || focusDip === "no-pattern"
       ? "With no consistent time for focus dropping, a few weeks of noting when it happens is more informative than any change made now."
       : `Focus most often dips ${focusDip.replace("-", " ")}, which gives a specific window to watch against the meal before it.`
 
@@ -544,11 +575,11 @@ function mindBody(a: Answers, priority: BioticScoreKey, v: Voice): LensBody {
   }
 }
 
-function performanceBody(a: Answers, priority: BioticScoreKey, v: Voice): LensBody {
-  const fuelling = pick(a, "lens1")
-  const recovery = pick(a, "lens2")
-  const meals = picks(a, "lens3")
-  const sleepRoutine = pick(a, "lens4")
+function performanceBody(r: SlotReader, priority: BioticScoreKey, v: Voice): LensBody {
+  const fuelling = r.one(1)
+  const recovery = r.one(2)
+  const meals = r.many(3)
+  const sleepRoutine = r.one(4)
 
   const fuellingLine =
     fuelling === "both"
@@ -639,7 +670,7 @@ function performanceBody(a: Answers, priority: BioticScoreKey, v: Voice): LensBo
   }
 }
 
-const BUILDERS: Record<AddonType, (a: Answers, p: BioticScoreKey, v: Voice) => LensBody> = {
+const BUILDERS: Record<AddonType, (r: SlotReader, p: BioticScoreKey, v: Voice) => LensBody> = {
   stability: stabilityBody,
   glucose: glucoseBody,
   mind: mindBody,
@@ -654,25 +685,50 @@ const BUILDERS: Record<AddonType, (a: Answers, p: BioticScoreKey, v: Voice) => L
  * placeholder.
  */
 /**
- * Attach a lens to a report that is entitled to one but does not have it.
+ * Reconcile a report's lens against the entitlement on the settled session.
  *
  * Mirrors `ensureFoodSystem`, and exists for the same reason: the reuse path
  * returns a stored `report_json` verbatim, so a report generated before the
  * lens shipped — or one whose generation predated the customer's entitlement
  * being readable — would never gain a chapter the customer paid for. Derived
- * only; no regeneration, so a retry costs nothing.
+ * only; no regeneration, so a retry costs nothing and makes no Claude call.
  *
- * A report that already has a lens keeps it. No add-on means no change at all,
- * which is what keeps legacy and no-add-on reports byte-identical.
+ * It is `reconcile`, not `ensure`, because the stored lens is not automatically
+ * trusted. The entitlement decides, in all five cases:
+ *
+ *   add-on + matching lens    preserved verbatim, narrative included
+ *   add-on + no lens          derived and attached
+ *   add-on + wrong-key lens   REPLACED with the entitled lens
+ *   no add-on + stale lens    REMOVED
+ *   no add-on + no lens       unchanged — legacy reports stay byte-identical
+ *
+ * The two mutating cases were previously no-ops: any existing lens was kept and
+ * a null entitlement returned early, so a report could in principle present a
+ * chapter its session never paid for.
  */
-export function ensureAddonLens<T extends { foodSystem?: FoodSystemReport }>(
+export function reconcileAddonLens<T extends { foodSystem?: FoodSystemReport }>(
   report: T,
   input: { addon: AddonType | null; answers: Answers; isFamily?: boolean },
 ): T {
-  if (!input.addon) return report
   if (!report.foodSystem) return report
-  if (report.foodSystem.lens) return report
+  const current = report.foodSystem.lens
 
+  // No entitlement: the report must carry no lens. Returning early here — as an
+  // earlier version did — meant a stale lens on a reused report survived under
+  // an entitlement that no longer includes one.
+  if (!input.addon) {
+    if (!current) return report
+    const { lens: _dropped, ...withoutLens } = report.foodSystem
+    return { ...report, foodSystem: withoutLens }
+  }
+
+  // Entitled, and the stored lens is the one that was bought: keep it verbatim,
+  // narrative and all. This is the retry path, and it must not regenerate.
+  if (current?.key === input.addon) return report
+
+  // Either there is no lens, or there is one for a DIFFERENT add-on. Both are
+  // resolved the same way: the settled session decides, so the entitled lens is
+  // derived fresh and replaces whatever was there.
   return {
     ...report,
     foodSystem: {
@@ -740,7 +796,7 @@ export function buildAddonLens(input: BuildLensInput): FoodSystemLens {
     ? { who: "Your household's", subjectIs: "the household is", subjectHas: "the household has", possessive: "the household's" }
     : { who: "Your", subjectIs: "you are", subjectHas: "you have", possessive: "your" }
 
-  const body = BUILDERS[addon](answers, priority, voice)
+  const body = BUILDERS[addon](slotReader(addon, answers), priority, voice)
   const meta = lensMeta(addon)
 
   const pathways: BioticScoreKey[] = ["prebiotics", "probiotics", "postbiotics"]

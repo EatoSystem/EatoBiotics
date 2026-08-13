@@ -8,6 +8,7 @@ import { buildFoodSystemReport } from "@/lib/report/build-food-system-report"
 import { FoodSystemSection } from "@/components/report/food-system-section"
 import { computeOverall, getProfile } from "@/lib/assessment-scoring"
 import type { FoodSystemReport } from "@/lib/report/food-system-report-types"
+import { ANSWERS_B } from "./helpers/lens-fixtures"
 
 /**
  * The lens chapter, as rendered.
@@ -20,10 +21,10 @@ import type { FoodSystemReport } from "@/lib/report/food-system-report-types"
 const SUB = { prebiotics: 85, probiotics: 20, postbiotics: 85 }
 
 const ANSWERS: Record<AddonType, Record<string, unknown>> = {
-  stability: { lens1: "unpredictable", lens2: "stress-linked", lens3: ["none"], lens4: "rarely" },
-  glucose: { lens1: "lift-then-dip", lens2: "skipped", lens3: "mid-afternoon", lens4: ["alone"] },
-  mind: { lens1: "skipped", lens2: "early-afternoon", lens3: ["none"], lens4: "daily" },
-  performance: { lens1: "neither", lens2: "depleted", lens3: ["variable"], lens4: "rarely" },
+  stability: ANSWERS_B["stability"],
+  glucose: ANSWERS_B["glucose"],
+  mind: ANSWERS_B["mind"],
+  performance: ANSWERS_B["performance"],
 }
 
 function reportFor(addon: AddonType | null, isFamily = false): FoodSystemReport {

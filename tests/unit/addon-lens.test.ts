@@ -2,11 +2,12 @@ import { describe, it, expect } from "vitest"
 
 import { ADDON_KEYS, type AddonType } from "@/lib/addon-types"
 import { buildAddonLens, ADDON_SAFETY } from "@/lib/report/addon-lens"
-import { ADDON_QUESTIONS } from "@/lib/assessment/addon-questions"
+import { ADDON_QUESTIONS, lensQuestionId, sanitizeLensAnswers } from "@/lib/assessment/addon-questions"
 import { buildFoodSystemReport } from "@/lib/report/build-food-system-report"
 import { foodSystemReportSchema } from "@/lib/report/food-system-report-types"
 import { computeOverall, getProfile } from "@/lib/assessment-scoring"
 import { CLAIMS, DENIAL_BOILERPLATE } from "./helpers/marketing-language"
+import { ANSWERS_A, ANSWERS_B, nsAnswers, withoutSlot, proseArtefacts, lensProse, SLOTS_A } from "./helpers/lens-fixtures"
 
 /**
  * The deterministic lens chapter.
@@ -35,25 +36,11 @@ function coreFor(sub: Sub) {
   })
 }
 
-/** Contrasting answer pairs per lens: A and B differ on every branch point. */
-const ANSWERS: Record<AddonType, { a: Record<string, unknown>; b: Record<string, unknown> }> = {
-  stability: {
-    a: { lens1: "predictable", lens2: "none", lens3: ["veg-variety", "fermented"], lens4: "daily" },
-    b: { lens1: "unpredictable", lens2: "stress-linked", lens3: ["none"], lens4: "rarely" },
-  },
-  glucose: {
-    a: { lens1: "steady", lens2: "protein-led", lens3: "no-pattern", lens4: ["veg", "protein", "fats"] },
-    b: { lens1: "lift-then-dip", lens2: "skipped", lens3: "mid-afternoon", lens4: ["alone"] },
-  },
-  mind: {
-    a: { lens1: "steady", lens2: "no-pattern", lens3: ["fermented", "oily-fish"], lens4: "rarely" },
-    b: { lens1: "skipped", lens2: "early-afternoon", lens3: ["none"], lens4: "daily" },
-  },
-  performance: {
-    a: { lens1: "both", lens2: "recovered", lens3: ["protein", "colour", "slow-carbs"], lens4: "daily" },
-    b: { lens1: "neither", lens2: "depleted", lens3: ["variable"], lens4: "rarely" },
-  },
-}
+/** Contrasting answer pairs per lens, from the shared slot-keyed fixtures. */
+const ANSWERS: Record<AddonType, { a: Record<string, unknown>; b: Record<string, unknown> }> =
+  Object.fromEntries(
+    ADDON_KEYS.map((k) => [k, { a: ANSWERS_A[k], b: ANSWERS_B[k] }]),
+  ) as Record<AddonType, { a: Record<string, unknown>; b: Record<string, unknown> }>
 
 function lensFor(addon: AddonType, which: "a" | "b" = "a", sub = SCORES.probioticsWeak, isFamily = false) {
   return buildAddonLens({ addon, answers: ANSWERS[addon][which], foodSystem: coreFor(sub), isFamily })
@@ -82,18 +69,131 @@ function everyBranchLens(): Array<readonly [string, ReturnType<typeof buildAddon
           const answers = {
             ...ANSWERS[addon].a,
             // multi questions take an array, single/yesno a string
-            [spec.id]: spec.type === "multi" ? [value] : value,
+            [lensQuestionId(addon, spec.slot)]: spec.type === "multi" ? [value] : value,
           }
           out.push([
-            `${addon}/${spec.id}=${value}/${isFamily ? "family" : "you"}`,
+            `${addon}/slot${spec.slot}=${value}/${isFamily ? "family" : "you"}`,
             buildAddonLens({ addon, answers, foodSystem: coreFor(SCORES.probioticsWeak), isFamily }),
           ] as const)
         }
       }
     }
   }
+  // ── The omission sweep ────────────────────────────────────────────────────
+  // Every case above answers all four questions. That is why two malformed
+  // sentences shipped: no fixture ever left a slot empty, so the branches that
+  // interpolate a value were never exercised with nothing to interpolate.
+  for (const addon of ADDON_KEYS) {
+    for (const isFamily of [false, true]) {
+      const voice = isFamily ? "family" : "you"
+      // Nothing answered at all.
+      out.push([
+        `${addon}/none-answered/${voice}`,
+        buildAddonLens({ addon, answers: {}, foodSystem: coreFor(SCORES.probioticsWeak), isFamily }),
+      ] as const)
+      // Each question dropped in turn, the rest held at the "a" fixture.
+      for (const spec of ADDON_QUESTIONS[addon]) {
+        out.push([
+          `${addon}/without-slot${spec.slot}/${voice}`,
+          buildAddonLens({
+            addon,
+            answers: withoutSlot(addon, SLOTS_A[addon], spec.slot),
+            foodSystem: coreFor(SCORES.probioticsWeak),
+            isFamily,
+          }),
+        ] as const)
+      }
+    }
+  }
+
   return out
 }
+
+/**
+ * Prose integrity across every branch, including the omission cases.
+ *
+ * The two defects this catches were both live in a paid report:
+ *   "Focus most often dips , which gives a specific window…"
+ *   "Notice whether the  window moves after two weeks…"
+ */
+describe("every branch produces complete prose", () => {
+  it.each(everyBranchLens())("%s reads as finished sentences", (label, lens) => {
+    const artefacts = proseArtefacts(lensProse(lens))
+    expect(artefacts, `${label}: ${artefacts.join(", ")}`).toEqual([])
+  })
+
+  it.each(ADDON_KEYS)("%s builds a complete, schema-shaped lens from zero answers", (addon) => {
+    const lens = buildAddonLens({ addon, answers: {}, foodSystem: coreFor(SCORES.probioticsWeak) })
+    // An incomplete or reused answer set must never cost the customer the
+    // chapter they paid for.
+    expect(lens.key).toBe(addon)
+    expect(lens.patternSummary.length).toBeGreaterThan(40)
+    expect(lens.pathwayConnections).toHaveLength(3)
+    expect(lens.signals.length).toBeGreaterThanOrEqual(2)
+    expect(lens.loopAdditions.length).toBeGreaterThanOrEqual(2)
+    expect(lens.evidenceNotes.length).toBeGreaterThanOrEqual(2)
+    expect(lens.safetyNote).toBe(ADDON_SAFETY[addon])
+  })
+})
+
+/**
+ * Rejected input must reach nothing a customer sees.
+ *
+ * `sanitizeLensAnswers` is the only thing standing between a request body and
+ * report prose, so this drives it with the payloads an attacker would actually
+ * send and then greps the built lens for the poison.
+ */
+describe("rejected input never reaches the lens", () => {
+  const POISON = "ZZQX-INJECTED-PAYLOAD-MARKER"
+
+  const hostilePayloads = (addon: AddonType): Array<[string, Record<string, unknown>]> => {
+    const other = ADDON_KEYS.find((k) => k !== addon)!
+    return [
+      ["arbitrary string in every slot", Object.fromEntries(
+        ADDON_QUESTIONS[addon].map((q) => [lensQuestionId(addon, q.slot), POISON]),
+      )],
+      ["another add-on's namespaced ids", nsAnswers(other, SLOTS_A[other])],
+      ["valid id, another question's value", {
+        [lensQuestionId(addon, 1)]: POISON,
+        [lensQuestionId(addon, 2)]: POISON,
+      }],
+      ["unknown ids", { [`${addon}_lens99`]: POISON, lens1: POISON, nonsense: POISON }],
+      ["non-string values", {
+        [lensQuestionId(addon, 1)]: { evil: POISON },
+        [lensQuestionId(addon, 2)]: 42,
+        [lensQuestionId(addon, 3)]: [POISON, { deep: POISON }],
+        [lensQuestionId(addon, 4)]: null,
+      }],
+    ]
+  }
+
+  it.each(
+    ADDON_KEYS.flatMap((addon) =>
+      hostilePayloads(addon).map(([name, payload]) => [`${addon}: ${name}`, addon, payload] as const),
+    ),
+  )("%s", (_label, addon, payload) => {
+    const clean = sanitizeLensAnswers(addon, payload)
+    const lens = buildAddonLens({ addon, answers: clean, foodSystem: coreFor(SCORES.probioticsWeak) })
+    const prose = lensProse(lens)
+
+    expect(JSON.stringify(clean)).not.toContain(POISON)
+    expect(prose).not.toContain(POISON)
+    expect(JSON.stringify(lens)).not.toContain(POISON)
+    // And the degraded chapter is still whole.
+    expect(proseArtefacts(prose)).toEqual([])
+    expect(lens.key).toBe(addon)
+  })
+
+  it.each(ADDON_KEYS)("%s: a valid id carrying another question's option is rejected", (addon) => {
+    // slot 1's value put on slot 2 — a real id, a real value, wrong pairing.
+    const slot1Value = ADDON_QUESTIONS[addon][0].options![0].value
+    const clean = sanitizeLensAnswers(addon, { [lensQuestionId(addon, 2)]: slot1Value })
+    const slot2Allows = ADDON_QUESTIONS[addon][1].options!.map((o) => o.value)
+    if (!slot2Allows.includes(slot1Value)) {
+      expect(clean).toEqual({})
+    }
+  })
+})
 
 describe("the lens never touches the core scores", () => {
   it.each(ADDON_KEYS)("%s leaves bioticScores and the ranking identical", (addon) => {
