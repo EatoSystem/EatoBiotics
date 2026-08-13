@@ -182,7 +182,10 @@ describe("entitlement is the settled session, and survives every stage", () => {
     // assert the raw `answers` identifier is not among the arguments.
     const call = src.slice(src.indexOf("content: buildDeepAnalysisPrompt("))
     const args = call.slice(0, call.indexOf("),") + 1)
-    expect(args).toContain("promptAnswers")
+    // `trustedAnswers` is `promptAnswers` narrowed to the server's canonical
+    // question ids — see lib/assessment/trusted-questions.ts. Either is
+    // acceptable here; the raw body `answers` is not.
+    expect(args).toMatch(/trustedAnswers|promptAnswers/)
     expect(args.split("\n").map((l) => l.trim())).not.toContain("answers,")
   })
 
