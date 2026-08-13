@@ -15,7 +15,14 @@ export type DeepPillar =
   | "feeling"
   | "lifestyle"
 
-export type DeepSection = "symptoms" | "history" | "lifestyle" | "goals"
+/**
+ * The four core sections, plus `lens` for the questions a purchased add-on
+ * adds. `lens` is deliberately its own section rather than being folded into
+ * one of the four: the customer paid for that lens and should be able to see
+ * where it starts. SECTION_META in the deep assessment client is keyed by this
+ * union, so a new member is a compile error until it has a label.
+ */
+export type DeepSection = "symptoms" | "history" | "lifestyle" | "goals" | "lens"
 
 export interface DeepQuestion {
   id: string // "dq1", "dq2", ...

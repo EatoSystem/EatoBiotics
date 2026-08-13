@@ -136,6 +136,80 @@ const s = StyleSheet.create({
     padding: 12,
     marginBottom: 10,
   },
+  /* Lens rows. The pathway connections, signals and loop additions were one
+   * bordered card each, which put eleven boxes on page 1 and overflowed it onto
+   * a third physical page — breaking the deliberate two-page structure. A tight
+   * label+text row carries the same content in roughly a third of the height.
+   * Scoped to the lens; the shared `card` style is untouched.
+   *
+   * The measurements here are load-bearing, not taste: lens page 1 fits with
+   * about a third of a row to spare, so raising any of these margins puts the
+   * last loop addition back onto a third page. `tests/unit/lens-render.test.ts`
+   * renders the real PDF and counts physical pages, so that regression fails
+   * the suite rather than being found by eye. */
+  lensRow: {
+    marginBottom: 5,
+    paddingLeft: 8,
+    borderLeftWidth: 2,
+    borderLeftColor: BRAND.lightGrey,
+  },
+  lensRowLabel: {
+    fontSize: 10,
+    fontFamily: FONT.sansBold,
+    color: BRAND.darkText,
+    marginBottom: 2,
+  },
+  /* Loop additions put the week inline with its action. They are the shortest
+   * rows on the page and the least in need of a heading of their own, so this
+   * is where the remaining overflow was recovered. */
+  lensLoopRow: {
+    marginBottom: 5,
+    paddingLeft: 8,
+    borderLeftWidth: 2,
+    borderLeftColor: BRAND.lightGrey,
+  },
+  lensLoopWeek: { fontFamily: FONT.sansBold, color: BRAND.darkText },
+  /* Same size and colour as `body`, one notch tighter in leading. 10pt on 14.5
+   * is still comfortably inside normal reading leading, and across the ~25
+   * lines of lens page 1 it buys back the last row. */
+  lensBody: {
+    fontSize: 10,
+    fontFamily: FONT.sans,
+    color: BRAND.bodyText,
+    lineHeight: 1.45,
+  },
+  lensGroupLabel: {
+    fontSize: 8,
+    fontFamily: FONT.sansBold,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    color: BRAND.subText,
+    marginTop: 9,
+    marginBottom: 4,
+  },
+  /* Lens safety. A callout, not a footnote: for Glucose and Mind this is the
+   * most important text on the page, and it must not read as small print. */
+  safetyCallout: {
+    borderWidth: 1,
+    borderColor: BRAND.teal,
+    borderLeftWidth: 3,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 14,
+  },
+  safetyCalloutLabel: {
+    fontSize: 8,
+    fontFamily: FONT.sansBold,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    color: BRAND.tealText,
+    marginBottom: 5,
+  },
+  safetyCalloutBody: {
+    fontSize: 10,
+    lineHeight: 1.5,
+    color: BRAND.darkText,
+  },
   cardTitle: {
     fontSize: 12,
     fontFamily: FONT.serifBold,
@@ -625,6 +699,99 @@ export function FoodSystemPages({ report }: { report: FoodSystemReport }) {
             <View style={{ marginTop: 8 }}>
               <Field label="Your shared lever" value={report.familyContext.sharedLever} />
             </View>
+          </View>
+          <PdfFooter />
+        </Page>
+      )}
+
+      {/* The purchased lens. Same position as the web report — after the loop,
+        * before Evidence, with the closing mission page still last — and it
+        * shares the ch() counter so numbering matches the web exactly. */}
+      {report.lens && (
+        <Page size="A4" style={s.page}>
+          <ChapterHeading
+            number={ch()}
+            eyebrow="Your Focus Area"
+            title={report.lens.name}
+            subtitle={`What this looks at: ${report.lens.examines}`}
+          />
+
+          <View style={s.spacer}>
+            <View style={[s.card, { padding: 10, marginBottom: 0 }]} wrap={false}>
+              <Text style={s.cardTitle}>What your answers describe</Text>
+              <Text style={s.lensBody}>{report.lens.patternSummary}</Text>
+            </View>
+
+            <Text style={s.lensGroupLabel}>How this connects to your Food System</Text>
+            {report.lens.pathwayConnections.map((pc) => (
+              <View key={pc.pathway} style={s.lensRow} wrap={false}>
+                <Text style={s.lensRowLabel}>{PATHWAY_LABEL[pc.pathway]}</Text>
+                <Text style={s.lensBody}>{pc.connection}</Text>
+              </View>
+            ))}
+
+            <View style={[s.card, { marginTop: 10, padding: 10, marginBottom: 0 }]} wrap={false}>
+              <Text style={s.cardTitle}>
+                Where it matters most: {PATHWAY_LABEL[report.lens.priorityConnection.pathway]}
+              </Text>
+              <Text style={s.lensBody}>{report.lens.priorityConnection.why}</Text>
+            </View>
+
+            <Text style={s.lensGroupLabel}>What to notice</Text>
+            {report.lens.signals.map((sig) => (
+              <View key={sig.label} style={s.lensRow} wrap={false}>
+                <Text style={s.lensRowLabel}>{sig.label}</Text>
+                <Text style={s.lensBody}>{sig.whatToNotice}</Text>
+              </View>
+            ))}
+
+            <Text style={s.lensGroupLabel}>Added to your 30-day loop</Text>
+            {report.lens.loopAdditions.map((l) => (
+              <View key={l.week} style={s.lensLoopRow} wrap={false}>
+                <Text style={s.lensBody}>
+                  <Text style={s.lensLoopWeek}>Week {l.week} · </Text>
+                  {l.action}
+                </Text>
+              </View>
+            ))}
+          </View>
+          <PdfFooter />
+        </Page>
+      )}
+
+      {/* Lens evidence — its own page so a long source list cannot push the
+        * safety note onto an orphan page. */}
+      {report.lens && (
+        <Page size="A4" style={s.page}>
+          <ChapterHeading
+            number={ch()}
+            eyebrow="Evidence & Safety"
+            title={`What the ${report.lens.shortLabel} Lens Can and Cannot Tell You`}
+            subtitle="The limits of this lens, and the sources behind it — what each one supports, and what it does not show."
+          />
+          <View style={s.spacer}>
+            {/* Safety FIRST, above the citations. Placing it after the source
+              * list buries the single most important sentence in the chapter —
+              * for Glucose, that this does not measure blood glucose; for Mind,
+              * that it does not diagnose. wrap={false} so it can never split
+              * across a page break or be orphaned from its label. */}
+            <View style={s.safetyCallout} wrap={false}>
+              <Text style={s.safetyCalloutLabel}>What this lens does not do</Text>
+              <Text style={s.safetyCalloutBody}>{report.lens.safetyNote}</Text>
+            </View>
+
+            {report.lens.evidenceNotes.map((note) => (
+              <View key={note.url} style={s.card} wrap={false}>
+                <Link src={note.url}>
+                  <Text style={s.evidenceSource}>{note.title}</Text>
+                </Link>
+                <Text style={s.evidenceClaim}>
+                  {note.organisation} · {note.year}
+                </Text>
+                <Text style={s.body}>What it supports: {note.whatItSupports}</Text>
+                <Text style={s.evidenceClaim}>What it does not show: {note.limitation}</Text>
+              </View>
+            ))}
           </View>
           <PdfFooter />
         </Page>

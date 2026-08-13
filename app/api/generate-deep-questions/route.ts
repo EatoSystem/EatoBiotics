@@ -1,5 +1,7 @@
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { stripe } from "@/lib/stripe-server"
+import { getPaidReportSummaryFromSession, asAddon, type PaidReportHealthSystem } from "@/lib/paid-report-session"
+import { addonQuestionsFor } from "@/lib/assessment/addon-questions"
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabase } from "@/lib/supabase"
 import {
@@ -164,6 +166,14 @@ export async function POST(req: NextRequest) {
 
   const devMode = !process.env.STRIPE_SECRET_KEY
 
+  // The purchased lens and foundation come from the Stripe session, NOT the
+  // request body. The client already sends scores it could tamper with; the
+  // entitlement is the one thing that decides what the customer paid for, so it
+  // is read from the settled payment record and re-validated. An unknown value
+  // becomes null and the questionnaire is simply the core set.
+  let entitledAddon: PaidReportHealthSystem | null = null
+  let foundation: "you" | "family" = "you"
+
   // Step 1: Stripe verification (skip in dev mode)
   if (!devMode) {
     try {
@@ -171,11 +181,25 @@ export async function POST(req: NextRequest) {
       if (session.payment_status !== "paid") {
         return NextResponse.json({ error: "Payment not confirmed" }, { status: 401 })
       }
+      const summary = getPaidReportSummaryFromSession(session)
+      entitledAddon = asAddon(summary?.selectedAddon)
+      foundation = summary?.foundationType === "family" ? "family" : "you"
     } catch (err) {
       console.error("[generate-deep-questions] Stripe error:", err)
       return NextResponse.json({ error: "Failed to verify payment" }, { status: 401 })
     }
   }
+
+  /**
+   * Core questions + the purchased lens's questions.
+   *
+   * Appended, never interleaved: the core set is exactly what it was before
+   * add-ons existed, which is what keeps a no-add-on questionnaire identical.
+   */
+  const withLensQuestions = (core: DeepQuestion[]): DeepQuestion[] => [
+    ...core,
+    ...addonQuestionsFor(entitledAddon, foundation),
+  ]
 
   // Step 2: Check Supabase for idempotency
   const supabase = getSupabase()
@@ -203,7 +227,7 @@ export async function POST(req: NextRequest) {
   // Step 3: Build prompt and call Claude
   if (!process.env.ANTHROPIC_API_KEY) {
     console.warn("[generate-deep-questions] ANTHROPIC_API_KEY not set — returning fallback questions")
-    return NextResponse.json({ questions: FALLBACK_DEEP_QUESTIONS })
+    return NextResponse.json({ questions: withLensQuestions(FALLBACK_DEEP_QUESTIONS) })
   }
 
   let questions: DeepQuestion[]
@@ -227,10 +251,10 @@ export async function POST(req: NextRequest) {
       .trim()
 
     const parsed = JSON.parse(cleaned)
-    questions = parsed.questions
+    questions = withLensQuestions(parsed.questions)
   } catch (err) {
     console.error("[generate-deep-questions] Claude error:", err)
-    return NextResponse.json({ questions: FALLBACK_DEEP_QUESTIONS })
+    return NextResponse.json({ questions: withLensQuestions(FALLBACK_DEEP_QUESTIONS) })
   }
 
   // Step 4: Upsert to Supabase

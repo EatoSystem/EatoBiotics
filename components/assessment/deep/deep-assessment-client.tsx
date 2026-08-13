@@ -33,6 +33,11 @@ const SECTION_META: Record<DeepSection, { icon: string; label: string; desc: str
   history:   { icon: "📋", label: "Your Gut History",  desc: "Events and patterns that shaped your microbiome",   color: "var(--icon-teal)" },
   lifestyle: { icon: "🌙", label: "Your Lifestyle",    desc: "Daily habits that directly affect your gut",        color: "var(--icon-yellow)" },
   goals:     { icon: "🎯", label: "Your Goals",        desc: "What success looks like for you in 3 months",       color: "var(--icon-green)" },
+  // The purchased add-on's own questions. Named generically here because this
+  // map is static and the lens varies per customer; the report chapter names
+  // the specific lens. Emoji matches the four above — the no-emoji rule applies
+  // to the report chapter, not to this questionnaire chrome.
+  lens:      { icon: "🔎", label: "Your Focus Area",   desc: "The deeper support you added to this report",       color: "var(--icon-teal)" },
 }
 
 const STAGES = [

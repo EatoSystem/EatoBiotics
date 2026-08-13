@@ -4,7 +4,16 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSupabase } from "@/lib/supabase"
 import type { DeepQuestion } from "@/lib/deep-assessment"
 import type { DeepReport } from "@/lib/claude-report"
-import { getPaidReportSummaryFromSession, isCheckoutSessionSettled } from "@/lib/paid-report-session"
+import {
+  getPaidReportSummaryFromSession,
+  isCheckoutSessionSettled,
+  asAddon,
+  type PaidReportFoundation,
+  type PaidReportHealthSystem,
+} from "@/lib/paid-report-session"
+import { buildAddonLens, reconcileAddonLens, mergeGeneratedLens } from "@/lib/report/addon-lens"
+import { sanitizeLensAnswers, withoutLensAnswers } from "@/lib/assessment/addon-questions"
+import { resolveTrustedQuestions, answersForTrustedQuestions } from "@/lib/assessment/trusted-questions"
 import { buildFallbackPaidReport } from "@/lib/fallback-paid-report"
 import {
   buildFoodSystemReport,
@@ -43,8 +52,9 @@ type FreeScores = {
   profile: { type: string; tagline: string; description: string }
   tier: "personal" | "starter" | "full" | "premium"
   email?: string | null
-  foundationType?: "you" | "family" | null
-  selectedAddon?: "stability" | "glucose" | "mind" | "performance" | null
+  foundationType?: PaidReportFoundation | null
+  /** Canonical union — never re-declare the add-on list here. */
+  selectedAddon?: PaidReportHealthSystem | null
 }
 
 type RequestBody = {
@@ -89,7 +99,8 @@ function getBioticScores(sub: SubScores): Record<"prebiotics" | "probiotics" | "
 function buildDeepAnalysisPrompt(
   freeScores: FreeScores,
   questions: DeepQuestion[],
-  answers: Record<string, unknown>
+  answers: Record<string, unknown>,
+  lens?: { addon: PaidReportHealthSystem; answers: Record<string, unknown> } | null,
 ): string {
   const { overall, subScores, profile, tier } = freeScores
   const qaBlock = buildQABlock(questions, answers)
@@ -197,6 +208,43 @@ function buildDeepAnalysisPrompt(
   "membershipBridge": "[One sentence connecting their top finding to what consistent daily tracking enables]"
 }`
 
+  // The lens block. Only the three prose fields are requested: everything else
+  // in the chapter is derived and would be overwritten anyway, so asking for it
+  // would waste tokens and invite the model to believe it owns those fields.
+  const lensBlock = lens
+    ? `
+
+THE CUSTOMER ALSO PURCHASED A FOCUSED LENS: ${lens.addon.toUpperCase()}.
+Their lens answers:
+${Object.entries(lens.answers)
+        .map(([k, v]) => `  ${k}: ${Array.isArray(v) ? v.join(", ") : String(v)}`)
+        .join("\n") || "  (none answered)"}
+
+Add a "lens" object INSIDE "foodSystem" with exactly these three fields:
+{
+  "lens": {
+    "patternSummary": "2-3 sentences describing what THEIR lens answers show, in 'your answers suggest' language",
+    "pathwayConnections": [
+      {"pathway": "prebiotics", "connection": "one sentence linking this lens to prebiotics"},
+      {"pathway": "probiotics", "connection": "one sentence linking this lens to probiotics"},
+      {"pathway": "postbiotics", "connection": "one sentence linking this lens to postbiotics"}
+    ],
+    "signals": [{"label": "must match a label we supply", "whatToNotice": "one observation prompt"}]
+  }
+}
+
+RULES FOR THE LENS — these are enforced after you respond, so breaking them only
+loses your text:
+- Do NOT invent a score for this lens. It has none.
+- Do NOT state or imply any measurement. For glucose in particular: this
+  questionnaire does not measure blood glucose.
+- Do NOT diagnose, or claim that food will change a symptom, mood or condition.
+- Use "your answers suggest", "is associated with", "may". Never "you have",
+  "this will fix", or a deadline.
+- Safety wording, evidence, the priority connection and the actions are fixed by
+  us and will replace anything you write for them.`
+    : ""
+
   return `You are EatoBiotics — a food system health expert writing a deeply personalised paid report.
 
 FREE ASSESSMENT RESULTS:
@@ -235,6 +283,8 @@ WRITING RULES:
 - In "bodySignalMap", keep the given "id" values and write only the
   explanations. These are food-pattern clues, never findings about the body
 
+${lensBlock}
+
 ${tierSchemaInstructions}
 
 Return ONLY valid JSON matching this exact schema — no markdown, no extra text.`
@@ -250,16 +300,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
   }
 
-  const { sessionId, questions: rawQuestions, answers } = body
+  // `questions` is still ACCEPTED in the body so older clients keep working,
+  // but it is deliberately not destructured: nothing in this route may read it.
+  // The question set comes from the row this session already wrote — see
+  // lib/assessment/trusted-questions.ts for why the body cannot be the source.
+  const { sessionId, answers } = body
 
   if (!sessionId) {
     return NextResponse.json({ error: "Missing sessionId" }, { status: 400 })
   }
-  if (!rawQuestions || !answers) {
-    return NextResponse.json({ error: "Missing questions or answers" }, { status: 400 })
+  if (!answers) {
+    return NextResponse.json({ error: "Missing answers" }, { status: 400 })
   }
 
-  const questions = rawQuestions as DeepQuestion[]
   const devMode = !process.env.STRIPE_SECRET_KEY
 
   // Step 1: Idempotency. Only short-circuit when the row is FULLY delivered
@@ -270,6 +323,8 @@ export async function POST(req: NextRequest) {
   let existingRow: {
     status?: string | null
     report_json?: unknown
+    /** The set generate-deep-questions persisted for THIS session. */
+    questions?: unknown
     pdf_url?: string | null
     pdf_status?: string | null
     email_status?: string | null
@@ -279,7 +334,7 @@ export async function POST(req: NextRequest) {
     try {
       const { data: existing } = await supabase
         .from("deep_assessments")
-        .select("status, pdf_url, report_json, pdf_status, email_status, email_sent_at")
+        .select("status, pdf_url, report_json, pdf_status, email_status, email_sent_at, questions")
         .eq("stripe_session_id", sessionId)
         .maybeSingle()
 
@@ -407,16 +462,93 @@ export async function POST(req: NextRequest) {
   const reportMode = resolveReportMode(freeScores)
   const foodSystemInput = { mode: reportMode, subScores, overall, profile }
 
+  // ── Entitlement ───────────────────────────────────────────────────────────
+  // Taken from `freeScores`, which is decoded from the SETTLED Stripe session a
+  // few steps above — not from the request body. The submitted payload carries
+  // only sessionId, questions and answers, so a client cannot claim a lens it
+  // did not buy, and re-validating through asAddon means a tampered or
+  // unrecognised value becomes null rather than an unrenderable string.
+  const entitledAddon = asAddon(freeScores.selectedAddon)
+  const isFamilyReport = freeScores.foundationType === "family"
+  // Only the answers belonging to THIS lens. A payload stuffed with another
+  // lens's ids contributes nothing.
+  const lensAnswerSet = sanitizeLensAnswers(entitledAddon, answers)
+
+  /**
+   * What the MODEL is allowed to read.
+   *
+   * `buildQABlock` prints `answers[q.id]` verbatim for every submitted
+   * question, so sanitizing only the builder's copy left a second door open: a
+   * payload could hand Claude arbitrary text under a real lens id. Every lens
+   * id is stripped here — including other add-ons' — and only the validated
+   * entitled answers are put back. Core `dq*` answers are unchanged; they are
+   * free text by design and the model is meant to read them.
+   */
+  const promptAnswers = { ...withoutLensAnswers(answers), ...lensAnswerSet }
+
+  /**
+   * The question set the SERVER believes was asked.
+   *
+   * Never the request body. `generate-deep-questions` already persisted the
+   * exact set it produced under this same stripe_session_id, so the trusted
+   * copy is read back from the row; the lens questions are re-derived from the
+   * settled entitlement rather than read back, which makes a wrong-add-on set
+   * unrepresentable. See lib/assessment/trusted-questions.ts.
+   */
+  const trusted = resolveTrustedQuestions({
+    persisted: existingRow?.questions,
+    entitledAddon,
+    foundation: isFamilyReport ? "family" : "you",
+    devMode,
+  })
+
+  // Refuse ONLY when we are about to generate. A reused report is returned from
+  // report_json without ever building a prompt, so legacy rows — persisted long
+  // before questions were stored, or stored without them — stay viewable and
+  // must not be rejected for lacking a question set.
+  //
+  // On the generate path, refusing beats producing a paid health report from
+  // context we cannot vouch for, and it is recoverable: the client re-runs
+  // generate-deep-questions and submits again.
+  const willGenerate = !existingRow?.report_json
+  if (willGenerate && !trusted.ok) {
+    console.error("[submit-deep-assessment] no server-side question set for", sessionId)
+    return NextResponse.json(
+      {
+        error: "Question set unavailable — please reload your assessment and try again.",
+        code: "question_set_unavailable",
+      },
+      { status: 400 },
+    )
+  }
+
+  // Non-empty on every path that reads it: the guard above returned already if
+  // generation was going to happen without a trusted set. The reuse branch
+  // never touches these.
+  const questions = trusted.ok ? trusted.questions : []
+  // Answers narrowed to canonical ids. Both consumers iterate `questions`, so an
+  // unknown id is already unreachable; this makes that explicit and testable.
+  const trustedAnswers = answersForTrustedQuestions(questions, promptAnswers)
+
+  /** Attach the derived lens to a freshly built report. No-op without one. */
+  const withLens = (r: DeepReport): DeepReport =>
+    reconcileAddonLens(r, { addon: entitledAddon, answers: lensAnswerSet, isFamily: isFamilyReport })
+
   if (existingRow?.report_json) {
     // Reports persisted before the educational block existed come back without
     // one, and this path returns them verbatim — so enrich rather than reuse
     // blind. Derived only: no regeneration, so a retry costs nothing extra and
     // the report keeps whatever narrative it already had.
-    report = ensureFoodSystem(existingRow.report_json as DeepReport, foodSystemInput)
+    report = reconcileAddonLens(
+      ensureFoodSystem(existingRow.report_json as DeepReport, foodSystemInput),
+      { addon: entitledAddon, answers: lensAnswerSet, isFamily: isFamilyReport },
+    )
   } else if (!process.env.ANTHROPIC_API_KEY) {
     console.warn("[submit-deep-assessment] ANTHROPIC_API_KEY not set; using fallback paid report")
     reportError = "ANTHROPIC_API_KEY not set — used deterministic fallback"
-    report = buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers, mode: reportMode })
+    report = withLens(
+      buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers: trustedAnswers, mode: reportMode }),
+    )
   } else {
     try {
       const effectiveTier = tier === "personal" ? "full" : tier
@@ -428,7 +560,13 @@ export async function POST(req: NextRequest) {
         messages: [
           {
             role: "user",
-            content: buildDeepAnalysisPrompt(freeScores, questions, answers),
+            content: buildDeepAnalysisPrompt(
+              freeScores,
+              questions,
+              // Scrubbed and narrowed to canonical ids — never the raw body.
+              trustedAnswers,
+              entitledAddon ? { addon: entitledAddon, answers: lensAnswerSet } : null,
+            ),
           },
         ],
       })
@@ -451,11 +589,31 @@ export async function POST(req: NextRequest) {
       // the safety footer all come from the assessment result, and only prose is
       // overlaid. So a model that omits the block, half-fills it, or invents a
       // score cannot put any of that in front of a customer.
-      const foodSystemBase = buildFoodSystemReport(foodSystemInput)
-      const foodSystem = mergeGeneratedNarrative(
-        foodSystemBase,
-        (parsed as { foodSystem?: unknown }).foodSystem,
-      )
+      const derivedBase = buildFoodSystemReport(foodSystemInput)
+      // The lens is DERIVED here for the same reason the block around it is:
+      // identity, priority connection, actions and safety wording must come
+      // from the assessment, not from the response.
+      const foodSystemBase: typeof derivedBase = entitledAddon
+        ? {
+            ...derivedBase,
+            lens: buildAddonLens({
+              addon: entitledAddon,
+              answers: lensAnswerSet,
+              foodSystem: derivedBase,
+              isFamily: isFamilyReport,
+            }),
+          }
+        : derivedBase
+
+      const generatedFoodSystem = (parsed as { foodSystem?: unknown }).foodSystem
+      const foodSystem = mergeGeneratedNarrative(foodSystemBase, generatedFoodSystem)
+      if (foodSystemBase.lens) {
+        // Prose only — see mergeGeneratedLens for the exact list it may touch.
+        foodSystem.lens = mergeGeneratedLens(
+          foodSystemBase.lens,
+          (generatedFoodSystem as { lens?: unknown } | undefined)?.lens,
+        )
+      }
 
       // Validate what we assembled rather than trusting it. This used to be a
       // bare `as DeepReport` cast, so a malformed response was persisted to
@@ -474,7 +632,9 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       console.error("[submit-deep-assessment] Claude error; using fallback paid report:", err)
       reportError = `Claude generation failed — used fallback: ${err instanceof Error ? err.message : String(err)}`
-      report = buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers, mode: reportMode })
+      report = withLens(
+      buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers: trustedAnswers, mode: reportMode }),
+    )
     }
   }
 
@@ -595,6 +755,9 @@ export async function POST(req: NextRequest) {
             typeof anyReport.topTriggerExplanation === "string" ? anyReport.topTriggerExplanation : "",
           sessionId,
           pdfUrl: pdfUrl ?? null,
+          // The settled-session entitlement, already narrowed by asAddon. Never
+          // the request body, never anything the model returned.
+          selectedAddon: entitledAddon,
         })
 
         const ownerEmail = process.env.OWNER_EMAIL

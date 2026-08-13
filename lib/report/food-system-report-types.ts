@@ -39,6 +39,7 @@
 import { z } from "zod"
 import type { BioticKey, VisualAccent } from "./visual-token"
 import type { BioticScoreKey } from "./subscores"
+import { ADDON_KEYS, type AddonType } from "@/lib/addon-types"
 
 export type { BioticKey, BioticScoreKey, VisualAccent }
 
@@ -133,6 +134,37 @@ export interface EvidenceNote {
 }
 
 /**
+ * A lens citation.
+ *
+ * Deliberately richer than `EvidenceNote` above, and deliberately separate from
+ * it. The core report's notes are a claim and a source; a lens note additionally
+ * carries the publishing body, the year, and — the field that matters most —
+ * an explicit `limitation`.
+ *
+ * The limitation is not a disclaimer bolted on afterwards. Every source in this
+ * product sits next to a statement about someone's body, and the honest gap
+ * between "population evidence exists" and "this applies to you" is exactly
+ * where a reader is most likely to over-read. Printing what a source does NOT
+ * show, beside what it does, is the only way a citation makes a paid report
+ * more trustworthy rather than merely more decorated.
+ *
+ * `EvidenceNote` is left untouched: it is consumed by the core report in
+ * components/report/food-system-section.tsx and lib/pdf/food-system-pdf.tsx.
+ */
+export interface LensEvidenceNote {
+  title: string
+  /** Publishing body or journal. */
+  organisation: string
+  /** Free text — "2017, reviewed 2025" is as valid as "2019". */
+  year: string
+  url: string
+  /** What this source actually supports, in the lens's context. */
+  whatItSupports: string
+  /** What it does not show. Rendered to the customer, never omitted. */
+  limitation: string
+}
+
+/**
  * The closing mission page headline. Fixed copy, fixed line breaks — it is the
  * brand's closing statement, not a field to paraphrase. Typed as a readonly
  * 4-tuple so a well-meaning edit to three or five lines fails to compile.
@@ -157,6 +189,61 @@ export const SAFETY_FOOTER =
   "medical condition, are pregnant, are immunocompromised, are making major diet " +
   "changes, or are concerned about symptoms, speak with a qualified health " +
   "professional."
+
+/**
+ * The lens chapter a purchased add-on produces.
+ *
+ * ── What this is not ─────────────────────────────────────────────────────────
+ *
+ * There is deliberately no score here. Inventing a "Stability Score" or a
+ * "Mind Score" out of four questionnaire answers would make the chapter look
+ * more personalised while being less honest: nothing in the assessment
+ * validates such a number, and once printed it would be read as a measurement.
+ * The lens interprets a pattern; it does not grade one.
+ *
+ * The core Feed/Seed/Heal scores are read here, never written. A lens explains
+ * how its area connects to those three pathways — it cannot move them.
+ */
+export interface FoodSystemLens {
+  /** Canonical add-on key. */
+  key: AddonType
+  /** Customer-facing name, e.g. "The Mind Food System". */
+  name: string
+  /** Short label for headers, e.g. "Mind". */
+  shortLabel: string
+  /** What this lens examines — fixed per add-on, not generated. */
+  examines: string
+  /** Answer-linked summary of what their responses describe. */
+  patternSummary: string
+  /** How this lens connects to each of the three pathways. */
+  pathwayConnections: Array<{
+    pathway: BioticScoreKey
+    connection: string
+  }>
+  /** 2–3 things worth noticing. Observations, never diagnoses. */
+  signals: Array<{ label: string; whatToNotice: string }>
+  /** The one connection that matters most, derived from the priority pathway. */
+  priorityConnection: {
+    pathway: BioticScoreKey
+    why: string
+  }
+  /**
+   * 2–3 actions expressed as additions to the EXISTING 30-day loop, by week.
+   * Not a second plan: a lens that issued its own competing schedule would
+   * leave the reader with two calendars and no idea which to follow.
+   */
+  loopAdditions: Array<{ week: number; action: string }>
+  /**
+   * At least two verified sources, each with its own limitation. Required
+   * whenever a lens exists — a lens chapter making health-adjacent statements
+   * with no citation is exactly what the evidence contract exists to prevent.
+   */
+  evidenceNotes: LensEvidenceNote[]
+  /** Fixed per-add-on safety wording. Never model-generated, never paraphrased. */
+  safetyNote: string
+  /** Accent token, reused from the system's own branding. */
+  accent: string
+}
 
 export interface FoodSystemReport {
   mode: ReportMode
@@ -213,6 +300,17 @@ export interface FoodSystemReport {
     memberNotes: string[]
     sharedLever: string
   }
+  /**
+   * Chapter 9b — the purchased add-on's lens. Present only when a lens was
+   * bought, so every report that predates add-ons, and every report bought
+   * without one, is unchanged.
+   *
+   * Placed after the 30-day loop and before evidence/closing: it is a lens ON
+   * the food system, so it has to come after the system has been explained, and
+   * the mission page stays last.
+   */
+  lens?: FoodSystemLens
+
   /** Chapter 10 — inside-out. */
   closingMissionPage: {
     headlineLines: ClosingHeadlineLines
@@ -283,6 +381,23 @@ const foodToolSchema = z.object({
 const scoreSchema = z.number().min(0).max(100)
 const pathwaySchema = z.enum(["prebiotics", "probiotics", "postbiotics"])
 
+const evidenceNoteSchema = z.object({
+  claim: z.string().min(1),
+  sourceTitle: z.string().min(1),
+  sourceUrl: z.string().url(),
+})
+
+const lensEvidenceNoteSchema = z.object({
+  title: z.string().min(10),
+  organisation: z.string().min(3),
+  year: z.string().min(4),
+  url: z.string().url(),
+  whatItSupports: z.string().min(40),
+  // Enforced as substantial: a one-word limitation would satisfy the shape
+  // while defeating the point of having the field.
+  limitation: z.string().min(40),
+})
+
 export const foodSystemReportSchema = z.object({
   mode: z.enum(["you", "family", "mind", "combined"]),
   title: z.string().min(1).max(200),
@@ -349,14 +464,44 @@ export const foodSystemReportSchema = z.object({
     nextAction: z.string().min(1),
     visualToken: visualTokenSchema,
   }),
-  evidenceNotes: z.array(
-    z.object({
-      claim: z.string().min(1),
-      sourceTitle: z.string().min(1),
-      sourceUrl: z.string().url(),
-    }),
-  ),
+  evidenceNotes: z.array(evidenceNoteSchema),
   safetyFooter: z.string().min(1),
+
+  /**
+   * Optional so that every report predating add-ons — and every report bought
+   * without one — validates exactly as before.
+   *
+   * When it IS present the bar is high: empty strings, an empty pathway list,
+   * no signals, no actions or no evidence all fail. A lens chapter that renders
+   * as blank headings is worse than no chapter, because the customer paid for
+   * it, so "present but hollow" must not validate.
+   */
+  lens: z
+    .object({
+      key: z.enum(ADDON_KEYS as unknown as [AddonType, ...AddonType[]]),
+      name: z.string().min(1),
+      shortLabel: z.string().min(1),
+      examines: z.string().min(20),
+      patternSummary: z.string().min(40),
+      pathwayConnections: z
+        .array(z.object({ pathway: pathwaySchema, connection: z.string().min(20) }))
+        .min(1),
+      signals: z
+        .array(z.object({ label: z.string().min(1), whatToNotice: z.string().min(20) }))
+        .min(2)
+        .max(3),
+      priorityConnection: z.object({ pathway: pathwaySchema, why: z.string().min(20) }),
+      loopAdditions: z
+        .array(z.object({ week: z.number().int().min(1).max(4), action: z.string().min(20) }))
+        .min(2)
+        .max(3),
+      // Required, and at least two. The lens is optional as a whole; a lens
+      // that exists without evidence is not.
+      evidenceNotes: z.array(lensEvidenceNoteSchema).min(2),
+      safetyNote: z.string().min(20),
+      accent: z.string().min(1),
+    })
+    .optional(),
 })
 
 export type ValidatedFoodSystemReport = z.infer<typeof foodSystemReportSchema>
