@@ -692,6 +692,9 @@ export async function POST(req: NextRequest) {
             typeof anyReport.topTriggerExplanation === "string" ? anyReport.topTriggerExplanation : "",
           sessionId,
           pdfUrl: pdfUrl ?? null,
+          // The settled-session entitlement, already narrowed by asAddon. Never
+          // the request body, never anything the model returned.
+          selectedAddon: entitledAddon,
         })
 
         const ownerEmail = process.env.OWNER_EMAIL

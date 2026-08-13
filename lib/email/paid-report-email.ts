@@ -2,6 +2,9 @@
 // Builds the HTML email for paid deep assessment reports (starter / full / premium).
 // Uses the same inline-styles HTML table pattern as results-email.ts.
 
+import { asAddonType, type AddonType } from "@/lib/addon-types"
+import { SYSTEMS } from "@/lib/systems"
+
 interface PaidReportEmailOpts {
   name: string
   tier: "personal" | "starter" | "full" | "premium"
@@ -15,6 +18,15 @@ interface PaidReportEmailOpts {
   sessionId: string
   pdfUrl: string | null
   ageBracket?: string
+  /**
+   * The purchased lens, if any.
+   *
+   * Must be the entitlement decoded from the SETTLED Stripe session — never a
+   * value from the request body or from model output. It is re-narrowed here
+   * anyway, so an unrecognised string produces the no-add-on email rather than
+   * a raw key in front of a customer.
+   */
+  selectedAddon?: AddonType | string | null
 }
 
 /* ── Constants ──────────────────────────────────────────────────────── */
@@ -129,6 +141,7 @@ export function buildPaidReportEmail(opts: PaidReportEmailOpts): {
     topTriggerExplanation,
     sessionId,
     pdfUrl,
+    selectedAddon,
     ageBracket,
   } = opts
 
@@ -227,6 +240,31 @@ export function buildPaidReportEmail(opts: PaidReportEmailOpts): {
 
   const retestDateStr = retestDate()
   const reportUrl = `https://eatobiotics.com/assessment/report?session_id=${sessionId}`
+
+  /**
+   * The purchased lens, acknowledged.
+   *
+   * Without this the email a customer who paid extra receives is byte-identical
+   * to a customer who did not, and the only way to discover the lens is to open
+   * the report and reach chapter 07 — which reads as "the add-on was lost".
+   *
+   * It states inclusion and nothing more: no score, no measurement, no
+   * diagnosis, no promised result, and no suggestion of a second report. The
+   * name comes from the same catalogue the report chapter uses, so the two can
+   * never disagree. An absent or unrecognised add-on renders NOTHING — not an
+   * empty box, not a placeholder, not a raw key.
+   */
+  const lensAddon = asAddonType(selectedAddon)
+  const lensNoteHtml = lensAddon
+    ? `
+          <tr>
+            <td style="padding: 14px 40px 0; text-align: center;">
+              <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #4a4a4a; font-family: Arial, sans-serif;">
+                Your <strong style="color: #2f7f6f;">${SYSTEMS[lensAddon].label}</strong> lens is included in your full report.
+              </p>
+            </td>
+          </tr>`
+    : ""
 
   /* ── HTML assembly ───────────────────────────────────────────────── */
   const html = `<!DOCTYPE html>
@@ -333,6 +371,7 @@ export function buildPaidReportEmail(opts: PaidReportEmailOpts): {
               <a href="${reportUrl}" style="display: inline-block; background: linear-gradient(135deg, #7fc47e 0%, #3ab0a0 100%); color: #ffffff; text-decoration: none; font-size: 15px; font-weight: bold; font-family: Arial, sans-serif; padding: 14px 32px; border-radius: 50px;">View Your Full Report →</a>
             </td>
           </tr>
+${lensNoteHtml}
 
           <!-- PDF note box -->
           <tr>
