@@ -12,7 +12,7 @@ import {
   type PaidReportHealthSystem,
 } from "@/lib/paid-report-session"
 import { buildAddonLens, reconcileAddonLens, mergeGeneratedLens } from "@/lib/report/addon-lens"
-import { sanitizeLensAnswers } from "@/lib/assessment/addon-questions"
+import { sanitizeLensAnswers, withoutLensAnswers } from "@/lib/assessment/addon-questions"
 import { buildFallbackPaidReport } from "@/lib/fallback-paid-report"
 import {
   buildFoodSystemReport,
@@ -468,6 +468,18 @@ export async function POST(req: NextRequest) {
   // lens's ids contributes nothing.
   const lensAnswerSet = sanitizeLensAnswers(entitledAddon, answers)
 
+  /**
+   * What the MODEL is allowed to read.
+   *
+   * `buildQABlock` prints `answers[q.id]` verbatim for every submitted
+   * question, so sanitizing only the builder's copy left a second door open: a
+   * payload could hand Claude arbitrary text under a real lens id. Every lens
+   * id is stripped here — including other add-ons' — and only the validated
+   * entitled answers are put back. Core `dq*` answers are unchanged; they are
+   * free text by design and the model is meant to read them.
+   */
+  const promptAnswers = { ...withoutLensAnswers(answers), ...lensAnswerSet }
+
   /** Attach the derived lens to a freshly built report. No-op without one. */
   const withLens = (r: DeepReport): DeepReport =>
     reconcileAddonLens(r, { addon: entitledAddon, answers: lensAnswerSet, isFamily: isFamilyReport })
@@ -501,7 +513,8 @@ export async function POST(req: NextRequest) {
             content: buildDeepAnalysisPrompt(
               freeScores,
               questions,
-              answers,
+              // Scrubbed, not raw — see promptAnswers above.
+              promptAnswers,
               entitledAddon ? { addon: entitledAddon, answers: lensAnswerSet } : null,
             ),
           },

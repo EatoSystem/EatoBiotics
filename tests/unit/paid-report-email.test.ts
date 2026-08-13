@@ -32,7 +32,11 @@ describe("buildPaidReportEmail — PDF note copy", () => {
   it("pdfUrl null: points to the durable report page instead of promising a re-email", () => {
     const { html } = buildPaidReportEmail({ ...base, pdfUrl: null })
 
-    expect(html).toContain("Your PDF is still being prepared. Your full report is already available on your report page")
+    // Copy corrected: the old line promised the download would "appear as soon
+    // as it is ready", which is not something the pipeline can guarantee — the
+    // PDF may have failed, not merely be slow.
+    expect(html).toContain("Your full report is ready to read online")
+    expect(html).toContain("check there whether the PDF download is available")
     // The old copy promised a re-email that nothing ever sends — that lie is gone.
     expect(html).not.toContain("will be emailed to you shortly")
     expect(html).not.toContain("attached to this email")
@@ -137,15 +141,9 @@ describe("buildPaidReportEmail — the purchased lens", () => {
   it.each(ADDON_KEYS)("%s: the real CLAIMS rules pass over the new wording", (addon) => {
     const { html, subject } = buildPaidReportEmail({ ...base, pdfUrl: null, selectedAddon: addon })
 
-    // Scoped to what this change ADDED — the lens line and the subject.
-    //
-    // Running the corpus over the whole email flags one PRE-EXISTING sentence
-    // in the pdfUrl-null branch: "the PDF download will appear there as soon as
-    // it is ready" trips the `promise` rule on "will appear". That is a promise
-    // about a button, not about anybody's health, and it shipped long before
-    // this branch — so it is reported rather than silently swept into scope
-    // here. See `the pre-existing promise phrase is still there` below, which
-    // pins it so a future cleanup is a deliberate act.
+    // Scoped to the lens line specifically, so a failure names the new wording
+    // rather than anything else in the email. The whole-email version now runs
+    // too — see "the whole email is now CLAIMS-clean in both PDF states".
     const lensLine = html.slice(
       Math.max(0, html.indexOf("lens is included") - 300),
       html.indexOf("lens is included") + 200,
@@ -174,11 +172,44 @@ describe("buildPaidReportEmail — the purchased lens", () => {
     }
   })
 
-  it("the pre-existing promise phrase is still there, and is about a button", () => {
-    // Documented, not fixed, in this change. If someone reworks the PDF note,
-    // this fails and they get to decide deliberately.
+  /**
+   * The PDF-unavailable copy, corrected.
+   *
+   * It used to say "the PDF download will appear there as soon as it is ready",
+   * which promises an automatic recovery nothing guarantees — the PDF may have
+   * failed outright, not merely be slow. It is now factual: read the report
+   * online, and check there whether a download is available. Deliberately NOT
+   * silenced via KNOWN_FALSE_POSITIVES; the copy changed instead.
+   */
+  it("the PDF-unavailable note promises no automatic recovery", () => {
     const { html } = buildPaidReportEmail({ ...base, pdfUrl: null })
-    expect(html).toContain("the PDF download will appear there as soon as it is ready")
+
+    expect(html).not.toContain("will appear there as soon as it is ready")
+    expect(html).not.toMatch(/will (appear|be ready|be available|arrive|be sent|be emailed)/i)
+    expect(html).toContain("check there whether the PDF download is available")
+    // The durable report link survives — that is the whole point of the note.
+    expect(html).toContain('href="https://eatobiotics.com/assessment/report?session_id=sess_123"')
+  })
+
+  it("the ready state still offers the direct 7-day PDF link", () => {
+    const pdfUrl = "https://storage.example.com/pdf-reports/sess_123.pdf?token=abc"
+    const { html } = buildPaidReportEmail({ ...base, pdfUrl })
+    expect(html).toContain(`href="${pdfUrl}"`)
+    expect(html).toContain("Download it here")
+    expect(html).toMatch(/7 days/)
+    expect(html).toContain('href="https://eatobiotics.com/assessment/report?session_id=sess_123"')
+  })
+
+  it("the whole email is now CLAIMS-clean in both PDF states", () => {
+    for (const pdfUrl of [null, "https://storage.example.com/x.pdf"]) {
+      for (const selectedAddon of [undefined, ...ADDON_KEYS]) {
+        const { html, subject } = buildPaidReportEmail({ ...base, pdfUrl, selectedAddon })
+        const plain = `${subject} ${html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")}`
+          .replace(DENIAL_BOILERPLATE, " ")
+        const hits = CLAIMS.filter(([, p]) => p.test(plain)).map(([r]) => r)
+        expect(hits, `${selectedAddon ?? "none"}/${pdfUrl ? "ready" : "pending"}: ${hits.join(", ")}`).toEqual([])
+      }
+    }
   })
 
   it("there is no plain-text variant to keep in sync", () => {

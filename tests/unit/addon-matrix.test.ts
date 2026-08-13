@@ -163,6 +163,29 @@ describe("entitlement is the settled session, and survives every stage", () => {
     expect(src).not.toMatch(/body\.selectedAddon|answers\.selectedAddon/)
   })
 
+  /**
+   * The route must hand the model the SCRUBBED answers, not the raw body.
+   *
+   * Source inspection, deliberately: `buildDeepAnalysisPrompt` is module-private
+   * and the Claude call cannot be exercised here (no API key), so the only way
+   * to pin the wiring is to read it. Composing `withoutLensAnswers` and
+   * `sanitizeLensAnswers` by hand in a unit test proved the helpers work while
+   * the route still passed `answers` straight through — this is the assertion
+   * that would have caught that.
+   */
+  it("submit-deep-assessment gives Claude the scrubbed answers, never the raw body", () => {
+    const src = readFileSync("app/api/submit-deep-assessment/route.ts", "utf8")
+
+    expect(src).toContain("const promptAnswers = { ...withoutLensAnswers(answers), ...lensAnswerSet }")
+
+    // The prompt call site must use promptAnswers. Grab its argument list and
+    // assert the raw `answers` identifier is not among the arguments.
+    const call = src.slice(src.indexOf("content: buildDeepAnalysisPrompt("))
+    const args = call.slice(0, call.indexOf("),") + 1)
+    expect(args).toContain("promptAnswers")
+    expect(args.split("\n").map((l) => l.trim())).not.toContain("answers,")
+  })
+
   it("generate-deep-questions derives entitlement from the session too", () => {
     const src = readFileSync("app/api/generate-deep-questions/route.ts", "utf8")
     expect(src).toContain("getPaidReportSummaryFromSession(session)")

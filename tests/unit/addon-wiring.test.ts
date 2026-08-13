@@ -5,7 +5,7 @@ import { asAddon } from "@/lib/paid-report-session"
 import { buildAddonLens, reconcileAddonLens, mergeGeneratedLens, ADDON_SAFETY } from "@/lib/report/addon-lens"
 import { buildFoodSystemReport } from "@/lib/report/build-food-system-report"
 import { computeOverall, getProfile } from "@/lib/assessment-scoring"
-import { ADDON_QUESTIONS, addonQuestionsFor, sanitizeLensAnswers } from "@/lib/assessment/addon-questions"
+import { ADDON_QUESTIONS, addonQuestionsFor, sanitizeLensAnswers, withoutLensAnswers, lensQuestionId } from "@/lib/assessment/addon-questions"
 import { ANSWERS_B, nsAnswers } from "./helpers/lens-fixtures"
 
 /**
@@ -228,5 +228,85 @@ describe("question sets by entitlement", () => {
       expect(family).toHaveLength(you.length)
       expect(family.map((q) => q.text).join()).not.toBe(you.map((q) => q.text).join())
     }
+  })
+})
+
+/**
+ * The MODEL's copy of the answers.
+ *
+ * `sanitizeLensAnswers` protects the deterministic builder, but the Claude
+ * prompt is assembled separately — `buildQABlock` prints `answers[q.id]`
+ * verbatim for every submitted question. Sanitizing only the builder's copy
+ * therefore left a second door open: a payload could hand the model arbitrary
+ * text under a real lens id, and the model might echo it into narrative that is
+ * then persisted and rendered.
+ *
+ * The route now builds the prompt from
+ * `{ ...withoutLensAnswers(answers), ...sanitizeLensAnswers(...) }`.
+ */
+describe("rejected lens input never reaches the model prompt", () => {
+  const P = "ZZQX-REJECTED-PAYLOAD"
+
+  const promptAnswersFor = (addon: AddonType | null, raw: Record<string, unknown>) => ({
+    ...withoutLensAnswers(raw),
+    ...sanitizeLensAnswers(addon, raw),
+  })
+
+  it.each(ADDON_KEYS)("%s: every hostile shape is stripped before the prompt", (addon) => {
+    const other = ADDON_KEYS.find((k) => k !== addon)!
+    const raw: Record<string, unknown> = {
+      dq1: "a legitimate core answer",
+      [lensQuestionId(addon, 1)]: P,                                     // arbitrary text
+      [lensQuestionId(addon, 2)]: ADDON_QUESTIONS[addon][0].options![0].value, // wrong question's option
+      [lensQuestionId(other, 1)]: ADDON_QUESTIONS[other][0].options![0].value, // another add-on
+      [lensQuestionId(addon, 3)]: [ADDON_QUESTIONS[addon][2].options![0].value, P], // mixed array
+      [`${addon}_lens99`]: P,                                            // unknown id
+      lens1: P,                                                          // retired generic id
+      [lensQuestionId(addon, 4)]: { evil: P },                           // non-string
+    }
+
+    const prompt = promptAnswersFor(addon, raw)
+
+    expect(JSON.stringify(prompt)).not.toContain(P)
+    // The one legitimate core answer is untouched — core copy is free text by
+    // design and the model is meant to read it.
+    expect(prompt.dq1).toBe("a legitimate core answer")
+    // No lens-shaped key survives except validated ones.
+    for (const key of Object.keys(prompt)) {
+      if (/lens/i.test(key)) {
+        expect(key.startsWith(`${addon}_lens`)).toBe(true)
+        expect(sanitizeLensAnswers(addon, raw)).toHaveProperty(key)
+      }
+    }
+  })
+
+  it.each(ADDON_KEYS)("%s: the mixed array keeps only its valid member", (addon) => {
+    const valid = ADDON_QUESTIONS[addon][2].options![0].value
+    const prompt = promptAnswersFor(addon, { [lensQuestionId(addon, 3)]: [valid, P] })
+    const kept = prompt[lensQuestionId(addon, 3)]
+    if (kept !== undefined) {
+      expect(kept).toEqual([valid])
+      expect(JSON.stringify(kept)).not.toContain(P)
+    }
+  })
+
+  it("omitted answers produce an empty lens set, not empty strings", () => {
+    for (const addon of ADDON_KEYS) {
+      expect(sanitizeLensAnswers(addon, {})).toEqual({})
+      expect(promptAnswersFor(addon, {})).toEqual({})
+    }
+  })
+
+  it("lens-shaped ids are stripped by SHAPE, not only by exact match", () => {
+    // `mind_lens99` and the retired bare `lens1` are not real ids, so an
+    // exact-match filter left them in the prompt object. Both must go.
+    const out = withoutLensAnswers({
+      dq1: "keep me",
+      mind_lens99: P,
+      lens1: P,
+      LENS2: P,
+      glucose_lens3: P,
+    })
+    expect(out).toEqual({ dq1: "keep me" })
   })
 })

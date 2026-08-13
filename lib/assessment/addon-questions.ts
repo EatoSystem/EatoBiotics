@@ -444,6 +444,54 @@ export function addonQuestionsFor(
   }))
 }
 
+/**
+ * Anything that LOOKS like a lens id, whether or not it is a real one.
+ *
+ * Stripping only known ids left `mind_lens99` and the retired generic `lens1`
+ * in the object handed to the prompt builder — rejected lens-shaped input that
+ * had simply missed the exact-match filter. Matching on shape closes that:
+ * `<addon>_lens<n>` and the legacy bare `lens<n>` both go, and only the
+ * validated entitled answers are merged back afterwards.
+ */
+const LENS_SHAPED_ID = /^(?:[a-z]+_)?lens\d+$/i
+
+/**
+ * Every lens wire id, for EVERY add-on — not just the entitled one.
+ *
+ * Used to scrub a raw answer map before it is shown to the model. The entitled
+ * lens's own answers are merged back in from the sanitized set afterwards.
+ */
+export function allLensQuestionIds(): ReadonlySet<string> {
+  const ids = new Set<string>()
+  for (const addon of Object.keys(ADDON_QUESTIONS) as AddonType[]) {
+    for (const spec of ADDON_QUESTIONS[addon]) ids.add(lensQuestionId(addon, spec.slot))
+  }
+  return ids
+}
+
+/**
+ * A raw answer map with EVERY lens answer removed, sanitized or not.
+ *
+ * ── Why the prompt needs this ────────────────────────────────────────────────
+ *
+ * `sanitizeLensAnswers` protects the deterministic builder, but the Claude
+ * prompt is assembled separately: `buildQABlock` walks the submitted questions
+ * and prints `answers[q.id]` verbatim. A payload could therefore hand the model
+ * arbitrary text under a real lens id even though the lens chapter itself was
+ * immune — the model would read it, and might echo it into narrative that is
+ * then persisted.
+ *
+ * So the prompt is built from `{ ...withoutLensAnswers(answers), ...sanitized }`:
+ * every lens id is stripped first (including other add-ons' ids), then only the
+ * validated entitled answers are added back.
+ */
+export function withoutLensAnswers(answers: Record<string, unknown>): Record<string, unknown> {
+  const lensIds = allLensQuestionIds()
+  return Object.fromEntries(
+    Object.entries(answers ?? {}).filter(([k]) => !lensIds.has(k) && !LENS_SHAPED_ID.test(k)),
+  )
+}
+
 /** The declared option values for one question. Empty when it has no options. */
 export function lensOptionValues(addon: AddonType, slot: LensSlot): ReadonlySet<string> {
   const spec = ADDON_QUESTIONS[addon]?.find((q) => q.slot === slot)

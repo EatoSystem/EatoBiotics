@@ -234,8 +234,8 @@ export function buildPaidReportEmail(opts: PaidReportEmailOpts): {
         and your report page (the button above) always has a fresh download link, permanently.
       </p>`
     : `<p style="margin: 0; font-size: 13px; color: #555555; font-family: Arial, sans-serif; line-height: 1.6;">
-        📎 Your PDF is still being prepared. Your full report is already available on your report page
-        (the button above), and the PDF download will appear there as soon as it is ready.
+        📎 Your full report is ready to read online — open it from the button above. You can also
+        check there whether the PDF download is available.
       </p>`
 
   const retestDateStr = retestDate()
