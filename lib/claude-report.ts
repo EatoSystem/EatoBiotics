@@ -161,5 +161,22 @@ export interface WithFoodSystem {
   foodSystem?: FoodSystemReport
 }
 
+/**
+ * Server-stamped metadata about the report, not part of its content.
+ *
+ * Optional and additive for the same reason `WithFoodSystem` is: reports
+ * persisted before it shipped simply do not have it, and every existing
+ * consumer keeps working. Nothing renders it — the web client, the PDF and the
+ * email all read named content fields — so it is metadata carried alongside the
+ * report rather than anything a customer is shown.
+ *
+ * See lib/report/generation-provenance.ts for the values and why the server
+ * must be the only writer.
+ */
+export interface WithReportMeta {
+  _meta?: { generationSource?: string }
+}
+
 export type DeepReport = (DeepStarterReport | DeepFullReport | DeepPremiumReport) &
-  WithFoodSystem
+  WithFoodSystem &
+  WithReportMeta

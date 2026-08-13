@@ -22,6 +22,13 @@ import {
   resolveReportMode,
 } from "@/lib/report/build-food-system-report"
 import { parseFoodSystemReport } from "@/lib/report/food-system-report-types"
+import {
+  withGenerationSource,
+  readGenerationSource,
+  logGenerationSource,
+  sessionTag,
+  type GenerationSource,
+} from "@/lib/report/generation-provenance"
 import { overallReportStatus } from "@/lib/report-status"
 // Aliased: the route already has a local `reportError` string (the report_error column value).
 import { reportError as alertOwner } from "@/lib/report-error"
@@ -458,6 +465,13 @@ export async function POST(req: NextRequest) {
   // "generated"; report_error records *why* a fallback was used for diagnostics.
   let report: DeepReport
   let reportError: string | null = null
+  /**
+   * What produced the CONTENT of this report. Separate from `reportError`, which
+   * stays a free-text operational diagnostic: this is a validated enum #222 can
+   * query to tell a real Claude generation from a deterministic fallback. It is
+   * inert — nothing downstream branches on it.
+   */
+  let generationSource: GenerationSource = "legacy_unknown"
 
   const reportMode = resolveReportMode(freeScores)
   const foodSystemInput = { mode: reportMode, subScores, overall, profile }
@@ -539,6 +553,11 @@ export async function POST(req: NextRequest) {
     // one, and this path returns them verbatim — so enrich rather than reuse
     // blind. Derived only: no regeneration, so a retry costs nothing extra and
     // the report keeps whatever narrative it already had.
+    // Provenance describes the CONTENT, so it is read off the stored report and
+    // preserved. Enriching a reused report with a derived food-system block or
+    // add-on lens is not generation and must not relabel it; a report written
+    // before this shipped honestly reads `legacy_unknown`.
+    generationSource = readGenerationSource(existingRow.report_json)
     report = reconcileAddonLens(
       ensureFoodSystem(existingRow.report_json as DeepReport, foodSystemInput),
       { addon: entitledAddon, answers: lensAnswerSet, isFamily: isFamilyReport },
@@ -546,6 +565,7 @@ export async function POST(req: NextRequest) {
   } else if (!process.env.ANTHROPIC_API_KEY) {
     console.warn("[submit-deep-assessment] ANTHROPIC_API_KEY not set; using fallback paid report")
     reportError = "ANTHROPIC_API_KEY not set — used deterministic fallback"
+    generationSource = "deterministic_no_api_key"
     report = withLens(
       buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers: trustedAnswers, mode: reportMode }),
     )
@@ -623,7 +643,14 @@ export async function POST(req: NextRequest) {
         console.warn(
           "[submit-deep-assessment] foodSystem failed validation after merge; using derived base",
         )
+        // The gap this provenance marker exists to close: Claude answered, but
+        // its content was discarded, and until now the row was indistinguishable
+        // from a clean generation. `reportError` also gets the operational
+        // message it was always missing here — safe, because nothing reads that
+        // column to decide status, access, delivery, alerts or retries.
+        reportError = "Claude returned a foodSystem that failed validation — used derived base"
       }
+      generationSource = validFoodSystem ? "claude_generated" : "deterministic_validation_failure"
 
       report = {
         ...(parsed as DeepReport),
@@ -632,11 +659,32 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       console.error("[submit-deep-assessment] Claude error; using fallback paid report:", err)
       reportError = `Claude generation failed — used fallback: ${err instanceof Error ? err.message : String(err)}`
+      generationSource = "deterministic_claude_error"
       report = withLens(
       buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers: trustedAnswers, mode: reportMode }),
     )
     }
   }
+
+  /**
+   * Stamp the provenance LAST, after every branch has produced its report.
+   *
+   * The success path builds its result by spreading Claude's parsed response, so
+   * a model that returned a `_meta` of its own would otherwise get to declare
+   * its own provenance. Stamping here makes the server the only writer, on every
+   * path, including reuse (where the value read off the stored report is
+   * re-stamped unchanged so the shape stays uniform).
+   */
+  report = withGenerationSource(report, generationSource)
+
+  logGenerationSource({
+    source: generationSource,
+    tier,
+    mode: reportMode,
+    addon: entitledAddon,
+    reuse: Boolean(existingRow?.report_json),
+    sessionTag: sessionTag(sessionId),
+  })
 
   // Step 6: Persist report_json (stays "analysing" until delivery is verified)
   if (supabase) {
