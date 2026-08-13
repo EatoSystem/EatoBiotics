@@ -13,6 +13,7 @@ import {
 } from "@/lib/paid-report-session"
 import { buildAddonLens, reconcileAddonLens, mergeGeneratedLens } from "@/lib/report/addon-lens"
 import { sanitizeLensAnswers, withoutLensAnswers } from "@/lib/assessment/addon-questions"
+import { resolveTrustedQuestions, answersForTrustedQuestions } from "@/lib/assessment/trusted-questions"
 import { buildFallbackPaidReport } from "@/lib/fallback-paid-report"
 import {
   buildFoodSystemReport,
@@ -299,16 +300,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
   }
 
-  const { sessionId, questions: rawQuestions, answers } = body
+  // `questions` is still ACCEPTED in the body so older clients keep working,
+  // but it is deliberately not destructured: nothing in this route may read it.
+  // The question set comes from the row this session already wrote — see
+  // lib/assessment/trusted-questions.ts for why the body cannot be the source.
+  const { sessionId, answers } = body
 
   if (!sessionId) {
     return NextResponse.json({ error: "Missing sessionId" }, { status: 400 })
   }
-  if (!rawQuestions || !answers) {
-    return NextResponse.json({ error: "Missing questions or answers" }, { status: 400 })
+  if (!answers) {
+    return NextResponse.json({ error: "Missing answers" }, { status: 400 })
   }
 
-  const questions = rawQuestions as DeepQuestion[]
   const devMode = !process.env.STRIPE_SECRET_KEY
 
   // Step 1: Idempotency. Only short-circuit when the row is FULLY delivered
@@ -319,6 +323,8 @@ export async function POST(req: NextRequest) {
   let existingRow: {
     status?: string | null
     report_json?: unknown
+    /** The set generate-deep-questions persisted for THIS session. */
+    questions?: unknown
     pdf_url?: string | null
     pdf_status?: string | null
     email_status?: string | null
@@ -328,7 +334,7 @@ export async function POST(req: NextRequest) {
     try {
       const { data: existing } = await supabase
         .from("deep_assessments")
-        .select("status, pdf_url, report_json, pdf_status, email_status, email_sent_at")
+        .select("status, pdf_url, report_json, pdf_status, email_status, email_sent_at, questions")
         .eq("stripe_session_id", sessionId)
         .maybeSingle()
 
@@ -480,6 +486,50 @@ export async function POST(req: NextRequest) {
    */
   const promptAnswers = { ...withoutLensAnswers(answers), ...lensAnswerSet }
 
+  /**
+   * The question set the SERVER believes was asked.
+   *
+   * Never the request body. `generate-deep-questions` already persisted the
+   * exact set it produced under this same stripe_session_id, so the trusted
+   * copy is read back from the row; the lens questions are re-derived from the
+   * settled entitlement rather than read back, which makes a wrong-add-on set
+   * unrepresentable. See lib/assessment/trusted-questions.ts.
+   */
+  const trusted = resolveTrustedQuestions({
+    persisted: existingRow?.questions,
+    entitledAddon,
+    foundation: isFamilyReport ? "family" : "you",
+    devMode,
+  })
+
+  // Refuse ONLY when we are about to generate. A reused report is returned from
+  // report_json without ever building a prompt, so legacy rows — persisted long
+  // before questions were stored, or stored without them — stay viewable and
+  // must not be rejected for lacking a question set.
+  //
+  // On the generate path, refusing beats producing a paid health report from
+  // context we cannot vouch for, and it is recoverable: the client re-runs
+  // generate-deep-questions and submits again.
+  const willGenerate = !existingRow?.report_json
+  if (willGenerate && !trusted.ok) {
+    console.error("[submit-deep-assessment] no server-side question set for", sessionId)
+    return NextResponse.json(
+      {
+        error: "Question set unavailable — please reload your assessment and try again.",
+        code: "question_set_unavailable",
+      },
+      { status: 400 },
+    )
+  }
+
+  // Non-empty on every path that reads it: the guard above returned already if
+  // generation was going to happen without a trusted set. The reuse branch
+  // never touches these.
+  const questions = trusted.ok ? trusted.questions : []
+  // Answers narrowed to canonical ids. Both consumers iterate `questions`, so an
+  // unknown id is already unreachable; this makes that explicit and testable.
+  const trustedAnswers = answersForTrustedQuestions(questions, promptAnswers)
+
   /** Attach the derived lens to a freshly built report. No-op without one. */
   const withLens = (r: DeepReport): DeepReport =>
     reconcileAddonLens(r, { addon: entitledAddon, answers: lensAnswerSet, isFamily: isFamilyReport })
@@ -497,7 +547,7 @@ export async function POST(req: NextRequest) {
     console.warn("[submit-deep-assessment] ANTHROPIC_API_KEY not set; using fallback paid report")
     reportError = "ANTHROPIC_API_KEY not set — used deterministic fallback"
     report = withLens(
-      buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers, mode: reportMode }),
+      buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers: trustedAnswers, mode: reportMode }),
     )
   } else {
     try {
@@ -513,8 +563,8 @@ export async function POST(req: NextRequest) {
             content: buildDeepAnalysisPrompt(
               freeScores,
               questions,
-              // Scrubbed, not raw — see promptAnswers above.
-              promptAnswers,
+              // Scrubbed and narrowed to canonical ids — never the raw body.
+              trustedAnswers,
               entitledAddon ? { addon: entitledAddon, answers: lensAnswerSet } : null,
             ),
           },
@@ -583,7 +633,7 @@ export async function POST(req: NextRequest) {
       console.error("[submit-deep-assessment] Claude error; using fallback paid report:", err)
       reportError = `Claude generation failed — used fallback: ${err instanceof Error ? err.message : String(err)}`
       report = withLens(
-      buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers, mode: reportMode }),
+      buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers: trustedAnswers, mode: reportMode }),
     )
     }
   }

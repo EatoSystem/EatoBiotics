@@ -453,7 +453,7 @@ export function addonQuestionsFor(
  * `<addon>_lens<n>` and the legacy bare `lens<n>` both go, and only the
  * validated entitled answers are merged back afterwards.
  */
-const LENS_SHAPED_ID = /^(?:[a-z]+_)?lens\d+$/i
+export const LENS_SHAPED_ID = /^(?:[a-z]+_)?lens\d+$/i
 
 /**
  * Every lens wire id, for EVERY add-on — not just the entitled one.
