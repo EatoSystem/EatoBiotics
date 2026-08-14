@@ -14,6 +14,7 @@ import {
   reusedAddonLensSource,
   sessionTag,
   LEGACY_PROVENANCE,
+  type AddonLensNarrativeSource,
   type ReportProvenance,
 } from "@/lib/report/generation-provenance"
 import { buildFallbackPaidReport } from "@/lib/fallback-paid-report"
@@ -22,12 +23,14 @@ import {
   reconcileAddonLens,
   mergeGeneratedLens,
   claudeContributedToLens,
+  lensNarrativeProjection,
 } from "@/lib/report/addon-lens"
 import {
   ensureFoodSystem,
   buildFoodSystemReport,
   mergeGeneratedNarrative,
   claudeContributedToFoodSystem,
+  foodSystemNarrativeProjection,
 } from "@/lib/report/build-food-system-report"
 import { parseFoodSystemReport } from "@/lib/report/food-system-report-types"
 import { overallReportStatus, reportViewState } from "@/lib/report-status"
@@ -79,6 +82,23 @@ const coreWithLens = (addon: AddonType): FoodSystemReport => {
     lens: buildAddonLens({ addon, answers: lensAnswers(addon), foodSystem: base, isFamily: false }),
   }
 }
+
+/**
+ * The route's own lens-attribution expression for the fresh-generation path.
+ *
+ * Restated here so tests exercise the mapping rather than a constant. It is a
+ * restatement, and that is a drift risk in itself — so the route-wiring block
+ * below asserts the route still contains this exact shape.
+ */
+const lensSourceFor = (
+  base: FoodSystemReport,
+  shipped: FoodSystemReport,
+): AddonLensNarrativeSource =>
+  !shipped.lens
+    ? "not_applicable"
+    : base.lens && claudeContributedToLens(base.lens, shipped.lens)
+    ? "claude_contributed"
+    : "deterministic"
 
 const provenance = (p: Partial<ReportProvenance> = {}): ReportProvenance => ({
   ...LEGACY_PROVENANCE,
@@ -553,8 +573,67 @@ describe("a mixed report is recorded as mixed", () => {
     })
     expect(shipped.lens).toBeUndefined()
     expect(claudeContributedToFoodSystem(base, shipped)).toBe(true)
-    // The route maps an absent lens to `not_applicable`, never to a claim.
-    expect(ADDON_LENS_NARRATIVE_SOURCES).toContain("not_applicable")
+    // The route's own expression, evaluated — not merely a check that the value
+    // exists in the enum, which would pass with the mapping deleted.
+    expect(lensSourceFor(base, shipped)).toBe("not_applicable")
+  })
+})
+
+/**
+ * The success branch compares the derived base against the block returned by
+ * `parseFoodSystemReport` — an unparsed object against a zod-parsed one. That
+ * only tells the truth if parsing is projection-neutral.
+ *
+ * It is today: the schema declares no `.trim()`, `.transform()`, `.default()` or
+ * coercion. But it is load-bearing and invisible — adding a `.trim()` to any
+ * narrative field would make every accepted response read `claude_contributed`
+ * regardless of what the model wrote, and nothing else here would notice.
+ */
+describe("validation is projection-neutral", () => {
+  it.each(ADDON_KEYS)("%s: parsing changes neither projection", (addon) => {
+    const base = coreWithLens(addon)
+    const parsed = parseFoodSystemReport(base)
+    expect(parsed).not.toBeNull()
+    expect(foodSystemNarrativeProjection(parsed!)).toEqual(foodSystemNarrativeProjection(base))
+    expect(claudeContributedToFoodSystem(base, parsed!)).toBe(false)
+    expect(lensNarrativeProjection(parsed!.lens!)).toEqual(lensNarrativeProjection(base.lens!))
+    expect(claudeContributedToLens(base.lens!, parsed!.lens!)).toBe(false)
+  })
+
+  it.each(ADDON_KEYS)("%s: a purchased lens survives validation, so it can never read not_applicable", (addon) => {
+    // The invalid combination worth ruling out: an entitled add-on whose lens is
+    // stripped by parsing would be recorded as "no add-on", which the operator
+    // would read as nothing to check.
+    const base = coreWithLens(addon)
+    const generated = { systemSnapshot: { oneLine: "A model-written opening line." } }
+    const merged = mergeGeneratedNarrative(base, generated)
+    merged.lens = mergeGeneratedLens(base.lens!, (generated as { lens?: unknown }).lens)
+
+    const shipped = parseFoodSystemReport(merged)
+    expect(shipped).not.toBeNull()
+    expect(shipped!.lens?.key).toBe(addon)
+    expect(lensSourceFor(base, shipped!)).toBe("deterministic")
+    expect(lensSourceFor(base, shipped!)).not.toBe("not_applicable")
+  })
+})
+
+/**
+ * The branch the whole marker exists for: Claude answered, the merged block
+ * failed validation, and the derived base shipped instead.
+ */
+describe("a discarded response is recorded as deterministic", () => {
+  it("a merged block that fails validation parses to null, so the base ships", () => {
+    const broken = { ...coreWithLens("glucose"), overallScore: "not a number" }
+    expect(parseFoodSystemReport(broken)).toBeNull()
+  })
+
+  it.each(ADDON_KEYS)("%s: shipping the base attributes neither layer to Claude", (addon) => {
+    const base = coreWithLens(addon)
+    // The route's `const shipped = validFoodSystem ?? foodSystemBase` on the
+    // failure path: the base compared against itself, no special case.
+    const shipped = base
+    expect(claudeContributedToFoodSystem(base, shipped)).toBe(false)
+    expect(lensSourceFor(base, shipped)).toBe("deterministic")
   })
 })
 
