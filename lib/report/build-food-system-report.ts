@@ -679,3 +679,87 @@ export function mergeGeneratedNarrative(
 
   return merged
 }
+
+/**
+ * The exact customer-visible strings `mergeGeneratedNarrative` above is allowed
+ * to take from a model response — and nothing else.
+ *
+ * This is a canonical PROJECTION, not a serialisation of the report. Comparing
+ * whole objects would make provenance depend on scores, evidence notes, the
+ * safety footer, visual tokens, derived ids, property order and every field
+ * added in future — none of which a model can influence, all of which would
+ * make the answer wrong for reasons that have nothing to do with authorship.
+ *
+ * Entries are tagged with a derived, model-unwritable key (`title` for a module,
+ * `id` for a signal node) and then sorted, so array order cannot change the
+ * result either.
+ *
+ * Lives here, immediately below the merge, so the two are read and changed
+ * together. A test in tests/unit/generation-provenance.test.ts extracts the
+ * property names this file's merge actually accepts and asserts each one is
+ * named below, so the projection cannot silently drift from the allow-list.
+ */
+export function foodSystemNarrativeProjection(report: FoodSystemReport): string[] {
+  const out: string[] = [
+    `systemSnapshot.oneLine=${report.systemSnapshot.oneLine}`,
+    `systemSnapshot.dominantPattern=${report.systemSnapshot.dominantPattern}`,
+    `systemSnapshot.mainLever=${report.systemSnapshot.mainLever}`,
+    `priorityLever.title=${report.priorityLever.title}`,
+    `priorityLever.whyThisFirst=${report.priorityLever.whyThisFirst}`,
+    `priorityLever.firstStep=${report.priorityLever.firstStep}`,
+    `priorityLever.whatToNotice=${report.priorityLever.whatToNotice}`,
+    `closingMissionPage.insideYou=${report.closingMissionPage.insideYou}`,
+    `closingMissionPage.aroundYou=${report.closingMissionPage.aroundYou}`,
+    `closingMissionPage.nextAction=${report.closingMissionPage.nextAction}`,
+  ]
+
+  for (const mod of report.educationModules) {
+    out.push(
+      `educationModules[${mod.title}].plainEnglish=${mod.plainEnglish}`,
+      `educationModules[${mod.title}].whyItMatters=${mod.whyItMatters}`,
+      `educationModules[${mod.title}].whatYourAnswersSuggest=${mod.whatYourAnswersSuggest}`,
+      `educationModules[${mod.title}].actionBridge=${mod.actionBridge}`,
+    )
+  }
+
+  for (const node of report.bodySignalMap) {
+    out.push(`bodySignalMap[${node.id}].explanation=${node.explanation}`)
+  }
+
+  // The whole array is replaced when a model supplies usable tools, so each tool
+  // is projected as one entry. `visualToken` is excluded: it is derived from
+  // `food` and `biotic`, both of which are already here.
+  for (const tool of report.foodTools) {
+    out.push(
+      [
+        "foodTools",
+        tool.food,
+        tool.biotic,
+        tool.mechanism,
+        tool.whyForThisCustomer,
+        tool.howToUse,
+        tool.swap ?? "",
+        tool.familyAdaptation ?? "",
+      ].join("|"),
+    )
+  }
+
+  return out.sort()
+}
+
+/**
+ * Did any permitted Food System narrative field end up different from the
+ * deterministic base?
+ *
+ * Under-claims by design: a model that returns text byte-identical to the
+ * derived copy reads as `deterministic`. Claiming authorship we cannot see is
+ * the failure that matters here; the reverse is harmless.
+ */
+export function claudeContributedToFoodSystem(
+  base: FoodSystemReport,
+  merged: FoodSystemReport,
+): boolean {
+  const a = foodSystemNarrativeProjection(base)
+  const b = foodSystemNarrativeProjection(merged)
+  return a.length !== b.length || a.some((value, i) => value !== b[i])
+}
