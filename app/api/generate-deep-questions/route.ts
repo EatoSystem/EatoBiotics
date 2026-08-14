@@ -8,6 +8,7 @@ import {
   FALLBACK_DEEP_QUESTIONS,
   type DeepQuestion,
 } from "@/lib/deep-assessment"
+import { readQuestionSnapshot } from "@/lib/assessment/question-snapshot"
 import { PILLAR_LABELS as CORE_PILLAR_LABELS } from "@/lib/pillars"
 
 type SubScores = {
@@ -147,6 +148,23 @@ Return ONLY valid JSON, no markdown fences:
 }`
 }
 
+/**
+ * Persistence failed, so there is nothing to return.
+ *
+ * Deliberately not a degraded 200. The questionnaire only means anything if
+ * submit-deep-assessment can read the same set back off the row; handing the
+ * client an ephemeral one lets a customer answer 18 questions and then be
+ * refused. The client treats any non-ok response as its retry path
+ * (components/assessment/deep/deep-assessment-client.tsx), so this surfaces as
+ * "please try again" rather than a dead end.
+ */
+function persistenceFailed(): NextResponse {
+  return NextResponse.json(
+    { error: "Could not save your questions. Please try again." },
+    { status: 503 }
+  )
+}
+
 export async function POST(req: NextRequest) {
   let body: RequestBody
   try {
@@ -201,82 +219,135 @@ export async function POST(req: NextRequest) {
     ...addonQuestionsFor(entitledAddon, foundation),
   ]
 
-  // Step 2: Check Supabase for idempotency
+  /**
+   * Step 2: reuse the persisted snapshot, if there is one.
+   *
+   * The reuse decision keys on the SNAPSHOT and never on the row's `status`.
+   * Five statuses reach this row from four files — "in_progress" (the Stripe
+   * webhook, and save-deep-progress by default), "questions_generated" (here),
+   * "analysing", and "complete" | "partial" (submit-deep-assessment) — plus
+   * whatever arbitrary string a caller hands the unauthenticated
+   * save-deep-progress PATCH, which writes `status` straight through.
+   *
+   * None of them means "discard the questions and start over". So a status
+   * allowlist can only ever be wrong in one direction: it regenerates over a
+   * snapshot the customer may already be part-way through answering. The old
+   * four-value list omitted "partial", a status submit-deep-assessment really
+   * does write, and was kept honest only by a redirect rule living in
+   * lib/report-status.ts — an invariant this route does not own.
+   *
+   * Regenerating is worse than losing the set, because core ids are positional:
+   * a fresh set reuses "dq1", "dq2", … with different text, so answers already
+   * saved against those ids re-bind to different questions instead of being
+   * dropped. Hence: if a usable snapshot exists, it is returned untouched, with
+   * no Claude call and no write.
+   */
   const supabase = getSupabase()
   if (supabase) {
     try {
       const { data: existing } = await supabase
         .from("deep_assessments")
-        .select("questions, status")
+        .select("questions")
         .eq("stripe_session_id", sessionId)
         .maybeSingle()
 
-      if (
-        existing?.questions &&
-        ["questions_generated", "in_progress", "analysing", "complete"].includes(
-          existing.status ?? ""
-        )
-      ) {
-        return NextResponse.json({ questions: existing.questions })
+      const snapshot = readQuestionSnapshot(existing?.questions)
+      if (snapshot) {
+        return NextResponse.json({ questions: snapshot })
       }
     } catch (err) {
       console.error("[generate-deep-questions] Supabase idempotency check error:", err)
     }
   }
 
-  // Step 3: Build prompt and call Claude
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.warn("[generate-deep-questions] ANTHROPIC_API_KEY not set — returning fallback questions")
-    return NextResponse.json({ questions: withLensQuestions(FALLBACK_DEEP_QUESTIONS) })
+  /**
+   * Step 3: choose a question set — Claude when it is available, the
+   * deterministic bank when it is not.
+   *
+   * Neither branch returns. Both converge on the single persistence step below,
+   * because a questionnaire that was never stored cannot be submitted against:
+   * submit-deep-assessment reads this row back and 400s when it is empty, so a
+   * customer who answered an unstored set would be stuck. Two early returns
+   * here — no API key, and Claude failing — used to do exactly that, turning a
+   * transient Claude outage into a paid flow that dead-ends after the work.
+   */
+  let questions: DeepQuestion[] | null = null
+
+  if (process.env.ANTHROPIC_API_KEY) {
+    try {
+      const effectiveTier = tier === "personal" ? "full" : tier
+      const maxTokens = effectiveTier === "premium" ? 4096 : effectiveTier === "full" ? 3072 : 2048
+
+      const message = await anthropic.messages.create({
+        model: CLAUDE_MODEL,
+        max_tokens: maxTokens,
+        messages: [{ role: "user", content: buildDeepQuestionsPrompt(body) }],
+      })
+
+      const rawText =
+        message.content[0].type === "text" ? message.content[0].text : ""
+
+      const cleaned = rawText
+        .replace(/^```(?:json)?\s*/i, "")
+        .replace(/\s*```\s*$/, "")
+        .trim()
+
+      const parsed = JSON.parse(cleaned)
+      // Validated before it can be stored: Step 2 will hand this exact set back
+      // on every later request, so an unrenderable response must not be pinned.
+      questions = readQuestionSnapshot(withLensQuestions(parsed.questions))
+      if (!questions) {
+        console.error("[generate-deep-questions] Claude returned an unusable question set")
+      }
+    } catch (err) {
+      console.error("[generate-deep-questions] Claude error:", err)
+    }
+  } else {
+    console.warn("[generate-deep-questions] ANTHROPIC_API_KEY not set — using fallback questions")
   }
 
-  let questions: DeepQuestion[]
-
-  try {
-    const effectiveTier = tier === "personal" ? "full" : tier
-    const maxTokens = effectiveTier === "premium" ? 4096 : effectiveTier === "full" ? 3072 : 2048
-
-    const message = await anthropic.messages.create({
-      model: CLAUDE_MODEL,
-      max_tokens: maxTokens,
-      messages: [{ role: "user", content: buildDeepQuestionsPrompt(body) }],
-    })
-
-    const rawText =
-      message.content[0].type === "text" ? message.content[0].text : ""
-
-    const cleaned = rawText
-      .replace(/^```(?:json)?\s*/i, "")
-      .replace(/\s*```\s*$/, "")
-      .trim()
-
-    const parsed = JSON.parse(cleaned)
-    questions = withLensQuestions(parsed.questions)
-  } catch (err) {
-    console.error("[generate-deep-questions] Claude error:", err)
-    return NextResponse.json({ questions: withLensQuestions(FALLBACK_DEEP_QUESTIONS) })
+  if (!questions) {
+    questions = withLensQuestions(FALLBACK_DEEP_QUESTIONS)
   }
 
-  // Step 4: Upsert to Supabase
+  /**
+   * Step 4: persist, then return exactly what was persisted.
+   *
+   * The response reads `payload.questions`, so the stored row and the client's
+   * questionnaire cannot disagree.
+   */
+  const payload = {
+    stripe_session_id: sessionId,
+    tier,
+    free_scores: { overall, subScores, profile },
+    questions,
+    status: "questions_generated",
+  }
+
   if (supabase) {
     try {
-      const { error } = await supabase.from("deep_assessments").upsert(
-        {
-          stripe_session_id: sessionId,
-          tier,
-          free_scores: { overall, subScores, profile },
-          questions,
-          status: "questions_generated",
-        },
-        { onConflict: "stripe_session_id" }
-      )
+      const { error } = await supabase
+        .from("deep_assessments")
+        .upsert(payload, { onConflict: "stripe_session_id" })
       if (error) {
         console.error("[generate-deep-questions] Supabase upsert error:", error.message)
+        return persistenceFailed()
       }
     } catch (err) {
       console.error("[generate-deep-questions] Supabase upsert exception:", err)
+      return persistenceFailed()
     }
+  } else if (!devMode) {
+    // Stripe is configured but Supabase is not — a production misconfiguration,
+    // not a local dev run. There is nowhere to persist to, so returning would
+    // hand a paying customer a set submit-deep-assessment is going to refuse.
+    // (In dev mode there is no settled session and no row to bind to anyway;
+    // resolveTrustedQuestions reconstructs the deterministic bank there.)
+    console.error(
+      "[generate-deep-questions] Supabase not configured — refusing to return an unpersisted question set"
+    )
+    return persistenceFailed()
   }
 
-  return NextResponse.json({ questions })
+  return NextResponse.json({ questions: payload.questions })
 }
