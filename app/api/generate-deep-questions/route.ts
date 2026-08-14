@@ -310,44 +310,123 @@ export async function POST(req: NextRequest) {
     questions = withLensQuestions(FALLBACK_DEEP_QUESTIONS)
   }
 
-  /**
-   * Step 4: persist, then return exactly what was persisted.
-   *
-   * The response reads `payload.questions`, so the stored row and the client's
-   * questionnaire cannot disagree.
-   */
-  const payload = {
-    stripe_session_id: sessionId,
-    tier,
-    free_scores: { overall, subScores, profile },
-    questions,
-    status: "questions_generated",
-  }
-
-  if (supabase) {
-    try {
-      const { error } = await supabase
-        .from("deep_assessments")
-        .upsert(payload, { onConflict: "stripe_session_id" })
-      if (error) {
-        console.error("[generate-deep-questions] Supabase upsert error:", error.message)
-        return persistenceFailed()
-      }
-    } catch (err) {
-      console.error("[generate-deep-questions] Supabase upsert exception:", err)
-      return persistenceFailed()
-    }
-  } else if (!devMode) {
-    // Stripe is configured but Supabase is not — a production misconfiguration,
-    // not a local dev run. There is nowhere to persist to, so returning would
-    // hand a paying customer a set submit-deep-assessment is going to refuse.
-    // (In dev mode there is no settled session and no row to bind to anyway;
-    // resolveTrustedQuestions reconstructs the deterministic bank there.)
+  if (!supabase) {
+    // In dev mode there is no settled session and no row to bind to anyway;
+    // resolveTrustedQuestions reconstructs the deterministic bank at submit
+    // time. With Stripe configured this is instead a production
+    // misconfiguration: nowhere to persist means nothing safe to return.
+    if (devMode) return NextResponse.json({ questions })
     console.error(
       "[generate-deep-questions] Supabase not configured — refusing to return an unpersisted question set"
     )
     return persistenceFailed()
   }
 
-  return NextResponse.json({ questions: payload.questions })
+  /**
+   * Step 4: install the snapshot with a compare-and-set, never a blind write.
+   *
+   * `upsert(..., { onConflict: "stripe_session_id" })` was last-write-wins, and
+   * that recreated the exact defect this route exists to prevent:
+   *
+   *   A and B both read no snapshot → A installs set A and returns it → B
+   *   installs set B → A's client submits answers against ids now bound to B.
+   *
+   * Positional ids are what make it harmful: the regenerated set reuses dq1,
+   * dq2, … with different text, so those answers RE-BIND rather than being
+   * dropped. It is reachable — /assessment/deep calls this route on load while
+   * the Stripe webhook that creates the row is still in flight, so two requests
+   * can genuinely both find nothing.
+   *
+   * The fix needs no migration: `stripe_session_id` is NOT NULL + UNIQUE, so
+   * a duplicate insert raises 23505 (the same idiom the Stripe webhook uses for
+   * its processed-event ledger), and an update guarded by `questions IS NULL`
+   * reports through `.select()` whether it actually touched a row. Between them
+   * a writer may install ONLY while the row still has no snapshot; whoever
+   * loses re-reads and returns the winner's set instead of its own.
+   *
+   * Claude is not called again on retry — the generated set above is reused.
+   */
+  const INSTALL_ATTEMPTS = 3
+
+  for (let attempt = 0; attempt < INSTALL_ATTEMPTS; attempt++) {
+    let observed: { questions?: unknown } | null
+    try {
+      const { data } = await supabase
+        .from("deep_assessments")
+        .select("questions")
+        .eq("stripe_session_id", sessionId)
+        .maybeSingle()
+      observed = (data as { questions?: unknown } | null) ?? null
+    } catch (err) {
+      // Without a trustworthy read we cannot tell a winner from a loser, and
+      // guessing is how a customer ends up answering a discarded set.
+      console.error("[generate-deep-questions] Supabase read-before-install error:", err)
+      return persistenceFailed()
+    }
+
+    // Someone installed while we were generating — theirs is authoritative.
+    const winner = readQuestionSnapshot(observed?.questions)
+    if (winner) return NextResponse.json({ questions: winner })
+
+    if (observed && observed.questions != null) {
+      // Non-null but unrenderable. The guard below can never match it, so
+      // there is no bounded path to convergence — and overwriting a value we
+      // cannot characterise is the one thing the CAS exists to forbid. Refuse
+      // rather than spin. Nothing in this codebase can write such a value: the
+      // route validates before storing, and neither the Stripe webhook nor
+      // save-deep-progress touches `questions`.
+      console.error(
+        "[generate-deep-questions] Stored questions are unusable and cannot be replaced safely"
+      )
+      return persistenceFailed()
+    }
+
+    try {
+      if (!observed) {
+        const { error } = await supabase.from("deep_assessments").insert({
+          stripe_session_id: sessionId,
+          tier,
+          free_scores: { overall, subScores, profile },
+          questions,
+          status: "questions_generated",
+        })
+        // The write succeeded and nothing may overwrite a non-null `questions`,
+        // so the row now provably holds exactly this set.
+        if (!error) return NextResponse.json({ questions })
+        if (error.code !== "23505") {
+          console.error("[generate-deep-questions] Supabase insert error:", error.message)
+          return persistenceFailed()
+        }
+        // Lost the insert race — re-read and return whatever they installed.
+        continue
+      }
+
+      // The row exists (usually created by the Stripe webhook) but carries no
+      // snapshot. Update only the columns this route owns: `tier` and
+      // `free_scores` came from the request body, whereas the webhook writes
+      // them from the settled session, so they are left alone.
+      const { data, error } = await supabase
+        .from("deep_assessments")
+        .update({ questions, status: "questions_generated" })
+        .eq("stripe_session_id", sessionId)
+        .is("questions", null)
+        .select("questions")
+
+      if (error) {
+        console.error("[generate-deep-questions] Supabase install error:", error.message)
+        return persistenceFailed()
+      }
+      if (data && data.length > 0) return NextResponse.json({ questions })
+      // Zero rows matched: the guard no longer holds because someone installed
+      // first. Re-read and return theirs.
+    } catch (err) {
+      console.error("[generate-deep-questions] Supabase install exception:", err)
+      return persistenceFailed()
+    }
+  }
+
+  console.error(
+    `[generate-deep-questions] Could not converge on a stored snapshot in ${INSTALL_ATTEMPTS} attempts`
+  )
+  return persistenceFailed()
 }

@@ -5,11 +5,12 @@ import { FALLBACK_DEEP_QUESTIONS, type DeepQuestion } from "@/lib/deep-assessmen
 import { ADDON_KEYS, type AddonType } from "@/lib/addon-types"
 import { addonQuestionsFor } from "@/lib/assessment/addon-questions"
 import { encodePaidReportSummary } from "@/lib/paid-report-session"
+import { makeFakeDb, type Row } from "./helpers/fake-deep-assessments"
 
 /**
  * POST /api/generate-deep-questions — snapshot reliability.
  *
- * Two invariants, both found while auditing #223:
+ * Three invariants, all found while auditing #223:
  *
  *  1. No 200 may carry questions that were not persisted first. A questionnaire
  *     that exists nowhere cannot be submitted against — submit-deep-assessment
@@ -18,41 +19,17 @@ import { encodePaidReportSummary } from "@/lib/paid-report-session"
  *
  *  2. Reuse keys on the stored snapshot, never on the row's `status`. Nothing in
  *     the codebase writes a status meaning "start over", so a status allowlist
- *     could only ever be wrong by regenerating over a live snapshot. Core ids
- *     are positional (dq1, dq2, …), so a regenerated set re-binds saved answers
- *     to different questions rather than dropping them.
+ *     could only ever be wrong by regenerating over a live snapshot.
  *
- * External services are mocked per the submit-deep-assessment-partial.test.ts
- * pattern.
+ *  3. The install is a compare-and-set, never a blind write, so two concurrent
+ *     requests cannot each install a different set. The interleaving proofs live
+ *     in generate-deep-questions-concurrency.test.ts; this file covers the
+ *     single-request behaviour of the same mechanism.
+ *
+ * Core ids are positional (dq1, dq2, …), which is what makes a replaced
+ * snapshot harmful rather than merely wasteful: saved answers re-bind to
+ * different question text instead of being dropped.
  */
-
-/* ── Chainable Supabase stub (queue per table, records writes) ──────────── */
-type Queued = { data?: unknown; error?: unknown }
-
-function makeSupabaseStub(
-  queues: Record<string, Queued[]>,
-  opts: { throwOnUpsert?: boolean } = {},
-) {
-  const writes: { table: string; method: string; payload: unknown }[] = []
-  const from = (table: string) => {
-    const next = (): Queued => queues[table]?.shift() ?? { data: null, error: null }
-    const chain: Record<string, unknown> = {}
-    const self = () => chain
-    for (const m of ["select", "eq", "in", "not", "order", "limit"]) chain[m] = self
-    for (const m of ["insert", "update", "upsert"]) {
-      chain[m] = (payload: unknown) => {
-        if (opts.throwOnUpsert && m === "upsert") throw new Error("connection reset")
-        writes.push({ table, method: m, payload })
-        return chain
-      }
-    }
-    chain.maybeSingle = () => Promise.resolve(next())
-    chain.single = () => Promise.resolve(next())
-    chain.then = (resolve: (v: Queued) => void) => resolve(next())
-    return chain
-  }
-  return { client: { from } as unknown, writes }
-}
 
 /* ── Mocks ──────────────────────────────────────────────────────────────── */
 const mockGetSupabase = vi.fn()
@@ -94,6 +71,16 @@ function claudeReturns(questions: unknown) {
   })
 }
 
+/** A row shaped the way the Stripe webhook or save-deep-progress leaves it. */
+const rowWith = (over: Row = {}): Row => ({
+  stripe_session_id: SESSION_ID,
+  tier: "personal",
+  free_scores: {},
+  status: "in_progress",
+  questions: null,
+  ...over,
+})
+
 function makeRequest(sessionId = SESSION_ID): NextRequest {
   return new NextRequest("http://localhost/api/generate-deep-questions", {
     method: "POST",
@@ -113,6 +100,8 @@ async function callRoute(req: NextRequest = makeRequest()) {
   return POST(req)
 }
 
+const bodyOf = async (res: Response) => (await res.json()) as { questions?: DeepQuestion[]; error?: string }
+
 /** A settled Stripe session carrying the given entitlement. */
 function paidSession(addon: AddonType | null, foundation: "you" | "family" = "you") {
   return {
@@ -130,13 +119,6 @@ function paidSession(addon: AddonType | null, foundation: "you" | "family" = "yo
   }
 }
 
-/** The questions actually written to deep_assessments, if any. */
-function persistedQuestions(writes: { table: string; method: string; payload: unknown }[]) {
-  const upserts = writes.filter((w) => w.table === "deep_assessments" && w.method === "upsert")
-  if (upserts.length === 0) return null
-  return (upserts[upserts.length - 1].payload as { questions: DeepQuestion[] }).questions
-}
-
 beforeEach(() => {
   vi.clearAllMocks()
   vi.unstubAllEnvs()
@@ -151,102 +133,133 @@ beforeEach(() => {
 
 describe("every successful response was persisted first", () => {
   it("Claude success persists before returning", async () => {
-    const { client, writes } = makeSupabaseStub({ deep_assessments: [{ data: null }, {}] })
-    mockGetSupabase.mockReturnValue(client)
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
 
     const res = await callRoute()
-    const body = await res.json()
+    const body = await bodyOf(res)
 
     expect(res.status).toBe(200)
-    expect(persistedQuestions(writes)).not.toBeNull()
-    expect(body.questions).toEqual(persistedQuestions(writes))
-    expect(body.questions[0].text).toBe("claude question 1")
+    expect(db.only()?.questions).toEqual(body.questions)
+    expect(body.questions?.[0].text).toBe("claude question 1")
   })
 
   it("no API key persists the fallback before returning", async () => {
     vi.stubEnv("ANTHROPIC_API_KEY", "")
-    const { client, writes } = makeSupabaseStub({ deep_assessments: [{ data: null }, {}] })
-    mockGetSupabase.mockReturnValue(client)
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
 
     const res = await callRoute()
-    const body = await res.json()
+    const body = await bodyOf(res)
 
     expect(res.status).toBe(200)
     expect(mockMessagesCreate).not.toHaveBeenCalled()
-    expect(persistedQuestions(writes)).toEqual(body.questions)
-    expect(body.questions.map((q: DeepQuestion) => q.id)).toEqual(
-      FALLBACK_DEEP_QUESTIONS.map((q) => q.id),
-    )
+    expect(db.only()?.questions).toEqual(body.questions)
+    expect(body.questions?.map((q) => q.id)).toEqual(FALLBACK_DEEP_QUESTIONS.map((q) => q.id))
   })
 
   it("Claude failure persists the fallback before returning", async () => {
     mockMessagesCreate.mockRejectedValue(new Error("upstream 529"))
-    const { client, writes } = makeSupabaseStub({ deep_assessments: [{ data: null }, {}] })
-    mockGetSupabase.mockReturnValue(client)
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
 
     const res = await callRoute()
-    const body = await res.json()
+    const body = await bodyOf(res)
 
     expect(res.status).toBe(200)
-    expect(persistedQuestions(writes)).toEqual(body.questions)
-    expect(body.questions.map((q: DeepQuestion) => q.id)).toEqual(
-      FALLBACK_DEEP_QUESTIONS.map((q) => q.id),
-    )
+    expect(db.only()?.questions).toEqual(body.questions)
+    expect(body.questions?.map((q) => q.id)).toEqual(FALLBACK_DEEP_QUESTIONS.map((q) => q.id))
   })
 
   it("an unusable Claude response falls back and still persists", async () => {
     // Reuse hands this exact set back on every later request, so a set the
     // questionnaire cannot render must never be the thing that gets pinned.
     claudeReturns([{ id: "dq1", text: "no type field" }])
-    const { client, writes } = makeSupabaseStub({ deep_assessments: [{ data: null }, {}] })
-    mockGetSupabase.mockReturnValue(client)
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
 
     const res = await callRoute()
-    const body = await res.json()
+    const body = await bodyOf(res)
 
     expect(res.status).toBe(200)
-    expect(body.questions.map((q: DeepQuestion) => q.id)).toEqual(
-      FALLBACK_DEEP_QUESTIONS.map((q) => q.id),
-    )
-    expect(persistedQuestions(writes)).toEqual(body.questions)
+    expect(body.questions?.map((q) => q.id)).toEqual(FALLBACK_DEEP_QUESTIONS.map((q) => q.id))
+    expect(db.only()?.questions).toEqual(body.questions)
   })
 
   it("the response payload is identical to the persisted payload, field for field", async () => {
-    const { client, writes } = makeSupabaseStub({ deep_assessments: [{ data: null }, {}] })
-    mockGetSupabase.mockReturnValue(client)
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
 
-    const body = await (await callRoute()).json()
+    const body = await bodyOf(await callRoute())
 
     // Not just the ids: options and wording must match too, since the customer
     // answers the response and submit-deep-assessment reads the row.
-    expect(JSON.stringify(body.questions)).toBe(JSON.stringify(persistedQuestions(writes)))
+    expect(JSON.stringify(body.questions)).toBe(JSON.stringify(db.only()?.questions))
+  })
+
+  it("a first write creates the row via insert; an existing row is updated in place", async () => {
+    const fresh = makeFakeDb()
+    mockGetSupabase.mockReturnValue(fresh.client)
+    await callRoute()
+    expect(fresh.counts().insert).toBe(1)
+    expect(fresh.counts().update).toBe(0)
+
+    vi.clearAllMocks()
+    claudeReturns(claudeSet("claude"))
+    mockRetrieveSession.mockResolvedValue(paidSession(null))
+    const existing = makeFakeDb(rowWith())
+    mockGetSupabase.mockReturnValue(existing.client)
+    await callRoute()
+    expect(existing.counts().update).toBe(1)
+    expect(existing.counts().insert).toBe(0)
+  })
+
+  it("updating an existing row leaves tier and free_scores alone", async () => {
+    // The Stripe webhook writes those from the settled session; this route only
+    // has the request body, so it writes the columns it owns and nothing else.
+    const db = makeFakeDb(rowWith({ tier: "premium", free_scores: { fromWebhook: true } }))
+    mockGetSupabase.mockReturnValue(db.client)
+
+    await callRoute()
+
+    expect(db.only()?.tier).toBe("premium")
+    expect(db.only()?.free_scores).toEqual({ fromWebhook: true })
+    expect(db.only()?.status).toBe("questions_generated")
   })
 })
 
 describe("persistence failure never returns questions", () => {
-  it("an upsert error is a 503, not a degraded 200", async () => {
-    const { client } = makeSupabaseStub({
-      deep_assessments: [{ data: null }, { error: { message: "deadlock detected" } }],
-    })
-    mockGetSupabase.mockReturnValue(client)
+  it("a write error is a 503, not a degraded 200", async () => {
+    const db = makeFakeDb(null, {}, { writeError: true })
+    mockGetSupabase.mockReturnValue(db.client)
 
     const res = await callRoute()
-    const body = await res.json()
+    const body = await bodyOf(res)
 
     expect(res.status).toBe(503)
     expect(body.questions).toBeUndefined()
     expect(body.error).toBeTruthy()
   })
 
-  it("an upsert exception is a 503, not a degraded 200", async () => {
-    const { client } = makeSupabaseStub({ deep_assessments: [{ data: null }] }, { throwOnUpsert: true })
-    mockGetSupabase.mockReturnValue(client)
+  it("a write exception is a 503, not a degraded 200", async () => {
+    const db = makeFakeDb(null, {}, { writeThrows: true })
+    mockGetSupabase.mockReturnValue(db.client)
 
     const res = await callRoute()
-    const body = await res.json()
 
     expect(res.status).toBe(503)
-    expect(body.questions).toBeUndefined()
+    expect((await bodyOf(res)).questions).toBeUndefined()
+  })
+
+  it("a failed read-before-install is a 503 — a winner cannot be told from a loser", async () => {
+    const db = makeFakeDb(null, {}, { selectError: true })
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callRoute()
+
+    expect(res.status).toBe(503)
+    expect((await bodyOf(res)).questions).toBeUndefined()
+    expect(db.validSnapshots()).toHaveLength(0)
   })
 
   it("Stripe configured but Supabase missing is a 503", async () => {
@@ -257,7 +270,7 @@ describe("persistence failure never returns questions", () => {
     const res = await callRoute()
 
     expect(res.status).toBe(503)
-    expect((await res.json()).questions).toBeUndefined()
+    expect((await bodyOf(res)).questions).toBeUndefined()
   })
 
   it("dev mode without Supabase still serves questions", async () => {
@@ -269,7 +282,7 @@ describe("persistence failure never returns questions", () => {
     const res = await callRoute()
 
     expect(res.status).toBe(200)
-    expect((await res.json()).questions.length).toBeGreaterThan(0)
+    expect((await bodyOf(res)).questions?.length).toBeGreaterThan(0)
   })
 })
 
@@ -278,31 +291,31 @@ describe("persistence failure never returns questions", () => {
 describe("an existing snapshot is reused whatever the status", () => {
   const STORED = claudeSet("stored")
 
-  /* Every status any writer puts on this row, plus NULL. "partial" is written
-     by submit-deep-assessment and was absent from the old four-value allowlist;
-     an arbitrary string is what the unauthenticated save-deep-progress PATCH
-     will write, since it passes `status` straight through. */
+  /* Every status any writer puts on this row.
+     `status` is NOT NULL with a DEFAULT of 'pending' in production, so a NULL
+     is unreachable and 'pending' is the value a row created without an explicit
+     status carries — both were outside the old four-value allowlist, as was
+     'partial', which submit-deep-assessment really does write. */
   it.each([
+    ["pending", "the column DEFAULT — outside the old allowlist"],
     ["in_progress", "stripe webhook / save-deep-progress default"],
     ["questions_generated", "this route"],
     ["analysing", "submit-deep-assessment steps 4 and 7"],
     ["complete", "submit-deep-assessment step 10"],
-    ["partial", "submit-deep-assessment step 10 — absent from the old allowlist"],
-    [null, "never written today, but a row can predate any writer"],
+    ["partial", "submit-deep-assessment step 10 — outside the old allowlist"],
     ["something_a_caller_invented", "save-deep-progress passes status through"],
+    [null, "defensive only: the column is NOT NULL, so this cannot occur"],
   ] as Array<[string | null, string]>)("status %p (%s) reuses the stored snapshot", async (status) => {
-    const { client, writes } = makeSupabaseStub({
-      deep_assessments: [{ data: { questions: STORED, status } }],
-    })
-    mockGetSupabase.mockReturnValue(client)
+    const db = makeFakeDb(rowWith({ questions: STORED, status }))
+    mockGetSupabase.mockReturnValue(db.client)
 
     const res = await callRoute()
-    const body = await res.json()
+    const body = await bodyOf(res)
 
     expect(res.status).toBe(200)
     expect(body.questions).toEqual(STORED)
     expect(mockMessagesCreate).not.toHaveBeenCalled()
-    expect(writes.filter((w) => w.method === "upsert")).toHaveLength(0)
+    expect(db.counts().insert + db.counts().update + db.counts().upsert).toBe(0)
   })
 
   it("reuse returns the stored wording and options verbatim", async () => {
@@ -316,10 +329,10 @@ describe("an existing snapshot is reused whatever the status", () => {
         required: true,
       },
     ]
-    const { client } = makeSupabaseStub({ deep_assessments: [{ data: { questions: stored, status: "partial" } }] })
-    mockGetSupabase.mockReturnValue(client)
+    const db = makeFakeDb(rowWith({ questions: stored, status: "partial" }))
+    mockGetSupabase.mockReturnValue(db.client)
 
-    const body = await (await callRoute()).json()
+    const body = await bodyOf(await callRoute())
 
     expect(JSON.stringify(body.questions)).toBe(JSON.stringify(stored))
   })
@@ -328,74 +341,90 @@ describe("an existing snapshot is reused whatever the status", () => {
     // save-deep-progress upserts answers + status without touching `questions`.
     // The customer is mid-questionnaire: replacing the set now would re-bind
     // these answers to different question text, because ids are positional.
-    const row = {
-      questions: STORED,
-      status: null,
-      answers: { dq1: "already answered", dq2: "also answered" },
-    }
-    const { client, writes } = makeSupabaseStub({ deep_assessments: [{ data: row }] })
-    mockGetSupabase.mockReturnValue(client)
+    const db = makeFakeDb(
+      rowWith({
+        questions: STORED,
+        status: "something_a_caller_invented",
+        answers: { dq1: "already answered", dq2: "also answered" },
+      }),
+    )
+    mockGetSupabase.mockReturnValue(db.client)
 
-    const body = await (await callRoute()).json()
+    const body = await bodyOf(await callRoute())
 
     expect(body.questions).toEqual(STORED)
-    expect(writes).toHaveLength(0)
+    expect(db.log.filter((op) => op !== "select")).toHaveLength(0)
     expect(mockMessagesCreate).not.toHaveBeenCalled()
   })
 
   it("reuse survives a status the allowlist would have rejected AND a second call", async () => {
-    const { client, writes } = makeSupabaseStub({
-      deep_assessments: [
-        { data: { questions: STORED, status: "partial" } },
-        { data: { questions: STORED, status: "partial" } },
-      ],
-    })
-    mockGetSupabase.mockReturnValue(client)
+    const db = makeFakeDb(rowWith({ questions: STORED, status: "partial" }))
+    mockGetSupabase.mockReturnValue(db.client)
 
-    const first = await (await callRoute()).json()
-    const second = await (await callRoute()).json()
+    const first = await bodyOf(await callRoute())
+    const second = await bodyOf(await callRoute())
 
     expect(first.questions).toEqual(second.questions)
-    expect(writes).toHaveLength(0)
+    expect(db.log.filter((op) => op !== "select")).toHaveLength(0)
   })
 })
 
-describe("an unusable stored set takes the regeneration path", () => {
+describe("an unusable stored set: regenerate when absent, refuse when unreadable", () => {
   it.each([
-    ["missing", undefined],
-    ["null", null],
+    ["no row at all", null],
+    ["an explicit null", rowWith({ questions: null })],
+  ] as Array<[string, Row | null]>)("regenerates and installs when questions are %s", async (_label, seed) => {
+    const db = makeFakeDb(seed)
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callRoute()
+    const body = await bodyOf(res)
+
+    expect(res.status).toBe(200)
+    expect(mockMessagesCreate).toHaveBeenCalledTimes(1)
+    expect(db.only()?.questions).toEqual(body.questions)
+    expect(body.questions?.[0].text).toBe("claude question 1")
+  })
+
+  /**
+   * Non-null but unreadable. The CAS guard is `questions IS NULL`, so it can
+   * never match these — and overwriting a value we cannot characterise is
+   * precisely what the guard exists to prevent. The route refuses instead of
+   * spinning, and leaves the stored value untouched.
+   *
+   * Unreachable from this codebase: the route validates before storing, and
+   * neither the Stripe webhook nor save-deep-progress writes `questions`.
+   */
+  it.each([
     ["empty", []],
     ["not an array", { dq1: "x" }],
     ["malformed elements", [{ id: "dq1", text: "no type" }]],
     ["a partly-malformed set", [...FALLBACK_DEEP_QUESTIONS, { id: "dq99" }]],
-  ])("regenerates when the stored questions are %s", async (_label, questions) => {
-    const { client, writes } = makeSupabaseStub({
-      deep_assessments: [{ data: { questions, status: "in_progress" } }, {}],
-    })
-    mockGetSupabase.mockReturnValue(client)
+  ])("refuses with 503 when stored questions are %s, without overwriting", async (_label, questions) => {
+    const db = makeFakeDb(rowWith({ questions }))
+    mockGetSupabase.mockReturnValue(db.client)
 
     const res = await callRoute()
-    const body = await res.json()
 
-    expect(res.status).toBe(200)
-    expect(mockMessagesCreate).toHaveBeenCalledTimes(1)
-    expect(body.questions).toEqual(persistedQuestions(writes))
-    expect(body.questions[0].text).toBe("claude question 1")
+    expect(res.status).toBe(503)
+    expect((await bodyOf(res)).questions).toBeUndefined()
+    expect(db.only()?.questions).toEqual(questions)
+    expect(db.counts().update + db.counts().insert).toBe(0)
+    // Bounded: an unbounded retry would blow past this rather than fail.
+    expect(db.counts().select).toBeLessThanOrEqual(4)
   })
 
-  it("a failed idempotency read regenerates rather than serving nothing", async () => {
-    const client = {
-      from: () => ({
-        select: () => ({ eq: () => ({ maybeSingle: () => Promise.reject(new Error("timeout")) }) }),
-        upsert: () => ({ then: (r: (v: Queued) => void) => r({ error: null }) }),
-      }),
-    }
-    mockGetSupabase.mockReturnValue(client)
+  it("a transient blip on the first read still converges", async () => {
+    // The reuse read is best-effort; the read-before-install is the one that
+    // must succeed. A single failed read must not cost the customer anything.
+    const db = makeFakeDb(null, {}, { selectErrorOnSeq: 1 })
+    mockGetSupabase.mockReturnValue(db.client)
 
     const res = await callRoute()
+    const body = await bodyOf(res)
 
     expect(res.status).toBe(200)
-    expect((await res.json()).questions.length).toBeGreaterThan(0)
+    expect(db.only()?.questions).toEqual(body.questions)
   })
 })
 
@@ -404,40 +433,40 @@ describe("an unusable stored set takes the regeneration path", () => {
 describe("entitlement-derived lens questions are retained", () => {
   it("no add-on yields the core set only", async () => {
     mockRetrieveSession.mockResolvedValue(paidSession(null))
-    const { client, writes } = makeSupabaseStub({ deep_assessments: [{ data: null }, {}] })
-    mockGetSupabase.mockReturnValue(client)
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
 
-    const body = await (await callRoute()).json()
+    const body = await bodyOf(await callRoute())
 
     expect(body.questions).toHaveLength(claudeSet("claude").length)
-    expect(body.questions.some((q: DeepQuestion) => /lens/i.test(q.id))).toBe(false)
-    expect(persistedQuestions(writes)).toEqual(body.questions)
+    expect(body.questions?.some((q) => /lens/i.test(q.id))).toBe(false)
+    expect(db.only()?.questions).toEqual(body.questions)
   })
 
   it.each(ADDON_KEYS)("%s appends exactly its four lens questions", async (addon) => {
     mockRetrieveSession.mockResolvedValue(paidSession(addon))
-    const { client, writes } = makeSupabaseStub({ deep_assessments: [{ data: null }, {}] })
-    mockGetSupabase.mockReturnValue(client)
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
 
-    const body = await (await callRoute()).json()
+    const body = await bodyOf(await callRoute())
     const expectedLens = addonQuestionsFor(addon, "you")
 
     expect(expectedLens).toHaveLength(4)
     expect(body.questions).toHaveLength(claudeSet("claude").length + 4)
     // Appended, never interleaved — the core set stays what it was.
-    expect(body.questions.slice(0, 3).map((q: DeepQuestion) => q.id)).toEqual(["dq1", "dq2", "dq3"])
-    expect(body.questions.slice(3)).toEqual(expectedLens)
-    expect(persistedQuestions(writes)).toEqual(body.questions)
+    expect(body.questions?.slice(0, 3).map((q) => q.id)).toEqual(["dq1", "dq2", "dq3"])
+    expect(body.questions?.slice(3)).toEqual(expectedLens)
+    expect(db.only()?.questions).toEqual(body.questions)
   })
 
   it("family foundation changes lens wording but not the id set", async () => {
     mockRetrieveSession.mockResolvedValue(paidSession("mind", "family"))
-    const { client } = makeSupabaseStub({ deep_assessments: [{ data: null }, {}] })
-    mockGetSupabase.mockReturnValue(client)
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
 
-    const body = await (await callRoute()).json()
+    const body = await bodyOf(await callRoute())
 
-    expect(body.questions.slice(3)).toEqual(addonQuestionsFor("mind", "family"))
+    expect(body.questions?.slice(3)).toEqual(addonQuestionsFor("mind", "family"))
   })
 
   it("the lens is re-derived from the session, not read from the stored row", async () => {
@@ -447,83 +476,12 @@ describe("entitlement-derived lens questions are retained", () => {
     // resolveTrustedQuestions discards stored lens entries outright.
     mockRetrieveSession.mockResolvedValue(paidSession("glucose"))
     const stored = [...claudeSet("stored"), ...addonQuestionsFor("mind", "you")]
-    const { client, writes } = makeSupabaseStub({ deep_assessments: [{ data: { questions: stored, status: "in_progress" } }] })
-    mockGetSupabase.mockReturnValue(client)
+    const db = makeFakeDb(rowWith({ questions: stored }))
+    mockGetSupabase.mockReturnValue(db.client)
 
-    const body = await (await callRoute()).json()
+    const body = await bodyOf(await callRoute())
 
     expect(body.questions).toEqual(stored)
-    expect(writes).toHaveLength(0)
-  })
-})
-
-/* ══ Residual: concurrent duplicate requests ════════════════════════════ */
-
-describe("concurrent duplicate requests (measured, not fixed)", () => {
-  /**
-   * Two requests for the same session that both miss the snapshot both call
-   * Claude and both upsert. Last write wins, and each caller keeps the array it
-   * was handed — so one caller can be answering a set that is no longer the one
-   * stored. Because core ids are positional, submit-deep-assessment then binds
-   * that caller's answers to the other set's question text.
-   *
-   * Not closed here: no lock, no RPC, no migration. Reuse-first strictly
-   * NARROWS the pre-existing last-write-wins window (the old code regenerated
-   * on far more paths); the window that remains is "both requests arrive before
-   * either upsert commits", which needs near-simultaneous duplicate loads of
-   * one paid session. The one mechanism the current schema would already allow
-   * — a conditional update `.is("questions", null)` + `.select()` as a
-   * compare-and-set on the existing primary key — is reported in the PR rather
-   * than implemented: the row usually already exists (the Stripe webhook
-   * creates it at checkout.session.completed), so it needs its own
-   * insert-if-missing handling and its own test against that concurrent upsert.
-   */
-  it("both callers get a persisted set; the stored set matches only one of them", async () => {
-    let call = 0
-    mockMessagesCreate.mockImplementation(async () => ({
-      content: [{ type: "text", text: JSON.stringify({ questions: claudeSet(`gen${++call}`) }) }],
-    }))
-
-    const { client, writes } = makeSupabaseStub({
-      deep_assessments: [{ data: null }, { data: null }, {}, {}],
-    })
-    mockGetSupabase.mockReturnValue(client)
-
-    const [a, b] = await Promise.all([callRoute(makeRequest()), callRoute(makeRequest())])
-    const [bodyA, bodyB] = [await a.json(), await b.json()]
-
-    // What still holds: nobody got an unpersisted set, and both are usable.
-    expect(a.status).toBe(200)
-    expect(b.status).toBe(200)
-    expect(writes.filter((w) => w.method === "upsert")).toHaveLength(2)
-    for (const body of [bodyA, bodyB]) {
-      expect(body.questions.length).toBeGreaterThan(0)
-    }
-
-    // The residual, stated as an assertion so it cannot quietly change: the two
-    // callers hold different sets, and only one of them is what got stored.
-    const stored = JSON.stringify(persistedQuestions(writes))
-    const held = [JSON.stringify(bodyA.questions), JSON.stringify(bodyB.questions)]
-    expect(held[0]).not.toBe(held[1])
-    expect(held.filter((h) => h === stored)).toHaveLength(1)
-  })
-
-  it("once a snapshot exists, further concurrent requests all agree", async () => {
-    const STORED = claudeSet("stored")
-    const { client, writes } = makeSupabaseStub({
-      deep_assessments: [
-        { data: { questions: STORED, status: "partial" } },
-        { data: { questions: STORED, status: "partial" } },
-        { data: { questions: STORED, status: "partial" } },
-      ],
-    })
-    mockGetSupabase.mockReturnValue(client)
-
-    const results = await Promise.all([callRoute(), callRoute(), callRoute()])
-    const bodies = await Promise.all(results.map((r) => r.json()))
-
-    for (const body of bodies) expect(body.questions).toEqual(STORED)
-    expect(writes).toHaveLength(0)
-    expect(mockMessagesCreate).not.toHaveBeenCalled()
+    expect(db.log.filter((op) => op !== "select")).toHaveLength(0)
   })
 })
