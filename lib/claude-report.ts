@@ -174,7 +174,11 @@ export interface WithFoodSystem {
  * must be the only writer.
  */
 export interface WithReportMeta {
-  _meta?: { generationSource?: string }
+  _meta?: {
+    generationSource?: string
+    foodSystemNarrativeSource?: string
+    addonLensNarrativeSource?: string
+  }
 }
 
 export type DeepReport = (DeepStarterReport | DeepFullReport | DeepPremiumReport) &

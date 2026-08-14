@@ -788,6 +788,41 @@ export function mergeGeneratedLens(base: FoodSystemLens, generated: unknown): Fo
   }
 }
 
+/**
+ * The three customer-visible strings `mergeGeneratedLens` above is allowed to
+ * take from a model response — and nothing else.
+ *
+ * A canonical projection, not a serialisation of the lens. Everything a lens
+ * carries beyond these — `key`, `name`, `shortLabel`, `examines`,
+ * `priorityConnection`, `loopAdditions`, `evidenceNotes`, `safetyNote`,
+ * `accent` — is derived or fixed, and must be incapable of changing the answer.
+ * Entries are keyed by `pathway` and `label` (neither model-writable) and
+ * sorted, so array order cannot change it either.
+ *
+ * Kept beside the merge deliberately; a test extracts the property names the
+ * merge accepts and asserts each is named here, so the two cannot drift apart.
+ */
+export function lensNarrativeProjection(lens: FoodSystemLens): string[] {
+  return [
+    `patternSummary=${lens.patternSummary}`,
+    ...lens.pathwayConnections.map((pc) => `pathwayConnections[${pc.pathway}].connection=${pc.connection}`),
+    ...lens.signals.map((s) => `signals[${s.label}].whatToNotice=${s.whatToNotice}`),
+  ].sort()
+}
+
+/**
+ * Did any permitted lens narrative field end up different from the
+ * deterministic base?
+ *
+ * Under-claims for the same reason `claudeContributedToFoodSystem` does: model
+ * text identical to the derived copy reads as `deterministic`.
+ */
+export function claudeContributedToLens(base: FoodSystemLens, merged: FoodSystemLens): boolean {
+  const a = lensNarrativeProjection(base)
+  const b = lensNarrativeProjection(merged)
+  return a.length !== b.length || a.some((value, i) => value !== b[i])
+}
+
 export function buildAddonLens(input: BuildLensInput): FoodSystemLens {
   const { addon, answers, foodSystem, isFamily = false } = input
   const priority = foodSystem.systemSnapshot.priorityPathway

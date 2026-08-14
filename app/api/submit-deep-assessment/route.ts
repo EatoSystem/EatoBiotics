@@ -11,23 +11,32 @@ import {
   type PaidReportFoundation,
   type PaidReportHealthSystem,
 } from "@/lib/paid-report-session"
-import { buildAddonLens, reconcileAddonLens, mergeGeneratedLens } from "@/lib/report/addon-lens"
+import {
+  buildAddonLens,
+  reconcileAddonLens,
+  mergeGeneratedLens,
+  claudeContributedToLens,
+} from "@/lib/report/addon-lens"
 import { sanitizeLensAnswers, withoutLensAnswers } from "@/lib/assessment/addon-questions"
 import { resolveTrustedQuestions, answersForTrustedQuestions } from "@/lib/assessment/trusted-questions"
 import { buildFallbackPaidReport } from "@/lib/fallback-paid-report"
 import {
   buildFoodSystemReport,
+  claudeContributedToFoodSystem,
   ensureFoodSystem,
   mergeGeneratedNarrative,
   resolveReportMode,
 } from "@/lib/report/build-food-system-report"
 import { parseFoodSystemReport } from "@/lib/report/food-system-report-types"
 import {
-  withGenerationSource,
-  readGenerationSource,
+  withProvenance,
+  readProvenance,
+  reusedAddonLensSource,
   logGenerationSource,
   sessionTag,
   type GenerationSource,
+  type FoodSystemNarrativeSource,
+  type AddonLensNarrativeSource,
 } from "@/lib/report/generation-provenance"
 import { overallReportStatus } from "@/lib/report-status"
 // Aliased: the route already has a local `reportError` string (the report_error column value).
@@ -466,12 +475,19 @@ export async function POST(req: NextRequest) {
   let report: DeepReport
   let reportError: string | null = null
   /**
-   * What produced the CONTENT of this report. Separate from `reportError`, which
-   * stays a free-text operational diagnostic: this is a validated enum #222 can
-   * query to tell a real Claude generation from a deterministic fallback. It is
-   * inert — nothing downstream branches on it.
+   * What produced this report, in three parts. Separate from `reportError`,
+   * which stays a free-text operational diagnostic: these are validated enums
+   * #222 can query. They are inert — nothing downstream branches on them.
+   *
+   * `generationSource` describes the REQUEST: did a model response arrive and
+   * survive validation. The other two describe the CONTENT, one per
+   * independently-merged narrative layer, because accepting a response is not
+   * the same as shipping its prose — both merges fall back field by field and
+   * return the derived base untouched when the model omits the key.
    */
   let generationSource: GenerationSource = "legacy_unknown"
+  let foodSystemNarrativeSource: FoodSystemNarrativeSource = "legacy_unknown"
+  let addonLensNarrativeSource: AddonLensNarrativeSource = "legacy_unknown"
 
   const reportMode = resolveReportMode(freeScores)
   const foodSystemInput = { mode: reportMode, subScores, overall, profile }
@@ -557,15 +573,28 @@ export async function POST(req: NextRequest) {
     // preserved. Enriching a reused report with a derived food-system block or
     // add-on lens is not generation and must not relabel it; a report written
     // before this shipped honestly reads `legacy_unknown`.
-    generationSource = readGenerationSource(existingRow.report_json)
+    const stored = readProvenance(existingRow.report_json)
+    const storedLensKey = (existingRow.report_json as DeepReport).foodSystem?.lens?.key ?? null
+
+    generationSource = stored.generationSource
+    foodSystemNarrativeSource = stored.foodSystemNarrativeSource
+
     report = reconcileAddonLens(
       ensureFoodSystem(existingRow.report_json as DeepReport, foodSystemInput),
       { addon: entitledAddon, answers: lensAnswerSet, isFamily: isFamilyReport },
+    )
+
+    addonLensNarrativeSource = reusedAddonLensSource(
+      stored,
+      storedLensKey,
+      report.foodSystem?.lens?.key ?? null,
     )
   } else if (!process.env.ANTHROPIC_API_KEY) {
     console.warn("[submit-deep-assessment] ANTHROPIC_API_KEY not set; using fallback paid report")
     reportError = "ANTHROPIC_API_KEY not set — used deterministic fallback"
     generationSource = "deterministic_no_api_key"
+    foodSystemNarrativeSource = "deterministic"
+    addonLensNarrativeSource = entitledAddon ? "deterministic" : "not_applicable"
     report = withLens(
       buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers: trustedAnswers, mode: reportMode }),
     )
@@ -650,16 +679,37 @@ export async function POST(req: NextRequest) {
         // column to decide status, access, delivery, alerts or retries.
         reportError = "Claude returned a foodSystem that failed validation — used derived base"
       }
-      generationSource = validFoodSystem ? "claude_generated" : "deterministic_validation_failure"
+      generationSource = validFoodSystem ? "claude_response_accepted" : "deterministic_validation_failure"
+
+      // What the customer will actually read. On validation failure that is the
+      // derived base itself, so the detectors below compare it against itself
+      // and correctly report `deterministic` — no special case needed.
+      const shipped = validFoodSystem ?? foodSystemBase
+
+      // Accepting a response is not the same as shipping its prose. Both merges
+      // fall back field by field, so this asks the only question that matters:
+      // did any string the merge is allowed to take end up different from the
+      // one this codebase derived?
+      foodSystemNarrativeSource = claudeContributedToFoodSystem(foodSystemBase, shipped)
+        ? "claude_contributed"
+        : "deterministic"
+
+      addonLensNarrativeSource = !shipped.lens
+        ? "not_applicable"
+        : foodSystemBase.lens && claudeContributedToLens(foodSystemBase.lens, shipped.lens)
+        ? "claude_contributed"
+        : "deterministic"
 
       report = {
         ...(parsed as DeepReport),
-        foodSystem: validFoodSystem ?? foodSystemBase,
+        foodSystem: shipped,
       }
     } catch (err) {
       console.error("[submit-deep-assessment] Claude error; using fallback paid report:", err)
       reportError = `Claude generation failed — used fallback: ${err instanceof Error ? err.message : String(err)}`
       generationSource = "deterministic_claude_error"
+      foodSystemNarrativeSource = "deterministic"
+      addonLensNarrativeSource = entitledAddon ? "deterministic" : "not_applicable"
       report = withLens(
       buildFallbackPaidReport({ tier, overall, subScores, profile, questions, answers: trustedAnswers, mode: reportMode }),
     )
@@ -675,10 +725,16 @@ export async function POST(req: NextRequest) {
    * path, including reuse (where the value read off the stored report is
    * re-stamped unchanged so the shape stays uniform).
    */
-  report = withGenerationSource(report, generationSource)
+  report = withProvenance(report, {
+    generationSource,
+    foodSystemNarrativeSource,
+    addonLensNarrativeSource,
+  })
 
   logGenerationSource({
-    source: generationSource,
+    generationSource,
+    foodSystemNarrativeSource,
+    addonLensNarrativeSource,
     tier,
     mode: reportMode,
     addon: entitledAddon,
