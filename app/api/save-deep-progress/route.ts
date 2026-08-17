@@ -3,6 +3,7 @@ import { z } from "zod"
 import { getSupabase } from "@/lib/supabase"
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 import { readQuestionSnapshot } from "@/lib/assessment/question-snapshot"
+import { nextUpdatedAt } from "@/lib/assessment/cas-token"
 
 /**
  * Autosave for one answer on a paid deep assessment.
@@ -35,6 +36,18 @@ import { readQuestionSnapshot } from "@/lib/assessment/question-snapshot"
  * submit-deep-assessment — do. A future writer that touches `answers` without
  * bumping `updated_at` would silently weaken this guard, which is why the
  * regression suite pins the behaviour rather than trusting the convention.
+ *
+ * The token also has to actually MOVE on every successful write, which
+ * millisecond-precision wall-clock time does not guarantee on its own — see
+ * `nextUpdatedAt` in lib/assessment/cas-token.ts.
+ *
+ * ── What the server cannot fix ──────────────────────────────────────────────
+ *
+ * Merging makes two saves for DIFFERENT questions order-independent. It does
+ * nothing for two saves of the SAME question: whichever lands second wins, and
+ * "second" means last network completion, not the latest thing the customer
+ * typed. That ordering is owned by the client — one request in flight per
+ * question, newest value last — in lib/assessment/answer-autosave.ts.
  *
  * ── Authority ───────────────────────────────────────────────────────────────
  *
@@ -92,11 +105,19 @@ export async function PATCH(req: NextRequest) {
   for (let attempt = 0; attempt < SAVE_ATTEMPTS; attempt++) {
     let row: { answers?: unknown; questions?: unknown; updated_at?: string | null } | null
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("deep_assessments")
         .select("answers, questions, updated_at")
         .eq("stripe_session_id", sessionId)
         .maybeSingle()
+      if (error) {
+        // A failed read returns no data, which is indistinguishable from "no
+        // such row" unless the error is checked. Reporting 404 here would tell
+        // a paying customer their assessment does not exist because the
+        // database blipped — so a read fault is reported as a read fault.
+        console.error("[save-deep-progress] read error:", error.message)
+        return NextResponse.json({ error: "Could not save your progress" }, { status: 503 })
+      }
       row = (data as typeof row) ?? null
     } catch (err) {
       console.error("[save-deep-progress] read failed:", err)
@@ -133,7 +154,7 @@ export async function PATCH(req: NextRequest) {
       // `.eq()` against null never matches and would loop to exhaustion.
       let q = supabase
         .from("deep_assessments")
-        .update({ answers: merged, updated_at: new Date().toISOString() })
+        .update({ answers: merged, updated_at: nextUpdatedAt(row.updated_at) })
         .eq("stripe_session_id", sessionId)
       q = row.updated_at == null ? q.is("updated_at", null) : q.eq("updated_at", row.updated_at)
 

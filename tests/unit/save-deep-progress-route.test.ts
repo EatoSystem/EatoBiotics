@@ -1,7 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { NextRequest } from "next/server"
+import { readFileSync } from "node:fs"
 
 import type { DeepQuestion } from "@/lib/deep-assessment"
+import { nextUpdatedAt } from "@/lib/assessment/cas-token"
 import { deferred, barrier } from "./helpers/fake-deep-assessments"
 
 /**
@@ -25,7 +27,11 @@ import { deferred, barrier } from "./helpers/fake-deep-assessments"
 type Row = Record<string, unknown>
 type Hooks = { beforeRead?: (n: number) => void | Promise<void>; beforeWrite?: (n: number) => void | Promise<void> }
 
-function makeDb(seed: Row | null, hooks: Hooks = {}, faults: { readThrows?: boolean; writeError?: boolean } = {}) {
+function makeDb(
+  seed: Row | null,
+  hooks: Hooks = {},
+  faults: { readThrows?: boolean; readError?: boolean; writeError?: boolean } = {},
+) {
   const rows = new Map<string, Row>()
   if (seed) rows.set(String(seed.stripe_session_id), { ...seed })
   const log: string[] = []
@@ -64,6 +70,9 @@ function makeDb(seed: Row | null, hooks: Hooks = {}, faults: { readThrows?: bool
         log.push("read")
         await hooks.beforeRead?.(n)
         if (faults.readThrows) throw new Error("read failed")
+        // How PostgREST actually reports a failed read: no data, an error, no
+        // throw.
+        if (faults.readError) return { data: null, error: { code: "08006", message: "connection failure" } }
         return { data: (key !== null ? rows.get(key) : undefined) ?? null, error: null }
       }
       const n = ++writes
@@ -140,6 +149,9 @@ const bodyOf = async (r: Response) => (await r.json()) as { ok?: boolean; saved?
 
 beforeEach(() => {
   vi.clearAllMocks()
+})
+afterEach(() => {
+  vi.useRealTimers()
 })
 
 /* ══ Authority ══════════════════════════════════════════════════════════ */
@@ -339,7 +351,9 @@ describe("concurrent saves cannot lose an answer", () => {
 
     expect(res.status).toBe(503)
     expect((await bodyOf(res)).ok).toBeUndefined()
-    expect(db.counts().writes, "retries must be bounded").toBeLessThanOrEqual(3)
+    // Exactly the budget: fewer would mean it gave up early, more would mean
+    // the bound is not enforced. `toBeLessThanOrEqual` alone passes for both.
+    expect(db.counts().writes, "every attempt must be spent, and no more").toBe(3)
   })
 
   it("a write error is a failure response, not a silent swallow", async () => {
@@ -357,6 +371,173 @@ describe("concurrent saves cannot lose an answer", () => {
     mockGetSupabase.mockReturnValue(db.client)
 
     expect((await call(patch({ sessionId: SESSION, questionId: "dq1", value: "yes" }))).status).toBe(503)
+  })
+
+  it("a read that ERRORS is a 503, not 'no assessment found'", async () => {
+    // PostgREST reports a failed read as `{ data: null, error }` rather than
+    // throwing, and null data is indistinguishable from "no such row" unless
+    // the error is checked. Telling a paying customer their assessment does
+    // not exist because the database blipped is the wrong answer.
+    const db = makeDb(rowWith(), {}, { readError: true })
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await call(patch({ sessionId: SESSION, questionId: "dq1", value: "yes" }))
+
+    expect(res.status).toBe(503)
+    expect(db.counts().writes, "a failed read must not be followed by a write").toBe(0)
+  })
+})
+
+/* ══ The CAS token ══════════════════════════════════════════════════════ */
+
+describe("the CAS token always moves", () => {
+  it("a successful write changes updated_at even inside the same millisecond", async () => {
+    // The clock is frozen at exactly the stored token. `new Date().toISOString()`
+    // would reproduce T0 byte for byte and leave the guard satisfied for a
+    // writer that read T0 — a compare-and-set that compares against a value it
+    // never moved is not a compare-and-set.
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(T0))
+
+    const db = makeDb(rowWith({ updated_at: T0 }))
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await call(patch({ sessionId: SESSION, questionId: "dq1", value: "mine" }))
+
+    expect(res.status).toBe(200)
+    expect(db.only()!.updated_at, "the token must not survive a write unchanged").not.toBe(T0)
+  })
+
+  it("a writer still holding the pre-write token loses, same millisecond included", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(T0))
+
+    const db = makeDb(rowWith({ updated_at: T0 }))
+    mockGetSupabase.mockReturnValue(db.client)
+
+    await call(patch({ sessionId: SESSION, questionId: "dq1", value: "mine" }))
+
+    // A concurrent writer that read T0 before our merge landed now runs its own
+    // guarded update. It must match zero rows, or it silently replaces a map it
+    // never saw.
+    const client = db.client as { from: (t: string) => Record<string, (...a: unknown[]) => unknown> }
+    const stale = client
+      .from("deep_assessments")
+      .update({ answers: { dq2: "stale" }, updated_at: T0 }) as Record<string, (...a: unknown[]) => unknown>
+    const staleQuery = (stale.eq("stripe_session_id", SESSION) as Record<string, (...a: unknown[]) => unknown>)
+      .eq("updated_at", T0) as Record<string, (...a: unknown[]) => unknown>
+    const { data } = (await staleQuery.select("stripe_session_id")) as { data: unknown[] }
+
+    expect(data, "the pre-write token must no longer match").toEqual([])
+    expect(db.answers(), "the stale writer must not have replaced the merged map").toEqual({ dq1: "mine" })
+  })
+
+  it("nextUpdatedAt never returns the value it was given", () => {
+    const cases: Array<[string | null | undefined, number, string]> = [
+      // Same millisecond as the observed token.
+      [T0, Date.parse(T0), "clock equal to the stored token"],
+      // A clock behind the stored token — different serverless instances do
+      // not share a clock, so this is not hypothetical.
+      [T0, Date.parse(T0) - 5_000, "clock behind the stored token"],
+      // Postgres stores microseconds; Date.parse truncates them downward, so
+      // seen + 1 ms is still strictly past the stored value.
+      ["2026-08-17T10:00:00.123456+00:00", Date.parse("2026-08-17T10:00:00.123Z"), "microsecond precision"],
+    ]
+
+    for (const [observed, now, label] of cases) {
+      const next = nextUpdatedAt(observed, now)
+      expect(next, label).not.toBe(observed)
+      expect(Date.parse(next), label).toBeGreaterThan(Date.parse(String(observed)))
+    }
+  })
+
+  it("nextUpdatedAt falls back to the clock when there is nothing to move past", () => {
+    const now = Date.parse(T0)
+    expect(nextUpdatedAt(null, now)).toBe(new Date(now).toISOString())
+    expect(nextUpdatedAt(undefined, now)).toBe(new Date(now).toISOString())
+    expect(nextUpdatedAt("not a timestamp", now)).toBe(new Date(now).toISOString())
+  })
+})
+
+/* ══ Every writer of `answers` ══════════════════════════════════════════ */
+
+describe("the CAS holds only while every writer of `answers` bumps `updated_at`", () => {
+  /**
+   * `deep_assessments` has no triggers (verified read-only against production
+   * `ephmojiwlcebenholhpc`), so `updated_at` moves only because writers choose
+   * to move it. That makes the guard a convention, and a convention that is
+   * not pinned is a convention that gets broken by the next person to add a
+   * write. This enumerates the writers and fails when the set changes.
+   */
+  const DECLARED_WRITERS = [
+    "app/api/save-deep-progress/route.ts",
+    "app/api/submit-deep-assessment/route.ts",
+  ]
+
+  /** Balanced-brace payloads passed to a Supabase write call. */
+  function writePayloads(source: string): string[] {
+    const out: string[] = []
+    const re = /\.(?:update|upsert|insert)\(\s*\{/g
+    let m: RegExpExecArray | null
+    while ((m = re.exec(source))) {
+      const start = source.indexOf("{", m.index)
+      let depth = 0
+      for (let i = start; i < source.length; i++) {
+        if (source[i] === "{") depth++
+        else if (source[i] === "}") {
+          depth--
+          if (depth === 0) {
+            out.push(source.slice(start, i + 1))
+            break
+          }
+        }
+      }
+    }
+    return out
+  }
+
+  const CANDIDATES = [
+    "app/api/save-deep-progress/route.ts",
+    "app/api/submit-deep-assessment/route.ts",
+    "app/api/generate-deep-questions/route.ts",
+    "app/api/stripe/webhook/route.ts",
+  ]
+
+  it("the set of files that write `answers` is exactly the declared set", () => {
+    const found = CANDIDATES.filter((f) =>
+      writePayloads(readFileSync(f, "utf8")).some((p) => /(^|[\s{,])answers\s*[,:]/.test(p)),
+    )
+    expect(
+      found.sort(),
+      "a new writer of `answers` must bump `updated_at` and be added here — otherwise the CAS silently stops guarding",
+    ).toEqual([...DECLARED_WRITERS].sort())
+  })
+
+  it("every `answers` write in those files also sets `updated_at`", () => {
+    for (const file of DECLARED_WRITERS) {
+      const payloads = writePayloads(readFileSync(file, "utf8")).filter((p) =>
+        /(^|[\s{,])answers\s*[,:]/.test(p),
+      )
+      expect(payloads.length, `${file} must contain at least one \`answers\` write`).toBeGreaterThan(0)
+      for (const p of payloads) {
+        expect(p, `${file}: an \`answers\` write that leaves \`updated_at\` alone breaks the CAS`).toMatch(
+          /updated_at\s*:/,
+        )
+      }
+    }
+  })
+
+  it("this route's write is guarded on the observed token, not unconditional", () => {
+    const src = readFileSync("app/api/save-deep-progress/route.ts", "utf8")
+    // The write must be conditioned on `updated_at`, and the value written must
+    // come from the token helper rather than a bare clock read.
+    expect(src).toMatch(/updated_at:\s*nextUpdatedAt\(row\.updated_at\)/)
+    expect(src).toMatch(/\.eq\("updated_at",\s*row\.updated_at\)/)
+    expect(src).toMatch(/\.is\("updated_at",\s*null\)/)
+    expect(
+      src,
+      "a bare `new Date().toISOString()` here is the same-millisecond collision coming back",
+    ).not.toMatch(/updated_at:\s*new Date\(\)\.toISOString\(\)/)
   })
 })
 

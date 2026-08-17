@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import type { DeepQuestion, DeepAnswer, DeepAnswers, DeepSection } from "@/lib/deep-assessment"
+import { createAnswerAutosave, type AutosaveStatus } from "@/lib/assessment/answer-autosave"
 import { DeepQuestionView } from "./deep-question"
 
 interface DeepAssessmentClientProps {
@@ -60,6 +61,37 @@ export function DeepAssessmentClient({
   const [currentIndex, setCurrentIndex] = useState(0)
   const [submitStage, setSubmitStage] = useState(0)
   const [errorMessage, setErrorMessage] = useState("")
+  const [saveStatus, setSaveStatus] = useState<AutosaveStatus>("idle")
+
+  const isDemoMode = sessionId.startsWith("demo-")
+
+  // One queue for the whole questionnaire. Demo sessions have no row to save
+  // against, so they get no queue rather than a queue that always fails.
+  const autosave = useMemo(() => {
+    if (isDemoMode) return null
+    return createAnswerAutosave({
+      onStatus: setSaveStatus,
+      send: async (questionId, value) => {
+        try {
+          const res = await fetch("/api/save-deep-progress", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId, questionId, value }),
+          })
+          if (res.ok) return { ok: true }
+          // 5xx and rate limiting are transient. A 400/404/409/422 means this
+          // exact request will keep being refused, so retrying it only delays
+          // showing the customer that it did not save. The response body is
+          // never read: it is the server's words, not something to surface.
+          return { ok: false, retryable: res.status >= 500 || res.status === 429 }
+        } catch {
+          return { ok: false, retryable: true }
+        }
+      },
+    })
+  }, [sessionId, isDemoMode])
+
+  useEffect(() => () => autosave?.cancel(), [autosave])
 
   const loadQuestions = useCallback(async () => {
     // If we have saved questions, resume from where we left off
@@ -100,29 +132,24 @@ export function DeepAssessmentClient({
     loadQuestions()
   }, [loadQuestions])
 
-  const isDemoMode = sessionId.startsWith("demo-")
-
   function handleAnswer(id: string, value: DeepAnswer) {
     const updated = { ...answers, [id]: value }
     setAnswers(updated)
-    // Auto-save fire and forget — skip in demo mode to avoid noisy Supabase errors.
-    //
-    // Sends ONLY the answer that changed. This used to post the whole map, and
-    // because there is no debounce or in-flight sequencing here, two answers
-    // given in quick succession put two full maps on the wire — if the earlier
-    // request landed last, it erased the newer answer. A single-field delta is
-    // order-independent: the server merges it, so a late request can no longer
-    // speak for answers it never saw.
-    if (!isDemoMode) {
-      fetch("/api/save-deep-progress", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, questionId: id, value }),
-      }).catch(() => {/* ignore */})
-    }
+    // The queue owns delivery: one changed answer per request, one request in
+    // flight per question, newest value last. This used to be a bare fetch of
+    // the ENTIRE answer map per change event, with no debounce, no sequencing
+    // and a swallowed error — three separate ways for a paying customer's work
+    // to vanish without anyone being told.
+    autosave?.queue(id, value)
   }
 
   async function handleSubmit() {
+    // Send anything still sitting in the debounce window before leaving the
+    // page. Nothing is discarded if this fails: the submit below carries the
+    // full `answers` map, so an unsaved autosave costs the resume snapshot,
+    // never the report itself.
+    await autosave?.flush()
+
     setView("submitting")
     setSubmitStage(0)
     setTimeout(() => setSubmitStage(1), 3000)
@@ -325,6 +352,21 @@ export function DeepAssessmentClient({
           </div>
         )}
       </div>
+
+      {/* Save trouble — restrained, and only when there is genuinely something
+          unstored. Says what it means for the customer (nothing is lost, keep
+          going) rather than showing them the server's error. */}
+      {saveStatus === "unsaved" && (
+        <div className="border-b border-[var(--icon-orange)]/30 bg-[var(--icon-orange)]/8">
+          <div className="max-w-2xl mx-auto px-4 py-2 flex items-start gap-2">
+            <span aria-hidden className="text-sm leading-5">⚠️</span>
+            <p role="status" className="text-xs leading-5 text-muted-foreground">
+              We couldn&apos;t save your progress just now. Your answers are still here — keep
+              going and we&apos;ll try again.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Section transition banner */}
       {isNewSection && sectionMeta && (
