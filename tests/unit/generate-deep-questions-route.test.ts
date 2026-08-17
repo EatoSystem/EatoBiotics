@@ -96,6 +96,22 @@ function makeRequest(sessionId = SESSION_ID): NextRequest {
   })
 }
 
+/** A request whose body deliberately disagrees with the settled session. */
+function hostileRequest(overrides: Record<string, unknown>): NextRequest {
+  return new NextRequest("http://localhost/api/generate-deep-questions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      sessionId: SESSION_ID,
+      tier: "personal",
+      overall: 58,
+      subScores: SUB_SCORES,
+      profile: PROFILE,
+      ...overrides,
+    }),
+  })
+}
+
 async function callRoute(req: NextRequest = makeRequest()) {
   const { POST } = await import("@/app/api/generate-deep-questions/route")
   return POST(req)
@@ -448,6 +464,402 @@ describe("an unusable stored set: regenerate when absent, refuse when unreadable
 
     expect(res.status).toBe(200)
     expect(db.only()?.questions).toEqual(body.questions)
+  })
+})
+
+/* ══ #228: tier and free_scores are Stripe-owned ════════════════════════ */
+
+/**
+ * The request body carries `tier`, `overall`, `subScores` and `profile`, and
+ * anyone holding the session id can set them to anything. `tier` and
+ * `free_scores` describe what was PURCHASED, and the Stripe webhook writes both
+ * from the settled checkout — so if this route wrote them from the body, the
+ * row's meaning would depend on which writer landed first.
+ *
+ * Every case below makes the body disagree with the session and asserts the
+ * STORED ROW follows the session. The existing suite cannot catch this on its
+ * own: its fixtures make body and session agree, so both sources produce the
+ * same row.
+ */
+describe("server-owned fields come from the settled session, never the body", () => {
+  /** The session says: personal tier, these scores, this profile. */
+  const SESSION_SCORES = { prebiotics: 62, probiotics: 38, postbiotics: 67 }
+
+  beforeEach(() => {
+    mockRetrieveSession.mockResolvedValue(paidSession(null))
+  })
+
+  it("a body claiming a higher tier cannot raise the stored tier", async () => {
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callRoute(hostileRequest({ tier: "premium" }))
+
+    expect(res.status).toBe(200)
+    expect(db.only()?.tier).toBe("personal")
+    expect(db.only()?.tier).not.toBe("premium")
+  })
+
+  it("altered scores in the body never reach free_scores", async () => {
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
+
+    await callRoute(
+      hostileRequest({
+        overall: 99,
+        subScores: { prebiotics: 99, probiotics: 99, postbiotics: 99 },
+        profile: { type: "FORGED", tagline: "forged", description: "forged" },
+      }),
+    )
+
+    const stored = db.only()?.free_scores as Record<string, unknown>
+    expect(stored.overall).toBe(58)
+    expect(stored.subScores).toEqual(SESSION_SCORES)
+    expect((stored.profile as { type: string }).type).toBe("Emerging Balance")
+    expect(JSON.stringify(stored)).not.toContain("FORGED")
+    expect(JSON.stringify(stored)).not.toContain("99")
+  })
+
+  it("a body-supplied add-on neither reaches the row nor the questionnaire", async () => {
+    // Session grants no add-on; the body asks for the mind lens.
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const body = await bodyOf(await callRoute(hostileRequest({ selectedAddon: "mind" })))
+
+    // No lens questions appended…
+    expect(body.questions).toHaveLength(claudeSet("claude").length)
+    expect(body.questions?.some((q) => /_lens/.test(q.id))).toBe(false)
+    // …and the stored entitlement records the session's answer, not the body's.
+    expect((db.only()?.free_scores as { selectedAddon: unknown }).selectedAddon).toBeNull()
+  })
+
+  it("the stored fields match the shape the Stripe webhook writes", async () => {
+    // The two authoritative writers must agree field-for-field, or the row's
+    // meaning depends on which one landed first.
+    mockRetrieveSession.mockResolvedValue(paidSession("glucose", "family"))
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
+
+    await callRoute(hostileRequest({ tier: "premium", overall: 99 }))
+
+    expect(db.only()?.free_scores).toEqual({
+      overall: 58,
+      subScores: SESSION_SCORES,
+      profile: PROFILE,
+      foundationType: "family",
+      selectedAddon: "glucose",
+    })
+    expect(db.only()?.tier).toBe("personal")
+  })
+
+  it("webhook lag still produces a Stripe-owned row", async () => {
+    // The row is absent precisely because the webhook has not landed. That is
+    // the only path that creates it here, and it must not use body values.
+    const db = makeFakeDb(null)
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callRoute(hostileRequest({ tier: "premium", overall: 99 }))
+
+    expect(res.status).toBe(200)
+    expect(db.counts().insert).toBe(1)
+    expect(db.only()?.tier).toBe("personal")
+    expect((db.only()?.free_scores as { overall: number }).overall).toBe(58)
+  })
+
+  it("an existing webhook-written row keeps its values when questions are installed", async () => {
+    const db = makeFakeDb(rowWith({ tier: "personal", free_scores: { fromWebhook: true } }))
+    mockGetSupabase.mockReturnValue(db.client)
+
+    await callRoute(hostileRequest({ tier: "premium", overall: 99 }))
+
+    expect(db.only()?.tier).toBe("personal")
+    expect(db.only()?.free_scores).toEqual({ fromWebhook: true })
+    expect(db.counts().insert).toBe(0)
+  })
+
+  it("an unsettled checkout is refused and writes nothing", async () => {
+    mockRetrieveSession.mockResolvedValue({ payment_status: "unpaid", metadata: {} })
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callRoute(hostileRequest({ tier: "premium" }))
+
+    expect(res.status).toBe(401)
+    expect(db.rows.size).toBe(0)
+    expect(mockMessagesCreate).not.toHaveBeenCalled()
+  })
+
+  it("a settled session with no readable summary refuses rather than trusting the body", async () => {
+    // No authoritative value exists. The body is not an acceptable substitute,
+    // so the route must refuse instead of silently falling back.
+    mockRetrieveSession.mockResolvedValue({ payment_status: "paid", metadata: {} })
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callRoute(hostileRequest({ tier: "premium", overall: 99 }))
+
+    expect(res.status).toBe(503)
+    expect((await bodyOf(res)).questions).toBeUndefined()
+    expect(db.rows.size).toBe(0)
+  })
+
+  it("a 100%-promo checkout (no_payment_required) is honoured, not rejected", async () => {
+    // Stripe marks a fully-discounted checkout `no_payment_required`. The
+    // webhook and submit-deep-assessment both accept it; gating on
+    // `payment_status === "paid"` here used to 401 those buyers out of their
+    // own questionnaire.
+    mockRetrieveSession.mockResolvedValue({
+      ...paidSession(null),
+      payment_status: "no_payment_required",
+    })
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callRoute()
+
+    expect(res.status).toBe(200)
+    expect(db.only()?.tier).toBe("personal")
+  })
+
+  it("reuse rewrites nothing, so a later hostile call cannot revise the row", async () => {
+    const stored = claudeSet("stored")
+    const db = makeFakeDb(rowWith({ questions: stored, tier: "personal", free_scores: { fromWebhook: true } }))
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const body = await bodyOf(await callRoute(hostileRequest({ tier: "premium", overall: 99 })))
+
+    expect(body.questions).toEqual(stored)
+    expect(db.only()?.tier).toBe("personal")
+    expect(db.only()?.free_scores).toEqual({ fromWebhook: true })
+    expect(db.log.filter((op) => op !== "select")).toHaveLength(0)
+  })
+
+  it("dev mode has no session, so it is the one named exception", async () => {
+    // No Stripe key ⇒ nothing authoritative exists to read. This path is
+    // explicit rather than a silent degradation, and cannot occur in production
+    // because devMode is `!process.env.STRIPE_SECRET_KEY`.
+    vi.stubEnv("STRIPE_SECRET_KEY", "")
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callRoute(hostileRequest({ tier: "premium" }))
+
+    expect(res.status).toBe(200)
+    expect(db.only()?.tier).toBe("premium")
+    expect(mockRetrieveSession).not.toHaveBeenCalled()
+  })
+})
+
+/* ══ #228 part 2: question generation is session-owned too ══════════════ */
+
+/**
+ * The first half of #228 made the PERSISTED columns session-owned. This half
+ * covers what the customer actually receives: the prompt, the question count,
+ * the model budget and the lens.
+ *
+ * These assert at the **real Claude call**, not the stored row. `messages.create`
+ * receives the finished prompt string and `max_tokens`, so spying there proves
+ * what was actually sent rather than what was written afterwards — a route could
+ * store the right tier and still generate a premium questionnaire.
+ */
+describe("prompt, question count, token budget and lens follow the settled session", () => {
+  /** A settled session with an explicit tier, disagreeing with the body. */
+  function sessionWithTier(
+    tier: "personal" | "starter" | "full" | "premium",
+    over: { overall?: number; subScores?: Record<string, number>; addon?: AddonType | null } = {},
+  ) {
+    return {
+      payment_status: "paid",
+      metadata: {
+        result_summary: encodePaidReportSummary({
+          tier,
+          overall: over.overall ?? 58,
+          subScores: over.subScores ?? SUB_SCORES,
+          profile: PROFILE,
+          foundationType: "you",
+          selectedAddon: over.addon ?? null,
+        }),
+      },
+    }
+  }
+
+  /** What the route actually sent to Claude. */
+  function claudeCall() {
+    expect(mockMessagesCreate, "the route must have called Claude").toHaveBeenCalled()
+    const arg = mockMessagesCreate.mock.calls[0][0] as {
+      max_tokens: number
+      messages: Array<{ content: string }>
+    }
+    return { maxTokens: arg.max_tokens, prompt: arg.messages[0].content }
+  }
+
+  const COUNT_FOR = { starter: 10, personal: 18, full: 18, premium: 25 } as const
+  const TOKENS_FOR = { starter: 2048, personal: 3072, full: 3072, premium: 4096 } as const
+
+  it.each(["starter", "personal", "full", "premium"] as const)(
+    "session tier %s decides count and budget, whatever the body asks for",
+    async (sessionTier) => {
+      // Body always claims the opposite end of the range.
+      const bodyTier = sessionTier === "premium" ? "starter" : "premium"
+      mockRetrieveSession.mockResolvedValue(sessionWithTier(sessionTier))
+      const db = makeFakeDb()
+      mockGetSupabase.mockReturnValue(db.client)
+
+      await callRoute(hostileRequest({ tier: bodyTier }))
+      const { prompt, maxTokens } = claudeCall()
+
+      expect(prompt).toContain(`Generate exactly ${COUNT_FOR[sessionTier]} deep assessment questions`)
+      expect(prompt).not.toContain(`Generate exactly ${COUNT_FOR[bodyTier]} deep assessment questions`)
+      expect(maxTokens).toBe(TOKENS_FOR[sessionTier])
+      expect(db.only()?.tier).toBe(sessionTier)
+    },
+  )
+
+  it("hostile scores never reach the prompt", async () => {
+    mockRetrieveSession.mockResolvedValue(
+      sessionWithTier("personal", { overall: 41, subScores: { prebiotics: 33, probiotics: 44, postbiotics: 55 } }),
+    )
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
+
+    await callRoute(
+      hostileRequest({
+        overall: 99,
+        subScores: { prebiotics: 98, probiotics: 97, postbiotics: 96 },
+        profile: { type: "FORGED", tagline: "forged", description: "forged" },
+      }),
+    )
+    const { prompt } = claudeCall()
+
+    expect(prompt).toContain("Overall: 41/100")
+    expect(prompt).toContain("Prebiotics: 33/100")
+    expect(prompt).toContain("Emerging Balance")
+    expect(prompt).not.toContain("99")
+    expect(prompt).not.toContain("FORGED")
+  })
+
+  it("malformed body scores cannot break or steer generation", async () => {
+    mockRetrieveSession.mockResolvedValue(sessionWithTier("personal"))
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callRoute(
+      hostileRequest({ overall: "not-a-number", subScores: "nonsense", profile: null }),
+    )
+
+    expect(res.status).toBe(200)
+    expect(claudeCall().prompt).toContain("Overall: 58/100")
+    expect(db.only()?.tier).toBe("personal")
+  })
+
+  it("a body-supplied add-on changes neither the lens nor the budget", async () => {
+    mockRetrieveSession.mockResolvedValue(sessionWithTier("personal", { addon: null }))
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const body = await bodyOf(await callRoute(hostileRequest({ selectedAddon: "mind" })))
+
+    expect(body.questions?.some((q) => /_lens/.test(q.id))).toBe(false)
+    expect((db.only()?.free_scores as { selectedAddon: unknown }).selectedAddon).toBeNull()
+  })
+
+  it("the settled add-on is honoured even when the body names a different one", async () => {
+    mockRetrieveSession.mockResolvedValue(sessionWithTier("personal", { addon: "glucose" }))
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const body = await bodyOf(await callRoute(hostileRequest({ selectedAddon: "mind" })))
+
+    expect(body.questions?.slice(3)).toEqual(addonQuestionsFor("glucose", "you"))
+    expect((db.only()?.free_scores as { selectedAddon: unknown }).selectedAddon).toBe("glucose")
+  })
+
+  it("a body that omits tier and scores entirely still works", async () => {
+    // Nothing in the body but sessionId — the session supplies everything.
+    mockRetrieveSession.mockResolvedValue(sessionWithTier("premium"))
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const req = new NextRequest("http://localhost/api/generate-deep-questions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId: SESSION_ID }),
+    })
+    const res = await callRoute(req)
+
+    expect(res.status).toBe(200)
+    expect(claudeCall().prompt).toContain("Generate exactly 25 deep assessment questions")
+    expect(claudeCall().maxTokens).toBe(4096)
+    expect(db.only()?.tier).toBe("premium")
+  })
+
+  it("a stale body-derived row does not become the authority", async () => {
+    // The row holds exactly the client-written values #228 is correcting.
+    mockRetrieveSession.mockResolvedValue(sessionWithTier("starter"))
+    const db = makeFakeDb(rowWith({ tier: "premium", free_scores: { overall: 99 }, questions: null }))
+    mockGetSupabase.mockReturnValue(db.client)
+
+    await callRoute(hostileRequest({ tier: "premium" }))
+    const { prompt, maxTokens } = claudeCall()
+
+    // Generation follows the freshly validated session, not the stale row.
+    expect(prompt).toContain("Generate exactly 10 deep assessment questions")
+    expect(maxTokens).toBe(2048)
+  })
+
+  it("a promo checkout generates against its real tier", async () => {
+    mockRetrieveSession.mockResolvedValue({
+      ...sessionWithTier("personal"),
+      payment_status: "no_payment_required",
+    })
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callRoute(hostileRequest({ tier: "premium" }))
+
+    expect(res.status).toBe(200)
+    expect(claudeCall().prompt).toContain("Generate exactly 18 deep assessment questions")
+    expect(db.only()?.tier).toBe("personal")
+  })
+
+  it("an unsettled checkout never reaches Claude", async () => {
+    mockRetrieveSession.mockResolvedValue({ payment_status: "unpaid", metadata: {} })
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callRoute(hostileRequest({ tier: "premium" }))
+
+    expect(res.status).toBe(401)
+    expect(mockMessagesCreate).not.toHaveBeenCalled()
+    expect(db.rows.size).toBe(0)
+  })
+
+  it("a settled session with no readable summary never reaches Claude", async () => {
+    mockRetrieveSession.mockResolvedValue({ payment_status: "paid", metadata: {} })
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callRoute(hostileRequest({ tier: "premium", overall: 99 }))
+
+    expect(res.status).toBe(503)
+    expect(mockMessagesCreate, "generation must not run on a customer's claim").not.toHaveBeenCalled()
+    expect(db.rows.size).toBe(0)
+  })
+
+  it("no product value from the request reaches the logs", async () => {
+    const errors: string[] = []
+    const spy = vi.spyOn(console, "error").mockImplementation((...a) => errors.push(a.join(" ")))
+    mockRetrieveSession.mockResolvedValue({ payment_status: "paid", metadata: {} })
+    mockGetSupabase.mockReturnValue(makeFakeDb().client)
+
+    await callRoute(hostileRequest({ tier: "premium", overall: 99, selectedAddon: "mind" }))
+    spy.mockRestore()
+
+    const joined = errors.join("\n")
+    expect(joined).not.toContain("premium")
+    expect(joined).not.toContain("99")
+    expect(joined).not.toContain("mind")
   })
 })
 

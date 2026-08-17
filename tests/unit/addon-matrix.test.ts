@@ -191,9 +191,60 @@ describe("entitlement is the settled session, and survives every stage", () => {
 
   it("generate-deep-questions derives entitlement from the session too", () => {
     const src = readFileSync("app/api/generate-deep-questions/route.ts", "utf8")
-    expect(src).toContain("getPaidReportSummaryFromSession(session)")
-    expect(src).toContain("entitledAddon = asAddon(summary?.selectedAddon)")
+
+    // Follow the dataflow rather than pinning identifiers. Whatever feeds
+    // `asAddon` must be a decoded `PaidReportSummary`, and that summary must
+    // come from the settled session. Pinning names instead has twice turned a
+    // refactor into a false entitlement regression.
+    const feeds = src.match(/entitledAddon:?\s*=?\s*asAddon\((\w+)\??\.selectedAddon\)/)
+    expect(feeds, "entitledAddon must be narrowed from a decoded summary").not.toBeNull()
+
+    const summaryRef = feeds![1]
+    expect(
+      src,
+      `${summaryRef} must be a decoded PaidReportSummary, not an ad-hoc object`,
+    ).toMatch(new RegExp(`${summaryRef}\\s*:\\s*PaidReportSummary`))
+
+    expect(
+      src,
+      "the summary must be decoded from the settled Stripe session",
+    ).toMatch(/getPaidReportSummaryFromSession\(session\)/)
+
     expect(src).not.toMatch(/body\.selectedAddon/)
+  })
+
+  /**
+   * #228: the prompt, the question count and the model budget must all read the
+   * same session-derived input, not the request body. A body-fed prompt was the
+   * half of the authority boundary the first pass left open.
+   */
+  it("generate-deep-questions builds the prompt and token budget from trusted input", () => {
+    const src = readFileSync("app/api/generate-deep-questions/route.ts", "utf8")
+
+    expect(src, "the prompt must not be built from the request body").not.toMatch(
+      /buildDeepQuestionsPrompt\(body\)/,
+    )
+    expect(src).toMatch(/buildDeepQuestionsPrompt\(trusted\)/)
+
+    // The token budget branches on tier; that tier must be the trusted one.
+    const budget = src.slice(src.indexOf("const maxTokens"), src.indexOf("const maxTokens") + 200)
+    expect(budget, "maxTokens must not branch on a body-derived tier").not.toMatch(/body\.tier/)
+
+    // And the prompt builder itself must take the trusted shape, not RequestBody.
+    expect(src).toMatch(/function buildDeepQuestionsPrompt\(\s*\w+\s*:\s*TrustedQuestionInput/)
+  })
+
+  /**
+   * #228: the same session summary — not the request body — is what defines the
+   * purchase columns the Stripe webhook also owns.
+   */
+  it("generate-deep-questions builds tier and free_scores from the session, not the body", () => {
+    const src = readFileSync("app/api/generate-deep-questions/route.ts", "utf8")
+
+    // The insert must not spell out body-derived purchase fields.
+    const insert = src.slice(src.indexOf('.insert({'), src.indexOf('.insert({') + 400)
+    expect(insert).not.toMatch(/free_scores:\s*\{\s*overall/)
+    expect(insert.split("\n").map((l) => l.trim())).not.toContain("tier,")
   })
 
   it("foreign answer keys are dropped entirely", () => {
