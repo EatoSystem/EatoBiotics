@@ -105,12 +105,19 @@ export function DeepAssessmentClient({
   function handleAnswer(id: string, value: DeepAnswer) {
     const updated = { ...answers, [id]: value }
     setAnswers(updated)
-    // Auto-save fire and forget — skip in demo mode to avoid noisy Supabase errors
+    // Auto-save fire and forget — skip in demo mode to avoid noisy Supabase errors.
+    //
+    // Sends ONLY the answer that changed. This used to post the whole map, and
+    // because there is no debounce or in-flight sequencing here, two answers
+    // given in quick succession put two full maps on the wire — if the earlier
+    // request landed last, it erased the newer answer. A single-field delta is
+    // order-independent: the server merges it, so a late request can no longer
+    // speak for answers it never saw.
     if (!isDemoMode) {
       fetch("/api/save-deep-progress", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, answers: updated }),
+        body: JSON.stringify({ sessionId, questionId: id, value }),
       }).catch(() => {/* ignore */})
     }
   }
