@@ -1,6 +1,12 @@
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { stripe } from "@/lib/stripe-server"
-import { getPaidReportSummaryFromSession, asAddon, type PaidReportHealthSystem } from "@/lib/paid-report-session"
+import {
+  getPaidReportSummaryFromSession,
+  isCheckoutSessionSettled,
+  asAddon,
+  type PaidReportHealthSystem,
+  type PaidReportSummary,
+} from "@/lib/paid-report-session"
 import { addonQuestionsFor } from "@/lib/assessment/addon-questions"
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabase } from "@/lib/supabase"
@@ -165,6 +171,57 @@ function persistenceFailed(): NextResponse {
   )
 }
 
+/**
+ * The two columns this row does not own: `tier` and `free_scores`.
+ *
+ * Both describe what was purchased, so the settled Stripe checkout is the only
+ * thing entitled to define them — the same source `app/api/stripe/webhook`
+ * writes them from, in the same shape, so the two writers cannot disagree.
+ *
+ * Returns `null` when no authoritative value can be established, which the
+ * caller turns into a refusal. The request body is never a fallback: it carries
+ * a `tier` and scores the caller chose, and silently promoting those to
+ * server-owned columns is the defect this exists to close (#228).
+ *
+ * The one exception is local development, where there is no Stripe key and
+ * therefore no session to read. That path is explicit and named rather than a
+ * quiet degradation, and it cannot be reached in production because `devMode`
+ * is `!process.env.STRIPE_SECRET_KEY`.
+ */
+function ownedAssessmentFields(
+  summary: PaidReportSummary | null,
+  devMode: boolean,
+  fromBody: { tier: string; overall: number; subScores: SubScores; profile: RequestBody["profile"] }
+): { tier: string; free_scores: Record<string, unknown> } | null {
+  if (summary) {
+    return {
+      tier: summary.tier,
+      free_scores: {
+        overall: summary.overall,
+        subScores: summary.subScores,
+        profile: summary.profile,
+        foundationType: summary.foundationType ?? null,
+        selectedAddon: summary.selectedAddon ?? null,
+      },
+    }
+  }
+
+  if (devMode) {
+    return {
+      tier: fromBody.tier,
+      free_scores: {
+        overall: fromBody.overall,
+        subScores: fromBody.subScores,
+        profile: fromBody.profile,
+        foundationType: null,
+        selectedAddon: null,
+      },
+    }
+  }
+
+  return null
+}
+
 export async function POST(req: NextRequest) {
   let body: RequestBody
   try {
@@ -184,11 +241,19 @@ export async function POST(req: NextRequest) {
 
   const devMode = !process.env.STRIPE_SECRET_KEY
 
-  // The purchased lens and foundation come from the Stripe session, NOT the
-  // request body. The client already sends scores it could tamper with; the
-  // entitlement is the one thing that decides what the customer paid for, so it
-  // is read from the settled payment record and re-validated. An unknown value
-  // becomes null and the questionnaire is simply the core set.
+  /**
+   * Everything the settled payment record says about this purchase.
+   *
+   * Nothing server-owned may be built from the request body. The client sends
+   * `tier`, `overall`, `subScores` and `profile`, and all four are writable by
+   * whoever holds the session id — so they describe what the caller *claims* to
+   * have bought, not what they paid for. The Stripe webhook writes the same two
+   * columns from this same summary, so taking them from anywhere else makes the
+   * row's provenance depend on which writer happened to land first.
+   *
+   * Stays null in dev mode, where there is no settled session to read.
+   */
+  let paidSummary: PaidReportSummary | null = null
   let entitledAddon: PaidReportHealthSystem | null = null
   let foundation: "you" | "family" = "you"
 
@@ -196,12 +261,16 @@ export async function POST(req: NextRequest) {
   if (!devMode) {
     try {
       const session = await stripe.checkout.sessions.retrieve(sessionId)
-      if (session.payment_status !== "paid") {
+      // The shared settled check, not `payment_status === "paid"`: Stripe marks
+      // a 100%-promo-code checkout `no_payment_required`, and the webhook and
+      // submit-deep-assessment both already accept it. Gating differently here
+      // 401'd those buyers out of their own questionnaire.
+      if (!isCheckoutSessionSettled(session)) {
         return NextResponse.json({ error: "Payment not confirmed" }, { status: 401 })
       }
-      const summary = getPaidReportSummaryFromSession(session)
-      entitledAddon = asAddon(summary?.selectedAddon)
-      foundation = summary?.foundationType === "family" ? "family" : "you"
+      paidSummary = getPaidReportSummaryFromSession(session)
+      entitledAddon = asAddon(paidSummary?.selectedAddon)
+      foundation = paidSummary?.foundationType === "family" ? "family" : "you"
     } catch (err) {
       console.error("[generate-deep-questions] Stripe error:", err)
       return NextResponse.json({ error: "Failed to verify payment" }, { status: 401 })
@@ -383,10 +452,36 @@ export async function POST(req: NextRequest) {
 
     try {
       if (!observed) {
+        /**
+         * Creating the row — usually because the Stripe webhook has not landed
+         * yet. `tier` and `free_scores` are NOT NULL with no default, so they
+         * have to be supplied here; the question is only *from where*.
+         *
+         * From the settled session, never the request body. The webhook writes
+         * these two columns from exactly this summary, so building them the
+         * same way means whichever writer wins, the row says the same thing.
+         * Using the body instead would make a paid row describe whatever the
+         * caller claimed to have bought.
+         */
+        const owned = ownedAssessmentFields(paidSummary, devMode, {
+          tier,
+          overall,
+          subScores,
+          profile,
+        })
+        if (!owned) {
+          // Settled, but the checkout carries no readable summary. There is no
+          // authoritative value to write and the body is not an acceptable
+          // substitute, so refuse rather than persist a claim.
+          console.error(
+            "[generate-deep-questions] Settled session has no decodable summary — refusing to build owned fields from the request body"
+          )
+          return persistenceFailed()
+        }
+
         const { error } = await supabase.from("deep_assessments").insert({
           stripe_session_id: sessionId,
-          tier,
-          free_scores: { overall, subScores, profile },
+          ...owned,
           questions,
           status: "questions_generated",
         })

@@ -191,9 +191,34 @@ describe("entitlement is the settled session, and survives every stage", () => {
 
   it("generate-deep-questions derives entitlement from the session too", () => {
     const src = readFileSync("app/api/generate-deep-questions/route.ts", "utf8")
-    expect(src).toContain("getPaidReportSummaryFromSession(session)")
-    expect(src).toContain("entitledAddon = asAddon(summary?.selectedAddon)")
+
+    // Follow the dataflow rather than pinning an identifier: whichever variable
+    // feeds `asAddon` must be the one assigned from the decoded session. The
+    // previous version asserted the literal name `summary`, which made a rename
+    // look like an entitlement regression.
+    const feeds = src.match(/entitledAddon = asAddon\((\w+)\?\.selectedAddon\)/)
+    expect(feeds, "entitledAddon must be narrowed from a decoded summary").not.toBeNull()
+
+    const summaryVar = feeds![1]
+    expect(
+      src,
+      `${summaryVar} must be assigned from the settled Stripe session`,
+    ).toMatch(new RegExp(`${summaryVar}\\s*=\\s*getPaidReportSummaryFromSession\\(session\\)`))
+
     expect(src).not.toMatch(/body\.selectedAddon/)
+  })
+
+  /**
+   * #228: the same session summary — not the request body — is what defines the
+   * purchase columns the Stripe webhook also owns.
+   */
+  it("generate-deep-questions builds tier and free_scores from the session, not the body", () => {
+    const src = readFileSync("app/api/generate-deep-questions/route.ts", "utf8")
+
+    // The insert must not spell out body-derived purchase fields.
+    const insert = src.slice(src.indexOf('.insert({'), src.indexOf('.insert({') + 400)
+    expect(insert).not.toMatch(/free_scores:\s*\{\s*overall/)
+    expect(insert.split("\n").map((l) => l.trim())).not.toContain("tier,")
   })
 
   it("foreign answer keys are dropped entirely", () => {
