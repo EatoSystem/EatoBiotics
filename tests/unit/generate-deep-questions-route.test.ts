@@ -651,6 +651,218 @@ describe("server-owned fields come from the settled session, never the body", ()
   })
 })
 
+/* ══ #228 part 2: question generation is session-owned too ══════════════ */
+
+/**
+ * The first half of #228 made the PERSISTED columns session-owned. This half
+ * covers what the customer actually receives: the prompt, the question count,
+ * the model budget and the lens.
+ *
+ * These assert at the **real Claude call**, not the stored row. `messages.create`
+ * receives the finished prompt string and `max_tokens`, so spying there proves
+ * what was actually sent rather than what was written afterwards — a route could
+ * store the right tier and still generate a premium questionnaire.
+ */
+describe("prompt, question count, token budget and lens follow the settled session", () => {
+  /** A settled session with an explicit tier, disagreeing with the body. */
+  function sessionWithTier(
+    tier: "personal" | "starter" | "full" | "premium",
+    over: { overall?: number; subScores?: Record<string, number>; addon?: AddonType | null } = {},
+  ) {
+    return {
+      payment_status: "paid",
+      metadata: {
+        result_summary: encodePaidReportSummary({
+          tier,
+          overall: over.overall ?? 58,
+          subScores: over.subScores ?? SUB_SCORES,
+          profile: PROFILE,
+          foundationType: "you",
+          selectedAddon: over.addon ?? null,
+        }),
+      },
+    }
+  }
+
+  /** What the route actually sent to Claude. */
+  function claudeCall() {
+    expect(mockMessagesCreate, "the route must have called Claude").toHaveBeenCalled()
+    const arg = mockMessagesCreate.mock.calls[0][0] as {
+      max_tokens: number
+      messages: Array<{ content: string }>
+    }
+    return { maxTokens: arg.max_tokens, prompt: arg.messages[0].content }
+  }
+
+  const COUNT_FOR = { starter: 10, personal: 18, full: 18, premium: 25 } as const
+  const TOKENS_FOR = { starter: 2048, personal: 3072, full: 3072, premium: 4096 } as const
+
+  it.each(["starter", "personal", "full", "premium"] as const)(
+    "session tier %s decides count and budget, whatever the body asks for",
+    async (sessionTier) => {
+      // Body always claims the opposite end of the range.
+      const bodyTier = sessionTier === "premium" ? "starter" : "premium"
+      mockRetrieveSession.mockResolvedValue(sessionWithTier(sessionTier))
+      const db = makeFakeDb()
+      mockGetSupabase.mockReturnValue(db.client)
+
+      await callRoute(hostileRequest({ tier: bodyTier }))
+      const { prompt, maxTokens } = claudeCall()
+
+      expect(prompt).toContain(`Generate exactly ${COUNT_FOR[sessionTier]} deep assessment questions`)
+      expect(prompt).not.toContain(`Generate exactly ${COUNT_FOR[bodyTier]} deep assessment questions`)
+      expect(maxTokens).toBe(TOKENS_FOR[sessionTier])
+      expect(db.only()?.tier).toBe(sessionTier)
+    },
+  )
+
+  it("hostile scores never reach the prompt", async () => {
+    mockRetrieveSession.mockResolvedValue(
+      sessionWithTier("personal", { overall: 41, subScores: { prebiotics: 33, probiotics: 44, postbiotics: 55 } }),
+    )
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
+
+    await callRoute(
+      hostileRequest({
+        overall: 99,
+        subScores: { prebiotics: 98, probiotics: 97, postbiotics: 96 },
+        profile: { type: "FORGED", tagline: "forged", description: "forged" },
+      }),
+    )
+    const { prompt } = claudeCall()
+
+    expect(prompt).toContain("Overall: 41/100")
+    expect(prompt).toContain("Prebiotics: 33/100")
+    expect(prompt).toContain("Emerging Balance")
+    expect(prompt).not.toContain("99")
+    expect(prompt).not.toContain("FORGED")
+  })
+
+  it("malformed body scores cannot break or steer generation", async () => {
+    mockRetrieveSession.mockResolvedValue(sessionWithTier("personal"))
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callRoute(
+      hostileRequest({ overall: "not-a-number", subScores: "nonsense", profile: null }),
+    )
+
+    expect(res.status).toBe(200)
+    expect(claudeCall().prompt).toContain("Overall: 58/100")
+    expect(db.only()?.tier).toBe("personal")
+  })
+
+  it("a body-supplied add-on changes neither the lens nor the budget", async () => {
+    mockRetrieveSession.mockResolvedValue(sessionWithTier("personal", { addon: null }))
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const body = await bodyOf(await callRoute(hostileRequest({ selectedAddon: "mind" })))
+
+    expect(body.questions?.some((q) => /_lens/.test(q.id))).toBe(false)
+    expect((db.only()?.free_scores as { selectedAddon: unknown }).selectedAddon).toBeNull()
+  })
+
+  it("the settled add-on is honoured even when the body names a different one", async () => {
+    mockRetrieveSession.mockResolvedValue(sessionWithTier("personal", { addon: "glucose" }))
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const body = await bodyOf(await callRoute(hostileRequest({ selectedAddon: "mind" })))
+
+    expect(body.questions?.slice(3)).toEqual(addonQuestionsFor("glucose", "you"))
+    expect((db.only()?.free_scores as { selectedAddon: unknown }).selectedAddon).toBe("glucose")
+  })
+
+  it("a body that omits tier and scores entirely still works", async () => {
+    // Nothing in the body but sessionId — the session supplies everything.
+    mockRetrieveSession.mockResolvedValue(sessionWithTier("premium"))
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const req = new NextRequest("http://localhost/api/generate-deep-questions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId: SESSION_ID }),
+    })
+    const res = await callRoute(req)
+
+    expect(res.status).toBe(200)
+    expect(claudeCall().prompt).toContain("Generate exactly 25 deep assessment questions")
+    expect(claudeCall().maxTokens).toBe(4096)
+    expect(db.only()?.tier).toBe("premium")
+  })
+
+  it("a stale body-derived row does not become the authority", async () => {
+    // The row holds exactly the client-written values #228 is correcting.
+    mockRetrieveSession.mockResolvedValue(sessionWithTier("starter"))
+    const db = makeFakeDb(rowWith({ tier: "premium", free_scores: { overall: 99 }, questions: null }))
+    mockGetSupabase.mockReturnValue(db.client)
+
+    await callRoute(hostileRequest({ tier: "premium" }))
+    const { prompt, maxTokens } = claudeCall()
+
+    // Generation follows the freshly validated session, not the stale row.
+    expect(prompt).toContain("Generate exactly 10 deep assessment questions")
+    expect(maxTokens).toBe(2048)
+  })
+
+  it("a promo checkout generates against its real tier", async () => {
+    mockRetrieveSession.mockResolvedValue({
+      ...sessionWithTier("personal"),
+      payment_status: "no_payment_required",
+    })
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callRoute(hostileRequest({ tier: "premium" }))
+
+    expect(res.status).toBe(200)
+    expect(claudeCall().prompt).toContain("Generate exactly 18 deep assessment questions")
+    expect(db.only()?.tier).toBe("personal")
+  })
+
+  it("an unsettled checkout never reaches Claude", async () => {
+    mockRetrieveSession.mockResolvedValue({ payment_status: "unpaid", metadata: {} })
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callRoute(hostileRequest({ tier: "premium" }))
+
+    expect(res.status).toBe(401)
+    expect(mockMessagesCreate).not.toHaveBeenCalled()
+    expect(db.rows.size).toBe(0)
+  })
+
+  it("a settled session with no readable summary never reaches Claude", async () => {
+    mockRetrieveSession.mockResolvedValue({ payment_status: "paid", metadata: {} })
+    const db = makeFakeDb()
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callRoute(hostileRequest({ tier: "premium", overall: 99 }))
+
+    expect(res.status).toBe(503)
+    expect(mockMessagesCreate, "generation must not run on a customer's claim").not.toHaveBeenCalled()
+    expect(db.rows.size).toBe(0)
+  })
+
+  it("no product value from the request reaches the logs", async () => {
+    const errors: string[] = []
+    const spy = vi.spyOn(console, "error").mockImplementation((...a) => errors.push(a.join(" ")))
+    mockRetrieveSession.mockResolvedValue({ payment_status: "paid", metadata: {} })
+    mockGetSupabase.mockReturnValue(makeFakeDb().client)
+
+    await callRoute(hostileRequest({ tier: "premium", overall: 99, selectedAddon: "mind" }))
+    spy.mockRestore()
+
+    const joined = errors.join("\n")
+    expect(joined).not.toContain("premium")
+    expect(joined).not.toContain("99")
+    expect(joined).not.toContain("mind")
+  })
+})
+
 /* ══ #221 entitlement behaviour is unchanged ════════════════════════════ */
 
 describe("entitlement-derived lens questions are retained", () => {

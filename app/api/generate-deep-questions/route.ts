@@ -6,6 +6,7 @@ import {
   asAddon,
   type PaidReportHealthSystem,
   type PaidReportSummary,
+  type PaidReportTier,
 } from "@/lib/paid-report-session"
 import { addonQuestionsFor } from "@/lib/assessment/addon-questions"
 import { NextRequest, NextResponse } from "next/server"
@@ -37,6 +38,33 @@ type RequestBody = {
   overall: number
   subScores: SubScores
   profile: { type: string; tagline: string; description: string }
+}
+
+/**
+ * Everything this route is allowed to decide anything with.
+ *
+ * The request body carries `tier`, `overall`, `subScores` and `profile`, and
+ * anyone holding the session id can set them to whatever they like. Those four
+ * decide what the customer paid for, how many questions they get, how much
+ * model budget is spent on them, and which lens is appended — so all four come
+ * from the settled Stripe checkout, and the body contributes only `sessionId`.
+ *
+ * The scores really are customer-authored: they come from the free assessment.
+ * But they were captured into Stripe metadata at checkout, so the settled
+ * session is the authoritative copy of that same answer set. There is no
+ * remaining field that has to be re-read from the request.
+ *
+ * This is a distinct type from `RequestBody` on purpose. Nothing spreads the
+ * body into it, so there is no composition order in which a request value could
+ * win — the shape simply has nowhere to put one.
+ */
+type TrustedQuestionInput = {
+  tier: PaidReportTier
+  overall: number
+  subScores: SubScores
+  profile: { type: string; tagline: string; description: string }
+  entitledAddon: PaidReportHealthSystem | null
+  foundation: "you" | "family"
 }
 
 const PILLAR_LABELS: Record<string, string> = {
@@ -71,8 +99,8 @@ function getSortedPillars(sub: SubScores): Array<[string, number]> {
   return Object.entries(getBioticScores(sub)).sort((a, b) => a[1] - b[1])
 }
 
-function buildDeepQuestionsPrompt(body: RequestBody): string {
-  const { tier, overall, subScores, profile } = body
+function buildDeepQuestionsPrompt(trusted: TrustedQuestionInput): string {
+  const { tier, overall, subScores, profile } = trusted
   const sorted = getSortedPillars(subScores)
   const effectiveTier = tier === "personal" ? "full" : tier
   const bioticScores = getBioticScores(subScores)
@@ -172,54 +200,77 @@ function persistenceFailed(): NextResponse {
 }
 
 /**
+ * The trusted input, derived only from the settled Stripe checkout.
+ *
+ * `null` when no authoritative source exists, which every caller turns into a
+ * refusal rather than a fallback to the request body.
+ *
+ * Deliberately NOT derived from the stored row: an existing `deep_assessments`
+ * row may still hold the client-written `tier`/`free_scores` this change is
+ * correcting, so trusting it would launder exactly the values being removed.
+ * Authority comes from the session that was just validated, every time.
+ */
+function trustedInputFromSession(summary: PaidReportSummary | null): TrustedQuestionInput | null {
+  if (!summary) return null
+  return {
+    tier: summary.tier,
+    overall: summary.overall,
+    // `PaidReportSummary.subScores` is a plain Record; the prompt helpers read
+    // named pillar keys off it and tolerate absent ones, so narrow rather than
+    // assert — an unexpected key set degrades to the documented ?? chain in
+    // getBioticScores instead of throwing.
+    subScores: summary.subScores as SubScores,
+    profile: summary.profile,
+    entitledAddon: asAddon(summary.selectedAddon),
+    foundation: summary.foundationType === "family" ? "family" : "you",
+  }
+}
+
+/**
+ * The local-development trusted input.
+ *
+ * With no `STRIPE_SECRET_KEY` there is no session to read, so the body is the
+ * only source there is. Named explicitly rather than reached by falling through
+ * a `??`, and unreachable in production because `devMode` is
+ * `!process.env.STRIPE_SECRET_KEY`.
+ */
+function trustedInputForDevMode(body: RequestBody): TrustedQuestionInput {
+  return {
+    tier: body.tier,
+    overall: body.overall,
+    subScores: body.subScores,
+    profile: body.profile,
+    entitledAddon: null,
+    foundation: "you",
+  }
+}
+
+/**
  * The two columns this row does not own: `tier` and `free_scores`.
  *
- * Both describe what was purchased, so the settled Stripe checkout is the only
- * thing entitled to define them — the same source `app/api/stripe/webhook`
- * writes them from, in the same shape, so the two writers cannot disagree.
+ * Both describe what was purchased, so they are projected from the same trusted
+ * input everything else in this route uses — which itself comes only from the
+ * settled Stripe checkout. `app/api/stripe/webhook` writes these two columns
+ * from that same summary in this same shape, so whichever writer lands first the
+ * row says the same thing.
  *
- * Returns `null` when no authoritative value can be established, which the
- * caller turns into a refusal. The request body is never a fallback: it carries
- * a `tier` and scores the caller chose, and silently promoting those to
- * server-owned columns is the defect this exists to close (#228).
- *
- * The one exception is local development, where there is no Stripe key and
- * therefore no session to read. That path is explicit and named rather than a
- * quiet degradation, and it cannot be reached in production because `devMode`
- * is `!process.env.STRIPE_SECRET_KEY`.
+ * There is no body-derived branch here any more. If no trusted input could be
+ * established the caller already refused, so this cannot be reached with a
+ * value the customer chose.
  */
 function ownedAssessmentFields(
-  summary: PaidReportSummary | null,
-  devMode: boolean,
-  fromBody: { tier: string; overall: number; subScores: SubScores; profile: RequestBody["profile"] }
-): { tier: string; free_scores: Record<string, unknown> } | null {
-  if (summary) {
-    return {
-      tier: summary.tier,
-      free_scores: {
-        overall: summary.overall,
-        subScores: summary.subScores,
-        profile: summary.profile,
-        foundationType: summary.foundationType ?? null,
-        selectedAddon: summary.selectedAddon ?? null,
-      },
-    }
+  trusted: TrustedQuestionInput
+): { tier: string; free_scores: Record<string, unknown> } {
+  return {
+    tier: trusted.tier,
+    free_scores: {
+      overall: trusted.overall,
+      subScores: trusted.subScores,
+      profile: trusted.profile,
+      foundationType: trusted.foundation,
+      selectedAddon: trusted.entitledAddon,
+    },
   }
-
-  if (devMode) {
-    return {
-      tier: fromBody.tier,
-      free_scores: {
-        overall: fromBody.overall,
-        subScores: fromBody.subScores,
-        profile: fromBody.profile,
-        foundationType: null,
-        selectedAddon: null,
-      },
-    }
-  }
-
-  return null
 }
 
 export async function POST(req: NextRequest) {
@@ -230,35 +281,38 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
   }
 
-  const { sessionId, tier, overall, subScores, profile } = body
+  // `sessionId` is the ONLY field taken from the request body in production.
+  // `tier`, `overall`, `subScores` and `profile` are still accepted so existing
+  // clients keep working, but nothing below reads them — see TrustedQuestionInput.
+  const { sessionId } = body
 
   if (!sessionId) {
     return NextResponse.json({ error: "Missing sessionId" }, { status: 400 })
   }
-  if (!["personal", "starter", "full", "premium"].includes(tier)) {
-    return NextResponse.json({ error: "Invalid tier" }, { status: 400 })
-  }
 
   const devMode = !process.env.STRIPE_SECRET_KEY
 
-  /**
-   * Everything the settled payment record says about this purchase.
-   *
-   * Nothing server-owned may be built from the request body. The client sends
-   * `tier`, `overall`, `subScores` and `profile`, and all four are writable by
-   * whoever holds the session id — so they describe what the caller *claims* to
-   * have bought, not what they paid for. The Stripe webhook writes the same two
-   * columns from this same summary, so taking them from anywhere else makes the
-   * row's provenance depend on which writer happened to land first.
-   *
-   * Stays null in dev mode, where there is no settled session to read.
-   */
-  let paidSummary: PaidReportSummary | null = null
-  let entitledAddon: PaidReportHealthSystem | null = null
-  let foundation: "you" | "family" = "you"
+  // The body's `tier` is only validated where it is actually used: dev mode,
+  // which has no session to read it from. In production the tier comes from the
+  // settled checkout and is validated by decodePaidReportSummary, so requiring
+  // it here would reject a perfectly good request that simply omits it.
+  if (devMode && !["personal", "starter", "full", "premium"].includes(body.tier)) {
+    return NextResponse.json({ error: "Invalid tier" }, { status: 400 })
+  }
 
-  // Step 1: Stripe verification (skip in dev mode)
-  if (!devMode) {
+  /**
+   * Step 1: Stripe verification, and the single point where authority enters
+   * this route.
+   *
+   * Everything downstream — the prompt, the question count, the model budget,
+   * the lens, and the persisted columns — reads `trusted`. Nothing reads the
+   * body again.
+   */
+  let trusted: TrustedQuestionInput
+
+  if (devMode) {
+    trusted = trustedInputForDevMode(body)
+  } else {
     try {
       const session = await stripe.checkout.sessions.retrieve(sessionId)
       // The shared settled check, not `payment_status === "paid"`: Stripe marks
@@ -268,9 +322,18 @@ export async function POST(req: NextRequest) {
       if (!isCheckoutSessionSettled(session)) {
         return NextResponse.json({ error: "Payment not confirmed" }, { status: 401 })
       }
-      paidSummary = getPaidReportSummaryFromSession(session)
-      entitledAddon = asAddon(paidSummary?.selectedAddon)
-      foundation = paidSummary?.foundationType === "family" ? "family" : "you"
+
+      const fromSession = trustedInputFromSession(getPaidReportSummaryFromSession(session))
+      if (!fromSession) {
+        // Settled, but the checkout carries no readable summary. There is no
+        // authoritative tier or score set, and the body is not a substitute, so
+        // refuse rather than generate a questionnaire off a customer's claim.
+        console.error(
+          "[generate-deep-questions] Settled session has no decodable summary — refusing to derive question inputs from the request body"
+        )
+        return persistenceFailed()
+      }
+      trusted = fromSession
     } catch (err) {
       console.error("[generate-deep-questions] Stripe error:", err)
       return NextResponse.json({ error: "Failed to verify payment" }, { status: 401 })
@@ -282,10 +345,12 @@ export async function POST(req: NextRequest) {
    *
    * Appended, never interleaved: the core set is exactly what it was before
    * add-ons existed, which is what keeps a no-add-on questionnaire identical.
+   * The lens comes from the settled entitlement via `trusted`, so a body-supplied
+   * add-on cannot add questions the customer did not buy.
    */
   const withLensQuestions = (core: DeepQuestion[]): DeepQuestion[] => [
     ...core,
-    ...addonQuestionsFor(entitledAddon, foundation),
+    ...addonQuestionsFor(trusted.entitledAddon, trusted.foundation),
   ]
 
   /**
@@ -344,13 +409,14 @@ export async function POST(req: NextRequest) {
 
   if (process.env.ANTHROPIC_API_KEY) {
     try {
-      const effectiveTier = tier === "personal" ? "full" : tier
+      // Budget follows the tier that was PAID FOR, not the one requested.
+      const effectiveTier = trusted.tier === "personal" ? "full" : trusted.tier
       const maxTokens = effectiveTier === "premium" ? 4096 : effectiveTier === "full" ? 3072 : 2048
 
       const message = await anthropic.messages.create({
         model: CLAUDE_MODEL,
         max_tokens: maxTokens,
-        messages: [{ role: "user", content: buildDeepQuestionsPrompt(body) }],
+        messages: [{ role: "user", content: buildDeepQuestionsPrompt(trusted) }],
       })
 
       const rawText =
@@ -463,21 +529,7 @@ export async function POST(req: NextRequest) {
          * Using the body instead would make a paid row describe whatever the
          * caller claimed to have bought.
          */
-        const owned = ownedAssessmentFields(paidSummary, devMode, {
-          tier,
-          overall,
-          subScores,
-          profile,
-        })
-        if (!owned) {
-          // Settled, but the checkout carries no readable summary. There is no
-          // authoritative value to write and the body is not an acceptable
-          // substitute, so refuse rather than persist a claim.
-          console.error(
-            "[generate-deep-questions] Settled session has no decodable summary — refusing to build owned fields from the request body"
-          )
-          return persistenceFailed()
-        }
+        const owned = ownedAssessmentFields(trusted)
 
         const { error } = await supabase.from("deep_assessments").insert({
           stripe_session_id: sessionId,
