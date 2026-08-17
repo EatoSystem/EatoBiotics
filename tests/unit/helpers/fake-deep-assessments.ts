@@ -26,7 +26,30 @@ export type FakeHooks = {
   beforeSelect?: (ctx: { seq: number }) => void | Promise<void>
   beforeInsert?: (ctx: { seq: number }) => void | Promise<void>
   beforeUpdate?: (ctx: { seq: number }) => void | Promise<void>
+  /** Runs once the insert's outcome is known — lets a test release a loser at
+   *  the exact moment the winner's install lands. */
+  afterInsert?: (ctx: { seq: number; outcome: InsertOutcome }) => void | Promise<void>
 }
+
+export type InsertOutcome = "installed" | "conflict" | "error"
+
+/**
+ * One database operation and how it actually turned out, in order.
+ *
+ * Op names alone cannot distinguish "the loser re-read after losing" from "the
+ * loser returned its own local object", because both leave the same counts.
+ * Recording the OUTCOME, and preserving order, is what lets a test assert that
+ * a read happened *after* a conflict — the step the CAS depends on.
+ *
+ * `select` outcomes separate "found a row with no snapshot" from "found the
+ * winner's snapshot", so a post-conflict re-read can be shown to have actually
+ * picked the winner's set up.
+ */
+export type FakeEvent =
+  | { op: "select"; seq: number; outcome: "empty" | "row-without-snapshot" | "snapshot" }
+  | { op: "insert"; seq: number; outcome: InsertOutcome }
+  | { op: "update"; seq: number; outcome: "installed" | "guard-missed" | "error" }
+  | { op: "upsert"; seq: number; outcome: "installed" }
 
 export type FakeFaults = {
   /** Every select rejects. */
@@ -67,6 +90,7 @@ export function makeFakeDb(seed: Row | null = null, hooks: FakeHooks = {}, fault
   if (seed) rows.set(String(seed.stripe_session_id), { ...seed })
 
   const log: string[] = []
+  const events: FakeEvent[] = []
   const seqs: Record<string, number> = { select: 0, insert: 0, update: 0, upsert: 0 }
 
   function from(_table: string) {
@@ -118,16 +142,27 @@ export function makeFakeDb(seed: Row | null = null, hooks: FakeHooks = {}, fault
         await hooks.beforeSelect?.({ seq })
         if (faults.selectError || faults.selectErrorOnSeq === seq) throw new Error("select failed")
         const row = key !== null ? rows.get(key) : undefined
+        events.push({
+          op: "select",
+          seq,
+          outcome: !row ? "empty" : readQuestionSnapshot(row.questions) ? "snapshot" : "row-without-snapshot",
+        })
         return { data: row ?? null, error: null }
       }
 
       if (op === "insert") {
         await hooks.beforeInsert?.({ seq })
         if (faults.writeThrows) throw new Error("connection reset")
-        if (faults.writeError) return { data: null, error: { code: "08006", message: "connection failure" } }
+        if (faults.writeError) {
+          events.push({ op: "insert", seq, outcome: "error" })
+          await hooks.afterInsert?.({ seq, outcome: "error" })
+          return { data: null, error: { code: "08006", message: "connection failure" } }
+        }
         const k = String(payload.stripe_session_id)
         if (rows.has(k)) {
           // The UNIQUE constraint doing its job.
+          events.push({ op: "insert", seq, outcome: "conflict" })
+          await hooks.afterInsert?.({ seq, outcome: "conflict" })
           return {
             data: null,
             error: {
@@ -139,23 +174,33 @@ export function makeFakeDb(seed: Row | null = null, hooks: FakeHooks = {}, fault
         }
         // `status` carries a NOT NULL default of 'pending' in production.
         rows.set(k, { status: "pending", ...payload })
+        events.push({ op: "insert", seq, outcome: "installed" })
+        await hooks.afterInsert?.({ seq, outcome: "installed" })
         return { data: [rows.get(k)], error: null }
       }
 
       if (op === "update") {
         await hooks.beforeUpdate?.({ seq })
         if (faults.writeThrows) throw new Error("connection reset")
-        if (faults.writeError) return { data: null, error: { code: "08006", message: "connection failure" } }
+        if (faults.writeError) {
+          events.push({ op: "update", seq, outcome: "error" })
+          return { data: null, error: { code: "08006", message: "connection failure" } }
+        }
         const row = key !== null ? rows.get(key) : undefined
         // Zero rows matched — no such row, or the guard no longer holds.
-        if (!row || !predicates.every((p) => p(row))) return { data: [], error: null }
+        if (!row || !predicates.every((p) => p(row))) {
+          events.push({ op: "update", seq, outcome: "guard-missed" })
+          return { data: [], error: null }
+        }
         Object.assign(row, payload)
+        events.push({ op: "update", seq, outcome: "installed" })
         return { data: [row], error: null }
       }
 
       // upsert — last-write-wins, which is exactly what the CAS install removes.
       const k = String(payload.stripe_session_id)
       rows.set(k, { ...(rows.get(k) ?? {}), ...payload })
+      events.push({ op: "upsert", seq, outcome: "installed" })
       return { data: null, error: null }
     }
 
@@ -166,6 +211,8 @@ export function makeFakeDb(seed: Row | null = null, hooks: FakeHooks = {}, fault
     client: { from } as unknown,
     rows,
     log,
+    /** Ordered operations with their outcomes — see FakeEvent. */
+    events,
     counts: () => ({ ...seqs }),
     /** The single row, when there is one. */
     only: () => [...rows.values()][0] ?? null,

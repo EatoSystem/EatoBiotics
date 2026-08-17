@@ -139,6 +139,35 @@ describe("a valid snapshot survives verbatim", () => {
  *
  * If this goes red: the versioning question is what has been reopened. Widen
  * PROMPT_QUESTION_FIELDS deliberately, do not relax the test.
+ *
+ * ── What this guard actually is, and is not ─────────────────────────────────
+ *
+ * Enforcement is **source-level regex and brace extraction, not TypeScript**.
+ * Nothing here makes a forbidden field unreadable; the type system still hands
+ * these functions a full `DeepQuestion`. This is a tripwire on the shapes a
+ * regression realistically takes, not a proof of unreachability.
+ *
+ * **Caught:** a direct member read — `q.options`, `question.options`, and the
+ * same for any other field outside the contract. Proven below by feeding the
+ * matcher a sabotaged `buildQABlock`.
+ *
+ * **Not caught:** destructuring (`const { options } = q`), computed access
+ * (`q["options"]`), or a parameter renamed to something other than `q` /
+ * `question` — the matcher keys on those two identifiers. A regression taking
+ * one of those shapes would pass this test. Widening the matcher is possible;
+ * it is not done here because every current consumer uses direct `q.` reads,
+ * and a matcher that tried to follow aliases would be guessing.
+ *
+ * **Cannot fail silently**, which is the usual way source guards rot:
+ * `functionBody` asserts its anchor is found, so a rename or move turns into a
+ * failure rather than an empty string; and "each contract field is actually
+ * used" fails if extraction ever returns nothing, because then no field is
+ * read at all.
+ *
+ * `app/api/submit-deep-assessment/route.ts` is deliberately **not modified** to
+ * enforce this from the inside — it is an explicit do-not-modify boundary in
+ * CLAUDE.md. The guard watches it from outside instead, which is why the
+ * enforcement is textual rather than structural.
  */
 describe("report generation consumes only id, text and type", () => {
   /** The body of `name`, by brace matching from its declaration. */

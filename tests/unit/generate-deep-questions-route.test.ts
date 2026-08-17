@@ -5,6 +5,7 @@ import { FALLBACK_DEEP_QUESTIONS, type DeepQuestion } from "@/lib/deep-assessmen
 import { ADDON_KEYS, type AddonType } from "@/lib/addon-types"
 import { addonQuestionsFor } from "@/lib/assessment/addon-questions"
 import { encodePaidReportSummary } from "@/lib/paid-report-session"
+import { PROMPT_QUESTION_FIELDS } from "@/lib/assessment/question-snapshot"
 import { makeFakeDb, type Row } from "./helpers/fake-deep-assessments"
 
 /**
@@ -186,15 +187,37 @@ describe("every successful response was persisted first", () => {
     expect(db.only()?.questions).toEqual(body.questions)
   })
 
-  it("the response payload is identical to the persisted payload, field for field", async () => {
+  it("the response payload is structurally equivalent to the persisted payload", async () => {
     const db = makeFakeDb()
     mockGetSupabase.mockReturnValue(db.client)
 
     const body = await bodyOf(await callRoute())
 
-    // Not just the ids: options and wording must match too, since the customer
-    // answers the response and submit-deep-assessment reads the row.
-    expect(JSON.stringify(body.questions)).toBe(JSON.stringify(db.only()?.questions))
+    /*
+     * Structural equivalence, not byte equality — and that distinction is real
+     * rather than pedantic. `questions` is a jsonb column, and Postgres jsonb
+     * does not preserve object key order (it also drops duplicate keys), so the
+     * bytes a later reader gets back are not guaranteed to match the bytes this
+     * route sent. Byte equality was never the available guarantee, so asserting
+     * it here would only be testing the fake, which stores the object by
+     * reference.
+     *
+     * `toEqual` is key-order-insensitive, which is exactly the jsonb semantics.
+     */
+    expect(body.questions).toEqual(db.only()?.questions)
+
+    // The values report generation actually consumes must match exactly — these
+    // are the three the downstream contract is pinned to, and all are scalars,
+    // so key ordering cannot affect them.
+    const values = (qs: DeepQuestion[] | undefined) =>
+      (qs ?? []).map((q) => PROMPT_QUESTION_FIELDS.map((f) => q[f]))
+    expect(values(body.questions)).toEqual(values(db.only()?.questions as DeepQuestion[]))
+
+    // Wording and options still round-trip; they are simply not what the
+    // contract guarantees.
+    expect(body.questions?.[0].options).toEqual(
+      (db.only()?.questions as DeepQuestion[])[0].options,
+    )
   })
 
   it("a first write creates the row via insert; an existing row is updated in place", async () => {

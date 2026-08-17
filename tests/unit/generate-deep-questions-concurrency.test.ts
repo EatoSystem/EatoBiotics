@@ -142,6 +142,75 @@ beforeEach(() => {
   })
 })
 
+/**
+ * A loser can recover by either of two routes, and they are genuinely different
+ * traces — so they get separate assertions rather than one helper stretched
+ * over both:
+ *
+ *   - **conflict** — the loser read empty, attempted an insert, hit 23505, and
+ *     had to re-read. Asserted by `expectConflictHandoff` below.
+ *   - **read-catches** — the winner installed while the loser was still
+ *     generating, so the loser's top-of-loop read finds the snapshot and it
+ *     never writes at all. Asserted inline in the Claude/Claude race.
+ *
+ * Which one occurs depends only on whether the winner's install lands before or
+ * after the loser's read, so both are reachable in production and both belong
+ * in the suite.
+ */
+
+/**
+ * The conflict hand-off, asserted from the ordered event trace.
+ *
+ * This is what makes a same-payload race non-vacuous. Counting inserts shows
+ * that both writers attempted, but it CANNOT distinguish "the loser re-read and
+ * returned the winner's snapshot" from "the loser returned its own local
+ * object" — both leave two inserts and one row. Only the order of outcomes
+ * separates them.
+ *
+ * So the decisive assertion is the fourth one: a select must appear AFTER the
+ * conflict. If the route returned local questions on 23505 instead of looping,
+ * no read follows the conflict, `findIndex` returns -1, and this fails.
+ */
+function expectConflictHandoff(db: ReturnType<typeof makeFakeDb>) {
+  const { events } = db
+
+  // Both writers reached the install step.
+  expect(db.counts().insert, "both requests should attempt an insert").toBe(2)
+
+  // Exactly one of them installed.
+  const installs = events.filter((e) => e.op !== "select" && e.outcome === "installed")
+  expect(installs, `expected exactly one install, trace: ${JSON.stringify(events)}`).toHaveLength(1)
+
+  // The other hit the unique-constraint conflict.
+  const conflictIdx = events.findIndex((e) => e.op === "insert" && e.outcome === "conflict")
+  expect(conflictIdx, "the loser should hit a 23505 conflict").toBeGreaterThan(-1)
+  expect(installs[0].seq, "the winner installed before the loser conflicted").toBeLessThan(
+    events[conflictIdx].seq,
+  )
+
+  // ── The one that cannot be faked ──
+  const reReadIdx = events.findIndex((e, i) => i > conflictIdx && e.op === "select")
+  expect(
+    reReadIdx,
+    "after losing the race the loser MUST re-read; returning its own local " +
+      `questions would leave no select after the conflict. Trace: ${JSON.stringify(events)}`,
+  ).toBeGreaterThan(conflictIdx)
+
+  // And that re-read is what handed it the winner's set.
+  expect(events[reReadIdx], "the post-conflict re-read should find the winner's snapshot").toMatchObject({
+    op: "select",
+    outcome: "snapshot",
+  })
+
+  // One row, one snapshot.
+  expect(db.rows.size).toBe(1)
+  expect(db.validSnapshots()).toHaveLength(1)
+}
+
+/** The question values report generation actually consumes. */
+const questionValues = (qs: DeepQuestion[] | undefined) =>
+  (qs ?? []).map((q) => ({ id: q.id, text: q.text, type: q.type }))
+
 /* ══ The controlled interleaving ════════════════════════════════════════ */
 
 describe("controlled A/B interleaving: both read empty, then both write", () => {
@@ -168,6 +237,20 @@ describe("controlled A/B interleaving: both read empty, then both write", () => 
 
     expect(resA.status).toBe(200)
     expect(resB.status).toBe(200)
+
+    // The mechanism, read-catches variant: A installed while B was still inside
+    // Claude, so B's top-of-loop read found the snapshot and B never wrote.
+    // Trace: select(empty) · select(empty) · insert(installed) · select(snapshot)
+    const installs = db.events.filter((e) => e.op !== "select" && e.outcome === "installed")
+    expect(installs, `expected exactly one install, trace: ${JSON.stringify(db.events)}`).toHaveLength(1)
+    expect(db.counts().insert, "B must not write once A's snapshot is visible").toBe(1)
+
+    const lastRead = [...db.events].reverse().find((e) => e.op === "select")
+    expect(
+      lastRead,
+      "B's final act must be a read that found A's snapshot — returning its own " +
+        `local SET_B would leave no such read. Trace: ${JSON.stringify(db.events)}`,
+    ).toMatchObject({ op: "select", outcome: "snapshot" })
 
     // The invariant: one snapshot, and everybody is answering it.
     expect(db.rows.size).toBe(1)
@@ -224,15 +307,26 @@ describe("controlled A/B interleaving: both read empty, then both write", () => 
     expect(bodyB.questions).not.toEqual(FALLBACK_DEEP_QUESTIONS)
   })
 
-  it("two deterministic-fallback requests converge on one row", async () => {
-    // No Claude at all, so the interleaving is forced at the write instead:
-    // the first write waits until both requests have read.
+  it("two deterministic-fallback requests: one installs, the other re-reads after losing", async () => {
+    // Both requests generate the SAME deterministic bank, so comparing the two
+    // response bodies proves nothing — they are equal however the loser behaved.
+    // The evidence therefore has to come from the ordered event trace, which is
+    // what expectCasHandoff asserts.
     vi.stubEnv("ANTHROPIC_API_KEY", "")
+
     const bothRead = barrier(2)
+    const winnerInstalled = deferred()
     const db = makeFakeDb(null, {
       beforeSelect: () => bothRead.arrive(),
       beforeInsert: async ({ seq }) => {
+        // The winner may not write until BOTH requests have observed no snapshot…
         if (seq === 1) await bothRead.reached
+        // …and the loser may not write until the winner's row actually exists,
+        // so the conflict is guaranteed rather than probable.
+        if (seq === 2) await winnerInstalled.promise
+      },
+      afterInsert: ({ seq, outcome }) => {
+        if (seq === 1 && outcome === "installed") winnerInstalled.resolve()
       },
     })
     mockGetSupabase.mockReturnValue(db.client)
@@ -242,12 +336,16 @@ describe("controlled A/B interleaving: both read empty, then both write", () => 
 
     expect(resA.status).toBe(200)
     expect(resB.status).toBe(200)
-    expect(db.rows.size).toBe(1)
-    expect(db.validSnapshots()).toHaveLength(1)
-    // Both sets are the same deterministic bank, so the mechanism is what
-    // matters: exactly one install succeeded and the other request recovered.
-    expect(bodyA.questions).toEqual(bodyB.questions)
     expect(mockMessagesCreate).not.toHaveBeenCalled()
+
+    // Trace: select(empty) · select(empty) · insert(installed) · insert(conflict) · select(snapshot)
+    expectConflictHandoff(db)
+
+    // Both responses carry the values that ended up in the row.
+    const stored = readQuestionSnapshot(db.only()?.questions)
+    expect(stored).not.toBeNull()
+    expect(questionValues(bodyA.questions)).toEqual(questionValues(stored!))
+    expect(questionValues(bodyB.questions)).toEqual(questionValues(stored!))
   })
 
   it("a request arriving after the webhook row exists uses the guarded update, not an insert", async () => {
