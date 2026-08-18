@@ -1724,8 +1724,12 @@ DROP POLICY IF EXISTS meal_scans_public_read ON meal_scans;
 -- agreeing to be quoted. Consent-based testimonials are designed separately;
 -- see the follow-up issue linked from #229.
 --
--- Retention: raw comment text is kept for 90 days. `expires_at` is server-
--- derived by DEFAULT — no route sends it — and the daily cleanup job at
+-- Retention: raw comment text is kept for 90 days FROM FIRST SUBMISSION.
+-- `expires_at` is server-derived by DEFAULT — no route sends it, and the
+-- upsert deliberately omits it, so editing a review moves `updated_at` but
+-- NOT the retention clock. A member cannot extend their own retention by
+-- re-submitting; the trade is that a comment edited on day 89 is deleted on
+-- day 90, which is the safe direction to err. The daily cleanup job at
 -- /api/feedback/retention deletes rows past it.
 --
 -- Account deletion: ON DELETE CASCADE. A member's rating and comment are their
@@ -1780,9 +1784,12 @@ CREATE INDEX IF NOT EXISTS idx_reviews_expires ON reviews (expires_at);
 -- policy's "deleted within 30 days of a verified account deletion request".
 -- Unlinking is not deleting.
 --
--- Retention: raw message text is kept for 90 days, server-derived by DEFAULT
--- and swept by /api/feedback/retention. Anonymous rows expire on the same
--- clock as account-linked ones.
+-- Retention: raw message text is kept for 90 days from submission, server-
+-- derived by DEFAULT and swept by /api/feedback/retention. One row per
+-- submission means there is no edit path here, so the clock is unambiguous.
+-- Anonymous rows expire on the same clock as account-linked ones. Every
+-- READER also filters on `expires_at`, because deletion is a daily sweep and
+-- rows are briefly still present after they expire.
 --
 -- The AI triage fields (category/sentiment/severity/feature_area/summary/
 -- suggested_improvement) come from one Claude extraction call at submit time.

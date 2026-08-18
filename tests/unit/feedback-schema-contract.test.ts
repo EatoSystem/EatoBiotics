@@ -12,7 +12,7 @@
  * and matching prose would fail on the rationale itself.
  */
 import { describe, it, expect } from "vitest"
-import { readFileSync } from "node:fs"
+import { readFileSync, readdirSync } from "node:fs"
 
 const RAW = readFileSync("supabase/migrations.sql", "utf8")
 
@@ -85,6 +85,79 @@ describe("90 days is enforced by the schema, not just documented", () => {
       const src = readFileSync(f, "utf8")
       expect(src, `${f} must not set expires_at`).not.toMatch(/expires_at\s*:/)
     }
+  })
+})
+
+/* ══ Every reader excludes expired rows ═════════════════════════════════ */
+
+describe("nothing reads text the retention policy says is gone", () => {
+  /**
+   * Physical deletion is a daily sweep, so expiry and deletion are up to ~24h
+   * apart. In that window the rows are still in the table, and a reader without
+   * a filter would show 90-day-old customer text — retention past the stated
+   * policy, by accident rather than by design.
+   *
+   * So the rule is: every SELECT against either table constrains `expires_at`.
+   * This enumerates the readers and fails when one is added without it.
+   */
+  const READERS = [
+    "app/admin/feedback/page.tsx",
+    "app/api/feedback/digest/route.ts",
+  ]
+
+  /** Files that touch either table at all, so a new one cannot slip in unseen. */
+  function tableTouchers(): string[] {
+    const out: string[] = []
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const full = `${dir}/${entry.name}`
+        if (entry.isDirectory()) {
+          if (entry.name !== "node_modules" && !entry.name.startsWith(".")) walk(full)
+        } else if (/\.tsx?$/.test(entry.name)) {
+          const src = readFileSync(full, "utf8")
+          // Literal `.from("feedback")`, and the sweep, which loops a table
+          // list rather than naming them inline.
+          const literal = /\.from\("(feedback|reviews)"\)/.test(src)
+          const viaList = /RETAINED_TABLES\s*=\s*\[[^\]]*"feedback"/.test(src)
+          if (literal || viaList) out.push(full)
+        }
+      }
+    }
+    walk("app")
+    walk("lib")
+    walk("components")
+    return out.sort()
+  }
+
+  it("the set of files touching either table is exactly what we expect", () => {
+    expect(tableTouchers()).toEqual(
+      [
+        "app/admin/feedback/page.tsx",
+        "app/api/feedback/digest/route.ts",
+        "app/api/feedback/retention/route.ts",
+        "app/api/feedback/route.ts",
+        "app/api/reviews/route.ts",
+      ].sort(),
+    )
+  })
+
+  it.each(READERS)("%s constrains expires_at", (file) => {
+    const src = readFileSync(file, "utf8")
+    expect(
+      src,
+      `${file} reads customer text — it must exclude rows past their retention horizon`,
+    ).toMatch(/\.gt\(\s*"expires_at"/)
+  })
+
+  it("the writers and the sweep are the only files that legitimately skip the filter", () => {
+    // Writers insert; the sweep deletes ON expiry (`lte`, the inverse). Neither
+    // is a read, so neither needs `gt`.
+    for (const f of ["app/api/feedback/route.ts", "app/api/reviews/route.ts"]) {
+      expect(readFileSync(f, "utf8")).not.toMatch(/\.select\(\s*"[^"]*message/)
+    }
+    expect(readFileSync("app/api/feedback/retention/route.ts", "utf8")).toMatch(
+      /\.lte\(\s*"expires_at"/,
+    )
   })
 })
 

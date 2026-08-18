@@ -24,6 +24,10 @@ async function runDigest(): Promise<NextResponse> {
     .from("feedback")
     .select("id, user_id, source_page, rating, message, category, sentiment, severity, feature_area, summary, suggested_improvement, status, created_at")
     .gte("created_at", since.toISOString())
+    // Redundant while the window is 7 days and retention is 90 — but that makes
+    // it safe by ACCIDENT. Widening this digest to a month or a quarter would
+    // otherwise start surfacing text the retention policy says is deleted.
+    .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
 
   if (error) {

@@ -48,10 +48,21 @@ async function sweep(): Promise<NextResponse> {
 
     if (error) {
       // Report the failure rather than a partial success that reads as a
-      // completed sweep — expired customer text still being present is
-      // exactly the thing someone needs to know about.
-      console.error(`[feedback/retention] ${table} sweep failed:`, error.message)
-      return NextResponse.json({ error: "Retention sweep failed" }, { status: 500 })
+      // completed sweep — expired customer text still being present is exactly
+      // the thing someone needs to know about. Carry the counts for whatever
+      // DID get swept: "feedback cleared, reviews did not" is a materially
+      // different situation to "nothing ran", and losing that distinction
+      // makes the failure harder to act on than it needs to be.
+      console.error(
+        `[feedback/retention] ${table} sweep failed:`,
+        error.message,
+        "| completed before failure:",
+        JSON.stringify(deleted),
+      )
+      return NextResponse.json(
+        { error: "Retention sweep failed", failedTable: table, deleted },
+        { status: 500 },
+      )
     }
     deleted[table] = data?.length ?? 0
   }

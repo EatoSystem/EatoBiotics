@@ -171,6 +171,9 @@ export function FeedbackWidget() {
               placeholder="Optional — add a little more"
               className="w-full resize-none rounded-lg border border-[#dbe3d5] bg-[#fafcf8] p-2.5 text-sm text-[#1B2A20] outline-none placeholder:text-[#9aa89d] focus:border-[#4CB648]"
             />
+            <p className="mt-2 text-[11px] leading-4 text-[#8a978c]">
+              Still private, and still no personal, medical or payment details please.
+            </p>
             <div className="mt-2.5 flex gap-2">
               <button
                 onClick={() => setPhase("done")}

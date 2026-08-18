@@ -29,6 +29,8 @@ vi.mock("@/lib/cron-auth", async () => {
 type Row = { id: string; expires_at: string; user_id?: string | null }
 let tables: Record<string, Row[]> = {}
 let deleteError: { message: string } | null = null
+/** Fail only this table, to exercise a partial sweep. */
+let failTable: string | null = null
 const filters: Array<{ table: string; op: string; col: string; value: string }> = []
 let dbConfigured = true
 
@@ -53,7 +55,9 @@ vi.mock("@/lib/supabase", () => ({
                   return builder
                 },
                 select: async () => {
-                  if (deleteError) return { data: null, error: deleteError }
+                  if (deleteError || failTable === table) {
+                    return { data: null, error: deleteError ?? { message: `relation "${table}" does not exist` } }
+                  }
                   const rows = tables[table] ?? []
                   const hit = rows.filter((r) => applied.every((f) => f(r)))
                   tables[table] = rows.filter((r) => !hit.includes(r))
@@ -81,6 +85,7 @@ beforeEach(() => {
   cronSecret = "test-secret"
   dbConfigured = true
   deleteError = null
+  failTable = null
   filters.length = 0
   tables = {
     feedback: [
@@ -161,6 +166,21 @@ describe("the sweep deletes expired rows and only expired rows", () => {
     const body = await res.json()
 
     expect(res.status).toBe(500)
+    expect(body.ok).toBeUndefined()
+    expect(JSON.stringify(body)).not.toMatch(/relation|does not exist/)
+  })
+
+  it("a failure on the second table still reports what the first one swept", async () => {
+    // "feedback cleared, reviews did not" is a materially different situation
+    // to "nothing ran", and an operator needs to tell them apart.
+    failTable = "reviews"
+    const { GET } = await load()
+    const res = await GET(req("Bearer test-secret"))
+    const body = await res.json()
+
+    expect(res.status).toBe(500)
+    expect(body.failedTable).toBe("reviews")
+    expect(body.deleted).toEqual({ feedback: 2 })
     expect(body.ok).toBeUndefined()
     expect(JSON.stringify(body)).not.toMatch(/relation|does not exist/)
   })

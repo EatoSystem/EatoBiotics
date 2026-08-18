@@ -48,9 +48,15 @@ export default async function AdminFeedbackPage({
     )
   }
 
+  // Expired rows are excluded by the QUERY, not just by the nightly sweep.
+  // Deletion is physical and runs once a day, so between a row's expiry and the
+  // next sweep there is a window — up to ~24h — where 90-day-old customer text
+  // is still in the table. Reading it in that window would be retention past
+  // the stated policy, so every reader filters as well.
   const { data } = await db
     .from("feedback")
     .select("id, user_id, source_page, rating, message, category, sentiment, severity, feature_area, summary, suggested_improvement, status, created_at")
+    .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
     .limit(300)
 
