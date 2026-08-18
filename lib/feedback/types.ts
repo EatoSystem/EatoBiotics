@@ -42,6 +42,8 @@ export interface FeedbackRow extends Partial<FeedbackExtraction> {
   message: string
   status: string
   created_at: string
+  /** Server-set 90-day retention horizon. Never sent by a client or a route. */
+  expires_at?: string
 }
 
 /** Coerce an unknown parsed value into a valid category (defensive). */
