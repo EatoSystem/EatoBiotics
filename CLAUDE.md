@@ -22,11 +22,20 @@ applies it (Supabase dashboard SQL editor or CLI) and verifies.
   authorization as precedent. Both audits are in REVIEW.md.
 - Read-only verification (`list_tables`, `SELECT` via `execute_sql`) is
   fine and encouraged — checking that docs match reality is how the
-  Migration 36 gap was found. Take care to target the right project:
-  the org contains an INACTIVE lookalike (`EatoSystem-Ireland`,
-  `hwuzbxsaxsifpdzqhqaq`); production is `EatoBiotics`
-  (`ephmojiwlcebenholhpc`, eu-central-2). Name the project ref explicitly
-  in every call.
+  Migration 36 gap was found. Take care to target the right project. The
+  org contains three, and naming the ref explicitly in every call is the
+  only reliable way to hit the one you meant:
+
+  | Ref | Name | Status | What it is |
+  |---|---|---|---|
+  | `ephmojiwlcebenholhpc` | EatoBiotics | ACTIVE | **production**, eu-central-2 |
+  | `hwuzbxsaxsifpdzqhqaq` | EatoSystem-Ireland | INACTIVE | inactive lookalike |
+  | `ohwzmulsvbfgaxgziqeo` | EatoSystem | **ACTIVE** | **role not established — see #225** |
+
+  The third is listed because it exists and is active, which makes it a
+  plausible mis-target; it is NOT listed as safe to use. Establishing what
+  it is for needs someone with the authority to say so, not an agent
+  inferring from its contents.
 - Enforcement note for whoever configures agent environments: the Supabase
   MCP server supports a read-only mode — enabling it turns this rule from
   a request into a guarantee.
@@ -179,10 +188,16 @@ non-diagnostic + red-flag→GP guardrails baked into the cached knowledge base.
 
 ## Database Tables
 
-> As of Migration 40, 34 distinct tables exist across profiles/leads/
-> deep_assessments/subscriptions/analyses/family/GLP-1/stability
-> (documented individually below), plus the CMS subsystem and Living Twin
-> tables documented in their own subsections near the end of this section.
+> Tables span profiles/leads/deep_assessments/subscriptions/analyses/
+> family/GLP-1/stability (documented individually below), plus the CMS
+> subsystem and Living Twin tables in their own subsections near the end
+> of this section.
+>
+> **No count is quoted here on purpose.** This line previously asserted a
+> fixed number, and by the time anyone read it the number was wrong — the
+> same drift the warning below is about, in the document doing the
+> warning. For a current count, read production:
+> `list_tables` against `ephmojiwlcebenholhpc` (read-only, always safe).
 > **The migrations file and the live database have drifted in the past**
 > — see the CMS subsection (Migration 41: written as "do not apply,"
 > applied anyway) and the Living Twin subsection (Migration 36: written
@@ -490,15 +505,21 @@ STRIPE_SHARE_COUPON_ID        # share reward, and assessment-lottery win
 STRIPE_WIN_COUPON_ID          # (app/api/promo/generate, app/api/submit-lead)
 
 DEV_PASSWORD                  # Site-wide preview password gate (lib/dev-password-gate.ts; proxy.ts
-EATOBIOTICS_PASSWORD_GATE     # redirects to /enter). NOTE: a temporary fallback password is
-EATOBIOTICS_PASSWORD_GATE_DISABLED # hardcoded in lib/dev-password-gate.ts — remove before launch.
+EATOBIOTICS_PASSWORD_GATE     # redirects to /enter). The gate is ON when DEV_PASSWORD is set, or
+EATOBIOTICS_PASSWORD_GATE_DISABLED # when EATOBIOTICS_PASSWORD_GATE is explicitly true/1/on.
+                              # WITH NEITHER SET THE GATE IS OFF AND THE SITE IS PUBLIC.
+                              # EATOBIOTICS_PASSWORD_GATE_DISABLED=true is the go-live kill-switch
+                              # and always wins. (The old hardcoded fallback password is gone.)
 ```
 
 > `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` is listed above for completeness but is
 > currently unreferenced in code (checkout uses server-created sessions).
 
 > **Go-live note:** the cron and admin routes are fail-closed. Set `CRON_SECRET`
-> and `ADMIN_SESSION_SECRET` (or `ADMIN_PASSWORD`) in production, and apply
+> and `ADMIN_SESSION_SECRET` (or `ADMIN_PASSWORD`) in production. **To stay in
+> private beta, `DEV_PASSWORD` must be set in the deploy env** — with it unset
+> and no explicit `EATOBIOTICS_PASSWORD_GATE`, the gate is off and the site is
+> public. Also apply
 > Migration 17 (`stripe_processed_events`), Migration 18 (`household_members`),
 > Migration 19 (`glp1_logs`), Migration 20 (`glp1_profile`), Migration 21
 > (`glp1_logs.side_effects`), Migration 22 (`ai_usage` — AI daily caps), and
