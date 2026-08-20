@@ -25,13 +25,35 @@ vi.mock("@/lib/cron-auth", async () => {
   }
 })
 
-/** Rows keyed by table, plus a record of every delete filter applied. */
-type Row = { id: string; expires_at: string; user_id?: string | null }
+/**
+ * A fake that models the PostgREST behaviour that actually matters here.
+ *
+ * `RESPONSE_LIMIT` stands in for `db-max-rows`: a server-side cap on how many
+ * rows come back in a response. Applying it to SELECT is the whole point —
+ * the old implementation deleted with `.select("id")` and counted the rows it
+ * got back, which is exactly the value this cap truncates.
+ *
+ * `mutationCap` models the case we could NOT rule out from the docs: a DELETE
+ * whose AFFECTED rows are themselves capped. Tests run the sweep with it set,
+ * so completeness cannot depend on the favourable answer being true.
+ *
+ * `count` is served from the row total, independent of any returned body —
+ * mirroring the client, which parses it from Content-Range.
+ */
+type Row = { id: string; expires_at: string; user_id?: string | null; message?: string }
 let tables: Record<string, Row[]> = {}
 let deleteError: { message: string } | null = null
 /** Fail only this table, to exercise a partial sweep. */
 let failTable: string | null = null
-const filters: Array<{ table: string; op: string; col: string; value: string }> = []
+/** Force a null count, i.e. no usable Content-Range. */
+let suppressCount = false
+/** Server-side response cap. Small, so tests can exceed it cheaply. */
+let RESPONSE_LIMIT = 5
+/** Max rows a single DELETE may actually affect. null = uncapped. */
+let mutationCap: number | null = null
+const filters: Array<{ table: string; op: string; col: string; value: unknown }> = []
+/** Every column list this route ever asked the database for. */
+const selectedColumns: string[] = []
 let dbConfigured = true
 
 vi.mock("@/lib/supabase", () => ({
@@ -40,31 +62,85 @@ vi.mock("@/lib/supabase", () => ({
       ? null
       : {
           from: (table: string) => ({
-            delete: () => {
-              const applied: Array<(r: Row) => boolean> = []
-              const builder: Record<string, unknown> = {}
-              Object.assign(builder, {
+            select: (cols: string) => {
+              selectedColumns.push(cols)
+              const preds: Array<(r: Row) => boolean> = []
+              let limit = Infinity
+              const b: Record<string, unknown> = {}
+              Object.assign(b, {
                 lte: (col: string, value: string) => {
                   filters.push({ table, op: "lte", col, value })
-                  applied.push((r) => String(r[col as keyof Row]) <= value)
-                  return builder
+                  preds.push((r) => String(r[col as keyof Row]) <= value)
+                  return b
+                },
+                limit: (n: number) => {
+                  limit = n
+                  return b
+                },
+                then: (resolve: (v: unknown) => void) => {
+                  if (failTable === table && deleteError === null) {
+                    return resolve({ data: null, error: { message: `read failed on ${table}` } })
+                  }
+                  const hit = (tables[table] ?? []).filter((r) => preds.every((f) => f(r)))
+                  // The server cap applies on top of any requested limit.
+                  const capped = hit.slice(0, Math.min(limit, RESPONSE_LIMIT))
+                  resolve({ data: capped.map((r) => ({ id: r.id })), error: null })
+                },
+              })
+              return b
+            },
+            delete: (opts?: { count?: string }) => {
+              const preds: Array<(r: Row) => boolean> = []
+              let representation = false
+              const b: Record<string, unknown> = {}
+              Object.assign(b, {
+                lte: (col: string, value: string) => {
+                  filters.push({ table, op: "lte", col, value })
+                  preds.push((r) => String(r[col as keyof Row]) <= value)
+                  return b
+                },
+                in: (col: string, values: string[]) => {
+                  filters.push({ table, op: "in", col, value: values })
+                  preds.push((r) => values.includes(String(r[col as keyof Row])))
+                  return b
                 },
                 eq: (col: string, value: string) => {
                   filters.push({ table, op: "eq", col, value })
-                  applied.push((r) => String(r[col as keyof Row]) === value)
-                  return builder
+                  preds.push((r) => String(r[col as keyof Row]) === value)
+                  return b
                 },
-                select: async () => {
-                  if (deleteError || failTable === table) {
-                    return { data: null, error: deleteError ?? { message: `relation "${table}" does not exist` } }
+                // Mirrors PostgrestTransformBuilder.select(), which appends
+                // `Prefer: return=representation` — the body db-max-rows caps.
+                select: (cols: string) => {
+                  selectedColumns.push(cols)
+                  representation = true
+                  return b
+                },
+                then: (resolve: (v: unknown) => void) => {
+                  if (deleteError) return resolve({ data: null, error: deleteError, count: null })
+                  if (failTable === table) {
+                    return resolve({
+                      data: null,
+                      error: { message: `relation "${table}" does not exist` },
+                      count: null,
+                    })
                   }
                   const rows = tables[table] ?? []
-                  const hit = rows.filter((r) => applied.every((f) => f(r)))
+                  let hit = rows.filter((r) => preds.every((f) => f(r)))
+                  // A DELETE that can only affect so many rows per statement.
+                  if (mutationCap !== null) hit = hit.slice(0, mutationCap)
                   tables[table] = rows.filter((r) => !hit.includes(r))
-                  return { data: hit.map((r) => ({ id: r.id })), error: null }
+                  resolve({
+                    // Only present with return=representation, and TRUNCATED by
+                    // the server cap — the trap the old implementation fell in.
+                    data: representation ? hit.slice(0, RESPONSE_LIMIT).map((r) => ({ id: r.id })) : null,
+                    error: null,
+                    // From the row total, independent of the body above.
+                    count: suppressCount || !opts?.count ? null : hit.length,
+                  })
                 },
               })
-              return builder
+              return b
             },
           }),
         },
@@ -86,7 +162,11 @@ beforeEach(() => {
   dbConfigured = true
   deleteError = null
   failTable = null
+  suppressCount = false
+  RESPONSE_LIMIT = 5
+  mutationCap = null
   filters.length = 0
+  selectedColumns.length = 0
   tables = {
     feedback: [
       { id: "f-old", expires_at: PAST, user_id: "u1" },
@@ -132,6 +212,103 @@ describe("the sweep deletes expired rows and only expired rows", () => {
     expect(tables.reviews.map((r) => r.id)).toEqual(["r-live"])
   })
 
+  it("deletes EVERY expired row when there are far more than the response limit", async () => {
+    // The case the old implementation got wrong. RESPONSE_LIMIT models
+    // db-max-rows: one round trip can only ever see 5 rows, so a single
+    // delete-and-count-what-came-back leaves the other 112 in place and
+    // reports a number that is not the truth.
+    RESPONSE_LIMIT = 5
+    tables.feedback = [
+      ...Array.from({ length: 117 }, (_, i) => ({ id: `old-${i}`, expires_at: PAST })),
+      ...Array.from({ length: 9 }, (_, i) => ({ id: `live-${i}`, expires_at: FUTURE })),
+    ]
+    tables.reviews = []
+
+    const { GET } = await load()
+    const body = await (await GET(req("Bearer test-secret"))).json()
+
+    expect(body.ok).toBe(true)
+    expect(body.deleted.feedback, "the count must be the real total, not one page").toBe(117)
+    expect(
+      tables.feedback.map((r) => r.id).sort(),
+      "no expired row may survive the sweep",
+    ).toEqual(Array.from({ length: 9 }, (_, i) => `live-${i}`).sort())
+  })
+
+  it("still completes when the DELETE itself is capped per statement", async () => {
+    // We could not establish from the docs whether db-max-rows caps rows
+    // AFFECTED by a mutation. So the sweep is built not to care: each pass
+    // re-reads, and the loop ends only on an empty read.
+    RESPONSE_LIMIT = 10
+    mutationCap = 3
+    tables.feedback = Array.from({ length: 40 }, (_, i) => ({ id: `old-${i}`, expires_at: PAST }))
+    tables.reviews = [{ id: "r-live", expires_at: FUTURE }]
+
+    const { GET } = await load()
+    const body = await (await GET(req("Bearer test-secret"))).json()
+
+    expect(body.ok).toBe(true)
+    expect(body.deleted.feedback).toBe(40)
+    expect(tables.feedback, "a capped mutation must not leave expired rows behind").toEqual([])
+    expect(tables.reviews.map((r) => r.id)).toEqual(["r-live"])
+  })
+
+  it("reports incomplete rather than success when it cannot converge", async () => {
+    // Pathological: the delete never removes anything. The sweep must not
+    // spin forever, and must not report a clean run.
+    mutationCap = 0
+    tables.feedback = Array.from({ length: 20 }, (_, i) => ({ id: `old-${i}`, expires_at: PAST }))
+
+    const { GET } = await load()
+    const res = await GET(req("Bearer test-secret"))
+    const body = await res.json()
+
+    expect(res.status).toBe(500)
+    expect(body.ok).toBeUndefined()
+    expect(body.error).toMatch(/incomplete/i)
+    expect(body.failedTable).toBe("feedback")
+  })
+
+  it("treats a missing exact count as a failure, not as zero", async () => {
+    // The rows may well be gone, but a deletion job that cannot say how many
+    // it deleted is not auditable. Reporting 0 would be worse than failing.
+    suppressCount = true
+    const { GET } = await load()
+    const res = await GET(req("Bearer test-secret"))
+    const body = await res.json()
+
+    expect(res.status).toBe(500)
+    expect(body.error).toMatch(/could not be verified/i)
+    expect(body.ok).toBeUndefined()
+  })
+
+  it("asks the database for ids and nothing else", async () => {
+    const { GET } = await load()
+    await GET(req("Bearer test-secret"))
+
+    expect(selectedColumns.length).toBeGreaterThan(0)
+    for (const cols of selectedColumns) {
+      expect(cols, "the sweep must never read customer content").toBe("id")
+    }
+    for (const forbidden of ["message", "comment", "rating", "user_id", "*"]) {
+      expect(selectedColumns.join(","), `selected ${forbidden}`).not.toContain(forbidden)
+    }
+  })
+
+  it("never logs anything but ids and counts", async () => {
+    const logged: string[] = []
+    const spies = (["log", "error", "warn"] as const).map((m) =>
+      vi.spyOn(console, m).mockImplementation((...a: unknown[]) => { logged.push(a.join(" ")) }),
+    )
+    tables.feedback = [{ id: "f-old", expires_at: PAST, message: "my private symptoms" }]
+
+    const { GET } = await load()
+    await GET(req("Bearer test-secret"))
+    for (const sp of spies) sp.mockRestore()
+
+    expect(logged.join("\n")).not.toMatch(/private symptoms/)
+  })
+
   it("expires anonymous feedback on the same clock as account-linked", async () => {
     const { GET } = await load()
     await GET(req("Bearer test-secret"))
@@ -139,18 +316,29 @@ describe("the sweep deletes expired rows and only expired rows", () => {
     expect(tables.feedback.find((r) => r.id === "f-old-anon")).toBeUndefined()
   })
 
-  it("filters on expires_at and nothing else", async () => {
+  it("selects only by expiry, and deletes only by the ids that selection returned", async () => {
     const { GET } = await load()
     await GET(req("Bearer test-secret"))
 
-    expect(filters.map((f) => f.table)).toEqual(["feedback", "reviews"])
-    for (const f of filters) {
-      expect(f.op, "an equality filter here could target specific customers").toBe("lte")
+    const reads = filters.filter((f) => f.op === "lte")
+    const deletes = filters.filter((f) => f.op === "in")
+
+    // Nothing is chosen for deletion except by having expired.
+    expect(reads.length).toBeGreaterThan(0)
+    for (const f of reads) {
       expect(
         f.col,
-        "filtering on anything but expiry turns a retention sweep into a deletion tool",
+        "selecting on anything but expiry turns a retention sweep into a deletion tool",
       ).toBe("expires_at")
     }
+
+    // And the DELETE names those exact ids — never a broad predicate that a
+    // server-side cap could apply to unpredictably.
+    expect(deletes.length).toBeGreaterThan(0)
+    for (const f of deletes) expect(f.col).toBe("id")
+
+    // No user/content targeting anywhere.
+    expect(filters.some((f) => f.op === "eq")).toBe(false)
   })
 
   it("sweeps both private tables, not just feedback", async () => {

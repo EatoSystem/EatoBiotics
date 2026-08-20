@@ -22,12 +22,58 @@ import { verifyCronRequest } from "@/lib/cron-auth"
    The delete predicate is deliberately narrow and identical for both tables:
    `expires_at <= now`. It never filters on user, content or status, so it
    cannot be nudged into deleting live feedback.
+
+   ── Why this reads ids and deletes in batches ─────────────────────────────
+
+   The first version was `.delete().lte("expires_at", cutoff).select("id")` and
+   counted `data.length`. Two problems, one certain and one unprovable:
+
+   CERTAIN: `.select()` appends `Prefer: return=representation`
+   (@supabase/postgrest-js PostgrestTransformBuilder.select), and the
+   representation is exactly what PostgREST's `db-max-rows` bounds — its own
+   docs call it "a hard limit to the number of rows PostgREST will fetch".
+   So `data.length` was counting a value the server is entitled to truncate.
+   A retention job that under-reports how much it deleted is a job nobody can
+   audit.
+
+   UNPROVABLE HERE: whether `db-max-rows` also caps the rows a DELETE
+   AFFECTS. The PostgREST docs describe it in terms of rows "fetched" and say
+   nothing about mutations; the docs site and Supabase's are egress-blocked
+   from the build container, and the setting is per-project and can be changed
+   by a human at any time. So the honest position is that we do not know, and
+   a design that only works if the answer is favourable is not good enough for
+   deleting customer data on a promise.
+
+   Both are answered by enumerating what to delete: read a bounded page of
+   expired IDs, delete exactly those by ID, repeat until a page comes back
+   empty. Each DELETE names ≤ RETENTION_BATCH rows, far below any plausible
+   cap, and the loop only ends when the table reports nothing expired left —
+   so completeness does not depend on what `db-max-rows` does to mutations.
+
+   The count comes from `Prefer: count=exact` via the Content-Range header,
+   which the client parses independently of the response body, so it is a real
+   affected-row count rather than a body length.
+
+   Only `id` is ever selected. No message, comment, rating or user id is read
+   or logged by this route.
 ──────────────────────────────────────────────────────────────────────── */
 
 export const dynamic = "force-dynamic"
 
 /** Tables swept here. Both hold raw customer text under the same 90-day rule. */
 const RETAINED_TABLES = ["feedback", "reviews"] as const
+
+/** Rows named per DELETE. Well under any plausible `db-max-rows`. */
+const RETENTION_BATCH = 500
+
+/**
+ * Safety bound on passes per table, so a pathological state cannot spin a cron
+ * invocation forever. 40 × 500 = 20,000 rows per table per run, against a job
+ * that runs daily — ample headroom. Exhausting it is reported as an INCOMPLETE
+ * sweep rather than a success, because expired text still being present is the
+ * one thing an operator needs to hear about.
+ */
+const RETENTION_MAX_PASSES = 40
 
 async function sweep(): Promise<NextResponse> {
   const supabase = getSupabase()
@@ -40,31 +86,93 @@ async function sweep(): Promise<NextResponse> {
   const deleted: Record<string, number> = {}
 
   for (const table of RETAINED_TABLES) {
-    const { data, error } = await supabase
-      .from(table)
-      .delete()
-      .lte("expires_at", cutoff)
-      .select("id")
+    let removed = 0
+    let complete = false
 
-    if (error) {
+    for (let pass = 0; pass < RETENTION_MAX_PASSES; pass++) {
+      // IDs only — never message, comment, rating or user_id.
+      const { data: expired, error: readError } = await supabase
+        .from(table)
+        .select("id")
+        .lte("expires_at", cutoff)
+        .limit(RETENTION_BATCH)
+
+      if (readError) {
+        console.error(
+          `[feedback/retention] ${table} read failed:`,
+          readError.message,
+          "| completed before failure:",
+          JSON.stringify({ ...deleted, [table]: removed }),
+        )
+        return NextResponse.json(
+          { error: "Retention sweep failed", failedTable: table, deleted },
+          { status: 500 },
+        )
+      }
+
+      const ids = (expired ?? []).map((r) => (r as { id: string }).id)
+      if (ids.length === 0) {
+        // Nothing expired remains: this table is genuinely finished.
+        complete = true
+        break
+      }
+
+      const { count, error } = await supabase
+        .from(table)
+        .delete({ count: "exact" })
+        .in("id", ids)
+
+      if (error) {
       // Report the failure rather than a partial success that reads as a
       // completed sweep — expired customer text still being present is exactly
       // the thing someone needs to know about. Carry the counts for whatever
       // DID get swept: "feedback cleared, reviews did not" is a materially
       // different situation to "nothing ran", and losing that distinction
       // makes the failure harder to act on than it needs to be.
+        console.error(
+          `[feedback/retention] ${table} delete failed:`,
+          error.message,
+          "| completed before failure:",
+          JSON.stringify({ ...deleted, [table]: removed }),
+        )
+        return NextResponse.json(
+          { error: "Retention sweep failed", failedTable: table, deleted },
+          { status: 500 },
+        )
+      }
+
+      if (count === null) {
+        // The count is read from Content-Range. Its absence means the rows may
+        // well be gone but we cannot say how many — and a deletion job that
+        // cannot report what it deleted is not auditable. Treat it as a
+        // failure rather than reporting a number we did not measure.
+        console.error(
+          `[feedback/retention] ${table} returned no exact count — cannot verify the sweep`,
+        )
+        return NextResponse.json(
+          { error: "Retention sweep could not be verified", failedTable: table, deleted },
+          { status: 500 },
+        )
+      }
+
+      removed += count
+      // Deliberately no early exit on a short page. The loop ends only when a
+      // read reports zero expired rows, so a capped DELETE (or a concurrent
+      // writer) is picked up on the next pass instead of being assumed away.
+    }
+
+    deleted[table] = removed
+
+    if (!complete) {
       console.error(
-        `[feedback/retention] ${table} sweep failed:`,
-        error.message,
-        "| completed before failure:",
-        JSON.stringify(deleted),
+        `[feedback/retention] ${table} did not converge in ${RETENTION_MAX_PASSES} passes —`,
+        `${removed} row(s) removed, expired rows may remain`,
       )
       return NextResponse.json(
-        { error: "Retention sweep failed", failedTable: table, deleted },
+        { error: "Retention sweep incomplete", failedTable: table, deleted },
         { status: 500 },
       )
     }
-    deleted[table] = data?.length ?? 0
   }
 
   console.log("[feedback/retention] swept:", JSON.stringify(deleted))
