@@ -45,9 +45,10 @@ vi.mock("@/lib/anthropic", () => ({
 
 const insertSpy = vi.fn()
 let insertError: { message: string } | null = null
+let dbConfigured = true
 
 vi.mock("@/lib/supabase", () => ({
-  getSupabase: () => ({
+  getSupabase: () => (!dbConfigured ? null : {
     from: () => ({
       insert: (row: unknown) => {
         insertSpy(row)
@@ -68,6 +69,7 @@ async function post(bodyObj: unknown) {
 }
 
 beforeEach(() => {
+  dbConfigured = true
   currentUser = null
   claudeText = JSON.stringify({
     category: "bug", sentiment: "negative", severity: "medium",
@@ -148,12 +150,66 @@ describe("/api/feedback graceful degradation", () => {
     expect(row.category).toBeNull() // no triage, but not lost
   })
 
-  it("thanks the user even if the DB insert fails", async () => {
-    insertError = { message: "boom" }
-    const res = await post({ message: "hope this saves" })
-    expect(res.status).toBe(200)
+  it("does NOT thank the user when the insert fails", async () => {
+    // The old contract answered `{ ok: true, stored: false }` here and the
+    // widget thanked them regardless, so a customer could write a paragraph,
+    // be thanked, and have it discarded with no way to tell.
+    currentUser = null
+    claudeText = '{"category":"bug","sentiment":"negative"}'
+    insertError = { message: 'relation "feedback" does not exist' }
+
+    const res = await post({ message: "The report never arrived" })
     const body = await res.json()
-    expect(body.ok).toBe(true)
-    expect(body.stored).toBe(false)
+
+    expect(res.status).toBe(503)
+    expect(body.ok).toBeUndefined()
+    expect(body.stored).toBeUndefined()
+  })
+
+  it("never leaks the database error to the caller", async () => {
+    currentUser = null
+    insertError = { message: 'relation "feedback" does not exist' }
+    const body = await (await post({ message: "hello" })).json()
+    expect(JSON.stringify(body)).not.toMatch(/relation|does not exist|feedback/)
+  })
+
+  it("503s rather than faking a save when Supabase is not configured", async () => {
+    currentUser = null
+    dbConfigured = false
+    const res = await post({ message: "anything" })
+    expect(res.status).toBe(503)
+    expect((await res.json()).stored).toBeUndefined()
+  })
+})
+
+describe("/api/feedback retention and privacy", () => {
+  it("never sends expires_at — the 90-day window is the database's to set", async () => {
+    currentUser = null
+    claudeText = "{}"
+    await post({ message: "hi" })
+    const row = insertSpy.mock.calls[0][0] as Record<string, unknown>
+    expect(
+      Object.keys(row),
+      "a client-influenced expiry is not a retention policy",
+    ).not.toContain("expires_at")
+  })
+
+  it("stores no IP address, score, report content or assessment answers", async () => {
+    currentUser = { id: "u1" }
+    claudeText = "{}"
+    await post({ message: "hi", rating: 4 })
+    const row = insertSpy.mock.calls[0][0] as Record<string, unknown>
+
+    for (const forbidden of ["ip", "ip_address", "client_ip", "score", "overall", "answers", "report", "email"]) {
+      expect(Object.keys(row), `feedback must not carry ${forbidden}`).not.toContain(forbidden)
+    }
+  })
+
+  it("keeps an anonymous submission anonymous — no manufactured identifier", async () => {
+    currentUser = null
+    claudeText = "{}"
+    await post({ message: "anon here" })
+    const row = insertSpy.mock.calls[0][0] as Record<string, unknown>
+    expect(row.user_id).toBeNull()
   })
 })

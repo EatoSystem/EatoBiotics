@@ -1705,64 +1705,123 @@ DROP POLICY IF EXISTS meal_scans_public_read ON meal_scans;
 
 
 -- ────────────────────────────────────────────────────────────
--- Migration 45: reviews (member feedback / testimonial loop → Loyalty)
+-- Migration 45: reviews (PRIVATE account-linked structured feedback)
 -- ────────────────────────────────────────────────────────────
--- Closes the Loyalty gap: capture a light "how's it going?" rating + optional
--- quote after a good moment, and feed approved quotes back as social proof.
--- POST /api/reviews (auth, one row per member, upserted) → GET /api/reviews
--- (public aggregate + APPROVED quotes only). `approved` defaults false so a
--- quote is never shown publicly until a human clears it — no unmoderated user
--- text on the marketing surface. Service-role only (RLS on, zero policies),
--- same pattern as contributions/email_sends. Idempotent. Follows Migration 44
--- (meal_scans) which precedes it in this stacked branch.
+-- STATUS: DRAFTED — NOT APPLIED. A human applies this; see the runbook in the
+-- PR and issue #229.
+--
+-- What this is, precisely: a signed-in member's 1-5 rating plus an optional
+-- free-text comment, captured once after a good moment. It is PRIVATE product
+-- feedback and nothing else.
+--
+-- What it is NOT: a testimonial store. An earlier draft of this migration
+-- described approved quotes being fed back as public social proof, and carried
+-- an `approved` moderation flag to gate that. Public testimonials are out of
+-- scope for the controlled beta, so the publication path is gone: there is no
+-- public read API, nothing renders these rows, and the `approved` column has
+-- been removed rather than left behind as a flag that could be mistaken for
+-- publication consent. Moderating text is not the same thing as a person
+-- agreeing to be quoted. Consent-based testimonials are designed separately;
+-- see the follow-up issue linked from #229.
+--
+-- Retention: raw comment text is kept for 90 days FROM FIRST SUBMISSION.
+-- `expires_at` is server-derived by DEFAULT — no route sends it, and the
+-- upsert deliberately omits it, so editing a review moves `updated_at` but
+-- NOT the retention clock. A member cannot extend their own retention by
+-- re-submitting; the trade is that a comment edited on day 89 is deleted on
+-- day 90, which is the safe direction to err. The daily cleanup job at
+-- /api/feedback/retention deletes rows past it.
+--
+-- Account deletion: ON DELETE CASCADE. A member's rating and comment are their
+-- account data, so deleting the account deletes them. `app/api/account/delete`
+-- does not enumerate this table, so the FK is what actually enforces this.
+--
+-- Access: service-role only (RLS enabled, ZERO policies), same pattern as
+-- contributions / email_sends / cms_*. No GRANTs — anon and authenticated
+-- reach this only through the server routes. Idempotent.
 CREATE TABLE IF NOT EXISTS reviews (
   id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id    uuid NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
   rating     integer NOT NULL CHECK (rating BETWEEN 1 AND 5),
-  quote      text CHECK (quote IS NULL OR char_length(quote) <= 500),
-  source     text,          -- where it was captured: 'account' | 'meal' | 'retest' | 'milestone'
-  approved   boolean NOT NULL DEFAULT false,  -- moderation gate for public display
+  comment    text CHECK (comment IS NULL OR char_length(comment) <= 500),
+  source     text CHECK (source IS NULL OR source IN ('account','meal','retest','milestone')),
   created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  -- 90-day raw-text retention. Both DEFAULTs resolve to the same transaction
+  -- timestamp, so a fresh row satisfies the upper bound exactly.
+  expires_at timestamptz NOT NULL DEFAULT (now() + interval '90 days'),
+  CONSTRAINT reviews_expiry_window CHECK (
+    expires_at > created_at AND expires_at <= created_at + interval '90 days'
+  )
 );
 
 ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only)
 
-CREATE INDEX IF NOT EXISTS idx_reviews_approved ON reviews (approved, created_at DESC) WHERE approved = true;
+-- Supports the retention sweep only. There is deliberately no index for public
+-- display, because there is no public display.
+CREATE INDEX IF NOT EXISTS idx_reviews_expires ON reviews (expires_at);
 
 
 -- ────────────────────────────────────────────────────────────
--- Migration 46: feedback (customer feedback bot → owner digests)
+-- Migration 46: feedback (PRIVATE product feedback → owner digests)
 -- ────────────────────────────────────────────────────────────
--- Captures free-text customer feedback from the site-wide feedback bot. One
--- row per submission (NOT one-per-user — a customer can send feedback many
--- times). `user_id` is nullable so anonymous visitors can be heard too, and
--- ON DELETE SET NULL so a submission survives account deletion (feedback is
--- product signal, not personal account data) while unlinking the identity.
--- The AI-derived triage fields (category/sentiment/severity/feature_area/
--- summary/suggested_improvement) are filled by a single Claude extraction call
--- at submit time; they're all nullable so a submission is never lost if that
--- call fails. Service-role only (RLS on, zero policies) — same pattern as
--- contributions/email_sends; read back only by the admin dashboard and the
--- weekly owner digest, both server-side.
+-- STATUS: DRAFTED — NOT APPLIED. A human applies this; see the runbook in the
+-- PR and issue #229.
+--
+-- Free-text product feedback from the site-wide widget. One row per
+-- submission (NOT one per user — someone may send feedback many times).
+-- Private in every direction: read back only by the admin dashboard and the
+-- weekly owner digest, both server-side. Never rendered publicly.
+--
+-- `user_id` is nullable so anonymous visitors can be heard. Anonymous rows
+-- stay anonymous — no identifier is manufactured for them, and no IP address,
+-- health score, report content or assessment answer is stored here.
+--
+-- Account deletion: ON DELETE CASCADE, changed from an earlier draft's
+-- SET NULL. SET NULL would have left a deleted member's free text sitting in
+-- the table indefinitely as unattributed prose — health-adjacent writing that
+-- no one can find, correct or erase, and which contradicts the privacy
+-- policy's "deleted within 30 days of a verified account deletion request".
+-- Unlinking is not deleting.
+--
+-- Retention: raw message text is kept for 90 days from submission, server-
+-- derived by DEFAULT and swept by /api/feedback/retention. One row per
+-- submission means there is no edit path here, so the clock is unambiguous.
+-- Anonymous rows expire on the same clock as account-linked ones. Every
+-- READER also filters on `expires_at`, because deletion is a daily sweep and
+-- rows are briefly still present after they expire.
+--
+-- The AI triage fields (category/sentiment/severity/feature_area/summary/
+-- suggested_improvement) come from one Claude extraction call at submit time.
+-- All nullable, so a failed extraction still stores the raw message.
+--
+-- Access: service-role only (RLS enabled, ZERO policies). No GRANTs.
+-- Idempotent.
 CREATE TABLE IF NOT EXISTS feedback (
   id                    uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id               uuid REFERENCES auth.users(id) ON DELETE SET NULL,
-  source_page           text,
+  user_id               uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  source_page           text CHECK (source_page IS NULL OR char_length(source_page) <= 300),
   rating                integer CHECK (rating IS NULL OR rating BETWEEN 1 AND 5),
-  message               text NOT NULL CHECK (char_length(message) <= 4000),
+  message               text NOT NULL CHECK (char_length(message) BETWEEN 1 AND 4000),
   category              text,          -- bug | feature | ux | pricing | content | praise | other
   sentiment             text,          -- positive | neutral | negative
   severity              text,          -- low | medium | high  (bugs/UX only)
   feature_area          text,          -- e.g. 'meal analysis', 'assessment', 'glp-1'
   summary               text,
   suggested_improvement text,
-  status                text NOT NULL DEFAULT 'new',            -- new | triaged | resolved | archived
-  created_at            timestamptz NOT NULL DEFAULT now()
+  status                text NOT NULL DEFAULT 'new'
+                          CHECK (status IN ('new','triaged','resolved','archived')),
+  created_at            timestamptz NOT NULL DEFAULT now(),
+  expires_at            timestamptz NOT NULL DEFAULT (now() + interval '90 days'),
+  CONSTRAINT feedback_expiry_window CHECK (
+    expires_at > created_at AND expires_at <= created_at + interval '90 days'
+  )
 );
 
 ALTER TABLE feedback ENABLE ROW LEVEL SECURITY;  -- zero policies (service-role only)
 
-CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback (created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_feedback_status  ON feedback (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_feedback_created  ON feedback (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_feedback_status   ON feedback (status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_feedback_category ON feedback (category);
+-- Supports the retention sweep.
+CREATE INDEX IF NOT EXISTS idx_feedback_expires  ON feedback (expires_at);

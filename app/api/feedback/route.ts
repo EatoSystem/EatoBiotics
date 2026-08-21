@@ -8,14 +8,27 @@ import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 import { EXTRACTION_SYSTEM, buildExtractionUser } from "@/lib/feedback/prompts"
 import { coerceCategory, coerceSentiment, coerceSeverity, type FeedbackExtraction } from "@/lib/feedback/types"
 
-/* ── Customer feedback capture ────────────────────────────────────────────
+/* ── Private product feedback capture ─────────────────────────────────────
    Open to everyone — signed-in members AND anonymous visitors (feedback from
    people who haven't signed up is some of the most valuable). One Claude call
-   triages the free-text into structured fields; if it fails, the raw message
-   is still stored so nothing is lost.
+   triages the free-text into structured fields; if THAT fails, the raw message
+   is still stored, because the triage is a convenience and the message is the
+   point.
+
+   Storage failure is a different thing entirely. This route used to report a
+   fail-soft success when Supabase was missing or the insert errored, and the
+   widget thanked the user either way — so a customer could type a paragraph,
+   be thanked for it, and have it silently discarded. A thank-you is a claim
+   that we received something. It is only sent now when a row actually exists.
+
+   Everything captured here is private: read back only by the admin dashboard
+   and the weekly owner digest, both server-side. Nothing is ever rendered
+   publicly. Raw text is retained 90 days (`expires_at`, server-derived by
+   column DEFAULT — deliberately never sent from here) and swept by
+   /api/feedback/retention.
 
    Cost cap: authed users go through guardAiUsage (per-user daily cap); anon
-   users are bounded by a per-IP burst limit. Both keep the AI spend safe.
+   users are bounded by a per-IP burst limit.
 ──────────────────────────────────────────────────────────────────────── */
 
 const bodySchema = z.object({
@@ -49,8 +62,10 @@ export async function POST(req: NextRequest) {
 
   const supabase = getSupabase()
   if (!supabase) {
-    // Never lose feedback to a misconfig — acknowledge so the UI thanks the user.
-    return NextResponse.json({ ok: true, stored: false })
+    // Nowhere to store it. Saying "thanks" here would be a lie the customer
+    // cannot detect, and their message would be gone.
+    console.error("[feedback] Supabase not configured — refusing to fake a save")
+    return NextResponse.json({ error: "Feedback is unavailable right now." }, { status: 503 })
   }
 
   // Best-effort AI triage. Any failure → store the raw message anyway.
@@ -95,9 +110,11 @@ export async function POST(req: NextRequest) {
   })
 
   if (error) {
+    // The failure IS ours, not theirs — which is exactly why they need to know
+    // it happened, so they can send it again. The message text is never echoed
+    // and the database error never leaves this log line.
     console.error("[feedback] insert failed:", error.message)
-    // Still thank the user — the failure is ours, not theirs.
-    return NextResponse.json({ ok: true, stored: false })
+    return NextResponse.json({ error: "We couldn't save that. Please try again." }, { status: 503 })
   }
 
   // The one adaptive follow-up (if any) lets the widget deepen the conversation

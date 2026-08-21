@@ -31,6 +31,10 @@
     {
       "path": "/api/feedback/digest",
       "schedule": "0 7 * * 1"
+    },
+    {
+      "path": "/api/feedback/retention",
+      "schedule": "0 3 * * *"
     }
   ]
 }

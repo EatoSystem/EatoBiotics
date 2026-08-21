@@ -5,21 +5,39 @@ import { getSupabase } from "@/lib/supabase"
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 
 /*
-  Member feedback / review loop (Loyalty). Migration 45 (`reviews`).
+  PRIVATE account-linked structured feedback. Migration 45 (`reviews`).
 
-  POST — an authenticated member submits (or updates) their rating + optional
-         quote. One row per member (upsert on user_id); every write resets
-         `approved` to false so an edited quote re-enters moderation.
-  GET  — public: aggregate rating + count over all reviews, plus a handful of
-         APPROVED quotes for social proof. Never exposes unapproved text.
+  One row per signed-in member: a 1–5 rating plus an optional comment,
+  upserted so a member can revise it.
 
-  Fails soft when the table isn't applied yet (GET → empty, POST → 503) so the
-  UI degrades gracefully before Migration 45 lands.
+  ── There is no public read, and that is the point ────────────────────────
+
+  This route used to export a public GET returning an aggregate rating and a
+  handful of moderated quotes as social proof for the marketing surface. That
+  is gone. Public testimonials are out of scope for the controlled beta, and
+  the old shape had a specific problem worth naming: the moderation flag was a
+  STAFF decision, not consent. Nobody submitting through FeedbackPrompt was
+  told their words might be published, so clearing a quote for display would
+  have published text the member never agreed to publish. Moderating text and
+  being allowed to quote someone are different permissions.
+
+  The public read was not replaced with an empty response either. An endpoint
+  answering with an empty list reads like a working public surface that happens
+  to have no data yet, and the next person to find it would wire a renderer to
+  it. A 405 says what is true: there is no public read.
+
+  Consent-based testimonials — affirmative unchecked opt-in, exact quote and
+  display-name approval, consent version and timestamp, withdrawal — are
+  designed separately. See the follow-up issue linked from #229.
+
+  Retention: comment text is kept 90 days (`expires_at`, set by column DEFAULT
+  and never sent from here) and swept by /api/feedback/retention. Account
+  deletion cascades.
 */
 
 const postSchema = z.object({
   rating: z.number().int().min(1).max(5),
-  quote: z.string().trim().max(500).optional(),
+  comment: z.string().trim().max(500).optional(),
   source: z.enum(["account", "meal", "retest", "milestone"]).optional(),
 })
 
@@ -38,65 +56,30 @@ export async function POST(req: NextRequest) {
   try {
     body = postSchema.parse(await req.json())
   } catch {
+    // No echo of the payload: it carries the member's own words.
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
   }
 
   const supabase = getSupabase()
-  if (!supabase) return NextResponse.json({ error: "Service unavailable" }, { status: 503 })
+  if (!supabase) {
+    console.error("[reviews] Supabase not configured — refusing to fake a save")
+    return NextResponse.json({ error: "Feedback is unavailable right now." }, { status: 503 })
+  }
 
   const { error } = await supabase.from("reviews").upsert(
     {
       user_id: user.id,
       rating: body.rating,
-      quote: body.quote && body.quote.length > 0 ? body.quote : null,
+      comment: body.comment && body.comment.length > 0 ? body.comment : null,
       source: body.source ?? "account",
-      approved: false, // re-enters moderation on every edit
       updated_at: new Date().toISOString(),
     },
     { onConflict: "user_id" },
   )
   if (error) {
-    console.error("[reviews] upsert:", error.message)
-    return NextResponse.json({ error: "Could not save your feedback" }, { status: 503 })
+    console.error("[reviews] upsert failed:", error.message)
+    return NextResponse.json({ error: "We couldn't save that. Please try again." }, { status: 503 })
   }
-  return NextResponse.json({ ok: true })
-}
-
-export async function GET(req: NextRequest) {
-  const rl = rateLimit(`reviews-get:${getClientIp(req)}`, 60, 10 * 60_000)
-  if (!rl.allowed) {
-    const { body, init } = rateLimitResponse(rl)
-    return NextResponse.json(body, init)
-  }
-
-  const supabase = getSupabase()
-  if (!supabase) return NextResponse.json({ count: 0, average: null, testimonials: [] })
-
-  // Aggregate over all reviews (rating only — no text exposed).
-  const { data: all, error } = await supabase.from("reviews").select("rating").limit(10000)
-  if (error) {
-    // Table not applied yet — present as empty rather than erroring the page.
-    return NextResponse.json({ count: 0, average: null, testimonials: [] })
-  }
-  const ratings = (all ?? []).map((r) => r.rating as number).filter((n) => typeof n === "number")
-  const count = ratings.length
-  const average = count > 0 ? Math.round((ratings.reduce((s, n) => s + n, 0) / count) * 10) / 10 : null
-
-  // Only APPROVED quotes are ever returned for public display.
-  const { data: quotes } = await supabase
-    .from("reviews")
-    .select("quote, rating")
-    .eq("approved", true)
-    .not("quote", "is", null)
-    .order("created_at", { ascending: false })
-    .limit(12)
-
-  const testimonials = (quotes ?? [])
-    .map((q) => ({ quote: q.quote as string, rating: q.rating as number }))
-    .filter((t) => t.quote && t.quote.trim().length > 0)
-
-  return NextResponse.json(
-    { count, average, testimonials },
-    { headers: { "Cache-Control": "public, s-maxage=600, stale-while-revalidate=300" } },
-  )
+  // `stored: true` is only ever sent when a row exists.
+  return NextResponse.json({ ok: true, stored: true })
 }

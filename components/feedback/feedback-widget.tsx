@@ -3,12 +3,18 @@
 import { useState, useCallback } from "react"
 import { usePathname } from "next/navigation"
 
-/* ── Feedback bot widget ──────────────────────────────────────────────────
+/* ── Private feedback widget ──────────────────────────────────────────────
    A small, dismissible floating launcher available site-wide. Opens a short
-   conversational capture: an optional 1–5 rating + a free-text message. On
-   submit it may return one adaptive follow-up question (generated server-side
-   in the same call, no extra round-trip) which the user can optionally answer.
-   Fails soft in every direction — a broken request still thanks the user.
+   capture: an optional 1–5 rating + a free-text message. On submit it may
+   return one adaptive follow-up question (generated server-side in the same
+   call, no extra round-trip) which the user can optionally answer.
+
+   It used to thank the user unconditionally — on a network error, on a 500, on
+   `{ stored: false }`. "Fails soft in every direction" sounded kind and was
+   the opposite: someone could write a considered paragraph, read "Thank you",
+   and have it discarded with no way to tell. Thanks is now shown ONLY when the
+   server confirms a stored row; anything else keeps their text on screen and
+   offers a retry.
 ──────────────────────────────────────────────────────────────────────── */
 
 type Phase = "closed" | "open" | "follow" | "done"
@@ -21,14 +27,18 @@ export function FeedbackWidget() {
   const [followUp, setFollowUp] = useState<string | null>(null)
   const [followText, setFollowText] = useState("")
   const [sending, setSending] = useState(false)
+  const [failed, setFailed] = useState(false)
 
   const reset = useCallback(() => {
-    setRating(null); setMessage(""); setFollowUp(null); setFollowText(""); setSending(false)
+    setRating(null); setMessage(""); setFollowUp(null); setFollowText(""); setSending(false); setFailed(false)
   }, [])
 
   async function submit(text: string, isFollow: boolean) {
+    // The `sending` guard is what stops a double-tap or an impatient second
+    // click becoming two rows.
     if (!text.trim() || sending) return
     setSending(true)
+    setFailed(false)
     try {
       const res = await fetch("/api/feedback", {
         method: "POST",
@@ -40,6 +50,16 @@ export function FeedbackWidget() {
         }),
       })
       const data = await res.json().catch(() => ({}))
+
+      // Thanks requires BOTH a 2xx and an explicit stored row. The response
+      // body is otherwise unread — a server error message is not something to
+      // put in front of a customer.
+      if (!res.ok || data?.stored !== true) {
+        setFailed(true)
+        setSending(false)
+        return
+      }
+
       if (!isFollow && data?.follow_up) {
         setFollowUp(data.follow_up as string)
         setPhase("follow")
@@ -48,9 +68,11 @@ export function FeedbackWidget() {
       }
       setPhase("done")
     } catch {
-      // Even on failure, thank the user — never make feedback feel punished.
-      setPhase("done")
+      setFailed(true)
+      setSending(false)
     }
+    // Note: `message` / `followText` are never cleared here, so a failed send
+    // leaves the customer's words in the box to retry with.
   }
 
   // Don't offer the widget inside the admin console — different audience.
@@ -91,6 +113,15 @@ export function FeedbackWidget() {
           </p>
         )}
 
+        {failed && phase !== "done" && (
+          <p
+            role="status"
+            className="mb-2.5 rounded-lg bg-[#fdf3e7] px-2.5 py-2 text-xs leading-5 text-[#7a5220]"
+          >
+            We couldn&apos;t send that just now. Your words are still here — try again in a moment.
+          </p>
+        )}
+
         {phase === "open" && (
           <>
             <div className="mb-3 flex gap-1.5" role="group" aria-label="Rating">
@@ -114,12 +145,16 @@ export function FeedbackWidget() {
               placeholder={rating && rating <= 3 ? "What would make this better?" : "What's working, or what's on your mind?"}
               className="w-full resize-none rounded-lg border border-[#dbe3d5] bg-[#fafcf8] p-2.5 text-sm text-[#1B2A20] outline-none placeholder:text-[#9aa89d] focus:border-[#4CB648]"
             />
+            <p className="mt-2 text-[11px] leading-4 text-[#8a978c]">
+              This goes privately to the team — it is never shown publicly. Please don&apos;t include
+              personal, medical or payment details.
+            </p>
             <button
               onClick={() => submit(message, false)}
               disabled={!message.trim() || sending}
-              className="mt-2.5 w-full rounded-full bg-[#2E5B3F] py-2.5 text-sm font-semibold text-white transition hover:bg-[#25492f] disabled:opacity-40"
+              className="mt-2 w-full rounded-full bg-[#2E5B3F] py-2.5 text-sm font-semibold text-white transition hover:bg-[#25492f] disabled:opacity-40"
             >
-              {sending ? "Sending…" : "Send feedback"}
+              {sending ? "Sending…" : failed ? "Try again" : "Send feedback"}
             </button>
           </>
         )}
@@ -136,6 +171,9 @@ export function FeedbackWidget() {
               placeholder="Optional — add a little more"
               className="w-full resize-none rounded-lg border border-[#dbe3d5] bg-[#fafcf8] p-2.5 text-sm text-[#1B2A20] outline-none placeholder:text-[#9aa89d] focus:border-[#4CB648]"
             />
+            <p className="mt-2 text-[11px] leading-4 text-[#8a978c]">
+              Still private, and still no personal, medical or payment details please.
+            </p>
             <div className="mt-2.5 flex gap-2">
               <button
                 onClick={() => setPhase("done")}
@@ -148,7 +186,7 @@ export function FeedbackWidget() {
                 disabled={!followText.trim() || sending}
                 className="flex-1 rounded-full bg-[#2E5B3F] py-2.5 text-sm font-semibold text-white transition hover:bg-[#25492f] disabled:opacity-40"
               >
-                {sending ? "Sending…" : "Send"}
+                {sending ? "Sending…" : failed ? "Try again" : "Send"}
               </button>
             </div>
           </>
