@@ -63,17 +63,39 @@ export const dynamic = "force-dynamic"
 /** Tables swept here. Both hold raw customer text under the same 90-day rule. */
 const RETAINED_TABLES = ["feedback", "reviews"] as const
 
-/** Rows named per DELETE. Well under any plausible `db-max-rows`. */
-const RETENTION_BATCH = 500
+/**
+ * Rows named per DELETE, via `.in("id", ids)`.
+ *
+ * Bounded well under 200 deliberately: `.in()` serialises every id into the
+ * request URL, and PostgREST's own client warns about exactly this shape —
+ * `@supabase/postgrest-js`'s `urlLengthLimit` defaults to 8000, and its error
+ * hints call out "`.in('id', [200+ IDs])`" by name. Measured against the real
+ * client with representative UUIDs and the production REST base URL: 100 ids
+ * serialises to ~3,967 characters — half the client's own limit, comfortable
+ * under any proxy's header cap too. 500 ids measured at ~19,567 characters,
+ * over both. See tests/unit/feedback-retention-url-size.test.ts, which builds
+ * the real URL through the real client rather than trusting arithmetic.
+ */
+export const RETENTION_BATCH = 100
 
 /**
  * Safety bound on passes per table, so a pathological state cannot spin a cron
- * invocation forever. 40 × 500 = 20,000 rows per table per run, against a job
- * that runs daily — ample headroom. Exhausting it is reported as an INCOMPLETE
- * sweep rather than a success, because expired text still being present is the
- * one thing an operator needs to hear about.
+ * invocation forever. Exhausting it is reported as an INCOMPLETE sweep rather
+ * than a success, because expired text still being present is the one thing
+ * an operator needs to hear about.
  */
 const RETENTION_MAX_PASSES = 40
+
+/**
+ * The most rows a single run will ever attempt to remove from one table.
+ * Derived, not restated — so changing either constant above can never leave
+ * this figure stale. At today's values: 100 × 40 = 4,000 rows/table/run,
+ * against a job that runs daily. A table with more than that many rows
+ * expired at once returns "Retention sweep incomplete" rather than a false
+ * success (see the pass-limit check below), and the next day's run continues
+ * from wherever this one stopped.
+ */
+const RETENTION_MAX_ROWS_PER_TABLE = RETENTION_BATCH * RETENTION_MAX_PASSES
 
 async function sweep(): Promise<NextResponse> {
   const supabase = getSupabase()
@@ -165,7 +187,9 @@ async function sweep(): Promise<NextResponse> {
 
     if (!complete) {
       console.error(
-        `[feedback/retention] ${table} did not converge in ${RETENTION_MAX_PASSES} passes —`,
+        `[feedback/retention] ${table} did not converge within its ` +
+          `${RETENTION_MAX_ROWS_PER_TABLE}-row budget (${RETENTION_MAX_PASSES} passes ` +
+          `of ${RETENTION_BATCH}) —`,
         `${removed} row(s) removed, expired rows may remain`,
       )
       return NextResponse.json(
