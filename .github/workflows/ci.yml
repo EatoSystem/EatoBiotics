@@ -25,6 +25,8 @@ jobs:
         run: node scripts/check-supabase-scoping.mjs
       - name: AI cost-guard check
         run: node scripts/check-ai-guard.mjs
+      - name: Schema drift check
+        run: node scripts/check-schema-drift.mjs
       - name: Production build
         run: npx next build
         # No secrets needed: SDK clients are constructed lazily (see lib/stripe-server.ts,

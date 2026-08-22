@@ -60,7 +60,15 @@ import { verifyCronRequest } from "@/lib/cron-auth"
 
 export const dynamic = "force-dynamic"
 
-/** Tables swept here. Both hold raw customer text under the same 90-day rule. */
+/**
+ * Tables swept here. Both hold raw customer text under the same 90-day rule.
+ *
+ * The loop below calls `.from(table)` with a variable, which the schema-drift
+ * guard cannot resolve by reading the source — so it is declared here instead.
+ * Keep this list and the marker in step.
+ *
+ * schema-drift-tables: feedback, reviews
+ */
 const RETAINED_TABLES = ["feedback", "reviews"] as const
 
 /**
