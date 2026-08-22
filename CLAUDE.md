@@ -347,7 +347,7 @@ Captured on first run of the in-app tracker (`Glp1Onboarding`); upserted via `ap
 | Column | Type | Notes |
 |--------|------|-------|
 | id | uuid PK | |
-| user_id | uuid | nullable, FK auth.users `ON DELETE SET NULL` (anon feedback allowed) |
+| user_id | uuid | nullable, FK auth.users `ON DELETE CASCADE` (anon feedback allowed; account deletion removes the row, not just the link) |
 | source_page | text | nullable — path it was sent from |
 | rating | integer | nullable — 1–5 |
 | message | text | required, ≤ 4000 chars |
@@ -358,8 +358,9 @@ Captured on first run of the in-app tracker (`Glp1Onboarding`); upserted via `ap
 | summary / suggested_improvement | text | AI-derived one-liners |
 | status | text | `new \| triaged \| resolved \| archived` (default `new`) |
 | created_at | timestamptz | |
+| expires_at | timestamptz | server-derived default `created_at + 90 days`; no route ever sends it |
 
-Service-role only (RLS on, zero policies). One row **per submission** (not per user). Migration 46 (drafted).
+Service-role only (RLS on, zero policies). One row **per submission** (not per user). Migration 46 (drafted; table not yet in `supabase/applied-schema.json`'s `applied` list — see #239's schema-drift guard). 90-day retention enforced by `app/api/feedback/retention/route.ts` (daily cron); `reviews` (Migration 45, also drafted) shares the same expiry + cascade pattern.
 
 ### Other tables
 - `referrals` — `referrer_code`, `referred_email`, `referred_id`
