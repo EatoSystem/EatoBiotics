@@ -17,7 +17,8 @@
  * with the first. Removing the number was the fix.
  */
 import { describe, it, expect } from "vitest"
-import { readFileSync } from "node:fs"
+import { readFileSync, readdirSync } from "node:fs"
+import { join } from "node:path"
 
 const DOC = readFileSync("CLAUDE.md", "utf8")
 const GATE = readFileSync("lib/dev-password-gate.ts", "utf8")
@@ -50,20 +51,124 @@ describe("the password-gate documentation matches the code", () => {
   })
 })
 
-describe("the Supabase project list is complete", () => {
-  it("names all three project refs, so 'name the ref explicitly' has a full list", () => {
-    for (const ref of ["ephmojiwlcebenholhpc", "hwuzbxsaxsifpdzqhqaq", "ohwzmulsvbfgaxgziqeo"]) {
+/** The one project this repository may ever talk to. */
+const EATOBIOTICS_PRODUCTION = "ephmojiwlcebenholhpc"
+
+/**
+ * EatoSystem projects. A different product, in the same Supabase org.
+ *
+ * Classified by the founder on 2026-08-23 — the only authority that can say
+ * what a project is for. They are listed in CLAUDE.md so that an agent reading
+ * `list_projects` can recognise and avoid them, NOT because this codebase has
+ * any business with them.
+ */
+const EATOSYSTEM_PROJECTS = ["hwuzbxsaxsifpdzqhqaq", "ohwzmulsvbfgaxgziqeo"]
+
+const ALL_REFS = [EATOBIOTICS_PRODUCTION, ...EATOSYSTEM_PROJECTS]
+
+/**
+ * The TABLE ROW for a ref — not merely the first line mentioning it.
+ *
+ * The prose around the table names refs too, so a plain
+ * `.find(l => l.includes(ref))` could match explanatory text instead of the
+ * row and then pass or fail for the wrong reason.
+ */
+function projectRow(ref: string): string {
+  const row = DOC.split("\n").find((l) => new RegExp(`^\\s*\\|\\s*\`${ref}\``).test(l))
+  if (!row) throw new Error(`no table row found for project ${ref}`)
+  return row
+}
+
+describe("the Supabase project list records ownership, not status", () => {
+  it("names all three refs, so 'name the ref explicitly' has a full list to name from", () => {
+    for (const ref of ALL_REFS) {
       expect(DOC, `project ${ref} must be listed`).toContain(ref)
+      expect(() => projectRow(ref), `project ${ref} must have a table row`).not.toThrow()
     }
   })
 
-  it("does not classify the undocumented project", () => {
-    // #225 is explicit that establishing its role needs someone with the
-    // authority to say so. Recording that it exists is a fact; guessing what
-    // it is for would be the opposite of what that issue asks.
-    const row = DOC.split("\n").find((l) => l.includes("ohwzmulsvbfgaxgziqeo"))!
-    expect(row).toMatch(/role not established/i)
-    expect(row).not.toMatch(/staging|production target|safe to use/i)
+  it("identifies the production ref as the EatoBiotics production project", () => {
+    const row = projectRow(EATOBIOTICS_PRODUCTION)
+    expect(row).toMatch(/EatoBiotics production project/i)
+    expect(row, "the doc must say this is the only project the repo may target").toMatch(
+      /only project this repository may target/i,
+    )
+  })
+
+  it("identifies both EatoSystem projects as unrelated and forbidden targets", () => {
+    for (const ref of EATOSYSTEM_PROJECTS) {
+      const row = projectRow(ref)
+      expect(row, `${ref} must be marked unrelated`).toMatch(/unrelated to EatoBiotics/i)
+      expect(row, `${ref} must be marked a forbidden target`).toMatch(/never a target/i)
+    }
+  })
+
+  it("does not label an EatoSystem project staging, preview, safe, or production", () => {
+    // The founder's classification is "unrelated". Anything softer reopens the
+    // door this closed — a future reader must not find a hint that one of these
+    // could serve as an EatoBiotics environment.
+    for (const ref of EATOSYSTEM_PROJECTS) {
+      const row = projectRow(ref)
+      expect(row, `${ref} must not be given an EatoBiotics role`).not.toMatch(
+        /staging|preview|safe to use|production|role not established/i,
+      )
+    }
+  })
+
+  it("attaches no mutable status to any project row", () => {
+    // The table used to carry ACTIVE/INACTIVE and went stale without anyone
+    // editing the file. Status is also not ownership, which is the actual
+    // question this table answers.
+    for (const ref of ALL_REFS) {
+      expect(projectRow(ref), `a status in this row goes stale on Supabase's schedule`).not.toMatch(
+        /\bACTIVE\b|\bINACTIVE\b|\bPAUSED\b|\bHEALTHY\b/i,
+      )
+    }
+  })
+
+  it("records that no EatoBiotics staging project exists yet", () => {
+    expect(DOC).toMatch(/There is no EatoBiotics staging project/i)
+  })
+
+  it("points at a live read rather than a written-down status", () => {
+    expect(DOC).toMatch(/`list_projects`/)
+  })
+})
+
+describe("no EatoBiotics code may select an EatoSystem project", () => {
+  it("names an EatoSystem ref nowhere but this documentation and this test", () => {
+    // The strongest form of "never a target": the strings do not appear in any
+    // route, library, component, script, migration, manifest or config. A
+    // future edit that wires one in fails here rather than at runtime against
+    // someone else's database.
+    const roots = ["app", "lib", "components", "scripts", "supabase", "tests"]
+    const offenders: string[] = []
+
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const full = join(dir, entry.name)
+        if (entry.isDirectory()) {
+          if (entry.name !== "node_modules" && !entry.name.startsWith(".")) walk(full)
+          continue
+        }
+        if (full === join("tests", "unit", "claude-md-accuracy.test.ts")) continue
+        if (!/\.(ts|tsx|mjs|js|json|sql)$/.test(entry.name)) continue
+        const source = readFileSync(full, "utf8")
+        if (EATOSYSTEM_PROJECTS.some((ref) => source.includes(ref))) offenders.push(full)
+      }
+    }
+
+    for (const root of roots) walk(root)
+    expect(offenders, "an EatoSystem project ref must never reach EatoBiotics code").toEqual([])
+  })
+
+  it("uses the production ref for the live-read instruction it gives", () => {
+    expect(DOC).toMatch(new RegExp(`\`list_tables\` against \`${EATOBIOTICS_PRODUCTION}\``))
+    for (const ref of EATOSYSTEM_PROJECTS) {
+      expect(DOC, `the doc must never instruct a read against ${ref}`).not.toMatch(
+        new RegExp(`(list_tables|execute_sql|against)[^\\n]*${ref}`),
+      )
+    }
   })
 })
 

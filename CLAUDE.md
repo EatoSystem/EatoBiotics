@@ -26,16 +26,27 @@ applies it (Supabase dashboard SQL editor or CLI) and verifies.
   org contains three, and naming the ref explicitly in every call is the
   only reliable way to hit the one you meant:
 
-  | Ref | Name | Status | What it is |
-  |---|---|---|---|
-  | `ephmojiwlcebenholhpc` | EatoBiotics | ACTIVE | **production**, eu-central-2 |
-  | `hwuzbxsaxsifpdzqhqaq` | EatoSystem-Ireland | INACTIVE | inactive lookalike |
-  | `ohwzmulsvbfgaxgziqeo` | EatoSystem | **ACTIVE** | **role not established — see #225** |
+  | Ref | Name | What it is |
+  |---|---|---|
+  | `ephmojiwlcebenholhpc` | EatoBiotics | **the EatoBiotics production project** — the only project this repository may target |
+  | `hwuzbxsaxsifpdzqhqaq` | EatoSystem-Ireland | an EatoSystem project, unrelated to EatoBiotics — never a target |
+  | `ohwzmulsvbfgaxgziqeo` | EatoSystem | an EatoSystem project, unrelated to EatoBiotics — never a target |
 
-  The third is listed because it exists and is active, which makes it a
-  plausible mis-target; it is NOT listed as safe to use. Establishing what
-  it is for needs someone with the authority to say so, not an agent
-  inferring from its contents.
+  Ownership classified by the founder on 2026-08-23, which is the only
+  authority that can say what a project is for. The two EatoSystem projects
+  belong to a different product and **must never be targeted by EatoBiotics
+  code, migrations, scripts, tests, rehearsals or agent tooling** — not
+  read, not written, not named in an environment variable.
+
+  **Operational status is deliberately not recorded here.** Supabase pauses
+  and restores projects on its own schedule, so a status typed into this
+  file describes the day it was typed and nothing after — and status is not
+  ownership in any case. Run `list_projects` if you need live state.
+
+  **There is no EatoBiotics staging project.** When one is created it must
+  be a separate project, explicitly designated and documented here by the
+  founder as the EatoBiotics non-production target. Neither EatoSystem
+  project may be adopted for that role.
 - Enforcement note for whoever configures agent environments: the Supabase
   MCP server supports a read-only mode — enabling it turns this rule from
   a request into a guarantee.
