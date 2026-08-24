@@ -26,16 +26,25 @@ applies it (Supabase dashboard SQL editor or CLI) and verifies.
   org contains three, and naming the ref explicitly in every call is the
   only reliable way to hit the one you meant:
 
-  | Ref | Name | Status | What it is |
-  |---|---|---|---|
-  | `ephmojiwlcebenholhpc` | EatoBiotics | ACTIVE | **production**, eu-central-2 |
-  | `hwuzbxsaxsifpdzqhqaq` | EatoSystem-Ireland | INACTIVE | inactive lookalike |
-  | `ohwzmulsvbfgaxgziqeo` | EatoSystem | **ACTIVE** | **role not established — see #225** |
+  | Ref | Name | What it is |
+  |---|---|---|
+  | `ephmojiwlcebenholhpc` | EatoBiotics | **production**, eu-central-2 |
+  | `hwuzbxsaxsifpdzqhqaq` | EatoSystem-Ireland | not production — a lookalike name |
+  | `ohwzmulsvbfgaxgziqeo` | EatoSystem | **role not established — see #225** |
 
-  The third is listed because it exists and is active, which makes it a
-  plausible mis-target; it is NOT listed as safe to use. Establishing what
+  **No project status is recorded here on purpose.** This table used to carry
+  an ACTIVE/INACTIVE column, and it went stale without anyone touching the
+  file: `ohwzmulsvbfgaxgziqeo` was ACTIVE when #225 was filed on 2026-08-13
+  and INACTIVE by 2026-08-23. Supabase pauses and restores projects on its
+  own schedule, so a status written into prose describes the day it was
+  typed and nothing after. Run `list_projects` for the live state — the same
+  reason the table count below is a live read rather than a number.
+
+  The third project is listed because it exists in this org under a similar
+  name, which makes it a plausible mis-target whatever state it happens to
+  be in today; it is NOT recorded as usable for anything. Establishing what
   it is for needs someone with the authority to say so, not an agent
-  inferring from its contents.
+  inferring from its contents or from whether it happens to be running.
 - Enforcement note for whoever configures agent environments: the Supabase
   MCP server supports a read-only mode — enabling it turns this rule from
   a request into a guarantee.

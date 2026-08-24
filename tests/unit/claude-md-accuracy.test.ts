@@ -50,10 +50,26 @@ describe("the password-gate documentation matches the code", () => {
   })
 })
 
+const PROJECT_REFS = ["ephmojiwlcebenholhpc", "hwuzbxsaxsifpdzqhqaq", "ohwzmulsvbfgaxgziqeo"] as const
+
+/**
+ * The TABLE ROW for a project ref — not merely the first line mentioning it.
+ *
+ * The prose below the table now names a ref too (recording that its status
+ * changed), so a plain `.find(l => l.includes(ref))` could match explanatory
+ * text instead of the row and fail for the wrong reason.
+ */
+function projectRow(ref: string): string {
+  const row = DOC.split("\n").find((l) => new RegExp(`^\\s*\\|\\s*\`${ref}\``).test(l))
+  if (!row) throw new Error(`no table row found for project ${ref}`)
+  return row
+}
+
 describe("the Supabase project list is complete", () => {
   it("names all three project refs, so 'name the ref explicitly' has a full list", () => {
-    for (const ref of ["ephmojiwlcebenholhpc", "hwuzbxsaxsifpdzqhqaq", "ohwzmulsvbfgaxgziqeo"]) {
+    for (const ref of PROJECT_REFS) {
       expect(DOC, `project ${ref} must be listed`).toContain(ref)
+      expect(() => projectRow(ref), `project ${ref} must have a table row`).not.toThrow()
     }
   })
 
@@ -61,9 +77,29 @@ describe("the Supabase project list is complete", () => {
     // #225 is explicit that establishing its role needs someone with the
     // authority to say so. Recording that it exists is a fact; guessing what
     // it is for would be the opposite of what that issue asks.
-    const row = DOC.split("\n").find((l) => l.includes("ohwzmulsvbfgaxgziqeo"))!
+    const row = projectRow("ohwzmulsvbfgaxgziqeo")
     expect(row).toMatch(/role not established/i)
     expect(row).not.toMatch(/staging|production target|safe to use/i)
+  })
+
+  it("records no project status — it drifts exactly like the table count did", () => {
+    // The table used to carry an ACTIVE/INACTIVE column. It went stale without
+    // anyone editing the file: ohwzmulsvbfgaxgziqeo was ACTIVE when #225 was
+    // filed and INACTIVE ten days later, because Supabase pauses and restores
+    // projects on its own schedule. A status in prose describes the day it was
+    // typed. This is the same failure the table count had, in the same file.
+    const rows = PROJECT_REFS.map(projectRow)
+    for (const row of rows) {
+      expect(row, `a status in this row is wrong the moment Supabase pauses it: ${row}`).not.toMatch(
+        /\bACTIVE\b|\bINACTIVE\b|\bPAUSED\b|\bHEALTHY\b/i,
+      )
+    }
+  })
+
+  it("says how to obtain the live project state", () => {
+    expect(DOC, "removing the status column only helps if it points somewhere current").toMatch(
+      /`list_projects`/,
+    )
   })
 })
 
