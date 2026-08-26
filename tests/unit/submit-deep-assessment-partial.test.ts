@@ -220,7 +220,9 @@ describe("submit-deep-assessment partial-delivery owner alert", () => {
     const body = await res.json()
 
     expect(res.status).toBe(200)
-    expect(body).toEqual({ ok: true, pdfUrl: null, status: "partial" })
+    // `statusPersisted` reports whether the final bookkeeping write actually
+    // landed; here it did, so the status reported is the one that was stored.
+    expect(body).toEqual({ ok: true, pdfUrl: null, status: "partial", statusPersisted: true })
     expect(mockReportError).toHaveBeenCalledTimes(1)
   })
 })

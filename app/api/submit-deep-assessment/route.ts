@@ -441,10 +441,20 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Step 4: Mark as analysing
+  // Step 4: Mark as analysing.
+  //
+  // This write is a precondition, not bookkeeping. Everything after it costs
+  // money (a Claude call), produces a PDF object, and emails the customer — and
+  // all of that is unrecoverable if no row exists to hang it on: `reportViewState`
+  // sends a buyer with no row back into the questionnaire, and the emailed PDF
+  // link expires in 7 days. So a failure here stops the request before any of it.
+  //
+  // An awaited PostgREST call RESOLVES with `{ error }` rather than throwing, so
+  // the try/catch alone never saw this — it only caught transport-level throws.
   if (supabase) {
+    let intakeWriteError: string | null = null
     try {
-      await supabase.from("deep_assessments").upsert(
+      const { error } = await supabase.from("deep_assessments").upsert(
         {
           stripe_session_id: sessionId,
           tier,
@@ -462,8 +472,27 @@ export async function POST(req: NextRequest) {
         },
         { onConflict: "stripe_session_id" }
       )
+      if (error) intakeWriteError = error.message
     } catch (err) {
-      console.error("[submit-deep-assessment] Supabase status=analysing upsert error:", err)
+      intakeWriteError = err instanceof Error ? err.message : String(err)
+    }
+
+    if (intakeWriteError) {
+      // Database text stays in the log line; the customer sees a retryable
+      // failure with no internals. The alert carries identifiers and stage only
+      // — never answers, scores or report prose.
+      console.error("[submit-deep-assessment] intake write failed:", intakeWriteError)
+      await alertOwner(
+        "submit-deep-assessment-intake-write-failed",
+        `session=${sessionId} tier=${tier} stage=analysing generation=not_started`
+      )
+      return NextResponse.json(
+        {
+          error: "We couldn't start your report just now. Please try again in a moment.",
+          code: "report_persistence_unavailable",
+        },
+        { status: 503 }
+      )
     }
   }
 
@@ -742,10 +771,24 @@ export async function POST(req: NextRequest) {
     sessionTag: sessionTag(sessionId),
   })
 
-  // Step 6: Persist report_json (stays "analysing" until delivery is verified)
+  // Step 6: Persist report_json (stays "analysing" until delivery is verified).
+  //
+  // This is the write that decides whether the customer owns anything. Until it
+  // lands, `report_json` is null, and `reportViewState(status, hasReport=false)`
+  // returns "resume_questionnaire" — a buyer who paid is bounced back into the
+  // intake form. Delivering a PDF and an email on top of that produces the worst
+  // available outcome: a "your report is ready" email pointing at a link that
+  // dies in 7 days, backed by a row the site refuses to render.
+  //
+  // So delivery is gated on it. On failure the request stops here: no PDF upload,
+  // no email, and no ok:true. A retry re-generates (the Claude cost is real but
+  // bounded) and re-attempts the write; nothing has been delivered that a retry
+  // could duplicate.
+  let reportPersisted = false
   if (supabase) {
+    let persistError: string | null = null
     try {
-      await supabase.from("deep_assessments").upsert(
+      const { error } = await supabase.from("deep_assessments").upsert(
         {
           stripe_session_id: sessionId,
           report_json: report,
@@ -756,8 +799,27 @@ export async function POST(req: NextRequest) {
         },
         { onConflict: "stripe_session_id" }
       )
+      if (error) persistError = error.message
+      else reportPersisted = true
     } catch (err) {
-      console.error("[submit-deep-assessment] Supabase report_json save error:", err)
+      persistError = err instanceof Error ? err.message : String(err)
+    }
+
+    if (!reportPersisted) {
+      console.error("[submit-deep-assessment] report_json save failed:", persistError)
+      // Stage and provenance enum only — no answers, no report prose, no email.
+      await alertOwner(
+        "submit-deep-assessment-report-persist-failed",
+        `session=${sessionId} tier=${tier} stage=report_json ` +
+          `generationSource=${generationSource} delivery=withheld`
+      )
+      return NextResponse.json(
+        {
+          error: "Your report was generated but could not be saved. Please try again in a moment.",
+          code: "report_persistence_failed",
+        },
+        { status: 503 }
+      )
     }
   }
 
@@ -899,15 +961,28 @@ export async function POST(req: NextRequest) {
   // Step 10: Finalise. The overall status is "complete" ONLY when the report,
   // PDF, and email all succeeded — otherwise it stays "partial" so the failure
   // is visible in the DB and a re-run retries just the failed stages.
+  // `reportOk` is now derived from the verified write, not asserted. A report
+  // object existing in memory was never the question — whether the buyer can
+  // reach it is. With no database configured at all the route has always run in
+  // a degraded, non-persisting mode; that path is unchanged and is called out as
+  // a limit in the PR rather than silently altered here.
+  const reportDurable = supabase ? reportPersisted : true
+
   const overall_status = overallReportStatus({
-    reportOk: true, // a report always exists (Claude or deterministic fallback)
+    reportOk: reportDurable,
     pdfOk: pdfStatus === "uploaded",
     emailOk: emailStatus === "sent",
   })
 
+  // Whether the row now actually says what `overall_status` says. Bookkeeping
+  // can fail on its own, and when it does the durable row still carries the
+  // step-6 state ("analysing") — the customer keeps full access to a persisted
+  // report, but the response must not claim a status that was never written.
+  let statusPersisted = false
   if (supabase) {
+    let statusWriteError: string | null = null
     try {
-      await supabase.from("deep_assessments").upsert(
+      const { error } = await supabase.from("deep_assessments").upsert(
         {
           stripe_session_id: sessionId,
           status: overall_status,
@@ -921,8 +996,14 @@ export async function POST(req: NextRequest) {
         },
         { onConflict: "stripe_session_id" }
       )
+      if (error) statusWriteError = error.message
+      else statusPersisted = true
     } catch (err) {
-      console.error("[submit-deep-assessment] Supabase final status upsert error:", err)
+      statusWriteError = err instanceof Error ? err.message : String(err)
+    }
+
+    if (!statusPersisted) {
+      console.error("[submit-deep-assessment] final status upsert failed:", statusWriteError)
     }
   }
 
@@ -930,17 +1011,30 @@ export async function POST(req: NextRequest) {
   // always, emails in production, throttles itself, and never throws). Only the
   // session id and stage statuses are included — no answers, report content, or
   // customer email.
-  if (overall_status !== "complete") {
+  // A silent failure here used to be possible in both directions: a "complete"
+  // run whose status write failed alerted nobody, and the response said the row
+  // had been updated. Both are covered now.
+  if (overall_status !== "complete" || !statusPersisted) {
     await alertOwner(
       "submit-deep-assessment-partial",
       `session=${sessionId} tier=${tier} status=${overall_status} ` +
+        `statusPersisted=${statusPersisted} ` +
         `pdf=${pdfStatus} email=${emailStatus} ` +
         `pdfError=${(pdfError ?? "none").slice(0, 300)} emailError=${(emailError ?? "none").slice(0, 300)}`
     )
   }
 
-  // The report itself is always available (PDF link + on-site view), so the
-  // client still gets ok:true; delivery problems are surfaced via DB status and
-  // retried on the next call rather than failing the user's request.
-  return NextResponse.json({ ok: true, pdfUrl, status: overall_status })
+  // The report is persisted (step 6 gated on it), so the buyer has durable
+  // access via the on-site view and a freshly-minted PDF link — hence ok:true
+  // even when delivery stages failed. `status` reports what the row actually
+  // says: if the final write failed, the durable value is still step 6's
+  // "analysing", which renders as "view_delivery_pending" rather than a
+  // redirect. Claiming `overall_status` there would be describing a write that
+  // did not happen.
+  return NextResponse.json({
+    ok: true,
+    pdfUrl,
+    status: statusPersisted ? overall_status : "analysing",
+    statusPersisted,
+  })
 }
