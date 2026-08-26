@@ -1,11 +1,15 @@
 /* ── Money-path route smoke tests ─────────────────────────────────────────
-   Route-level coverage for the three handlers that move money or accounts:
-   the Stripe webhook, subscription checkout, and the auth callback. External
+   Route-level coverage for handlers that move money or accounts: report
+   checkout, the Stripe webhook, subscription checkout, and the auth callback. External
    services (Stripe, Supabase, Resend, Statsig) are mocked; the assertions
    target the routes' guard rails and the webhook's core state transition.
 ──────────────────────────────────────────────────────────────────────── */
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import type { NextRequest } from "next/server"
+import {
+  getPaidReportSummaryFromSession,
+  STRIPE_METADATA_VALUE_LIMIT,
+} from "@/lib/paid-report-session"
 
 /* ── Chainable Supabase stub ──────────────────────────────────────────────
    Every query-builder method returns the chain; awaiting it resolves the
@@ -73,7 +77,9 @@ function jsonReq(body: unknown, url = "http://localhost/api/x"): NextRequest {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  process.env.STRIPE_SECRET_KEY = "sk_test_money_paths"
   process.env.STRIPE_WEBHOOK_SECRET = "whsec_test"
+  delete process.env.NEXT_PUBLIC_SITE_URL
   delete process.env.RESEND_API_KEY // email sends are skipped in webhook paths
 })
 
@@ -138,6 +144,70 @@ describe("POST /api/stripe/webhook", () => {
     expect(subEvent?.payload).toMatchObject({ event_type: "cancelled", from_tier: "restore", to_tier: "free" })
 
     expect(writes.some((w) => w.table === "stripe_processed_events" && w.method === "insert")).toBe(true)
+  })
+})
+
+/* ══ One-time report checkout ════════════════════════════════════════════ */
+describe("POST /api/checkout", () => {
+  it("creates a Stripe-safe metadata payload for the EUR 49 report", async () => {
+    mockCheckoutCreate.mockResolvedValue({
+      id: "cs_test_report_1",
+      url: "https://checkout.stripe.com/c/pay/cs_test_report_1",
+      livemode: false,
+    })
+
+    const { POST } = await import("@/app/api/checkout/route")
+    const res = await POST(jsonReq({
+      tier: "personal",
+      overall: 56,
+      subScores: {
+        prebiotics: 44,
+        probiotics: 66,
+        postbiotics: 67,
+        feed: 44,
+        seed: 66,
+        heal: 67,
+      },
+      profile: {
+        type: "Emerging Balance",
+        tagline: "The pieces show up in your answers; the pattern is not yet steady.",
+        description:
+          "Your answers suggest the pieces are present but not yet settled into a daily rhythm. This pattern may indicate that repetition, rather than knowledge, is the gap. Small repeatable changes to any of the three pathways are a useful place to begin.",
+        color: "var(--icon-lime)",
+      },
+      email: "Buyer@Example.com",
+      foundationType: "you",
+      selectedAddon: "glucose",
+    }))
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ url: "https://checkout.stripe.com/c/pay/cs_test_report_1" })
+
+    const [params] = mockCheckoutCreate.mock.calls[0] as [
+      { customer_email?: string; metadata: Record<string, string>; mode: string; currency: string }
+    ]
+    expect(params.mode).toBe("payment")
+    expect(params.currency).toBe("eur")
+    expect(params.customer_email).toBe("buyer@example.com")
+    expect(params.metadata.result_summary).toBeUndefined()
+    expect(params.metadata.foundation_type).toBe("you")
+    expect(params.metadata.selected_addon).toBe("glucose")
+    expect(Number(params.metadata.result_summary_parts)).toBeGreaterThan(1)
+    for (const value of Object.values(params.metadata)) {
+      expect(value.length).toBeLessThanOrEqual(STRIPE_METADATA_VALUE_LIMIT)
+    }
+
+    const decoded = getPaidReportSummaryFromSession({
+      metadata: params.metadata,
+      client_reference_id: null,
+    } as Parameters<typeof getPaidReportSummaryFromSession>[0])
+    expect(decoded).toMatchObject({
+      tier: "personal",
+      overall: 56,
+      email: "buyer@example.com",
+      foundationType: "you",
+      selectedAddon: "glucose",
+    })
   })
 })
 

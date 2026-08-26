@@ -8,6 +8,9 @@ import { describe, it, expect } from "vitest"
 import {
   encodePaidReportSummary,
   decodePaidReportSummary,
+  getPaidReportSummaryFromSession,
+  paidReportSummaryMetadata,
+  STRIPE_METADATA_VALUE_LIMIT,
   type PaidReportSummary,
 } from "@/lib/paid-report-session"
 
@@ -18,6 +21,12 @@ const base: PaidReportSummary = {
   profile: { type: "Grower", tagline: "On the up", description: "..." },
   email: "jason@example.com",
 }
+
+const sessionWithMetadata = (
+  metadata: Record<string, string>,
+  client_reference_id: string | null = null
+): Parameters<typeof getPaidReportSummaryFromSession>[0] =>
+  ({ metadata, client_reference_id }) as Parameters<typeof getPaidReportSummaryFromSession>[0]
 
 describe("paid-report-session encode/decode", () => {
   it("round-trips a full summary including foundation + add-on", () => {
@@ -57,5 +66,55 @@ describe("paid-report-session encode/decode", () => {
     // valid base64 but missing required fields
     const bad = Buffer.from(JSON.stringify({ tier: "personal" }), "utf-8").toString("base64")
     expect(decodePaidReportSummary(bad)).toBeNull()
+  })
+
+  it("splits a real checkout summary into Stripe-safe metadata values", () => {
+    const summary: PaidReportSummary = {
+      tier: "personal",
+      overall: 56,
+      subScores: {
+        prebiotics: 44,
+        probiotics: 66,
+        postbiotics: 67,
+        feed: 44,
+        seed: 66,
+        heal: 67,
+      },
+      profile: {
+        type: "Emerging Balance",
+        tagline: "The pieces show up in your answers; the pattern is not yet steady.",
+        description:
+          "Your answers suggest the pieces are present but not yet settled into a daily rhythm. This pattern may indicate that repetition, rather than knowledge, is the gap. Small repeatable changes to any of the three pathways are a useful place to begin.",
+        color: "var(--icon-lime)",
+      },
+      email: "buyer@example.com",
+      foundationType: "you",
+      selectedAddon: "glucose",
+    }
+
+    expect(encodePaidReportSummary(summary).length).toBeGreaterThan(STRIPE_METADATA_VALUE_LIMIT)
+
+    const metadata = paidReportSummaryMetadata(summary)
+    expect(metadata.result_summary).toBeUndefined()
+    expect(Number(metadata.result_summary_parts)).toBeGreaterThan(1)
+    for (const value of Object.values(metadata)) {
+      expect(value.length).toBeLessThanOrEqual(STRIPE_METADATA_VALUE_LIMIT)
+    }
+
+    const decoded = getPaidReportSummaryFromSession(sessionWithMetadata(metadata))
+    expect(decoded).toMatchObject({
+      tier: "personal",
+      overall: 56,
+      email: "buyer@example.com",
+      foundationType: "you",
+      selectedAddon: "glucose",
+    })
+    expect(decoded?.profile.description).toBe(summary.profile.description)
+  })
+
+  it("still reads legacy single-field metadata summaries", () => {
+    const encoded = encodePaidReportSummary(base)
+    const decoded = getPaidReportSummaryFromSession(sessionWithMetadata({ result_summary: encoded }))
+    expect(decoded?.email).toBe("jason@example.com")
   })
 })
