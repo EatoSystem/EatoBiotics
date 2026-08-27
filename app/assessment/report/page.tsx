@@ -3,6 +3,7 @@ import { redirect, unstable_rethrow } from "next/navigation"
 import { stripe } from "@/lib/stripe-server"
 import { FullReportClient } from "@/components/assessment/full-report-client"
 import { PaidReportClient } from "@/components/assessment/paid-report-client"
+import { PaidReportUnavailable } from "@/components/assessment/paid-report-unavailable"
 import { DeliveryPendingNotice } from "@/components/assessment/delivery-pending-notice"
 import { getSupabase } from "@/lib/supabase"
 import { getUser } from "@/lib/supabase-server"
@@ -114,9 +115,17 @@ export default async function ReportPage({ searchParams }: Props) {
       redirect(`/assessment/deep?session_id=${session_id}`)
     }
 
-    // Supabase not configured (dev mode without DB) — fall through to existing client
-    const displayTier2 = displayTierForReport(summary.tier)
-    return <FullReportClient tier={displayTier2} />
+    // Supabase unavailable. Reaching here means Stripe already confirmed this
+    // checkout is settled — this person paid — so the one thing we must not do
+    // is hand them the generic report. `FullReportClient` renders tier-shaped
+    // content with none of their answers in it; showing it would look like
+    // fulfilment while quietly substituting someone else's report for theirs.
+    //
+    // Their real report may well exist and be perfectly fine; we simply cannot
+    // read it right now. So this says exactly that and invites a retry, rather
+    // than redirecting them into the questionnaire (which implies their purchase
+    // did not register) or rendering a substitute.
+    return <PaidReportUnavailable />
   } catch (error) {
     // redirect() interrupts rendering by throwing a NEXT_REDIRECT-digest Error.
     // A bare `catch {}` swallowed that silently and ran the fallback below

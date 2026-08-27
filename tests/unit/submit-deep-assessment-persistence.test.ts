@@ -398,6 +398,120 @@ describe("existing partial states are unchanged", () => {
 
 /* ══ Retry safety ════════════════════════════════════════════════════════ */
 
+describe("paid fulfilment fails closed without a database", () => {
+  it("returns 503 and spends nothing when getSupabase() returns null", async () => {
+    // Previously every write was skipped, the route returned ok:true, and the
+    // customer was emailed a report backed by no row at all.
+    mockGetSupabase.mockReturnValue(null)
+
+    const res = await callRoute()
+    const body = await res.json()
+
+    expect(res.status).toBe(503)
+    expect(body.ok).toBeUndefined()
+    expect(body.code).toBe("report_persistence_unavailable")
+
+    expect(mockMessagesCreate, "no Claude call may be paid for").not.toHaveBeenCalled()
+    expect(mockGeneratePDF, "no PDF may be generated").not.toHaveBeenCalled()
+    expect(mockSendEmail, "no email may be sent").not.toHaveBeenCalled()
+  })
+
+  it("leaks nothing to the caller when the database is missing", async () => {
+    mockGetSupabase.mockReturnValue(null)
+
+    const body = JSON.stringify(await (await callRoute()).json())
+
+    expect(body).not.toContain(ANSWER_SENTINEL)
+    expect(body).not.toContain(BUYER_EMAIL)
+    expect(body).not.toMatch(/supabase|service.role|SUPABASE_URL/i)
+  })
+})
+
+/* ══ Email idempotency across a failed status write ══════════════════════ */
+
+describe("the customer email is sent at most once per session", () => {
+  /**
+   * The window this closes: the email is sent BEFORE the step-10 upsert, so a
+   * failed status write leaves `email_status` un-persisted. Re-invoking the
+   * route then re-sent. The `email_sends` ledger is written immediately after a
+   * successful send, so it survives that failure.
+   */
+  function queuesWithLedger(ledgerRows: Queued[], statusWriteFails: boolean) {
+    const q = statusWriteFails ? queuesWithFailureAt(STATUS_WRITE) : freshRunQueues()
+    return { ...q, email_sends: ledgerRows }
+  }
+
+  it("records the delivery in email_sends immediately, not in the final write", async () => {
+    const stub = makeSupabaseStub(queuesWithLedger([{ data: null }, { data: null }], false))
+    mockGetSupabase.mockReturnValue(stub.client)
+
+    await callRoute()
+
+    const ledgerWrite = stub.writes.find((w) => w.table === "email_sends")
+    expect(ledgerWrite, "a successful send must be recorded in the ledger").toBeTruthy()
+    expect(ledgerWrite!.payload).toMatchObject({
+      email: BUYER_EMAIL,
+      kind: `paid_report:${SESSION_ID}`,
+    })
+  })
+
+  it("does not re-send when the status write failed and the route is invoked again", async () => {
+    // Call 1: everything delivers, but the final status upsert fails — so
+    // `email_status` never reaches the row. The ledger insert did land.
+    const first = makeSupabaseStub(queuesWithLedger([{ data: null }, { data: null }], true))
+    mockGetSupabase.mockReturnValue(first.client)
+
+    const firstBody = await (await callRoute()).json()
+    expect(firstBody.statusPersisted).toBe(false)
+    expect(mockSendEmail).toHaveBeenCalledTimes(1)
+    expect(first.writes.some((w) => w.table === "email_sends")).toBe(true)
+
+    // Call 2: same session. The row still says "analysing" with no email_status
+    // — the ONLY durable evidence of delivery is the ledger row.
+    mockSendEmail.mockClear()
+    const second = makeSupabaseStub(
+      queuesWithLedger([{ data: { id: "ledger-row-from-call-1" } }], false),
+    )
+    mockGetSupabase.mockReturnValue(second.client)
+
+    const secondBody = await (await callRoute()).json()
+
+    expect(mockSendEmail, "the buyer must not be emailed twice").not.toHaveBeenCalled()
+    expect(secondBody.ok).toBe(true)
+  })
+
+  it("skips the send rather than risking a duplicate when the ledger cannot be read", async () => {
+    const stub = makeSupabaseStub(
+      queuesWithLedger([{ data: null, error: { message: DB_ERROR } }], false),
+    )
+    mockGetSupabase.mockReturnValue(stub.client)
+
+    const body = await (await callRoute()).json()
+
+    expect(mockSendEmail, "an unreadable ledger cannot prove a first send").not.toHaveBeenCalled()
+    // The report is durable and viewable; only delivery is deferred.
+    expect(body.ok).toBe(true)
+    expect(body.status).toBe("partial")
+  })
+
+  it("alerts the owner when the send succeeded but the ledger write failed", async () => {
+    const stub = makeSupabaseStub(
+      queuesWithLedger([{ data: null }, { data: null, error: { message: DB_ERROR } }], false),
+    )
+    mockGetSupabase.mockReturnValue(stub.client)
+
+    await callRoute()
+
+    expect(mockSendEmail).toHaveBeenCalledTimes(1)
+    const ledgerAlert = mockReportError.mock.calls.find(
+      (c) => c[0] === "submit-deep-assessment-email-ledger-write-failed",
+    )
+    expect(ledgerAlert, "an unrecorded delivery leaves a duplicate window open").toBeTruthy()
+    expect(ledgerAlert![1]).toContain("risk=duplicate_on_retry")
+    expect(ledgerAlert![1]).not.toContain(ANSWER_SENTINEL)
+  })
+})
+
 describe("a retry cannot silently duplicate a completed delivery", () => {
   it("reuses a prior successful run without re-generating, re-uploading or re-emailing", async () => {
     // A row that already completed: report present, PDF uploaded, email sent.
