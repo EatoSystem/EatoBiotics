@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { stripe } from "@/lib/stripe-server"
-import { getPaidReportSummaryFromSession, isCheckoutSessionSettled } from "@/lib/paid-report-session"
+import {
+  getPaidReportSummaryFromSession,
+  getPaidReportSummaryReferenceFromSession,
+  isCheckoutSessionSettled,
+} from "@/lib/paid-report-session"
 
 export async function GET(req: NextRequest) {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -27,7 +31,7 @@ export async function GET(req: NextRequest) {
       paid,
       summary,
       // Backward-compatible field for older clients.
-      clientReferenceId: session.metadata?.result_summary ?? session.client_reference_id ?? null,
+      clientReferenceId: getPaidReportSummaryReferenceFromSession(session),
     })
   } catch (err) {
     console.error("Stripe verify error:", err)

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { stripe } from "@/lib/stripe-server"
 import {
-  encodePaidReportSummary,
   asFoundation,
   asAddon,
+  paidReportSummaryMetadata,
   type PaidReportTier,
 } from "@/lib/paid-report-session"
 
@@ -60,8 +60,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Encode result summary + tier so the report page can reconstruct it.
-    // metadata.result_summary is canonical because Stripe limits client_reference_id to 200 chars.
-    const resultSummary = encodePaidReportSummary({
+    // Stripe caps each metadata value at 500 chars, so the shared helper splits
+    // the base64 payload into numbered chunks and the downstream decoder
+    // reassembles them after payment verification.
+    const summaryMetadata = paidReportSummaryMetadata({
       overall,
       profile,
       subScores,
@@ -89,12 +91,12 @@ export async function POST(req: NextRequest) {
           quantity: 1,
         },
       ],
-      // Store result summary in metadata (no length limit) instead of
-      // client_reference_id which has a 200-char Stripe limit. The flat
+      // Store the summary in Stripe-safe metadata chunks instead of
+      // client_reference_id, which has a 200-char limit. The flat
       // foundation/add-on keys are duplicated for easy reading in the Stripe
-      // dashboard + webhooks (the canonical copy lives in result_summary).
+      // dashboard + webhooks.
       metadata: {
-        result_summary: resultSummary,
+        ...summaryMetadata,
         ...(foundation ? { foundation_type: foundation } : {}),
         ...(addon ? { selected_addon: addon } : {}),
       },
