@@ -336,6 +336,32 @@ export async function POST(req: NextRequest) {
   // succeeded). For a partially-failed prior run we keep the row so we can reuse
   // the work that did succeed and retry only the failed stages below.
   const supabase = getSupabase()
+
+  // Fail closed without a database.
+  //
+  // This route fulfils a purchase. Every step after this point either costs
+  // money (a Claude call), produces an artefact the customer is told to expect
+  // (a PDF), or makes a promise to them (the delivery email) — and none of it is
+  // recoverable unless the row exists. Running on without persistence produced
+  // the worst possible shape: the buyer is emailed a report the site cannot
+  // render, backed by a link that expires in 7 days.
+  //
+  // `getSupabase()` returns null for a missing URL, a missing service-role key,
+  // or a malformed URL (lib/supabase.ts) — a misconfigured production deploy
+  // looks exactly like local dev from here, so there is no safe "dev only"
+  // carve-out. `send-results-email` already fails closed the same way for the
+  // Mind flow; this matches it.
+  if (!supabase) {
+    console.error("[submit-deep-assessment] Supabase not configured — refusing to fulfil a paid report")
+    return NextResponse.json(
+      {
+        error: "We couldn't start your report just now. Please try again in a moment.",
+        code: "report_persistence_unavailable",
+      },
+      { status: 503 }
+    )
+  }
+
   let existingRow: {
     status?: string | null
     report_json?: unknown
@@ -441,10 +467,20 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Step 4: Mark as analysing
+  // Step 4: Mark as analysing.
+  //
+  // This write is a precondition, not bookkeeping. Everything after it costs
+  // money (a Claude call), produces a PDF object, and emails the customer — and
+  // all of that is unrecoverable if no row exists to hang it on: `reportViewState`
+  // sends a buyer with no row back into the questionnaire, and the emailed PDF
+  // link expires in 7 days. So a failure here stops the request before any of it.
+  //
+  // An awaited PostgREST call RESOLVES with `{ error }` rather than throwing, so
+  // the try/catch alone never saw this — it only caught transport-level throws.
   if (supabase) {
+    let intakeWriteError: string | null = null
     try {
-      await supabase.from("deep_assessments").upsert(
+      const { error } = await supabase.from("deep_assessments").upsert(
         {
           stripe_session_id: sessionId,
           tier,
@@ -462,8 +498,27 @@ export async function POST(req: NextRequest) {
         },
         { onConflict: "stripe_session_id" }
       )
+      if (error) intakeWriteError = error.message
     } catch (err) {
-      console.error("[submit-deep-assessment] Supabase status=analysing upsert error:", err)
+      intakeWriteError = err instanceof Error ? err.message : String(err)
+    }
+
+    if (intakeWriteError) {
+      // Database text stays in the log line; the customer sees a retryable
+      // failure with no internals. The alert carries identifiers and stage only
+      // — never answers, scores or report prose.
+      console.error("[submit-deep-assessment] intake write failed:", intakeWriteError)
+      await alertOwner(
+        "submit-deep-assessment-intake-write-failed",
+        `session=${sessionId} tier=${tier} stage=analysing generation=not_started`
+      )
+      return NextResponse.json(
+        {
+          error: "We couldn't start your report just now. Please try again in a moment.",
+          code: "report_persistence_unavailable",
+        },
+        { status: 503 }
+      )
     }
   }
 
@@ -742,10 +797,24 @@ export async function POST(req: NextRequest) {
     sessionTag: sessionTag(sessionId),
   })
 
-  // Step 6: Persist report_json (stays "analysing" until delivery is verified)
+  // Step 6: Persist report_json (stays "analysing" until delivery is verified).
+  //
+  // This is the write that decides whether the customer owns anything. Until it
+  // lands, `report_json` is null, and `reportViewState(status, hasReport=false)`
+  // returns "resume_questionnaire" — a buyer who paid is bounced back into the
+  // intake form. Delivering a PDF and an email on top of that produces the worst
+  // available outcome: a "your report is ready" email pointing at a link that
+  // dies in 7 days, backed by a row the site refuses to render.
+  //
+  // So delivery is gated on it. On failure the request stops here: no PDF upload,
+  // no email, and no ok:true. A retry re-generates (the Claude cost is real but
+  // bounded) and re-attempts the write; nothing has been delivered that a retry
+  // could duplicate.
+  let reportPersisted = false
   if (supabase) {
+    let persistError: string | null = null
     try {
-      await supabase.from("deep_assessments").upsert(
+      const { error } = await supabase.from("deep_assessments").upsert(
         {
           stripe_session_id: sessionId,
           report_json: report,
@@ -756,8 +825,27 @@ export async function POST(req: NextRequest) {
         },
         { onConflict: "stripe_session_id" }
       )
+      if (error) persistError = error.message
+      else reportPersisted = true
     } catch (err) {
-      console.error("[submit-deep-assessment] Supabase report_json save error:", err)
+      persistError = err instanceof Error ? err.message : String(err)
+    }
+
+    if (!reportPersisted) {
+      console.error("[submit-deep-assessment] report_json save failed:", persistError)
+      // Stage and provenance enum only — no answers, no report prose, no email.
+      await alertOwner(
+        "submit-deep-assessment-report-persist-failed",
+        `session=${sessionId} tier=${tier} stage=report_json ` +
+          `generationSource=${generationSource} delivery=withheld`
+      )
+      return NextResponse.json(
+        {
+          error: "Your report was generated but could not be saved. Please try again in a moment.",
+          code: "report_persistence_failed",
+        },
+        { status: 503 }
+      )
     }
   }
 
@@ -821,6 +909,18 @@ export async function POST(req: NextRequest) {
   }
 
   // Step 9: Send the report email. Skip if a prior run already delivered it.
+  //
+  // `existingRow.email_status` alone is not enough to prevent a duplicate. It is
+  // written by the step-10 upsert, which runs AFTER the send — so if that write
+  // fails, the row never records the delivery and the next invocation of this
+  // route emails the customer a second time.
+  //
+  // The `email_sends` ledger (Migration 23, already applied) closes that window:
+  // it is written immediately after a successful send, before step 10, and its
+  // `UNIQUE (email, kind)` constraint makes the record authoritative even if
+  // every later write fails. Keyed per checkout session so a buyer who purchases
+  // twice still receives both reports.
+  const emailLedgerKind = `paid_report:${sessionId}`
   let emailStatus: "sent" | "failed" | "pending" =
     existingRow?.email_status === "sent" ? "sent" : "pending"
   let emailSentAt: string | null = existingRow?.email_sent_at ?? null
@@ -844,7 +944,35 @@ export async function POST(req: NextRequest) {
         leadEmail = sessionRow?.email ?? leadEmail
       }
 
-      if (resendKey && leadEmail) {
+      // Durable "already delivered?" check. Survives a failed step-10 write,
+      // which `existingRow.email_status` does not.
+      let alreadyDelivered = false
+      if (leadEmail) {
+        const { data: ledgerRow, error: ledgerReadError } = await supabase
+          .from("email_sends")
+          .select("id")
+          .eq("email", leadEmail)
+          .eq("kind", emailLedgerKind)
+          .maybeSingle()
+
+        if (ledgerReadError) {
+          // Unreadable ledger means we cannot prove this is a first send. Not
+          // sending is the recoverable failure (the report is already durable
+          // and viewable on-site, and the next run retries); sending blind risks
+          // a duplicate we can never take back.
+          console.error("[submit-deep-assessment] email ledger read failed:", ledgerReadError.message)
+          emailStatus = "failed"
+          emailError = "Delivery ledger unavailable — send skipped to avoid a duplicate"
+        } else if (ledgerRow) {
+          alreadyDelivered = true
+          emailStatus = "sent"
+        }
+      }
+
+      if (alreadyDelivered || emailStatus === "failed") {
+        // Nothing to send: either a prior run already delivered this session's
+        // report, or the ledger could not be read.
+      } else if (resendKey && leadEmail) {
         const anyReport = report as unknown as Record<string, unknown>
         const { subject, html } = buildPaidReportEmail({
           name: leadName,
@@ -882,6 +1010,28 @@ export async function POST(req: NextRequest) {
         } else {
           emailStatus = "sent"
           emailSentAt = new Date().toISOString()
+
+          // Record the delivery NOW, not in step 10. This is the write that
+          // makes "already emailed" durable: if the step-10 status upsert fails,
+          // this row still exists and the next invocation skips the send.
+          const { error: ledgerWriteError } = await supabase
+            .from("email_sends")
+            .insert({ email: leadEmail, kind: emailLedgerKind })
+
+          if (ledgerWriteError) {
+            // The customer HAS their email; only the record of it failed. Say so
+            // rather than silently leaving a duplicate-send window open — the
+            // delivery stands, so emailStatus is not downgraded.
+            console.error(
+              "[submit-deep-assessment] email ledger write failed:",
+              ledgerWriteError.message,
+            )
+            await alertOwner(
+              "submit-deep-assessment-email-ledger-write-failed",
+              `session=${sessionId} tier=${tier} stage=email_sends delivered=true ` +
+                `risk=duplicate_on_retry`
+            )
+          }
         }
       } else if (!resendKey) {
         console.log("[submit-deep-assessment] RESEND_API_KEY not set — skipping email")
@@ -899,15 +1049,26 @@ export async function POST(req: NextRequest) {
   // Step 10: Finalise. The overall status is "complete" ONLY when the report,
   // PDF, and email all succeeded — otherwise it stays "partial" so the failure
   // is visible in the DB and a re-run retries just the failed stages.
+  // `reportOk` is derived from the verified write, not asserted. A report object
+  // existing in memory was never the question — whether the buyer can reach it
+  // is. There is no "no database" fallback here any more: the route fails closed
+  // at the top, so reaching this line means persistence was available and the
+  // step-6 write was confirmed.
   const overall_status = overallReportStatus({
-    reportOk: true, // a report always exists (Claude or deterministic fallback)
+    reportOk: reportPersisted,
     pdfOk: pdfStatus === "uploaded",
     emailOk: emailStatus === "sent",
   })
 
+  // Whether the row now actually says what `overall_status` says. Bookkeeping
+  // can fail on its own, and when it does the durable row still carries the
+  // step-6 state ("analysing") — the customer keeps full access to a persisted
+  // report, but the response must not claim a status that was never written.
+  let statusPersisted = false
   if (supabase) {
+    let statusWriteError: string | null = null
     try {
-      await supabase.from("deep_assessments").upsert(
+      const { error } = await supabase.from("deep_assessments").upsert(
         {
           stripe_session_id: sessionId,
           status: overall_status,
@@ -921,8 +1082,14 @@ export async function POST(req: NextRequest) {
         },
         { onConflict: "stripe_session_id" }
       )
+      if (error) statusWriteError = error.message
+      else statusPersisted = true
     } catch (err) {
-      console.error("[submit-deep-assessment] Supabase final status upsert error:", err)
+      statusWriteError = err instanceof Error ? err.message : String(err)
+    }
+
+    if (!statusPersisted) {
+      console.error("[submit-deep-assessment] final status upsert failed:", statusWriteError)
     }
   }
 
@@ -930,17 +1097,30 @@ export async function POST(req: NextRequest) {
   // always, emails in production, throttles itself, and never throws). Only the
   // session id and stage statuses are included — no answers, report content, or
   // customer email.
-  if (overall_status !== "complete") {
+  // A silent failure here used to be possible in both directions: a "complete"
+  // run whose status write failed alerted nobody, and the response said the row
+  // had been updated. Both are covered now.
+  if (overall_status !== "complete" || !statusPersisted) {
     await alertOwner(
       "submit-deep-assessment-partial",
       `session=${sessionId} tier=${tier} status=${overall_status} ` +
+        `statusPersisted=${statusPersisted} ` +
         `pdf=${pdfStatus} email=${emailStatus} ` +
         `pdfError=${(pdfError ?? "none").slice(0, 300)} emailError=${(emailError ?? "none").slice(0, 300)}`
     )
   }
 
-  // The report itself is always available (PDF link + on-site view), so the
-  // client still gets ok:true; delivery problems are surfaced via DB status and
-  // retried on the next call rather than failing the user's request.
-  return NextResponse.json({ ok: true, pdfUrl, status: overall_status })
+  // The report is persisted (step 6 gated on it), so the buyer has durable
+  // access via the on-site view and a freshly-minted PDF link — hence ok:true
+  // even when delivery stages failed. `status` reports what the row actually
+  // says: if the final write failed, the durable value is still step 6's
+  // "analysing", which renders as "view_delivery_pending" rather than a
+  // redirect. Claiming `overall_status` there would be describing a write that
+  // did not happen.
+  return NextResponse.json({
+    ok: true,
+    pdfUrl,
+    status: statusPersisted ? overall_status : "analysing",
+    statusPersisted,
+  })
 }
