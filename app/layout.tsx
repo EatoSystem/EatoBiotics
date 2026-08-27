@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
-import { Analytics } from '@vercel/analytics/next'
 import { Nav } from '@/components/nav'
 import { Footer } from '@/components/footer'
 import { JsonLd } from '@/components/json-ld'
@@ -14,6 +13,7 @@ import { Toaster } from 'sonner'
 import { PHProvider } from '@/components/providers/posthog-provider'
 import { PostHogPageview } from '@/components/providers/posthog-pageview'
 import { StatsigClientProvider } from '@/components/providers/statsig-provider'
+import { ConsentedAnalytics } from '@/components/providers/consented-analytics'
 import { Suspense } from 'react'
 import './globals.css'
 
@@ -115,7 +115,7 @@ export default function RootLayout({
             <main id="main" tabIndex={-1}>{children}</main>
           </LocaleProvider>
           <Footer />
-          <Analytics />
+          <ConsentedAnalytics />
           <Toaster position="bottom-center" richColors />
           <PwaRegister />
           <PwaInstallPrompt />

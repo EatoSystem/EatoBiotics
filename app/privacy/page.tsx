@@ -111,9 +111,12 @@ export default function PrivacyPolicyPage() {
             <SubList items={[
               { label: "Supabase", text: "Our database and authentication provider. Your account data, scores, and meal records are stored on Supabase servers hosted in the EU." },
               { label: "Anthropic (Claude AI)", text: "We send meal descriptions and report context to Anthropic's Claude API to generate analysis and personalised recommendations. Data sent is limited to what is necessary for the analysis. Anthropic's data usage policy applies." },
-              { label: "Stripe", text: "Our payment processor. Handles all subscription billing. Subject to Stripe's own Privacy Policy." },
+              { label: "OpenAI", text: "Used only by the Plate Builder, to generate recipes and recipe images from the ingredients you choose. Your assessment answers and reports are not sent to OpenAI." },
+              { label: "Stripe", text: "Our payment processor, for the one-time report purchase and for any membership billing. We never receive your card details. To reconstruct your report after payment, the checkout session currently also carries your assessment scores and profile type; we are removing this so that Stripe receives payment data only." },
               { label: "Resend", text: "Our email delivery provider. Used to send account, report, and notification emails." },
-              { label: "Vercel", text: "Our hosting provider. The application runs on Vercel's infrastructure." },
+              { label: "Vercel", text: "Our hosting provider. The application runs on Vercel's infrastructure, and Vercel Analytics records anonymous page-view statistics when you accept analytics cookies." },
+              { label: "PostHog", text: "Product analytics, hosted in the EU. Records how the Service is used. Only loaded if you accept analytics cookies; form inputs are masked." },
+              { label: "Statsig", text: "Feature flags and product analytics. Only loaded if you accept analytics cookies; when loaded while you are signed in it receives your user ID and email address." },
             ]} />
           </Section>
 
@@ -134,8 +137,8 @@ export default function PrivacyPolicyPage() {
             <SubList items={[
               { label: "Access", text: "Request a copy of all personal data we hold about you. You can also download this directly from your account dashboard." },
               { label: "Rectification", text: "Ask us to correct inaccurate or incomplete data." },
-              { label: "Erasure", text: "Ask us to delete your data. You can do this directly in your account under My Account → Delete Account." },
-              { label: "Portability", text: "Receive your data in a machine-readable format (JSON). Available directly from your account dashboard." },
+              { label: "Erasure", text: "Ask us to delete your data. You can do this directly in your account under My Account → Delete Account. This removes your profile, your assessments and leads, your paid reports and their PDF files, your meal, journal, plate, stability and GLP-1 records, and your entry in our email log. If any part of it fails, we stop and keep your account open rather than leaving data behind with no owner. Payment records are kept — see section 6." },
+              { label: "Portability", text: "Receive your data in a machine-readable format (JSON), including your paid reports. Available directly from your account dashboard." },
               { label: "Restriction", text: "Ask us to stop processing your data in certain circumstances." },
               { label: "Object", text: "Object to processing based on legitimate interests." },
               { label: "Withdraw consent", text: "Where we rely on consent, you can withdraw it at any time without affecting prior processing." },
@@ -161,7 +164,10 @@ export default function PrivacyPolicyPage() {
               { label: "Analytics cookies", text: "Used to understand how the Service is used. Only placed with your consent." },
             ]} />
             <p className="mt-3">
-              You can manage cookie preferences in your browser settings at any time.
+              You can change your choice at any time using the <strong>Cookie preferences</strong>
+              {" "}link in the footer of every page. Choosing &ldquo;Essential only&rdquo; reloads the
+              page so that anything already running stops. Analytics tools are not loaded at all
+              until you accept.
             </p>
           </Section>
 

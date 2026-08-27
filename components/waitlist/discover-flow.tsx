@@ -36,6 +36,7 @@ import {
   computeQuickResult,
   type QuickPillar,
 } from "@/lib/quick-assessment"
+import { AGE_BRACKETS } from "@/lib/age-brackets"
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://eatobiotics.com"
 
@@ -44,7 +45,6 @@ function track(event: string, props?: Record<string, unknown>) {
   try { posthog.capture(event, props) } catch { /* analytics optional */ }
 }
 
-const AGE_BRACKETS = ["Under 20", "20–29", "30–39", "40–49", "50–59", "60+"]
 
 const COUNTRIES = [
   "Ireland", "United Kingdom", "United States", "Canada", "Australia",

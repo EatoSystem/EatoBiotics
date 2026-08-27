@@ -88,8 +88,20 @@ const TIERS = [
 export function PaymentCTA({ result }: PaymentCTAProps) {
   const [loading, setLoading] = useState<Tier | null>(null)
   const [error, setError] = useState<string | null>(null)
+  /**
+   * Express consent to immediate supply of digital content, and acknowledgement
+   * that it ends the 14-day right to cancel (Consumer Rights Directive; Irish
+   * Consumer Rights Act 2022). Terms section 5 says this is asked at checkout,
+   * so it has to actually be asked — unticked by default, because a pre-ticked
+   * box is not consent.
+   */
+  const [acknowledged, setAcknowledged] = useState(false)
 
   async function handlePurchase(tier: Tier) {
+    if (!acknowledged) {
+      setError("Please confirm the two points above before continuing to payment.")
+      return
+    }
     setLoading(tier)
     setError(null)
 
@@ -248,7 +260,7 @@ export function PaymentCTA({ result }: PaymentCTAProps) {
                 {/* CTA button */}
                 <button
                   onClick={() => handlePurchase(tier.id)}
-                  disabled={loading !== null}
+                  disabled={loading !== null || !acknowledged}
                   className={cn(
                     "mb-2 flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60",
                     tier.featured ? "brand-gradient" : ""
@@ -279,6 +291,26 @@ export function PaymentCTA({ result }: PaymentCTAProps) {
             </div>
           )
         })}
+      </div>
+
+      {/* Express consent to immediate supply — see Terms sections 4 and 5. */}
+      <div className="mx-auto max-w-2xl rounded-2xl border border-border bg-secondary/20 px-5 py-4">
+        <label className="flex cursor-pointer items-start gap-3 text-xs leading-relaxed text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={acknowledged}
+            onChange={(e) => setAcknowledged(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--icon-green)]"
+          />
+          <span>
+            I ask EatoBiotics to prepare my report straight away, and I understand that once it
+            has been generated I lose the 14-day right to cancel. I agree to the{" "}
+            <Link href="/terms" className="underline hover:text-foreground">Terms of Service</Link>{" "}
+            and the{" "}
+            <Link href="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>,
+            including that my assessment answers are health-related data used to produce the report.
+          </span>
+        </label>
       </div>
 
       {error && (

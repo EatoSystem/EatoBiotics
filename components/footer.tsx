@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { openConsentPreferences } from "@/lib/consent"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { NAV_GROUPS, hidesSiteChrome } from "@/lib/nav"
@@ -134,6 +135,13 @@ function MinimalFooter() {
             <Link href="/terms" className="text-xs text-muted-foreground transition-colors hover:text-foreground">
               Terms of Service
             </Link>
+            <button
+              type="button"
+              onClick={openConsentPreferences}
+              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Cookie preferences
+            </button>
             <Link href="/preview-access" className="text-xs text-muted-foreground transition-colors hover:text-muted-foreground">
               Founder Access
             </Link>
@@ -236,6 +244,13 @@ export function Footer() {
             <Link href="/terms" className="text-xs text-muted-foreground transition-colors hover:text-foreground">
               Terms of Service
             </Link>
+            <button
+              type="button"
+              onClick={openConsentPreferences}
+              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Cookie preferences
+            </button>
             <Link href="/preview-access" className="text-xs text-muted-foreground transition-colors hover:text-muted-foreground">
               Founder Access
             </Link>

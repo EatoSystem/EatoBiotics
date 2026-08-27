@@ -38,6 +38,7 @@ import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
 import type { TwinVisualState } from "@/lib/account/twin-visual"
 import type { TwinFeedEntry } from "@/lib/agent-loop/account-twin"
 import type { TwinVideo } from "@/lib/account/twin-figure"
+import { AGE_BRACKETS } from "@/lib/age-brackets"
 
 
 function MealCard({ meal }: { meal: { image: string; name: string; time: string; type: string; score: number; insight: string; biotics: { prebiotic: number; probiotic: number; postbiotic: number }; quality: { diversity: number; antiInflammatory: number }; nutrition: { calories: number; protein: number; carbs: number; fat: number; fibre: number }; tags: string[] } }) {
@@ -613,7 +614,6 @@ type Tab = "overview" | "meals" | "reports" | "consultations" | "account"
 type LoggerState = "empty" | "analysing" | "result"
 type DeleteStage = "closed" | "warning" | "confirm" | "deleting" | "done"
 
-const AGE_BRACKETS = ["Under 20", "20–29", "30–39", "40–49", "50–59", "60+"]
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "overview",      label: "Overview",      icon: <TrendingUp size={14} /> },

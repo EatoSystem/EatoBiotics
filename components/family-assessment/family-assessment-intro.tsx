@@ -16,6 +16,7 @@ import {
 import Link from "next/link"
 import { GradientText } from "@/components/gradient-text"
 import type { LeadData } from "@/lib/assessment-storage"
+import { AGE_BRACKETS, isUnderMinimumAge, UNDER_MINIMUM_AGE_MESSAGE } from "@/lib/age-brackets"
 
 interface FamilyAssessmentIntroProps {
   onStart: (lead: LeadData) => void
@@ -103,7 +104,6 @@ const STEPS = [
   },
 ]
 
-const AGE_BRACKETS = ["Under 20", "20–29", "30–39", "40–49", "50–59", "60+"]
 
 export function FamilyAssessmentIntro({ onStart }: FamilyAssessmentIntroProps) {
   const [name, setName] = useState("")
@@ -118,6 +118,11 @@ export function FamilyAssessmentIntro({ onStart }: FamilyAssessmentIntroProps) {
     if (!email.trim()) e.email = "Please enter your email"
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Please enter a valid email"
     if (!ageBracket) e.ageBracket = "Please select your age bracket"
+    // The Terms of Service commit to a 16+ Service, so this is a stop rather
+    // than a warning: nothing is submitted and no lead row is created. The
+    // same check runs server-side, because the age is self-declared either
+    // way and a form control is not an enforcement point.
+    else if (isUnderMinimumAge(ageBracket)) e.ageBracket = UNDER_MINIMUM_AGE_MESSAGE
     setErrors(e)
     return Object.keys(e).length === 0
   }
