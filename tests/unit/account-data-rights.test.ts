@@ -158,6 +158,24 @@ describe("erasure fails closed", () => {
     expect(supabase.authDeletes).toEqual([])
   })
 
+  it("deletes nothing at all when the paid-report rows cannot be read", async () => {
+    supabase = makeSupabase({ table: "deep_assessments" })
+
+    const res = await callDelete()
+    const body = await res.json()
+
+    expect(res.status).toBe(503)
+    expect(body.stages).toEqual(["deep_assessments:read"])
+    // The strong claim: not "we stopped before closing the account" but "we
+    // stopped before removing anything". Without the session ids we cannot
+    // derive the PDF object paths, and deleting the rows anyway would destroy
+    // the only index of those files — leaving paid reports in the bucket
+    // permanently, unreachable and undeletable.
+    expect(supabase.deleted, "nothing may be deleted once the index is unreadable").toEqual([])
+    expect(supabase.removedPaths).toEqual([])
+    expect(supabase.authDeletes).toEqual([])
+  })
+
   it("names the failed stage without leaking database error text", async () => {
     supabase = makeSupabase({ table: "leads" })
 
@@ -200,6 +218,21 @@ describe("the export includes what the customer paid for", () => {
     ]) {
       expect(supabase.selected, `${table} must be in the export`).toContain(table)
     }
+  })
+
+  it("refuses rather than hand over a partial export", async () => {
+    supabase = makeSupabase({ table: "glp1_logs" })
+
+    const res = await callExport()
+    const body = await res.json()
+
+    expect(res.status).toBe(503)
+    expect(body).toMatchObject({ code: "export_incomplete" })
+    expect(body.stages).toContain("glp1_logs")
+    // An export is a factual claim about everything we hold. Coercing a failed
+    // read to [] produces a document that looks complete and is not, and the
+    // person receiving it has no way to tell.
+    expect(JSON.stringify(body)).not.toContain("exploded")
   })
 
   it("still returns a downloadable JSON attachment", async () => {

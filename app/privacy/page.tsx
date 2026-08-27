@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: "How EatoBiotics collects, uses, and protects your personal data.",
 }
 
-const LAST_UPDATED = "15 May 2025"
+const LAST_UPDATED = "27 August 2026"
 const CONTACT_EMAIL = "hello@eatobiotics.com"
 const COMPANY_NAME = "EatoBiotics"
 const COMPANY_JURISDICTION = "Republic of Ireland"
@@ -112,7 +112,7 @@ export default function PrivacyPolicyPage() {
               { label: "Supabase", text: "Our database and authentication provider. Your account data, scores, and meal records are stored on Supabase servers hosted in the EU." },
               { label: "Anthropic (Claude AI)", text: "We send meal descriptions and report context to Anthropic's Claude API to generate analysis and personalised recommendations. Data sent is limited to what is necessary for the analysis. Anthropic's data usage policy applies." },
               { label: "OpenAI", text: "Used only by the Plate Builder, to generate recipes and recipe images from the ingredients you choose. Your assessment answers and reports are not sent to OpenAI." },
-              { label: "Stripe", text: "Our payment processor, for the one-time report purchase and for any membership billing. We never receive your card details. To reconstruct your report after payment, the checkout session currently also carries your assessment scores and profile type; we are removing this so that Stripe receives payment data only." },
+              { label: "Stripe", text: "Our payment processor, for the one-time report purchase and for any membership billing. We never receive your card details. Separately from payment, the checkout session we create currently carries some of your assessment data in its metadata so the report can be rebuilt after payment: your overall score, your five sub-scores, your profile type and its description, the assessment you came from, any deeper-support area you selected, your email address, and the time you agreed to immediate supply. This is health-related information held by a payment processor, which is more than Stripe needs. We are moving it to our own database so that Stripe receives payment data only; until then it is disclosed here and at checkout rather than left unsaid." },
               { label: "Resend", text: "Our email delivery provider. Used to send account, report, and notification emails." },
               { label: "Vercel", text: "Our hosting provider. The application runs on Vercel's infrastructure, and Vercel Analytics records anonymous page-view statistics when you accept analytics cookies." },
               { label: "PostHog", text: "Product analytics, hosted in the EU. Records how the Service is used. Only loaded if you accept analytics cookies; form inputs are masked." },

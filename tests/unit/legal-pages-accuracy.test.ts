@@ -18,7 +18,7 @@ import { join } from "node:path"
 
 const TERMS = readFileSync("app/terms/page.tsx", "utf8")
 const PRIVACY = readFileSync("app/privacy/page.tsx", "utf8")
-const CTA = readFileSync("components/assessment/payment-cta.tsx", "utf8")
+const CTA = readFileSync("components/assessment/withdrawal-acknowledgement.tsx", "utf8")
 
 /* ── Which processors does the code actually reach? ─────────────────────── */
 
@@ -71,6 +71,17 @@ describe("the Privacy Policy names every processor the code uses", () => {
     expect(detected.length).toBe(PROCESSOR_SIGNALS.length)
   })
 
+  it("discloses what the checkout session metadata actually carries", () => {
+    // Until this data moves out of Stripe, the policy has to name it. Each of
+    // these is a field paidReportSummaryMetadata() encodes today
+    // (lib/paid-report-session.ts), so a vaguer summary would understate it.
+    for (const disclosed of ["sub-scores", "profile type", "email address"]) {
+      expect(PRIVACY, `Stripe metadata disclosure must mention ${disclosed}`).toContain(disclosed)
+    }
+    // Named for what it is, rather than described neutrally.
+    expect(PRIVACY).toMatch(/health-related information held by a payment processor/)
+  })
+
   it("no longer says Stripe handles only subscription billing", () => {
     // The live offer is a one-time €49 report; describing Stripe as a
     // subscription processor misstated both the product and the processing.
@@ -106,19 +117,33 @@ describe("the Terms describe the live offer", () => {
   })
 })
 
-describe("the checkout acknowledgement the Terms promise exists", () => {
-  it("is asked before payment can start", () => {
-    // Terms section 4 says "you are asked at checkout". If that control did not
-    // exist, the Terms would be making the same kind of untrue statement this
-    // whole change is fixing.
-    expect(CTA).toContain("acknowledged")
-    expect(CTA).toMatch(/setAcknowledged/)
+describe("the last-updated dates move with the content", () => {
+  it("both pages carry the same date", () => {
+    const dateOf = (source: string) => source.match(/const LAST_UPDATED = "([^"]+)"/)?.[1]
+    const privacy = dateOf(PRIVACY)
+    const terms = dateOf(TERMS)
+    expect(privacy).toBeTruthy()
+    // Both were rewritten in the same change, so a mismatch means one was edited
+    // and its date left behind — the drift that makes a policy date meaningless.
+    expect(terms).toBe(privacy)
   })
 
-  it("is unticked by default and blocks the purchase until ticked", () => {
-    // A pre-ticked box is not consent.
-    expect(CTA).toContain("useState(false)")
-    expect(CTA).toMatch(/disabled=\{loading !== null \|\| !acknowledged\}/)
-    expect(CTA).toMatch(/if \(!acknowledged\)/)
+  it("is not the date that predated this rewrite", () => {
+    // Substantive changes landed in both documents: the one-time offer, the
+    // right of withdrawal, three added processors. A stale date tells readers
+    // nothing changed.
+    expect(PRIVACY).not.toContain('LAST_UPDATED = "15 May 2025"')
+    expect(TERMS).not.toContain('LAST_UPDATED = "15 May 2025"')
+  })
+})
+
+describe("the checkout acknowledgement the Terms promise exists", () => {
+  it("states the consequence the Terms describe", () => {
+    // Terms sections 4 and 5 say the buyer is asked at checkout. The per-caller
+    // wiring and the server-side refusal are covered in
+    // checkout-acknowledgement.test.ts; this only pins that the control's copy
+    // says what the Terms say it says.
+    expect(CTA).toMatch(/14-day right to cancel/)
+    expect(CTA).toContain("ACKNOWLEDGEMENT_FIELD")
   })
 })

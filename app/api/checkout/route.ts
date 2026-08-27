@@ -29,7 +29,15 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { overall, profile, subScores, email, foundationType, selectedAddon } = body as {
+    const {
+      overall,
+      profile,
+      subScores,
+      email,
+      foundationType,
+      selectedAddon,
+      acknowledgedImmediateSupply,
+    } = body as {
       tier?: PaidReportTier
       overall?: number
       profile?: { type: string; tagline: string; description: string; color?: string }
@@ -37,6 +45,23 @@ export async function POST(req: NextRequest) {
       email?: string
       foundationType?: string
       selectedAddon?: string
+      acknowledgedImmediateSupply?: boolean
+    }
+
+    // Express consent to immediate supply of digital content, without which the
+    // 14-day right to cancel is not lost (Consumer Rights Directive; Irish
+    // Consumer Rights Act 2022). Terms sections 4 and 5 state that this is asked
+    // at checkout, so it has to be true of every path that reaches Stripe — a
+    // checkbox in one caller is neither an enforcement point nor a record.
+    if (acknowledgedImmediateSupply !== true) {
+      return NextResponse.json(
+        {
+          error:
+            "Please confirm you're asking us to prepare your report straight away before continuing to payment.",
+          code: "acknowledgement_required",
+        },
+        { status: 400 },
+      )
     }
 
     // Validate the new product-architecture context through the canonical
@@ -99,6 +124,13 @@ export async function POST(req: NextRequest) {
         ...summaryMetadata,
         ...(foundation ? { foundation_type: foundation } : {}),
         ...(addon ? { selected_addon: addon } : {}),
+        // The durable record that the buyer asked for immediate supply. Kept on
+        // the session because that object survives independently of our
+        // database, and the consent needs to outlive the request that gave it.
+        // Two keys of the 50-key budget; MAX_SUMMARY_CHUNKS was lowered to 43
+        // to keep headroom rather than land exactly on Stripe's limit.
+        acknowledged_immediate_supply: "true",
+        acknowledged_at: new Date().toISOString(),
       },
       ...(email ? { customer_email: email.toLowerCase().trim() } : {}),
       allow_promotion_codes: true,

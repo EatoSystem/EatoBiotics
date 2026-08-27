@@ -78,7 +78,23 @@ export async function DELETE() {
       .from("deep_assessments")
       .select("stripe_session_id")
       .or(ownedBy)
-    record("deep_assessments:read", paidReadError)
+    if (paidReadError) {
+      // Abort before deleting anything. If we cannot read the session ids we
+      // cannot derive the PDF object paths — and deleting the rows anyway would
+      // destroy the only index of those files, leaving the customer's paid
+      // reports in the bucket permanently, unreachable and undeletable. Nothing
+      // has been removed at this point, so a retry is clean.
+      console.error("[account/delete] deep_assessments read failed:", paidReadError.message)
+      return NextResponse.json(
+        {
+          error:
+            "We couldn't finish deleting your data, so we haven't closed your account. Please try again — if it keeps failing, email us and we'll do it manually.",
+          code: "deletion_incomplete",
+          stages: ["deep_assessments:read"],
+        },
+        { status: 503 },
+      )
+    }
 
     const pdfPaths = (paidRows ?? [])
       .map((row: { stripe_session_id?: string | null }) => row.stripe_session_id)

@@ -56,9 +56,15 @@ export const STRIPE_METADATA_VALUE_LIMIT = 500
 const SUMMARY_METADATA_KEY = "result_summary"
 const SUMMARY_CHUNK_COUNT_KEY = "result_summary_parts"
 const SUMMARY_CHUNK_PREFIX = "result_summary_"
-// Stripe allows 50 metadata keys. Leave room for the count key plus the
-// duplicated foundation/add-on dashboard fields the checkout route adds.
-const MAX_SUMMARY_CHUNKS = 45
+// Stripe allows 50 metadata keys. The checkout route adds, at most: the chunk
+// count, foundation_type, selected_addon, acknowledged_immediate_supply and
+// acknowledged_at — five. 43 leaves two spare rather than landing exactly on
+// the limit, which is where 45 put it once the consent record was added.
+//
+// Lowering the ceiling also narrows what the decoder accepts, which is safe: a
+// realistic summary measures two chunks (the €49 outage in #243 was a 660-char
+// payload), so no live session is anywhere near this bound.
+const MAX_SUMMARY_CHUNKS = 43
 
 function isPaidReportTier(value: unknown): value is PaidReportTier {
   return typeof value === "string" && VALID_TIERS.includes(value as PaidReportTier)

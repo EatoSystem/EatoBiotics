@@ -7,10 +7,16 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false }, // internal test console — keep out of search
 }
 
+/**
+ * The starter/full/premium tiers were retired; `/api/checkout` sells one
+ * product, the €49 personal report, and ignores any other tier in the request.
+ * These labels are kept as report *shapes* to preview, with the retired prices
+ * removed — quoting €20/€40/€50 anywhere described a price nobody can pay.
+ */
 const TIER_COLORS = {
-  starter: { bg: "bg-[var(--icon-lime)]/10", border: "border-[var(--icon-lime)]/30", dot: "bg-[var(--icon-lime)]", label: "Starter · €20" },
-  full: { bg: "bg-[var(--icon-green)]/10", border: "border-[var(--icon-green)]/30", dot: "bg-[var(--icon-green)]", label: "Full Report · €40" },
-  premium: { bg: "bg-[var(--icon-teal)]/10", border: "border-[var(--icon-teal)]/30", dot: "bg-[var(--icon-teal)]", label: "Premium · €50" },
+  starter: { bg: "bg-[var(--icon-lime)]/10", border: "border-[var(--icon-lime)]/30", dot: "bg-[var(--icon-lime)]", label: "Starter layout · retired tier" },
+  full: { bg: "bg-[var(--icon-green)]/10", border: "border-[var(--icon-green)]/30", dot: "bg-[var(--icon-green)]", label: "Full layout · retired tier" },
+  premium: { bg: "bg-[var(--icon-teal)]/10", border: "border-[var(--icon-teal)]/30", dot: "bg-[var(--icon-teal)]", label: "Premium layout · retired tier" },
 }
 
 function PreviewCard({

@@ -29,8 +29,18 @@ export async function PATCH(req: NextRequest) {
     if ("sex" in body) update.sex = body.sex === "male" || body.sex === "female" ? body.sex : null
 
     const supabase = getSupabase()
-    if (supabase) {
-      await supabase.from("profiles").update(update).eq("id", user.id)
+    if (!supabase) {
+      return NextResponse.json({ error: "Database not configured" }, { status: 503 })
+    }
+
+    // An awaited PostgREST call resolves with { error } rather than throwing, so
+    // discarding it here reported a saved profile that was never written — the
+    // person sees their new name or age bracket in the form and it is gone on
+    // the next load.
+    const { error } = await supabase.from("profiles").update(update).eq("id", user.id)
+    if (error) {
+      console.error("[account/settings] profile update failed:", error.message)
+      return NextResponse.json({ error: "Could not save your changes." }, { status: 503 })
     }
 
     return NextResponse.json({ ok: true })

@@ -4,7 +4,7 @@ import { Check, Lock, ArrowDown } from "lucide-react"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
 
 /* ── Report Reframe ──────────────────────────────────────────────────────
-   Shown between the free results content and the PaymentCTA.
+   Shown between the free results content and the report purchase CTA.
    Makes the upgrade feel like "unlocking the rest of your report"
    not "buying something new."
 ────────────────────────────────────────────────────────────────────── */

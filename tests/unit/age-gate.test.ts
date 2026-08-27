@@ -209,6 +209,25 @@ describe("the age floor is enforced server-side", () => {
     expect(mockFrom).toHaveBeenCalled()
   })
 
+  it("account settings reports a failed profile write instead of claiming success", async () => {
+    // An awaited PostgREST call resolves with { error } rather than throwing, so
+    // the route returned ok:true for a write that never landed — the person sees
+    // their new name or age bracket in the form and it is gone on the next load.
+    mockFrom.mockImplementation(() => {
+      const chain: Record<string, unknown> = {}
+      for (const m of ["select", "eq", "update"]) chain[m] = () => chain
+      chain.then = (resolve: (v: unknown) => void) =>
+        resolve({ data: null, error: { message: "profiles exploded" } })
+      return chain
+    })
+
+    const { PATCH } = await import("@/app/api/account/settings/route")
+    const res = await PATCH(post("http://localhost/api/account/settings", { age_bracket: "40–49" }))
+
+    expect(res.status).toBe(503)
+    expect(JSON.stringify(await res.json())).not.toContain("exploded")
+  })
+
   it("refuses with copy that names the age, not a bare error code", () => {
     expect(UNDER_MINIMUM_AGE_MESSAGE).toContain(String(MINIMUM_AGE))
   })

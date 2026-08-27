@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: "The terms and conditions governing use of the EatoBiotics platform.",
 }
 
-const LAST_UPDATED = "15 May 2025"
+const LAST_UPDATED = "27 August 2026"
 const CONTACT_EMAIL = "hello@eatobiotics.com"
 const COMPANY_NAME = "EatoBiotics"
 const GOVERNING_LAW = "Republic of Ireland"

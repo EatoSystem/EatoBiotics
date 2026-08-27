@@ -84,10 +84,14 @@ const TIERS: {
   tagline: string
   keyFeature: string
 }[] = [
+  // The starter/full/premium tiers were retired: /api/checkout sells one
+  // product, the €49 personal report. These tabs still switch between report
+  // *layouts* for the demo, but the €20/€40/€50 labels are gone — they quoted
+  // prices nobody can pay, on a page real visitors reach.
   {
     id: "starter",
     label: "Starter",
-    price: "€20",
+    price: "Starter layout",
     color: "var(--icon-green)",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
     icon: FileText,
@@ -97,7 +101,7 @@ const TIERS: {
   {
     id: "full",
     label: "Full Report",
-    price: "€40",
+    price: "Full layout",
     color: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
     icon: Layers,
@@ -107,7 +111,7 @@ const TIERS: {
   {
     id: "premium",
     label: "Premium",
-    price: "€50",
+    price: "Premium layout",
     color: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     icon: Sparkles,
