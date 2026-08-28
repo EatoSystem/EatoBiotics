@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabase } from "@/lib/supabase"
+import { isUnderMinimumAge, UNDER_MINIMUM_AGE_MESSAGE } from "@/lib/age-brackets"
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 import { waitlistConfirmationEmail } from "@/lib/email/waitlist-email"
 import { waitlistResultEmail } from "@/lib/email/waitlist-result-email"
@@ -53,6 +54,16 @@ export async function POST(req: NextRequest) {
     // Lightweight email sanity check.
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: "Please enter a valid email." }, { status: 400 })
+    }
+
+    // Same age floor as the assessment routes. The waitlist quiz stores a Food
+    // System profile and scores alongside the email, so it is health-adjacent
+    // capture and belongs behind the 16+ line the Terms draw, not in front of it.
+    if (isUnderMinimumAge(body.ageBracket)) {
+      return NextResponse.json(
+        { error: UNDER_MINIMUM_AGE_MESSAGE, code: "under_minimum_age" },
+        { status: 400 },
+      )
     }
 
     const result = body.result

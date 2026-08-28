@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: "The terms and conditions governing use of the EatoBiotics platform.",
 }
 
-const LAST_UPDATED = "15 May 2025"
+const LAST_UPDATED = "27 August 2026"
 const CONTACT_EMAIL = "hello@eatobiotics.com"
 const COMPANY_NAME = "EatoBiotics"
 const GOVERNING_LAW = "Republic of Ireland"
@@ -67,7 +67,8 @@ export default function TermsOfServicePage() {
             <p className="mb-2">EatoBiotics provides:</p>
             <ul className="list-disc space-y-1.5 pl-5">
               {[
-                "A gut health assessment that calculates Biotics scores based on your food habits",
+                "A free food system assessment that calculates Biotics scores based on your food habits",
+                "A one-time \u20AC49 personalised Food System Report, with a free 30-day account (see section 4)",
                 "Meal analysis powered by AI that scores meals across Prebiotic, Probiotic, and Postbiotic dimensions",
                 "Weekly food system reports summarising your progress",
                 "AI consultation allowing you to ask questions about your food data and reports",
@@ -99,18 +100,46 @@ export default function TermsOfServicePage() {
           </Section>
 
           {/* 4 */}
-          <Section title="4. Subscriptions and payments">
+          <Section title="4. The Food System Report (one-time purchase)">
             <SubList items={[
-              { label: "Billing", text: "Paid plans are billed monthly or annually in advance via Stripe. Your subscription renews automatically unless cancelled." },
+              { label: "What it is", text: "A one-time \u20AC49 purchase: your personalised Food System score, report and plan, built from your assessment answers, plus a free 30-day EatoBiotics account. It is not a subscription and does not renew." },
+              { label: "Payment", text: "Taken by Stripe at checkout. We never see or store your card details." },
+              { label: "Delivery", text: "Your report is generated after you complete the deep assessment and is available in your account and by email. If delivery fails we will tell you rather than mark it delivered." },
+              { label: "Immediate access", text: "Because the report is digital content prepared for you and made available immediately, you are asked at checkout to agree to us starting straight away and to acknowledge that doing so ends your 14-day right to cancel. See section 5." },
+              { label: "If something goes wrong", text: "If your report is not delivered, is not the one you paid for, or the purchase was charged in error, contact us and we will put it right or refund you in full." },
+            ]} />
+          </Section>
+
+          {/* 5 */}
+          <Section title="5. Your right to cancel (EU/EEA consumers)">
+            <p className="mb-2">
+              You normally have 14 days to cancel a distance purchase for any reason. Digital
+              content is the exception: once you have asked us to supply it immediately and
+              acknowledged the consequence, that right ends as soon as supply begins.
+            </p>
+            <SubList items={[
+              { label: "Before we start", text: "You can cancel for a full refund at any point before your report is generated \u2014 for example if you have paid but not yet completed the deep assessment." },
+              { label: "After we start", text: "Once your report has been generated, the 14-day right no longer applies, because you asked for it to be prepared immediately and confirmed that at checkout." },
+              { label: "This does not affect", text: "Your statutory rights if what you received is faulty, not as described, or not what you paid for. Those are unaffected by anything in these Terms." },
+              { label: "How to cancel", text: `Email ${CONTACT_EMAIL} from the address you used at checkout.` },
+            ]} />
+          </Section>
+
+          {/* 6 */}
+          <Section title="6. Memberships">
+            <p className="mb-2">
+              Membership plans are separate from the one-time report and are optional.
+            </p>
+            <SubList items={[
+              { label: "Billing", text: "Where a paid membership is offered, it is billed monthly or annually in advance via Stripe and renews automatically unless cancelled." },
               { label: "Cancellation", text: "You can cancel at any time from your account dashboard. Access continues until the end of the current billing period. No partial refunds are issued for unused time." },
-              { label: "Price changes", text: "We will give you at least 30 days notice of any price changes before they affect your subscription." },
-              { label: "Refunds", text: "We offer refunds at our discretion for genuine billing errors. If you believe you have been charged incorrectly, contact us within 14 days." },
+              { label: "Price changes", text: "We will give you at least 30 days notice of any price changes before they affect your membership." },
               { label: "Free tier", text: "The free tier is provided at our discretion and we may change or discontinue it at any time with reasonable notice." },
             ]} />
           </Section>
 
           {/* 5 */}
-          <Section title="5. Acceptable use">
+          <Section title="7. Acceptable use">
             <p className="mb-2">You agree not to:</p>
             <ul className="list-disc space-y-1.5 pl-5">
               {[
@@ -125,7 +154,7 @@ export default function TermsOfServicePage() {
           </Section>
 
           {/* 6 */}
-          <Section title="6. Your content">
+          <Section title="8. Your content">
             <p className="mb-2">
               When you submit meal descriptions, images, or other content (&ldquo;Your Content&rdquo;):
             </p>
@@ -139,8 +168,8 @@ export default function TermsOfServicePage() {
             </ul>
           </Section>
 
-          {/* 7 */}
-          <Section title="7. AI-generated content">
+          {/* 9 */}
+          <Section title="9. AI-generated content">
             <p>
               Meal scores, weekly reports, and consultation responses are generated by artificial
               intelligence and are inherently probabilistic. They may contain errors or
@@ -150,8 +179,8 @@ export default function TermsOfServicePage() {
             </p>
           </Section>
 
-          {/* 8 */}
-          <Section title="8. Intellectual property">
+          {/* 10 */}
+          <Section title="10. Intellectual property">
             <p>
               All content, design, branding, methodology, and software comprising the Service
               (excluding Your Content) is the intellectual property of {COMPANY_NAME} and is
@@ -161,8 +190,8 @@ export default function TermsOfServicePage() {
             </p>
           </Section>
 
-          {/* 9 */}
-          <Section title="9. Disclaimer of warranties">
+          {/* 11 */}
+          <Section title="11. Disclaimer of warranties">
             <p>
               The Service is provided &ldquo;as is&rdquo; and &ldquo;as available&rdquo; without
               warranties of any kind, either express or implied. We do not guarantee that the
@@ -173,8 +202,8 @@ export default function TermsOfServicePage() {
             </p>
           </Section>
 
-          {/* 10 */}
-          <Section title="10. Limitation of liability">
+          {/* 12 */}
+          <Section title="12. Limitation of liability">
             <p>
               To the maximum extent permitted by law, {COMPANY_NAME} shall not be liable for any
               indirect, incidental, special, consequential, or punitive damages arising from your
@@ -185,8 +214,8 @@ export default function TermsOfServicePage() {
             </p>
           </Section>
 
-          {/* 11 */}
-          <Section title="11. Account termination">
+          {/* 13 */}
+          <Section title="13. Account termination">
             <p className="mb-2">
               You can delete your account at any time from your account dashboard. We may suspend
               or terminate your account if:
@@ -200,8 +229,8 @@ export default function TermsOfServicePage() {
             </ul>
           </Section>
 
-          {/* 12 */}
-          <Section title="12. Changes to these Terms">
+          {/* 14 */}
+          <Section title="14. Changes to these Terms">
             <p>
               We may update these Terms from time to time. For material changes, we will notify
               you by email at least 14 days before the changes take effect. Continued use of the
@@ -209,8 +238,8 @@ export default function TermsOfServicePage() {
             </p>
           </Section>
 
-          {/* 13 */}
-          <Section title="13. Governing law">
+          {/* 15 */}
+          <Section title="15. Governing law">
             <p>
               These Terms are governed by the laws of the {GOVERNING_LAW}. Any disputes arising
               from these Terms or the Service shall be subject to the exclusive jurisdiction of the
@@ -218,8 +247,8 @@ export default function TermsOfServicePage() {
             </p>
           </Section>
 
-          {/* 14 */}
-          <Section title="14. Contact">
+          {/* 16 */}
+          <Section title="16. Contact">
             <p>
               If you have any questions about these Terms, contact us at:{" "}
               <a href={`mailto:${CONTACT_EMAIL}`} className="underline" style={{ color: "var(--icon-orange)" }}>

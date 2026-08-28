@@ -32,6 +32,7 @@ import { useEffect } from "react"
 import { useClientAsyncInit, StatsigProvider } from "@statsig/react-bindings"
 import { _registerStatsigLogger } from "@/lib/statsig-client"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
+import { useAnalyticsConsent } from "./use-analytics-consent"
 
 export function StatsigClientProvider({
   children,
@@ -39,8 +40,16 @@ export function StatsigClientProvider({
   children: React.ReactNode
 }) {
   const sdkKey = process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY ?? ""
+  // Consent gate. The SDK sets client storage and this provider syncs the real
+  // Supabase user id and email into it, so initialising before the visitor has
+  // accepted contradicted the cookie banner and the Privacy Policy alike. The
+  // hook is called unconditionally — an early `if (!sdkKey) return` above it
+  // would change hook order between renders.
+  const consented = useAnalyticsConsent()
 
-  if (!sdkKey) {
+  if (!sdkKey || !consented) {
+    // Gates read false while un-consented, which is their documented safe
+    // default, so every child renders as it would with Statsig unconfigured.
     return <>{children}</>
   }
 

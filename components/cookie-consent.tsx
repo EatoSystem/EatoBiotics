@@ -2,12 +2,18 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { EB_CONSENT_KEY, EB_CONSENT_EVENT } from "@/lib/consent"
+import { EB_CONSENT_KEY, EB_CONSENT_REOPEN_EVENT, setConsent, withdrawConsent } from "@/lib/consent"
 
 const STORAGE_KEY = EB_CONSENT_KEY
 
 export function CookieConsent() {
   const [visible, setVisible] = useState(false)
+
+  // Tracks whether a choice was already stored when the banner opened. It
+  // decides what declining has to do: a first-time decline need only record the
+  // choice, but changing an earlier "accept" has to stop SDKs that are already
+  // running, and only a reload does that.
+  const [hadStoredChoice, setHadStoredChoice] = useState(false)
 
   useEffect(() => {
     try {
@@ -18,16 +24,32 @@ export function CookieConsent() {
     }
   }, [])
 
+  // Reopened from the footer's "Cookie preferences" control. Withdrawing consent
+  // has to be as easy as giving it, and the banner otherwise never returns once
+  // a choice is stored.
+  useEffect(() => {
+    const reopen = () => {
+      try {
+        setHadStoredChoice(Boolean(localStorage.getItem(STORAGE_KEY)))
+      } catch { /* noop */ }
+      setVisible(true)
+    }
+    window.addEventListener(EB_CONSENT_REOPEN_EVENT, reopen)
+    return () => window.removeEventListener(EB_CONSENT_REOPEN_EVENT, reopen)
+  }, [])
+
   function accept() {
-    try {
-      localStorage.setItem(STORAGE_KEY, "accepted")
-      window.dispatchEvent(new Event(EB_CONSENT_EVENT))
-    } catch { /* noop */ }
+    setConsent("accepted")
     setVisible(false)
   }
 
   function decline() {
-    try { localStorage.setItem(STORAGE_KEY, "declined") } catch { /* noop */ }
+    if (hadStoredChoice) {
+      // Reloads, so anything started under the previous consent stops.
+      withdrawConsent()
+      return
+    }
+    setConsent("declined")
     setVisible(false)
   }
 

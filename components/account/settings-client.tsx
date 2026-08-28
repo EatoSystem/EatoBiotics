@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
 import { ArrowLeft, LogOut, Save, Check } from "lucide-react"
 import Link from "next/link"
+import { AGE_BRACKETS } from "@/lib/age-brackets"
 
-const AGE_BRACKETS = ["Under 20", "20–29", "30–39", "40–49", "50–59", "60+"]
 
 interface SettingsClientProps {
   profile: {

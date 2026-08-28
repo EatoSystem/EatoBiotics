@@ -1,5 +1,10 @@
 "use client"
 
+import {
+  ACKNOWLEDGEMENT_FIELD,
+  ACKNOWLEDGEMENT_REQUIRED_MESSAGE,
+  WithdrawalAcknowledgement,
+} from "@/components/assessment/withdrawal-acknowledgement"
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import {
@@ -188,6 +193,8 @@ interface AssessmentResultsProps {
 export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: AssessmentResultsProps) {
   const { overall, profile, insights, nextActions, subScores } = result
   const [loading, setLoading] = useState(false)
+  // Unticked by default — a pre-ticked box is not consent.
+  const [acknowledged, setAcknowledged] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // Lottery winner code copy state
@@ -217,6 +224,10 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
   /* ── Checkout helpers ─────────────────────────────────────────────── */
 
   async function handlePurchase(tier: string = "personal") {
+    if (!acknowledged) {
+      setError(ACKNOWLEDGEMENT_REQUIRED_MESSAGE)
+      return
+    }
     setLoading(true)
     setError(null)
 
@@ -230,7 +241,14 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier, overall, profile, subScores, email: leadEmail }),
+        body: JSON.stringify({
+          tier,
+          overall,
+          profile,
+          subScores,
+          email: leadEmail,
+          [ACKNOWLEDGEMENT_FIELD]: true,
+        }),
       })
       const data = await res.json()
       if (!res.ok || !data.url) {
@@ -497,9 +515,11 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
                 </ul>
 
                 {/* CTA button */}
+                <WithdrawalAcknowledgement checked={acknowledged} onChange={setAcknowledged} />
+
                 <button
                   onClick={() => handlePurchase("personal")}
-                  disabled={loading}
+                  disabled={loading || !acknowledged}
                   className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 brand-gradient"
                 >
                   {loading ? (
@@ -823,21 +843,15 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
         </div>
       </section>
 
-      {/* ── G. Abandonment safety net ──────────────────────────────────── */}
-      <section className="border-t border-border px-6 py-8">
-        <div className="mx-auto max-w-3xl text-center">
-          <p className="text-xs text-muted-foreground/50">
-            Not ready for the full report?{" "}
-            <button
-              onClick={() => handlePurchase("starter")}
-              disabled={loading}
-              className="underline hover:text-muted-foreground transition-colors disabled:opacity-50"
-            >
-              Get your Starter Insights for €19
-            </button>
-          </p>
-        </div>
-      </section>
+      {/*
+        The abandonment safety net used to offer "Starter Insights for €19" here,
+        wired to handlePurchase("starter"). The starter tier was retired:
+        /api/checkout ignores the tier and charges €49 for the one product it
+        sells, so this offered one price and took another. Removed rather than
+        re-priced — a second CTA quoting the same €49 as the button above it is
+        not a safety net, and re-introducing a cheaper tier is a pricing
+        decision, not a copy fix.
+      */}
 
     </div>
   )

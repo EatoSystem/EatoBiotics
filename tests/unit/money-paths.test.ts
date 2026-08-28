@@ -178,6 +178,10 @@ describe("POST /api/checkout", () => {
       email: "Buyer@Example.com",
       foundationType: "you",
       selectedAddon: "glucose",
+      // Checkout now requires express consent to immediate supply; without it
+      // the route refuses before Stripe is called. See the dedicated tests in
+      // checkout-acknowledgement.test.ts.
+      acknowledgedImmediateSupply: true,
     }))
 
     expect(res.status).toBe(200)
@@ -192,6 +196,13 @@ describe("POST /api/checkout", () => {
     expect(params.metadata.result_summary).toBeUndefined()
     expect(params.metadata.foundation_type).toBe("you")
     expect(params.metadata.selected_addon).toBe("glucose")
+    // The consent record lives on the session, so it survives independently of
+    // our database.
+    expect(params.metadata.acknowledged_immediate_supply).toBe("true")
+    expect(params.metadata.acknowledged_at).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+    // Stripe caps metadata at 50 keys; the ceiling in lib/paid-report-session.ts
+    // is set so the consent keys cannot push a real session over it.
+    expect(Object.keys(params.metadata).length).toBeLessThanOrEqual(50)
     expect(Number(params.metadata.result_summary_parts)).toBeGreaterThan(1)
     for (const value of Object.values(params.metadata)) {
       expect(value.length).toBeLessThanOrEqual(STRIPE_METADATA_VALUE_LIMIT)

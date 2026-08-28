@@ -333,7 +333,7 @@ export function generateFullReport(result: AssessmentResult): FullReport {
   return { deepDives, top12Foods, thirtyDayPlan }
 }
 
-/* ── Starter Report (€19) ───────────────────────────────────────────── */
+/* ── Starter Report (retired tier; kept as a report shape) ──────────── */
 
 export interface StarterFood {
   food: string
@@ -405,7 +405,7 @@ export function generateStarterReport(result: AssessmentResult): StarterReport {
   return { top5Foods, sevenDayPlan }
 }
 
-/* ── Premium Addons (€50 extras) ────────────────────────────────────── */
+/* ── Premium Addons (retired tier; kept as a report shape) ──────────── */
 
 export interface MealTimingRule {
   title: string

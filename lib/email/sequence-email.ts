@@ -148,7 +148,7 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
       return {
         subject: "Last chance: your 30-day plan is waiting",
         headline: `${firstName}, your gut health window is closing`,
-        body: `This is the last email in your EatoBiotics sequence. Your score of <strong>${score}</strong> — and everything it tells you about your ${pillarLabel} gap — stays relevant as long as you act on it.<br /><br />The Food System Report is €49. It gives you a full 30-day plan, your top 10 foods, a weekly shopping framework, and a free 30-day account to follow the plan. Most people who get it improve their score by 8–18 points within a month.<br /><br />If €49 isn't right for you today, the Starter Insights (€19) gives you your key action and a 7-day kickstart — a meaningful step for a smaller commitment.`,
+        body: `This is the last email in your EatoBiotics sequence. Your score of <strong>${score}</strong> — and everything it tells you about your ${pillarLabel} gap — stays relevant as long as you act on it.<br /><br />The Food System Report is €49. It gives you a full 30-day plan, your top 10 foods, a weekly shopping framework, and a free 30-day account to follow the plan. Most people who get it improve their score by 8–18 points within a month.`,
         cta: "Get My Food System Report — €49",
         ctaUrl: `${baseUrl}/pricing`,
         showScores: true,

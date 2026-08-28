@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { isUnderMinimumAge, UNDER_MINIMUM_AGE_MESSAGE } from "@/lib/age-brackets"
 import { getSupabase } from "@/lib/supabase"
 import { stripe } from "@/lib/stripe-server"
 
@@ -49,6 +50,17 @@ export async function POST(req: NextRequest) {
 
     if (!name || !email || !ageBracket) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    }
+
+    // The age floor the Terms commit to. The intro forms already refuse this
+    // selection, but a form control is not an enforcement point: this route is
+    // reachable directly, and it is where a lead row (name, email, health
+    // assessment scores) would otherwise be written.
+    if (isUnderMinimumAge(ageBracket)) {
+      return NextResponse.json(
+        { error: UNDER_MINIMUM_AGE_MESSAGE, code: "under_minimum_age" },
+        { status: 400 },
+      )
     }
 
     // Store in Supabase if configured

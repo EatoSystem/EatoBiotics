@@ -1,5 +1,10 @@
 "use client"
 
+import {
+  ACKNOWLEDGEMENT_FIELD,
+  ACKNOWLEDGEMENT_REQUIRED_MESSAGE,
+  WithdrawalAcknowledgement,
+} from "@/components/assessment/withdrawal-acknowledgement"
 import { useState } from "react"
 import Link from "next/link"
 import { ArrowRight, Check } from "lucide-react"
@@ -23,8 +28,14 @@ const REPORT_FEATURES = [
 export function PersonalReportCta({ result }: PersonalReportCtaProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Unticked by default — a pre-ticked box is not consent.
+  const [acknowledged, setAcknowledged] = useState(false)
 
   async function handlePurchase() {
+    if (!acknowledged) {
+      setError(ACKNOWLEDGEMENT_REQUIRED_MESSAGE)
+      return
+    }
     setLoading(true)
     setError(null)
 
@@ -43,6 +54,7 @@ export function PersonalReportCta({ result }: PersonalReportCtaProps) {
           // any selected add-on (null for the legacy standalone flow).
           foundationType: resolvedFoundation(),
           selectedAddon: getJourney().selectedAddon,
+          [ACKNOWLEDGEMENT_FIELD]: true,
         }),
       })
 
@@ -116,9 +128,11 @@ export function PersonalReportCta({ result }: PersonalReportCtaProps) {
             ))}
           </ul>
 
+          <WithdrawalAcknowledgement checked={acknowledged} onChange={setAcknowledged} />
+
           <button
             onClick={handlePurchase}
-            disabled={loading}
+            disabled={loading || !acknowledged}
             className="w-full flex items-center justify-center gap-2 rounded-2xl py-4 text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             style={{
               background:
