@@ -83,8 +83,8 @@ const INTERPRETATIONS: Record<string, Record<"low" | "mid" | "high", string>> = 
 /* ── Weakest pillar free food recommendation ─────────────────────────── */
 
 const WEAKEST_FOOD_REC: Record<string, string> = {
-  prebiotics: "Adding {PREBIOTIC} to just three meals this week could meaningfully move your Prebiotics score.",
-  probiotics: "A daily spoonful of {FERMENTED} is one of the fastest ways to improve your Probiotics score — it takes seconds.",
+  prebiotics: "Adding {PREBIOTIC} to just three meals this week is a concrete place to start on your Prebiotics score.",
+  probiotics: "A daily spoonful of {FERMENTED} is the simplest habit this pillar asks for — it takes seconds.",
   postbiotics: "Eating your main meal before 7pm and adding two colourful plant foods per day are the two habits this pillar tracks most closely.",
 }
 

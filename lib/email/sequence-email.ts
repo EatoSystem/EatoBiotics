@@ -99,7 +99,7 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
       return {
         subject: "Why consistency beats perfection for your gut",
         headline: "Consistency is the most underrated gut health tool",
-        body: `The gut microbiome doesn't respond well to bursts of effort. It responds to rhythm — the same inputs at roughly the same times, day after day.<br /><br />That's why your ${pillarLabel} score moves faster from consistent small actions than from occasional perfect days. Your microbiome needs predictability to recalibrate its bacterial populations.<br /><br />If you've tried the one action from day 3, you've already started the process. Three more days of it and your gut is already adapting.`,
+        body: `Research on diet and the gut tends to look at habits held over time rather than short bursts of effort — the same inputs at roughly the same times, day after day.<br /><br />That is the case for small consistent actions on your ${pillarLabel} score over occasional perfect days: they are the ones you can still be doing next month.<br /><br />If you tried the one action from day 3, you have the hard part done. Three more days and it stops being something you have to remember.`,
         cta: "Unlock My Full Plan — €49",
         ctaUrl: `${baseUrl}/pricing`,
         showScores: false,

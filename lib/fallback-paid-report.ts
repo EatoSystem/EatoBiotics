@@ -174,14 +174,14 @@ function openingFor(ctx: FallbackContext): string {
         `${scoreLead} has real strengths and one area still settling. ` +
         (ctx.priority === ctx.strongest
           ? `Your answers suggest ${ctx.priorityLabel} is the pathway with the most room to grow.`
-          : `The strongest signal is that ${ctx.strongestLabel} is already working for you, while ${ctx.priorityLabel} is where your answers suggest a change would show up fastest.`)
+          : `The strongest signal is that ${ctx.strongestLabel} is already working for you, while ${ctx.priorityLabel} is where your answers point to the clearest first step.`)
       )
     case "early":
       return (
         `${scoreLead} is early in its development. ` +
         (ctx.priority === ctx.strongest
           ? `Your answers suggest ${ctx.priorityLabel} is the pathway with the most room to grow.`
-          : `The strongest signal is that ${ctx.strongestLabel} is already working for you, while ${ctx.priorityLabel} is where your answers suggest a change would show up fastest.`)
+          : `The strongest signal is that ${ctx.strongestLabel} is already working for you, while ${ctx.priorityLabel} is where your answers point to the clearest first step.`)
       )
   }
 }
@@ -279,7 +279,7 @@ function topTriggerFor(ctx: FallbackContext): { topTrigger: string; topTriggerEx
   if (ctx.framing === "mixed") {
     return {
       topTrigger: `${ctx.priorityLabel} is the one pathway holding the rest back.`,
-      topTriggerExplanation: `Your overall score is strong, but ${ctx.priorityLabel.toLowerCase()} at ${ctx.priorityScore}/100 sits well below your other two pathways. That single gap is where a change would show up fastest, and it is worth prioritising ahead of anything else in this report.`,
+      topTriggerExplanation: `Your overall score is strong, but ${ctx.priorityLabel.toLowerCase()} at ${ctx.priorityScore}/100 sits well below your other two pathways. That single gap is the clearest place to start, and it is worth prioritising ahead of anything else in this report.`,
     }
   }
   return {

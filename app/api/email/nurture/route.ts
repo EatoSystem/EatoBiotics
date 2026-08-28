@@ -110,7 +110,7 @@ function day1Email(name: string, score: number | null, profileType: string | nul
 
     <p style="margin:0 0 12px;color:#1A2E12;font-size:15px;font-weight:600;">Your score is a baseline, not a verdict</p>
     <p style="margin:0 0 20px;color:#5A6E50;font-size:14px;line-height:1.7;">
-      It reflects the state of your food system <em>right now</em>. The five pillars — Plant Diversity, Feeding, Live Foods, Consistency, and Feeling — each scored individually. Your weakest is where the most movement happens fastest.
+      It reflects the state of your food system <em>right now</em>. The five pillars — Plant Diversity, Feeding, Live Foods, Consistency, and Feeling — each scored individually. Your weakest is usually the most useful place to start.
     </p>
 
     ${insight ? pillarInsight(insight.label, insight.action, insight.color) : ""}
@@ -127,11 +127,11 @@ function day3Email(name: string, weakestPillar: string | null, email: string): s
   const greeting = name ? `Hi ${name.split(" ")[0]},` : "Hi there,"
 
   const PILLAR_DAY3: Record<string, { label: string; action: string }> = {
-    adding:      { label: "Day 3 Live Foods action", action: "Swap a regular drink for a fermented one today — water kefir, kombucha, or kefir milk. Liquid ferments colonise faster than solids." },
-    diversity:   { label: "Day 3 Plant action", action: "Include a legume in one meal today — lentils, chickpeas, or beans. They&apos;re the most impactful single plant group for gut diversity." },
+    adding:      { label: "Day 3 Live Foods action", action: "Swap a regular drink for a fermented one today — water kefir, kombucha, or kefir milk. A drink is an easy place to add live cultures without changing a meal." },
+    diversity:   { label: "Day 3 Plant action", action: "Include a legume in one meal today — lentils, chickpeas, or beans. Legumes bring fibre types that are hard to get from other plant groups." },
     feeding:     { label: "Day 3 Feeding action", action: "Replace a refined carb with a whole-grain alternative today. Whole grains retain the bran — the part your gut bacteria actually eat." },
-    consistency: { label: "Day 3 Rhythm action", action: "Avoid eating within 2 hours of sleep tonight. Late eating disrupts gut-brain signalling during the window when microbiome restoration happens." },
-    feeling:     { label: "Day 3 Body Awareness action", action: "Track your digestion after your largest meal today. Bloating, sluggishness, or discomfort after meals are signals from your microbiome." },
+    consistency: { label: "Day 3 Rhythm action", action: "Avoid eating within 2 hours of sleep tonight. An overnight gap without food is one of the habits associated with a steadier daily gut rhythm." },
+    feeling:     { label: "Day 3 Body Awareness action", action: "Track your digestion after your largest meal today. Noticing how you feel after eating is the habit this pillar is built on." },
   }
 
   const action = weakestPillar ? PILLAR_DAY3[weakestPillar] : PILLAR_DAY3.adding
@@ -146,7 +146,7 @@ function day3Email(name: string, weakestPillar: string | null, email: string): s
     ${action ? pillarInsight(action.label, action.action, "#4CB648") : ""}
 
     <p style="margin:20px 0 8px;color:#5A6E50;font-size:14px;line-height:1.7;">
-      The science is straightforward: <strong style="color:#1A2E12;">three days of consistent action</strong> is when your gut microbiome starts responding. You&apos;re right at the threshold.
+      <strong style="color:#1A2E12;">Three days</strong> is the point where a habit either sticks or quietly stops. You&apos;re right at it.
     </p>
     <p style="margin:0 0 8px;color:#5A6E50;font-size:14px;line-height:1.7;">
       Check in on your account — see your pillar scores and complete today&apos;s 7-day guide action.

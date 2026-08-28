@@ -33,9 +33,27 @@
  *    is analysis, not guidance. Rather than reword it, the founder chose to
  *    drop the line and let the section be a thing the reader finds. Erring
  *    toward under-promising is the safe direction, and re-adding it is one line.
- *  - The Food System Map (`foodSystemMap` in food-system-report-types.ts). It
- *    exists in the model but is not rendered on the live `personal` path, so
- *    selling it now would recreate exactly the defect this file closes.
+ *  - The Food System Map (`foodSystemMap` in food-system-report-types.ts).
+ *    Held back for scope, NOT because it is missing. It is generated — the
+ *    full-tier prompt asks for a `foodSystem` block
+ *    (app/api/submit-deep-assessment/route.ts:175, :216) and
+ *    ensureFoodSystem/buildFoodSystemReport
+ *    (lib/report/build-food-system-report.ts:97, :428) derive one
+ *    deterministically, so it is present whether or not the model returns it —
+ *    and it is rendered, on the web at paid-report-client.tsx:615 and in the
+ *    PDF at report-pdf.tsx:1100, with the map itself iterated at
+ *    food-system-section.tsx:487 and food-system-pdf.tsx:545.
+ *
+ *    The reason to leave it out of the offer is that the Map is the centrepiece
+ *    of the report redesign now being planned, and its shape is about to change.
+ *    Committing sales copy to it today would mean rewriting that copy twice.
+ *
+ *    An earlier version of this comment claimed the Map "is not rendered on the
+ *    live personal path". That was wrong, and it is worth recording why the
+ *    error mattered rather than quietly deleting it: this file is where someone
+ *    checks before adding a line to the offer, so a false statement in it is
+ *    precisely the failure the file exists to prevent. Every claim above names
+ *    a file and a line so the next reader can verify instead of trusting.
  */
 
 /** One-time price, in euro. The report is not a subscription. */

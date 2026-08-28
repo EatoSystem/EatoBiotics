@@ -95,7 +95,7 @@ export function paidDay3Email(opts: PaidOnboardingOpts): { subject: string; html
     opts.tier === "transform"
       ? calloutBox("Have you tried your AI consultant?", `Transform includes one-to-one AI consultations about your gut, your scores, and your plan. Ask it anything — it knows your data. <a href="${SITE_URL}/account/consult" style="color:#4CB648;font-weight:600;text-decoration:none;">Start a consultation →</a>`)
       : opts.tier === "grow"
-      ? calloutBox("Your streak is the engine", `Grow gives you unlimited meal analyses and a daily streak. Members who log 3+ meals in week one see their score move fastest. <a href="${SITE_URL}/analyse" style="color:#4CB648;font-weight:600;text-decoration:none;">Log today's meal →</a>`)
+      ? calloutBox("Your streak is the engine", `Grow gives you unlimited meal analyses and a daily streak. Logging a few meals in week one is what gives your score something to compare against. <a href="${SITE_URL}/analyse" style="color:#4CB648;font-weight:600;text-decoration:none;">Log today's meal →</a>`)
       : calloutBox("Two member tools worth meeting", `Your plan includes the <a href="${SITE_URL}/account/glp1" style="color:#4CB648;font-weight:600;text-decoration:none;">GLP-1 Companion</a> (protein + muscle tracking) and the monthly <a href="${SITE_URL}/stability/report" style="color:#4CB648;font-weight:600;text-decoration:none;">Stability Report</a>. If either fits your life, they're already unlocked.`)
 
   return {

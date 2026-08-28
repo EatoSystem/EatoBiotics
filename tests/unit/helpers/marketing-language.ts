@@ -276,8 +276,49 @@ export const CLAIMS: Array<[string, RegExp]> = [
   // exactly what separates the invented statistic from the computed one, and
   // this rule fires only on the literal.
   ["invented population statistic", /\btop \d+ ?% of people\b/i],
-  // Superlatives that outrun the evidence.
-  ["superlative", /\b(number-one|single biggest|fastest way|big difference)\b/i],
+  // `fastest way` used to live in the superlative rule below. It moved here, and
+  // the move is the point: `fastest way\b` does not match "fastest way**s**" —
+  // there is no word boundary between `y` and `s` — so "one of the fastest ways
+  // to improve your Probiotics score" sat on the live results page under a rule
+  // whose name says it covers superlatives.
+  //
+  // Speed is its own claim, separate from the superlatives below, and the
+  // comparative form is the more dangerous half: "your score moves faster from
+  // consistent small actions", "members who log 3+ meals see their score move
+  // fastest", "liquid ferments colonise faster than solids". Each states a rate
+  // of change nothing has measured, and none of them names a timeframe, so
+  // RESULT_DEADLINE never saw them.
+  //
+  // Measured at six files across the corpus before landing, every one a real
+  // claim this change rewrites — no pre-existing false positive.
+  ["speed claim", /\b(fastest|quickest|faster|sooner|quicker)\b/i],
+  // Asserting a physiological process is already underway inside the reader.
+  // The emails are sent on a cron to everyone on a schedule, so the reader may
+  // have done nothing at all since taking the assessment: "your gut is already
+  // adapting", "three days of consistent action is when your gut microbiome
+  // starts responding".
+  //
+  // A verb-form rule rather than a phrase list, so it covers the family instead
+  // of today's two instances. A broader version keyed on
+  // `your (gut|microbiome|body) ... (is|starts|begins)` was measured first and
+  // rejected at NINE files: it fired on ordinary headings like "Your gut system
+  // is" on /report and /you. A rule that cries wolf gets deleted, so the narrow
+  // one ships and the broad one is recorded here as tried.
+  [
+    "process already underway",
+    /\b(?:is|are|has|have|starts?|begins?)\s+(?:already\s+)?(?:adapting|responding|recalibrat\w+|restoring|rebuilding|shifting|changing)\b/i,
+  ],
+  // The same claim in noun and infinitive form, which the verb rule above cannot
+  // reach: "the window when microbiome restoration happens", "your microbiome
+  // needs predictability to recalibrate". Both describe an internal process as
+  // settled fact and as product vocabulary.
+  [
+    "physiological process as product vocabulary",
+    /\b(?:microbiome|gut)\s+(?:restoration|recalibration)\b|\brecalibrate\b/i,
+  ],
+  // Superlatives that outrun the evidence. `fastest way` moved to the speed rule
+  // above; leaving it in both would make one line report under two rule names.
+  ["superlative", /\b(number-one|single biggest|big difference)\b/i],
   ["comparative superlative", /more than (almost )?any other/i],
 ]
 
