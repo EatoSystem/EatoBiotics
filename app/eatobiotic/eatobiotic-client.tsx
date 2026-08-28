@@ -8,7 +8,6 @@ import {
   Mic, MicOff, CheckCircle,
   MessageSquare, Lock,
   Leaf, Droplets, Zap, Dumbbell,
-  Check,
 } from "lucide-react"
 import { useConversation } from "@11labs/react"
 import { ScrollReveal } from "@/components/scroll-reveal"
@@ -95,59 +94,6 @@ const PLATE_PARTS = [
   },
 ]
 
-const REPORTS = [
-  {
-    tag: "Essential",
-    price: "€50",
-    tagline: "A clear summary with practical next steps.",
-    gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
-    features: [
-      "Conversation summary",
-      "Key food and gut-health insights",
-      "Your current EatoBiotics priorities",
-      "3 recommended actions for the week",
-      "Simple food suggestions",
-    ],
-    cta: "Generate Essential Report",
-    href: "/report/essential",
-    highlight: false,
-  },
-  {
-    tag: "Advanced",
-    price: "€75",
-    tagline: "A deeper analysis of your plate, habits, and Biotics Score.",
-    gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
-    features: [
-      "Everything in the Essential Report",
-      "Personal EatoBiotics Plate analysis",
-      "Prebiotic, Probiotic, Postbiotic & Protein Balance review",
-      "Weekly improvement plan",
-      "Shopping and meal suggestions",
-      "Biotics Score improvement guidance",
-    ],
-    cta: "Generate Advanced Report",
-    href: "/report/advanced",
-    highlight: true,
-  },
-  {
-    tag: "Complete",
-    price: "€100",
-    tagline: "The most detailed report and a full personal food system plan.",
-    gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
-    features: [
-      "Everything in the Advanced Report",
-      "Full Personal Food System Map",
-      "Gut-health, plate, habits, kitchen, community & environment review",
-      "7-day EatoBiotics food plan",
-      "Seasonal food recommendations",
-      "Sustainability and community impact suggestions",
-      "Long-term EatoBiotics improvement roadmap",
-    ],
-    cta: "Generate Complete Report",
-    href: "/report/complete",
-    highlight: false,
-  },
-]
 
 const PROMPT_CHIPS = [
   "How can I improve my breakfast?",
@@ -706,82 +652,6 @@ export function EatobioticClient({ signedIn, voiceEnabled }: { signedIn: boolean
 
       <div className="section-divider" />
 
-      {/* ── G. Report section ────────────────────────────────────── */}
-      <section className="px-6 py-16 md:py-24">
-        <div className="mx-auto max-w-[1200px]">
-          <ScrollReveal>
-            <p className="text-xs font-semibold uppercase tracking-widest text-icon-green mb-2">
-              Personalised Reports
-            </p>
-            <h2 className="font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
-              Generate your personalised EatoBiotics Report
-            </h2>
-            <p className="mt-3 text-base text-muted-foreground max-w-lg">
-              After your conversation, turn your insights into a detailed personal food system plan.
-            </p>
-          </ScrollReveal>
-
-          <div className="mt-10 grid gap-6 sm:grid-cols-3">
-            {REPORTS.map((report, i) => (
-              <ScrollReveal key={report.tag} delay={i * 80}>
-                <div
-                  className={`relative flex flex-col overflow-hidden rounded-2xl bg-background p-6 h-full ${
-                    report.highlight
-                      ? "border-2 border-icon-green shadow-xl shadow-icon-green/10"
-                      : "border border-border"
-                  }`}
-                >
-                  {/* Most Popular badge */}
-                  {report.highlight && (
-                    <div
-                      className="absolute top-4 right-4 rounded-full px-3 py-1 text-xs font-bold text-white"
-                      style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}
-                    >
-                      Most Popular
-                    </div>
-                  )}
-
-                  {/* Gradient bar */}
-                  <div className="absolute top-0 left-0 right-0 h-1" style={{ background: report.gradient }} />
-
-                  {/* Tag */}
-                  <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--icon-green)" }}>
-                    {report.tag}
-                  </p>
-
-                  {/* Price */}
-                  <p className="font-serif text-4xl font-bold text-foreground">{report.price}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{report.tagline}</p>
-
-                  {/* Features */}
-                  <ul className="mt-6 flex flex-col gap-2.5 flex-1">
-                    {report.features.map((f) => (
-                      <li key={f} className="flex items-start gap-2.5 text-sm text-foreground">
-                        <Check size={14} className="shrink-0 mt-0.5" style={{ color: "var(--icon-green)" }} />
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* CTA */}
-                  <Link
-                    href={report.href}
-                    className={`mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all ${
-                      report.highlight
-                        ? "brand-gradient text-white shadow-lg shadow-icon-green/20 hover:opacity-90"
-                        : "border-2 border-icon-green text-foreground hover:bg-icon-green hover:text-white"
-                    }`}
-                  >
-                    {report.cta} <ArrowRight size={14} />
-                  </Link>
-                </div>
-              </ScrollReveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <div className="section-divider" />
 
       {/* ── H. Trust section ─────────────────────────────────────── */}
       <section className="px-6 py-12 md:py-16">
