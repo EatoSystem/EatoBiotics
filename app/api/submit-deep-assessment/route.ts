@@ -5,7 +5,7 @@ import { getSupabase } from "@/lib/supabase"
 import type { DeepQuestion } from "@/lib/deep-assessment"
 import type { DeepReport } from "@/lib/claude-report"
 import {
-  getPaidReportSummaryFromSession,
+  resolvePaidReportSummary,
   isCheckoutSessionSettled,
   asAddon,
   type PaidReportFoundation,
@@ -425,7 +425,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Payment not confirmed" }, { status: 401 })
       }
 
-      const summary = getPaidReportSummaryFromSession(session)
+      const summary = await resolvePaidReportSummary(session, supabase)
       if (!summary) {
         return NextResponse.json({ error: "Missing session metadata" }, { status: 400 })
       }

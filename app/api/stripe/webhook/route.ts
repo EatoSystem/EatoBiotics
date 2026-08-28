@@ -7,7 +7,7 @@ import { tierFromPriceId, isFoundingMember } from "@/lib/membership"
 import { logServerEvent } from "@/lib/statsig-server"
 import { welcomeSubscriptionEmailHtml } from "@/lib/email/welcome-subscription-email"
 import { cancellationEmail } from "@/lib/email/paid-onboarding-email"
-import { getPaidReportSummaryFromSession, isCheckoutSessionSettled } from "@/lib/paid-report-session"
+import { resolvePaidReportSummary, isCheckoutSessionSettled } from "@/lib/paid-report-session"
 import { decideTrialActivation } from "@/lib/auth/reconcile-account"
 import { reportError } from "@/lib/report-error"
 
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
         if (!isCheckoutSessionSettled(session)) break
 
         // Identify the user via customer_email or user_id from metadata
-        const summary = getPaidReportSummaryFromSession(session)
+        const summary = await resolvePaidReportSummary(session, supabase)
         const email = summary?.email ?? session.customer_details?.email ?? null
         if (!email) break
 

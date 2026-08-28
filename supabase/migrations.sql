@@ -1825,3 +1825,95 @@ CREATE INDEX IF NOT EXISTS idx_feedback_status   ON feedback (status, created_at
 CREATE INDEX IF NOT EXISTS idx_feedback_category ON feedback (category);
 -- Supports the retention sweep.
 CREATE INDEX IF NOT EXISTS idx_feedback_expires  ON feedback (expires_at);
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 47: paid_report_intents + consents
+-- ────────────────────────────────────────────────────────────
+-- STATUS: DRAFTED — NOT APPLIED. A human applies this; see the runbook in the
+-- PR and issue #244.
+--
+-- Two tables, one migration, because the code needs both at once: checkout
+-- writes an intent row and a consent row in the same request.
+--
+-- ── paid_report_intents ────────────────────────────────────
+-- Closes #244. The Stripe checkout session used to carry the buyer's overall
+-- score, five sub-scores, profile type and description, foundation, selected
+-- add-on and email address in its metadata, because the report page had to
+-- rebuild the report after payment and Stripe was the only thing that survived
+-- the redirect. That put health-derived data in a payment processor, which is
+-- more than Stripe needs to take a payment.
+--
+-- The summary now lives here and Stripe gets an opaque token. This preserves
+-- what #232 established — authority is NOT taken from the client — because the
+-- row is written server-side before the session exists and is never rewritten
+-- from a request body. It also retires the metadata chunking added in #243:
+-- there is no 500-char value limit or 50-key budget on a jsonb column, so the
+-- €49 outage that motivated the chunking cannot recur in this shape.
+--
+-- `stripe_session_id` is written back immediately after the session is created
+-- and is UNIQUE, so one intent maps to at most one checkout. Readers match on
+-- BOTH the token and the session id: a token alone would let a leaked token
+-- read a summary, and a session alone would not prove the row belongs to it.
+--
+-- Retention: 30 days. An intent whose checkout was never completed is
+-- abandoned, and this is health-derived data — keeping it indefinitely to serve
+-- a purchase that never happened has no basis. Completed purchases are already
+-- durable in deep_assessments, which is what the report renders from once the
+-- deep assessment is submitted.
+--
+-- Access: service-role only (RLS enabled, ZERO policies). No GRANTs. Idempotent.
+CREATE TABLE IF NOT EXISTS paid_report_intents (
+  token              text PRIMARY KEY CHECK (char_length(token) BETWEEN 32 AND 128),
+  summary            jsonb NOT NULL,
+  stripe_session_id  text UNIQUE,
+  created_at         timestamptz NOT NULL DEFAULT now(),
+  expires_at         timestamptz NOT NULL DEFAULT (now() + interval '30 days'),
+  CONSTRAINT paid_report_intents_expiry_window CHECK (
+    expires_at > created_at AND expires_at <= created_at + interval '30 days'
+  )
+);
+
+ALTER TABLE paid_report_intents ENABLE ROW LEVEL SECURITY;  -- zero policies
+
+CREATE INDEX IF NOT EXISTS idx_paid_report_intents_session ON paid_report_intents (stripe_session_id);
+CREATE INDEX IF NOT EXISTS idx_paid_report_intents_expires ON paid_report_intents (expires_at);
+
+-- ── consents ───────────────────────────────────────────────
+-- Closes the "no affirmative consent before processing health data" blocker.
+-- app/privacy/page.tsx §2 calls assessment responses sensitive personal data;
+-- until now nothing recorded that the person agreed to that processing before
+-- it happened.
+--
+-- One row per consent given, not one per person: someone may consent to the
+-- free assessment today and the paid report next month, and each needs its own
+-- record with its own timestamp.
+--
+-- `document_version` and `statement_hash` record WHAT was agreed. Without them
+-- a later copy edit silently reinterprets every consent already given — the
+-- record would say "they agreed" while the thing they agreed to no longer
+-- exists. The hash is of the exact statement text shown.
+--
+-- `email` is stored because consent is given before an account exists: the free
+-- assessment and the waitlist both collect health-derived answers from people
+-- who never sign in. `user_id` is filled when there is one, and cascades on
+-- account deletion. A guest row is erased by the account-delete route's
+-- email-keyed sweep, alongside leads and deep_assessments.
+--
+-- Access: service-role only (RLS enabled, ZERO policies). No GRANTs. Idempotent.
+CREATE TABLE IF NOT EXISTS consents (
+  id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id           uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  email             text CHECK (email IS NULL OR char_length(email) <= 320),
+  kind              text NOT NULL CHECK (kind IN ('health_processing','immediate_supply')),
+  document_version  text NOT NULL CHECK (char_length(document_version) <= 40),
+  statement_hash    text NOT NULL CHECK (char_length(statement_hash) = 64),
+  source            text CHECK (source IS NULL OR char_length(source) <= 120),
+  created_at        timestamptz NOT NULL DEFAULT now(),
+  -- A consent that identifies nobody is not a record of anything.
+  CONSTRAINT consents_identifies_someone CHECK (user_id IS NOT NULL OR email IS NOT NULL)
+);
+
+ALTER TABLE consents ENABLE ROW LEVEL SECURITY;  -- zero policies
+
+CREATE INDEX IF NOT EXISTS idx_consents_email ON consents (email, kind, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_consents_user  ON consents (user_id, kind, created_at DESC);

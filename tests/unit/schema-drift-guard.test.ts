@@ -298,10 +298,23 @@ describe("finding 3 — applied and pending must be disjoint, and internally con
 
 describe("the real manifest", () => {
   it("declares today's real drift rather than hiding it", () => {
+    // Pinned exactly, so pending tables cannot accumulate quietly. Every entry
+    // here is a table the code references and production does not have yet —
+    // each one is a migration a human still has to apply, and the list is the
+    // only place that is visible at a glance.
     const { pending } = loadManifest() as { pending: Map<string, { migration: number; issue: number }> }
-    expect([...pending.keys()].sort()).toEqual(["feedback", "reviews"])
-    expect(pending.get("feedback")!.migration).toBe(46)
+    expect([...pending.keys()].sort()).toEqual([
+      "consents",
+      "feedback",
+      "paid_report_intents",
+      "reviews",
+    ])
     expect(pending.get("reviews")!.migration).toBe(45)
+    expect(pending.get("feedback")!.migration).toBe(46)
+    // Migration 47 — both tables land together because checkout writes to both
+    // in the same request.
+    expect(pending.get("paid_report_intents")!.migration).toBe(47)
+    expect(pending.get("consents")!.migration).toBe(47)
   })
 
   it("stays sorted, so a diff shows what changed", () => {

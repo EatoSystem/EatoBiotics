@@ -4,7 +4,7 @@ import { stripe } from "@/lib/stripe-server"
 import { getSupabase } from "@/lib/supabase"
 import { DeepAssessmentClient } from "@/components/assessment/deep/deep-assessment-client"
 import type { DeepQuestion, DeepAnswers } from "@/lib/deep-assessment"
-import { getPaidReportSummaryFromSession, isCheckoutSessionSettled } from "@/lib/paid-report-session"
+import { resolvePaidReportSummary, isCheckoutSessionSettled } from "@/lib/paid-report-session"
 import { reportViewState } from "@/lib/report-status"
 import { TrackConversion } from "@/components/analytics/track-conversion"
 
@@ -85,7 +85,8 @@ export default async function DeepAssessmentPage({ searchParams }: Props) {
       redirect("/assessment")
     }
 
-    const summary = getPaidReportSummaryFromSession(session)
+    const supabase = getSupabase()
+    const summary = await resolvePaidReportSummary(session, supabase)
     if (!summary) redirect("/assessment")
 
     const { tier, overall, subScores } = summary
@@ -98,7 +99,6 @@ export default async function DeepAssessmentPage({ searchParams }: Props) {
     let savedQuestions: DeepQuestion[] | null = null
     let savedAnswers: DeepAnswers | null = null
 
-    const supabase = getSupabase()
     if (supabase) {
       const { data } = await supabase
         .from("deep_assessments")

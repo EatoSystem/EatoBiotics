@@ -9,7 +9,6 @@ import {
   encodePaidReportSummary,
   decodePaidReportSummary,
   getPaidReportSummaryFromSession,
-  paidReportSummaryMetadata,
   STRIPE_METADATA_VALUE_LIMIT,
   type PaidReportSummary,
 } from "@/lib/paid-report-session"
@@ -92,14 +91,19 @@ describe("paid-report-session encode/decode", () => {
       selectedAddon: "glucose",
     }
 
-    expect(encodePaidReportSummary(summary).length).toBeGreaterThan(STRIPE_METADATA_VALUE_LIMIT)
+    // The writer is gone (#244) — the summary no longer reaches Stripe at all.
+    // What still has to work is READING a session created before that change,
+    // because those buyers have already paid. So the chunks are built here the
+    // way the retired writer built them, and the decoder must still handle them.
+    const encoded = encodePaidReportSummary(summary)
+    expect(encoded.length).toBeGreaterThan(STRIPE_METADATA_VALUE_LIMIT)
 
-    const metadata = paidReportSummaryMetadata(summary)
-    expect(metadata.result_summary).toBeUndefined()
-    expect(Number(metadata.result_summary_parts)).toBeGreaterThan(1)
-    for (const value of Object.values(metadata)) {
-      expect(value.length).toBeLessThanOrEqual(STRIPE_METADATA_VALUE_LIMIT)
-    }
+    const chunks = encoded.match(new RegExp(`.{1,${STRIPE_METADATA_VALUE_LIMIT}}`, "g")) ?? []
+    expect(chunks.length).toBeGreaterThan(1)
+    const metadata: Record<string, string> = { result_summary_parts: String(chunks.length) }
+    chunks.forEach((chunk, index) => {
+      metadata[`result_summary_${index}`] = chunk
+    })
 
     const decoded = getPaidReportSummaryFromSession(sessionWithMetadata(metadata))
     expect(decoded).toMatchObject({

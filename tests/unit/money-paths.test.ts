@@ -149,7 +149,13 @@ describe("POST /api/stripe/webhook", () => {
 
 /* ══ One-time report checkout ════════════════════════════════════════════ */
 describe("POST /api/checkout", () => {
-  it("creates a Stripe-safe metadata payload for the EUR 49 report", async () => {
+  it("keeps the buyer's answers out of Stripe and stores them server-side", async () => {
+    // Checkout now writes paid_report_intents before creating the session, so
+    // the route needs a working client; a null one is a 503 by design.
+    const { client, writes } = makeSupabaseStub({ paid_report_intents: [] })
+    mockGetSupabase.mockReturnValue(client)
+    const supabase = { writes }
+
     mockCheckoutCreate.mockResolvedValue({
       id: "cs_test_report_1",
       url: "https://checkout.stripe.com/c/pay/cs_test_report_1",
@@ -193,26 +199,40 @@ describe("POST /api/checkout", () => {
     expect(params.mode).toBe("payment")
     expect(params.currency).toBe("eur")
     expect(params.customer_email).toBe("buyer@example.com")
+    // #244: the summary no longer travels in Stripe metadata. Stripe gets an
+    // opaque token and nothing describing the buyer's answers. foundation_type
+    // and selected_addon went too — which health system someone selected should
+    // not be legible in a payments dashboard.
+    expect(params.metadata.summary_token).toMatch(/^[0-9a-f]{64}$/)
+    expect(params.metadata.report_tier).toBe("personal")
     expect(params.metadata.result_summary).toBeUndefined()
-    expect(params.metadata.foundation_type).toBe("you")
-    expect(params.metadata.selected_addon).toBe("glucose")
+    expect(params.metadata.result_summary_parts).toBeUndefined()
+    expect(params.metadata.foundation_type).toBeUndefined()
+    expect(params.metadata.selected_addon).toBeUndefined()
+
     // The consent record lives on the session, so it survives independently of
     // our database.
     expect(params.metadata.acknowledged_immediate_supply).toBe("true")
     expect(params.metadata.acknowledged_at).toMatch(/^\d{4}-\d{2}-\d{2}T/)
-    // Stripe caps metadata at 50 keys; the ceiling in lib/paid-report-session.ts
-    // is set so the consent keys cannot push a real session over it.
+
+    // Nothing in the metadata may carry the profile prose, the email, or a score.
+    const metadataBlob = JSON.stringify(params.metadata)
+    expect(metadataBlob).not.toContain("Emerging Balance")
+    expect(metadataBlob).not.toContain("buyer@example.com")
     expect(Object.keys(params.metadata).length).toBeLessThanOrEqual(50)
-    expect(Number(params.metadata.result_summary_parts)).toBeGreaterThan(1)
     for (const value of Object.values(params.metadata)) {
       expect(value.length).toBeLessThanOrEqual(STRIPE_METADATA_VALUE_LIMIT)
     }
 
-    const decoded = getPaidReportSummaryFromSession({
-      metadata: params.metadata,
-      client_reference_id: null,
-    } as Parameters<typeof getPaidReportSummaryFromSession>[0])
-    expect(decoded).toMatchObject({
+    // The summary is written server-side instead, before the session exists,
+    // so a failure costs nothing: no session, no payment page, no charge.
+    const intentWrite = supabase.writes.find(
+      (w) => w.table === "paid_report_intents" && w.method === "insert",
+    )
+    expect(intentWrite, "checkout must persist the summary before creating a session").toBeTruthy()
+    const persisted = (intentWrite!.payload as { token: string; summary: Record<string, unknown> })
+    expect(persisted.token).toBe(params.metadata.summary_token)
+    expect(persisted.summary).toMatchObject({
       tier: "personal",
       overall: 56,
       email: "buyer@example.com",

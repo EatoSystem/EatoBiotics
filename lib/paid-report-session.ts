@@ -74,22 +74,19 @@ export function encodePaidReportSummary(summary: PaidReportSummary): string {
   return Buffer.from(JSON.stringify(summary), "utf-8").toString("base64")
 }
 
-export function paidReportSummaryMetadata(summary: PaidReportSummary): Record<string, string> {
-  const encoded = encodePaidReportSummary(summary)
-  const chunks = encoded.match(new RegExp(`.{1,${STRIPE_METADATA_VALUE_LIMIT}}`, "g")) ?? []
-
-  if (chunks.length === 0 || chunks.length > MAX_SUMMARY_CHUNKS) {
-    throw new Error("Paid report summary is too large for Stripe metadata")
-  }
-
-  return chunks.reduce<Record<string, string>>(
-    (metadata, chunk, index) => {
-      metadata[`${SUMMARY_CHUNK_PREFIX}${index}`] = chunk
-      return metadata
-    },
-    { [SUMMARY_CHUNK_COUNT_KEY]: String(chunks.length) }
-  )
-}
+/*
+ * paidReportSummaryMetadata() lived here. It split the base64 summary across
+ * numbered Stripe metadata values so the report page could rebuild the report
+ * after the redirect — which is how the buyer's score, sub-scores, profile and
+ * email ended up in a payment processor (#244).
+ *
+ * Deleted rather than left unused: an available writer is an invitation to call
+ * it again. The summary is now written to paid_report_intents by
+ * app/api/checkout/route.ts and Stripe receives only an opaque token.
+ *
+ * The DECODER below stays. Sessions created before this shipped carry the
+ * chunked metadata and nothing else, and their buyers have already paid.
+ */
 
 function encodedPaidReportSummaryFromMetadata(
   metadata: Record<string, string> | null | undefined
@@ -153,6 +150,96 @@ export function getPaidReportSummaryFromSession(session: Stripe.Checkout.Session
   // metadata.result_summary or client_reference_id, so both remain readable.
   return decodePaidReportSummary(
     encodedPaidReportSummaryFromMetadata(session.metadata) ?? session.client_reference_id
+  )
+}
+
+/** Metadata key carrying the opaque intent token. Nothing else about the
+ *  buyer's answers reaches Stripe. */
+export const SUMMARY_TOKEN_KEY = "summary_token"
+
+/** Bytes of entropy in an intent token. 32 bytes → 64 hex chars, inside the
+ *  32–128 CHECK on paid_report_intents.token. */
+export const SUMMARY_TOKEN_BYTES = 32
+
+/** The narrow slice of a Supabase client the resolver needs — keeps the full
+ *  service-role client out of reach of anything downstream, matching the
+ *  PdfStorageClient pattern in lib/report/pdf-access.ts. */
+export interface PaidReportIntentReader {
+  /**
+   * Deliberately `unknown` rather than the builder chain this actually calls.
+   *
+   * Typing the full chain made TypeScript compare it structurally against
+   * `SupabaseClient`'s PostgREST generics and give up (TS2589, "type
+   * instantiation is excessively deep"). The chain is described by
+   * `IntentQuery` below and asserted once, at the single call site — which is
+   * where the runtime narrowing happens anyway, since a jsonb column returns
+   * `unknown` no matter how it is typed.
+   */
+  from(table: string): unknown
+}
+
+/** The shape `from("paid_report_intents")` is used as. */
+type IntentQuery = {
+  select(columns: string): {
+    eq(column: string, value: string): {
+      eq(column: string, value: string): {
+        maybeSingle(): PromiseLike<{ data: unknown; error: unknown }>
+      }
+    }
+  }
+}
+
+/**
+ * The summary for a settled checkout session.
+ *
+ * Token first, legacy metadata second. The fallback is not optional: sessions
+ * created before this deployed carry the chunked metadata and nothing else, and
+ * a buyer mid-checkout at deploy time would otherwise lose the report they had
+ * already paid for.
+ *
+ * The lookup matches on the token AND the session id. A token alone would let a
+ * leaked token read someone's summary; a session id alone would not prove the
+ * row was issued for that session. Requiring both means a token lifted from one
+ * checkout cannot be replayed against another.
+ *
+ * Returns null rather than throwing on a missing row, an unreadable row, or a
+ * mismatch — every caller already treats null as "cannot serve this report",
+ * which is the safe direction.
+ */
+export async function resolvePaidReportSummary(
+  session: Stripe.Checkout.Session,
+  supabase: PaidReportIntentReader | null,
+): Promise<PaidReportSummary | null> {
+  const token = session.metadata?.[SUMMARY_TOKEN_KEY]
+
+  if (token && supabase) {
+    try {
+      const query = supabase.from("paid_report_intents") as IntentQuery
+      const { data, error } = await query
+        .select("summary")
+        .eq("token", token)
+        .eq("stripe_session_id", session.id)
+        .maybeSingle()
+
+      const summary = (data as { summary?: unknown } | null)?.summary
+      if (!error && summary) {
+        return coercePaidReportSummary(summary)
+      }
+    } catch {
+      // Fall through to the legacy path rather than failing a paid report on a
+      // transport error.
+    }
+  }
+
+  return getPaidReportSummaryFromSession(session)
+}
+
+/** Validates a stored summary through the same checks the encoded path uses, so
+ *  a hand-edited row cannot put unvalidated values into a paid report. */
+export function coercePaidReportSummary(value: unknown): PaidReportSummary | null {
+  if (!value || typeof value !== "object") return null
+  return decodePaidReportSummary(
+    Buffer.from(JSON.stringify(value), "utf-8").toString("base64"),
   )
 }
 

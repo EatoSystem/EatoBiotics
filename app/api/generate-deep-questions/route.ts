@@ -1,7 +1,8 @@
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic"
 import { stripe } from "@/lib/stripe-server"
 import {
-  getPaidReportSummaryFromSession,
+  resolvePaidReportSummary,
+  type PaidReportIntentReader,
   isCheckoutSessionSettled,
   asAddon,
   type PaidReportHealthSystem,
@@ -323,7 +324,11 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Payment not confirmed" }, { status: 401 })
       }
 
-      const fromSession = trustedInputFromSession(getPaidReportSummaryFromSession(session))
+      // Split rather than nested: inlining getSupabase() inside both calls made
+      // TypeScript give up on the client's generics (TS2589).
+      const intentReader: PaidReportIntentReader | null = getSupabase()
+      const sessionSummary = await resolvePaidReportSummary(session, intentReader)
+      const fromSession = trustedInputFromSession(sessionSummary)
       if (!fromSession) {
         // Settled, but the checkout carries no readable summary. There is no
         // authoritative tier or score set, and the body is not a substitute, so

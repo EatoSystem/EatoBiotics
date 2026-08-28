@@ -25,6 +25,22 @@ vi.mock("@/lib/stripe-server", () => ({
   stripe: { checkout: { sessions: { create: (...a: unknown[]) => mockCheckoutCreate(...a) } } },
 }))
 
+/* Checkout writes the summary to paid_report_intents before creating a session
+   (#244), so the route needs a client. Failure modes for that write have their
+   own tests in paid-report-intents.test.ts; here it always succeeds. */
+const mockGetSupabase = vi.fn()
+vi.mock("@/lib/supabase", () => ({ getSupabase: () => mockGetSupabase() }))
+
+function workingSupabase() {
+  const from = () => {
+    const chain: Record<string, unknown> = {}
+    for (const m of ["select", "eq", "insert", "update"]) chain[m] = () => chain
+    chain.then = (resolve: (v: unknown) => void) => resolve({ data: null, error: null })
+    return chain
+  }
+  return { from }
+}
+
 const VALID_BODY = {
   tier: "personal",
   overall: 56,
@@ -49,6 +65,7 @@ function jsonReq(body: unknown): NextRequest {
 beforeEach(() => {
   vi.clearAllMocks()
   vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_key")
+  mockGetSupabase.mockReturnValue(workingSupabase())
   mockCheckoutCreate.mockResolvedValue({
     id: "cs_test_1",
     url: "https://checkout.stripe.com/c/pay/cs_test_1",

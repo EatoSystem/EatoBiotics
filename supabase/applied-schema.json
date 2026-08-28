@@ -3,23 +3,22 @@
     "Which tables actually exist in production. Read by scripts/check-schema-drift.mjs.",
     "",
     "This file exists because supabase/migrations.sql CANNOT answer the question.",
-    "Eight tables in daily use — profiles, leads, deep_assessments, journal_entries,",
-    "plate_data, referrals, meal_scans, food_intelligence_reports — are live in",
+    "Eight tables in daily use \u2014 profiles, leads, deep_assessments, journal_entries,",
+    "plate_data, referrals, meal_scans, food_intelligence_reports \u2014 are live in",
     "production but are never created by that file; they predate it. A guard parsing",
     "CREATE TABLE would flag all eight on day one and the allowlist would swallow the",
     "real signal.",
     "",
     "It also exists because that file's own comments have been wrong before: Migration",
-    "41 carried a 'PROPOSED — DO NOT APPLY' header and was applied to production",
+    "41 carried a 'PROPOSED \u2014 DO NOT APPLY' header and was applied to production",
     "anyway. A comment is not a record. This is.",
     "",
     "APPLY RITUAL: whoever applies a migration moves its tables from `pending` to",
     "`applied` in the same PR. That is the whole maintenance burden.",
     "",
     "`applied` seeded 2026-08-18 from a read-only information_schema query against",
-    "production (ephmojiwlcebenholhpc) — 40 tables."
+    "production (ephmojiwlcebenholhpc) \u2014 40 tables."
   ],
-
   "applied": [
     "ai_usage",
     "analyses",
@@ -62,9 +61,26 @@
     "twin_state",
     "weekly_checkins"
   ],
-
   "pending": [
-    { "table": "feedback", "migration": 46, "issue": 229 },
-    { "table": "reviews", "migration": 45, "issue": 229 }
+    {
+      "table": "consents",
+      "migration": 47,
+      "issue": 244
+    },
+    {
+      "table": "feedback",
+      "migration": 46,
+      "issue": 229
+    },
+    {
+      "table": "paid_report_intents",
+      "migration": 47,
+      "issue": 244
+    },
+    {
+      "table": "reviews",
+      "migration": 45,
+      "issue": 229
+    }
   ]
 }
