@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { isUnderMinimumAge, UNDER_MINIMUM_AGE_MESSAGE } from "@/lib/age-brackets"
+import {
+  HEALTH_CONSENT_REQUIRED_MESSAGE,
+  hasHealthConsent,
+  recordHealthConsent,
+} from "@/lib/health-consent"
 import { getSupabase } from "@/lib/supabase"
 import { stripe } from "@/lib/stripe-server"
 
@@ -40,11 +45,12 @@ async function createLotteryPromoCode(email: string): Promise<string | null> {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { name, ageBracket, referralCode, assessmentType } = body as {
+    const { name, ageBracket, referralCode, assessmentType, healthDataConsent } = body as {
       name: string
       ageBracket: string
       referralCode?: string
       assessmentType?: "gut" | "mind" | "family"
+      healthDataConsent?: unknown
     }
     const email = ((body as { email: string }).email ?? "").toLowerCase().trim()
 
@@ -63,9 +69,35 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Affirmative consent before any health-derived data is stored. The intro
+    // forms ask, but a form control is not an enforcement point: this route is
+    // reachable directly and it is where the lead row — email plus assessment
+    // scores — is written. Refusing here is what makes the Privacy Policy's
+    // "we treat this as sensitive personal data" a rule rather than a wish.
+    if (!hasHealthConsent(healthDataConsent)) {
+      return NextResponse.json(
+        { error: HEALTH_CONSENT_REQUIRED_MESSAGE, code: "health_consent_required" },
+        { status: 400 },
+      )
+    }
+
     // Store in Supabase if configured
     const supabase = getSupabase()
     if (supabase) {
+      // Record the consent alongside the data it authorises. Deliberately not
+      // fail-closed: the person did consent, and refusing their assessment
+      // because our bookkeeping failed is a worse outcome than an incomplete
+      // audit trail. The failure is logged.
+      await recordHealthConsent(supabase, {
+        email,
+        source:
+          assessmentType === "mind"
+            ? "assessment_mind"
+            : assessmentType === "family"
+              ? "assessment_family"
+              : "assessment_gut",
+      })
+
       // Check if this is a brand-new lead (not a repeat submission)
       const { data: existing } = await supabase
         .from("leads")

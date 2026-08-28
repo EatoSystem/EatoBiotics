@@ -1,5 +1,7 @@
 "use client"
 
+import { HealthConsentCheckbox } from "@/components/health-consent-checkbox"
+import { HEALTH_CONSENT_REQUIRED_MESSAGE } from "@/lib/health-consent"
 import { useState, useRef } from "react"
 import {
   ArrowRight,
@@ -110,6 +112,8 @@ export function FamilyAssessmentIntro({ onStart }: FamilyAssessmentIntroProps) {
   const [email, setEmail] = useState("")
   const [ageBracket, setAgeBracket] = useState("")
   const [errors, setErrors] = useState<Record<string, string>>({})
+  // Unticked by default — a pre-ticked box is not consent.
+  const [healthConsent, setHealthConsent] = useState(false)
   const formRef = useRef<HTMLDivElement>(null)
 
   function validate(): boolean {
@@ -123,6 +127,7 @@ export function FamilyAssessmentIntro({ onStart }: FamilyAssessmentIntroProps) {
     // same check runs server-side, because the age is self-declared either
     // way and a form control is not an enforcement point.
     else if (isUnderMinimumAge(ageBracket)) e.ageBracket = UNDER_MINIMUM_AGE_MESSAGE
+    if (!healthConsent) e.healthConsent = HEALTH_CONSENT_REQUIRED_MESSAGE
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -130,7 +135,7 @@ export function FamilyAssessmentIntro({ onStart }: FamilyAssessmentIntroProps) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!validate()) return
-    onStart({ name: name.trim(), email: email.trim(), ageBracket })
+    onStart({ name: name.trim(), email: email.trim(), ageBracket, healthDataConsent: healthConsent})
   }
 
   function scrollToForm() {
@@ -275,6 +280,12 @@ export function FamilyAssessmentIntro({ onStart }: FamilyAssessmentIntroProps) {
                   <p className="mt-1 text-xs text-destructive">{errors.ageBracket}</p>
                 )}
               </div>
+
+              <HealthConsentCheckbox
+                checked={healthConsent}
+                onChange={setHealthConsent}
+                error={errors.healthConsent}
+              />
 
               {/* Submit */}
               <button

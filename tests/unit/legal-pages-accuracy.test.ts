@@ -71,15 +71,20 @@ describe("the Privacy Policy names every processor the code uses", () => {
     expect(detected.length).toBe(PROCESSOR_SIGNALS.length)
   })
 
-  it("discloses what the checkout session metadata actually carries", () => {
-    // Until this data moves out of Stripe, the policy has to name it. Each of
-    // these is a field paidReportSummaryMetadata() encodes today
-    // (lib/paid-report-session.ts), so a vaguer summary would understate it.
-    for (const disclosed of ["sub-scores", "profile type", "email address"]) {
-      expect(PRIVACY, `Stripe metadata disclosure must mention ${disclosed}`).toContain(disclosed)
-    }
-    // Named for what it is, rather than described neutrally.
-    expect(PRIVACY).toMatch(/health-related information held by a payment processor/)
+  it("says the assessment data no longer reaches Stripe, and is right", () => {
+    // #244 removed it. This guard used to require the OPPOSITE — that the
+    // policy name every field Stripe received — and it failed the moment the
+    // code stopped sending them, which is exactly what it was for: the copy
+    // cannot quietly keep describing a world the code has left.
+    expect(PRIVACY).toMatch(/not sent to Stripe/)
+
+    // And the claim has to be true of the code. paidReportSummaryMetadata was
+    // the only writer; it is deleted, and nothing may call it.
+    const session = readFileSync("lib/paid-report-session.ts", "utf8")
+    expect(session).not.toMatch(/export function paidReportSummaryMetadata/)
+    const checkout = readFileSync("app/api/checkout/route.ts", "utf8")
+    expect(checkout).toContain("SUMMARY_TOKEN_KEY")
+    expect(checkout, "the summary must be persisted, not sent").toContain("paid_report_intents")
   })
 
   it("describes payment as the one-time report plus optional membership", () => {
@@ -92,12 +97,13 @@ describe("the Privacy Policy names every processor the code uses", () => {
   })
 
   it("says the same thing at checkout as it does on the policy page", () => {
-    // The checkout copy used to name only "scores and profile type" while this
-    // page listed seven fields. A buyer consenting at checkout must be told what
-    // the policy says they are consenting to, not a shorter version of it.
-    for (const field of ["sub-scores", "profile type", "email address"]) {
-      expect(CTA, `the checkout copy must disclose ${field} as the policy does`).toContain(field)
-    }
+    // The two texts have to agree. They previously drifted in the other
+    // direction — the policy listed seven fields while checkout named two — and
+    // they must not now drift back, with one page claiming the data stays and
+    // the other still describing it as sent.
+    expect(CTA).toMatch(/stay with EatoBiotics/)
+    expect(CTA).not.toMatch(/sub-scores|profile type and its description/)
+    expect(PRIVACY).toMatch(/not sent to Stripe/)
   })
 
   it("no longer says Stripe handles only subscription billing", () => {

@@ -9,6 +9,7 @@ import {
   type PaidReportTier,
 } from "@/lib/paid-report-session"
 import { getSupabase } from "@/lib/supabase"
+import { recordHealthConsent } from "@/lib/health-consent"
 
 const TIER_CONFIG = {
   // The single one-time report offering. The legacy starter/full/premium tiers
@@ -125,6 +126,17 @@ export async function POST(req: NextRequest) {
         { error: "We couldn't start checkout just now. Please try again shortly.", code: "checkout_unavailable" },
         { status: 503 },
       )
+    }
+
+    // The checkout acknowledgement covers both consents in one statement: the
+    // buyer asks for immediate supply AND agrees their answers are
+    // health-related data used to produce the report. Recording them here, from
+    // the text they actually saw, avoids asking a second time for something
+    // already agreed — and puts the record somewhere durable rather than only
+    // in Stripe metadata.
+    const consentEmail = email?.toLowerCase().trim() || null
+    if (consentEmail) {
+      await recordHealthConsent(supabase, { email: consentEmail, source: "deep_assessment" })
     }
 
     const origin = process.env.NEXT_PUBLIC_SITE_URL ?? req.headers.get("origin") ?? "http://localhost:3000"

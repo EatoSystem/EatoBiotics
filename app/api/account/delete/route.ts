@@ -43,7 +43,7 @@ import { PDF_BUCKET, pdfObjectPath } from "@/lib/report/pdf-access"
  * The table lists below are looped over, so `.from(table)` is not a literal the
  * schema-drift scanner can read. Declared here for it:
  *
- * schema-drift-tables: weekly_checkins, analyses, consultations, journal_entries, plate_data, deep_assessments, leads, email_sends, profiles
+ * schema-drift-tables: weekly_checkins, analyses, consultations, journal_entries, plate_data, deep_assessments, leads, email_sends, consents, paid_report_intents, profiles
  */
 export async function DELETE() {
   try {
@@ -96,10 +96,11 @@ export async function DELETE() {
       )
     }
 
-    const pdfPaths = (paidRows ?? [])
+    const paidSessionIds = (paidRows ?? [])
       .map((row: { stripe_session_id?: string | null }) => row.stripe_session_id)
       .filter((id): id is string => typeof id === "string" && id.length > 0)
-      .map(pdfObjectPath)
+
+    const pdfPaths = paidSessionIds.map(pdfObjectPath)
 
     if (pdfPaths.length > 0) {
       const { error: storageError } = await adminSupabase.storage.from(PDF_BUCKET).remove(pdfPaths)
@@ -128,10 +129,26 @@ export async function DELETE() {
     }
 
     // The lifecycle-email ledger holds the address itself, so it is deleted by
-    // email rather than by the user_id it sets to null.
+    // email rather than by the user_id it sets to null. The consent record is
+    // the same shape: guests consent before an account exists, so those rows are
+    // keyed by email and no cascade reaches them.
     if (email) {
-      const { error } = await adminSupabase.from("email_sends").delete().eq("email", email)
-      record("email_sends", error)
+      for (const table of ["email_sends", "consents"] as const) {
+        const { error } = await adminSupabase.from(table).delete().eq("email", email)
+        record(table, error)
+      }
+    }
+
+    // Checkout intents hold the summary — score, sub-scores, profile, email —
+    // for 30 days. They have no user column, so they are reached through the
+    // session ids read at the top of this route, the same list the PDF paths
+    // came from.
+    if (paidSessionIds.length > 0) {
+      const { error } = await adminSupabase
+        .from("paid_report_intents")
+        .delete()
+        .in("stripe_session_id", paidSessionIds)
+      record("paid_report_intents", error)
     }
 
     const { error: profileError } = await adminSupabase.from("profiles").delete().eq("id", userId)

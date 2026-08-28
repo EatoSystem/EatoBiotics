@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabase } from "@/lib/supabase"
 import { isUnderMinimumAge, UNDER_MINIMUM_AGE_MESSAGE } from "@/lib/age-brackets"
+import {
+  HEALTH_CONSENT_REQUIRED_MESSAGE,
+  hasHealthConsent,
+  recordHealthConsent,
+} from "@/lib/health-consent"
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 import { waitlistConfirmationEmail } from "@/lib/email/waitlist-email"
 import { waitlistResultEmail } from "@/lib/email/waitlist-result-email"
@@ -18,6 +23,7 @@ interface WaitlistBody {
   mainGoal?: string
   foodChallenge?: string
   referredBy?: string
+  healthDataConsent?: unknown
   utm_source?: string
   utm_medium?: string
   utm_campaign?: string
@@ -66,6 +72,17 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // The waitlist quiz stores a Food System profile and sub-scores next to the
+    // email, so it is health-derived capture and needs the same consent as the
+    // assessments. A bare { email } signup carries no health data and is
+    // exempt — the consent is required only when a quiz result is present.
+    if (body.result && !hasHealthConsent(body.healthDataConsent)) {
+      return NextResponse.json(
+        { error: HEALTH_CONSENT_REQUIRED_MESSAGE, code: "health_consent_required" },
+        { status: 400 },
+      )
+    }
+
     const result = body.result
     const clean = (s?: string) => {
       const t = (s ?? "").trim()
@@ -93,6 +110,12 @@ export async function POST(req: NextRequest) {
     const referredBy = clean(body.referredBy)
     const supabase = getSupabase()
     if (supabase) {
+      // Only when a quiz result is present — that is the only case where health
+      // data is stored, and the only case consent was required for.
+      if (result) {
+        await recordHealthConsent(supabase, { email, source: "waitlist" })
+      }
+
       // Detect repeat signups (email once) and reuse any existing share code.
       const { data: existing } = await supabase
         .from("leads")

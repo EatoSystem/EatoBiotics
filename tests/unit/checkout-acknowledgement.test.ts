@@ -179,11 +179,14 @@ describe("every live checkout caller asks for the acknowledgement", () => {
 })
 
 describe("the acknowledgement copy is stated once", () => {
-  it("names the consequence and the Stripe disclosure", () => {
+  it("names the consequence, and says where the answers stay", () => {
     const control = readFileSync("components/assessment/withdrawal-acknowledgement.tsx", "utf8")
     expect(control).toMatch(/14-day right to cancel/)
-    // Until PR B moves the summary out of Stripe metadata, the buyer is told
-    // that it goes there. The copy has to describe today's behaviour.
-    expect(control).toMatch(/sent to Stripe/)
+    // This used to assert the opposite — that the copy told the buyer their
+    // scores went to Stripe — because at the time they did. #244 moved the
+    // summary into paid_report_intents, so the honest statement changed with
+    // the behaviour rather than lagging behind it.
+    expect(control).toMatch(/stay with EatoBiotics/)
+    expect(control).toMatch(/health-related data/)
   })
 })

@@ -89,6 +89,15 @@ export interface LeadData {
   name: string
   email: string
   ageBracket: string
+  /**
+   * Affirmative consent to process health data, given at the intro.
+   *
+   * Carried on LeadData because all three assessment clients POST this object
+   * wholesale to /api/submit-lead — threading it separately would mean three
+   * more places to forget. Optional in the type only so stored objects written
+   * before this shipped still parse; the route requires it.
+   */
+  healthDataConsent?: boolean
 }
 
 const LEAD_KEY = "eatobiotics-lead"

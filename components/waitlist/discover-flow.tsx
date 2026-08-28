@@ -12,6 +12,8 @@
  * sends the instant result email.
  */
 
+import { HealthConsentCheckbox } from "@/components/health-consent-checkbox"
+import { HEALTH_CONSENT_REQUIRED_MESSAGE } from "@/lib/health-consent"
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import Image from "next/image"
 import Link from "next/link"
@@ -82,6 +84,8 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [ageBracket, setAgeBracket] = useState("")
+  // Unticked by default — a pre-ticked box is not consent.
+  const [healthConsent, setHealthConsent] = useState(false)
   const [country, setCountry] = useState("")
   const [diet, setDiet] = useState("")
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle")
@@ -182,13 +186,18 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (status === "loading" || !result) return
+    if (!healthConsent) {
+      setStatus("error")
+      setMessage(HEALTH_CONSENT_REQUIRED_MESSAGE)
+      return
+    }
     setStatus("loading")
     setMessage("")
     try {
       const res = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name, ageBracket, country, diet, mainGoal, foodChallenge, referredBy, ...utm, result }),
+        body: JSON.stringify({ email, name, ageBracket, country, diet, mainGoal, foodChallenge, referredBy, ...utm, result, healthDataConsent: healthConsent }),
       })
       const data = (await res.json()) as { ok?: boolean; error?: string; shareCode?: string }
       if (res.ok && data.ok) {
@@ -399,6 +408,7 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
                   className="brand-gradient inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-4 text-base font-semibold text-white shadow-[0_14px_30px_-10px_rgba(45,170,110,0.6)] transition-transform hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0">
                   {status === "loading" ? tw.form.joining : <>{tw.form.joinCta} <ArrowRight size={16} /></>}
                 </button>
+                <HealthConsentCheckbox checked={healthConsent} onChange={setHealthConsent} />
                 {status === "error" && <p className="text-sm font-medium text-red-600">{message}</p>}
                 <p className="text-center text-xs text-muted-foreground">{tw.form.consent}</p>
             </form>
