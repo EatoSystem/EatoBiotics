@@ -118,9 +118,107 @@ const MARKETING_COMPONENTS: Record<string, { minChars: number; anchor: string }>
     minChars: 2_000,
     anchor: "Your recommended retest date",
   },
+  // The three surfaces that actually sell the €49 report, added with the offer
+  // rewrite. NON_MARKETING keeps app/pricing/page.tsx in the corpus, but the
+  // page is a shell — every word of the offer lives in pricing-client.tsx, a
+  // component, so no rule had ever read it. Between them these three promised
+  // "Top 10 food recommendations", a "weekly shopping framework" and an
+  // "avoid/reduce list" against a report that generates five foods and renders
+  // neither of the other two. That is the same shape as the demo-report.tsx
+  // case described above: real customer copy, invisible because of where it
+  // happened to live.
+  "app/pricing/pricing-client.tsx": {
+    minChars: 3_000,
+    anchor: "Take the free assessment first",
+  },
+  "components/assessment/personal-report-cta.tsx": {
+    minChars: 800,
+    anchor: "AI-generated from your assessment",
+  },
+  "components/assessment/assessment-results.tsx": {
+    minChars: 8_000,
+    anchor: "What your report includes",
+  },
 }
 
-const CORPUS = () => [...publicPages(), ...Object.keys(MARKETING_COMPONENTS)]
+/**
+ * Email templates — customer copy that no rule reached until now.
+ *
+ * `publicPages` collects `app/**\/page.tsx`, and NON_MARKETING excludes
+ * `app/api` wholesale, so every lifecycle email was outside the corpus. That is
+ * not a theoretical gap: `/api/email/sequence` and `/api/email/paid-onboarding`
+ * are daily crons in vercel.json, and between them they were sending "a score
+ * improvement of 8–18 points within 30 days", "you're already in the top 20%",
+ * and "microbial diversity has increased" — asserted about a reader who may
+ * have done nothing since taking the assessment. A claim in an email is worse
+ * than the same claim on a page: the reader did not go looking for it.
+ *
+ * **A walk here, an explicit list for components.** The header above argues
+ * against sweeping the 324 files under components/, and that argument still
+ * holds — most of them are UI primitives no health rule should run against.
+ * lib/email/ is the opposite case: every file in it exists to write to a
+ * customer. Three are infrastructure rather than copy and are named out.
+ *
+ * The route walk is nearly all future-proofing, and worth saying plainly: five
+ * of the six routes delegate their copy to lib/email/ and carry none of their
+ * own. `app/api/email/nurture/route.ts` is the exception, with 37 lines of
+ * inline HTML holding the same claims in the same words — which is the argument
+ * for scanning all six rather than just the one. This phrasing gets copied
+ * forward, and the next route to inline a paragraph is guarded on the day it
+ * does.
+ */
+const EMAIL_INFRASTRUCTURE = new Set(["send.ts", "unsubscribe.ts", "brand-layout.ts"])
+
+function emailTemplates(): string[] {
+  const templates = fs
+    .readdirSync("lib/email")
+    .filter((f) => f.endsWith(".ts") && !EMAIL_INFRASTRUCTURE.has(f))
+    .map((f) => path.join("lib/email", f))
+
+  const routes = fs
+    .readdirSync("app/api/email", { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .map((e) => path.join("app/api/email", e.name, "route.ts"))
+    .filter((p) => fs.existsSync(p))
+
+  return [...templates, ...routes].sort()
+}
+
+/**
+ * Extraction floors for the email files that have actually carried claims.
+ *
+ * Deliberately a subset rather than one entry per file. The walk auto-includes
+ * anything new — that is the point of a walk — so an exhaustive list would be a
+ * second thing to keep in sync and would fail every time an email is added,
+ * training whoever hits it to append rather than read. What must not happen
+ * silently is a file *leaving* the corpus: marketingCopy throws on a rename,
+ * corpusHits catches and continues, and the file's claims stop being checked
+ * with every assertion still green. These four are the ones where that would
+ * matter most, and the count floor below covers the rest.
+ *
+ * Anchors are copy this change rewrote, so they double as proof the rewrite is
+ * the version being scanned.
+ */
+const EMAIL_FLOORS: Record<string, { minChars: number; anchor: string }> = {
+  "lib/email/sequence-email.ts": {
+    minChars: 3_000,
+    anchor: "Your score isn't a verdict",
+  },
+  "lib/email/paid-onboarding-email.ts": {
+    minChars: 2_000,
+    anchor: "Two weeks is long enough",
+  },
+  "lib/email/paid-report-email.ts": {
+    minChars: 2_000,
+    anchor: "Build the food system inside you",
+  },
+  "app/api/email/nurture/route.ts": {
+    minChars: 2_000,
+    anchor: "That's the foundation",
+  },
+}
+
+const CORPUS = () => [...publicPages(), ...Object.keys(MARKETING_COMPONENTS), ...emailTemplates()]
 
 /**
  * Known hits, as `page|rule|fragment`.
@@ -299,6 +397,30 @@ describe("the public marketing corpus holds no unknown claims", () => {
       )
     const overlap = Object.keys(MARKETING_COMPONENTS).filter((c) => asserted.includes(c))
     expect(overlap, `also asserted clean by a per-page guard:\n${overlap.join("\n")}`).toEqual([])
+  })
+
+  it("still scans every email template, and real copy from each", () => {
+    // Same argument as the component floor above, for the same failure: a
+    // rename or a move makes marketingCopy throw, corpusHits `continue`s, and
+    // the file leaves the corpus in silence with every assertion still green.
+    const emails = emailTemplates()
+    expect(emails.length, "the email walk found almost nothing").toBeGreaterThan(15)
+    // lib/email/ holds the templates; app/api/email/ holds the routes. Losing
+    // either root would halve the corpus without failing anything.
+    expect(emails.some((f) => f.startsWith("lib/email/"))).toBe(true)
+    expect(emails.some((f) => f.startsWith("app/api/email/"))).toBe(true)
+    // Infrastructure is excluded on purpose; if send.ts appears here the
+    // exclusion has broken and the corpus is scanning transport code.
+    expect(emails).not.toContain("lib/email/send.ts")
+
+    for (const [file, floor] of Object.entries(EMAIL_FLOORS)) {
+      expect(emails, `${file} is no longer in the walk`).toContain(file)
+      const copy = marketingCopy(file)
+      expect(copy.length, `${file} extracted only ${copy.length} chars`).toBeGreaterThan(
+        floor.minChars,
+      )
+      expect(copy, `${file} is missing its anchor phrase`).toContain(floor.anchor)
+    }
   })
 
   it("produces no claim hit that is not already known", () => {

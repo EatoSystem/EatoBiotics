@@ -89,7 +89,7 @@ function pillarInsight(label: string, action: string, color: string): string {
 /* Day 1 — What your score means */
 function day1Email(name: string, score: number | null, profileType: string | null, weakestPillar: string | null, email: string): string {
   const greeting = name ? `Hi ${name.split(" ")[0]},` : "Hi there,"
-  const scoreText = score != null ? `You scored <strong style="color:#4CB648;">${score}/100</strong>` : "You have a Biotics Score"
+  const scoreText = score != null ? `You scored <strong style="color:#4CB648;">${score}/100</strong>` : "Your Biotics Score is ready"
   const profileText = profileType ? ` — that makes you a <strong>${profileType}</strong>` : ""
 
   const PILLAR_INSIGHTS: Record<string, { label: string; action: string; color: string }> = {
@@ -105,7 +105,7 @@ function day1Email(name: string, score: number | null, profileType: string | nul
   return baseTemplate(`
     <p style="margin:0 0 6px;color:#1A2E12;font-size:16px;font-weight:600;">${greeting}</p>
     <p style="margin:0 0 24px;color:#5A6E50;font-size:15px;line-height:1.7;">
-      ${scoreText}${profileText}. Here&apos;s what that actually means — and the one thing that will move it.
+      ${scoreText}${profileText}. Here&apos;s what that actually means — and the one place we&apos;d start.
     </p>
 
     <p style="margin:0 0 12px;color:#1A2E12;font-size:15px;font-weight:600;">Your score is a baseline, not a verdict</p>
@@ -168,12 +168,12 @@ function day7Email(name: string, score: number | null, email: string): string {
 
     <p style="margin:0 0 12px;color:#1A2E12;font-size:15px;font-weight:600;">What one week of consistent action actually does</p>
     <p style="margin:0 0 20px;color:#5A6E50;font-size:14px;line-height:1.7;">
-      In seven days of consistent change, your gut has already begun shifting. Microbiome research shows measurable changes in bacterial populations in as little as <strong style="color:#1A2E12;">72 hours</strong>. After seven days, diversity scores begin moving. The foundation is there.
+      A week is where a change stops being a decision you have to make each morning. Studies of dietary change have observed shifts in bacterial populations over days rather than months — but what happened in your gut this week is not something this email can know. What you do know is that you did the seven days. That's the foundation.
     </p>
 
     <p style="margin:0 0 12px;color:#1A2E12;font-size:15px;font-weight:600;">The next step: 30 days</p>
     <p style="margin:0 0 8px;color:#5A6E50;font-size:14px;line-height:1.7;">
-      This is where the shift becomes measurable in how you feel — not just in your score. Your account has a 30-day challenge waiting for you. It continues exactly where your 7-day guide left off.
+      A week builds the habit; a month is where it settles. Your account has a 30-day challenge waiting for you, and it continues exactly where your 7-day guide left off.
     </p>
     ${ctaButton(`${SITE_URL}/account`, "Start your 30-day challenge")}
 
@@ -193,7 +193,7 @@ function day14Email(name: string, score: number | null, email: string): string {
   return baseTemplate(`
     <p style="margin:0 0 6px;color:#1A2E12;font-size:16px;font-weight:600;">${greeting}</p>
     <p style="margin:0 0 24px;color:#5A6E50;font-size:15px;line-height:1.7;">
-      Two weeks since your assessment. Your gut has been changing whether you noticed or not.
+      Two weeks since your assessment. Long enough for a habit to take, if you&apos;ve been at it.
     </p>
 
     <p style="margin:0 0 12px;color:#1A2E12;font-size:15px;font-weight:600;">This is the moment most people miss</p>
@@ -204,7 +204,7 @@ function day14Email(name: string, score: number | null, email: string): string {
     ${score != null ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px 20px;margin:0 0 20px;">
       <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#4CB648;text-transform:uppercase;letter-spacing:1px;">Your score</p>
       <p style="margin:0;font-size:28px;font-weight:800;color:#1A2E12;">${score}<span style="font-size:16px;font-weight:400;color:#5A6E50;">/100</span></p>
-      <p style="margin:6px 0 0;font-size:13px;color:#5A6E50;">Two weeks of action on your weakest pillar can move this by 5–12 points.</p>
+      <p style="margin:6px 0 0;font-size:13px;color:#5A6E50;">Retake the assessment to see where two weeks of attention on your weakest pillar has taken it.</p>
     </div>` : ""}
 
     <p style="margin:0 0 8px;color:#5A6E50;font-size:14px;line-height:1.7;">

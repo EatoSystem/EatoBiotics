@@ -252,6 +252,30 @@ export const CLAIMS: Array<[string, RegExp]> = [
   // Asserting the reader's state rather than their habits.
   ["asserts the reader's state", /working in your favour/i],
   ["states a fact about the body", /\bYou have\b/],
+  // Predicting how far someone's score will move. The strongest claim the
+  // product can make and the one it has least standing to: the number is not
+  // derived from anything — no cohort, no retest data, no study — and it was
+  // being asserted to every lead on a daily cron ("a score improvement of 8–18
+  // points within 30 days", "typically moves it 5–12 points").
+  //
+  // RESULT_DEADLINE caught the "within 30 days" half of one instance and
+  // nothing at all when the timeframe was absent, so the quantity needs its own
+  // rule. Zero legitimate uses in the tree: score BANDS are written "60-79" or
+  // "60–79" without the word, and every real percentile is computed rather than
+  // typed (see below).
+  ["quantified score outcome", /\b\d+\s*[–—-]\s*\d+\s*points\b/i],
+  // Invented social proof: "you're already in the top 20% of people who
+  // actually act on their results" — flattering, unfalsifiable, and measured
+  // against nothing.
+  //
+  // Deliberately NOT a bare /top \d+%/. The product has a real percentile
+  // feature — score-ring.tsx renders `Top {100 - percentile}%` from
+  // lib/percentile.ts, and assessment-results renders "Higher than
+  // {percentile}% of people" — and those are honest statements about a score
+  // distribution. Both are template expressions, so a hardcoded literal is
+  // exactly what separates the invented statistic from the computed one, and
+  // this rule fires only on the literal.
+  ["invented population statistic", /\btop \d+ ?% of people\b/i],
   // Superlatives that outrun the evidence.
   ["superlative", /\b(number-one|single biggest|fastest way|big difference)\b/i],
   ["comparative superlative", /more than (almost )?any other/i],

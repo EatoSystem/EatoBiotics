@@ -137,11 +137,11 @@ export function paidDay14Email(opts: PaidOnboardingOpts): { subject: string; htm
     html: baseTemplate(`
       <p style="margin:0 0 6px;color:#1A2E12;font-size:16px;font-weight:600;">${greet(opts.name)}</p>
       <p style="margin:0 0 20px;color:#5A6E50;font-size:15px;line-height:1.7;">
-        Microbiome research shows measurable bacterial-population changes within 72 hours of consistent dietary change. At two weeks, the shift is underway whether you feel it yet or not — the members who see it are the ones still logging.
+        Two weeks is long enough for a change to stop being an experiment and start being a habit. Whether you can feel a difference yet varies a lot from person to person — what's in your control is whether there's a record of it, and that comes from logging.
       </p>
       ${calloutBox("Worth 5 minutes this week", `Your <a href="${SITE_URL}/account/doctor-report" style="color:#4CB648;font-weight:600;text-decoration:none;">clinician report</a> turns everything you've tracked into a printable summary you can bring to your GP. It gets better with every week of data.`)}
       <p style="margin:0 0 8px;color:#5A6E50;font-size:14px;line-height:1.7;">
-        Check your pillar breakdown — two weeks of action on your weakest pillar typically moves it 5–12 points.
+        Check your pillar breakdown — it's the clearest view of where two weeks of effort has gone.
       </p>
       ${ctaButton(`${SITE_URL}/account`, "Check your progress")}
     `),
