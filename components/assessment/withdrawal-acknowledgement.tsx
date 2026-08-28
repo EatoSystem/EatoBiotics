@@ -7,15 +7,18 @@ import Link from "next/link"
  * that it ends the 14-day right to cancel (Consumer Rights Directive; Irish
  * Consumer Rights Act 2022, and see Terms sections 4 and 5).
  *
- * This lives in one component because there are **three** live callers of
- * `/api/checkout` — `payment-cta.tsx`, `personal-report-cta.tsx` and
- * `assessment-results.tsx` — and the first version of this change gated only
- * one of them. That was worse than the gap it closed: the Terms had started
- * asserting the acknowledgement was asked at checkout, so on two of the three
- * paths the Terms were simply untrue.
+ * This lives in one component because two live callers POST to `/api/checkout`
+ * — `assessment-results.tsx` and `personal-report-cta.tsx` — and the first
+ * version of this change gated neither. It gated `payment-cta.tsx`, which was
+ * the one caller that was *not* live: it hung off `premium-teaser.tsx`, which
+ * nothing rendered. Both files have since been deleted. So the checkbox went
+ * into dead code while the Terms had already begun asserting that every buyer
+ * is asked, which is worse than the gap it closed.
  *
  * The wire field is `acknowledgedImmediateSupply`, checked server-side in
- * `app/api/checkout/route.ts`. A checkbox is not an enforcement point.
+ * `app/api/checkout/route.ts`. A checkbox is not an enforcement point; the
+ * caller list above is kept honest by `tests/unit/checkout-acknowledgement.test.ts`,
+ * which enumerates the callers from the tree rather than trusting this comment.
  */
 export const ACKNOWLEDGEMENT_FIELD = "acknowledgedImmediateSupply" as const
 
@@ -49,8 +52,10 @@ export function WithdrawalAcknowledgement({
             Privacy Policy
           </Link>
           , including that my assessment answers are health-related data used to produce the
-          report, and that my scores and profile type are sent to Stripe as part of the checkout
-          session.
+          report. I understand that the checkout session sent to Stripe currently also carries my
+          overall score, my sub-scores, my profile type and its description, the assessment I came
+          from, any deeper-support area I chose, my email address, and the time I gave this
+          confirmation.
         </span>
       </label>
     </div>

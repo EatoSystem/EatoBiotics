@@ -82,6 +82,24 @@ describe("the Privacy Policy names every processor the code uses", () => {
     expect(PRIVACY).toMatch(/health-related information held by a payment processor/)
   })
 
+  it("describes payment as the one-time report plus optional membership", () => {
+    // The live offer is a one-time purchase. Three places described it as
+    // subscription billing, which misstated both the product and what Stripe
+    // processes: the third-party entry, the payment-data category, and the
+    // "how we use your data" list.
+    expect(PRIVACY).not.toContain("Subscription and payment information")
+    expect(PRIVACY).not.toContain("Process your subscription payments")
+  })
+
+  it("says the same thing at checkout as it does on the policy page", () => {
+    // The checkout copy used to name only "scores and profile type" while this
+    // page listed seven fields. A buyer consenting at checkout must be told what
+    // the policy says they are consenting to, not a shorter version of it.
+    for (const field of ["sub-scores", "profile type", "email address"]) {
+      expect(CTA, `the checkout copy must disclose ${field} as the policy does`).toContain(field)
+    }
+  })
+
   it("no longer says Stripe handles only subscription billing", () => {
     // The live offer is a one-time €49 report; describing Stripe as a
     // subscription processor misstated both the product and the processing.

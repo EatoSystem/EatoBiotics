@@ -66,7 +66,7 @@ export default function PrivacyPolicyPage() {
               { label: "Account data", text: "Your name, email address, and age bracket, provided when you create an account or complete the gut health assessment." },
               { label: "Dietary data", text: "Meal descriptions and food photographs you submit for analysis. This is used to generate your Biotics scores and weekly reports." },
               { label: "Health & lifestyle data", text: "Your gut health assessment responses including scores for diversity, feeding, consistency, and general wellbeing. We treat this as sensitive personal data and handle it with additional care." },
-              { label: "Payment data", text: "Subscription and payment information processed by Stripe. We do not store your card details — Stripe handles payment processing and is PCI-DSS compliant." },
+              { label: "Payment data", text: "Payment information for the one-time \u20AC49 Food System Report, and for an optional membership if you take one, processed by Stripe. We do not store your card details — Stripe handles payment processing and is PCI-DSS compliant." },
               { label: "Usage data", text: "How you interact with the Service — pages visited, features used, and session information — collected through analytics tools." },
               { label: "Communications", text: "Any messages you send us directly, including support requests or feedback." },
             ]} />
@@ -93,7 +93,7 @@ export default function PrivacyPolicyPage() {
                 "Generate personalised weekly food system reports",
                 "Power AI consultation features that answer questions about your food data",
                 "Send you weekly report notifications and account-related emails",
-                "Process your subscription payments",
+                "Take payment for your Food System Report, and for an optional membership if you take one",
                 "Improve and develop the Service based on usage patterns",
                 "Comply with legal and regulatory requirements",
               ].map((item, i) => (
