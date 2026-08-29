@@ -36,6 +36,7 @@ import type { PillarKey } from "@/lib/assessment-data"
 import { getFoodBySlug } from "@/lib/foods"
 import { getPercentile } from "@/lib/percentile"
 import { getIdentityLabel } from "@/lib/identity-labels"
+import { REPORT_OFFER_FEATURES } from "@/lib/report/offer"
 import { browserCountry, localFoods, fermentedPair, prebioticTrio } from "@/lib/local-foods"
 import type { FoodSet } from "@/lib/foods-by-country"
 import { BioticIcon } from "@/components/report/food-tool"
@@ -68,7 +69,7 @@ const INTERPRETATIONS: Record<string, Record<"low" | "mid" | "high", string>> = 
     high: "Your Prebiotics score is strong — you're consistently nourishing your gut bacteria with the plant diversity and fibre they need to thrive.",
   },
   probiotics: {
-    low: "Your Probiotics score is your biggest opportunity. Adding even one fermented food daily — {FERMENTED} — can transform your microbial diversity within weeks.",
+    low: "Your Probiotics score is your biggest opportunity. Adding even one fermented food daily — {FERMENTED} — is the most direct way to build the habit this pillar measures.",
     mid: "You're introducing some live foods, but your Probiotics score suggests there's room to build a more consistent fermented food habit and broaden the variety.",
     high: "Your Probiotics score shows you're actively supporting your gut microbiome with fermented and live foods — one of the most targeted dietary inputs available.",
   },
@@ -82,9 +83,9 @@ const INTERPRETATIONS: Record<string, Record<"low" | "mid" | "high", string>> = 
 /* ── Weakest pillar free food recommendation ─────────────────────────── */
 
 const WEAKEST_FOOD_REC: Record<string, string> = {
-  prebiotics: "Adding {PREBIOTIC} to just three meals this week could meaningfully move your Prebiotics score.",
-  probiotics: "A daily spoonful of {FERMENTED} is one of the fastest ways to improve your Probiotics score — it takes seconds.",
-  postbiotics: "Eating your main meal before 7pm and adding two colourful plant foods per day can improve your Postbiotics score within weeks.",
+  prebiotics: "Adding {PREBIOTIC} to just three meals this week is a concrete place to start on your Prebiotics score.",
+  probiotics: "A daily spoonful of {FERMENTED} is the simplest habit this pillar asks for — it takes seconds.",
+  postbiotics: "Eating your main meal before 7pm and adding two colourful plant foods per day are the two habits this pillar tracks most closely.",
 }
 
 /* ── "The science is global. The food is local." ─────────────────────────
@@ -497,16 +498,7 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
 
                 {/* What&apos;s included */}
                 <ul className="mb-8 grid gap-2.5 sm:grid-cols-2">
-                  {[
-                    "Full Prebiotics / Probiotics / Postbiotics score analysis",
-                    "Your personalised 30-day plan",
-                    "Top 10 food recommendations",
-                    "Weekly shopping framework",
-                    "Meal timing and food rhythm guidance",
-                    "Food swaps and avoid / reduce list",
-                    "7-day kickstart action plan",
-                    "Free 30-day EatoBiotics account",
-                  ].map((f) => (
+                  {REPORT_OFFER_FEATURES.map((f) => (
                     <li key={f} className="flex items-center gap-2.5 text-sm text-foreground/80">
                       <Check size={15} className="shrink-0 text-[var(--icon-green)]" />
                       {f}
@@ -571,14 +563,14 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
               {
                 icon: ShoppingCart,
                 gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
-                title: "Your Food Upgrades",
-                desc: "Ten foods ranked by impact for your specific profile, with a weekly shopping framework to match.",
+                title: "Your Five-Food Strategy",
+                desc: "Five foods chosen for your profile — what each one does, why it suits you, and a swap if it doesn't.",
               },
               {
                 icon: BarChart3,
                 gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
-                title: "Your Weekly Framework",
-                desc: "Meal timing guidance, food swaps, and a rhythm that fits your lifestyle — not someone else's.",
+                title: "Your 7-Day Starter Plan",
+                desc: "One specific action for each of the first seven days, so where to begin is never a decision.",
               },
             ].map((card, i) => (
               <ScrollReveal key={card.title} delay={i * 80}>

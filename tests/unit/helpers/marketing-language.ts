@@ -252,8 +252,89 @@ export const CLAIMS: Array<[string, RegExp]> = [
   // Asserting the reader's state rather than their habits.
   ["asserts the reader's state", /working in your favour/i],
   ["states a fact about the body", /\bYou have\b/],
-  // Superlatives that outrun the evidence.
-  ["superlative", /\b(number-one|single biggest|fastest way|big difference)\b/i],
+  // Predicting how far someone's score will move. The strongest claim the
+  // product can make and the one it has least standing to: the number is not
+  // derived from anything — no cohort, no retest data, no study — and it was
+  // being asserted to every lead on a daily cron ("a score improvement of 8–18
+  // points within 30 days", "typically moves it 5–12 points").
+  //
+  // RESULT_DEADLINE caught the "within 30 days" half of one instance and
+  // nothing at all when the timeframe was absent, so the quantity needs its own
+  // rule. Zero legitimate uses in the tree: score BANDS are written "60-79" or
+  // "60–79" without the word, and every real percentile is computed rather than
+  // typed (see below).
+  ["quantified score outcome", /\b\d+\s*[–—-]\s*\d+\s*points\b/i],
+  // Invented social proof: "you're already in the top 20% of people who
+  // actually act on their results" — flattering, unfalsifiable, and measured
+  // against nothing.
+  //
+  // Deliberately NOT a bare /top \d+%/. The product has a real percentile
+  // feature — score-ring.tsx renders `Top {100 - percentile}%` from
+  // lib/percentile.ts, and assessment-results renders "Higher than
+  // {percentile}% of people" — and those are honest statements about a score
+  // distribution. Both are template expressions, so a hardcoded literal is
+  // exactly what separates the invented statistic from the computed one, and
+  // this rule fires only on the literal.
+  ["invented population statistic", /\btop \d+ ?% of people\b/i],
+  // `fastest way` used to live in the superlative rule below. It moved here, and
+  // the move is the point: `fastest way\b` does not match "fastest way**s**" —
+  // there is no word boundary between `y` and `s` — so "one of the fastest ways
+  // to improve your Probiotics score" sat on the live results page under a rule
+  // whose name says it covers superlatives.
+  //
+  // Speed is its own claim, separate from the superlatives below, and the
+  // comparative form is the more dangerous half: "your score moves faster from
+  // consistent small actions", "members who log 3+ meals see their score move
+  // fastest", "liquid ferments colonise faster than solids". Each states a rate
+  // of change nothing has measured, and none of them names a timeframe, so
+  // RESULT_DEADLINE never saw them.
+  //
+  // Measured at six files across the corpus before landing, every one a real
+  // claim this change rewrites — no pre-existing false positive.
+  ["speed claim", /\b(fastest|quickest|faster|sooner|quicker)\b/i],
+  // Asserting a physiological process is already underway inside the reader.
+  // The emails are sent on a cron to everyone on a schedule, so the reader may
+  // have done nothing at all since taking the assessment: "your gut is already
+  // adapting", "three days of consistent action is when your gut microbiome
+  // starts responding".
+  //
+  // A verb-form rule rather than a phrase list, so it covers the family instead
+  // of today's two instances. A broader version keyed on
+  // `your (gut|microbiome|body) ... (is|starts|begins)` was measured first and
+  // rejected at NINE files: it fired on ordinary headings like "Your gut system
+  // is" on /report and /you. A rule that cries wolf gets deleted, so the narrow
+  // one ships and the broad one is recorded here as tried.
+  //
+  // WIDENED after the first version shipped with a hole. It required the
+  // auxiliary to sit directly against the participle, so `has BEEN changing`
+  // walked past it — and a nurture email subject line, "Two weeks in — your gut
+  // has been changing", survived a green corpus run because of it. The perfect
+  // and progressive tenses are the same claim, so they belong in the same rule.
+  //
+  // That is the second time in this PR a rule covered one phrasing of a class
+  // and read as covering the class: `fastest way` did not match "fastest wayS".
+  // The lesson both times is that a green run over a rule with a hole is worse
+  // than no rule, because it looks like coverage.
+  //
+  // Measured at 1 hit, 0 false positives. Two looser forms were tried and
+  // rejected for buying nothing on this corpus: adding `starts?|begins?|to`,
+  // and a `{0,2}` any-word gap. The shipped form is principled — same claim,
+  // other tenses — rather than a gap that would eventually fire on prose.
+  [
+    "process already underway",
+    /\b(?:is|are|was|were|has|have|had)\s+(?:been\s+|being\s+)?(?:already\s+)?(?:adapting|responding|recalibrat\w+|restoring|rebuilding|shifting|changing)\b/i,
+  ],
+  // The same claim in noun and infinitive form, which the verb rule above cannot
+  // reach: "the window when microbiome restoration happens", "your microbiome
+  // needs predictability to recalibrate". Both describe an internal process as
+  // settled fact and as product vocabulary.
+  [
+    "physiological process as product vocabulary",
+    /\b(?:microbiome|gut)\s+(?:restoration|recalibration)\b|\brecalibrate\b/i,
+  ],
+  // Superlatives that outrun the evidence. `fastest way` moved to the speed rule
+  // above; leaving it in both would make one line report under two rule names.
+  ["superlative", /\b(number-one|single biggest|big difference)\b/i],
   ["comparative superlative", /more than (almost )?any other/i],
 ]
 

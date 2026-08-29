@@ -5,18 +5,27 @@ import { sendEmail } from "@/lib/email/send"
 import { unsubscribeUrl } from "@/lib/email/unsubscribe"
 
 /* ── Nurture Email Sequence ──────────────────────────────────────────────
-   Runs daily via Vercel Cron (see vercel.json: "0 9 * * *").
-   Sends timed emails to users at days 1, 3, 7, and 14 after signup.
+   NOT SCHEDULED. This route is absent from vercel.json and nothing else in
+   the repo calls it, so it sends only when invoked directly. verifyCronRequest
+   still gates it, so a bare request gets 401/503 rather than a send.
 
-   Each day is detected by looking at profiles.created_at within a
-   ±2-hour window around the target interval (avoids double-sends while
-   tolerating cron drift).
+   This header used to say it "runs daily via Vercel Cron (see vercel.json:
+   0 9 * * *)". That schedule belongs to /api/email/sequence, the sibling route
+   this one was modelled on — named here so the next reader does not have to
+   re-derive the confusion. Whether nurture should be scheduled, retired, or
+   merged into the sequence route is an open product question, not something
+   this comment can settle; what it must not do is claim a cadence the platform
+   never runs.
 
-   Sequence:
-   - Day 1  → "Here's what your score actually means"
-   - Day 3  → "Have you tried today's action?" (pillar-specific nudge)
+   Sends timed emails at days 1, 3, 7, and 14 after signup, each detected by
+   looking at profiles.created_at within a ±2-hour window around the target
+   interval (avoids double-sends while tolerating drift).
+
+   Sequence — subjects as actually sent, see the dayLabel branch below:
+   - Day 1  → "What your EatoBiotics score actually means"
+   - Day 3  → "Day 3 — your action for today"
    - Day 7  → "You've completed your 7-day starter — what's next"
-   - Day 14 → "It's been two weeks — your gut has been changing"
+   - Day 14 → "Two weeks in — what to look at next"
 ────────────────────────────────────────────────────────────────────── */
 
 const EMAIL_FROM  = process.env.EMAIL_FROM ?? "hello@eatobiotics.com"
@@ -89,7 +98,7 @@ function pillarInsight(label: string, action: string, color: string): string {
 /* Day 1 — What your score means */
 function day1Email(name: string, score: number | null, profileType: string | null, weakestPillar: string | null, email: string): string {
   const greeting = name ? `Hi ${name.split(" ")[0]},` : "Hi there,"
-  const scoreText = score != null ? `You scored <strong style="color:#4CB648;">${score}/100</strong>` : "You have a Biotics Score"
+  const scoreText = score != null ? `You scored <strong style="color:#4CB648;">${score}/100</strong>` : "Your Biotics Score is ready"
   const profileText = profileType ? ` — that makes you a <strong>${profileType}</strong>` : ""
 
   const PILLAR_INSIGHTS: Record<string, { label: string; action: string; color: string }> = {
@@ -105,12 +114,12 @@ function day1Email(name: string, score: number | null, profileType: string | nul
   return baseTemplate(`
     <p style="margin:0 0 6px;color:#1A2E12;font-size:16px;font-weight:600;">${greeting}</p>
     <p style="margin:0 0 24px;color:#5A6E50;font-size:15px;line-height:1.7;">
-      ${scoreText}${profileText}. Here&apos;s what that actually means — and the one thing that will move it.
+      ${scoreText}${profileText}. Here&apos;s what that actually means — and the one place we&apos;d start.
     </p>
 
     <p style="margin:0 0 12px;color:#1A2E12;font-size:15px;font-weight:600;">Your score is a baseline, not a verdict</p>
     <p style="margin:0 0 20px;color:#5A6E50;font-size:14px;line-height:1.7;">
-      It reflects the state of your food system <em>right now</em>. The five pillars — Plant Diversity, Feeding, Live Foods, Consistency, and Feeling — each scored individually. Your weakest is where the most movement happens fastest.
+      It reflects the state of your food system <em>right now</em>. The five pillars — Plant Diversity, Feeding, Live Foods, Consistency, and Feeling — each scored individually. Your weakest is usually the most useful place to start.
     </p>
 
     ${insight ? pillarInsight(insight.label, insight.action, insight.color) : ""}
@@ -127,11 +136,11 @@ function day3Email(name: string, weakestPillar: string | null, email: string): s
   const greeting = name ? `Hi ${name.split(" ")[0]},` : "Hi there,"
 
   const PILLAR_DAY3: Record<string, { label: string; action: string }> = {
-    adding:      { label: "Day 3 Live Foods action", action: "Swap a regular drink for a fermented one today — water kefir, kombucha, or kefir milk. Liquid ferments colonise faster than solids." },
-    diversity:   { label: "Day 3 Plant action", action: "Include a legume in one meal today — lentils, chickpeas, or beans. They&apos;re the most impactful single plant group for gut diversity." },
+    adding:      { label: "Day 3 Live Foods action", action: "Swap a regular drink for a fermented one today — water kefir, kombucha, or kefir milk. A drink is an easy place to add live cultures without changing a meal." },
+    diversity:   { label: "Day 3 Plant action", action: "Include a legume in one meal today — lentils, chickpeas, or beans. Legumes bring fibre types that are hard to get from other plant groups." },
     feeding:     { label: "Day 3 Feeding action", action: "Replace a refined carb with a whole-grain alternative today. Whole grains retain the bran — the part your gut bacteria actually eat." },
-    consistency: { label: "Day 3 Rhythm action", action: "Avoid eating within 2 hours of sleep tonight. Late eating disrupts gut-brain signalling during the window when microbiome restoration happens." },
-    feeling:     { label: "Day 3 Body Awareness action", action: "Track your digestion after your largest meal today. Bloating, sluggishness, or discomfort after meals are signals from your microbiome." },
+    consistency: { label: "Day 3 Rhythm action", action: "Avoid eating within 2 hours of sleep tonight. An overnight gap without food is one of the habits associated with a steadier daily gut rhythm." },
+    feeling:     { label: "Day 3 Body Awareness action", action: "Track your digestion after your largest meal today. Noticing how you feel after eating is the habit this pillar is built on." },
   }
 
   const action = weakestPillar ? PILLAR_DAY3[weakestPillar] : PILLAR_DAY3.adding
@@ -146,7 +155,7 @@ function day3Email(name: string, weakestPillar: string | null, email: string): s
     ${action ? pillarInsight(action.label, action.action, "#4CB648") : ""}
 
     <p style="margin:20px 0 8px;color:#5A6E50;font-size:14px;line-height:1.7;">
-      The science is straightforward: <strong style="color:#1A2E12;">three days of consistent action</strong> is when your gut microbiome starts responding. You&apos;re right at the threshold.
+      <strong style="color:#1A2E12;">Three days</strong> is the point where a habit either sticks or quietly stops. You&apos;re right at it.
     </p>
     <p style="margin:0 0 8px;color:#5A6E50;font-size:14px;line-height:1.7;">
       Check in on your account — see your pillar scores and complete today&apos;s 7-day guide action.
@@ -168,12 +177,12 @@ function day7Email(name: string, score: number | null, email: string): string {
 
     <p style="margin:0 0 12px;color:#1A2E12;font-size:15px;font-weight:600;">What one week of consistent action actually does</p>
     <p style="margin:0 0 20px;color:#5A6E50;font-size:14px;line-height:1.7;">
-      In seven days of consistent change, your gut has already begun shifting. Microbiome research shows measurable changes in bacterial populations in as little as <strong style="color:#1A2E12;">72 hours</strong>. After seven days, diversity scores begin moving. The foundation is there.
+      A week is where a change stops being a decision you have to make each morning. Studies of dietary change have observed shifts in bacterial populations over days rather than months — but what happened in your gut this week is not something this email can know. What you do know is that you did the seven days. That's the foundation.
     </p>
 
     <p style="margin:0 0 12px;color:#1A2E12;font-size:15px;font-weight:600;">The next step: 30 days</p>
     <p style="margin:0 0 8px;color:#5A6E50;font-size:14px;line-height:1.7;">
-      This is where the shift becomes measurable in how you feel — not just in your score. Your account has a 30-day challenge waiting for you. It continues exactly where your 7-day guide left off.
+      A week builds the habit; a month is where it settles. Your account has a 30-day challenge waiting for you, and it continues exactly where your 7-day guide left off.
     </p>
     ${ctaButton(`${SITE_URL}/account`, "Start your 30-day challenge")}
 
@@ -193,7 +202,7 @@ function day14Email(name: string, score: number | null, email: string): string {
   return baseTemplate(`
     <p style="margin:0 0 6px;color:#1A2E12;font-size:16px;font-weight:600;">${greeting}</p>
     <p style="margin:0 0 24px;color:#5A6E50;font-size:15px;line-height:1.7;">
-      Two weeks since your assessment. Your gut has been changing whether you noticed or not.
+      Two weeks since your assessment. Long enough for a habit to take, if you&apos;ve been at it.
     </p>
 
     <p style="margin:0 0 12px;color:#1A2E12;font-size:15px;font-weight:600;">This is the moment most people miss</p>
@@ -204,7 +213,7 @@ function day14Email(name: string, score: number | null, email: string): string {
     ${score != null ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px 20px;margin:0 0 20px;">
       <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#4CB648;text-transform:uppercase;letter-spacing:1px;">Your score</p>
       <p style="margin:0;font-size:28px;font-weight:800;color:#1A2E12;">${score}<span style="font-size:16px;font-weight:400;color:#5A6E50;">/100</span></p>
-      <p style="margin:6px 0 0;font-size:13px;color:#5A6E50;">Two weeks of action on your weakest pillar can move this by 5–12 points.</p>
+      <p style="margin:6px 0 0;font-size:13px;color:#5A6E50;">Retake the assessment to see where two weeks of attention on your weakest pillar has taken it.</p>
     </div>` : ""}
 
     <p style="margin:0 0 8px;color:#5A6E50;font-size:14px;line-height:1.7;">
@@ -305,7 +314,7 @@ export async function GET(req: NextRequest) {
           subject = "You've completed your 7-day starter — what's next"
           html    = day7Email(profile.name ?? "", score, profile.email)
         } else if (seq.dayLabel === "day14") {
-          subject = "Two weeks in — your gut has been changing"
+          subject = "Two weeks in — what to look at next"
           html    = day14Email(profile.name ?? "", score, profile.email)
         }
 

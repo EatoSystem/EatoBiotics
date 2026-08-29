@@ -4,6 +4,7 @@
 
 import { asAddonType, type AddonType } from "@/lib/addon-types"
 import { SYSTEMS } from "@/lib/systems"
+import { REPORT_OFFER_FEATURES } from "@/lib/report/offer"
 
 interface PaidReportEmailOpts {
   name: string
@@ -75,16 +76,13 @@ const TIER_LABELS: Record<string, string> = {
 }
 
 const TIER_HIGHLIGHTS: Record<string, string[]> = {
-  personal: [
-    "Full Feed · Seed · Regenerate analysis",
-    "Your 30-day personalised plan",
-    "Top 10 food recommendations",
-    "Weekly shopping framework",
-    "Meal timing guidance",
-    "Food swaps and avoid/reduce list",
-    "7-day kickstart actions",
-    "Free 30-day account included",
-  ],
+  // The live one-time product. Drawn from the shared definition so the delivery
+  // email cannot describe a different report from the one that was sold.
+  //
+  // The starter/full/premium entries below are NOT converted: those tiers are
+  // retired, so the only way to reach them is re-sending a report someone
+  // already received, and restating its contents would make that email wrong.
+  personal: [...REPORT_OFFER_FEATURES],
   starter: [
     "7-day personalised starter plan",
     "Your top 5 priority foods",

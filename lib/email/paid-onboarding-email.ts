@@ -95,7 +95,7 @@ export function paidDay3Email(opts: PaidOnboardingOpts): { subject: string; html
     opts.tier === "transform"
       ? calloutBox("Have you tried your AI consultant?", `Transform includes one-to-one AI consultations about your gut, your scores, and your plan. Ask it anything — it knows your data. <a href="${SITE_URL}/account/consult" style="color:#4CB648;font-weight:600;text-decoration:none;">Start a consultation →</a>`)
       : opts.tier === "grow"
-      ? calloutBox("Your streak is the engine", `Grow gives you unlimited meal analyses and a daily streak. Members who log 3+ meals in week one see their score move fastest. <a href="${SITE_URL}/analyse" style="color:#4CB648;font-weight:600;text-decoration:none;">Log today's meal →</a>`)
+      ? calloutBox("Your streak is the engine", `Grow gives you unlimited meal analyses and a daily streak. Logging a few meals in week one is what gives your score something to compare against. <a href="${SITE_URL}/analyse" style="color:#4CB648;font-weight:600;text-decoration:none;">Log today's meal →</a>`)
       : calloutBox("Two member tools worth meeting", `Your plan includes the <a href="${SITE_URL}/account/glp1" style="color:#4CB648;font-weight:600;text-decoration:none;">GLP-1 Companion</a> (protein + muscle tracking) and the monthly <a href="${SITE_URL}/stability/report" style="color:#4CB648;font-weight:600;text-decoration:none;">Stability Report</a>. If either fits your life, they're already unlocked.`)
 
   return {
@@ -133,15 +133,15 @@ export function paidDay7Email(opts: PaidOnboardingOpts): { subject: string; html
 /* D14 — habit + value reinforcement */
 export function paidDay14Email(opts: PaidOnboardingOpts): { subject: string; html: string } {
   return {
-    subject: "Two weeks in — what your gut has been doing",
+    subject: "Two weeks in — what your logs show",
     html: baseTemplate(`
       <p style="margin:0 0 6px;color:#1A2E12;font-size:16px;font-weight:600;">${greet(opts.name)}</p>
       <p style="margin:0 0 20px;color:#5A6E50;font-size:15px;line-height:1.7;">
-        Microbiome research shows measurable bacterial-population changes within 72 hours of consistent dietary change. At two weeks, the shift is underway whether you feel it yet or not — the members who see it are the ones still logging.
+        Two weeks is long enough for a change to stop being an experiment and start being a habit. Whether you can feel a difference yet varies a lot from person to person — what's in your control is whether there's a record of it, and that comes from logging.
       </p>
       ${calloutBox("Worth 5 minutes this week", `Your <a href="${SITE_URL}/account/doctor-report" style="color:#4CB648;font-weight:600;text-decoration:none;">clinician report</a> turns everything you've tracked into a printable summary you can bring to your GP. It gets better with every week of data.`)}
       <p style="margin:0 0 8px;color:#5A6E50;font-size:14px;line-height:1.7;">
-        Check your pillar breakdown — two weeks of action on your weakest pillar typically moves it 5–12 points.
+        Check your pillar breakdown — it's the clearest view of where two weeks of effort has gone.
       </p>
       ${ctaButton(`${SITE_URL}/account`, "Check your progress")}
     `),

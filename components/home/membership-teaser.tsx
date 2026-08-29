@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { ArrowRight, Check, ShieldCheck } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
+import { REPORT_OFFER_FEATURES } from "@/lib/report/offer"
 
 export function MembershipTeaser() {
   return (
@@ -44,12 +45,14 @@ export function MembershipTeaser() {
                 Understand what is driving your gut score and get your personalised 30-day action plan.
               </p>
               <ul className="mb-6 flex-1 space-y-2.5">
-                {[
-                  "See what is driving your gut score",
-                  "Get a personalised 30-day action plan",
-                  "Know your next best food changes",
-                  "Understand your stability, diversity, and recovery scores",
-                ].map((f) => (
+                {/* A prefix of the shared offer, not a list of its own. The homepage
+                    card has room for four lines where /pricing has room for seven,
+                    and a prefix can only under-sell — the failure this shared list
+                    exists to stop is copy that promises what the report does not
+                    contain, which no prefix can do. The line it replaces —
+                    "Understand your stability, diversity, and recovery scores" —
+                    named three scores the €49 report does not produce. */}
+                {REPORT_OFFER_FEATURES.slice(0, 4).map((f) => (
                   <li key={f} className="flex items-start gap-2.5 text-sm text-muted-foreground">
                     <Check size={13} className="mt-0.5 shrink-0" style={{ color: "var(--icon-teal)" }} />
                     {f}
