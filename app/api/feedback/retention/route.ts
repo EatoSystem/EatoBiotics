@@ -2,8 +2,26 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSupabase } from "@/lib/supabase"
 import { verifyCronRequest } from "@/lib/cron-auth"
 
-/* ── Private-feedback retention sweep (cron) ───────────────────────────────
-   Deletes feedback and review rows whose server-set `expires_at` has passed.
+/* ── Retention sweep (cron) ────────────────────────────────────────────────
+   Deletes rows whose server-set `expires_at` has passed, across every table
+   in this repository that carries a retention promise.
+
+   Three tables today: `feedback` and `reviews` (90 days, #229) and
+   `paid_report_intents` (30 days, #244). The path still says "feedback"
+   because that is where the job started and renaming it would mean changing
+   the cron entry in vercel.json for no behavioural gain; it has swept two
+   unrelated tables since it was written, so a third is what it already is
+   rather than a change of purpose.
+
+   `paid_report_intents` holds the buyer's score summary between checkout and
+   report generation. An intent whose checkout was abandoned is health-derived
+   data being kept to serve a purchase that never happened, and Migration 47
+   states a 30-day window — which was, until this route learned about the
+   table, a sentence with nothing behind it.
+
+   NOT swept: `consents`. It is the record that someone agreed to health-data
+   processing, and its whole value is that it outlives the thing it permitted.
+   Deleting it would destroy the evidence, not tidy it.
 
    This is what makes "90-day retention" a fact rather than a sentence in a
    policy document. The window is enforced in two places that have to agree:
@@ -61,15 +79,27 @@ import { verifyCronRequest } from "@/lib/cron-auth"
 export const dynamic = "force-dynamic"
 
 /**
- * Tables swept here. Both hold raw customer text under the same 90-day rule.
+ * Tables swept here, each with the column its rows are named by.
+ *
+ * `keyColumn` exists because `paid_report_intents` is keyed on `token`, not
+ * `id`. The batch loop deletes by naming primary keys explicitly, so it has to
+ * ask for the right one — a hardcoded "id" would silently select nothing for
+ * that table and report a completed sweep having deleted nothing, which is the
+ * worst available outcome for a retention job.
+ *
+ * `consents` is deliberately absent — see the header.
  *
  * The loop below calls `.from(table)` with a variable, which the schema-drift
  * guard cannot resolve by reading the source — so it is declared here instead.
  * Keep this list and the marker in step.
  *
- * schema-drift-tables: feedback, reviews
+ * schema-drift-tables: feedback, reviews, paid_report_intents
  */
-const RETAINED_TABLES = ["feedback", "reviews"] as const
+const RETAINED_TABLES = [
+  { table: "feedback", keyColumn: "id" },
+  { table: "reviews", keyColumn: "id" },
+  { table: "paid_report_intents", keyColumn: "token" },
+] as const
 
 /**
  * Rows named per DELETE, via `.in("id", ids)`.
@@ -115,15 +145,17 @@ async function sweep(): Promise<NextResponse> {
   const cutoff = new Date().toISOString()
   const deleted: Record<string, number> = {}
 
-  for (const table of RETAINED_TABLES) {
+  for (const { table, keyColumn } of RETAINED_TABLES) {
     let removed = 0
     let complete = false
 
     for (let pass = 0; pass < RETENTION_MAX_PASSES; pass++) {
-      // IDs only — never message, comment, rating or user_id.
+      // Keys only — never message, comment, rating, user_id, or the intent
+      // summary (which is the health-derived payload this table exists to
+      // hold). The sweep never reads what it deletes.
       const { data: expired, error: readError } = await supabase
         .from(table)
-        .select("id")
+        .select(keyColumn)
         .lte("expires_at", cutoff)
         .limit(RETENTION_BATCH)
 
@@ -140,7 +172,7 @@ async function sweep(): Promise<NextResponse> {
         )
       }
 
-      const ids = (expired ?? []).map((r) => (r as { id: string }).id)
+      const ids = (expired ?? []).map((r) => (r as Record<string, string>)[keyColumn])
       if (ids.length === 0) {
         // Nothing expired remains: this table is genuinely finished.
         complete = true
@@ -150,7 +182,7 @@ async function sweep(): Promise<NextResponse> {
       const { count, error } = await supabase
         .from(table)
         .delete({ count: "exact" })
-        .in("id", ids)
+        .in(keyColumn, ids)
 
       if (error) {
       // Report the failure rather than a partial success that reads as a

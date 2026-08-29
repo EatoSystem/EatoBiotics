@@ -1829,8 +1829,16 @@ CREATE INDEX IF NOT EXISTS idx_feedback_expires  ON feedback (expires_at);
 -- ────────────────────────────────────────────────────────────
 -- Migration 47: paid_report_intents + consents
 -- ────────────────────────────────────────────────────────────
--- STATUS: DRAFTED — NOT APPLIED. A human applies this; see the runbook in the
--- PR and issue #244.
+-- STATUS: APPLIED TO PRODUCTION 2026-08-29 (project ephmojiwlcebenholhpc),
+-- on explicit human authorisation, and verified live immediately after: both
+-- tables present, RLS enabled, ZERO policies, every CHECK/PK/UNIQUE/FK and all
+-- four indexes confirmed, anon and authenticated able to read nothing, and the
+-- public table count moved 40 → 42 with no existing object altered.
+--
+-- This header is updated deliberately. Migration 41 sat in this file reading
+-- "PROPOSED — DO NOT APPLY" while both its tables were already live in
+-- production, and CLAUDE.md records the confusion that caused. A status line
+-- that describes the day it was typed and nothing after is worse than none.
 --
 -- Two tables, one migration, because the code needs both at once: checkout
 -- writes an intent row and a consent row in the same request.

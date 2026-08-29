@@ -304,17 +304,17 @@ describe("the real manifest", () => {
     // only place that is visible at a glance.
     const { pending } = loadManifest() as { pending: Map<string, { migration: number; issue: number }> }
     expect([...pending.keys()].sort()).toEqual([
-      "consents",
       "feedback",
-      "paid_report_intents",
       "reviews",
     ])
     expect(pending.get("reviews")!.migration).toBe(45)
     expect(pending.get("feedback")!.migration).toBe(46)
-    // Migration 47 — both tables land together because checkout writes to both
-    // in the same request.
-    expect(pending.get("paid_report_intents")!.migration).toBe(47)
-    expect(pending.get("consents")!.migration).toBe(47)
+    // Migration 47 (paid_report_intents + consents) was applied to production on
+    // 2026-08-29 and verified live — table, RLS enabled, zero policies, all
+    // constraints and indexes present — so both tables moved to `applied`. They
+    // are deliberately NOT asserted here any more: this list is the set still
+    // awaiting a human, and leaving an applied table in it is the stale-entry
+    // drift the guard exists to prevent.
   })
 
   it("stays sorted, so a diff shows what changed", () => {
@@ -322,9 +322,9 @@ describe("the real manifest", () => {
     expect(raw.applied).toEqual([...raw.applied].sort())
   })
 
-  it("matches the 40 tables read from production", () => {
+  it("matches the 42 tables read from production", () => {
     const raw = JSON.parse(readFileSync("supabase/applied-schema.json", "utf8"))
-    expect(raw.applied.length).toBe(40)
+    expect(raw.applied.length).toBe(42)
   })
 
   it("is internally consistent (no duplicates, no overlap) — loadManifest would already throw otherwise", () => {

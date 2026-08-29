@@ -172,16 +172,38 @@ describe("checkout stores the summary server-side", () => {
     await postCheckout()
 
     const [params] = mockCheckoutCreate.mock.calls[0] as [{ metadata: Record<string, string> }]
-    const blob = JSON.stringify(params.metadata)
-    for (const leak of ["Emerging Balance", "A description with prose", "buyer@example.com", "glucose", "56"]) {
-      expect(blob, `Stripe metadata must not contain ${leak}`).not.toContain(leak)
-    }
-    expect(Object.keys(params.metadata).sort()).toEqual([
+    const metadata = params.metadata
+
+    // The real guarantee: an exact allowlist of keys. Nothing describing the
+    // buyer can be present if only these four exist.
+    expect(Object.keys(metadata).sort()).toEqual([
       "acknowledged_at",
       "acknowledged_immediate_supply",
       "report_tier",
       SUMMARY_TOKEN_KEY,
     ])
+
+    // Distinctive values, scanned across the whole blob — none of these can
+    // collide with hex or a timestamp.
+    const blob = JSON.stringify(metadata)
+    for (const leak of ["Emerging Balance", "A description with prose", "buyer@example.com", "glucose"]) {
+      expect(blob, `Stripe metadata must not contain ${leak}`).not.toContain(leak)
+    }
+
+    // The score is two digits, and this used to be scanned against the whole
+    // blob including the 64-hex `summary_token` and an ISO timestamp. That is a
+    // coin flip rather than an assertion: a random 64-hex string contains any
+    // given byte pair about 22% of the time, and it was measured failing 1 run
+    // in 6 before this was fixed. Scan the fields that could actually carry a
+    // score, and pin the two generated fields by SHAPE instead — which is a
+    // stronger statement about them than a substring scan ever made.
+    expect(metadata[SUMMARY_TOKEN_KEY]).toMatch(/^[0-9a-f]{64}$/)
+    expect(metadata.acknowledged_at).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+    const describable = Object.entries(metadata)
+      .filter(([k]) => k !== SUMMARY_TOKEN_KEY && k !== "acknowledged_at")
+      .map(([, v]) => String(v))
+      .join("|")
+    expect(describable, "no metadata field may carry the buyer's score").not.toContain("56")
   })
 })
 

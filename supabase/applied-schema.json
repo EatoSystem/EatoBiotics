@@ -34,6 +34,7 @@
     "cms_import_batch",
     "cms_media",
     "cms_tags",
+    "consents",
     "consultations",
     "contributions",
     "deep_assessments",
@@ -50,6 +51,7 @@
     "meal_scans",
     "monthly_gut_plans",
     "monthly_reviews",
+    "paid_report_intents",
     "plate_data",
     "plate_recipes",
     "profiles",
@@ -63,19 +65,9 @@
   ],
   "pending": [
     {
-      "table": "consents",
-      "migration": 47,
-      "issue": 244
-    },
-    {
       "table": "feedback",
       "migration": 46,
       "issue": 229
-    },
-    {
-      "table": "paid_report_intents",
-      "migration": 47,
-      "issue": 244
     },
     {
       "table": "reviews",
