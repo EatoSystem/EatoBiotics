@@ -13,7 +13,7 @@ import { reportViewState } from "@/lib/report-status"
 import { freshPdfUrl } from "@/lib/report/pdf-access"
 import {
   displayTierForReport,
-  getPaidReportSummaryFromSession,
+  resolvePaidReportSummary,
   isCheckoutSessionSettled,
 } from "@/lib/paid-report-session"
 
@@ -47,7 +47,11 @@ export default async function ReportPage({ searchParams }: Props) {
       redirect("/assessment")
     }
 
-    const summary = getPaidReportSummaryFromSession(session)
+    // Hoisted above the resolve: the summary now lives in paid_report_intents
+    // and is addressed by the token in Stripe metadata, so reading it needs the
+    // client that used to be created further down for the deep_assessments read.
+    const supabase = getSupabase()
+    const summary = await resolvePaidReportSummary(session, supabase)
     if (!summary) redirect("/assessment")
 
     const freeScores = {
@@ -64,7 +68,6 @@ export default async function ReportPage({ searchParams }: Props) {
     const membershipTier = user ? await getUserMembershipTier(user.id).catch(() => "free") : "free"
 
     // Check if deep assessment is complete in Supabase
-    const supabase = getSupabase()
     if (supabase) {
       const { data } = await supabase
         .from("deep_assessments")

@@ -202,6 +202,9 @@ describe("the age floor is enforced server-side", () => {
         name: "Test",
         email: "adult@example.com",
         ageBracket: "40–49",
+        // Health-data consent is also required now; its own refusal cases live
+        // in health-consent.test.ts. Sending it here keeps this test about age.
+        healthDataConsent: true,
       }),
     )
 
@@ -226,6 +229,23 @@ describe("the age floor is enforced server-side", () => {
 
     expect(res.status).toBe(503)
     expect(JSON.stringify(await res.json())).not.toContain("exploded")
+  })
+
+  it("refuses on age before it asks about consent", async () => {
+    // An under-16 should be turned away for being under-16, not handed a
+    // consent checkbox — the age refusal is the more fundamental one, and the
+    // message they see should say so.
+    const { POST } = await import("@/app/api/submit-lead/route")
+    const res = await POST(
+      post("http://localhost/api/submit-lead", {
+        name: "Test",
+        email: "child@example.com",
+        ageBracket: UNDER_MINIMUM_AGE_BRACKET,
+        healthDataConsent: false,
+      }),
+    )
+
+    expect(await res.json()).toMatchObject({ code: "under_minimum_age" })
   })
 
   it("refuses with copy that names the age, not a bare error code", () => {

@@ -52,10 +52,8 @@ export function WithdrawalAcknowledgement({
             Privacy Policy
           </Link>
           , including that my assessment answers are health-related data used to produce the
-          report. I understand that the checkout session sent to Stripe currently also carries my
-          overall score, my sub-scores, my profile type and its description, the assessment I came
-          from, any deeper-support area I chose, my email address, and the time I gave this
-          confirmation.
+          report. My answers, scores and profile stay with EatoBiotics — the payment page receives
+          only a reference to them, what I bought, and the time I gave this confirmation.
         </span>
       </label>
     </div>

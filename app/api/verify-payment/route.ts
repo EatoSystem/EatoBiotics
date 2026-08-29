@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { stripe } from "@/lib/stripe-server"
+import { getSupabase } from "@/lib/supabase"
 import {
-  getPaidReportSummaryFromSession,
+  resolvePaidReportSummary,
   getPaidReportSummaryReferenceFromSession,
   isCheckoutSessionSettled,
 } from "@/lib/paid-report-session"
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest) {
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId)
     const paid = isCheckoutSessionSettled(session)
-    const summary = getPaidReportSummaryFromSession(session)
+    const summary = await resolvePaidReportSummary(session, getSupabase())
 
     console.log(
       `[verify-payment] Session ${sessionId}: paid=${paid}, status=${session.status}, payment_status=${session.payment_status}`

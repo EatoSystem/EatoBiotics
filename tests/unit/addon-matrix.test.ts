@@ -207,8 +207,13 @@ describe("entitlement is the settled session, and survives every stage", () => {
 
     expect(
       src,
-      "the summary must be decoded from the settled Stripe session",
-    ).toMatch(/getPaidReportSummaryFromSession\(session\)/)
+      "the summary must be derived from the settled Stripe session, not the request body",
+    ).toMatch(/resolvePaidReportSummary\(\s*session\b/)
+
+    // #244 moved the summary out of Stripe metadata into paid_report_intents,
+    // so the call is now async and takes a reader. The property this guards is
+    // unchanged and is the whole point: the first argument is the settled
+    // `session`, so entitlement still cannot come from anything the caller sent.
 
     expect(src).not.toMatch(/body\.selectedAddon/)
   })

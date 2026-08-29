@@ -40,7 +40,7 @@ vi.mock("@/lib/cron-auth", async () => {
  * `count` is served from the row total, independent of any returned body —
  * mirroring the client, which parses it from Content-Range.
  */
-type Row = { id: string; expires_at: string; user_id?: string | null; message?: string }
+type Row = { id?: string; token?: string; expires_at: string; user_id?: string | null; message?: string; summary?: unknown }
 let tables: Record<string, Row[]> = {}
 let deleteError: { message: string } | null = null
 /** Fail only this table, to exercise a partial sweep. */
@@ -84,7 +84,15 @@ vi.mock("@/lib/supabase", () => ({
                   const hit = (tables[table] ?? []).filter((r) => preds.every((f) => f(r)))
                   // The server cap applies on top of any requested limit.
                   const capped = hit.slice(0, Math.min(limit, RESPONSE_LIMIT))
-                  resolve({ data: capped.map((r) => ({ id: r.id })), error: null })
+                  // Project the column the route ASKED for. Hardcoding `id`
+                  // here would make the paid_report_intents case (keyed on
+                  // `token`) pass against a route that selects the wrong
+                  // column — the fake would be hiding the bug it exists to
+                  // catch.
+                  resolve({
+                    data: capped.map((r) => ({ [cols]: (r as Record<string, unknown>)[cols] })),
+                    error: null,
+                  })
                 },
               })
               return b
@@ -133,7 +141,7 @@ vi.mock("@/lib/supabase", () => ({
                   resolve({
                     // Only present with return=representation, and TRUNCATED by
                     // the server cap — the trap the old implementation fell in.
-                    data: representation ? hit.slice(0, RESPONSE_LIMIT).map((r) => ({ id: r.id })) : null,
+                    data: representation ? hit.slice(0, RESPONSE_LIMIT).map((r) => ({ id: r.id })) : null,  // representation body is unused by the route
                     error: null,
                     // From the row total, independent of the body above.
                     count: suppressCount || !opts?.count ? null : hit.length,
@@ -168,6 +176,11 @@ beforeEach(() => {
   filters.length = 0
   selectedColumns.length = 0
   tables = {
+    // Keyed on `token`, not `id` — the reason the route carries a keyColumn.
+    paid_report_intents: [
+      { token: "t-old", expires_at: PAST, summary: { overall: 56 } },
+      { token: "t-live", expires_at: FUTURE, summary: { overall: 71 } },
+    ],
     feedback: [
       { id: "f-old", expires_at: PAST, user_id: "u1" },
       { id: "f-old-anon", expires_at: PAST, user_id: null },
@@ -207,9 +220,11 @@ describe("the sweep deletes expired rows and only expired rows", () => {
     const body = await res.json()
 
     expect(res.status).toBe(200)
-    expect(body.deleted).toEqual({ feedback: 2, reviews: 1 })
+    expect(body.deleted).toEqual({ feedback: 2, reviews: 1, paid_report_intents: 1 })
     expect(tables.feedback.map((r) => r.id)).toEqual(["f-live"])
     expect(tables.reviews.map((r) => r.id)).toEqual(["r-live"])
+    // The unexpired intent survives; only the abandoned one goes.
+    expect(tables.paid_report_intents.map((r) => r.token)).toEqual(["t-live"])
   })
 
   it("deletes EVERY expired row when there are far more than the response limit", async () => {
@@ -282,15 +297,19 @@ describe("the sweep deletes expired rows and only expired rows", () => {
     expect(body.ok).toBeUndefined()
   })
 
-  it("asks the database for ids and nothing else", async () => {
+  it("asks the database for primary keys and nothing else", async () => {
     const { GET } = await load()
     await GET(req("Bearer test-secret"))
 
     expect(selectedColumns.length).toBeGreaterThan(0)
     for (const cols of selectedColumns) {
-      expect(cols, "the sweep must never read customer content").toBe("id")
+      // `token` for paid_report_intents, `id` for the other two — never a
+      // content column, and never `*`.
+      expect(["id", "token"], "the sweep must never read customer content").toContain(cols)
     }
-    for (const forbidden of ["message", "comment", "rating", "user_id", "*"]) {
+    // `summary` is the health-derived payload on paid_report_intents; the sweep
+    // deletes those rows without ever reading what is in them.
+    for (const forbidden of ["message", "comment", "rating", "user_id", "summary", "*"]) {
       expect(selectedColumns.join(","), `selected ${forbidden}`).not.toContain(forbidden)
     }
   })
@@ -335,16 +354,59 @@ describe("the sweep deletes expired rows and only expired rows", () => {
     // And the DELETE names those exact ids — never a broad predicate that a
     // server-side cap could apply to unpredictably.
     expect(deletes.length).toBeGreaterThan(0)
-    for (const f of deletes) expect(f.col).toBe("id")
+    // Primary key per table: `id` for feedback/reviews, `token` for
+    // paid_report_intents. Never a content or ownership column.
+    for (const f of deletes) expect(["id", "token"]).toContain(f.col)
 
     // No user/content targeting anywhere.
     expect(filters.some((f) => f.op === "eq")).toBe(false)
   })
 
-  it("sweeps both private tables, not just feedback", async () => {
+  it("sweeps exactly the retained tables — and nothing else", async () => {
     const { GET } = await load()
     await GET(req("Bearer test-secret"))
-    expect(new Set(filters.map((f) => f.table))).toEqual(new Set(["feedback", "reviews"]))
+    const touched = new Set(filters.map((f) => f.table))
+    expect(touched).toEqual(new Set(["feedback", "reviews", "paid_report_intents"]))
+
+    // The consequential half, asserted explicitly rather than implied by the
+    // set above: `consents` is the record that someone agreed to health-data
+    // processing and must outlive what it permitted, and `deep_assessments`
+    // holds the purchased report itself. A widened predicate that swept either
+    // would destroy data no retention promise covers.
+    for (const protectedTable of ["consents", "deep_assessments", "leads", "profiles"]) {
+      expect(touched, `${protectedTable} must never be swept`).not.toContain(protectedTable)
+    }
+  })
+
+  it("deletes intents by token, and only expired ones", async () => {
+    const { GET } = await load()
+    await GET(req("Bearer test-secret"))
+
+    const intentFilters = filters.filter((f) => f.table === "paid_report_intents")
+    // Named by primary key, not by a bare predicate — the batch contract.
+    const del = intentFilters.find((f) => f.op === "in")
+    expect(del?.col, "intents are keyed on token, not id").toBe("token")
+    expect(del?.value).toEqual(["t-old"])
+
+    // And the read that chose them filtered on expiry only — never on the
+    // buyer, the session, or the summary.
+    const read = intentFilters.find((f) => f.op === "lte")
+    expect(read?.col).toBe("expires_at")
+    expect(intentFilters.every((f) => ["expires_at", "token"].includes(f.col))).toBe(true)
+  })
+
+  it("leaves every intent alone when none has expired", async () => {
+    tables.paid_report_intents = [
+      { token: "t-a", expires_at: FUTURE, summary: {} },
+      { token: "t-b", expires_at: FUTURE, summary: {} },
+    ]
+    const { GET } = await load()
+    const res = await GET(req("Bearer test-secret"))
+    const body = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(body.deleted.paid_report_intents).toBe(0)
+    expect(tables.paid_report_intents.map((r) => r.token)).toEqual(["t-a", "t-b"])
   })
 
   it("reports failure rather than a partial sweep that reads as complete", async () => {

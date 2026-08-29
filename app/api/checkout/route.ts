@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
 import { stripe } from "@/lib/stripe-server"
+import { randomBytes } from "node:crypto"
 import {
   asFoundation,
   asAddon,
-  paidReportSummaryMetadata,
+  SUMMARY_TOKEN_BYTES,
+  SUMMARY_TOKEN_KEY,
   type PaidReportTier,
 } from "@/lib/paid-report-session"
+import { getSupabase } from "@/lib/supabase"
+import { recordHealthConsent } from "@/lib/health-consent"
 
 const TIER_CONFIG = {
   // The single one-time report offering. The legacy starter/full/premium tiers
@@ -84,19 +88,56 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Encode result summary + tier so the report page can reconstruct it.
-    // Stripe caps each metadata value at 500 chars, so the shared helper splits
-    // the base64 payload into numbered chunks and the downstream decoder
-    // reassembles them after payment verification.
-    const summaryMetadata = paidReportSummaryMetadata({
-      overall,
-      profile,
-      subScores,
-      tier: reportTier,
-      email: email?.toLowerCase().trim() || null,
-      foundationType: foundation,
-      selectedAddon: addon,
+    // The summary is stored server-side and Stripe is given only an opaque
+    // token. It used to travel in Stripe metadata — score, sub-scores, profile
+    // type and description, foundation, add-on and email — which put
+    // health-derived data in a payment processor for no payment reason (#244).
+    //
+    // Written BEFORE the session is created, so a failure here costs nothing:
+    // no session means no payment page and nobody is charged. Authority stays
+    // server-side, which is what #232 established when it stopped taking these
+    // values from the request body downstream.
+    const supabase = getSupabase()
+    if (!supabase) {
+      console.error("[checkout] Supabase not configured — refusing to start a paid checkout")
+      return NextResponse.json(
+        { error: "We couldn't start checkout just now. Please try again shortly.", code: "checkout_unavailable" },
+        { status: 503 },
+      )
+    }
+
+    const summaryToken = randomBytes(SUMMARY_TOKEN_BYTES).toString("hex")
+    const { error: intentError } = await supabase.from("paid_report_intents").insert({
+      token: summaryToken,
+      summary: {
+        overall,
+        profile,
+        subScores,
+        tier: reportTier,
+        email: email?.toLowerCase().trim() || null,
+        foundationType: foundation,
+        selectedAddon: addon,
+      },
     })
+
+    if (intentError) {
+      console.error("[checkout] paid_report_intents insert failed:", intentError.message)
+      return NextResponse.json(
+        { error: "We couldn't start checkout just now. Please try again shortly.", code: "checkout_unavailable" },
+        { status: 503 },
+      )
+    }
+
+    // The checkout acknowledgement covers both consents in one statement: the
+    // buyer asks for immediate supply AND agrees their answers are
+    // health-related data used to produce the report. Recording them here, from
+    // the text they actually saw, avoids asking a second time for something
+    // already agreed — and puts the record somewhere durable rather than only
+    // in Stripe metadata.
+    const consentEmail = email?.toLowerCase().trim() || null
+    if (consentEmail) {
+      await recordHealthConsent(supabase, { email: consentEmail, source: "deep_assessment" })
+    }
 
     const origin = process.env.NEXT_PUBLIC_SITE_URL ?? req.headers.get("origin") ?? "http://localhost:3000"
 
@@ -116,19 +157,17 @@ export async function POST(req: NextRequest) {
           quantity: 1,
         },
       ],
-      // Store the summary in Stripe-safe metadata chunks instead of
-      // client_reference_id, which has a 200-char limit. The flat
-      // foundation/add-on keys are duplicated for easy reading in the Stripe
-      // dashboard + webhooks.
+      // Four keys, none of them health data. The foundation/add-on keys that
+      // used to be duplicated here for dashboard convenience are gone: which
+      // health system someone selected is exactly the kind of thing that should
+      // not be legible in a payments dashboard.
       metadata: {
-        ...summaryMetadata,
-        ...(foundation ? { foundation_type: foundation } : {}),
-        ...(addon ? { selected_addon: addon } : {}),
+        // The only reference to the buyer's answers that Stripe ever sees.
+        [SUMMARY_TOKEN_KEY]: summaryToken,
+        report_tier: reportTier,
         // The durable record that the buyer asked for immediate supply. Kept on
         // the session because that object survives independently of our
         // database, and the consent needs to outlive the request that gave it.
-        // Two keys of the 50-key budget; MAX_SUMMARY_CHUNKS was lowered to 43
-        // to keep headroom rather than land exactly on Stripe's limit.
         acknowledged_immediate_supply: "true",
         acknowledged_at: new Date().toISOString(),
       },
@@ -137,6 +176,29 @@ export async function POST(req: NextRequest) {
       success_url: `${origin}/assessment/deep?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/assessment`,
     })
+
+    // Bind the intent to the session it was issued for. Readers match on the
+    // token AND the session id, so until this lands the token resolves to
+    // nothing — which is the safe direction: a failure here degrades to the
+    // buyer being unable to load a report they have not yet paid for, and the
+    // row expires on its own after 30 days.
+    const { error: bindError } = await supabase
+      .from("paid_report_intents")
+      .update({ stripe_session_id: session.id })
+      .eq("token", summaryToken)
+
+    if (bindError) {
+      // Fail closed. The session exists but the buyer has not been redirected,
+      // so nobody has been charged and an orphaned session costs nothing. The
+      // alternative — returning the URL anyway — takes €49 for a report whose
+      // summary can never be resolved, because the legacy metadata that used to
+      // back it up is no longer written.
+      console.error(`[checkout] intent bind failed for session ${session.id}:`, bindError.message)
+      return NextResponse.json(
+        { error: "We couldn't start checkout just now. Please try again shortly.", code: "checkout_unavailable" },
+        { status: 503 },
+      )
+    }
 
     console.log(
       `[checkout] Session ${session.id} created (mode=payment, amount=${config.amount}, hasEmail=${Boolean(email)}, livemode=${session.livemode})`

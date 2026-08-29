@@ -298,10 +298,23 @@ describe("finding 3 — applied and pending must be disjoint, and internally con
 
 describe("the real manifest", () => {
   it("declares today's real drift rather than hiding it", () => {
+    // Pinned exactly, so pending tables cannot accumulate quietly. Every entry
+    // here is a table the code references and production does not have yet —
+    // each one is a migration a human still has to apply, and the list is the
+    // only place that is visible at a glance.
     const { pending } = loadManifest() as { pending: Map<string, { migration: number; issue: number }> }
-    expect([...pending.keys()].sort()).toEqual(["feedback", "reviews"])
-    expect(pending.get("feedback")!.migration).toBe(46)
+    expect([...pending.keys()].sort()).toEqual([
+      "feedback",
+      "reviews",
+    ])
     expect(pending.get("reviews")!.migration).toBe(45)
+    expect(pending.get("feedback")!.migration).toBe(46)
+    // Migration 47 (paid_report_intents + consents) was applied to production on
+    // 2026-08-29 and verified live — table, RLS enabled, zero policies, all
+    // constraints and indexes present — so both tables moved to `applied`. They
+    // are deliberately NOT asserted here any more: this list is the set still
+    // awaiting a human, and leaving an applied table in it is the stale-entry
+    // drift the guard exists to prevent.
   })
 
   it("stays sorted, so a diff shows what changed", () => {
@@ -309,9 +322,9 @@ describe("the real manifest", () => {
     expect(raw.applied).toEqual([...raw.applied].sort())
   })
 
-  it("matches the 40 tables read from production", () => {
+  it("matches the 42 tables read from production", () => {
     const raw = JSON.parse(readFileSync("supabase/applied-schema.json", "utf8"))
-    expect(raw.applied.length).toBe(40)
+    expect(raw.applied.length).toBe(42)
   })
 
   it("is internally consistent (no duplicates, no overlap) — loadManifest would already throw otherwise", () => {

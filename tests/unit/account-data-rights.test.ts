@@ -111,6 +111,12 @@ describe("erasure removes what no cascade reaches", () => {
     expect(supabase.deleted).toContain("leads")
     expect(supabase.deleted).toContain("email_sends")
     expect(supabase.deleted).toContain("profiles")
+    // Migration 47's two tables. `consents` holds guest rows keyed by email that
+    // no cascade reaches; `paid_report_intents` holds the summary — score,
+    // sub-scores, profile, email — and has no user column at all, so it is
+    // reached through the session ids read at the top of the route.
+    expect(supabase.deleted).toContain("consents")
+    expect(supabase.deleted).toContain("paid_report_intents")
   })
 
   it("removes the report PDFs from storage", async () => {
