@@ -175,7 +175,7 @@ export async function GET(request: Request) {
           </div>
 
           <p style={{ fontSize: 18, color: "rgba(255,255,255,0.55)", lineHeight: 1.5, margin: 0, display: "flex" }}>
-            A 2-minute assessment reveals your biotic balance across 5 pillars of gut health.
+            A 2-minute assessment reveals your balance across Prebiotics, Probiotics and Postbiotics.
           </p>
 
           {/* Brand pills */}

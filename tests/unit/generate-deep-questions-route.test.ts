@@ -316,6 +316,12 @@ describe("persistence failure never returns questions", () => {
     // No Stripe session means no row to bind to; resolveTrustedQuestions
     // reconstructs the deterministic bank at submit time.
     vi.stubEnv("STRIPE_SECRET_KEY", "")
+    // The development flow is now an EXPLICIT opt-in plus a provably
+    // non-production runtime, not the side effect of a missing secret.
+    // See lib/paid-flow-policy.ts.
+    vi.stubEnv("EATOBIOTICS_ALLOW_UNVERIFIED_PAID_FLOW", "true")
+    vi.stubEnv("NODE_ENV", "test")
+    vi.stubEnv("VERCEL_ENV", "")
     mockGetSupabase.mockReturnValue(null)
 
     const res = await callRoute()
@@ -638,8 +644,14 @@ describe("server-owned fields come from the settled session, never the body", ()
   it("dev mode has no session, so it is the one named exception", async () => {
     // No Stripe key ⇒ nothing authoritative exists to read. This path is
     // explicit rather than a silent degradation, and cannot occur in production
-    // because devMode is `!process.env.STRIPE_SECRET_KEY`.
+    // because the paid-flow policy allows it: explicit flag + test runtime.
     vi.stubEnv("STRIPE_SECRET_KEY", "")
+    // The development flow is now an EXPLICIT opt-in plus a provably
+    // non-production runtime, not the side effect of a missing secret.
+    // See lib/paid-flow-policy.ts.
+    vi.stubEnv("EATOBIOTICS_ALLOW_UNVERIFIED_PAID_FLOW", "true")
+    vi.stubEnv("NODE_ENV", "test")
+    vi.stubEnv("VERCEL_ENV", "")
     const db = makeFakeDb()
     mockGetSupabase.mockReturnValue(db.client)
 

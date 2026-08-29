@@ -9,7 +9,7 @@ import { reportViewState } from "@/lib/report-status"
 import { TrackConversion } from "@/components/analytics/track-conversion"
 
 export const metadata: Metadata = {
-  title: "Your Deep Assessment — EatoBiotics",
+  title: "Your Food System Consultation — EatoBiotics",
   description: "Complete your personalised deep assessment to unlock your full report.",
 }
 

@@ -5,6 +5,7 @@
 import { asAddonType, type AddonType } from "@/lib/addon-types"
 import { SYSTEMS } from "@/lib/systems"
 import { REPORT_OFFER_FEATURES } from "@/lib/report/offer"
+import { normalizeToBiotics, type IncomingSubScores } from "@/lib/report/subscores"
 
 interface PaidReportEmailOpts {
   name: string
@@ -33,11 +34,20 @@ interface PaidReportEmailOpts {
 /* ── Constants ──────────────────────────────────────────────────────── */
 
 const PILLAR_LABELS: Record<string, string> = {
-  // Current pillars. The `heal` key stays — it is what stored reports contain —
-  // but it displays as "Regenerate".
-  feed: "Feed",
-  seed: "Seed",
-  heal: "Regenerate",
+  // The three pathways, under their product names. `feed`/`seed`/`heal` are
+  // legacy STORAGE keys that stored reports still contain; they map to the
+  // pathway they hold, never to an action word.
+  //
+  // These previously read "Feed" / "Seed" / "Regenerate", which broke two rules
+  // at once: Feed · Seed · Regenerate is the ACTION vocabulary and is not a set
+  // of scores, and Regenerate is not Postbiotics renamed. A buyer's email is
+  // the last place that distinction should blur.
+  prebiotics: "Prebiotics",
+  probiotics: "Probiotics",
+  postbiotics: "Postbiotics",
+  feed: "Prebiotics",
+  seed: "Probiotics",
+  heal: "Postbiotics",
   // Legacy pillars
   diversity: "Plant Diversity",
   feeding: "Feeding",
@@ -47,6 +57,9 @@ const PILLAR_LABELS: Record<string, string> = {
 }
 
 const PILLAR_COLORS: Record<string, string> = {
+  prebiotics: "#7fc47e",
+  probiotics: "#3ab0a0",
+  postbiotics: "#e6b84a",
   feed: "#7fc47e",
   seed: "#3ab0a0",
   heal: "#e6b84a",
@@ -69,7 +82,7 @@ const PILLAR_BG: Record<string, string> = {
 }
 
 const TIER_LABELS: Record<string, string> = {
-  personal: "Food System Report",
+  personal: "Personal Food System Report",
   starter: "Starter Insights",
   full: "Full Report",
   premium: "Premium Report",
@@ -146,14 +159,30 @@ export function buildPaidReportEmail(opts: PaidReportEmailOpts): {
   const tierLabel = TIER_LABELS[tier] ?? "Report"
   const subject = `Your EatoBiotics ${tierLabel} is ready, ${name}`
 
-  /* ── Pillar rows ─────────────────────────────────────────────────── */
-  const sortedPillars = Object.entries(subScores).sort(([, a], [, b]) => b - a)
-
-  // For personal tier, only show feed/seed/heal; for legacy tiers, show old 5 pillars
-  const relevantPillars =
+  /* ── Pathway rows ────────────────────────────────────────────────── */
+  /*
+   * Derived through normalizeToBiotics rather than enumerated.
+   *
+   * `Object.entries(subScores)` walked whatever keys the stored blob happened
+   * to hold. A You-flow report carries the canonical three AND the feed/seed/
+   * heal aliases, so the filter below was the only thing standing between a
+   * buyer and six bars for three pathways — and the legacy branch rendered the
+   * retired five. Normalising takes canonical-first with the alias as
+   * fallback, so old and new stored shapes both produce exactly three rows.
+   *
+   * Legacy tiers keep their five-pillar view: those emails are only ever
+   * re-sent for reports already delivered under that model, and restating an
+   * old report in today's vocabulary would misdescribe what the buyer received.
+   */
+  const canonical = normalizeToBiotics(subScores as IncomingSubScores)
+  const relevantPillars: Array<[string, number]> =
     tier === "personal"
-      ? sortedPillars.filter(([key]) => ["feed", "seed", "heal"].includes(key))
-      : sortedPillars.filter(([key]) => ["diversity", "feeding", "adding", "consistency", "feeling"].includes(key))
+      ? canonical
+        ? (Object.entries(canonical) as Array<[string, number]>).sort(([, a], [, b]) => b - a)
+        : []
+      : Object.entries(subScores)
+          .sort(([, a], [, b]) => b - a)
+          .filter(([key]) => ["diversity", "feeding", "adding", "consistency", "feeling"].includes(key))
 
   const pillarsHtml = relevantPillars
     .map(([key, score]) => {
@@ -333,7 +362,7 @@ export function buildPaidReportEmail(opts: PaidReportEmailOpts): {
           <!-- Your Pillar Scores -->
           <tr>
             <td style="padding: 24px 40px 0;">
-              <p style="margin: 0 0 12px; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: #999999; font-family: Arial, sans-serif;">${tier === "personal" ? "Feed · Seed · Regenerate" : "Your 5 Pillars"}</p>
+              <p style="margin: 0 0 12px; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: #999999; font-family: Arial, sans-serif;">${tier === "personal" ? "Prebiotics · Probiotics · Postbiotics" : "Your 5 Pillars"}</p>
               <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 ${pillarsHtml}
               </table>
@@ -366,7 +395,7 @@ export function buildPaidReportEmail(opts: PaidReportEmailOpts): {
           <!-- CTA button -->
           <tr>
             <td style="padding: 32px 40px 0; text-align: center;">
-              <a href="${reportUrl}" style="display: inline-block; background: linear-gradient(135deg, #7fc47e 0%, #3ab0a0 100%); color: #ffffff; text-decoration: none; font-size: 15px; font-weight: bold; font-family: Arial, sans-serif; padding: 14px 32px; border-radius: 50px;">View Your Full Report →</a>
+              <a href="${reportUrl}" style="display: inline-block; background: linear-gradient(135deg, #7fc47e 0%, #3ab0a0 100%); color: #ffffff; text-decoration: none; font-size: 15px; font-weight: bold; font-family: Arial, sans-serif; padding: 14px 32px; border-radius: 50px;">View Your Report →</a>
             </td>
           </tr>
 ${lensNoteHtml}

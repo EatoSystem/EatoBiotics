@@ -482,17 +482,17 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
                 {/* Headline */}
                 <div className="mb-8 text-center">
                   <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                    Unlock your full 30-day plan
+                    The next step in your Food System
                   </p>
                   <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
-                    Personal EatoBiotics Report
+                    Personal Food System Consultation
                   </h2>
                   <div className="mt-3 flex items-baseline justify-center gap-2">
                     <span className="text-5xl font-bold text-foreground">€49</span>
                     <span className="text-muted-foreground text-sm">one-time</span>
                   </div>
                   <p className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
-                    Everything you need to understand and improve your inner food system — built around your specific scores.
+                    A guided set of deeper questions about your food, rhythm and daily life — and the Personal Food System Report they produce.
                   </p>
                 </div>
 
@@ -521,7 +521,7 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
                     </>
                   ) : (
                     <>
-                      Generate My Food System Report
+                      Begin My Food System Consultation — €49
                       <ArrowRight size={16} />
                     </>
                   )}
@@ -532,7 +532,8 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
                 )}
 
                 <p className="mt-4 text-center text-xs text-muted-foreground/60">
-                  Instant access · One-off payment · Secure checkout via Stripe
+                  A guided digital process. Educational and non-diagnostic; not a medical
+                  consultation or diagnosis. One-off payment · Secure checkout via Stripe
                 </p>
               </div>
             </div>

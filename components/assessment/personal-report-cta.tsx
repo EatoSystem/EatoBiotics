@@ -95,9 +95,10 @@ export function PersonalReportCta({ result }: PersonalReportCtaProps) {
         <div className="p-6 sm:p-8">
           <div className="flex items-start justify-between gap-4 mb-6">
             <div>
-              <p className="text-sm font-bold text-foreground">Personal EatoBiotics Report</p>
+              <p className="text-sm font-bold text-foreground">Personal Food System Consultation</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                AI-generated from your assessment. Yours forever.
+                A guided digital process. Educational and non-diagnostic; not a
+                medical consultation or diagnosis.
               </p>
             </div>
             <div className="shrink-0 text-right">
@@ -138,7 +139,7 @@ export function PersonalReportCta({ result }: PersonalReportCtaProps) {
               </>
             ) : (
               <>
-                Generate My Food System Report <ArrowRight size={16} />
+                Begin My Food System Consultation — €49 <ArrowRight size={16} />
               </>
             )}
           </button>

@@ -108,12 +108,12 @@ export function ReportStarter({ result, isDemo, claudeReport }: ReportStarterPro
         </div>
       </section>
 
-      {/* ── 5 Pillars at a Glance ─────────────────────────────────── */}
+      {/* ── Pathways at a Glance ──────────────────────────────────── */}
       <section className="border-t border-border px-6 py-12">
         <div className="mx-auto max-w-2xl">
           <ScrollReveal>
             <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
-              Your 5 Pillars at a Glance
+              Your Pathways at a Glance
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
               How your food system scores across each area.

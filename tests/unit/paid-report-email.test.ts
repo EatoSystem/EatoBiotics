@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest"
+import { readFileSync } from "node:fs"
 import { buildPaidReportEmail } from "@/lib/email/paid-report-email"
 import { ADDON_KEYS, type AddonType } from "@/lib/addon-types"
 import { SYSTEMS } from "@/lib/systems"
@@ -26,7 +27,7 @@ describe("buildPaidReportEmail — PDF note copy", () => {
     expect(html).toContain("Download it here")
     expect(html).toMatch(/7 days/)
     expect(html).toContain('href="https://eatobiotics.com/assessment/report?session_id=sess_123"')
-    expect(html).toContain("View Your Full Report")
+    expect(html).toContain("View Your Report")
   })
 
   it("pdfUrl null: points to the durable report page instead of promising a re-email", () => {
@@ -73,7 +74,7 @@ describe("buildPaidReportEmail — the purchased lens", () => {
 
     expect(html).toContain(`<strong style="color: #2f7f6f;">${NAMES[addon]}</strong> lens is included`)
     // Beside the CTA, not buried after the footer.
-    expect(html.indexOf("View Your Full Report")).toBeLessThan(html.indexOf("lens is included"))
+    expect(html.indexOf("View Your Report")).toBeLessThan(html.indexOf("lens is included"))
     // The name matches the catalogue the report chapter itself uses.
     expect(NAMES[addon]).toBe(SYSTEMS[addon].label)
   })
@@ -217,5 +218,132 @@ describe("buildPaidReportEmail — the purchased lens", () => {
     // ever added, the lens line has to be added there too — this pins that.
     const out = buildPaidReportEmail({ ...base, pdfUrl: null, selectedAddon: "mind" })
     expect(Object.keys(out).sort()).toEqual(["html", "subject"])
+  })
+})
+
+/* ── Phase 0 · P0.11 — the bars name pathways, not actions ──────────────── */
+
+describe("the paid email renders exactly the three pathways", () => {
+  const base = {
+    name: "Test",
+    tier: "personal" as const,
+    overall: 56,
+    profileType: "Emerging Balance",
+    tagline: "Building blocks are there.",
+    topTrigger: "Live cultures are the gap.",
+    topTriggerExplanation: "Your answers point at fermented foods first.",
+    sessionId: "cs_1",
+    pdfUrl: null,
+    reportUrl: "https://eatobiotics.com/assessment/report?session_id=cs_1",
+  }
+
+  /** Count how many score rows the email rendered. */
+  // Count BAR ROWS, not occurrences of the word: the panel header now reads
+  // "Prebiotics · Probiotics · Postbiotics", so a bare `>label` match would
+  // count the header too and let a genuinely missing bar pass.
+  const barCount = (html: string, label: string) =>
+    html.split(`color: #333333; font-family: Arial, sans-serif;">${label}`).length - 1
+
+  it("uses Prebiotics / Probiotics / Postbiotics — never Feed, Seed or Regenerate", () => {
+    const { html } = buildPaidReportEmail({
+      ...base,
+      subScores: { prebiotics: 62, probiotics: 38, postbiotics: 67 },
+    })
+
+    for (const pathway of ["Prebiotics", "Probiotics", "Postbiotics"]) {
+      expect(html, `${pathway} bar missing`).toContain(pathway)
+    }
+    // Feed · Seed · Regenerate is the ACTION vocabulary. A score bar labelled
+    // "Regenerate" asserts that Regenerate is Postbiotics renamed, which is
+    // exactly the equivalence the product model forbids.
+    for (const action of [">Feed<", ">Seed<", ">Regenerate<", ">Heal<"]) {
+      expect(html, `${action} must not label a score`).not.toContain(action)
+    }
+  })
+
+  it("maps no pathway key to an action word, reachable or not", () => {
+    // Asserted against the SOURCE, not the rendered output, because the bars
+    // now derive from normalizeToBiotics and therefore only ever look up the
+    // canonical keys. That makes the feed/seed/heal label entries unreachable
+    // on the live path — so a rendering test passes no matter what they say,
+    // and a sabotage that set `heal: "Regenerate"` went undetected.
+    //
+    // The mapping is still the thing the rule is about: Feed · Seed ·
+    // Regenerate is the action vocabulary and must never name a score, however
+    // it is reached.
+    const source = readFileSync("lib/email/paid-report-email.ts", "utf8")
+    const labelMap = source
+      .slice(source.indexOf("const PILLAR_LABELS"), source.indexOf("const PILLAR_COLORS"))
+      // Comments out: the block above the map explains what the labels used to
+      // say, and quotes them. Asserting over the explanation would fail on the
+      // documentation of the fix rather than on the code.
+      .split("\n")
+      .filter((l) => !l.trim().startsWith("//") && !l.trim().startsWith("*"))
+      .join("\n")
+    expect(labelMap.length).toBeGreaterThan(100)
+    for (const action of ['"Feed"', '"Seed"', '"Regenerate"', '"Heal"']) {
+      expect(labelMap, `${action} must not be a score label`).not.toContain(action)
+    }
+    // And the pathway names are present, so this cannot pass on an empty slice.
+    for (const pathway of ['"Prebiotics"', '"Probiotics"', '"Postbiotics"']) {
+      expect(labelMap).toContain(pathway)
+    }
+  })
+
+  it("renders three bars from a stored report carrying legacy aliases too", () => {
+    // A You-flow report stores canonical AND feed/seed/heal. Enumerating the
+    // object gave six bars for three pathways; normalising gives three.
+    const { html } = buildPaidReportEmail({
+      ...base,
+      subScores: { prebiotics: 62, probiotics: 38, postbiotics: 67, feed: 62, seed: 38, heal: 67 },
+    })
+
+    expect(barCount(html, "Prebiotics")).toBe(1)
+    expect(barCount(html, "Probiotics")).toBe(1)
+    expect(barCount(html, "Postbiotics")).toBe(1)
+  })
+
+  it("reads a legacy-only stored report through the aliases", () => {
+    // Reports persisted before the canonical keys existed carry only the
+    // aliases. They must still render, under the pathway names.
+    const { html } = buildPaidReportEmail({
+      ...base,
+      subScores: { feed: 62, seed: 38, heal: 67 },
+    })
+
+    expect(html).toContain("Prebiotics")
+    expect(html).toContain("Probiotics")
+    expect(html).toContain("Postbiotics")
+    expect(html).not.toContain(">Regenerate<")
+  })
+
+  it("renders no bars rather than a hole when a pathway is missing", () => {
+    // normalizeToBiotics returns null if any pathway is unresolvable. Half a
+    // score panel is worse than none — it reads as a real, low score.
+    const { html } = buildPaidReportEmail({
+      ...base,
+      subScores: { prebiotics: 62, probiotics: 38 },
+    })
+
+    // Assert on the BAR structure, not the word: "Prebiotics" also appears in
+    // the email's prose, so a bare substring check would fail on copy rather
+    // than on a rendered score.
+    expect(barCount(html, "Prebiotics")).toBe(0)
+    expect(barCount(html, "Probiotics")).toBe(0)
+    expect(barCount(html, "Postbiotics")).toBe(0)
+    // The overall Biotics Score still renders — dropping the pathway panel is
+    // not the same as dropping the email, and the score is not in doubt.
+    expect(html).toContain("56")
+  })
+
+  it("leaves a legacy-tier report describing the model it was sold under", () => {
+    // Re-sending an old Family-shaped report must not restate it in today's
+    // vocabulary — that would misdescribe what the buyer actually received.
+    const { html } = buildPaidReportEmail({
+      ...base,
+      tier: "full",
+      subScores: { diversity: 70, feeding: 55, adding: 40, consistency: 60, feeling: 65 },
+    })
+    expect(html).toContain("Plant Diversity")
   })
 })

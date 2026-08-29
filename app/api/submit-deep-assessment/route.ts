@@ -42,6 +42,7 @@ import { overallReportStatus } from "@/lib/report-status"
 // Aliased: the route already has a local `reportError` string (the report_error column value).
 import { reportError as alertOwner } from "@/lib/report-error"
 import { PDF_BUCKET, pdfObjectPath } from "@/lib/report/pdf-access"
+import { isUnverifiedPaidFlowAllowed } from "@/lib/paid-flow-policy"
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -329,7 +330,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing answers" }, { status: 400 })
   }
 
-  const devMode = !process.env.STRIPE_SECRET_KEY
+  // See lib/paid-flow-policy.ts. Previously `!process.env.STRIPE_SECRET_KEY`,
+  // which treated a misconfigured environment as authority to accept mock
+  // scores and persist a paid-shaped deep_assessments row.
+  const devMode = isUnverifiedPaidFlowAllowed()
 
   // Step 1: Idempotency. Only short-circuit when the row is FULLY delivered
   // (status === "complete", which is now only set when report + PDF + email all

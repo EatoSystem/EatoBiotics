@@ -159,7 +159,7 @@ function FullReportSections({
         <div className="mx-auto max-w-2xl text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: result.profile.color }} />
-            Full Report
+            Personal Food System Report
           </div>
           <h1 className="mt-5 font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
             The Food System Inside You
