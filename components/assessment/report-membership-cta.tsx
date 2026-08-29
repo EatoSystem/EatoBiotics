@@ -2,7 +2,9 @@
 
 import Link from "next/link"
 import { ArrowRight, Check, Compass } from "lucide-react"
-import { PAID_TIERS } from "@/lib/membership"
+// Pure tier vocabulary. lib/membership.ts imports the service-role Supabase
+// client and must not be pulled into a "use client" component.
+import { isPaidTierName } from "@/lib/membership-tiers"
 
 interface ReportMembershipCTAProps {
   /** The customer's current overall score — the one real number this report
@@ -112,16 +114,14 @@ export function ReportMembershipCTA({
    *
    * This listed only grow/restore/transform, so an active `member` or a `trial`
    * buyer (the two tiers the product actually issues today) fell through to the
-   * upsell and was sold something they already had. PAID_TIERS is the shared
-   * list, so a future tier is recognised here by default rather than by
-   * remembering to edit this line.
+   * upsell and was sold something they already had. isPaidTierName reads the
+   * shared PAID_TIERS list, so a future tier is recognised here by default
+   * rather than by remembering to edit this line.
    *
    * `membershipTier` is the paid/access field. It is never the `membership`
    * referral field, which means something else entirely.
    */
-  const hasActiveMembership = Boolean(
-    membershipTier && (PAID_TIERS as readonly string[]).includes(membershipTier),
-  )
+  const hasActiveMembership = isPaidTierName(membershipTier)
 
   return (
     <div className="space-y-5 pt-2">
@@ -229,7 +229,7 @@ export function ReportMembershipCTA({
           </div>
 
           <p className="text-center text-xs text-muted-foreground">
-            Cancel any time · Start free and upgrade when you&apos;re ready
+            €24.99/month · Cancel any time
           </p>
 
         </>

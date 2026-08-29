@@ -6,9 +6,14 @@ import { getSupabase } from "@/lib/supabase"
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 
-/** Full set of tiers. trial / member are the new model; grow/restore/transform are legacy. */
-export type MembershipTier = "free" | "trial" | "member" | "grow" | "restore" | "transform"
-export type MembershipStatus = "active" | "inactive" | "cancelled" | "past_due"
+/*
+ * The tier vocabulary lives in lib/membership-tiers.ts, which is pure and safe
+ * to import from a client component. Re-exported here so every existing server
+ * caller keeps its import path and there is still one definition.
+ */
+export type { MembershipTier, MembershipStatus } from "@/lib/membership-tiers"
+export { PAID_TIERS, isPaidTierName } from "@/lib/membership-tiers"
+import type { MembershipTier, MembershipStatus } from "@/lib/membership-tiers"
 
 /* ── Feature flags ──────────────────────────────────────────────────────── */
 
@@ -54,8 +59,7 @@ export function isPaidTier(tier: MembershipTier): boolean {
   return tier !== "free"
 }
 
-/** All paying tiers — handy for DB `.in(...)` filters in cron jobs. */
-export const PAID_TIERS: MembershipTier[] = ["trial", "member", "grow", "restore", "transform"]
+
 
 /* ── Tier ↔ Stripe price mapping ────────────────────────────────────────── */
 

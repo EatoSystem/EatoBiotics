@@ -7,10 +7,12 @@ import type { DeepQuestion, DeepAnswers } from "@/lib/deep-assessment"
 import { resolvePaidReportSummary, isCheckoutSessionSettled } from "@/lib/paid-report-session"
 import { reportViewState } from "@/lib/report-status"
 import { TrackConversion } from "@/components/analytics/track-conversion"
+import { isUnverifiedPaidFlowAllowed } from "@/lib/paid-flow-policy"
 
 export const metadata: Metadata = {
   title: "Your Food System Consultation — EatoBiotics",
-  description: "Complete your personalised deep assessment to unlock your full report.",
+  description:
+    "A guided digital process that produces your Personal Food System Report. Educational and non-diagnostic.",
 }
 
 interface Props {
@@ -56,8 +58,14 @@ export default async function DeepAssessmentPage({ searchParams }: Props) {
     redirect("/assessment")
   }
 
-  // Dev mode: no Stripe configured
-  if (!process.env.STRIPE_SECRET_KEY) {
+  // ── Unverified development flow ───────────────────────────────────────
+  // Was `if (!process.env.STRIPE_SECRET_KEY)`, which sat BEFORE the
+  // isCheckoutSessionSettled check below — so a missing secret rendered the
+  // paid Consultation UI and the settled check never ran. Same shared policy as
+  // the API routes: explicit opt-in AND a provably non-production runtime, with
+  // Vercel production and unknown runtimes denied. The `?demo=true` path above
+  // is unaffected and stays explicit.
+  if (isUnverifiedPaidFlowAllowed()) {
     return (
       <DeepAssessmentClient
         sessionId={session_id}

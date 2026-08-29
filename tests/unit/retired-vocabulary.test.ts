@@ -68,18 +68,33 @@ function journeySurfaces(): string[] {
  * `full: "Full Report"` as a legacy tier key is fine; a heading that reads
  * "Full Report" to a buyer is not.
  */
+/*
+ * Case-insensitive throughout, deliberately.
+ *
+ * The first version of this guard was case-SENSITIVE, and it missed a live
+ * defect for that reason alone: the Consultation page's own `<meta
+ * description>` read "Complete your personalised deep assessment to unlock
+ * your full report." Lowercase, so `/\bDeep Assessment\b/` and
+ * `/\b(Full|Starter|Premium) Report\b/` both walked straight past it — on the
+ * page metadata, which is what a search engine and a shared link display.
+ *
+ * A rule that only catches Title Case catches the heading and misses the
+ * sentence, which is the half more likely to be written casually.
+ */
 const RETIRED: Array<[string, RegExp]> = [
   // Feed · Seed · Regenerate is the action vocabulary. It never labels a score,
-  // and Regenerate is never Postbiotics renamed.
+  // and Regenerate is never Postbiotics renamed. `Heal` stays case-sensitive:
+  // lowercase "heal" is an ordinary English verb that appears in legitimate
+  // educational prose, whereas capital-H Heal is the retired pathway name.
   ["Heal or Regenerate as a pathway name", /\bHeal\b|\bRegenerates\b/],
   ["five-pillar model", /\b(five|5) pillars\b/i],
-  ["retired report titles", /\b(Full|Starter|Premium) Report\b/],
-  ["Grow/Restore/Transform as a current offer", /\bStart (Grow|Restore|Transform)\b|\b(Grow|Restore|Transform) plan\b/],
-  ["Deep Assessment as a product title", /\bDeep Assessment\b/],
+  ["retired report titles", /\b(full|starter|premium) report\b/i],
+  ["Grow/Restore/Transform as a current offer", /\bstart (grow|restore|transform)\b|\b(grow|restore|transform) plan\b/i],
+  ["Deep Assessment as a product title", /\bdeep assessment\b/i],
   ["diagnostic framing", /\bgut imbalance\b/i],
   ["instant delivery promise", /\binstant report\b/i],
-  ["report promised before the Consultation", /\bGenerate My\b/i],
-  ["a competing branded score", /\bFood System Score\b/],
+  ["report promised before the Consultation", /\bgenerate my\b/i],
+  ["a competing branded score", /\bfood system score\b/i],
 ]
 
 /**
@@ -155,6 +170,41 @@ describe("the live journey uses only current vocabulary", () => {
     for (const [probe, ruleName] of probes) {
       const rule = RETIRED.find(([n]) => n === ruleName)![1]
       expect(probe, `${ruleName} does not match its own example`).toMatch(rule)
+    }
+  })
+
+  it("catches retired names in any case, not only Title Case", () => {
+    // The gap that let a live defect through. These rules were case-sensitive,
+    // so the Consultation page's own meta description — "Complete your
+    // personalised deep assessment to unlock your full report." — matched
+    // nothing, on the text a search result and a shared link display.
+    const titles = RETIRED.find(([n]) => n === "retired report titles")![1]
+    const deep = RETIRED.find(([n]) => n === "Deep Assessment as a product title")![1]
+
+    for (const variant of ["full report", "Full Report", "FULL REPORT", "Full report"]) {
+      expect(variant, `${variant} must be caught`).toMatch(titles)
+    }
+    for (const variant of ["deep assessment", "Deep Assessment", "DEEP ASSESSMENT", "Deep assessment"]) {
+      expect(variant, `${variant} must be caught`).toMatch(deep)
+    }
+  })
+
+  it("would have failed on the exact metadata defect this pass fixed", () => {
+    // The verbatim string that shipped, proving the strengthened rules catch it
+    // rather than merely being more permissive in principle.
+    const SHIPPED = "Complete your personalised deep assessment to unlock your full report."
+    const caught = RETIRED.filter(([, rule]) => rule.test(SHIPPED)).map(([name]) => name)
+    expect(caught.sort()).toEqual([
+      "Deep Assessment as a product title",
+      "retired report titles",
+    ])
+
+    // And the replacement is clean under every rule.
+    const NOW =
+      "A guided digital process that produces your Personal Food System Report. " +
+      "Educational and non-diagnostic."
+    for (const [name, rule] of RETIRED) {
+      expect(NOW, `${name} fired on the corrected metadata`).not.toMatch(rule)
     }
   })
 
