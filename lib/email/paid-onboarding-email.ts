@@ -133,7 +133,7 @@ export function paidDay7Email(opts: PaidOnboardingOpts): { subject: string; html
 /* D14 — habit + value reinforcement */
 export function paidDay14Email(opts: PaidOnboardingOpts): { subject: string; html: string } {
   return {
-    subject: "Two weeks in — what your gut has been doing",
+    subject: "Two weeks in — what your logs show",
     html: baseTemplate(`
       <p style="margin:0 0 6px;color:#1A2E12;font-size:16px;font-weight:600;">${greet(opts.name)}</p>
       <p style="margin:0 0 20px;color:#5A6E50;font-size:15px;line-height:1.7;">

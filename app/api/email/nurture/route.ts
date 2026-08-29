@@ -5,18 +5,27 @@ import { sendEmail } from "@/lib/email/send"
 import { unsubscribeUrl } from "@/lib/email/unsubscribe"
 
 /* ── Nurture Email Sequence ──────────────────────────────────────────────
-   Runs daily via Vercel Cron (see vercel.json: "0 9 * * *").
-   Sends timed emails to users at days 1, 3, 7, and 14 after signup.
+   NOT SCHEDULED. This route is absent from vercel.json and nothing else in
+   the repo calls it, so it sends only when invoked directly. verifyCronRequest
+   still gates it, so a bare request gets 401/503 rather than a send.
 
-   Each day is detected by looking at profiles.created_at within a
-   ±2-hour window around the target interval (avoids double-sends while
-   tolerating cron drift).
+   This header used to say it "runs daily via Vercel Cron (see vercel.json:
+   0 9 * * *)". That schedule belongs to /api/email/sequence, the sibling route
+   this one was modelled on — named here so the next reader does not have to
+   re-derive the confusion. Whether nurture should be scheduled, retired, or
+   merged into the sequence route is an open product question, not something
+   this comment can settle; what it must not do is claim a cadence the platform
+   never runs.
 
-   Sequence:
-   - Day 1  → "Here's what your score actually means"
-   - Day 3  → "Have you tried today's action?" (pillar-specific nudge)
+   Sends timed emails at days 1, 3, 7, and 14 after signup, each detected by
+   looking at profiles.created_at within a ±2-hour window around the target
+   interval (avoids double-sends while tolerating drift).
+
+   Sequence — subjects as actually sent, see the dayLabel branch below:
+   - Day 1  → "What your EatoBiotics score actually means"
+   - Day 3  → "Day 3 — your action for today"
    - Day 7  → "You've completed your 7-day starter — what's next"
-   - Day 14 → "It's been two weeks — your gut has been changing"
+   - Day 14 → "Two weeks in — what to look at next"
 ────────────────────────────────────────────────────────────────────── */
 
 const EMAIL_FROM  = process.env.EMAIL_FROM ?? "hello@eatobiotics.com"
@@ -305,7 +314,7 @@ export async function GET(req: NextRequest) {
           subject = "You've completed your 7-day starter — what's next"
           html    = day7Email(profile.name ?? "", score, profile.email)
         } else if (seq.dayLabel === "day14") {
-          subject = "Two weeks in — your gut has been changing"
+          subject = "Two weeks in — what to look at next"
           html    = day14Email(profile.name ?? "", score, profile.email)
         }
 

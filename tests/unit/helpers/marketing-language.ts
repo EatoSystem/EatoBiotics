@@ -304,9 +304,25 @@ export const CLAIMS: Array<[string, RegExp]> = [
   // rejected at NINE files: it fired on ordinary headings like "Your gut system
   // is" on /report and /you. A rule that cries wolf gets deleted, so the narrow
   // one ships and the broad one is recorded here as tried.
+  //
+  // WIDENED after the first version shipped with a hole. It required the
+  // auxiliary to sit directly against the participle, so `has BEEN changing`
+  // walked past it — and a nurture email subject line, "Two weeks in — your gut
+  // has been changing", survived a green corpus run because of it. The perfect
+  // and progressive tenses are the same claim, so they belong in the same rule.
+  //
+  // That is the second time in this PR a rule covered one phrasing of a class
+  // and read as covering the class: `fastest way` did not match "fastest wayS".
+  // The lesson both times is that a green run over a rule with a hole is worse
+  // than no rule, because it looks like coverage.
+  //
+  // Measured at 1 hit, 0 false positives. Two looser forms were tried and
+  // rejected for buying nothing on this corpus: adding `starts?|begins?|to`,
+  // and a `{0,2}` any-word gap. The shipped form is principled — same claim,
+  // other tenses — rather than a gap that would eventually fire on prose.
   [
     "process already underway",
-    /\b(?:is|are|has|have|starts?|begins?)\s+(?:already\s+)?(?:adapting|responding|recalibrat\w+|restoring|rebuilding|shifting|changing)\b/i,
+    /\b(?:is|are|was|were|has|have|had)\s+(?:been\s+|being\s+)?(?:already\s+)?(?:adapting|responding|recalibrat\w+|restoring|rebuilding|shifting|changing)\b/i,
   ],
   // The same claim in noun and infinitive form, which the verb rule above cannot
   // reach: "the window when microbiome restoration happens", "your microbiome
