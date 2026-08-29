@@ -466,7 +466,7 @@ export function buildFoodSystemReport(input: BuildReportInput): FoodSystemReport
   const snapshotOneLine =
     band(priorityScore) === "strong"
       ? `Your answers suggest ${who} food system is working well across all three pathways, with ${PATHWAY_LABEL[priorityPathway]} the one with most room left.`
-      : `Your answers suggest ${PATHWAY_LABEL[strongestPathway]} is ${who} strongest pathway, and that ${PATHWAY_LABEL[priorityPathway]} is where a change would show up fastest.`
+      : `Your answers suggest ${PATHWAY_LABEL[strongestPathway]} is ${who} strongest pathway, and that ${PATHWAY_LABEL[priorityPathway]} is where your answers point to the clearest first step.`
 
   // Five unique tools, priority pathway first.
   //

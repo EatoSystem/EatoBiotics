@@ -10,20 +10,12 @@ import Link from "next/link"
 import { ArrowRight, Check } from "lucide-react"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
 import { resolvedFoundation, getJourney } from "@/lib/assessment/journey"
+import { REPORT_OFFER_FEATURES } from "@/lib/report/offer"
 
 interface PersonalReportCtaProps {
   result: AssessmentResult
 }
 
-const REPORT_FEATURES = [
-  "Your Food System Score breakdown",
-  "Your 30-day personalised plan",
-  "Top 10 food recommendations",
-  "Weekly shopping framework",
-  "Meal timing guidance",
-  "Food swaps and avoid/reduce list",
-  "Free 30-day EatoBiotics account",
-]
 
 export function PersonalReportCta({ result }: PersonalReportCtaProps) {
   const [loading, setLoading] = useState(false)
@@ -120,7 +112,7 @@ export function PersonalReportCta({ result }: PersonalReportCtaProps) {
           </div>
 
           <ul className="mb-6 space-y-2.5">
-            {REPORT_FEATURES.map((f) => (
+            {REPORT_OFFER_FEATURES.map((f) => (
               <li key={f} className="flex items-center gap-2.5 text-sm text-foreground/80">
                 <Check size={14} className="shrink-0" style={{ color: "var(--icon-green)" }} />
                 {f}

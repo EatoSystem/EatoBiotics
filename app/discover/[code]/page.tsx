@@ -136,7 +136,7 @@ export default async function DiscoverResultPage({ params }: { params: Promise<{
         <div className="rounded-3xl border border-border bg-card p-6">
           <p className="text-xs font-bold uppercase tracking-widest text-[var(--icon-orange)]">Biggest opportunity</p>
           <p className="mt-1 font-serif text-lg font-bold text-foreground">{weakest?.label}</p>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">The fastest place to create momentum from here.</p>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">A good place to create momentum from here.</p>
         </div>
       </section>
 

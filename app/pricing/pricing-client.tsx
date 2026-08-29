@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import posthog from "posthog-js"
 import type { MembershipTier } from "@/lib/membership"
+import { REPORT_OFFER_FEATURES, REPORT_OFFER_SENTENCE } from "@/lib/report/offer"
 
 /* ── Types ───────────────────────────────────────────────────────────── */
 
@@ -125,7 +126,7 @@ function PortalButton({ label, className }: { label: string; className?: string 
 
 const FAQS = [
   {
-    q: "What happens after 30 days?",
+    q: "What happens when the 30 days end?",
     a: "After your 30-day account period ends, you'll be invited to continue with an EatoBiotics Member plan at €24.99/month. Nothing is charged automatically — you choose whether to continue.",
   },
   {
@@ -134,7 +135,7 @@ const FAQS = [
   },
   {
     q: "What's in the report?",
-    a: "Your report is generated personally for you by AI, based on your assessment and deep-dive answers. It includes your full Feed · Seed · Regenerate analysis, a 30-day plan, your top 10 food recommendations, a weekly shopping framework, meal timing guidance, food swaps, and a 7-day kickstart.",
+    a: REPORT_OFFER_SENTENCE,
   },
 ]
 
@@ -270,7 +271,7 @@ export function PricingClient({
           One clear path to a healthier food system
         </div>
         <h1 className="font-serif text-4xl font-bold text-foreground sm:text-5xl">
-          Improve your inner food system{" "}
+          Understand your inner food system{" "}
           <span
             style={{
               background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green), var(--icon-teal))",
@@ -278,7 +279,7 @@ export function PricingClient({
               WebkitTextFillColor: "transparent",
             }}
           >
-            in 30 days.
+            and what to do next.
           </span>
         </h1>
         <p className="mt-4 text-base text-muted-foreground sm:text-lg">
@@ -384,7 +385,7 @@ export function PricingClient({
                 EatoBiotics Food System Report
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Everything you need to understand and improve your inner food system in 30 days.
+                Everything you need to understand your inner food system, and a 30-day plan to work from.
               </p>
             </div>
             <div className="shrink-0 sm:text-right">
@@ -395,16 +396,7 @@ export function PricingClient({
 
           {/* Feature list */}
           <div className="mb-8 grid gap-2.5 sm:grid-cols-2">
-            {[
-              "Your EatoBiotics Score analysis",
-              "Full Feed · Seed · Regenerate breakdown",
-              "Your top 10 food recommendations",
-              "30-day personalised plan",
-              "Weekly shopping framework",
-              "Meal timing and food rhythm guidance",
-              "Food swaps and avoid/reduce list",
-              "Free 30-day EatoBiotics account",
-            ].map((f) => (
+            {REPORT_OFFER_FEATURES.map((f) => (
               <div key={f} className="flex items-start gap-2.5">
                 <Check size={14} className="mt-0.5 shrink-0" style={{ color: "var(--icon-teal)" }} />
                 <span className="text-sm text-muted-foreground">{f}</span>
@@ -471,7 +463,7 @@ export function PricingClient({
             className="mb-1 text-xs font-bold uppercase tracking-widest"
             style={{ color: "var(--icon-green-text)" }}
           >
-            After 30 days — optional
+            When the 30 days end — optional
           </p>
           <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
             <div>
