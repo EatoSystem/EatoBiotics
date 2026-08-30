@@ -67,8 +67,8 @@ export default function TermsOfServicePage() {
             <p className="mb-2">EatoBiotics provides:</p>
             <ul className="list-disc space-y-1.5 pl-5">
               {[
-                "A free food system assessment that calculates Biotics scores based on your food habits",
-                "A one-time \u20AC49 personalised Food System Report, with a free 30-day account (see section 4)",
+                "A free Food System Assessment that produces your Biotics Score\u2122 from your food habits",
+                "A one-time \u20AC49 Personal Food System Consultation, which produces your Personal Food System Report and includes 30 days of EatoBiotics access (see section 4)",
                 "Meal analysis powered by AI that scores meals across Prebiotic, Probiotic, and Postbiotic dimensions",
                 "Weekly food system reports summarising your progress",
                 "AI consultation allowing you to ask questions about your food data and reports",

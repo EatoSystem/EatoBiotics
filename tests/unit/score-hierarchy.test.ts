@@ -19,6 +19,7 @@ import { describe, it, expect } from "vitest"
 import { readFileSync, existsSync } from "node:fs"
 import { copyOf } from "./helpers/marketing-language"
 import { BIOTICS, ACTIONS } from "@/lib/product-vocabulary"
+import { MEAL_SURFACES } from "./customer-surfaces"
 
 const read = (p: string) => copyOf(readFileSync(p, "utf8"))
 
@@ -54,17 +55,27 @@ describe("the person-level score", () => {
 })
 
 describe("the meal-level score", () => {
-  const mealSurfaces = [
-    "components/analyse/free-scan-upsell.tsx",
-    "app/analyse/result/[hash]/page.tsx",
-    "lib/nav.ts",
-  ].filter(existsSync)
+  // From the shared manifest, plus lib/nav.ts — which is a marketing surface
+  // but carries the one nav entry that names the meal score, and was the
+  // original person/meal collision.
+  const mealSurfaces = [...MEAL_SURFACES, "lib/nav.ts"].filter(existsSync)
 
-  it("is named Meal Biotics Score", () => {
-    expect(mealSurfaces.length).toBe(3)
-    for (const f of mealSurfaces) {
-      expect(read(f), `${f} must name the Meal Biotics Score`).toMatch(/Meal Biotics Score/)
-    }
+  it("is named Meal Biotics Score wherever a meal score is labelled", () => {
+    expect(mealSurfaces.length).toBeGreaterThanOrEqual(6)
+    // Not every meal surface names the score — guest-scan-flow.tsx is a
+    // container that renders ResultBuilder, and requiring the string there
+    // would be asserting where a component lives rather than what it says.
+    // What must hold is that the surfaces which DO label a score use the meal
+    // name, and that the group as a whole establishes it.
+    const labelling = mealSurfaces.filter((f) => /\bScore\b/.test(read(f)))
+    expect(labelling.length, "some meal surface must label a score").toBeGreaterThan(0)
+    const naming = labelling.filter((f) => /Meal Biotics Score/.test(read(f)))
+    expect(
+      naming.length,
+      `meal surfaces labelling a score without naming it: ${labelling
+        .filter((f) => !/Meal Biotics Score/.test(read(f)))
+        .join(", ")}`,
+    ).toBe(labelling.length)
   })
 
   it("never claims the person's branded score for a meal", () => {

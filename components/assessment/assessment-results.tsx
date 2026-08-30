@@ -596,7 +596,7 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
         <div className="mx-auto max-w-3xl">
           <ScrollReveal>
             <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
-              Your Three Pillars
+              Your Three Biotics
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               How your food system performs across Prebiotics, Probiotics, and Postbiotics — the three areas that shape your gut health.

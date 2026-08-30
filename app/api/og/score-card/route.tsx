@@ -153,7 +153,7 @@ export async function GET(request: Request) {
           gap: 28,
         }}>
 
-          {/* Gut health score label */}
+          {/* Biotics Score label */}
           <div style={{ display: "flex" }}>
             <div style={{
               display: "flex", background: B.lime, color: B.fore,
@@ -170,7 +170,7 @@ export async function GET(request: Request) {
               What's your
             </span>
             <span style={{ fontSize: 52, fontWeight: 800, color: B.green, lineHeight: 0.95, letterSpacing: "-2px", display: "flex" }}>
-              gut score?
+              Biotics Score™?
             </span>
           </div>
 

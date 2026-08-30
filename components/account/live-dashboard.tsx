@@ -585,7 +585,7 @@ function ReportCard({ card }: { card: ReportCardData }) {
               <Link href={card.reportHref}
                 className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
                 style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", boxShadow: "0 2px 8px rgba(45,170,110,0.25)" }}>
-                View full report <ExternalLink size={11} />
+                View report <ExternalLink size={11} />
               </Link>
               {card.chatHref && (
                 <Link href={card.chatHref}
@@ -598,7 +598,7 @@ function ReportCard({ card }: { card: ReportCardData }) {
           ) : (
             <span className="inline-flex cursor-default items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold text-white opacity-40"
               style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))" }}>
-              View full report <ExternalLink size={11} />
+              View report <ExternalLink size={11} />
             </span>
           )}
         </div>
@@ -1922,7 +1922,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                     Fix your fermented food gap.
                   </h3>
                   <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
-                    Your plant diversity has been strong but your Live Foods score is pulling down your overall Biotics number.
+                    Your Prebiotics have been strong but your Probiotics are pulling down your Biotics Score™.
                     One fermented food daily for 30 days changes this.
                   </p>
                   <Link href="#" className="mt-3 inline-flex items-center gap-1 text-sm font-semibold transition-opacity hover:opacity-75"
@@ -2018,7 +2018,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             <h2 className="mt-1 font-serif text-xl font-bold" style={{ color: "var(--foreground)" }}>Moments your Food System remembers</h2>
             <p className="mt-0.5 text-sm" style={{ color: "var(--muted-foreground)" }}>
               {paidReports.length > 0
-                ? `${paidReports.length} Food System snapshot${paidReports.length === 1 ? "" : "s"} — each one a moment your Food System can look back on`
+                ? `${paidReports.length} Personal Food System Report${paidReports.length === 1 ? "" : "s"} — each one a moment your Food System can look back on`
                 : "Your purchased Food System Reports will appear here."}
             </p>
           </div>
@@ -2097,7 +2097,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
               <Link href="/assessment"
                 className="mt-5 inline-flex items-center gap-1 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-80"
                 style={{ background: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))", boxShadow: "0 2px 8px rgba(45,170,110,0.25)" }}>
-                Get My Food System Score <ArrowRight size={13} />
+                Take My Food System Assessment <ArrowRight size={13} />
               </Link>
             </div>
           )}

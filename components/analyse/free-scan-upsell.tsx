@@ -3,7 +3,6 @@
 import Link from "next/link"
 import { ArrowRight, Sparkles } from "lucide-react"
 import { getIdentityLabel } from "@/lib/identity-labels"
-import { getPercentile } from "@/lib/percentile"
 
 /* ── Free Scan Upsell ────────────────────────────────────────────────────
    Shown at the bottom of meal analysis results when the user is on the free
@@ -25,7 +24,6 @@ interface FreeScanUpsellProps {
 export function FreeScanUpsell({ score }: FreeScanUpsellProps) {
   const rounded      = Math.round(score)
   const identityLabel = getIdentityLabel(rounded)
-  const percentile    = getPercentile(rounded)
 
   return (
     <div
@@ -45,8 +43,15 @@ export function FreeScanUpsell({ score }: FreeScanUpsellProps) {
         </span>
         <div>
           <p className="text-sm font-bold text-foreground">{identityLabel.word}</p>
+          {/* The percentile claim that stood here is gone, and not reworded.
+            * lib/percentile.ts is a SYNTHETIC normal distribution (mean 55,
+            * std 17) whose own header calls it a "bootstrap distribution … at
+            * launch with 0 real users". There is no comparison population, and
+            * it was modelled on person-level scores while this surface feeds it
+            * ONE MEAL's score — then stated the result as a health comparison.
+            * "better than X% of meals" would be no better supported. */}
           <p className="text-xs text-muted-foreground">
-            Better gut health than <strong>{percentile}%</strong> of people
+            This meal&apos;s Meal Biotics Score
           </p>
         </div>
       </div>

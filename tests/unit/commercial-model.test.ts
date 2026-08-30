@@ -28,6 +28,7 @@ import {
 import { REPORT_PRICE_EUR } from "@/lib/report/offer"
 import { MEMBER_PRICE_EUR, PAID_TIERS, isPaidTierName } from "@/lib/membership-tiers"
 import { TIER_META } from "@/lib/membership"
+import { ACCOUNT_SURFACES, MARKETING_SURFACES } from "./customer-surfaces"
 
 describe("the current commercial model", () => {
   it("names the free product, and what it produces", () => {
@@ -98,16 +99,10 @@ describe("no current surface sells a retired plan", () => {
   it("quotes no retired price on the current-offer surfaces", () => {
     // €9.99 was Grow. There is no current €9.99 offer at all, so a live
     // commercial surface quoting it is quoting a retired plan.
-    const surfaces = [
-      "app/page.tsx",
-      "components/home/membership-teaser.tsx",
-      "app/pricing/page.tsx",
-      "app/pricing/pricing-client.tsx",
-      "components/analyse/free-scan-upsell.tsx",
-      "components/account/report-bridge-card.tsx",
-      "components/account/day8-challenge-card.tsx",
-      "app/api/email/nurture/route.ts",
-    ]
+    // From the shared manifest — this list used to be maintained here, which
+    // is precisely how components/account/dashboard-client.tsx went on selling
+    // Grow while every guard reported green.
+    const surfaces = [...MARKETING_SURFACES, ...ACCOUNT_SURFACES, "app/api/email/nurture/route.ts"]
     for (const f of surfaces) {
       const src = readFileSync(f, "utf8")
       // Strip block comments: two of these files EXPLAIN the retired ladder

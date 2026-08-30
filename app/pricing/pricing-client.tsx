@@ -422,14 +422,20 @@ export function PricingClient({
           className="mb-1 text-xs font-bold uppercase tracking-widest"
           style={{ color: "var(--icon-green-text)" }}
         >
-          Included with your report
+          Included with your Consultation
         </p>
         <h3 className="mb-1 font-serif text-xl font-bold text-foreground">
-          Free 30-Day EatoBiotics Account
+          30 Days of EatoBiotics Access
         </h3>
+        {/* The 30 days are INCLUDED in a €49 purchase, so calling them a "free
+          * account" made the paid thing sound free. And "after your report is
+          * ready, you get…" describes an activation clock Phase 6 has not
+          * built — a promise about behaviour that does not exist. Both replaced
+          * with present-tense truth. */}
         <p className="mb-5 text-sm text-muted-foreground">
-          After your report is ready, you get a free 30-day account to follow your plan.
-          No subscription required to get started.
+          Your Personal Food System Consultation includes 30 days of EatoBiotics access.
+          Nothing is charged automatically — continue afterwards as an EatoBiotics Member
+          if you choose.
         </p>
         <div className="grid gap-2.5 sm:grid-cols-2">
           {[

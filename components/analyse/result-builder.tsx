@@ -6,7 +6,6 @@ import {
   ArrowRight, Sparkles, TrendingUp, RefreshCw, Share2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { getPercentile } from "@/lib/percentile"
 import { getIdentityLabel } from "@/lib/identity-labels"
 import { ShareMealCard } from "./share-meal-card"
 import { FreeScanUpsell } from "./free-scan-upsell"
@@ -131,7 +130,6 @@ function ScoreDisplay({
   postbioticScore?: number
 }) {
   const { label, color } = getScoreBand(score)
-  const percentile    = getPercentile(score)
   const identityLabel = getIdentityLabel(score)
   const r = 52
   const circ = 2 * Math.PI * r
@@ -197,7 +195,7 @@ function ScoreDisplay({
           </svg>
           <div className="absolute text-center">
             <p className="text-5xl font-bold tabular-nums leading-none" style={{ color }}>{score}</p>
-            <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Gut Score</p>
+            <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Meal Biotics Score</p>
           </div>
         </div>
         <div>
@@ -209,8 +207,11 @@ function ScoreDisplay({
               ? "A decent foundation — small additions can boost it significantly."
               : "A starting point — the suggestions below will transform this meal."}
           </p>
+          {/* "Top X%" removed with the rest of the percentile claim — see the
+            * note in free-scan-upsell.tsx. The identity label stays; it
+            * describes the meal, not a population. */}
           <p className="mt-2 text-xs text-muted-foreground/70">
-            {identityLabel.emoji} {identityLabel.word} · Top {100 - percentile}%
+            {identityLabel.emoji} {identityLabel.word}
           </p>
         </div>
       </div>
@@ -367,7 +368,7 @@ function GutMetricsPanel({ result }: { result: AnalysisResult }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
       <p className="mb-4 border-b border-border pb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-        Gut Health Metrics
+        Meal Biotics Breakdown
       </p>
       <div className="grid grid-cols-2 gap-3">
 
@@ -602,7 +603,7 @@ function AssessmentBridgeCTA({
         You scored <span style={{ color: "var(--icon-green)" }}>{score}</span> on this meal.
       </h3>
       <p className="mt-1.5 text-sm text-muted-foreground">
-        How does your full food system score?
+        Ready to see your whole Food System?
       </p>
       <p className="mt-1 text-xs text-muted-foreground/70">
         15 questions · Free · Takes 3 minutes
@@ -613,7 +614,7 @@ function AssessmentBridgeCTA({
           className="flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
           style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
         >
-          Get My Full Biotics Score <ArrowRight size={14} />
+          Take My Food System Assessment <ArrowRight size={14} />
         </Link>
         {shareHash && (
           <button

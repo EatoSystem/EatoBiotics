@@ -44,12 +44,17 @@ export function ShareMealCard({ result }: ShareMealCardProps) {
   const [ugcSubmitted,  setUgcSubmitted]  = useState(false)
 
   // Feature gates
-  // share_card_v2    — when ON, shows the platform share buttons (X/WhatsApp/Instagram).
-  //                    Turn OFF to hide the social platform section for a subset of users.
-  // percentile_copy_v2 — when ON, uses the v2 percentile phrasing in the share text.
-  //                      Create in Statsig and enable to test alternate copy.
-  const { value: shareCardV2 }      = useFeatureGate("share_card_v2")
-  const { value: percentileCopyV2 } = useFeatureGate("percentile_copy_v2")
+  // share_card_v2 — when ON, shows the platform share buttons (X/WhatsApp/Instagram).
+  //                 Turn OFF to hide the social platform section for a subset of users.
+  //
+  // `percentile_copy_v2` was read here to A/B two phrasings of a percentile
+  // claim — "better gut than X% of people" vs "top X% for gut diversity". Both
+  // were phrasings of a claim lib/percentile.ts cannot support: a synthetic
+  // normal distribution with no comparison population, applied to one meal.
+  // The claim is gone, so the gate has nothing left to switch and the read is
+  // removed rather than left as a no-op that still logs exposures. The gate
+  // itself should be retired in Statsig by whoever owns the experiment.
+  const { value: shareCardV2 } = useFeatureGate("share_card_v2")
 
   const score         = Math.round(result.score)
   const percentile    = getPercentile(score)
@@ -72,16 +77,9 @@ export function ShareMealCard({ result }: ShareMealCardProps) {
     ? window.location.origin + "/analyse"
     : "https://eatobiotics.com/analyse"
 
-  // percentile_copy_v2: alternate phrasing for the percentile claim in share text.
-  // V1 (default): "better gut than X% of people"
-  // V2 (gate ON) : "top X% for gut diversity"
-  const percentileClaim = percentileCopyV2
-    ? `top ${100 - percentile}% for gut diversity`
-    : `better gut than ${percentile}% of people`
-
   const shareText =
-    `I scanned my meal on EatoBiotics and scored ${score}/100 — ` +
-    `I'm a ${identityLabel.word} ${identityLabel.emoji}, ${percentileClaim}. ` +
+    `I scanned my meal on EatoBiotics and got a Meal Biotics Score of ${score}/100 — ` +
+    `I'm a ${identityLabel.word} ${identityLabel.emoji}. ` +
     (topFoods.length > 0 ? `I tracked: ${foodEmojiStr}. ` : "") +
     `Check yours:`
 
@@ -125,7 +123,7 @@ export function ShareMealCard({ result }: ShareMealCardProps) {
     if (!navigator.share) return
     try {
       await navigator.share({
-        title: `My Gut Meal Score — EatoBiotics`,
+        title: `My Meal Biotics Score — EatoBiotics`,
         text:  shareText,
         url:   shareUrl,
       })
@@ -143,7 +141,7 @@ export function ShareMealCard({ result }: ShareMealCardProps) {
   function handleShareX() {
     const xText =
       `I just scanned my meal on @EatoBiotics and scored ${score}/100 🎯\n` +
-      `I'm a ${identityLabel.word} ${identityLabel.emoji} — ${percentileClaim}.\n` +
+      `I'm a ${identityLabel.word} ${identityLabel.emoji}.\n` +
       (foodEmojiStr ? `${foodEmojiStr}\n` : "") +
       `#GutHealth #EatoBiotics`
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(xText)}&url=${encodeURIComponent(shareUrl)}`
@@ -247,13 +245,13 @@ export function ShareMealCard({ result }: ShareMealCardProps) {
       {/* Expanded state */}
       {expanded && (
         <div className="border-t border-border px-5 pb-5 pt-4 space-y-4">
-          {/* Identity + percentile summary */}
+          {/* Identity summary */}
           <div className="flex items-center gap-3 rounded-xl bg-secondary/40 px-4 py-3">
             <span className="text-2xl">{identityLabel.emoji}</span>
             <div>
               <p className="text-sm font-bold text-foreground">{identityLabel.word}</p>
               <p className="text-xs text-muted-foreground">
-                Better gut health than <strong>{percentile}%</strong> of people with typical eating habits
+                Your Meal Biotics Score for this plate
               </p>
             </div>
           </div>

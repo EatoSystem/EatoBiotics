@@ -209,12 +209,16 @@ function TodayTab({
         <div className="mt-2 flex flex-wrap items-center gap-3">
           {overall !== null && (
             <span className="rounded-full border px-3 py-1 text-sm font-semibold" style={{ color: "var(--icon-green)" }}>
-              Score: {overall}
+              Biotics Score™: {overall}
             </span>
           )}
-          {feedScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Feed: {feedScore}</span>}
-          {seedScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Seed: {seedScore}</span>}
-          {healScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Regenerate: {healScore}</span>}
+          {/* The variables stay feed/seed/heal — they read stored keys. The
+            * LABELS are the three biotics, because these are scores, and Feed /
+            * Seed / Regenerate are actions a person takes. A number beside an
+            * action name turns the action framework into a scoring model. */}
+          {feedScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Prebiotics: {feedScore}</span>}
+          {seedScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Probiotics: {seedScore}</span>}
+          {healScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Postbiotics: {healScore}</span>}
           <span className="rounded-full border px-3 py-1 text-xs text-muted-foreground">Day {dayInPlan} of 30</span>
         </div>
       </div>
@@ -300,8 +304,8 @@ function TodayTab({
         >
           <p className="text-sm font-semibold text-foreground">
             {daysRemaining === 0
-              ? "Your free account has ended."
-              : `${daysRemaining} day${daysRemaining === 1 ? "" : "s"} remaining in your free account.`}
+              ? "Your included 30 days have ended."
+              : `${daysRemaining} day${daysRemaining === 1 ? "" : "s"} remaining in your included 30 days.`}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
             Continue your journey with an EatoBiotics Member plan — €24.99/month.
@@ -988,7 +992,7 @@ function AnalyseMealCard({
             Analyse a Meal
           </p>
           <p className="mt-1.5 text-base" style={{ color: "rgba(255,255,255,0.78)" }}>
-            Log what you ate and see how it scores across your 5 pillars
+            Log what you ate and see its Meal Biotics Score across Prebiotics, Probiotics and Postbiotics
           </p>
           {oneLeft && (
             <span
@@ -1046,7 +1050,7 @@ function TodayCard({
           <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))" }} />
           <div className="p-5">
             <p className="mb-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">Start your journey</p>
-            <h3 className="mb-2 font-serif text-lg font-semibold text-foreground">Discover your food system score</h3>
+            <h3 className="mb-2 font-serif text-lg font-semibold text-foreground">Discover your Biotics Score™</h3>
             <p className="mb-4 text-sm text-muted-foreground">A free 5-minute assessment reveals your Biotics Score and identifies exactly where your food system needs attention.</p>
             <Link
               href="/assessment"
@@ -1232,17 +1236,35 @@ function ScoreHistoryPreview({ score }: { score: number | null }) {
           </div>
         </div>
 
+        {/* Two corrections here.
+          *
+          * Grow is a retired entitlement, not an offer — and the branch it sat
+          * in is keyed on whether a person HAS A SCORE, which is exactly the
+          * stage signal needed: a score means they completed the Assessment, so
+          * the next product is the €49 Consultation. No score means the next
+          * product is the Assessment itself. Neither is Member, which would
+          * only have been right because Grow happened to occupy the card.
+          *
+          * And "Most members improve 8–15 points in their first month of daily
+          * tracking" is gone rather than reworded. Nothing in this repository
+          * substantiates that number or that population, and looking for a way
+          * to justify a sentence is the wrong direction of travel. It is
+          * replaced with what is true and carries no number. */}
         <p className="mb-4 text-sm text-muted-foreground leading-relaxed">
           {score != null
-            ? `Your score is ${Math.round(score)}. With Grow, you'll see exactly which meals are moving it — daily.`
-            : "Track how each of your 5 pillars changes week to week. Most members improve 8–15 points in their first month of daily tracking."}
+            ? `Your Biotics Score™ is ${Math.round(score)}. Your Personal Food System Consultation explains what is driving it.`
+            : "Track how your Biotics Score™ changes over time, across Prebiotics, Probiotics and Postbiotics."}
         </p>
+        {/* Both stages route to /assessment: the Consultation is purchased from
+          * the assessment-results surface (only /api/checkout's two callers can
+          * reach it, and they need the score payload), and someone with no
+          * score starts there anyway. The CTA LABEL is what differs. */}
         <Link
-          href="/pricing"
+          href="/assessment"
           className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
           style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
         >
-          Build the habit <ArrowRight size={13} />
+          {score != null ? "Begin my Consultation" : "Take my Food System Assessment"} <ArrowRight size={13} />
         </Link>
       </div>
     </div>
@@ -1250,7 +1272,7 @@ function ScoreHistoryPreview({ score }: { score: number | null }) {
 }
 
 function MonthlyPlanPreview({ addingScore }: { addingScore: number | null }) {
-  const sampleText = "Your food system this month is showing real momentum. Your plant diversity has been one of your stronger pillars, but your Live Foods score is pulling down your overall Biotics number — this month, that's your primary focus. Fermented foods are the fastest lever you have..."
+  const sampleText = "Your food system this month is showing real momentum. Your Prebiotics have been one of your stronger pathways, but your Probiotics are pulling down your Biotics Score™ — this month, that's your primary focus. Fermented foods are the fastest lever you have..."
 
   return (
     <div className="overflow-hidden rounded-3xl border bg-card">
@@ -1275,8 +1297,8 @@ function MonthlyPlanPreview({ addingScore }: { addingScore: number | null }) {
 
         <p className="mb-4 text-sm text-muted-foreground leading-relaxed">
           {addingScore != null
-            ? `EatoBiotic can build your Live Foods recovery plan — month by month, targeting your biggest opportunity.`
-            : "EatoBiotic can build your personalised gut recovery plan — month by month, targeting your weakest pillar."}
+            ? `EatoBiotic can build your Probiotics plan — month by month, targeting your biggest opportunity.`
+            : "EatoBiotic can build your personalised food-first plan — month by month, targeting your current focus."}
         </p>
         <Link
           href="/pricing"
@@ -2212,11 +2234,14 @@ function OverviewTab({
           }}
         >
           <p className="mb-1 font-serif text-base font-semibold text-foreground">
-            Your score is {Math.round(latest.overall_score)}. With Grow, you&apos;ll see exactly which meals are moving it — daily.
+            {/* Same stage signal as above: `latest.overall_score` exists, so
+              * this person completed the Assessment and the next product is the
+              * Consultation — not the retired Grow plan, and not Member. */}
+            Your Biotics Score™ is {Math.round(latest.overall_score)}. Your Personal Food System Consultation explains what is driving it.
           </p>
-          <p className="mb-3 text-xs text-muted-foreground">Build a streak. Track your habit. See the numbers move.</p>
+          <p className="mb-3 text-xs text-muted-foreground">Understand your Food System, then put it into practice.</p>
           <Link
-            href="/pricing"
+            href="/assessment"
             className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
             style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
           >
@@ -2597,7 +2622,7 @@ function UpgradePrompt({
         </div>
         <h3 className="mb-2 font-serif text-lg font-semibold text-foreground">Keep the momentum going</h3>
         <p className="mb-4 text-sm text-muted-foreground leading-relaxed">
-          Your free 30-day account gives you a great start. Upgrading to a monthly membership keeps your plan updated, adds meal tracking, and gives you a new 30-day focus plan every month.
+          The 30 days included with your Consultation give you a great start. Continuing as an EatoBiotics Member keeps your plan updated, adds meal tracking, and gives you a new monthly focus.
         </p>
         <div className="flex items-center gap-3">
           <Link
@@ -2670,11 +2695,11 @@ function MembershipTab({
   }> = [
     {
       key: "free",
-      title: "Free Account",
-      price: "Included with report",
+      title: "Included Access",
+      price: "Included with your Consultation",
       perks: [
         "Permanent access to your Food System Report",
-        "EatoBiotics Biotics Score (today)",
+        "Your Biotics Score™ (today)",
         "7-day food system guide",
         "Food library access",
         "Weekly guidance emails",

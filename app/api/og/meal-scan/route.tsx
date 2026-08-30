@@ -23,7 +23,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
 
   const score      = Math.max(0, Math.min(100, parseInt(searchParams.get("score")      ?? "0",  10)))
-  const percentile = Math.max(1, Math.min(99,  parseInt(searchParams.get("percentile") ?? "50", 10)))
+  // Read and ignored: kept so already-shared ?percentile= links still render.
+  void Math.max(1, Math.min(99, parseInt(searchParams.get("percentile") ?? "50", 10)))
   const label      = searchParams.get("label")   ?? "Gut Explorer"
   const emoji      = searchParams.get("emoji")   ?? "🧭"
   const pre        = searchParams.get("pre")     ?? "low"   // "strong" | "moderate" | "low"
@@ -136,13 +137,12 @@ export async function GET(request: Request) {
             </span>
           </div>
 
-          {/* Percentile */}
-          <p style={{
-            marginTop: 10, fontSize: 13,
-            color: "rgba(255,255,255,0.38)", textAlign: "center", display: "flex",
-          }}>
-            Better than {percentile}% of people
-          </p>
+          {/* The "Better than X% of people" line is gone. It came from
+              lib/percentile.ts — a synthetic normal distribution with no
+              comparison population behind it — applied to a single meal and
+              stated as a health comparison. The `percentile` query param is
+              still ACCEPTED above so cards shared before this change keep
+              rendering; it simply is not printed. */}
         </div>
 
         {/* ─── RIGHT PANEL — Meal details ─── */}
@@ -162,7 +162,7 @@ export async function GET(request: Request) {
               fontSize: 11, fontWeight: 800, letterSpacing: "2px",
               textTransform: "uppercase", padding: "5px 14px", borderRadius: 100,
             }}>
-              Meal Gut Score
+              Meal Biotics Score
             </div>
           </div>
 

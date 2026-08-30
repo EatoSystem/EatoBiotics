@@ -27,6 +27,11 @@ import { describe, it, expect } from "vitest"
 import { readFileSync, existsSync, readdirSync, statSync } from "node:fs"
 import { join } from "node:path"
 import { copyOf } from "./helpers/marketing-language"
+import {
+  allCustomerSurfaces,
+  AI_PROMPT_SURFACES,
+  manifestProblems,
+} from "./customer-surfaces"
 
 /**
  * The customer-facing journey. Demo and preview routes are excluded on purpose:
@@ -54,49 +59,16 @@ function journeySurfaces(): string[] {
   walk("components/assessment", false)
   return [
     ...out.filter((p) => !/(full-report-client|report-starter|paid-report-client|demo-client)\.tsx$/.test(p)),
-    // Named individually because they are the live paid artefact and its
-    // delivery email — the two surfaces that carried the worst of this.
-    "components/assessment/paid-report-client.tsx",
-    "lib/email/paid-report-email.ts",
-    "app/pricing/pricing-client.tsx",
-    "lib/report/offer.ts",
-    // ── Phase 1: the rest of the current-offer corpus ──────────────────
-    // A NAMED list, not a tree walk. The point of naming each file is that
-    // adding one is a decision someone made, and the reason is reviewable.
-    // Deliberately absent: Family and Mind surfaces (their product naming is
-    // deferred and a rule here would demand names nobody has approved),
-    // /about's founder practice, the book, historical storage, and the demo
-    // renderers that describe reports delivered under the old model.
-    "app/page.tsx",
-    "components/home/membership-teaser.tsx",
-    "components/home/feed-seed-heal.tsx",
-    "app/start/page.tsx",
-    ...startFunnel(),
-    "app/pricing/page.tsx",
-    "app/method/page.tsx",
-    "lib/nav.ts",
-    "app/api/checkout/route.ts",
-    "lib/email/results-email.ts",
-    "lib/email/sequence-email.ts",
-    "lib/email/trial-winback-email.ts",
-    "app/api/email/nurture/route.ts",
-    "components/analyse/free-scan-upsell.tsx",
-    "app/analyse/result/[hash]/page.tsx",
-    // Demo-only, but they are commercial cards a person is shown and both sold
-    // a retired ladder until Phase 1.
-    "components/account/report-bridge-card.tsx",
-    "components/account/day8-challenge-card.tsx",
-    // §39: /roadmap is guarded so PR #126's vocabulary cannot land unnoticed.
-    // The route itself is not rewritten in Phase 1.
-    "app/roadmap/page.tsx",
-  ].filter((p) => existsSync(p))
-}
-
-/** The nine /start components. One funnel, one decision. */
-function startFunnel(): string[] {
-  const dir = "components/start"
-  if (!existsSync(dir)) return []
-  return readdirSync(dir).filter((f) => /\.tsx$/.test(f)).map((f) => join(dir, f))
+    // Everything else comes from the shared manifest — see
+    // tests/unit/customer-surfaces.ts for why this stopped being an inline
+    // list. The walk above stays because app/assessment and
+    // components/assessment grow new files often, and a walk catches those
+    // without anyone remembering; the manifest carries the named surfaces that
+    // no walk would ever reach.
+    ...allCustomerSurfaces(),
+  ]
+    .filter((p, i, a) => a.indexOf(p) === i)
+    .filter((p) => existsSync(p))
 }
 
 /**
@@ -124,6 +96,17 @@ const RETIRED: Array<[string, RegExp]> = [
   // educational prose, whereas capital-H Heal is the retired pathway name.
   ["Heal or Regenerate as a pathway name", /\bHeal\b|\bRegenerates\b/],
   ["five-pillar model", /\b(five|5) pillars\b/i],
+  // "Your Three Pillars" shipped as the heading above the three-biotic
+  // breakdown and no rule caught it: the five-pillar rule is about the RETIRED
+  // COUNT, and this had the right count with the wrong noun. The breakdown is
+  // Prebiotics · Probiotics · Postbiotics — biotics, not pillars.
+  //
+  // Anchored on the POSSESSIVE, and that is the whole rule. A first draft
+  // matched any "three pillars" and immediately failed on /roadmap's "Three
+  // pillars, one mission" — Substack, book and app, which are business strands
+  // and ordinary English. "YOUR three pillars" is the customer's score
+  // breakdown and nothing else.
+  ["pillars as the current score model", /\byour (three|3) pillars\b/i],
   ["retired report titles", /\b(full|starter|premium) report\b/i],
   ["Grow/Restore/Transform as a current offer", /\bstart (grow|restore|transform)\b|\b(grow|restore|transform) plan\b/i],
   ["Deep Assessment as a product title", /\bdeep assessment\b/i],
@@ -155,6 +138,39 @@ const RETIRED: Array<[string, RegExp]> = [
   ["actions used as score names", /\b(feed|seed|regenerate)\s+score\b|\bscores? across feed\b|\bfeed\s*[·/]\s*seed\s*[·/]\s*regenerate\b(?=[^.]{0,40}\bscore)/i],
   // Regenerate is not Postbiotics renamed, in either direction.
   ["Regenerate equated with Postbiotics", /\bregenerate\s*(=|\u2014|-|:)\s*postbiotics\b|\bpostbiotics,?\s+(also |now )?(called|known as|renamed)\s+regenerate\b/i],
+  // ── Phase 1 completion pass ────────────────────────────────────────────
+  // Every rule below exists because a live surface carried the shape and no
+  // guard was reading that file. Independent review found them, not CI.
+  //
+  // A meal has a Meal Biotics Score. "Gut Score" and "Gut Health Score" are
+  // retired names, and on a meal they also claim something about the person.
+  ["a retired gut-score name", /\bgut (health )?score\b|\bgut health metrics\b/i],
+  // A meal is not a partial version of the person's score. The Assessment
+  // produces that, and this shape sold the meal as a fragment of it.
+  ["a meal sold as part of the person's score", /\b(full|complete|whole) (biotics|food system) score\b/i],
+  // Feed / Seed / Regenerate are actions. A number beside one makes it a score.
+  // CASE-SENSITIVE and anchored to a rendered value, deliberately: `feed:` and
+  // `seed:` are object keys all over this codebase (mock scores in
+  // app/assessment/deep/page.tsx, the pillar maps, `{ feed, seed, heal }`
+  // destructuring) and copyOf does not strip object literals. Title-case plus a
+  // number or an interpolation is the shape a CUSTOMER sees; lowercase plus a
+  // value is code. Matching both would have meant weakening the rule until it
+  // passed, which is how a guard becomes decoration.
+  ["an action used as a score label", /\b(Feed|Seed|Regenerate):\s*[{\d]/],
+  // The 30 days are INCLUDED in a €49 purchase. Calling them free makes the
+  // paid thing sound free and the included thing sound conditional.
+  //
+  // Scoped to the PURCHASED access. "Create a free account to score unlimited
+  // meals" in guest-scan-flow.tsx is a genuinely free signup and a different
+  // thing entirely — a rule that failed on it would be demanding a lie in the
+  // opposite direction.
+  ["purchased access called free", /\bfree 30[- ]day\b|\byour free (eatobiotics )?account\b/i],
+  // Phase 6 has not built an activation clock; promising one describes
+  // behaviour that does not exist.
+  ["a 30-day clock that does not exist", /\bafter your report is ready\b|\byour 30 days (begin|start)\b/i],
+  // A numeric efficacy claim needs an evidence contract. There isn't one, and
+  // the honest response to that is to not make the claim.
+  ["an unsupported numeric outcome claim", /\b(most|many) (members|users|people)[^.]{0,40}\bimprove\b[^.]{0,30}\d+\s*[\u2013\u2014-]\s*\d+\s*points?\b/i],
 ]
 
 /**
@@ -199,6 +215,62 @@ function retiredHits(): string[] {
   }
   return hits.sort()
 }
+
+describe("the surface manifest is real", () => {
+  it("names only files that exist, with no empty group", () => {
+    // The manifest degrades exactly the way the old inline lists did if a
+    // rename silently empties an entry: the guard then reports green over a
+    // surface nobody reads any more.
+    expect(manifestProblems(), "manifest problems").toEqual([])
+  })
+
+  it("actually widens the corpus beyond the assessment walk", () => {
+    const surfaces = journeySurfaces()
+    for (const f of [
+      "components/analyse/result-builder.tsx",
+      "components/analyse/share-meal-card.tsx",
+      "components/account/live-dashboard.tsx",
+      "components/account/dashboard-client.tsx",
+      "lib/email/meal-analysis-email.ts",
+      "app/api/og/meal-scan/route.tsx",
+    ]) {
+      expect(surfaces, `${f} must be in the corpus`).toContain(f)
+    }
+  })
+})
+
+describe("live AI instructions do not name internal dimensions as scores", () => {
+  // Judged apart from page copy on purpose: a system prompt is an instruction,
+  // and `copyOf` would strip the very comments that carry its intent. The
+  // shape below is the one that shipped — `"Your Adding score of 38 tells
+  // me..."` told the model to quote an internal sub-score key at the customer.
+  const NAMED_AS_SCORE =
+    /\byour (adding|diversity|feeding|feeling|consistency) score\b|\b(adding|diversity|feeding|feeling|consistency) (score|pillar) of \d/i
+
+  it("never instructs the model to quote an internal dimension", () => {
+    const offenders: string[] = []
+    for (const file of AI_PROMPT_SURFACES) {
+      if (!existsSync(file)) continue
+      // Read raw: the instruction IS the artefact here, comments included.
+      const src = readFileSync(file, "utf8")
+      // The negative instruction telling the model NOT to do this is the guard
+      // working, so a line that forbids the shape does not count as using it.
+      for (const line of src.split("\n")) {
+        if (/\bnever say\b|\bnot\s+"your\b|\bnot customer-facing\b/i.test(line)) continue
+        const m = line.match(NAMED_AS_SCORE)
+        if (m) offenders.push(`${file}: "${m[0]}"`)
+      }
+    }
+    expect(offenders, "internal dimension named as a customer score").toEqual([])
+  })
+
+  it("matches the shape that actually shipped", () => {
+    expect('Always reference their actual numbers: "Your Adding score of 38 tells me..."').toMatch(
+      NAMED_AS_SCORE,
+    )
+    expect("Their weakest dimension is adding — focus advice here first.").not.toMatch(NAMED_AS_SCORE)
+  })
+})
 
 describe("the live journey uses only current vocabulary", () => {
   it("carries none of the retired names", () => {

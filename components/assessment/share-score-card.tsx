@@ -27,10 +27,16 @@ export function ShareScoreCard({ result }: ShareScoreCardProps) {
   const percentile    = getPercentile(overall)
   const identityLabel = getIdentityLabel(overall)
 
-  const weakestKey = Object.entries(subScores)
+  // Renamed from `weakestKey`/`weakestLabel` in the copy sense only: the
+  // customer is told their CURRENT FOCUS, not their "weakest pillar". "Weakest"
+  // ranks a person against themselves in a vocabulary the product retired, and
+  // "pillar" is not the current model. The derivation, the keys, and every
+  // legacy alias below are untouched — the label has to stay true for canonical
+  // Biotic keys AND the five legacy dimension keys, which is why it is neutral.
+  const focusKey = Object.entries(subScores)
     .filter(([k]) => ["prebiotics", "probiotics", "postbiotics", "feed", "seed", "heal"].includes(k))
     .sort(([, a], [, b]) => a - b)[0]?.[0] ?? "prebiotics"
-  const weakestLabels: Record<string, string> = {
+  const focusLabels: Record<string, string> = {
     // Current pillar keys
     prebiotics:  "Prebiotics",
     probiotics:  "Probiotics",
@@ -46,9 +52,9 @@ export function ShareScoreCard({ result }: ShareScoreCardProps) {
     consistency: "Consistency",
     feeling:     "Feeling",
   }
-  const weakestLabel = weakestLabels[weakestKey] ?? weakestKey
+  const focusLabel = focusLabels[focusKey] ?? focusKey
 
-  const shareText = `I scored ${overall}/100 on my gut health check — I'm a ${identityLabel.word} ${identityLabel.emoji} and scored higher than ${percentile}% of people. My weakest pillar is ${weakestLabel}. Check your gut score:`
+  const shareText = `I took the EatoBiotics Food System Assessment and my Biotics Score is ${overall}/100 — I'm a ${identityLabel.word} ${identityLabel.emoji} and scored higher than ${percentile}% of people. My current focus is ${focusLabel}. Take yours:`
 
   const shareUrl = typeof window !== "undefined"
     ? window.location.origin + "/assessment"
@@ -78,7 +84,7 @@ export function ShareScoreCard({ result }: ShareScoreCardProps) {
     if (!navigator.share) return
     try {
       await navigator.share({
-        title: `My Gut Health Score — EatoBiotics`,
+        title: `My Biotics Score — EatoBiotics`,
         text:  shareText,
         url:   shareUrl,
       })

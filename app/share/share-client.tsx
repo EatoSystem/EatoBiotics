@@ -161,7 +161,7 @@ function ScoreDisplay({
           </svg>
           <div className="absolute text-center">
             <p className="text-5xl font-bold tabular-nums leading-none" style={{ color }}>{score}</p>
-            <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Gut Score</p>
+            <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Biotics Score™</p>
           </div>
         </div>
         <div>
