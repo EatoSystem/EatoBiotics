@@ -2,6 +2,9 @@
 
 import Link from "next/link"
 import { ArrowRight, Check, Compass } from "lucide-react"
+// Pure tier vocabulary. lib/membership.ts imports the service-role Supabase
+// client and must not be pulled into a "use client" component.
+import { isPaidTierName } from "@/lib/membership-tiers"
 
 interface ReportMembershipCTAProps {
   /** The customer's current overall score — the one real number this report
@@ -15,54 +18,36 @@ interface ReportMembershipCTAProps {
   membershipTier?: string
 }
 
-const TIERS = [
-  {
-    id: "grow",
-    name: "Grow",
-    price: "€9.99",
-    period: "/mo",
-    color: "var(--icon-lime)",
-    gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
-    tagline: "Build daily habits",
-    features: [
-      "2 meal analyses per day",
-      "30-day score history",
-      "Daily habit nudges + streak",
-      "Create My Plate — AI meal plans",
-    ],
-  },
-  {
-    id: "restore",
-    name: "Restore",
-    price: "€49",
-    period: "/mo",
-    color: "var(--icon-teal)",
-    gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
-    tagline: "Fix what's holding you back",
-    featured: true,
-    features: [
-      "5 daily meal analyses",
-      "AI-built monthly gut plan",
-      "Deep-dive your weakest pillar",
-      "Condition-specific guidance",
-    ],
-  },
-  {
-    id: "transform",
-    name: "Transform",
-    price: "€99",
-    period: "/mo",
-    color: "var(--icon-orange)",
-    gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
-    tagline: "Fully optimise your system",
-    features: [
-      "Unlimited AI consultations",
-      "Weekly AI check-in",
-      "Full food system optimisation",
-      "Founding member status",
-    ],
-  },
-]
+/**
+ * The one current continuation product.
+ *
+ * This was a three-card ladder — Grow €9.99, Restore €49, Transform €99 —
+ * shown to every €49 buyer at the end of their report. Those tiers are retired
+ * as a purchase option: the live continuation is a single EatoBiotics Member
+ * plan, and Restore's "€49/mo" sat one screen away from the €49 ONE-TIME
+ * report, which is a genuinely confusing thing to put in front of someone who
+ * has just paid.
+ *
+ * The tier ids remain valid internally — existing Grow/Restore/Transform
+ * subscribers keep their access and their Stripe mappings, and
+ * `hasActiveMembership` below still recognises them. Retired as an offer, not
+ * as data.
+ */
+const MEMBER_PLAN = {
+  name: "EatoBiotics Member",
+  price: "€24.99",
+  period: "/mo",
+  color: "var(--icon-green)",
+  gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-teal))",
+  tagline: "Keep building your Food System",
+  features: [
+    "Daily meal analyses",
+    "Your score history over time",
+    "Daily habit nudges and streak",
+    "Create My Plate — AI meal plans",
+  ],
+}
+
 
 /* The score-projection card that used to live here rendered a predicted
  * future score with a deadline ("You could reach 74–84 in 8–10 weeks") — a
@@ -124,8 +109,19 @@ export function ReportMembershipCTA({
   membershipBridge,
   membershipTier,
 }: ReportMembershipCTAProps) {
-  const hasActiveMembership =
-    membershipTier && ["grow", "restore", "transform"].includes(membershipTier)
+  /*
+   * Every tier that already carries access — not just the retired three.
+   *
+   * This listed only grow/restore/transform, so an active `member` or a `trial`
+   * buyer (the two tiers the product actually issues today) fell through to the
+   * upsell and was sold something they already had. isPaidTierName reads the
+   * shared PAID_TIERS list, so a future tier is recognised here by default
+   * rather than by remembering to edit this line.
+   *
+   * `membershipTier` is the paid/access field. It is never the `membership`
+   * referral field, which means something else entirely.
+   */
+  const hasActiveMembership = isPaidTierName(membershipTier)
 
   return (
     <div className="space-y-5 pt-2">
@@ -188,77 +184,54 @@ export function ReportMembershipCTA({
         </div>
       ) : (
         <>
-          {/* Membership tier cards */}
+          {/* One current plan */}
           <p className="text-sm font-semibold text-foreground text-center">
-            Choose the plan that fits your journey
+            Keep building your Food System
           </p>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {TIERS.map((tier) => (
-              <div
-                key={tier.id}
-                className="relative flex flex-col rounded-2xl border overflow-hidden"
-                style={
-                  tier.featured
-                    ? {
-                        borderColor: `color-mix(in srgb, ${tier.color} 40%, transparent)`,
-                        background: `color-mix(in srgb, ${tier.color} 4%, var(--card))`,
-                      }
-                    : { borderColor: "var(--border)", background: "var(--card)" }
-                }
+          <div
+            className="relative flex flex-col rounded-2xl border overflow-hidden"
+            style={{
+              borderColor: `color-mix(in srgb, ${MEMBER_PLAN.color} 40%, transparent)`,
+              background: `color-mix(in srgb, ${MEMBER_PLAN.color} 4%, var(--card))`,
+            }}
+          >
+            <div className="h-1 w-full" style={{ background: MEMBER_PLAN.gradient }} />
+            <div className="flex flex-1 flex-col p-5">
+              <p
+                className="text-xs font-bold uppercase tracking-widest"
+                style={{ color: MEMBER_PLAN.color }}
               >
-                {/* Top accent */}
-                <div className="h-1 w-full" style={{ background: tier.gradient }} />
-
-                {tier.featured && (
-                  <div
-                    className="absolute right-3 top-3 rounded-full px-2 py-0.5 text-[9px] font-bold text-white"
-                    style={{ background: tier.gradient }}
-                  >
-                    Most Popular
-                  </div>
-                )}
-
-                <div className="flex flex-1 flex-col p-4 pt-3">
-                  <p className="text-xs font-bold uppercase tracking-widest" style={{ color: tier.color }}>
-                    {tier.name}
-                  </p>
-                  <div className="mt-1 flex items-baseline gap-0.5">
-                    <span className="text-2xl font-bold text-foreground">{tier.price}</span>
-                    <span className="text-xs text-muted-foreground">{tier.period}</span>
-                  </div>
-                  <p className="mt-1 text-[11px] text-muted-foreground mb-3">{tier.tagline}</p>
-
-                  <ul className="space-y-1.5 flex-1 mb-4">
-                    {tier.features.map((f) => (
-                      <li key={f} className="flex items-start gap-1.5 text-[11px] text-foreground/80">
-                        <Check size={11} className="mt-0.5 shrink-0" style={{ color: tier.color }} />
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-
-                  <Link
-                    href="/pricing"
-                    className="flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-semibold text-white transition hover:opacity-90"
-                    style={{ background: tier.gradient }}
-                  >
-                    Start {tier.name} <ArrowRight size={11} />
-                  </Link>
-                </div>
+                {MEMBER_PLAN.name}
+              </p>
+              <div className="mt-1 flex items-baseline gap-0.5">
+                <span className="text-3xl font-bold text-foreground">{MEMBER_PLAN.price}</span>
+                <span className="text-xs text-muted-foreground">{MEMBER_PLAN.period}</span>
               </div>
-            ))}
+              <p className="mt-1 mb-4 text-[11px] text-muted-foreground">{MEMBER_PLAN.tagline}</p>
+
+              <ul className="mb-5 flex-1 space-y-1.5 sm:grid sm:grid-cols-2 sm:gap-x-4 sm:space-y-0">
+                {MEMBER_PLAN.features.map((f) => (
+                  <li key={f} className="flex items-start gap-1.5 text-[11px] text-foreground/80">
+                    <Check size={11} className="mt-0.5 shrink-0" style={{ color: MEMBER_PLAN.color }} />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+
+              <Link
+                href="/pricing"
+                className="flex w-full items-center justify-center gap-1.5 rounded-xl py-3 text-sm font-semibold text-white transition hover:opacity-90"
+                style={{ background: MEMBER_PLAN.gradient }}
+              >
+                Become a Member <ArrowRight size={13} />
+              </Link>
+            </div>
           </div>
 
           <p className="text-center text-xs text-muted-foreground">
-            Cancel any time · Start free and upgrade when you&apos;re ready
+            €24.99/month · Cancel any time
           </p>
 
-          <Link
-            href="/pricing"
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-border py-3 text-sm font-medium text-foreground transition hover:bg-secondary/60"
-          >
-            Compare all plans <ArrowRight size={13} />
-          </Link>
         </>
       )}
     </div>

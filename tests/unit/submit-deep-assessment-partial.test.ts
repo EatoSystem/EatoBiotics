@@ -10,7 +10,7 @@ import { NextRequest } from "next/server"
  * the customer-facing response must be unchanged by the alerting.
  *
  * External services are mocked per the money-paths.test.ts pattern. The route
- * runs in dev mode (no STRIPE_SECRET_KEY), which uses fixed free scores
+ * runs in the explicitly-allowed development flow, which uses fixed free scores
  * (tier "personal") and skips Stripe verification, so the delivery stages
  * under test are reached without checkout fixtures. Claude is mocked to fail
  * so the real, pure buildFallbackPaidReport supplies the report.
@@ -136,7 +136,12 @@ async function callRoute() {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.stubEnv("STRIPE_SECRET_KEY", "") // dev mode: fixed free scores, no Stripe call
+  vi.stubEnv("STRIPE_SECRET_KEY", "")
+  // Explicit opt-in + test runtime. A missing Stripe key alone no longer
+  // grants the development flow — see lib/paid-flow-policy.ts.
+  vi.stubEnv("EATOBIOTICS_ALLOW_UNVERIFIED_PAID_FLOW", "true")
+  vi.stubEnv("NODE_ENV", "test")
+  vi.stubEnv("VERCEL_ENV", "")
   vi.stubEnv("RESEND_API_KEY", "re_test_key")
   vi.stubEnv("EMAIL_FROM", "reports@eatobiotics.com")
   // Default happy path: Claude fails (fallback report used), PDF + email succeed.

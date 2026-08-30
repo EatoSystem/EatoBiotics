@@ -10,6 +10,7 @@ import { getUser } from "@/lib/supabase-server"
 import { getUserMembershipTier } from "@/lib/membership"
 import type { DeepReport } from "@/lib/claude-report"
 import { reportViewState } from "@/lib/report-status"
+import { isUnverifiedPaidFlowAllowed } from "@/lib/paid-flow-policy"
 import { freshPdfUrl } from "@/lib/report/pdf-access"
 import {
   displayTierForReport,
@@ -35,8 +36,12 @@ export default async function ReportPage({ searchParams }: Props) {
     redirect("/assessment")
   }
 
-  // Dev mode: if Stripe isn't configured, allow direct access for UI testing (defaults to "full")
-  if (!process.env.STRIPE_SECRET_KEY) {
+  // ── Unverified development flow ───────────────────────────────────────
+  // Was `if (!process.env.STRIPE_SECRET_KEY)`, which rendered the paid report
+  // UI whenever the secret was absent and short-circuited the settled-session
+  // check below. Now the shared policy: explicit opt-in AND a provably
+  // non-production runtime.
+  if (isUnverifiedPaidFlowAllowed()) {
     return <FullReportClient tier="full" />
   }
 

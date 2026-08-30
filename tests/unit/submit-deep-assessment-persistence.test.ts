@@ -167,7 +167,11 @@ async function callRoute() {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.stubEnv("STRIPE_SECRET_KEY", "") // dev mode: fixed free scores, no Stripe call
+  vi.stubEnv("STRIPE_SECRET_KEY", "")
+  // Explicit opt-in + test runtime — see lib/paid-flow-policy.ts.
+  vi.stubEnv("EATOBIOTICS_ALLOW_UNVERIFIED_PAID_FLOW", "true")
+  vi.stubEnv("NODE_ENV", "test")
+  vi.stubEnv("VERCEL_ENV", "")
   vi.stubEnv("RESEND_API_KEY", "re_test_key")
   vi.stubEnv("EMAIL_FROM", "reports@eatobiotics.com")
   // Set so the generation branch is genuinely reachable. Without a key the

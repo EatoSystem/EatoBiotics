@@ -107,7 +107,7 @@ const MARKETING_COMPONENTS: Record<string, { minChars: number; anchor: string }>
   },
   "components/assessment/report-membership-cta.tsx": {
     minChars: 1_000,
-    anchor: "Choose the plan that fits your journey",
+    anchor: "Keep building your Food System",
   },
   // Joined after the PR #215 review flagged a live "will show meaningful,
   // measurable progress" claim here — pre-existing, not introduced by that PR,
@@ -133,7 +133,7 @@ const MARKETING_COMPONENTS: Record<string, { minChars: number; anchor: string }>
   },
   "components/assessment/personal-report-cta.tsx": {
     minChars: 800,
-    anchor: "AI-generated from your assessment",
+    anchor: "A guided digital process",
   },
   "components/assessment/assessment-results.tsx": {
     minChars: 8_000,

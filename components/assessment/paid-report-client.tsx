@@ -64,10 +64,22 @@ function TopTriggerCard({ trigger, explanation }: { trigger: string; explanation
   )
 }
 
-/** Tier display names, shared by the eyebrow badge and the hero fallback title. */
+/**
+ * Tier display names, shared by the eyebrow badge and the hero fallback title.
+ *
+ * `personal` — the only tier on sale — is mapped to `full` upstream by
+ * displayTierForReport, so this component never sees it and the live €49 report
+ * titled itself "Full Report". The product name is Personal Food System Report.
+ *
+ * The starter/premium keys keep their own names: those reports were delivered
+ * under those titles and restating an old artefact in today's vocabulary would
+ * misdescribe what that buyer received. Legacy `full` reports adopt the new
+ * title because it describes the artefact rather than a retired SKU, and it is
+ * accurate for every one of them.
+ */
 const TIER_LABEL: Record<"starter" | "full" | "premium", string> = {
   starter: "Starter Insights",
-  full: "Full Report",
+  full: "Personal Food System Report",
   premium: "Premium Report",
 }
 

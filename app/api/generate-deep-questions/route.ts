@@ -18,6 +18,7 @@ import {
 } from "@/lib/deep-assessment"
 import { readQuestionSnapshot } from "@/lib/assessment/question-snapshot"
 import { PILLAR_LABELS as CORE_PILLAR_LABELS } from "@/lib/pillars"
+import { isUnverifiedPaidFlowAllowed } from "@/lib/paid-flow-policy"
 
 type SubScores = {
   prebiotics?: number
@@ -120,12 +121,22 @@ function buildDeepQuestionsPrompt(trusted: TrustedQuestionInput): string {
 
   const questionCount = effectiveTier === "starter" ? 10 : effectiveTier === "full" ? 18 : 25
 
+  /**
+   * Question distribution across the THREE pathways.
+   *
+   * getBioticScores returns exactly prebiotics/probiotics/postbiotics, so
+   * weakest1 + weakest2 + strongest exhausts the set — there is no fourth. The
+   * full and premium blocks used to say "2 each on remaining 3 pillars", a
+   * five-pillar remnant that asked the model for six questions about pathways
+   * that do not exist. `personal` maps to `full`, so it was on the live €49
+   * path. Counts below name each pathway explicitly and sum to the tier total.
+   */
   const distributionBlock =
     effectiveTier === "starter"
       ? `[Starter - 10 total]: 4 on ${weakest1Label}, 3 on ${weakest2Label}, 2 lifestyle (sleep, stress, exercise), 1 gut feeling/symptoms`
       : effectiveTier === "full"
-      ? `[Full - 18 total]: 4 on ${weakest1Label}, 3 on ${weakest2Label}, 2 each on remaining 3 pillars, 3 lifestyle, 2 food environment (cooking habits, meal planning)`
-      : `[Premium - 25 total]: 5 on ${weakest1Label}, 4 on ${weakest2Label}, 2 each on remaining 3 pillars, 3 lifestyle, 3 gut diagnostic (symptom frequency, energy patterns, food reactions), 2 motivation/barriers (what has failed before, biggest obstacle)`
+      ? `[Full - 18 total]: 5 on ${weakest1Label}, 4 on ${weakest2Label}, 2 on ${strongestLabel}, 4 lifestyle (sleep, stress, exercise, eating rhythm), 3 food environment (cooking habits, shopping, meal planning)`
+      : `[Premium - 25 total]: 6 on ${weakest1Label}, 5 on ${weakest2Label}, 3 on ${strongestLabel}, 4 lifestyle, 4 signals (how their system is communicating: energy patterns, digestive comfort, food reactions), 3 motivation/barriers (what has failed before, biggest obstacle)`
 
   return `You are EatoBiotics — a food system health expert personalising a paid deep-dive assessment.
 
@@ -291,7 +302,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing sessionId" }, { status: 400 })
   }
 
-  const devMode = !process.env.STRIPE_SECRET_KEY
+  // Was `!process.env.STRIPE_SECRET_KEY` — a missing secret was read as
+  // permission to skip payment verification and trust the request body. The
+  // shared policy requires an explicit opt-in AND a provably non-production
+  // runtime, and denies everything it does not recognise.
+  const devMode = isUnverifiedPaidFlowAllowed()
 
   // The body's `tier` is only validated where it is actually used: dev mode,
   // which has no session to read it from. In production the tier comes from the
