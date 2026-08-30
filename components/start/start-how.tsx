@@ -12,8 +12,8 @@ const STEPS = [
   },
   {
     number: "02",
-    title: "Get your Food System Score",
-    detail: "Instantly see your score across four pillars — with a breakdown of exactly where you stand.",
+    title: "Get your Biotics Score™",
+    detail: "See your score across Prebiotics, Probiotics and Postbiotics — with a breakdown of exactly where you stand.",
     color: "var(--icon-green)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
   },
@@ -79,7 +79,7 @@ export function StartHow() {
               href="/assessment"
               className="brand-gradient inline-flex w-full items-center justify-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/25 transition-all hover:shadow-xl hover:shadow-icon-green/35 hover:opacity-90"
             >
-              Check your Food System Score
+              Take my Food System Assessment
               <ArrowRight size={18} />
             </Link>
             <p className="text-xs text-muted-foreground">

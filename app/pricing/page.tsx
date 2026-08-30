@@ -3,20 +3,22 @@ import { getUser } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { PricingClient } from "./pricing-client"
 import type { MembershipTier } from "@/lib/membership"
+import { MEMBER_PRICE_EUR } from "@/lib/membership-tiers"
+import { REPORT_PRICE_EUR } from "@/lib/report/offer"
 
 export const metadata: Metadata = {
   title: "Plans & Pricing — EatoBiotics",
   description:
-    "Choose your EatoBiotics plan. From free gut health scoring to full AI meal analysis, weekly reports, and personalised gut coaching. Plans from €9.99/month.",
+    `Your Food System Assessment is free. The Personal Food System Consultation is €${REPORT_PRICE_EUR} one-time and produces your Personal Food System Report. EatoBiotics Member is €${MEMBER_PRICE_EUR}/month.`,
   openGraph: {
     title: "Plans & Pricing — EatoBiotics",
-    description: "From free gut health scoring to full AI meal analysis, weekly reports, and personalised gut coaching.",
+    description: `Free Food System Assessment, a €${REPORT_PRICE_EUR} Personal Food System Consultation, and EatoBiotics Member at €${MEMBER_PRICE_EUR}/month.`,
     url: "https://eatobiotics.com/pricing",
   },
   twitter: {
     card: "summary_large_image",
     title: "Plans & Pricing — EatoBiotics",
-    description: "From free gut health scoring to full AI meal analysis and personalised weekly reports.",
+    description: `Free Food System Assessment, a €${REPORT_PRICE_EUR} Personal Food System Consultation, and EatoBiotics Member at €${MEMBER_PRICE_EUR}/month.`,
   },
 }
 
@@ -59,9 +61,6 @@ export default async function PricingPage({
         currentStatus={currentStatus}
         isFoundingMember={isFoundingMember}
         highlightFeature={highlightFeature}
-        growPriceId={process.env.NEXT_PUBLIC_STRIPE_GROW_PRICE_ID ?? ""}
-        restorePriceId={process.env.NEXT_PUBLIC_STRIPE_RESTORE_PRICE_ID ?? ""}
-        transformPriceId={process.env.NEXT_PUBLIC_STRIPE_TRANSFORM_PRICE_ID ?? ""}
       />
     </div>
   )

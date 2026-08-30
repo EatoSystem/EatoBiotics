@@ -282,7 +282,7 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
           <div className="mb-6 text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: profile.color }} />
-              Your EatoBiotics Score
+              Your Biotics Score™
             </div>
           </div>
 
@@ -549,7 +549,7 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
               What your report includes
             </h2>
             <p className="mt-2 text-center text-sm text-muted-foreground">
-              Built around your EatoBiotics Score — not a generic template.
+              Built around your Biotics Score™ — not a generic template.
             </p>
           </ScrollReveal>
 

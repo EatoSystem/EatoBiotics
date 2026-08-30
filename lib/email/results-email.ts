@@ -156,7 +156,7 @@ export function buildResultsEmail(opts: ResultsEmailOpts): {
           <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #f3faf3; border-radius: 10px; border: 1px solid #d4edda;">
             <tr>
               <td style="padding: 14px 16px;">
-                <p style="margin: 0 0 4px; font-size: 10px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: ${strongestColor}; font-family: Arial, sans-serif;">⭐ Your Strongest Pillar</p>
+                <p style="margin: 0 0 4px; font-size: 10px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: ${strongestColor}; font-family: Arial, sans-serif;">⭐ ${variant === "gut" ? "Your Strongest Pathway" : "Your Strongest Pillar"}</p>
                 <p style="margin: 0; font-size: 15px; font-weight: bold; color: #222222; font-family: Arial, sans-serif;">${strongestLabel}</p>
                 <p style="margin: 2px 0 0; font-size: 13px; color: ${strongestColor}; font-family: Arial, sans-serif; font-weight: bold;">${strongestScore}/100</p>
               </td>
@@ -167,7 +167,7 @@ export function buildResultsEmail(opts: ResultsEmailOpts): {
           <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #fdf5f0; border-radius: 10px; border: 1px solid #f5d5c5;">
             <tr>
               <td style="padding: 14px 16px;">
-                <p style="margin: 0 0 4px; font-size: 10px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: ${focusColor}; font-family: Arial, sans-serif;">🎯 Your Focus Area</p>
+                <p style="margin: 0 0 4px; font-size: 10px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: ${focusColor}; font-family: Arial, sans-serif;">🎯 ${variant === "gut" ? "Your First Focus" : "Your Focus Area"}</p>
                 <p style="margin: 0; font-size: 15px; font-weight: bold; color: #222222; font-family: Arial, sans-serif;">${focusLabel}</p>
                 <p style="margin: 2px 0 0; font-size: 13px; color: ${focusColor}; font-family: Arial, sans-serif; font-weight: bold;">${focusScore}/100</p>
               </td>
@@ -297,8 +297,8 @@ export function buildResultsEmail(opts: ResultsEmailOpts): {
           <!-- CTA -->
           <tr>
             <td style="padding: 32px 40px; text-align: center;">
-              <p style="margin: 0 0 20px; font-size: 16px; color: #333333; font-family: Georgia, serif; font-style: italic;">Ready to see exactly what to eat, what to add, and a 30-day plan?</p>
-              <a href="${SITE_URL}/assessment" style="display: inline-block; background-color: ${BRAND_GREEN}; background-image: ${BRAND_GRADIENT}; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: bold; font-family: Arial, sans-serif; padding: 14px 32px; border-radius: 50px;">Unlock Your Full Report →</a>
+              <p style="margin: 0 0 20px; font-size: 16px; color: #333333; font-family: Georgia, serif; font-style: italic;">${variant === "gut" ? "Your score says where you are. Ready to understand how your Food System works?" : "Ready to see exactly what to eat, what to add, and a 30-day plan?"}</p>
+              <a href="${SITE_URL}/assessment" style="display: inline-block; background-color: ${BRAND_GREEN}; background-image: ${BRAND_GRADIENT}; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: bold; font-family: Arial, sans-serif; padding: 14px 32px; border-radius: 50px;">${variant === "gut" ? "Begin My Personal Food System Consultation →" : "Unlock Your Full Report →"}</a>
             </td>
           </tr>
 

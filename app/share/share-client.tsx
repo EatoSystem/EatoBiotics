@@ -395,7 +395,7 @@ function ShareCard({ result }: { result: AnalysisResult }) {
         </div>
       </div>
 
-      <p className="font-serif text-lg font-bold text-white">Food System Score</p>
+      <p className="font-serif text-lg font-bold text-white">Biotics Score™</p>
       <p className="mt-1 text-xs text-white/60">Powered by EatoBiotics</p>
 
       {/* Biotics presence dots */}

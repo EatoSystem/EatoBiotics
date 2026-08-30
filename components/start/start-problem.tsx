@@ -113,7 +113,7 @@ export function StartProblem() {
               href="/assessment"
               className="inline-flex items-center gap-1.5 text-sm font-semibold text-icon-green transition-colors hover:text-foreground"
             >
-              Check your Food System Score
+              Take my Food System Assessment
               <ArrowRight size={14} />
             </Link>
           </div>

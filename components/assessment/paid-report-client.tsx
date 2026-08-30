@@ -662,7 +662,8 @@ export function PaidReportClient({
                 <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                   Follow the plan for 30 days, then review: which changes were practical on an
                   ordinary week, and which signals — digestion, comfort, energy — you noticed.
-                  Then retake the assessment to reset your snapshot. Individual outcomes vary;
+                  Then retake your Food System Assessment for an updated Biotics Score™.
+                  Individual outcomes vary;
                   the cycle is the commitment, not a result by a date.
                 </p>
               </div>

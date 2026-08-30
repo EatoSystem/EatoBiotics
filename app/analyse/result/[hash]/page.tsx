@@ -32,10 +32,10 @@ export async function generateMetadata({
 
   return {
     title: `${mealName} — ${score}/100 | EatoBiotics`,
-    description: `This meal scored ${score}/100 on EatoBiotics. How does yours score? Take the free analysis.`,
+    description: `This meal scored ${score}/100 — its Meal Biotics Score. How does yours score?`,
     openGraph: {
       title: `${mealName} scored ${score}/100 on EatoBiotics`,
-      description: `How does your meal compare? Get your free Biotics Score at eatobiotics.com`,
+      description: `How does your meal compare? Score a meal, or take your free Food System Assessment at eatobiotics.com`,
     },
   }
 }
@@ -104,10 +104,16 @@ export default async function ResultPage({
         {/* Try yours CTA */}
         <div className="mt-8 rounded-2xl border border-border bg-card p-6 text-center">
           <h2 className="font-serif text-xl font-semibold text-foreground">
-            What does your meal score?
+            What&apos;s your Meal Biotics Score?
           </h2>
+          {/* Two different scores, deliberately named apart. The Meal Biotics
+            * Score measures this plate; the Biotics Score™ is the person, and is
+            * earned by completing the Food System Assessment. This CTA used to
+            * read "Get My Full Biotics Score", which told a visitor their meal
+            * score was a partial version of a score they have never taken. */}
           <p className="mt-2 text-sm text-muted-foreground">
-            Upload a photo or describe your meal. Free. Takes 30 seconds.
+            Score a meal in 30 seconds — or take your free Food System Assessment for the
+            person-level picture.
           </p>
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link
@@ -121,7 +127,7 @@ export default async function ResultPage({
               href="/assessment"
               className="flex items-center justify-center gap-2 rounded-full border border-border px-6 py-3 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
             >
-              Get My Full Biotics Score
+              Take My Food System Assessment
             </Link>
           </div>
         </div>

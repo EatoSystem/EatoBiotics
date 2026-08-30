@@ -57,8 +57,8 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
   switch (dayOffset) {
     case 0:
       return {
-        subject: `Your EatoBiotics Score is ${score}/100`,
-        headline: `${firstName}, your EatoBiotics Score is ${score}/100`,
+        subject: `Your Biotics Score™ is ${score}/100`,
+        headline: `${firstName}, your Biotics Score™ is ${score}/100`,
         body: `You've completed the EatoBiotics Assessment and your score reflects something real about how your food system is working right now. Your profile is <strong>${profileType}</strong> — and below you'll see exactly how your three Biotics compare.<br /><br />Prebiotics, Probiotics, and Postbiotics each measure a different dimension of your food system. The one with the lowest score is usually the most useful place to start.`,
         cta: "See My Score Breakdown",
         ctaUrl: `${baseUrl}/assessment`,
@@ -69,8 +69,8 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
       return {
         subject: `What your score of ${score} actually means`,
         headline: `${firstName}, here's what your ${score} means`,
-        body: `A score of ${score} puts you in the <strong>${profileType}</strong> category. That means your food system has ${score >= 65 ? "strong foundations with clear refinement opportunities" : score >= 50 ? "a developing base that's ready to compound quickly with consistency" : "real room to grow, and a clear place to start"}.<br /><br />Your score isn't a verdict. It's a starting point. Focusing on one pillar first — rather than all three at once — is what makes a change easy enough to keep. Your <strong>${pillarLabel}</strong> score is your biggest lever right now.`,
-        cta: "Unlock My 30-Day Plan — €49",
+        body: `A score of ${score} puts you in the <strong>${profileType}</strong> category. That means your food system has ${score >= 65 ? "strong foundations with clear refinement opportunities" : score >= 50 ? "a developing base that's ready to compound quickly with consistency" : "real room to grow, and a clear place to start"}.<br /><br />Your score isn't a verdict. It's a starting point. Focusing on one pathway first — rather than all three at once — is what makes a change easy enough to keep. Your <strong>${pillarLabel}</strong> score is your biggest lever right now.`,
+        cta: `Begin My Consultation — €${REPORT_PRICE_EUR}`,
         ctaUrl: `${baseUrl}/assessment`,
         showScores: false,
       }
@@ -80,7 +80,7 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
         subject: `Your ${pillarLabel} score is holding you back`,
         headline: `Your ${pillarLabel} score: the gap worth closing`,
         body: `${PILLAR_INSIGHT[weakestPillar]}<br /><br />Moving your ${pillarLabel} score starts with a single daily habit rather than a complete overhaul. Here's the one we'd start with:<br /><br /><strong>${PILLAR_ACTIONS[weakestPillar]}</strong>`,
-        cta: "Get My Food System Report — €49",
+        cta: `Begin My Consultation — €${REPORT_PRICE_EUR}`,
         ctaUrl: `${baseUrl}/pricing`,
         showScores: false,
       }
@@ -90,7 +90,7 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
         subject: "One food change. Real difference.",
         headline: `One change for your ${pillarLabel} score`,
         body: `${firstName}, here's something worth trying today: ${PILLAR_ACTIONS[weakestPillar].toLowerCase()}<br /><br />This isn't generic advice — it's specifically the right move for your ${pillarLabel} score of ${opts[`${weakestPillar}Score` as keyof SequenceEmailOpts] as number}. Small and consistent beats sporadic and ambitious every time when it comes to gut health.`,
-        cta: "Get My 30-Day Plan — €49",
+        cta: `Begin My Consultation — €${REPORT_PRICE_EUR}`,
         ctaUrl: `${baseUrl}/pricing`,
         showScores: false,
       }
@@ -100,7 +100,7 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
         subject: "Why consistency beats perfection for your gut",
         headline: "Consistency is the most underrated gut health tool",
         body: `Research on diet and the gut tends to look at habits held over time rather than short bursts of effort — the same inputs at roughly the same times, day after day.<br /><br />That is the case for small consistent actions on your ${pillarLabel} score over occasional perfect days: they are the ones you can still be doing next month.<br /><br />If you tried the one action from day 3, you have the hard part done. Three more days and it stops being something you have to remember.`,
-        cta: "Unlock My Full Plan — €49",
+        cta: `Begin My Consultation — €${REPORT_PRICE_EUR}`,
         ctaUrl: `${baseUrl}/pricing`,
         showScores: false,
       }
@@ -109,8 +109,8 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
       return {
         subject: `${firstName}, one week in — are you making progress?`,
         headline: "Week one check-in",
-        body: `It's been a week since you got your EatoBiotics Score of <strong>${score}</strong>. If you've made a start on your ${pillarLabel} score, that's the hard part — most people never get past reading the result.<br /><br />Your Food System Report takes it further: ${REPORT_OFFER_SENTENCE}`,
-        cta: "Get My Food System Report — €49",
+        body: `It's been a week since you got your Biotics Score of <strong>${score}</strong>. If you've made a start on your ${pillarLabel} score, that's the hard part — most people never get past reading the result.<br /><br />Your Personal Food System Consultation takes it further: ${REPORT_OFFER_SENTENCE}`,
+        cta: `Begin My Consultation — €${REPORT_PRICE_EUR}`,
         ctaUrl: `${baseUrl}/pricing`,
         showScores: true,
       }
@@ -120,7 +120,7 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
         subject: `${firstName}, your gut health window is open`,
         headline: "The gut-brain connection rewards early action",
         body: `Gut bacteria turn over continually, and what you eat is one of the things that shapes which populations are supported. That is why researchers describe diet as one of the more modifiable influences on the microbiome.<br /><br />It also means a plan is worth more than a single good week. The Food System Report sets out what to do and when, so a change has somewhere to go.`,
-        cta: "Get My 30-Day Plan — €49",
+        cta: `Begin My Consultation — €${REPORT_PRICE_EUR}`,
         ctaUrl: `${baseUrl}/pricing`,
         showScores: false,
       }
@@ -130,7 +130,7 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
         subject: "Two weeks in — the part most people skip",
         headline: "Two weeks of consistent input",
         body: `Two weeks is roughly the point at which a change stops being an experiment and starts being how you eat. Whether anything has shifted for you is something only you can say — some people report feeling steadier by now, and plenty notice nothing yet. Neither means it isn't working.<br /><br />Your Food System Report maps what to do next against your own Prebiotics, Probiotics and Postbiotics scores, rather than a general timeline.`,
-        cta: "Get My Food System Report — €49",
+        cta: `Begin My Consultation — €${REPORT_PRICE_EUR}`,
         ctaUrl: `${baseUrl}/pricing`,
         showScores: false,
       }
@@ -140,7 +140,7 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
         subject: "Three weeks in: the EatoBiotics way",
         headline: "What three consistent weeks does for your gut",
         body: `Studies of sustained dietary change have observed shifts in microbial diversity and short-chain fatty acid production over a period of weeks. What that looks like in any one person varies, and nothing here has measured yours.<br /><br />What we can tell you is what to do next. The Food System Report is a concrete 30-day plan built around your own scores.<br /><br />Your score of ${score} has room to move. Retake the assessment in 30 days and you'll see where it actually went.`,
-        cta: "Get My Plan Now — €49",
+        cta: `Begin My Consultation — €${REPORT_PRICE_EUR}`,
         ctaUrl: `${baseUrl}/pricing`,
         showScores: false,
       }
@@ -150,17 +150,17 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
         subject: "Last chance: your 30-day plan is waiting",
         headline: `${firstName}, your gut health window is closing`,
         body: `This is the last email in your EatoBiotics sequence. Your score of <strong>${score}</strong> — and everything it tells you about your ${pillarLabel} gap — stays relevant as long as you act on it.<br /><br />The Food System Report is €${REPORT_PRICE_EUR}. ${REPORT_OFFER_SENTENCE}`,
-        cta: "Get My Food System Report — €49",
+        cta: `Begin My Consultation — €${REPORT_PRICE_EUR}`,
         ctaUrl: `${baseUrl}/pricing`,
         showScores: true,
       }
 
     default:
       return {
-        subject: `Your EatoBiotics Score: ${score}/100`,
+        subject: `Your Biotics Score™: ${score}/100`,
         headline: `${firstName}, your gut health update`,
-        body: `Your EatoBiotics Score is <strong>${score}/100</strong>. Your ${pillarLabel} score is your biggest opportunity. ${PILLAR_ACTIONS[weakestPillar]}`,
-        cta: "Get My Food System Report — €49",
+        body: `Your Biotics Score™ is <strong>${score}/100</strong>. Your ${pillarLabel} score is your biggest opportunity. ${PILLAR_ACTIONS[weakestPillar]}`,
+        cta: `Begin My Consultation — €${REPORT_PRICE_EUR}`,
         ctaUrl: `${baseUrl}/pricing`,
         showScores: false,
       }

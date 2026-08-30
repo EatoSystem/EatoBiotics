@@ -711,7 +711,7 @@ export function FoodSystemPages({ report }: { report: FoodSystemReport }) {
         <Page size="A4" style={s.page}>
           <ChapterHeading
             number={ch()}
-            eyebrow="Your Focus Area"
+            eyebrow="Your Lens"
             title={report.lens.name}
             subtitle={`What this looks at: ${report.lens.examines}`}
           />

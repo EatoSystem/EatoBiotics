@@ -36,3 +36,18 @@ export const PAID_TIERS: MembershipTier[] = ["trial", "member", "grow", "restore
 export function isPaidTierName(tier: string | null | undefined): boolean {
   return Boolean(tier && (PAID_TIERS as readonly string[]).includes(tier))
 }
+
+/**
+ * The current Member price, in euro per month.
+ *
+ * Lives here rather than in lib/membership.ts because the pricing page, the
+ * report CTA and the account cards are all client components — the same reason
+ * the tier names moved. `TIER_META.member` in lib/membership.ts derives its
+ * display string from this, so the number has exactly one definition.
+ *
+ * The legacy Grow/Restore/Transform prices deliberately do NOT get constants.
+ * They are not offers any more; they survive only as the historical price of an
+ * entitlement someone already holds, and giving them a named export here would
+ * invite a surface to quote one as though it were purchasable.
+ */
+export const MEMBER_PRICE_EUR = 24.99

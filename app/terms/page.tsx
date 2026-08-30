@@ -104,7 +104,7 @@ export default function TermsOfServicePage() {
             <SubList items={[
               { label: "What it is", text: "A one-time \u20AC49 purchase: your personalised Food System score, report and plan, built from your assessment answers, plus a free 30-day EatoBiotics account. It is not a subscription and does not renew." },
               { label: "Payment", text: "Taken by Stripe at checkout. We never see or store your card details." },
-              { label: "Delivery", text: "Your report is generated after you complete the deep assessment and is available in your account and by email. If delivery fails we will tell you rather than mark it delivered." },
+              { label: "Delivery", text: "Your report is generated after you complete the Personal Food System Consultation and is available in your account and by email. If delivery fails we will tell you rather than mark it delivered." },
               { label: "Immediate access", text: "Because the report is digital content prepared for you and made available immediately, you are asked at checkout to agree to us starting straight away and to acknowledge that doing so ends your 14-day right to cancel. See section 5." },
               { label: "If something goes wrong", text: "If your report is not delivered, is not the one you paid for, or the purchase was charged in error, contact us and we will put it right or refund you in full." },
             ]} />
@@ -118,7 +118,7 @@ export default function TermsOfServicePage() {
               acknowledged the consequence, that right ends as soon as supply begins.
             </p>
             <SubList items={[
-              { label: "Before we start", text: "You can cancel for a full refund at any point before your report is generated \u2014 for example if you have paid but not yet completed the deep assessment." },
+              { label: "Before we start", text: "You can cancel for a full refund at any point before your report is generated \u2014 for example if you have paid but not yet completed the Personal Food System Consultation." },
               { label: "After we start", text: "Once your report has been generated, the 14-day right no longer applies, because you asked for it to be prepared immediately and confirmed that at checkout." },
               { label: "This does not affect", text: "Your statutory rights if what you received is faulty, not as described, or not what you paid for. Those are unaffected by anything in these Terms." },
               { label: "How to cancel", text: `Email ${CONTACT_EMAIL} from the address you used at checkout.` },

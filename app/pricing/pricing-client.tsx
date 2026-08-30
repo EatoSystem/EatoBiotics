@@ -16,7 +16,8 @@ import {
 } from "lucide-react"
 import posthog from "posthog-js"
 import type { MembershipTier } from "@/lib/membership"
-import { REPORT_OFFER_FEATURES, REPORT_OFFER_SENTENCE } from "@/lib/report/offer"
+import { REPORT_OFFER_FEATURES, REPORT_OFFER_SENTENCE, REPORT_PRICE_EUR } from "@/lib/report/offer"
+import { MEMBER_PRICE_EUR } from "@/lib/membership-tiers"
 
 /* ── Types ───────────────────────────────────────────────────────────── */
 
@@ -26,9 +27,6 @@ interface PricingClientProps {
   currentStatus: string
   isFoundingMember: boolean
   highlightFeature: string | null
-  growPriceId: string
-  restorePriceId: string
-  transformPriceId: string
 }
 
 /* ── Report Purchase Button (€49 one-time) ───────────────────────────── */
@@ -127,11 +125,11 @@ function PortalButton({ label, className }: { label: string; className?: string 
 const FAQS = [
   {
     q: "What happens when the 30 days end?",
-    a: "After your 30-day account period ends, you'll be invited to continue with an EatoBiotics Member plan at €24.99/month. Nothing is charged automatically — you choose whether to continue.",
+    a: `After your included 30 days end, you'll be invited to continue as an EatoBiotics Member at €${MEMBER_PRICE_EUR}/month. Nothing is charged automatically — you choose whether to continue.`,
   },
   {
     q: "Is this a subscription?",
-    a: "The Food System Report is a one-time €49 purchase. The monthly plan is completely optional and only starts if you choose it after your free 30-day account ends.",
+    a: `The Personal Food System Consultation is a one-time €${REPORT_PRICE_EUR} purchase and produces your Personal Food System Report. Membership is optional and only starts if you choose it after your included 30 days end.`,
   },
   {
     q: "What's in the report?",
@@ -171,9 +169,6 @@ export function PricingClient({
   currentStatus,
   isFoundingMember,
   highlightFeature,
-  growPriceId,
-  restorePriceId,
-  transformPriceId,
 }: PricingClientProps) {
   const isLegacySubscriber =
     currentStatus === "active" && ["grow", "restore", "transform"].includes(currentTier)
@@ -283,8 +278,8 @@ export function PricingClient({
           </span>
         </h1>
         <p className="mt-4 text-base text-muted-foreground sm:text-lg">
-          Take the free EatoBiotics Assessment, discover your Feed · Seed · Regenerate scores, and get a
-          personalised plan to improve your gut health — starting today.
+          Take your free Food System Assessment, discover your Biotics Score™ across Prebiotics,
+          Probiotics and Postbiotics, and go deeper whenever you&apos;re ready.
         </p>
       </div>
 
@@ -303,23 +298,23 @@ export function PricingClient({
               icon: ClipboardList,
               step: "01",
               label: "Assess",
-              desc: "Take the free 15-question assessment — no account needed.",
+              desc: "Take your free Food System Assessment — 15 questions, no account needed.",
               color: "var(--icon-lime)",
               text: "var(--icon-lime-text)",
             },
             {
               icon: BarChart2,
               step: "02",
-              label: "Score",
-              desc: "Get your EatoBiotics Score across Feed · Seed · Regenerate — free.",
+              label: "Biotics Score™",
+              desc: "Your Biotics Score™ across Prebiotics, Probiotics and Postbiotics — free.",
               color: "var(--icon-green)",
               text: "var(--icon-green-text)",
             },
             {
               icon: FileText,
               step: "03",
-              label: "Report",
-              desc: "Unlock your Food System Report and 30-day plan for €49.",
+              label: "Consultation",
+              desc: `Your Personal Food System Consultation produces your Personal Food System Report — €${REPORT_PRICE_EUR}.`,
               color: "var(--icon-teal)",
               text: "var(--icon-teal-text)",
             },
@@ -327,7 +322,7 @@ export function PricingClient({
               icon: Calendar,
               step: "04",
               label: "30 Days",
-              desc: "Follow your plan with a free 30-day EatoBiotics account.",
+              desc: "Your Consultation includes 30 days of EatoBiotics access.",
               color: "var(--icon-orange)",
               text: "var(--icon-orange-text)",
             },
@@ -379,17 +374,18 @@ export function PricingClient({
                 className="mb-1 text-xs font-bold uppercase tracking-widest"
                 style={{ color: "var(--icon-teal-text)" }}
               >
-                Food System Report
+                One-time
               </p>
               <h2 className="font-serif text-3xl font-bold text-foreground">
-                EatoBiotics Food System Report
+                Personal Food System Consultation
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Everything you need to understand your inner food system, and a 30-day plan to work from.
+                A guided digital process that produces your Personal Food System Report, and
+                includes 30 days of EatoBiotics access.
               </p>
             </div>
             <div className="shrink-0 sm:text-right">
-              <p className="font-serif text-4xl font-bold text-foreground">€49</p>
+              <p className="font-serif text-4xl font-bold text-foreground">€{REPORT_PRICE_EUR}</p>
               <p className="text-xs text-muted-foreground">one-time payment</p>
             </div>
           </div>
@@ -437,7 +433,7 @@ export function PricingClient({
         </p>
         <div className="grid gap-2.5 sm:grid-cols-2">
           {[
-            "Your EatoBiotics Score dashboard",
+            "Your Biotics Score™ dashboard",
             "Week-by-week 30-day plan",
             "Daily food focus and action",
             "Progress check-ins",
@@ -463,26 +459,27 @@ export function PricingClient({
             className="mb-1 text-xs font-bold uppercase tracking-widest"
             style={{ color: "var(--icon-green-text)" }}
           >
-            When the 30 days end — optional
+            When your 30 days end — optional
           </p>
           <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h3 className="font-serif text-xl font-bold text-foreground">
-                Continue Your Journey
+                EatoBiotics Member
               </h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Keep the momentum going with a monthly EatoBiotics Member plan.
+                Keep building your Food System. Nothing starts automatically — you choose whether
+                to continue.
               </p>
             </div>
             <div className="shrink-0 sm:text-right">
-              <p className="font-serif text-2xl font-bold text-foreground">€24.99<span className="text-base font-normal text-muted-foreground">/month</span></p>
+              <p className="font-serif text-2xl font-bold text-foreground">€{MEMBER_PRICE_EUR}<span className="text-base font-normal text-muted-foreground">/month</span></p>
               <p className="text-xs text-muted-foreground">cancel any time</p>
             </div>
           </div>
 
           <div className="mb-5 grid gap-2 sm:grid-cols-2">
             {[
-              "Monthly updated EatoBiotics Score",
+              "Monthly updated Biotics Score™",
               "New 30-day focus plan each month",
               "Weekly personalised food guidance",
               "Monthly progress report (included)",

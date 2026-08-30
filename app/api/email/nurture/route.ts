@@ -3,6 +3,7 @@ import { getSupabase } from "@/lib/supabase"
 import { verifyCronRequest } from "@/lib/cron-auth"
 import { sendEmail } from "@/lib/email/send"
 import { unsubscribeUrl } from "@/lib/email/unsubscribe"
+import { REPORT_OFFER_SENTENCE, REPORT_PRICE_EUR } from "@/lib/report/offer"
 
 /* ── Nurture Email Sequence ──────────────────────────────────────────────
    NOT SCHEDULED. This route is absent from vercel.json and nothing else in
@@ -98,7 +99,7 @@ function pillarInsight(label: string, action: string, color: string): string {
 /* Day 1 — What your score means */
 function day1Email(name: string, score: number | null, profileType: string | null, weakestPillar: string | null, email: string): string {
   const greeting = name ? `Hi ${name.split(" ")[0]},` : "Hi there,"
-  const scoreText = score != null ? `You scored <strong style="color:#4CB648;">${score}/100</strong>` : "Your Biotics Score is ready"
+  const scoreText = score != null ? `You scored <strong style="color:#4CB648;">${score}/100</strong>` : "Your Biotics Score™ is ready"
   const profileText = profileType ? ` — that makes you a <strong>${profileType}</strong>` : ""
 
   const PILLAR_INSIGHTS: Record<string, { label: string; action: string; color: string }> = {
@@ -119,13 +120,13 @@ function day1Email(name: string, score: number | null, profileType: string | nul
 
     <p style="margin:0 0 12px;color:#1A2E12;font-size:15px;font-weight:600;">Your score is a baseline, not a verdict</p>
     <p style="margin:0 0 20px;color:#5A6E50;font-size:14px;line-height:1.7;">
-      It reflects the state of your food system <em>right now</em>. The five pillars — Plant Diversity, Feeding, Live Foods, Consistency, and Feeling — each scored individually. Your weakest is usually the most useful place to start.
+      It reflects the state of your Food System <em>right now</em>. Your Food System Assessment looks at plant diversity, feeding, live foods, consistency and how you feel — and produces your Biotics Score™ across Prebiotics, Probiotics and Postbiotics. Your weakest pathway is usually the most useful place to start.
     </p>
 
     ${insight ? pillarInsight(insight.label, insight.action, insight.color) : ""}
 
     <p style="margin:20px 0 8px;color:#5A6E50;font-size:14px;line-height:1.7;">
-      Your account is ready. Log your first meal, check your pillar scores, and take one small action today.
+      Your account is ready. Log your first meal, check your pathway scores, and take one small action today.
     </p>
     ${ctaButton(`${SITE_URL}/account`, "Go to your account")}
   `, email)
@@ -187,10 +188,10 @@ function day7Email(name: string, score: number | null, email: string): string {
     ${ctaButton(`${SITE_URL}/account`, "Start your 30-day challenge")}
 
     <p style="margin:24px 0 4px;color:#5A6E50;font-size:13px;line-height:1.6;border-top:1px solid #f3f3f3;padding-top:20px;">
-      <strong style="color:#1A2E12;">Want to go deeper?</strong> A Grow membership adds daily meal tracking, real-time score movement, and a streak to keep you accountable — €9.99/mo, cancel any time.
+      <strong style="color:#1A2E12;">Want to go deeper?</strong> Your Personal Food System Consultation is €${REPORT_PRICE_EUR} one-time. ${REPORT_OFFER_SENTENCE}
     </p>
-    <a href="${SITE_URL}/pricing" style="display:inline-block;margin-top:8px;color:#4CB648;font-size:13px;font-weight:600;text-decoration:none;">
-      See what Grow includes →
+    <a href="${SITE_URL}/assessment" style="display:inline-block;margin-top:8px;color:#4CB648;font-size:13px;font-weight:600;text-decoration:none;">
+      Begin my Food System Consultation →
     </a>
   `, email)
 }

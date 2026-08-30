@@ -60,7 +60,43 @@ function journeySurfaces(): string[] {
     "lib/email/paid-report-email.ts",
     "app/pricing/pricing-client.tsx",
     "lib/report/offer.ts",
+    // ── Phase 1: the rest of the current-offer corpus ──────────────────
+    // A NAMED list, not a tree walk. The point of naming each file is that
+    // adding one is a decision someone made, and the reason is reviewable.
+    // Deliberately absent: Family and Mind surfaces (their product naming is
+    // deferred and a rule here would demand names nobody has approved),
+    // /about's founder practice, the book, historical storage, and the demo
+    // renderers that describe reports delivered under the old model.
+    "app/page.tsx",
+    "components/home/membership-teaser.tsx",
+    "components/home/feed-seed-heal.tsx",
+    "app/start/page.tsx",
+    ...startFunnel(),
+    "app/pricing/page.tsx",
+    "app/method/page.tsx",
+    "lib/nav.ts",
+    "app/api/checkout/route.ts",
+    "lib/email/results-email.ts",
+    "lib/email/sequence-email.ts",
+    "lib/email/trial-winback-email.ts",
+    "app/api/email/nurture/route.ts",
+    "components/analyse/free-scan-upsell.tsx",
+    "app/analyse/result/[hash]/page.tsx",
+    // Demo-only, but they are commercial cards a person is shown and both sold
+    // a retired ladder until Phase 1.
+    "components/account/report-bridge-card.tsx",
+    "components/account/day8-challenge-card.tsx",
+    // §39: /roadmap is guarded so PR #126's vocabulary cannot land unnoticed.
+    // The route itself is not rewritten in Phase 1.
+    "app/roadmap/page.tsx",
   ].filter((p) => existsSync(p))
+}
+
+/** The nine /start components. One funnel, one decision. */
+function startFunnel(): string[] {
+  const dir = "components/start"
+  if (!existsSync(dir)) return []
+  return readdirSync(dir).filter((f) => /\.tsx$/.test(f)).map((f) => join(dir, f))
 }
 
 /**
@@ -95,6 +131,30 @@ const RETIRED: Array<[string, RegExp]> = [
   ["instant delivery promise", /\binstant report\b/i],
   ["report promised before the Consultation", /\bgenerate my\b/i],
   ["a competing branded score", /\bfood system score\b/i],
+  // ── Phase 1 ────────────────────────────────────────────────────────────
+  // The free product is the Food System Assessment. "Snapshot" is caught only
+  // in its product sense: bare "snapshot" is ordinary English ("an educational
+  // snapshot of how your meals line up"), and `systemSnapshot` is a stored
+  // report_json key, so a bare-word rule would demand a data migration to
+  // satisfy a naming rule. The two shapes below are unambiguous.
+  ["Snapshot as the free product name", /\bfood system snapshot\b|\byour snapshot\b|\bthe snapshot\b(?!\s+(of|in)\b)/i],
+  // Retired plan names presented as something to buy. Narrow on purpose:
+  // "Grow" is a common verb and existing subscribers' tiers are legitimate
+  // internal values, so this fires on the SELL, not the word.
+  ["a retired plan sold as a current offer", /\b(start|see|join|get|try|upgrade to)\s+(grow|restore|transform)\b|\b(grow|restore|transform)\s+(membership|subscription)\b/i],
+  // €9.99 was the Grow price. There is no current €9.99 offer at all, so any
+  // appearance on a commercial surface is a retired price being quoted.
+  ["the retired €9.99 entry price", /€\s?9\.99/],
+  // The 30 days are INCLUDED with a €49 purchase. Calling them a free trial
+  // makes the paid thing sound free and the included thing sound conditional.
+  // The internal `trial` tier is invisible to copyOf, so this only catches prose.
+  ["the included 30 days called a free trial", /\bfree trial\b|\bstart your trial\b|\btrial starts\b/i],
+  // Phase 6 activation semantics, promised before they exist.
+  ["future 30-day activation semantics", /\b30 days start (after|when)\b|\bpractice[- ]ready\b|\breport[- ]ready\b|\bactivation window\b/i],
+  // Feed/Seed/Regenerate are actions. A score is not an action.
+  ["actions used as score names", /\b(feed|seed|regenerate)\s+score\b|\bscores? across feed\b|\bfeed\s*[·/]\s*seed\s*[·/]\s*regenerate\b(?=[^.]{0,40}\bscore)/i],
+  // Regenerate is not Postbiotics renamed, in either direction.
+  ["Regenerate equated with Postbiotics", /\bregenerate\s*(=|\u2014|-|:)\s*postbiotics\b|\bpostbiotics,?\s+(also |now )?(called|known as|renamed)\s+regenerate\b/i],
 ]
 
 /**
@@ -118,6 +178,14 @@ const RETAINED_FOR_LEGACY_REPORTS = [
   // panel and the old tier label, for re-sends of reports already delivered.
   'lib/email/paid-report-email.ts → five-pillar model: "5 Pillars"',
   'lib/email/paid-report-email.ts → retired report titles: "Full Report"',
+  // The results email's NON-GUT branches. Both sit behind `variant !== "gut"`
+  // and serve the Mind and Family assessments, whose product naming is
+  // explicitly deferred out of Phase 1 (§41). Rewriting them here would invent
+  // names nobody has approved, so the You-journey branch was corrected and
+  // these were left exactly as they were — deliberately, and recorded here
+  // rather than by narrowing the rules.
+  'lib/email/results-email.ts → five-pillar model: "5 Pillars"',
+  'lib/email/results-email.ts → retired report titles: "Full Report"',
 ]
 
 function retiredHits(): string[] {

@@ -553,13 +553,43 @@ New AI routes must call `guardAiUsage` (or implement an equivalent cap).
 
 ---
 
+## The current commercial model (Phase 1 — frozen)
+
+**These three are the only things EatoBiotics currently sells.** Anything else
+in this file that names a price or a plan is describing history, not an offer.
+
+| Step | Product | Price | Produces |
+|---|---|---|---|
+| 1 | **Food System Assessment** | Free | **Biotics Score™** |
+| 2 | **Personal Food System Consultation** | €49 one-time (`REPORT_PRICE_EUR`, `lib/report/offer.ts`) | **Personal Food System Report** + 30 days of EatoBiotics access |
+| 3 | **EatoBiotics Member** | €24.99/month (`MEMBER_PRICE_EUR`, `lib/membership-tiers.ts`) | ongoing membership |
+
+Vocabulary that goes with it, and must not drift:
+
+- The free product is the **Food System Assessment**. It is not "Food System
+  Snapshot", not "Snapshot", not "Food System Score", and not "Biotics Score" —
+  the Assessment is the product, the Biotics Score™ is what it produces.
+- **Prebiotics · Probiotics · Postbiotics** is how a score is understood.
+  **Feed · Seed · Regenerate** is how a person acts. Never score names, and
+  Regenerate is not Postbiotics renamed. "Heal" is a stored key, never a
+  customer-facing pathway name.
+- One meal gets a **Meal Biotics Score**, never the person's Biotics Score™.
+- Product names live in `lib/product-vocabulary.ts` (pure, client-safe, zero
+  imports). Prices live with their product, in the two modules named above.
+  Never re-literal 49 or 24.99.
+
+**Grow, Restore and Transform are legacy entitlements, not offers.** Existing
+subscribers keep full access and `membership_tier` still accepts them, but no
+surface may present them as something to buy. `tests/unit/retired-vocabulary.test.ts`
+and `tests/unit/agent-vocabulary.test.ts` enforce both halves of this.
+
 ## Membership System
 
 Two parallel membership fields exist on `profiles`:
 
 1. **`membership`** (`free | early_access | member | premium`) — the OLD referral-based system. Do not modify this logic. Referral upgrades still write to this field.
 
-2. **`membership_tier`** (`free | grow | restore | transform`) — the NEW subscription tier. All paid feature gating reads from this field, via `getUserMembershipTier()` in `lib/membership.ts`.
+2. **`membership_tier`** (`free | trial | member | grow | restore | transform`) — the subscription tier. All paid feature gating reads from this field, via `getUserMembershipTier()` in `lib/membership.ts`. `member` is the current tier; `grow | restore | transform` are legacy entitlements that must keep working and must not be sold.
 
 The `getUserMembershipTier()` function enforces grace periods for `past_due` accounts.
 

@@ -12,7 +12,8 @@ import { getSupabase } from "@/lib/supabase"
  * caller keeps its import path and there is still one definition.
  */
 export type { MembershipTier, MembershipStatus } from "@/lib/membership-tiers"
-export { PAID_TIERS, isPaidTierName } from "@/lib/membership-tiers"
+export { PAID_TIERS, isPaidTierName, MEMBER_PRICE_EUR } from "@/lib/membership-tiers"
+import { MEMBER_PRICE_EUR } from "@/lib/membership-tiers"
 import type { MembershipTier, MembershipStatus } from "@/lib/membership-tiers"
 
 /* ── Feature flags ──────────────────────────────────────────────────────── */
@@ -96,7 +97,7 @@ export function tierFromPriceIdOrThrow(priceId: string): MembershipTier {
 export const TIER_META: Record<MembershipTier, { label: string; price: string; priceMonthly: number }> = {
   free:      { label: "Free",      price: "Free",        priceMonthly: 0 },
   trial:     { label: "Trial",     price: "30-day free", priceMonthly: 0 },
-  member:    { label: "Member",    price: "€24.99/mo",   priceMonthly: 24.99 },
+  member:    { label: "Member",    price: `€${MEMBER_PRICE_EUR}/mo`, priceMonthly: MEMBER_PRICE_EUR },
   grow:      { label: "Grow",      price: "€9.99/mo",    priceMonthly: 9.99 },
   restore:   { label: "Restore",   price: "€49/mo",      priceMonthly: 49 },
   transform: { label: "Transform", price: "€99/mo",      priceMonthly: 99 },

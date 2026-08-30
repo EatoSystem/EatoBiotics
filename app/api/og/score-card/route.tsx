@@ -160,7 +160,7 @@ export async function GET(request: Request) {
               fontSize: 12, fontWeight: 800, letterSpacing: "2px",
               textTransform: "uppercase", padding: "6px 14px", borderRadius: 100,
             }}>
-              Gut Health Score
+              Biotics Score™
             </div>
           </div>
 
@@ -175,7 +175,7 @@ export async function GET(request: Request) {
           </div>
 
           <p style={{ fontSize: 18, color: "rgba(255,255,255,0.55)", lineHeight: 1.5, margin: 0, display: "flex" }}>
-            A 2-minute assessment reveals your balance across Prebiotics, Probiotics and Postbiotics.
+            Your free Food System Assessment reveals your balance across Prebiotics, Probiotics and Postbiotics.
           </p>
 
           {/* Brand pills */}

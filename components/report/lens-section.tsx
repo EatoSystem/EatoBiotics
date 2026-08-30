@@ -37,7 +37,7 @@ export function LensSection({ lens, chapterNumber }: { lens: FoodSystemLens; cha
           <p className="text-xs font-bold uppercase tracking-widest text-[var(--icon-green-text)]">
             <span className="tabular-nums">{chapterNumber}</span>
             <span className="mx-2 text-muted-foreground/40">·</span>
-            Your Focus Area
+            Your Lens
           </p>
           <h2 className="mt-2 font-serif text-2xl font-semibold text-foreground sm:text-3xl text-balance">
             {lens.name}

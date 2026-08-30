@@ -38,7 +38,7 @@ const SECTION_META: Record<DeepSection, { icon: string; label: string; desc: str
   // map is static and the lens varies per customer; the report chapter names
   // the specific lens. Emoji matches the four above — the no-emoji rule applies
   // to the report chapter, not to this questionnaire chrome.
-  lens:      { icon: "🔎", label: "Your Focus Area",   desc: "The deeper support you added to this report",       color: "var(--icon-teal)" },
+  lens:      { icon: "🔎", label: "Your Lens",         desc: "The deeper support you added to this report",       color: "var(--icon-teal)" },
 }
 
 const STAGES = [

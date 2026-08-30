@@ -6,9 +6,16 @@ import { getIdentityLabel } from "@/lib/identity-labels"
 import { getPercentile } from "@/lib/percentile"
 
 /* ── Free Scan Upsell ────────────────────────────────────────────────────
-   Shown at the bottom of meal analysis results when the user is on the
-   free tier. This was their one free lifetime scan — prompt them to upgrade
-   to keep tracking daily.
+   Shown at the bottom of meal analysis results when the user is on the free
+   tier. This viewer is typically anonymous and has scored ONE MEAL — nothing
+   here implies they have completed a Food System Assessment, let alone bought
+   a Consultation.
+
+   So the next step is the free Food System Assessment, not a subscription.
+   This CTA used to read "Unlock daily tracking — €9.99/mo" and point at
+   /pricing: a retired Grow price, sold to someone two whole steps earlier in
+   the journey than the offer assumed. Gating is unchanged — this is copy and a
+   destination, not entitlement.
 ────────────────────────────────────────────────────────────────────── */
 
 interface FreeScanUpsellProps {
@@ -49,26 +56,27 @@ export function FreeScanUpsell({ score }: FreeScanUpsellProps) {
         <div className="flex items-center gap-2">
           <Sparkles size={14} style={{ color: "var(--icon-lime)" }} />
           <p className="text-sm font-bold uppercase tracking-widest" style={{ color: "var(--icon-lime)" }}>
-            You&apos;ve unlocked your gut score
+            That&apos;s your Meal Biotics Score
           </p>
         </div>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          This was your free scan. Start tracking daily and watch your gut score improve — you&apos;ll
-          see patterns across meals, build streaks, and get personalised food system plans.
+          That score is for this meal. Your Food System Assessment takes about two minutes and
+          gives you your Biotics Score™ — the person-level picture, across Prebiotics, Probiotics
+          and Postbiotics.
         </p>
       </div>
 
       {/* CTA */}
       <Link
-        href="/pricing"
+        href="/assessment"
         className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
         style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
       >
-        Unlock daily tracking — €9.99/mo <ArrowRight size={14} />
+        Understand My Food System <ArrowRight size={14} />
       </Link>
 
       <p className="text-xs text-muted-foreground/60">
-        Cancel any time · No hidden fees · Your data stays yours
+        Free · About 2 minutes · No account needed
       </p>
     </div>
   )

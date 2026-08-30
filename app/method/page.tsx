@@ -6,10 +6,15 @@ import { SCORE_BANDS } from "@/lib/scoring"
 export const metadata: Metadata = {
   title: "Our Method — How EatoBiotics Works",
   description:
-    "How the Food System Score, the three biotics, and Your Food System actually work — in plain language, with honest limits.",
+    "How the Food System Assessment, your Biotics Score™, and the three biotics actually work — in plain language, with honest limits.",
 }
 
-/* The five assessment pillars behind the Food System Score. */
+/* What the Food System Assessment LOOKS AT. These five are the assessment's
+   input dimensions and the keys behind `leads.sub_scores` — they are not the
+   product model and are not what the customer's score is broken down by. The
+   score is the Biotics Score™; its breakdown is the three biotics below. This
+   list used to be introduced as "the five pillars behind the Food System
+   Score", which made an internal input structure the headline model. */
 const PILLARS = [
   { key: "diversity", label: "Plant Diversity", blurb: "How many different plants reach your plate — variety is the single strongest food signal for a thriving inner ecosystem." },
   { key: "feeding", label: "Feeding", blurb: "How well your meals feed your resident microbes — fibre-rich wholefoods, legumes, and wholegrains." },
@@ -43,7 +48,7 @@ const BIOTICS = [
 ]
 
 const SIGNALS = [
-  { icon: ClipboardList, label: "Your assessment", detail: "The five-pillar baseline — where your Food System starts." },
+  { icon: ClipboardList, label: "Your assessment", detail: "Your baseline — where your Food System starts." },
   { icon: Utensils, label: "Every meal you log", detail: "Analysed for its three-biotic profile and overall score." },
   { icon: Flame, label: "Your daily ritual & streaks", detail: "Rhythm and consistency — the strongest signal of all." },
   { icon: Sparkles, label: "Patterns over time", detail: "Weekday vs weekend shifts, repeat winners, fortnight trends — noticed only when your data genuinely supports them." },
@@ -79,23 +84,25 @@ export default function MethodPage() {
             How EatoBiotics works — in plain language.
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed md:text-lg" style={{ color: "rgba(253,251,247,0.65)" }}>
-            No black box. Here is exactly what your Food System Score measures, how the three
-            biotics are scored, what Your Food System learns from — and what we deliberately
-            don&apos;t claim.
+            No black box. Here is exactly what your Food System Assessment measures, how the
+            three biotics are scored, what Your Food System learns from — and what we
+            deliberately don&apos;t claim.
           </p>
         </div>
       </section>
 
-      {/* ── The Food System Score ── */}
+      {/* ── The Biotics Score ── */}
       <SectionShell>
-        <Eyebrow>The Food System Score</Eyebrow>
+        <Eyebrow>The Biotics Score™</Eyebrow>
         <h2 className="mt-2 font-serif text-2xl font-bold md:text-3xl" style={{ color: "var(--foreground)" }}>
-          One number, five pillars.
+          One number, three biotics.
         </h2>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed md:text-base" style={{ color: "var(--muted-foreground)" }}>
-          Your score (0–100) starts from your assessment across five food-first pillars, then
-          moves as your Food System learns from what you actually eat. It measures your <em>food
-          patterns</em> — not your body, and not a medical status.
+          Your Food System Assessment produces your Biotics Score™ (0–100), broken down across
+          Prebiotics, Probiotics and Postbiotics — and it moves as your Food System learns from
+          what you actually eat. It measures your <em>food patterns</em> — not your body, and not
+          a medical status. Nothing about the questions or the maths changed here; what changed
+          is that the score has one name.
         </p>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -210,10 +217,10 @@ export default function MethodPage() {
       <section className="relative overflow-hidden" style={{ background: "linear-gradient(175deg, #10200A 0%, #0B1607 100%)" }}>
         <div className="relative mx-auto max-w-5xl px-5 py-14 text-center md:px-8 md:py-16">
           <h2 className="font-serif text-2xl font-bold md:text-3xl" style={{ color: "#FDFBF7" }}>
-            See your own Food System Score.
+            See your own Biotics Score™.
           </h2>
           <p className="mx-auto mt-2 max-w-xl text-sm" style={{ color: "rgba(253,251,247,0.6)" }}>
-            Two minutes, five pillars, and Your Food System starts learning.
+            Two minutes, three biotics, and Your Food System starts learning.
           </p>
           <Link
             href="/assessment"

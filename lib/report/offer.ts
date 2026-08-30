@@ -1,5 +1,8 @@
 /**
- * What the €49 Food System Report contains — defined once.
+ * What the €49 Personal Food System Consultation delivers — defined once.
+ *
+ * The Consultation is the product; the Personal Food System Report is what it
+ * produces. This file owns REPORT_PRICE_EUR, the one definition of that price.
  *
  * ── Why this exists ──────────────────────────────────────────────────────────
  *
@@ -85,7 +88,11 @@ export const REPORT_OFFER_FEATURES = [
   `Your ${REPORT_FOOD_COUNT_WORD}-food strategy, with a swap for each`,
   "Your 30-day roadmap",
   "How your lifestyle connects to your scores",
-  "Free 30-day EatoBiotics account",
+  // "Free 30-day EatoBiotics account" — the 30 days are INCLUDED in a €49
+  // purchase, not free. Calling paid access free makes the price look like it
+  // buys less than it does, and it is the same wording the win-back email used
+  // to call a "free trial".
+  "30 days of EatoBiotics access, included",
 ] as const
 
 /**
@@ -98,4 +105,5 @@ export const REPORT_OFFER_SENTENCE =
   `Your report is generated for you from your assessment and deep-dive answers. ` +
   `It includes your full Prebiotics · Probiotics · Postbiotics analysis, your key ` +
   `insight, a 7-day starter plan, your ${REPORT_FOOD_COUNT_WORD}-food strategy with a ` +
-  `swap for each, a 30-day roadmap, and how your lifestyle connects to your scores.`
+  `swap for each, a 30-day roadmap, and how your lifestyle connects to your scores. ` +
+  `It also includes 30 days of EatoBiotics access.`

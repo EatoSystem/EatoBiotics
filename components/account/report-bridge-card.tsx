@@ -2,11 +2,20 @@
 
 import Link from "next/link"
 import { ArrowRight, FileText, Zap } from "lucide-react"
+import { MEMBER_PRICE_EUR } from "@/lib/membership-tiers"
 
 /* ── Report Bridge Card ──────────────────────────────────────────────────
-   Shown on the Overview tab when a user has a paid deep-dive report
-   but is on the free subscription tier. Bridges the gap between
-   "I paid for a report" and "I should subscribe for ongoing support."
+   Shown on the Overview tab when a user has a paid report but is on the free
+   subscription tier. Bridges "I paid for a report" and "I should continue."
+
+   This card used to branch three ways into a retired ladder — Grow €9.99,
+   Restore €49, Transform €99 — chosen by which report the person holds. All
+   three are legacy entitlements now, not offers, and "Restore — €49/mo" sat one
+   card away from the €49 ONE-TIME Consultation the person had just bought.
+
+   The continuation is a single product: EatoBiotics Member. The report a person
+   already owns still keeps its delivered name in the receipt row above, because
+   renaming a delivered artefact would misdescribe what they paid for.
 ────────────────────────────────────────────────────────────────────── */
 
 interface ReportBridgeCardProps {
@@ -21,29 +30,14 @@ const TIER_LABELS: Record<string, string> = {
   premium: "Premium",
 }
 
-const SUBSCRIPTION_BRIDGE: Record<string, { headline: string; body: string; cta: string; tier: string }> = {
-  starter: {
-    headline: "Your report gave you the diagnosis — now build the habit",
-    body:     "Your Starter report identified your key gaps. A Grow subscription turns that into a daily practice — meal tracking, score movement, and a streak to build on.",
-    cta:      "See Grow — €9.99/mo",
-    tier:     "grow",
-  },
-  full: {
-    headline: "Your Full Report found the root cause — now fix it",
-    body:     "You paid to understand your system. A Restore subscription gives you the monthly gut plan and pillar-specific protocols to act on what your report revealed.",
-    cta:      "See Restore — €49/mo",
-    tier:     "restore",
-  },
-  premium: {
-    headline: "Your Premium Report is a blueprint — let's build on it",
-    body:     "Your Premium deep-dive gave you a full picture. Transform membership adds unlimited EatoBiotic consultations and weekly check-ins — turning your report into a living, evolving plan.",
-    cta:      "See Transform — €99/mo",
-    tier:     "transform",
-  },
-}
+const MEMBER_BRIDGE = {
+  headline: "Your report showed you the system — now keep building it",
+  body:     "You paid to understand how your Food System works. EatoBiotics Member keeps it moving: your Biotics Score™ tracked month by month, ongoing food guidance, and a new focus each month.",
+  cta:      `Continue as an EatoBiotics Member — €${MEMBER_PRICE_EUR}/month`,
+} as const
 
 export function ReportBridgeCard({ reportTier, reportDate, profileType }: ReportBridgeCardProps) {
-  const bridge = SUBSCRIPTION_BRIDGE[reportTier] ?? SUBSCRIPTION_BRIDGE.starter
+  const bridge = MEMBER_BRIDGE
   const tierLabel = TIER_LABELS[reportTier] ?? "Paid"
 
   function formatDate(iso: string) {
@@ -96,7 +90,7 @@ export function ReportBridgeCard({ reportTier, reportDate, profileType }: Report
 
         {/* CTA */}
         <Link
-          href={`/pricing?feature=${bridge.tier}`}
+          href="/pricing?feature=member"
           className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:opacity-90"
           style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green), var(--icon-teal))" }}
         >

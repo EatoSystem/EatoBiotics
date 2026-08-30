@@ -8,6 +8,7 @@ import {
 import { useState } from "react"
 import Link from "next/link"
 import { ArrowRight, Check } from "lucide-react"
+import { MEMBER_PRICE_EUR } from "@/lib/membership-tiers"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
 import { resolvedFoundation, getJourney } from "@/lib/assessment/journey"
 import { REPORT_OFFER_FEATURES } from "@/lib/report/offer"
@@ -76,10 +77,17 @@ export function PersonalReportCta({ result }: PersonalReportCtaProps) {
           Next Step
         </p>
         <h3 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
-          Unlock your full 30-day plan
+          How does your Food System work?
         </h3>
+        {/* Free vs paid, stated as the two different questions they answer. The
+          * heading here used to promise the 30-day plan ("Unlock your full
+          * 30-day plan") before a single Consultation question had been asked —
+          * selling the last step of the paid journey as though it were the
+          * first. */}
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground max-w-md mx-auto">
-          Your free score is the starting point. Your Food System Report is where the real change begins.
+          Your free Food System Assessment answered <em>where am I</em>. The Personal Food System
+          Consultation answers how your Food System works, what that means for you, and what to
+          do next.
         </p>
       </div>
 
@@ -159,7 +167,8 @@ export function PersonalReportCta({ result }: PersonalReportCtaProps) {
           After your 30 days — continue with EatoBiotics Member
         </p>
         <p className="text-xs text-muted-foreground mb-3">
-          Monthly score updates, new 30-day plans, and ongoing food guidance — €24.99/month, cancel anytime.
+          Monthly Biotics Score™ updates, new monthly focus, and ongoing food guidance —
+          €{MEMBER_PRICE_EUR}/month, cancel any time.
         </p>
         <Link
           href="/pricing"

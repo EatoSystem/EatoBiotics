@@ -18,8 +18,13 @@ const TIER_CONFIG = {
   personal: {
     amount: 4900,
     name: "EatoBiotics Food System Report",
+    // The Stripe product `name` above is frozen — it is what appears on the
+    // customer's card statement and receipt, and existing purchases carry it.
+    // The DESCRIPTION names the experience in current vocabulary: what they buy
+    // is the Consultation, and it produces the Report. Nothing here derives from
+    // the buyer's answers — see the metadata note below.
     description:
-      "Your personalised Food System score, report, and plan — built from your foundation assessment and, where selected, your deeper support assessment. Includes a free 30-day EatoBiotics account.",
+      "The Personal Food System Consultation — a guided digital process that produces your Personal Food System Report, and includes 30 days of EatoBiotics access.",
   },
 } as const
 

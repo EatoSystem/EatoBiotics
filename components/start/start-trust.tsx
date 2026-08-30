@@ -7,7 +7,7 @@ const PRINCIPLES = [
   {
     icon: FlaskConical,
     title: "Built on gut science",
-    detail: "The Food System Score is grounded in research on the gut microbiome — how diversity, consistency, and biotic foods shape your health from the inside out.",
+    detail: "The Food System Assessment is grounded in research on the gut microbiome — how diversity, consistency, and biotic foods shape your health from the inside out.",
     color: "var(--icon-green)",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
   },
@@ -39,7 +39,7 @@ export function StartTrust() {
             No supplements. No shortcuts.
           </h2>
           <p className="mx-auto mt-4 max-w-md text-center text-sm leading-relaxed text-muted-foreground">
-            The Food System Score is built around the gut microbiome research — not trends,
+            The Food System Assessment is built around the gut microbiome research — not trends,
             not marketing. Everything it measures can be improved with everyday food.
           </p>
         </ScrollReveal>
@@ -73,7 +73,7 @@ export function StartTrust() {
               href="/assessment"
               className="inline-flex items-center gap-1.5 text-sm font-semibold text-icon-green transition-colors hover:text-foreground"
             >
-              Check your Food System Score
+              Take my Food System Assessment
               <ArrowRight size={14} />
             </Link>
           </div>
