@@ -102,7 +102,7 @@ export default function TermsOfServicePage() {
           {/* 4 */}
           <Section title="4. The Food System Report (one-time purchase)">
             <SubList items={[
-              { label: "What it is", text: "A one-time \u20AC49 purchase: your personalised Food System score, report and plan, built from your assessment answers, plus a free 30-day EatoBiotics account. It is not a subscription and does not renew." },
+              { label: "What it is", text: "A one-time \u20AC49 purchase: the Personal Food System Consultation, a guided digital process that produces your Personal Food System Report and includes 30 days of EatoBiotics access. It is not a subscription and does not renew." },
               { label: "Payment", text: "Taken by Stripe at checkout. We never see or store your card details." },
               { label: "Delivery", text: "Your report is generated after you complete the Personal Food System Consultation and is available in your account and by email. If delivery fails we will tell you rather than mark it delivered." },
               { label: "Immediate access", text: "Because the report is digital content prepared for you and made available immediately, you are asked at checkout to agree to us starting straight away and to acknowledge that doing so ends your 14-day right to cancel. See section 5." },
