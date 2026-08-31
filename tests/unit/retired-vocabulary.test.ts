@@ -107,6 +107,25 @@ const RETIRED: Array<[string, RegExp]> = [
   // and ordinary English. "YOUR three pillars" is the customer's score
   // breakdown and nothing else.
   ["pillars as the current score model", /\byour (three|3) pillars\b/i],
+  // ── Synthetic population comparison ────────────────────────────────────
+  // "You scored higher than 63% of people with typical eating habits" came
+  // from lib/percentile.ts — a normal CDF against an ASSUMED mean of 55 and
+  // std of 17, with no observed population at any score. It read as a
+  // measurement of other people and was not one.
+  //
+  // Matches the interpolated form too (`{percentile}%`, `${percentile}%`),
+  // because the number being computed rather than typed was never what made it
+  // true. Scoped to the COMPARISON shape, not to percentages: the product
+  // legitimately says "up to 45 pts", "70+ is excellent", "30 plants per week",
+  // and "Free · 3 minutes" — none of which claim anything about other people.
+  [
+    "an unsupported population comparison",
+    /\b(higher|better|more)\s+than\s+(\{|\$\{|<strong>)?[\w.\s{}$<>/-]{0,24}%?\s*(<\/strong>)?\s*%?\s*of\s+(people|users|members)\b|\btop\s+(\{|\$\{|\d)[\w.\s{}$-]{0,24}%/i,
+  ],
+  [
+    "a vague comparative claim about other people",
+    /\b(higher|better|healthier)\s+than\s+most\s+(people|users|members)\b|\babove\s+average\s+(gut|score|for)\b/i,
+  ],
   ["retired report titles", /\b(full|starter|premium) report\b/i],
   ["Grow/Restore/Transform as a current offer", /\bstart (grow|restore|transform)\b|\b(grow|restore|transform) plan\b/i],
   ["Deep Assessment as a product title", /\bdeep assessment\b/i],

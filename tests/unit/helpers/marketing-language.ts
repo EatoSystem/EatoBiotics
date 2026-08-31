@@ -268,13 +268,21 @@ export const CLAIMS: Array<[string, RegExp]> = [
   // actually act on their results" — flattering, unfalsifiable, and measured
   // against nothing.
   //
-  // Deliberately NOT a bare /top \d+%/. The product has a real percentile
-  // feature — score-ring.tsx renders `Top {100 - percentile}%` from
-  // lib/percentile.ts, and assessment-results renders "Higher than
-  // {percentile}% of people" — and those are honest statements about a score
-  // distribution. Both are template expressions, so a hardcoded literal is
-  // exactly what separates the invented statistic from the computed one, and
-  // this rule fires only on the literal.
+  // This comment used to justify keeping the rule narrow by saying the product
+  // had "a real percentile feature" whose output was "an honest statement about
+  // a score distribution". That was wrong, and it is worth recording rather
+  // than quietly rewriting: lib/percentile.ts is a normal CDF against an
+  // ASSUMED mean and standard deviation, with no observed population at any
+  // score. The computed number was no more supported than a typed one — the
+  // distinction this rule was drawn around did not exist.
+  //
+  // Every customer-facing use has since been removed, and the population-
+  // comparison shapes are now caught by "an unsupported population comparison"
+  // in tests/unit/retired-vocabulary.test.ts, which fires on the shape whether
+  // the number is literal or interpolated. This rule keeps its narrow literal
+  // form because it belongs to the CLAIMS corpus, which covers a wider set of
+  // pages than the current-offer corpus and must not fail on legitimate
+  // percentages elsewhere in the product.
   ["invented population statistic", /\btop \d+ ?% of people\b/i],
   // `fastest way` used to live in the superlative rule below. It moved here, and
   // the move is the point: `fastest way\b` does not match "fastest way**s**" —

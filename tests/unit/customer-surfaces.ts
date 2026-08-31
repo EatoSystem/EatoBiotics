@@ -52,6 +52,8 @@ export const ASSESSMENT_SURFACES = [
   "components/assessment/paid-report-client.tsx",
   "components/assessment/share-score-card.tsx",
   "components/assessment/score-card.tsx",
+  // Shared by ~20 callers; it rendered the synthetic "Top X%" badge.
+  "components/assessment/score-ring.tsx",
   "components/assessment/deep/deep-assessment-client.tsx",
 ]
 
@@ -116,6 +118,8 @@ export const MARKETING_SURFACES = [
   "app/api/checkout/route.ts",
   "app/api/score-card/route.tsx",
   "app/api/og/score-card/route.tsx",
+  // Person-level progress share card, generated from the account dashboard.
+  "app/api/og/progress/route.tsx",
   // Guarded, not rewritten: PR #126 would reintroduce Heal, Food System Score
   // and Feed/Seed/Regenerate-as-scores here.
   "app/roadmap/page.tsx",

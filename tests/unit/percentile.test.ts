@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { getPercentile, getPercentileLabel } from "@/lib/percentile"
+import { getPercentile } from "@/lib/percentile"
 
 describe("getPercentile", () => {
   it("returns ~50 at the distribution mean (55)", () => {
@@ -17,10 +17,12 @@ describe("getPercentile", () => {
   })
 })
 
-describe("getPercentileLabel", () => {
-  it("embeds the percentile in a readable sentence", () => {
-    const label = getPercentileLabel(55)
-    expect(label).toContain("50%")
-    expect(label).toMatch(/scored higher than/i)
-  })
-})
+/*
+ * The getPercentileLabel suite is gone with the function. It asserted the exact
+ * sentence — "You scored higher than N% of people with typical eating habits" —
+ * that this pass removed from every customer surface, so keeping it would have
+ * been a test pinning a claim the product no longer makes.
+ *
+ * The maths tests above stay: the value still feeds analytics and share-URL
+ * compatibility, and it should keep behaving predictably there.
+ */

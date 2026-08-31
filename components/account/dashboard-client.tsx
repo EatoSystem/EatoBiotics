@@ -533,7 +533,6 @@ function DashboardHero({
                 gradientId="dashboard-hero-ring"
                 className="relative h-48 w-48 sm:h-52 sm:w-52"
                 textColor="white"
-                percentile={getPercentile(Math.round(score))}
               />
               {/* Profile type badge */}
               {profileType && (
@@ -558,7 +557,7 @@ function DashboardHero({
                 className="mt-0.5 text-[10px] text-center"
                 style={{ color: "rgba(255,255,255,0.4)" }}
               >
-                {getIdentityLabel(Math.round(score)).word} · Top {100 - getPercentile(Math.round(score))}%
+                {getIdentityLabel(Math.round(score)).word}
               </p>
               {/* Share progress — only when meal history exists */}
               {patterns && (

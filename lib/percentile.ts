@@ -28,26 +28,17 @@ function normalCDF(x: number, mean: number, std: number): number {
   return 0.5 * (1 + erf((x - mean) / (std * Math.SQRT2)))
 }
 
-// Bootstrap distribution parameters (Western diet benchmark)
+// ASSUMED distribution parameters. Not derived from any observed population.
 const MEAN = 55
 const STD  = 17
 
 /**
- * Returns the percentile rank of `score` (0–100).
- * A percentile of 63 means the user scored higher than 63% of people
- * with typical Western eating habits.
+ * Rank of `score` within the SYNTHETIC distribution above (1–99).
+ *
+ * Not a measurement of anyone. Internal use only — see the module header.
  */
 export function getPercentile(score: number): number {
   const raw = normalCDF(score, MEAN, STD) * 100
   // Clamp to 1–99 so we never say "top 0%" or "top 100%"
   return Math.round(Math.min(99, Math.max(1, raw)))
-}
-
-/**
- * Returns a human-readable percentile statement.
- * e.g. "You scored higher than 63% of people with typical eating habits"
- */
-export function getPercentileLabel(score: number): string {
-  const p = getPercentile(score)
-  return `You scored higher than ${p}% of people with typical eating habits`
 }

@@ -34,7 +34,6 @@ import { SaveResultsCard } from "./save-results-card"
 import type { AssessmentResult, PillarInsight } from "@/lib/assessment-scoring"
 import type { PillarKey } from "@/lib/assessment-data"
 import { getFoodBySlug } from "@/lib/foods"
-import { getPercentile } from "@/lib/percentile"
 import { getIdentityLabel } from "@/lib/identity-labels"
 import { REPORT_OFFER_FEATURES } from "@/lib/report/offer"
 import { browserCountry, localFoods, fermentedPair, prebioticTrio } from "@/lib/local-foods"
@@ -214,8 +213,7 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
   const foods = useLocalFoodSet()
   const interpretationText = fillLocalFoods(INTERPRETATIONS[weakestPillar][scoreBand], foods)
 
-  // Percentile + identity
-  const percentile = getPercentile(overall)
+  // Identity
   const identityLabel = getIdentityLabel(overall)
 
   // Strengths / opportunities for breakdown section
@@ -296,7 +294,6 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
                 color={profile.color}
                 gradientId="assessment-ring"
                 profileType={profile.type}
-                percentile={percentile}
               />
               <div className="mt-4 text-center">
                 <p className="text-5xl font-bold tabular-nums leading-none" style={{ color: profile.color }}>
@@ -304,17 +301,18 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
                   <span className="text-xl text-muted-foreground">/100</span>
                 </p>
                 <p className="mt-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                  Overall Score
+                  Biotics Score™
                 </p>
               </div>
-              {/* Identity badge */}
+              {/* Identity badge. The "Higher than X% of people" line below it is
+                * gone: a Biotics Score™ is the person's own number and does not
+                * need a population ranking to mean something — and the ranking on
+                * offer was synthetic. The badge keeps its own bottom margin so
+                * nothing collapses. */}
               <div className="mt-4 flex flex-col items-center gap-1.5">
                 <div className="flex items-center gap-2 rounded-full border border-border bg-secondary/40 px-4 py-1.5">
                   <span className="text-sm font-bold text-foreground">{identityLabel.word}</span>
                 </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  Higher than <strong>{percentile}%</strong> of people
-                </p>
               </div>
             </div>
 

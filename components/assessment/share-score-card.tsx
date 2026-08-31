@@ -54,7 +54,7 @@ export function ShareScoreCard({ result }: ShareScoreCardProps) {
   }
   const focusLabel = focusLabels[focusKey] ?? focusKey
 
-  const shareText = `I took the EatoBiotics Food System Assessment and my Biotics Score is ${overall}/100 — I'm a ${identityLabel.word} ${identityLabel.emoji} and scored higher than ${percentile}% of people. My current focus is ${focusLabel}. Take yours:`
+  const shareText = `I took the EatoBiotics Food System Assessment and my Biotics Score is ${overall}/100 — I'm a ${identityLabel.word} ${identityLabel.emoji}. My current focus is ${focusLabel}. Take yours:`
 
   const shareUrl = typeof window !== "undefined"
     ? window.location.origin + "/assessment"
@@ -141,13 +141,15 @@ export function ShareScoreCard({ result }: ShareScoreCardProps) {
       {/* Expanded state */}
       {expanded && (
         <div className="border-t border-border px-5 pb-5 pt-4 space-y-4">
-          {/* Identity + percentile summary */}
+          {/* Identity summary. The population comparison that sat here came
+            * from a synthetic distribution — see lib/percentile.ts — so the row
+            * now names the score it is actually about. */}
           <div className="flex items-center gap-3 rounded-xl bg-secondary/40 px-4 py-3">
             <span className="text-2xl">{identityLabel.emoji}</span>
             <div>
               <p className="text-sm font-bold text-foreground">{identityLabel.word}</p>
               <p className="text-xs text-muted-foreground">
-                Higher than <strong>{percentile}%</strong> of people with typical eating habits
+                Your Biotics Score™ is <strong>{overall}</strong>/100
               </p>
             </div>
           </div>
