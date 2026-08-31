@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: "How EatoBiotics collects, uses, and protects your personal data.",
 }
 
-const LAST_UPDATED = "27 August 2026"
+const LAST_UPDATED = "31 August 2026"
 const CONTACT_EMAIL = "hello@eatobiotics.com"
 const COMPANY_NAME = "EatoBiotics"
 const COMPANY_JURISDICTION = "Republic of Ireland"
@@ -112,7 +112,7 @@ export default function PrivacyPolicyPage() {
               { label: "Supabase", text: "Our database and authentication provider. Your account data, scores, and meal records are stored on Supabase servers hosted in the EU." },
               { label: "Anthropic (Claude AI)", text: "We send meal descriptions and report context to Anthropic's Claude API to generate analysis and personalised recommendations. Data sent is limited to what is necessary for the analysis. Anthropic's data usage policy applies." },
               { label: "OpenAI", text: "Used only by the Plate Builder, to generate recipes and recipe images from the ingredients you choose. Your assessment answers and reports are not sent to OpenAI." },
-              { label: "Stripe", text: "Our payment processor, for the one-time report purchase and for any membership billing. We never receive your card details. Your assessment answers, scores and profile are not sent to Stripe: the checkout session carries only a random reference to the results we hold ourselves, the product you bought, and the time you agreed to us starting straight away. Earlier versions did send your score, sub-scores, profile and email to Stripe; that has been removed." },
+              { label: "Stripe", text: "Our payment processor, for the one-time report purchase and for any membership billing. We never receive your card details. Your assessment answers, scores and profile are not sent to Stripe: the checkout session carries only a random reference to the results we hold ourselves, the product you bought, and the time you asked us to start. Earlier versions did send your score, sub-scores, profile and email to Stripe; that has been removed." },
               { label: "Resend", text: "Our email delivery provider. Used to send account, report, and notification emails." },
               { label: "Vercel", text: "Our hosting provider. The application runs on Vercel's infrastructure, and Vercel Analytics records anonymous page-view statistics when you accept analytics cookies." },
               { label: "PostHog", text: "Product analytics, hosted in the EU. Records how the Service is used. Only loaded if you accept analytics cookies; form inputs are masked." },

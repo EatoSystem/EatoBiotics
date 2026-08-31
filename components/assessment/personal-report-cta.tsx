@@ -1,10 +1,15 @@
 "use client"
 
 import {
-  ACKNOWLEDGEMENT_FIELD,
-  ACKNOWLEDGEMENT_REQUIRED_MESSAGE,
-  WithdrawalAcknowledgement,
-} from "@/components/assessment/withdrawal-acknowledgement"
+  IMMEDIATE_START_FIELD,
+  IMMEDIATE_START_REQUIRED_MESSAGE,
+  ImmediateStartRequest,
+} from "@/components/assessment/immediate-start-request"
+import { HealthConsentCheckbox } from "@/components/health-consent-checkbox"
+import {
+  HEALTH_CONSENT_FIELD,
+  HEALTH_CONSENT_REQUIRED_MESSAGE,
+} from "@/lib/health-consent"
 import { useState } from "react"
 import Link from "next/link"
 import { ArrowRight, Check } from "lucide-react"
@@ -21,12 +26,20 @@ interface PersonalReportCtaProps {
 export function PersonalReportCta({ result }: PersonalReportCtaProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  // Unticked by default — a pre-ticked box is not consent.
-  const [acknowledged, setAcknowledged] = useState(false)
+  // Two separate questions, both unticked by default — a pre-ticked box is
+  // neither a request nor consent. They were one sentence until this change;
+  // bundling a processing consent into a commercial request is what made the
+  // consent record quote a statement the buyer had never been shown.
+  const [startNow, setStartNow] = useState(false)
+  const [healthConsent, setHealthConsent] = useState(false)
 
   async function handlePurchase() {
-    if (!acknowledged) {
-      setError(ACKNOWLEDGEMENT_REQUIRED_MESSAGE)
+    if (!healthConsent) {
+      setError(HEALTH_CONSENT_REQUIRED_MESSAGE)
+      return
+    }
+    if (!startNow) {
+      setError(IMMEDIATE_START_REQUIRED_MESSAGE)
       return
     }
     setLoading(true)
@@ -47,7 +60,8 @@ export function PersonalReportCta({ result }: PersonalReportCtaProps) {
           // any selected add-on (null for the legacy standalone flow).
           foundationType: resolvedFoundation(),
           selectedAddon: getJourney().selectedAddon,
-          [ACKNOWLEDGEMENT_FIELD]: true,
+          [HEALTH_CONSENT_FIELD]: true,
+          [IMMEDIATE_START_FIELD]: true,
         }),
       })
 
@@ -129,11 +143,14 @@ export function PersonalReportCta({ result }: PersonalReportCtaProps) {
             ))}
           </ul>
 
-          <WithdrawalAcknowledgement checked={acknowledged} onChange={setAcknowledged} />
+          <div className="space-y-3">
+            <HealthConsentCheckbox checked={healthConsent} onChange={setHealthConsent} />
+            <ImmediateStartRequest checked={startNow} onChange={setStartNow} />
+          </div>
 
           <button
             onClick={handlePurchase}
-            disabled={loading || !acknowledged}
+            disabled={loading || !healthConsent || !startNow}
             className="w-full flex items-center justify-center gap-2 rounded-2xl py-4 text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             style={{
               background:
@@ -147,7 +164,7 @@ export function PersonalReportCta({ result }: PersonalReportCtaProps) {
               </>
             ) : (
               <>
-                Begin My Food System Consultation — €49 <ArrowRight size={16} />
+                Pay €49 &amp; Begin My Consultation <ArrowRight size={16} />
               </>
             )}
           </button>
@@ -180,7 +197,7 @@ export function PersonalReportCta({ result }: PersonalReportCtaProps) {
       </div>
 
       <p className="text-center text-xs text-muted-foreground/50">
-        Secure payment via Stripe · Instant access · No subscription required
+        Secure payment via Stripe · Full refund within 14 days · No subscription required
       </p>
     </div>
   )

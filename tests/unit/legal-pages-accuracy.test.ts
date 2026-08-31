@@ -14,11 +14,19 @@
  */
 import { describe, it, expect } from "vitest"
 import { readFileSync, readdirSync, statSync } from "node:fs"
+import { copyOf } from "./helpers/marketing-language"
 import { join } from "node:path"
 
 const TERMS = readFileSync("app/terms/page.tsx", "utf8")
 const PRIVACY = readFileSync("app/privacy/page.tsx", "utf8")
-const CTA = readFileSync("components/assessment/withdrawal-acknowledgement.tsx", "utf8")
+const CTA = readFileSync("components/assessment/immediate-start-request.tsx", "utf8")
+const HEALTH_CONTROL = readFileSync("components/health-consent-checkbox.tsx", "utf8")
+// The rendered copy, not the source. This control's doc comment quotes the
+// retired waiver sentence in order to explain what replaced it, so a negative
+// rule run against raw source fires on its own explanation. copyOf also joins
+// wrapped JSX lines, which the positive rules need — the refund sentence spans
+// three source lines.
+const CTA_COPY = copyOf(CTA)
 
 /* ── Which processors does the code actually reach? ─────────────────────── */
 
@@ -122,11 +130,49 @@ describe("the Terms describe the live offer", () => {
     )
   })
 
-  it("carries the EU right-of-withdrawal position", () => {
-    // Immediate supply of digital content requires express consent plus an
-    // acknowledgement that the 14-day right is lost. Neither was stated.
-    expect(TERMS).toMatch(/14-day right to cancel|right to cancel/i)
-    expect(TERMS).toMatch(/statutory rights/i)
+  it("states the 14-day full-refund policy, from purchase", () => {
+    // This assertion used to require the OPPOSITE sentence — that the 14-day
+    // right ends once supply begins. That position was argued from an
+    // exception for digital content supplied immediately, and this product is
+    // not supplied immediately: section 4 has always said the report is
+    // created after the Consultation. EatoBiotics now refunds in full for 14
+    // days from purchase instead, so the guard flips with the policy.
+    expect(TERMS).toMatch(/within 14 days of purchase/)
+    expect(TERMS).toMatch(/full refund/i)
+  })
+
+  it("does not claim the report is supplied at checkout", () => {
+    expect(TERMS).not.toMatch(/made available immediately/i)
+    expect(TERMS).not.toMatch(/lose (the|your) 14-day right/i)
+    expect(TERMS).not.toMatch(/waiv\w* .{0,30}right to cancel/i)
+  })
+
+  it("does not tie the refund to report generation", () => {
+    // The retired boundary. A buyer who finished the Consultation was told the
+    // right no longer applied; under the new policy the only boundary is 14
+    // days from purchase.
+    expect(TERMS).not.toMatch(/before your report is generated/i)
+    expect(TERMS).not.toMatch(/the 14-day right no longer applies/i)
+  })
+
+  it("keeps a statutory-rights savings clause and does not claim to be exhaustive", () => {
+    // The policy is voluntary. Saying so is what stops it reading as a
+    // restatement — or a ceiling — of what the law already gives.
+    expect(TERMS).toMatch(/does not limit your statutory consumer rights/i)
+    expect(TERMS).toMatch(/does not affect any rights you may have under consumer law/i)
+  })
+
+  it("promises no revocation mechanism that does not exist", () => {
+    // There is no charge.refunded handler and no refund state on profiles, so
+    // a refund does not automatically end access today. "may end" is the
+    // honest tense until one exists.
+    expect(TERMS).toMatch(/paid EatoBiotics access may end/)
+    expect(TERMS).not.toMatch(/paid EatoBiotics access will end/)
+  })
+
+  it("gives a practical way to cancel without a special form", () => {
+    expect(TERMS).toMatch(/hello@eatobiotics\.com/)
+    expect(TERMS).toMatch(/there is no special form/i)
   })
 
   it("does not offer refunds only at our discretion", () => {
@@ -161,13 +207,31 @@ describe("the last-updated dates move with the content", () => {
   })
 })
 
-describe("the checkout acknowledgement the Terms promise exists", () => {
-  it("states the consequence the Terms describe", () => {
-    // Terms sections 4 and 5 say the buyer is asked at checkout. The per-caller
-    // wiring and the server-side refusal are covered in
-    // checkout-acknowledgement.test.ts; this only pins that the control's copy
+describe("the checkout asks two questions, and neither is a waiver", () => {
+  it("asks to start now, and says the refund survives it", () => {
+    // The per-caller wiring and the server-side refusal are covered in
+    // checkout-acknowledgement.test.ts; this pins only that the control's copy
     // says what the Terms say it says.
-    expect(CTA).toMatch(/14-day right to cancel/)
-    expect(CTA).toContain("ACKNOWLEDGEMENT_FIELD")
+    expect(CTA_COPY).toMatch(/Start my Personal Food System Consultation now/)
+    expect(CTA_COPY).toMatch(/full refund if I cancel within 14 days of purchase/)
+    expect(CTA, "the wire field the route checks").toContain("IMMEDIATE_START_FIELD")
+  })
+
+  it("no longer tells the buyer they give anything up", () => {
+    expect(CTA_COPY).not.toMatch(/lose the 14-day right/i)
+    expect(CTA_COPY).not.toMatch(/right to cancel/i)
+    expect(CTA_COPY).not.toMatch(/acknowledgedImmediateSupply/)
+  })
+
+  it("collects the health consent through the shared control, not this one", () => {
+    // Checkout was the one collection point that did not use the shared
+    // control: it bundled the health consent into the withdrawal sentence and
+    // then recorded the hash of HEALTH_CONSENT_STATEMENT — a statement the
+    // buyer had never been shown. The hash exists to say what was agreed, so
+    // showing different words defeats the record.
+    expect(HEALTH_CONTROL).toContain("HEALTH_CONSENT_STATEMENT")
+    expect(CTA_COPY, "the start request must not restate the health consent").not.toMatch(
+      /health-related data/i,
+    )
   })
 })

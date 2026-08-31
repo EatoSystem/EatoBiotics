@@ -9,7 +9,12 @@ import {
   type PaidReportTier,
 } from "@/lib/paid-report-session"
 import { getSupabase } from "@/lib/supabase"
-import { recordHealthConsent } from "@/lib/health-consent"
+import {
+  HEALTH_CONSENT_FIELD,
+  HEALTH_CONSENT_REQUIRED_MESSAGE,
+  hasHealthConsent,
+  recordHealthConsent,
+} from "@/lib/health-consent"
 
 const TIER_CONFIG = {
   // The single one-time report offering. The legacy starter/full/premium tiers
@@ -45,7 +50,7 @@ export async function POST(req: NextRequest) {
       email,
       foundationType,
       selectedAddon,
-      acknowledgedImmediateSupply,
+      requestedImmediateStart,
     } = body as {
       tier?: PaidReportTier
       overall?: number
@@ -54,20 +59,43 @@ export async function POST(req: NextRequest) {
       email?: string
       foundationType?: string
       selectedAddon?: string
-      acknowledgedImmediateSupply?: boolean
+      requestedImmediateStart?: boolean
     }
 
-    // Express consent to immediate supply of digital content, without which the
-    // 14-day right to cancel is not lost (Consumer Rights Directive; Irish
-    // Consumer Rights Act 2022). Terms sections 4 and 5 state that this is asked
-    // at checkout, so it has to be true of every path that reaches Stripe — a
-    // checkbox in one caller is neither an enforcement point nor a record.
-    if (acknowledgedImmediateSupply !== true) {
+    // Two questions, checked separately, because they are two different things.
+    //
+    // They used to be one field: `acknowledgedImmediateSupply`, which carried a
+    // consent to immediate supply AND stood in for the health-data consent. That
+    // conflation is why `recordHealthConsent` below wrote the hash of
+    // HEALTH_CONSENT_STATEMENT against a buyer who had been shown different
+    // words — the hash exists precisely so a record says what was agreed.
+    //
+    // The immediate-supply half is gone with the policy behind it. EatoBiotics
+    // refunds €49 in full for 14 days from purchase whether or not the report
+    // has been generated (Terms section 5), so nothing is waived here; what is
+    // left is a request to start now rather than wait.
+    //
+    // Both are checked before Stripe is called, so a request that fails either
+    // check reaches no payment page and nobody is charged. That is also what
+    // makes it safe to refuse the retired field shape outright: a browser
+    // holding a stale bundle gets an error and a reload, not a charge. An alias
+    // would not have helped it anyway — the old client sends no health consent,
+    // so it fails the check below regardless — and accepting the old field for
+    // BOTH would let it skip the health checkbox and record a statement it never
+    // displayed, which is the defect being fixed.
+    if (!hasHealthConsent(body?.[HEALTH_CONSENT_FIELD])) {
+      return NextResponse.json(
+        { error: HEALTH_CONSENT_REQUIRED_MESSAGE, code: "health_consent_required" },
+        { status: 400 },
+      )
+    }
+
+    if (requestedImmediateStart !== true) {
       return NextResponse.json(
         {
           error:
-            "Please confirm you're asking us to prepare your report straight away before continuing to payment.",
-          code: "acknowledgement_required",
+            "Please confirm you'd like to start your Consultation now before continuing to payment.",
+          code: "immediate_start_required",
         },
         { status: 400 },
       )
@@ -133,12 +161,21 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // The checkout acknowledgement covers both consents in one statement: the
-    // buyer asks for immediate supply AND agrees their answers are
-    // health-related data used to produce the report. Recording them here, from
-    // the text they actually saw, avoids asking a second time for something
-    // already agreed — and puts the record somewhere durable rather than only
-    // in Stripe metadata.
+    // The health consent, recorded from the statement the buyer was actually
+    // shown: checkout now renders the same HealthConsentCheckbox as the four
+    // other collection points, so the hash written here matches the words on
+    // screen. It lands in `consents`, not in Stripe — whether someone consented
+    // to health-data processing is not a payment fact, and #244 exists because
+    // buyer-describing data had drifted into the payment processor.
+    //
+    // Note: this no-ops without an email, and the /assessment/results caller is
+    // the only one that sends one. The Mind and Family results pages reach
+    // checkout through personal-report-cta.tsx, which has no email in scope —
+    // those buyers consented at their assessment intro instead (sources
+    // assessment_mind / assessment_family), so a lawful basis exists; what is
+    // missing is the deep_assessment-sourced row. Plumbing the email through
+    // means touching the Mind and Family results components, which is out of
+    // scope here and is recorded as a follow-up.
     const consentEmail = email?.toLowerCase().trim() || null
     if (consentEmail) {
       await recordHealthConsent(supabase, { email: consentEmail, source: "deep_assessment" })
@@ -170,11 +207,14 @@ export async function POST(req: NextRequest) {
         // The only reference to the buyer's answers that Stripe ever sees.
         [SUMMARY_TOKEN_KEY]: summaryToken,
         report_tier: reportTier,
-        // The durable record that the buyer asked for immediate supply. Kept on
-        // the session because that object survives independently of our
-        // database, and the consent needs to outlive the request that gave it.
-        acknowledged_immediate_supply: "true",
-        acknowledged_at: new Date().toISOString(),
+        // The durable record that the buyer asked to start now. Kept on the
+        // session because that object survives independently of our database,
+        // and the request needs to outlive the call that made it. Sessions
+        // created before this change carry acknowledged_immediate_supply /
+        // acknowledged_at instead; nothing reads either key, so those stay as
+        // they are rather than being rewritten.
+        requested_immediate_start: "true",
+        requested_at: new Date().toISOString(),
       },
       ...(email ? { customer_email: email.toLowerCase().trim() } : {}),
       allow_promotion_codes: true,

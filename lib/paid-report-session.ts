@@ -56,10 +56,14 @@ export const STRIPE_METADATA_VALUE_LIMIT = 500
 const SUMMARY_METADATA_KEY = "result_summary"
 const SUMMARY_CHUNK_COUNT_KEY = "result_summary_parts"
 const SUMMARY_CHUNK_PREFIX = "result_summary_"
-// Stripe allows 50 metadata keys. The checkout route adds, at most: the chunk
-// count, foundation_type, selected_addon, acknowledged_immediate_supply and
-// acknowledged_at — five. 43 leaves two spare rather than landing exactly on
-// the limit, which is where 45 put it once the consent record was added.
+// Stripe allows 50 metadata keys. The checkout route writes four in total:
+// the summary token, report_tier, requested_immediate_start and requested_at.
+// (This comment used to name a five-key worst case including foundation_type,
+// selected_addon and the retired acknowledged_immediate_supply / acknowledged_at
+// pair. The first two stopped being written when #244 moved the summary out of
+// Stripe; the last two were renamed when the immediate-supply waiver was
+// retired. 43 still leaves headroom, and lowering it further is not worth a
+// change to a decoder that older sessions depend on.)
 //
 // Lowering the ceiling also narrows what the decoder accepts, which is safe: a
 // realistic summary measures two chunks (the €49 outage in #243 was a 660-char

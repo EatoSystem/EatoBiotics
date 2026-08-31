@@ -184,10 +184,11 @@ describe("POST /api/checkout", () => {
       email: "Buyer@Example.com",
       foundationType: "you",
       selectedAddon: "glucose",
-      // Checkout now requires express consent to immediate supply; without it
-      // the route refuses before Stripe is called. See the dedicated tests in
-      // checkout-acknowledgement.test.ts.
-      acknowledgedImmediateSupply: true,
+      // Checkout requires two answers — the health-data consent and a request
+      // to start now — and refuses before Stripe is called without either.
+      // See the dedicated tests in checkout-acknowledgement.test.ts.
+      healthDataConsent: true,
+      requestedImmediateStart: true,
     }))
 
     expect(res.status).toBe(200)
@@ -210,10 +211,13 @@ describe("POST /api/checkout", () => {
     expect(params.metadata.foundation_type).toBeUndefined()
     expect(params.metadata.selected_addon).toBeUndefined()
 
-    // The consent record lives on the session, so it survives independently of
-    // our database.
-    expect(params.metadata.acknowledged_immediate_supply).toBe("true")
-    expect(params.metadata.acknowledged_at).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+    // The record of the start request lives on the session, so it survives
+    // independently of our database. The health consent deliberately does NOT:
+    // its home is the `consents` table, and whether someone consented to
+    // health-data processing is not a payment fact.
+    expect(params.metadata.requested_immediate_start).toBe("true")
+    expect(params.metadata.requested_at).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+    expect(params.metadata.health_data_consent).toBeUndefined()
 
     // Nothing in the metadata may carry the profile prose, the email, or a score.
     const metadataBlob = JSON.stringify(params.metadata)

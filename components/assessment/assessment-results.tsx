@@ -1,10 +1,15 @@
 "use client"
 
 import {
-  ACKNOWLEDGEMENT_FIELD,
-  ACKNOWLEDGEMENT_REQUIRED_MESSAGE,
-  WithdrawalAcknowledgement,
-} from "@/components/assessment/withdrawal-acknowledgement"
+  IMMEDIATE_START_FIELD,
+  IMMEDIATE_START_REQUIRED_MESSAGE,
+  ImmediateStartRequest,
+} from "@/components/assessment/immediate-start-request"
+import { HealthConsentCheckbox } from "@/components/health-consent-checkbox"
+import {
+  HEALTH_CONSENT_FIELD,
+  HEALTH_CONSENT_REQUIRED_MESSAGE,
+} from "@/lib/health-consent"
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import {
@@ -193,8 +198,12 @@ interface AssessmentResultsProps {
 export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: AssessmentResultsProps) {
   const { overall, profile, insights, nextActions, subScores } = result
   const [loading, setLoading] = useState(false)
-  // Unticked by default — a pre-ticked box is not consent.
-  const [acknowledged, setAcknowledged] = useState(false)
+  // Two separate questions, both unticked by default — a pre-ticked box is
+  // neither a request nor consent. They were one sentence until this change;
+  // bundling a processing consent into a commercial request is what made the
+  // consent record quote a statement the buyer had never been shown.
+  const [startNow, setStartNow] = useState(false)
+  const [healthConsent, setHealthConsent] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // Lottery winner code copy state
@@ -223,8 +232,12 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
   /* ── Checkout helpers ─────────────────────────────────────────────── */
 
   async function handlePurchase(tier: string = "personal") {
-    if (!acknowledged) {
-      setError(ACKNOWLEDGEMENT_REQUIRED_MESSAGE)
+    if (!healthConsent) {
+      setError(HEALTH_CONSENT_REQUIRED_MESSAGE)
+      return
+    }
+    if (!startNow) {
+      setError(IMMEDIATE_START_REQUIRED_MESSAGE)
       return
     }
     setLoading(true)
@@ -246,7 +259,8 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
           profile,
           subScores,
           email: leadEmail,
-          [ACKNOWLEDGEMENT_FIELD]: true,
+          [HEALTH_CONSENT_FIELD]: true,
+          [IMMEDIATE_START_FIELD]: true,
         }),
       })
       const data = await res.json()
@@ -505,11 +519,14 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
                 </ul>
 
                 {/* CTA button */}
-                <WithdrawalAcknowledgement checked={acknowledged} onChange={setAcknowledged} />
+                <div className="space-y-3">
+                  <HealthConsentCheckbox checked={healthConsent} onChange={setHealthConsent} />
+                  <ImmediateStartRequest checked={startNow} onChange={setStartNow} />
+                </div>
 
                 <button
                   onClick={() => handlePurchase("personal")}
-                  disabled={loading || !acknowledged}
+                  disabled={loading || !healthConsent || !startNow}
                   className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 brand-gradient"
                 >
                   {loading ? (
@@ -519,7 +536,7 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
                     </>
                   ) : (
                     <>
-                      Begin My Food System Consultation — €49
+                      Pay €49 &amp; Begin My Consultation
                       <ArrowRight size={16} />
                     </>
                   )}
