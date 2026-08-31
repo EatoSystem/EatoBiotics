@@ -20,10 +20,28 @@ import { REPORT_OFFER_FEATURES } from "@/lib/report/offer"
 
 interface PersonalReportCtaProps {
   result: AssessmentResult
+  /**
+   * The buyer's email, when the flow rendering this already has one.
+   *
+   * Both current callers do: Mind and Family results already receive it as
+   * `leadEmail` and already use it for SaveResultsCard. It was simply never
+   * passed here, so `/api/checkout` received no email — and recordHealthConsent
+   * no-ops without one. The buyer ticked the health-consent box and no
+   * deep_assessment row was written for it.
+   *
+   * Optional, not required: a future caller may legitimately have no email,
+   * and a required prop would push it to invent one. Absent, the request body
+   * is exactly what it was before this prop existed.
+   *
+   * Not normalised here. app/api/checkout/route.ts lowercases and trims before
+   * recording, and recordHealthConsent lowercases again; a third pass on the
+   * client would be a second place to keep in step for no gain.
+   */
+  email?: string
 }
 
 
-export function PersonalReportCta({ result }: PersonalReportCtaProps) {
+export function PersonalReportCta({ result, email }: PersonalReportCtaProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // Two separate questions, both unticked by default — a pre-ticked box is
@@ -60,6 +78,11 @@ export function PersonalReportCta({ result }: PersonalReportCtaProps) {
           // any selected add-on (null for the legacy standalone flow).
           foundationType: resolvedFoundation(),
           selectedAddon: getJourney().selectedAddon,
+          // Sent when the caller has it, so the consent the buyer just gave
+          // gets a record. Omitted rather than sent as null when it does not:
+          // the route reads `email?.toLowerCase()`, so either shape works, but
+          // an absent key keeps the no-email body byte-identical to before.
+          ...(email ? { email } : {}),
           [HEALTH_CONSENT_FIELD]: true,
           [IMMEDIATE_START_FIELD]: true,
         }),

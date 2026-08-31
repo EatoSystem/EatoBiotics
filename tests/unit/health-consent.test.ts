@@ -19,6 +19,7 @@ import { join } from "node:path"
 import {
   HEALTH_CONSENT_FIELD,
   HEALTH_CONSENT_SOURCES,
+  type HealthConsentSource,
   HEALTH_CONSENT_STATEMENT,
   HEALTH_CONSENT_VERSION,
   hasHealthConsent,
@@ -29,7 +30,10 @@ import {
 const mockGetSupabase = vi.fn()
 vi.mock("@/lib/supabase", () => ({ getSupabase: () => mockGetSupabase() }))
 vi.mock("@/lib/supabase-server", () => ({ getUser: () => Promise.resolve(null) }))
-vi.mock("@/lib/stripe-server", () => ({ stripe: { checkout: { sessions: { create: vi.fn() } } } }))
+const mockCheckoutCreate = vi.fn()
+vi.mock("@/lib/stripe-server", () => ({
+  stripe: { checkout: { sessions: { create: (...a: unknown[]) => mockCheckoutCreate(...a) } } },
+}))
 vi.mock("@/lib/email/send", () => ({ sendEmail: vi.fn().mockResolvedValue({ ok: true }) }))
 vi.mock("@/lib/statsig-server", () => ({ logServerEvent: vi.fn() }))
 vi.mock("@/lib/rate-limit", () => ({
@@ -71,6 +75,12 @@ beforeEach(() => {
   vi.clearAllMocks()
   supabase = makeClient()
   mockGetSupabase.mockReturnValue(supabase.client)
+  vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_key")
+  mockCheckoutCreate.mockResolvedValue({
+    id: "cs_test_1",
+    url: "https://checkout.stripe.com/c/pay/cs_test_1",
+    livemode: false,
+  })
 })
 
 /* ── The statement and its record ───────────────────────────────────────── */
@@ -194,6 +204,103 @@ describe("the routes require consent before storing health data", () => {
     expect(await res.json()).toMatchObject({ code: "health_consent_required" })
   })
 
+  /* Checkout was the one route this file never covered, which is how the
+     Mind/Family gap survived: the consent was checked but its RECORD depended
+     on an email nothing was sending. Asserting the check without the row is
+     the shape of test that misses that. */
+  const CHECKOUT_BODY = {
+    tier: "personal",
+    overall: 56,
+    subScores: { feed: 44, seed: 66, heal: 67 },
+    profile: { type: "Emerging Balance", tagline: "A tagline.", description: "A description." },
+  }
+
+  async function postCheckout(body: Record<string, unknown>) {
+    const { POST } = await import("@/app/api/checkout/route")
+    return POST(post("http://localhost/api/checkout", body))
+  }
+
+  it("checkout records the consent against the buyer's email", async () => {
+    const res = await postCheckout({
+      ...CHECKOUT_BODY,
+      email: "Buyer@Example.com",
+      [HEALTH_CONSENT_FIELD]: true,
+      requestedImmediateStart: true,
+    })
+
+    expect(res.status).toBe(200)
+    const consent = supabase.writes.find((w) => w.table === "consents")
+    expect(consent, "the tick must leave a record, not just pass a check").toBeTruthy()
+    expect(consent!.payload).toMatchObject({
+      email: "buyer@example.com",
+      kind: "health_processing",
+      source: "deep_assessment",
+    })
+    // The hash of the statement actually rendered — checkout shows the shared
+    // HealthConsentCheckbox, so the record and the screen agree.
+    expect((consent!.payload as { statement_hash: string }).statement_hash).toBe(
+      healthConsentStatementHash(),
+    )
+  })
+
+  it("checkout refuses without the consent and writes nothing", async () => {
+    const res = await postCheckout({
+      ...CHECKOUT_BODY,
+      email: "buyer@example.com",
+      requestedImmediateStart: true,
+    })
+
+    expect(res.status).toBe(400)
+    expect(await res.json()).toMatchObject({ code: "health_consent_required" })
+    expect(supabase.writes).toHaveLength(0)
+    expect(mockCheckoutCreate, "no payment page may exist").not.toHaveBeenCalled()
+  })
+
+  it("checkout still refuses without the immediate-start request", async () => {
+    // The other half of the split contract. Threading an email through must
+    // not weaken either check.
+    const res = await postCheckout({
+      ...CHECKOUT_BODY,
+      email: "buyer@example.com",
+      [HEALTH_CONSENT_FIELD]: true,
+    })
+
+    expect(res.status).toBe(400)
+    expect(await res.json()).toMatchObject({ code: "immediate_start_required" })
+    expect(supabase.writes.find((w) => w.table === "consents")).toBeUndefined()
+  })
+
+  it("checkout still completes, without a record, when no email is available", async () => {
+    // Pinned as the honest current behaviour rather than left implicit. A
+    // consent row needs an identifier (the `consents` CHECK requires an email
+    // or a user id), so with neither there is nothing to write — and refusing
+    // the purchase over it would be a policy change, not a bug fix. If a third
+    // caller ever arrives with no email, this test says what happens.
+    const res = await postCheckout({
+      ...CHECKOUT_BODY,
+      [HEALTH_CONSENT_FIELD]: true,
+      requestedImmediateStart: true,
+    })
+
+    expect(res.status).toBe(200)
+    expect(supabase.writes.find((w) => w.table === "consents")).toBeUndefined()
+  })
+
+  it("checkout sends the payment processor no consent data", async () => {
+    await postCheckout({
+      ...CHECKOUT_BODY,
+      email: "buyer@example.com",
+      [HEALTH_CONSENT_FIELD]: true,
+      requestedImmediateStart: true,
+    })
+
+    const [params] = mockCheckoutCreate.mock.calls[0] as [{ metadata: Record<string, string> }]
+    // The record belongs in `consents`. Whether someone consented to
+    // health-data processing is not a payment fact.
+    expect(Object.keys(params.metadata)).not.toContain("health_data_consent")
+    expect(JSON.stringify(params.metadata)).not.toMatch(/healthDataConsent|health_processing/)
+  })
+
   it("waitlist still accepts a bare email signup", async () => {
     // A bare { email } carries no health data, so requiring consent there would
     // be asking for permission to process something we are not processing.
@@ -207,18 +314,36 @@ describe("the routes require consent before storing health data", () => {
 
 /* ── Every surface asks ─────────────────────────────────────────────────── */
 
-const CONSENT_SURFACES = [
-  "components/assessment/assessment-intro.tsx",
-  "components/mind-assessment/mind-assessment-intro.tsx",
-  "components/family-assessment/family-assessment-intro.tsx",
-  "components/waitlist/discover-flow.tsx",
-]
+/**
+ * Every surface that asks, mapped to the source it records under.
+ *
+ * This was a bare list of the four intros, with the count asserted as
+ * `SOURCES.length === SURFACES.length + 1` and a comment reading
+ * "+1 = deep_assessment" — i.e. one source with no surface, because checkout
+ * folded its consent into the withdrawal acknowledgement instead of rendering
+ * the shared control. That stopped being true when checkout was split into two
+ * questions. Arithmetic standing in for a relationship goes stale silently;
+ * naming the relationship does not.
+ */
+const CONSENT_SURFACES: Record<string, HealthConsentSource> = {
+  "components/assessment/assessment-intro.tsx": "assessment_gut",
+  "components/mind-assessment/mind-assessment-intro.tsx": "assessment_mind",
+  "components/family-assessment/family-assessment-intro.tsx": "assessment_family",
+  "components/waitlist/discover-flow.tsx": "waitlist",
+  // Both checkout callers. They reach /api/checkout, which records
+  // deep_assessment.
+  "components/assessment/assessment-results.tsx": "deep_assessment",
+  "components/assessment/personal-report-cta.tsx": "deep_assessment",
+}
 
 describe("every health-data entry point asks", () => {
-  for (const file of CONSENT_SURFACES) {
+  for (const file of Object.keys(CONSENT_SURFACES)) {
     it(`${file} renders the shared control, unticked`, () => {
       const source = readFileSync(file, "utf8")
-      expect(source).toContain("HealthConsentCheckbox")
+      // Matched as rendered JSX with its props. `toContain` on the bare name
+      // matches the import line, so deleting the render leaves it green —
+      // a sabotage case walked through exactly that in the previous pass.
+      expect(source).toMatch(/<HealthConsentCheckbox\s+checked=/)
       expect(source).toContain("useState(false)")
     })
   }
@@ -248,9 +373,10 @@ describe("every health-data entry point asks", () => {
   })
 
   it("covers every source the code can record", () => {
-    // The source list and the surfaces must not drift apart: a source with no
-    // surface means a flow nobody asks on.
-    expect(HEALTH_CONSENT_SOURCES).toHaveLength(CONSENT_SURFACES.length + 1) // +1 = deep_assessment
-    expect(HEALTH_CONSENT_SOURCES).toContain("deep_assessment")
+    // A source with no surface is a flow nobody asks on; a surface recording a
+    // source that does not exist is a row that will never validate. Both
+    // directions, by name rather than by count.
+    const covered = new Set(Object.values(CONSENT_SURFACES))
+    expect([...covered].sort()).toEqual([...HEALTH_CONSENT_SOURCES].sort())
   })
 })

@@ -249,6 +249,74 @@ describe("every live checkout caller asks both questions", () => {
   }
 })
 
+/* ── The email that makes the consent record possible ───────────────────── */
+
+/**
+ * A consent that is checked but not recorded is not an audit trail.
+ *
+ * /api/checkout only records the health consent when the request carries an
+ * email, and `PersonalReportCta` — the checkout surface on the Mind and Family
+ * results pages — sent none. Both of those pages already HELD the address (they
+ * pass it to SaveResultsCard); it simply stopped one component short. So the
+ * route check passed, the buyer ticked the box, and no deep_assessment row was
+ * written.
+ *
+ * Asserted as a CHAIN rather than at one link. Pinning only that the CTA
+ * forwards `email` would stay green if a caller stopped passing it, which is
+ * the failure that actually happened.
+ */
+const EMAIL_CHAIN: { file: string; must: RegExp; why: string }[] = [
+  {
+    file: "components/mind-assessment/mind-assessment-client.tsx",
+    must: /leadEmail=\{lead\?\.email\}/,
+    why: "the Mind client must hand its lead email to the results page",
+  },
+  {
+    file: "components/mind-assessment/mind-assessment-results.tsx",
+    must: /<PersonalReportCta[^>]*email=\{leadEmail\}/,
+    why: "Mind results must pass it on to the checkout surface",
+  },
+  {
+    file: "components/family-assessment/family-assessment-client.tsx",
+    must: /leadEmail=\{lead\?\.email\}/,
+    why: "the Family client must hand its lead email to the results page",
+  },
+  {
+    file: "components/family-assessment/family-assessment-results.tsx",
+    must: /<PersonalReportCta[^>]*email=\{leadEmail\}/,
+    why: "Family results must pass it on to the checkout surface",
+  },
+  {
+    file: "components/assessment/personal-report-cta.tsx",
+    must: /\.\.\.\(email \? \{ email \} : \{\}\)/,
+    why: "the checkout surface must put it in the request body",
+  },
+]
+
+describe("the buyer's email reaches the consent recorder", () => {
+  for (const { file, must, why } of EMAIL_CHAIN) {
+    it(`${file}: ${why}`, () => {
+      expect(readFileSync(file, "utf8")).toMatch(must)
+    })
+  }
+
+  it("the You path already sent one, and still does", () => {
+    // /assessment renders AssessmentResults directly rather than through
+    // PersonalReportCta, so it was never part of the gap. Pinned so a later
+    // consolidation of the two surfaces cannot quietly drop it.
+    const source = readFileSync("components/assessment/assessment-results.tsx", "utf8")
+    expect(source).toMatch(/email:\s*leadEmail/)
+  })
+
+  it("the email is not normalised on the client", () => {
+    // app/api/checkout lowercases and trims before recording, and
+    // recordHealthConsent lowercases again. A third pass here would be a
+    // second place to keep in step for no gain.
+    const source = readFileSync("components/assessment/personal-report-cta.tsx", "utf8")
+    expect(source).not.toMatch(/email\.toLowerCase\(\)/)
+  })
+})
+
 describe("the start-request copy is stated once", () => {
   it("asks to start, names the refund, and says where the answers stay", () => {
     const control = copyOf(

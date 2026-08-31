@@ -168,14 +168,18 @@ export async function POST(req: NextRequest) {
     // to health-data processing is not a payment fact, and #244 exists because
     // buyer-describing data had drifted into the payment processor.
     //
-    // Note: this no-ops without an email, and the /assessment/results caller is
-    // the only one that sends one. The Mind and Family results pages reach
-    // checkout through personal-report-cta.tsx, which has no email in scope —
-    // those buyers consented at their assessment intro instead (sources
-    // assessment_mind / assessment_family), so a lawful basis exists; what is
-    // missing is the deep_assessment-sourced row. Plumbing the email through
-    // means touching the Mind and Family results components, which is out of
-    // scope here and is recorded as a follow-up.
+    // This no-ops without an email, so every caller that has one must send it.
+    // For a while only /assessment/results did: Mind and Family reach checkout
+    // through personal-report-cta.tsx, which took no email prop, so those
+    // buyers ticked the box and no deep_assessment row was written. Both
+    // results components already held the address for SaveResultsCard; it is
+    // now passed on. A lawful basis was never the issue — they consented at
+    // their assessment intro (assessment_mind / assessment_family) — the
+    // missing thing was a record of the action they took here.
+    //
+    // Fail-open, deliberately: the boolean is discarded, as it is at the other
+    // two call sites. A failed audit insert does not block a purchase. See the
+    // note in lib/health-consent.ts.
     const consentEmail = email?.toLowerCase().trim() || null
     if (consentEmail) {
       await recordHealthConsent(supabase, { email: consentEmail, source: "deep_assessment" })
