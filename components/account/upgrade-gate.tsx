@@ -126,7 +126,7 @@ const GATE_CONFIGS: Record<string, GateConfig> = {
       "Your personal gut-health fingerprint",
     ],
     previewRows: [
-      { label: "Average Gut Score",    value: "71/100",             color: "var(--icon-green)" },
+      { label: "Average Meal Biotics Score", value: "71/100",       color: "var(--icon-green)" },
       { label: "Top missing biotic",   value: "Probiotic",          color: "var(--icon-teal)" },
       { label: "Score trend",          value: "↑ Improving",        color: "var(--icon-lime)" },
       { label: "Gut fingerprint",      value: "Strong plant base…", color: "var(--icon-yellow)" },

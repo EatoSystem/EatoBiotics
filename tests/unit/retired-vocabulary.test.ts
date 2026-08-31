@@ -122,10 +122,25 @@ const RETIRED: Array<[string, RegExp]> = [
     "an unsupported population comparison",
     /\b(higher|better|more)\s+than\s+(\{|\$\{|<strong>)?[\w.\s{}$<>/-]{0,24}%?\s*(<\/strong>)?\s*%?\s*of\s+(people|users|members)\b|\btop\s+(\{|\$\{|\d)[\w.\s{}$-]{0,24}%/i,
   ],
+  // The purchased 30 days, badged as a trial. Specific on purpose — the word
+  // "trial" alone is a legitimate internal tier id that appears in type
+  // unions and DB values throughout.
+  ["included access badged as a trial", /\b\d+[- ]day trial\b|\bfree trial\b/i],
   [
     "a vague comparative claim about other people",
     /\b(higher|better|healthier)\s+than\s+most\s+(people|users|members)\b|\babove\s+average\s+(gut|score|for)\b/i,
   ],
+  // A rank quantified in WORDS rather than digits. The first draft of the
+  // numeric rule missed "places you in the top third of people who take this
+  // assessment" on the public sample report — same claim, no digit in it.
+  [
+    "a word-quantified population rank",
+    /\btop\s+(third|half|quarter|tenth|fifth)\b|\b(bottom|lower)\s+(third|half|quarter)\s+of\s+(people|users)\b/i,
+  ],
+  // The free product is the Food System Assessment. "EatoBiotics Assessment"
+  // is a fourth name for it, and a customer meeting two of them cannot tell
+  // whether they are the same thing.
+  ["a competing name for the free product", /\bEatoBiotics Assessment\b/],
   ["retired report titles", /\b(full|starter|premium) report\b/i],
   ["Grow/Restore/Transform as a current offer", /\bstart (grow|restore|transform)\b|\b(grow|restore|transform) plan\b/i],
   ["Deep Assessment as a product title", /\bdeep assessment\b/i],
@@ -234,6 +249,71 @@ function retiredHits(): string[] {
   }
   return hits.sort()
 }
+
+describe("the account dashboards score by biotic, not by historical dimension", () => {
+  /*
+   * The defect: /account-you rendered scored bars for Plant Diversity,
+   * Feeding, Live Foods, Consistency and Feeling — the stored sub_scores keys
+   * — as the customer's scoring model. A customer's Biotics Score™ breaks into
+   * three biotics.
+   *
+   * This is a TEST, not a vocabulary rule, and that is the point. A rule
+   * matching "plant diversity" fires on ten legitimate surfaces — "you eat a
+   * good variety of plant foods", "your plant diversity has been strong" —
+   * which is ordinary biology, not a score model. What makes it a MODEL is the
+   * five appearing together as a scored set. So the check is: how many of the
+   * five does this file render, and does it derive three biotics instead.
+   *
+   * The dimensions may still drive focus logic, prompts and recommendations —
+   * `deriveReportPillars` is exactly that, deriving the three from the five.
+   */
+  const DIMENSIONS = ["Plant Diversity", "Feeding", "Live Foods", "Consistency", "Feeling"]
+  const DASHBOARDS = [
+    "components/account/dashboard-client.tsx",
+    "components/account/live-dashboard.tsx",
+  ].filter(existsSync)
+
+  it.each(DASHBOARDS)("%s does not present the five dimensions as a scored set", (file) => {
+    const copy = copyOf(readFileSync(file, "utf8"))
+    const present = DIMENSIONS.filter((d) => new RegExp(`\\b${d}\\b`, "i").test(copy))
+    expect(
+      present.length,
+      `${file} renders ${present.length} of the five historical dimensions (${present.join(", ")}) — four or more reads as the scoring model`,
+    ).toBeLessThan(4)
+  })
+
+  it("derives the three biotics from the shared helper rather than a new mapping", () => {
+    // deriveReportPillars already backed the paid-report card before this
+    // change. Reusing it is what stops the bars and the card disagreeing.
+    const src = readFileSync("components/account/dashboard-client.tsx", "utf8")
+    expect(src, "the dashboard must derive biotics via the shared helper").toMatch(
+      /deriveReportPillars\(/,
+    )
+    for (const b of ["Prebiotics", "Probiotics", "Postbiotics"]) {
+      expect(readFileSync("components/account/dashboard-client-data.ts", "utf8")).toContain(b)
+    }
+  })
+})
+
+describe("the synthetic percentile module warns rather than invites", () => {
+  it("carries no customer-style example and no 'accurate-feeling' framing", () => {
+    // The previous pass reported this header as rewritten. It was not: the
+    // script that rewrote it threw before writing, and the claim was reported
+    // without re-reading the file. This test is why that cannot recur.
+    const src = readFileSync("lib/percentile.ts", "utf8")
+    // The two phrases may appear ONLY inside the paragraph explaining that they
+    // were removed, which names itself.
+    const explanation = "The header this replaces"
+    const beforeExplanation = src.split(explanation)[0]
+    expect(beforeExplanation, "stale framing above its own explanation").not.toMatch(
+      /accurate-feeling/i,
+    )
+    expect(beforeExplanation).not.toMatch(/you beat \d+% of people/i)
+    expect(src, "must state it is not observed data").toMatch(/not observed data|assumed distribution/i)
+    expect(src, "must forbid customer display").toMatch(/never be shown to a customer/i)
+    expect(src, "the label helper must stay deleted").not.toMatch(/export function getPercentileLabel/)
+  })
+})
 
 describe("the surface manifest is real", () => {
   it("names only files that exist, with no empty group", () => {

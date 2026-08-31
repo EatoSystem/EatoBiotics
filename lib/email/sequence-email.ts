@@ -59,7 +59,7 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
       return {
         subject: `Your Biotics Score™ is ${score}/100`,
         headline: `${firstName}, your Biotics Score™ is ${score}/100`,
-        body: `You've completed the EatoBiotics Assessment and your score reflects something real about how your food system is working right now. Your profile is <strong>${profileType}</strong> — and below you'll see exactly how your three Biotics compare.<br /><br />Prebiotics, Probiotics, and Postbiotics each measure a different dimension of your food system. The one with the lowest score is usually the most useful place to start.`,
+        body: `You've completed your Food System Assessment and your Biotics Score™ reflects something real about how your food system is working right now. Your profile is <strong>${profileType}</strong> — and below you'll see exactly how your three Biotics compare.<br /><br />Prebiotics, Probiotics, and Postbiotics each measure a different dimension of your food system. The one with the lowest score is usually the most useful place to start.`,
         cta: "See My Score Breakdown",
         ctaUrl: `${baseUrl}/assessment`,
         showScores: true,

@@ -3,9 +3,14 @@
 import { useState } from "react"
 import { TrendingUp, TrendingDown, Minus, ChevronDown, ChevronUp } from "lucide-react"
 
+/*
+ * Customer-facing focus labels → the biotic pathway the internal dimension
+ * feeds, matching deriveReportPillars. The dimension still PICKS the focus;
+ * naming it to the customer taught the retired five-dimension score model.
+ */
 const PILLAR_LABELS: Record<string, string> = {
-  diversity: "Plant Diversity", feeding: "Feeding", adding: "Live Foods",
-  consistency: "Consistency", feeling: "Body Awareness",
+  diversity: "Prebiotics", feeding: "Prebiotics", adding: "Probiotics",
+  consistency: "Postbiotics", feeling: "Postbiotics",
 }
 
 const PILLAR_NEXT_ACTIONS: Record<string, string> = {

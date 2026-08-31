@@ -68,6 +68,11 @@ export const MEAL_SURFACES = [
   "components/analyse/share-meal-card.tsx",
   "app/analyse/result/[hash]/page.tsx",
   "app/api/og/meal-scan/route.tsx",
+  // The route-colocated OG image for a shared meal. Missed by the first
+  // manifest and by every guard before it, which is how "GUT SCORE" survived
+  // on the image a customer actually posts. A route's opengraph-image.tsx is
+  // as customer-visible as its page.tsx.
+  "app/analyse/result/[hash]/opengraph-image.tsx",
 ]
 
 /**
@@ -83,6 +88,23 @@ export const ACCOUNT_SURFACES = [
   "components/account/dashboard-client.tsx",
   "components/account/report-bridge-card.tsx",
   "components/account/day8-challenge-card.tsx",
+  // Not a component: a DATA module whose labels are rendered verbatim by the
+  // dashboards (it carried the customer-facing "30-Day Trial" badge). A copy
+  // source counts as a surface.
+  "components/account/dashboard-client-data.ts",
+  // Both render directly on /account-you and both carried the five-dimension
+  // model independently of the dashboard that mounts them — which is exactly
+  // why the first correction pass missed them. A component is a surface.
+  "components/account/progress-chart.tsx",
+  "components/account/score-progress-card.tsx",
+  // The focus-label sources. Each keeps its own map keyed by the internal
+  // dimension and each rendered that dimension name to the customer; they were
+  // found by looking at the RENDERED page, not the source, which is the lesson.
+  "components/account/welcome-screen.tsx",
+  "components/account/goal-progress-card.tsx",
+  "components/account/monthly-progress-card.tsx",
+  "components/account/seven-day-guide.tsx",
+  "components/account/upgrade-gate.tsx",
 ]
 
 /**
@@ -101,6 +123,25 @@ export const EMAIL_SURFACES = [
   "lib/email/paid-report-email.ts",
   "lib/email/meal-analysis-email.ts",
   "app/api/email/nurture/route.ts",
+]
+
+/**
+ * Publicly reachable sample reports.
+ *
+ * `/report` and `/report-you` explain the product to someone deciding whether
+ * to buy it, so their vocabulary is current-product vocabulary. `/report`'s
+ * shared metadata also covers Family and Mind, whose naming is deferred — it is
+ * corrected to neutral wording rather than to a You-specific name, so including
+ * it here forces no Family/Mind decision.
+ *
+ * `components/report/demo-report.tsx` is deliberately ABSENT: it is the shared
+ * renderer for all three sample reports, and guarding it would mean either
+ * making Family/Mind naming decisions or weakening a rule to accommodate them.
+ * The You data lives in app/report-you/page.tsx, which is guarded.
+ */
+export const SAMPLE_REPORT_SURFACES = [
+  "app/report/page.tsx",
+  "app/report-you/page.tsx",
 ]
 
 /** Public marketing and commercial pages. */
@@ -139,6 +180,7 @@ export const CUSTOMER_SURFACES: Record<string, string[]> = {
   account: ACCOUNT_SURFACES,
   email: EMAIL_SURFACES,
   marketing: MARKETING_SURFACES,
+  sampleReports: SAMPLE_REPORT_SURFACES,
 }
 
 /** Flat list of customer-copy surfaces. AI prompts are NOT included. */

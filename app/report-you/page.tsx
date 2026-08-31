@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   robots: { index: false },
   title: "Sample Report — The Food System Inside You | EatoBiotics",
   description:
-    "See a full sample EatoBiotics personal gut health report — your Prebiotics · Probiotics · Postbiotics scores, key insights, 7-day plan, 5 foods, and a 30-day roadmap.",
+    "See a full sample Personal Food System Report — your Biotics Score™ across Prebiotics, Probiotics and Postbiotics, key insights, a 7-day plan, five foods, and a 30-day roadmap.",
 }
 
 const YOU_DATA: DemoReportData = {
@@ -22,9 +22,9 @@ const YOU_DATA: DemoReportData = {
   tagline:
     "Your gut system is developing real momentum — you have genuine strengths to build on and clear levers to pull.",
   opening:
-    "Your food system is further along than most. A score of 68 places you in the top third of people who take this assessment, and your Prebiotics and Postbiotics scores are particularly strong. The opportunity ahead is focused and specific: your Probiotics score is the widest gap, and closing it supports the rest.",
+    "A score of 68 shows a developing Food System with clear strengths to build on. Your Prebiotics and Postbiotics are the strong parts of this picture. The opportunity ahead is focused and specific: your Probiotics score is the widest gap, and closing it supports the rest.",
   scoreInterpretation:
-    "A score of 68 reflects a gut system that functions reasonably well day-to-day but is operating below its potential. You eat a good variety of plant foods (Prebiotics: 72) and your body shows signs of recovery and rhythm (Postbiotics: 78), but your intake of fermented and probiotic-rich foods is noticeably low (Probiotics: 45). This creates a one-sided system — you're feeding the microbiome but not actively seeding it with the bacterial diversity it needs to thrive. The good news is that Probiotics is the most responsive pillar to targeted dietary change. Small, consistent additions are the usual place to start.",
+    "A score of 68 reflects a gut system that functions reasonably well day-to-day but is operating below its potential. You eat a good variety of plant foods (Prebiotics: 72) and your body shows signs of recovery and rhythm (Postbiotics: 78), but your intake of fermented and probiotic-rich foods is noticeably low (Probiotics: 45). This creates a one-sided system — you're feeding the microbiome but not actively seeding it with the bacterial diversity it needs to thrive. The good news is that Probiotics is the pathway most responsive to targeted dietary change. Small, consistent additions are the usual place to start.",
   pillarScores: [
     {
       name: "Prebiotics",
@@ -243,7 +243,7 @@ const YOU_DATA: DemoReportData = {
     {
       week: "Week 3",
       theme: "Build the Rhythm",
-      focus: "Establish consistent daily habits and support your Postbiotics pillar",
+      focus: "Establish consistent daily habits and support your Postbiotics",
       actions: [
         "Set a consistent daily eating window — try 8am–7pm",
         "Add a 10-minute walk after your largest meal every day",
@@ -264,7 +264,7 @@ const YOU_DATA: DemoReportData = {
     },
   ],
   closing:
-    "Your starting point is genuinely strong. A score of 68 with high Prebiotics and Postbiotics scores means you're not starting from scratch — you're filling a specific gap in an otherwise functional system. The roadmap above is designed to close that gap methodically, without overhauling everything you're already doing well. Focus on the Probiotics pillar first, keep the habits you already have, and retake the assessment when you're ready to see what has changed.",
+    "Your starting point is genuinely strong. A score of 68 with high Prebiotics and Postbiotics scores means you're not starting from scratch — you're filling a specific gap in an otherwise functional system. The roadmap above is designed to close that gap methodically, without overhauling everything you're already doing well. Focus on Probiotics first, keep the habits you already have, and retake the assessment when you're ready to see what has changed.",
 }
 
 export default function ReportYouPage() {

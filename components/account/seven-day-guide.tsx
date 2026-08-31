@@ -14,7 +14,7 @@ const PILLAR_PROGRAMS: Record<string, {
   days: Array<{ label: string; action: string; why: string }>
 }> = {
   adding: {
-    title: "Your 7-day Live Foods starter",
+    title: "Your 7-day Probiotics starter",
     days: [
       { label: "Day 1", action: "Add natural live yogurt to breakfast", why: "Yogurt contains Lactobacillus strains that survive to your colon and begin shifting your microbiome within 24 hours." },
       { label: "Day 2", action: "Try a tablespoon of sauerkraut with lunch", why: "Fermented vegetables carry a different bacterial profile to dairy — broadening your microbiome's input." },
@@ -26,7 +26,7 @@ const PILLAR_PROGRAMS: Record<string, {
     ],
   },
   diversity: {
-    title: "Your 7-day Plant Diversity starter",
+    title: "Your 7-day Prebiotics starter",
     days: [
       { label: "Day 1", action: "Count your plants today — aim for 5 different species", why: "Most people eat fewer than 10 plant species per week. Your gut bacteria need at least 20 to maintain resilience." },
       { label: "Day 2", action: "Add a new vegetable you haven't eaten this week", why: "Each new plant species feeds a slightly different microbial family — broadening your gut's defence network." },

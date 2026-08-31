@@ -334,15 +334,27 @@ function TodayTab({
   )
 }
 
-/* ── Pillar config ───────────────────────────────────────────────────── */
+/* ── Biotic display config ───────────────────────────────────────────────
+   This was HERO_PILLARS: five scored bars labelled Plant Diversity, Feeding,
+   Live Foods, Consistency and Feeling. Those five are the ASSESSMENT'S INPUT
+   DIMENSIONS — the stored `sub_scores` keys — not the model a customer is
+   scored against. Rendering them as the primary scored framework on a public
+   page taught a scoring model the product retired.
 
-const HERO_PILLARS = [
-  { key: "diversity" as const,    label: "Plant Diversity", emoji: "🌿", color: "var(--icon-lime)" },
-  { key: "feeding" as const,      label: "Feeding",         emoji: "🍽️",  color: "var(--icon-green)" },
-  { key: "adding" as const,       label: "Live Foods",      emoji: "➕",  color: "var(--icon-teal)" },
-  { key: "consistency" as const,  label: "Consistency",     emoji: "📅", color: "var(--icon-yellow)" },
-  { key: "feeling" as const,      label: "Feeling",         emoji: "💚", color: "var(--icon-orange)" },
-]
+   The three bars below come from `deriveReportPillars`, which is not a new
+   mapping invented here: it already derives exactly this on the paid-report
+   card in this same file (see its other call site), so the public dashboard
+   and the report card now agree rather than showing two different models.
+   Stored sub_scores, q1–q15 and the scoring algorithm are untouched, and the
+   five dimensions still drive focus logic, prompts and recommendations — they
+   are simply no longer taught as the customer's score.
+   ──────────────────────────────────────────────────────────────────────── */
+
+const BIOTIC_EMOJI: Record<string, string> = {
+  Prebiotics: "🌿",
+  Probiotics: "➕",
+  Postbiotics: "✨",
+}
 
 /* ── Hero Pillar Bar (dark bg version) ──────────────────────────────── */
 
@@ -508,16 +520,16 @@ function DashboardHero({
                 </div>
               </div>
 
-              {/* Pillar bars */}
-              {subScores && (
+              {/* Biotic bars — the three pathways a Biotics Score™ breaks into */}
+              {subScores && (deriveReportPillars(subScores)?.length ?? 0) > 0 && (
                 <div className="space-y-3">
-                  {HERO_PILLARS.map((p, i) => (
+                  {deriveReportPillars(subScores)!.map((b, i) => (
                     <HeroPillarBar
-                      key={p.key}
-                      emoji={p.emoji}
-                      label={p.label}
-                      score={Math.round(subScores[p.key])}
-                      color={p.color}
+                      key={b.name}
+                      emoji={BIOTIC_EMOJI[b.name] ?? "•"}
+                      label={b.name}
+                      score={b.score}
+                      color={b.color}
                       index={i}
                     />
                   ))}
@@ -655,23 +667,25 @@ function PillarMiniRing({ score, color }: { score: number; color: string }) {
 }
 
 function PillarScoreCards({ subScores }: { subScores: NonNullable<ReturnType<typeof extractSubScores>> }) {
+  const biotics = deriveReportPillars(subScores)
+  if (!biotics) return null
   return (
     <div className="flex gap-2.5 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-      {HERO_PILLARS.map((p) => (
+      {biotics.map((b) => (
         <div
-          key={p.key}
+          key={b.name}
           className="flex shrink-0 flex-col items-center gap-2 rounded-2xl border bg-card p-3"
-          style={{ minWidth: 88 }}
+          style={{ minWidth: 96 }}
         >
           <div
             className="flex h-9 w-9 items-center justify-center rounded-xl text-lg"
-            style={{ background: `color-mix(in srgb, ${p.color} 18%, transparent)` }}
+            style={{ background: `color-mix(in srgb, ${b.color} 18%, transparent)` }}
           >
-            {p.emoji}
+            {BIOTIC_EMOJI[b.name] ?? "•"}
           </div>
-          <PillarMiniRing score={Math.round(subScores[p.key])} color={p.color} />
+          <PillarMiniRing score={b.score} color={b.color} />
           <span className="text-center text-[9px] font-semibold uppercase tracking-wide text-muted-foreground leading-tight">
-            {p.label}
+            {b.name}
           </span>
         </div>
       ))}
@@ -1121,23 +1135,21 @@ function TodayCard({
   /* Restore — this month's focus + weakest pillar + daily nudge */
   if (membershipTier === "restore") {
     const dailyPrompt = getDailyPrompt(latestSubScores, dailyPromptIndex)
-    const pillarLabels: Record<string, string> = {
-      diversity: "Plant Diversity", feeding: "Feeding", adding: "Live Foods",
-      consistency: "Consistency", feeling: "Feeling",
-    }
-    let weakestPillarLabel = "Live Foods"
-    if (latestSubScores) {
-      let lowestVal = Infinity
-      for (const [k, v] of Object.entries(latestSubScores)) {
-        if (v < lowestVal && pillarLabels[k]) { lowestVal = v; weakestPillarLabel = pillarLabels[k] }
-      }
-    }
+    // Residual leakage from the retired five-dimension model: this rendered
+    // "Your Live Foods score needs attention" to a customer. The internal
+    // dimensions still DRIVE the focus — that is allowed and useful — but the
+    // pathway the customer is shown is one of the three biotics, derived by the
+    // same helper the bars above use so the card and the bars cannot disagree.
+    const focusBiotics = deriveReportPillars(latestSubScores ?? null)
+    const focusLabel = focusBiotics
+      ? focusBiotics.reduce((lo, b) => (b.score < lo.score ? b : lo)).name
+      : "Probiotics"
     return (
       <div className="overflow-hidden rounded-3xl border bg-card">
         <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, var(--icon-teal), var(--icon-green))" }} />
         <div className="p-5">
           <p className="mb-1 text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-teal)" }}>This month&apos;s focus</p>
-          <h3 className="mb-1 font-serif text-base font-semibold text-foreground">Your {weakestPillarLabel} score needs attention</h3>
+          <h3 className="mb-1 font-serif text-base font-semibold text-foreground">Your {focusLabel} are this month&apos;s focus</h3>
           {monthlyGutPlan && (
             <p className="mb-3 text-sm text-muted-foreground leading-relaxed line-clamp-2">
               {monthlyGutPlan.content.slice(0, 120)}{monthlyGutPlan.content.length > 120 ? "…" : ""}

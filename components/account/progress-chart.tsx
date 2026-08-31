@@ -14,12 +14,22 @@ interface ProgressChartProps {
   previous?: PillarScores | null
 }
 
-const PILLARS = [
-  { key: "diversity" as const, label: "Plant Diversity", color: "var(--icon-lime)" },
-  { key: "feeding" as const, label: "Feeding", color: "var(--icon-green)" },
-  { key: "adding" as const, label: "Live Foods", color: "var(--icon-teal)" },
-  { key: "consistency" as const, label: "Consistency", color: "var(--icon-yellow)" },
-  { key: "feeling" as const, label: "Feeling", color: "var(--icon-orange)" },
+/*
+ * Was five rows — Plant Diversity, Feeding, Live Foods, Consistency, Feeling —
+ * each with a Current/Previous bar. That is the retired scoring model rendered
+ * on a public page, and it survived the first pass because it lives in this
+ * component rather than in the dashboard that mounts it.
+ *
+ * The three below use the SAME derivation as `deriveReportPillars` in
+ * dashboard-client-data.ts — Prebiotics from diversity+feeding, Probiotics from
+ * adding, Postbiotics from consistency+feeling — expressed here as a reducer
+ * because this component compares two snapshots and needs the arithmetic on
+ * each. No new mapping is invented; the numbers match the bars elsewhere.
+ */
+const BIOTICS = [
+  { label: "Prebiotics",  of: (p: PillarScores) => Math.round((p.diversity + p.feeding) / 2), color: "var(--icon-green)" },
+  { label: "Probiotics",  of: (p: PillarScores) => Math.round(p.adding),                      color: "var(--icon-orange)" },
+  { label: "Postbiotics", of: (p: PillarScores) => Math.round((p.consistency + p.feeling) / 2), color: "var(--icon-teal)" },
 ]
 
 function DeltaBadge({ delta }: { delta: number }) {
@@ -101,7 +111,7 @@ export function ProgressChart({ current, previous }: ProgressChartProps) {
         {/* Pillar comparison */}
         <div className="rounded-2xl border bg-card p-5">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-foreground">Pillar Breakdown</h3>
+            <h3 className="text-sm font-semibold text-foreground">Biotics Breakdown</h3>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <span className="inline-block h-2 w-4 rounded-full" style={{ background: "var(--icon-green)" }} />
@@ -114,12 +124,12 @@ export function ProgressChart({ current, previous }: ProgressChartProps) {
             </div>
           </div>
           <div className="space-y-5">
-            {PILLARS.map(({ key, label, color }) => {
-              const curr = current[key]
-              const prev = previous[key]
+            {BIOTICS.map(({ label, of, color }) => {
+              const curr = of(current)
+              const prev = of(previous)
               const delta = curr - prev
               return (
-                <div key={key} className="space-y-1.5">
+                <div key={label} className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-foreground">{label}</span>
                     <DeltaBadge delta={delta} />
@@ -158,10 +168,10 @@ export function ProgressChart({ current, previous }: ProgressChartProps) {
   // No previous: simple current bars
   return (
     <div className="rounded-2xl border bg-card p-5">
-      <h3 className="mb-4 text-sm font-semibold text-foreground">Pillar Scores</h3>
+      <h3 className="mb-4 text-sm font-semibold text-foreground">Your Biotics</h3>
       <div className="space-y-3">
-        {PILLARS.map(({ key, label, color }) => (
-          <PillarBar key={key} label={label} score={current[key]} color={color} />
+        {BIOTICS.map(({ label, of, color }) => (
+          <PillarBar key={label} label={label} score={of(current)} color={color} />
         ))}
       </div>
     </div>

@@ -7,12 +7,19 @@ import { TrendingUp, TrendingDown, Minus } from "lucide-react"
    The most powerful retention story the product can tell.
 ────────────────────────────────────────────────────────────────────── */
 
+/*
+ * The internal dimension still picks the biggest mover — that logic is fine and
+ * useful. What the CUSTOMER is told is the biotic pathway that dimension feeds,
+ * matching deriveReportPillars: diversity and feeding → Prebiotics, adding →
+ * Probiotics, consistency and feeling → Postbiotics. Before this, the card said
+ * "Feeding is your biggest mover", naming a score model the product retired.
+ */
 const PILLAR_LABELS: Record<string, string> = {
-  diversity:   "Plant Diversity",
-  feeding:     "Feeding",
-  adding:      "Live Foods",
-  consistency: "Consistency",
-  feeling:     "Feeling",
+  diversity:   "Prebiotics",
+  feeding:     "Prebiotics",
+  adding:      "Probiotics",
+  consistency: "Postbiotics",
+  feeling:     "Postbiotics",
 }
 
 const PILLAR_COLORS: Record<string, string> = {
@@ -183,7 +190,7 @@ export function ScoreProgressCard({
           >
             <span className="font-semibold text-foreground">{PILLAR_LABELS[biggestGain.key]}</span>
             <span className="text-muted-foreground">
-              {" "}is your biggest mover — up {biggestGain.delta} points. That&apos;s a measurable shift in your gut system.
+              {" "}moved most — up {biggestGain.delta} points. That&apos;s a measurable shift in your Food System.
             </span>
           </div>
         )}

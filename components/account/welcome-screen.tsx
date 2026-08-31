@@ -61,12 +61,17 @@ const GOAL_PLANS: Record<string, { headline: string; steps: string[] }> = {
   },
 }
 
+/*
+ * Customer-facing focus labels → the biotic pathway the internal dimension
+ * feeds, matching deriveReportPillars. The dimension still PICKS the focus;
+ * naming it to the customer taught the retired five-dimension score model.
+ */
 const PILLAR_LABELS: Record<string, string> = {
-  diversity:   "Plant Diversity",
-  feeding:     "Feeding",
-  adding:      "Live Foods",
-  consistency: "Consistency",
-  feeling:     "Feeling",
+  diversity:   "Prebiotics",
+  feeding:     "Prebiotics",
+  adding:      "Probiotics",
+  consistency: "Postbiotics",
+  feeling:     "Postbiotics",
 }
 
 const PILLAR_ACTIONS: Record<string, string> = {
