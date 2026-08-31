@@ -1,7 +1,8 @@
 import Link from "next/link"
 import { ArrowRight, Check, ShieldCheck } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
-import { REPORT_OFFER_FEATURES } from "@/lib/report/offer"
+import { REPORT_OFFER_FEATURES, REPORT_PRICE_EUR } from "@/lib/report/offer"
+import { MEMBER_PRICE_EUR } from "@/lib/membership-tiers"
 
 export function MembershipTeaser() {
   return (
@@ -11,10 +12,11 @@ export function MembershipTeaser() {
         <ScrollReveal>
           <div className="mb-12 text-center">
             <h2 className="font-serif text-4xl font-semibold tracking-tight text-foreground sm:text-5xl text-balance">
-              Two ways to start
+              Where it goes from here
             </h2>
             <p className="mt-4 mx-auto max-w-lg text-base text-muted-foreground leading-relaxed">
-              Start with clarity. Continue with a system.
+              Step 1 is your free Food System Assessment — it produces your Biotics Score™.
+              These are the two steps after it.
             </p>
           </div>
         </ScrollReveal>
@@ -22,7 +24,7 @@ export function MembershipTeaser() {
         {/* Two sequential steps */}
         <div className="grid items-stretch gap-6 sm:grid-cols-2 lg:gap-7">
 
-          {/* Step 1 — Food System Report */}
+          {/* Step 2 — the €49 Consultation (step 1 is the free Assessment, named above) */}
           <ScrollReveal delay={60}>
             <div
               className="relative flex h-full flex-col rounded-3xl border-2 bg-card p-8 shadow-lg"
@@ -36,13 +38,13 @@ export function MembershipTeaser() {
                 className="mb-1 text-[10px] font-bold uppercase tracking-widest"
                 style={{ color: "var(--icon-teal)" }}
               >
-                Step 1 · Food System Report
+                Step 2 · Personal Food System Consultation
               </p>
               <p className="mb-1 font-serif text-3xl font-bold text-foreground">
-                €49 <span className="text-base font-normal text-muted-foreground">one-time</span>
+                €{REPORT_PRICE_EUR} <span className="text-base font-normal text-muted-foreground">one-time</span>
               </p>
               <p className="mb-5 text-sm text-muted-foreground">
-                Understand what is driving your gut score and get your personalised 30-day action plan.
+Understand how your Food System works. The Consultation produces your Personal Food System Report, and includes 30 days of EatoBiotics access.
               </p>
               <ul className="mb-6 flex-1 space-y-2.5">
                 {/* A prefix of the shared offer, not a list of its own. The homepage
@@ -61,15 +63,19 @@ export function MembershipTeaser() {
               </ul>
               <Link
                 href="/assessment"
-                className="flex items-center justify-center gap-2 rounded-full py-4 text-base font-semibold text-white transition-all hover:opacity-90 hover:shadow-lg"
+                /* text-center + a horizontal pad: "Begin my Food System
+                 * Consultation" wraps to two lines in this card at 390px, and
+                 * without centring the wrapped lines sit left of the arrow.
+                 * Measured at 390px, not guessed. */
+                className="flex items-center justify-center gap-2 rounded-full px-5 py-4 text-center text-base font-semibold text-white transition-all hover:opacity-90 hover:shadow-lg"
                 style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-teal))" }}
               >
-                Get my Food System Report <ArrowRight size={16} />
+                Begin my Food System Consultation <ArrowRight size={16} className="shrink-0" />
               </Link>
             </div>
           </ScrollReveal>
 
-          {/* Step 2 — Membership (elevated, ongoing system) */}
+          {/* Step 3 — Member (elevated, ongoing system) */}
           <ScrollReveal delay={120}>
             <div
               className="relative flex h-full flex-col rounded-3xl border-2 p-8 pt-9 shadow-2xl"
@@ -93,20 +99,20 @@ export function MembershipTeaser() {
                 className="mb-1 text-[10px] font-bold uppercase tracking-widest"
                 style={{ color: "var(--icon-green)" }}
               >
-                Step 2 · EatoBiotics Membership
+                Step 3 · EatoBiotics Member
               </p>
               <p className="mb-1 font-serif text-3xl font-bold text-foreground">
-                €24.99<span className="text-base font-normal text-muted-foreground">/month</span>
+                €{MEMBER_PRICE_EUR}<span className="text-base font-normal text-muted-foreground">/month</span>
               </p>
               <p className="mb-5 text-sm text-muted-foreground">
-                Keep improving your score, meals, habits, and food confidence week by week.
+Keep building your Food System after your 30 days — score, meals and habits, week by week.
               </p>
               <ul className="mb-6 flex-1 space-y-2.5">
                 {[
                   "Track your score week by week",
                   "Build better meals with ongoing guidance",
                   "Stay accountable with a simple daily system",
-                  "Keep improving after your 30-day plan",
+                  "Keep going after your included 30 days",
                 ].map((f) => (
                   <li key={f} className="flex items-start gap-2.5 text-sm text-muted-foreground">
                     <Check size={13} className="mt-0.5 shrink-0" style={{ color: "var(--icon-green)" }} />
@@ -129,7 +135,7 @@ export function MembershipTeaser() {
         <ScrollReveal delay={220}>
           <p className="mt-6 flex items-center justify-center gap-2 text-center text-xs font-medium text-muted-foreground">
             <ShieldCheck size={14} style={{ color: "var(--icon-green)" }} />
-            30-day money-back guarantee on the Food System Report.
+            30-day money-back guarantee on the Personal Food System Consultation.
           </p>
         </ScrollReveal>
 

@@ -114,7 +114,11 @@ export const DAILY_LIMITS: Record<string, number> = { grow: 2, restore: 5, trans
 
 export const TIER_ACCENT: Record<string, { bg: string; text: string; label: string }> = {
   free:      { bg: "rgba(255,255,255,0.1)",  text: "rgba(255,255,255,0.6)",  label: "Free" },
-  trial:     { bg: "rgba(132,204,22,0.22)",  text: "#bef264",                label: "30-Day Trial" },
+  // DISPLAY LABEL ONLY. The key stays `trial` — it is the membership_tier
+  // value, and the type union, DB rows, webhook, trial_expires_at and every
+  // access check read it. What changed is what a customer is shown: they did
+  // not start a trial, they bought a €49 Consultation that includes 30 days.
+  trial:     { bg: "rgba(132,204,22,0.22)",  text: "#bef264",                label: "30 Days Included" },
   member:    { bg: "rgba(20,184,166,0.22)",  text: "#5eead4",                label: "Member" },
   grow:      { bg: "rgba(132,204,22,0.22)",  text: "#bef264",                label: "Grow Member" },
   restore:   { bg: "rgba(20,184,166,0.22)",  text: "#5eead4",                label: "Restore Member" },

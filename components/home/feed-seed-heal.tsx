@@ -140,8 +140,14 @@ export function FeedSeedHeal() {
                   {p.number}
                 </span>
                 <h3 className="mt-6 font-serif text-xl font-semibold text-foreground">{p.title}</h3>
+                {/* "Inspired by", not the bare science word. Printed alone under
+                  * the action title, "Regenerate / POSTBIOTICS" reads as a rename —
+                  * and Regenerate is an action a person takes, while postbiotics are
+                  * what bacteria produce. The relationship is real; the equation is
+                  * not. The "Scientific foundation:" chip below says the same thing
+                  * the same way. */}
                 <p className="mt-1 text-sm font-semibold uppercase tracking-wider" style={{ color: p.color }}>
-                  {p.science}
+                  Inspired by {p.science}
                 </p>
                 <p className="mt-4 text-sm font-medium leading-relaxed text-foreground">{p.line}</p>
                 <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">{p.description}</p>

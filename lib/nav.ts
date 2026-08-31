@@ -94,7 +94,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Food",
     items: [
       { href: "/food",    label: "Food Library",  description: "Every food profiled for your gut",      icon: UtensilsCrossed },
-      { href: "/analyse", label: "Score My Meal", description: "Describe a plate, get its Biotics score", icon: ScanLine },
+      { href: "/analyse", label: "Score My Meal", description: "Describe a plate, get its Meal Biotics Score", icon: ScanLine },
       { href: "/today",   label: "Today's Food",  description: "A new food spotlight, daily",            icon: Calendar },
     ],
   },

@@ -162,13 +162,13 @@ function EmailCapture({
             Your result is ready
           </h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Meal scored{" "}
+            Meal Biotics Score{" "}
             <span className="font-bold" style={{ color: "var(--icon-green)" }}>
               {score}/100
             </span>
           </p>
           <p className="mt-1.5 text-xs text-muted-foreground/70">
-            Enter your email to unlock your full score and save your result
+            Enter your email to see the full breakdown and save your result
           </p>
         </div>
 
@@ -198,7 +198,7 @@ function EmailCapture({
             {loading ? (
               <Loader2 size={15} className="animate-spin" />
             ) : (
-              <>See My Score <ArrowRight size={14} /></>
+              <>See My Meal Biotics Score <ArrowRight size={14} /></>
             )}
           </button>
         </form>
@@ -334,7 +334,7 @@ function AlreadyUsedWall() {
           className="inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
           style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
         >
-          Get My Full Biotics Score <ArrowRight size={14} />
+          Take My Food System Assessment <ArrowRight size={14} />
         </a>
         <p className="text-xs text-muted-foreground/60">Free · Takes 3 minutes</p>
       </div>

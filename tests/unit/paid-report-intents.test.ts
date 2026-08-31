@@ -74,7 +74,8 @@ const VALID_BODY = {
   email: "buyer@example.com",
   foundationType: "you",
   selectedAddon: "glucose",
-  acknowledgedImmediateSupply: true,
+  healthDataConsent: true,
+  requestedImmediateStart: true,
 }
 
 function jsonReq(body: unknown): NextRequest {
@@ -177,9 +178,9 @@ describe("checkout stores the summary server-side", () => {
     // The real guarantee: an exact allowlist of keys. Nothing describing the
     // buyer can be present if only these four exist.
     expect(Object.keys(metadata).sort()).toEqual([
-      "acknowledged_at",
-      "acknowledged_immediate_supply",
       "report_tier",
+      "requested_at",
+      "requested_immediate_start",
       SUMMARY_TOKEN_KEY,
     ])
 
@@ -198,9 +199,9 @@ describe("checkout stores the summary server-side", () => {
     // score, and pin the two generated fields by SHAPE instead — which is a
     // stronger statement about them than a substring scan ever made.
     expect(metadata[SUMMARY_TOKEN_KEY]).toMatch(/^[0-9a-f]{64}$/)
-    expect(metadata.acknowledged_at).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+    expect(metadata.requested_at).toMatch(/^\d{4}-\d{2}-\d{2}T/)
     const describable = Object.entries(metadata)
-      .filter(([k]) => k !== SUMMARY_TOKEN_KEY && k !== "acknowledged_at")
+      .filter(([k]) => k !== SUMMARY_TOKEN_KEY && k !== "requested_at")
       .map(([, v]) => String(v))
       .join("|")
     expect(describable, "no metadata field may carry the buyer's score").not.toContain("56")

@@ -184,7 +184,7 @@ describe("chapter order and accessibility", () => {
   it.each(ADDON_KEYS)("%s: the lens comes after the loop and before evidence", (addon) => {
     const body = text(web(reportFor(addon)))
     const loop = body.indexOf("30-Day Improvement Loop")
-    const lens = body.indexOf("Your Focus Area")
+    const lens = body.indexOf("Your Lens")
     const evidence = body.indexOf("Where This Comes From")
 
     expect(loop).toBeGreaterThan(-1)

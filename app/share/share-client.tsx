@@ -161,7 +161,7 @@ function ScoreDisplay({
           </svg>
           <div className="absolute text-center">
             <p className="text-5xl font-bold tabular-nums leading-none" style={{ color }}>{score}</p>
-            <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Gut Score</p>
+            <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Biotics Score™</p>
           </div>
         </div>
         <div>
@@ -395,7 +395,7 @@ function ShareCard({ result }: { result: AnalysisResult }) {
         </div>
       </div>
 
-      <p className="font-serif text-lg font-bold text-white">Food System Score</p>
+      <p className="font-serif text-lg font-bold text-white">Biotics Score™</p>
       <p className="mt-1 text-xs text-white/60">Powered by EatoBiotics</p>
 
       {/* Biotics presence dots */}

@@ -43,7 +43,7 @@ export function StartHero() {
                 backgroundClip: "text",
               }}
             >
-              Food System Score?
+              Biotics Score™?
             </span>
           </h1>
         </ScrollReveal>
@@ -58,8 +58,8 @@ export function StartHero() {
         {/* Subheadline */}
         <ScrollReveal delay={150}>
           <p className="mx-auto mt-4 max-w-md text-center text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Discover how your daily food habits are shaping your health,
-            energy, and mind — in under 2 minutes.
+            Take your free Food System Assessment and see how your daily
+            habits are shaping your Prebiotics, Probiotics and Postbiotics.
           </p>
         </ScrollReveal>
 
@@ -70,7 +70,7 @@ export function StartHero() {
               href="/assessment"
               className="brand-gradient w-full max-w-sm inline-flex items-center justify-center gap-2 rounded-full px-8 py-5 text-base font-semibold text-white shadow-xl shadow-icon-green/30 transition-all hover:shadow-2xl hover:shadow-icon-green/40 hover:opacity-90"
             >
-              Check your Food System Score
+              Take my Food System Assessment
               <ArrowRight size={18} />
             </Link>
             <p className="text-xs text-muted-foreground">

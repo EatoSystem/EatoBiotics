@@ -18,7 +18,7 @@ export function StartSolution() {
           </p>
           <h2 className="text-center font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
             The{" "}
-            <span className="brand-gradient-text">Food System Score</span>
+            <span className="brand-gradient-text">Food System Assessment</span>
           </h2>
           <p className="mx-auto mt-5 max-w-md text-center text-base leading-relaxed text-muted-foreground">
             You don&apos;t need more food advice. You need a clearer picture of your system.
@@ -63,9 +63,9 @@ export function StartSolution() {
         {/* Description */}
         <ScrollReveal delay={180}>
           <p className="mt-8 text-center text-sm leading-relaxed text-muted-foreground">
-            The Food System Score measures four pillars —{" "}
-            <strong className="text-foreground">Diversity, Biotics, Consistency, and Rhythm</strong>
-            {" "}— giving you a precise picture of what&apos;s working and exactly where to improve.
+            The Food System Assessment produces your Biotics Score™, broken down across{" "}
+            <strong className="text-foreground">Prebiotics, Probiotics and Postbiotics</strong>
+            {" "}— a picture of what&apos;s working and where to start.
           </p>
         </ScrollReveal>
 
@@ -76,7 +76,7 @@ export function StartSolution() {
               href="/assessment"
               className="inline-flex items-center gap-1.5 text-sm font-semibold text-icon-green transition-colors hover:text-foreground"
             >
-              Check your Food System Score
+              Take my Food System Assessment
               <ArrowRight size={14} />
             </Link>
           </div>

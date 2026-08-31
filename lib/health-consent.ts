@@ -88,8 +88,20 @@ type ConsentInsert = {
  * assessment routes deliberately do NOT fail closed on a write error: the
  * person did consent, refusing their assessment because our bookkeeping failed
  * would be a worse outcome than an incomplete audit trail, and the failure is
- * logged for follow-up. The paid path is the one where a missing record would
- * matter, and there the row is written before generation begins.
+ * logged for follow-up.
+ *
+ * NO CALLER CURRENTLY FAILS CLOSED, the paid path included. All three —
+ * app/api/checkout, app/api/submit-lead, app/api/waitlist — await this and
+ * discard the boolean. That is the intended behaviour and worth stating
+ * plainly, because the sentence above reads like a promise that someone does:
+ * an earlier version of this comment said the paid path was 'the one where a
+ * missing record would matter', which invited exactly that reading. Refusing a
+ * paid checkout because an audit insert failed is worse for the buyer than an
+ * incomplete trail, and the failure is logged either way.
+ *
+ * What checkout DOES guarantee is ordering: the row is written before Stripe is
+ * called and long before generation begins, so a consent recorded here always
+ * precedes the processing it covers.
  */
 export async function recordHealthConsent(
   supabase: ConsentWriter | null,

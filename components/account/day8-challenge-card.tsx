@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { ArrowRight, X, Flame } from "lucide-react"
+import { REPORT_PRICE_EUR } from "@/lib/report/offer"
 
 /* ── Day 8 Challenge Card ────────────────────────────────────────────────
    Shown on the Overview tab after the 7-day guide has ended.
@@ -149,18 +150,24 @@ export function Day8ChallengeCard({
             className="rounded-xl p-4"
             style={{ background: `color-mix(in srgb, ${profileColor} 6%, transparent)` }}
           >
+            {/* `isFree` means no paid tier — which does NOT mean this person
+              * bought the Consultation, so the next product is the Consultation
+              * itself, not a subscription. This block used to sell Grow at
+              * €9.99/mo: a retired price, and a step the customer has not
+              * reached. The challenge mechanics above are untouched. */}
             <p className="text-xs font-semibold text-foreground mb-1">
-              Track your 30-day challenge with Grow
+              Go deeper with your Personal Food System Consultation
             </p>
             <p className="text-xs text-muted-foreground mb-3">
-              Log your meals, watch your score move, and build a streak — €9.99/mo, cancel anytime.
+              Understand how your Food System works — €{REPORT_PRICE_EUR} one-time, and it produces
+              your Personal Food System Report.
             </p>
             <Link
-              href="/pricing?feature=grow"
+              href="/assessment"
               className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:opacity-90"
               style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
             >
-              Start Grow <ArrowRight size={12} />
+              Begin my Consultation <ArrowRight size={12} />
             </Link>
           </div>
         ) : (

@@ -8,7 +8,7 @@ import { OG_ICON_BASE64 } from "@/lib/og-icon"
 // the build. Node functions have no such limit. Matches the sibling Supabase OG
 // route (app/discover/[code]/opengraph-image.tsx), which runs on nodejs too.
 export const runtime = "nodejs"
-export const alt = "EatoBiotics Meal Score"
+export const alt = "EatoBiotics Meal Biotics Score"
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 
@@ -96,7 +96,7 @@ export default async function OGImage({
               }}
             >
               <span style={{ fontSize: "72px", fontWeight: 900, color: scoreColor, lineHeight: 1 }}>{score}</span>
-              <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)", letterSpacing: "2px", marginTop: "4px" }}>GUT SCORE</span>
+              <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.5)", letterSpacing: "1.5px", marginTop: "4px" }}>MEAL BIOTICS SCORE</span>
             </div>
           </div>
 

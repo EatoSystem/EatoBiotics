@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: "The terms and conditions governing use of the EatoBiotics platform.",
 }
 
-const LAST_UPDATED = "27 August 2026"
+const LAST_UPDATED = "31 August 2026"
 const CONTACT_EMAIL = "hello@eatobiotics.com"
 const COMPANY_NAME = "EatoBiotics"
 const GOVERNING_LAW = "Republic of Ireland"
@@ -67,8 +67,8 @@ export default function TermsOfServicePage() {
             <p className="mb-2">EatoBiotics provides:</p>
             <ul className="list-disc space-y-1.5 pl-5">
               {[
-                "A free food system assessment that calculates Biotics scores based on your food habits",
-                "A one-time \u20AC49 personalised Food System Report, with a free 30-day account (see section 4)",
+                "A free Food System Assessment that produces your Biotics Score\u2122 from your food habits",
+                "A one-time \u20AC49 Personal Food System Consultation, which produces your Personal Food System Report and includes 30 days of EatoBiotics access (see section 4)",
                 "Meal analysis powered by AI that scores meals across Prebiotic, Probiotic, and Postbiotic dimensions",
                 "Weekly food system reports summarising your progress",
                 "AI consultation allowing you to ask questions about your food data and reports",
@@ -102,26 +102,42 @@ export default function TermsOfServicePage() {
           {/* 4 */}
           <Section title="4. The Food System Report (one-time purchase)">
             <SubList items={[
-              { label: "What it is", text: "A one-time \u20AC49 purchase: your personalised Food System score, report and plan, built from your assessment answers, plus a free 30-day EatoBiotics account. It is not a subscription and does not renew." },
+              { label: "What it is", text: "A one-time \u20AC49 purchase: the Personal Food System Consultation, a guided digital process that produces your Personal Food System Report and includes 30 days of EatoBiotics access. It is not a subscription and does not renew." },
               { label: "Payment", text: "Taken by Stripe at checkout. We never see or store your card details." },
-              { label: "Delivery", text: "Your report is generated after you complete the deep assessment and is available in your account and by email. If delivery fails we will tell you rather than mark it delivered." },
-              { label: "Immediate access", text: "Because the report is digital content prepared for you and made available immediately, you are asked at checkout to agree to us starting straight away and to acknowledge that doing so ends your 14-day right to cancel. See section 5." },
+              { label: "Delivery", text: "Your report is generated after you complete the Personal Food System Consultation and is available in your account and by email. If delivery fails we will tell you rather than mark it delivered." },
+              { label: "Starting your Consultation", text: "You can begin your Personal Food System Consultation as soon as your payment is confirmed. You do not need to wait until the end of the 14-day cancellation period. Your Personal Food System Report is created after you complete the Consultation. Your \u20AC49 purchase also includes 30 days of EatoBiotics access." },
+              { label: "14-day refund", text: "EatoBiotics currently provides a full refund if you cancel within 14 days of purchase, including where you have already started the Consultation or your personalised report has been generated. This voluntary refund policy does not limit your statutory consumer rights. See section 5." },
               { label: "If something goes wrong", text: "If your report is not delivered, is not the one you paid for, or the purchase was charged in error, contact us and we will put it right or refund you in full." },
             ]} />
           </Section>
 
           {/* 5 */}
-          <Section title="5. Your right to cancel (EU/EEA consumers)">
+          <Section title="5. Cancelling and refunds">
+            {/* The clause this replaces argued the digital-content exception: that
+              * asking for immediate supply ended the 14-day right at checkout. It did
+              * not describe this product — the report is created AFTER the
+              * Consultation, which section 4 has always said. Rather than reword the
+              * exception, EatoBiotics gives the refund outright. The boundary is now
+              * 14 days from purchase, not report generation. */}
             <p className="mb-2">
-              You normally have 14 days to cancel a distance purchase for any reason. Digital
-              content is the exception: once you have asked us to supply it immediately and
-              acknowledged the consequence, that right ends as soon as supply begins.
+              You can cancel your Personal Food System Consultation within 14 days of purchase
+              for any reason and receive a full refund of €49.
+            </p>
+            <p className="mb-2">
+              You do not have to wait 14 days to begin. If you choose to start immediately, you
+              can complete your Consultation and receive your Personal Food System Report during
+              this period without giving up this EatoBiotics 14-day refund policy.
             </p>
             <SubList items={[
-              { label: "Before we start", text: "You can cancel for a full refund at any point before your report is generated \u2014 for example if you have paid but not yet completed the deep assessment." },
-              { label: "After we start", text: "Once your report has been generated, the 14-day right no longer applies, because you asked for it to be prepared immediately and confirmed that at checkout." },
-              { label: "This does not affect", text: "Your statutory rights if what you received is faulty, not as described, or not what you paid for. Those are unaffected by anything in these Terms." },
-              { label: "How to cancel", text: `Email ${CONTACT_EMAIL} from the address you used at checkout.` },
+              // "may end" rather than "will end": no refund automatically revokes
+              // access today — there is no charge.refunded handler and no refund
+              // state on profiles, so refunds are processed manually. Promising
+              // technical revocation that does not exist would be the same class of
+              // error as the clause above.
+              { label: "After a refund", text: "If you cancel and receive a refund, your paid EatoBiotics access may end and you may no longer be able to access your Personal Food System Report through your account." },
+              { label: "After 14 days", text: "After 14 days, we do not normally provide refunds simply because you have changed your mind. This does not affect any rights you may have under consumer law where a product or service is faulty, not as described, not supplied as agreed, or where another statutory remedy applies." },
+              { label: "How refunds are paid", text: "Approved refunds are returned to the original payment method." },
+              { label: "How to cancel", text: `Email ${CONTACT_EMAIL} from the address you used at checkout and tell us you want to cancel. Any clear written request is enough \u2014 there is no special form.` },
             ]} />
           </Section>
 

@@ -80,8 +80,8 @@ const STEPS = [
   {
     number: "02",
     icon: BarChart2,
-    title: "Get your 5-pillar score",
-    description: "See exactly where your food system is strong and where it needs support.",
+    title: "Get your Biotics Score™",
+    description: "Your score across Prebiotics, Probiotics and Postbiotics — where you are strong, and where to start.",
   },
   {
     number: "03",
@@ -203,7 +203,7 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
         >
           <div className="rounded-3xl border border-border bg-background/90 p-6 shadow-xl backdrop-blur-sm sm:p-8">
             <p className="mb-5 text-center font-serif text-lg font-semibold text-foreground">
-              Begin your free assessment
+              Begin your free Food System Assessment
             </p>
 
             <form onSubmit={handleSubmit} noValidate className="space-y-4">
@@ -298,7 +298,7 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
         </div>
       </section>
 
-      {/* ── 5 Pillars preview ─────────────────────────────────────────── */}
+      {/* ── 3 Biotics preview ─────────────────────────────────────────── */}
       <section className="border-t border-border bg-secondary/10 px-6 py-20">
         <div className="mx-auto max-w-3xl">
           <div className="mb-10 text-center">

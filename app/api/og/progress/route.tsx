@@ -22,7 +22,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
 
   const score      = Math.max(0, Math.min(100, parseInt(searchParams.get("score")      ?? "0",  10)))
-  const percentile = Math.max(1, Math.min(99,  parseInt(searchParams.get("percentile") ?? "50", 10)))
+  // Read and ignored: kept so already-shared ?percentile= links still render.
+  void Math.max(1, Math.min(99, parseInt(searchParams.get("percentile") ?? "50", 10)))
   const label      = searchParams.get("label")   ?? "Gut Explorer"
   const emoji      = searchParams.get("emoji")   ?? "🧭"
   const streak     = Math.max(0, parseInt(searchParams.get("streak")  ?? "0", 10))
@@ -127,13 +128,9 @@ export async function GET(request: Request) {
             </span>
           </div>
 
-          {/* Percentile */}
-          <p style={{
-            marginTop: 10, fontSize: 13,
-            color: "rgba(255,255,255,0.38)", textAlign: "center", display: "flex",
-          }}>
-            Better than {percentile}% of people
-          </p>
+          {/* The "Better than X% of people" line that stood here is gone —
+              lib/percentile.ts is synthetic, with no observed population. The
+              query param is still accepted so old shared links render. */}
         </div>
 
         {/* ─── RIGHT PANEL — Journey stats ─── */}

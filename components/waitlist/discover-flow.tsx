@@ -25,7 +25,6 @@ import { CountryLeaderboard } from "@/components/waitlist/country-leaderboard"
 import { WaitlistLangBar } from "@/components/waitlist/waitlist-lang-bar"
 import { useTranslations } from "@/components/i18n/locale-provider"
 import { interpolate } from "@/lib/i18n/config"
-import { getPercentile } from "@/lib/percentile"
 import { resolveMarket, marketByName, DEFAULT_MARKET, type FoodProfile } from "@/lib/market"
 import { foodSet } from "@/lib/foods-by-country"
 import {
@@ -297,9 +296,6 @@ export function DiscoverFlow({ defaultCountry }: { defaultCountry?: string } = {
                 {result.profile.type}
               </h2>
               <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">{result.profile.tagline}</p>
-              <p className="mt-2 text-xs font-semibold text-muted-foreground">
-                {interpolate(tw.reveal.percentile, { pct: getPercentile(result.overall) })}
-              </p>
 
               <div className="mt-6 space-y-3.5 text-left">
                 {ENGINE_ORDER.map((p) => {

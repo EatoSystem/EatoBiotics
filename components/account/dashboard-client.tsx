@@ -209,12 +209,16 @@ function TodayTab({
         <div className="mt-2 flex flex-wrap items-center gap-3">
           {overall !== null && (
             <span className="rounded-full border px-3 py-1 text-sm font-semibold" style={{ color: "var(--icon-green)" }}>
-              Score: {overall}
+              Biotics Score™: {overall}
             </span>
           )}
-          {feedScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Feed: {feedScore}</span>}
-          {seedScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Seed: {seedScore}</span>}
-          {healScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Regenerate: {healScore}</span>}
+          {/* The variables stay feed/seed/heal — they read stored keys. The
+            * LABELS are the three biotics, because these are scores, and Feed /
+            * Seed / Regenerate are actions a person takes. A number beside an
+            * action name turns the action framework into a scoring model. */}
+          {feedScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Prebiotics: {feedScore}</span>}
+          {seedScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Probiotics: {seedScore}</span>}
+          {healScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Postbiotics: {healScore}</span>}
           <span className="rounded-full border px-3 py-1 text-xs text-muted-foreground">Day {dayInPlan} of 30</span>
         </div>
       </div>
@@ -300,8 +304,8 @@ function TodayTab({
         >
           <p className="text-sm font-semibold text-foreground">
             {daysRemaining === 0
-              ? "Your free account has ended."
-              : `${daysRemaining} day${daysRemaining === 1 ? "" : "s"} remaining in your free account.`}
+              ? "Your included 30 days have ended."
+              : `${daysRemaining} day${daysRemaining === 1 ? "" : "s"} remaining in your included 30 days.`}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
             Continue your journey with an EatoBiotics Member plan — €24.99/month.
@@ -330,15 +334,27 @@ function TodayTab({
   )
 }
 
-/* ── Pillar config ───────────────────────────────────────────────────── */
+/* ── Biotic display config ───────────────────────────────────────────────
+   This was HERO_PILLARS: five scored bars labelled Plant Diversity, Feeding,
+   Live Foods, Consistency and Feeling. Those five are the ASSESSMENT'S INPUT
+   DIMENSIONS — the stored `sub_scores` keys — not the model a customer is
+   scored against. Rendering them as the primary scored framework on a public
+   page taught a scoring model the product retired.
 
-const HERO_PILLARS = [
-  { key: "diversity" as const,    label: "Plant Diversity", emoji: "🌿", color: "var(--icon-lime)" },
-  { key: "feeding" as const,      label: "Feeding",         emoji: "🍽️",  color: "var(--icon-green)" },
-  { key: "adding" as const,       label: "Live Foods",      emoji: "➕",  color: "var(--icon-teal)" },
-  { key: "consistency" as const,  label: "Consistency",     emoji: "📅", color: "var(--icon-yellow)" },
-  { key: "feeling" as const,      label: "Feeling",         emoji: "💚", color: "var(--icon-orange)" },
-]
+   The three bars below come from `deriveReportPillars`, which is not a new
+   mapping invented here: it already derives exactly this on the paid-report
+   card in this same file (see its other call site), so the public dashboard
+   and the report card now agree rather than showing two different models.
+   Stored sub_scores, q1–q15 and the scoring algorithm are untouched, and the
+   five dimensions still drive focus logic, prompts and recommendations — they
+   are simply no longer taught as the customer's score.
+   ──────────────────────────────────────────────────────────────────────── */
+
+const BIOTIC_EMOJI: Record<string, string> = {
+  Prebiotics: "🌿",
+  Probiotics: "➕",
+  Postbiotics: "✨",
+}
 
 /* ── Hero Pillar Bar (dark bg version) ──────────────────────────────── */
 
@@ -504,16 +520,16 @@ function DashboardHero({
                 </div>
               </div>
 
-              {/* Pillar bars */}
-              {subScores && (
+              {/* Biotic bars — the three pathways a Biotics Score™ breaks into */}
+              {subScores && (deriveReportPillars(subScores)?.length ?? 0) > 0 && (
                 <div className="space-y-3">
-                  {HERO_PILLARS.map((p, i) => (
+                  {deriveReportPillars(subScores)!.map((b, i) => (
                     <HeroPillarBar
-                      key={p.key}
-                      emoji={p.emoji}
-                      label={p.label}
-                      score={Math.round(subScores[p.key])}
-                      color={p.color}
+                      key={b.name}
+                      emoji={BIOTIC_EMOJI[b.name] ?? "•"}
+                      label={b.name}
+                      score={b.score}
+                      color={b.color}
                       index={i}
                     />
                   ))}
@@ -529,7 +545,6 @@ function DashboardHero({
                 gradientId="dashboard-hero-ring"
                 className="relative h-48 w-48 sm:h-52 sm:w-52"
                 textColor="white"
-                percentile={getPercentile(Math.round(score))}
               />
               {/* Profile type badge */}
               {profileType && (
@@ -554,7 +569,7 @@ function DashboardHero({
                 className="mt-0.5 text-[10px] text-center"
                 style={{ color: "rgba(255,255,255,0.4)" }}
               >
-                {getIdentityLabel(Math.round(score)).word} · Top {100 - getPercentile(Math.round(score))}%
+                {getIdentityLabel(Math.round(score)).word}
               </p>
               {/* Share progress — only when meal history exists */}
               {patterns && (
@@ -652,23 +667,25 @@ function PillarMiniRing({ score, color }: { score: number; color: string }) {
 }
 
 function PillarScoreCards({ subScores }: { subScores: NonNullable<ReturnType<typeof extractSubScores>> }) {
+  const biotics = deriveReportPillars(subScores)
+  if (!biotics) return null
   return (
     <div className="flex gap-2.5 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-      {HERO_PILLARS.map((p) => (
+      {biotics.map((b) => (
         <div
-          key={p.key}
+          key={b.name}
           className="flex shrink-0 flex-col items-center gap-2 rounded-2xl border bg-card p-3"
-          style={{ minWidth: 88 }}
+          style={{ minWidth: 96 }}
         >
           <div
             className="flex h-9 w-9 items-center justify-center rounded-xl text-lg"
-            style={{ background: `color-mix(in srgb, ${p.color} 18%, transparent)` }}
+            style={{ background: `color-mix(in srgb, ${b.color} 18%, transparent)` }}
           >
-            {p.emoji}
+            {BIOTIC_EMOJI[b.name] ?? "•"}
           </div>
-          <PillarMiniRing score={Math.round(subScores[p.key])} color={p.color} />
+          <PillarMiniRing score={b.score} color={b.color} />
           <span className="text-center text-[9px] font-semibold uppercase tracking-wide text-muted-foreground leading-tight">
-            {p.label}
+            {b.name}
           </span>
         </div>
       ))}
@@ -988,7 +1005,7 @@ function AnalyseMealCard({
             Analyse a Meal
           </p>
           <p className="mt-1.5 text-base" style={{ color: "rgba(255,255,255,0.78)" }}>
-            Log what you ate and see how it scores across your 5 pillars
+            Log what you ate and see its Meal Biotics Score across Prebiotics, Probiotics and Postbiotics
           </p>
           {oneLeft && (
             <span
@@ -1046,7 +1063,7 @@ function TodayCard({
           <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, var(--icon-lime), var(--icon-green))" }} />
           <div className="p-5">
             <p className="mb-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">Start your journey</p>
-            <h3 className="mb-2 font-serif text-lg font-semibold text-foreground">Discover your food system score</h3>
+            <h3 className="mb-2 font-serif text-lg font-semibold text-foreground">Discover your Biotics Score™</h3>
             <p className="mb-4 text-sm text-muted-foreground">A free 5-minute assessment reveals your Biotics Score and identifies exactly where your food system needs attention.</p>
             <Link
               href="/assessment"
@@ -1118,23 +1135,21 @@ function TodayCard({
   /* Restore — this month's focus + weakest pillar + daily nudge */
   if (membershipTier === "restore") {
     const dailyPrompt = getDailyPrompt(latestSubScores, dailyPromptIndex)
-    const pillarLabels: Record<string, string> = {
-      diversity: "Plant Diversity", feeding: "Feeding", adding: "Live Foods",
-      consistency: "Consistency", feeling: "Feeling",
-    }
-    let weakestPillarLabel = "Live Foods"
-    if (latestSubScores) {
-      let lowestVal = Infinity
-      for (const [k, v] of Object.entries(latestSubScores)) {
-        if (v < lowestVal && pillarLabels[k]) { lowestVal = v; weakestPillarLabel = pillarLabels[k] }
-      }
-    }
+    // Residual leakage from the retired five-dimension model: this rendered
+    // "Your Live Foods score needs attention" to a customer. The internal
+    // dimensions still DRIVE the focus — that is allowed and useful — but the
+    // pathway the customer is shown is one of the three biotics, derived by the
+    // same helper the bars above use so the card and the bars cannot disagree.
+    const focusBiotics = deriveReportPillars(latestSubScores ?? null)
+    const focusLabel = focusBiotics
+      ? focusBiotics.reduce((lo, b) => (b.score < lo.score ? b : lo)).name
+      : "Probiotics"
     return (
       <div className="overflow-hidden rounded-3xl border bg-card">
         <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, var(--icon-teal), var(--icon-green))" }} />
         <div className="p-5">
           <p className="mb-1 text-xs font-bold uppercase tracking-widest" style={{ color: "var(--icon-teal)" }}>This month&apos;s focus</p>
-          <h3 className="mb-1 font-serif text-base font-semibold text-foreground">Your {weakestPillarLabel} score needs attention</h3>
+          <h3 className="mb-1 font-serif text-base font-semibold text-foreground">Your {focusLabel} are this month&apos;s focus</h3>
           {monthlyGutPlan && (
             <p className="mb-3 text-sm text-muted-foreground leading-relaxed line-clamp-2">
               {monthlyGutPlan.content.slice(0, 120)}{monthlyGutPlan.content.length > 120 ? "…" : ""}
@@ -1232,17 +1247,35 @@ function ScoreHistoryPreview({ score }: { score: number | null }) {
           </div>
         </div>
 
+        {/* Two corrections here.
+          *
+          * Grow is a retired entitlement, not an offer — and the branch it sat
+          * in is keyed on whether a person HAS A SCORE, which is exactly the
+          * stage signal needed: a score means they completed the Assessment, so
+          * the next product is the €49 Consultation. No score means the next
+          * product is the Assessment itself. Neither is Member, which would
+          * only have been right because Grow happened to occupy the card.
+          *
+          * And "Most members improve 8–15 points in their first month of daily
+          * tracking" is gone rather than reworded. Nothing in this repository
+          * substantiates that number or that population, and looking for a way
+          * to justify a sentence is the wrong direction of travel. It is
+          * replaced with what is true and carries no number. */}
         <p className="mb-4 text-sm text-muted-foreground leading-relaxed">
           {score != null
-            ? `Your score is ${Math.round(score)}. With Grow, you'll see exactly which meals are moving it — daily.`
-            : "Track how each of your 5 pillars changes week to week. Most members improve 8–15 points in their first month of daily tracking."}
+            ? `Your Biotics Score™ is ${Math.round(score)}. Your Personal Food System Consultation explains what is driving it.`
+            : "Track how your Biotics Score™ changes over time, across Prebiotics, Probiotics and Postbiotics."}
         </p>
+        {/* Both stages route to /assessment: the Consultation is purchased from
+          * the assessment-results surface (only /api/checkout's two callers can
+          * reach it, and they need the score payload), and someone with no
+          * score starts there anyway. The CTA LABEL is what differs. */}
         <Link
-          href="/pricing"
+          href="/assessment"
           className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
           style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
         >
-          Build the habit <ArrowRight size={13} />
+          {score != null ? "Begin my Consultation" : "Take my Food System Assessment"} <ArrowRight size={13} />
         </Link>
       </div>
     </div>
@@ -1250,7 +1283,7 @@ function ScoreHistoryPreview({ score }: { score: number | null }) {
 }
 
 function MonthlyPlanPreview({ addingScore }: { addingScore: number | null }) {
-  const sampleText = "Your food system this month is showing real momentum. Your plant diversity has been one of your stronger pillars, but your Live Foods score is pulling down your overall Biotics number — this month, that's your primary focus. Fermented foods are the fastest lever you have..."
+  const sampleText = "Your food system this month is showing real momentum. Your Prebiotics have been one of your stronger pathways, but your Probiotics are pulling down your Biotics Score™ — this month, that's your primary focus. Fermented foods are the fastest lever you have..."
 
   return (
     <div className="overflow-hidden rounded-3xl border bg-card">
@@ -1275,8 +1308,8 @@ function MonthlyPlanPreview({ addingScore }: { addingScore: number | null }) {
 
         <p className="mb-4 text-sm text-muted-foreground leading-relaxed">
           {addingScore != null
-            ? `EatoBiotic can build your Live Foods recovery plan — month by month, targeting your biggest opportunity.`
-            : "EatoBiotic can build your personalised gut recovery plan — month by month, targeting your weakest pillar."}
+            ? `EatoBiotic can build your Probiotics plan — month by month, targeting your biggest opportunity.`
+            : "EatoBiotic can build your personalised food-first plan — month by month, targeting your current focus."}
         </p>
         <Link
           href="/pricing"
@@ -1896,11 +1929,13 @@ function OverviewTab({
         setActiveTab={setActiveTab}
       />
 
-      {/* Pillar score mini cards */}
+      {/* Biotic score mini cards. The heading was "Pillar Scores" while the
+        * cards below it already rendered Prebiotics / Probiotics / Postbiotics
+        * — an earlier pass corrected the cards and left their label. */}
       {currentScores && (
         <div>
           <p className="mb-2.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Pillar Scores
+            Your Three Biotics
           </p>
           <PillarScoreCards subScores={currentScores} />
         </div>
@@ -2212,11 +2247,14 @@ function OverviewTab({
           }}
         >
           <p className="mb-1 font-serif text-base font-semibold text-foreground">
-            Your score is {Math.round(latest.overall_score)}. With Grow, you&apos;ll see exactly which meals are moving it — daily.
+            {/* Same stage signal as above: `latest.overall_score` exists, so
+              * this person completed the Assessment and the next product is the
+              * Consultation — not the retired Grow plan, and not Member. */}
+            Your Biotics Score™ is {Math.round(latest.overall_score)}. Your Personal Food System Consultation explains what is driving it.
           </p>
-          <p className="mb-3 text-xs text-muted-foreground">Build a streak. Track your habit. See the numbers move.</p>
+          <p className="mb-3 text-xs text-muted-foreground">Understand your Food System, then put it into practice.</p>
           <Link
-            href="/pricing"
+            href="/assessment"
             className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
             style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
           >
@@ -2597,7 +2635,7 @@ function UpgradePrompt({
         </div>
         <h3 className="mb-2 font-serif text-lg font-semibold text-foreground">Keep the momentum going</h3>
         <p className="mb-4 text-sm text-muted-foreground leading-relaxed">
-          Your free 30-day account gives you a great start. Upgrading to a monthly membership keeps your plan updated, adds meal tracking, and gives you a new 30-day focus plan every month.
+          The 30 days included with your Consultation give you a great start. Continuing as an EatoBiotics Member keeps your plan updated, adds meal tracking, and gives you a new monthly focus.
         </p>
         <div className="flex items-center gap-3">
           <Link
@@ -2670,11 +2708,11 @@ function MembershipTab({
   }> = [
     {
       key: "free",
-      title: "Free Account",
-      price: "Included with report",
+      title: "Included Access",
+      price: "Included with your Consultation",
       perks: [
         "Permanent access to your Food System Report",
-        "EatoBiotics Biotics Score (today)",
+        "Your Biotics Score™ (today)",
         "7-day food system guide",
         "Food library access",
         "Weekly guidance emails",

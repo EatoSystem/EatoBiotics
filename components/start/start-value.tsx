@@ -2,13 +2,13 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 
 const DISCOVERIES = [
   {
-    title: "Your Food System Score",
+    title: "Your Biotics Score™",
     detail: "A single number (0–100) that shows exactly how well your food habits are working for your body right now.",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
   },
   {
     title: "Where your system is already strong",
-    detail: "See the pillars you're already getting right — so you know what to protect.",
+    detail: "See the pathways you're already getting right — so you know what to protect.",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
   },
   {

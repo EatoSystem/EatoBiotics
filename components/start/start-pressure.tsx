@@ -46,7 +46,7 @@ export function StartPressure() {
               href="/assessment"
               className="brand-gradient inline-flex w-full max-w-sm items-center justify-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/30 transition-all hover:opacity-90"
             >
-              Check your Food System Score
+              Take my Food System Assessment
               <ArrowRight size={18} />
             </Link>
             <p className="text-xs text-white/30">

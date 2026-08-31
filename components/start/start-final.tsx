@@ -10,8 +10,8 @@ export function StartFinal() {
           <ScrollReveal>
             <div className="mx-auto mb-6 h-1 w-16 rounded-full brand-gradient" />
             <h2 className="font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
-              Check your{" "}
-              <span className="brand-gradient-text">Food System Score</span>
+              Take your{" "}
+              <span className="brand-gradient-text">Food System Assessment</span>
             </h2>
             <p className="mx-auto mt-4 max-w-sm text-base leading-relaxed text-muted-foreground">
               Free report included &nbsp;·&nbsp; Takes 2 minutes &nbsp;·&nbsp; Instant results
@@ -24,7 +24,7 @@ export function StartFinal() {
                 href="/assessment"
                 className="brand-gradient inline-flex w-full max-w-sm items-center justify-center gap-2 rounded-full px-8 py-5 text-base font-semibold text-white shadow-xl shadow-icon-green/25 transition-all hover:shadow-2xl hover:shadow-icon-green/35 hover:opacity-90"
               >
-                Check your Food System Score
+                Take my Food System Assessment
                 <ArrowRight size={18} />
               </Link>
             </div>

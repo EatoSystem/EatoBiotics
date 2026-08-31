@@ -10,13 +10,13 @@ import { StartFinal } from "@/components/start/start-final"
 import { StickyCta } from "@/components/start/sticky-cta"
 
 export const metadata: Metadata = {
-  title: "What's your Food System Score? | EatoBiotics",
+  title: "What's your Biotics Score™? | EatoBiotics",
   description:
-    "Discover how your daily food habits are shaping your health, energy, and mind. Get your free Food System Score in 2 minutes.",
+    "Take your free Food System Assessment and discover your Biotics Score™ across Prebiotics, Probiotics and Postbiotics — in 2 minutes.",
   openGraph: {
-    title: "What's your Food System Score? | EatoBiotics",
+    title: "What's your Biotics Score™? | EatoBiotics",
     description:
-      "Discover how your daily food habits are shaping your health, energy, and mind. Get your free Food System Score in 2 minutes.",
+      "Take your free Food System Assessment and discover your Biotics Score™ across Prebiotics, Probiotics and Postbiotics — in 2 minutes.",
   },
 }
 

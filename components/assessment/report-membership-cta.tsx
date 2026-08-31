@@ -169,7 +169,12 @@ export function ReportMembershipCTA({
           </span>
           <div>
             <p className="text-sm font-semibold text-foreground capitalize">
-              Your {membershipTier} plan is tracking your progress
+              {/* Never print the raw tier id. `grow` rendered verbatim showed the
+                * customer a retired product name as though it were their current
+                * plan — and a lowercase database value at that. Legacy tiers get
+                * neutral wording rather than a name that reads like an offer;
+                * their access is unchanged. */}
+              {membershipTier === "member" ? "Your Member plan" : "Your existing plan"} is tracking your progress
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
               Use daily meal analyses to monitor the changes from this report

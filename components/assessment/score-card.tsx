@@ -32,8 +32,8 @@ export function ScoreCard({ score, feed, seed, heal, profile }: ScoreCardProps) 
     try {
       if (navigator.share) {
         await navigator.share({
-          title: `My EatoBiotics Score: ${score}/100`,
-          text: `My Prebiotics, Probiotics, and Postbiotics scores are ${feed}, ${seed}, and ${heal}. Take the free EatoBiotics Assessment to get yours.`,
+          title: `My Biotics Score: ${score}/100`,
+          text: `My Prebiotics, Probiotics, and Postbiotics scores are ${feed}, ${seed}, and ${heal}. Take the free Food System Assessment to discover yours.`,
           url: shareUrl,
         })
       } else {

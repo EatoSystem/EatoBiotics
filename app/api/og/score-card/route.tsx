@@ -24,7 +24,8 @@ const BRAND_STRIPE = `linear-gradient(90deg, ${B.lime}, ${B.green}, ${B.teal}, $
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const score      = Math.max(0, Math.min(100, parseInt(searchParams.get("score")      ?? "0",  10)))
-  const percentile = Math.max(1, Math.min(99,  parseInt(searchParams.get("percentile") ?? "50", 10)))
+  // Read and ignored: kept so already-shared ?percentile= links still render.
+  void Math.max(1, Math.min(99, parseInt(searchParams.get("percentile") ?? "50", 10)))
   const label      = searchParams.get("label")   ?? "Gut Explorer"
   const emoji      = searchParams.get("emoji")   ?? "🧭"
 
@@ -131,15 +132,11 @@ export async function GET(request: Request) {
             </span>
           </div>
 
-          {/* Percentile */}
-          <p style={{
-            marginTop: 12,
-            fontSize: 15, color: "rgba(255,255,255,0.45)",
-            textAlign: "center",
-            display: "flex",
-          }}>
-            Higher than {percentile}% of people with typical eating habits
-          </p>
+          {/* The "Higher than X% of people with typical eating habits" line
+              that stood here is gone: lib/percentile.ts is a synthetic normal
+              distribution with no observed population. The `percentile` query
+              param is still ACCEPTED above so cards shared before this change
+              keep rendering; it simply is not printed. */}
         </div>
 
         {/* ─── RIGHT PANEL — CTA ─── */}
@@ -153,14 +150,14 @@ export async function GET(request: Request) {
           gap: 28,
         }}>
 
-          {/* Gut health score label */}
+          {/* Biotics Score label */}
           <div style={{ display: "flex" }}>
             <div style={{
               display: "flex", background: B.lime, color: B.fore,
               fontSize: 12, fontWeight: 800, letterSpacing: "2px",
               textTransform: "uppercase", padding: "6px 14px", borderRadius: 100,
             }}>
-              Gut Health Score
+              Biotics Score™
             </div>
           </div>
 
@@ -170,12 +167,12 @@ export async function GET(request: Request) {
               What's your
             </span>
             <span style={{ fontSize: 52, fontWeight: 800, color: B.green, lineHeight: 0.95, letterSpacing: "-2px", display: "flex" }}>
-              gut score?
+              Biotics Score™?
             </span>
           </div>
 
           <p style={{ fontSize: 18, color: "rgba(255,255,255,0.55)", lineHeight: 1.5, margin: 0, display: "flex" }}>
-            A 2-minute assessment reveals your balance across Prebiotics, Probiotics and Postbiotics.
+            Your free Food System Assessment reveals your balance across Prebiotics, Probiotics and Postbiotics.
           </p>
 
           {/* Brand pills */}

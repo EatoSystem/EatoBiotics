@@ -1,10 +1,15 @@
 "use client"
 
 import {
-  ACKNOWLEDGEMENT_FIELD,
-  ACKNOWLEDGEMENT_REQUIRED_MESSAGE,
-  WithdrawalAcknowledgement,
-} from "@/components/assessment/withdrawal-acknowledgement"
+  IMMEDIATE_START_FIELD,
+  IMMEDIATE_START_REQUIRED_MESSAGE,
+  ImmediateStartRequest,
+} from "@/components/assessment/immediate-start-request"
+import { HealthConsentCheckbox } from "@/components/health-consent-checkbox"
+import {
+  HEALTH_CONSENT_FIELD,
+  HEALTH_CONSENT_REQUIRED_MESSAGE,
+} from "@/lib/health-consent"
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import {
@@ -34,7 +39,6 @@ import { SaveResultsCard } from "./save-results-card"
 import type { AssessmentResult, PillarInsight } from "@/lib/assessment-scoring"
 import type { PillarKey } from "@/lib/assessment-data"
 import { getFoodBySlug } from "@/lib/foods"
-import { getPercentile } from "@/lib/percentile"
 import { getIdentityLabel } from "@/lib/identity-labels"
 import { REPORT_OFFER_FEATURES } from "@/lib/report/offer"
 import { browserCountry, localFoods, fermentedPair, prebioticTrio } from "@/lib/local-foods"
@@ -194,8 +198,12 @@ interface AssessmentResultsProps {
 export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: AssessmentResultsProps) {
   const { overall, profile, insights, nextActions, subScores } = result
   const [loading, setLoading] = useState(false)
-  // Unticked by default — a pre-ticked box is not consent.
-  const [acknowledged, setAcknowledged] = useState(false)
+  // Two separate questions, both unticked by default — a pre-ticked box is
+  // neither a request nor consent. They were one sentence until this change;
+  // bundling a processing consent into a commercial request is what made the
+  // consent record quote a statement the buyer had never been shown.
+  const [startNow, setStartNow] = useState(false)
+  const [healthConsent, setHealthConsent] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // Lottery winner code copy state
@@ -214,8 +222,7 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
   const foods = useLocalFoodSet()
   const interpretationText = fillLocalFoods(INTERPRETATIONS[weakestPillar][scoreBand], foods)
 
-  // Percentile + identity
-  const percentile = getPercentile(overall)
+  // Identity
   const identityLabel = getIdentityLabel(overall)
 
   // Strengths / opportunities for breakdown section
@@ -225,8 +232,12 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
   /* ── Checkout helpers ─────────────────────────────────────────────── */
 
   async function handlePurchase(tier: string = "personal") {
-    if (!acknowledged) {
-      setError(ACKNOWLEDGEMENT_REQUIRED_MESSAGE)
+    if (!healthConsent) {
+      setError(HEALTH_CONSENT_REQUIRED_MESSAGE)
+      return
+    }
+    if (!startNow) {
+      setError(IMMEDIATE_START_REQUIRED_MESSAGE)
       return
     }
     setLoading(true)
@@ -248,7 +259,8 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
           profile,
           subScores,
           email: leadEmail,
-          [ACKNOWLEDGEMENT_FIELD]: true,
+          [HEALTH_CONSENT_FIELD]: true,
+          [IMMEDIATE_START_FIELD]: true,
         }),
       })
       const data = await res.json()
@@ -282,7 +294,7 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
           <div className="mb-6 text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: profile.color }} />
-              Your EatoBiotics Score
+              Your Biotics Score™
             </div>
           </div>
 
@@ -296,7 +308,6 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
                 color={profile.color}
                 gradientId="assessment-ring"
                 profileType={profile.type}
-                percentile={percentile}
               />
               <div className="mt-4 text-center">
                 <p className="text-5xl font-bold tabular-nums leading-none" style={{ color: profile.color }}>
@@ -304,17 +315,18 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
                   <span className="text-xl text-muted-foreground">/100</span>
                 </p>
                 <p className="mt-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                  Overall Score
+                  Biotics Score™
                 </p>
               </div>
-              {/* Identity badge */}
+              {/* Identity badge. The "Higher than X% of people" line below it is
+                * gone: a Biotics Score™ is the person's own number and does not
+                * need a population ranking to mean something — and the ranking on
+                * offer was synthetic. The badge keeps its own bottom margin so
+                * nothing collapses. */}
               <div className="mt-4 flex flex-col items-center gap-1.5">
                 <div className="flex items-center gap-2 rounded-full border border-border bg-secondary/40 px-4 py-1.5">
                   <span className="text-sm font-bold text-foreground">{identityLabel.word}</span>
                 </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  Higher than <strong>{percentile}%</strong> of people
-                </p>
               </div>
             </div>
 
@@ -507,11 +519,14 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
                 </ul>
 
                 {/* CTA button */}
-                <WithdrawalAcknowledgement checked={acknowledged} onChange={setAcknowledged} />
+                <div className="space-y-3">
+                  <HealthConsentCheckbox checked={healthConsent} onChange={setHealthConsent} />
+                  <ImmediateStartRequest checked={startNow} onChange={setStartNow} />
+                </div>
 
                 <button
                   onClick={() => handlePurchase("personal")}
-                  disabled={loading || !acknowledged}
+                  disabled={loading || !healthConsent || !startNow}
                   className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 brand-gradient"
                 >
                   {loading ? (
@@ -521,7 +536,7 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
                     </>
                   ) : (
                     <>
-                      Begin My Food System Consultation — €49
+                      Pay €49 &amp; Begin My Consultation
                       <ArrowRight size={16} />
                     </>
                   )}
@@ -549,7 +564,7 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
               What your report includes
             </h2>
             <p className="mt-2 text-center text-sm text-muted-foreground">
-              Built around your EatoBiotics Score — not a generic template.
+              Built around your Biotics Score™ — not a generic template.
             </p>
           </ScrollReveal>
 
@@ -596,7 +611,7 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
         <div className="mx-auto max-w-3xl">
           <ScrollReveal>
             <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
-              Your Three Pillars
+              Your Three Biotics
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               How your food system performs across Prebiotics, Probiotics, and Postbiotics — the three areas that shape your gut health.

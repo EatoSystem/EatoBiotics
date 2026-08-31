@@ -156,9 +156,19 @@ describe("the retired promises are gone from the whole tree", () => {
  * became six the same way.
  */
 function offerSurfaces(): string[] {
+  // Two shapes, and the second one matters more than it looks. Phase 1 replaced
+  // hard-coded "€49" with `€{REPORT_PRICE_EUR}` on the surfaces that sell it —
+  // which is the right change, and which silently dropped
+  // app/pricing/pricing-client.tsx out of this guard's view. A guard that stops
+  // seeing a surface because that surface got BETTER is worse than no guard:
+  // it reports green over a blind spot. So the interpolation counts as naming
+  // the price, exactly as the literal does.
+  const literal = new RegExp(`€${REPORT_PRICE_EUR}\\b`)
+  const interpolated = /€\$\{REPORT_PRICE_EUR\}/
   return sourceFiles().filter((f) => {
     if (f === "lib/report/offer.ts") return false
-    return new RegExp(`€${REPORT_PRICE_EUR}\\b`).test(copyOf(readFileSync(f, "utf8")))
+    const copy = copyOf(readFileSync(f, "utf8"))
+    return literal.test(copy) || interpolated.test(copy)
   })
 }
 

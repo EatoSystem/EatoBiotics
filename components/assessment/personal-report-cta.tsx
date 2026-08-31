@@ -1,31 +1,63 @@
 "use client"
 
 import {
-  ACKNOWLEDGEMENT_FIELD,
-  ACKNOWLEDGEMENT_REQUIRED_MESSAGE,
-  WithdrawalAcknowledgement,
-} from "@/components/assessment/withdrawal-acknowledgement"
+  IMMEDIATE_START_FIELD,
+  IMMEDIATE_START_REQUIRED_MESSAGE,
+  ImmediateStartRequest,
+} from "@/components/assessment/immediate-start-request"
+import { HealthConsentCheckbox } from "@/components/health-consent-checkbox"
+import {
+  HEALTH_CONSENT_FIELD,
+  HEALTH_CONSENT_REQUIRED_MESSAGE,
+} from "@/lib/health-consent"
 import { useState } from "react"
 import Link from "next/link"
 import { ArrowRight, Check } from "lucide-react"
+import { MEMBER_PRICE_EUR } from "@/lib/membership-tiers"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
 import { resolvedFoundation, getJourney } from "@/lib/assessment/journey"
 import { REPORT_OFFER_FEATURES } from "@/lib/report/offer"
 
 interface PersonalReportCtaProps {
   result: AssessmentResult
+  /**
+   * The buyer's email, when the flow rendering this already has one.
+   *
+   * Both current callers do: Mind and Family results already receive it as
+   * `leadEmail` and already use it for SaveResultsCard. It was simply never
+   * passed here, so `/api/checkout` received no email — and recordHealthConsent
+   * no-ops without one. The buyer ticked the health-consent box and no
+   * deep_assessment row was written for it.
+   *
+   * Optional, not required: a future caller may legitimately have no email,
+   * and a required prop would push it to invent one. Absent, the request body
+   * is exactly what it was before this prop existed.
+   *
+   * Not normalised here. app/api/checkout/route.ts lowercases and trims before
+   * recording, and recordHealthConsent lowercases again; a third pass on the
+   * client would be a second place to keep in step for no gain.
+   */
+  email?: string
 }
 
 
-export function PersonalReportCta({ result }: PersonalReportCtaProps) {
+export function PersonalReportCta({ result, email }: PersonalReportCtaProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  // Unticked by default — a pre-ticked box is not consent.
-  const [acknowledged, setAcknowledged] = useState(false)
+  // Two separate questions, both unticked by default — a pre-ticked box is
+  // neither a request nor consent. They were one sentence until this change;
+  // bundling a processing consent into a commercial request is what made the
+  // consent record quote a statement the buyer had never been shown.
+  const [startNow, setStartNow] = useState(false)
+  const [healthConsent, setHealthConsent] = useState(false)
 
   async function handlePurchase() {
-    if (!acknowledged) {
-      setError(ACKNOWLEDGEMENT_REQUIRED_MESSAGE)
+    if (!healthConsent) {
+      setError(HEALTH_CONSENT_REQUIRED_MESSAGE)
+      return
+    }
+    if (!startNow) {
+      setError(IMMEDIATE_START_REQUIRED_MESSAGE)
       return
     }
     setLoading(true)
@@ -46,7 +78,13 @@ export function PersonalReportCta({ result }: PersonalReportCtaProps) {
           // any selected add-on (null for the legacy standalone flow).
           foundationType: resolvedFoundation(),
           selectedAddon: getJourney().selectedAddon,
-          [ACKNOWLEDGEMENT_FIELD]: true,
+          // Sent when the caller has it, so the consent the buyer just gave
+          // gets a record. Omitted rather than sent as null when it does not:
+          // the route reads `email?.toLowerCase()`, so either shape works, but
+          // an absent key keeps the no-email body byte-identical to before.
+          ...(email ? { email } : {}),
+          [HEALTH_CONSENT_FIELD]: true,
+          [IMMEDIATE_START_FIELD]: true,
         }),
       })
 
@@ -76,10 +114,17 @@ export function PersonalReportCta({ result }: PersonalReportCtaProps) {
           Next Step
         </p>
         <h3 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
-          Unlock your full 30-day plan
+          How does your Food System work?
         </h3>
+        {/* Free vs paid, stated as the two different questions they answer. The
+          * heading here used to promise the 30-day plan ("Unlock your full
+          * 30-day plan") before a single Consultation question had been asked —
+          * selling the last step of the paid journey as though it were the
+          * first. */}
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground max-w-md mx-auto">
-          Your free score is the starting point. Your Food System Report is where the real change begins.
+          Your free Food System Assessment answered <em>where am I</em>. The Personal Food System
+          Consultation answers how your Food System works, what that means for you, and what to
+          do next.
         </p>
       </div>
 
@@ -121,11 +166,14 @@ export function PersonalReportCta({ result }: PersonalReportCtaProps) {
             ))}
           </ul>
 
-          <WithdrawalAcknowledgement checked={acknowledged} onChange={setAcknowledged} />
+          <div className="space-y-3">
+            <HealthConsentCheckbox checked={healthConsent} onChange={setHealthConsent} />
+            <ImmediateStartRequest checked={startNow} onChange={setStartNow} />
+          </div>
 
           <button
             onClick={handlePurchase}
-            disabled={loading || !acknowledged}
+            disabled={loading || !healthConsent || !startNow}
             className="w-full flex items-center justify-center gap-2 rounded-2xl py-4 text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             style={{
               background:
@@ -139,7 +187,7 @@ export function PersonalReportCta({ result }: PersonalReportCtaProps) {
               </>
             ) : (
               <>
-                Begin My Food System Consultation — €49 <ArrowRight size={16} />
+                Pay €49 &amp; Begin My Consultation <ArrowRight size={16} />
               </>
             )}
           </button>
@@ -159,7 +207,8 @@ export function PersonalReportCta({ result }: PersonalReportCtaProps) {
           After your 30 days — continue with EatoBiotics Member
         </p>
         <p className="text-xs text-muted-foreground mb-3">
-          Monthly score updates, new 30-day plans, and ongoing food guidance — €24.99/month, cancel anytime.
+          Monthly Biotics Score™ updates, new monthly focus, and ongoing food guidance —
+          €{MEMBER_PRICE_EUR}/month, cancel any time.
         </p>
         <Link
           href="/pricing"
@@ -171,7 +220,7 @@ export function PersonalReportCta({ result }: PersonalReportCtaProps) {
       </div>
 
       <p className="text-center text-xs text-muted-foreground/50">
-        Secure payment via Stripe · Instant access · No subscription required
+        Secure payment via Stripe · Full refund within 14 days · No subscription required
       </p>
     </div>
   )

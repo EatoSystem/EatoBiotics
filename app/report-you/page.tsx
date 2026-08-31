@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   robots: { index: false },
   title: "Sample Report — The Food System Inside You | EatoBiotics",
   description:
-    "See a full sample EatoBiotics personal gut health report — your Prebiotics · Probiotics · Postbiotics scores, key insights, 7-day plan, 5 foods, and a 30-day roadmap.",
+    "See a full sample Personal Food System Report — your Biotics Score™ across Prebiotics, Probiotics and Postbiotics, key insights, a 7-day plan, five foods, and a 30-day roadmap.",
 }
 
 const YOU_DATA: DemoReportData = {
@@ -22,9 +22,9 @@ const YOU_DATA: DemoReportData = {
   tagline:
     "Your gut system is developing real momentum — you have genuine strengths to build on and clear levers to pull.",
   opening:
-    "Your food system is further along than most. A score of 68 places you in the top third of people who take this assessment, and your Prebiotics and Postbiotics scores are particularly strong. The opportunity ahead is focused and specific: your Probiotics score is the widest gap, and closing it supports the rest.",
+    "A score of 68 shows a developing Food System with clear strengths to build on. Your Prebiotics and Postbiotics are the strong parts of this picture. The opportunity ahead is focused and specific: your Probiotics score is the widest gap, and closing it supports the rest.",
   scoreInterpretation:
-    "A score of 68 reflects a gut system that functions reasonably well day-to-day but is operating below its potential. You eat a good variety of plant foods (Prebiotics: 72) and your body shows signs of recovery and rhythm (Postbiotics: 78), but your intake of fermented and probiotic-rich foods is noticeably low (Probiotics: 45). This creates a one-sided system — you're feeding the microbiome but not actively seeding it with the bacterial diversity it needs to thrive. The good news is that Probiotics is the most responsive pillar to targeted dietary change. Small, consistent additions are the usual place to start.",
+    "A score of 68 reflects a gut system that functions reasonably well day-to-day but is operating below its potential. You eat a good variety of plant foods (Prebiotics: 72) and your body shows signs of recovery and rhythm (Postbiotics: 78), but your intake of fermented and probiotic-rich foods is noticeably low (Probiotics: 45). This creates a one-sided system — you're feeding the microbiome but not actively seeding it with the bacterial diversity it needs to thrive. The good news is that Probiotics is the pathway most responsive to targeted dietary change. Small, consistent additions are the usual place to start.",
   pillarScores: [
     {
       name: "Prebiotics",
@@ -57,7 +57,7 @@ const YOU_DATA: DemoReportData = {
     {
       icon: "🫁",
       title: "Digestive comfort",
-      body: "Occasional bloating or sluggish digestion after meals is commonly reported alongside a low Probiotics score. Adding fermented foods is the usual first thing to try.",
+      body: "You reported occasional bloating or sluggish digestion after meals, alongside a Probiotics score of 45. Fermented foods are a food-first place to start.",
     },
     {
       icon: "😴",
@@ -71,7 +71,7 @@ const YOU_DATA: DemoReportData = {
     drivers: ["Daily fermented food habit", "Prebiotic vegetable at every meal", "Consistent meal timing"],
   },
   pullQuote:
-    "Your gut system is more responsive to change than most people realise. The right inputs, consistently applied, are what the habit is built on.",
+    "Your Food System responds to what you give it. The right inputs, consistently applied, are what the habit is built on.",
   strengths: [
     {
       title: "Strong plant variety",
@@ -93,7 +93,7 @@ const YOU_DATA: DemoReportData = {
     {
       title: "Fermented food frequency",
       explanation:
-        "You rarely or never include fermented foods in your diet. This is the most direct way to introduce beneficial bacteria — even one serving of kefir, kimchi, or live yoghurt daily can shift your Probiotics score significantly.",
+        "You rarely or never include fermented foods in your diet. Adding a regular serving of kefir, kimchi or live-culture yoghurt is one practical way to build this part of your Food System.",
     },
     {
       title: "Probiotic variety",
@@ -110,10 +110,10 @@ const YOU_DATA: DemoReportData = {
     trigger:
       "Your plant diversity is a genuine foundation — fermented foods are a clear next lever.",
     explanation:
-      "Most people with a Probiotics score below 50 also score low on Prebiotics, which makes the fix harder and slower. You don't have that problem. You already eat the plant foods that create the environment for beneficial bacteria to thrive — you just need to start introducing them. Adding fermented foods to an already fibre-rich diet builds on what is there rather than starting from zero. That is a good position to be starting from.",
+      "Your Prebiotics score of 72 is already one of the stronger parts of your Food System, and that shapes what comes next. You already eat the plant foods that create the environment for beneficial bacteria to thrive — the gap is that little is arriving to occupy it. Adding fermented foods to an already fibre-rich diet builds on what is there rather than starting from zero. That is a good position to be starting from.",
   },
   deepInsight:
-    "What your scores reveal is a food system that's doing the right things structurally but missing a key biological input. Think of your gut as a living ecosystem: the habitat is well kept and well fed (Prebiotics + Postbiotics), but new residents rarely arrive (Probiotics). The structure is there — the community just needs to be populated.\n\nThis pattern is more common than you might think, especially in people who eat healthily but have grown up in cultures or households where fermented foods aren't a staple. It's not a sign of poor habits overall — it's a specific blind spot. The encouraging truth is that this is the easiest gap to close. Unlike fibre intake or meal timing (which require sustained habit change), fermented foods can be added as a simple daily addition to what you already eat.",
+    "What your scores reveal is a food system that's doing the right things structurally but missing a key biological input. Think of your gut as a living ecosystem: the habitat is well kept and well fed (Prebiotics + Postbiotics), but new residents rarely arrive (Probiotics). The structure is there — the community just needs to be populated.\n\nThis pattern often shows up where someone eats healthily but grew up in a culture or household where fermented foods aren't a staple. It's not a sign of poor habits overall — it's a specific blind spot. The practical part is that fermented foods can be added as a simple daily addition to what you already eat, rather than a change to how you eat.",
   sevenDayPlan: [
     {
       day: "Monday",
@@ -243,7 +243,7 @@ const YOU_DATA: DemoReportData = {
     {
       week: "Week 3",
       theme: "Build the Rhythm",
-      focus: "Establish consistent daily habits and support your Postbiotics pillar",
+      focus: "Establish consistent daily habits and support your Postbiotics",
       actions: [
         "Set a consistent daily eating window — try 8am–7pm",
         "Add a 10-minute walk after your largest meal every day",
@@ -264,7 +264,7 @@ const YOU_DATA: DemoReportData = {
     },
   ],
   closing:
-    "Your starting point is genuinely strong. A score of 68 with high Prebiotics and Postbiotics scores means you're not starting from scratch — you're filling a specific gap in an otherwise functional system. The roadmap above is designed to close that gap methodically, without overhauling everything you're already doing well. Focus on the Probiotics pillar first, keep the habits you already have, and retake the assessment when you're ready to see what has changed.",
+    "Your starting point is genuinely strong. A score of 68 with high Prebiotics and Postbiotics scores means you're not starting from scratch — you're filling a specific gap in an otherwise functional system. The roadmap above is designed to close that gap methodically, without overhauling everything you're already doing well. Focus on Probiotics first, keep the habits you already have, and retake the assessment when you're ready to see what has changed.",
 }
 
 export default function ReportYouPage() {

@@ -8,7 +8,7 @@ import { disclaimerFor } from "@/lib/assessment-disclaimers"
 export const metadata: Metadata = {
   title: "EatoBiotics Reports — See What's Inside",
   description:
-    "Explore the three EatoBiotics report types — You, Family, and Mind. View sample reports and discover what a full gut health analysis looks like.",
+    "Explore EatoBiotics sample reports — You, Family, and Mind. See what each one contains before you begin.",
 }
 
 const REPORTS = [
@@ -17,7 +17,7 @@ const REPORTS = [
     title: "The Food System Inside You",
     tagline: "Your gut system is developing real momentum — you have genuine strengths to build on and clear levers to pull.",
     insight: "Your plant diversity is a genuine foundation — fermented foods are a clear next lever.",
-    copy: "A complete personal gut health analysis — your Prebiotics · Probiotics · Postbiotics scores, what they mean for your daily energy, and a personalised 30-day plan to improve your food system.",
+    copy: "Your Personal Food System Report — your Biotics Score™ across Prebiotics, Probiotics and Postbiotics, what they mean for your daily energy, and a personalised 30-day plan.",
     score: 68,
     profile: "Emerging Balance",
     cta: "View Sample Report",
@@ -386,7 +386,7 @@ export default function ReportPage() {
                 Ready to see yours?
               </h2>
               <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed opacity-90">
-                Take the free assessment to see your gut health score, then unlock your full personalised report.
+                Take your free Food System Assessment to see your Biotics Score™, then go deeper with your Personal Food System Consultation.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link

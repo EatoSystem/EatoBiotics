@@ -67,8 +67,8 @@ export async function POST(req: NextRequest) {
           <td style="padding: 8px 12px; color: #1A2E12; border: 1px solid #D6E8CC;">${body.emoji} ${body.label}</td>
         </tr>
         <tr>
-          <td style="padding: 8px 12px; font-weight: bold; color: #1A2E12; background: #f5f9f3; border: 1px solid #D6E8CC;">Percentile</td>
-          <td style="padding: 8px 12px; color: #1A2E12; border: 1px solid #D6E8CC;">Better than ${body.percentile}% of people</td>
+          <td style="padding: 8px 12px; font-weight: bold; color: #1A2E12; background: #f5f9f3; border: 1px solid #D6E8CC;">Score</td>
+          <td style="padding: 8px 12px; color: #1A2E12; border: 1px solid #D6E8CC;">${body.score}/100</td>
         </tr>
         <tr>
           <td style="padding: 8px 12px; font-weight: bold; color: #1A2E12; background: #f5f9f3; border: 1px solid #D6E8CC;">User</td>

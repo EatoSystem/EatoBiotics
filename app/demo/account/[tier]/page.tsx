@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 
 /* ── Mock content ─────────────────────────────────────────────────── */
 
-const MOCK_PLAN_CONTENT = `Your food system this month is showing real momentum. Your plant diversity has been one of your stronger pillars, but your Live Foods score is pulling down your overall Biotics number — this month, that's your primary focus.
+const MOCK_PLAN_CONTENT = `Your food system this month is showing real momentum. Your Prebiotics have been one of your stronger pathways, but your Probiotics are pulling down your Biotics Score™ — this month, that's your primary focus.
 
 Fermented foods are the fastest lever you have. Adding kefir to your morning routine, swapping one meal to include kimchi or sauerkraut, or making a simple overnight yoghurt with live cultures will meaningfully shift your probiotic score within two to three weeks. Aim for at least one fermented food every day this month.
 

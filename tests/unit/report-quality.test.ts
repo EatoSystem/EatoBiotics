@@ -151,7 +151,12 @@ describe("live report surfaces render no emoji", () => {
   // lib/foods.ts. lib/foods.ts is shared with the food directory, /today,
   // myplate and the condition pages — report surfaces read it through
   // bioticFromFoodType rather than rendering its emoji.
-  const PICTOGRAPH = /\p{Extended_Pictographic}/u
+  // \p{Extended_Pictographic} includes ™ (U+2122) and ® (U+00AE). Those are
+  // typographic marks, not emoji, and "Biotics Score™" is the canonical name of
+  // the person-level score — so a rule that banned them would be a no-emoji
+  // rule forbidding the product's own trademark. Excluded by name rather than
+  // by loosening the class, so every actual pictograph is still caught.
+  const PICTOGRAPH = /(?!\u2122|\u00AE)\p{Extended_Pictographic}/u
 
   it.each(surfaces)("%s has no pictographic characters", (file) => {
     const src = read(file)

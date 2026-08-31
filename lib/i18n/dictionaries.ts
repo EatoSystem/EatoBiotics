@@ -132,8 +132,6 @@ export interface Dictionary {
     diets: { omnivore: string; flexitarian: string; vegetarian: string; vegan: string; pescatarian: string; other: string }
     reveal: {
       eyebrow: string
-      /** params: {pct} */
-      percentile: string
       /** params: {label} */
       biggestOpp: string
     }
@@ -366,7 +364,6 @@ const en: Dictionary = {
     diets: { omnivore: "Omnivore", flexitarian: "Flexitarian", vegetarian: "Vegetarian", vegan: "Vegan", pescatarian: "Pescatarian", other: "Other" },
     reveal: {
       eyebrow: "Meet your food system",
-      percentile: "Higher than {pct}% of people with typical eating habits",
       biggestOpp: "Your biggest opportunity: {label}.",
     },
     form: {
@@ -594,7 +591,6 @@ const es: Dictionary = {
     diets: { omnivore: "Omnívora", flexitarian: "Flexitariana", vegetarian: "Vegetariana", vegan: "Vegana", pescatarian: "Pescetariana", other: "Otra" },
     reveal: {
       eyebrow: "Conoce tu sistema alimentario",
-      percentile: "Por encima del {pct}% de las personas con hábitos alimentarios típicos",
       biggestOpp: "Tu mayor oportunidad: {label}.",
     },
     form: {
@@ -822,7 +818,6 @@ const fr: Dictionary = {
     diets: { omnivore: "Omnivore", flexitarian: "Flexitarien", vegetarian: "Végétarien", vegan: "Végan", pescatarian: "Pescétarien", other: "Autre" },
     reveal: {
       eyebrow: "Découvrez votre système alimentaire",
-      percentile: "Au-dessus de {pct} % des personnes ayant des habitudes alimentaires typiques",
       biggestOpp: "Votre plus grande opportunité : {label}.",
     },
     form: {
@@ -1050,7 +1045,6 @@ const de: Dictionary = {
     diets: { omnivore: "Allesesser", flexitarian: "Flexitarisch", vegetarian: "Vegetarisch", vegan: "Vegan", pescatarian: "Pescetarisch", other: "Andere" },
     reveal: {
       eyebrow: "Lerne dein Ernährungssystem kennen",
-      percentile: "Höher als {pct}% der Menschen mit typischen Essgewohnheiten",
       biggestOpp: "Deine größte Chance: {label}.",
     },
     form: {
@@ -1277,7 +1271,6 @@ const ar: Dictionary = {
     diets: { omnivore: "أكل كل شيء", flexitarian: "مرن", vegetarian: "نباتي", vegan: "نباتي صرف", pescatarian: "نباتي مع السمك", other: "أخرى" },
     reveal: {
       eyebrow: "تعرّف على نظامك الغذائي",
-      percentile: "أعلى من {pct}٪ من الأشخاص ذوي العادات الغذائية المعتادة",
       biggestOpp: "أكبر فرصة لديك: {label}.",
     },
     form: {

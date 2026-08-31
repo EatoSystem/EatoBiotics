@@ -19,17 +19,21 @@ export async function GET(req: NextRequest) {
   const feed     = Number(searchParams.get("feed") ?? searchParams.get("prebiotics")  ?? 0)
   const seed     = Number(searchParams.get("seed") ?? searchParams.get("probiotics")  ?? 0)
   const heal     = Number(searchParams.get("heal") ?? searchParams.get("postbiotics") ?? 0)
-  const profile  = searchParams.get("profile") ?? "EatoBiotics Score"
+  const profile  = searchParams.get("profile") ?? "Biotics Score"
 
+  // Bars are the SCIENTIFIC pathways, not the actions. Feed / Seed / Regenerate
+  // are things a person does; a score is not an action. The query keys stay
+  // feed/seed/heal — see the ?heal= note below — so every card shared before
+  // this change still renders with the right numbers under the right bar.
   const pillars = [
-    { label: "Feed",  score: feed,  color: "#7fc47e", gradient: "linear-gradient(90deg, #7fc47e, #4caf7d)" },
-    { label: "Seed",  score: seed,  color: "#3ab0a0", gradient: "linear-gradient(90deg, #4caf7d, #3ab0a0)" },
-    // Displayed as "Regenerate"; the `heal` query param is kept, because cards
+    { label: "Prebiotics",  score: feed,  color: "#7fc47e", gradient: "linear-gradient(90deg, #7fc47e, #4caf7d)" },
+    { label: "Probiotics",  score: seed,  color: "#3ab0a0", gradient: "linear-gradient(90deg, #4caf7d, #3ab0a0)" },
+    // Displayed as "Postbiotics"; the `heal` query param is kept, because cards
     // shared before 68f1f94 link with `?heal=` and must keep working.
     // The two bugs previously noted here — the Satori 500 and the caller/route
     // parameter mismatch that rendered every card 0/0/0 — were fixed in #179.
     // See the dual-spelling reads above and the explicit `display` below.
-    { label: "Regenerate", score: heal, color: "#e6b84a", gradient: "linear-gradient(90deg, #e6b84a, #e07b4a)" },
+    { label: "Postbiotics", score: heal, color: "#e6b84a", gradient: "linear-gradient(90deg, #e6b84a, #e07b4a)" },
   ]
 
   // Score band colour
@@ -73,7 +77,7 @@ export async function GET(req: NextRequest) {
               EatoBiotics
             </span>
             <span style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.85)", marginTop: 4 }}>
-              Personal Food System Score
+              Biotics Score™
             </span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -121,7 +125,7 @@ export async function GET(req: NextRequest) {
                 fontWeight: 600,
               }}
             >
-              EatoBiotics Score
+              Biotics Score
             </span>
           </div>
 

@@ -444,7 +444,7 @@ export function FamilyAssessmentResults({ result, onRetake, leadEmail }: FamilyA
       <section className="border-t border-border bg-secondary/10 px-6 py-16">
         <div className="mx-auto max-w-3xl">
           <ScrollReveal>
-            <PersonalReportCta result={result} />
+            <PersonalReportCta result={result} email={leadEmail} />
           </ScrollReveal>
         </div>
       </section>

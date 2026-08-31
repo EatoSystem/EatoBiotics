@@ -7,7 +7,6 @@ import { WaitlistStatus } from "@/components/waitlist/waitlist-status"
 import { CountryLeaderboard } from "@/components/waitlist/country-leaderboard"
 import { resultFromLead } from "@/lib/waitlist-result"
 import { ENGINES, type QuickPillar } from "@/lib/quick-assessment"
-import { getPercentile } from "@/lib/percentile"
 import { marketByName, DEFAULT_MARKET } from "@/lib/market"
 import { foodSet } from "@/lib/foods-by-country"
 
@@ -65,7 +64,6 @@ export default async function DiscoverResultPage({ params }: { params: Promise<{
 
   const { profile, overall, subScores, insights } = result
   const firstName = (lead?.name as string | undefined)?.split(" ")[0]
-  const percentile = getPercentile(overall)
   const shareUrl = `${SITE_URL}/discover/${code}`
   const weakest = insights[0]
   const strongest = insights[insights.length - 1]
@@ -86,7 +84,6 @@ export default async function DiscoverResultPage({ params }: { params: Promise<{
         </div>
         <h1 className="mt-4 font-serif text-4xl font-bold sm:text-5xl" style={{ color: profile.color }}>{profile.type}</h1>
         <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-muted-foreground">{profile.tagline} {profile.description}</p>
-        <p className="mt-3 text-sm font-semibold text-muted-foreground">Higher than {percentile}% of people with typical eating habits.</p>
       </section>
 
       {/* Three engines explained */}

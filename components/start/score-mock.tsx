@@ -20,7 +20,7 @@ export function ScoreMock() {
       {/* Header */}
       <div className="mb-5 flex items-center justify-between">
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          Food System Score
+          Biotics Score™
         </p>
         <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-muted-foreground">
           Sample

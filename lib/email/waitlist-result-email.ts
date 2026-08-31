@@ -7,7 +7,6 @@
  */
 import { renderBrandEmail, BRAND_INK, BRAND_MUTED, SERIF, SANS } from "./brand-layout"
 import { unsubscribeUrl } from "./unsubscribe"
-import { getPercentile } from "@/lib/percentile"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://eatobiotics.com"
@@ -27,7 +26,6 @@ export function waitlistResultEmail(
 ): { subject: string; html: string } {
   const { profile, overall, subScores, insights } = result
   const greeting = name ? `Hi ${name},` : "Hi there,"
-  const percentile = getPercentile(overall)
   const weakest = insights[0]
   const reportUrl = shareCode ? `${SITE_URL}/discover/${shareCode}` : `${SITE_URL}/enter`
   const subject = `Your Food System Type: ${profile.type} 🌱`
@@ -60,7 +58,7 @@ export function waitlistResultEmail(
       <p style="margin:0 0 6px;font-size:11px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase;color:${BRAND_MUTED};font-family:${SANS};">Your Food System Type</p>
       <h2 style="margin:0 0 4px;font-size:28px;font-weight:bold;color:${BRAND_INK};font-family:${SERIF};">${profile.type}</h2>
       <p style="margin:0 0 18px;font-size:14px;color:${BRAND_MUTED};font-family:${SANS};">
-        Overall ${overall}/100 · higher than ${percentile}% of people with typical eating habits
+        Overall ${overall}/100
       </p>
       <p style="margin:0 0 22px;font-size:15px;line-height:1.65;color:#374151;font-family:${SANS};">
         ${greeting} ${profile.tagline} ${profile.description}
