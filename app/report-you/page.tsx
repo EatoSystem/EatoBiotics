@@ -57,7 +57,7 @@ const YOU_DATA: DemoReportData = {
     {
       icon: "🫁",
       title: "Digestive comfort",
-      body: "Occasional bloating or sluggish digestion after meals is commonly reported alongside a low Probiotics score. Adding fermented foods is the usual first thing to try.",
+      body: "You reported occasional bloating or sluggish digestion after meals, alongside a Probiotics score of 45. Fermented foods are a food-first place to start.",
     },
     {
       icon: "😴",
@@ -71,7 +71,7 @@ const YOU_DATA: DemoReportData = {
     drivers: ["Daily fermented food habit", "Prebiotic vegetable at every meal", "Consistent meal timing"],
   },
   pullQuote:
-    "Your gut system is more responsive to change than most people realise. The right inputs, consistently applied, are what the habit is built on.",
+    "Your Food System responds to what you give it. The right inputs, consistently applied, are what the habit is built on.",
   strengths: [
     {
       title: "Strong plant variety",
@@ -93,7 +93,7 @@ const YOU_DATA: DemoReportData = {
     {
       title: "Fermented food frequency",
       explanation:
-        "You rarely or never include fermented foods in your diet. This is the most direct way to introduce beneficial bacteria — even one serving of kefir, kimchi, or live yoghurt daily can shift your Probiotics score significantly.",
+        "You rarely or never include fermented foods in your diet. Adding a regular serving of kefir, kimchi or live-culture yoghurt is one practical way to build this part of your Food System.",
     },
     {
       title: "Probiotic variety",
@@ -110,10 +110,10 @@ const YOU_DATA: DemoReportData = {
     trigger:
       "Your plant diversity is a genuine foundation — fermented foods are a clear next lever.",
     explanation:
-      "Most people with a Probiotics score below 50 also score low on Prebiotics, which makes the fix harder and slower. You don't have that problem. You already eat the plant foods that create the environment for beneficial bacteria to thrive — you just need to start introducing them. Adding fermented foods to an already fibre-rich diet builds on what is there rather than starting from zero. That is a good position to be starting from.",
+      "Your Prebiotics score of 72 is already one of the stronger parts of your Food System, and that shapes what comes next. You already eat the plant foods that create the environment for beneficial bacteria to thrive — the gap is that little is arriving to occupy it. Adding fermented foods to an already fibre-rich diet builds on what is there rather than starting from zero. That is a good position to be starting from.",
   },
   deepInsight:
-    "What your scores reveal is a food system that's doing the right things structurally but missing a key biological input. Think of your gut as a living ecosystem: the habitat is well kept and well fed (Prebiotics + Postbiotics), but new residents rarely arrive (Probiotics). The structure is there — the community just needs to be populated.\n\nThis pattern is more common than you might think, especially in people who eat healthily but have grown up in cultures or households where fermented foods aren't a staple. It's not a sign of poor habits overall — it's a specific blind spot. The encouraging truth is that this is the easiest gap to close. Unlike fibre intake or meal timing (which require sustained habit change), fermented foods can be added as a simple daily addition to what you already eat.",
+    "What your scores reveal is a food system that's doing the right things structurally but missing a key biological input. Think of your gut as a living ecosystem: the habitat is well kept and well fed (Prebiotics + Postbiotics), but new residents rarely arrive (Probiotics). The structure is there — the community just needs to be populated.\n\nThis pattern often shows up where someone eats healthily but grew up in a culture or household where fermented foods aren't a staple. It's not a sign of poor habits overall — it's a specific blind spot. The practical part is that fermented foods can be added as a simple daily addition to what you already eat, rather than a change to how you eat.",
   sevenDayPlan: [
     {
       day: "Monday",

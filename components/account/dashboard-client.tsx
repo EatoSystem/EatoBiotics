@@ -1929,11 +1929,13 @@ function OverviewTab({
         setActiveTab={setActiveTab}
       />
 
-      {/* Pillar score mini cards */}
+      {/* Biotic score mini cards. The heading was "Pillar Scores" while the
+        * cards below it already rendered Prebiotics / Probiotics / Postbiotics
+        * — an earlier pass corrected the cards and left their label. */}
       {currentScores && (
         <div>
           <p className="mb-2.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Pillar Scores
+            Your Three Biotics
           </p>
           <PillarScoreCards subScores={currentScores} />
         </div>

@@ -30,7 +30,7 @@ const GATE_CONFIGS: Record<string, GateConfig> = {
   meals: {
     icon: <Zap size={20} style={{ color: "var(--icon-yellow)" }} />,
     title: "Track meals & watch your score move",
-    description: "Log what you eat and see your Biotics Score shift in real time. Build a streak. Get daily nudges based on your weakest pillar.",
+    description: "Log what you eat and see your Biotics Score shift in real time. Build a streak. Get daily nudges based on your current focus.",
     requiredTier: "member",
     requiredLabel: "Member",
     price: "€24.99/mo",
@@ -39,7 +39,7 @@ const GATE_CONFIGS: Record<string, GateConfig> = {
       "See your score move in real time",
       "30-day score history",
       "Build a daily habit streak",
-      "Nudges based on your weakest pillar",
+      "Nudges based on your current focus",
     ],
     previewRows: [
       { label: "Today's Biotics Score",  value: "74/100", color: "var(--icon-green)" },
@@ -58,7 +58,7 @@ const GATE_CONFIGS: Record<string, GateConfig> = {
     benefits: [
       "AI-generated daily & weekly meal plans",
       "Plans built around your profile type",
-      "Swap suggestions for your weakest pillar",
+      "Swap suggestions for your current focus",
       "Seasonal food recommendations",
       "Shopping list export",
     ],
@@ -72,19 +72,19 @@ const GATE_CONFIGS: Record<string, GateConfig> = {
   "monthly-plan": {
     icon: <Calendar size={20} style={{ color: "var(--icon-teal)" }} />,
     title: "Your personalised monthly gut plan",
-    description: "Every month, a new gut plan drops — built from your score data, your weakest pillars, and your goals. Feels like a personal nutritionist.",
+    description: "Every month, a new gut plan drops — built from your score data, your current Biotics pattern, and your goals. Feels like a personal nutritionist.",
     requiredTier: "member",
     requiredLabel: "Member",
     price: "€24.99/mo",
     benefits: [
       "Monthly AI-built gut plan",
       "5 daily meal analyses",
-      "Deep-dive into your weakest pillar",
+      "Deep-dive into your current focus",
       "Condition-specific guidance",
-      "Pillar-by-pillar food protocols",
+      "Food guidance across your three Biotics",
     ],
     previewRows: [
-      { label: "This month's focus", value: "Live Foods + Diversity", color: "var(--icon-teal)" },
+      { label: "This month's focus", value: "Probiotics + Prebiotics", color: "var(--icon-teal)" },
       { label: "Week 1 priority",    value: "Fermented food daily",   color: "var(--icon-green)" },
       { label: "Week 2 priority",    value: "20+ plant species",      color: "var(--icon-lime)" },
       { label: "Condition guidance", value: "Gut-brain protocol",     color: "var(--icon-yellow)" },

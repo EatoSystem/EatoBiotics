@@ -295,6 +295,101 @@ describe("the account dashboards score by biotic, not by historical dimension", 
   })
 })
 
+describe("the current framework is not sold as pillars", () => {
+  /*
+   * SURFACE-SPECIFIC on purpose, and that is the whole design.
+   *
+   * The previous pass wrote a rule matching "plant diversity" and had to throw
+   * it away: it fired on ten legitimate surfaces where the phrase is biology,
+   * not a score model. "pillar", "most people", "significantly" and "diversity"
+   * all have honest uses elsewhere in this product, so none of them is banned
+   * globally. These assertions name the file and the phrase together.
+   *
+   * What each caught, on the surface named:
+   *   dashboard  a "Pillar Scores" heading sitting directly above cards that
+   *              already rendered Prebiotics / Probiotics / Postbiotics — an
+   *              earlier pass fixed the cards and left their label.
+   *   gate       the Member upgrade gate selling "your weakest pillar" and
+   *              "Pillar-by-pillar food protocols" — the surface that sells the
+   *              dashboard kept the framework the dashboard had dropped.
+   */
+  const FRAMEWORK_SURFACES: Array<[string, RegExp[]]> = [
+    [
+      "components/account/dashboard-client.tsx",
+      [/\bPillar Scores\b/],
+    ],
+    [
+      "components/account/upgrade-gate.tsx",
+      [/\bweakest pillars?\b/i, /\bpillar-by-pillar\b/i, /\bLive Foods \+ Diversity\b/i],
+    ],
+  ]
+
+  it.each(FRAMEWORK_SURFACES.map(([f]) => f))("%s sells no five-dimension framing", (file) => {
+    const rules = FRAMEWORK_SURFACES.find(([f]) => f === file)![1]
+    const copy = copyOf(readFileSync(file, "utf8"))
+    const hits = rules.map((r) => copy.match(r)?.[0]).filter(Boolean)
+    expect(hits, `retired framework framing in ${file}`).toEqual([])
+  })
+
+  it("matches the shapes that actually shipped", () => {
+    // A rule written against a shape the code never used passes by finding
+    // nothing. These are the exact strings this pass removed.
+    const [, dash] = FRAMEWORK_SURFACES[0]
+    const [, gate] = FRAMEWORK_SURFACES[1]
+    expect("Pillar Scores").toMatch(dash[0])
+    expect("Nudges based on your weakest pillar").toMatch(gate[0])
+    expect("Pillar-by-pillar food protocols").toMatch(gate[1])
+    expect("This month's focus — Live Foods + Diversity").toMatch(gate[2])
+    // And the words stay usable where they are honest.
+    expect("deriveReportPillars derives the three").not.toMatch(dash[0])
+  })
+})
+
+describe("the public sample report claims nothing about other people", () => {
+  /*
+   * /report-you explains the product to someone deciding whether to buy it, so
+   * its claims are commercial claims. Two classes are checked, both scoped to
+   * this one file so that "most people" and "significantly" stay usable
+   * elsewhere:
+   *
+   *   population   "Most people with a Probiotics score below 50 also score low
+   *                on Prebiotics" — there is no observed comparison population.
+   *   magnitude    "can shift your Probiotics score significantly" — a promise
+   *                about score movement with nothing behind it.
+   *
+   * NOT checked here, and reported for scientific review instead: claims about
+   * microbiome science ("the bacteria most strongly associated with gut health
+   * and mood support"). Those need evidence, not rewording.
+   */
+  const FILE = "app/report-you/page.tsx"
+  const UNSUPPORTED: Array<[string, RegExp]> = [
+    ["a population claim about other people", /\bmost people\b|\bmore common than you might think\b|\bcommonly reported\b/i],
+    ["a population rank", /\btop (third|half|quarter)\b|\bhigher than \d+% of people\b/i],
+    ["a promise about score movement", /\bshift your \w+ score significantly\b|\bscore significantly\b|\bsignificantly (improve|increase|raise)\b/i],
+    ["a comparative-difficulty claim", /\beasiest gap\b|\bfastest (way|gap)\b/i],
+  ]
+
+  it("carries none of them", () => {
+    const copy = copyOf(readFileSync(FILE, "utf8"))
+    const hits = UNSUPPORTED.filter(([, r]) => r.test(copy)).map(([n]) => n)
+    expect(hits, `unsupported claims on the public sample report`).toEqual([])
+  })
+
+  it("matches the shapes that actually shipped", () => {
+    const probes: Array<[string, string]> = [
+      ["Most people with a Probiotics score below 50 also score low on Prebiotics", "a population claim about other people"],
+      ["A score of 68 places you in the top third of people who take this assessment", "a population rank"],
+      ["can shift your Probiotics score significantly", "a promise about score movement"],
+      ["this is the easiest gap to close", "a comparative-difficulty claim"],
+      ["This pattern is more common than you might think", "a population claim about other people"],
+    ]
+    for (const [probe, expected] of probes) {
+      const matched = UNSUPPORTED.filter(([, r]) => r.test(probe)).map(([n]) => n)
+      expect(matched, `"${probe}" should trip ${expected}`).toContain(expected)
+    }
+  })
+})
+
 describe("the synthetic percentile module warns rather than invites", () => {
   it("carries no customer-style example and no 'accurate-feeling' framing", () => {
     // The previous pass reported this header as rewritten. It was not: the
