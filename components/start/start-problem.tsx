@@ -110,7 +110,7 @@ export function StartProblem() {
         <ScrollReveal delay={400}>
           <div className="mt-10 text-center">
             <Link
-              href="/assessment"
+              href="/assessment/you"
               className="inline-flex items-center gap-1.5 text-sm font-semibold text-icon-green transition-colors hover:text-foreground"
             >
               Take my Food System Assessment

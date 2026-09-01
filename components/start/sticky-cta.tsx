@@ -35,7 +35,7 @@ export function StickyCta() {
       }}
     >
       <Link
-        href="/assessment"
+        href="/assessment/you"
         className="brand-gradient flex w-full items-center justify-center gap-2 rounded-full py-4 text-base font-semibold text-white shadow-xl shadow-icon-green/30"
       >
         Understand My Food System

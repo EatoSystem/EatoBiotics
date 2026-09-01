@@ -77,7 +77,7 @@ export function Hero() {
           <ScrollReveal delay={200}>
             <div className="mt-8">
               <Link
-                href="/assessment"
+                href="/assessment/you"
                 className="brand-gradient inline-flex items-center gap-2.5 rounded-full px-10 py-5 text-lg font-semibold text-white shadow-xl shadow-icon-green/25 transition-all hover:shadow-2xl hover:shadow-icon-green/35 hover:opacity-90"
               >
                 Understand My Food System <ArrowRight size={20} aria-hidden />

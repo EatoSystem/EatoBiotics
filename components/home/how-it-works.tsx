@@ -102,13 +102,13 @@ export function HowItWorks() {
         <ScrollReveal delay={400}>
           <div className="mt-12 text-center">
             <Link
-              href="/assessment"
+              href="/assessment/you"
               className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
             >
               Understand My Food System <ArrowRight size={16} />
             </Link>
             <p className="mt-3 text-xs text-muted-foreground">
-              Takes about 3 minutes. No account required.
+              Takes about 5 minutes. No account required.
             </p>
           </div>
         </ScrollReveal>

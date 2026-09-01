@@ -76,7 +76,7 @@ export function StartHow() {
         <ScrollReveal delay={320}>
           <div className="mt-10 flex flex-col items-center gap-3">
             <Link
-              href="/assessment"
+              href="/assessment/you"
               className="brand-gradient inline-flex w-full items-center justify-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/25 transition-all hover:shadow-xl hover:shadow-icon-green/35 hover:opacity-90"
             >
               Take my Food System Assessment

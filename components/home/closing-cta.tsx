@@ -54,7 +54,7 @@ export function ClosingCta() {
           <ScrollReveal delay={120}>
             <div className="mt-9 flex justify-center">
               <Link
-                href="/assessment"
+                href="/assessment/you"
                 className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-xl shadow-black/30 transition-all hover:opacity-90"
               >
                 Understand My Food System <ArrowRight size={16} />
