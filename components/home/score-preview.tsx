@@ -180,13 +180,13 @@ export function ScorePreview() {
         <ScrollReveal delay={180}>
           <div className="mt-10 text-center">
             <Link
-              href="/assessment"
+              href="/assessment/you"
               className="brand-gradient inline-flex items-center gap-2.5 rounded-full px-10 py-5 text-lg font-semibold text-white shadow-xl shadow-icon-green/25 transition-all hover:shadow-2xl hover:shadow-icon-green/35 hover:opacity-90"
             >
               Understand My Food System <ArrowRight size={18} />
             </Link>
             <p className="mt-3.5 text-sm text-muted-foreground">
-              Takes about 3 minutes. No account required.
+              Takes about 5 minutes. No account required.
             </p>
           </div>
         </ScrollReveal>

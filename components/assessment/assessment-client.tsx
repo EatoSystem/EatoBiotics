@@ -18,6 +18,7 @@ import { AssessmentProgress } from "./assessment-progress"
 import { AssessmentQuestionView } from "./assessment-question"
 import { AssessmentResults } from "./assessment-results"
 import { PrivacyOptIn } from "./privacy-opt-in"
+import { patchJourney } from "@/lib/assessment/journey"
 import posthog from "posthog-js"
 import { logEvent } from "@/lib/statsig-client"
 
@@ -27,6 +28,23 @@ export function AssessmentClient() {
   const [lead, setLead] = useState<LeadData | null>(null)
   const [winnerCode, setWinnerCode] = useState<string | null>(null)
   const resultsViewedFired = useRef(false)
+
+  // This route now has its own front door.
+  //
+  // FoundationChooser sets `foundationType` BEFORE it navigates here, so
+  // until Phase 2A every arrival had been through it. The default You CTAs
+  // now link straight to /assessment/you, and without this the journey would
+  // keep whatever foundation was last chosen: resolvedFoundation() reads the
+  // stored intent first, so someone who once completed Family and then takes
+  // You directly would still resolve to `family` — a value that reaches
+  // personal-report-cta.tsx and /api/checkout.
+  //
+  // Declaring it here mirrors exactly what the chooser does, which makes the
+  // two entry paths equivalent rather than making one of them a special
+  // case. Idempotent, and it does not touch pendingAddon or selectedAddon.
+  useEffect(() => {
+    patchJourney({ foundationType: "you" })
+  }, [])
 
   // Load saved state from localStorage after hydration
   useEffect(() => {

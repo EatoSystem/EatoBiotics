@@ -23,33 +23,59 @@ interface AssessmentIntroProps {
   onStart: (lead: LeadData) => void
 }
 
+/**
+ * The three Biotics, as an orientation before the first question.
+ *
+ * Postbiotics is the one that has to be worded carefully. It used to read
+ * "Rhythm, colour, and the compounds your gut produces", which tells a reader
+ * the free Assessment sees microbial products. It does not: it sees fifteen
+ * self-reported answers. The line now describes how the Food System *appears
+ * to respond* on the evidence of what was reported — no metabolites, no
+ * biomarkers, no claim of clinical adequacy.
+ */
 const PILLARS = [
   {
     icon: Leaf,
     label: "Prebiotics",
-    description: "Plant variety, fibre, and foods that feed your microbiome",
+    description: "What feeds your Food System — plant variety and fibre.",
     color: "var(--icon-lime)",
     gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
   },
   {
     icon: FlaskConical,
     label: "Probiotics",
-    description: "How regularly you include live and fermented foods",
+    description: "The live and fermented foods you introduce.",
     color: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
   },
   {
     icon: Wheat,
     label: "Postbiotics",
-    description: "Rhythm, colour, and the compounds your gut produces",
+    description: "How your Food System appears to respond, from the rhythm and colour you report.",
     color: "var(--icon-yellow)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
   },
 ]
 
+/**
+ * Illustrative examples, not a catalogue.
+ *
+ * The copy below this array claimed the Assessment "places you in one of six
+ * profiles". Three numbers disagreed: the copy said six, this array renders
+ * four, and getProfile() has six branches carrying five distinct names. The
+ * first card also read "Thriving System" — a label getProfile() never
+ * returns, so the one example a reader might remember was a name they could
+ * not receive.
+ *
+ * The count is gone rather than corrected. Publishing an accurate one would
+ * mean explaining that "Developing System" has three internal branches, which
+ * is scoring implementation, not something a customer needs before q1. Every
+ * name here must be one getProfile() can return; a test derives that list
+ * from lib/assessment-scoring.ts rather than trusting this comment.
+ */
 const PROFILES = [
   {
-    type: "Thriving System",
+    type: "Thriving Food System",
     tagline: "Your gut is working exactly as it should.",
     color: "var(--icon-green)",
   },
@@ -166,29 +192,60 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
           }
         `}</style>
 
+        {/* The first mobile viewport has one job: say what this is, what it
+          * costs in time, how it is understood, and what it produces — before
+          * anyone is asked for a name.
+          *
+          * It used to lead with "The Food System Inside You" as the h1, which
+          * is the brand line, not the product. The product name appeared only
+          * as small text on the form card, so a reader met the promise before
+          * they met the thing. The brand line is now the overline and the
+          * Assessment is the heading; the Biotics Score™ is named as its
+          * output rather than as the offer. */}
         <div className="relative mx-auto max-w-2xl text-center">
-          {/* Overline */}
+          {/* Overline — brand, not product */}
           <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background/80 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground backdrop-blur-sm">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--icon-green)]" />
-            Free · 5 minutes · Science-backed
+            EatoBiotics · The Food System Inside You
           </div>
 
-          {/* Headline */}
-          <h1 className="mt-6 font-serif text-4xl font-semibold leading-tight text-foreground sm:text-5xl md:text-6xl">
-            <GradientText>The Food System</GradientText>
-            <br />
-            Inside You
+          {/* The product */}
+          <h1 className="mt-5 font-serif text-4xl font-semibold leading-tight text-foreground sm:text-5xl">
+            <GradientText>Food System</GradientText> Assessment
           </h1>
 
-          <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-muted-foreground sm:text-lg">
-            A 15-question assessment revealing how well you&rsquo;re supporting your gut microbiome
-            — scored across Prebiotics, Probiotics, and Postbiotics with a personalised 7-day action plan sent to your inbox.
+          <p className="mt-3 text-sm font-semibold tracking-wide text-muted-foreground sm:text-base">
+            Free · 15 questions · about 5 minutes
+          </p>
+
+          {/* How it is understood, then what it produces. Two different
+            * things, said in that order, because the score means nothing
+            * until the three Biotics are named. */}
+          <div className="mx-auto mt-6 max-w-md space-y-3">
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Understand your Food System through{" "}
+              <span className="font-semibold text-foreground">
+                Prebiotics · Probiotics · Postbiotics
+              </span>
+              .
+            </p>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Produces your{" "}
+              <span className="font-semibold text-foreground">Biotics Score™</span>.
+            </p>
+          </div>
+
+          {/* §7. Same register as the results page already uses — stated once,
+            * plainly, without a warning box. */}
+          <p className="mx-auto mt-5 max-w-md text-xs leading-relaxed text-muted-foreground/70">
+            A personalised educational assessment based on your answers. Educational and
+            non-diagnostic; not a medical test or diagnosis.
           </p>
 
           {/* Scroll cue */}
           <button
             onClick={scrollToForm}
-            className="mt-6 flex items-center gap-1.5 mx-auto text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+            className="mt-5 flex items-center gap-1.5 mx-auto text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
           >
             Start below
             <ChevronDown size={14} className="animate-bounce" />
@@ -204,6 +261,9 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
           <div className="rounded-3xl border border-border bg-background/90 p-6 shadow-xl backdrop-blur-sm sm:p-8">
             <p className="mb-5 text-center font-serif text-lg font-semibold text-foreground">
               Begin your free Food System Assessment
+            </p>
+            <p className="-mt-3 mb-5 text-center text-xs text-muted-foreground">
+              Your results are sent to this address.
             </p>
 
             <form onSubmit={handleSubmit} noValidate className="space-y-4">
@@ -277,7 +337,7 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
                 type="submit"
                 className="brand-gradient mt-1 flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
               >
-                Get My Free Biotics Score
+                Begin My Food System Assessment
                 <ArrowRight size={16} />
               </button>
             </form>
@@ -306,11 +366,11 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
               What you&rsquo;ll discover
             </p>
             <h2 className="mt-3 font-serif text-2xl font-semibold text-foreground sm:text-3xl">
-              You&rsquo;ll score 0-100 across the 3 Biotics
+              The three Biotics
             </h2>
             <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-              Each Biotic score measures a different dimension of your internal food system. Together,
-              they reveal the full picture.
+              Your answers are read through three pathways. Together they make up your
+              Biotics Score™.
             </p>
           </div>
 
@@ -332,19 +392,12 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
                     <p className="text-xs text-muted-foreground">{pillar.description}</p>
                   </div>
                 </div>
-                {/* Teaser score bar */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-muted-foreground/50">Your score</span>
-                    <span className="text-xs font-bold text-muted-foreground">??</span>
-                  </div>
-                  <div className="h-1.5 w-full rounded-full bg-border overflow-hidden">
-                    <div
-                      className="h-full w-0 rounded-full opacity-30"
-                      style={{ background: pillar.gradient }}
-                    />
-                  </div>
-                </div>
+                {/* A "Your score / ??" row and an empty bar used to sit here.
+                  * Nothing has been measured yet, so it showed a placeholder
+                  * where a number will be — which is a fabricated number with
+                  * the digits withheld. The three Biotics are worth naming
+                  * before the first question; a score is not, until there is
+                  * one. */}
               </div>
             ))}
           </div>
@@ -362,8 +415,8 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
               Which one describes you today?
             </h2>
             <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
-              The assessment places you in one of six profiles based on your 3 Biotics scores.
-              Take the assessment to find yours.
+              Your Biotics Score™ comes with a profile describing the pattern your answers
+              show. These are examples of the kind of thing it says.
             </p>
           </div>
 
@@ -455,7 +508,7 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
               onClick={scrollToForm}
               className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-3.5 text-base font-semibold text-white transition-opacity hover:opacity-90"
             >
-              Get My Free Biotics Score
+              Begin My Food System Assessment
               <ArrowRight size={18} />
             </button>
           </div>

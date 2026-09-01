@@ -96,7 +96,7 @@ export function ScoreMock() {
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/70 backdrop-blur-[3px]" />
         <div className="relative z-20 flex items-center justify-center py-3">
           <Link
-            href="/assessment"
+            href="/assessment/you"
             className="text-sm font-semibold"
             style={{ color: "var(--icon-green)" }}
           >

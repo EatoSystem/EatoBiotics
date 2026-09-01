@@ -43,7 +43,7 @@ export function StartPressure() {
         <ScrollReveal delay={160}>
           <div className="mt-8 space-y-3">
             <Link
-              href="/assessment"
+              href="/assessment/you"
               className="brand-gradient inline-flex w-full max-w-sm items-center justify-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/30 transition-all hover:opacity-90"
             >
               Take my Food System Assessment
