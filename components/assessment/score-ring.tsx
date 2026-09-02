@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { usePrefersReducedMotion } from "./result/use-reduced-motion"
 
 interface ScoreRingProps {
   score: number
@@ -22,13 +23,24 @@ interface ScoreRingProps {
  * caller cannot reintroduce it by passing a prop that still exists.
  */
 export function ScoreRing({ score, color, gradientId, profileType, className, textColor }: ScoreRingProps) {
+  const reducedMotion = usePrefersReducedMotion()
   const [animated, setAnimated] = useState(0)
 
   const r = 88
   const circumference = 2 * Math.PI * r
   const progress = (animated / 100) * circumference
 
+  /* The ring sweeps to the score, or arrives at it.
+   *
+   * This used to run unconditionally: fifty setInterval ticks over a
+   * second, with no reduced-motion check anywhere. Someone who has asked
+   * their system for less motion still had to watch the arc travel before
+   * the ring showed their result. */
   useEffect(() => {
+    if (reducedMotion) {
+      setAnimated(score)
+      return
+    }
     const target = score
     const duration = 1000
     const steps = 50
@@ -44,7 +56,7 @@ export function ScoreRing({ score, color, gradientId, profileType, className, te
       }
     }, duration / steps)
     return () => clearInterval(timer)
-  }, [score])
+  }, [score, reducedMotion])
 
   return (
     <div className={className ?? "relative mx-auto h-56 w-56 sm:h-64 sm:w-64"}>

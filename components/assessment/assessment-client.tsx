@@ -5,7 +5,6 @@ import {
   loadAssessment,
   saveAssessment,
   emptyAssessmentState,
-  loadPrivacyChoice,
   saveLeadData,
   loadLeadData,
   type AssessmentState,
@@ -18,7 +17,6 @@ import { AssessmentIntro } from "./assessment-intro"
 import { AssessmentProgress } from "./assessment-progress"
 import { AssessmentQuestionView } from "./assessment-question"
 import { AssessmentResults } from "./assessment-results"
-import { PrivacyOptIn } from "./privacy-opt-in"
 import { patchJourney } from "@/lib/assessment/journey"
 import posthog from "posthog-js"
 import { logEvent } from "@/lib/statsig-client"
@@ -150,7 +148,6 @@ export function AssessmentClient() {
     } else {
       // Last question — compute results
       const computed = computeResult(answers)
-      const privacyAlreadyChosen = loadPrivacyChoice() !== null
 
       // PostHog: assessment completed + identify user by email
       posthog.capture("assessment_completed", {
@@ -186,7 +183,7 @@ export function AssessmentClient() {
         ...s,
         answers,
         result: computed,
-        view: privacyAlreadyChosen ? "results" : "privacy",
+        view: "results",
       }))
     }
   }
@@ -252,14 +249,9 @@ export function AssessmentClient() {
     )
   }
 
-  if (state.view === "privacy" && state.result) {
-    return (
-      <PrivacyOptIn
-        result={state.result}
-        onChoice={() => setState(s => ({ ...s, view: "results" }))}
-      />
-    )
-  }
+  /* The `privacy` view is gone from the You journey. A saved state that
+   * still carries view: "privacy" — someone mid-flow when this shipped —
+   * falls through to the results below, which is where they were headed. */
 
   // view === "results"
   if (!state.result) return null
