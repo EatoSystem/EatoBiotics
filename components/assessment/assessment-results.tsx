@@ -10,15 +10,10 @@ import {
   HEALTH_CONSENT_FIELD,
   HEALTH_CONSENT_REQUIRED_MESSAGE,
 } from "@/lib/health-consent"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import {
-  CheckCircle2,
-  TrendingUp,
   RotateCcw,
-  Leaf,
-  Droplets,
-  Zap,
   Utensils,
   ArrowRight,
   Check,
@@ -30,16 +25,19 @@ import {
 } from "lucide-react"
 import posthog from "posthog-js"
 import { ScrollReveal } from "@/components/scroll-reveal"
-import { ScoreRing } from "./score-ring"
+import { BioticsScoreReveal } from "./result/biotics-score-reveal"
+import { FoodSystemProfile } from "./result/food-system-profile"
+import { ThreeBioticsResult } from "./result/three-biotics-result"
+import { FoodSystemPattern } from "./result/food-system-pattern"
+import { OneFreeAction } from "./result/one-free-action"
+import { ContributeOptIn } from "./result/contribute-opt-in"
 import { MissionNote } from "./mission-note"
 import { ShareScoreCard } from "./share-score-card"
 import { JourneyNextStep } from "./journey-next-step"
 import { ScoreCard } from "./score-card"
 import { SaveResultsCard } from "./save-results-card"
-import type { AssessmentResult, PillarInsight } from "@/lib/assessment-scoring"
-import type { PillarKey } from "@/lib/assessment-data"
+import type { AssessmentResult } from "@/lib/assessment-scoring"
 import { getFoodBySlug } from "@/lib/foods"
-import { getIdentityLabel } from "@/lib/identity-labels"
 import { REPORT_OFFER_FEATURES } from "@/lib/report/offer"
 import { browserCountry, localFoods, fermentedPair, prebioticTrio } from "@/lib/local-foods"
 import type { FoodSet } from "@/lib/foods-by-country"
@@ -58,38 +56,28 @@ const STARTER_PACK: Record<string, string[]> = {
 
 const DEFAULT_STARTER: string[] = ["garlic", "oats", "yogurt", "kefir", "lentils", "blueberries"]
 
-const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
-  Leaf,
-  Droplets,
-  Zap,
-}
 
-/* ── Interpretation copy (in-component, no API call) ─────────────────── */
 
-const INTERPRETATIONS: Record<string, Record<"low" | "mid" | "high", string>> = {
-  prebiotics: {
-    low: "Your gut bacteria are hungry. Your Prebiotics score suggests you may not be eating enough plant diversity and fibre to support a thriving microbiome — this is your biggest lever right now.",
-    mid: "Your Prebiotics score shows a reasonable fibre foundation. With a few targeted additions to your weekly plant variety, you could significantly improve your gut ecosystem.",
-    high: "Your Prebiotics score is strong — you're consistently nourishing your gut bacteria with the plant diversity and fibre they need to thrive.",
-  },
-  probiotics: {
-    low: "Your Probiotics score is your biggest opportunity. Adding even one fermented food daily — {FERMENTED} — is the most direct way to build the habit this pillar measures.",
-    mid: "You're introducing some live foods, but your Probiotics score suggests there's room to build a more consistent fermented food habit and broaden the variety.",
-    high: "Your Probiotics score shows you're actively supporting your gut microbiome with fermented and live foods — one of the most targeted dietary inputs available.",
-  },
-  postbiotics: {
-    low: "Your Postbiotics score suggests your food habits and meal rhythm may be working against your gut's recovery and energy systems. Small consistency wins here compound quickly.",
-    mid: "Your Postbiotics score shows some consistency, but your gut's recovery system could benefit from more regular meal patterns and colourful, polyphenol-rich foods.",
-    high: "Your Postbiotics score is excellent — your food habits and meal timing are supporting your gut's natural recovery and resilience processes.",
-  },
-}
+/* ── Localised focus suggestion ──────────────────────────────────────────
+   One concrete, country-aware thing to try, rendered by OneFreeAction.
 
-/* ── Weakest pillar free food recommendation ─────────────────────────── */
+   The interpretation paragraphs that used to sit beside this were removed with
+   the weakest-pillar callout they belonged to. They carried claims this phase
+   retires — "significantly improve your gut ecosystem", "your biggest lever
+   right now", "may be working against your gut's recovery", and "the habit this
+   pillar measures". insight.strength / insight.opportunity already carry
+   interpretation, without the promises.
 
-const WEAKEST_FOOD_REC: Record<string, string> = {
-  prebiotics: "Adding {PREBIOTIC} to just three meals this week is a concrete place to start on your Prebiotics score.",
-  probiotics: "A daily spoonful of {FERMENTED} is the simplest habit this pillar asks for — it takes seconds.",
-  postbiotics: "Eating your main meal before 7pm and adding two colourful plant foods per day are the two habits this pillar tracks most closely.",
+   The localisation itself was worth keeping rather than deleting with them:
+   lib/local-foods.ts has exactly one consumer — this file — so dropping the
+   last use would have orphaned the module and quietly removed a personalisation
+   that names food someone can actually buy where they live. */
+
+const FOCUS_FOOD_SUGGESTION: Record<string, string> = {
+  prebiotics: "Add {PREBIOTIC} to three meals this week.",
+  probiotics: "A daily spoonful of {FERMENTED} — it takes seconds.",
+  postbiotics:
+    "Eat your main meal earlier in the evening, and add two colourful plant foods a day.",
 }
 
 /* ── "The science is global. The food is local." ─────────────────────────
@@ -112,78 +100,7 @@ function useLocalFoodSet(): FoodSet {
   return set
 }
 
-/* ── Animated score counter ─────────────────────────────────────────── */
 
-function useCountUp(target: number, duration = 1200, delay = 400) {
-  const [count, setCount] = useState(0)
-  const startTime = useRef<number | null>(null)
-  const rafId = useRef<number | null>(null)
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      const tick = (now: number) => {
-        if (!startTime.current) startTime.current = now
-        const elapsed = now - startTime.current
-        const progress = Math.min(elapsed / duration, 1)
-        const eased = 1 - Math.pow(1 - progress, 3)
-        setCount(Math.round(eased * target))
-        if (progress < 1) {
-          rafId.current = requestAnimationFrame(tick)
-        }
-      }
-      rafId.current = requestAnimationFrame(tick)
-    }, delay)
-
-    return () => {
-      clearTimeout(timeout)
-      if (rafId.current) cancelAnimationFrame(rafId.current)
-    }
-  }, [target, duration, delay])
-
-  return count
-}
-
-/* ── Pillar bar (hero + breakdown) ───────────────────────────────────── */
-
-function PillarBar({ insight, index }: { insight: PillarInsight; index: number }) {
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 500 + index * 120)
-    return () => clearTimeout(t)
-  }, [index])
-
-  const Icon = ICON_MAP[insight.icon] ?? Leaf
-
-  return (
-    <div className="flex items-center gap-3">
-      <div
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
-        style={{ background: insight.gradient }}
-      >
-        <Icon size={14} className="text-white" />
-      </div>
-      <div className="flex flex-1 flex-col gap-1.5">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-foreground">{insight.label}</span>
-          <span className="text-sm font-bold tabular-nums" style={{ color: insight.color }}>
-            {insight.score}
-          </span>
-        </div>
-        <div className="h-2 overflow-hidden rounded-full bg-border/40">
-          <div
-            className="h-full rounded-full"
-            style={{
-              width: visible ? `${insight.score}%` : "0%",
-              background: insight.gradient,
-              transition: `width 800ms cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 100}ms`,
-            }}
-          />
-        </div>
-      </div>
-    </div>
-  )
-}
 
 
 /* ── Main component ──────────────────────────────────────────────────── */
@@ -209,25 +126,14 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
   // Lottery winner code copy state
   const [winnerCodeCopied, setWinnerCodeCopied] = useState(false)
 
-  // Animated counter
-  const animatedScore = useCountUp(overall)
-
-  // Weakest pillar (insights sorted weakest-first)
-  const weakestInsight = insights[0]
-  const weakestPillar = weakestInsight.pillar as PillarKey
-
-  // Interpretation — keyed to weakest pillar's own score band
-  const ws = weakestInsight.score
-  const scoreBand: "low" | "mid" | "high" = ws >= 65 ? "high" : ws >= 40 ? "mid" : "low"
+  // FoodSystemPattern reads the same weakest-first `insights` ordering that
+  // produced the callout this replaced — the derivation moved, it was not
+  // reinvented. `foods` is still needed by the Gut Starter Pack below.
   const foods = useLocalFoodSet()
-  const interpretationText = fillLocalFoods(INTERPRETATIONS[weakestPillar][scoreBand], foods)
-
-  // Identity
-  const identityLabel = getIdentityLabel(overall)
-
-  // Strengths / opportunities for breakdown section
-  const strengths = insights.filter((i) => i.strength)
-  const opportunities = insights.filter((i) => i.opportunity)
+  const focusPillar = insights[0]?.pillar ?? ""
+  const localSuggestion = FOCUS_FOOD_SUGGESTION[focusPillar]
+    ? fillLocalFoods(FOCUS_FOOD_SUGGESTION[focusPillar], foods)
+    : undefined
 
   /* ── Checkout helpers ─────────────────────────────────────────────── */
 
@@ -279,131 +185,25 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
   return (
     <div className="min-h-screen bg-background">
 
-      {/* ── A. Score Reveal — above fold ───────────────────────────────── */}
-      <section className="relative overflow-hidden px-6 pb-16 pt-28 sm:pt-36">
-        {/* Radial glow tinted by profile colour */}
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background: `radial-gradient(ellipse 80% 60% at 50% 0%, color-mix(in srgb, ${profile.color} 12%, transparent), transparent 70%)`,
-          }}
-        />
+      {/* ── The free result, in the order it makes sense ────────────────
+        *
+        * Score → profile → the three Biotics → the pattern → one thing to try.
+        * All of it before the €49 block, which used to sit above the Three
+        * Biotics and above the report-features list; the only interpretation
+        * ahead of it was a "weakest pillar" callout that closed by advertising
+        * the paid plan. The free result now stands on its own.
+        *
+        * One scrollable page, normal document flow — no stage index, no taps
+        * between a customer and their own result. */}
+      <BioticsScoreReveal overall={overall} color={profile.color} profileType={profile.type} />
 
-        <div className="relative mx-auto max-w-4xl">
-          {/* Overline */}
-          <div className="mb-6 text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: profile.color }} />
-              Your Biotics Score™
-            </div>
-          </div>
+      <FoodSystemProfile profile={profile} />
 
-          {/* Score + bars layout */}
-          <div className="flex flex-col items-center gap-10 sm:flex-row sm:items-start sm:gap-12 lg:gap-20">
+      <ThreeBioticsResult insights={insights} />
 
-            {/* Left: Score ring + animated number */}
-            <div className="flex shrink-0 flex-col items-center">
-              <ScoreRing
-                score={overall}
-                color={profile.color}
-                gradientId="assessment-ring"
-                profileType={profile.type}
-              />
-              <div className="mt-4 text-center">
-                <p className="text-5xl font-bold tabular-nums leading-none" style={{ color: profile.color }}>
-                  {animatedScore}
-                  <span className="text-xl text-muted-foreground">/100</span>
-                </p>
-                <p className="mt-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                  Biotics Score™
-                </p>
-              </div>
-              {/* Identity badge. The "Higher than X% of people" line below it is
-                * gone: a Biotics Score™ is the person's own number and does not
-                * need a population ranking to mean something — and the ranking on
-                * offer was synthetic. The badge keeps its own bottom margin so
-                * nothing collapses. */}
-              <div className="mt-4 flex flex-col items-center gap-1.5">
-                <div className="flex items-center gap-2 rounded-full border border-border bg-secondary/40 px-4 py-1.5">
-                  <span className="text-sm font-bold text-foreground">{identityLabel.word}</span>
-                </div>
-              </div>
-            </div>
+      <FoodSystemPattern insights={insights} />
 
-            {/* Right: Profile label + 3 pillar bars + interpretation */}
-            <div className="w-full max-w-sm flex-1 sm:max-w-none">
-              <div className="mb-2 flex items-center gap-2">
-                <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: profile.color }} />
-                <span className="text-sm font-bold" style={{ color: profile.color }}>
-                  {profile.type}
-                </span>
-              </div>
-              <p className="mb-5 font-serif text-xl font-semibold text-foreground sm:text-2xl leading-snug">
-                {profile.tagline}
-              </p>
-
-              {/* 3 pillar bars */}
-              <div className="space-y-4 rounded-2xl border border-border bg-background/80 p-5 backdrop-blur-sm">
-                {insights.map((insight, i) => (
-                  <PillarBar key={insight.pillar} insight={insight} index={i} />
-                ))}
-              </div>
-
-              {/* Interpretation paragraph */}
-              <div
-                className="mt-4 rounded-xl border-l-4 bg-secondary/30 px-4 py-3"
-                style={{ borderLeftColor: weakestInsight.color }}
-              >
-                <p className="text-sm leading-relaxed text-foreground/80">{interpretationText}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Foundation → add-on journey next step ──────────────────────── */}
-      <section className="px-6"><JourneyNextStep /></section>
-
-      {/* ── B. Weakest pillar callout — free insight ───────────────────── */}
-      <section className="px-6 pb-12">
-        <div className="mx-auto max-w-3xl">
-          <ScrollReveal>
-            <div
-              className="rounded-2xl border p-6"
-              style={{
-                borderColor: `color-mix(in srgb, ${weakestInsight.color} 30%, var(--border))`,
-                background: `color-mix(in srgb, ${weakestInsight.color} 5%, var(--background))`,
-              }}
-            >
-              <div className="flex items-start gap-4">
-                <div
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                  style={{ background: weakestInsight.gradient }}
-                >
-                  {(() => {
-                    const Icon = ICON_MAP[weakestInsight.icon] ?? Leaf
-                    return <Icon size={18} className="text-white" />
-                  })()}
-                </div>
-                <div>
-                  <p
-                    className="text-xs font-bold uppercase tracking-widest"
-                    style={{ color: weakestInsight.color }}
-                  >
-                    Your biggest opportunity — {weakestInsight.label}
-                  </p>
-                  <p className="mt-1 text-sm leading-relaxed text-foreground">
-                    <strong>{fillLocalFoods(WEAKEST_FOOD_REC[weakestPillar], foods)}</strong>
-                  </p>
-                  <p className="mt-1.5 text-xs text-muted-foreground">
-                    This is a free insight — your full 30-day plan goes much deeper.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </ScrollReveal>
-        </div>
-      </section>
+      <OneFreeAction action={nextActions[0]} localSuggestion={localSuggestion} />
 
       {/* ── Share your score ───────────────────────────────────────────── */}
       <section className="px-6 pb-12">
@@ -423,64 +223,9 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
         </div>
       </section>
 
-      {/* ── Lottery winner ────────────────────────────────────────────── */}
-      {winnerCode && (
-        <section className="px-6 pb-10">
-          <div className="mx-auto max-w-3xl">
-            <ScrollReveal>
-              <div className="overflow-hidden rounded-2xl" style={{
-                background: "linear-gradient(135deg, #7c3aed 0%, #4f46e5 35%, #0ea5e9 70%, #06b6d4 100%)",
-                boxShadow: "0 8px 40px rgba(79,70,229,0.35)",
-              }}>
-                {/* Shimmering top bar */}
-                <div className="h-[3px]" style={{ background: "linear-gradient(90deg, #fbbf24, #f59e0b, #fcd34d, #fbbf24)", backgroundSize: "200% 100%", animation: "shimmer 2s linear infinite" }} />
-                <div className="px-6 py-6 md:px-8">
-                  {/* Trophy + headline */}
-                  <div className="mb-1 flex items-center gap-3">
-                    <Trophy size={32} aria-hidden strokeWidth={1.8} className="text-white" />
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.65)" }}>
-                        You&apos;re a milestone taker
-                      </p>
-                      <p className="font-serif text-xl font-bold text-white leading-tight">
-                        Congratulations — you&apos;ve won a free month!
-                      </p>
-                    </div>
-                  </div>
-                  <p className="mt-3 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.80)" }}>
-                    Every 100th person to take the EatoBiotics assessment wins a free first month on any plan. Today, that&apos;s you. Use the code below at checkout — it&apos;s yours alone and can only be used once.
-                  </p>
-                  {/* Code box */}
-                  <div className="mt-5 flex items-center gap-2">
-                    <div
-                      className="flex-1 rounded-xl px-4 py-3 font-mono text-lg font-bold tracking-widest text-white"
-                      style={{ background: "rgba(255,255,255,0.15)", border: "1.5px solid rgba(255,255,255,0.35)", letterSpacing: "0.15em" }}
-                    >
-                      {winnerCode}
-                    </div>
-                    <button
-                      onClick={() => {
-                        void navigator.clipboard.writeText(winnerCode).then(() => {
-                          setWinnerCodeCopied(true)
-                          setTimeout(() => setWinnerCodeCopied(false), 2500)
-                          posthog.capture("lottery_winner_code_copied")
-                        })
-                      }}
-                      className="flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-3 text-sm font-bold transition-opacity hover:opacity-90"
-                      style={{ background: "rgba(255,255,255,0.20)", border: "1px solid rgba(255,255,255,0.30)", color: "white", minWidth: 90 }}
-                    >
-                      {winnerCodeCopied ? <><Check size={13} /> Copied!</> : <><Copy size={13} /> Copy</>}
-                    </button>
-                  </div>
-                  <p className="mt-2.5 text-xs" style={{ color: "rgba(255,255,255,0.60)" }}>
-                    Free first month · Single-use · Apply at checkout
-                  </p>
-                </div>
-              </div>
-            </ScrollReveal>
-          </div>
-        </section>
-      )}
+      {/* The optional contribution ask, after the free result rather than
+        * in front of it. */}
+      <ContributeOptIn result={result} />
 
       {/* ── C. Single CTA — the conversion moment ─────────────────────── */}
       <section className="border-y border-border bg-secondary/10 px-6 py-16">
@@ -606,131 +351,20 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
         </div>
       </section>
 
-      {/* ── E. 3 Biotics Breakdown ─────────────────────────────────────── */}
-      <section className="border-t border-border bg-secondary/10 px-6 py-16">
-        <div className="mx-auto max-w-3xl">
-          <ScrollReveal>
-            <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
-              Your Three Biotics
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              How your food system performs across Prebiotics, Probiotics, and Postbiotics — the three areas that shape your gut health.
-            </p>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              {strengths.length > 0 && (
-                <span className="flex items-center gap-1.5 rounded-full bg-[var(--icon-green)]/10 px-3 py-1 text-xs font-semibold text-[var(--icon-green)]">
-                  <CheckCircle2 size={11} />
-                  {strengths.length} {strengths.length === 1 ? "strength" : "strengths"}
-                </span>
-              )}
-              {opportunities.length > 0 && (
-                <span className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
-                  <TrendingUp size={11} />
-                  {opportunities.length} {opportunities.length === 1 ? "area to build" : "areas to build"}
-                </span>
-              )}
-            </div>
-          </ScrollReveal>
-
-          {/* Strengths */}
-          {strengths.length > 0 && (
-            <div className="mt-8">
-              <p className="mb-3 text-xs font-bold uppercase tracking-widest text-[var(--icon-green)]">
-                What&rsquo;s working
-              </p>
-              <div className="space-y-3">
-                {strengths.map((insight, i) => {
-                  const Icon = ICON_MAP[insight.icon] ?? Leaf
-                  return (
-                    <ScrollReveal key={insight.pillar} delay={i * 60}>
-                      <div className="flex gap-4 rounded-2xl border border-[var(--icon-green)]/15 bg-[var(--icon-green)]/5 p-5">
-                        <div
-                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-                          style={{ background: insight.gradient }}
-                        >
-                          <Icon size={16} className="text-white" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-semibold text-foreground">{insight.label}</p>
-                              <CheckCircle2 size={13} className="text-[var(--icon-green)]" />
-                            </div>
-                            <span className="text-xs font-bold tabular-nums" style={{ color: insight.color }}>
-                              {insight.score}/100
-                            </span>
-                          </div>
-                          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{insight.strength}</p>
-                          <p className="mt-2 text-xs leading-relaxed text-muted-foreground/70 italic">
-                            Next step: {insight.action}
-                          </p>
-                        </div>
-                      </div>
-                    </ScrollReveal>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Opportunities */}
-          {opportunities.length > 0 && (
-            <div className={strengths.length > 0 ? "mt-8" : "mt-6"}>
-              <p className="mb-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                Where to focus
-              </p>
-              <div className="space-y-3">
-                {opportunities.map((insight, i) => {
-                  const Icon = ICON_MAP[insight.icon] ?? Leaf
-                  return (
-                    <ScrollReveal key={insight.pillar} delay={i * 60}>
-                      <div className="flex gap-4 rounded-2xl border border-border bg-background p-5">
-                        <div
-                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-                          style={{ background: insight.gradient }}
-                        >
-                          <Icon size={16} className="text-white" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-semibold text-foreground">{insight.label}</p>
-                              <TrendingUp size={13} className="text-muted-foreground" />
-                            </div>
-                            <span className="text-xs font-bold tabular-nums text-muted-foreground">
-                              {insight.score}/100
-                            </span>
-                          </div>
-                          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{insight.opportunity}</p>
-                          <p className="mt-2 text-xs leading-relaxed text-muted-foreground/70 italic">
-                            This week: {insight.action}
-                          </p>
-                        </div>
-                      </div>
-                    </ScrollReveal>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-
       {/* ── 7-Day Actions ────────────────────────────────────────────────── */}
       <section className="px-6 py-16">
         <div className="mx-auto max-w-3xl">
           <ScrollReveal>
             <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
-              Your Next 7 Days
+              More to try
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Three specific things you can do this week to start improving your food system.
+              A few more small things you could try this week.
             </p>
           </ScrollReveal>
 
           <div className="mt-6 space-y-4">
-            {nextActions.map((action, i) => (
+            {nextActions.slice(1).map((action, i) => (
               <ScrollReveal key={i} delay={i * 80}>
                 <div className="flex gap-4 rounded-2xl border border-border bg-background p-5">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full brand-gradient text-sm font-bold text-white">
@@ -755,7 +389,7 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
               Your Gut Starter Pack
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Six foods matched to your profile — add any of them to today&apos;s plate to start improving your score right now.
+              Six foods matched to your profile — any of them is a reasonable place to start.
             </p>
           </ScrollReveal>
 
@@ -815,6 +449,68 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
         </div>
       </section>
 
+      {/* ── Foundation → add-on journey next step ──────────────────────── */}
+      <section className="px-6"><JourneyNextStep /></section>
+
+      {/* ── Lottery winner ────────────────────────────────────────────── */}
+      {winnerCode && (
+        <section className="px-6 pb-10">
+          <div className="mx-auto max-w-3xl">
+            <ScrollReveal>
+              <div className="overflow-hidden rounded-2xl" style={{
+                background: "linear-gradient(135deg, #7c3aed 0%, #4f46e5 35%, #0ea5e9 70%, #06b6d4 100%)",
+                boxShadow: "0 8px 40px rgba(79,70,229,0.35)",
+              }}>
+                {/* Shimmering top bar */}
+                <div className="h-[3px]" style={{ background: "linear-gradient(90deg, #fbbf24, #f59e0b, #fcd34d, #fbbf24)", backgroundSize: "200% 100%", animation: "shimmer 2s linear infinite" }} />
+                <div className="px-6 py-6 md:px-8">
+                  {/* Trophy + headline */}
+                  <div className="mb-1 flex items-center gap-3">
+                    <Trophy size={32} aria-hidden strokeWidth={1.8} className="text-white" />
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.65)" }}>
+                        You&apos;re a milestone taker
+                      </p>
+                      <p className="font-serif text-xl font-bold text-white leading-tight">
+                        Congratulations — you&apos;ve won a free month!
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.80)" }}>
+                    Every 100th person to take the EatoBiotics assessment wins a free first month on any plan. Today, that&apos;s you. Use the code below at checkout — it&apos;s yours alone and can only be used once.
+                  </p>
+                  {/* Code box */}
+                  <div className="mt-5 flex items-center gap-2">
+                    <div
+                      className="flex-1 rounded-xl px-4 py-3 font-mono text-lg font-bold tracking-widest text-white"
+                      style={{ background: "rgba(255,255,255,0.15)", border: "1.5px solid rgba(255,255,255,0.35)", letterSpacing: "0.15em" }}
+                    >
+                      {winnerCode}
+                    </div>
+                    <button
+                      onClick={() => {
+                        void navigator.clipboard.writeText(winnerCode).then(() => {
+                          setWinnerCodeCopied(true)
+                          setTimeout(() => setWinnerCodeCopied(false), 2500)
+                          posthog.capture("lottery_winner_code_copied")
+                        })
+                      }}
+                      className="flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-3 text-sm font-bold transition-opacity hover:opacity-90"
+                      style={{ background: "rgba(255,255,255,0.20)", border: "1px solid rgba(255,255,255,0.30)", color: "white", minWidth: 90 }}
+                    >
+                      {winnerCodeCopied ? <><Check size={13} /> Copied!</> : <><Copy size={13} /> Copy</>}
+                    </button>
+                  </div>
+                  <p className="mt-2.5 text-xs" style={{ color: "rgba(255,255,255,0.60)" }}>
+                    Free first month · Single-use · Apply at checkout
+                  </p>
+                </div>
+              </div>
+            </ScrollReveal>
+          </div>
+        </section>
+      )}
+
       {/* ── Mission Bridge ─────────────────────────────────────────────── */}
       <section className="border-t border-border px-6 py-12">
         <div className="mx-auto max-w-3xl">
@@ -851,6 +547,7 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
         </div>
       </section>
 
+      {/*
       {/*
         The abandonment safety net used to offer "Starter Insights for €19" here,
         wired to handlePurchase("starter"). The starter tier was retired:

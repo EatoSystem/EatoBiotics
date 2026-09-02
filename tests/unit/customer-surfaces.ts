@@ -55,6 +55,16 @@ export const ASSESSMENT_SURFACES = [
   // Shared by ~20 callers; it rendered the synthetic "Top X%" badge.
   "components/assessment/score-ring.tsx",
   "components/assessment/deep/deep-assessment-client.tsx",
+  // The free result's narrative, extracted out of assessment-results.tsx in
+  // Phase 2C. The copy moved with it, so the corpus has to move with it too —
+  // otherwise the three vocabulary guards keep reading a file the customer no
+  // longer sees the words in.
+  "components/assessment/result/biotics-score-reveal.tsx",
+  "components/assessment/result/food-system-profile.tsx",
+  "components/assessment/result/three-biotics-result.tsx",
+  "components/assessment/result/food-system-pattern.tsx",
+  "components/assessment/result/one-free-action.tsx",
+  "components/assessment/result/contribute-opt-in.tsx",
 ]
 
 /**

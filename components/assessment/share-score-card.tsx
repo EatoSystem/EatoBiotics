@@ -5,7 +5,6 @@ import { Share2, Copy, Check, MessageCircle, Image as ImageIcon } from "lucide-r
 import posthog from "posthog-js"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
 import { getPercentile } from "@/lib/percentile"
-import { getIdentityLabel } from "@/lib/identity-labels"
 
 /* ── Share Score Card ────────────────────────────────────────────────────
    Shown at the top of the results page.
@@ -21,40 +20,17 @@ export function ShareScoreCard({ result }: ShareScoreCardProps) {
   const [copied, setCopied] = useState(false)
   const [expanded, setExpanded] = useState(false)
 
-  const { overall, profile, subScores } = result
+  const { overall, profile } = result
 
-  // Achievement framing
-  const percentile    = getPercentile(overall)
-  const identityLabel = getIdentityLabel(overall)
+  // percentile stays for /api/og/score-card's existing query contract and the
+  // existing analytics payloads below — not displayed anywhere on this card.
+  // getIdentityLabel and its "current focus" (weakest-pillar) framing are
+  // gone: the profile the customer just read on the result IS the identity
+  // shared here, matching the rest of Phase 2C. Full percentile retirement is
+  // Phase 2G.
+  const percentile = getPercentile(overall)
 
-  // Renamed from `weakestKey`/`weakestLabel` in the copy sense only: the
-  // customer is told their CURRENT FOCUS, not their "weakest pillar". "Weakest"
-  // ranks a person against themselves in a vocabulary the product retired, and
-  // "pillar" is not the current model. The derivation, the keys, and every
-  // legacy alias below are untouched — the label has to stay true for canonical
-  // Biotic keys AND the five legacy dimension keys, which is why it is neutral.
-  const focusKey = Object.entries(subScores)
-    .filter(([k]) => ["prebiotics", "probiotics", "postbiotics", "feed", "seed", "heal"].includes(k))
-    .sort(([, a], [, b]) => a - b)[0]?.[0] ?? "prebiotics"
-  const focusLabels: Record<string, string> = {
-    // Current pillar keys
-    prebiotics:  "Prebiotics",
-    probiotics:  "Probiotics",
-    postbiotics: "Postbiotics",
-    // Feed/Seed/Heal aliases
-    feed:        "Prebiotics",
-    seed:        "Probiotics",
-    heal:        "Postbiotics",
-    // Legacy pillar keys (backward compat)
-    diversity:   "Plant Diversity",
-    feeding:     "Feeding",
-    adding:      "Live Foods",
-    consistency: "Consistency",
-    feeling:     "Feeling",
-  }
-  const focusLabel = focusLabels[focusKey] ?? focusKey
-
-  const shareText = `I took the EatoBiotics Food System Assessment and my Biotics Score is ${overall}/100 — I'm a ${identityLabel.word} ${identityLabel.emoji}. My current focus is ${focusLabel}. Take yours:`
+  const shareText = `I took the EatoBiotics Food System Assessment and my Biotics Score™ is ${overall}/100. My Food System profile is ${profile.type}. Take yours:`
 
   const shareUrl = typeof window !== "undefined"
     ? window.location.origin + "/assessment"
@@ -62,7 +38,7 @@ export function ShareScoreCard({ result }: ShareScoreCardProps) {
 
   const ogCardUrl =
     `/api/og/score-card?score=${overall}&percentile=${percentile}` +
-    `&label=${encodeURIComponent(identityLabel.word)}&emoji=${encodeURIComponent(identityLabel.emoji)}`
+    `&label=${encodeURIComponent(profile.type)}&emoji=`
 
   async function handleCopy() {
     try {
@@ -70,9 +46,9 @@ export function ShareScoreCard({ result }: ShareScoreCardProps) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2500)
       posthog.capture("score_shared", {
-        method:         "clipboard",
-        score:          overall,
-        identity_label: identityLabel.word,
+        method:       "clipboard",
+        score:        overall,
+        profile_type: profile.type,
         percentile,
       })
     } catch {
@@ -89,9 +65,9 @@ export function ShareScoreCard({ result }: ShareScoreCardProps) {
         url:   shareUrl,
       })
       posthog.capture("score_shared", {
-        method:         "native",
-        score:          overall,
-        identity_label: identityLabel.word,
+        method:       "native",
+        score:        overall,
+        profile_type: profile.type,
         percentile,
       })
     } catch {
@@ -102,9 +78,9 @@ export function ShareScoreCard({ result }: ShareScoreCardProps) {
   function handleShareImage() {
     window.open(ogCardUrl, "_blank", "noopener")
     posthog.capture("score_shared", {
-      method:         "image",
-      score:          overall,
-      identity_label: identityLabel.word,
+      method:       "image",
+      score:        overall,
+      profile_type: profile.type,
       percentile,
     })
   }
@@ -128,12 +104,16 @@ export function ShareScoreCard({ result }: ShareScoreCardProps) {
           </div>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-sm">{identityLabel.emoji}</span>
+          <span
+            className="h-2 w-2 rounded-full"
+            style={{ backgroundColor: profile.color }}
+            aria-hidden
+          />
           <div
             className="rounded-full px-3 py-1 text-xs font-semibold text-white"
             style={{ background: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))" }}
           >
-            {overall}/100 · {identityLabel.word}
+            {overall}/100 · {profile.type}
           </div>
         </div>
       </button>
@@ -145,9 +125,13 @@ export function ShareScoreCard({ result }: ShareScoreCardProps) {
             * from a synthetic distribution — see lib/percentile.ts — so the row
             * now names the score it is actually about. */}
           <div className="flex items-center gap-3 rounded-xl bg-secondary/40 px-4 py-3">
-            <span className="text-2xl">{identityLabel.emoji}</span>
+            <span
+              className="h-3 w-3 shrink-0 rounded-full"
+              style={{ backgroundColor: profile.color }}
+              aria-hidden
+            />
             <div>
-              <p className="text-sm font-bold text-foreground">{identityLabel.word}</p>
+              <p className="text-sm font-bold text-foreground">{profile.type}</p>
               <p className="text-xs text-muted-foreground">
                 Your Biotics Score™ is <strong>{overall}</strong>/100
               </p>
@@ -201,7 +185,8 @@ export function ShareScoreCard({ result }: ShareScoreCardProps) {
           </div>
 
           <p className="text-[11px] text-muted-foreground/50">
-            Help someone you know discover their gut health baseline — it only takes 2 minutes.
+            Help someone you know take their own Food System Assessment — it takes about 5
+            minutes.
           </p>
         </div>
       )}
