@@ -18,6 +18,7 @@ import { describe, it, expect } from "vitest"
 import { readFileSync } from "node:fs"
 import { copyOf } from "./helpers/marketing-language"
 import { BIOTIC_INTRO } from "@/lib/assessment/biotics"
+import { getInsights } from "@/lib/assessment-scoring"
 
 const RESULTS_PATH = "components/assessment/assessment-results.tsx"
 const RESULTS = readFileSync(RESULTS_PATH, "utf8")
@@ -30,6 +31,7 @@ const PATTERN = readFileSync("components/assessment/result/food-system-pattern.t
 const ACTION = readFileSync("components/assessment/result/one-free-action.tsx", "utf8")
 const CONTRIBUTE = readFileSync("components/assessment/result/contribute-opt-in.tsx", "utf8")
 const RING = readFileSync("components/assessment/score-ring.tsx", "utf8")
+const SHARE = readFileSync("components/assessment/share-score-card.tsx", "utf8")
 
 /**
  * Source with comments stripped, for every rule that forbids a construct BY
@@ -45,6 +47,15 @@ const code = (src: string) => copyOf(src)
 
 /** Every narrative surface's rendered copy, comments and classNames stripped. */
 const NARRATIVE_COPY = [REVEAL, PROFILE, BIOTICS, PATTERN, ACTION].map(copyOf).join(" ")
+
+/**
+ * The Share surface's own copy, kept separate from NARRATIVE_COPY rather than
+ * folded in: it isn't part of the score→profile→Biotics→pattern→action
+ * sequence §12 orders, it's the thing a customer sends to someone else, so it
+ * gets its own identity and vocabulary checks below rather than silently
+ * riding on the narrative's.
+ */
+const SHARE_COPY = copyOf(SHARE)
 
 /** Where a thing sits in the composed result. -1 when absent. */
 const at = (needle: string) => RESULTS.indexOf(needle)
@@ -168,6 +179,39 @@ describe("the profile is the only identity on the You result", () => {
   })
 })
 
+/* ── §6b The Share surface uses the same identity, and the true duration ── */
+
+describe("the Share card carries the same identity as the result, honestly", () => {
+  it("does not use getIdentityLabel or any gamified identity word", () => {
+    // NARRATIVE_COPY (§6 above) never included this file — the identity
+    // system stayed live here for the whole of Phase 2C's first pass, found
+    // by an independent checkpoint review after that PR was already open.
+    expect(code(SHARE)).not.toMatch(/getIdentityLabel/)
+    expect(SHARE_COPY).not.toMatch(
+      /Gut Athlete|Gut Explorer|Biotic Champion|Gut Optimizer|Food Strategist|Plant Builder/,
+    )
+  })
+
+  it("uses the canonical profile as the shared identity", () => {
+    expect(SHARE).toMatch(/profile\.type/)
+  })
+
+  it("names the product and the real duration, not the retired copy", () => {
+    expect(SHARE_COPY).not.toMatch(/gut health baseline/i)
+    expect(SHARE_COPY).toMatch(/about 5 minutes/i)
+    expect(SHARE_COPY).not.toMatch(/\b(only|just)?\s*2 minutes\b/i)
+  })
+
+  it("shows no visible ranking or percentile language", () => {
+    // percentile itself stays as a query-string parameter for
+    // /api/og/score-card's existing contract (Phase 2G retires it) — this
+    // checks the customer-visible sentences, not that bare identifier.
+    for (const rule of [/higher than \d+%/i, /top \d+ ?% of people/i, /\bpercentile\b.{0,20}(rank|compare|people)/i]) {
+      expect(SHARE_COPY, String(rule)).not.toMatch(rule)
+    }
+  })
+})
+
 /* ── §8 The three Biotics, and the Postbiotics boundary ─────────────────── */
 
 describe("each Biotic arrives with its meaning and its score", () => {
@@ -223,6 +267,26 @@ describe("the pattern names a place to explore, not a failure", () => {
   it("decides that by the scores, not by a tolerance somebody picked", () => {
     expect(code(PATTERN)).not.toMatch(/Math\.abs/)
     expect(code(PATTERN)).not.toMatch(/<\s*\d+\s*(\)|&&)/)
+  })
+
+  it("can produce a weakest pillar with no opportunity to explore", () => {
+    // Real code, not source pattern: getInsights() sets `opportunity` only
+    // below its own strength threshold (65), independently per pillar — so a
+    // result where all three are high but unequal (70/75/90) leaves the
+    // weakest of the three with a `strength` and no `opportunity`. This is
+    // the exact shape "Most worth exploring" used to mislabel.
+    const insights = getInsights({ prebiotics: 70, probiotics: 75, postbiotics: 90 })
+    expect(insights[0].opportunity).toBeUndefined()
+    expect(insights[0].strength).toBeDefined()
+  })
+
+  it("does not label a strength as something to explore", () => {
+    // The card only renders when the weakest pillar actually has an
+    // opportunity — otherwise the fallback used to show strength copy under a
+    // heading calling it something to explore.
+    expect(code(PATTERN)).toMatch(/!sameOne\s*&&\s*!!focus\.opportunity/)
+    expect(code(PATTERN)).not.toMatch(/focus\.opportunity\s*\?\?\s*focus\.strength/)
+    expect(code(PATTERN)).toMatch(/showExploring\s*&&/)
   })
 })
 
@@ -281,6 +345,31 @@ describe("the optional contribution no longer gates the result", () => {
   it("does not touch the required health-data consent", () => {
     // Different statement, different record, different moment.
     expect(code(CONTRIBUTE)).not.toMatch(/HEALTH_CONSENT|healthDataConsent/)
+  })
+
+  it("does not overclaim anonymity /api/contribute cannot back up", () => {
+    // The route stores `country` (from eb_country) alongside the scores —
+    // not a name or email, but not "no identifier of any kind" either.
+    expect(copyOf(CONTRIBUTE)).not.toMatch(/no identifier of any kind/i)
+    expect(copyOf(CONTRIBUTE)).not.toMatch(/completely anonymous/i)
+    expect(copyOf(CONTRIBUTE)).toMatch(/country/i)
+    expect(copyOf(CONTRIBUTE)).toMatch(/name and email.{0,20}not/i)
+  })
+
+  it("does not claim this result was contributed unless it actually POSTed", () => {
+    // choice is seeded from a PRIOR run's localStorage value — the fix is a
+    // flag set only inside handle(), so the restored state can't describe a
+    // request this render never made.
+    expect(code(CONTRIBUTE)).toMatch(/justPosted/)
+    expect(code(CONTRIBUTE)).toMatch(/setJustPosted\(true\)/)
+    // The claim must sit behind that flag, not render unconditionally for
+    // every opted-in state.
+    expect(code(CONTRIBUTE)).toMatch(/justPosted\s*\?/)
+  })
+
+  it("sends no payload field the endpoint never reads", () => {
+    // /api/contribute destructures only { overall, subScores, profile }.
+    expect(code(CONTRIBUTE)).not.toMatch(/completedAt/)
   })
 })
 

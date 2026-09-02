@@ -21,6 +21,15 @@ import type { PillarInsight } from "@/lib/assessment-scoring"
  * showed a card headed "Appears strongest" whose own text called that Biotic
  * the thinner part. Equality is read from the scores themselves rather than
  * from a tolerance: a "close enough" threshold would be a number nobody chose.
+ *
+ * `focus` (the weakest of the three) is not guaranteed to have an
+ * `opportunity`: getInsights() sets that field only below its own strength
+ * threshold, independently per pillar, so a result where all three are high
+ * but unequal (e.g. 70/75/90) leaves the weakest with only a `strength`. The
+ * "Most worth exploring" card only renders when `focus.opportunity` exists —
+ * otherwise it would show strength copy under a heading calling it something
+ * to explore, the same class of contradiction the equal-scores case above
+ * was fixed for.
  */
 export function FoodSystemPattern({ insights }: { insights: PillarInsight[] }) {
   if (insights.length === 0) return null
@@ -29,6 +38,7 @@ export function FoodSystemPattern({ insights }: { insights: PillarInsight[] }) {
   const strongest = insights[insights.length - 1]
   const sameOne = focus.pillar === strongest.pillar
   const level = !sameOne && focus.score === strongest.score
+  const showExploring = !sameOne && !!focus.opportunity
 
   return (
     <section className="px-6 py-14">
@@ -58,7 +68,7 @@ export function FoodSystemPattern({ insights }: { insights: PillarInsight[] }) {
             </div>
           </ScrollReveal>
         ) : (
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <div className={`mt-6 grid gap-3 ${showExploring ? "sm:grid-cols-2" : ""}`}>
             <ScrollReveal>
               <div
                 className="h-full rounded-2xl border p-5"
@@ -82,7 +92,7 @@ export function FoodSystemPattern({ insights }: { insights: PillarInsight[] }) {
               </div>
             </ScrollReveal>
 
-            {!sameOne && (
+            {showExploring && (
               <ScrollReveal delay={60}>
                 <div className="h-full rounded-2xl border border-border bg-background p-5">
                   <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
@@ -92,7 +102,7 @@ export function FoodSystemPattern({ insights }: { insights: PillarInsight[] }) {
                     {focus.label}
                   </p>
                   <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                    {focus.opportunity ?? focus.strength}
+                    {focus.opportunity}
                   </p>
                 </div>
               </ScrollReveal>
