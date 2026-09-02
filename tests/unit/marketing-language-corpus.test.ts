@@ -135,9 +135,18 @@ const MARKETING_COMPONENTS: Record<string, { minChars: number; anchor: string }>
     minChars: 800,
     anchor: "A guided digital process",
   },
+  // Floor and anchor both moved in Phase 2D, because the copy they described
+  // was deliberately deleted: "What your report includes" was a second
+  // brochure for the product the €49 card above it already describes, and the
+  // Gut Starter Pack's six cards went with it. That is ~1.1k characters of
+  // real customer copy legitimately gone, not an extraction that broke.
+  //
+  // The new anchor is the Consultation heading — the one piece of copy on this
+  // surface the current phase boundaries explicitly freeze — so the floor
+  // still fails loudly if extraction ever silently empties.
   "components/assessment/assessment-results.tsx": {
-    minChars: 8_000,
-    anchor: "What your report includes",
+    minChars: 6_000,
+    anchor: "Personal Food System Consultation",
   },
 }
 

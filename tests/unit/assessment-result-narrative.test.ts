@@ -32,6 +32,8 @@ const ACTION = readFileSync("components/assessment/result/one-free-action.tsx", 
 const CONTRIBUTE = readFileSync("components/assessment/result/contribute-opt-in.tsx", "utf8")
 const RING = readFileSync("components/assessment/score-ring.tsx", "utf8")
 const SHARE = readFileSync("components/assessment/share-score-card.tsx", "utf8")
+const JOURNEY = readFileSync("components/assessment/journey-next-step.tsx", "utf8")
+const FAMILY = readFileSync("components/family-assessment/family-assessment-results.tsx", "utf8")
 
 /**
  * Source with comments stripped, for every rule that forbids a construct BY
@@ -64,7 +66,6 @@ const at = (needle: string) => RESULTS.indexOf(needle)
 
 describe("the free result stands on its own, before anything is sold", () => {
   const cta = at("── C. Single CTA")
-  const reportFeatures = at("── D. What the report includes")
 
   it("renders the whole free narrative before the Consultation block", () => {
     expect(cta, "the €49 block must still exist").toBeGreaterThan(-1)
@@ -81,11 +82,17 @@ describe("the free result stands on its own, before anything is sold", () => {
     }
   })
 
-  it("renders the Three Biotics before the report-features block too", () => {
-    // Both used to sit above it. Listing what the paid report contains is a
-    // sales surface, not free value.
-    expect(at("<ThreeBioticsResult")).toBeLessThan(reportFeatures)
-    expect(at("<OneFreeAction")).toBeLessThan(reportFeatures)
+  it("keeps every commercial surface below the free narrative", () => {
+    // Phase 2C asserted this against "What your report includes", the
+    // three-card brochure that sat under the CTA. Phase 2D deleted that block
+    // as duplicate commercial material, so the rule now reads against what
+    // remains: the €49 card is the last thing on the page that sells, and the
+    // free narrative is complete before it.
+    expect(copyOf(RESULTS), "the brochure must stay gone").not.toMatch(
+      /What your report includes/i,
+    )
+    expect(at("<ThreeBioticsResult")).toBeLessThan(cta)
+    expect(at("<OneFreeAction")).toBeLessThan(cta)
   })
 
   it("keeps the narrative in its intended order", () => {
@@ -462,5 +469,151 @@ describe("Phase 2C leaves the paid contract alone", () => {
     expect(RESULTS).toMatch(/\[HEALTH_CONSENT_FIELD\]: true/)
     expect(RESULTS).toMatch(/\[IMMEDIATE_START_FIELD\]: true/)
     expect(RESULTS).toMatch(/fetch\("\/api\/checkout"/)
+  })
+})
+
+
+/* ── Phase 2D — the result ends, rather than opening a second product ───── */
+
+/**
+ * The compact branch of JourneyNextStep, sliced out of the source.
+ *
+ * The default branch legitimately keeps the CombinedReport link and the four
+ * marketing cards — Family still renders it — so "compact does not contain X"
+ * cannot be asserted against the whole file. The slice is bounded by markers
+ * and floored below, so a rename that silently empties it fails loudly rather
+ * than making every assertion pass on an empty string.
+ */
+const COMPACT_START = JOURNEY.indexOf("if (compact) {")
+const DEFAULT_START = JOURNEY.indexOf("Add a deeper focus")
+const COMPACT_BRANCH = JOURNEY.slice(COMPACT_START, DEFAULT_START)
+
+describe("the You result closes instead of starting again", () => {
+  it("extracts a real compact branch to assert against", () => {
+    expect(COMPACT_START).toBeGreaterThan(-1)
+    expect(DEFAULT_START).toBeGreaterThan(COMPACT_START)
+    expect(COMPACT_BRANCH.length).toBeGreaterThan(200)
+  })
+
+  it("puts the Consultation ahead of everything that follows it", () => {
+    const cta = at("── C. Single CTA")
+    for (const section of [
+      "── A few more ideas",
+      "── F. Save results",
+      "<JourneyNextStep compact />",
+      "── Lottery winner",
+      "── Retake + Disclaimer",
+    ]) {
+      const i = at(section)
+      expect(i, `${section} must exist`).toBeGreaterThan(-1)
+      expect(i, `${section} must come after the €49 CTA`).toBeGreaterThan(cta)
+    }
+  })
+
+  it("closes on Save, then drops to the tertiary tail", () => {
+    // Save is the closure moment: after the last free material, before the
+    // onward links, the lottery and retake.
+    expect(at("── A few more ideas")).toBeLessThan(at("── F. Save results"))
+    expect(at("── F. Save results")).toBeLessThan(at("<JourneyNextStep compact />"))
+    expect(at("<JourneyNextStep compact />")).toBeLessThan(at("── Lottery winner"))
+    expect(at("── Lottery winner")).toBeLessThan(at("── Retake + Disclaimer"))
+  })
+
+  it("no longer renders a second brochure for the product it just sold", () => {
+    // REPORT_OFFER_FEATURES inside the primary card is the description; the
+    // three-card grid under it was the same pitch a second time.
+    expect(copyOf(RESULTS)).not.toMatch(/What your report includes/i)
+    expect(copyOf(RESULTS)).not.toMatch(/Your 30-Day Plan/i)
+    expect(copyOf(RESULTS)).not.toMatch(/Your Five-Food Strategy/i)
+    expect(copyOf(RESULTS)).not.toMatch(/Your 7-Day Starter Plan/i)
+    // …but the primary card still describes the offer.
+    expect(RESULTS).toMatch(/REPORT_OFFER_FEATURES/)
+  })
+
+  it("folds the leftover free material into one quiet cluster", () => {
+    expect(copyOf(RESULTS)).toMatch(/A few more ideas/)
+    expect(copyOf(RESULTS)).not.toMatch(/Your Gut Starter Pack/i)
+    expect(copyOf(RESULTS)).not.toMatch(/More to try/i)
+    // No second programme: the cluster claims nothing about plans or matching.
+    expect(copyOf(RESULTS)).not.toMatch(/personalised picks/i)
+    expect(copyOf(RESULTS)).not.toMatch(/matched to your profile/i)
+  })
+
+  it("keeps the remaining actions the result already produced", () => {
+    expect(RESULTS).toMatch(/nextActions\.slice\(1\)/)
+    // Quietly: the numbered brand-gradient markers are what made this read as
+    // a second programme beside One thing you can try.
+    expect(code(RESULTS)).not.toMatch(/brand-gradient text-sm font-bold text-white/)
+  })
+
+  it("shows three foods, with no call to action on any of them", () => {
+    expect(code(RESULTS)).toMatch(/STARTER_PACK\[profile\.type\] \?\? DEFAULT_STARTER/)
+    // Raw source: copyOf() strips ".word(", which would eat the slice itself.
+    expect(RESULTS).toMatch(/\.slice\(0, 3\)/)
+    expect(code(RESULTS)).not.toMatch(/myplate\?add=/)
+    expect(copyOf(RESULTS)).not.toMatch(/Add to Plate/i)
+  })
+
+  it("keeps exactly one quiet route into the food library", () => {
+    const links = code(RESULTS).match(/href="\/food"/g) ?? []
+    expect(links).toHaveLength(1)
+    expect(copyOf(RESULTS)).toMatch(/Browse the food library/i)
+  })
+
+  it("does not end the customer's result on the mission", () => {
+    // MissionNote itself and its six other consumers are untouched — this is
+    // a placement decision about the You result only.
+    expect(code(RESULTS)).not.toMatch(/MissionNote/)
+  })
+
+  it("keeps the lottery conditional, its event, and its low prominence", () => {
+    expect(RESULTS).toMatch(/\{winnerCode && \(/)
+    expect(RESULTS).toMatch(/lottery_winner_code_copied/)
+  })
+})
+
+describe("the onward journey is tertiary on You, unchanged everywhere else", () => {
+  it("asks for compact mode on the You result", () => {
+    expect(RESULTS).toMatch(/<JourneyNextStep compact \/>/)
+  })
+
+  it("still persists the completed foundation", () => {
+    // Load-bearing side effect: compact mode renders almost nothing, but the
+    // component must keep mounting or signed-in customers stop being recorded
+    // as having completed their foundation.
+    expect(code(JOURNEY)).toMatch(/void persist\(\)/)
+    expect(code(JOURNEY)).toMatch(/useEffect\(/)
+  })
+
+  it("leaves a pending Lens on its existing prominent resume path", () => {
+    // Checked before the compact branch: someone mid-journey is not the case
+    // this phase quietens.
+    expect(JOURNEY.indexOf("if (pendingAddon)")).toBeGreaterThan(-1)
+    expect(JOURNEY.indexOf("if (pendingAddon)")).toBeLessThan(COMPACT_START)
+    expect(JOURNEY).toMatch(/resumeAddonRoute/)
+  })
+
+  it("offers the four Lenses as quiet links in compact mode", () => {
+    expect(COMPACT_BRANCH).toMatch(/HEALTH_SYSTEMS\[c\.key\]\.label/)
+    expect(COMPACT_BRANCH).toMatch(/assessment\/add\//)
+    expect(COMPACT_BRANCH).not.toMatch(/brand-gradient/)
+    for (const key of ["stability", "glucose", "mind", "performance"]) {
+      expect(JOURNEY, key).toMatch(new RegExp(`key: "${key}"`))
+    }
+  })
+
+  it("does not offer a competing report identity in compact mode", () => {
+    // /assessment/results is the free CombinedReport, not the paid Personal
+    // Food System Report the customer was just offered.
+    expect(COMPACT_BRANCH).not.toMatch(/View my Food System report/)
+    expect(COMPACT_BRANCH).not.toMatch(/assessment\/results/)
+    // The default branch keeps it — this was scoped, not deleted.
+    expect(JOURNEY).toMatch(/View my Food System report/)
+  })
+
+  it("leaves every other caller on the default rendering", () => {
+    expect(FAMILY).toMatch(/<JourneyNextStep \/>/)
+    expect(FAMILY).not.toMatch(/<JourneyNextStep compact/)
+    expect(JOURNEY).toMatch(/compact = false/)
   })
 })
