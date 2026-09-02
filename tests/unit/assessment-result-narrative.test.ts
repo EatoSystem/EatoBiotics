@@ -356,15 +356,29 @@ describe("the optional contribution no longer gates the result", () => {
     expect(copyOf(CONTRIBUTE)).toMatch(/name and email.{0,20}not/i)
   })
 
-  it("does not claim this result was contributed unless it actually POSTed", () => {
-    // choice is seeded from a PRIOR run's localStorage value — the fix is a
-    // flag set only inside handle(), so the restored state can't describe a
-    // request this render never made.
-    expect(code(CONTRIBUTE)).toMatch(/justPosted/)
-    expect(code(CONTRIBUTE)).toMatch(/setJustPosted\(true\)/)
-    // The claim must sit behind that flag, not render unconditionally for
-    // every opted-in state.
-    expect(code(CONTRIBUTE)).toMatch(/justPosted\s*\?/)
+  it("distinguishes a choice on this result from a restored preference", () => {
+    // choice is seeded from a PRIOR run's localStorage value — the flag is
+    // set only inside handle(), so the restored state can't describe a
+    // choice this render never saw made.
+    expect(code(CONTRIBUTE)).toMatch(/chosenThisResult/)
+    expect(code(CONTRIBUTE)).toMatch(/setChosenThisResult\(true\)/)
+    // The confirmation must sit behind that flag, not render unconditionally
+    // for every opted-in state.
+    expect(code(CONTRIBUTE)).toMatch(/chosenThisResult\s*\?/)
+  })
+
+  it("does not claim the contribution succeeded — only that it was chosen", () => {
+    // The POST is fire-and-forget with its failure swallowed (.catch(() =>
+    // {})), so the component never learns whether the request arrived. A
+    // failed network call must not be able to produce a success claim —
+    // checked against raw source, not just comment-stripped, because this is
+    // a literal customer-facing string rather than a construct name a
+    // comment might legitimately mention.
+    expect(CONTRIBUTE).not.toMatch(/your results were contributed/i)
+    expect(code(CONTRIBUTE)).not.toMatch(/your results were contributed/i)
+    expect(copyOf(CONTRIBUTE)).toMatch(/you chose to contribute this result/i)
+    expect(copyOf(CONTRIBUTE)).toMatch(/You previously chose to contribute/i)
+    expect(copyOf(CONTRIBUTE)).toMatch(/Nothing from this result was shared/i)
   })
 
   it("sends no payload field the endpoint never reads", () => {

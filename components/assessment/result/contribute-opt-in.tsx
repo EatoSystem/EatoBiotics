@@ -35,23 +35,30 @@ import type { AssessmentResult } from "@/lib/assessment-scoring"
  *    leftover from a PRIOR assessment run — this component never re-POSTs an
  *    old choice against a new result. Saying "your scores were contributed"
  *    unconditionally in that state would describe a request that never
- *    happened for the result on screen. `justPosted` is only ever set inside
- *    handle(), so it is true exactly when this render actually sent a
- *    request, and the restored-opted-in copy is worded as a standing
- *    preference rather than a claim about the current result.
+ *    happened for the result on screen. `chosenThisResult` is only ever set
+ *    inside handle(), so it is true exactly when the customer chose to
+ *    contribute THIS result, and the restored-opted-in copy is worded as a
+ *    standing preference rather than a claim about the current result.
+ *
+ *    That flag marks a CHOICE, not a delivered request: the POST below is
+ *    fire-and-forget with its failure swallowed (a failed optional favour
+ *    must not become an error state), so the code never learns whether the
+ *    request actually arrived. The confirmation copy says only what is
+ *    known — that the customer chose this — never that the contribution
+ *    was successfully sent.
  */
 export function ContributeOptIn({ result }: { result: AssessmentResult }) {
   const [choice, setChoice] = useState<"opted-in" | "opted-out" | null>(() =>
     typeof window === "undefined" ? null : loadPrivacyChoice(),
   )
-  const [justPosted, setJustPosted] = useState(false)
+  const [chosenThisResult, setChosenThisResult] = useState(false)
 
   function handle(next: "opted-in" | "opted-out") {
     savePrivacyChoice(next)
     setChoice(next)
 
     if (next === "opted-in") {
-      setJustPosted(true)
+      setChosenThisResult(true)
       // Fire-and-forget — the answer is recorded locally either way, and a
       // failed request must not turn an optional favour into an error state.
       fetch("/api/contribute", {
@@ -72,8 +79,8 @@ export function ContributeOptIn({ result }: { result: AssessmentResult }) {
         <div className="mx-auto max-w-2xl rounded-2xl border border-border bg-secondary/20 px-5 py-4">
           <p className="text-sm text-muted-foreground">
             {choice === "opted-in"
-              ? justPosted
-                ? "Thank you — your results were contributed."
+              ? chosenThisResult
+                ? "Thank you — you chose to contribute this result."
                 : "You previously chose to contribute EatoBiotics results."
               : "Nothing from this result was shared."}
           </p>
