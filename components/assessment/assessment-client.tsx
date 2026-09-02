@@ -12,6 +12,7 @@ import {
   type LeadData,
 } from "@/lib/assessment-storage"
 import { QUESTIONS } from "@/lib/assessment-data"
+import { bioticOf, startsBiotic } from "@/lib/assessment/biotics"
 import { computeResult } from "@/lib/assessment-scoring"
 import { AssessmentIntro } from "./assessment-intro"
 import { AssessmentProgress } from "./assessment-progress"
@@ -62,6 +63,34 @@ export function AssessmentClient() {
   useEffect(() => {
     if (hydrated) saveAssessment(state)
   }, [state, hydrated])
+
+  /* Where the customer is in the journey, and nothing about their answers.
+   *
+   * Deliberately only the question index and the Biotic: no answer values,
+   * no scores, no free text. Which option someone picked about their
+   * digestion is health-derived data, and an analytics provider is not
+   * where it belongs.
+   *
+   * Uses the posthog.capture already in this file, so it inherits the same
+   * consent gating as assessment_started rather than opening a second path.
+   * No beforeunload / pagehide abandonment event — those fire unreliably and
+   * would be a worse signal than none. */
+  useEffect(() => {
+    if (!hydrated || state.view !== "questions") return
+    const question = QUESTIONS[state.currentIndex]
+    if (!question) return
+    const biotic = bioticOf(question.sectionTitle)
+    const opens = startsBiotic(QUESTIONS, state.currentIndex)
+
+    if (opens) {
+      posthog.capture("assessment_section_entered", { biotic: opens })
+    }
+    posthog.capture("assessment_question_viewed", {
+      question_index: state.currentIndex + 1,
+      question_total: QUESTIONS.length,
+      biotic,
+    })
+  }, [hydrated, state.view, state.currentIndex])
 
   // Fire results_viewed once when the results screen becomes visible
   useEffect(() => {
@@ -215,6 +244,9 @@ export function AssessmentClient() {
           onNext={handleNext}
           canNext={hasAnswered}
           isLast={state.currentIndex === QUESTIONS.length - 1}
+          sectionOpens={startsBiotic(QUESTIONS, state.currentIndex)}
+          position={state.currentIndex + 1}
+          total={QUESTIONS.length}
         />
       </div>
     )
