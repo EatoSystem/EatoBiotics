@@ -21,6 +21,31 @@ cannot drift away from the questions it describes.
 
 ---
 
+## Corrections applied after the first review
+
+Six changes, all inside the existing architecture:
+
+1. **`core_signals_context_v1` is now adaptive**, not baseline. As a baseline
+   question it contradicted the answer immediately before it: "on the days you
+   notice it most" is incoherent for someone who has just said there is nothing
+   to notice, or who declined to say. It now shares the exclusion boundary with
+   `core_signals_settled_days_v1`, and a test asserts the two appear and
+   disappear together.
+2. **Applicability now fails closed on the whole parent answer.** It reuses
+   `validateAnswer` rather than checking each value individually — see the
+   Applicability section.
+3. **`allergenDetail` → `foodAvoidances`.** A food avoided for medical reasons
+   is frequently not an allergen. Renamed while the bank has never been active
+   and there is no compatibility cost.
+4. **New: `deriveFoodGuidanceConstraints`** — the explicit unresolved-avoidance
+   safety state (new section below).
+5. **Six required questions gained an escape value**, including primary focus
+   and barrier (see "Honest Answers").
+6. The food-avoidance question now says its list is not exhaustive, and offers
+   "Prefer not to say".
+
+---
+
 ## Product Principles
 
 1. **Every question earns its place.** `reportTargets` is required and
@@ -41,6 +66,9 @@ cannot drift away from the questions it describes.
    presentation and can be revised without renaming a persisted answer.
 6. **Family is a household Food System.** Not this bank with plural pronouns.
 7. **AI interprets.** It does not author the runtime core paid questions.
+8. **Required never means "pick one of ours".** A closed set that cannot be
+   exhaustive carries an escape, or the stable semantic answer it produces is a
+   stable semantic lie.
 
 ---
 
@@ -68,21 +96,18 @@ further (antibiotics) is optional and only reachable from it.
 
 | | Baseline | Adaptive (max) | Core total (max) | With Lens | Free text |
 |---|---|---|---|---|---|
-| You | 14 | 3 | 17 | 21 | 1 |
+| You | 13 | 4 | 17 | 21 | 1 |
 | Family | 13 | 2 | 15 | 19 | 1 |
 
 Frozen target: baseline 12–16, normal range 14–20, with Lens 18–24, exceptional
 ceiling 26. Both foundations sit inside every bound, and the bank validator
 fails the build if they stop doing so.
 
-**One deliberate deviation, flagged for review.** The spec's envelope for
-runtime adaptive questions is 2–6. In practice a customer sees **0–3** adaptive
-questions (You) or **0–2** (Family), because adaptive questions only fire when
-their trigger fires. Every adaptive module that survived the §75 quality bar is
-in the bank; I did not add filler to reach the lower bound, because §74 says a
-shorter, better Consultation is preferred to a long impressive-looking one.
-If the reviewer wants the count raised, that is a product decision about which
-*additional* module earns its place, not a gap to be filled.
+Moving the Signals context question from baseline to adaptive changed You from
+14 + 3 to **13 + 4**. The core total is unchanged at 17, and the runtime range
+widened rather than narrowed: a customer who reports a post-meal signal sees the
+same questions as before, and one who reports none now sees one fewer — the one
+they no longer see being the question that made no sense to ask them.
 
 No duration estimate and no question-count promise appears anywhere in
 customer-facing copy. The burden target above is internal product architecture.
@@ -146,9 +171,9 @@ customer-facing copy. The burden target above is internal product architecture.
 - **Support text:** none
 - **Options:** `rushed` Meals were rushed or skipped<br>`large-late` Meals were unusually large or late<br>`stress-sleep` Stress was high or sleep was short<br>`away-from-home` I was eating out, travelling or away from home<br>`no-connection` No clear connection **[exclusive]**<br>`prefer-not-to-say` Prefer not to say **[exclusive]**
 - **Intent:** Identifies what co-occurs with the signal, which is where a first change is most likely to land.
-- **Why needed:** This is the single most useful thing the free Assessment never asks. Something that shows up on rushed days and something that shows up when away from home lead to completely different first steps.
+- **Why needed:** This is the single most useful thing the free Assessment never asks. Something that shows up on rushed days and something that shows up when away from home lead to completely different first steps. Asked only of someone who reported noticing something: 'on the days you notice it most' is an incoherent question for a person who has just said there is nothing to notice, or who declined to say — the same exclusion boundary as the settled-days question.
 - **Report targets:** `priorityLever`, `bodySignalMap`, `thirtyDayLoop`
-- **Applicability:** Always asked (baseline)
+- **Applicability:** Only when `core_signals_post_meal_pattern_v1` notEquals `nothing` / `prefer-not-to-say`
 - **Free Assessment overlap:** none
 - **What deeper information this adds:** n/a — no overlap with the free Assessment
 
@@ -282,7 +307,7 @@ customer-facing copy. The burden target above is internal product architecture.
 - **Question (You):** How different are your weekends from your weekdays?
 - **Question (Family):** How different are your household's weekends from its weekdays?
 - **Support text:** none
-- **Options:** `same` Much the same<br>`looser` A little later or looser<br>`very-different` Very different<br>`weekdays-unpredictable` It's the weekdays that are unpredictable
+- **Options:** `same` Much the same<br>`looser` A little later or looser<br>`very-different` Very different<br>`weekdays-unpredictable` It's the weekdays that are unpredictable<br>`varies` It varies too much to say
 - **Intent:** Tells the 30-day loop which days it has to survive.
 - **Why needed:** A four-week plan that only works Monday to Friday fails on day six. The shape of the difference decides whether the plan needs a weekend version.
 - **Report targets:** `thirtyDayLoop`, `systemSnapshot`
@@ -320,7 +345,7 @@ customer-facing copy. The burden target above is internal product architecture.
 - **Question (You):** —
 - **Question (Family):** What most often makes eating together difficult?
 - **Support text:** none
-- **Options:** `schedules` Different schedules<br>`tastes` Different tastes<br>`space` Space, or the way the kitchen works<br>`not-tried` We haven't really tried to change it<br>`works-better` It works better this way for us
+- **Options:** `schedules` Different schedules<br>`tastes` Different tastes<br>`space` Space, or the way the kitchen works<br>`not-tried` We haven't really tried to change it<br>`works-better` It works better this way for us<br>`other` Something else
 - **Intent:** Decides whether the household plan should work towards a shared meal or work well without one.
 - **Why needed:** Only asked of households that rarely eat together. 'It works better this way for us' is a real and complete answer — the Report should then stop trying to assemble everyone at a table and make the separate meals better instead.
 - **Report targets:** `familyContext`, `thirtyDayLoop`
@@ -401,7 +426,7 @@ customer-facing copy. The burden target above is internal product architecture.
 - **Question (You):** How does food usually get into the house?
 - **Question (Family):** How does food usually get into your household?
 - **Support text:** none
-- **Options:** `planned` A planned shop, with a list<br>`regular` A regular shop, without much planning<br>`top-ups` Frequent top-up trips<br>`delivery` Mostly delivery or takeaway<br>`someone-else` Someone else handles it
+- **Options:** `planned` A planned shop, with a list<br>`regular` A regular shop, without much planning<br>`top-ups` Frequent top-up trips<br>`delivery` Mostly delivery or takeaway<br>`someone-else` Someone else handles it<br>`varies` It varies, or another way
 - **Intent:** Finds the point upstream of the plate where a change is cheapest to make.
 - **Why needed:** Most of what someone eats is decided in a shop, not at a meal. A Report that never mentions how food arrives is intervening at the last and hardest possible moment.
 - **Report targets:** `foodTools`, `thirtyDayLoop`, `priorityLever`
@@ -439,7 +464,7 @@ customer-facing copy. The burden target above is internal product architecture.
 - **Question (You):** —
 - **Question (Family):** Do different people in your household need different things from food?
 - **Support text:** none
-- **Options:** `tastes` Yes — different tastes<br>`schedules` Yes — different schedules<br>`allergies` Yes — allergies or intolerances<br>`life-stage` Yes — different amounts, or different life stages<br>`same` No — largely the same **[exclusive]**<br>`prefer-not-to-say` Prefer not to say **[exclusive]**
+- **Options:** `tastes` Yes — different tastes<br>`schedules` Yes — different schedules<br>`allergies` Yes — allergies or intolerances<br>`life-stage` Yes — different amounts, or different life stages<br>`other` Yes — something else<br>`same` No — largely the same **[exclusive]**<br>`prefer-not-to-say` Prefer not to say **[exclusive]**
 - **Intent:** Captures the conflicting-needs problem that defines most household food systems.
 - **Why needed:** Cooking for people who need different things is the hardest part of feeding a household, and a plan that ignores it is a plan for a household of identical people. Asks only THAT needs differ and in what broad way — never what anyone's condition is.
 - **Report targets:** `familyContext`, `foodTools`, `thirtyDayLoop`
@@ -447,9 +472,9 @@ customer-facing copy. The burden target above is internal product architecture.
 - **Free Assessment overlap:** none
 - **What deeper information this adds:** n/a — no overlap with the free Assessment
 
-#### `core_environment_allergen_detail_v1`
+#### `core_environment_food_avoidances_v1`
 
-- **Answer field:** `environment.allergenDetail`
+- **Answer field:** `environment.foodAvoidances`
 - **Type:** multi
 - **Foundations:** you, family
 - **Required:** optional
@@ -457,10 +482,10 @@ customer-facing copy. The burden target above is internal product architecture.
 - **Science review:** required
 - **Question (You):** So your Report doesn't suggest something unsuitable, which of these should it avoid?
 - **Question (Family):** So your household's Report doesn't suggest something unsuitable, which of these should it avoid?
-- **Support text:** Optional. Whatever you choose, always check labels yourself as well.
-- **Options:** `dairy` Milk or dairy<br>`eggs` Eggs<br>`fish-shellfish` Fish or shellfish<br>`nuts` Nuts or peanuts<br>`wheat-gluten` Wheat or gluten<br>`soya` Soya<br>`sesame` Sesame<br>`other` Something not listed here
-- **Intent:** Turns a declared constraint into something the food section can mechanically avoid.
-- **Why needed:** Only asked of someone who has already said there is an allergy or a medical avoidance, and optional even then. Broad categories rather than free text, because a Report generator cannot reliably parse a sentence, and a mis-parsed allergy is the worst failure this product could have.
+- **Support text:** Optional, and this list is not exhaustive. Whatever you choose, always check labels yourself as well.
+- **Options:** `dairy` Milk or dairy<br>`eggs` Eggs<br>`fish-shellfish` Fish or shellfish<br>`nuts` Nuts or peanuts<br>`wheat-gluten` Wheat or gluten<br>`soya` Soya<br>`sesame` Sesame<br>`other` Something else, not listed here<br>`prefer-not-to-say` Prefer not to say **[exclusive]**
+- **Intent:** Turns a declared avoidance into something the food section can mechanically work around.
+- **Why needed:** Only asked of someone who has already said there is an allergy or a medical avoidance, and optional even then. Named for avoidance rather than allergens because a food avoided for medical reasons is frequently not an allergen. Broad categories rather than free text, because a Report generator cannot reliably parse a sentence and a mis-parsed avoidance is the worst failure this product could have — and where the categories do not cover it, the answer says so rather than pretending to.
 - **Report targets:** `foodTools`, `thirtyDayLoop`
 - **Applicability:** Only when `core_environment_constraints_v1` includes `allergy` / `medical-avoid`
 - **Free Assessment overlap:** none
@@ -482,7 +507,7 @@ customer-facing copy. The burden target above is internal product architecture.
 - **Question (You):** If your Report could help with one thing first, what would it be?
 - **Question (Family):** If your household's Report could help with one thing first, what would it be?
 - **Support text:** none
-- **Options:** `energy` Steadier energy<br>`digestion` More comfortable digestion<br>`focus` Clearer focus<br>`recovery` Better sleep and recovery<br>`consistency` Eating more consistently<br>`variety` More variety in what I eat (family: More variety in what we eat)
+- **Options:** `energy` Steadier energy<br>`digestion` More comfortable digestion<br>`focus` Clearer focus<br>`recovery` Better sleep and recovery<br>`consistency` Eating more consistently<br>`variety` More variety in what I eat (family: More variety in what we eat)<br>`unsure` Something else, or I'm not sure yet
 - **Intent:** Chooses which of several defensible priorities the Report actually leads with.
 - **Why needed:** The assessment can identify several things worth working on. Only the reader can say which one they will actually care about in four weeks, and a Report that leads with the wrong one is read once and closed.
 - **Report targets:** `priorityLever`, `systemSnapshot`, `thirtyDayLoop`
@@ -501,7 +526,7 @@ customer-facing copy. The burden target above is internal product architecture.
 - **Question (You):** What has usually made change hard to keep going?
 - **Question (Family):** What has usually made change hard for your household to keep going?
 - **Support text:** none
-- **Options:** `time` Time<br>`cost` Cost<br>`different-needs` Cooking for people with different needs<br>`unclear` Not knowing what to do<br>`fades` It tends to fade after a week or two<br>`none` Nothing in particular has got in the way
+- **Options:** `time` Time<br>`cost` Cost<br>`different-needs` Cooking for people with different needs<br>`unclear` Not knowing what to do<br>`fades` It tends to fade after a week or two<br>`other` Something else<br>`none` Nothing in particular has got in the way
 - **Intent:** Shapes the 30-day loop around the thing that has actually stopped this person before.
 - **Why needed:** Every plan meets the same barrier the last one did. A plan built for someone short of time and a plan built for someone who runs out of momentum look different, and the free Assessment never asks.
 - **Report targets:** `thirtyDayLoop`, `priorityLever`, `educationModules`
@@ -532,7 +557,7 @@ customer-facing copy. The burden target above is internal product architecture.
 
 ## Family-Only / Family-Different Questions
 
-**Family-only (15 questions in the Family bank; these are the ones You never sees):**
+**Family-only (never asked of a You Consultation):**
 
 - `core_signals_household_mealtime_v1` — how shared meals actually go
 - `core_signals_household_hardest_moment_v1` — which part of the day is hardest
@@ -544,11 +569,11 @@ customer-facing copy. The burden target above is internal product architecture.
 
 - `core_signals_post_meal_pattern_v1`
 - `core_signals_energy_shape_v1`
-- `core_signals_context_v1`
-- `core_signals_settled_days_v1`
+- `core_signals_context_v1` *(adaptive)*
+- `core_signals_settled_days_v1` *(adaptive)*
 - `core_rhythm_first_meal_v1`
 - `core_rhythm_longest_gap_v1`
-- `core_rhythm_antibiotics_v1`
+- `core_rhythm_antibiotics_v1` *(adaptive)*
 
 The rule applied: **individual health signals and individual history are never
 asked as a household aggregate.** An average of five people's post-meal
@@ -566,21 +591,51 @@ assert it differs from the You wording and reads as a household.
 
 ## Adaptive Modules
 
-Four declared modules, all depth 1 (a branch off a branch is rejected by the
+Five declared modules, all depth 1 (a branch off a branch is rejected by the
 validator). Operators are `equals`, `notEquals` and `includes`, each taking a
 value list — there is no AND, no nesting and no expression language.
 
 | Module | Foundation | Trigger | Required? | Sensitivity |
 |---|---|---|---|---|
-| `core_signals_settled_days_v1` | you | post-meal pattern is anything other than "nothing" / "prefer not to say" | required when applicable | low |
+| `core_signals_context_v1` | you | post-meal pattern is anything other than "nothing" / "prefer not to say" | required when applicable | medium |
+| `core_signals_settled_days_v1` | you | *(same boundary)* | required when applicable | low |
 | `core_rhythm_antibiotics_v1` | you | recent change includes "a health event, or a period of recovery" | **optional** | high |
-| `core_environment_allergen_detail_v1` | you + family | constraints include an allergy or a medical avoidance | **optional** | high |
+| `core_environment_food_avoidances_v1` | you + family | constraints include an allergy or a medical avoidance | **optional** | high |
 | `core_rhythm_household_separate_reason_v1` | family | household eats together "rarely" or "never" | required when applicable | low |
 
 Every trigger is a baseline question, appears earlier in the bank, and lists
 only values that trigger question actually offers — all three enforced by
 `validateConsultationBank`, so a branch that can never fire (and therefore
 looks present in review while being dead) is a build failure.
+
+### Applicability fails closed on the whole parent answer
+
+The first implementation domain-checked each value of a multi trigger
+individually:
+
+```
+raw.some(v => inDomain(v) && rule.values.includes(v))
+```
+
+`["health-event", "not-a-real-option"]` therefore **revealed** the branch,
+because one member happened to be legitimate. Per-value checking also cannot
+see duplicates, an exclusive value combined with a substantive one, or a
+below-minimum selection — all states the trusted projection refuses.
+
+The resolver now calls `validateAnswer(parent, raw)` — the same function the
+trusted projection uses — and branches only on a `valid` result:
+
+| Trigger state | Child |
+|---|---|
+| missing | hidden |
+| invalid (any reason) | hidden |
+| valid, matches the rule | shown |
+| valid, does not match | hidden |
+
+The invariant, asserted directly: **an invalid parent answer can never make an
+adaptive child applicable.** And because applicability and the projection now
+ask the identical question, a customer can no longer be *asked* something whose
+answer is then silently discarded — the two halves cannot disagree.
 
 **Adaptation is bounded.** The resolver may select a module, reveal a declared
 branch, omit an irrelevant module, use Family-specific selection and wording,
@@ -596,6 +651,63 @@ NOT an input: the duplication problem they would solve is solved by design (see
 below), and carrying fifteen raw health answers through checkout to solve it
 would expand sensitive-data transport for no benefit this pack does not
 already deliver.
+
+---
+
+## Food-Guidance Safety Contract
+
+`lib/consultation/food-guidance.ts` · `deriveFoodGuidanceConstraints()`
+
+The Report recommends specific foods. The Consultation asks whether anything
+must be worked around and — only when someone declares an allergy or a medical
+avoidance — tries to find out what. That second question is optional, and
+**should stay optional**. Which means the Consultation can legitimately finish
+in this state:
+
+> the customer has said *there is a food I must avoid*, and the system does not
+> know which one.
+
+Three routes reach it: they declined the detail question, they chose "Something
+else, not listed here", or they chose "Prefer not to say".
+
+The honest reading of all three is the same — **an avoidance exists and is
+unresolved**. The dangerous reading, and the one a Report generator reaches by
+default because the field is simply absent, is that there is nothing to avoid.
+
+So the state is made explicit rather than left to be inferred:
+
+```
+{
+  declaredConstraints: string[]          // everything to work around
+  requiresSpecificAvoidance: boolean     // an allergy or medical avoidance was declared
+  knownAvoidances: string[]              // structured categories the Report can exclude
+  unresolvedSpecificAvoidance: boolean   // declared, but not identified
+}
+```
+
+`unresolvedSpecificAvoidance === true` is the fact Phase 4A acts on: **do not
+name specific foods with confidence.** Phase 3A suppresses nothing and does not
+touch the Report generator.
+
+Three properties worth stating plainly:
+
+- **A known category alongside "something else" is still unresolved.** Knowing
+  about the nuts does not make it safe to assume there is nothing else — the
+  customer explicitly said there is.
+- **An ordinary constraint never becomes a safety state.** Vegetarian,
+  religious or cultural, budget, time and dislikes shape suggestions without
+  making an unnamed food unsafe. `requiresSpecificAvoidance` reads only the
+  values in the avoidance question's own applicability rule, so the trigger and
+  the safety check are the same list by construction.
+- **It reads trusted answers only.** It projects them itself rather than
+  accepting an answer map — a food-safety check where a malformed constraint
+  list could drop the very flag that makes it cautious is precisely the wrong
+  place to be trusting.
+
+**Declining detail must not block completion.** The Consultation completes, and
+the Report adapts to missing detail. Data minimisation and safety point the same
+way: the safe response to "I'd rather not say" is a more careful Report, not a
+harder question.
 
 ---
 
@@ -652,7 +764,7 @@ cannot name a deliverable that does not exist.
 | `core_environment_planning_v1` | `environment.planning` | foodTools, thirtyDayLoop, priorityLever | yes | low | none | you, family |
 | `core_environment_constraints_v1` | `environment.constraints` | foodTools, thirtyDayLoop, familyContext | yes | medium | none | you, family |
 | `core_environment_household_differing_needs_v1` | `environment.householdDifferingNeeds` | familyContext, foodTools, thirtyDayLoop | yes | medium | none | family |
-| `core_environment_allergen_detail_v1` | `environment.allergenDetail` | foodTools, thirtyDayLoop | no | high | none | you, family |
+| `core_environment_food_avoidances_v1` | `environment.foodAvoidances` | foodTools, thirtyDayLoop | no | high | none | you, family |
 | `core_intentions_primary_focus_v1` | `intentions.primaryFocus` | priorityLever, systemSnapshot, thirtyDayLoop | yes | low | none | you, family |
 | `core_intentions_barrier_v1` | `intentions.barrier` | thirtyDayLoop, priorityLever, educationModules | yes | low | none | you, family |
 | `core_intentions_success_v1` | `intentions.success` | closingMissionPage, systemSnapshot | no | medium | none | you, family |
@@ -693,6 +805,39 @@ of these four and would have flagged several innocent questions.
 
 ---
 
+## Honest Answers — required questions and escape values
+
+A question can be required without forcing a false answer, but only if its
+option set is either genuinely exhaustive or carries an escape. Re-reading every
+required question after the first review found six that did not:
+
+| Question | Added | Why it was needed |
+|---|---|---|
+| `core_intentions_primary_focus_v1` | "Something else, or I'm not sure yet" | Six named priorities cannot cover what everyone wants from a Report, and the answer is a stable semantic field the Report personalises on. The escape lets it decline to over-personalise instead of inventing a priority. |
+| `core_intentions_barrier_v1` | "Something else" | "Nothing in particular has got in the way" is a **different claim** from "my barrier is real but not on your list". Without the second, the first was collecting both. |
+| `core_rhythm_week_shape_v1` | "It varies too much to say" | Shift work and genuinely irregular weeks had no truthful answer among four shapes. |
+| `core_rhythm_household_separate_reason_v1` | "Something else" | Four named reasons for not eating together, and no way to say it is another one. |
+| `core_environment_household_differing_needs_v1` | "Yes — something else" | The list allowed "yes, tastes / schedules / allergies / life stage" or "no" — but not "yes, for another reason". |
+| `core_environment_planning_v1` | "It varies, or another way" | A category list, not an ordinal one. Food that arrives by another route — grown, gifted, a food bank, a workplace canteen — had no honest answer. |
+
+No free text is demanded when any escape is chosen. A test walks every required
+choice question and fails if one has neither an escape option nor an exclusive
+one.
+
+**Two questions are exempted, by name, in the test.** Both are ordinal frequency
+scales whose ends bound the space — `core_rhythm_household_shared_meals_v1`
+(most days → never) and `core_environment_cooking_frequency_v1` (almost all →
+hardly any). There is no state of the world they fail to describe. The exemption
+is a named list rather than a cleverer matcher, because "is this scale
+exhaustive?" is a judgement somebody should have made and a reviewer should be
+able to argue with; a second test fails if an exempted question stops being
+required, so the exemption cannot quietly rot.
+
+Mechanically adding "not sure" to every question was rejected: it would be noise
+on a genuine scale, and it would train reviewers to stop reading option lists.
+
+---
+
 ## Sensitive Data Review
 
 Classification is review architecture, not runtime behaviour — nothing branches
@@ -701,19 +846,19 @@ on it. Its job is to make a collection decision visible and arguable.
 | Question | Sensitivity | Required | Asked of everyone? | Decline path |
 |---|---|---|---|---|
 | `core_signals_post_meal_pattern_v1` | medium | yes | yes | `nothing`, `prefer-not-to-say` |
-| `core_signals_context_v1` | medium | yes | yes | `prefer-not-to-say` |
+| `core_signals_context_v1` | medium | yes | no — adaptive | `prefer-not-to-say` |
 | `core_rhythm_recent_change_v1` | medium | yes | yes | `none`, `prefer-not-to-say` |
 | `core_rhythm_antibiotics_v1` | high | no | no — adaptive | `unsure`, `prefer-not-to-say` |
 | `core_environment_constraints_v1` | medium | yes | yes | `none`, `prefer-not-to-say` |
 | `core_environment_household_differing_needs_v1` | medium | yes | yes | `same`, `prefer-not-to-say` |
-| `core_environment_allergen_detail_v1` | high | no | no — adaptive | skip (optional) |
+| `core_environment_food_avoidances_v1` | high | no | no — adaptive | `prefer-not-to-say` |
 | `core_intentions_success_v1` | medium | no | yes | skip (optional) |
 
 Rules the bank holds to, each asserted by a test:
 
 - **Every `high`-sensitivity question is optional.** No exceptions.
 - **Every `high`-sensitivity question is adaptive** — nobody is asked about
-  antibiotics or allergens as a matter of course.
+  antibiotics or food avoidances as a matter of course.
 - **Every sensitive question offers a way to decline.** A question someone
   cannot decline is a judgement of its own. On `multi` questions the decline
   option is flagged `exclusive`, so "prefer not to say" cannot be recorded
@@ -796,21 +941,19 @@ needs external sign-off before Phase 3B activation:
 - `core_signals_settled_days_v1` — On the days things feel more settled, what is usually different?
 - `core_rhythm_antibiotics_v1` — In the last two years, have you had a course of antibiotics?
 - `core_environment_constraints_v1` — Is there anything your Report needs to work around?
-- `core_environment_allergen_detail_v1` — So your Report doesn't suggest something unsuitable, which of these should it avoid?
+- `core_environment_food_avoidances_v1` — So your Report doesn't suggest something unsuitable, which of these should it avoid?
 
 **REQUIRES PRODUCT DECISION** — open questions for the reviewer, not for a
 scientist:
 
-- `core_environment_allergen_detail_v1` offers "Something not listed here" with
-  no follow-up text field, so the Report does not learn what that something is.
-  The alternative (free text) cannot be reliably parsed by a report generator,
-  and a mis-parsed allergy is the worst failure this product could have. The
-  current position is: broad categories only, plus "always check labels
-  yourself" in the support line. Phase 4A should decide whether the Report also
-  needs a standing "check anything new against your own known allergies" line.
 - Whether `core_rhythm_recent_change_v1` and `core_environment_constraints_v1`
   should be optional rather than required (see Sensitive Data Review).
-- Whether the adaptive count should be raised above 0–3 (see Question Count).
+- Whether Phase 4A should add a standing "check anything new against your own
+  known allergies" line to every Report, in addition to acting on
+  `unresolvedSpecificAvoidance`. The support text on the avoidance question
+  already says to check labels; whether the Report repeats it is a Report
+  decision.
+- Whether the runtime adaptive count (You 0–4, Family 0–2) should be raised.
 
 **LOW-RISK PRODUCT WORDING** — everything else. Cooking frequency, shopping,
 who prepares food, meal timing, weekend shape, intentions and barriers make no
@@ -837,11 +980,14 @@ list assembled to populate a section.
 | Clinical mental-health screening (anxiety, depression) | **Rejected** | Same. The Mind Lens deliberately asks about routine and what someone notices, never about diagnosis. |
 | Frequency of digestive discomfort | **Rejected** | The free Assessment already asks it (q14). Asking again is not depth. |
 | A second plant-variety / fermented-foods question | **Rejected** | q1–q9's entire job. |
+| **Free-text detail for the food avoidance** | **Rejected** | A Report generator cannot reliably parse a sentence, and a mis-parsed avoidance is the worst failure this product could have. Structured categories plus an explicit *unresolved* state is safer than text nobody can act on. |
+| **Making the food-avoidance question required** | **Rejected** | It would simplify completeness at the cost of forcing disclosure. The customer keeps the choice; the Report adapts. |
 | "What kind of first step tends to work for you?" | **Deferred** | A good question that lost to `core_intentions_barrier_v1`, which reaches the same 30-day-loop decision while also collecting what has actually stopped this person. Keeping both would have pushed Intentions past its 2–3 target for no new Report action. |
 | "How often do you eat away from home?" | **Deferred** | Substantially covered by `core_environment_cooking_frequency_v1`. Worth revisiting if the Report's food section proves it needs it separately. |
 | A slider question | **Rejected for v1** | Nothing in v1 is genuinely a magnitude, and adding one to exercise the type would inflate the bank. The contract and validator support sliders (including "no implicit default") for future banks. |
 | A `yesno` question type | **Rejected** | The legacy schema has it, but a two-option `single` carries the same information with one fewer branch in every validator, renderer and report reader. Legacy yes/no questions exist only to hang a `followUp` off, which declared applicability replaces. |
 | Household versions of individual health signals | **Rejected** | Pluralising "how do you feel after eating" into a household aggregate produces a number describing nobody. See Family-Only above. |
+| Mechanically adding "not sure" to every required question | **Rejected** | Six needed an escape and got one. Adding it to genuinely exhaustive option sets would be noise, and would train reviewers to stop reading the option lists. |
 
 ---
 
@@ -852,7 +998,9 @@ list assembled to populate a section.
 - Does not activate the bank for any session, new or existing.
 - Does not migrate, regenerate or touch legacy `dq*` sessions.
 - Does not add a migration, a column, or any schema change.
-- Does not redesign the Report generator or Phase 4A architecture.
+- Does not redesign the Report generator or Phase 4A architecture, and does not
+  suppress anything — `deriveFoodGuidanceConstraints` reports a state, nothing
+  consumes it yet.
 - Does not delete the legacy AI generation path or the fallback bank.
 - Does not add Orientation, Back, Review, progress, save feedback, icons or any
   other UI — those are Phase 3B/3C, and they will consume this contract.

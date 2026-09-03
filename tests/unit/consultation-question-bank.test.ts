@@ -284,6 +284,123 @@ describe("multi-select exclusivity is declared, not inferred", () => {
   })
 })
 
+/* ══ Honest answers ══════════════════════════════════════════════════════════
+ *
+ * "Required" must never mean "pick one of our categories even if none is
+ * true". A closed set that cannot be exhaustive needs an escape, or the stable
+ * semantic answer it produces is a stable semantic lie. */
+
+describe("every required question has an honest answer available", () => {
+  /** A value that lets someone answer truthfully when no category fits. */
+  const ESCAPE = /^(something else|prefer not to say|nothing|none|not sure|i'?m not sure|it varies|hard to (say|predict)|i can'?t tell|no clear|i don'?t|no —)/i
+
+  it("the primary-focus list does not force a false priority", () => {
+    const q = findConsultationQuestion("core_intentions_primary_focus_v1")
+    expect(q?.required).toBe(true)
+    const escapes = (q?.options ?? []).filter((o) => ESCAPE.test(o.label))
+    expect(escapes.length, "primary focus has no escape value").toBeGreaterThan(0)
+    // Chosen so the Report can tell "steadier energy" from "I don't know yet"
+    // and decline to over-personalise on the second.
+    expect((q?.options ?? []).map((o) => o.value)).toContain("unsure")
+    // And it must not demand free text as the price of not knowing.
+    expect(q?.type).toBe("single")
+  })
+
+  it("the barrier list separates 'not in your list' from 'nothing got in the way'", () => {
+    const q = findConsultationQuestion("core_intentions_barrier_v1")
+    const values = (q?.options ?? []).map((o) => o.value)
+    expect(values).toContain("other")
+    expect(values).toContain("none")
+    // These are different claims. Collapsing them records "nothing stopped me"
+    // for someone whose barrier simply was not offered.
+    expect(values.indexOf("other")).not.toBe(values.indexOf("none"))
+    expect(q?.type).toBe("single")
+  })
+
+  /**
+   * The only required questions allowed to have no escape option, and why.
+   *
+   * Both are ordinal frequency scales whose ends genuinely bound the space —
+   * "most days" through "never", and "almost all" through "hardly any". There
+   * is no state of the world they fail to describe, so an added "not sure"
+   * would be noise, and mechanically adding one to every question would train
+   * a reviewer to stop reading option lists.
+   *
+   * A named list rather than a cleverer matcher: "is this scale exhaustive?"
+   * is a judgement, and it should be one somebody made and a reviewer can
+   * argue with. Adding an entry here is the visible cost of deciding a
+   * question does not need an escape.
+   */
+  const EXHAUSTIVE_BY_CONSTRUCTION = new Set([
+    "core_rhythm_household_shared_meals_v1", // most days → never
+    "core_environment_cooking_frequency_v1", // almost all → hardly any
+  ])
+
+  it("no required question leaves the customer without a truthful option", () => {
+    const offenders: string[] = []
+    for (const q of CONSULTATION_QUESTION_BANK) {
+      if (!q.required) continue
+      if (q.type === "textarea" || q.type === "slider") continue
+      if (EXHAUSTIVE_BY_CONSTRUCTION.has(q.id)) continue
+      const hasEscape = (q.options ?? []).some((o) => ESCAPE.test(o.label) || o.exclusive)
+      if (!hasEscape) offenders.push(`${q.id} — ${(q.options ?? []).map((o) => o.label).join(" | ")}`)
+    }
+    expect(offenders, offenders.join("\n")).toEqual([])
+  })
+
+  it("the exhaustive-scale exemption cannot rot", () => {
+    // If one of these stops being required, or stops existing, the exemption
+    // is stale and should be removed rather than left sitting there excusing
+    // a question nobody is looking at any more.
+    for (const id of EXHAUSTIVE_BY_CONSTRUCTION) {
+      const q = findConsultationQuestion(id)
+      expect(q, `${id} is exempted but not in the bank`).toBeDefined()
+      expect(q?.required, `${id} is exempted but no longer required`).toBe(true)
+      expect((q?.options ?? []).length).toBeGreaterThanOrEqual(4)
+    }
+  })
+
+  it("the escape matcher is not vacuous", () => {
+    expect(ESCAPE.test("Steadier energy")).toBe(false)
+    expect(ESCAPE.test("Something else, or I'm not sure yet")).toBe(true)
+    expect(ESCAPE.test("It varies too much to say")).toBe(true)
+  })
+})
+
+describe("the food-avoidance question is honest about what it does not know", () => {
+  const q = () => findConsultationQuestion("core_environment_food_avoidances_v1")
+
+  it("is named for avoidance, not for allergens", () => {
+    // A food avoided for medical reasons is frequently not an allergen, and
+    // the semantic answer has to describe both. Renamed while the bank has
+    // never been active and there is no compatibility cost.
+    expect(q()).toBeDefined()
+    expect(q()?.answerField).toBe("environment.foodAvoidances")
+    expect(findConsultationQuestion("core_environment_allergen_detail_v1")).toBeUndefined()
+    expect(CONSULTATION_QUESTION_BANK.some((x) => x.answerField.includes("allergen"))).toBe(false)
+  })
+
+  it("stays optional and stays structured", () => {
+    expect(q()?.required).toBe(false)
+    expect(q()?.sensitivity).toBe("high")
+    expect(q()?.type).toBe("multi")
+    // Not free text: a Report generator cannot reliably parse a sentence, and
+    // a mis-parsed avoidance is the worst failure this product could have.
+    expect(q()?.maxLength).toBeUndefined()
+  })
+
+  it("offers a way to record an avoidance it cannot itself capture", () => {
+    const values = (q()?.options ?? []).map((o) => o.value)
+    expect(values).toContain("other")
+    expect(values).toContain("prefer-not-to-say")
+  })
+
+  it("does not claim its categories are exhaustive", () => {
+    expect(q()?.supportText ?? "").toMatch(/not exhaustive/i)
+    expect(q()?.supportText ?? "").toMatch(/check labels/i)
+  })
+})
+
 /* ══ Burden ══════════════════════════════════════════════════════════════════ */
 
 describe("question burden stays inside the frozen target", () => {
@@ -339,8 +456,8 @@ describe("question burden stays inside the frozen target", () => {
 
   it("bankSummary reports what the review pack claims", () => {
     expect(bankSummary(CONSULTATION_QUESTION_BANK, "you")).toEqual({
-      baseline: 14,
-      adaptive: 3,
+      baseline: 13,
+      adaptive: 4,
       total: 17,
       freeText: 1,
     })
@@ -453,7 +570,7 @@ describe("sensitive collection is deliberate and reviewable", () => {
     for (const id of [
       "core_signals_post_meal_pattern_v1",
       "core_rhythm_antibiotics_v1",
-      "core_environment_allergen_detail_v1",
+      "core_environment_food_avoidances_v1",
       "core_environment_constraints_v1",
     ]) {
       expect(flagged, `${id} must be flagged for science review`).toContain(id)

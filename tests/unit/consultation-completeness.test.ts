@@ -8,6 +8,7 @@ import {
   trustedAnswersByField,
   validateConsultationAnswers,
 } from "@/lib/consultation/completeness"
+import { deriveFoodGuidanceConstraints } from "@/lib/consultation/food-guidance"
 
 /**
  * Completeness and trusted-answer projection.
@@ -262,7 +263,7 @@ describe("completeness over the real bank", () => {
   it("an empty submission names every required baseline question", () => {
     const result = validateConsultationAnswers({ context: you, answers: {} })
     expect(result.complete).toBe(false)
-    expect(result.missingQuestionIds.length).toBe(13)
+    expect(result.missingQuestionIds.length).toBe(12)
     // The one optional baseline question is not reported as missing.
     expect(result.missingQuestionIds).not.toContain("core_intentions_success_v1")
   })
@@ -394,6 +395,28 @@ describe("trusted answer projection", () => {
     expect(byField.core_rhythm_longest_gap_v1).toBeUndefined()
   })
 
+  it("an invalid trigger drops the child that depended on it", () => {
+    // The two halves have to agree. If applicability read a malformed trigger
+    // more permissively than the projection does, a customer could be ASKED a
+    // question whose answer is then silently discarded — and the Report would
+    // be built from a set nobody was ever shown.
+    const answers = {
+      ...completeYouAnswers(),
+      core_rhythm_recent_change_v1: ["health-event", "not-a-real-option"],
+      core_rhythm_antibiotics_v1: "recent",
+    }
+    const result = validateConsultationAnswers({ context: you, answers })
+
+    expect(result.trustedAnswers.core_rhythm_recent_change_v1).toBeUndefined()
+    expect(result.applicableQuestionIds).not.toContain("core_rhythm_antibiotics_v1")
+    expect(result.trustedAnswers.core_rhythm_antibiotics_v1).toBeUndefined()
+    expect(result.droppedQuestionIds).toContain("core_rhythm_antibiotics_v1")
+
+    // And the required parent is reported invalid, so nothing completes on it.
+    expect(result.invalidQuestionIds).toContain("core_rhythm_recent_change_v1")
+    expect(result.complete).toBe(false)
+  })
+
   it("a trusted projection is always itself complete-consistent", () => {
     // Re-validating the projection must not discover new invalid answers:
     // whatever survived is, by construction, valid for a live question.
@@ -401,5 +424,128 @@ describe("trusted answer projection", () => {
     const trusted = projectTrustedAnswers({ context: you, answers })
     const second = validateConsultationAnswers({ context: you, answers: trusted })
     expect(second.invalidQuestionIds).toEqual([])
+  })
+})
+
+/* ══ Food-guidance safety ════════════════════════════════════════════════════
+ *
+ * The Report recommends specific foods. The Consultation can legitimately end
+ * with the customer having said "there is a food I must avoid" while the
+ * system does not know which one — they declined the detail question, chose
+ * "something else", or preferred not to say. The dangerous default is that an
+ * absent field reads as "nothing to avoid".
+ *
+ * These tests pin the state, not a behaviour: nothing is suppressed in Phase
+ * 3A. `unresolvedSpecificAvoidance` is the fact Phase 4A acts on. */
+
+describe("food-guidance constraints", () => {
+  const withConstraints = (constraints: string[], avoidances?: string[]): ConsultationAnswers => ({
+    ...completeYouAnswers(),
+    core_environment_constraints_v1: constraints,
+    ...(avoidances ? { core_environment_food_avoidances_v1: avoidances } : {}),
+  })
+
+  it("no allergy or medical avoidance means no unresolved safety state", () => {
+    const r = deriveFoodGuidanceConstraints({ context: you, answers: completeYouAnswers() })
+    expect(r.requiresSpecificAvoidance).toBe(false)
+    expect(r.unresolvedSpecificAvoidance).toBe(false)
+    expect(r.knownAvoidances).toEqual([])
+  })
+
+  it.each([
+    ["vegetarian or vegan", "vegetarian-vegan"],
+    ["religious or cultural", "religious-cultural"],
+    ["budget", "budget"],
+    ["time", "time"],
+    ["dislikes", "dislikes"],
+    ["nothing in particular", "none"],
+  ])("an ordinary %s constraint never becomes an unresolved allergy state", (_label, value) => {
+    // The failure this prevents: treating every declared constraint as a
+    // safety constraint, which would suppress specific food guidance for a
+    // vegetarian on a budget and make the Report useless for most customers.
+    const r = deriveFoodGuidanceConstraints({ context: you, answers: withConstraints([value]) })
+    expect(r.declaredConstraints).toContain(value)
+    expect(r.requiresSpecificAvoidance).toBe(false)
+    expect(r.unresolvedSpecificAvoidance).toBe(false)
+  })
+
+  it.each(["allergy", "medical-avoid"])(
+    "a declared %s with structured detail is resolved",
+    (constraint) => {
+      const r = deriveFoodGuidanceConstraints({
+        context: you,
+        answers: withConstraints([constraint], ["nuts", "sesame"]),
+      })
+      expect(r.requiresSpecificAvoidance).toBe(true)
+      expect(r.knownAvoidances).toEqual(["nuts", "sesame"])
+      expect(r.unresolvedSpecificAvoidance).toBe(false)
+    },
+  )
+
+  it.each(["allergy", "medical-avoid"])("a declared %s with no detail is unresolved", (constraint) => {
+    const r = deriveFoodGuidanceConstraints({ context: you, answers: withConstraints([constraint]) })
+    expect(r.requiresSpecificAvoidance).toBe(true)
+    expect(r.knownAvoidances).toEqual([])
+    expect(r.unresolvedSpecificAvoidance).toBe(true)
+  })
+
+  it("'something else, not listed here' is an avoidance, not a resolution", () => {
+    const r = deriveFoodGuidanceConstraints({
+      context: you,
+      answers: withConstraints(["allergy"], ["other"]),
+    })
+    expect(r.unresolvedSpecificAvoidance).toBe(true)
+    expect(r.knownAvoidances).toEqual([])
+  })
+
+  it("a known category alongside 'something else' is still unresolved", () => {
+    // Knowing about the nuts does not make it safe to assume there is nothing
+    // else — the customer explicitly said there is.
+    const r = deriveFoodGuidanceConstraints({
+      context: you,
+      answers: withConstraints(["allergy"], ["nuts", "other"]),
+    })
+    expect(r.knownAvoidances).toEqual(["nuts"])
+    expect(r.unresolvedSpecificAvoidance).toBe(true)
+  })
+
+  it("'prefer not to say' is unresolved, and is not a reason to ask harder", () => {
+    const r = deriveFoodGuidanceConstraints({
+      context: you,
+      answers: withConstraints(["medical-avoid"], ["prefer-not-to-say"]),
+    })
+    expect(r.unresolvedSpecificAvoidance).toBe(true)
+    expect(r.knownAvoidances).toEqual([])
+  })
+
+  it("declining the detail still lets the Consultation complete", () => {
+    // Data minimisation and safety point the same way: the customer keeps the
+    // choice, and the Report adapts to missing detail rather than the
+    // Consultation forcing disclosure.
+    const answers = withConstraints(["allergy"])
+    expect(validateConsultationAnswers({ context: you, answers }).complete).toBe(true)
+    expect(deriveFoodGuidanceConstraints({ context: you, answers }).unresolvedSpecificAvoidance).toBe(true)
+  })
+
+  it("reads trusted answers only", () => {
+    // A malformed constraints answer must not quietly drop the safety flag.
+    // It is dropped from `declaredConstraints` because it was never trusted —
+    // and the Consultation is incomplete, so nothing generates from it.
+    const answers = { ...completeYouAnswers(), core_environment_constraints_v1: ["allergy", "none"] }
+    const r = deriveFoodGuidanceConstraints({ context: you, answers })
+    expect(r.declaredConstraints).toEqual([])
+    expect(validateConsultationAnswers({ context: you, answers }).complete).toBe(false)
+  })
+
+  it("works the same for a household", () => {
+    const answers = {
+      ...completeFamilyAnswers(),
+      core_environment_constraints_v1: ["allergy"],
+      core_environment_food_avoidances_v1: ["dairy"],
+    }
+    const r = deriveFoodGuidanceConstraints({ context: family, answers })
+    expect(r.requiresSpecificAvoidance).toBe(true)
+    expect(r.knownAvoidances).toEqual(["dairy"])
+    expect(r.unresolvedSpecificAvoidance).toBe(false)
   })
 })

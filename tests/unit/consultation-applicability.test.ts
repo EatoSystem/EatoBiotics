@@ -68,7 +68,7 @@ describe("foundation gating", () => {
 
 describe("baseline questions apply with no answers at all", () => {
   it.each([
-    ["you", you, 14],
+    ["you", you, 13],
     ["family", family, 13],
   ] as const)("%s starts with its full baseline", (_label, context, expected) => {
     const ids = resolveApplicableQuestionIds({ context })
@@ -128,14 +128,14 @@ describe("the three operators", () => {
   it("includes fires on any listed value, not all of them", () => {
     for (const value of ["allergy", "medical-avoid"]) {
       expect(
-        isQuestionApplicable("core_environment_allergen_detail_v1", {
+        isQuestionApplicable("core_environment_food_avoidances_v1", {
           context: you,
           answers: { core_environment_constraints_v1: [value] },
         }),
       ).toBe(true)
     }
     expect(
-      isQuestionApplicable("core_environment_allergen_detail_v1", {
+      isQuestionApplicable("core_environment_food_avoidances_v1", {
         context: you,
         answers: { core_environment_constraints_v1: ["budget", "time"] },
       }),
@@ -163,9 +163,10 @@ describe("the three operators", () => {
 describe("the resolver refuses rather than guesses", () => {
   it("an unanswered trigger reveals nothing", () => {
     const ids = resolveApplicableQuestionIds({ context: you, answers: {} })
+    expect(ids).not.toContain("core_signals_context_v1")
     expect(ids).not.toContain("core_signals_settled_days_v1")
     expect(ids).not.toContain("core_rhythm_antibiotics_v1")
-    expect(ids).not.toContain("core_environment_allergen_detail_v1")
+    expect(ids).not.toContain("core_environment_food_avoidances_v1")
   })
 
   it("a garbage trigger answer does not reveal a notEquals branch", () => {
@@ -244,6 +245,147 @@ describe("the resolver refuses rather than guesses", () => {
   })
 })
 
+/**
+ * Signals context is adaptive, not baseline.
+ *
+ * "On the days you notice it most…" is an incoherent question for someone who
+ * has just said there is nothing to notice, or who declined to say. As a
+ * baseline question it contradicted the answer immediately before it.
+ */
+describe("the Signals context question follows the post-meal signal", () => {
+  it("is hidden when the customer reports no post-meal signal", () => {
+    expect(
+      isQuestionApplicable("core_signals_context_v1", {
+        context: you,
+        answers: { core_signals_post_meal_pattern_v1: "nothing" },
+      }),
+    ).toBe(false)
+  })
+
+  it("is hidden when the customer declined to say", () => {
+    expect(
+      isQuestionApplicable("core_signals_context_v1", {
+        context: you,
+        answers: { core_signals_post_meal_pattern_v1: "prefer-not-to-say" },
+      }),
+    ).toBe(false)
+  })
+
+  it.each(["fullness", "bloating", "dip", "lift-then-dip"])(
+    "is shown when the customer reports %s",
+    (signal) => {
+      expect(
+        isQuestionApplicable("core_signals_context_v1", {
+          context: you,
+          answers: { core_signals_post_meal_pattern_v1: signal },
+        }),
+      ).toBe(true)
+    },
+  )
+
+  it("shares the exclusion boundary with the settled-days question", () => {
+    // Both ask about a signal the customer has said they notice, so both must
+    // disappear together. Two rules drifting apart is how one of them ends up
+    // asking about something the other just established does not exist.
+    for (const answer of ["nothing", "prefer-not-to-say", "bloating"]) {
+      const ids = resolveApplicableQuestionIds({
+        context: you,
+        answers: { core_signals_post_meal_pattern_v1: answer },
+      })
+      expect(ids.includes("core_signals_context_v1")).toBe(ids.includes("core_signals_settled_days_v1"))
+    }
+  })
+})
+
+/**
+ * An invalid parent answer can never make an adaptive child applicable.
+ *
+ * The earlier implementation checked each value of a multi trigger
+ * individually, so `["health-event", "not-a-real-option"]` revealed the branch
+ * because one member happened to be legitimate. Per-value checking cannot see
+ * duplicates, exclusivity violations or below-minimum selections — all states
+ * the trusted projection refuses. Applicability now asks the same question,
+ * through the same function.
+ */
+describe("applicability fails closed on the whole parent answer", () => {
+  it("an unknown value mixed with a triggering value hides the branch", () => {
+    expect(
+      isQuestionApplicable("core_rhythm_antibiotics_v1", {
+        context: you,
+        answers: { core_rhythm_recent_change_v1: ["health-event", "not-a-real-option"] },
+      }),
+    ).toBe(false)
+  })
+
+  it("a duplicated value mixed with a triggering value hides the branch", () => {
+    expect(
+      isQuestionApplicable("core_rhythm_antibiotics_v1", {
+        context: you,
+        answers: { core_rhythm_recent_change_v1: ["health-event", "health-event"] },
+      }),
+    ).toBe(false)
+  })
+
+  it("an exclusive value mixed with a triggering value hides the branch", () => {
+    // "Nothing much has changed" alongside "a health event" is a contradiction,
+    // and a contradiction must not decide what the customer is asked next.
+    for (const exclusive of ["none", "prefer-not-to-say"]) {
+      expect(
+        isQuestionApplicable("core_rhythm_antibiotics_v1", {
+          context: you,
+          answers: { core_rhythm_recent_change_v1: ["health-event", exclusive] },
+        }),
+      ).toBe(false)
+    }
+  })
+
+  it("the same holds for the food-avoidance branch", () => {
+    for (const bad of [
+      ["allergy", "not-a-real-option"],
+      ["allergy", "allergy"],
+      ["allergy", "none"],
+      ["allergy", "prefer-not-to-say"],
+    ]) {
+      expect(
+        isQuestionApplicable("core_environment_food_avoidances_v1", {
+          context: you,
+          answers: { core_environment_constraints_v1: bad },
+        }),
+        bad.join("+"),
+      ).toBe(false)
+    }
+  })
+
+  it("a non-string member hides the branch", () => {
+    expect(
+      isQuestionApplicable("core_rhythm_antibiotics_v1", {
+        context: you,
+        answers: { core_rhythm_recent_change_v1: ["health-event", 7] as unknown as string[] },
+      }),
+    ).toBe(false)
+  })
+
+  it("an empty trigger array hides the branch", () => {
+    expect(
+      isQuestionApplicable("core_rhythm_antibiotics_v1", {
+        context: you,
+        answers: { core_rhythm_recent_change_v1: [] },
+      }),
+    ).toBe(false)
+  })
+
+  it("a valid trigger still opens the branch", () => {
+    // The guard has to fail closed without failing shut: a correct answer must
+    // still work, or the rule is just "never branch".
+    expect(
+      isQuestionApplicable("core_rhythm_antibiotics_v1", {
+        context: you,
+        answers: { core_rhythm_recent_change_v1: ["schedule", "health-event"] },
+      }),
+    ).toBe(true)
+  })
+})
+
 describe("determinism", () => {
   it("the same inputs always produce the same output", () => {
     const answers = {
@@ -276,7 +418,7 @@ describe("determinism", () => {
     expect(ids).toHaveLength(17)
     expect(ids).toContain("core_signals_settled_days_v1")
     expect(ids).toContain("core_rhythm_antibiotics_v1")
-    expect(ids).toContain("core_environment_allergen_detail_v1")
+    expect(ids).toContain("core_environment_food_avoidances_v1")
   })
 })
 

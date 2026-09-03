@@ -140,9 +140,14 @@ const SIGNALS: ConsultationQuestion[] = [
     required: true,
     sensitivity: "medium",
     scienceReview: "required",
+    applicableWhen: {
+      questionId: "core_signals_post_meal_pattern_v1",
+      operator: "notEquals",
+      values: ["nothing", "prefer-not-to-say"],
+    },
     intent: "Identifies what co-occurs with the signal, which is where a first change is most likely to land.",
     whyNeeded:
-      "This is the single most useful thing the free Assessment never asks. Something that shows up on rushed days and something that shows up when away from home lead to completely different first steps.",
+      "This is the single most useful thing the free Assessment never asks. Something that shows up on rushed days and something that shows up when away from home lead to completely different first steps. Asked only of someone who reported noticing something: 'on the days you notice it most' is an incoherent question for a person who has just said there is nothing to notice, or who declined to say — the same exclusion boundary as the settled-days question.",
     reportTargets: ["priorityLever", "bodySignalMap", "thirtyDayLoop"],
     freeAssessmentOverlap: "none",
   },
@@ -310,6 +315,7 @@ const RHYTHM: ConsultationQuestion[] = [
       { label: "A little later or looser", value: "looser" },
       { label: "Very different", value: "very-different" },
       { label: "It's the weekdays that are unpredictable", value: "weekdays-unpredictable" },
+      { label: "It varies too much to say", value: "varies" },
     ],
     required: true,
     sensitivity: "low",
@@ -362,6 +368,7 @@ const RHYTHM: ConsultationQuestion[] = [
       { label: "Space, or the way the kitchen works", value: "space" },
       { label: "We haven't really tried to change it", value: "not-tried" },
       { label: "It works better this way for us", value: "works-better" },
+      { label: "Something else", value: "other" },
     ],
     required: true,
     sensitivity: "low",
@@ -470,6 +477,7 @@ const ENVIRONMENT: ConsultationQuestion[] = [
       { label: "Frequent top-up trips", value: "top-ups" },
       { label: "Mostly delivery or takeaway", value: "delivery" },
       { label: "Someone else handles it", value: "someone-else" },
+      { label: "It varies, or another way", value: "varies" },
     ],
     required: true,
     sensitivity: "low",
@@ -522,6 +530,7 @@ const ENVIRONMENT: ConsultationQuestion[] = [
       { label: "Yes — different schedules", value: "schedules" },
       { label: "Yes — allergies or intolerances", value: "allergies" },
       { label: "Yes — different amounts, or different life stages", value: "life-stage" },
+      { label: "Yes — something else", value: "other" },
       { label: "No — largely the same", value: "same", exclusive: true },
       PREFER_NOT_TO_SAY_EXCLUSIVE,
     ],
@@ -535,14 +544,15 @@ const ENVIRONMENT: ConsultationQuestion[] = [
     freeAssessmentOverlap: "none",
   },
   {
-    id: "core_environment_allergen_detail_v1",
-    answerField: "environment.allergenDetail",
+    id: "core_environment_food_avoidances_v1",
+    answerField: "environment.foodAvoidances",
     section: "environment",
     type: "multi",
     foundations: ["you", "family"],
     text: "So your Report doesn't suggest something unsuitable, which of these should it avoid?",
     familyText: "So your household's Report doesn't suggest something unsuitable, which of these should it avoid?",
-    supportText: "Optional. Whatever you choose, always check labels yourself as well.",
+    supportText:
+      "Optional, and this list is not exhaustive. Whatever you choose, always check labels yourself as well.",
     options: [
       { label: "Milk or dairy", value: "dairy" },
       { label: "Eggs", value: "eggs" },
@@ -551,7 +561,12 @@ const ENVIRONMENT: ConsultationQuestion[] = [
       { label: "Wheat or gluten", value: "wheat-gluten" },
       { label: "Soya", value: "soya" },
       { label: "Sesame", value: "sesame" },
-      { label: "Something not listed here", value: "other" },
+      // Deliberately NOT a resolution. It records that an avoidance exists
+      // which this bank has not captured, and `deriveFoodGuidanceConstraints`
+      // reads it as unresolved — so the Report holds back specific food
+      // suggestions rather than assuming the list above was complete.
+      { label: "Something else, not listed here", value: "other" },
+      PREFER_NOT_TO_SAY_EXCLUSIVE,
     ],
     required: false,
     sensitivity: "high",
@@ -561,9 +576,9 @@ const ENVIRONMENT: ConsultationQuestion[] = [
       operator: "includes",
       values: ["allergy", "medical-avoid"],
     },
-    intent: "Turns a declared constraint into something the food section can mechanically avoid.",
+    intent: "Turns a declared avoidance into something the food section can mechanically work around.",
     whyNeeded:
-      "Only asked of someone who has already said there is an allergy or a medical avoidance, and optional even then. Broad categories rather than free text, because a Report generator cannot reliably parse a sentence, and a mis-parsed allergy is the worst failure this product could have.",
+      "Only asked of someone who has already said there is an allergy or a medical avoidance, and optional even then. Named for avoidance rather than allergens because a food avoided for medical reasons is frequently not an allergen. Broad categories rather than free text, because a Report generator cannot reliably parse a sentence and a mis-parsed avoidance is the worst failure this product could have — and where the categories do not cover it, the answer says so rather than pretending to.",
     reportTargets: ["foodTools", "thirtyDayLoop"],
     freeAssessmentOverlap: "none",
   },
@@ -585,6 +600,7 @@ const INTENTIONS: ConsultationQuestion[] = [
       { label: "Better sleep and recovery", value: "recovery" },
       { label: "Eating more consistently", value: "consistency" },
       { label: "More variety in what I eat", value: "variety", familyLabel: "More variety in what we eat" },
+      { label: "Something else, or I'm not sure yet", value: "unsure" },
     ],
     required: true,
     sensitivity: "low",
@@ -609,6 +625,7 @@ const INTENTIONS: ConsultationQuestion[] = [
       { label: "Cooking for people with different needs", value: "different-needs" },
       { label: "Not knowing what to do", value: "unclear" },
       { label: "It tends to fade after a week or two", value: "fades" },
+      { label: "Something else", value: "other" },
       { label: "Nothing in particular has got in the way", value: "none" },
     ],
     required: true,
@@ -654,6 +671,40 @@ export const CONSULTATION_QUESTION_BANK: readonly ConsultationQuestion[] = [
   ...ENVIRONMENT,
   ...INTENTIONS,
 ]
+
+/* ── Food-safety anchors ────────────────────────────────────────────────────
+ * Named here rather than typed as string literals inside the food-guidance
+ * helper, so renaming a question or a value cannot leave a safety check
+ * silently pointing at nothing. */
+
+/** The question that declares what the Report must work around. */
+export const FOOD_CONSTRAINTS_QUESTION_ID = "core_environment_constraints_v1"
+
+/** The adaptive question that tries to resolve WHAT to avoid. */
+export const FOOD_AVOIDANCES_QUESTION_ID = "core_environment_food_avoidances_v1"
+
+/**
+ * Avoidance answers that record an avoidance without identifying it.
+ *
+ * `other` says "there is something, and it is not on your list". Treating it as
+ * a resolution would be the exact failure this contract exists to prevent: the
+ * Report would conclude the categories were exhaustive and recommend freely.
+ * `prefer-not-to-say` is a declined disclosure, which is equally unresolved and
+ * equally must not be overridden by asking harder.
+ */
+export const UNRESOLVED_AVOIDANCE_VALUES: readonly string[] = ["other", "prefer-not-to-say"]
+
+/**
+ * Constraint values that require a specific food to be identified before the
+ * Report may make specific food suggestions.
+ *
+ * Read from the avoidance question's own applicability rule, so the trigger and
+ * the safety check are the same list by construction. A vegetarian, religious,
+ * budget or time constraint is NOT here — those shape suggestions, they do not
+ * make an unidentified food unsafe.
+ */
+export const AVOIDANCE_CONSTRAINT_VALUES: readonly string[] =
+  CONSULTATION_QUESTION_BANK.find((q) => q.id === FOOD_AVOIDANCES_QUESTION_ID)?.applicableWhen?.values ?? []
 
 /** Every question a foundation could be asked, adaptive ones included. */
 export function questionsForFoundation(

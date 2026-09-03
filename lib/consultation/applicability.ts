@@ -1,11 +1,11 @@
 import type {
-  ConsultationAnswer,
   ConsultationAnswers,
   ConsultationApplicability,
   ConsultationContext,
   ConsultationQuestion,
 } from "./types"
 import { CONSULTATION_QUESTION_BANK } from "./question-bank"
+import { validateAnswer } from "./validation"
 
 /**
  * The one deterministic resolver for "which questions apply right now".
@@ -49,32 +49,42 @@ function evaluateRule(
   // Consultation would keep resurrecting a branch that no longer applies.
   if (!parent || !applicableSoFar.has(rule.questionId)) return false
 
-  const raw: ConsultationAnswer | undefined = answers[rule.questionId]
-  if (raw === undefined || raw === null) return false
-
-  // The trigger's answer has to be something the trigger actually offers.
-  //
-  // `equals` and `includes` get this for free — the bank validator already
-  // proved every listed value is one of the parent's options, so an
-  // out-of-domain answer simply fails to match. `notEquals` does not: a
-  // garbage value is "not equal" to everything, so without this check a
-  // corrupted or crafted parent answer would REVEAL a branch rather than hide
-  // it. Domain-checking all three in one place keeps that asymmetry from
-  // having to be remembered.
-  const allowed = new Set((parent.options ?? []).map((o) => o.value))
-  const inDomain = (v: unknown): v is string => typeof v === "string" && allowed.has(v)
+  /*
+   * ── The trigger answer must be valid AS A WHOLE ──────────────────────────
+   *
+   * Not merely "contains a value that matches". An earlier version of this
+   * function domain-checked each value individually, which left `includes`
+   * open: `["health-event", "not-a-real-option"]` revealed the branch because
+   * one member happened to be legitimate. Per-value checking cannot see
+   * duplicates, cannot see an exclusive value combined with a substantive one,
+   * and cannot see a below-minimum selection — all of which are answers the
+   * rest of the system refuses to trust.
+   *
+   * So applicability now asks exactly the question the trusted projection
+   * asks, using exactly the same function. That is the point: a second, more
+   * permissive notion of "valid enough to branch on" is how a malformed answer
+   * ends up governing which questions a customer is asked while being dropped
+   * from the answers a Report is built from.
+   *
+   * Fail-closed in every direction:
+   *   missing trigger  → hidden (a `notEquals` rule must not read "unknown"
+   *                      as "not equal", which is why this is a guard rather
+   *                      than a fall-through)
+   *   invalid trigger  → hidden
+   *   valid + matches  → shown
+   *   valid, no match  → hidden
+   */
+  const parentAnswer = validateAnswer(parent, answers[rule.questionId])
+  if (parentAnswer.status !== "valid") return false
+  const value = parentAnswer.value
 
   switch (rule.operator) {
     case "equals":
-      return inDomain(raw) && rule.values.includes(raw)
+      return typeof value === "string" && rule.values.includes(value)
     case "notEquals":
-      // An unanswered trigger is NOT "not equal" — it is unknown, and an
-      // unknown trigger must not reveal a question. Handled by the
-      // `undefined` guard above, deliberately, rather than falling through
-      // to a vacuous true here.
-      return inDomain(raw) && !rule.values.includes(raw)
+      return typeof value === "string" && !rule.values.includes(value)
     case "includes":
-      return Array.isArray(raw) && raw.some((v) => inDomain(v) && rule.values.includes(v))
+      return Array.isArray(value) && value.some((v) => rule.values.includes(v))
     default:
       // Unknown operator: reveal nothing. An operator added to the type but
       // not to this switch must not silently mean "always applicable".
