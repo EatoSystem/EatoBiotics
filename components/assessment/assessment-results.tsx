@@ -14,12 +14,8 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import {
   RotateCcw,
-  Utensils,
   ArrowRight,
   Check,
-  Calendar,
-  ShoppingCart,
-  BarChart3,
   Copy,
   Trophy,
 } from "lucide-react"
@@ -31,7 +27,6 @@ import { ThreeBioticsResult } from "./result/three-biotics-result"
 import { FoodSystemPattern } from "./result/food-system-pattern"
 import { OneFreeAction } from "./result/one-free-action"
 import { ContributeOptIn } from "./result/contribute-opt-in"
-import { MissionNote } from "./mission-note"
 import { ShareScoreCard } from "./share-score-card"
 import { JourneyNextStep } from "./journey-next-step"
 import { ScoreCard } from "./score-card"
@@ -44,7 +39,13 @@ import type { FoodSet } from "@/lib/foods-by-country"
 import { BioticIcon } from "@/components/report/food-tool"
 import { bioticFromFoodType } from "@/lib/report/visual-token"
 
-/* ── Gut Starter Pack config ─────────────────────────────────────────── */
+/* ── Starter food slugs, by profile ──────────────────────────────────────
+ *
+ * The arrays are unchanged. Phase 2D renders only the first three of them,
+ * and the section they used to fill — "Your Gut Starter Pack", six cards,
+ * six Add-to-Plate CTAs — is gone. The data keeps its shape because deciding
+ * what these lists should contain is a separate question from how many of
+ * them the free result should show. */
 
 const STARTER_PACK: Record<string, string[]> = {
   "Thriving Food System": ["kimchi", "kombucha", "asparagus", "tempeh", "pomegranate", "water-kefir"],
@@ -128,7 +129,9 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
 
   // FoodSystemPattern reads the same weakest-first `insights` ordering that
   // produced the callout this replaced — the derivation moved, it was not
-  // reinvented. `foods` is still needed by the Gut Starter Pack below.
+  // reinvented. `foods` is the country-aware set behind the local suggestion
+  // in OneFreeAction; the starter foods below come from STARTER_PACK and
+  // getFoodBySlug instead, which is a separate path.
   const foods = useLocalFoodSet()
   const focusPillar = insights[0]?.pillar ?? ""
   const localSuggestion = FOCUS_FOOD_SUGGESTION[focusPillar]
@@ -301,156 +304,100 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
         </div>
       </section>
 
-      {/* ── D. What the report includes ────────────────────────────────── */}
-      <section className="px-6 py-16">
-        <div className="mx-auto max-w-3xl">
-          <ScrollReveal>
-            <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl text-center">
-              What your report includes
-            </h2>
-            <p className="mt-2 text-center text-sm text-muted-foreground">
-              Built around your Biotics Score™ — not a generic template.
-            </p>
-          </ScrollReveal>
-
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            {[
-              {
-                icon: Calendar,
-                gradient: "linear-gradient(135deg, var(--icon-lime), var(--icon-green))",
-                title: "Your 30-Day Plan",
-                desc: "Four weeks of specific, week-by-week actions tailored to your Prebiotics, Probiotics, and Postbiotics scores.",
-              },
-              {
-                icon: ShoppingCart,
-                gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
-                title: "Your Five-Food Strategy",
-                desc: "Five foods chosen for your profile — what each one does, why it suits you, and a swap if it doesn't.",
-              },
-              {
-                icon: BarChart3,
-                gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
-                title: "Your 7-Day Starter Plan",
-                desc: "One specific action for each of the first seven days, so where to begin is never a decision.",
-              },
-            ].map((card, i) => (
-              <ScrollReveal key={card.title} delay={i * 80}>
-                <div className="flex flex-col gap-3 rounded-2xl border border-border bg-background p-5">
-                  <div
-                    className="flex h-10 w-10 items-center justify-center rounded-xl"
-                    style={{ background: card.gradient }}
-                  >
-                    <card.icon size={18} className="text-white" />
-                  </div>
-                  <p className="font-semibold text-foreground text-sm">{card.title}</p>
-                  <p className="text-xs leading-relaxed text-muted-foreground">{card.desc}</p>
-                </div>
-              </ScrollReveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── 7-Day Actions ────────────────────────────────────────────────── */}
-      <section className="px-6 py-16">
+      {/* ── A few more ideas — one quiet free cluster ──────────────────
+        *
+        * Phase 2D folded three sections into this one: "What your report
+        * includes" (a second brochure for the product the card above already
+        * describes with REPORT_OFFER_FEATURES), "More to try", and the "Gut
+        * Starter Pack" with its six Add-to-Plate CTAs. After the €49 card the
+        * page was opening a second product — another numbered action
+        * programme, six food CTAs, four Lens cards and a Mission bridge — so
+        * the remaining free material is presented once, quietly, and the
+        * Consultation stays the only major commercial action on the page.
+        *
+        * Nothing is invented and nothing is recomputed: the actions are the
+        * ones the result already produced (`nextActions.slice(1)` — the first
+        * is promoted into OneFreeAction above), and the foods are the existing
+        * STARTER_PACK entries, trimmed to three. */}
+      <section className="px-6 py-14">
         <div className="mx-auto max-w-3xl">
           <ScrollReveal>
             <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
-              More to try
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              A few more small things you could try this week.
-            </p>
-          </ScrollReveal>
-
-          <div className="mt-6 space-y-4">
-            {nextActions.slice(1).map((action, i) => (
-              <ScrollReveal key={i} delay={i * 80}>
-                <div className="flex gap-4 rounded-2xl border border-border bg-background p-5">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full brand-gradient text-sm font-bold text-white">
-                    {i + 1}
-                  </div>
-                  <p className="pt-1.5 text-sm leading-relaxed text-foreground sm:text-base">{action}</p>
-                </div>
-              </ScrollReveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Gut Starter Pack ─────────────────────────────────────────────── */}
-      <section className="border-t border-border px-6 py-16">
-        <div className="mx-auto max-w-3xl">
-          <ScrollReveal>
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-              Your personalised picks
-            </p>
-            <h2 className="mt-2 font-serif text-2xl font-semibold text-foreground sm:text-3xl">
-              Your Gut Starter Pack
+              A few more ideas
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Six foods matched to your profile — any of them is a reasonable place to start.
+              Two more small actions from your Assessment, plus a few foods you could
+              explore.
             </p>
           </ScrollReveal>
 
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {(STARTER_PACK[profile.type] ?? DEFAULT_STARTER).map((slug, i) => {
-              const food = getFoodBySlug(slug)
-              if (!food) return null
-              return (
-                <ScrollReveal key={slug} delay={i * 60}>
-                  <div
-                    className="relative overflow-hidden rounded-2xl border border-border bg-background p-4 transition-all hover:shadow-md"
-                    style={{ borderTopColor: food.accentColor, borderTopWidth: "3px" }}
-                  >
-                    <BioticIcon food={food.name} biotic={bioticFromFoodType(food.biotic)} size={18} />
-                    <p
-                      className="mt-2 text-[10px] font-bold uppercase tracking-widest"
-                      style={{ color: food.accentColor }}
-                    >
-                      {food.biotic === "prebiotic"
-                        ? "Prebiotic"
-                        : food.biotic === "probiotic"
-                        ? "Probiotic"
-                        : food.biotic === "postbiotic"
-                        ? "Postbiotic"
-                        : food.biotic === "protein"
-                        ? "Protein"
-                        : "Food"}
-                    </p>
-                    <p className="mt-0.5 font-serif text-sm font-semibold text-foreground">{food.name}</p>
-                    <p className="mt-1 text-[11px] leading-snug text-muted-foreground line-clamp-2">
-                      {food.tagline}
-                    </p>
-                    <Link
-                      href={`/myplate?add=${food.slug}`}
-                      className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
-                      style={{ background: food.accentColor }}
-                    >
-                      <Utensils size={11} />
-                      Add to Plate
-                    </Link>
-                  </div>
-                </ScrollReveal>
-              )
-            })}
-          </div>
+          {/* A muted list, not a second programme: no numbered gradient
+            * markers, nothing that competes with One thing you can try. */}
+          <ul className="mt-6 space-y-3">
+            {nextActions.slice(1).map((action, i) => (
+              <ScrollReveal key={i} delay={i * 60}>
+                <li className="flex gap-3 rounded-xl border border-border/60 bg-background px-4 py-3.5">
+                  <span
+                    className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/40"
+                    aria-hidden
+                  />
+                  <p className="text-sm leading-relaxed text-muted-foreground">{action}</p>
+                </li>
+              </ScrollReveal>
+            ))}
+          </ul>
 
-          <ScrollReveal delay={400}>
-            <div className="mt-6 text-center">
+          {/* Three foods, not six, and no CTA on any of them. These are
+            * things someone could try — the copy claims nothing about matching
+            * them to anyone's biology, and the per-card Biotic label is gone
+            * because Your Three Biotics has already taught that. */}
+          <ScrollReveal delay={120}>
+            <p className="mt-8 text-sm font-medium text-foreground">Foods you could explore</p>
+            <div className="mt-3 grid gap-2.5 sm:grid-cols-3">
+              {(STARTER_PACK[profile.type] ?? DEFAULT_STARTER)
+                .map((slug) => getFoodBySlug(slug))
+                .filter((food): food is NonNullable<typeof food> => Boolean(food))
+                .slice(0, 3)
+                .map((food) => (
+                  <div
+                    key={food.slug}
+                    className="flex items-center gap-2.5 rounded-xl border border-border bg-background px-3 py-2.5"
+                  >
+                    <BioticIcon
+                      food={food.name}
+                      biotic={bioticFromFoodType(food.biotic)}
+                      size={16}
+                    />
+                    <p className="font-serif text-sm font-semibold text-foreground">{food.name}</p>
+                  </div>
+                ))}
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal delay={180}>
+            <div className="mt-5">
               <Link
                 href="/food"
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                className="text-sm font-medium text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
               >
-                Browse the full food library →
+                Browse the food library →
               </Link>
             </div>
           </ScrollReveal>
         </div>
       </section>
 
+      {/* ── F. Save results / email capture ────────────────────────────── */}
+      <section className="border-t border-border bg-secondary/10 px-6 py-16">
+        <div className="mx-auto max-w-3xl">
+          <ScrollReveal>
+            <SaveResultsCard email={leadEmail} />
+          </ScrollReveal>
+        </div>
+      </section>
+
       {/* ── Foundation → add-on journey next step ──────────────────────── */}
-      <section className="px-6"><JourneyNextStep /></section>
+      <section className="px-6"><JourneyNextStep compact /></section>
 
       {/* ── Lottery winner ────────────────────────────────────────────── */}
       {winnerCode && (
@@ -510,24 +457,6 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
           </div>
         </section>
       )}
-
-      {/* ── Mission Bridge ─────────────────────────────────────────────── */}
-      <section className="border-t border-border px-6 py-12">
-        <div className="mx-auto max-w-3xl">
-          <ScrollReveal>
-            <MissionNote variant="bridge" />
-          </ScrollReveal>
-        </div>
-      </section>
-
-      {/* ── F. Save results / email capture ────────────────────────────── */}
-      <section className="border-t border-border bg-secondary/10 px-6 py-16">
-        <div className="mx-auto max-w-3xl">
-          <ScrollReveal>
-            <SaveResultsCard email={leadEmail} />
-          </ScrollReveal>
-        </div>
-      </section>
 
       {/* ── Retake + Disclaimer ────────────────────────────────────────── */}
       <section className="px-6 py-16">

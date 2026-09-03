@@ -5,6 +5,23 @@
  * a Health system (pendingAddon), it surfaces a prominent "continue" CTA;
  * otherwise it offers the four assessed Health systems + a link to the
  * foundation report.
+ *
+ * ── `compact` (Phase 2D) ────────────────────────────────────────────────────
+ *
+ * The You result ends with a €49 Consultation as its one major commercial
+ * action. The default rendering below puts four marketing cards and a second
+ * "View my Food System report" link underneath it — a competing marketplace
+ * and a competing report identity (that link goes to /assessment/results, the
+ * free CombinedReport, not the paid Personal Food System Report).
+ *
+ * `compact` renders the same destinations as quiet text links instead. It
+ * defaults to false, so Family and every other existing caller is untouched —
+ * this is deliberately the smallest API that separates the two contexts rather
+ * than a redesign of the shared component.
+ *
+ * The pendingAddon branch is checked FIRST and is identical in both modes: a
+ * customer who already chose a Health system is mid-journey, and that is not
+ * the case this phase is quietening.
  */
 
 import { useEffect, useState } from "react"
@@ -21,10 +38,14 @@ const SYSTEM_CARDS: Array<{ key: AssessedSystemKey; icon: typeof Activity; blurb
   { key: "performance", icon: ShieldPlus, blurb: "Energy, recovery, movement, and output.", accent: "var(--icon-yellow)" },
 ]
 
-export function JourneyNextStep() {
+export function JourneyNextStep({ compact = false }: { compact?: boolean }) {
   const [pendingAddon, setPendingAddon] = useState<AnyAssessedKey | null>(null)
   const [ready, setReady] = useState(false)
 
+  // This effect is load-bearing beyond the UI: persist() writes the completed
+  // foundation for signed-in customers. Whatever this component renders — and
+  // in compact mode it renders very little — it must keep mounting on the You
+  // result, or that write silently stops happening.
   useEffect(() => {
     setPendingAddon(getJourney().pendingAddon)
     setReady(true)
@@ -52,6 +73,31 @@ export function JourneyNextStep() {
         >
           Continue to {label} <ArrowRight size={18} />
         </Link>
+      </div>
+    )
+  }
+
+  // Same four destinations, no marketplace: quiet anchors, no gradient
+  // button, and no CombinedReport link competing with the paid report the
+  // customer was just offered.
+  if (compact) {
+    return (
+      <div className="mx-auto my-10 max-w-3xl">
+        <h3 className="text-sm font-semibold text-foreground">Explore another focus</h3>
+        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+          Each one builds on the Assessment you have just finished.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
+          {SYSTEM_CARDS.map((c) => (
+            <Link
+              key={c.key}
+              href={`/assessment/add/${c.key}`}
+              className="text-sm font-medium text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
+            >
+              {HEALTH_SYSTEMS[c.key].label}
+            </Link>
+          ))}
+        </div>
       </div>
     )
   }
