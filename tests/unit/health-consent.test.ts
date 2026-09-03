@@ -330,9 +330,16 @@ const CONSENT_SURFACES: Record<string, HealthConsentSource> = {
   "components/mind-assessment/mind-assessment-intro.tsx": "assessment_mind",
   "components/family-assessment/family-assessment-intro.tsx": "assessment_family",
   "components/waitlist/discover-flow.tsx": "waitlist",
-  // Both checkout callers. They reach /api/checkout, which records
+  // The one checkout surface. It reaches /api/checkout, which records
   // deep_assessment.
-  "components/assessment/assessment-results.tsx": "deep_assessment",
+  //
+  // assessment-results.tsx was listed here until Phase 2F, when the You
+  // result stopped carrying its own copy of the offer and started rendering
+  // PersonalReportCta like Mind and Family. It no longer renders the control
+  // directly, so asserting that it does would be asserting a duplicate back
+  // into existence. That the You result still reaches this control is proved
+  // in assessment-result-narrative.test.ts, which pins the component and its
+  // props at the call site.
   "components/assessment/personal-report-cta.tsx": "deep_assessment",
 }
 

@@ -34,6 +34,8 @@ const RING = readFileSync("components/assessment/score-ring.tsx", "utf8")
 const SHARE = readFileSync("components/assessment/share-score-card.tsx", "utf8")
 const JOURNEY = readFileSync("components/assessment/journey-next-step.tsx", "utf8")
 const FAMILY = readFileSync("components/family-assessment/family-assessment-results.tsx", "utf8")
+const CTA = readFileSync("components/assessment/personal-report-cta.tsx", "utf8")
+const MIND = readFileSync("components/mind-assessment/mind-assessment-results.tsx", "utf8")
 
 /**
  * Source with comments stripped, for every rule that forbids a construct BY
@@ -65,7 +67,7 @@ const at = (needle: string) => RESULTS.indexOf(needle)
 /* ── §12 Free value before commercial value ─────────────────────────────── */
 
 describe("the free result stands on its own, before anything is sold", () => {
-  const cta = at("── C. Single CTA")
+  const cta = at("<PersonalReportCta")
 
   it("renders the whole free narrative before the Consultation block", () => {
     expect(cta, "the €49 block must still exist").toBeGreaterThan(-1)
@@ -301,7 +303,7 @@ describe("the pattern names a place to explore, not a failure", () => {
 
 describe("the free action is useful and promises nothing", () => {
   it("appears before the commercial block", () => {
-    expect(at("<OneFreeAction")).toBeLessThan(at("── C. Single CTA"))
+    expect(at("<OneFreeAction")).toBeLessThan(at("<PersonalReportCta"))
   })
 
   it("comes from the result's own actions", () => {
@@ -466,9 +468,15 @@ describe("the narrative displays the result rather than inventing one", () => {
 
 describe("Phase 2C leaves the paid contract alone", () => {
   it("still sends both consents and the same fields", () => {
-    expect(RESULTS).toMatch(/\[HEALTH_CONSENT_FIELD\]: true/)
-    expect(RESULTS).toMatch(/\[IMMEDIATE_START_FIELD\]: true/)
-    expect(RESULTS).toMatch(/fetch\("\/api\/checkout"/)
+    // These assertions used to read assessment-results.tsx, which had its own
+    // inline checkout. Phase 2F deleted that duplicate and pointed You at the
+    // shared offer, so the contract is asserted where it now lives — and the
+    // call site is pinned separately below, so "You renders it" and "it sends
+    // the fields" cannot drift apart.
+    expect(CTA).toMatch(/\[HEALTH_CONSENT_FIELD\]: true/)
+    expect(CTA).toMatch(/\[IMMEDIATE_START_FIELD\]: true/)
+    expect(CTA).toMatch(/fetch\("\/api\/checkout"/)
+    expect(RESULTS).toMatch(/<PersonalReportCta/)
   })
 })
 
@@ -496,7 +504,7 @@ describe("the You result closes instead of starting again", () => {
   })
 
   it("puts the Consultation ahead of everything that follows it", () => {
-    const cta = at("── C. Single CTA")
+    const cta = at("<PersonalReportCta")
     for (const section of [
       "── A few more ideas",
       "── F. Save results",
@@ -615,5 +623,174 @@ describe("the onward journey is tertiary on You, unchanged everywhere else", () 
     expect(FAMILY).toMatch(/<JourneyNextStep \/>/)
     expect(FAMILY).not.toMatch(/<JourneyNextStep compact/)
     expect(JOURNEY).toMatch(/compact = false/)
+  })
+})
+
+
+/* ── Phase 2F — one Consultation offer, told truthfully in three places ─── */
+
+describe("the €49 Consultation is offered once, and the same way everywhere", () => {
+  it("is the shared component in all three contexts", () => {
+    for (const [name, src] of [["You", RESULTS], ["Mind", MIND], ["Family", FAMILY]] as const) {
+      expect(src, `${name} must render the shared offer`).toMatch(/<PersonalReportCta/)
+    }
+    // And the duplicate that used to live on You is gone: no second checkout
+    // implementation, no second purchase event, no second consent pair.
+    expect(code(RESULTS)).not.toMatch(/fetch\("\/api\/checkout"/)
+    expect(code(RESULTS)).not.toMatch(/report_purchase_clicked/)
+    expect(code(RESULTS)).not.toMatch(/<HealthConsentCheckbox/)
+  })
+
+  it("names the Consultation as the product and the Report as its output", () => {
+    expect(copyOf(CTA)).toMatch(/Personal Food System Consultation/)
+    expect(copyOf(CTA)).toMatch(/What you receive after the Consultation/)
+    // The question is a subhead, not the product name — a heading here would
+    // make "How does your Food System work?" the thing being sold.
+    expect(CTA).toMatch(/<h2[^>]*>\s*\n?\s*Personal Food System Consultation/)
+    expect(CTA).not.toMatch(/<h[1-6][^>]*>\s*\n?\s*How does your Food System work\?/)
+  })
+
+  it("prices it as a one-time purchase from the shared constant", () => {
+    expect(CTA).toMatch(/REPORT_PRICE_EUR/)
+    expect(copyOf(CTA)).toMatch(/one-time/)
+    expect(code(CTA)).not.toMatch(/€\s*49/)
+  })
+
+  it("gives You the where-am-I bridge and does not give it to Mind or Family", () => {
+    // Only the You journey just completed the Food System Assessment. Telling
+    // a Mind or Family customer that it did would describe an assessment they
+    // did not take.
+    expect(copyOf(CTA)).toMatch(/You now know where you are/)
+    expect(copyOf(CTA)).toMatch(/Your Food System Assessment answered where you are/)
+    expect(copyOf(CTA)).toMatch(/focused starting point/)
+    // The strings above live in the BRIDGE constant, which survives deleting
+    // the JSX that renders it — sabotage removed the render and every copy
+    // rule stayed green. So the render site is asserted too. Same hole as the
+    // BIOTIC_INTRO lookup in Phase 2C: a rule that reads the data and not the
+    // page is not reading the page.
+    expect(code(CTA)).toMatch(/\{bridge\.eyebrow\}/)
+    expect(code(CTA)).toMatch(/\{bridge\.body\}/)
+    expect(RESULTS).toMatch(/source="you_result"/)
+    expect(MIND).toMatch(/source="mind"/)
+    expect(FAMILY).toMatch(/source="family"/)
+  })
+
+  it("never puts a question count or a duration in front of the buyer", () => {
+    // The free Assessment is fifteen questions; the paid path generates a core
+    // set plus follow-ups plus any Lens questions. No single number is true
+    // across contexts, and there is no measured timing behind a duration.
+    for (const rule of [
+      /\b\d+ questions\b/i,
+      /from 15\b/i,
+      /about \d+ minutes/i,
+      /\b\d+[-\s]minute/i,
+      /takes \d+/i,
+    ]) {
+      expect(copyOf(CTA), String(rule)).not.toMatch(rule)
+    }
+  })
+
+  it("keeps one feature list, from the one definition", () => {
+    expect(CTA).toMatch(/REPORT_OFFER_FEATURES\.map/)
+    // No hand-written second list beside it.
+    expect(copyOf(CTA)).not.toMatch(/Your 30-Day Plan/)
+    expect(copyOf(CTA)).not.toMatch(/Your Five-Food Strategy/)
+  })
+
+  it("says the 30 days are included and that nothing starts on its own", () => {
+    expect(copyOf(CTA)).toMatch(/Membership does not start automatically/)
+    for (const rule of [/free trial/i, /\btrial\b/i, /free 30-day/i, /activate/i, /activation/i]) {
+      expect(copyOf(CTA), String(rule)).not.toMatch(rule)
+    }
+  })
+
+  it("asks to begin the Consultation, not to unlock a document", () => {
+    expect(copyOf(CTA)).toMatch(/Begin My Food System Consultation/)
+    for (const rule of [/unlock/i, /\binstant\b/i, /generate my report/i, /subscribe/i, /buy report/i]) {
+      expect(copyOf(CTA), String(rule)).not.toMatch(rule)
+    }
+  })
+
+  it("describes what actually happens after payment", () => {
+    expect(copyOf(CTA)).toMatch(/continue into the guided Consultation questions/)
+    expect(copyOf(CTA)).toMatch(/saved as you go/)
+    expect(copyOf(CTA)).not.toMatch(/report (will be )?ready (immediately|instantly)/i)
+  })
+
+  it("keeps both consent controls, unticked, in front of payment", () => {
+    expect(CTA).toMatch(/<HealthConsentCheckbox\s+checked=/)
+    expect(CTA).toMatch(/<ImmediateStartRequest\s+checked=/)
+    expect(CTA).toMatch(/useState\(false\)/)
+    expect(copyOf(CTA)).toMatch(/Before payment/)
+    // Neither may be hidden behind a disclosure.
+    expect(code(CTA)).not.toMatch(/<details/)
+  })
+
+  it("sends the whole checkout context every caller needs", () => {
+    for (const field of [
+      /foundationType: resolvedFoundation\(\)/,
+      /selectedAddon: getJourney\(\)\.selectedAddon/,
+      /\.\.\.\(email \? \{ email \} : \{\}\)/,
+      /\[HEALTH_CONSENT_FIELD\]: true/,
+      /\[IMMEDIATE_START_FIELD\]: true/,
+    ]) {
+      expect(CTA, String(field)).toMatch(field)
+    }
+  })
+
+  it("shows the Member continuation only where a caller asks for it", () => {
+    expect(CTA).toMatch(/showMembership && \(/)
+    // code(), not raw: assessment-results.tsx explains this prop in a comment
+    // that contains the literal `showMembership={false}`, so a raw match reads
+    // the explanation and passes while the prop says the opposite. Sabotage
+    // flipped it to true and this rule stayed green.
+    expect(code(RESULTS)).toMatch(/showMembership=\{false\}/)
+    expect(code(RESULTS)).not.toMatch(/showMembership=\{true\}/)
+    expect(code(MIND)).toMatch(/showMembership=\{true\}/)
+    expect(code(FAMILY)).toMatch(/showMembership=\{true\}/)
+    // Required, not defaulted: a default is how a caller inherits a decision
+    // instead of making one, which is how You lost the panel by accident.
+    expect(CTA).not.toMatch(/showMembership = /)
+  })
+
+  it("fires exactly one purchase event, and says which surface it came from", () => {
+    // Comment-stripped: this component's own docblock explains that Mind and
+    // Family never fired this event, and a raw count reads that sentence as a
+    // second call site. Same reason every negative rule in this file uses
+    // code() — the commentary is not the code.
+    const fires = code(CTA).match(/report_purchase_clicked/g) ?? []
+    expect(fires).toHaveLength(1)
+    expect(CTA).toMatch(/source,/)
+    // Mind and Family fired nothing at all before this consolidation.
+    for (const src of [MIND, FAMILY]) expect(code(src)).not.toMatch(/report_purchase_clicked/)
+  })
+})
+
+describe("the lottery claims only what the repository can support", () => {
+  it("no longer promises a free month or names where it applies", () => {
+    for (const rule of [/free first month/i, /free month/i, /any plan/i, /apply at checkout/i]) {
+      expect(copyOf(RESULTS), String(rule)).not.toMatch(rule)
+    }
+  })
+
+  it("still says what is actually known about the code", () => {
+    expect(copyOf(RESULTS)).toMatch(/reward code/i)
+    expect(copyOf(RESULTS)).toMatch(/can only be used once/i)
+  })
+
+  it("keeps its logic, its event and its low position", () => {
+    expect(RESULTS).toMatch(/\{winnerCode && \(/)
+    expect(RESULTS).toMatch(/lottery_winner_code_copied/)
+    // Exactly one winner block. Asserting only its POSITION let sabotage add a
+    // second one directly beside the Consultation while the original stayed
+    // low and every ordering rule passed — the claim being guarded is "the
+    // lottery is not next to the buy button", and a duplicate breaks that
+    // without moving anything.
+    const winnerBlocks = code(RESULTS).match(/winnerCode && /g) ?? []
+    expect(winnerBlocks).toHaveLength(1)
+    // Not moved beside the Consultation: still after the onward links.
+    expect(at("<JourneyNextStep compact />")).toBeLessThan(at("── Lottery winner"))
+    expect(at("── Lottery winner")).toBeLessThan(at("── Retake + Disclaimer"))
+    expect(at("<PersonalReportCta")).toBeLessThan(at("── Lottery winner"))
   })
 })
