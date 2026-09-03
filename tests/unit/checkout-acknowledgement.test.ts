@@ -178,10 +178,19 @@ describe("the checkout route requires both answers", () => {
 
 /* ── Every caller, not just the one ─────────────────────────────────────── */
 
-const CALLERS = [
-  "components/assessment/personal-report-cta.tsx",
-  "components/assessment/assessment-results.tsx",
-]
+/**
+ * Every file that posts to /api/checkout.
+ *
+ * One entry since Phase 2F. The You result used to hold an inline copy of the
+ * offer — its own fetch, its own consent state — and that duplicate is what
+ * let the two paths drift: You sent no foundationType/selectedAddon, and Mind
+ * and Family fired no purchase event. They now share PersonalReportCta.
+ *
+ * The list has not lost its teeth by shrinking. The sweep below still fails if
+ * a SECOND caller appears, which is the failure this guard exists for: a new
+ * checkout path shipping without the two questions.
+ */
+const CALLERS = ["components/assessment/personal-report-cta.tsx"]
 
 describe("every live checkout caller asks both questions", () => {
   it("finds exactly the callers this test knows about", () => {
@@ -301,11 +310,20 @@ describe("the buyer's email reaches the consent recorder", () => {
   }
 
   it("the You path already sent one, and still does", () => {
-    // /assessment renders AssessmentResults directly rather than through
-    // PersonalReportCta, so it was never part of the gap. Pinned so a later
-    // consolidation of the two surfaces cannot quietly drop it.
-    const source = readFileSync("components/assessment/assessment-results.tsx", "utf8")
-    expect(source).toMatch(/email:\s*leadEmail/)
+    // This asserted `email: leadEmail` inside AssessmentResults' own fetch,
+    // "pinned so a later consolidation of the two surfaces cannot quietly drop
+    // it". Phase 2F is that consolidation, so the pin moves with the code
+    // rather than being deleted: the You result must still hand its lead email
+    // to the shared offer, and the shared offer must still put it in the body.
+    // Both halves, because either one alone can silently break the chain.
+    const you = readFileSync("components/assessment/assessment-results.tsx", "utf8")
+    expect(you, "the You result must pass its lead email to the shared offer").toMatch(
+      /<PersonalReportCta[\s\S]*?email=\{leadEmail\}/,
+    )
+    const shared = readFileSync("components/assessment/personal-report-cta.tsx", "utf8")
+    expect(shared, "the shared offer must forward it to /api/checkout").toMatch(
+      /\.\.\.\(email \? \{ email \} : \{\}\)/,
+    )
   })
 
   it("the email is not normalised on the client", () => {

@@ -179,7 +179,9 @@ describe("one offer definition, not one per surface", () => {
   const CONSUMERS = [
     "app/pricing/pricing-client.tsx",
     "components/assessment/personal-report-cta.tsx",
-    "components/assessment/assessment-results.tsx",
+    // assessment-results.tsx read REPORT_OFFER_FEATURES directly until Phase
+    // 2F. It now renders PersonalReportCta, which reads it — one consumer
+    // instead of two, which is the point of this guard.
     "components/home/membership-teaser.tsx",
     "lib/email/paid-report-email.ts",
   ]

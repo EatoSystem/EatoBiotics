@@ -131,22 +131,37 @@ const MARKETING_COMPONENTS: Record<string, { minChars: number; anchor: string }>
     minChars: 3_000,
     anchor: "Take the free assessment first",
   },
+  // Floor raised 800 -> 4_000 in Phase 2F. This file is now the ONE place
+  // EatoBiotics offers the €49 Consultation: the You result's inline copy of
+  // the same offer was deleted and its callers point here instead, so roughly
+  // 3.2k characters of commercial copy arrived. A floor left at 800 would no
+  // longer notice most of this surface going missing.
   "components/assessment/personal-report-cta.tsx": {
-    minChars: 800,
+    minChars: 4_000,
     anchor: "A guided digital process",
   },
-  // Floor and anchor both moved in Phase 2D, because the copy they described
-  // was deliberately deleted: "What your report includes" was a second
-  // brochure for the product the €49 card above it already describes, and the
-  // Gut Starter Pack's six cards went with it. That is ~1.1k characters of
-  // real customer copy legitimately gone, not an extraction that broke.
+  // Phase 2D deleted ~1.1k characters here (a duplicate report brochure and
+  // the six-card starter pack) and moved the floor 8_000 -> 6_000, with a
+  // warning attached: do not lower this again casually — if the file is
+  // restructured again, reconsider the corpus strategy instead.
   //
-  // The new anchor is the Consultation heading — the one piece of copy on this
-  // surface the current phase boundaries explicitly freeze — so the floor
-  // still fails loudly if extraction ever silently empties.
+  // Phase 2F is that restructure, and this is the reconsidered strategy rather
+  // than another mechanical lowering. The €49 offer did not disappear; it MOVED
+  // into personal-report-cta.tsx, which is already in this corpus and whose
+  // floor is raised by 3.2k in the same change. Total guarded copy goes UP:
+  //
+  //   assessment-results.tsx    6_913 -> 4_631 chars  (offer moved out)
+  //   personal-report-cta.tsx     ~1.1k -> 4_396 chars  (offer moved in)
+  //
+  // The anchor moves for the same reason — "Personal Food System Consultation"
+  // now lives in the other file. The educational disclaimer was tried first
+  // and rejected by this very guard: DISCLAIMER_SECTION strips everything from
+  // the retake block's comment onward, so the disclaimer is not in the
+  // extracted copy by design. The anchor is instead the Phase 2D free cluster
+  // heading, which is inside the extracted range and which that phase froze.
   "components/assessment/assessment-results.tsx": {
-    minChars: 6_000,
-    anchor: "Personal Food System Consultation",
+    minChars: 4_000,
+    anchor: "A few more ideas",
   },
 }
 

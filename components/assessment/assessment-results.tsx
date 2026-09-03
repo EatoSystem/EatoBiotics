@@ -1,26 +1,16 @@
 "use client"
 
-import {
-  IMMEDIATE_START_FIELD,
-  IMMEDIATE_START_REQUIRED_MESSAGE,
-  ImmediateStartRequest,
-} from "@/components/assessment/immediate-start-request"
-import { HealthConsentCheckbox } from "@/components/health-consent-checkbox"
-import {
-  HEALTH_CONSENT_FIELD,
-  HEALTH_CONSENT_REQUIRED_MESSAGE,
-} from "@/lib/health-consent"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import {
   RotateCcw,
-  ArrowRight,
   Check,
   Copy,
   Trophy,
 } from "lucide-react"
 import posthog from "posthog-js"
 import { ScrollReveal } from "@/components/scroll-reveal"
+import { PersonalReportCta } from "./personal-report-cta"
 import { BioticsScoreReveal } from "./result/biotics-score-reveal"
 import { FoodSystemProfile } from "./result/food-system-profile"
 import { ThreeBioticsResult } from "./result/three-biotics-result"
@@ -33,7 +23,6 @@ import { ScoreCard } from "./score-card"
 import { SaveResultsCard } from "./save-results-card"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
 import { getFoodBySlug } from "@/lib/foods"
-import { REPORT_OFFER_FEATURES } from "@/lib/report/offer"
 import { browserCountry, localFoods, fermentedPair, prebioticTrio } from "@/lib/local-foods"
 import type { FoodSet } from "@/lib/foods-by-country"
 import { BioticIcon } from "@/components/report/food-tool"
@@ -114,15 +103,7 @@ interface AssessmentResultsProps {
 }
 
 export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: AssessmentResultsProps) {
-  const { overall, profile, insights, nextActions, subScores } = result
-  const [loading, setLoading] = useState(false)
-  // Two separate questions, both unticked by default — a pre-ticked box is
-  // neither a request nor consent. They were one sentence until this change;
-  // bundling a processing consent into a commercial request is what made the
-  // consent record quote a statement the buyer had never been shown.
-  const [startNow, setStartNow] = useState(false)
-  const [healthConsent, setHealthConsent] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { overall, profile, insights, nextActions } = result
 
   // Lottery winner code copy state
   const [winnerCodeCopied, setWinnerCodeCopied] = useState(false)
@@ -137,53 +118,6 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
   const localSuggestion = FOCUS_FOOD_SUGGESTION[focusPillar]
     ? fillLocalFoods(FOCUS_FOOD_SUGGESTION[focusPillar], foods)
     : undefined
-
-  /* ── Checkout helpers ─────────────────────────────────────────────── */
-
-  async function handlePurchase(tier: string = "personal") {
-    if (!healthConsent) {
-      setError(HEALTH_CONSENT_REQUIRED_MESSAGE)
-      return
-    }
-    if (!startNow) {
-      setError(IMMEDIATE_START_REQUIRED_MESSAGE)
-      return
-    }
-    setLoading(true)
-    setError(null)
-
-    posthog.capture("report_purchase_clicked", {
-      tier,
-      score: overall,
-      profile_type: profile.type,
-    })
-
-    try {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tier,
-          overall,
-          profile,
-          subScores,
-          email: leadEmail,
-          [HEALTH_CONSENT_FIELD]: true,
-          [IMMEDIATE_START_FIELD]: true,
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok || !data.url) {
-        setError(data.error ?? "Could not start checkout. Please try again.")
-        return
-      }
-      window.location.href = data.url
-    } catch {
-      setError("Network error. Please check your connection and try again.")
-    } finally {
-      setLoading(false)
-    }
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -230,76 +164,27 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
         * in front of it. */}
       <ContributeOptIn result={result} />
 
-      {/* ── C. Single CTA — the conversion moment ─────────────────────── */}
+      {/* ── The €49 Consultation — one shared offer ─────────────────────
+        *
+        * This section used to be an inline copy of PersonalReportCta: its own
+        * handlePurchase, its own narrative, its own analytics call. Mind and
+        * Family rendered the shared component instead, and the two had drifted
+        * — You sent no foundationType/selectedAddon, Mind and Family fired no
+        * purchase event at all, and the Member panel appeared on two surfaces
+        * of three by accident rather than by decision.
+        *
+        * showMembership={false} keeps Phase 2D's result: the Consultation is
+        * the one commercial action on this page. It is stated here rather than
+        * defaulted, so it is a choice a reader can see. */}
       <section className="border-y border-border bg-secondary/10 px-6 py-16">
         <div className="mx-auto max-w-3xl">
           <ScrollReveal>
-            <div className="rounded-3xl border border-border bg-background overflow-hidden shadow-xl shadow-black/5">
-              {/* Top accent */}
-              <div className="h-1.5 w-full brand-gradient" />
-
-              <div className="p-6 sm:p-10">
-                {/* Headline */}
-                <div className="mb-8 text-center">
-                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                    The next step in your Food System
-                  </p>
-                  <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl">
-                    Personal Food System Consultation
-                  </h2>
-                  <div className="mt-3 flex items-baseline justify-center gap-2">
-                    <span className="text-5xl font-bold text-foreground">€49</span>
-                    <span className="text-muted-foreground text-sm">one-time</span>
-                  </div>
-                  <p className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
-                    A guided set of deeper questions about your food, rhythm and daily life — and the Personal Food System Report they produce.
-                  </p>
-                </div>
-
-                {/* What&apos;s included */}
-                <ul className="mb-8 grid gap-2.5 sm:grid-cols-2">
-                  {REPORT_OFFER_FEATURES.map((f) => (
-                    <li key={f} className="flex items-center gap-2.5 text-sm text-foreground/80">
-                      <Check size={15} className="shrink-0 text-[var(--icon-green)]" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-
-                {/* CTA button */}
-                <div className="space-y-3">
-                  <HealthConsentCheckbox checked={healthConsent} onChange={setHealthConsent} />
-                  <ImmediateStartRequest checked={startNow} onChange={setStartNow} />
-                </div>
-
-                <button
-                  onClick={() => handlePurchase("personal")}
-                  disabled={loading || !healthConsent || !startNow}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 brand-gradient"
-                >
-                  {loading ? (
-                    <>
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      Redirecting…
-                    </>
-                  ) : (
-                    <>
-                      Pay €49 &amp; Begin My Consultation
-                      <ArrowRight size={16} />
-                    </>
-                  )}
-                </button>
-
-                {error && (
-                  <p className="mt-3 text-center text-sm text-destructive">{error}</p>
-                )}
-
-                <p className="mt-4 text-center text-xs text-muted-foreground/60">
-                  A guided digital process. Educational and non-diagnostic; not a medical
-                  consultation or diagnosis. One-off payment · Secure checkout via Stripe
-                </p>
-              </div>
-            </div>
+            <PersonalReportCta
+              result={result}
+              email={leadEmail}
+              source="you_result"
+              showMembership={false}
+            />
           </ScrollReveal>
         </div>
       </section>
@@ -419,12 +304,22 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
                         You&apos;re a milestone taker
                       </p>
                       <p className="font-serif text-xl font-bold text-white leading-tight">
-                        Congratulations — you&apos;ve won a free month!
+                        You&apos;ve received an EatoBiotics reward code
                       </p>
                     </div>
                   </div>
+                  {/* De-claimed in Phase 2F. This said "a free first month on
+                    * any plan … use the code at checkout", and the repository
+                    * cannot establish what the live Stripe coupon actually
+                    * discounts — so it cannot establish that it applies to a
+                    * €49 one-time Consultation. The code, its creation, the
+                    * winner logic and the copy event are all untouched; only
+                    * the claim about what it is worth is withdrawn, until a
+                    * human verifies the coupon. */}
                   <p className="mt-3 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.80)" }}>
-                    Every 100th person to take the EatoBiotics assessment wins a free first month on any plan. Today, that&apos;s you. Use the code below at checkout — it&apos;s yours alone and can only be used once.
+                    This one-time code is unique to you and can only be used once. If
+                    you&apos;re unsure where it applies, contact hello@eatobiotics.com before
+                    purchasing.
                   </p>
                   {/* Code box */}
                   <div className="mt-5 flex items-center gap-2">
@@ -449,7 +344,7 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
                     </button>
                   </div>
                   <p className="mt-2.5 text-xs" style={{ color: "rgba(255,255,255,0.60)" }}>
-                    Free first month · Single-use · Apply at checkout
+                    Single-use · Unique to you
                   </p>
                 </div>
               </div>
