@@ -154,6 +154,78 @@ describe("B–D. bodySignalMap is withdrawn from the three signal questions", ()
   })
 })
 
+/* ══ B2 — Q1 internal rationale ════════════════════════════════════════════ */
+
+describe("B2. Q1's rationale argues the adjudicated position, not the withdrawn one", () => {
+  const q1 = () => findConsultationQuestion("core_signals_post_meal_pattern_v1")
+  const rationale = () => `${q1()?.intent ?? ""} ${q1()?.whyNeeded ?? ""}`
+
+  // Scoped to Q1's own two fields on purpose. A repo-wide grep would hit
+  // lib/assessment/addon-questions.ts, which carries near-identical wording for
+  // the free Assessment and is outside the Consultation contract entirely.
+
+  it("no longer names the withdrawn report target in prose", () => {
+    // Dropping bodySignalMap from reportTargets while the rationale still says
+    // the Report builds a body-signal section around this answer would leave
+    // the question arguing for the thing adjudication took away.
+    expect(rationale()).not.toMatch(/body[- ]signal/i)
+  })
+
+  it("does not claim the options point at different practical changes", () => {
+    // That claim is treatment selection: it says each reported sensation
+    // identifies its own correct intervention.
+    expect(rationale()).not.toMatch(/point (at|to) a different/i)
+    expect(rationale()).not.toMatch(/which one leads/i)
+  })
+
+  it("carries no treatment-selection or mechanism language", () => {
+    for (const re of [
+      /\btreat(ment|s|ing)?\b/i,
+      /\bprescrib/i,
+      /\bintervention\b/i,
+      /\bdiagnos/i,
+      /\bcauses\b/i,
+      /\btrigger(s|ed)?\b/i,
+      /\bmicrobiome\b/i,
+      /\binflamm/i,
+    ]) {
+      const hit = rationale().match(re)
+      // "without assigning a cause" and "never a basis for selecting a
+      // treatment" are the approved disclaimers — negated, and matched here
+      // only if someone drops the negation.
+      if (hit) {
+        expect(
+          rationale(),
+          `Q1 rationale asserts "${hit[0]}"`,
+        ).toMatch(new RegExp(`(without|never|not)[^.]*${hit[0]}`, "i"))
+      }
+    }
+  })
+
+  it("describes what the customer reports, and what the Report may do with it", () => {
+    expect(rationale()).toMatch(/notice/i)
+    expect(rationale()).toMatch(/describ/i)
+    expect(rationale()).toMatch(/educat|self-observation/i)
+  })
+
+  it("stays consistent with Q1's typed contract", () => {
+    const contract = QUESTION_SCIENCE_CONTRACTS.core_signals_post_meal_pattern_v1
+    expect(contract.evidenceStatus).toBe("CONTEXT_ONLY")
+    expect(contract.reportTargets.prohibited).toContain("bodySignalMap")
+    for (const banned of [
+      "treatment-selection",
+      "therapeutic-food-prescription",
+    ] as const) {
+      expect(contract.prohibitedInferences).toContain(banned)
+      expect(isInferenceProhibited("core_signals_post_meal_pattern_v1", banned)).toBe(true)
+    }
+    // Every use the rationale claims has to be one adjudication allowed.
+    for (const use of ["descriptive-recap", "educational-topic-selection"] as const) {
+      expect(contract.allowedReportUses).toContain(use)
+    }
+  })
+})
+
 /* ══ E — Q3 intent ═════════════════════════════════════════════════════════ */
 
 describe("E. Q3 intent claims fit, not efficacy", () => {
@@ -188,36 +260,96 @@ describe("E. Q3 intent claims fit, not efficacy", () => {
 /* ══ F — bundled values ════════════════════════════════════════════════════ */
 
 describe("F. Q3 bundled values stay atomic", () => {
-  it("every OR-bundled value is recorded with its components", () => {
+  const CONTRACT_SRC = () =>
+    readFileSync(join(process.cwd(), "lib/consultation/science-contract.ts"), "utf8")
+
+  it("exactly the three expected bundles are registered, all atomic", () => {
     const bundles = allBundledValues()
     expect(bundles.map((b) => b.value).sort()).toEqual(["large-late", "rushed", "stress-sleep"])
-    for (const b of bundles) {
-      expect(b.integrity).toBe("atomic")
-      expect(b.components.length).toBeGreaterThanOrEqual(2)
-    }
+    for (const b of bundles) expect(b.integrity).toBe("atomic")
   })
 
-  it("each recorded bundle is a real option of the question", () => {
+  it("no bundle record carries component data at all", () => {
+    // Atomicity has to be structural. A `components` field holding
+    // ["stress was high", "sleep was short"] IS the decomposition, whether or
+    // not any function reads it — the separately-addressable fact exists the
+    // moment it is written down, and the next reader will use it.
     for (const b of allBundledValues()) {
-      const values = (findConsultationQuestion(b.questionId)?.options ?? []).map((o) => o.value)
-      expect(values, `${b.value} is not an option of ${b.questionId}`).toContain(b.value)
+      expect(Object.keys(b).sort(), `${b.value} exposes extra fields`).toEqual([
+        "integrity",
+        "questionId",
+        "value",
+      ])
+      expect("components" in b, `${b.value} still has components`).toBe(false)
+    }
+    // And the type itself cannot reintroduce one.
+    const iface = CONTRACT_SRC().match(/export interface BundledAnswerValue \{[^}]*\}/)?.[0] ?? ""
+    expect(iface, "BundledAnswerValue is missing").not.toBe("")
+    expect(iface).not.toMatch(/components/)
+    expect(iface).not.toMatch(/label|text|wording|parts|halves/i)
+  })
+
+  it("the module holds none of the component phrases as literals", () => {
+    // The wording that would let a reader reconstruct a half.
+    for (const phrase of [
+      "meals were rushed",
+      "meals were skipped",
+      "meals were unusually large",
+      "meals were late",
+      "stress was high",
+      "sleep was short",
+    ]) {
+      expect(CONTRACT_SRC(), `component phrase "${phrase}" is recorded`).not.toContain(phrase)
     }
   })
 
   it("the module exposes no way to decompose a bundle", () => {
-    // The guarantee is structural: `components` is recorded for review, and
-    // there is deliberately no exported function that turns a bundle into
-    // separately-selected facts. A customer who chose "Stress was high or sleep
-    // was short" never told us which.
-    const src = readFileSync(join(process.cwd(), "lib/consultation/science-contract.ts"), "utf8")
+    const src = CONTRACT_SRC()
     const exportedFns = [...src.matchAll(/^export function (\w+)/gm)].map((m) => m[1])
-    for (const banned of ["decompose", "splitBundle", "componentsOf", "expandBundle"]) {
-      expect(exportedFns, `${banned} must not exist`).not.toContain(banned)
+
+    // Substring, not exact match. An earlier version of this compared names
+    // against a list with `not.toContain`, so `decompose` was banned while
+    // `decomposeBundle` sailed through — a guard that only catches the one
+    // spelling nobody would actually use.
+    for (const name of exportedFns) {
+      expect(
+        name,
+        `${name} reads as a decomposition API`,
+      ).not.toMatch(/decompos|split|expand|unbundle|separate|componentsof|halves|parts/i)
     }
+
+    // The structural guarantee, independent of naming: exactly two exported
+    // functions may touch bundle records at all, and neither returns parts.
+    const touchingBundles = exportedFns.filter((name) => {
+      const body = src.split(new RegExp(`^export function ${name}\\b`, "m"))[1] ?? ""
+      return /bundledValues/.test(body.split(/^export /m)[0] ?? "")
+    })
+    expect([...touchingBundles].sort()).toEqual(["allBundledValues", "isBundledValue"])
+
     // And nothing exported names a component as a derived boolean.
     for (const banned of [/\bhasStress\b/, /\bhasPoorSleep\b/, /\blateMeals\b/, /\bskippedMeals\b/]) {
       expect(src, `derived component flag ${banned}`).not.toMatch(banned)
     }
+  })
+
+  it("each bundle is a real Q3 option whose bank label is still OR-shaped", () => {
+    // The question bank keeps the customer-facing wording — that is why the
+    // contract does not need a copy of it. If a label stopped being an OR,
+    // the value would no longer be a bundle and this record would be wrong.
+    for (const b of allBundledValues()) {
+      const options = findConsultationQuestion(b.questionId)?.options ?? []
+      const option = options.find((o) => o.value === b.value)
+      expect(option, `${b.value} is not an option of ${b.questionId}`).toBeDefined()
+      expect(option?.label, `${b.value} is no longer OR-labelled`).toMatch(/\bor\b/i)
+    }
+  })
+
+  it("isBundledValue still resolves all three, and nothing else", () => {
+    for (const v of ["rushed", "large-late", "stress-sleep"]) {
+      expect(isBundledValue("core_signals_context_v1", v), v).toBe(true)
+    }
+    expect(isBundledValue("core_signals_context_v1", "not-a-value")).toBe(false)
+    expect(isBundledValue("core_signals_post_meal_pattern_v1", "rushed")).toBe(false)
   })
 
   it.each([

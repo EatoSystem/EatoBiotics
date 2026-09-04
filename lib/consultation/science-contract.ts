@@ -135,16 +135,20 @@ export interface AnswerActionBoundary {
  * An OR-bundled semantic value, recorded so downstream code cannot pretend the
  * customer selected one half of it.
  *
- * `components` exists to be asserted against, NOT to be read as a decomposition
- * API. There is deliberately no exported function that splits a bundle: the
- * whole point is that "you selected sleep" is a claim the customer never made
- * when what they selected was "Stress was high or sleep was short".
+ * Atomicity is structural, not conventional. The record deliberately carries no
+ * component data — not an array, not a label, nothing separately addressable —
+ * because a field listing the two halves IS the decomposition, whether or not
+ * any function reads it. Where the customer picked one option covering two
+ * circumstances, naming either one alone is a claim they never made.
+ *
+ * The option's own wording lives in the question bank, which stays the single
+ * source of truth for what the customer was shown. It is not repeated here:
+ * a guard forbids these phrases in this module precisely so no copy can drift
+ * into being read as a separate fact.
  */
 export interface BundledAnswerValue {
   questionId: string
   value: string
-  /** The label's own OR-components. Never separately derivable. */
-  components: readonly string[]
   integrity: "atomic"
 }
 
@@ -276,19 +280,16 @@ export const QUESTION_SCIENCE_CONTRACTS: Readonly<Record<ReviewedQuestionId, Que
       {
         questionId: "core_signals_context_v1",
         value: "rushed",
-        components: ["meals were rushed", "meals were skipped"],
         integrity: "atomic",
       },
       {
         questionId: "core_signals_context_v1",
         value: "large-late",
-        components: ["meals were unusually large", "meals were late"],
         integrity: "atomic",
       },
       {
         questionId: "core_signals_context_v1",
         value: "stress-sleep",
-        components: ["stress was high", "sleep was short"],
         integrity: "atomic",
       },
     ],
@@ -716,11 +717,10 @@ export function isBundledValue(questionId: string, value: string): boolean {
 /**
  * Every bundled value in the contract.
  *
- * Note what is deliberately absent from this module: any function that returns
- * a bundle's components as separately-selected facts. `components` is recorded
- * on the bundle for review and testing; there is no decomposition API, because
- * the customer selecting "Stress was high or sleep was short" never told us
- * which.
+ * Each record carries only what enforcing atomicity needs: which question it
+ * belongs to, which value it is, and that it is atomic. There is no
+ * decomposition API and no component data to build one from, because a customer
+ * who selects an option covering two circumstances never told us which.
  */
 export function allBundledValues(): readonly BundledAnswerValue[] {
   return REVIEWED_QUESTION_IDS.flatMap((id) => QUESTION_SCIENCE_CONTRACTS[id].bundledValues ?? [])

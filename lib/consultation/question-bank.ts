@@ -87,9 +87,10 @@ const SIGNALS: ConsultationQuestion[] = [
     required: true,
     sensitivity: "medium",
     scienceReview: "required",
-    intent: "Names the one post-meal signal the Report should build its body-signal section around.",
+    intent:
+      "Identifies the post-meal pattern the customer says they notice first, so the Report can reflect that pattern descriptively and choose relevant educational context without assigning a cause.",
     whyNeeded:
-      "Heaviness, bloating and an energy dip each point at a different practical change; without knowing which one leads, the Report can only describe all three and commit to none.",
+      "The free Assessment records a broad post-meal rating but not which experience the customer notices. This gives the Report a specific self-reported pattern to describe and, where useful, a topic for education or self-observation — never a basis for selecting a treatment or inferring a biological cause.",
     reportTargets: ["systemSnapshot"],
     freeAssessmentOverlap: "deeper",
     freeAssessmentQuestionIds: ["q13"],
