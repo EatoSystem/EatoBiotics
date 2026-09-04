@@ -5,6 +5,7 @@ import {
   UNRESOLVED_AVOIDANCE_VALUES,
 } from "./question-bank"
 import { projectTrustedAnswers, type ConsultationCompletenessInput } from "./completeness"
+import { constraintClass, declaresNoConstraints } from "./science-contract"
 
 /**
  * Whether the Report is safe to name specific foods.
@@ -52,6 +53,33 @@ export interface FoodGuidanceConstraints {
   /** Everything the customer said the Report must work around. */
   declaredConstraints: readonly string[]
   /**
+   * Constraints that require a specific food to be identified before specific
+   * food guidance is safe — allergy and medical avoidance only.
+   */
+  safetyConstraints: readonly string[]
+  /**
+   * Constraints that shape suggestions without making an unnamed food unsafe:
+   * vegetarian/vegan, religious or cultural, budget, time, dislikes.
+   *
+   * Separated from `safetyConstraints` because treating every declared
+   * constraint as a safety constraint would suppress specific food guidance for
+   * a vegetarian on a budget, and treating none of them as one would suppress
+   * nothing at all. They may still be presented to the customer together.
+   */
+  practicalConstraints: readonly string[]
+  /**
+   * True ONLY where the customer affirmatively said there is nothing to work
+   * around.
+   *
+   * `prefer-not-to-say` does not set this. Collapsing a declined disclosure
+   * into "no constraint" converts silence into an affirmative safety claim,
+   * which is the most consequential misreading available in this question — so
+   * the two states are separate fields rather than one falsy value.
+   */
+  declaresNoConstraints: boolean
+  /** True when the customer declined to disclose their constraints. */
+  constraintsUndisclosed: boolean
+  /**
    * True when a declared constraint means a specific food has to be identified
    * before specific food guidance is safe — an allergy or a medical avoidance.
    * A vegetarian, religious, budget or time constraint shapes suggestions
@@ -93,8 +121,20 @@ export function deriveFoodGuidanceConstraints(
       avoidances.some((v) => UNRESOLVED_AVOIDANCE_VALUES.includes(v)) ||
       knownAvoidances.length === 0)
 
+  // Class membership, per the frozen Science Contract. `constraintClass` treats
+  // an unrecognised value as `undisclosed` rather than absent — an unknown
+  // constraint is information we do not have, not information that there is
+  // nothing to work around.
+  const safetyConstraints = declaredConstraints.filter((c) => constraintClass(c) === "safety")
+  const practicalConstraints = declaredConstraints.filter((c) => constraintClass(c) === "practical")
+  const constraintsUndisclosed = declaredConstraints.some((c) => constraintClass(c) === "undisclosed")
+
   return {
     declaredConstraints,
+    safetyConstraints,
+    practicalConstraints,
+    declaresNoConstraints: declaresNoConstraints(declaredConstraints),
+    constraintsUndisclosed,
     requiresSpecificAvoidance,
     knownAvoidances,
     unresolvedSpecificAvoidance,

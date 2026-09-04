@@ -42,9 +42,9 @@ import type { ConsultationFoundation, ConsultationQuestion, ConsultationSection 
  *
  * ══ FAMILY IS A HOUSEHOLD FOOD SYSTEM ═══════════════════════════════════════
  *
- * Family is NOT this bank with plural pronouns. Individual digestive signals,
- * individual energy shape and antibiotic history are `you`-only — asking a
- * household for an aggregate of those produces a number that describes nobody.
+ * Family is NOT this bank with plural pronouns. Individual digestive signals
+ * and individual energy shape are `you`-only — asking a household for an
+ * aggregate of those produces a number that describes nobody.
  * Family instead gets its own questions about shared meals, mealtime reality,
  * the hardest moment of the day and differing needs, and shares the questions
  * that genuinely are household-level: cooking, shopping, constraints, the shape
@@ -90,7 +90,7 @@ const SIGNALS: ConsultationQuestion[] = [
     intent: "Names the one post-meal signal the Report should build its body-signal section around.",
     whyNeeded:
       "Heaviness, bloating and an energy dip each point at a different practical change; without knowing which one leads, the Report can only describe all three and commit to none.",
-    reportTargets: ["bodySignalMap", "systemSnapshot"],
+    reportTargets: ["systemSnapshot"],
     freeAssessmentOverlap: "deeper",
     freeAssessmentQuestionIds: ["q13"],
     deeperBecause:
@@ -116,7 +116,7 @@ const SIGNALS: ConsultationQuestion[] = [
     intent: "Places the Report's first action at a time of day the reader will actually be there for.",
     whyNeeded:
       "An action with no hour attached is not something anyone can do. Knowing the shape of the day is what turns a suggestion into a specific one.",
-    reportTargets: ["priorityLever", "thirtyDayLoop", "bodySignalMap"],
+    reportTargets: ["priorityLever", "thirtyDayLoop"],
     freeAssessmentOverlap: "deeper",
     freeAssessmentQuestionIds: ["q15"],
     deeperBecause:
@@ -145,10 +145,11 @@ const SIGNALS: ConsultationQuestion[] = [
       operator: "notEquals",
       values: ["nothing", "prefer-not-to-say"],
     },
-    intent: "Identifies what co-occurs with the signal, which is where a first change is most likely to land.",
+    intent:
+      "A customer-reported context that may be a practical place to start because it fits their day, without implying that the context caused the reported signal or that changing it will improve the signal.",
     whyNeeded:
       "This is the single most useful thing the free Assessment never asks. Something that shows up on rushed days and something that shows up when away from home lead to completely different first steps. Asked only of someone who reported noticing something: 'on the days you notice it most' is an incoherent question for a person who has just said there is nothing to notice, or who declined to say — the same exclusion boundary as the settled-days question.",
-    reportTargets: ["priorityLever", "bodySignalMap", "thirtyDayLoop"],
+    reportTargets: ["priorityLever", "thirtyDayLoop"],
     freeAssessmentOverlap: "none",
   },
   {
@@ -210,7 +211,7 @@ const SIGNALS: ConsultationQuestion[] = [
       { label: "Meals were lighter or simpler", value: "lighter-meals" },
       { label: "Less stress, or better sleep", value: "stress-sleep" },
       { label: "More movement", value: "movement" },
-      { label: "I can't tell a difference yet", value: "cannot-tell" },
+      { label: "I can't tell a difference", value: "cannot-tell" },
     ],
     required: true,
     sensitivity: "low",
@@ -382,35 +383,6 @@ const RHYTHM: ConsultationQuestion[] = [
     whyNeeded:
       "Only asked of households that rarely eat together. 'It works better this way for us' is a real and complete answer — the Report should then stop trying to assemble everyone at a table and make the separate meals better instead.",
     reportTargets: ["familyContext", "thirtyDayLoop"],
-    freeAssessmentOverlap: "none",
-  },
-  {
-    id: "core_rhythm_antibiotics_v1",
-    answerField: "rhythm.antibiotics",
-    section: "rhythm",
-    type: "single",
-    foundations: ["you"],
-    text: "In the last two years, have you had a course of antibiotics?",
-    supportText: "Optional. It is used only as background, and your Report draws no medical conclusion from it.",
-    options: [
-      { label: "Yes, in the last six months", value: "recent" },
-      { label: "Yes, longer ago than that", value: "older" },
-      { label: "No", value: "no" },
-      { label: "Not sure", value: "unsure" },
-      PREFER_NOT_TO_SAY,
-    ],
-    required: false,
-    sensitivity: "high",
-    scienceReview: "required",
-    applicableWhen: {
-      questionId: "core_rhythm_recent_change_v1",
-      operator: "includes",
-      values: ["health-event"],
-    },
-    intent: "Adds timing context to a health event the customer has already chosen to mention.",
-    whyNeeded:
-      "Kept deliberately narrow. It is OPTIONAL, high-sensitivity, and asked only of someone who already mentioned a health event — so nobody is asked about antibiotics as a matter of course, and nobody has to answer. Its wording carries no claim about what antibiotics do; that is exactly the wording that needs human science review before this bank is ever activated.",
-    reportTargets: ["educationModules", "systemSnapshot"],
     freeAssessmentOverlap: "none",
   },
 ]

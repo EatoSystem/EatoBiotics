@@ -310,9 +310,9 @@ describe("completeness over the real bank", () => {
   })
 
   it("an applicable but OPTIONAL adaptive question never blocks completion", () => {
-    const answers = { ...completeYouAnswers(), core_rhythm_recent_change_v1: ["health-event"] }
+    const answers = { ...completeYouAnswers(), core_environment_constraints_v1: ["allergy"] }
     const result = validateConsultationAnswers({ context: you, answers })
-    expect(result.applicableQuestionIds).toContain("core_rhythm_antibiotics_v1")
+    expect(result.applicableQuestionIds).toContain("core_environment_food_avoidances_v1")
     expect(result.missingQuestionIds).toEqual([])
     expect(result.complete).toBe(true)
   })
@@ -402,18 +402,18 @@ describe("trusted answer projection", () => {
     // be built from a set nobody was ever shown.
     const answers = {
       ...completeYouAnswers(),
-      core_rhythm_recent_change_v1: ["health-event", "not-a-real-option"],
-      core_rhythm_antibiotics_v1: "recent",
+      core_environment_constraints_v1: ["allergy", "not-a-real-option"],
+      core_environment_food_avoidances_v1: ["nuts"],
     }
     const result = validateConsultationAnswers({ context: you, answers })
 
-    expect(result.trustedAnswers.core_rhythm_recent_change_v1).toBeUndefined()
-    expect(result.applicableQuestionIds).not.toContain("core_rhythm_antibiotics_v1")
-    expect(result.trustedAnswers.core_rhythm_antibiotics_v1).toBeUndefined()
-    expect(result.droppedQuestionIds).toContain("core_rhythm_antibiotics_v1")
+    expect(result.trustedAnswers.core_environment_constraints_v1).toBeUndefined()
+    expect(result.applicableQuestionIds).not.toContain("core_environment_food_avoidances_v1")
+    expect(result.trustedAnswers.core_environment_food_avoidances_v1).toBeUndefined()
+    expect(result.droppedQuestionIds).toContain("core_environment_food_avoidances_v1")
 
     // And the required parent is reported invalid, so nothing completes on it.
-    expect(result.invalidQuestionIds).toContain("core_rhythm_recent_change_v1")
+    expect(result.invalidQuestionIds).toContain("core_environment_constraints_v1")
     expect(result.complete).toBe(false)
   })
 
