@@ -457,8 +457,8 @@ describe("question burden stays inside the frozen target", () => {
   it("bankSummary reports what the review pack claims", () => {
     expect(bankSummary(CONSULTATION_QUESTION_BANK, "you")).toEqual({
       baseline: 13,
-      adaptive: 4,
-      total: 17,
+      adaptive: 3,
+      total: 16,
       freeText: 1,
     })
     expect(bankSummary(CONSULTATION_QUESTION_BANK, "family")).toEqual({
@@ -483,7 +483,6 @@ describe("Family is a household Food System, not a pluralised personal one", () 
       "core_signals_energy_shape_v1",
       "core_signals_context_v1",
       "core_signals_settled_days_v1",
-      "core_rhythm_antibiotics_v1",
     ]) {
       expect(youOnly, `${id} must not be asked of a household`).toContain(id)
     }
@@ -569,7 +568,6 @@ describe("sensitive collection is deliberate and reviewable", () => {
     const flagged = CONSULTATION_QUESTION_BANK.filter((q) => q.scienceReview === "required").map((q) => q.id)
     for (const id of [
       "core_signals_post_meal_pattern_v1",
-      "core_rhythm_antibiotics_v1",
       "core_environment_food_avoidances_v1",
       "core_environment_constraints_v1",
     ]) {

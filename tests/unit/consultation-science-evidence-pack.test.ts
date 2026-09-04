@@ -2,133 +2,127 @@ import { describe, it, expect } from "vitest"
 import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 
-import { CONSULTATION_QUESTION_BANK, questionTextFor, supportTextFor } from "@/lib/consultation/question-bank"
+import { CONSULTATION_QUESTION_BANK } from "@/lib/consultation/question-bank"
 
 /**
- * The canonical multi-model science evidence pack must describe the bank that
- * exists — exactly.
+ * The canonical multi-model science evidence pack — a HISTORICAL SNAPSHOT.
  *
- * ── Why this test is worth its weight ────────────────────────────────────────
+ * ── What changed at Phase 3A-S4, and why this guard changed with it ──────────
  *
- * The pack is a frozen factual source handed identically to three independent
- * reviewers, who then judge wording that a paying customer would actually see.
- * A drifted pack does not fail loudly; it produces three confident reviews of
- * a question nobody is shipping. That is a worse outcome than no review, and it
- * would be invisible until someone re-read both documents side by side.
+ * Originally this guard asserted the pack matched the LIVE bank exactly. That
+ * was right while the pack described the bank as reviewers would see it.
  *
- * So the exactness claims the pack makes about itself — EXACT CUSTOMER WORDING,
- * EXACT SUPPORT TEXT, EXACT ANSWER OPTIONS, EXACT SEMANTIC ANSWER FIELD, EXACT
- * REPORT TARGETS — are checked here against source rather than trusted.
+ * S4 then implemented the adjudicated Science Contract, and the bank moved on
+ * purpose: `core_rhythm_antibiotics_v1` was removed, `bodySignalMap` was
+ * withdrawn from three questions' targets, Q3's intent was rewritten, and Q4's
+ * label lost the word "yet". A correspondence guard would now fail, and the
+ * tempting fix would be to edit the pack to match — destroying the record of
+ * what the three reviewers were actually shown, which is the entire point of
+ * having a frozen pack.
  *
- * ── What this deliberately is NOT ────────────────────────────────────────────
+ * So the guard was re-pointed rather than weakened. It now validates the pack
+ * against the FROZEN HISTORICAL RECORD below, and — more usefully — asserts
+ * that the pack and the current bank diverge in exactly the ways S4 intended.
+ * An unintended drift in either direction still fails.
  *
- * Not a Markdown parser. It asserts substring presence, which is enough to
- * catch the failure that matters (source changed, pack did not) without
- * building a fragile document model that would itself need maintaining. The
- * pack is documentation; the guard should stay smaller than the thing it
- * guards.
+ * ── What it still protects ───────────────────────────────────────────────────
+ *
+ * Provenance, methodology, the reviewer panel, the independence definition, the
+ * common-output contract, the rationale-is-not-evidence statement, the absence
+ * of a shared bibliography, and the non-anchoring architecture. None of that is
+ * affected by S4, and none of it is relaxed here.
+ *
+ * Not a Markdown parser. Substring checks, deliberately — the guard should stay
+ * smaller than the thing it guards.
  */
+
+/**
+ * The seven questions as the pack recorded them, at question-bank source SHA
+ * 097cc6df961929742098e869066460fd49e08bef.
+ *
+ * Frozen. This is what reviewers reviewed. It is NOT the current bank, and
+ * after S4 it deliberately never will be again.
+ */
+const HISTORICAL_REVIEW_SET: readonly string[] = [
+  "core_environment_constraints_v1",
+  "core_environment_food_avoidances_v1",
+  "core_rhythm_antibiotics_v1",
+  "core_signals_context_v1",
+  "core_signals_energy_shape_v1",
+  "core_signals_post_meal_pattern_v1",
+  "core_signals_settled_days_v1",
+]
 
 const PACK = join(process.cwd(), "docs/phase-3a-multi-model-science-evidence-pack.md")
 
-const sevenFromSource = CONSULTATION_QUESTION_BANK.filter((q) => q.scienceReview === "required")
 
-describe("science-review scope", () => {
-  it("exactly seven questions are flagged for science review", () => {
-    expect(sevenFromSource.map((q) => q.id).sort()).toEqual(
-      [
-        "core_environment_constraints_v1",
-        "core_environment_food_avoidances_v1",
-        "core_rhythm_antibiotics_v1",
-        "core_signals_context_v1",
-        "core_signals_energy_shape_v1",
-        "core_signals_post_meal_pattern_v1",
-        "core_signals_settled_days_v1",
-      ].sort(),
-    )
-  })
-
-  it("nothing is marked scientifically reviewed", () => {
-    // The review has not happened. No model may set this, and the evidence
-    // pack exists precisely because it has not.
-    expect(CONSULTATION_QUESTION_BANK.filter((q) => q.scienceReview === "reviewed")).toEqual([])
-  })
-})
-
-describe("the evidence pack matches source exactly", () => {
+describe("the historical review set is intact", () => {
   const pack = existsSync(PACK) ? readFileSync(PACK, "utf8") : ""
 
-  it("exists", () => {
+  it("exists and is substantial", () => {
     expect(existsSync(PACK)).toBe(true)
     expect(pack.length).toBeGreaterThan(10_000)
   })
 
-  it("covers every science-review question and no others", () => {
-    for (const q of sevenFromSource) {
-      expect(pack, `${q.id} missing from the pack`).toContain(q.id)
+  it("records all seven questions the reviewers were given", () => {
+    for (const id of HISTORICAL_REVIEW_SET) {
+      expect(pack, `${id} missing from the historical pack`).toContain(id)
     }
-    // A question that stopped being flagged must not linger in the pack, or
-    // reviewers would spend effort on something no longer in scope.
-    //
-    // The exception is a trigger: an adaptive question under review is only
-    // intelligible if the reviewer can see what reveals it, so the ids of the
-    // seven's applicability parents legitimately appear. Derived from source
-    // rather than listed, so it cannot silently widen into "any id may appear".
-    const triggers = new Set(
-      sevenFromSource.map((q) => q.applicableWhen?.questionId).filter((id): id is string => Boolean(id)),
+  })
+
+  it("still contains the pre-adjudication wording, un-retrofitted", () => {
+    // If someone "tidied" the pack to match the post-S4 bank, these would be
+    // gone — and three reviews would then cite wording nobody was shown.
+    expect(pack, "Q4 label was retro-edited").toContain("I can't tell a difference yet")
+    expect(pack, "Q3 intent was retro-edited").toContain(
+      "Identifies what co-occurs with the signal, which is where a first change is most likely to land.",
     )
-    for (const q of CONSULTATION_QUESTION_BANK) {
-      if (q.scienceReview === "required" || triggers.has(q.id)) continue
-      expect(pack, `${q.id} is in the pack but is neither under review nor a trigger`).not.toContain(q.id)
+    expect(pack, "Q1/Q2/Q3 report targets were retro-edited").toContain("bodySignalMap")
+  })
+
+  it("nothing in the current bank is marked scientifically reviewed", () => {
+    // Still true after S4: the multi-model process is not qualified-human
+    // review, so this flag stays unset regardless of what was adjudicated.
+    expect(CONSULTATION_QUESTION_BANK.filter((q) => q.scienceReview === "reviewed")).toEqual([])
+  })
+})
+
+describe("the pack and the current bank diverge exactly as S4 intended", () => {
+  const pack = existsSync(PACK) ? readFileSync(PACK, "utf8") : ""
+  const currentIds = new Set(CONSULTATION_QUESTION_BANK.map((q) => q.id))
+
+  it("the removed question is in the pack and gone from the bank", () => {
+    expect(pack).toContain("core_rhythm_antibiotics_v1")
+    expect(currentIds.has("core_rhythm_antibiotics_v1"), "S4 removed this question").toBe(false)
+  })
+
+  it("every other reviewed question still exists in the bank", () => {
+    for (const id of HISTORICAL_REVIEW_SET) {
+      if (id === "core_rhythm_antibiotics_v1") continue
+      expect(currentIds.has(id), `${id} vanished without an adjudicated decision`).toBe(true)
     }
   })
 
-  it.each(sevenFromSource.map((q) => [q.id, q] as const))(
-    "%s — customer wording, support text, options, answer field and report targets are verbatim",
-    (_id, q) => {
-      for (const foundation of q.foundations) {
-        expect(pack, `${q.id} ${foundation} wording`).toContain(questionTextFor(q, foundation))
-        const support = supportTextFor(q, foundation)
-        if (support) expect(pack, `${q.id} ${foundation} support text`).toContain(support)
-      }
-
-      for (const o of q.options ?? []) {
-        expect(pack, `${q.id} option label "${o.label}"`).toContain(o.label)
-        expect(pack, `${q.id} option value "${o.value}"`).toContain(`\`${o.value}\``)
-        if (o.familyLabel) expect(pack, `${q.id} family label`).toContain(o.familyLabel)
-      }
-
-      expect(pack, `${q.id} answerField`).toContain(`\`${q.answerField}\``)
-      for (const t of q.reportTargets) expect(pack, `${q.id} reportTarget ${t}`).toContain(t)
-
-      // Documentation carried as data — reviewers judge the stated intent, so
-      // a paraphrase would have them assessing something the product does not
-      // actually claim.
-      expect(pack, `${q.id} intent`).toContain(q.intent)
-      expect(pack, `${q.id} whyNeeded`).toContain(q.whyNeeded)
-    },
-  )
-
-  it("represents adaptive rules and required/optional state accurately", () => {
-    for (const q of sevenFromSource) {
-      const rule = q.applicableWhen
-      if (!rule) continue
-      expect(pack, `${q.id} trigger`).toContain(rule.questionId)
-      expect(pack, `${q.id} operator`).toContain(rule.operator)
-      for (const v of rule.values) expect(pack, `${q.id} trigger value ${v}`).toContain(`\`${v}\``)
-    }
-    // The two optional ones are the two high-sensitivity ones; if that stops
-    // being true the pack's sensitivity story is wrong.
-    const optional = sevenFromSource.filter((q) => !q.required).map((q) => q.id).sort()
-    expect(optional).toEqual(["core_environment_food_avoidances_v1", "core_rhythm_antibiotics_v1"])
-    for (const id of optional) {
-      expect(CONSULTATION_QUESTION_BANK.find((q) => q.id === id)?.sensitivity).toBe("high")
+  it("bodySignalMap is in the historical pack and off the current questions", () => {
+    expect(pack).toContain("bodySignalMap")
+    for (const id of [
+      "core_signals_post_meal_pattern_v1",
+      "core_signals_energy_shape_v1",
+      "core_signals_context_v1",
+    ]) {
+      const q = CONSULTATION_QUESTION_BANK.find((x) => x.id === id)
+      expect(q?.reportTargets, `${id} still targets bodySignalMap`).not.toContain("bodySignalMap")
     }
   })
 
-  it("carries the frozen provenance", () => {
-    expect(pack).toContain("097cc6df961929742098e869066460fd49e08bef")
-    expect(pack).toContain("60b5b8d97dbf14205b90853f2339eb4f0534dc15")
+  it("the surviving six still carry the science-review flag", () => {
+    // "required" continues to mean a specialist/human gate is outstanding —
+    // which it is, for all three gates. S4 changed what is adjudicated, not
+    // whether human review remains owed.
+    const flagged = CONSULTATION_QUESTION_BANK.filter((q) => q.scienceReview === "required").map((q) => q.id)
+    expect([...flagged].sort()).toEqual(
+      HISTORICAL_REVIEW_SET.filter((id) => id !== "core_rhythm_antibiotics_v1").sort(),
+    )
   })
 })
 
