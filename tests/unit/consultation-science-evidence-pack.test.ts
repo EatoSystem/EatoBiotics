@@ -189,6 +189,56 @@ describe("the pack claims nothing it has not earned", () => {
     }
   })
 
+  it("names the agreed reviewer panel", () => {
+    expect(pack).toContain("**Reviewer A** — Claude")
+    expect(pack).toContain("**Reviewer B** — OpenAI")
+    expect(pack).toMatch(/\*\*Reviewer C\*\* — a third independent frontier model/)
+    // Codex is part of the engineering workflow, not the chosen
+    // literature-review surface for S2B.
+    expect(pack).not.toContain("Codex")
+    // No specific model version is named — the panel is by provider, so the
+    // pack does not go stale the moment a model is superseded.
+    expect(pack).not.toMatch(/\bgpt-?[0-9]|\bo[0-9]-(mini|preview)|\bgemini-[0-9]/i)
+  })
+
+  it("defines 'independent' precisely, so blinding is not mistaken for validation", () => {
+    expect(pack).toMatch(/each AI review is performed separately and blinded/i)
+    for (const disclaimed of [
+      "independent clinical studies",
+      "independent experimental evidence",
+      "professional medical validation",
+      "scientific validation",
+    ]) {
+      expect(pack, `independence statement omits "${disclaimed}"`).toContain(disclaimed)
+    }
+  })
+
+  it("requires the common output and permits only additive supplements", () => {
+    expect(pack).toContain("COMMON REVIEW OUTPUT — REQUIRED FOR ALL REVIEWERS")
+    expect(pack).toContain("REVIEWER-SPECIFIC SUPPLEMENTAL ANALYSIS IS ALLOWED")
+    // The distinction that matters: a supplement must not be a substitution.
+    expect(pack).toMatch(/must \*\*not\*\* be removed, renamed, omitted or replaced/)
+    expect(pack).toMatch(/never replace, substitute for, or excuse omitting a common field/)
+  })
+
+  it("states that internal product rationale is not evidence", () => {
+    expect(pack).toContain("# Product Rationale Is Not Evidence")
+    // Every rationale field the pack carries has to be named, or a reviewer
+    // could reasonably read an unnamed one as vetted fact.
+    for (const field of [
+      "`intent`",
+      "`whyNeeded`",
+      "`deeperBecause`",
+      "Report targets",
+      "PROPOSED INTERPRETATION BOUNDARY",
+      "PROPOSED PROHIBITED INFERENCES",
+    ]) {
+      expect(pack, `rationale disclaimer omits ${field}`).toContain(field)
+    }
+    expect(pack).toMatch(/not scientific evidence/i)
+    expect(pack).toMatch(/accept them, narrow them, reject them/i)
+  })
+
   it("contains no bibliography that would correlate the three reviews", () => {
     // Each reviewer searches independently. A shared source list would produce
     // three correlated reviews and defeat running them separately.

@@ -31,10 +31,14 @@ Every quoted question, option, answer field, Report target and applicability rul
 This is **one canonical document**, supplied identically to three independent reviewers:
 
 - **Reviewer A** — Claude
-- **Reviewer B** — Codex
+- **Reviewer B** — OpenAI
 - **Reviewer C** — a third independent frontier model, acting adversarially
 
 The reviewers are blinded to each other. Their conclusions are then adjudicated separately, where **evidence outranks model agreement** and there is no majority vote. Only adjudicated changes are later implemented.
+
+### What "independent" means here
+
+**"Independent" means each AI review is performed separately and blinded to the other reviewers' conclusions.** It does not mean the models constitute independent clinical studies, independent experimental evidence, professional medical validation, or scientific validation. Three blinded AI reviews are a way of reducing single-reviewer error and anchoring — they are not a substitute for evidence, and agreement between them establishes nothing that the underlying evidence does not.
 
 This pack **does not perform the review**. It contains no scientific conclusion, no anticipated rating, no prior model's verdict, and no steer toward any particular outcome. A reviewer must be able to conclude KEEP, REWRITE, CONTEXT ONLY, REMOVE or ESCALATE for any question without contradicting anything stated here.
 
@@ -213,6 +217,32 @@ For each Consultation question:
 18. What evidence would change your conclusion?
 
 # END COMMON REVIEW QUESTIONS
+
+---
+
+# Product Rationale Is Not Evidence
+
+The following fields describe the EatoBiotics product team's **current rationale or intended use**:
+
+- `intent`
+- `whyNeeded`
+- `deeperBecause`
+- Report targets
+- Current product rationale
+- PROPOSED INTERPRETATION BOUNDARY
+- PROPOSED PROHIBITED INFERENCES
+
+They are included because a reviewer cannot assess what the product intends to do with an answer
+without being told what that is.
+
+**They are not scientific evidence.** Reviewers must independently test them against evidence, and
+may accept them, narrow them, reject them, or recommend removing the question or the Report use
+entirely.
+
+No internal rationale carries additional evidentiary weight merely because it appears in the source
+contract, is written confidently, or is enforced by a repository test. A `whyNeeded` string is an
+argument the product makes to itself; the review exists precisely to check whether that argument
+survives contact with evidence.
 
 ---
 
@@ -1218,9 +1248,35 @@ This sentence exists **only** in this pack. It is not in the product, not in the
 
 ---
 
-## Reviewer Output Format
+## Common Reviewer Output Format
 
-All three reviewers must return their review in exactly this structure. The structure is frozen so that three independent reviews can be compared field by field.
+# COMMON REVIEW OUTPUT — REQUIRED FOR ALL REVIEWERS
+
+Every reviewer must complete **every field** in the common output structure below. The common
+headings, the seven question sections, the A–E rating, recommendations, allowed interpretation,
+prohibited interpretation, Report use, wording, sensitivity, confidence, sources, cross-question
+review, Postbiotics review, food-safety copy review, final matrix and activation recommendation
+must **not** be removed, renamed, omitted or replaced.
+
+That is what makes three blinded reviews comparable field for field. A reviewer who restructures
+the common output has produced something that cannot be adjudicated against the other two.
+
+# REVIEWER-SPECIFIC SUPPLEMENTAL ANALYSIS IS ALLOWED
+
+A reviewer may **append** clearly labelled additional analysis required by its reviewer role.
+Supplements are additive: they never replace, substitute for, or excuse omitting a common field.
+
+For example:
+
+- **Reviewer B** may add a Claim → Data → Report trace and inference-inflation analysis.
+- **Reviewer C**, as the adversarial reviewer, may add: Case FOR Keeping · Case AGAINST Keeping ·
+  Alternative Explanations · Non-specificity analysis · Causal-reversal analysis ·
+  Recommendation-leap analysis · Antibiotics removal test · Food-safety failure test.
+
+This preserves reviewer diversity — the adversarial reviewer's job is not the same as the
+literature reviewer's — while keeping the comparison surface identical.
+
+### The common structure
 
 ```markdown
 # Independent Science Review
