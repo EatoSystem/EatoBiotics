@@ -114,8 +114,23 @@ describe("the contract stays decoupled from live runtime", () => {
 
 /* ══ Non-activation ═══════════════════════════════════════════════════════════
  *
- * Phase 3A must not change what a paying customer receives. The bank is
- * additive, and this is the mechanical proof rather than an assurance. */
+ * Phase 3A must not change what a paying customer receives, and Phase 3B must
+ * not either — it builds the deterministic experience behind an explicit
+ * preview rather than replacing the paid flow.
+ *
+ * ── Why this guard changed shape at Phase 3B ─────────────────────────────────
+ *
+ * It used to assert the bank had NO importers at all. That was the right rule
+ * while nothing consumed it, and its own failure message named the phase that
+ * would end it: "activation is Phase 3B". Phase 3B is here, and the deterministic
+ * Consultation components legitimately import the bank.
+ *
+ * So the rule is re-pointed rather than deleted. Deleting it would remove the
+ * only mechanical proof that the bank has not reached the paid flow; loosening
+ * it to "some importers are allowed" would permit exactly the thing it exists to
+ * prevent. Instead it now pins the importer set EXACTLY, and separately asserts
+ * that no server route and no legacy paid surface is among them. A fifth
+ * importer — a route, an API handler, the legacy client — still fails. */
 
 function walk(dir: string, out: string[] = []): string[] {
   if (!existsSync(dir)) return out
@@ -128,22 +143,53 @@ function walk(dir: string, out: string[] = []): string[] {
   return out
 }
 
-describe("Phase 3A is non-activating", () => {
+describe("the deterministic bank has not reached the paid flow", () => {
   const consumers = ["app", "components", "lib", "scripts"]
     .flatMap((d) => walk(join(repoRoot, d)))
     .filter((f) => !f.includes(join("lib", "consultation")))
+
+  const importers = () =>
+    consumers
+      .filter((f) => /["']@\/lib\/consultation\//.test(readFileSync(f, "utf8")))
+      .map((f) => f.replace(`${repoRoot}/`, ""))
 
   it("scanned a real tree", () => {
     // A guard that silently examined nothing would pass every assertion below.
     expect(consumers.length).toBeGreaterThan(300)
   })
 
-  it("no route, page, component or script imports the new bank", () => {
-    const importers = consumers.filter((f) => /["']@\/lib\/consultation\//.test(readFileSync(f, "utf8")))
+  it("exactly the Phase 3B preview experience imports it, and nothing else", () => {
     expect(
-      importers.map((f) => f.replace(`${repoRoot}/`, "")),
-      "Phase 3A must stay additive — activation is Phase 3B",
-    ).toEqual([])
+      importers().sort(),
+      "a new importer of the deterministic bank has appeared",
+    ).toEqual([
+      "components/assessment/consultation/consultation-orientation.tsx",
+      "components/assessment/consultation/consultation-progress.tsx",
+      "components/assessment/consultation/consultation-question.tsx",
+      "components/assessment/consultation/deterministic-consultation-client.tsx",
+    ])
+  })
+
+  it("no server route consumes it — server completeness is Phase 3C", () => {
+    expect(importers().filter((f) => f.startsWith("app/api/"))).toEqual([])
+  })
+
+  it("no legacy paid surface consumes it", () => {
+    for (const paid of [
+      "components/assessment/deep/deep-assessment-client.tsx",
+      "components/assessment/deep/deep-question.tsx",
+      "lib/deep-assessment.ts",
+      "lib/assessment/answer-autosave.ts",
+    ]) {
+      expect(importers(), paid).not.toContain(paid)
+    }
+  })
+
+  it("the deep-assessment page reaches it only through the preview component", () => {
+    // The page itself must not import the bank: it hands a context to the
+    // preview client and nothing more, so the paid branch below it cannot
+    // accidentally start resolving deterministic questions.
+    expect(importers()).not.toContain("app/assessment/deep/page.tsx")
   })
 
   it("the legacy generated-question path is untouched", () => {
