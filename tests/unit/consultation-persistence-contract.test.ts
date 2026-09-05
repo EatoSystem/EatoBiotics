@@ -515,6 +515,58 @@ describe("resume rebuilds from the bank, never from the stored row", () => {
     expect(out.session.state.currentQuestionId).not.toBe(AVOIDANCES)
   })
 
+  it("does NOT repair a null cursor in the review phase — that IS the Review list", () => {
+    // (review, null) is the Review list and (review, qid) is an edit of that
+    // item. Repairing the null would return someone who finished into an edit of
+    // their last answer, every single time they came back.
+    const out = resume(
+      deterministicState({
+        candidateAnswers: { [Q1]: "bloating" },
+        currentQuestionId: null,
+        phase: "review",
+      }),
+    )
+    if (out.status !== "ok") throw new Error("expected ok")
+    expect(out.session.state.currentQuestionId).toBeNull()
+    expect(out.session.state.phase).toBe("review")
+    expect(out.session.cursorRepaired).toBe(false)
+  })
+
+  it("a review edit whose question stopped applying falls back to the list", () => {
+    const out = resume(
+      deterministicState({
+        candidateAnswers: { [CONSTRAINTS]: ["budget"] },
+        currentQuestionId: AVOIDANCES,
+        phase: "review",
+      }),
+    )
+    if (out.status !== "ok") throw new Error("expected ok")
+    // Somewhere they have already been, rather than an unrelated question.
+    expect(out.session.state.currentQuestionId).toBeNull()
+    expect(out.session.cursorRepaired).toBe(true)
+  })
+
+  it("reports whether the session has been started, read before the repair", () => {
+    const untouched = resume(deterministicState())
+    if (untouched.status !== "ok") throw new Error("expected ok")
+    expect(untouched.session.started).toBe(false)
+    // The repaired cursor now points at question one — which is exactly why the
+    // client cannot derive this for itself.
+    expect(untouched.session.state.currentQuestionId).not.toBeNull()
+
+    for (const stored of [
+      { candidateAnswers: { [Q1]: "bloating" } },
+      { touchedQuestionIds: [Q1] },
+      { skippedOptionalQuestionIds: [AVOIDANCES] },
+      { currentQuestionId: Q1 },
+      { phase: "review" as const },
+    ]) {
+      const out = resume(deterministicState(stored))
+      if (out.status !== "ok") throw new Error("expected ok")
+      expect(out.session.started, JSON.stringify(stored)).toBe(true)
+    }
+  })
+
   it("treats a stored valid answer as already touched", () => {
     const out = resume(deterministicState({ candidateAnswers: { [Q1]: "bloating" } }))
     if (out.status !== "ok") throw new Error("expected ok")
@@ -595,10 +647,15 @@ describe("the deterministic routes keep the authority boundary", () => {
   })
 
   it("progress validates the question against the bank and applicability", () => {
+    // Re-pointed at Phase 3C-B, when the body became a discriminated action
+    // union: the answer path now narrows `question` explicitly, so the call
+    // reads `validateAnswer(question!, …)`. The rule is unchanged — every
+    // stored answer is still checked by the canonical validator against a
+    // question the bank holds and applicability allows.
     expect(PROGRESS).toContain("resolveConsultationBank(snapshot.bankVersion)")
     expect(PROGRESS).toContain("bank.find((q) => q.id === questionId)")
     expect(PROGRESS).toContain("applicableIds.has(questionId)")
-    expect(PROGRESS).toContain("validateAnswer(question, body.value)")
+    expect(PROGRESS).toMatch(/validateAnswer\(question!?, body\.value\)/)
   })
 
   it("neither route creates a row, generates questions, or submits", () => {

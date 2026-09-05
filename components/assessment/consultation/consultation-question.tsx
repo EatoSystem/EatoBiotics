@@ -43,8 +43,12 @@ interface Props {
   onAnswer: (id: string, value: ConsultationAnswer) => void
   onBack: () => void
   onNext: () => void
+  /** Present only on OPTIONAL questions — a required one cannot be skipped. */
+  onSkipOptional?: () => void
   canGoBack: boolean
   isLast: boolean
+  /** Rendered as a one-answer correction returning to Review, not as step N. */
+  editingFromReview?: boolean
   validationError: string | null
   /** 1-based position within the current section, for the announcement. */
   sectionTitle: string
@@ -65,8 +69,10 @@ export function ConsultationQuestionView({
   onAnswer,
   onBack,
   onNext,
+  onSkipOptional,
   canGoBack,
   isLast,
+  editingFromReview = false,
   validationError,
   sectionTitle,
   questionNumber,
@@ -285,6 +291,19 @@ export function ConsultationQuestionView({
         </p>
       )}
 
+      {/* Skipping is offered only where it is real: an optional question the
+        * customer has not answered. It records a deliberate skip rather than
+        * writing "I'd rather not say", which is a different statement. */}
+      {onSkipOptional && !question.required && (
+        <button
+          type="button"
+          onClick={onSkipOptional}
+          className="mt-6 min-h-[44px] rounded-full px-4 py-2.5 text-sm font-medium text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
+        >
+          Skip this question
+        </button>
+      )}
+
       <div className="mt-8 flex items-center justify-between gap-3">
         {canGoBack ? (
           <button
@@ -308,7 +327,7 @@ export function ConsultationQuestionView({
           onClick={onNext}
           className="brand-gradient flex min-h-[44px] items-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
         >
-          {isLast ? "Finish" : "Continue"}
+          {editingFromReview ? "Save and return to Review" : isLast ? "Finish" : "Continue"}
           <ArrowRight size={15} />
         </button>
       </div>

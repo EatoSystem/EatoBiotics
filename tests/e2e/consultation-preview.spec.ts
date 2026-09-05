@@ -14,6 +14,11 @@ import { test, expect, type Page } from "@playwright/test"
  *
  * So this suite does the parts only a browser can answer honestly.
  *
+ * Phase 3C-B extends it through Review and Edit. The preview still persists
+ * nothing — the save/resume half of 3C-B is proven against mocked routes in
+ * `tests/unit/consultation-persisted-integration.test.ts`, because a browser
+ * test of it would need a settled payment, which this phase forbids.
+ *
  * ══ SAFETY ══════════════════════════════════════════════════════════════════
  *
  * The preview path takes no payment, needs no Supabase row, and writes nothing.
@@ -55,6 +60,21 @@ async function chooseLabelled(page: Page, label: string) {
   await page.locator("fieldset label").filter({ hasText: new RegExp(`^${label}$`) }).click()
 }
 
+/** The Review list itself — its own h1, distinct from the section h2s. */
+function reviewHeading(page: Page) {
+  return page.getByRole("heading", { level: 1, name: "Review your Consultation" })
+}
+
+/** The Edit control for the item whose question matches. */
+function editFor(page: Page, question: RegExp) {
+  return page.getByRole("button", { name: question }).filter({ hasText: "Edit" })
+}
+
+/** The question texts currently listed on Review, in order. */
+async function reviewQuestions(page: Page): Promise<string[]> {
+  return page.locator("li p.text-sm").allInnerTexts()
+}
+
 async function beginConsultation(page: Page, url = PREVIEW) {
   const response = await page.goto(url)
   expect(response?.status(), `${url} must render, not error`).toBe(200)
@@ -89,10 +109,9 @@ test.describe("Scenario 1 — the You baseline walk", () => {
     await page.getByRole("button", { name: "Continue", exact: true }).click()
     await completeRemaining(page)
 
-    await expect(
-      page.getByRole("heading", { name: /answers are ready to review/i }),
-    ).toBeVisible()
-    await expect(page.getByText(/Phase 3C/)).toBeVisible()
+    await expect(reviewHeading(page)).toBeVisible()
+    await expect(page.getByText("Your Consultation is ready for the next step.")).toBeVisible()
+    await expect(page.getByText("Report creation is not active in this preview.")).toBeVisible()
   })
 
   test("a required question refuses Continue and says why", async ({ page }) => {
@@ -138,9 +157,7 @@ test.describe("Scenario 2 — the adaptive You path", () => {
     // The two signal branches and the avoidance branch were all reached.
     expect(seen.some((t) => /usually also true|usually different/i.test(t))).toBe(true)
     expect(seen.some((t) => /should it avoid/i.test(t))).toBe(true)
-    await expect(
-      page.getByRole("heading", { name: /answers are ready to review/i }),
-    ).toBeVisible()
+    await expect(reviewHeading(page)).toBeVisible()
   })
 
   test("the avoidance question is optional and can be passed unanswered", async ({ page }) => {
@@ -200,9 +217,261 @@ test.describe("Scenario 4 — Family", () => {
     // Family asks about the household, never the personal post-meal signal.
     expect(seen.some((t) => /household/i.test(t))).toBe(true)
     expect(seen.some((t) => /what do you tend to notice first/i.test(t))).toBe(false)
+    await expect(reviewHeading(page)).toBeVisible()
+  })
+})
+
+test.describe("Scenario 7 — Review", () => {
+  test("groups every applicable question under its own section, with its answer", async ({
+    page,
+  }) => {
+    await beginConsultation(page)
+    await chooseLabelled(page, "Bloating or wind")
+    await page.getByRole("button", { name: "Continue", exact: true }).click()
+    await completeRemaining(page, { choose: { "work around": "A limited food budget" } })
+
+    await expect(reviewHeading(page)).toBeVisible()
     await expect(
-      page.getByRole("heading", { name: /answers are ready to review/i }),
+      page.getByText(/You can edit any answer before moving to the next step/),
     ).toBeVisible()
+
+    // The canonical four, in bank order, and no invented taxonomy.
+    const sections = await page.getByRole("heading", { level: 2 }).allInnerTexts()
+    expect(sections).toEqual([
+      "Your Signals",
+      "Your Rhythm",
+      "Your Food Environment",
+      "Your Intentions",
+    ])
+
+    // Every listed question has an Edit, and the answer is shown as a label
+    // rather than a stored value.
+    const questions = await reviewQuestions(page)
+    expect(questions.length).toBeGreaterThanOrEqual(13)
+    expect(await page.getByRole("button", { name: /Edit/ }).count()).toBe(questions.length)
+    const body = await page.locator("main, body").first().innerText()
+    expect(body).toContain("Bloating or wind")
+    expect(body).not.toMatch(/core_[a-z]+_[a-z_]+_v\d/)
+    expect(body).not.toMatch(/\bstress-sleep\b|\blarge-late\b/)
+  })
+
+  test("shows an untouched optional question as unanswered, never as a refusal", async ({
+    page,
+  }) => {
+    await beginConsultation(page)
+    await advanceUntil(page, /work around/i, { choose: { "": "first" } })
+    await chooseLabelled(page, "A food allergy")
+    await page.getByRole("button", { name: "Continue", exact: true }).click()
+
+    // The optional avoidance question — skipped deliberately.
+    await expect(page.getByText("Optional", { exact: true })).toBeVisible()
+    await page.getByRole("button", { name: "Skip this question" }).click()
+    await completeRemaining(page)
+
+    await expect(reviewHeading(page)).toBeVisible()
+    const body = await page.locator("body").innerText()
+    expect(body).toContain("Not answered (optional)")
+    // Not an answer the customer could have given and did not.
+    expect(body).not.toMatch(/should it avoid[\s\S]{0,200}I&#x27;d rather not say/)
+  })
+})
+
+test.describe("Scenario 8 — editing one answer from Review", () => {
+  test("Edit opens that question, saves, and returns to Review", async ({ page }) => {
+    await beginConsultation(page)
+    await completeRemaining(page, { choose: { "work around": "A limited food budget" } })
+    await expect(reviewHeading(page)).toBeVisible()
+
+    await editFor(page, /shape of your energy/i).click()
+
+    // That exact question, not question one, and no progress strip implying a
+    // restart.
+    expect(await heading(page)).toMatch(/shape of your energy/i)
+    // The progress STRIP is gone — "Question 2 of 4" while someone corrects one
+    // answer would imply they had been sent back to the start. The screen-reader
+    // position inside the heading legitimately stays; it describes the question,
+    // not a journey.
+    await expect(page.locator('[aria-current="step"]')).toHaveCount(0)
+    await expect(page.getByRole("button", { name: "Back", exact: true })).toHaveCount(0)
+
+    await chooseLabelled(page, "Slow to start, then steady")
+    await page.getByRole("button", { name: "Save and return to Review" }).click()
+
+    await expect(reviewHeading(page)).toBeVisible()
+    await expect(page.getByText("Slow to start, then steady")).toBeVisible()
+  })
+
+  test("an edit that closes a branch removes it from Review, immediately", async ({ page }) => {
+    await beginConsultation(page)
+    await chooseLabelled(page, "Bloating or wind")
+    await page.getByRole("button", { name: "Continue", exact: true }).click()
+    await completeRemaining(page, { choose: { "work around": "A food allergy" } })
+
+    await expect(reviewHeading(page)).toBeVisible()
+    const before = await reviewQuestions(page)
+    expect(before.some((q) => /should it avoid/i.test(q))).toBe(true)
+
+    await editFor(page, /work around/i).click()
+    await chooseLabelled(page, "A food allergy") // untick the trigger
+    await chooseLabelled(page, "A limited food budget")
+    await page.getByRole("button", { name: "Save and return to Review" }).click()
+
+    await expect(reviewHeading(page)).toBeVisible()
+    const after = await reviewQuestions(page)
+    expect(after.some((q) => /should it avoid/i.test(q))).toBe(false)
+  })
+
+  test("an edit that opens a required branch takes the customer out of Review", async ({
+    page,
+  }) => {
+    // The load-bearing one: a Review that stayed complete here would be a
+    // Review of a Consultation that does not exist.
+    await beginConsultation(page)
+    await chooseLabelled(page, "Nothing in particular")
+    await page.getByRole("button", { name: "Continue", exact: true }).click()
+    await completeRemaining(page, { choose: { "work around": "A limited food budget" } })
+    await expect(reviewHeading(page)).toBeVisible()
+
+    const before = await reviewQuestions(page)
+    expect(before.some((q) => /usually also true/i.test(q))).toBe(false)
+
+    await editFor(page, /what do you tend to notice first/i).click()
+    await chooseLabelled(page, "Bloating or wind")
+    await page.getByRole("button", { name: "Save and return to Review" }).click()
+
+    // Not back to a falsely complete Review — into the question that now needs
+    // an answer.
+    await expect(reviewHeading(page)).toHaveCount(0)
+    expect(await heading(page)).toMatch(/usually also true/i)
+
+    // Once the new branch is answered, Review is reachable again and shows it.
+    await completeRemaining(page)
+    await expect(reviewHeading(page)).toBeVisible()
+    const after = await reviewQuestions(page)
+    expect(after.some((q) => /usually also true/i.test(q))).toBe(true)
+  })
+
+  test("Back from Review returns to the last question, not out of the Consultation", async ({
+    page,
+  }) => {
+    await beginConsultation(page)
+    await completeRemaining(page, { choose: { "work around": "A limited food budget" } })
+    await expect(reviewHeading(page)).toBeVisible()
+
+    await page.getByRole("button", { name: "Back to the last question" }).click()
+    expect(await heading(page)).toMatch(/what would feel different/i)
+
+    await page.getByRole("button", { name: /^(Continue|Finish)$/ }).click()
+    await expect(reviewHeading(page)).toBeVisible()
+  })
+})
+
+test.describe("Scenario 9 — Family Review", () => {
+  test("household wording in the sections, the questions and the answers", async ({ page }) => {
+    await beginConsultation(page, FAMILY)
+    await completeRemaining(page)
+
+    await expect(reviewHeading(page)).toBeVisible()
+    // The section names are shared between the two foundations by design — the
+    // household voice lives in the question wording, not in a second taxonomy.
+    const sections = await page.getByRole("heading", { level: 2 }).allInnerTexts()
+    expect(sections).toEqual([
+      "Your Signals",
+      "Your Rhythm",
+      "Your Food Environment",
+      "Your Intentions",
+    ])
+
+    const questions = await reviewQuestions(page)
+    expect(questions.some((q) => /household/i.test(q))).toBe(true)
+    expect(questions.some((q) => /what do you tend to notice first/i.test(q))).toBe(false)
+  })
+})
+
+test.describe("Scenario 10 — mobile Review", () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  test("no horizontal overflow, and Edit stays reachable", async ({ page }) => {
+    await beginConsultation(page)
+    await completeRemaining(page, { choose: { "work around": "A limited food budget" } })
+    await expect(reviewHeading(page)).toBeVisible()
+
+    expect(await unclippedOverflow(page)).toEqual([])
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    )
+    expect(overflow).toBeLessThanOrEqual(0)
+
+    const edit = page.getByRole("button", { name: /Edit/ }).first()
+    await expect(edit).toBeVisible()
+    const box = await edit.boundingBox()
+    expect(box!.height).toBeGreaterThanOrEqual(44)
+    expect(box!.x + box!.width).toBeLessThanOrEqual(390)
+  })
+})
+
+test.describe("Scenario 11 — keyboard-only Review and Edit", () => {
+  test("Review is announced, and an item can be edited without a mouse", async ({ page }) => {
+    await beginConsultation(page)
+    await completeRemaining(page, { choose: { "work around": "A limited food budget" } })
+
+    await expect(reviewHeading(page)).toBeVisible()
+    // Focus lands on the Review heading, so arriving is announced rather than
+    // leaving focus on the Continue button that caused it.
+    expect(await page.evaluate(() => document.activeElement?.tagName)).toBe("H1")
+
+    const edit = editFor(page, /shape of your energy/i)
+    await edit.focus()
+    await page.keyboard.press("Enter")
+
+    expect(await heading(page)).toMatch(/shape of your energy/i)
+    expect(await page.evaluate(() => document.activeElement?.tagName)).toBe("H2")
+
+    await page.getByRole("button", { name: "Save and return to Review" }).focus()
+    await page.keyboard.press("Enter")
+    await expect(reviewHeading(page)).toBeVisible()
+  })
+
+  test("each Edit is distinguishable to a screen reader", async ({ page }) => {
+    await beginConsultation(page)
+    await completeRemaining(page, { choose: { "work around": "A limited food budget" } })
+    await expect(reviewHeading(page)).toBeVisible()
+
+    const names = await page
+      .getByRole("button", { name: /Edit/ })
+      .evaluateAll((els) => els.map((el) => (el.textContent ?? "").trim()))
+    // A column of identical "Edit" buttons is unusable; each carries its own
+    // question.
+    expect(new Set(names).size).toBe(names.length)
+    for (const name of names) expect(name.length).toBeGreaterThan("Edit".length + 10)
+  })
+})
+
+test.describe("Scenario 12 — the preview asks nothing of any server", () => {
+  test("a whole walk through Review issues no API request at all", async ({ page }) => {
+    const apiCalls: string[] = []
+    page.on("request", (request) => {
+      const url = request.url()
+      if (/\/api\//.test(url)) apiCalls.push(`${request.method()} ${url}`)
+    })
+
+    await beginConsultation(page)
+    await chooseLabelled(page, "Bloating or wind")
+    await page.getByRole("button", { name: "Continue", exact: true }).click()
+    await completeRemaining(page, { choose: { "work around": "A food allergy" } })
+    await expect(reviewHeading(page)).toBeVisible()
+
+    await editFor(page, /shape of your energy/i).click()
+    await chooseLabelled(page, "Slow to start, then steady")
+    await page.getByRole("button", { name: "Save and return to Review" }).click()
+    await expect(reviewHeading(page)).toBeVisible()
+
+    // No question generation, no save, no submit — and no Report.
+    expect(apiCalls, `unexpected API traffic: ${apiCalls.join(", ")}`).toEqual([])
+    const body = await page.locator("body").innerText()
+    expect(body).not.toMatch(/Create My (Food System )?Report/i)
+    expect(body).not.toMatch(/generating|analysing your/i)
+    expect(body).toContain("Report creation is not active in this preview.")
   })
 })
 
@@ -348,12 +617,10 @@ async function answerCurrent(page: Page, options: WalkOptions) {
   }
 }
 
-/** Answer and Continue until the pre-Review state appears. */
+/** Answer and Continue until the Review list appears. */
 async function completeRemaining(page: Page, options: WalkOptions = {}) {
   for (let i = 0; i < 25; i += 1) {
-    if (await page.getByRole("heading", { name: /answers are ready to review/i }).isVisible()) {
-      return
-    }
+    if (await reviewHeading(page).isVisible()) return
     await answerCurrent(page, options)
     await page.getByRole("button", { name: /^(Continue|Finish)$/ }).click()
   }

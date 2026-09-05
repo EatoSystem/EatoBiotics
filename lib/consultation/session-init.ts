@@ -13,6 +13,7 @@ import {
 } from "./session-envelope"
 import { resolveApplicableQuestions } from "./applicability"
 import { validateConsultationAnswers } from "./completeness"
+import { isFreshSession } from "./session"
 
 /**
  * Opening and resuming a deterministic Consultation — Phase 3C-A.
@@ -113,6 +114,17 @@ export interface ResumedSession {
   droppedInvalidIds: readonly string[]
   /** True when the stored cursor no longer applied and was repaired. */
   cursorRepaired: boolean
+  /**
+   * Has anyone actually been here?
+   *
+   * Derived from the STORED state, before the cursor repair below — and that
+   * ordering is the whole reason it exists. Repair moves a null cursor to the
+   * first outstanding question, which is right for someone coming back and
+   * makes a brand-new session indistinguishable from one paused on question
+   * one. A client reading only the repaired cursor would skip Orientation for
+   * a customer who has never seen it.
+   */
+  started: boolean
 }
 
 export type ResumeOutcome =
@@ -165,6 +177,16 @@ export function resumeDeterministicSession(input: {
   if (slot.status === "unreadable") return { status: "state_unreadable" }
   const stored = slot.state
 
+  // Read before anything below repairs or sanitises. Afterwards the answer is
+  // no longer available: the cursor has moved and the distinction is gone.
+  const started = !isFreshSession({
+    answers: stored.candidateAnswers,
+    touchedQuestionIds: stored.touchedQuestionIds,
+    skippedOptionalQuestionIds: stored.skippedOptionalQuestionIds,
+    currentQuestionId: stored.currentQuestionId,
+    phase: stored.phase,
+  })
+
   const { answers, droppedUnknownIds, droppedInvalidIds } = sanitiseCandidateAnswers(
     stored.candidateAnswers,
     snapshot.bankVersion,
@@ -193,9 +215,25 @@ export function resumeDeterministicSession(input: {
         completeness.missingQuestionIds.includes(id) || completeness.invalidQuestionIds.includes(id),
     ) ?? null
 
-  const currentQuestionId = storedCursorApplies
-    ? stored.currentQuestionId
-    : (firstOutstanding ?? applicableIds[applicableIds.length - 1] ?? null)
+  /*
+   * The repair is for the QUESTIONS phase only.
+   *
+   * In `review`, a null cursor is not a missing position — it IS the Review
+   * list, and the pair (review, null) is what makes an interrupted edit
+   * distinguishable from the list itself. Repairing it to the last applicable
+   * question would return someone who finished the Consultation into an edit of
+   * their final answer, every time they came back. A review cursor that has
+   * stopped applying falls back to the list rather than to another question,
+   * because the list is somewhere they have already been.
+   */
+  const currentQuestionId =
+    stored.phase === "questions"
+      ? storedCursorApplies
+        ? stored.currentQuestionId
+        : (firstOutstanding ?? applicableIds[applicableIds.length - 1] ?? null)
+      : storedCursorApplies
+        ? stored.currentQuestionId
+        : null
 
   return {
     status: "ok",
@@ -216,6 +254,7 @@ export function resumeDeterministicSession(input: {
       droppedUnknownIds,
       droppedInvalidIds,
       cursorRepaired: stored.currentQuestionId !== null && !storedCursorApplies,
+      started,
     },
   }
 }

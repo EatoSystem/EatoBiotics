@@ -10,6 +10,7 @@ import { CONSULTATION_QUESTION_BANK } from "./question-bank"
 import { resolveApplicableQuestions } from "./applicability"
 import { validateAnswer } from "./validation"
 import { validateConsultationAnswers } from "./completeness"
+import type { ConsultationPhase } from "./session-envelope"
 
 /**
  * The Consultation as a headless state machine — Phase 3B.
@@ -78,12 +79,33 @@ export interface ConsultationSessionState {
    * opt in.
    */
   touched: ReadonlySet<string>
+  /**
+   * Optional questions the customer deliberately moved past without answering.
+   *
+   * A DIFFERENT state from both "not reached yet" and from having chosen
+   * "I'd rather not say" — that last one is an ANSWER, and conflating the two
+   * would record a declined disclosure the customer never made. Persisted as
+   * `skippedOptionalQuestionIds` (Phase 3C-A), which is why the engine now
+   * tracks it rather than leaving it to the UI.
+   */
+  skipped: ReadonlySet<string>
   /** `null` while the customer is on Orientation, before the first question. */
   currentQuestionId: string | null
   /** Set when Continue was refused, cleared on any answer change or navigation. */
   validationError: string | null
-  /** True once the customer has passed the last applicable question. */
-  finished: boolean
+  /**
+   * Where the Consultation is, in the SAME vocabulary the server persists.
+   *
+   * Phase 3B had a local `finished` boolean; Phase 3C-A introduced a persisted
+   * `phase`. Keeping both would be two names for one idea, and they would drift
+   * the first time one was set without the other — so `finished` is gone and
+   * this is the single notion.
+   *
+   * `ready-for-report` is deliberately unreachable from here: nothing in this
+   * module sets it, and a guard asserts that. It belongs to a later phase that
+   * owns finalisation.
+   */
+  phase: Exclude<ConsultationPhase, "ready-for-report">
   /** Overridable so a test — or a future stored snapshot — can supply a bank. */
   questions: readonly ConsultationQuestion[]
 }
@@ -96,6 +118,10 @@ export interface CreateSessionInput {
   questions?: readonly ConsultationQuestion[]
   /** Start on a specific question instead of Orientation. */
   startAtQuestionId?: string | null
+  /** Restored from persisted state. */
+  touchedQuestionIds?: readonly string[]
+  skippedOptionalQuestionIds?: readonly string[]
+  phase?: Exclude<ConsultationPhase, "ready-for-report">
 }
 
 export function createConsultationSession(input: CreateSessionInput): ConsultationSessionState {
@@ -103,10 +129,14 @@ export function createConsultationSession(input: CreateSessionInput): Consultati
   return {
     context: input.context,
     answers,
-    touched: new Set(Object.keys(answers)),
+    // A stored answer counts as touched even if the persisted touched-set has
+    // lost it: the customer gave that answer, and the untouched-slider rule is
+    // about a control nobody has moved, not about a value nobody re-asserted.
+    touched: new Set([...(input.touchedQuestionIds ?? []), ...Object.keys(answers)]),
+    skipped: new Set(input.skippedOptionalQuestionIds ?? []),
     currentQuestionId: input.startAtQuestionId ?? null,
     validationError: null,
-    finished: false,
+    phase: input.phase ?? "questions",
     questions: input.questions ?? CONSULTATION_QUESTION_BANK,
   }
 }
@@ -256,10 +286,16 @@ export function setAnswer(
 ): ConsultationSessionState {
   const touched = new Set(state.touched)
   touched.add(questionId)
+  // Answering un-skips (§12). A skip marker beside a real answer would
+  // misdescribe both — the customer did engage with the question after all —
+  // and the same rule runs server-side in the progress route.
+  const skipped = new Set(state.skipped)
+  skipped.delete(questionId)
   return {
     ...state,
     answers: { ...state.answers, [questionId]: value },
     touched,
+    skipped,
     validationError: null,
   }
 }
@@ -319,9 +355,38 @@ export function begin(state: ConsultationSessionState): ConsultationSessionState
   return {
     ...state,
     currentQuestionId: first ? first.id : null,
-    finished: !first,
+    phase: first ? "questions" : "review",
     validationError: null,
   }
+}
+
+/**
+ * Is this a session nobody has started yet?
+ *
+ * Derived, never persisted. Phase 3C-A's resume repairs a null cursor to the
+ * first outstanding question, which is right for someone coming back — but it
+ * makes a brand-new session look identical to one paused on question one, and
+ * the client would then skip Orientation for a customer who has never seen it.
+ *
+ * The stored contract already distinguishes them without a new field: a session
+ * nobody has touched has no answers, nothing touched, nothing skipped, no
+ * stored cursor, and is still in the questions phase. Any one of those being
+ * non-empty means somebody has been here.
+ */
+export function isFreshSession(input: {
+  answers: ConsultationAnswers
+  touchedQuestionIds: readonly string[]
+  skippedOptionalQuestionIds: readonly string[]
+  currentQuestionId: string | null
+  phase: ConsultationPhase
+}): boolean {
+  return (
+    input.phase === "questions" &&
+    input.currentQuestionId === null &&
+    Object.keys(input.answers).length === 0 &&
+    input.touchedQuestionIds.length === 0 &&
+    input.skippedOptionalQuestionIds.length === 0
+  )
 }
 
 /**
@@ -341,8 +406,40 @@ export function goNext(state: ConsultationSessionState): ConsultationSessionStat
   const index = currentIndex(state)
   const next = index >= 0 ? applicable[index + 1] : applicable[0]
 
-  if (!next) return { ...state, finished: true, validationError: null }
+  // Past the last applicable question, the Consultation goes to Review — but
+  // only if it is actually complete. An optional question the customer skipped
+  // is fine; a required one that opened late is not, and `enterReview` sends
+  // them to it rather than showing a Review that is missing an answer.
+  if (!next) return enterReview(state)
   return { ...state, currentQuestionId: next.id, validationError: null }
+}
+
+/**
+ * Move the customer past an OPTIONAL question without answering it.
+ *
+ * Records the skip rather than writing a value. Choosing "I'd rather not say"
+ * is an answer and goes through `setAnswer`; this is the customer declining to
+ * engage with the question at all, and the two must stay distinguishable
+ * because a Report may legitimately read them differently.
+ *
+ * A required question cannot be skipped — the gate refuses it anyway, but this
+ * refuses it at the source so no caller can construct the state.
+ */
+export function skipOptional(
+  state: ConsultationSessionState,
+  questionId: string,
+): ConsultationSessionState {
+  const question = state.questions.find((q) => q.id === questionId)
+  if (!question || question.required) return state
+
+  const answers = { ...state.answers }
+  delete answers[questionId]
+  const touched = new Set(state.touched)
+  touched.delete(questionId)
+  const skipped = new Set(state.skipped)
+  skipped.add(questionId)
+
+  return { ...state, answers, touched, skipped, validationError: null }
 }
 
 /**
@@ -356,11 +453,13 @@ export function goNext(state: ConsultationSessionState): ConsultationSessionStat
 export function goBack(state: ConsultationSessionState): ConsultationSessionState {
   const applicable = applicableQuestions(state)
 
-  if (state.finished) {
+  // From the Review list, Back returns to the last question rather than out of
+  // the Consultation.
+  if (state.phase === "review" && state.currentQuestionId === null) {
     const last = applicable[applicable.length - 1]
     return {
       ...state,
-      finished: false,
+      phase: "questions",
       currentQuestionId: last ? last.id : null,
       validationError: null,
     }
@@ -374,7 +473,82 @@ export function goBack(state: ConsultationSessionState): ConsultationSessionStat
 }
 
 export function canGoBack(state: ConsultationSessionState): boolean {
-  return state.finished || currentIndex(state) > 0
+  if (state.phase === "review" && state.currentQuestionId === null) return true
+  return currentIndex(state) > 0
+}
+
+/* ══ Review ════════════════════════════════════════════════════════════════ */
+
+/**
+ * Ask to enter Review.
+ *
+ * Gated on canonical completeness, not on the customer having walked to the
+ * end: an edit can open a required branch behind them, and a Review that
+ * silently omitted an unanswered required question would be a Review of a
+ * Consultation that does not exist. When something is outstanding this returns
+ * the customer to the FIRST such question instead, in the questions phase.
+ *
+ * The server repeats this check in `/api/consultation/review` and owns the
+ * persisted transition — this is the same rule evaluated locally so the UI does
+ * not have to round-trip to know what it will say.
+ */
+export function enterReview(state: ConsultationSessionState): ConsultationSessionState {
+  const { missingQuestionIds, invalidQuestionIds, applicableQuestionIds } = sessionCompleteness(state)
+  const outstanding = applicableQuestionIds.find(
+    (id) => missingQuestionIds.includes(id) || invalidQuestionIds.includes(id),
+  )
+
+  if (outstanding) {
+    return {
+      ...state,
+      phase: "questions",
+      currentQuestionId: outstanding,
+      validationError: null,
+    }
+  }
+
+  return { ...state, phase: "review", currentQuestionId: null, validationError: null }
+}
+
+/** True when the customer is looking at the Review list itself. */
+export function isReviewing(state: ConsultationSessionState): boolean {
+  return state.phase === "review" && state.currentQuestionId === null
+}
+
+/** True when the customer is editing one answer from within Review. */
+export function isEditingFromReview(state: ConsultationSessionState): boolean {
+  return state.phase === "review" && state.currentQuestionId !== null
+}
+
+/**
+ * Open one Review item for editing.
+ *
+ * The cursor moves while the phase stays `review`, which is what makes an
+ * interrupted edit resumable: the persisted pair (phase, currentQuestionId)
+ * already says "in Review, editing this one", so no second editing cursor has
+ * to be invented or stored.
+ */
+export function editFromReview(
+  state: ConsultationSessionState,
+  questionId: string,
+): ConsultationSessionState {
+  const applicable = applicableQuestions(state)
+  if (!applicable.some((q) => q.id === questionId)) return state
+  return { ...state, phase: "review", currentQuestionId: questionId, validationError: null }
+}
+
+/**
+ * Finish a Review edit.
+ *
+ * Re-runs completeness rather than assuming the edit was harmless: changing a
+ * parent can open a required branch, and returning to a Review that still
+ * looked complete would hide it. Complete → back to the list; incomplete →
+ * out of Review, to the first question that now needs an answer.
+ */
+export function returnToReview(state: ConsultationSessionState): ConsultationSessionState {
+  const gate = continueGate(state)
+  if (!gate.allowed) return { ...state, validationError: gate.reason }
+  return enterReview(state)
 }
 
 /** True when the current question is the last one that currently applies. */

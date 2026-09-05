@@ -99,6 +99,12 @@ export async function GET(req: NextRequest) {
       skippedOptionalQuestionIds: resumed.state.skippedOptionalQuestionIds,
       currentQuestionId: resumed.state.currentQuestionId,
       phase: resumed.state.phase,
+      // Whether anyone has been here yet, read from the stored state before the
+      // cursor was repaired. The repaired cursor cannot answer it: it points at
+      // question one for a brand-new session and for one paused there alike, and
+      // a client deciding Orientation from the cursor would skip it for someone
+      // who has never seen it.
+      started: resumed.started,
       updatedAt: row.updated_at ?? null,
     })
   } catch (err) {
