@@ -125,7 +125,7 @@ function MinimalFooter() {
           <p className="text-xs text-muted-foreground">
             © 2025 EatoBiotics. All rights reserved.
           </p>
-          <div className="flex items-center gap-5">
+          <div className="flex flex-wrap items-center justify-center gap-5">
             <Link href="/help" className="text-xs text-muted-foreground transition-colors hover:text-foreground">
               Help
             </Link>
@@ -234,7 +234,7 @@ export function Footer() {
           <p className="text-xs text-muted-foreground">
             © 2025 EatoBiotics. All rights reserved.
           </p>
-          <div className="flex items-center gap-5">
+          <div className="flex flex-wrap items-center justify-center gap-5">
             <Link href="/help" className="text-xs text-muted-foreground transition-colors hover:text-foreground">
               Help
             </Link>

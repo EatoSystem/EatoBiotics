@@ -206,11 +206,46 @@ test.describe("Scenario 4 — Family", () => {
   })
 })
 
+/**
+ * Every element whose right edge escapes the viewport WITHOUT an ancestor that
+ * clips it — i.e. the ones that actually push document scrollWidth out.
+ *
+ * A bare "scrollWidth − clientWidth" assertion reports a number and nothing
+ * else, and the first failure of this test cost a CI run to diagnose: 1px, from
+ * the global footer's legal-link row, on every page in the site. Naming the
+ * offending rectangles means the next failure explains itself.
+ *
+ * Deliberately ignores content inside a scroll container: the section-journey
+ * strip is `overflow-x-auto` and its items are MEANT to extend past the
+ * viewport and scroll within their own box.
+ */
+async function unclippedOverflow(page: Page) {
+  return page.evaluate(() => {
+    const vw = document.documentElement.clientWidth
+    const isClipped = (el: Element) => {
+      let p = el.parentElement
+      while (p && p !== document.documentElement) {
+        if (/hidden|auto|scroll|clip/.test(getComputedStyle(p).overflowX)) return true
+        p = p.parentElement
+      }
+      return false
+    }
+    return [...document.querySelectorAll("*")]
+      .map((el) => ({ el, rect: el.getBoundingClientRect() }))
+      .filter(({ rect }) => rect.width > 0 && rect.right > vw + 0.01)
+      .filter(({ el }) => !isClipped(el))
+      .map(({ el, rect }) => `${el.tagName}.${String(el.className).slice(0, 60)} right=${rect.right.toFixed(2)} vw=${vw}`)
+  })
+}
+
 test.describe("Scenario 5 — mobile", () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
   test("no horizontal overflow, and both controls are reachable", async ({ page }) => {
     await beginConsultation(page)
+
+    // Named offenders first, so a failure says WHICH element, not just "1".
+    expect(await unclippedOverflow(page)).toEqual([])
 
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -226,10 +261,16 @@ test.describe("Scenario 5 — mobile", () => {
     await continueButton.click()
     await expect(page.getByRole("button", { name: "Back", exact: true })).toBeVisible()
 
+    expect(await unclippedOverflow(page)).toEqual([])
     const afterAdvance = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     )
     expect(afterAdvance).toBeLessThanOrEqual(0)
+
+    // The section-journey strip is allowed to scroll inside its own box — that
+    // is what `overflow-x-auto` is for — but it must never widen the document.
+    const journey = await page.locator("ol").first().boundingBox()
+    expect(journey!.x + journey!.width).toBeLessThanOrEqual(390)
   })
 })
 
