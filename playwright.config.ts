@@ -10,7 +10,10 @@ import { defineConfig } from "@playwright/test"
  * overlap: Playwright only matches *.spec.ts under tests/a11y.
  */
 export default defineConfig({
-  testDir: "tests/a11y",
+  // Widened from "tests/a11y" so the Phase 3B deterministic-Consultation
+  // preview flow (tests/e2e/) runs in the same command. Vitest matches
+  // tests/**/*.test.ts, so the two runners still do not overlap.
+  testDir: "tests",
   testMatch: "**/*.spec.ts",
   timeout: 45_000,
   fullyParallel: true,

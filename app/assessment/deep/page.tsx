@@ -8,6 +8,8 @@ import { resolvePaidReportSummary, isCheckoutSessionSettled } from "@/lib/paid-r
 import { reportViewState } from "@/lib/report-status"
 import { TrackConversion } from "@/components/analytics/track-conversion"
 import { isUnverifiedPaidFlowAllowed } from "@/lib/paid-flow-policy"
+import { DeterministicConsultationClient } from "@/components/assessment/consultation/deterministic-consultation-client"
+import { asAddonType } from "@/lib/addon-types"
 
 export const metadata: Metadata = {
   title: "Your Food System Consultation — EatoBiotics",
@@ -16,7 +18,15 @@ export const metadata: Metadata = {
 }
 
 interface Props {
-  searchParams: Promise<{ session_id?: string; demo?: string; tier?: string }>
+  searchParams: Promise<{
+    session_id?: string
+    demo?: string
+    tier?: string
+    /** Phase 3B preview. Only honoured together with `demo=true` — see below. */
+    deterministic?: string
+    foundation?: string
+    lens?: string
+  }>
 }
 
 // Mock scores used for demo mode — matches DEMO_RESULT in demo-client.tsx
@@ -34,10 +44,35 @@ const DEMO_FREE_SCORES = {
 
 export default async function DeepAssessmentPage({ searchParams }: Props) {
   const params = await searchParams
-  const { session_id, demo, tier: tierParam } = params
+  const { session_id, demo, tier: tierParam, deterministic, foundation, lens } = params
 
   // ── Demo mode bypass (no Stripe required) ─────────────────────────────
   if (demo === "true") {
+    /* ── Phase 3B deterministic Consultation preview ─────────────────────
+     *
+     * Nested INSIDE the existing `demo === "true"` branch on purpose, rather
+     * than being its own top-level check. That single fact is what makes the
+     * preview unreachable from checkout: `?deterministic=true` alone does
+     * nothing, and no paid path — Stripe success URL, resume link, email —
+     * ever carries `demo=true`. Widening this to a top-level check would turn
+     * a preview into a production backdoor.
+     *
+     * It renders no Stripe data, needs no database row, generates no Report
+     * and saves nothing. The real paid flow below is untouched. */
+    if (deterministic === "true") {
+      return (
+        <DeterministicConsultationClient
+          context={{
+            foundation: foundation === "family" ? "family" : "you",
+            // Entitlement stays with the canonical add-on narrowing: an
+            // unrecognised value becomes null rather than a string nothing
+            // downstream can render.
+            lens: asAddonType(lens),
+          }}
+        />
+      )
+    }
+
     const demoTier =
       tierParam === "starter" || tierParam === "full" || tierParam === "premium"
         ? tierParam
