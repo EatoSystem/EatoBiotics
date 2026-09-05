@@ -158,11 +158,23 @@ describe("the deterministic bank has not reached the paid flow", () => {
     expect(consumers.length).toBeGreaterThan(300)
   })
 
-  it("exactly the Phase 3B preview experience imports it, and nothing else", () => {
+  it("exactly the preview experience and the deterministic routes import it", () => {
+    /*
+     * Re-pointed a second time, at Phase 3C-A.
+     *
+     * Phase 3B pinned this to the four preview components and asserted no
+     * server route was among them — with a name that said "server completeness
+     * is Phase 3C". This is Phase 3C-A, and the two deterministic routes are
+     * exactly that server side arriving. So the set grows by those two and
+     * stops there; the legacy-surface exclusions below are untouched, and a
+     * seventh importer still fails.
+     */
     expect(
       importers().sort(),
       "a new importer of the deterministic bank has appeared",
     ).toEqual([
+      "app/api/consultation/progress/route.ts",
+      "app/api/consultation/session/route.ts",
       "components/assessment/consultation/consultation-orientation.tsx",
       "components/assessment/consultation/consultation-progress.tsx",
       "components/assessment/consultation/consultation-question.tsx",
@@ -170,8 +182,22 @@ describe("the deterministic bank has not reached the paid flow", () => {
     ])
   })
 
-  it("no server route consumes it — server completeness is Phase 3C", () => {
-    expect(importers().filter((f) => f.startsWith("app/api/"))).toEqual([])
+  it("only the two deterministic routes consume it server-side", () => {
+    // Never the legacy question, save or submit routes: those own legacy
+    // sessions, and a deterministic import there would be the two contracts
+    // starting to merge.
+    expect(importers().filter((f) => f.startsWith("app/api/")).sort()).toEqual([
+      "app/api/consultation/progress/route.ts",
+      "app/api/consultation/session/route.ts",
+    ])
+    for (const legacy of [
+      "app/api/generate-deep-questions/route.ts",
+      "app/api/save-deep-progress/route.ts",
+      "app/api/submit-deep-assessment/route.ts",
+      "app/api/stripe/webhook/route.ts",
+    ]) {
+      expect(importers(), legacy).not.toContain(legacy)
+    }
   })
 
   it("no legacy paid surface consumes it", () => {
