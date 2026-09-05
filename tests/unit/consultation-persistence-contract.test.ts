@@ -23,10 +23,12 @@ import {
   createDeterministicConsultationSnapshot,
   readDeterministicConsultationSnapshot,
   readDeterministicConsultationState,
+  readDeterministicStateSlot,
   sanitiseCandidateAnswers,
   snapshotIsResolvable,
   DETERMINISTIC_STATE_KIND,
   DETERMINISTIC_STATE_SCHEMA_VERSION,
+  EMPTY_DETERMINISTIC_STATE,
 } from "@/lib/consultation/session-envelope"
 import { resolveDeterministicInit, resumeDeterministicSession } from "@/lib/consultation/session-init"
 import type { ConsultationQuestion } from "@/lib/consultation/types"
@@ -651,5 +653,154 @@ describe("Phase 3C-A changes nothing a paying customer sees", () => {
       expect(src, f).not.toContain("lib/deep-assessment")
       expect(src, f).not.toContain("DeepQuestion")
     }
+  })
+})
+
+/* ══ Empty vs unreadable — the fail-closed correction ══════════════════════ */
+
+describe("only an ABSENT answers column means 'nothing stored yet'", () => {
+  /**
+   * The defect this replaced: both callers did
+   * `readDeterministicConsultationState(row.answers) ?? EMPTY_DETERMINISTIC_STATE`,
+   * so a PRESENT but unreadable value — a legacy flat answer map, a truncated
+   * write, anything — was indistinguishable from a session that had stored
+   * nothing. The progress route would then have written over it.
+   *
+   * `?? EMPTY` is an easy pattern to reintroduce, which is why the call sites
+   * are asserted directly rather than only the behaviour.
+   */
+
+  it("A. answers = null reads as empty", () => {
+    const slot = readDeterministicStateSlot(null)
+    expect(slot.status).toBe("empty")
+    if (slot.status === "empty") expect(slot.state.candidateAnswers).toEqual({})
+  })
+
+  it("B. answers = undefined reads as empty", () => {
+    const slot = readDeterministicStateSlot(undefined)
+    expect(slot.status).toBe("empty")
+    if (slot.status === "empty") expect(slot.state).toEqual(EMPTY_DETERMINISTIC_STATE)
+  })
+
+  it("a null answers column still resumes into a working session", () => {
+    const out = resumeDeterministicSession({
+      persistedQuestions: snapshot(),
+      persistedAnswers: null,
+    })
+    expect(out.status).toBe("ok")
+    if (out.status !== "ok") return
+    expect(out.session.state.candidateAnswers).toEqual({})
+    expect(out.session.applicableQuestionIds.length).toBeGreaterThan(0)
+  })
+
+  it("C. a legacy flat answer map is unreadable, and resume REFUSES", () => {
+    expect(readDeterministicStateSlot(legacyAnswers()).status).toBe("unreadable")
+    expect(
+      resumeDeterministicSession({
+        persistedQuestions: snapshot(),
+        persistedAnswers: legacyAnswers(),
+      }),
+    ).toEqual({ status: "state_unreadable" })
+  })
+
+  it("D. the progress route refuses that same row before any write", () => {
+    const src = readFileSync(join(process.cwd(), "app/api/consultation/progress/route.ts"), "utf8")
+    // The check exists, refuses, and — the part that matters — sits before the
+    // update, so a refusal returns without touching the row.
+    expect(src).toContain("readDeterministicStateSlot(row.answers)")
+    expect(src).toMatch(/slot\.status === "unreadable"[\s\S]{0,120}refuse\(409/)
+    expect(src.indexOf("readDeterministicStateSlot")).toBeLessThan(src.indexOf(".update("))
+  })
+
+  it("neither call site may collapse a refusal into an empty state", () => {
+    for (const f of ["app/api/consultation/progress/route.ts", "lib/consultation/session-init.ts"]) {
+      const src = readFileSync(join(process.cwd(), f), "utf8")
+      expect(src, `${f} fails open`).not.toContain("?? EMPTY_DETERMINISTIC_STATE")
+      expect(src, `${f} should use the three-state read`).toContain("readDeterministicStateSlot")
+    }
+  })
+
+  it.each([
+    ["wrong kind", { kind: "something-else" }],
+    ["wrong schema version", { schemaVersion: 2 }],
+    ["candidateAnswers is an array", { candidateAnswers: [] }],
+    ["candidateAnswers is a string", { candidateAnswers: "x" }],
+    ["touchedQuestionIds is a string", { touchedQuestionIds: "qid" }],
+    ["touchedQuestionIds holds a non-string", { touchedQuestionIds: ["a", 7] }],
+    ["skippedOptionalQuestionIds is an object", { skippedOptionalQuestionIds: {} }],
+    ["currentQuestionId is a number", { currentQuestionId: 123 }],
+    ["phase is not a declared phase", { phase: "complete" }],
+  ])("E. refuses a malformed envelope rather than emptying it: %s", (_label, override) => {
+    const malformed = { ...deterministicState(), ...override }
+    expect(readDeterministicConsultationState(malformed)).toBeNull()
+    expect(readDeterministicStateSlot(malformed).status).toBe("unreadable")
+    expect(
+      resumeDeterministicSession({ persistedQuestions: snapshot(), persistedAnswers: malformed }).status,
+    ).toBe("state_unreadable")
+  })
+
+  it("F. a valid state still round-trips unchanged", () => {
+    const valid = deterministicState({
+      candidateAnswers: { [Q1]: "bloating" },
+      touchedQuestionIds: [Q1],
+      skippedOptionalQuestionIds: [AVOIDANCES],
+      currentQuestionId: CONSTRAINTS,
+      phase: "questions",
+    })
+    const slot = readDeterministicStateSlot(valid)
+    expect(slot.status).toBe("ok")
+    if (slot.status !== "ok") return
+    expect(slot.state.candidateAnswers).toEqual({ [Q1]: "bloating" })
+    expect(slot.state.touchedQuestionIds).toEqual([Q1])
+    expect(slot.state.skippedOptionalQuestionIds).toEqual([AVOIDANCES])
+    expect(slot.state.currentQuestionId).toBe(CONSTRAINTS)
+    expect(slot.state.phase).toBe("questions")
+    // Duplicates in a set-shaped field are normalised, not treated as malformed.
+    const deduped = readDeterministicStateSlot(
+      deterministicState({ touchedQuestionIds: [Q1, Q1] }),
+    )
+    expect(deduped.status).toBe("ok")
+    if (deduped.status === "ok") expect(deduped.state.touchedQuestionIds).toEqual([Q1])
+  })
+
+  it("G. a bad answer VALUE inside a good envelope is still only sanitised", () => {
+    // The distinction the strictness must not swallow: a malformed envelope is
+    // unreadable, but an invalid answer inside a well-formed one is dropped —
+    // and a valid-but-inapplicable one is still kept.
+    const state = deterministicState({
+      candidateAnswers: {
+        [Q1]: "not-an-option",
+        nope: "x",
+        [CONSTRAINTS]: ["budget"],
+        [AVOIDANCES]: ["nuts"],
+      },
+    })
+    expect(readDeterministicStateSlot(state).status).toBe("ok")
+
+    const out = resumeDeterministicSession({ persistedQuestions: snapshot(), persistedAnswers: state })
+    if (out.status !== "ok") throw new Error("expected ok")
+    expect(out.session.droppedInvalidIds).toContain(Q1)
+    expect(out.session.droppedUnknownIds).toContain("nope")
+    // Stale but valid: retained as a candidate, excluded from trusted.
+    expect(out.session.state.candidateAnswers[AVOIDANCES]).toEqual(["nuts"])
+    expect(out.session.trustedAnswers[AVOIDANCES]).toBeUndefined()
+  })
+
+  it("H. deterministic code leaves a legacy answer map byte-untouched", () => {
+    const legacy = legacyAnswers()
+    const before = JSON.stringify(legacy)
+    readDeterministicStateSlot(legacy)
+    readDeterministicConsultationState(legacy)
+    sanitiseCandidateAnswers(legacy, CONSULTATION_BANK_V1)
+    resumeDeterministicSession({ persistedQuestions: snapshot(), persistedAnswers: legacy })
+    expect(JSON.stringify(legacy)).toBe(before)
+  })
+
+  it("the resume route maps every non-ok outcome to one generic 409", () => {
+    // `state_unreadable` needs no new branch there, and must not get one that
+    // tells a customer what shape their stored data is in.
+    const src = readFileSync(join(process.cwd(), "app/api/consultation/session/route.ts"), "utf8")
+    expect(src).toMatch(/outcome\.status !== "ok"[\s\S]{0,160}status: 409/)
+    expect(src).not.toContain("state_unreadable")
   })
 })

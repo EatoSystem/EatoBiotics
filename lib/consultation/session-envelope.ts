@@ -181,9 +181,21 @@ export const EMPTY_DETERMINISTIC_STATE: DeterministicConsultationState = {
   phase: "questions",
 }
 
-function stringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) return []
-  return [...new Set(value.filter((v): v is string => typeof v === "string" && v.length > 0))]
+/**
+ * An array of non-empty strings, or `null` if the value is not that.
+ *
+ * It replaced a filtering helper, and the difference is the whole point: that
+ * one turned `"qid"` into `[]` and `["a", 7]` into `["a"]`, so a malformed shape
+ * quietly became a plausible one. This REFUSES. Duplicates are still collapsed,
+ * because a set genuinely has none — that is normalising, not repairing.
+ *
+ * The filtering version is deleted rather than kept unused: leaving it in the
+ * module would be leaving the fail-open tool next to the fail-closed one.
+ */
+function strictStringArray(value: unknown): string[] | null {
+  if (!Array.isArray(value)) return null
+  if (!value.every((v) => typeof v === "string" && v.length > 0)) return null
+  return [...new Set(value as string[])]
 }
 
 /**
@@ -197,6 +209,23 @@ function stringArray(value: unknown): string[] {
  * Returns `null` rather than an empty state on malformed input, so a caller
  * cannot confuse "this session has no answers yet" with "this session's answers
  * are unreadable".
+ *
+ * ══ EVERY FIELD REFUSES RATHER THAN DEFAULTS ════════════════════════════════
+ *
+ * An earlier version checked `kind` and `schemaVersion` strictly and then
+ * coerced the five inner fields: a non-object `candidateAnswers` became `{}`, a
+ * non-array id list became `[]`, `currentQuestionId: 123` became `null`, and an
+ * unknown `phase` became `"questions"`. Each of those turned structurally
+ * invalid stored data into a valid-LOOKING default — which is the same fail-open
+ * shape as the `?? EMPTY` this contract removed at the call sites, just moved
+ * one level down.
+ *
+ * So a malformed field is now a refusal. Note what has NOT moved with it:
+ * unknown question ids and invalid answer VALUES are still
+ * `sanitiseCandidateAnswers`'s job, and it still drops them. A malformed
+ * ENVELOPE and a bad answer inside a well-formed one are different failures,
+ * and merging them would either reject whole sessions over one stale answer or
+ * accept envelopes nothing wrote.
  */
 export function readDeterministicConsultationState(
   persisted: unknown,
@@ -207,26 +236,64 @@ export function readDeterministicConsultationState(
   if (v.kind !== DETERMINISTIC_STATE_KIND) return null
   if (v.schemaVersion !== DETERMINISTIC_STATE_SCHEMA_VERSION) return null
 
-  const rawAnswers =
-    v.candidateAnswers && typeof v.candidateAnswers === "object" && !Array.isArray(v.candidateAnswers)
-      ? (v.candidateAnswers as Record<string, unknown>)
-      : {}
+  if (!v.candidateAnswers || typeof v.candidateAnswers !== "object" || Array.isArray(v.candidateAnswers)) {
+    return null
+  }
 
-  const phase = PHASES.includes(v.phase as ConsultationPhase)
-    ? (v.phase as ConsultationPhase)
-    : "questions"
+  const touchedQuestionIds = strictStringArray(v.touchedQuestionIds)
+  if (!touchedQuestionIds) return null
+
+  const skippedOptionalQuestionIds = strictStringArray(v.skippedOptionalQuestionIds)
+  if (!skippedOptionalQuestionIds) return null
+
+  if (v.currentQuestionId !== null && typeof v.currentQuestionId !== "string") return null
+
+  if (!PHASES.includes(v.phase as ConsultationPhase)) return null
 
   return {
     kind: DETERMINISTIC_STATE_KIND,
     schemaVersion: DETERMINISTIC_STATE_SCHEMA_VERSION,
-    // Values are shape-checked against the bank by `sanitiseCandidateAnswers`,
-    // not here: this parser only establishes that the ENVELOPE is ours.
-    candidateAnswers: rawAnswers as ConsultationAnswers,
-    touchedQuestionIds: stringArray(v.touchedQuestionIds),
-    skippedOptionalQuestionIds: stringArray(v.skippedOptionalQuestionIds),
-    currentQuestionId: typeof v.currentQuestionId === "string" ? v.currentQuestionId : null,
-    phase,
+    // Individual answer VALUES are checked against the bank by
+    // `sanitiseCandidateAnswers`, not here: this parser establishes only that
+    // the envelope is ours and structurally intact.
+    candidateAnswers: v.candidateAnswers as ConsultationAnswers,
+    touchedQuestionIds,
+    skippedOptionalQuestionIds,
+    currentQuestionId: v.currentQuestionId as string | null,
+    phase: v.phase as ConsultationPhase,
   }
+}
+
+/* ══ Empty vs unreadable ═══════════════════════════════════════════════════ */
+
+export type DeterministicStateRead =
+  /** The column is genuinely unset — a Consultation that has stored nothing yet. */
+  | { status: "empty"; state: DeterministicConsultationState }
+  /** A well-formed deterministic state envelope. */
+  | { status: "ok"; state: DeterministicConsultationState }
+  /** Something IS stored and it is not ours. Refuse; never repair or replace. */
+  | { status: "unreadable" }
+
+/**
+ * Read the `answers` column, distinguishing the three cases that matter.
+ *
+ * ══ WHY `?? EMPTY_DETERMINISTIC_STATE` WAS WRONG ════════════════════════════
+ *
+ * Both callers used to collapse a parser refusal into an empty state. That made
+ * a PRESENT but unreadable value — a legacy flat answer map, a truncated write,
+ * anything at all — indistinguishable from a session that had simply not stored
+ * anything yet. The progress route would then have written over it.
+ *
+ * Only an absent column may mean "nothing yet". Anything present has to parse,
+ * or the caller must refuse: repairing it would be inventing a customer's
+ * answers, and overwriting it would be destroying them.
+ */
+export function readDeterministicStateSlot(persisted: unknown): DeterministicStateRead {
+  if (persisted === null || persisted === undefined) {
+    return { status: "empty", state: EMPTY_DETERMINISTIC_STATE }
+  }
+  const parsed = readDeterministicConsultationState(persisted)
+  return parsed ? { status: "ok", state: parsed } : { status: "unreadable" }
 }
 
 /* ══ Candidate sanitisation ════════════════════════════════════════════════ */

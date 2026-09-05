@@ -16,12 +16,11 @@ import {
 import { resolveConsultationBank } from "@/lib/consultation/bank-registry"
 import {
   readDeterministicConsultationSnapshot,
-  readDeterministicConsultationState,
+  readDeterministicStateSlot,
   sanitiseCandidateAnswers,
   snapshotIsResolvable,
   DETERMINISTIC_STATE_KIND,
   DETERMINISTIC_STATE_SCHEMA_VERSION,
-  EMPTY_DETERMINISTIC_STATE,
   type DeterministicConsultationState,
 } from "@/lib/consultation/session-envelope"
 import { resolveApplicableQuestions } from "@/lib/consultation/applicability"
@@ -164,7 +163,14 @@ export async function PATCH(req: NextRequest) {
     const question = bank.find((q) => q.id === questionId)
     if (!question) return refuse(422, "Unknown question")
 
-    const stored = readDeterministicConsultationState(row.answers) ?? EMPTY_DETERMINISTIC_STATE
+    // Absent means "nothing stored yet". Present-but-unreadable means refuse:
+    // writing here would overwrite a value we cannot characterise, which is the
+    // same thing the legacy question generator declines to do on its own column.
+    const slot = readDeterministicStateSlot(row.answers)
+    if (slot.status === "unreadable") {
+      return refuse(409, "This Consultation state cannot be read")
+    }
+    const stored = slot.state
     const { answers: candidates } = sanitiseCandidateAnswers(stored.candidateAnswers, snapshot.bankVersion)
 
     const context: ConsultationContext = {

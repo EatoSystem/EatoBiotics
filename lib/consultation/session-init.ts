@@ -5,10 +5,9 @@ import { resolveConsultationBank } from "./bank-registry"
 import {
   createDeterministicConsultationSnapshot,
   readDeterministicConsultationSnapshot,
-  readDeterministicConsultationState,
+  readDeterministicStateSlot,
   sanitiseCandidateAnswers,
   snapshotIsResolvable,
-  EMPTY_DETERMINISTIC_STATE,
   type DeterministicConsultationSnapshot,
   type DeterministicConsultationState,
 } from "./session-envelope"
@@ -121,6 +120,8 @@ export type ResumeOutcome =
   | { status: "legacy_session" }
   | { status: "not_deterministic" }
   | { status: "bank_unavailable"; bankVersion: string }
+  /** Answers are stored but do not parse. Never resumed as an empty session. */
+  | { status: "state_unreadable" }
 
 /**
  * Rebuild a deterministic session from storage, server-side.
@@ -156,7 +157,14 @@ export function resumeDeterministicSession(input: {
     return { status: "bank_unavailable", bankVersion: snapshot.bankVersion }
   }
 
-  const stored = readDeterministicConsultationState(input.persistedAnswers) ?? EMPTY_DETERMINISTIC_STATE
+  // Same rule as the progress route: only an absent column means "nothing
+  // stored yet". A present value that will not parse is refused rather than
+  // resumed as an empty Consultation — the customer's answers are either
+  // readable or they are not ours to guess at.
+  const slot = readDeterministicStateSlot(input.persistedAnswers)
+  if (slot.status === "unreadable") return { status: "state_unreadable" }
+  const stored = slot.state
+
   const { answers, droppedUnknownIds, droppedInvalidIds } = sanitiseCandidateAnswers(
     stored.candidateAnswers,
     snapshot.bankVersion,
