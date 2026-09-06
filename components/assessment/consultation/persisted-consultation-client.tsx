@@ -1,11 +1,12 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { resolveConsultationBank } from "@/lib/consultation/bank-registry"
+import { sanitiseCandidateAnswers } from "@/lib/consultation/session-envelope"
 import { createAnswerAutosave, type AutosaveStatus } from "@/lib/assessment/answer-autosave"
 import { SECTION_META } from "@/lib/consultation/types"
-import type { ConsultationAnswer, ConsultationContext } from "@/lib/consultation/types"
+import type { ConsultationAnswer } from "@/lib/consultation/types"
 import {
   begin,
   canGoBack as canGoBackFrom,
@@ -15,6 +16,7 @@ import {
   goBack,
   isEditingFromReview,
   isLastQuestion,
+  optionalSkipOnContinue,
   isReviewing,
   isSectionStart,
   progress as progressOf,
@@ -81,6 +83,86 @@ const LOAD_FAILED_MESSAGE = "We couldn't load your Consultation. Please try agai
  */
 const SAVE_FAILED_MESSAGE = "We couldn't save that yet. Try Continue again."
 
+/**
+ * One pending change to one question.
+ *
+ * Tagged rather than three queues, because the ordering guarantee has to be
+ * shared: a skip must be able to REPLACE a pending answer, and must be sent
+ * after an answer that is already in flight. Two queues cannot express either.
+ */
+type QueuedMutation =
+  | { kind: "answer"; value: ConsultationAnswer }
+  | { kind: "skip" }
+  | { kind: "clear" }
+
+/**
+ * The one place answer, skip and clear are sequenced.
+ *
+ * Exported so a test drives the SAME queue the hook does. A test that rebuilt
+ * this dispatch by hand could pass against a wiring the component does not use,
+ * which for an ordering guarantee is worse than no test at all.
+ */
+export interface ConsultationMutationQueue {
+  queueAnswer: (questionId: string, value: ConsultationAnswer) => void
+  queueSkip: (questionId: string) => void
+  /** Send everything outstanding. False if anything failed. */
+  flush: () => Promise<boolean>
+  /** Drop pending timers without sending. For unmount. */
+  cancel: () => void
+}
+
+export function createConsultationMutationQueue(
+  persistence: ConsultationPersistence,
+  onStatus?: (status: AutosaveStatus) => void,
+): ConsultationMutationQueue {
+  const autosave = createAnswerAutosave({
+    onStatus,
+    send: async (questionId, value) => {
+      const mutation = value as QueuedMutation
+      if (mutation.kind === "skip") return persistence.skipOptional(questionId)
+      if (mutation.kind === "clear") return persistence.clearAnswer(questionId)
+      return persistence.saveAnswer(questionId, mutation.value)
+    },
+  })
+
+  return {
+    queueAnswer: (questionId, value) => autosave.queue(questionId, { kind: "answer", value }),
+    queueSkip: (questionId) => autosave.queue(questionId, { kind: "skip" }),
+    async flush() {
+      try {
+        return await autosave.flush()
+      } catch {
+        return false
+      }
+    },
+    cancel: () => autosave.cancel(),
+  }
+}
+
+/**
+ * The navigation contract, assembled from a queue and an adapter.
+ *
+ * Exported and used by BOTH the hook and its tests, because the assembly is
+ * itself a correctness claim: `queueSkip` must be the QUEUE's, so a skip shares
+ * ordering with an outstanding answer, and `leaveReview` must be the retreat
+ * rather than a cursor write. A test that rebuilt this by hand would keep
+ * passing while the hook wired either one to the wrong thing.
+ */
+export function createNavigationDeps(
+  persistence: ConsultationPersistence,
+  queue: ConsultationMutationQueue,
+): NavigationDeps {
+  return {
+    flush: queue.flush,
+    persistCursor: (questionId) => persistence.saveCursor(questionId),
+    // The SAME per-question queue as an answer, which is what stops an
+    // in-flight answer landing after the skip and resurrecting itself.
+    queueSkip: queue.queueSkip,
+    requestReview: () => persistence.enterReview(),
+    leaveReview: (questionId) => persistence.leaveReview(questionId),
+  }
+}
+
 export type PersistedLoadState =
   | { status: "loading" }
   | { status: "loaded"; session: ConsultationSessionState; fresh: boolean }
@@ -111,32 +193,36 @@ export interface UsePersistedConsultationResult {
  * same question must not race, and a weaker debounce would lose the newer one.
  */
 export function usePersistedConsultation(
-  context: ConsultationContext,
   persistence: ConsultationPersistence,
 ): UsePersistedConsultationResult {
   const [load, setLoad] = useState<PersistedLoadState>({ status: "loading" })
   const [saveStatus, setSaveStatus] = useState<AutosaveStatus>("idle")
 
-  const autosave = useMemo(
-    () =>
-      createAnswerAutosave({
-        onStatus: setSaveStatus,
-        send: async (questionId, value) =>
-          persistence.saveAnswer(questionId, value as ConsultationAnswer),
-      }),
+  /**
+   * ONE queue for every mutation of a question, not one for answers.
+   *
+   * Answer, skip and clear all decide the same thing — what the server ends up
+   * holding for this question — so they have to share the ordering guarantee, or
+   * the customer's newest intent can lose to their oldest. The race that forced
+   * this: type an answer, press Skip while the save is still on the wire, and
+   * the answer lands afterwards and un-skips itself, because the server's answer
+   * action clears the skip marker by design.
+   */
+  const queue = useMemo(
+    () => createConsultationMutationQueue(persistence, setSaveStatus),
     [persistence],
   )
 
   // Cancel pending timers on unmount. It does NOT claim the pending value was
   // saved — an unmount is not a save, and the status is left as it stands.
-  useEffect(() => () => autosave.cancel(), [autosave])
+  useEffect(() => () => queue.cancel(), [queue])
 
   const cancelled = useRef(false)
   useEffect(() => {
     cancelled.current = false
     ;(async () => {
       try {
-        const { session, fresh } = hydratePersistedSession(context, await persistence.load())
+        const { session, fresh } = hydratePersistedSession(await persistence.load())
         if (!cancelled.current) setLoad({ status: "loaded", session, fresh })
       } catch {
         if (!cancelled.current) setLoad({ status: "failed" })
@@ -145,14 +231,9 @@ export function usePersistedConsultation(
     return () => {
       cancelled.current = true
     }
-  }, [context, persistence])
+  }, [persistence])
 
-  const queueAnswer = useCallback(
-    (questionId: string, value: ConsultationAnswer) => {
-      autosave.queue(questionId, value)
-    },
-    [autosave],
-  )
+  const queueAnswer = queue.queueAnswer
 
   /**
    * Send anything still in the debounce window.
@@ -162,22 +243,9 @@ export function usePersistedConsultation(
    * a later question while the server still has the earlier one blank — and a
    * resume would then send them backwards with no explanation.
    */
-  const flush = useCallback(async () => {
-    try {
-      return await autosave.flush()
-    } catch {
-      return false
-    }
-  }, [autosave])
-
-  const navigation = useMemo<NavigationDeps>(
-    () => ({
-      flush,
-      persistCursor: (questionId) => persistence.saveCursor(questionId),
-      persistSkip: (questionId) => persistence.skipOptional(questionId),
-      requestReview: () => persistence.enterReview(),
-    }),
-    [flush, persistence],
+  const navigation = useMemo(
+    () => createNavigationDeps(persistence, queue),
+    [persistence, queue],
   )
 
   return { load, saveStatus, queueAnswer, navigation }
@@ -195,7 +263,6 @@ export function usePersistedConsultation(
  * is the outcome every convenient default produces.
  */
 export function hydratePersistedSession(
-  context: ConsultationContext,
   state: LoadedConsultationState,
 ): { session: ConsultationSessionState; fresh: boolean } {
   const bank = resolveConsultationBank(state.bankVersion)
@@ -203,6 +270,21 @@ export function hydratePersistedSession(
   // was not answered against is the exact failure the fingerprint prevents.
   if (!bank) throw new Error("unknown-bank")
   if (state.phase === "ready-for-report") throw new Error("unsupported-phase")
+
+  /*
+   * Candidates are re-checked against the bank now that it is resolved.
+   *
+   * The server already sanitised them, so in the ordinary case this drops
+   * nothing. It runs anyway because the strict load parser can only prove the
+   * SHAPE of the payload — that it is an object of answers — and cannot know
+   * whether a value is legal for the question it belongs to without the bank.
+   * Rendering an answer the canonical contract would refuse is how a client and
+   * a server start disagreeing about what was asked.
+   *
+   * Valid-but-inapplicable answers survive, exactly as they do server-side: a
+   * closed branch is not an un-said answer.
+   */
+  const { answers } = sanitiseCandidateAnswers(state.candidateAnswers, state.bankVersion)
 
   // The server derives `started` from the state as STORED — see the note on it.
   // Re-deriving it here would be re-deriving it from a repaired cursor, which
@@ -212,9 +294,11 @@ export function hydratePersistedSession(
   return {
     fresh,
     session: createConsultationSession({
-      context,
+      // The SERVER's context, never a caller's. It is the only one that has been
+      // checked against the settled payment and the stored snapshot.
+      context: state.context,
       questions: bank,
-      answers: state.candidateAnswers,
+      answers,
       touchedQuestionIds: state.touchedQuestionIds,
       skippedOptionalQuestionIds: state.skippedOptionalQuestionIds,
       phase: state.phase,
@@ -231,17 +315,26 @@ export function hydratePersistedSession(
 interface Props {
   /** The settled Stripe checkout session this Consultation belongs to. */
   sessionId: string
-  context: ConsultationContext
   /** Test seam. Production supplies the HTTP adapter from `sessionId`. */
   persistence?: ConsultationPersistence
 }
 
-export function PersistedConsultationClient({ sessionId, context, persistence }: Props) {
+/**
+ * Deliberately takes NO context.
+ *
+ * The foundation and lens are the server's to state, not a caller's: the
+ * session route resolves them from the settled payment and the stored snapshot
+ * and refuses when those disagree. A `context` prop here would let a page render
+ * a Family Consultation for someone who paid for You — different questions,
+ * different wording — and the server would then refuse every answer they gave.
+ * There is nothing to pass, so nothing can be passed wrongly.
+ */
+export function PersistedConsultationClient({ sessionId, persistence }: Props) {
   const adapter = useMemo(
     () => persistence ?? createHttpConsultationPersistence(sessionId),
     [persistence, sessionId],
   )
-  const { load, saveStatus, queueAnswer, navigation } = usePersistedConsultation(context, adapter)
+  const { load, saveStatus, queueAnswer, navigation } = usePersistedConsultation(adapter)
 
   if (load.status === "loading") {
     return (
@@ -369,7 +462,7 @@ function PersistedConsultationSession({
         // that is where Back goes.
         <ConsultationOrientation
           foundation={foundation}
-          onBegin={() => void apply(() => commitMove(begin(state), navigation))}
+          onBegin={() => void apply(() => commitMove(state, begin(state), navigation))}
         />
       )}
 
@@ -393,12 +486,15 @@ function PersistedConsultationSession({
             answer={state.answers[question.id]}
             touched={state.touched.has(question.id)}
             onAnswer={handleAnswer}
-            onBack={() => void apply(() => commitMove(goBack(state), navigation))}
+            onBack={() => void apply(() => commitMove(state, goBack(state), navigation))}
             onNext={() => void apply(() => continueFrom(state, navigation))}
+            // Offered only while the question is genuinely unanswered — which
+            // is what the control's own description promises. Once an answer
+            // exists, Skip would silently discard it, and there is no undo.
             onSkipOptional={
-              question.required
-                ? undefined
-                : () => void apply(() => skipFrom(state, question.id, navigation))
+              optionalSkipOnContinue(state)
+                ? () => void apply(() => skipFrom(state, question.id, navigation))
+                : undefined
             }
             canGoBack={!isEditingFromReview(state) && canGoBackFrom(state)}
             isLast={isLastQuestion(state)}
@@ -414,10 +510,10 @@ function PersistedConsultationSession({
       {isReviewing(state) && (
         <ConsultationReviewView
           review={review}
-          onEdit={(id) => void apply(() => commitMove(editFromReview(state, id), navigation))}
+          onEdit={(id) => void apply(() => commitMove(state, editFromReview(state, id), navigation))}
           footer={
             <ReviewFooter
-              onBack={() => void apply(() => commitMove(goBack(state), navigation))}
+              onBack={() => void apply(() => commitMove(state, goBack(state), navigation))}
             />
           }
         />

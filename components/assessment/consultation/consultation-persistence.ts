@@ -1,4 +1,11 @@
-import type { ConsultationAnswer, ConsultationAnswers } from "@/lib/consultation/types"
+import { isAddon } from "@/lib/addon-types"
+import { CONSULTATION_FOUNDATIONS } from "@/lib/consultation/types"
+import type {
+  ConsultationAnswer,
+  ConsultationAnswers,
+  ConsultationContext,
+  ConsultationFoundation,
+} from "@/lib/consultation/types"
 import type { ConsultationPhase } from "@/lib/consultation/session-envelope"
 
 /**
@@ -23,6 +30,17 @@ import type { ConsultationPhase } from "@/lib/consultation/session-envelope"
 
 export interface LoadedConsultationState {
   bankVersion: string
+  /**
+   * The canonical context, as the SERVER resolved it.
+   *
+   * Not a caller's opinion. The session route derives this from the settled
+   * Stripe session, the paid summary and the stored snapshot, and refuses when
+   * any of them disagree — so by the time it reaches here it is the only
+   * statement about foundation and lens that has been checked against what was
+   * actually paid for. A client that branched on its own context could render a
+   * different questionnaire from the one the server will accept answers to.
+   */
+  context: ConsultationContext
   candidateAnswers: ConsultationAnswers
   touchedQuestionIds: readonly string[]
   skippedOptionalQuestionIds: readonly string[]
@@ -63,6 +81,100 @@ export interface ConsultationPersistence {
   saveCursor(questionId: string | null): Promise<SaveOutcome>
   /** Ask the server whether Review may be entered. It decides, not the client. */
   enterReview(): Promise<ReviewOutcome>
+  /**
+   * Leave Review for a question — the one phase RETREAT the browser may request.
+   *
+   * Separate from `saveCursor` because the two are different statements. A
+   * cursor move inside Review is an edit and must keep the review phase; leaving
+   * Review is an exit and must clear it. Persisting an exit as a cursor move is
+   * the divergence this exists to close: storage would still say `review` while
+   * the screen showed ordinary questions, and the next resume would believe
+   * storage.
+   */
+  leaveReview(questionId: string): Promise<SaveOutcome>
+}
+
+/* ══ The strict load parser ════════════════════════════════════════════════ */
+
+/**
+ * Phase 3C-A's fail-closed rule, applied to the WIRE as well as to storage.
+ *
+ * The stored-state parser refuses a malformed envelope rather than repairing
+ * it, because a value that cannot be characterised must not be overwritten or
+ * emptied. A client parser that shrugged malformed fields into defaults would
+ * reinstate exactly that fail-open behaviour one layer out: the server would
+ * hold answers it refused to describe, and the browser would render a session
+ * built from `{}` on top of them.
+ *
+ * So a payload claiming `kind: "deterministic"` must carry the COMPLETE
+ * recognised shape. Anything else throws, and the wrapper shows its load-failure
+ * screen. Every field below is CHECKED and then used as it stands: there is
+ * deliberately no coalescing default for the answer map, no shape fallback for
+ * the id lists, and no fallback for the phase. A guard forbids all three, and
+ * naming them in prose here would trip it.
+ */
+
+const PHASES: readonly ConsultationPhase[] = ["questions", "review", "ready-for-report"]
+
+const isPlainObject = (v: unknown): v is Record<string, unknown> =>
+  typeof v === "object" && v !== null && !Array.isArray(v)
+
+const isStringArray = (v: unknown): v is string[] =>
+  Array.isArray(v) && v.every((s) => typeof s === "string" && s.trim().length > 0)
+
+/**
+ * The canonical context, or `null` if this is not one.
+ *
+ * An unknown lens is REFUSED rather than narrowed to `null`. Those two mean
+ * opposite things: `null` is "this customer bought no lens", and an unknown
+ * string is "this build does not understand what they bought". Coercing the
+ * second into the first would quietly serve a lens-less Consultation to someone
+ * who paid for a lens, which is the failure the snapshot check exists to catch.
+ */
+function readContext(value: unknown): ConsultationContext | null {
+  if (!isPlainObject(value)) return null
+
+  const foundation = value.foundation
+  if (!CONSULTATION_FOUNDATIONS.includes(foundation as ConsultationFoundation)) return null
+
+  const lens = value.lens
+  if (lens !== null && !isAddon(lens)) return null
+
+  return { foundation: foundation as ConsultationFoundation, lens }
+}
+
+/** Throws unless the payload is a complete, well-formed deterministic state. */
+export function readLoadedConsultationState(data: unknown): LoadedConsultationState {
+  const fail = (): never => {
+    throw new Error("consultation-load-malformed")
+  }
+
+  if (!isPlainObject(data)) return fail()
+  if (data.kind !== "deterministic") return fail()
+  if (typeof data.bankVersion !== "string" || data.bankVersion.trim().length === 0) return fail()
+
+  const context = readContext(data.context)
+  if (!context) return fail()
+
+  if (!isPlainObject(data.candidateAnswers)) return fail()
+  if (!isStringArray(data.touchedQuestionIds)) return fail()
+  if (!isStringArray(data.skippedOptionalQuestionIds)) return fail()
+  if (data.currentQuestionId !== null && typeof data.currentQuestionId !== "string") return fail()
+  if (!PHASES.includes(data.phase as ConsultationPhase)) return fail()
+  // Guessing this wrong either re-shows Orientation to someone mid-Consultation
+  // or hides it from someone who has never seen it.
+  if (typeof data.started !== "boolean") return fail()
+
+  return {
+    bankVersion: data.bankVersion,
+    context,
+    candidateAnswers: data.candidateAnswers as ConsultationAnswers,
+    touchedQuestionIds: data.touchedQuestionIds,
+    skippedOptionalQuestionIds: data.skippedOptionalQuestionIds,
+    currentQuestionId: data.currentQuestionId,
+    phase: data.phase as ConsultationPhase,
+    started: data.started,
+  }
 }
 
 /**
@@ -95,40 +207,18 @@ export function createHttpConsultationPersistence(sessionId: string): Consultati
     async load() {
       const res = await fetch(`/api/consultation/session?session_id=${encodeURIComponent(sessionId)}`)
       if (!res.ok) throw new Error("consultation-load-failed")
-      const data = await res.json()
-      // A legacy session, or anything that is not a well-formed deterministic
-      // payload, throws rather than degrading to an empty Consultation — the
-      // same fail-closed rule the server applies to unreadable stored state.
-      if (
-        !data ||
-        data.kind !== "deterministic" ||
-        typeof data.bankVersion !== "string" ||
-        // Strict rather than defaulted. Guessing it wrong either re-shows
-        // Orientation to someone mid-Consultation or hides it from someone who
-        // has never seen it, and a payload without it is not a shape this build
-        // understands.
-        typeof data.started !== "boolean"
-      ) {
-        throw new Error("consultation-not-deterministic")
-      }
-      return {
-        bankVersion: data.bankVersion,
-        started: data.started,
-        candidateAnswers: (data.candidateAnswers ?? {}) as ConsultationAnswers,
-        touchedQuestionIds: Array.isArray(data.touchedQuestionIds) ? data.touchedQuestionIds : [],
-        skippedOptionalQuestionIds: Array.isArray(data.skippedOptionalQuestionIds)
-          ? data.skippedOptionalQuestionIds
-          : [],
-        currentQuestionId:
-          typeof data.currentQuestionId === "string" ? data.currentQuestionId : null,
-        phase: (data.phase ?? "questions") as ConsultationPhase,
-      }
+      // A legacy session, or anything that is not a COMPLETE well-formed
+      // deterministic payload, throws rather than degrading to an empty
+      // Consultation — the same fail-closed rule the server applies to
+      // unreadable stored state.
+      return readLoadedConsultationState(await res.json())
     },
 
     saveAnswer: (questionId, value) => patch({ action: "answer", questionId, value }),
     clearAnswer: (questionId) => patch({ action: "clear", questionId }),
     skipOptional: (questionId) => patch({ action: "skip", questionId }),
     saveCursor: (currentQuestionId) => patch({ action: "navigate", currentQuestionId }),
+    leaveReview: (currentQuestionId) => patch({ action: "leave-review", currentQuestionId }),
 
     async enterReview() {
       try {

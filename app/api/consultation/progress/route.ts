@@ -109,6 +109,18 @@ const bodySchema = z
     sessionId: SESSION_ID,
     currentQuestionId: z.string().trim().min(1).max(120).nullable(),
   }).strict(),
+  z.object({
+    // The ONE phase transition the browser may request, and it is a retreat:
+    // review → questions. Entering review stays the review route's decision,
+    // because that one is a claim about completeness; leaving is not.
+    //
+    // The target is a required string rather than nullable: leaving Review
+    // means landing on a real question. A null would describe the Review list,
+    // which is the thing being left.
+    action: z.literal("leave-review"),
+    sessionId: SESSION_ID,
+    currentQuestionId: z.string().trim().min(1).max(120),
+  }).strict(),
 ])
 
 const SAVE_ATTEMPTS = 3
@@ -133,7 +145,11 @@ export async function PATCH(req: NextRequest) {
   }
 
   const { sessionId } = body
-  const questionId = body.action === "navigate" ? null : body.questionId
+  // Both cursor-only actions touch no answer, so neither has a question to look
+  // up. Written inline rather than via a boolean, because the discriminant has
+  // to be narrowed here for `body.questionId` to exist at all.
+  const questionId =
+    body.action === "navigate" || body.action === "leave-review" ? null : body.questionId
 
   const supabase = getSupabase()
   if (!supabase) {
@@ -196,8 +212,8 @@ export async function PATCH(req: NextRequest) {
     const bank = resolveConsultationBank(snapshot.bankVersion)
     if (!bank) return refuse(409, "This Consultation cannot be resumed")
 
-    // `navigate` touches no answer, so it has no question to look up. Every
-    // other action does, and an unknown id is refused before anything is read.
+    // A cursor-only action has no question to look up. Every other action does,
+    // and an unknown id is refused before anything is read.
     const question = questionId === null ? null : bank.find((q) => q.id === questionId)
     if (questionId !== null && !question) return refuse(422, "Unknown question")
 
@@ -209,6 +225,14 @@ export async function PATCH(req: NextRequest) {
       return refuse(409, "This Consultation state cannot be read")
     }
     const stored = slot.state
+
+    // Leaving Review presupposes being in it. Without this a browser could use
+    // the retreat as a general "set phase to questions", which is a different
+    // and much larger permission than the one being granted.
+    if (body.action === "leave-review" && stored.phase !== "review") {
+      return refuse(409, "This Consultation is not in review")
+    }
+
     const { answers: candidates } = sanitiseCandidateAnswers(stored.candidateAnswers, snapshot.bankVersion)
 
     const context: ConsultationContext = {
@@ -245,8 +269,9 @@ export async function PATCH(req: NextRequest) {
       // distinct, and a stale skip beside a real answer would misdescribe both.
       skipped.delete(questionId!)
     }
-    // `navigate` falls through deliberately: answers, touched and skips are
-    // carried forward exactly as they were, and only the cursor below moves.
+    // `navigate` and `leave-review` fall through deliberately: answers, touched
+    // and skips are carried forward exactly as they were, and only the cursor
+    // below — and, for the retreat, the phase — moves.
 
     // A cursor is accepted only if it names a question that applies once this
     // delta is in place — otherwise the customer is left where the server can
@@ -281,12 +306,22 @@ export async function PATCH(req: NextRequest) {
       touchedQuestionIds: [...touched],
       skippedOptionalQuestionIds: [...skipped],
       currentQuestionId,
-      // Phase never advances here. Entering review is the review route's
-      // decision, taken against canonical completeness; a save endpoint that
-      // could also move the phase would be a second, weaker gate on the same
-      // transition. The finalisation phase is not reachable from any route in
-      // this phase at all.
-      phase: stored.phase === "questions" ? "questions" : stored.phase,
+      /*
+       * The phase moves in exactly one direction here, and only when asked.
+       *
+       * `leave-review` retreats to the questions phase, having already checked
+       * that the session IS in review and that the target question applies. It
+       * is a retreat rather than an advance, which is why it is safe to grant:
+       * it claims nothing about completeness, and the customer ends up with
+       * MORE left to do rather than less.
+       *
+       * Every other action carries the stored phase through untouched. Entering
+       * review remains the review route's decision, taken against canonical
+       * completeness — a save endpoint that could also grant it would be a
+       * second, weaker gate on the same transition. The finalisation phase is
+       * not reachable from any route in this phase at all.
+       */
+      phase: body.action === "leave-review" ? "questions" : stored.phase,
     }
 
     try {

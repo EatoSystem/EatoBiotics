@@ -10,12 +10,12 @@ import {
   currentQuestion,
   editFromReview,
   goBack,
+  isEditingFromReview,
   isReviewing,
   setAnswer,
   type ConsultationSessionState,
 } from "@/lib/consultation/session"
 import { buildConsultationReview } from "@/lib/consultation/review"
-import type { ConsultationContext } from "@/lib/consultation/types"
 import { createHttpConsultationPersistence } from "@/components/assessment/consultation/consultation-persistence"
 import {
   commitMove,
@@ -116,7 +116,6 @@ vi.mock("@/lib/paid-report-session", async (importOriginal) => {
 /* ── Fixtures ───────────────────────────────────────────────────────────── */
 
 const SESSION = "cs_test_integration_3cb"
-const you: ConsultationContext = { foundation: "you" }
 
 const Q1 = "core_signals_post_meal_pattern_v1"
 const Q2 = "core_signals_energy_shape_v1"
@@ -177,8 +176,11 @@ const depsFor = (): NavigationDeps => {
     // outstanding.
     flush: async () => true,
     persistCursor: (id) => p.saveCursor(id),
-    persistSkip: (id) => p.skipOptional(id),
+    // The real ordered queue is exercised in the client tests; here the
+    // interest is the wire contract, so the skip goes straight out.
+    queueSkip: (id) => void p.skipOptional(id),
     requestReview: () => p.enterReview(),
+    leaveReview: (id) => p.leaveReview(id),
   }
 }
 
@@ -191,7 +193,7 @@ function mustMove(outcome: NavigationOutcome, what: string): ConsultationSession
 
 /** Load from the server and hydrate, exactly as the wrapper does on mount. */
 async function load() {
-  return hydratePersistedSession(you, await persistence().load())
+  return hydratePersistedSession(await persistence().load())
 }
 
 /** Answer the current question over the wire, then Continue. */
@@ -251,7 +253,7 @@ describe("a persisted Consultation runs end to end without a real payment", () =
 
   it("Begin persists the first question, so a reload resumes there", async () => {
     const { session } = await load()
-    const outcome = await commitMove(begin(session), depsFor())
+    const outcome = await commitMove(session, begin(session), depsFor())
     expect(outcome.status).toBe("moved")
 
     const again = await load()
@@ -261,7 +263,7 @@ describe("a persisted Consultation runs end to end without a real payment", () =
 
   it("an answer survives a full reload as the identical canonical value", async () => {
     const { session } = await load()
-    const started = mustMove(await commitMove(begin(session), depsFor()), "Begin")
+    const started = mustMove(await commitMove(session, begin(session), depsFor()), "Begin")
     await answerAndContinue(started, "bloating")
 
     const again = await load()
@@ -271,7 +273,7 @@ describe("a persisted Consultation runs end to end without a real payment", () =
 
   it("answering the trigger opens its branch on the server as well as the client", async () => {
     const { session } = await load()
-    const started = mustMove(await commitMove(begin(session), depsFor()), "Begin")
+    const started = mustMove(await commitMove(session, begin(session), depsFor()), "Begin")
     const after = await answerAndContinue(started, "bloating")
 
     // The client moved into the branch...
@@ -284,7 +286,7 @@ describe("a persisted Consultation runs end to end without a real payment", () =
 
   it("the server refuses a cursor to a question its own engine says does not apply", async () => {
     const { session } = await load()
-    const started = mustMove(await commitMove(begin(session), depsFor()), "Begin")
+    const started = mustMove(await commitMove(session, begin(session), depsFor()), "Begin")
     await answerAndContinue(started, "nothing")
 
     expect((await persistence().saveCursor(Q3)).ok).toBe(false)
@@ -292,7 +294,7 @@ describe("a persisted Consultation runs end to end without a real payment", () =
 
   it("a deliberate skip comes back as a skip and not as an answer", async () => {
     const { session } = await load()
-    let s = mustMove(await commitMove(begin(session), depsFor()), "Begin")
+    let s = mustMove(await commitMove(session, begin(session), depsFor()), "Begin")
     s = await answerAndContinue(s, "nothing")
     // Walk to the constraints question, taking a safety constraint so the
     // optional avoidance question opens.
@@ -312,7 +314,7 @@ describe("a persisted Consultation runs end to end without a real payment", () =
 
   it("completing the Consultation enters Review, and a reload comes back to Review", async () => {
     const { session } = await load()
-    let s = mustMove(await commitMove(begin(session), depsFor()), "Begin")
+    let s = mustMove(await commitMove(session, begin(session), depsFor()), "Begin")
     for (let i = 0; i < 40 && !isReviewing(s); i += 1) {
       s = await answerAndContinue(s, validValueFor(s))
     }
@@ -327,7 +329,7 @@ describe("a persisted Consultation runs end to end without a real payment", () =
 
   it("Review shows exactly what the server stored, in customer wording", async () => {
     const { session } = await load()
-    let s = mustMove(await commitMove(begin(session), depsFor()), "Begin")
+    let s = mustMove(await commitMove(session, begin(session), depsFor()), "Begin")
     for (let i = 0; i < 40 && !isReviewing(s); i += 1) {
       s = await answerAndContinue(s, validValueFor(s))
     }
@@ -347,12 +349,12 @@ describe("a persisted Consultation runs end to end without a real payment", () =
 
   it("an interrupted Review edit is resumable from the stored pair alone", async () => {
     const { session } = await load()
-    let s = mustMove(await commitMove(begin(session), depsFor()), "Begin")
+    let s = mustMove(await commitMove(session, begin(session), depsFor()), "Begin")
     for (let i = 0; i < 40 && !isReviewing(s); i += 1) {
       s = await answerAndContinue(s, validValueFor(s))
     }
 
-    const opened = await commitMove(editFromReview(s, Q2), depsFor())
+    const opened = await commitMove(s, editFromReview(s, Q2), depsFor())
     expect(opened.status).toBe("moved")
 
     // Nothing else was stored — phase stayed `review` and only the cursor moved.
@@ -366,7 +368,7 @@ describe("a persisted Consultation runs end to end without a real payment", () =
 
   it("an edit that opens a required branch is refused Review by the server", async () => {
     const { session } = await load()
-    let s = mustMove(await commitMove(begin(session), depsFor()), "Begin")
+    let s = mustMove(await commitMove(session, begin(session), depsFor()), "Begin")
     // Take the branch-free path, so the Consultation completes without Q3.
     s = await answerAndContinue(s, "nothing")
     for (let i = 0; i < 40 && !isReviewing(s); i += 1) {
@@ -375,7 +377,7 @@ describe("a persisted Consultation runs end to end without a real payment", () =
     expect(isReviewing(s)).toBe(true)
 
     // Now edit Q1 so a required branch opens behind them.
-    const editing = mustMove(await commitMove(editFromReview(s, Q1), depsFor()), "opening the edit")
+    const editing = mustMove(await commitMove(s, editFromReview(s, Q1), depsFor()), "opening the edit")
     const saved = await persistence().saveAnswer(Q1, "bloating")
     expect(saved.ok).toBe(true)
 
@@ -388,9 +390,128 @@ describe("a persisted Consultation runs end to end without a real payment", () =
     expect(back.status === "moved" && back.state.currentQuestionId).toBe(Q3)
   })
 
+  it("Back from Review is stored as an EXIT, and reloads as ordinary questions", async () => {
+    const { session } = await load()
+    let s = mustMove(await commitMove(session, begin(session), depsFor()), "Begin")
+    for (let i = 0; i < 40 && !isReviewing(s); i += 1) {
+      s = await answerAndContinue(s, validValueFor(s))
+    }
+    expect(db.state().phase).toBe("review")
+
+    const back = mustMove(await commitMove(s, goBack(s), depsFor()), "Back from Review")
+
+    // The whole point of the correction: the phase moves with the cursor.
+    expect(db.state().phase).toBe("questions")
+    expect(db.state().currentQuestionId).toBe(back.currentQuestionId)
+    expect(db.state().currentQuestionId).not.toBeNull()
+
+    const again = await load()
+    expect(again.session.phase).toBe("questions")
+    expect(isEditingFromReview(again.session), "not a Review edit").toBe(false)
+    expect(currentQuestion(again.session)?.id).toBe(back.currentQuestionId)
+  })
+
+  it("an edit that opens a required branch is stored as an exit too", async () => {
+    const { session } = await load()
+    let s = mustMove(await commitMove(session, begin(session), depsFor()), "Begin")
+    s = await answerAndContinue(s, "nothing")
+    for (let i = 0; i < 40 && !isReviewing(s); i += 1) {
+      s = await answerAndContinue(s, validValueFor(s))
+    }
+    expect(db.state().phase).toBe("review")
+
+    const editing = mustMove(
+      await commitMove(s, editFromReview(s, Q1), depsFor()),
+      "opening the edit",
+    )
+    // Opening an item is an edit, so the phase must still say review.
+    expect(db.state().phase).toBe("review")
+    expect(db.state().currentQuestionId).toBe(Q1)
+
+    expect((await persistence().saveAnswer(Q1, "bloating")).ok).toBe(true)
+    const out = mustMove(
+      await continueFrom(setAnswer(editing, Q1, "bloating"), depsFor()),
+      "saving the edit",
+    )
+
+    expect(out.currentQuestionId).toBe(Q3)
+    expect(db.state().phase, "the refusal is an exit, not a cursor move").toBe("questions")
+    expect(db.state().currentQuestionId).toBe(Q3)
+
+    const again = await load()
+    expect(again.session.phase).toBe("questions")
+    expect(isEditingFromReview(again.session), "not a Review edit").toBe(false)
+    expect(currentQuestion(again.session)?.id).toBe(Q3)
+  })
+
+  it("a harmless Review edit stays in Review", async () => {
+    const { session } = await load()
+    let s = mustMove(await commitMove(session, begin(session), depsFor()), "Begin")
+    for (let i = 0; i < 40 && !isReviewing(s); i += 1) {
+      s = await answerAndContinue(s, validValueFor(s))
+    }
+
+    const editing = mustMove(await commitMove(s, editFromReview(s, Q2), depsFor()), "edit")
+    expect((await persistence().saveAnswer(Q2, "slow-start")).ok).toBe(true)
+    const back = mustMove(
+      await continueFrom(setAnswer(editing, Q2, "slow-start"), depsFor()),
+      "return to Review",
+    )
+
+    expect(isReviewing(back)).toBe(true)
+    expect(db.state().phase).toBe("review")
+    expect(db.state().currentQuestionId).toBeNull()
+  })
+
+  it("the retreat is refused when the session is not in review", async () => {
+    const { session } = await load()
+    const started = mustMove(await commitMove(session, begin(session), depsFor()), "Begin")
+    expect(db.state().phase).toBe("questions")
+    void started
+
+    // Nothing to leave: the browser cannot use the retreat as a general
+    // "set phase to questions".
+    expect((await persistence().leaveReview(Q1)).ok).toBe(false)
+    expect(db.state().phase).toBe("questions")
+  })
+
+  it("the retreat refuses a target that does not apply, and changes nothing", async () => {
+    const { session } = await load()
+    let s = mustMove(await commitMove(session, begin(session), depsFor()), "Begin")
+    s = await answerAndContinue(s, "nothing")
+    for (let i = 0; i < 40 && !isReviewing(s); i += 1) {
+      s = await answerAndContinue(s, validValueFor(s))
+    }
+    expect(db.state().phase).toBe("review")
+
+    // Q3 needs a substantive post-meal signal, which this session does not have.
+    expect((await persistence().leaveReview(Q3)).ok).toBe(false)
+    expect(db.state().phase, "still in review").toBe("review")
+    expect(db.state().currentQuestionId).toBeNull()
+  })
+
+  it("the retreat alters no answer, touch or skip", async () => {
+    const { session } = await load()
+    let s = mustMove(await commitMove(session, begin(session), depsFor()), "Begin")
+    for (let i = 0; i < 40 && !isReviewing(s); i += 1) {
+      s = await answerAndContinue(s, validValueFor(s))
+    }
+    const before = db.state()
+
+    const last = [...s.questions].reverse().find((q) => before.candidateAnswers[q.id] !== undefined)!
+    expect((await persistence().leaveReview(last.id)).ok).toBe(true)
+
+    const after = db.state()
+    expect(after.candidateAnswers).toEqual(before.candidateAnswers)
+    expect(after.touchedQuestionIds).toEqual(before.touchedQuestionIds)
+    expect(after.skippedOptionalQuestionIds).toEqual(before.skippedOptionalQuestionIds)
+    expect(after.phase).toBe("questions")
+    expect(after.currentQuestionId).toBe(last.id)
+  })
+
   it("a stale candidate answer survives a branch closing and is not reviewed", async () => {
     const { session } = await load()
-    let s = mustMove(await commitMove(begin(session), depsFor()), "Begin")
+    let s = mustMove(await commitMove(session, begin(session), depsFor()), "Begin")
     s = await answerAndContinue(s, "bloating")
     s = await answerAndContinue(s, validValueFor(s))
     expect(currentQuestion(s)?.id).toBe(Q3)
@@ -411,12 +532,12 @@ describe("a persisted Consultation runs end to end without a real payment", () =
 
   it("nothing in the whole walk writes a Report field or a finalisation phase", async () => {
     const { session } = await load()
-    let s = mustMove(await commitMove(begin(session), depsFor()), "Begin")
+    let s = mustMove(await commitMove(session, begin(session), depsFor()), "Begin")
     for (let i = 0; i < 40 && !isReviewing(s); i += 1) {
       s = await answerAndContinue(s, validValueFor(s))
       expect(db.state().phase).not.toBe("ready-for-report")
     }
-    await commitMove(goBack(s), depsFor())
+    await commitMove(s, goBack(s), depsFor())
 
     const row = db.row()
     expect(row.report_json).toBeNull()

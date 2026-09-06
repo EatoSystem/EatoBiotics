@@ -43,7 +43,11 @@ interface Props {
   onAnswer: (id: string, value: ConsultationAnswer) => void
   onBack: () => void
   onNext: () => void
-  /** Present only on OPTIONAL questions — a required one cannot be skipped. */
+  /**
+   * Present only when skipping is a real option: an OPTIONAL question the
+   * customer has not answered. The caller decides, because deciding needs the
+   * canonical validator and this component holds no opinion about answers.
+   */
   onSkipOptional?: () => void
   canGoBack: boolean
   isLast: boolean
@@ -292,7 +296,8 @@ export function ConsultationQuestionView({
       )}
 
       {/* Skipping is offered only where it is real: an optional question the
-        * customer has not answered. It records a deliberate skip rather than
+        * customer has not answered. Whether that holds is the caller's
+        * judgement — see the prop. It records a deliberate skip rather than
         * writing "I'd rather not say", which is a different statement. */}
       {onSkipOptional && !question.required && (
         <button

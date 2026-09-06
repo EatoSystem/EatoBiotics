@@ -429,6 +429,144 @@ describe("PATCH progress navigate moves the cursor and nothing else", () => {
   })
 })
 
+/* ══ Progress — leaving Review ═════════════════════════════════════════════ */
+
+describe("PATCH progress leave-review is the one phase retreat the browser may ask for", () => {
+  const inReview = (over: Partial<DeterministicConsultationState> = {}) =>
+    rowWith({
+      answers: stateWith({
+        candidateAnswers: completeAnswers({ [Q1]: "bloating" }),
+        touchedQuestionIds: [Q1],
+        skippedOptionalQuestionIds: [],
+        currentQuestionId: null,
+        phase: "review",
+        ...over,
+      }),
+    })
+
+  it("moves phase and cursor together", async () => {
+    const db = makeDb(inReview())
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callProgress(
+      patch({ action: "leave-review", sessionId: SESSION, currentQuestionId: Q2 }),
+    )
+
+    expect(res.status).toBe(200)
+    expect(db.state().phase).toBe("questions")
+    expect(db.state().currentQuestionId).toBe(Q2)
+  })
+
+  it("is refused when the session is not in review", async () => {
+    const db = makeDb(
+      rowWith({ answers: stateWith({ candidateAnswers: { [Q1]: "bloating" }, phase: "questions" }) }),
+    )
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callProgress(
+      patch({ action: "leave-review", sessionId: SESSION, currentQuestionId: Q2 }),
+    )
+
+    // Otherwise the retreat would be a general "set phase to questions", which
+    // is a much larger permission than the one being granted.
+    expect(res.status).toBe(409)
+    expect(db.counts().writes).toBe(0)
+  })
+
+  it("is refused for a question that does not currently apply", async () => {
+    const answers = completeAnswers({ [Q1]: "nothing" })
+    const db = makeDb(
+      rowWith({ answers: stateWith({ candidateAnswers: answers, currentQuestionId: null, phase: "review" }) }),
+    )
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callProgress(
+      patch({ action: "leave-review", sessionId: SESSION, currentQuestionId: Q3 }),
+    )
+
+    expect(res.status).toBe(422)
+    expect(db.counts().writes).toBe(0)
+    expect(db.state().phase).toBe("review")
+  })
+
+  it("cannot clear the cursor — leaving Review means landing on a question", async () => {
+    const db = makeDb(inReview())
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callProgress(
+      patch({ action: "leave-review", sessionId: SESSION, currentQuestionId: null }),
+    )
+
+    // A null cursor describes the Review list, which is the thing being left.
+    expect(res.status).toBe(400)
+    expect(db.counts().writes).toBe(0)
+  })
+
+  it("cannot name a phase of its own", async () => {
+    const db = makeDb(inReview())
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callProgress(
+      patch({
+        action: "leave-review",
+        sessionId: SESSION,
+        currentQuestionId: Q2,
+        phase: "ready-for-report",
+      }),
+    )
+
+    expect(res.status).toBe(400)
+    expect(db.state().phase).toBe("review")
+  })
+
+  it("alters no answer, touched mark or skip", async () => {
+    const answers = completeAnswers({ [Q1]: "nothing", [CONSTRAINTS]: ["allergy"] })
+    delete answers[AVOIDANCES]
+    const db = makeDb(
+      rowWith({
+        answers: stateWith({
+          candidateAnswers: answers,
+          touchedQuestionIds: [Q1, CONSTRAINTS],
+          skippedOptionalQuestionIds: [AVOIDANCES],
+          currentQuestionId: null,
+          phase: "review",
+        }),
+      }),
+    )
+    mockGetSupabase.mockReturnValue(db.client)
+
+    await callProgress(
+      patch({ action: "leave-review", sessionId: SESSION, currentQuestionId: Q2 }),
+    )
+
+    const after = db.state()
+    expect(after.candidateAnswers).toEqual(answers)
+    expect(after.touchedQuestionIds.slice().sort()).toEqual([CONSTRAINTS, Q1].sort())
+    expect(after.skippedOptionalQuestionIds).toEqual([AVOIDANCES])
+  })
+
+  it("never reaches the finalisation phase, whatever it is given", async () => {
+    const db = makeDb(inReview())
+    mockGetSupabase.mockReturnValue(db.client)
+    await callProgress(patch({ action: "leave-review", sessionId: SESSION, currentQuestionId: Q2 }))
+    expect(db.state().phase).toBe("questions")
+    expect(db.state().phase).not.toBe("ready-for-report")
+  })
+
+  it("an unreadable state is refused without a write", async () => {
+    const legacy = { dq1: "yes" }
+    const db = makeDb(rowWith({ answers: legacy }))
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callProgress(
+      patch({ action: "leave-review", sessionId: SESSION, currentQuestionId: Q2 }),
+    )
+
+    expect(res.status).toBe(409)
+    expect(db.only()!.answers).toEqual(legacy)
+  })
+})
+
 /* ══ Progress — persistence discipline ═════════════════════════════════════ */
 
 describe("PATCH progress keeps the persistence discipline it inherited", () => {

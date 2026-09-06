@@ -443,6 +443,34 @@ export function skipOptional(
 }
 
 /**
+ * The optional question the customer is passing WITHOUT answering, if any.
+ *
+ * Pressing Continue on an applicable optional question they have left empty is
+ * the same statement as pressing Skip: they were asked, and they chose to move
+ * on. Recording only the button press would make the two indistinguishable in
+ * storage, and "deliberately passed" would collapse into "never reached" — a
+ * distinction a Report may legitimately read differently.
+ *
+ * Returns `null` for a required question, an answered one, and an INVALID one:
+ * the last is refused by the gate rather than skipped, because an unusable
+ * value is a correction to make, not a decision to record.
+ */
+export function optionalSkipOnContinue(state: ConsultationSessionState): string | null {
+  const question = currentQuestion(state)
+  if (!question || question.required) return null
+
+  const result = validateAnswer(question, state.answers[question.id])
+  if (result.status === "invalid") return null
+
+  // Same rule as the gate: a slider nobody moved is not an answer (§18), so
+  // passing it is a skip even though the control reports a value.
+  const untouchedSlider = question.type === "slider" && !state.touched.has(question.id)
+  if (result.status === "valid" && !untouchedSlider) return null
+
+  return question.id
+}
+
+/**
  * Back (§11).
  *
  * The previous question in the LIVE sequence, so it crosses sections and stays

@@ -3,6 +3,7 @@ import {
   goNext,
   isEditingFromReview,
   isReviewing,
+  optionalSkipOnContinue,
   returnToReview,
   skipOptional,
   type ConsultationSessionState,
@@ -19,7 +20,7 @@ import type { ReviewOutcome, SaveOutcome } from "./consultation-persistence"
  *
  *   1. validate locally, so a question that cannot be left never reaches the
  *      network;
- *   2. flush the pending save and REFUSE TO MOVE if it did not land;
+ *   2. flush the pending mutations and REFUSE TO MOVE if they did not land;
  *   3. persist the resulting position before showing it.
  *
  * Each is trivially reversible by accident. Advancing before the flush, or
@@ -32,6 +33,16 @@ import type { ReviewOutcome, SaveOutcome } from "./consultation-persistence"
  * provable against a fake: a reordered flush and a swallowed failure each fail a
  * test rather than a review.
  *
+ * ══ POSITION IS NOT THE ONLY THING THAT MOVES ═══════════════════════════════
+ *
+ * Leaving Review changes the PHASE as well as the cursor, and the two have to be
+ * written together. Persisting an exit as a plain cursor move leaves storage
+ * saying `review` while the screen shows ordinary questions, and since the
+ * stored pair (phase, cursor) is the whole resumable editing state, the next
+ * load reads that exit as a Review edit. So `commitMove` takes the state being
+ * left as well as the one being entered, and asks the server for the retreat
+ * when the transition is a real one.
+ *
  * ══ THE ENGINE STILL DECIDES WHERE ══════════════════════════════════════════
  *
  * Nothing below computes a next question, judges an answer or evaluates
@@ -40,12 +51,23 @@ import type { ReviewOutcome, SaveOutcome } from "./consultation-persistence"
  */
 
 export interface NavigationDeps {
-  /** Send anything still in the debounce window. False means it did not land. */
+  /** Send everything still queued. False means something did not land. */
   flush: () => Promise<boolean>
   persistCursor: (questionId: string | null) => Promise<SaveOutcome>
-  persistSkip: (questionId: string) => Promise<SaveOutcome>
+  /**
+   * Record a deliberate optional skip.
+   *
+   * QUEUED, not sent — it shares the one-in-flight-per-question ordering with
+   * answer saves. Sending it directly is the race this parameter exists to
+   * remove: an answer already on the wire would land after the skip and
+   * resurrect the value the customer had just chosen to pass, because the
+   * server's answer action un-skips by design.
+   */
+  queueSkip: (questionId: string) => void
   /** Ask the SERVER whether Review may be entered. It decides, not this module. */
   requestReview: () => Promise<ReviewOutcome>
+  /** The one phase retreat: review → questions, at a named applicable question. */
+  leaveReview: (questionId: string) => Promise<SaveOutcome>
 }
 
 export type NavigationOutcome =
@@ -56,42 +78,67 @@ export type NavigationOutcome =
   /** Nothing was stored. Keep the customer where they are and say so. */
   | { status: "save-failed" }
 
+/** True when this transition is a real exit from Review, not a move within it. */
+function isLeavingReview(
+  from: ConsultationSessionState,
+  to: ConsultationSessionState,
+): boolean {
+  return from.phase === "review" && to.phase === "questions"
+}
+
 /**
  * Persist a position, then move to it.
  *
- * Entering Review is a request rather than a write: the server re-derives
- * completeness and may refuse, in which case it names the question to go back
- * to — and this returns the customer THERE rather than reporting an error,
- * because nothing has gone wrong from their point of view. They have an answer
- * left to give.
+ * Three destinations, and they are written differently on purpose:
+ *
+ *   into Review     — a REQUEST. The server re-derives completeness and may
+ *                     refuse, in which case it names the question to go back to
+ *                     and this returns the customer THERE rather than reporting
+ *                     an error: nothing has gone wrong from their point of view,
+ *                     they simply have an answer left to give.
+ *   out of Review   — the explicit retreat, so phase and cursor land together.
+ *   anywhere else   — a plain cursor write.
  */
 export async function commitMove(
-  next: ConsultationSessionState,
+  from: ConsultationSessionState,
+  to: ConsultationSessionState,
   deps: NavigationDeps,
 ): Promise<NavigationOutcome> {
   // A refusal from the engine has no position to record: the customer has not
   // moved, so there is nothing for the server to be told.
-  if (next.validationError) return { status: "refused", state: next }
+  if (to.validationError) return { status: "refused", state: to }
 
-  if (isReviewing(next)) {
+  if (isReviewing(to)) {
     const outcome = await deps.requestReview()
-    if (outcome.ok) return { status: "moved", state: next }
+    if (outcome.ok) return { status: "moved", state: to }
+
     if ("incomplete" in outcome && outcome.incomplete.firstQuestionId) {
-      return {
-        status: "moved",
-        state: {
-          ...next,
-          phase: "questions",
-          currentQuestionId: outcome.incomplete.firstQuestionId,
-          validationError: null,
-        },
+      const target = outcome.incomplete.firstQuestionId
+      const back: ConsultationSessionState = {
+        ...to,
+        phase: "questions",
+        currentQuestionId: target,
+        validationError: null,
       }
+      // If storage already says `review`, being sent back is an EXIT and has to
+      // be stored as one. This is the branch-open edit: the customer was in
+      // Review, changed a parent, and a required branch opened behind them.
+      const saved = isLeavingReview(from, back)
+        ? await deps.leaveReview(target)
+        : await deps.persistCursor(target)
+      return saved.ok ? { status: "moved", state: back } : { status: "save-failed" }
     }
+
     return { status: "save-failed" }
   }
 
-  const saved = await deps.persistCursor(next.currentQuestionId)
-  return saved.ok ? { status: "moved", state: next } : { status: "save-failed" }
+  if (isLeavingReview(from, to) && to.currentQuestionId) {
+    const saved = await deps.leaveReview(to.currentQuestionId)
+    return saved.ok ? { status: "moved", state: to } : { status: "save-failed" }
+  }
+
+  const saved = await deps.persistCursor(to.currentQuestionId)
+  return saved.ok ? { status: "moved", state: to } : { status: "save-failed" }
 }
 
 /**
@@ -100,6 +147,11 @@ export async function commitMove(
  * From an ordinary question, the next one. From a Review edit, back to the
  * Review list — but only if the Consultation is still complete, because the
  * edit may have opened a required branch behind them.
+ *
+ * An applicable OPTIONAL question left empty is recorded as a deliberate skip on
+ * the way past, so it is stored the same way the Skip button stores it. The
+ * customer was asked and chose to move on; that is not the same as never having
+ * reached the question, and only one of the two is true.
  */
 export async function continueFrom(
   state: ConsultationSessionState,
@@ -107,21 +159,31 @@ export async function continueFrom(
 ): Promise<NavigationOutcome> {
   const gate = continueGate(state)
   if (!gate.allowed) {
-    // Nothing is flushed and nothing is persisted on a refusal. A save here
+    // Nothing is queued and nothing is persisted on a refusal. A save here
     // would store an answer the projection has already said it will not accept.
     return { status: "refused", state: { ...state, validationError: gate.reason } }
   }
 
+  const passing = optionalSkipOnContinue(state)
+  if (passing) deps.queueSkip(passing)
+  const moving = passing ? skipOptional(state, passing) : state
+
+  // After queueing, so the skip is part of what has to land before the move.
   if (!(await deps.flush())) return { status: "save-failed" }
 
-  return commitMove(isEditingFromReview(state) ? returnToReview(state) : goNext(state), deps)
+  return commitMove(
+    state,
+    isEditingFromReview(moving) ? returnToReview(moving) : goNext(moving),
+    deps,
+  )
 }
 
 /**
  * Move past an OPTIONAL question without answering it.
  *
- * The skip is persisted BEFORE the move, for the same reason the answer is: a
- * customer who returns must find the question in the state they left it, and
+ * The skip goes through the same queue as an answer, then the flush confirms it
+ * landed before anything moves — for the same reason the answer does. A customer
+ * who returns must find the question in the state they left it, and
  * "deliberately skipped" is a different state from "not reached yet".
  */
 export async function skipFrom(
@@ -135,7 +197,12 @@ export async function skipFrom(
   // disagreement this architecture exists to prevent.
   if (skipped === state) return { status: "refused", state }
 
-  if (!(await deps.persistSkip(questionId)).ok) return { status: "save-failed" }
+  deps.queueSkip(questionId)
+  if (!(await deps.flush())) return { status: "save-failed" }
 
-  return commitMove(isEditingFromReview(skipped) ? returnToReview(skipped) : goNext(skipped), deps)
+  return commitMove(
+    state,
+    isEditingFromReview(skipped) ? returnToReview(skipped) : goNext(skipped),
+    deps,
+  )
 }

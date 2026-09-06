@@ -16,6 +16,7 @@ import {
   isLastQuestion,
   isReviewing,
   isSectionStart,
+  optionalSkipOnContinue,
   progress as progressOf,
   returnToReview,
   setAnswer,
@@ -152,10 +153,18 @@ export function DeterministicConsultationClient({ context, preview = true }: Pro
             onAnswer={handleAnswer}
             onBack={() => setState((s) => goBack(s))}
             onNext={handleNext}
+            /* Offered only while the question is genuinely unanswered, which is
+             * what the control's own description promises. Once an answer
+             * exists, Skip would silently discard it with no undo. */
             onSkipOptional={
-              question.required
-                ? undefined
-                : () => setState((s) => (isEditingFromReview(s) ? returnToReview(skipOptional(s, question.id)) : goNext(skipOptional(s, question.id))))
+              optionalSkipOnContinue(state)
+                ? () =>
+                    setState((s) =>
+                      isEditingFromReview(s)
+                        ? returnToReview(skipOptional(s, question.id))
+                        : goNext(skipOptional(s, question.id)),
+                    )
+                : undefined
             }
             canGoBack={!isEditingFromReview(state) && canGoBackFrom(state)}
             isLast={isLastQuestion(state)}
