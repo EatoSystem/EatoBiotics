@@ -276,6 +276,48 @@ test.describe("Scenario 7 — Review", () => {
   })
 })
 
+test.describe("Scenario 7b — Continue past an optional question", () => {
+  test("reads as a decision on Review, not as silence", async ({ page }) => {
+    await beginConsultation(page)
+    await advanceUntil(page, /work around/i, { choose: { "": "first" } })
+    await chooseLabelled(page, "A food allergy")
+    await page.getByRole("button", { name: "Continue", exact: true }).click()
+
+    // The optional avoidance question — passed with CONTINUE, not with Skip.
+    await expect(page.getByText("Optional", { exact: true })).toBeVisible()
+    expect(await heading(page)).toMatch(/should it avoid/i)
+    await page.getByRole("button", { name: /^(Continue|Finish)$/ }).click()
+    expect(await heading(page)).not.toMatch(/should it avoid/i)
+
+    await completeRemaining(page)
+    await expect(reviewHeading(page)).toBeVisible()
+
+    // Same wording the Skip button produces (Scenario 7). Before the parity fix
+    // this row read "Not answered yet", which described a decision as silence.
+    const row = page.locator("li").filter({ hasText: /should it avoid/i })
+    await expect(row).toContainText("Not answered (optional)")
+    await expect(row).not.toContainText("Not answered yet")
+  })
+
+  test("choosing to decline stays an answer, and is shown as one", async ({ page }) => {
+    await beginConsultation(page)
+    await advanceUntil(page, /work around/i, { choose: { "": "first" } })
+    await chooseLabelled(page, "A food allergy")
+    await page.getByRole("button", { name: "Continue", exact: true }).click()
+
+    expect(await heading(page)).toMatch(/should it avoid/i)
+    await chooseLabelled(page, "Prefer not to say")
+    await page.getByRole("button", { name: /^(Continue|Finish)$/ }).click()
+
+    await completeRemaining(page)
+    await expect(reviewHeading(page)).toBeVisible()
+
+    const row = page.locator("li").filter({ hasText: /should it avoid/i })
+    await expect(row).not.toContainText("Not answered")
+    await expect(row).toContainText(/Prefer not to say/i)
+  })
+})
+
 test.describe("Scenario 8 — editing one answer from Review", () => {
   test("Edit opens that question, saves, and returns to Review", async ({ page }) => {
     await beginConsultation(page)

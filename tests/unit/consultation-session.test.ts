@@ -27,6 +27,7 @@ import {
   isLastQuestion,
   isReviewing,
   isSectionStart,
+  optionalSkipOnContinue,
   progress,
   returnToReview,
   sessionCompleteness,
@@ -811,6 +812,66 @@ describe("J. a skip and a declined disclosure are different statements", () => {
     expect(continueGate(s).allowed).toBe(true)
     const next = goNext(s)
     expect(next.currentQuestionId).not.toBe(AVOIDANCES)
+  })
+})
+
+/* ══ J2 — Continue and Skip are one statement ══════════════════════════════ */
+
+describe("J2. passing an optional question means the same thing however it is done", () => {
+  const atAvoidances = () =>
+    driveTo(session(you, { [Q1]: "nothing", [CONSTRAINTS]: ["allergy"] }), AVOIDANCES)
+
+  it("Continue on an unanswered optional question records the skip", () => {
+    const before = atAvoidances()
+    expect(before.skipped.has(AVOIDANCES)).toBe(false)
+
+    const passing = optionalSkipOnContinue(before)
+    expect(passing).toBe(AVOIDANCES)
+
+    const after = goNext(skipOptional(before, passing!))
+    expect(after.skipped.has(AVOIDANCES)).toBe(true)
+    expect(after.answers[AVOIDANCES]).toBeUndefined()
+    expect(after.currentQuestionId).not.toBe(AVOIDANCES)
+  })
+
+  it("the explicit Skip button reaches the identical state", () => {
+    const viaContinue = goNext(skipOptional(atAvoidances(), optionalSkipOnContinue(atAvoidances())!))
+    const viaButton = goNext(skipOptional(atAvoidances(), AVOIDANCES))
+
+    expect([...viaContinue.skipped]).toEqual([...viaButton.skipped])
+    expect(viaContinue.answers).toEqual(viaButton.answers)
+    expect(viaContinue.currentQuestionId).toBe(viaButton.currentQuestionId)
+  })
+
+  it("an ANSWERED optional question is passed without a skip", () => {
+    const answered = setAnswer(atAvoidances(), AVOIDANCES, ["dairy"])
+    expect(optionalSkipOnContinue(answered)).toBeNull()
+    expect(goNext(answered).skipped.has(AVOIDANCES)).toBe(false)
+  })
+
+  it("choosing to decline is an ANSWER, so nothing is skipped", () => {
+    const declined = setAnswer(atAvoidances(), AVOIDANCES, ["prefer-not-to-say"])
+    expect(optionalSkipOnContinue(declined)).toBeNull()
+    const after = goNext(declined)
+    expect(after.answers[AVOIDANCES]).toEqual(["prefer-not-to-say"])
+    expect(after.skipped.has(AVOIDANCES)).toBe(false)
+  })
+
+  it("a REQUIRED question is never a skip candidate, and Continue still refuses", () => {
+    const s = session(you)
+    expect(optionalSkipOnContinue(s)).toBeNull()
+    const refused = goNext(s)
+    expect(refused.currentQuestionId).toBe(Q1)
+    expect(refused.validationError).toBeTruthy()
+    expect(refused.skipped.has(Q1)).toBe(false)
+  })
+
+  it("an INVALID optional answer is a correction, not a skip", () => {
+    // The gate refuses it; recording a decision the customer has not made would
+    // turn a mistake into a statement.
+    const broken = setAnswer(atAvoidances(), AVOIDANCES, ["not-an-option"])
+    expect(optionalSkipOnContinue(broken)).toBeNull()
+    expect(goNext(broken).validationError).toBeTruthy()
   })
 })
 

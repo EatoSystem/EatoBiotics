@@ -437,6 +437,30 @@ describe("the experience makes no AI call and no submission", () => {
     expect(source).not.toMatch(/onChange=\{[^}]*onNext/)
   })
 
+  it("Continue runs the shared engine transition, not an inlined copy of it", () => {
+    /*
+     * The preview persists nothing, which makes it the easy place for the two
+     * paths to drift: an inlined `goNext(s)` here would still look right on
+     * screen and would still pass every rendering assertion, while quietly
+     * dropping the deliberate optional-skip the persisted path records. Then
+     * the same customer answering the same way would read
+     * "Not answered yet" in the preview and "Not answered (optional)" once
+     * persistence was switched on.
+     *
+     * So the handler must DELEGATE. The semantics of that transition are proven
+     * behaviourally in `consultation-review-model.test.ts`; what this pins is
+     * that the component actually uses it.
+     */
+    const source = read(CLIENT)
+    const handler = source.slice(
+      source.indexOf("function handleNext()"),
+      source.indexOf("const sectionTitle"),
+    )
+    expect(handler).toContain("continueLocally")
+    expect(handler, "the transition is inlined rather than shared").not.toContain("goNext(")
+    expect(handler).not.toContain("returnToReview(")
+  })
+
   it("Continue is the only thing wired to onNext", () => {
     const source = read(QUESTION)
     const onNextUses = source.match(/onNext/g) ?? []

@@ -471,6 +471,26 @@ export function optionalSkipOnContinue(state: ConsultationSessionState): string 
 }
 
 /**
+ * Continue, as one engine transition.
+ *
+ * Named here rather than written out in a component because BOTH paths need it
+ * to mean the same thing. The persisted path sequences persistence around these
+ * same steps; the preview stores nothing but must still describe the customer's
+ * actions identically, or the same person answering the same way sees a Review
+ * that says "Not answered (optional)" in one and "Not answered yet" in the
+ * other. A preview that disagrees with the real experience is worse than none.
+ *
+ * Three steps: record a deliberate pass over an unanswered optional question,
+ * then either return to Review (from an edit) or advance. Refusals come back as
+ * the same state carrying a message, exactly as `goNext` produces them.
+ */
+export function continueLocally(state: ConsultationSessionState): ConsultationSessionState {
+  const passing = optionalSkipOnContinue(state)
+  const moving = passing ? skipOptional(state, passing) : state
+  return isEditingFromReview(moving) ? returnToReview(moving) : goNext(moving)
+}
+
+/**
  * Back (§11).
  *
  * The previous question in the LIVE sequence, so it crosses sections and stays

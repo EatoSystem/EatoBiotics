@@ -1,5 +1,6 @@
 import {
   continueGate,
+  continueLocally,
   goNext,
   isEditingFromReview,
   isReviewing,
@@ -164,18 +165,15 @@ export async function continueFrom(
     return { status: "refused", state: { ...state, validationError: gate.reason } }
   }
 
+  // The skip is QUEUED before the flush, so it is part of what has to land
+  // before the move. `continueLocally` then applies the identical transition
+  // the preview applies — one definition, so the two cannot drift.
   const passing = optionalSkipOnContinue(state)
   if (passing) deps.queueSkip(passing)
-  const moving = passing ? skipOptional(state, passing) : state
 
-  // After queueing, so the skip is part of what has to land before the move.
   if (!(await deps.flush())) return { status: "save-failed" }
 
-  return commitMove(
-    state,
-    isEditingFromReview(moving) ? returnToReview(moving) : goNext(moving),
-    deps,
-  )
+  return commitMove(state, continueLocally(state), deps)
 }
 
 /**

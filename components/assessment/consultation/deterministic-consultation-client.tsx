@@ -15,6 +15,7 @@ import {
   isEditingFromReview,
   isLastQuestion,
   isReviewing,
+  continueLocally,
   isSectionStart,
   optionalSkipOnContinue,
   progress as progressOf,
@@ -104,9 +105,16 @@ export function DeterministicConsultationClient({ context, preview = true }: Pro
    * only if the Consultation is still complete, because the edit may have
    * opened a required branch behind them, in which case `returnToReview` sends
    * them to it instead.
+   *
+   * An applicable OPTIONAL question left empty is recorded as a deliberate skip
+   * on the way past, exactly as the persisted path records it. The preview
+   * stores nothing, but it must still MEAN the same thing: without this, the
+   * same customer answering the same way sees "Not answered yet" here and
+   * "Not answered (optional)" once persistence is switched on, and a preview
+   * that disagrees with the real experience is worse than no preview.
    */
   function handleNext() {
-    setState((s) => (isEditingFromReview(s) ? returnToReview(s) : goNext(s)))
+    setState(continueLocally)
   }
 
   const sectionTitle = progress.current

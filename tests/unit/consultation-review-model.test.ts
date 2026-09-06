@@ -13,6 +13,14 @@ import {
 import { SECTION_META } from "@/lib/consultation/types"
 import type { ConsultationAnswers, ConsultationContext } from "@/lib/consultation/types"
 import { buildConsultationReview } from "@/lib/consultation/review"
+import {
+  begin,
+  continueLocally,
+  createConsultationSession,
+  currentQuestion,
+  goNext,
+  setAnswer,
+} from "@/lib/consultation/session"
 import { validateConsultationAnswers } from "@/lib/consultation/completeness"
 import { ConsultationReviewView } from "@/components/assessment/consultation/consultation-review"
 
@@ -290,6 +298,79 @@ describe("an unanswered optional question is described truthfully", () => {
     expect(r.missingRequiredIds).toContain(Q2)
     expect(r.complete).toBe(false)
     expect(renderReview(r)).not.toContain("not-an-option")
+  })
+})
+
+/* ══ Preview and persisted paths agree ═════════════════════════════════════ */
+
+describe("a question passed with Continue reads the same as one passed with Skip", () => {
+  const withBranch = { [Q1]: "nothing", [CONSTRAINTS]: ["allergy"] }
+
+  /** The state after Continue on the unanswered optional question. */
+  function afterContinue() {
+    let s = begin(createConsultationSession({ context: you, answers: withBranch }))
+    for (let i = 0; i < 30 && currentQuestion(s)?.id !== AVOIDANCES; i += 1) {
+      const q = currentQuestion(s)!
+      const value =
+        q.type === "single"
+          ? q.options![0].value
+          : q.type === "multi"
+            ? [q.options![0].value]
+            : q.type === "textarea"
+              ? "A sentence that is a real answer."
+              : (q.min ?? 0)
+      s = goNext(setAnswer(s, q.id, value))
+    }
+    expect(currentQuestion(s)?.id).toBe(AVOIDANCES)
+
+    // The SAME transition the preview's Continue handler runs — called, not
+    // re-implemented, so a change to it cannot pass here and fail there.
+    return continueLocally(s)
+  }
+
+  it("Continue records the skip, so the model reports it as skipped", () => {
+    const s = afterContinue()
+    const r = review(you, s.answers, [...s.skipped])
+    expect(itemFor(r, AVOIDANCES)!.state).toBe("skipped")
+  })
+
+  it("the avoidance row says 'Not answered (optional)', not 'Not answered yet'", () => {
+    // The whole point of the parity: the preview must not describe a decision
+    // the customer made as silence.
+    //
+    // Scoped to that row on purpose. Questions further on are genuinely not
+    // reached yet, and they SHOULD still read "Not answered yet" — a page-wide
+    // assertion would be checking the wrong thing and would pass for the wrong
+    // reason if the two labels were ever merged.
+    const s = afterContinue()
+    const html = renderReview(review(you, s.answers, [...s.skipped]))
+    const question = questionTextFor(findConsultationQuestion(AVOIDANCES)!, "you")
+    const start = html.indexOf(esc(question))
+    expect(start, "the avoidance row is on the page").toBeGreaterThan(-1)
+    const row = html.slice(start, html.indexOf("</li>", start))
+
+    expect(row).toContain("Not answered (optional)")
+    expect(row).not.toContain("Not answered yet")
+  })
+
+  it("Continue and the Skip button produce the same Review", () => {
+    const viaContinue = afterContinue()
+    const answers = answerEverything(you, withBranch)
+    delete answers[AVOIDANCES]
+    const viaButton = review(you, answers, [AVOIDANCES])
+
+    expect(itemFor(review(you, viaContinue.answers, [...viaContinue.skipped]), AVOIDANCES)!.state)
+      .toBe(itemFor(viaButton, AVOIDANCES)!.state)
+  })
+
+  it("a question genuinely not reached still reads as not answered yet", () => {
+    // The distinction has to survive in both directions, or recording the skip
+    // would just have replaced one wrong label with another.
+    const answers = answerEverything(you, withBranch)
+    delete answers[AVOIDANCES]
+    const html = renderReview(review(you, answers))
+    expect(html).toContain("Not answered yet")
+    expect(html).not.toContain("Not answered (optional)")
   })
 })
 
