@@ -18,12 +18,21 @@ import {
   continueGate,
   createConsultationSession,
   currentQuestion,
+  editFromReview,
+  enterReview,
   goBack,
   goNext,
+  isEditingFromReview,
+  isFreshSession,
   isLastQuestion,
+  isReviewing,
   isSectionStart,
+  optionalSkipOnContinue,
   progress,
+  returnToReview,
+  sessionCompleteness,
   setAnswer,
+  skipOptional,
   toggleMultiValue,
   trustedAnswers,
   type ConsultationSessionState,
@@ -308,7 +317,7 @@ describe("H. Back returns to the previous applicable question", () => {
   it("from the first question returns to Orientation, never out of the flow", () => {
     const s = goBack(session(you))
     expect(s.currentQuestionId).toBeNull()
-    expect(s.finished).toBe(false)
+    expect(s.phase).toBe("questions")
   })
 
   it("is unavailable on the first question and available after it", () => {
@@ -332,7 +341,7 @@ describe("I/J. only Continue advances", () => {
     let s = driveTo(session(you), SUCCESS)
     expect(isLastQuestion(s)).toBe(true)
     s = setAnswer(s, SUCCESS, "Something I would like to change.")
-    expect(s.finished).toBe(false)
+    expect(s.phase).toBe("questions")
   })
 
   it("toggling every option of a multi never advances", () => {
@@ -358,7 +367,7 @@ describe("K. an optional question can be passed unanswered", () => {
     const s = driveTo(session(you), SUCCESS)
     expect(findConsultationQuestion(SUCCESS)!.required).toBe(false)
     expect(continueGate(s).allowed).toBe(true)
-    expect(goNext(s).finished).toBe(true)
+    expect(goNext(s).phase).toBe("review")
   })
 
   it("unanswered and 'prefer-not-to-say' stay distinct states", () => {
@@ -398,7 +407,7 @@ describe("L. a required question cannot be passed", () => {
     let s = session(you)
     for (let i = 0; i < 10; i += 1) s = goNext(s)
     expect(s.currentQuestionId).toBe(Q1)
-    expect(s.finished).toBe(false)
+    expect(s.phase).toBe("questions")
   })
 
   it("an invalid answer is refused as firmly as a missing one", () => {
@@ -422,7 +431,7 @@ describe("L. a required question cannot be passed", () => {
       if (q.required) expect(continueGate(s).allowed, q.id).toBe(false)
       s = goNext(answerValidly(s, q))
     }
-    expect(s.finished).toBe(true)
+    expect(s.phase).toBe("review")
   })
 })
 
@@ -623,19 +632,19 @@ describe("a whole Consultation can be completed", () => {
   it("You baseline finishes in 13 questions", () => {
     let s = session(you)
     let asked = 0
-    for (let i = 0; i < 40 && !s.finished; i += 1) {
+    for (let i = 0; i < 40 && s.phase !== "review"; i += 1) {
       const q = currentQuestion(s)!
       asked += 1
       s = goNext(answerForBaseline(s, q))
     }
-    expect(s.finished).toBe(true)
+    expect(s.phase).toBe("review")
     expect(asked).toBe(13)
   })
 
   it("the fully adaptive You path finishes in 16", () => {
     let s = session(you)
     let asked = 0
-    for (let i = 0; i < 40 && !s.finished; i += 1) {
+    for (let i = 0; i < 40 && s.phase !== "review"; i += 1) {
       const q = currentQuestion(s)!
       asked += 1
       // Choose the branch-opening answer wherever one exists.
@@ -644,7 +653,7 @@ describe("a whole Consultation can be completed", () => {
       else s = answerValidly(s, q)
       s = goNext(s)
     }
-    expect(s.finished).toBe(true)
+    expect(s.phase).toBe("review")
     expect(asked).toBe(16)
   })
 
@@ -655,7 +664,7 @@ describe("a whole Consultation can be completed", () => {
     ] as const) {
       let s = session(family)
       let asked = 0
-      for (let i = 0; i < 40 && !s.finished; i += 1) {
+      for (let i = 0; i < 40 && s.phase !== "review"; i += 1) {
         const q = currentQuestion(s)!
         asked += 1
         s = goNext(
@@ -668,10 +677,329 @@ describe("a whole Consultation can be completed", () => {
 
   it("Back from the finished state returns to the last question", () => {
     let s = session(you)
-    for (let i = 0; i < 40 && !s.finished; i += 1) s = goNext(answerValidly(s, currentQuestion(s)!))
-    expect(s.finished).toBe(true)
+    for (let i = 0; i < 40 && s.phase !== "review"; i += 1) s = goNext(answerValidly(s, currentQuestion(s)!))
+    expect(s.phase).toBe("review")
     s = goBack(s)
-    expect(s.finished).toBe(false)
+    expect(s.phase).toBe("questions")
     expect(currentQuestion(s)?.id).toBe(SUCCESS)
+  })
+})
+
+/* ══ H — hydration from persisted state ════════════════════════════════════ */
+
+describe("H. a session hydrates from exactly what was persisted", () => {
+  it("restores touched ids, so a saved slider is not asked to be moved again", () => {
+    const s = createConsultationSession({
+      context: you,
+      answers: { [Q1]: "bloating" },
+      touchedQuestionIds: [Q2],
+      startAtQuestionId: Q1,
+    })
+    expect(s.touched.has(Q2)).toBe(true)
+    // And a stored answer counts as touched even if the persisted set lost it.
+    expect(s.touched.has(Q1)).toBe(true)
+  })
+
+  it("restores deliberate optional skips as skips, not as answers", () => {
+    const s = createConsultationSession({
+      context: you,
+      answers: { [Q1]: "nothing", [CONSTRAINTS]: ["allergy"] },
+      skippedOptionalQuestionIds: [AVOIDANCES],
+      startAtQuestionId: AVOIDANCES,
+    })
+    expect(s.skipped.has(AVOIDANCES)).toBe(true)
+    expect(s.answers[AVOIDANCES], "a skip is not a stored value").toBeUndefined()
+  })
+
+  it("restores the review phase and lands on the Review list", () => {
+    const s = createConsultationSession({
+      context: you,
+      answers: { [Q1]: "nothing" },
+      phase: "review",
+      startAtQuestionId: null,
+    })
+    expect(isReviewing(s)).toBe(true)
+    expect(isEditingFromReview(s)).toBe(false)
+    expect(currentQuestion(s)).toBeNull()
+  })
+
+  it("restores an interrupted Review edit from the same two fields", () => {
+    // phase + cursor already say "in Review, editing this one", so no second
+    // editing cursor has to exist for the edit to survive a reload.
+    const s = createConsultationSession({
+      context: you,
+      answers: { [Q1]: "nothing" },
+      phase: "review",
+      startAtQuestionId: Q2,
+    })
+    expect(isEditingFromReview(s)).toBe(true)
+    expect(isReviewing(s)).toBe(false)
+    expect(currentQuestion(s)?.id).toBe(Q2)
+  })
+
+  it("defaults to the questions phase when none was stored", () => {
+    expect(createConsultationSession({ context: you }).phase).toBe("questions")
+  })
+})
+
+/* ══ I — fresh versus returning ════════════════════════════════════════════ */
+
+describe("I. Orientation is shown to a new session and only to a new one", () => {
+  const stored = {
+    answers: {} as ConsultationAnswers,
+    touchedQuestionIds: [] as string[],
+    skippedOptionalQuestionIds: [] as string[],
+    currentQuestionId: null as string | null,
+    phase: "questions" as const,
+  }
+
+  it("a state nobody has touched is fresh", () => {
+    expect(isFreshSession(stored)).toBe(true)
+  })
+
+  it("any one trace of a customer makes it a returning session", () => {
+    expect(isFreshSession({ ...stored, answers: { [Q1]: "nothing" } })).toBe(false)
+    expect(isFreshSession({ ...stored, touchedQuestionIds: [Q1] })).toBe(false)
+    expect(isFreshSession({ ...stored, skippedOptionalQuestionIds: [AVOIDANCES] })).toBe(false)
+    expect(isFreshSession({ ...stored, currentQuestionId: Q1 })).toBe(false)
+    expect(isFreshSession({ ...stored, phase: "review" })).toBe(false)
+  })
+
+  it("a fresh session starts on Orientation, not on question one", () => {
+    const s = createConsultationSession({ context: you })
+    expect(s.currentQuestionId).toBeNull()
+    expect(currentQuestion(s)).toBeNull()
+    expect(begin(s).currentQuestionId).toBe(Q1)
+  })
+})
+
+/* ══ J — optional skips ════════════════════════════════════════════════════ */
+
+describe("J. a skip and a declined disclosure are different statements", () => {
+  const withBranch = () =>
+    driveTo(session(you, { [Q1]: "nothing", [CONSTRAINTS]: ["allergy"] }), AVOIDANCES)
+
+  it("skipping an optional question records the skip and stores no value", () => {
+    const s = skipOptional(withBranch(), AVOIDANCES)
+    expect(s.skipped.has(AVOIDANCES)).toBe(true)
+    expect(s.answers[AVOIDANCES]).toBeUndefined()
+    expect(s.touched.has(AVOIDANCES)).toBe(false)
+  })
+
+  it("choosing 'I'd rather not say' is an ANSWER and records no skip", () => {
+    const s = setAnswer(withBranch(), AVOIDANCES, ["prefer-not-to-say"])
+    expect(s.answers[AVOIDANCES]).toEqual(["prefer-not-to-say"])
+    expect(s.skipped.has(AVOIDANCES)).toBe(false)
+  })
+
+  it("answering later removes the skip marker", () => {
+    const skippedState = skipOptional(withBranch(), AVOIDANCES)
+    expect(skippedState.skipped.has(AVOIDANCES)).toBe(true)
+    const answered = setAnswer(skippedState, AVOIDANCES, ["dairy"])
+    expect(answered.skipped.has(AVOIDANCES)).toBe(false)
+    expect(answered.answers[AVOIDANCES]).toEqual(["dairy"])
+  })
+
+  it("a REQUIRED question cannot be skipped at all", () => {
+    const s = session(you)
+    const attempted = skipOptional(s, Q1)
+    expect(attempted).toBe(s)
+    expect(attempted.skipped.has(Q1)).toBe(false)
+  })
+
+  it("Continue past a skipped optional question is allowed and advances", () => {
+    const s = skipOptional(withBranch(), AVOIDANCES)
+    expect(continueGate(s).allowed).toBe(true)
+    const next = goNext(s)
+    expect(next.currentQuestionId).not.toBe(AVOIDANCES)
+  })
+})
+
+/* ══ J2 — Continue and Skip are one statement ══════════════════════════════ */
+
+describe("J2. passing an optional question means the same thing however it is done", () => {
+  const atAvoidances = () =>
+    driveTo(session(you, { [Q1]: "nothing", [CONSTRAINTS]: ["allergy"] }), AVOIDANCES)
+
+  it("Continue on an unanswered optional question records the skip", () => {
+    const before = atAvoidances()
+    expect(before.skipped.has(AVOIDANCES)).toBe(false)
+
+    const passing = optionalSkipOnContinue(before)
+    expect(passing).toBe(AVOIDANCES)
+
+    const after = goNext(skipOptional(before, passing!))
+    expect(after.skipped.has(AVOIDANCES)).toBe(true)
+    expect(after.answers[AVOIDANCES]).toBeUndefined()
+    expect(after.currentQuestionId).not.toBe(AVOIDANCES)
+  })
+
+  it("the explicit Skip button reaches the identical state", () => {
+    const viaContinue = goNext(skipOptional(atAvoidances(), optionalSkipOnContinue(atAvoidances())!))
+    const viaButton = goNext(skipOptional(atAvoidances(), AVOIDANCES))
+
+    expect([...viaContinue.skipped]).toEqual([...viaButton.skipped])
+    expect(viaContinue.answers).toEqual(viaButton.answers)
+    expect(viaContinue.currentQuestionId).toBe(viaButton.currentQuestionId)
+  })
+
+  it("an ANSWERED optional question is passed without a skip", () => {
+    const answered = setAnswer(atAvoidances(), AVOIDANCES, ["dairy"])
+    expect(optionalSkipOnContinue(answered)).toBeNull()
+    expect(goNext(answered).skipped.has(AVOIDANCES)).toBe(false)
+  })
+
+  it("choosing to decline is an ANSWER, so nothing is skipped", () => {
+    const declined = setAnswer(atAvoidances(), AVOIDANCES, ["prefer-not-to-say"])
+    expect(optionalSkipOnContinue(declined)).toBeNull()
+    const after = goNext(declined)
+    expect(after.answers[AVOIDANCES]).toEqual(["prefer-not-to-say"])
+    expect(after.skipped.has(AVOIDANCES)).toBe(false)
+  })
+
+  it("a REQUIRED question is never a skip candidate, and Continue still refuses", () => {
+    const s = session(you)
+    expect(optionalSkipOnContinue(s)).toBeNull()
+    const refused = goNext(s)
+    expect(refused.currentQuestionId).toBe(Q1)
+    expect(refused.validationError).toBeTruthy()
+    expect(refused.skipped.has(Q1)).toBe(false)
+  })
+
+  it("an INVALID optional answer is a correction, not a skip", () => {
+    // The gate refuses it; recording a decision the customer has not made would
+    // turn a mistake into a statement.
+    const broken = setAnswer(atAvoidances(), AVOIDANCES, ["not-an-option"])
+    expect(optionalSkipOnContinue(broken)).toBeNull()
+    expect(goNext(broken).validationError).toBeTruthy()
+  })
+})
+
+/* ══ K — Review ════════════════════════════════════════════════════════════ */
+
+/** Answer everything validly, taking the branch-opening choice where there is one. */
+function completeSession(context: ConsultationContext, seed: ConsultationAnswers = {}) {
+  let s = session(context, seed)
+  for (let i = 0; i < 40 && s.phase !== "review"; i += 1) {
+    const q = currentQuestion(s)!
+    s = goNext(q.id in seed ? s : answerValidly(s, q))
+  }
+  return s
+}
+
+describe("K. Review is entered only when the Consultation is actually complete", () => {
+  it("Continue past the last question enters Review with no cursor", () => {
+    const s = completeSession(you)
+    expect(isReviewing(s)).toBe(true)
+    expect(s.currentQuestionId).toBeNull()
+  })
+
+  it("Back from the Review list returns to the last applicable question", () => {
+    const s = goBack(completeSession(you))
+    expect(s.phase).toBe("questions")
+    expect(currentQuestion(s)?.id).toBe(SUCCESS)
+    expect(canGoBack(completeSession(you))).toBe(true)
+  })
+
+  it("enterReview refuses and names the first outstanding required question", () => {
+    // Manufactured directly: a required answer is missing behind the customer.
+    const complete = completeSession(you)
+    const holed = enterReview(clearAnswer(complete, Q2))
+    expect(isReviewing(holed)).toBe(false)
+    expect(holed.phase).toBe("questions")
+    expect(holed.currentQuestionId).toBe(Q2)
+  })
+
+  it("an unanswered OPTIONAL question does not keep Review closed", () => {
+    const s = completeSession(you, { [Q1]: "nothing", [CONSTRAINTS]: ["allergy"] })
+    const withoutOptional = skipOptional(s, AVOIDANCES)
+    expect(isReviewing(enterReview(withoutOptional))).toBe(true)
+  })
+})
+
+describe("K. editing one Review answer returns to Review, or to what it broke", () => {
+  // "budget" rather than the first option: the first constraint option is a
+  // safety one, which opens the optional avoidance branch and would make the
+  // "does not currently apply" case below quietly untrue.
+  const complete = () => completeSession(you, { [Q1]: "bloating", [CONSTRAINTS]: ["budget"] })
+
+  it("Edit opens that exact question and keeps the review phase", () => {
+    const s = editFromReview(complete(), Q2)
+    expect(isEditingFromReview(s)).toBe(true)
+    expect(currentQuestion(s)?.id).toBe(Q2)
+    // Not question one, and not a fresh questionnaire.
+    expect(s.phase).toBe("review")
+  })
+
+  it("Edit ignores a question that does not currently apply", () => {
+    const s = complete()
+    // AVOIDANCES needs a safety constraint, which this session does not have.
+    expect(applicableQuestions(s).some((q) => q.id === AVOIDANCES)).toBe(false)
+    expect(editFromReview(s, AVOIDANCES)).toBe(s)
+  })
+
+  it("saving a valid edit returns to the Review list", () => {
+    const edited = setAnswer(editFromReview(complete(), Q2), Q2, "slow-start")
+    const back = returnToReview(edited)
+    expect(isReviewing(back)).toBe(true)
+    expect(back.answers[Q2]).toBe("slow-start")
+  })
+
+  it("an edit that CLOSES a branch drops it from the sequence but keeps the answer", () => {
+    const s = complete()
+    expect(applicableQuestions(s).map((q) => q.id)).toContain(Q3)
+    const closed = returnToReview(setAnswer(editFromReview(s, Q1), Q1, "nothing"))
+    expect(isReviewing(closed)).toBe(true)
+    expect(applicableQuestions(closed).map((q) => q.id)).not.toContain(Q3)
+    expect(closed.answers[Q3], "the candidate survives").toBeDefined()
+    expect(trustedAnswers(closed)[Q3], "but is no longer trusted").toBeUndefined()
+  })
+
+  it("an edit that OPENS a required branch leaves Review for that question", () => {
+    // The load-bearing one (§32): a Review that stayed complete here would be a
+    // Review of a Consultation that does not exist.
+    const s = completeSession(you, { [Q1]: "nothing" })
+    expect(isReviewing(s)).toBe(true)
+    const opened = returnToReview(setAnswer(editFromReview(s, Q1), Q1, "bloating"))
+    expect(isReviewing(opened)).toBe(false)
+    expect(opened.phase).toBe("questions")
+    expect(opened.currentQuestionId).toBe(Q3)
+  })
+
+  it("only once the new branch is answered may Review be re-entered", () => {
+    const s = completeSession(you, { [Q1]: "nothing" })
+    let opened = returnToReview(setAnswer(editFromReview(s, Q1), Q1, "bloating"))
+    for (let i = 0; i < 40 && !isReviewing(opened); i += 1) {
+      opened = goNext(answerValidly(opened, currentQuestion(opened)!))
+    }
+    expect(isReviewing(opened)).toBe(true)
+    expect(sessionCompleteness(opened).complete).toBe(true)
+  })
+
+  it("an edit left invalid refuses to return, with a message", () => {
+    const edited = setAnswer(editFromReview(complete(), Q2), Q2, "not-an-option")
+    const refused = returnToReview(edited)
+    expect(isReviewing(refused)).toBe(false)
+    expect(refused.currentQuestionId).toBe(Q2)
+    expect(refused.validationError).toBeTruthy()
+  })
+
+  it("nothing in the engine can reach the finalisation phase", () => {
+    // Exhaustive over every transition this module exposes, from a complete
+    // session — the state where a stray finalisation would be most tempting.
+    const s = complete()
+    const reachable = [
+      s,
+      goNext(s),
+      goBack(s),
+      enterReview(s),
+      returnToReview(s),
+      begin(s),
+      editFromReview(s, Q2),
+      setAnswer(s, Q2, "steady"),
+      clearAnswer(s, Q2),
+      skipOptional(s, Q2),
+    ]
+    for (const state of reachable) expect(state.phase).not.toBe("ready-for-report")
   })
 })

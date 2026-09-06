@@ -59,22 +59,69 @@ import type { ConsultationAnswers, ConsultationContext } from "@/lib/consultatio
  * wired to it.
  */
 
+const SESSION_ID = z.string().trim().min(8).max(200)
+const QUESTION_ID = z.string().trim().min(1).max(120)
+const CURSOR = z.string().trim().min(1).max(120).nullable().optional()
+
+/**
+ * One explicit action per request.
+ *
+ * A discriminated union rather than a bag of optional flags: with `clear`,
+ * `skipOptional` and `value` all optional on one object, a body could assert two
+ * contradictory intents at once and the handler would silently pick whichever
+ * branch it tested first. Here `navigate` structurally cannot carry a value,
+ * and `answer` structurally must.
+ *
+ * Every variant is `.strict()`, so an unexpected key is REFUSED rather than
+ * stripped. Stripping would make a contradictory body succeed quietly — a
+ * navigation carrying an answer would move the cursor and silently discard the
+ * write the caller believed it had made — and it would let a body carry
+ * `phase` to an endpoint that must never take one.
+ */
 const bodySchema = z
-  .object({
-    sessionId: z.string().trim().min(8).max(200),
-    questionId: z.string().trim().min(1).max(120),
+.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("answer"),
+    sessionId: SESSION_ID,
+    questionId: QUESTION_ID,
     // Shape only. What an answer MEANS is decided by the canonical validator
     // against the question it belongs to, never by this schema.
-    value: z.union([z.number(), z.string().max(5000), z.array(z.string().max(200)).max(50)]).optional(),
-    clear: z.literal(true).optional(),
-    /** The customer moved past an optional question without answering it. */
-    skipOptional: z.literal(true).optional(),
-    /** Where the customer now is. Validated against applicability, not trusted. */
-    currentQuestionId: z.string().trim().min(1).max(120).nullable().optional(),
-  })
-  .refine((b) => b.clear === true || b.skipOptional === true || b.value !== undefined, {
-    message: "either value, clear or skipOptional is required",
-  })
+    value: z.union([z.number(), z.string().max(5000), z.array(z.string().max(200)).max(50)]),
+    currentQuestionId: CURSOR,
+  }).strict(),
+  z.object({
+    action: z.literal("clear"),
+    sessionId: SESSION_ID,
+    questionId: QUESTION_ID,
+    currentQuestionId: CURSOR,
+  }).strict(),
+  z.object({
+    action: z.literal("skip"),
+    sessionId: SESSION_ID,
+    questionId: QUESTION_ID,
+    currentQuestionId: CURSOR,
+  }).strict(),
+  z.object({
+    // Moving without changing an answer — Back, or opening a Review item.
+    // Carries no questionId and no value, so a navigation cannot smuggle a
+    // write past the checks that guard one.
+    action: z.literal("navigate"),
+    sessionId: SESSION_ID,
+    currentQuestionId: z.string().trim().min(1).max(120).nullable(),
+  }).strict(),
+  z.object({
+    // The ONE phase transition the browser may request, and it is a retreat:
+    // review → questions. Entering review stays the review route's decision,
+    // because that one is a claim about completeness; leaving is not.
+    //
+    // The target is a required string rather than nullable: leaving Review
+    // means landing on a real question. A null would describe the Review list,
+    // which is the thing being left.
+    action: z.literal("leave-review"),
+    sessionId: SESSION_ID,
+    currentQuestionId: z.string().trim().min(1).max(120),
+  }).strict(),
+])
 
 const SAVE_ATTEMPTS = 3
 
@@ -97,7 +144,12 @@ export async function PATCH(req: NextRequest) {
     return refuse(400, "Invalid request body")
   }
 
-  const { sessionId, questionId } = body
+  const { sessionId } = body
+  // Both cursor-only actions touch no answer, so neither has a question to look
+  // up. Written inline rather than via a boolean, because the discriminant has
+  // to be narrowed here for `body.questionId` to exist at all.
+  const questionId =
+    body.action === "navigate" || body.action === "leave-review" ? null : body.questionId
 
   const supabase = getSupabase()
   if (!supabase) {
@@ -160,8 +212,10 @@ export async function PATCH(req: NextRequest) {
     const bank = resolveConsultationBank(snapshot.bankVersion)
     if (!bank) return refuse(409, "This Consultation cannot be resumed")
 
-    const question = bank.find((q) => q.id === questionId)
-    if (!question) return refuse(422, "Unknown question")
+    // A cursor-only action has no question to look up. Every other action does,
+    // and an unknown id is refused before anything is read.
+    const question = questionId === null ? null : bank.find((q) => q.id === questionId)
+    if (questionId !== null && !question) return refuse(422, "Unknown question")
 
     // Absent means "nothing stored yet". Present-but-unreadable means refuse:
     // writing here would overwrite a value we cannot characterise, which is the
@@ -171,6 +225,14 @@ export async function PATCH(req: NextRequest) {
       return refuse(409, "This Consultation state cannot be read")
     }
     const stored = slot.state
+
+    // Leaving Review presupposes being in it. Without this a browser could use
+    // the retreat as a general "set phase to questions", which is a different
+    // and much larger permission than the one being granted.
+    if (body.action === "leave-review" && stored.phase !== "review") {
+      return refuse(409, "This Consultation is not in review")
+    }
+
     const { answers: candidates } = sanitiseCandidateAnswers(stored.candidateAnswers, snapshot.bankVersion)
 
     const context: ConsultationContext = {
@@ -183,28 +245,33 @@ export async function PATCH(req: NextRequest) {
     const applicableIds = new Set(
       resolveApplicableQuestions({ questions: bank, context, answers: candidates }).map((q) => q.id),
     )
-    if (!applicableIds.has(questionId)) return refuse(422, "That question does not apply")
+    if (questionId !== null && !applicableIds.has(questionId)) {
+      return refuse(422, "That question does not apply")
+    }
 
     const nextAnswers: ConsultationAnswers = { ...candidates }
     const touched = new Set(stored.touchedQuestionIds)
     const skipped = new Set(stored.skippedOptionalQuestionIds)
 
-    if (body.clear) {
-      delete nextAnswers[questionId]
-      touched.delete(questionId)
-    } else if (body.skipOptional) {
-      if (question.required) return refuse(422, "That question is required")
-      delete nextAnswers[questionId]
-      skipped.add(questionId)
-    } else {
-      const validated = validateAnswer(question, body.value)
+    if (body.action === "clear") {
+      delete nextAnswers[questionId!]
+      touched.delete(questionId!)
+    } else if (body.action === "skip") {
+      if (question!.required) return refuse(422, "That question is required")
+      delete nextAnswers[questionId!]
+      skipped.add(questionId!)
+    } else if (body.action === "answer") {
+      const validated = validateAnswer(question!, body.value)
       if (validated.status !== "valid") return refuse(422, "That answer is not valid for this question")
-      nextAnswers[questionId] = validated.value
-      touched.add(questionId)
+      nextAnswers[questionId!] = validated.value
+      touched.add(questionId!)
       // Answering an optional question un-skips it: the two states are
       // distinct, and a stale skip beside a real answer would misdescribe both.
-      skipped.delete(questionId)
+      skipped.delete(questionId!)
     }
+    // `navigate` and `leave-review` fall through deliberately: answers, touched
+    // and skips are carried forward exactly as they were, and only the cursor
+    // below — and, for the retreat, the phase — moves.
 
     // A cursor is accepted only if it names a question that applies once this
     // delta is in place — otherwise the customer is left where the server can
@@ -215,10 +282,22 @@ export async function PATCH(req: NextRequest) {
       context,
       answers: nextAnswers,
     }).map((q) => q.id)
-    const currentQuestionId =
-      proposedCursor !== undefined && proposedCursor !== null && cursorAfter.includes(proposedCursor)
-        ? proposedCursor
-        : (stored.currentQuestionId ?? questionId)
+    let currentQuestionId: string | null
+    if (proposedCursor !== undefined && proposedCursor !== null) {
+      // A named target must be a question that applies once this delta is in
+      // place. Refusing rather than silently relocating matters most for
+      // `navigate`, where the cursor IS the request: quietly landing the
+      // customer elsewhere would look like the Back button skipping a question.
+      if (!cursorAfter.includes(proposedCursor)) {
+        return refuse(422, "That question does not apply")
+      }
+      currentQuestionId = proposedCursor
+    } else if (proposedCursor === null) {
+      // Explicitly cleared — the Review list has no current question.
+      currentQuestionId = null
+    } else {
+      currentQuestionId = stored.currentQuestionId ?? questionId
+    }
 
     const nextState: DeterministicConsultationState = {
       kind: DETERMINISTIC_STATE_KIND,
@@ -227,10 +306,22 @@ export async function PATCH(req: NextRequest) {
       touchedQuestionIds: [...touched],
       skippedOptionalQuestionIds: [...skipped],
       currentQuestionId,
-      // Phase never advances here. `review` and `ready-for-report` are
-      // Phase 3C-B's to set, and a route that could set them would be a
-      // finalisation path built ahead of the review screen that gates it.
-      phase: stored.phase === "questions" ? "questions" : stored.phase,
+      /*
+       * The phase moves in exactly one direction here, and only when asked.
+       *
+       * `leave-review` retreats to the questions phase, having already checked
+       * that the session IS in review and that the target question applies. It
+       * is a retreat rather than an advance, which is why it is safe to grant:
+       * it claims nothing about completeness, and the customer ends up with
+       * MORE left to do rather than less.
+       *
+       * Every other action carries the stored phase through untouched. Entering
+       * review remains the review route's decision, taken against canonical
+       * completeness — a save endpoint that could also grant it would be a
+       * second, weaker gate on the same transition. The finalisation phase is
+       * not reachable from any route in this phase at all.
+       */
+      phase: body.action === "leave-review" ? "questions" : stored.phase,
     }
 
     try {
@@ -246,7 +337,7 @@ export async function PATCH(req: NextRequest) {
         return refuse(503, "Could not save your progress")
       }
       if (data && data.length > 0) {
-        return NextResponse.json({ ok: true, saved: questionId })
+        return NextResponse.json({ ok: true, action: body.action, saved: questionId })
       }
       // Someone wrote between our read and our write: re-read and re-apply.
     } catch (err) {

@@ -33,6 +33,20 @@ const CLIENT = join(process.cwd(), DIR, "deterministic-consultation-client.tsx")
 const QUESTION = join(process.cwd(), DIR, "consultation-question.tsx")
 const ORIENTATION = join(process.cwd(), DIR, "consultation-orientation.tsx")
 const PROGRESS = join(process.cwd(), DIR, "consultation-progress.tsx")
+const REVIEW = join(process.cwd(), DIR, "consultation-review.tsx")
+const PERSISTENCE = join(process.cwd(), DIR, "consultation-persistence.ts")
+const PERSISTED_CLIENT = join(process.cwd(), DIR, "persisted-consultation-client.tsx")
+const NAVIGATION = join(process.cwd(), DIR, "consultation-navigation.ts")
+
+/**
+ * The transport boundary (Phase 3C-B §57).
+ *
+ * Exactly one file in this directory may know that an endpoint exists. Every
+ * other file — including the persisted wrapper — reaches the network only
+ * through the adapter it exports, which is what keeps the ephemeral preview
+ * genuinely network-free rather than network-free-by-configuration.
+ */
+const TRANSPORT_FILES = new Set([PERSISTENCE])
 
 const read = (p: string) => readFileSync(p, "utf8")
 
@@ -42,6 +56,11 @@ function experienceSources(): string[] {
   return readdirSync(base)
     .filter((f) => f.endsWith(".tsx") || f.endsWith(".ts"))
     .map((f) => join(base, f))
+}
+
+/** Everything except the one file allowed to speak HTTP. */
+function nonTransportSources(): string[] {
+  return experienceSources().filter((f) => !TRANSPORT_FILES.has(f))
 }
 
 function renderQuestion(question: ConsultationQuestion, overrides: Record<string, unknown> = {}) {
@@ -319,12 +338,20 @@ describe("progress leads with the section, not a global count", () => {
 
 /* ══ End state ═════════════════════════════════════════════════════════════ */
 
-describe("the Consultation ends at a neutral pre-Review state", () => {
+describe("the Consultation ends at Review with no Report handoff", () => {
   const source = read(CLIENT)
 
-  it("says the answers are ready to review and names Phase 3C", () => {
-    expect(source).toContain("Your Consultation answers are ready to review.")
-    expect(source).toMatch(/Phase 3C/)
+  it("states the neutral next step without offering one", () => {
+    expect(source).toContain("Your Consultation is ready for the next step.")
+    expect(source).toContain("Report creation is not active in this preview.")
+  })
+
+  it("offers no CTA that looks like the Report handoff", () => {
+    for (const file of experienceSources()) {
+      const text = read(file)
+      expect(text, file).not.toMatch(/Create My (Food System )?Report/i)
+      expect(text, file).not.toMatch(/handoffId|finalise|finalize/i)
+    }
   })
 
   it("promises no report, no PDF and no email", () => {
@@ -359,15 +386,42 @@ describe("the experience makes no AI call and no submission", () => {
     }
   })
 
-  it("makes no network request whatsoever", () => {
-    // Phase 3B persists nothing (see the persistence note in the PR): a fetch
-    // here would either be a save that cannot succeed or a call that should not
-    // exist. Either is worth failing on.
-    for (const file of experienceSources()) {
+  it("makes no network request outside the one transport file", () => {
+    // The rule is unchanged in substance: a component may not talk to a server.
+    // Phase 3C-B adds persistence, and it arrives as a single adapter rather
+    // than as calls sprinkled through the views — so the exemption is one named
+    // file, not a relaxed rule.
+    for (const file of nonTransportSources()) {
       const source = read(file)
       expect(source, file).not.toMatch(/\bfetch\(/)
       expect(source, file).not.toMatch(/XMLHttpRequest|axios/)
     }
+  })
+
+  it("only the adapter knows an endpoint exists", () => {
+    for (const file of nonTransportSources()) {
+      const source = read(file)
+      // The URL literals themselves, not merely `fetch`: a component holding a
+      // path is one refactor away from calling it.
+      expect(source, file).not.toMatch(/["'`]\/api\//)
+    }
+    const adapter = read(PERSISTENCE)
+    for (const endpoint of [
+      "/api/consultation/session",
+      "/api/consultation/progress",
+      "/api/consultation/review",
+    ]) {
+      expect(adapter, endpoint).toContain(endpoint)
+    }
+  })
+
+  it("the ephemeral preview reaches no adapter at all", () => {
+    // Not just "no fetch": the preview must not import the transport module
+    // either, because an adapter it held could be handed a session id later
+    // without any other change.
+    const source = read(CLIENT)
+    expect(source).not.toContain("consultation-persistence")
+    expect(source).not.toContain("createHttpConsultationPersistence")
   })
 
   it("selecting an option cannot advance — no navigation call sits in an answer handler", () => {
@@ -381,6 +435,30 @@ describe("the experience makes no AI call and no submission", () => {
     }
     // And the only onChange wiring goes to those handlers.
     expect(source).not.toMatch(/onChange=\{[^}]*onNext/)
+  })
+
+  it("Continue runs the shared engine transition, not an inlined copy of it", () => {
+    /*
+     * The preview persists nothing, which makes it the easy place for the two
+     * paths to drift: an inlined `goNext(s)` here would still look right on
+     * screen and would still pass every rendering assertion, while quietly
+     * dropping the deliberate optional-skip the persisted path records. Then
+     * the same customer answering the same way would read
+     * "Not answered yet" in the preview and "Not answered (optional)" once
+     * persistence was switched on.
+     *
+     * So the handler must DELEGATE. The semantics of that transition are proven
+     * behaviourally in `consultation-review-model.test.ts`; what this pins is
+     * that the component actually uses it.
+     */
+    const source = read(CLIENT)
+    const handler = source.slice(
+      source.indexOf("function handleNext()"),
+      source.indexOf("const sectionTitle"),
+    )
+    expect(handler).toContain("continueLocally")
+    expect(handler, "the transition is inlined rather than shared").not.toContain("goNext(")
+    expect(handler).not.toContain("returnToReview(")
   })
 
   it("Continue is the only thing wired to onNext", () => {
@@ -528,14 +606,21 @@ describe("the experience is a new component, not a mutated legacy one", () => {
   })
 
   it("every source file in the directory is accounted for", () => {
+    // Pinned exactly rather than loosened. Every guard above sweeps this
+    // directory, so a file that appears without being listed here is a file
+    // nobody decided belonged to the experience.
     const files = experienceSources().map((f) => f.split("/").pop())
     expect(files.sort()).toEqual([
+      "consultation-navigation.ts",
       "consultation-orientation.tsx",
+      "consultation-persistence.ts",
       "consultation-progress.tsx",
       "consultation-question.tsx",
+      "consultation-review.tsx",
       "deterministic-consultation-client.tsx",
+      "persisted-consultation-client.tsx",
     ])
-    for (const f of [CLIENT, QUESTION, ORIENTATION, PROGRESS]) {
+    for (const f of [CLIENT, QUESTION, ORIENTATION, PROGRESS, REVIEW, PERSISTENCE, PERSISTED_CLIENT, NAVIGATION]) {
       expect(statSync(f).isFile()).toBe(true)
     }
   })

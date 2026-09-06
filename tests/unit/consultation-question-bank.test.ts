@@ -158,36 +158,42 @@ describe("the deterministic bank has not reached the paid flow", () => {
     expect(consumers.length).toBeGreaterThan(300)
   })
 
-  it("exactly the preview experience and the deterministic routes import it", () => {
+  it("exactly the deterministic experience and the deterministic routes import it", () => {
     /*
-     * Re-pointed a second time, at Phase 3C-A.
+     * Re-pointed a third time, at Phase 3C-B.
      *
-     * Phase 3B pinned this to the four preview components and asserted no
-     * server route was among them — with a name that said "server completeness
-     * is Phase 3C". This is Phase 3C-A, and the two deterministic routes are
-     * exactly that server side arriving. So the set grows by those two and
-     * stops there; the legacy-surface exclusions below are untouched, and a
-     * seventh importer still fails.
+     * Each re-point pins the new exact set rather than loosening the rule: the
+     * additions here are the Review model's view, the transport adapter, the
+     * navigation sequencer, the dormant persisted wrapper and the review-entry
+     * route — every one of them inside the deterministic surface this guard
+     * exists to bound. The legacy exclusions below are untouched, and a twelfth
+     * importer still fails.
      */
     expect(
       importers().sort(),
       "a new importer of the deterministic bank has appeared",
     ).toEqual([
       "app/api/consultation/progress/route.ts",
+      "app/api/consultation/review/route.ts",
       "app/api/consultation/session/route.ts",
+      "components/assessment/consultation/consultation-navigation.ts",
       "components/assessment/consultation/consultation-orientation.tsx",
+      "components/assessment/consultation/consultation-persistence.ts",
       "components/assessment/consultation/consultation-progress.tsx",
       "components/assessment/consultation/consultation-question.tsx",
+      "components/assessment/consultation/consultation-review.tsx",
       "components/assessment/consultation/deterministic-consultation-client.tsx",
+      "components/assessment/consultation/persisted-consultation-client.tsx",
     ])
   })
 
-  it("only the two deterministic routes consume it server-side", () => {
+  it("only the deterministic routes consume it server-side", () => {
     // Never the legacy question, save or submit routes: those own legacy
     // sessions, and a deterministic import there would be the two contracts
     // starting to merge.
     expect(importers().filter((f) => f.startsWith("app/api/")).sort()).toEqual([
       "app/api/consultation/progress/route.ts",
+      "app/api/consultation/review/route.ts",
       "app/api/consultation/session/route.ts",
     ])
     for (const legacy of [

@@ -9,17 +9,26 @@ import {
   canGoBack as canGoBackFrom,
   createConsultationSession,
   currentQuestion as currentQuestionOf,
+  editFromReview,
   goBack,
   goNext,
+  isEditingFromReview,
   isLastQuestion,
+  isReviewing,
+  continueLocally,
   isSectionStart,
+  optionalSkipOnContinue,
   progress as progressOf,
+  returnToReview,
   setAnswer,
+  skipOptional,
   type ConsultationSessionState,
 } from "@/lib/consultation/session"
+import { buildConsultationReview } from "@/lib/consultation/review"
 import { ConsultationOrientation } from "./consultation-orientation"
 import { ConsultationProgressBar } from "./consultation-progress"
 import { ConsultationQuestionView } from "./consultation-question"
+import { ConsultationReviewView } from "./consultation-review"
 
 /**
  * The deterministic Personal Food System Consultation — Phase 3B.
@@ -71,9 +80,41 @@ export function DeterministicConsultationClient({ context, preview = true }: Pro
   const progress = useMemo(() => progressOf(state), [state])
   const { foundation } = state.context
 
+  const review = useMemo(
+    () =>
+      buildConsultationReview({
+        context: state.context,
+        candidateAnswers: state.answers,
+        skippedOptionalQuestionIds: [...state.skipped],
+        questions: state.questions,
+      }),
+    [state],
+  )
+
   function handleAnswer(id: string, value: ConsultationAnswer) {
-    // Records only. Advancing is `handleNext`, and nothing else may call it.
+    // Records only. Advancing is the Continue handler, and nothing else may
+    // call it.
     setState((s) => setAnswer(s, id, value))
+  }
+
+  /**
+   * Continue.
+   *
+   * Two destinations depending on where the customer is. From an ordinary
+   * question, the next one. From a Review edit, back to the Review list — but
+   * only if the Consultation is still complete, because the edit may have
+   * opened a required branch behind them, in which case `returnToReview` sends
+   * them to it instead.
+   *
+   * An applicable OPTIONAL question left empty is recorded as a deliberate skip
+   * on the way past, exactly as the persisted path records it. The preview
+   * stores nothing, but it must still MEAN the same thing: without this, the
+   * same customer answering the same way sees "Not answered yet" here and
+   * "Not answered (optional)" once persistence is switched on, and a preview
+   * that disagrees with the real experience is worse than no preview.
+   */
+  function handleNext() {
+    setState(continueLocally)
   }
 
   const sectionTitle = progress.current
@@ -82,25 +123,34 @@ export function DeterministicConsultationClient({ context, preview = true }: Pro
       : SECTION_META[progress.current.section].title
     : ""
 
+  const onOrientation = state.phase === "questions" && state.currentQuestionId === null
+
   return (
     <div className="min-h-screen bg-background pt-[57px]">
       {preview && <PreviewNotice />}
 
-      {!state.currentQuestionId && !state.finished && (
+      {onOrientation && (
         <ConsultationOrientation
           foundation={foundation}
           onBegin={() => setState((s) => begin(s))}
         />
       )}
 
-      {question && !state.finished && (
+      {question && (
         <>
-          <ConsultationProgressBar progress={progress} foundation={foundation} />
-          {isSectionStart(state) && progress.current && (
-            <SectionTransition
-              title={sectionTitle}
-              purpose={SECTION_META[progress.current.section].purpose}
-            />
+          {/* The progress strip belongs to the questionnaire, not to a Review
+            * edit: showing "Question 2 of 4" while someone corrects one answer
+            * would imply they had been sent back to the start. */}
+          {!isEditingFromReview(state) && (
+            <>
+              <ConsultationProgressBar progress={progress} foundation={foundation} />
+              {isSectionStart(state) && progress.current && (
+                <SectionTransition
+                  title={sectionTitle}
+                  purpose={SECTION_META[progress.current.section].purpose}
+                />
+              )}
+            </>
           )}
           <ConsultationQuestionView
             key={question.id}
@@ -110,9 +160,23 @@ export function DeterministicConsultationClient({ context, preview = true }: Pro
             touched={state.touched.has(question.id)}
             onAnswer={handleAnswer}
             onBack={() => setState((s) => goBack(s))}
-            onNext={() => setState((s) => goNext(s))}
-            canGoBack={canGoBackFrom(state)}
+            onNext={handleNext}
+            /* Offered only while the question is genuinely unanswered, which is
+             * what the control's own description promises. Once an answer
+             * exists, Skip would silently discard it with no undo. */
+            onSkipOptional={
+              optionalSkipOnContinue(state)
+                ? () =>
+                    setState((s) =>
+                      isEditingFromReview(s)
+                        ? returnToReview(skipOptional(s, question.id))
+                        : goNext(skipOptional(s, question.id)),
+                    )
+                : undefined
+            }
+            canGoBack={!isEditingFromReview(state) && canGoBackFrom(state)}
             isLast={isLastQuestion(state)}
+            editingFromReview={isEditingFromReview(state)}
             validationError={state.validationError}
             sectionTitle={sectionTitle}
             questionNumber={progress.current?.questionNumber ?? 1}
@@ -121,7 +185,13 @@ export function DeterministicConsultationClient({ context, preview = true }: Pro
         </>
       )}
 
-      {state.finished && <PreReviewState onBack={() => setState((s) => goBack(s))} />}
+      {isReviewing(state) && (
+        <ConsultationReviewView
+          review={review}
+          onEdit={(id) => setState((s) => editFromReview(s, id))}
+          footer={<ReviewFooter onBack={() => setState((s) => goBack(s))} />}
+        />
+      )}
     </div>
   )
 }
@@ -165,28 +235,31 @@ function SectionTransition({ title, purpose }: { title: string; purpose: string 
 }
 
 /**
- * The end of Phase 3B (§35).
+ * The end of Phase 3C-B.
  *
- * A neutral resting state. Review and Edit, server completeness, the trusted
- * handoff and Report generation are all Phase 3C, and this screen says so
- * rather than implying work is under way. Back still works, so the preview can
- * be walked in both directions.
+ * Review is the last screen. There is deliberately no Report handoff here: no
+ * submit, no sealing of the answers, no immutable trusted snapshot, and no
+ * button dressed up as one. A control that looked like the real step and did
+ * nothing would be worse than saying plainly that the step does not exist yet.
  */
-function PreReviewState({ onBack }: { onBack: () => void }) {
+function ReviewFooter({ onBack }: { onBack: () => void }) {
   return (
-    <div className="mx-auto max-w-2xl px-6 py-16 text-center">
-      <CheckCircle2 className="mx-auto text-[var(--icon-green)]" size={40} aria-hidden />
-      <h2 className="mt-5 font-serif text-2xl font-semibold text-foreground sm:text-3xl">
-        Your Consultation answers are ready to review.
-      </h2>
-      <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
-        Reviewing and editing your answers, and turning them into your Personal Food System
-        Report, is Phase 3C — in development, and not part of this preview.
-      </p>
+    <div className="mt-12 rounded-2xl border border-border bg-secondary/40 p-6">
+      <div className="flex items-start gap-3">
+        <CheckCircle2 className="mt-0.5 shrink-0 text-[var(--icon-green)]" size={20} aria-hidden />
+        <div>
+          <p className="font-semibold text-foreground">
+            Your Consultation is ready for the next step.
+          </p>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+            Report creation is not active in this preview.
+          </p>
+        </div>
+      </div>
       <button
         type="button"
         onClick={onBack}
-        className="mt-8 min-h-[44px] rounded-full border-2 border-border px-6 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary/60"
+        className="mt-6 min-h-[44px] rounded-full border-2 border-border px-6 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary/60"
       >
         Back to the last question
       </button>
