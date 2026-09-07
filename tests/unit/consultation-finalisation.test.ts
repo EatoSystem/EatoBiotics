@@ -710,3 +710,75 @@ describe("a stored finalisation is validated, never cast", () => {
     expect(broken).not.toHaveProperty("finalisation")
   })
 })
+
+/* ══ Unknown fields are malformed ══════════════════════════════════════════ */
+
+/**
+ * Phase 3C-C2A review fix — the v1 envelope is EXACT.
+ *
+ * The reader validated the fields it knew and ignored the rest, so a stored
+ * payload could carry anything alongside them and still read back as a valid
+ * trusted record. For an immutable versioned envelope that is the wrong default:
+ * the value of this record is that everything in it was derived under the
+ * Science Contract, and a passenger field is by definition something that was
+ * not. A real shape change is a new `finalisationVersion`, not an extra key.
+ */
+describe("a v1 finalisation has exactly the fields v1 defines", () => {
+  const valid = () => JSON.parse(JSON.stringify(mustFinalise(prepare(readyState()))))
+
+  it.each([
+    ["a downstream job identifier", "reportJobId", "job_123"],
+    ["a Report", "report", { summary: "..." }],
+    ["an inferred conclusion", "diagnosis", "IBS"],
+    ["an invented biological map", "bodySignalMap", { gut: 0.7 }],
+    ["an arbitrary unknown field", "somethingNobodyDefined", 1],
+  ])("%s is refused as malformed", (_name, key, value) => {
+    const result = readConsultationFinalisation({ ...valid(), [key]: value })
+    expect(result.ok, `${key} was accepted`).toBe(false)
+    if (result.ok) throw new Error("unreachable")
+    expect(result.reason).toBe("malformed")
+  })
+
+  it("an unknown field inside foodGuidance is refused too", () => {
+    // The frozen safety state is where an extra field would do the most damage:
+    // a `severity` or a `risk` sitting beside the derived constraints would look
+    // like part of the canonical derivation.
+    const payload = valid()
+    payload.foodGuidance = { ...payload.foodGuidance, severity: "high" }
+    const result = readConsultationFinalisation(payload)
+    expect(result.ok).toBe(false)
+    if (result.ok) throw new Error("unreachable")
+    expect(result.reason).toBe("malformed")
+  })
+
+  it("a MISSING field is malformed as well — exact means both directions", () => {
+    const payload = valid()
+    delete payload.applicableQuestionIds
+    expect(readConsultationFinalisation(payload).ok).toBe(false)
+
+    const guidance = valid()
+    delete guidance.foodGuidance.knownAvoidances
+    expect(readConsultationFinalisation(guidance).ok).toBe(false)
+  })
+
+  it("the exact key set is the C1 contract's own, not a second list", () => {
+    // If the builder gains a field and this list does not, every real payload
+    // becomes unreadable — which is a loud failure, not a silent one, and that
+    // is the intended direction.
+    const built = mustFinalise(prepare(readyState()))
+    expect(readConsultationFinalisation(JSON.parse(JSON.stringify(built))).ok).toBe(true)
+    expect(Object.keys(built)).toHaveLength(14)
+    expect(Object.keys(built.foodGuidance)).toHaveLength(8)
+  })
+
+  it("an explicit future version is still unsupported, not malformed", () => {
+    // Order matters: exactness is checked after the version gate, so a payload
+    // from a later contract reports the reason that sends someone to the right
+    // place rather than starting a hunt for corruption.
+    const future = { ...valid(), finalisationVersion: "consultation-finalisation-v2", extra: true }
+    const result = readConsultationFinalisation(future)
+    expect(result.ok).toBe(false)
+    if (result.ok) throw new Error("unreachable")
+    expect(result.reason).toBe("unsupported-version")
+  })
+})

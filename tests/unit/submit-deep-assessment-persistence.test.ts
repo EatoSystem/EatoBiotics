@@ -130,20 +130,28 @@ function makeRequest(): NextRequest {
  * Order of `deep_assessments` queue hits on a fresh run:
  *  0 idempotency select → no row
  *  1 step-3 email select → buyer email
- *  2 step-4 "analysing" upsert      ← intake write
- *  3 step-6 report upsert            ← report persistence
- *  4 step-9 email select → buyer email
- *  5 step-10 final status upsert     ← delivery bookkeeping
+ *  2 step-3b deterministic-boundary select → no row   (Phase 3C-C2A)
+ *  3 step-4 "analysing" upsert      ← intake write
+ *  4 step-6 report upsert            ← report persistence
+ *  5 step-9 email select → buyer email
+ *  6 step-10 final status upsert     ← delivery bookkeeping
+ *
+ * Position 2 is new. The boundary read is deliberately its OWN read rather than
+ * a reuse of position 0: the idempotency select is allowed to fail quietly, and
+ * a safety boundary must not inherit that. `{ data: null }` is "no row yet",
+ * the legacy first-submit case these fixtures model, so it passes.
  */
-const INTAKE_WRITE = 2
-const REPORT_WRITE = 3
-const STATUS_WRITE = 5
+const INTAKE_WRITE = 3
+const REPORT_WRITE = 4
+const STATUS_WRITE = 6
 
 function freshRunQueues(): Record<string, Queued[]> {
   return {
     deep_assessments: [
       { data: null },
       { data: { email: BUYER_EMAIL } },
+      // step-3b deterministic boundary — no row, so a legacy submit proceeds.
+      { data: null },
       { data: null },
       { data: null },
       { data: { email: BUYER_EMAIL } },

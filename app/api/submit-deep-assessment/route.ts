@@ -474,19 +474,29 @@ export async function POST(req: NextRequest) {
   /*
    * Step 3b: the deterministic Consultation boundary — Phase 3C-C2A.
    *
-   * ══ WHY HERE, AND NOT WHERE THE EXISTING REFUSAL IS ═════════════════════
+   * ══ THE GAP THIS CLOSES ═════════════════════════════════════════════════
    *
-   * `resolveTrustedQuestions` already refuses to build a Report from a
+   * `resolveTrustedQuestions` already refuses to BUILD a Report from a
    * deterministic question envelope — but it runs several hundred lines below,
    * AFTER the intake upsert has replaced `answers` with whatever this request
-   * carried. By the time that refusal fires, a deterministic Consultation's
-   * stored state envelope is gone: its candidate answers, its skips, its phase,
-   * and — once Migration 48 is applied — a state that no longer satisfies the
-   * seal-coherence constraint.
+   * carried. By the time that refusal fires, the deterministic state envelope
+   * is gone: candidate answers, skips, phase, cursor. The customer would be
+   * told their report could not be made, and the Consultation they spent
+   * twenty minutes on would have been overwritten on the way to telling them.
    *
-   * So the boundary moves to before the first write, and only after canonical
-   * payment and session authority has been established, so this cannot be used
-   * to probe which sessions exist.
+   * ══ WHY THIS READS THE ROW AGAIN ════════════════════════════════════════
+   *
+   * `existingRow` above cannot carry this decision. That read is an IDEMPOTENCY
+   * check and is deliberately tolerant: it destructures `data` without
+   * inspecting `error`, and a throw is logged so the submit can continue. Both
+   * are right for what it is for — a failed idempotency check should not stop a
+   * paying customer's report — and both are fatal here, because they produce
+   * `existingRow === null` for a session whose row exists and is deterministic.
+   * Inheriting that tolerance would enforce the boundary only while the
+   * database happened to be healthy.
+   *
+   * So this is its own read, and it fails CLOSED: a returned error or a throw
+   * stops the request before any write rather than assuming the row is legacy.
    *
    * ══ WHAT IS AND IS NOT REFUSED ══════════════════════════════════════════
    *
@@ -498,22 +508,69 @@ export async function POST(req: NextRequest) {
    * No conversion is attempted in either direction, and this route does not
    * call the deterministic finalise route: a legacy submit arriving at a
    * deterministic session is a routing mistake, not a Consultation to finish.
+   *
+   * ══ A TOCTOU THIS PHASE DOES NOT CLOSE ══════════════════════════════════
+   *
+   * This read and the write below are not one operation, so in principle a
+   * deterministic snapshot installed between them would still be overwritten.
+   * It is unreachable today — nothing installs a deterministic snapshot on any
+   * customer path — and closing it properly means making the legacy intake
+   * write conditional, which is a change to the legacy Report architecture this
+   * phase is explicitly not making.
+   *
+   * It is therefore an explicit PRECONDITION of Phase 3C-C2B: before
+   * deterministic initialisation is wired to any customer surface, this write
+   * must become race-safe. A pinned test holds that precondition, and Migration
+   * 48's coherence CHECK is the database-level backstop meanwhile.
    */
-  if (
-    existingRow?.questions !== undefined &&
-    existingRow.questions !== null &&
-    !Array.isArray(existingRow.questions)
-  ) {
-    console.error(
-      `[submit-deep-assessment] refusing legacy intake against a deterministic Consultation: ${sessionId}`,
-    )
-    return NextResponse.json(
-      {
-        error: "This assessment is a deterministic Consultation and cannot be submitted here.",
-        code: "deterministic_consultation_conflict",
-      },
-      { status: 409 }
-    )
+  if (supabase) {
+    let storedQuestions: unknown
+    try {
+      const { data: boundaryRow, error: boundaryError } = await supabase
+        .from("deep_assessments")
+        .select("questions")
+        .eq("stripe_session_id", sessionId)
+        .maybeSingle()
+
+      if (boundaryError) {
+        // Fail closed. Proceeding would risk overwriting a deterministic
+        // Consultation on the strength of a read that did not happen.
+        console.error(
+          "[submit-deep-assessment] deterministic boundary read error:",
+          boundaryError.message,
+        )
+        return NextResponse.json(
+          {
+            error: "We couldn't start your report just now. Please try again in a moment.",
+            code: "report_persistence_unavailable",
+          },
+          { status: 503 }
+        )
+      }
+      storedQuestions = boundaryRow?.questions
+    } catch (err) {
+      console.error("[submit-deep-assessment] deterministic boundary read failed:", err)
+      return NextResponse.json(
+        {
+          error: "We couldn't start your report just now. Please try again in a moment.",
+          code: "report_persistence_unavailable",
+        },
+        { status: 503 }
+      )
+    }
+
+    if (storedQuestions !== undefined && storedQuestions !== null && !Array.isArray(storedQuestions)) {
+      console.error(
+        `[submit-deep-assessment] refusing legacy intake against a deterministic Consultation: ${sessionId}`,
+      )
+      return NextResponse.json(
+        {
+          error: "This assessment is a deterministic Consultation and cannot be submitted here.",
+          code: "deterministic_consultation_conflict",
+        },
+        { status: 409 }
+      )
+    }
   }
 
   // Step 4: Mark as analysing.

@@ -29,7 +29,7 @@ import { createDeterministicConsultationSnapshot } from "@/lib/consultation/sess
  */
 
 /* ── Chainable Supabase stub (queue-per-table, plus Storage) ────────────── */
-type Queued = { data?: unknown; error?: unknown }
+type Queued = { data?: unknown; error?: unknown; throws?: string }
 
 function makeSupabaseStub(queues: Record<string, Queued[]>) {
   const writes: { table: string; method: string; payload: unknown }[] = []
@@ -44,9 +44,16 @@ function makeSupabaseStub(queues: Record<string, Queued[]>) {
         return chain
       }
     }
-    chain.maybeSingle = () => Promise.resolve(next())
-    chain.single = () => Promise.resolve(next())
-    chain.then = (resolve: (v: Queued) => void) => resolve(next())
+    /* A queued `throws` models a transport failure: an awaited PostgREST call
+     * resolves with `{ error }`, but the connection itself can still throw. */
+    const settle = () => {
+      const q = next()
+      return q.throws ? Promise.reject(new Error(q.throws)) : Promise.resolve(q)
+    }
+    chain.maybeSingle = settle
+    chain.single = settle
+    chain.then = (resolve: (v: Queued) => void, reject?: (e: unknown) => void) =>
+      settle().then(resolve, reject)
     return chain
   }
   const storage = {
@@ -103,12 +110,29 @@ function makeRequest(): NextRequest {
   })
 }
 
-/** The idempotency select, then the step-3 email lookup, then the writes. */
-function queuesFor(existingQuestions: unknown): Record<string, Queued[]> {
+/**
+ * Queue order on `deep_assessments`:
+ *   0 idempotency select
+ *   1 step-3 email select
+ *   2 THE BOUNDARY READ            ← its own read, not the idempotency one
+ *   3 step-4 intake upsert
+ *   4 step-6 report upsert
+ *   5 step-9 email select
+ *   6 step-10 status upsert
+ *
+ * `idempotency` is passed separately from `boundary` on purpose: the whole
+ * point of the fix is that the boundary no longer inherits whatever the
+ * idempotency read happened to return.
+ */
+function queuesFor(
+  boundary: Queued,
+  { idempotency = { data: null } as Queued }: { idempotency?: Queued } = {},
+): Record<string, Queued[]> {
   return {
     deep_assessments: [
-      { data: existingQuestions === undefined ? null : { status: "in_progress", questions: existingQuestions } },
+      idempotency,
       { data: { email: BUYER_EMAIL } },
+      boundary,
       { data: null },
       { data: null },
       { data: { email: BUYER_EMAIL } },
@@ -117,6 +141,11 @@ function queuesFor(existingQuestions: unknown): Record<string, Queued[]> {
     leads: [{ data: null }],
   }
 }
+
+/** A boundary read that found a row holding this question set. */
+const found = (questions: unknown): Queued => ({ data: { questions } })
+/** A boundary read that found no row at all. */
+const noRow: Queued = { data: null }
 
 async function callRoute() {
   const { POST } = await import("@/app/api/submit-deep-assessment/route")
@@ -142,7 +171,7 @@ beforeEach(() => {
 
 describe("a deterministic Consultation is refused before any intake write", () => {
   it("no write of any kind reaches deep_assessments", async () => {
-    const stub = makeSupabaseStub(queuesFor(snapshot()))
+    const stub = makeSupabaseStub(queuesFor(found(snapshot())))
     mockGetSupabase.mockReturnValue(stub.client)
 
     const res = await callRoute()
@@ -159,7 +188,7 @@ describe("a deterministic Consultation is refused before any intake write", () =
   })
 
   it("the browser's legacy answers reach nothing at all", async () => {
-    const stub = makeSupabaseStub(queuesFor(snapshot()))
+    const stub = makeSupabaseStub(queuesFor(found(snapshot())))
     mockGetSupabase.mockReturnValue(stub.client)
 
     await callRoute()
@@ -170,7 +199,7 @@ describe("a deterministic Consultation is refused before any intake write", () =
   it("nothing downstream of the write runs either", async () => {
     // No Claude call, no PDF, no email. The key is set in `beforeEach`, so the
     // generation branch is genuinely reachable and not reaching it is a signal.
-    const stub = makeSupabaseStub(queuesFor(snapshot()))
+    const stub = makeSupabaseStub(queuesFor(found(snapshot())))
     mockGetSupabase.mockReturnValue(stub.client)
 
     await callRoute()
@@ -197,7 +226,7 @@ describe("a deterministic Consultation is refused before any intake write", () =
 describe("ordinary legacy sessions still submit", () => {
   it("a stored DeepQuestion[] passes the boundary and writes intake", async () => {
     const stub = makeSupabaseStub(
-      queuesFor([{ id: "q1", question: "How is your digestion?", type: "scale" }]),
+      queuesFor(found([{ id: "q1", question: "How is your digestion?", type: "scale" }])),
     )
     mockGetSupabase.mockReturnValue(stub.client)
 
@@ -210,7 +239,7 @@ describe("ordinary legacy sessions still submit", () => {
   })
 
   it("a first submit with nothing stored passes, exactly as before", async () => {
-    const stub = makeSupabaseStub(queuesFor(undefined))
+    const stub = makeSupabaseStub(queuesFor(noRow))
     mockGetSupabase.mockReturnValue(stub.client)
 
     const res = await callRoute()
@@ -220,12 +249,169 @@ describe("ordinary legacy sessions still submit", () => {
   })
 
   it("a row whose questions column is explicitly null passes", async () => {
-    const stub = makeSupabaseStub(queuesFor(null))
+    const stub = makeSupabaseStub(queuesFor(found(null)))
     mockGetSupabase.mockReturnValue(stub.client)
 
     const res = await callRoute()
 
     expect(res.status).not.toBe(409)
     expect(stub.writes.filter((w) => w.table === "deep_assessments").length).toBeGreaterThan(0)
+  })
+})
+
+/* ══ The boundary fails CLOSED ═════════════════════════════════════════════ */
+
+/**
+ * Phase 3C-C2A review fix — the boundary owns its read.
+ *
+ * The first version reused `existingRow`, populated by the idempotency check
+ * near the top of the route. That check destructures `data` without inspecting
+ * `error`, and swallows a throw so a paying customer's report is not stopped by
+ * a failed idempotency lookup. Both are right for what it is; both are fatal
+ * here, because they produce `existingRow === null` for a session whose row
+ * exists and is deterministic — and the guard would then wave the write
+ * through.
+ *
+ * A safety boundary cannot inherit another check's tolerance for failure. These
+ * cases are the difference between "enforced" and "enforced while the database
+ * is healthy".
+ */
+describe("a boundary read that did not happen stops the request", () => {
+  it("a returned Supabase error is a 503, and writes nothing", async () => {
+    const stub = makeSupabaseStub(
+      queuesFor({ data: null, error: { message: "permission denied for table deep_assessments" } }),
+    )
+    mockGetSupabase.mockReturnValue(stub.client)
+
+    const res = await callRoute()
+    const body = (await res.json()) as Record<string, unknown>
+
+    expect(res.status).toBe(503)
+    expect(body.code).toBe("report_persistence_unavailable")
+    expect(stub.writes.filter((w) => w.table === "deep_assessments")).toEqual([])
+  })
+
+  it("a read that THROWS is a 503, and writes nothing", async () => {
+    // An awaited PostgREST call resolves with `{ error }` rather than throwing,
+    // but transport failures do throw — and this must not be the one path where
+    // the boundary silently opens.
+    const stub = makeSupabaseStub(queuesFor({ throws: "connection reset" }))
+    mockGetSupabase.mockReturnValue(stub.client)
+
+    const res = await callRoute()
+
+    expect(res.status).toBe(503)
+    expect((await res.json()).code).toBe("report_persistence_unavailable")
+    expect(stub.writes.filter((w) => w.table === "deep_assessments")).toEqual([])
+  })
+
+  it("the boundary does NOT trust the idempotency read", async () => {
+    /*
+     * The exact failure the fix closes: the idempotency read fails and returns
+     * nothing, while the row genuinely is deterministic. Reusing `existingRow`
+     * would see `null`, conclude "legacy, first submit", and overwrite the
+     * Consultation.
+     */
+    const stub = makeSupabaseStub(
+      queuesFor(found(snapshot()), { idempotency: { data: null, error: { message: "timeout" } } }),
+    )
+    mockGetSupabase.mockReturnValue(stub.client)
+
+    const res = await callRoute()
+
+    expect(res.status).toBe(409)
+    expect((await res.json()).code).toBe("deterministic_consultation_conflict")
+    expect(stub.writes.filter((w) => w.table === "deep_assessments")).toEqual([])
+  })
+
+  it("no browser answer reaches a write in ANY refused case", async () => {
+    for (const boundary of [
+      found(snapshot()),
+      { data: null, error: { message: "permission denied" } } as Queued,
+    ]) {
+      const stub = makeSupabaseStub(queuesFor(boundary))
+      mockGetSupabase.mockReturnValue(stub.client)
+
+      await callRoute()
+
+      expect(JSON.stringify(stub.writes)).not.toContain(ANSWER_SENTINEL)
+    }
+  })
+
+  it("nothing downstream runs after a fail-closed refusal", async () => {
+    const stub = makeSupabaseStub(queuesFor({ data: null, error: { message: "permission denied" } }))
+    mockGetSupabase.mockReturnValue(stub.client)
+
+    await callRoute()
+
+    expect(mockMessagesCreate).not.toHaveBeenCalled()
+    expect(mockGeneratePDF).not.toHaveBeenCalled()
+    expect(mockSendEmail).not.toHaveBeenCalled()
+  })
+
+  it("the guard reads its own row rather than the idempotency result", async () => {
+    // Structural, because the behavioural cases above can only show that the
+    // current wiring is correct — this shows it cannot quietly revert to reading
+    // a variable that is allowed to be wrong.
+    const source = await import("node:fs").then((fs) =>
+      fs.readFileSync("app/api/submit-deep-assessment/route.ts", "utf8"),
+    )
+    const marker = source.indexOf("Step 3b: the deterministic Consultation boundary")
+    // From the comment's OPENING, so the strip below has a `/*` to match.
+    const block = source.slice(
+      source.lastIndexOf("/*", marker),
+      source.indexOf("// Step 4: Mark as analysing."),
+    )
+    // Comments stripped before matching. The guard EXPLAINS at length why it
+    // does not reuse `existingRow`, and a check that read the explanation would
+    // fail on the rationale rather than on the code.
+    const guard = block.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "")
+    expect(guard).toContain('.select("questions")')
+    expect(guard).toContain("boundaryError")
+    expect(guard, "the boundary must not read the best-effort idempotency row").not.toContain(
+      "existingRow",
+    )
+  })
+})
+
+/* ══ The TOCTOU that Phase 3C-C2B must close ═══════════════════════════════ */
+
+describe("the boundary's remaining race is pinned as a C2B precondition", () => {
+  it("nothing installs a deterministic snapshot on a customer path", async () => {
+    /*
+     * The boundary read and the intake write are not one operation, so a
+     * deterministic snapshot installed between them would still be overwritten.
+     * Closing that means making the legacy intake write conditional, which is a
+     * change to the legacy Report architecture C2A is explicitly not making.
+     *
+     * What makes that acceptable TODAY is that the race is unreachable: no
+     * customer surface creates a deterministic session at all. This test is the
+     * thing that stops it becoming reachable quietly — the moment
+     * `createDeterministicConsultationSnapshot` is wired into a route or a page,
+     * this fails, and whoever did it has to make the legacy write race-safe
+     * first.
+     */
+    const { readFileSync, readdirSync, statSync } = await import("node:fs")
+    const { join } = await import("node:path")
+
+    const walk = (dir: string, out: string[] = []): string[] => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        if (entry.name === "node_modules" || entry.name === ".next") continue
+        const full = join(dir, entry.name)
+        if (entry.isDirectory()) walk(full, out)
+        else if (/\.(ts|tsx)$/.test(entry.name) && statSync(full).isFile()) out.push(full)
+      }
+      return out
+    }
+
+    const installers = ["app", "components"]
+      .flatMap((d) => walk(join(process.cwd(), d)))
+      .filter((f) => readFileSync(f, "utf8").includes("createDeterministicConsultationSnapshot"))
+      .map((f) => f.slice(process.cwd().length + 1))
+
+    expect(
+      installers,
+      "a deterministic snapshot installer appeared — the legacy intake write must be made race-safe before this ships",
+    ).toEqual([])
   })
 })

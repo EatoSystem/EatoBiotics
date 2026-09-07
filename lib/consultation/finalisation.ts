@@ -300,8 +300,55 @@ export type StoredFinalisationResult =
   | { ok: true; finalisation: ConsultationFinalisation }
   | { ok: false; reason: StoredFinalisationRefusal }
 
+/**
+ * The EXACT top-level shape of a v1 finalisation.
+ *
+ * Unknown keys are malformed, not tolerated. A finalisation is an immutable
+ * versioned record: an extra field in a v1 payload means either that something
+ * wrote a shape this build does not define, or that a future contract was
+ * stored under this version's name. Both are reasons to refuse, and the
+ * alternative is worse — an inferred conclusion or a downstream job identifier
+ * riding along inside a record whose whole purpose is that everything in it was
+ * derived under the Science Contract. A genuine extension gets a new
+ * `finalisationVersion`.
+ */
+const V1_KEYS = [
+  "kind",
+  "schemaVersion",
+  "finalisationVersion",
+  "bankVersion",
+  "bankFingerprint",
+  "scienceContractVersion",
+  "foundation",
+  "entitledLens",
+  "applicableQuestionIds",
+  "trustedAnswers",
+  "trustedAnswersByField",
+  "skippedOptionalQuestionIds",
+  "foodGuidance",
+  "finalisedAt",
+] as const
+
+/** Same rule one level down: the frozen safety state has no room for extras. */
+const FOOD_GUIDANCE_KEYS = [
+  "declaredConstraints",
+  "safetyConstraints",
+  "practicalConstraints",
+  "knownAvoidances",
+  "declaresNoConstraints",
+  "constraintsUndisclosed",
+  "requiresSpecificAvoidance",
+  "unresolvedSpecificAvoidance",
+] as const
+
 const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v)
+
+/** Exactly these keys — no more, no fewer. */
+const hasExactKeys = (v: Record<string, unknown>, keys: readonly string[]): boolean => {
+  const actual = Object.keys(v)
+  return actual.length === keys.length && keys.every((k) => k in v)
+}
 
 const isNonEmptyString = (v: unknown): v is string =>
   typeof v === "string" && v.trim().length > 0
@@ -324,6 +371,7 @@ const isInstant = (v: unknown): v is string =>
 
 function isFoodGuidance(v: unknown): v is FoodGuidanceConstraints {
   if (!isPlainObject(v)) return false
+  if (!hasExactKeys(v, FOOD_GUIDANCE_KEYS)) return false
   return (
     isStringArray(v.declaredConstraints) &&
     isStringArray(v.safetyConstraints) &&
@@ -382,6 +430,15 @@ export function readConsultationFinalisation(
   ) {
     return { ok: false, reason: "unsupported-version" }
   }
+
+  /*
+   * Exactness is checked AFTER the version gate, deliberately.
+   *
+   * A payload from a future contract will legitimately have a different key
+   * set; reporting that as "malformed" would send whoever debugs it hunting for
+   * corruption. Version first, then shape.
+   */
+  if (!hasExactKeys(value, V1_KEYS)) return { ok: false, reason: "malformed" }
 
   if (!isNonEmptyString(value.bankVersion)) return { ok: false, reason: "malformed" }
   if (!isNonEmptyString(value.bankFingerprint)) return { ok: false, reason: "malformed" }

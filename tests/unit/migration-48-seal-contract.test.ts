@@ -93,15 +93,61 @@ describe("the database refuses to hold an incoherent seal", () => {
     expect(c).toMatch(/consultation_finalisation IS NOT NULL AND consultation_handoff_id IS NOT NULL/)
   })
 
+  const coherence = () =>
+    SQL.slice(SQL.indexOf("deep_assessments_seal_state_coherent"), SQL.indexOf("END $$"))
+
   it("a sealed row must carry a finished deterministic state", () => {
-    const c = SQL.slice(
-      SQL.indexOf("deep_assessments_seal_state_coherent"),
-      SQL.indexOf("END $$"),
-    )
+    const c = coherence()
     expect(c).toContain("'deterministic-consultation-state'")
     expect(c).toContain("'ready-for-report'")
     // (ready, questionId) is a finished Consultation that is also mid-edit.
-    expect(c).toMatch(/jsonb_typeof\(answers -> 'currentQuestionId'\) = 'null'/)
+    expect(c).toMatch(/answers -> 'currentQuestionId' = 'null'::jsonb/)
+  })
+
+  it("every comparison is TWO-VALUED, so a missing key is FALSE and not UNKNOWN", () => {
+    /*
+     * The defect this pins. A CHECK accepts TRUE *or UNKNOWN*, and extracting a
+     * missing key from jsonb yields SQL NULL — so the first draft of this
+     * constraint, written with ordinary `=`, ACCEPTED a sealed row with a NULL
+     * `answers`, an empty object, or a state missing `kind`, `phase` or
+     * `currentQuestionId`. Four of the six shapes it exists to reject.
+     *
+     * `migration-48-postgres-truth-table.test.ts` proves the behaviour against a
+     * real server where one is available; this asserts the SQL is written the
+     * way that behaviour depends on, and runs everywhere.
+     */
+    const c = coherence()
+    expect(c, "a SQL NULL answers must be FALSE, not UNKNOWN").toMatch(/answers IS NOT NULL/)
+    expect(c, "kind must use NULL-safe equality").toMatch(
+      /\(answers ->> 'kind'\) IS NOT DISTINCT FROM/,
+    )
+    expect(c, "phase must use NULL-safe equality").toMatch(
+      /\(answers ->> 'phase'\) IS NOT DISTINCT FROM/,
+    )
+    // Key EXISTENCE, which is what separates "absent" from "JSON null".
+    expect(c, "the cursor key must be required to exist").toMatch(/answers \? 'currentQuestionId'/)
+  })
+
+  it("no bare `=` comparison is left on an extracted key", () => {
+    // The exact shape of the original bug: `answers ->> 'x' = '...'` is UNKNOWN
+    // when the key is missing, and UNKNOWN passes a CHECK.
+    const c = coherence()
+    expect(c).not.toMatch(/answers ->> '\w+' = '/)
+    expect(c).not.toMatch(/jsonb_typeof\(answers -> '\w+'\)/)
+  })
+})
+
+/* ══ Idempotency must not be fooled by another table ═══════════════════════ */
+
+describe("re-applying the migration is scoped to this table", () => {
+  it("both constraint lookups check conrelid, not just the name", () => {
+    // `pg_constraint.conname` is not globally unique. A same-named constraint
+    // on any other table would satisfy an unscoped EXISTS and silently skip the
+    // ADD — leaving the migration reporting success with no constraint added.
+    for (const name of ["deep_assessments_seal_pair", "deep_assessments_seal_state_coherent"]) {
+      const lookup = SQL.slice(SQL.indexOf(name), SQL.indexOf(name) + 220)
+      expect(lookup, name).toMatch(/conrelid = 'deep_assessments'::regclass/)
+    }
   })
 
   it("it says nothing about UNSEALED rows", () => {

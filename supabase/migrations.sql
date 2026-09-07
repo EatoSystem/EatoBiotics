@@ -1994,7 +1994,9 @@ BEGIN
   -- write that was supposed to be atomic and was not, so the database refuses
   -- to hold it at all rather than leaving the application to detect it later.
   IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'deep_assessments_seal_pair'
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'deep_assessments_seal_pair'
+      AND conrelid = 'deep_assessments'::regclass
   ) THEN
     ALTER TABLE deep_assessments
       ADD CONSTRAINT deep_assessments_seal_pair CHECK (
@@ -2010,21 +2012,46 @@ BEGIN
   -- pair (review, questionId) is a Consultation mid-correction, and a record
   -- frozen there captures a value the customer was in the middle of changing.
   --
+  -- ══ WHY THIS IS WRITTEN THE AWKWARD WAY ══════════════════
+  --
+  -- A CHECK constraint accepts TRUE *or UNKNOWN*, and extracting a missing key
+  -- from jsonb yields SQL NULL. Written with ordinary `=` this constraint
+  -- would therefore ACCEPT the very rows it exists to reject: a SQL NULL
+  -- `answers`, an empty object, a state missing `kind`, `phase` or
+  -- `currentQuestionId` all evaluate to UNKNOWN rather than FALSE. Four of the
+  -- six malformed shapes would have been stored, and the constraint would have
+  -- looked correct while doing nothing.
+  --
+  -- So every comparison below is forced two-valued:
+  --
+  --   `answers IS NOT NULL`            a SQL NULL is FALSE, not UNKNOWN.
+  --   `IS NOT DISTINCT FROM`           NULL-safe equality: a missing key is
+  --                                    FALSE rather than UNKNOWN.
+  --   `answers ? 'currentQuestionId'`  the key must EXIST. This is what
+  --                                    separates "absent" from "JSON null",
+  --                                    and `->` on a missing key is NULL.
+  --   `-> ... = 'null'::jsonb`         two-valued, because the guard above
+  --                                    guarantees the left side is not NULL.
+  --
   -- Deliberately one-directional: this says nothing about UNSEALED rows, so
   -- every legacy row, every in-progress Consultation and every row whose
   -- `answers` is a legacy object stays valid with both new columns NULL. No
   -- backfill, and nothing existing is rewritten.
   IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'deep_assessments_seal_state_coherent'
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'deep_assessments_seal_state_coherent'
+      AND conrelid = 'deep_assessments'::regclass
   ) THEN
     ALTER TABLE deep_assessments
       ADD CONSTRAINT deep_assessments_seal_state_coherent CHECK (
         consultation_finalisation IS NULL
         OR (
-          jsonb_typeof(answers) = 'object'
-          AND answers ->> 'kind' = 'deterministic-consultation-state'
-          AND answers ->> 'phase' = 'ready-for-report'
-          AND jsonb_typeof(answers -> 'currentQuestionId') = 'null'
+          answers IS NOT NULL
+          AND jsonb_typeof(answers) = 'object'
+          AND (answers ->> 'kind') IS NOT DISTINCT FROM 'deterministic-consultation-state'
+          AND (answers ->> 'phase') IS NOT DISTINCT FROM 'ready-for-report'
+          AND answers ? 'currentQuestionId'
+          AND answers -> 'currentQuestionId' = 'null'::jsonb
         )
       );
   END IF;
