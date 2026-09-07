@@ -471,6 +471,51 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  /*
+   * Step 3b: the deterministic Consultation boundary — Phase 3C-C2A.
+   *
+   * ══ WHY HERE, AND NOT WHERE THE EXISTING REFUSAL IS ═════════════════════
+   *
+   * `resolveTrustedQuestions` already refuses to build a Report from a
+   * deterministic question envelope — but it runs several hundred lines below,
+   * AFTER the intake upsert has replaced `answers` with whatever this request
+   * carried. By the time that refusal fires, a deterministic Consultation's
+   * stored state envelope is gone: its candidate answers, its skips, its phase,
+   * and — once Migration 48 is applied — a state that no longer satisfies the
+   * seal-coherence constraint.
+   *
+   * So the boundary moves to before the first write, and only after canonical
+   * payment and session authority has been established, so this cannot be used
+   * to probe which sessions exist.
+   *
+   * ══ WHAT IS AND IS NOT REFUSED ══════════════════════════════════════════
+   *
+   * A legacy `DeepQuestion[]` is an array and passes, exactly as before. An
+   * absent or null question set passes, exactly as before — a first submit has
+   * nothing stored yet. Only a PRESENT non-array envelope is refused, which is
+   * precisely the deterministic snapshot shape and nothing else.
+   *
+   * No conversion is attempted in either direction, and this route does not
+   * call the deterministic finalise route: a legacy submit arriving at a
+   * deterministic session is a routing mistake, not a Consultation to finish.
+   */
+  if (
+    existingRow?.questions !== undefined &&
+    existingRow.questions !== null &&
+    !Array.isArray(existingRow.questions)
+  ) {
+    console.error(
+      `[submit-deep-assessment] refusing legacy intake against a deterministic Consultation: ${sessionId}`,
+    )
+    return NextResponse.json(
+      {
+        error: "This assessment is a deterministic Consultation and cannot be submitted here.",
+        code: "deterministic_consultation_conflict",
+      },
+      { status: 409 }
+    )
+  }
+
   // Step 4: Mark as analysing.
   //
   // This write is a precondition, not bookkeeping. Everything after it costs

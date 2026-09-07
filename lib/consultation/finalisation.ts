@@ -1,4 +1,5 @@
 import type { AddonType } from "@/lib/addon-types"
+import { isAddon } from "@/lib/addon-types"
 
 import type {
   ConsultationAnswer,
@@ -272,6 +273,166 @@ export function prepareConsultationFinalisation(input: FinalisationInput): Final
       foodGuidance: deriveFoodGuidanceConstraints(completenessInput),
 
       finalisedAt: input.finalisedAt.toISOString(),
+    },
+  }
+}
+
+/* ══ Reading one back ══════════════════════════════════════════════════════ */
+
+/**
+ * Why a stored finalisation could not be trusted.
+ *
+ * Separate from `FinalisationRefusalReason` because they answer different
+ * questions. That one says why a Consultation cannot be finalised YET, and the
+ * customer can act on most of it. This one says the sealed record we hold does
+ * not describe the session it is attached to — nothing the customer did causes
+ * it, and nothing they can do fixes it.
+ */
+export type StoredFinalisationRefusal =
+  /** Not a recognisable finalisation envelope at all. */
+  | "malformed"
+  /** Recognisable, but written by a build whose contract we do not implement. */
+  | "unsupported-version"
+  /** Well-formed, but describes a different session than the one it sits on. */
+  | "identity-mismatch"
+
+export type StoredFinalisationResult =
+  | { ok: true; finalisation: ConsultationFinalisation }
+  | { ok: false; reason: StoredFinalisationRefusal }
+
+const isPlainObject = (v: unknown): v is Record<string, unknown> =>
+  typeof v === "object" && v !== null && !Array.isArray(v)
+
+const isNonEmptyString = (v: unknown): v is string =>
+  typeof v === "string" && v.trim().length > 0
+
+const isStringArray = (v: unknown): v is string[] =>
+  Array.isArray(v) && v.every(isNonEmptyString)
+
+/** One stored answer, in the shape the canonical answer union allows. */
+const isAnswer = (v: unknown): v is ConsultationAnswer =>
+  typeof v === "string" ||
+  typeof v === "number" ||
+  (Array.isArray(v) && v.every((x) => typeof x === "string"))
+
+const isAnswerMap = (v: unknown): v is ConsultationAnswers =>
+  isPlainObject(v) && Object.values(v).every(isAnswer)
+
+/** An ISO instant that round-trips. A string that merely looks like one is not. */
+const isInstant = (v: unknown): v is string =>
+  typeof v === "string" && !Number.isNaN(Date.parse(v)) && new Date(v).toISOString() === v
+
+function isFoodGuidance(v: unknown): v is FoodGuidanceConstraints {
+  if (!isPlainObject(v)) return false
+  return (
+    isStringArray(v.declaredConstraints) &&
+    isStringArray(v.safetyConstraints) &&
+    isStringArray(v.practicalConstraints) &&
+    isStringArray(v.knownAvoidances) &&
+    typeof v.declaresNoConstraints === "boolean" &&
+    typeof v.constraintsUndisclosed === "boolean" &&
+    typeof v.requiresSpecificAvoidance === "boolean" &&
+    typeof v.unresolvedSpecificAvoidance === "boolean"
+  )
+}
+
+/**
+ * Read a finalisation back out of storage — fail-closed, never coerced.
+ *
+ * ══ WHY THIS CANNOT BE A CAST ═══════════════════════════════════════════════
+ *
+ * `value as ConsultationFinalisation` would make every field below a promise
+ * rather than a fact, and the promise would be kept by whatever happened to be
+ * in a jsonb column. This record is the thing a Report will eventually be built
+ * from; a missing `foodGuidance` read as `undefined` is a Report written with no
+ * knowledge of an allergy.
+ *
+ * ══ WHY A MALFORMED SEAL IS NOT A REASON TO MAKE A NEW ONE ══════════════════
+ *
+ * The tempting repair — "we cannot read it, so rebuild it from the current
+ * answers" — silently replaces a record of what the customer finished with a
+ * record of whatever their session says today, under today's bank. The whole
+ * point of sealing was that those can differ. So this refuses, and the caller
+ * refuses with it.
+ *
+ * ══ IDENTITY, NOT CONTENT ═══════════════════════════════════════════════════
+ *
+ * `snapshot` is optional and checks only the four immutable facts a
+ * finalisation shares with the session it belongs to: foundation, entitled
+ * lens, bank version and bank fingerprint. Disagreement means the payload was
+ * written for a different session — not that it is out of date. A finalisation
+ * whose bank has since been revised is still the authority for its own handoff,
+ * and is deliberately NOT recomputed.
+ */
+export function readConsultationFinalisation(
+  value: unknown,
+  snapshot?: Pick<
+    DeterministicConsultationSnapshot,
+    "foundation" | "entitledLens" | "bankVersion" | "bankFingerprint"
+  >,
+): StoredFinalisationResult {
+  if (!isPlainObject(value)) return { ok: false, reason: "malformed" }
+  if (value.kind !== FINALISATION_KIND) return { ok: false, reason: "malformed" }
+
+  // Version before shape: a payload from a future contract is not malformed,
+  // and calling it that would send whoever debugs it looking for corruption.
+  if (
+    value.schemaVersion !== FINALISATION_SCHEMA_VERSION ||
+    value.finalisationVersion !== CONSULTATION_FINALISATION_VERSION
+  ) {
+    return { ok: false, reason: "unsupported-version" }
+  }
+
+  if (!isNonEmptyString(value.bankVersion)) return { ok: false, reason: "malformed" }
+  if (!isNonEmptyString(value.bankFingerprint)) return { ok: false, reason: "malformed" }
+  if (value.scienceContractVersion !== SCIENCE_CONTRACT_VERSION) {
+    return { ok: false, reason: "unsupported-version" }
+  }
+
+  if (value.foundation !== "you" && value.foundation !== "family") {
+    return { ok: false, reason: "malformed" }
+  }
+  // A lens the build does not recognise is REFUSED rather than narrowed to
+  // `null`: those mean opposite things, and the second would quietly serve a
+  // lens-less handoff for someone who paid for a lens.
+  const entitledLens = value.entitledLens
+  if (entitledLens !== null && !isAddon(entitledLens)) return { ok: false, reason: "malformed" }
+
+  if (!isStringArray(value.applicableQuestionIds)) return { ok: false, reason: "malformed" }
+  if (!isAnswerMap(value.trustedAnswers)) return { ok: false, reason: "malformed" }
+  if (!isAnswerMap(value.trustedAnswersByField)) return { ok: false, reason: "malformed" }
+  if (!isStringArray(value.skippedOptionalQuestionIds)) return { ok: false, reason: "malformed" }
+  if (!isFoodGuidance(value.foodGuidance)) return { ok: false, reason: "malformed" }
+  if (!isInstant(value.finalisedAt)) return { ok: false, reason: "malformed" }
+
+  if (snapshot) {
+    if (
+      value.foundation !== snapshot.foundation ||
+      entitledLens !== snapshot.entitledLens ||
+      value.bankVersion !== snapshot.bankVersion ||
+      value.bankFingerprint !== snapshot.bankFingerprint
+    ) {
+      return { ok: false, reason: "identity-mismatch" }
+    }
+  }
+
+  return {
+    ok: true,
+    finalisation: {
+      kind: FINALISATION_KIND,
+      schemaVersion: FINALISATION_SCHEMA_VERSION,
+      finalisationVersion: CONSULTATION_FINALISATION_VERSION,
+      bankVersion: value.bankVersion,
+      bankFingerprint: value.bankFingerprint,
+      scienceContractVersion: SCIENCE_CONTRACT_VERSION,
+      foundation: value.foundation,
+      entitledLens,
+      applicableQuestionIds: value.applicableQuestionIds,
+      trustedAnswers: value.trustedAnswers,
+      trustedAnswersByField: value.trustedAnswersByField,
+      skippedOptionalQuestionIds: value.skippedOptionalQuestionIds,
+      foodGuidance: value.foodGuidance,
+      finalisedAt: value.finalisedAt,
     },
   }
 }

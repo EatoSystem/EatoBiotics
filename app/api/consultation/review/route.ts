@@ -17,6 +17,7 @@ import {
   DETERMINISTIC_STATE_SCHEMA_VERSION,
   type DeterministicConsultationState,
 } from "@/lib/consultation/session-envelope"
+import { readConsultationSeal } from "@/lib/consultation/seal"
 import { validateConsultationAnswers } from "@/lib/consultation/completeness"
 import type { ConsultationContext } from "@/lib/consultation/types"
 
@@ -98,11 +99,19 @@ export async function POST(req: NextRequest) {
   }
 
   for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
-    let row: { questions?: unknown; answers?: unknown; updated_at?: string | null } | null
+    let row: {
+      questions?: unknown
+      answers?: unknown
+      updated_at?: string | null
+      consultation_finalisation?: unknown
+      consultation_handoff_id?: unknown
+    } | null
     try {
       const { data, error } = await supabase
         .from("deep_assessments")
-        .select("questions, answers, updated_at")
+        // The seal columns are read so Review cannot be re-entered on a
+        // Consultation that has already been finalised.
+        .select("questions, answers, updated_at, consultation_finalisation, consultation_handoff_id")
         .eq("stripe_session_id", sessionId)
         .maybeSingle()
       if (error) {
@@ -132,6 +141,34 @@ export async function POST(req: NextRequest) {
     const slot = readDeterministicStateSlot(row.answers)
     if (slot.status === "unreadable") return refuse(409, "This Consultation state cannot be read")
     const stored = slot.state
+
+
+    /*
+     * A finalised Consultation is terminal — Phase 3C-C2A.
+     *
+     * The record has been sealed and handed off, so a mutation landing now
+     * would change answers a frozen payload already describes: the row and the
+     * finalisation would disagree, and the finalisation is the one a Report is
+     * built from. There is deliberately no "reopen" — that is a product
+     * decision nobody has taken, and inventing it here would take it.
+     *
+     * An INCOHERENT seal refuses for a different reason: something is present
+     * that should not be, and writing through evidence we cannot explain is how
+     * the explanation gets destroyed.
+     *
+     * This is inside the retry loop on purpose. A finalisation that lands
+     * between this read and this write fails the CAS below, and the next pass
+     * sees the seal and refuses — so a mutation cannot slip in after the seal
+     * by having read before it.
+     */
+    const seal = readConsultationSeal(row, stored)
+    if (seal.status !== "unsealed") {
+      console.error(
+        `[consultation-review] refusing mutation on a finalised Consultation ${sessionId}:`,
+        seal.status === "sealed" ? "sealed" : seal.detail,
+      )
+      return refuse(409, "This Consultation has been finished and can no longer be changed")
+    }
 
     const { answers } = sanitiseCandidateAnswers(stored.candidateAnswers, snapshot.bankVersion)
     const context: ConsultationContext = {

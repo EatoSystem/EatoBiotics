@@ -173,6 +173,7 @@ describe("the deterministic bank has not reached the paid flow", () => {
       importers().sort(),
       "a new importer of the deterministic bank has appeared",
     ).toEqual([
+      "app/api/consultation/finalise/route.ts",
       "app/api/consultation/progress/route.ts",
       "app/api/consultation/review/route.ts",
       "app/api/consultation/session/route.ts",
@@ -192,6 +193,10 @@ describe("the deterministic bank has not reached the paid flow", () => {
     // sessions, and a deterministic import there would be the two contracts
     // starting to merge.
     expect(importers().filter((f) => f.startsWith("app/api/")).sort()).toEqual([
+      // Phase 3C-C2A adds the finalise route. The list is extended rather than
+      // relaxed: it still names every server file allowed to know the bank
+      // exists, and the legacy routes below are still named as forbidden.
+      "app/api/consultation/finalise/route.ts",
       "app/api/consultation/progress/route.ts",
       "app/api/consultation/review/route.ts",
       "app/api/consultation/session/route.ts",

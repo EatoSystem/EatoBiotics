@@ -1925,3 +1925,157 @@ ALTER TABLE consents ENABLE ROW LEVEL SECURITY;  -- zero policies
 
 CREATE INDEX IF NOT EXISTS idx_consents_email ON consents (email, kind, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_consents_user  ON consents (user_id, kind, created_at DESC);
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 48: deterministic Consultation finalisation & trusted handoff
+-- ────────────────────────────────────────────────────────────
+-- STATUS: PROPOSED — DO NOT APPLY WITHOUT EXPLICIT AUTHORISATION.
+--
+-- Nothing in this repository applies it. Phase 3C-C2A's code and tests are
+-- written against it, but the deterministic Consultation is not activated for
+-- any paying customer, so no live row can reach the columns below until a human
+-- both applies this and authorises that activation separately.
+--
+-- The status line is a fact about a day, not a standing description — see
+-- Migration 41, which read "DO NOT APPLY" in this file while both its tables
+-- were already live. Whoever applies this must edit this header to say so.
+--
+-- ── WHAT THIS IS FOR ───────────────────────────────────────
+-- Phase 3C-C1 defined what a finished deterministic Consultation is allowed to
+-- hand off: a frozen, versioned, trusted payload derived entirely from the
+-- customer's own stored answers. It had nowhere to live. This gives it one, and
+-- gives it an identity.
+--
+-- The invariant the whole migration exists to protect:
+--
+--   ONE paid Consultation → ONE immutable trusted finalisation → ONE handoff.
+--
+-- Refreshes, retries, double-clicks and two browser tabs must never produce a
+-- second finalisation, a second handoff identity or a second finalised time.
+--
+-- ── WHY THE EXISTING ROW, NOT A NEW TABLE ──────────────────
+-- `deep_assessments` already IS the Consultation aggregate: the deterministic
+-- snapshot lives in `questions`, the mutable answer state in `answers`, and the
+-- row is keyed by the settled Stripe session. The transition being recorded is
+-- "this state is now sealed, and here is what was sealed" — one fact about one
+-- row. A separate table would make it two writes across two objects, and the
+-- one thing this must never be is two writes: a crash between them leaves a
+-- Consultation that is finalised in one place and still editable in another,
+-- and no constraint could see the contradiction.
+--
+-- Here the seal, the sealed payload and the phase move in a single UPDATE
+-- guarded by the existing `updated_at` compare-and-set, so either all of it
+-- happened or none of it did.
+--
+-- ── WHY NOT INSIDE questions / answers / report_json ───────
+-- `answers` is mutable by design and rewritten on every keystroke's autosave.
+-- `questions` is the snapshot. `report_json` belongs to the legacy Report and
+-- is written by a route that knows nothing about any of this. A trusted,
+-- write-once record cannot live inside a column three other writers rewrite —
+-- the immutability below would be unenforceable, because the constraint could
+-- not tell a legitimate answer edit from a tampered seal.
+ALTER TABLE deep_assessments
+  ADD COLUMN IF NOT EXISTS consultation_finalisation jsonb,
+  ADD COLUMN IF NOT EXISTS consultation_handoff_id   uuid;
+
+-- One handoff identity, globally. Partial so the millions of legacy rows with
+-- NULL here do not collide with each other — in Postgres NULLs never collide in
+-- a UNIQUE index anyway, but saying it in the predicate makes the intent
+-- explicit and keeps the index small.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_deep_assessments_handoff
+  ON deep_assessments (consultation_handoff_id)
+  WHERE consultation_handoff_id IS NOT NULL;
+
+DO $$
+BEGIN
+  -- ── The pair is atomic ───────────────────────────────────
+  -- A finalisation with no handoff cannot be referred to; a handoff with no
+  -- finalisation refers to nothing. Either state is the visible symptom of a
+  -- write that was supposed to be atomic and was not, so the database refuses
+  -- to hold it at all rather than leaving the application to detect it later.
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'deep_assessments_seal_pair'
+  ) THEN
+    ALTER TABLE deep_assessments
+      ADD CONSTRAINT deep_assessments_seal_pair CHECK (
+        (consultation_finalisation IS NULL AND consultation_handoff_id IS NULL)
+        OR
+        (consultation_finalisation IS NOT NULL AND consultation_handoff_id IS NOT NULL)
+      );
+  END IF;
+
+  -- ── A seal describes a finished Consultation ─────────────
+  -- Sealed rows must carry a deterministic state that is actually finished:
+  -- the right envelope kind, the finalisation phase, and no open cursor. The
+  -- pair (review, questionId) is a Consultation mid-correction, and a record
+  -- frozen there captures a value the customer was in the middle of changing.
+  --
+  -- Deliberately one-directional: this says nothing about UNSEALED rows, so
+  -- every legacy row, every in-progress Consultation and every row whose
+  -- `answers` is a legacy object stays valid with both new columns NULL. No
+  -- backfill, and nothing existing is rewritten.
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'deep_assessments_seal_state_coherent'
+  ) THEN
+    ALTER TABLE deep_assessments
+      ADD CONSTRAINT deep_assessments_seal_state_coherent CHECK (
+        consultation_finalisation IS NULL
+        OR (
+          jsonb_typeof(answers) = 'object'
+          AND answers ->> 'kind' = 'deterministic-consultation-state'
+          AND answers ->> 'phase' = 'ready-for-report'
+          AND jsonb_typeof(answers -> 'currentQuestionId') = 'null'
+        )
+      );
+  END IF;
+END $$;
+
+-- ── Write-once, enforced below the application ─────────────
+-- The application already refuses to overwrite a seal. This is the guarantee
+-- that survives a bug in it, a future route written by someone who has not read
+-- Phase 3C-C1, and a manual UPDATE typed into a SQL console at 2am.
+--
+-- Scoped to the two immutable columns and nothing else. It is NOT a Consultation
+-- state machine: it expresses no opinion about `answers`, `status`, the Report
+-- columns or anything else on the row, all of which must keep changing normally.
+--
+-- The equality branch matters. A retry that recomputes byte-identical values, or
+-- a client library that re-sends the full row, would otherwise be refused for
+-- attempting a change it is not making. `IS DISTINCT FROM` treats NULLs as
+-- comparable, so the first NULL → sealed transition is the only assignment that
+-- reaches the exception.
+--
+-- DELETE is untouched on purpose: account erasure removes the row, and a record
+-- somebody has the right to have deleted must not be made undeletable by a rule
+-- about not editing it.
+--
+-- No SECURITY DEFINER: this runs with the privileges of whoever is writing, and
+-- needs no more than that.
+CREATE OR REPLACE FUNCTION deep_assessments_seal_is_write_once()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF OLD.consultation_finalisation IS NOT NULL
+     AND NEW.consultation_finalisation IS DISTINCT FROM OLD.consultation_finalisation THEN
+    RAISE EXCEPTION
+      'consultation_finalisation is write-once and cannot be changed or cleared'
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+
+  IF OLD.consultation_handoff_id IS NOT NULL
+     AND NEW.consultation_handoff_id IS DISTINCT FROM OLD.consultation_handoff_id THEN
+    RAISE EXCEPTION
+      'consultation_handoff_id is write-once and cannot be changed or cleared'
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_deep_assessments_seal_write_once ON deep_assessments;
+CREATE TRIGGER trg_deep_assessments_seal_write_once
+  BEFORE UPDATE OF consultation_finalisation, consultation_handoff_id ON deep_assessments
+  FOR EACH ROW
+  EXECUTE FUNCTION deep_assessments_seal_is_write_once();
