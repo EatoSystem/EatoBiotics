@@ -1,4 +1,5 @@
 import {
+  canWithdrawAnswer,
   continueGate,
   continueLocally,
   goNext,
@@ -7,6 +8,7 @@ import {
   optionalSkipOnContinue,
   returnToReview,
   skipOptional,
+  withdrawOptionalAnswer,
   type ConsultationSessionState,
 } from "@/lib/consultation/session"
 import type { ReviewOutcome, SaveOutcome } from "./consultation-persistence"
@@ -203,4 +205,39 @@ export async function skipFrom(
     isEditingFromReview(skipped) ? returnToReview(skipped) : goNext(skipped),
     deps,
   )
+}
+
+/**
+ * Withdraw a previously supplied OPTIONAL answer, from Review.
+ *
+ * ══ THE ORDER IS THE POINT ══════════════════════════════════════════════════
+ *
+ * Queue, flush, and only THEN apply locally. Removing the answer from the
+ * screen first and hoping the write lands is the one thing this must not do:
+ * the customer would watch their disclosure disappear while the server still
+ * held it, and the next resume would put it back. Better to leave it visible
+ * and say the removal did not save.
+ *
+ * The skip goes through the SAME per-question queue as an answer, so an answer
+ * still in flight cannot land afterwards and resurrect the value the customer
+ * has just asked to remove — the server's answer action clears the skip marker
+ * by design, which is exactly the race that ordering closes.
+ *
+ * Nothing moves. Withdrawal happens on the Review list and leaves the customer
+ * there: no phase change, no cursor, and therefore no position to persist.
+ */
+export async function withdrawFrom(
+  state: ConsultationSessionState,
+  questionId: string,
+  deps: NavigationDeps,
+): Promise<NavigationOutcome> {
+  // The engine decides whether this is withdrawable — applicable, optional and
+  // currently answered. Asking the server to record a skip the engine would not
+  // make is the disagreement this architecture exists to prevent.
+  if (!canWithdrawAnswer(state, questionId)) return { status: "refused", state }
+
+  deps.queueSkip(questionId)
+  if (!(await deps.flush())) return { status: "save-failed" }
+
+  return { status: "moved", state: withdrawOptionalAnswer(state, questionId) }
 }

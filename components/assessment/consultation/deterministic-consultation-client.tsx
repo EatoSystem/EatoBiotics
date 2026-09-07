@@ -22,6 +22,7 @@ import {
   returnToReview,
   setAnswer,
   skipOptional,
+  withdrawOptionalAnswer,
   type ConsultationSessionState,
 } from "@/lib/consultation/session"
 import { buildConsultationReview } from "@/lib/consultation/review"
@@ -189,6 +190,10 @@ export function DeterministicConsultationClient({ context, preview = true }: Pro
         <ConsultationReviewView
           review={review}
           onEdit={(id) => setState((s) => editFromReview(s, id))}
+          /* Entirely local — the preview persists nothing and asks nothing of
+           * any server. The row re-derives on the next render and reads
+           * "Not answered (optional)". */
+          onWithdraw={(id) => setState((s) => withdrawOptionalAnswer(s, id))}
           footer={<ReviewFooter onBack={() => setState((s) => goBack(s))} />}
         />
       )}

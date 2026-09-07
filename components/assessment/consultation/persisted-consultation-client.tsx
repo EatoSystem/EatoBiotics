@@ -37,6 +37,7 @@ import {
   commitMove,
   continueFrom,
   skipFrom,
+  withdrawFrom,
   type NavigationDeps,
   type NavigationOutcome,
 } from "./consultation-navigation"
@@ -511,6 +512,9 @@ function PersistedConsultationSession({
         <ConsultationReviewView
           review={review}
           onEdit={(id) => void apply(() => commitMove(state, editFromReview(state, id), navigation))}
+          /* Queued, flushed, and applied only once the server confirms — the
+           * answer stays on screen if the removal did not save. */
+          onWithdraw={(id) => void apply(() => withdrawFrom(state, id, navigation))}
           footer={
             <ReviewFooter
               onBack={() => void apply(() => commitMove(state, goBack(state), navigation))}

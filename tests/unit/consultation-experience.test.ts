@@ -625,3 +625,39 @@ describe("the experience is a new component, not a mutated legacy one", () => {
     }
   })
 })
+
+/* ══ Withdrawal is offered by both surfaces ════════════════════════════════ */
+
+/**
+ * Phase 3C-C1 — the removal control is not a persisted-only feature.
+ *
+ * The two clients reach Review by different routes, and it would be entirely
+ * possible to wire the control into one of them and leave the other showing an
+ * optional answer the customer cannot take back. This is the guard that says
+ * both offer it, and that the Review view is the only place either does.
+ */
+describe("both clients let the customer take an optional answer back", () => {
+  it("each one hands the Review view a withdrawal handler", () => {
+    for (const file of [CLIENT, PERSISTED_CLIENT]) {
+      expect(read(file), file).toMatch(/onWithdraw=\{/)
+    }
+  })
+
+  it("the preview does it locally and the persisted client goes through navigation", () => {
+    // Different mechanisms, deliberately: the preview persists nothing, so a
+    // save contract there would be a fiction. Both end at the same engine rule.
+    expect(read(CLIENT)).toContain("withdrawOptionalAnswer")
+    expect(read(CLIENT)).not.toContain("withdrawFrom")
+    expect(read(PERSISTED_CLIENT)).toContain("withdrawFrom")
+  })
+
+  it("neither client decides for itself which answers may be removed", () => {
+    // `canWithdraw` is the model's, computed once in lib/consultation. A client
+    // that recomputed it would be a second definition, and the copy is the one
+    // that eventually offers Remove on a required question.
+    for (const file of [CLIENT, PERSISTED_CLIENT, REVIEW]) {
+      expect(read(file), file).not.toMatch(/required\s*===?\s*false/)
+      expect(read(file), file).not.toMatch(/!\w+\.required\s*&&/)
+    }
+  })
+})

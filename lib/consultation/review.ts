@@ -46,6 +46,15 @@ export interface ReviewItem {
   answer: readonly string[]
   state: ReviewAnswerState
   required: boolean
+  /**
+   * May the customer remove this answer before finalisation?
+   *
+   * Derived, never stored: optional + currently answered. A required question is
+   * never withdrawable, and a question with nothing in it has nothing to
+   * withdraw. Kept on the item rather than recomputed in the view so the rule
+   * has one definition and the view holds no opinion about answers.
+   */
+  canWithdraw: boolean
 }
 
 export interface ReviewSection {
@@ -139,6 +148,7 @@ export function buildConsultationReview(input: BuildReviewInput): ConsultationRe
       answer,
       state,
       required: question.required,
+      canWithdraw: state === "answered" && !question.required,
     }
 
     const existing = sections.find((s) => s.section === question.section)
