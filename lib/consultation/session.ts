@@ -443,6 +443,79 @@ export function skipOptional(
 }
 
 /**
+ * May this question's answer be withdrawn, right now?
+ *
+ * ══ WHERE, AS WELL AS WHAT ══════════════════════════════════════════════════
+ *
+ * Withdrawal is a Review-LIST operation, and the phase and cursor are part of
+ * the rule rather than a property of whichever screen happens to call it. The
+ * pair (review, null) is the list; (review, questionId) is an edit in progress,
+ * where the customer is already looking at the question and Clear is the
+ * ordinary way to empty it; and the questions phase is the flow, where passing
+ * an optional question is Skip. Offering a fourth route into the same end state
+ * from those screens would be three ways to say one thing.
+ *
+ * Putting the check here rather than trusting the UI is the point: the engine
+ * makes an invalid transition unconstructable, so a later surface — or a
+ * server that one day drives the same transition — cannot reach a state the
+ * product does not have.
+ *
+ * ══ AND WHAT ════════════════════════════════════════════════════════════════
+ *
+ * Three canonical facts, no fourth notion: it applies right now, it is
+ * optional, and it currently holds an answer that validates. A required
+ * question is never withdrawable — offering it would imply a Consultation can
+ * stay complete without it — and a question with nothing to withdraw offers
+ * nothing to press.
+ */
+export function canWithdrawAnswer(
+  state: ConsultationSessionState,
+  questionId: string,
+): boolean {
+  if (state.phase !== "review") return false
+  if (state.currentQuestionId !== null) return false
+
+  const question = applicableQuestions(state).find((q) => q.id === questionId)
+  if (!question || question.required) return false
+  return validateAnswer(question, state.answers[questionId]).status === "valid"
+}
+
+/**
+ * Withdraw a previously supplied OPTIONAL answer, from Review.
+ *
+ * ══ WHY THIS IS THE SKIP OPERATION, NOT A FOURTH STATE ══════════════════════
+ *
+ * The end state is the one the vocabulary already has: the question was
+ * reached, and it holds no answer by the customer's decision. "I no longer want
+ * this included" and "I looked at this and chose not to answer" describe the
+ * same fact about the record, and inventing a `withdrawn` state beside
+ * `skipped` would give a Report two ways to read one thing — with the newer,
+ * less-tested one carrying the disclosure the customer just asked to remove.
+ *
+ * ══ WHY IT IS NOT THE SAME AS A BRANCH CLOSING ══════════════════════════════
+ *
+ * A candidate answer whose branch closed is RETAINED, because the customer
+ * changed a different answer and never un-said this one. This deletes, because
+ * they did. The two must not converge: collapsing them either loses answers
+ * nobody withdrew, or keeps ones somebody did.
+ *
+ * ══ WHAT IT DOES NOT DO ═════════════════════════════════════════════════════
+ *
+ * It does not move. Withdrawing from Review leaves the customer on the Review
+ * list — no phase change, no cursor change, no edit opened for them. Returning
+ * the state unchanged is the refusal, exactly as `skipOptional` refuses.
+ */
+export function withdrawOptionalAnswer(
+  state: ConsultationSessionState,
+  questionId: string,
+): ConsultationSessionState {
+  if (!canWithdrawAnswer(state, questionId)) return state
+  // The canonical optional-skip operation, reused rather than restated: it
+  // already deletes the answer, drops the touched mark and records the skip.
+  return skipOptional(state, questionId)
+}
+
+/**
  * The optional question the customer is passing WITHOUT answering, if any.
  *
  * Pressing Continue on an applicable optional question they have left empty is

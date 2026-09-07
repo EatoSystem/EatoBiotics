@@ -1,4 +1,5 @@
 import {
+  canWithdrawAnswer,
   continueGate,
   continueLocally,
   goNext,
@@ -7,6 +8,7 @@ import {
   optionalSkipOnContinue,
   returnToReview,
   skipOptional,
+  withdrawOptionalAnswer,
   type ConsultationSessionState,
 } from "@/lib/consultation/session"
 import type { ReviewOutcome, SaveOutcome } from "./consultation-persistence"
@@ -64,7 +66,7 @@ export interface NavigationDeps {
    * resurrect the value the customer had just chosen to pass, because the
    * server's answer action un-skips by design.
    */
-  queueSkip: (questionId: string) => void
+  queueSkip: (questionId: string, currentQuestionId?: string | null) => void
   /** Ask the SERVER whether Review may be entered. It decides, not this module. */
   requestReview: () => Promise<ReviewOutcome>
   /** The one phase retreat: review → questions, at a named applicable question. */
@@ -203,4 +205,46 @@ export async function skipFrom(
     isEditingFromReview(skipped) ? returnToReview(skipped) : goNext(skipped),
     deps,
   )
+}
+
+/**
+ * Withdraw a previously supplied OPTIONAL answer, from Review.
+ *
+ * ══ THE ORDER IS THE POINT ══════════════════════════════════════════════════
+ *
+ * Queue, flush, and only THEN apply locally. Removing the answer from the
+ * screen first and hoping the write lands is the one thing this must not do:
+ * the customer would watch their disclosure disappear while the server still
+ * held it, and the next resume would put it back. Better to leave it visible
+ * and say the removal did not save.
+ *
+ * The skip goes through the SAME per-question queue as an answer, so an answer
+ * still in flight cannot land afterwards and resurrect the value the customer
+ * has just asked to remove — the server's answer action clears the skip marker
+ * by design, which is exactly the race that ordering closes.
+ *
+ * ══ ONE MUTATION, INCLUDING THE POSITION ════════════════════════════════════
+ *
+ * Nothing moves, and the request SAYS so: the skip carries an explicit `null`
+ * cursor, because "the customer is on the Review list" is a fact only the
+ * client holds and the server would otherwise have to guess. It is one request
+ * rather than a skip followed by a cursor repair, so there is no in-between
+ * state where the answer is gone and the position is wrong — a repair that
+ * failed on its own would leave exactly that, and the customer would come back
+ * to an edit of the answer they had just removed.
+ */
+export async function withdrawFrom(
+  state: ConsultationSessionState,
+  questionId: string,
+  deps: NavigationDeps,
+): Promise<NavigationOutcome> {
+  // The engine decides whether this is withdrawable — applicable, optional and
+  // currently answered. Asking the server to record a skip the engine would not
+  // make is the disagreement this architecture exists to prevent.
+  if (!canWithdrawAnswer(state, questionId)) return { status: "refused", state }
+
+  deps.queueSkip(questionId, null)
+  if (!(await deps.flush())) return { status: "save-failed" }
+
+  return { status: "moved", state: withdrawOptionalAnswer(state, questionId) }
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { Pencil } from "lucide-react"
+import { Pencil, X } from "lucide-react"
 import type { ConsultationReview, ReviewItem } from "@/lib/consultation/review"
 
 /**
@@ -29,11 +29,19 @@ import type { ConsultationReview, ReviewItem } from "@/lib/consultation/review"
 interface Props {
   review: ConsultationReview
   onEdit: (questionId: string) => void
+  /**
+   * Remove a previously supplied OPTIONAL answer.
+   *
+   * Optional prop: the ephemeral preview and the persisted wrapper both supply
+   * it, but a caller that cannot honour a removal must not render a control
+   * that appears to.
+   */
+  onWithdraw?: (questionId: string) => void
   /** Rendered under the list. Phase 3C-B has no Report handoff. */
   footer?: React.ReactNode
 }
 
-export function ConsultationReviewView({ review, onEdit, footer }: Props) {
+export function ConsultationReviewView({ review, onEdit, onWithdraw, footer }: Props) {
   const headingRef = useRef<HTMLHeadingElement>(null)
 
   /* Focus the Review heading on entry and on return from an edit, so the change
@@ -67,7 +75,12 @@ export function ConsultationReviewView({ review, onEdit, footer }: Props) {
             </h2>
             <ul className="mt-4 space-y-3">
               {section.items.map((item) => (
-                <ReviewRow key={item.questionId} item={item} onEdit={onEdit} />
+                <ReviewRow
+                  key={item.questionId}
+                  item={item}
+                  onEdit={onEdit}
+                  onWithdraw={onWithdraw}
+                />
               ))}
             </ul>
           </section>
@@ -79,7 +92,15 @@ export function ConsultationReviewView({ review, onEdit, footer }: Props) {
   )
 }
 
-function ReviewRow({ item, onEdit }: { item: ReviewItem; onEdit: (id: string) => void }) {
+function ReviewRow({
+  item,
+  onEdit,
+  onWithdraw,
+}: {
+  item: ReviewItem
+  onEdit: (id: string) => void
+  onWithdraw?: (id: string) => void
+}) {
   return (
     <li className="rounded-2xl border border-border bg-background p-4 sm:p-5">
       <div className="flex items-start justify-between gap-4">
@@ -107,18 +128,40 @@ function ReviewRow({ item, onEdit }: { item: ReviewItem; onEdit: (id: string) =>
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={() => onEdit(item.questionId)}
-          className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full border border-border px-4 text-sm font-medium text-foreground transition-colors hover:bg-secondary/60"
-        >
-          <Pencil size={14} aria-hidden />
-          Edit
-          {/* The visible word is "Edit" for everyone; a screen reader gets the
-            * question too, because a list of identical "Edit" buttons is
-            * unusable without it. */}
-          <span className="sr-only"> {item.question}</span>
-        </button>
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <button
+            type="button"
+            onClick={() => onEdit(item.questionId)}
+            className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full border border-border px-4 text-sm font-medium text-foreground transition-colors hover:bg-secondary/60"
+          >
+            <Pencil size={14} aria-hidden />
+            Edit
+            {/* The visible word is "Edit" for everyone; a screen reader gets the
+              * question too, because a list of identical "Edit" buttons is
+              * unusable without it. */}
+            <span className="sr-only"> {item.question}</span>
+          </button>
+
+          {/* Offered only where it is real: an optional question that currently
+            * holds an answer. A required one is never withdrawable, and a
+            * question with nothing in it has nothing to remove.
+            *
+            * Deliberately quiet. This is a reversible product choice — the
+            * customer can Edit and answer again — not an irreversible deletion,
+            * and styling it like one would make an ordinary correction feel
+            * dangerous. No confirmation dialog for the same reason. */}
+          {onWithdraw && item.canWithdraw && (
+            <button
+              type="button"
+              onClick={() => onWithdraw(item.questionId)}
+              className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
+            >
+              <X size={14} aria-hidden />
+              Remove answer
+              <span className="sr-only"> for {item.question}</span>
+            </button>
+          )}
+        </div>
       </div>
     </li>
   )

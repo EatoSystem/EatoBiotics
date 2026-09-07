@@ -4,12 +4,14 @@ import { join } from "node:path"
 
 import { createAnswerAutosave, type AutosaveStatus } from "@/lib/assessment/answer-autosave"
 import { CONSULTATION_BANK_V1 } from "@/lib/consultation/bank-registry"
+import { CONSULTATION_QUESTION_BANK } from "@/lib/consultation/question-bank"
 import {
   applicableQuestions,
   begin,
   createConsultationSession,
   currentQuestion,
   editFromReview,
+  enterReview,
   goBack,
   isEditingFromReview,
   isReviewing,
@@ -30,6 +32,7 @@ import {
   commitMove,
   continueFrom,
   skipFrom,
+  withdrawFrom,
   type NavigationDeps,
 } from "@/components/assessment/consultation/consultation-navigation"
 import {
@@ -82,6 +85,7 @@ interface FakeOptions {
 function fakeAdapter(options: FakeOptions = {}) {
   const calls: string[] = []
   const saved: Array<{ questionId: string; value: unknown }> = []
+  const skips: Array<{ questionId: string; currentQuestionId?: string | null }> = []
   const cursors: Array<string | null> = []
   const left: string[] = []
 
@@ -110,8 +114,12 @@ function fakeAdapter(options: FakeOptions = {}) {
       calls.push(`clear:${questionId}`)
       return options.save ?? { ok: true }
     },
-    async skipOptional(questionId) {
+    async skipOptional(questionId, currentQuestionId) {
       calls.push(`skip:${questionId}`)
+      // The cursor argument is recorded separately from the call log because it
+      // is a different claim: the log says WHAT was sent, this says where the
+      // customer said they were while sending it.
+      skips.push({ questionId, currentQuestionId })
       return options.skip ?? { ok: true }
     },
     async saveCursor(questionId) {
@@ -130,7 +138,7 @@ function fakeAdapter(options: FakeOptions = {}) {
     },
   }
 
-  return { persistence, calls, saved, cursors, left }
+  return { persistence, calls, saved, skips, cursors, left }
 }
 
 /**
@@ -142,7 +150,8 @@ function fakeAdapter(options: FakeOptions = {}) {
 function depsFor(
   persistence: ConsultationPersistence,
   flush: () => Promise<boolean>,
-  queueSkip: (questionId: string) => void = (id) => void persistence.skipOptional(id),
+  queueSkip: (questionId: string, currentQuestionId?: string | null) => void = (id, cursor) =>
+    void persistence.skipOptional(id, cursor),
 ): NavigationDeps {
   return {
     flush,
@@ -1108,5 +1117,298 @@ describe("the persisted wrapper is dormant and stays inside its boundary", () =>
     for (const message of messages) {
       expect(message, message).not.toMatch(/supabase|stripe|\b\d{3}\b|postgres|deep_assessments|bank/i)
     }
+  })
+})
+
+/* ══ Withdrawing an optional answer ════════════════════════════════════════ */
+
+/**
+ * Phase 3C-C1 — the customer takes an optional answer back, on a real session.
+ *
+ * ══ WHY THE ORDER IS THE TEST ═══════════════════════════════════════════════
+ *
+ * Every case below is about WHEN the local state changes relative to the write.
+ * A withdrawal that updates the screen first would show the customer their
+ * disclosure vanishing while the server still held it, and the next resume
+ * would hand it back — the worst possible way to learn that a removal did not
+ * take. So the answer stays visible until the server has confirmed, and these
+ * assertions are what stop that being reversed by a later refactor.
+ */
+describe("removing an optional answer is saved before it is shown as removed", () => {
+  /** A complete You session sitting on the Review list, as a resume would leave it. */
+  function reviewSession() {
+    const answers: ConsultationAnswers = {
+      [Q1]: "nothing",
+      [CONSTRAINTS]: ["allergy"],
+      [AVOIDANCES]: ["dairy"],
+    }
+    for (let pass = 0; pass < 3; pass += 1) {
+      for (const q of CONSULTATION_QUESTION_BANK) {
+        if (!q.foundations.includes("you")) continue
+        if (q.id in answers) continue
+        if (q.type === "single") answers[q.id] = q.options![0].value
+        else if (q.type === "multi") answers[q.id] = [q.options![0].value]
+        else if (q.type === "textarea") answers[q.id] = "A sentence that is a real answer."
+        else answers[q.id] = q.min ?? 0
+      }
+    }
+    const s = enterReview(begin(createConsultationSession({ context: you, answers })))
+    // The fixture is only meaningful if it is genuinely complete: `enterReview`
+    // refuses otherwise, so this assertion is what makes the rest trustworthy.
+    expect(isReviewing(s)).toBe(true)
+    return s
+  }
+
+  it("the server records the skip, and only then does the answer go", async () => {
+    const adapter = fakeAdapter()
+    const { deps } = queuedDepsFor(adapter)
+    const before = reviewSession()
+
+    const outcome = await withdrawFrom(before, AVOIDANCES, deps)
+
+    expect(adapter.calls).toEqual([`skip:${AVOIDANCES}`])
+    expect(outcome.status).toBe("moved")
+    if (outcome.status !== "moved") throw new Error("unreachable")
+    expect(outcome.state.answers[AVOIDANCES]).toBeUndefined()
+    expect(outcome.state.skipped.has(AVOIDANCES)).toBe(true)
+  })
+
+  it("a failed save leaves the answer on screen and says so", async () => {
+    const adapter = fakeAdapter({ skip: { ok: false, retryable: true } })
+    const { deps } = queuedDepsFor(adapter)
+    const before = reviewSession()
+
+    const outcome = await withdrawFrom(before, AVOIDANCES, deps)
+
+    expect(outcome.status).toBe("save-failed")
+    // No new state is handed back, so the caller keeps rendering the answer.
+    expect(outcome).not.toHaveProperty("state")
+    expect(before.answers[AVOIDANCES]).toEqual(["dairy"])
+  })
+
+  it("nothing moves — no cursor, no review entry, no leaving Review", async () => {
+    const adapter = fakeAdapter()
+    const { deps } = queuedDepsFor(adapter)
+
+    const outcome = await withdrawFrom(reviewSession(), AVOIDANCES, deps)
+
+    expect(adapter.calls.some((c) => c.startsWith("cursor:"))).toBe(false)
+    expect(adapter.calls).not.toContain("review")
+    expect(adapter.calls.some((c) => c.startsWith("leave-review:"))).toBe(false)
+    if (outcome.status !== "moved") throw new Error("unreachable")
+    expect(isReviewing(outcome.state)).toBe(true)
+    expect(outcome.state.currentQuestionId).toBeNull()
+    expect(isEditingFromReview(outcome.state)).toBe(false)
+  })
+
+  it("it sends the SAME server action the Skip button sends", async () => {
+    // One action, one meaning. A separate "withdraw" action would be a second
+    // way to say a thing the server already understands, and the newer one
+    // would be the less-tested path carrying the customer's removal.
+    const viaWithdraw = fakeAdapter()
+    await withdrawFrom(reviewSession(), AVOIDANCES, queuedDepsFor(viaWithdraw).deps)
+
+    const viaSkip = fakeAdapter()
+    await skipFrom(
+      createConsultationSession({
+        context: you,
+        answers: { [Q1]: "nothing", [CONSTRAINTS]: ["allergy"] },
+        startAtQuestionId: AVOIDANCES,
+      }),
+      AVOIDANCES,
+      queuedDepsFor(viaSkip).deps,
+    )
+
+    expect(viaWithdraw.calls[0]).toBe(`skip:${AVOIDANCES}`)
+    expect(viaSkip.calls[0]).toBe(viaWithdraw.calls[0])
+    // Skip moves the customer on; a withdrawal from Review does not.
+    expect(viaSkip.calls[1]).toMatch(/^cursor:/)
+    expect(viaWithdraw.calls).toHaveLength(1)
+  })
+
+  it("a still-pending answer for the same question never reaches the server", async () => {
+    // The race this closes: the customer edits, then immediately removes. The
+    // shared per-question queue drops the superseded answer, so nothing can land
+    // after the skip and restore the value they just took back.
+    const adapter = fakeAdapter()
+    const { deps, queue } = queuedDepsFor(adapter)
+    queue.queueAnswer(AVOIDANCES, ["nuts"])
+
+    const outcome = await withdrawFrom(reviewSession(), AVOIDANCES, deps)
+
+    expect(outcome.status).toBe("moved")
+    expect(adapter.saved).toEqual([])
+    expect(adapter.calls).toEqual([`skip:${AVOIDANCES}`])
+  })
+
+  it("a REQUIRED question asks the server for nothing at all", async () => {
+    const adapter = fakeAdapter()
+    const { deps } = queuedDepsFor(adapter)
+
+    const outcome = await withdrawFrom(reviewSession(), Q1, deps)
+
+    expect(outcome.status).toBe("refused")
+    expect(adapter.calls).toEqual([])
+  })
+
+  it("an already-skipped question asks the server for nothing either", async () => {
+    const adapter = fakeAdapter()
+    const { deps } = queuedDepsFor(adapter)
+    const already = skipOptional(reviewSession(), AVOIDANCES)
+
+    const outcome = await withdrawFrom(already, AVOIDANCES, deps)
+
+    expect(outcome.status).toBe("refused")
+    expect(adapter.calls).toEqual([])
+  })
+
+  it("a question whose branch has closed asks the server for nothing", async () => {
+    // Its answer is retained, not withdrawn — the customer never un-said it.
+    const adapter = fakeAdapter()
+    const { deps } = queuedDepsFor(adapter)
+    const closed = setAnswer(reviewSession(), CONSTRAINTS, ["budget"])
+
+    const outcome = await withdrawFrom(closed, AVOIDANCES, deps)
+
+    expect(outcome.status).toBe("refused")
+    expect(adapter.calls).toEqual([])
+    expect(closed.answers[AVOIDANCES]).toEqual(["dairy"])
+  })
+})
+
+/* ══ The withdrawal states its position ════════════════════════════════════ */
+
+/**
+ * Phase 3C-C1 corrections — the client half of the atomic Review withdrawal.
+ *
+ * The server cannot infer where the customer is standing. A skip that names no
+ * position is resolved against the stored cursor, and on the Review list the
+ * stored cursor is `null` — the one value that looks like "nothing stored".
+ * So the client says it outright, in the same request that removes the answer.
+ *
+ * The route is asserted separately, in `consultation-api-routes.test.ts`.
+ * Neither test proves the other: with both layers correct, a regression in
+ * either one alone would be masked by the other.
+ */
+describe("a Review withdrawal tells the server where the customer is", () => {
+  function reviewSession() {
+    const answers: ConsultationAnswers = {
+      [Q1]: "nothing",
+      [CONSTRAINTS]: ["allergy"],
+      [AVOIDANCES]: ["dairy"],
+    }
+    for (let pass = 0; pass < 3; pass += 1) {
+      for (const q of CONSULTATION_QUESTION_BANK) {
+        if (!q.foundations.includes("you")) continue
+        if (q.id in answers) continue
+        if (q.type === "single") answers[q.id] = q.options![0].value
+        else if (q.type === "multi") answers[q.id] = [q.options![0].value]
+        else if (q.type === "textarea") answers[q.id] = "A sentence that is a real answer."
+        else answers[q.id] = q.min ?? 0
+      }
+    }
+    const s = enterReview(begin(createConsultationSession({ context: you, answers })))
+    expect(isReviewing(s)).toBe(true)
+    return s
+  }
+
+  it("the skip carries an explicit null cursor — the Review list", async () => {
+    const adapter = fakeAdapter()
+    const { deps } = queuedDepsFor(adapter)
+
+    await withdrawFrom(reviewSession(), AVOIDANCES, deps)
+
+    expect(adapter.skips).toHaveLength(1)
+    // Explicitly null, not absent. The two are different statements to the
+    // route: "the position is the Review list" versus "I am not saying".
+    expect(adapter.skips[0]).toEqual({ questionId: AVOIDANCES, currentQuestionId: null })
+    expect(adapter.skips[0].currentQuestionId).toBeNull()
+  })
+
+  it("an ordinary Skip during the question flow names no cursor", async () => {
+    // Non-regression: question flow keeps its own semantics, where the stored
+    // cursor already names the question being passed and `skipFrom` persists
+    // the new position itself once the move is committed.
+    const adapter = fakeAdapter()
+    const { deps } = queuedDepsFor(adapter)
+
+    await skipFrom(
+      createConsultationSession({
+        context: you,
+        answers: { [Q1]: "nothing", [CONSTRAINTS]: ["allergy"] },
+        startAtQuestionId: AVOIDANCES,
+      }),
+      AVOIDANCES,
+      deps,
+    )
+
+    expect(adapter.skips).toHaveLength(1)
+    expect(adapter.skips[0].currentQuestionId).toBeUndefined()
+  })
+
+  it("the cursor survives the queue, rather than being dropped in transit", async () => {
+    // The queue stores one pending mutation per question and sends the newest.
+    // A cursor dropped on the way in would be invisible at the call site and
+    // only show up as a wrong position in the database.
+    const adapter = fakeAdapter()
+    const { queue } = queuedDepsFor(adapter)
+
+    queue.queueSkip(AVOIDANCES, null)
+    expect(await queue.flush()).toBe(true)
+
+    expect(adapter.skips[0].currentQuestionId).toBeNull()
+  })
+
+  it("a withdrawal still supersedes a pending answer, cursor and all", async () => {
+    const adapter = fakeAdapter()
+    const { deps, queue } = queuedDepsFor(adapter)
+    queue.queueAnswer(AVOIDANCES, ["nuts"])
+
+    await withdrawFrom(reviewSession(), AVOIDANCES, deps)
+
+    expect(adapter.saved).toEqual([])
+    expect(adapter.skips).toEqual([{ questionId: AVOIDANCES, currentQuestionId: null }])
+  })
+})
+
+/* ══ Withdrawal is a Review-list operation ═════════════════════════════════ */
+
+describe("withdrawal refuses from anywhere that is not the Review list", () => {
+  const answered = (over: Partial<ConsultationSessionState> = {}) => ({
+    ...begin(
+      createConsultationSession({
+        context: you,
+        answers: { [Q1]: "nothing", [CONSTRAINTS]: ["allergy"], [AVOIDANCES]: ["dairy"] },
+      }),
+    ),
+    ...over,
+  })
+
+  it("the question flow asks the server for nothing", async () => {
+    const adapter = fakeAdapter()
+    const { deps } = queuedDepsFor(adapter)
+
+    const outcome = await withdrawFrom(
+      answered({ phase: "questions", currentQuestionId: AVOIDANCES }),
+      AVOIDANCES,
+      deps,
+    )
+
+    expect(outcome.status).toBe("refused")
+    expect(adapter.calls).toEqual([])
+  })
+
+  it("an open Review EDIT asks the server for nothing", async () => {
+    const adapter = fakeAdapter()
+    const { deps } = queuedDepsFor(adapter)
+
+    const outcome = await withdrawFrom(
+      answered({ phase: "review", currentQuestionId: AVOIDANCES }),
+      AVOIDANCES,
+      deps,
+    )
+
+    expect(outcome.status).toBe("refused")
+    expect(adapter.calls).toEqual([])
   })
 })

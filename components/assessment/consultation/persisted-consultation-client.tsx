@@ -37,6 +37,7 @@ import {
   commitMove,
   continueFrom,
   skipFrom,
+  withdrawFrom,
   type NavigationDeps,
   type NavigationOutcome,
 } from "./consultation-navigation"
@@ -92,7 +93,7 @@ const SAVE_FAILED_MESSAGE = "We couldn't save that yet. Try Continue again."
  */
 type QueuedMutation =
   | { kind: "answer"; value: ConsultationAnswer }
-  | { kind: "skip" }
+  | { kind: "skip"; currentQuestionId?: string | null }
   | { kind: "clear" }
 
 /**
@@ -104,7 +105,8 @@ type QueuedMutation =
  */
 export interface ConsultationMutationQueue {
   queueAnswer: (questionId: string, value: ConsultationAnswer) => void
-  queueSkip: (questionId: string) => void
+  /** `currentQuestionId` states where the customer is; see `skipOptional`. */
+  queueSkip: (questionId: string, currentQuestionId?: string | null) => void
   /** Send everything outstanding. False if anything failed. */
   flush: () => Promise<boolean>
   /** Drop pending timers without sending. For unmount. */
@@ -119,7 +121,9 @@ export function createConsultationMutationQueue(
     onStatus,
     send: async (questionId, value) => {
       const mutation = value as QueuedMutation
-      if (mutation.kind === "skip") return persistence.skipOptional(questionId)
+      if (mutation.kind === "skip") {
+        return persistence.skipOptional(questionId, mutation.currentQuestionId)
+      }
       if (mutation.kind === "clear") return persistence.clearAnswer(questionId)
       return persistence.saveAnswer(questionId, mutation.value)
     },
@@ -127,7 +131,8 @@ export function createConsultationMutationQueue(
 
   return {
     queueAnswer: (questionId, value) => autosave.queue(questionId, { kind: "answer", value }),
-    queueSkip: (questionId) => autosave.queue(questionId, { kind: "skip" }),
+    queueSkip: (questionId, currentQuestionId) =>
+      autosave.queue(questionId, { kind: "skip", currentQuestionId }),
     async flush() {
       try {
         return await autosave.flush()
@@ -511,6 +516,9 @@ function PersistedConsultationSession({
         <ConsultationReviewView
           review={review}
           onEdit={(id) => void apply(() => commitMove(state, editFromReview(state, id), navigation))}
+          /* Queued, flushed, and applied only once the server confirms — the
+           * answer stays on screen if the removal did not save. */
+          onWithdraw={(id) => void apply(() => withdrawFrom(state, id, navigation))}
           footer={
             <ReviewFooter
               onBack={() => void apply(() => commitMove(state, goBack(state), navigation))}

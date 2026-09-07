@@ -14,6 +14,7 @@ import {
   applicableQuestions,
   begin,
   canGoBack,
+  canWithdrawAnswer,
   clearAnswer,
   continueGate,
   createConsultationSession,
@@ -35,6 +36,7 @@ import {
   skipOptional,
   toggleMultiValue,
   trustedAnswers,
+  withdrawOptionalAnswer,
   type ConsultationSessionState,
 } from "@/lib/consultation/session"
 
@@ -1001,5 +1003,281 @@ describe("K. editing one Review answer returns to Review, or to what it broke", 
       skipOptional(s, Q2),
     ]
     for (const state of reachable) expect(state.phase).not.toBe("ready-for-report")
+  })
+})
+
+/* ══ L — withdrawing an optional answer ════════════════════════════════════ */
+
+/**
+ * Phase 3C-C1 — the customer takes back an OPTIONAL answer they already gave.
+ *
+ * ══ WHY THIS IS NOT THE SAME AS EDITING ═════════════════════════════════════
+ *
+ * Edit changes a value. Until this existed, an optional disclosure was
+ * one-way: having once named an avoided food or written a sentence about what
+ * success looks like, the only routes out were to overwrite it with a
+ * different disclosure or to leave it in. "I would rather this not be part of
+ * my Consultation" had no expression at all, which is the wrong shape for the
+ * questions that are optional precisely because they are the personal ones.
+ *
+ * ══ WHY IT IS THE SKIP OPERATION ════════════════════════════════════════════
+ *
+ * The end state already had a name. "Reached, and holding no answer by the
+ * customer's decision" is what `skipped` means, so withdrawal reuses it rather
+ * than adding a fourth notion beside answered / skipped / not-reached. The
+ * tests below therefore assert equality with `skipOptional` directly: if the
+ * two ever diverge, a Report gains two ways to read one fact.
+ */
+describe("L. an optional answer can be taken back, and it means a skip", () => {
+  /** A complete You session, sitting on the Review list, both optionals answered. */
+  const reviewed = () => completeSession(you)
+
+  it("both optional questions arrive at Review actually answered", () => {
+    // The premise the rest of this section rests on. Stated rather than assumed,
+    // because a bank revision that made either required would otherwise turn
+    // every case below green by vacuity.
+    const s = reviewed()
+    for (const id of [AVOIDANCES, SUCCESS]) {
+      expect(findConsultationQuestion(id)?.required, id).toBe(false)
+      expect(s.answers[id], id).toBeDefined()
+    }
+  })
+
+  /* A — a required question is never withdrawable */
+  it("a REQUIRED question offers nothing to withdraw", () => {
+    const s = reviewed()
+    expect(canWithdrawAnswer(s, Q1)).toBe(false)
+    expect(withdrawOptionalAnswer(s, Q1)).toBe(s)
+    expect(withdrawOptionalAnswer(s, Q1).answers[Q1]).toBe(s.answers[Q1])
+  })
+
+  /* B — nothing there to take back */
+  it("an UNANSWERED optional question offers nothing to withdraw", () => {
+    const skippedState = skipOptional(reviewed(), SUCCESS)
+    expect(canWithdrawAnswer(skippedState, SUCCESS)).toBe(false)
+    expect(withdrawOptionalAnswer(skippedState, SUCCESS)).toBe(skippedState)
+  })
+
+  /* C — a question that is not being asked */
+  it("an INAPPLICABLE optional question is not withdrawable, and keeps its answer", () => {
+    // The branch closed because a different answer changed. The customer never
+    // said anything about this one, so there is nothing here to take back.
+    const closed = setAnswer(reviewed(), CONSTRAINTS, ["budget"])
+    expect(applicableQuestions(closed).map((q) => q.id)).not.toContain(AVOIDANCES)
+    expect(canWithdrawAnswer(closed, AVOIDANCES)).toBe(false)
+    expect(withdrawOptionalAnswer(closed, AVOIDANCES).answers[AVOIDANCES]).toEqual(
+      closed.answers[AVOIDANCES],
+    )
+  })
+
+  /* D — an id the bank does not have */
+  it("an unknown question id is refused rather than recorded", () => {
+    const s = reviewed()
+    expect(canWithdrawAnswer(s, "not_a_question_v1")).toBe(false)
+    const after = withdrawOptionalAnswer(s, "not_a_question_v1")
+    expect(after).toBe(s)
+    expect(after.skipped.has("not_a_question_v1")).toBe(false)
+  })
+
+  /* E — the real thing */
+  it("withdrawing deletes the answer, clears touched and RECORDS the skip", () => {
+    const before = reviewed()
+    expect(canWithdrawAnswer(before, SUCCESS)).toBe(true)
+
+    const after = withdrawOptionalAnswer(before, SUCCESS)
+    expect(after.answers[SUCCESS]).toBeUndefined()
+    expect(after.touched.has(SUCCESS)).toBe(false)
+    expect(after.skipped.has(SUCCESS)).toBe(true)
+  })
+
+  it("it reaches the IDENTICAL state the canonical skip reaches", () => {
+    // Not a restatement of the rule — the assertion that there is only one rule.
+    const s = reviewed()
+    expect(withdrawOptionalAnswer(s, SUCCESS)).toEqual(skipOptional(s, SUCCESS))
+    expect(withdrawOptionalAnswer(s, AVOIDANCES)).toEqual(skipOptional(s, AVOIDANCES))
+  })
+
+  it("the withdrawn answer stops counting as a trusted answer", () => {
+    const after = withdrawOptionalAnswer(reviewed(), SUCCESS)
+    expect(trustedAnswers(after)[SUCCESS]).toBeUndefined()
+    // And the Consultation is still complete — an optional question is optional.
+    expect(sessionCompleteness(after).complete).toBe(true)
+  })
+
+  /* F — it does not move the customer */
+  it("withdrawing from Review leaves the customer on the Review list", () => {
+    const before = reviewed()
+    const after = withdrawOptionalAnswer(before, SUCCESS)
+    expect(after.phase).toBe(before.phase)
+    expect(isReviewing(after)).toBe(true)
+    expect(after.currentQuestionId).toBeNull()
+    expect(isEditingFromReview(after)).toBe(false)
+  })
+
+  /* G — pressing it twice says nothing new */
+  it("withdrawing twice is the same state as withdrawing once", () => {
+    const once = withdrawOptionalAnswer(reviewed(), SUCCESS)
+    const twice = withdrawOptionalAnswer(once, SUCCESS)
+    expect(twice).toEqual(once)
+    expect(canWithdrawAnswer(once, SUCCESS)).toBe(false)
+  })
+
+  /* H — the two ways an answer stops counting are not the same event */
+  it("a CLOSED BRANCH retains the answer; a WITHDRAWAL deletes it", () => {
+    const s = reviewed()
+    const closed = setAnswer(s, CONSTRAINTS, ["budget"])
+    const withdrawn = withdrawOptionalAnswer(s, AVOIDANCES)
+
+    // Both stop counting.
+    expect(trustedAnswers(closed)[AVOIDANCES]).toBeUndefined()
+    expect(trustedAnswers(withdrawn)[AVOIDANCES]).toBeUndefined()
+
+    // Only one of them was the customer un-saying it.
+    expect(closed.answers[AVOIDANCES]).toEqual(s.answers[AVOIDANCES])
+    expect(withdrawn.answers[AVOIDANCES]).toBeUndefined()
+    expect(closed.skipped.has(AVOIDANCES)).toBe(false)
+    expect(withdrawn.skipped.has(AVOIDANCES)).toBe(true)
+
+    // And re-opening the branch gives the retained answer back, unchanged.
+    const reopened = setAnswer(closed, CONSTRAINTS, ["allergy"])
+    expect(trustedAnswers(reopened)[AVOIDANCES]).toEqual(s.answers[AVOIDANCES])
+  })
+
+  it("an INVALID stored answer is a correction, never a withdrawal", () => {
+    // Same rule the Continue gate applies: a broken value is a mistake to fix,
+    // and recording a skip for it would turn a typo into a decision.
+    const broken = setAnswer(reviewed(), AVOIDANCES, ["not-an-option"])
+    expect(canWithdrawAnswer(broken, AVOIDANCES)).toBe(false)
+    expect(withdrawOptionalAnswer(broken, AVOIDANCES)).toBe(broken)
+  })
+
+  it("a withdrawn question can be answered again, and the skip marker goes", () => {
+    const withdrawn = withdrawOptionalAnswer(reviewed(), SUCCESS)
+    const reanswered = setAnswer(withdrawn, SUCCESS, "Sitting down to eat without rushing.")
+    expect(reanswered.skipped.has(SUCCESS)).toBe(false)
+    expect(trustedAnswers(reanswered)[SUCCESS]).toBe("Sitting down to eat without rushing.")
+    expect(canWithdrawAnswer(reanswered, SUCCESS)).toBe(true)
+  })
+
+  it("withdrawal cannot reach the finalisation phase", () => {
+    const s = reviewed()
+    for (const id of [SUCCESS, AVOIDANCES, Q1, "not_a_question_v1"]) {
+      expect(withdrawOptionalAnswer(s, id).phase, id).not.toBe("ready-for-report")
+    }
+  })
+})
+
+/* ══ L2 — the two optional questions, by name ══════════════════════════════ */
+
+/**
+ * The free-text answer and the food-avoidance answer get their own cases
+ * because they are the two the customer is most likely to want back: one is
+ * whatever they chose to write about themselves, the other names a food they
+ * avoid. A withdrawal that half-worked on either is the failure that matters.
+ */
+describe("L2. the personal optional answers come back out cleanly", () => {
+  it("withdrawn FREE TEXT is gone from the state, not blanked", () => {
+    const s = completeSession(you)
+    const sentence = s.answers[SUCCESS]
+    expect(typeof sentence).toBe("string")
+
+    const after = withdrawOptionalAnswer(s, SUCCESS)
+    expect(after.answers).not.toHaveProperty(SUCCESS)
+    expect(Object.values(after.answers)).not.toContain(sentence)
+    expect(JSON.stringify(after.answers)).not.toContain(sentence as string)
+  })
+
+  it("withdrawn FOOD AVOIDANCES leaves no named food behind", () => {
+    const s = setAnswer(completeSession(you), AVOIDANCES, ["dairy", "wheat-gluten"])
+    const after = withdrawOptionalAnswer(s, AVOIDANCES)
+    expect(after.answers).not.toHaveProperty(AVOIDANCES)
+    expect(JSON.stringify(after.answers)).not.toContain("dairy")
+    expect(JSON.stringify(after.answers)).not.toContain("wheat-gluten")
+    expect(after.skipped.has(AVOIDANCES)).toBe(true)
+  })
+
+  it("withdrawing the avoidance detail does not withdraw the CONSTRAINT that opened it", () => {
+    // The customer said they have an allergy. Taking back the detail is not
+    // taking back the allergy, and the question stays live and unanswered.
+    const after = withdrawOptionalAnswer(completeSession(you), AVOIDANCES)
+    expect(trustedAnswers(after)[CONSTRAINTS]).toEqual(["allergy"])
+    expect(applicableQuestions(after).map((q) => q.id)).toContain(AVOIDANCES)
+  })
+})
+
+/* ══ L3 — withdrawal is a Review-LIST transition ═══════════════════════════ */
+
+/**
+ * Phase 3C-C1 correction — where the customer must be standing.
+ *
+ * The engine, not the screen, decides this. Every other route into the same end
+ * state already exists and belongs to a different screen: Skip passes an
+ * optional question during the flow, and Clear empties one the customer has
+ * open in front of them. A fourth way in from those screens would be three ways
+ * to say one thing, and the least-used one would be the least-tested.
+ *
+ * Enforcing it here rather than trusting the UI is what makes the invalid state
+ * unconstructable, including by a caller that does not exist yet.
+ */
+describe("L3. an optional answer may only be taken back from the Review list", () => {
+  const answered = (over: Partial<ConsultationSessionState> = {}): ConsultationSessionState => ({
+    ...begin(
+      createConsultationSession({
+        context: you,
+        answers: { [Q1]: "nothing", [CONSTRAINTS]: ["allergy"], [AVOIDANCES]: ["dairy"] },
+      }),
+    ),
+    ...over,
+  })
+
+  it("the Review LIST allows it", () => {
+    const s = answered({ phase: "review", currentQuestionId: null })
+    expect(canWithdrawAnswer(s, AVOIDANCES)).toBe(true)
+    expect(withdrawOptionalAnswer(s, AVOIDANCES).answers[AVOIDANCES]).toBeUndefined()
+  })
+
+  it("the questions phase refuses, and changes nothing", () => {
+    // Passing an optional question during the flow is Skip, and it is right
+    // there on the screen.
+    const s = answered({ phase: "questions", currentQuestionId: AVOIDANCES })
+    expect(canWithdrawAnswer(s, AVOIDANCES)).toBe(false)
+    expect(withdrawOptionalAnswer(s, AVOIDANCES)).toBe(s)
+  })
+
+  it("Orientation refuses, and changes nothing", () => {
+    const s = answered({ phase: "questions", currentQuestionId: null })
+    expect(canWithdrawAnswer(s, AVOIDANCES)).toBe(false)
+    expect(withdrawOptionalAnswer(s, AVOIDANCES)).toBe(s)
+  })
+
+  it("an open Review EDIT refuses, and changes nothing", () => {
+    // (review, questionId) is a correction in progress. The customer is looking
+    // at the question; emptying it there is Clear.
+    const s = answered({ phase: "review", currentQuestionId: AVOIDANCES })
+    expect(isEditingFromReview(s)).toBe(true)
+    expect(canWithdrawAnswer(s, AVOIDANCES)).toBe(false)
+    expect(withdrawOptionalAnswer(s, AVOIDANCES)).toBe(s)
+  })
+
+  it("an edit of a DIFFERENT question refuses it too", () => {
+    // The pair is the rule, not the identity of the question being edited: a
+    // record frozen mid-correction is the hazard either way.
+    const s = answered({ phase: "review", currentQuestionId: Q2 })
+    expect(canWithdrawAnswer(s, AVOIDANCES)).toBe(false)
+    expect(withdrawOptionalAnswer(s, AVOIDANCES)).toBe(s)
+  })
+
+  it("on the Review list, the other refusals still hold", () => {
+    const s = answered({ phase: "review", currentQuestionId: null })
+    // Required.
+    expect(canWithdrawAnswer(s, Q1)).toBe(false)
+    // Unanswered / already skipped.
+    expect(canWithdrawAnswer(skipOptional(s, AVOIDANCES), AVOIDANCES)).toBe(false)
+    // Inapplicable, with a retained candidate answer behind a closed branch.
+    const closed = setAnswer(s, CONSTRAINTS, ["budget"])
+    expect(closed.answers[AVOIDANCES]).toEqual(["dairy"])
+    expect(canWithdrawAnswer(closed, AVOIDANCES)).toBe(false)
+    // Unknown id.
+    expect(canWithdrawAnswer(s, "not_a_question_v1")).toBe(false)
   })
 })

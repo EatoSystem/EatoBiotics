@@ -70,6 +70,22 @@ function editFor(page: Page, question: RegExp) {
   return page.getByRole("button", { name: question }).filter({ hasText: "Edit" })
 }
 
+/**
+ * The "Remove answer" control for the item whose question matches.
+ *
+ * Named by its question, exactly as Edit is: a column of identical controls is
+ * unusable otherwise, and asking for it by accessible name is what proves the
+ * name is really there.
+ */
+function removeFor(page: Page, question: RegExp) {
+  return page.getByRole("button", { name: question }).filter({ hasText: "Remove answer" })
+}
+
+/** The Review row for the item whose question matches. */
+function rowFor(page: Page, question: RegExp) {
+  return page.locator("li").filter({ hasText: question })
+}
+
 /** The question texts currently listed on Review, in order. */
 async function reviewQuestions(page: Page): Promise<string[]> {
   return page.locator("li p.text-sm").allInnerTexts()
@@ -678,3 +694,122 @@ async function advanceUntil(page: Page, match: RegExp, options: WalkOptions = {}
   }
   throw new Error(`never reached a question matching ${match}`)
 }
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+test.describe("Scenario 13 — taking an optional answer back from Review", () => {
+  test("free text can be removed, and the question answered again afterwards", async ({ page }) => {
+    // The one the customer is most likely to want back: whatever they chose to
+    // write about themselves, in their own words.
+    await beginConsultation(page)
+    await completeRemaining(page, { choose: { "work around": "A limited food budget" } })
+    await expect(reviewHeading(page)).toBeVisible()
+
+    const row = rowFor(page, /own words/i)
+    await expect(row).toContainText("Something I would like to be different in three months.")
+
+    await removeFor(page, /own words/i).click()
+
+    // Gone from the row, and described as the decision it is — not as silence,
+    // and not as a "No" the customer never gave.
+    await expect(row).toContainText("Not answered (optional)")
+    await expect(row).not.toContainText("Something I would like to be different")
+    await expect(row).not.toContainText("Not answered yet")
+    // Still on Review. Removing an answer is not a navigation.
+    await expect(reviewHeading(page)).toBeVisible()
+
+    // And it is reversible: Edit opens the question EMPTY, not pre-filled with
+    // the answer that was just taken back.
+    await editFor(page, /own words/i).click()
+    const textarea = page.locator("textarea")
+    await expect(textarea).toHaveValue("")
+
+    await textarea.fill("Sitting down to eat without rushing.")
+    await page.getByRole("button", { name: "Save and return to Review" }).click()
+
+    await expect(reviewHeading(page)).toBeVisible()
+    await expect(rowFor(page, /own words/i)).toContainText("Sitting down to eat without rushing.")
+    // Answered again, so it can be taken back again.
+    await expect(removeFor(page, /own words/i)).toBeVisible()
+  })
+
+  test("a named food can be removed without withdrawing the allergy itself", async ({ page }) => {
+    await beginConsultation(page)
+    await completeRemaining(page, { choose: { "work around": "A food allergy" } })
+    await expect(reviewHeading(page)).toBeVisible()
+
+    const avoidance = rowFor(page, /should it avoid/i)
+    await expect(avoidance).toContainText("Milk or dairy")
+
+    await removeFor(page, /should it avoid/i).click()
+
+    await expect(avoidance).toContainText("Not answered (optional)")
+    await expect(avoidance).not.toContainText("Milk or dairy")
+
+    // The constraint that opened the question is untouched: taking back the
+    // detail is not taking back the allergy, and the question stays on the list
+    // waiting to be answered again.
+    await expect(rowFor(page, /work around/i)).toContainText("A food allergy")
+    expect(await reviewQuestions(page)).toEqual(
+      expect.arrayContaining([expect.stringMatching(/should it avoid/i)]),
+    )
+  })
+
+  test("only the optional answers offer it", async ({ page }) => {
+    await beginConsultation(page)
+    await completeRemaining(page, { choose: { "work around": "A food allergy" } })
+    await expect(reviewHeading(page)).toBeVisible()
+
+    // Exactly the two optional questions in the bank, and nothing else.
+    await expect(page.getByRole("button", { name: /Remove answer/ })).toHaveCount(2)
+    await expect(rowFor(page, /shape of your energy/i)).not.toContainText("Remove answer")
+    await expect(rowFor(page, /work around/i)).not.toContainText("Remove answer")
+
+    // Once removed, the control goes with the answer — there is nothing left to
+    // take back, and a second press would say nothing new.
+    await removeFor(page, /own words/i).click()
+    await expect(page.getByRole("button", { name: /Remove answer/ })).toHaveCount(1)
+  })
+
+  test("it can be done without a mouse", async ({ page }) => {
+    await beginConsultation(page)
+    await completeRemaining(page, { choose: { "work around": "A limited food budget" } })
+    await expect(reviewHeading(page)).toBeVisible()
+
+    const control = removeFor(page, /own words/i)
+    await control.focus()
+    await expect(control).toBeFocused()
+    await page.keyboard.press("Enter")
+
+    await expect(rowFor(page, /own words/i)).toContainText("Not answered (optional)")
+  })
+})
+
+test.describe("Scenario 14 — removing an answer on a phone", () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  test("the control fits, is tappable, and removing changes no layout width", async ({ page }) => {
+    await beginConsultation(page)
+    await completeRemaining(page, { choose: { "work around": "A food allergy" } })
+    await expect(reviewHeading(page)).toBeVisible()
+
+    const control = removeFor(page, /should it avoid/i)
+    await expect(control).toBeVisible()
+
+    const box = await control.boundingBox()
+    expect(box!.height).toBeGreaterThanOrEqual(44)
+    expect(box!.x + box!.width).toBeLessThanOrEqual(390)
+
+    // The second control on a row must not push the row wider than the phone.
+    expect(await unclippedOverflow(page)).toEqual([])
+
+    await control.click()
+    await expect(rowFor(page, /should it avoid/i)).toContainText("Not answered (optional)")
+
+    expect(await unclippedOverflow(page)).toEqual([])
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    )
+    expect(overflow).toBeLessThanOrEqual(0)
+  })
+})

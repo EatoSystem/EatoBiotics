@@ -972,3 +972,164 @@ describe("neither route can begin a Report", () => {
     }
   })
 })
+
+/* ══ Progress — skip, and the Review-list position ═════════════════════════ */
+
+/**
+ * Phase 3C-C1 corrections — what a `skip` must leave behind.
+ *
+ * ══ WHY THESE ARE ROUTE TESTS AND NOT CLIENT TESTS ══════════════════════════
+ *
+ * The client sends an explicit `null` cursor when a withdrawal comes from the
+ * Review list, and a fake-adapter test proves it does. But two layers each
+ * closing the same hole means neither is proven by the other: with the client
+ * fixed, a route that still synthesised a position from `questionId` would go
+ * unnoticed, and the next caller to omit a cursor would reopen it. So the route
+ * is asserted here on its own terms, against a body that names no position.
+ */
+describe("PATCH progress skip leaves the customer where they actually are", () => {
+  /** On the Review list, with the optional question answered and touched. */
+  const onReviewList = () =>
+    rowWith({
+      answers: stateWith({
+        candidateAnswers: completeAnswers({ [Q1]: "nothing", [CONSTRAINTS]: ["allergy"] }),
+        touchedQuestionIds: [AVOIDANCES, Q1],
+        skippedOptionalQuestionIds: [],
+        currentQuestionId: null,
+        phase: "review",
+      }),
+    })
+
+  it("a skip from the Review list keeps the null cursor, even with none in the body", async () => {
+    // The defect this closes: `null` filled in from `questionId` stored
+    // (review, withdrawnId) — a Review EDIT of the answer just removed — while
+    // the browser stayed on the list. Resume believes storage.
+    const db = makeDb(onReviewList())
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callProgress(
+      patch({ action: "skip", sessionId: SESSION, questionId: AVOIDANCES }),
+    )
+
+    expect(res.status).toBe(200)
+    expect(db.state().currentQuestionId).toBeNull()
+    expect(db.state().phase).toBe("review")
+  })
+
+  it("an explicit null cursor reaches the same place", async () => {
+    const db = makeDb(onReviewList())
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callProgress(
+      patch({
+        action: "skip",
+        sessionId: SESSION,
+        questionId: AVOIDANCES,
+        currentQuestionId: null,
+      }),
+    )
+
+    expect(res.status).toBe(200)
+    expect(db.state().currentQuestionId).toBeNull()
+    expect(db.state().phase).toBe("review")
+  })
+
+  it("all five properties land in the ONE mutation", async () => {
+    const db = makeDb(onReviewList())
+    mockGetSupabase.mockReturnValue(db.client)
+    const writesBefore = db.counts().writes
+
+    await callProgress(
+      patch({
+        action: "skip",
+        sessionId: SESSION,
+        questionId: AVOIDANCES,
+        currentQuestionId: null,
+      }),
+    )
+
+    const after = db.state()
+    expect(after.candidateAnswers[AVOIDANCES]).toBeUndefined()
+    expect(after.touchedQuestionIds).not.toContain(AVOIDANCES)
+    expect(after.skippedOptionalQuestionIds).toContain(AVOIDANCES)
+    expect(after.phase).toBe("review")
+    expect(after.currentQuestionId).toBeNull()
+    // A second request to repair the position would leave a partial state
+    // reachable: answer gone, position wrong, repair failed.
+    expect(db.counts().writes - writesBefore).toBe(1)
+  })
+
+  it("a skip CLEARS the touched mark, exactly as the engine does locally", async () => {
+    // A withdrawal is a skip of a question the customer HAD answered, so a
+    // stale touched mark is guaranteed rather than hypothetical. It would say
+    // they had interacted with a question that now holds nothing.
+    const db = makeDb(onReviewList())
+    mockGetSupabase.mockReturnValue(db.client)
+
+    await callProgress(patch({ action: "skip", sessionId: SESSION, questionId: AVOIDANCES }))
+
+    expect(db.state().touchedQuestionIds).not.toContain(AVOIDANCES)
+    // And it touches nobody else's marks.
+    expect(db.state().touchedQuestionIds).toContain(Q1)
+  })
+
+  it("an ordinary skip during the question flow still keeps its own position", async () => {
+    // The non-regression half. Question flow is untouched: a skip that names no
+    // position leaves the stored cursor exactly where it was.
+    const db = makeDb(
+      rowWith({
+        answers: stateWith({
+          candidateAnswers: { [Q1]: "nothing", [CONSTRAINTS]: ["allergy"] },
+          touchedQuestionIds: [Q1, CONSTRAINTS],
+          skippedOptionalQuestionIds: [],
+          currentQuestionId: AVOIDANCES,
+          phase: "questions",
+        }),
+      }),
+    )
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callProgress(
+      patch({ action: "skip", sessionId: SESSION, questionId: AVOIDANCES }),
+    )
+
+    expect(res.status).toBe(200)
+    const after = db.state()
+    expect(after.currentQuestionId).toBe(AVOIDANCES)
+    expect(after.phase).toBe("questions")
+    expect(after.skippedOptionalQuestionIds).toContain(AVOIDANCES)
+    expect(after.candidateAnswers[AVOIDANCES]).toBeUndefined()
+  })
+
+  it("a first answer on a session with no stored position still records one", async () => {
+    // The other half of the non-regression: with nothing stored, an action that
+    // names no position is still enough to say where the customer is.
+    const db = makeDb(
+      rowWith({
+        answers: stateWith({ currentQuestionId: null, phase: "questions" }),
+      }),
+    )
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callProgress(
+      patch({ action: "answer", sessionId: SESSION, questionId: Q1, value: "nothing" }),
+    )
+
+    expect(res.status).toBe(200)
+    expect(db.state().currentQuestionId).toBe(Q1)
+  })
+
+  it("a REQUIRED question is still refused, and nothing is written", async () => {
+    const db = makeDb(onReviewList())
+    mockGetSupabase.mockReturnValue(db.client)
+    const before = db.counts().writes
+
+    const res = await callProgress(
+      patch({ action: "skip", sessionId: SESSION, questionId: Q1, currentQuestionId: null }),
+    )
+
+    expect(res.status).toBe(422)
+    expect(db.counts().writes).toBe(before)
+    expect(db.state().candidateAnswers[Q1]).toBeDefined()
+  })
+})

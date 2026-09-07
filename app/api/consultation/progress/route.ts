@@ -259,6 +259,12 @@ export async function PATCH(req: NextRequest) {
     } else if (body.action === "skip") {
       if (question!.required) return refuse(422, "That question is required")
       delete nextAnswers[questionId!]
+      // All three, exactly as the canonical `skipOptional` does them locally.
+      // Leaving the touched mark behind was a real divergence rather than a
+      // cosmetic one: a withdrawal is a skip of a question the customer HAD
+      // answered, so the stale mark was guaranteed, and it would say they had
+      // interacted with a question that now holds nothing.
+      touched.delete(questionId!)
       skipped.add(questionId!)
     } else if (body.action === "answer") {
       const validated = validateAnswer(question!, body.value)
@@ -295,7 +301,21 @@ export async function PATCH(req: NextRequest) {
     } else if (proposedCursor === null) {
       // Explicitly cleared — the Review list has no current question.
       currentQuestionId = null
+    } else if (stored.phase === "review") {
+      /*
+       * In Review the stored cursor is carried through EXACTLY, `null` included.
+       *
+       * `null` there is not a missing position — it IS the Review list, and the
+       * pair (review, null) is what makes the list distinguishable from an
+       * interrupted edit. Filling it in from `questionId` would turn a
+       * withdrawal taken from the list into a stored edit of the very answer
+       * that was removed, and resume believes storage.
+       */
+      currentQuestionId = stored.currentQuestionId
     } else {
+      // Question flow, unchanged: a mutation that names no position leaves the
+      // customer where they were, or on the question they just acted on if
+      // nothing has been stored yet.
       currentQuestionId = stored.currentQuestionId ?? questionId
     }
 

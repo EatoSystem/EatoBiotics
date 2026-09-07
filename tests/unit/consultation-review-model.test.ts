@@ -554,3 +554,161 @@ describe("Review reflects and does not explain", () => {
     expect(VIEW).not.toMatch(/\bfetch\(/)
   })
 })
+
+/* ══ Withdrawal — who may take an answer back ══════════════════════════════ */
+
+/**
+ * Phase 3C-C1 — `canWithdraw`.
+ *
+ * The model decides who may remove an answer, and the view asks rather than
+ * decides. Keeping the rule here means there is one definition of "this can be
+ * taken back", shared by the ephemeral preview, the persisted client and any
+ * later surface — rather than a condition retyped in each of them, which is how
+ * a required question eventually acquires a Remove button.
+ */
+describe("Review says which answers may be taken back", () => {
+  const withBranch = { [Q1]: "nothing", [CONSTRAINTS]: ["allergy"] }
+
+  it("an answered OPTIONAL question may be withdrawn", () => {
+    const r = review(you, answerEverything(you, withBranch))
+    for (const id of [AVOIDANCES, SUCCESS]) {
+      expect(itemFor(r, id)!.state, id).toBe("answered")
+      expect(itemFor(r, id)!.canWithdraw, id).toBe(true)
+    }
+  })
+
+  it("no REQUIRED question may be withdrawn, however it was answered", () => {
+    const r = review(you, answerEverything(you, withBranch))
+    const required = r.sections.flatMap((s) => s.items).filter((i) => i.required)
+    expect(required.length).toBeGreaterThan(0)
+    for (const item of required) expect(item.canWithdraw, item.questionId).toBe(false)
+  })
+
+  it("an optional question that is already skipped has nothing to withdraw", () => {
+    const answers = answerEverything(you, withBranch)
+    delete answers[AVOIDANCES]
+    const r = review(you, answers, [AVOIDANCES])
+    expect(itemFor(r, AVOIDANCES)!.state).toBe("skipped")
+    expect(itemFor(r, AVOIDANCES)!.canWithdraw).toBe(false)
+  })
+
+  it("an optional question not yet reached has nothing to withdraw", () => {
+    const answers = answerEverything(you, withBranch)
+    delete answers[AVOIDANCES]
+    const r = review(you, answers)
+    expect(itemFor(r, AVOIDANCES)!.state).toBe("unanswered")
+    expect(itemFor(r, AVOIDANCES)!.canWithdraw).toBe(false)
+  })
+
+  it("a DECLINED disclosure is an answer, so it may be taken back too", () => {
+    // "I'd rather not say" is something the customer chose to record. Refusing
+    // to let them remove it would make the declining option stickier than the
+    // disclosing ones.
+    const r = review(you, answerEverything(you, { ...withBranch, [AVOIDANCES]: ["prefer-not-to-say"] }))
+    expect(itemFor(r, AVOIDANCES)!.state).toBe("answered")
+    expect(itemFor(r, AVOIDANCES)!.canWithdraw).toBe(true)
+  })
+
+  it("an invalid stored value is a correction, not something to withdraw", () => {
+    const answers = { ...answerEverything(you, withBranch), [AVOIDANCES]: ["not-an-option"] }
+    const r = review(you, answers)
+    expect(itemFor(r, AVOIDANCES)!.state).toBe("unanswered")
+    expect(itemFor(r, AVOIDANCES)!.canWithdraw).toBe(false)
+  })
+
+  it("a closed branch is not on the list at all, so it cannot be withdrawn here", () => {
+    const answers = answerEverything(you, { [Q1]: "nothing", [CONSTRAINTS]: ["allergy"] })
+    const closed = { ...answers, [CONSTRAINTS]: ["budget"] }
+    const r = review(you, closed)
+    expect(r.questionIds).not.toContain(AVOIDANCES)
+    expect(itemFor(r, AVOIDANCES)).toBeUndefined()
+  })
+
+  it("Family follows the same rule, on the same two optional questions", () => {
+    const r = review(family, answerEverything(family, { [CONSTRAINTS]: ["allergy"] }))
+    const withdrawable = r.sections
+      .flatMap((s) => s.items)
+      .filter((i) => i.canWithdraw)
+      .map((i) => i.questionId)
+    expect(withdrawable.sort()).toEqual([AVOIDANCES, SUCCESS].sort())
+  })
+})
+
+/* ══ Withdrawal — what reaches the screen ══════════════════════════════════ */
+
+describe("the Remove control appears exactly where the model allows it", () => {
+  const r = review(you, answerEverything(you, { [Q1]: "nothing", [CONSTRAINTS]: ["allergy"] }))
+  const items = r.sections.flatMap((s) => s.items)
+
+  const renderWithWithdraw = () =>
+    renderToStaticMarkup(
+      createElement(ConsultationReviewView, {
+        review: r,
+        onEdit: () => {},
+        onWithdraw: () => {},
+      }),
+    )
+
+  /** The rendered rows, each paired with the item it belongs to. */
+  const rowsByItem = () => {
+    // Split on the ROW element specifically. A multi-value answer renders its
+    // own list items inside the row, so splitting on every `<li` would cut a
+    // row in half and hand the controls to the wrong question.
+    const rows = renderWithWithdraw().split('<li class="rounded-2xl').slice(1)
+    expect(rows).toHaveLength(items.length)
+    return items.map((item) => {
+      const matching = rows.filter((row) => row.includes(esc(item.question)))
+      expect(matching, `one row for ${item.questionId}`).toHaveLength(1)
+      return { item, row: matching[0] }
+    })
+  }
+
+  it("a caller that cannot honour a removal renders no control", () => {
+    // The preview and the persisted client both pass a handler. A surface that
+    // did not would otherwise show a button that silently does nothing.
+    expect(renderReview(r)).not.toContain("Remove answer")
+  })
+
+  it("one control per withdrawable answer, and none anywhere else", () => {
+    const expected = items.filter((i) => i.canWithdraw).length
+    expect(expected).toBeGreaterThan(0)
+    expect((renderWithWithdraw().match(/Remove answer/g) ?? []).length).toBe(expected)
+  })
+
+  it("no required question's row carries one", () => {
+    for (const { item, row } of rowsByItem()) {
+      expect(row.includes("Remove answer"), item.questionId).toBe(item.canWithdraw)
+      if (item.required) expect(row, item.questionId).not.toContain("Remove answer")
+    }
+  })
+
+  it("each control names its own question for a screen reader", () => {
+    for (const { item, row } of rowsByItem()) {
+      if (!item.canWithdraw) continue
+      // Visible text is "Remove answer" for everyone; the question follows it in
+      // the accessible name, as it does for Edit.
+      expect(row, item.questionId).toContain(`Remove answer<span class="sr-only"> for ${esc(item.question)}`)
+    }
+  })
+
+  it("it is a real button with an adequate touch target", () => {
+    for (const { item, row } of rowsByItem()) {
+      if (!item.canWithdraw) continue
+      // The control's own opening tag, not a fixed lookback: the inline icon is
+      // long enough that a character count would silently start mid-element.
+      const at = row.indexOf("Remove answer")
+      const segment = row.slice(row.lastIndexOf("<button", at), at)
+      expect(segment, item.questionId).toContain('type="button"')
+      expect(segment, item.questionId).toContain("min-h-[44px]")
+    }
+  })
+
+  it("it is worded as a removal, never as a deletion or a warning", () => {
+    // Reversible: the customer can Edit the question and answer it again. Copy
+    // that implied otherwise would make an ordinary correction feel dangerous.
+    const html = renderWithWithdraw()
+    for (const alarming of ["Delete", "Erase", "permanently", "cannot be undone", "Are you sure"]) {
+      expect(html, alarming).not.toContain(alarming)
+    }
+  })
+})

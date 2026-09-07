@@ -34,6 +34,25 @@ import type { ConsultationReportTarget } from "./types"
  * mechanically consume.
  */
 
+/* ══ Version ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Which adjudicated Science Contract governs a given piece of work.
+ *
+ * Metadata only — this constant asserts nothing about the contract's CONTENT,
+ * and adding it changes no decision, no status and no gate. It exists so a
+ * finalised Consultation can record which contract it was frozen under, because
+ * "the answers were collected and constrained under v1.0" is a fact about that
+ * customer's record that a later v2.0 must not silently rewrite.
+ *
+ * Bumping this is a deliberate act that accompanies a re-adjudication of
+ * `docs/phase-3a-science-contract-v1.md`. It is NOT a version of the question
+ * bank — a bank can be revised without the contract moving, and the contract
+ * can be re-adjudicated without a single question changing. Both versions
+ * therefore travel together in a finalisation payload.
+ */
+export const SCIENCE_CONTRACT_VERSION = "science-contract-v1.0" as const
+
 /* ══ Vocabulary ════════════════════════════════════════════════════════════ */
 
 /**
