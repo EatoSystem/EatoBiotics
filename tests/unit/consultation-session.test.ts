@@ -1204,3 +1204,80 @@ describe("L2. the personal optional answers come back out cleanly", () => {
     expect(applicableQuestions(after).map((q) => q.id)).toContain(AVOIDANCES)
   })
 })
+
+/* ══ L3 — withdrawal is a Review-LIST transition ═══════════════════════════ */
+
+/**
+ * Phase 3C-C1 correction — where the customer must be standing.
+ *
+ * The engine, not the screen, decides this. Every other route into the same end
+ * state already exists and belongs to a different screen: Skip passes an
+ * optional question during the flow, and Clear empties one the customer has
+ * open in front of them. A fourth way in from those screens would be three ways
+ * to say one thing, and the least-used one would be the least-tested.
+ *
+ * Enforcing it here rather than trusting the UI is what makes the invalid state
+ * unconstructable, including by a caller that does not exist yet.
+ */
+describe("L3. an optional answer may only be taken back from the Review list", () => {
+  const answered = (over: Partial<ConsultationSessionState> = {}): ConsultationSessionState => ({
+    ...begin(
+      createConsultationSession({
+        context: you,
+        answers: { [Q1]: "nothing", [CONSTRAINTS]: ["allergy"], [AVOIDANCES]: ["dairy"] },
+      }),
+    ),
+    ...over,
+  })
+
+  it("the Review LIST allows it", () => {
+    const s = answered({ phase: "review", currentQuestionId: null })
+    expect(canWithdrawAnswer(s, AVOIDANCES)).toBe(true)
+    expect(withdrawOptionalAnswer(s, AVOIDANCES).answers[AVOIDANCES]).toBeUndefined()
+  })
+
+  it("the questions phase refuses, and changes nothing", () => {
+    // Passing an optional question during the flow is Skip, and it is right
+    // there on the screen.
+    const s = answered({ phase: "questions", currentQuestionId: AVOIDANCES })
+    expect(canWithdrawAnswer(s, AVOIDANCES)).toBe(false)
+    expect(withdrawOptionalAnswer(s, AVOIDANCES)).toBe(s)
+  })
+
+  it("Orientation refuses, and changes nothing", () => {
+    const s = answered({ phase: "questions", currentQuestionId: null })
+    expect(canWithdrawAnswer(s, AVOIDANCES)).toBe(false)
+    expect(withdrawOptionalAnswer(s, AVOIDANCES)).toBe(s)
+  })
+
+  it("an open Review EDIT refuses, and changes nothing", () => {
+    // (review, questionId) is a correction in progress. The customer is looking
+    // at the question; emptying it there is Clear.
+    const s = answered({ phase: "review", currentQuestionId: AVOIDANCES })
+    expect(isEditingFromReview(s)).toBe(true)
+    expect(canWithdrawAnswer(s, AVOIDANCES)).toBe(false)
+    expect(withdrawOptionalAnswer(s, AVOIDANCES)).toBe(s)
+  })
+
+  it("an edit of a DIFFERENT question refuses it too", () => {
+    // The pair is the rule, not the identity of the question being edited: a
+    // record frozen mid-correction is the hazard either way.
+    const s = answered({ phase: "review", currentQuestionId: Q2 })
+    expect(canWithdrawAnswer(s, AVOIDANCES)).toBe(false)
+    expect(withdrawOptionalAnswer(s, AVOIDANCES)).toBe(s)
+  })
+
+  it("on the Review list, the other refusals still hold", () => {
+    const s = answered({ phase: "review", currentQuestionId: null })
+    // Required.
+    expect(canWithdrawAnswer(s, Q1)).toBe(false)
+    // Unanswered / already skipped.
+    expect(canWithdrawAnswer(skipOptional(s, AVOIDANCES), AVOIDANCES)).toBe(false)
+    // Inapplicable, with a retained candidate answer behind a closed branch.
+    const closed = setAnswer(s, CONSTRAINTS, ["budget"])
+    expect(closed.answers[AVOIDANCES]).toEqual(["dairy"])
+    expect(canWithdrawAnswer(closed, AVOIDANCES)).toBe(false)
+    // Unknown id.
+    expect(canWithdrawAnswer(s, "not_a_question_v1")).toBe(false)
+  })
+})

@@ -76,7 +76,19 @@ export interface ConsultationPersistence {
   load(): Promise<LoadedConsultationState>
   saveAnswer(questionId: string, value: ConsultationAnswer): Promise<SaveOutcome>
   clearAnswer(questionId: string): Promise<SaveOutcome>
-  skipOptional(questionId: string): Promise<SaveOutcome>
+  /**
+   * Record an optional question as deliberately passed.
+   *
+   * `currentQuestionId` states where the customer IS while doing it, and exists
+   * because the server cannot infer it. A skip sent without one is resolved
+   * against the stored cursor, and for a withdrawal taken from the Review list
+   * the stored cursor is `null` — which the server would otherwise have to fill
+   * in from somewhere. Passing `null` says "still on the Review list", so the
+   * answer, the touched mark, the skip and the position all land in ONE
+   * mutation. Omit it for an ordinary skip during the question flow, where the
+   * stored cursor already names the question being passed.
+   */
+  skipOptional(questionId: string, currentQuestionId?: string | null): Promise<SaveOutcome>
   /** Move without changing an answer. `null` means the Review list. */
   saveCursor(questionId: string | null): Promise<SaveOutcome>
   /** Ask the server whether Review may be entered. It decides, not the client. */
@@ -216,7 +228,16 @@ export function createHttpConsultationPersistence(sessionId: string): Consultati
 
     saveAnswer: (questionId, value) => patch({ action: "answer", questionId, value }),
     clearAnswer: (questionId) => patch({ action: "clear", questionId }),
-    skipOptional: (questionId) => patch({ action: "skip", questionId }),
+    skipOptional: (questionId, currentQuestionId) =>
+      // Sent only when the caller states one. An absent key and an explicit
+      // `null` mean different things to the route — "leave the position alone"
+      // versus "the position is the Review list" — so the two must not be
+      // collapsed into one body.
+      patch(
+        currentQuestionId === undefined
+          ? { action: "skip", questionId }
+          : { action: "skip", questionId, currentQuestionId },
+      ),
     saveCursor: (currentQuestionId) => patch({ action: "navigate", currentQuestionId }),
     leaveReview: (currentQuestionId) => patch({ action: "leave-review", currentQuestionId }),
 

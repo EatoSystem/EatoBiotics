@@ -3,8 +3,15 @@ import { NextRequest } from "next/server"
 
 import {
   createDeterministicConsultationSnapshot,
+  readDeterministicConsultationSnapshot,
+  DETERMINISTIC_STATE_KIND,
+  DETERMINISTIC_STATE_SCHEMA_VERSION,
   type DeterministicConsultationState,
 } from "@/lib/consultation/session-envelope"
+import { CONSULTATION_QUESTION_BANK } from "@/lib/consultation/question-bank"
+import { prepareConsultationFinalisation } from "@/lib/consultation/finalisation"
+import { resolveApplicableQuestions } from "@/lib/consultation/applicability"
+import type { ConsultationAnswers } from "@/lib/consultation/types"
 import {
   begin,
   currentQuestion,
@@ -20,6 +27,8 @@ import { createHttpConsultationPersistence } from "@/components/assessment/consu
 import {
   commitMove,
   continueFrom,
+  skipFrom,
+  withdrawFrom,
   type NavigationDeps,
   type NavigationOutcome,
 } from "@/components/assessment/consultation/consultation-navigation"
@@ -178,7 +187,7 @@ const depsFor = (): NavigationDeps => {
     persistCursor: (id) => p.saveCursor(id),
     // The real ordered queue is exercised in the client tests; here the
     // interest is the wire contract, so the skip goes straight out.
-    queueSkip: (id) => void p.skipOptional(id),
+    queueSkip: (id, cursor) => void p.skipOptional(id, cursor),
     requestReview: () => p.enterReview(),
     leaveReview: (id) => p.leaveReview(id),
   }
@@ -544,5 +553,234 @@ describe("a persisted Consultation runs end to end without a real payment", () =
     expect(row.pdf_url).toBeNull()
     expect(row.status).toBe("in_progress")
     expect(db.state().phase).not.toBe("ready-for-report")
+  })
+})
+
+/* ══ Withdrawing an optional answer, against the real route ════════════════ */
+
+/**
+ * Phase 3C-C1 corrections — the load-bearing test.
+ *
+ * ══ WHY THE FAKE ADAPTER WAS NOT ENOUGH ═════════════════════════════════════
+ *
+ * The client tests prove the client's half against a fake `skipOptional` that
+ * returns `{ ok: true }` and stores nothing. The route's cursor resolution and
+ * its touched handling live on the other side of that fake, so a withdrawal
+ * could pass every client test and still store the wrong position — which is
+ * exactly what it did: with no cursor in the body, the route resolved
+ * `stored.currentQuestionId ?? questionId`, and `null ?? questionId` on the
+ * Review list stored (review, withdrawnId). That pair is an interrupted EDIT,
+ * so the next reload opened the question the customer had just removed.
+ *
+ * These tests put the real adapter in front of the real handler and then read
+ * the ROW, because the row is the only thing the next session will see.
+ */
+describe("a withdrawal taken from the Review list survives the round trip", () => {
+  const CONSTRAINTS = "core_environment_constraints_v1"
+  const AVOIDANCES = "core_environment_food_avoidances_v1"
+  const SUCCESS = "core_intentions_success_v1"
+
+  /** Every applicable answer, valid, with the branch-opening choices taken. */
+  function completeAnswers(overrides: ConsultationAnswers = {}): ConsultationAnswers {
+    const answers: ConsultationAnswers = { ...overrides }
+    for (let pass = 0; pass < 4; pass += 1) {
+      for (const q of resolveApplicableQuestions({
+        questions: CONSULTATION_QUESTION_BANK,
+        context: { foundation: "you" },
+        answers,
+      })) {
+        if (q.id in answers) continue
+        if (q.type === "single") answers[q.id] = q.options![0].value
+        else if (q.type === "multi") answers[q.id] = [q.options![0].value]
+        else if (q.type === "textarea") answers[q.id] = "A sentence that is a real answer."
+        else answers[q.id] = q.min ?? 0
+      }
+    }
+    return answers
+  }
+
+  /** Seed the row exactly as a finished Consultation sitting on Review looks. */
+  function seedReviewList(overrides: ConsultationAnswers = {}) {
+    const candidateAnswers = completeAnswers({
+      [Q1]: "nothing",
+      [CONSTRAINTS]: ["allergy"],
+      ...overrides,
+    })
+    db = makeDb({
+      stripe_session_id: SESSION,
+      tier: "personal",
+      questions: createDeterministicConsultationSnapshot({ foundation: "you", entitledLens: null }),
+      answers: {
+        kind: DETERMINISTIC_STATE_KIND,
+        schemaVersion: DETERMINISTIC_STATE_SCHEMA_VERSION,
+        candidateAnswers,
+        // Everything answered has been touched, which is what makes a stale
+        // touched marker after a withdrawal a certainty rather than a maybe.
+        touchedQuestionIds: Object.keys(candidateAnswers),
+        skippedOptionalQuestionIds: [],
+        currentQuestionId: null,
+        phase: "review",
+      } satisfies DeterministicConsultationState,
+      status: "in_progress",
+      report_json: null,
+      pdf_url: null,
+      updated_at: null,
+    })
+    mockGetSupabase.mockReturnValue(db.client)
+    return candidateAnswers
+  }
+
+  /**
+   * Navigation whose flush actually waits for the skip.
+   *
+   * The file's shared `depsFor` fires mutations with `void` and stubs `flush` to
+   * `true`, which is fine where the interest is the wire contract. Here the
+   * assertions read the row immediately afterwards, so the flush has to mean
+   * what it means in the real queue: everything outstanding has landed.
+   */
+  function awaitingDeps() {
+    const p = persistence()
+    const outstanding: Array<Promise<{ ok: boolean }>> = []
+    const deps: NavigationDeps = {
+      flush: async () => {
+        const results = await Promise.all(outstanding.splice(0))
+        return results.every((r) => r.ok)
+      },
+      persistCursor: (id) => p.saveCursor(id),
+      queueSkip: (id, cursor) => void outstanding.push(p.skipOptional(id, cursor)),
+      requestReview: () => p.enterReview(),
+      leaveReview: (id) => p.leaveReview(id),
+    }
+    return deps
+  }
+
+  /** The stored state hydrated back into a session, as a reload would. */
+  async function reload() {
+    return (await load()).session
+  }
+
+  it("stores all five properties, and leaves the customer on the Review list", async () => {
+    seedReviewList()
+    const before = await reload()
+    expect(isReviewing(before)).toBe(true)
+
+    const outcome = await withdrawFrom(before, AVOIDANCES, awaitingDeps())
+    expect(outcome.status).toBe("moved")
+
+    const stored = db.state()
+    expect(stored.candidateAnswers[AVOIDANCES], "candidate answer").toBeUndefined()
+    expect(stored.touchedQuestionIds, "touched marker").not.toContain(AVOIDANCES)
+    expect(stored.skippedOptionalQuestionIds, "skip marker").toContain(AVOIDANCES)
+    expect(stored.phase, "phase").toBe("review")
+    expect(stored.currentQuestionId, "cursor").toBeNull()
+  })
+
+  it("a reload lands on the Review list, NOT on an edit of what was removed", async () => {
+    seedReviewList()
+    await withdrawFrom(await reload(), AVOIDANCES, awaitingDeps())
+
+    const resumed = await reload()
+    expect(isReviewing(resumed), "the Review list").toBe(true)
+    expect(isEditingFromReview(resumed), "not an interrupted edit").toBe(false)
+    expect(resumed.currentQuestionId).toBeNull()
+    expect(currentQuestion(resumed)).toBeNull()
+
+    const review = buildConsultationReview({
+      context: resumed.context,
+      candidateAnswers: resumed.answers,
+      skippedOptionalQuestionIds: [...resumed.skipped],
+    })
+    const item = review.sections.flatMap((s) => s.items).find((i) => i.questionId === AVOIDANCES)!
+    expect(item.state, "described as a decision, not as silence").toBe("skipped")
+    expect(item.answer).toEqual([])
+    // Still complete: an optional question is optional.
+    expect(review.complete).toBe(true)
+  })
+
+  it("free text is gone from the row, not blanked, and leaves no touched marker", async () => {
+    const sentence = "A distinctive sentence only this test would ever write."
+    seedReviewList({ [SUCCESS]: sentence })
+    expect(JSON.stringify(db.state())).toContain(sentence)
+
+    await withdrawFrom(await reload(), SUCCESS, awaitingDeps())
+
+    const stored = db.state()
+    expect(JSON.stringify(stored), "no resurrection").not.toContain(sentence)
+    expect(stored.candidateAnswers).not.toHaveProperty(SUCCESS)
+    expect(stored.touchedQuestionIds).not.toContain(SUCCESS)
+    expect(stored.skippedOptionalQuestionIds).toContain(SUCCESS)
+
+    // And an Edit after the reload opens it empty rather than pre-filled.
+    const resumed = await reload()
+    expect(resumed.answers[SUCCESS]).toBeUndefined()
+    const editing = editFromReview(resumed, SUCCESS)
+    expect(currentQuestion(editing)?.id).toBe(SUCCESS)
+    expect(editing.answers[SUCCESS]).toBeUndefined()
+  })
+
+  it("a withdrawn avoidance detail stays UNRESOLVED, never safe", async () => {
+    seedReviewList({ [AVOIDANCES]: ["dairy"] })
+    await withdrawFrom(await reload(), AVOIDANCES, awaitingDeps())
+
+    const stored = db.state()
+    expect(JSON.stringify(stored)).not.toContain("dairy")
+    expect(stored.touchedQuestionIds).not.toContain(AVOIDANCES)
+    expect(stored.skippedOptionalQuestionIds).toContain(AVOIDANCES)
+    expect(stored.phase).toBe("review")
+    expect(stored.currentQuestionId).toBeNull()
+
+    // The finalisation contract, unchanged, reading the row the route wrote.
+    const snapshot = readDeterministicConsultationSnapshot(db.row().questions)!
+    const result = prepareConsultationFinalisation({
+      snapshot,
+      state: stored,
+      finalisedAt: new Date("2026-09-07T09:00:00.000Z"),
+    })
+    expect(result.ok, "a complete Consultation still finalises").toBe(true)
+    if (!result.ok) throw new Error("unreachable")
+
+    // Removing the detail removed information. It did not create an assurance.
+    expect(result.finalisation.foodGuidance.requiresSpecificAvoidance).toBe(true)
+    expect(result.finalisation.foodGuidance.knownAvoidances).toEqual([])
+    expect(result.finalisation.foodGuidance.unresolvedSpecificAvoidance).toBe(true)
+    expect(result.finalisation.foodGuidance.declaresNoConstraints).toBe(false)
+    expect(result.finalisation.trustedAnswers[AVOIDANCES]).toBeUndefined()
+    expect(result.finalisation.skippedOptionalQuestionIds).toContain(AVOIDANCES)
+  })
+
+  it("an ordinary Skip in the question flow is unaffected", async () => {
+    // The non-regression, over the same real route: skip stores the decision,
+    // clears any touched mark, and the position follows the navigation
+    // sequence rather than staying on the question that was passed.
+    const { session } = await load()
+    let s = mustMove(await commitMove(session, begin(session), depsFor()), "Begin")
+    for (let i = 0; i < 40 && currentQuestion(s)?.id !== AVOIDANCES; i += 1) {
+      s = await answerAndContinue(s, currentQuestion(s)!.id === Q1 ? "nothing" : validValueFor(s))
+      if (currentQuestion(s)?.id === CONSTRAINTS) {
+        const saved = await persistence().saveAnswer(CONSTRAINTS, ["allergy"] as never)
+        expect(saved.ok).toBe(true)
+        s = mustMove(
+          await continueFrom(setAnswer(s, CONSTRAINTS, ["allergy"] as never), depsFor()),
+          "past the constraints question",
+        )
+      }
+    }
+    expect(currentQuestion(s)?.id, "reached the optional question").toBe(AVOIDANCES)
+
+    const moved = await skipFrom(s, AVOIDANCES, awaitingDeps())
+    expect(moved.status).toBe("moved")
+
+    const stored = db.state()
+    expect(stored.skippedOptionalQuestionIds).toContain(AVOIDANCES)
+    expect(stored.candidateAnswers[AVOIDANCES]).toBeUndefined()
+    expect(stored.touchedQuestionIds).not.toContain(AVOIDANCES)
+    expect(stored.phase).toBe("questions")
+    // The customer moved on, and the stored position says so.
+    expect(stored.currentQuestionId).not.toBe(AVOIDANCES)
+    expect(stored.currentQuestionId).not.toBeNull()
+
+    const resumed = await reload()
+    expect(isReviewing(resumed)).toBe(false)
+    expect(currentQuestion(resumed)?.id).toBe(stored.currentQuestionId)
   })
 })

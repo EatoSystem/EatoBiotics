@@ -66,7 +66,7 @@ export interface NavigationDeps {
    * resurrect the value the customer had just chosen to pass, because the
    * server's answer action un-skips by design.
    */
-  queueSkip: (questionId: string) => void
+  queueSkip: (questionId: string, currentQuestionId?: string | null) => void
   /** Ask the SERVER whether Review may be entered. It decides, not this module. */
   requestReview: () => Promise<ReviewOutcome>
   /** The one phase retreat: review → questions, at a named applicable question. */
@@ -223,8 +223,15 @@ export async function skipFrom(
  * has just asked to remove — the server's answer action clears the skip marker
  * by design, which is exactly the race that ordering closes.
  *
- * Nothing moves. Withdrawal happens on the Review list and leaves the customer
- * there: no phase change, no cursor, and therefore no position to persist.
+ * ══ ONE MUTATION, INCLUDING THE POSITION ════════════════════════════════════
+ *
+ * Nothing moves, and the request SAYS so: the skip carries an explicit `null`
+ * cursor, because "the customer is on the Review list" is a fact only the
+ * client holds and the server would otherwise have to guess. It is one request
+ * rather than a skip followed by a cursor repair, so there is no in-between
+ * state where the answer is gone and the position is wrong — a repair that
+ * failed on its own would leave exactly that, and the customer would come back
+ * to an edit of the answer they had just removed.
  */
 export async function withdrawFrom(
   state: ConsultationSessionState,
@@ -236,7 +243,7 @@ export async function withdrawFrom(
   // make is the disagreement this architecture exists to prevent.
   if (!canWithdrawAnswer(state, questionId)) return { status: "refused", state }
 
-  deps.queueSkip(questionId)
+  deps.queueSkip(questionId, null)
   if (!(await deps.flush())) return { status: "save-failed" }
 
   return { status: "moved", state: withdrawOptionalAnswer(state, questionId) }
