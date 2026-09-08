@@ -682,11 +682,41 @@ describe("the deterministic routes keep the authority boundary", () => {
 /* ══ Non-activation, still ═════════════════════════════════════════════════ */
 
 describe("Phase 3C-A changes nothing a paying customer sees", () => {
-  it("the deep-assessment page still routes paid traffic to the legacy client", () => {
+  it("the deep-assessment page still routes PRODUCTION paid traffic to the legacy client", () => {
+    /*
+     * Re-pointed at Phase 3C-C2B. The page now dispatches by stored mode, so
+     * "the word Deterministic does not appear" stopped being the rule — it
+     * appears in the claimer's name.
+     *
+     * What is unchanged, and what this asserts, is that the legacy client is
+     * still the default and that every deterministic branch sits behind the
+     * non-production policy. A production buyer reaches exactly what they
+     * reached before.
+     */
     const src = readFileSync(join(process.cwd(), "app/assessment/deep/page.tsx"), "utf8")
     const realFlow = src.slice(src.indexOf("// ── Real flow "))
+
     expect(realFlow).toContain("<DeepAssessmentClient")
-    expect(realFlow).not.toContain("Deterministic")
+
+    /*
+     * Both deterministic branches are gated — by DIFFERENT gates, since the
+     * repair round. Claiming a new session needs the rollout; rendering one
+     * that already exists needs only a runtime that can serve it, because
+     * re-deciding an existing session on a rollout flag would strand whoever
+     * was mid-Consultation when it flipped. Production is denied by the runtime
+     * gate in both cases, which is what this file is actually about.
+     */
+    for (const [branch, gate] of [
+      ["claimDeterministicConsultation", "isNewDeterministicClaimAllowed"],
+      ["<PersistedConsultationClient", "isPersistedRuntimeEligible"],
+    ] as const) {
+      const at = realFlow.indexOf(branch)
+      expect(at, `${branch} must be present`).toBeGreaterThan(-1)
+      expect(
+        realFlow.lastIndexOf(gate, at),
+        `${branch} must sit behind ${gate}`,
+      ).toBeGreaterThan(-1)
+    }
   })
 
   it("no page or component calls the deterministic routes", () => {

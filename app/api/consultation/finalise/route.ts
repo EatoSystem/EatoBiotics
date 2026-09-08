@@ -14,6 +14,7 @@ import {
   readConsultationFinalisation,
 } from "@/lib/consultation/finalisation"
 import { readConsultationSeal } from "@/lib/consultation/seal"
+import { FINALISE_CODES, type FinaliseCode } from "@/lib/consultation/finalise-codes"
 import {
   readDeterministicConsultationSnapshot,
   readDeterministicStateSlot,
@@ -76,8 +77,26 @@ const bodySchema = z
 
 const ATTEMPTS = 3
 
-function refuse(status: number, error: string, extra: Record<string, unknown> = {}) {
-  return NextResponse.json({ error, ...extra }, { status })
+/**
+ * Every refusal names a machine-readable code — Phase 3C-C2B repair round.
+ *
+ * `code` is a REQUIRED parameter rather than an optional extra, so a refusal
+ * cannot be added without deciding what category it belongs to. That matters
+ * because this route answers 409 to ten different situations and only one of
+ * them — `consultation_incomplete` — means the customer still has something to
+ * answer. Classified by status alone, the browser told everybody the same
+ * thing, and nine of them were wrong.
+ *
+ * `error` stays human-readable for logs and for anyone reading the response by
+ * hand; the browser classifies on the code and never displays either.
+ */
+function refuse(
+  status: number,
+  error: string,
+  code: FinaliseCode,
+  extra: Record<string, unknown> = {},
+) {
+  return NextResponse.json({ error, code, ...extra }, { status })
 }
 
 /** The row this route reads. The two seal columns are Migration 48's. */
@@ -101,25 +120,25 @@ export async function POST(req: NextRequest) {
     body = bodySchema.parse(await req.json())
   } catch {
     // Never echoed: a rejected body may carry a customer's answers.
-    return refuse(400, "Invalid request body")
+    return refuse(400, "Invalid request body", FINALISE_CODES.INVALID_REQUEST)
   }
   const { sessionId } = body
 
   const supabase = getSupabase()
-  if (!supabase) return refuse(503, "Service unavailable")
+  if (!supabase) return refuse(503, "Service unavailable", FINALISE_CODES.UNAVAILABLE)
 
   /* ── Stripe is the authority on who this is and what they bought ───────── */
   let trustedFoundation: "you" | "family"
   let trustedLens: ReturnType<typeof asAddonType>
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId)
-    if (!isCheckoutSessionSettled(session)) return refuse(402, "Payment is not settled")
+    if (!isCheckoutSessionSettled(session)) return refuse(402, "Payment is not settled", FINALISE_CODES.PAYMENT_NOT_SETTLED)
     const summary = await resolvePaidReportSummary(session, supabase)
-    if (!summary) return refuse(404, "No assessment found for this session")
+    if (!summary) return refuse(404, "No assessment found for this session", FINALISE_CODES.ASSESSMENT_NOT_FOUND)
     trustedFoundation = asFoundation(summary.foundationType) ?? "you"
     trustedLens = asAddonType(summary.selectedAddon)
   } catch {
-    return refuse(503, "Could not verify your session")
+    return refuse(503, "Could not verify your session", FINALISE_CODES.UNAVAILABLE)
   }
 
   for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
@@ -132,31 +151,34 @@ export async function POST(req: NextRequest) {
         .maybeSingle()
       if (error) {
         console.error("[consultation-finalise] read error:", error.message)
-        return refuse(503, "Could not finish your Consultation")
+        return refuse(503, "Could not finish your Consultation", FINALISE_CODES.UNAVAILABLE)
       }
       row = (data as FinaliseRow) ?? null
     } catch (err) {
       console.error("[consultation-finalise] read failed:", err)
-      return refuse(503, "Could not finish your Consultation")
+      return refuse(503, "Could not finish your Consultation", FINALISE_CODES.UNAVAILABLE)
     }
 
-    if (!row) return refuse(404, "No assessment found for this session")
+    if (!row) return refuse(404, "No assessment found for this session", FINALISE_CODES.ASSESSMENT_NOT_FOUND)
 
     // A legacy array here is a legacy session. It is not ours to seal, and
     // there is no safe conversion.
     if (Array.isArray(row.questions)) {
-      return refuse(409, "This session is not a deterministic Consultation")
+      return refuse(409, "This session is not a deterministic Consultation", FINALISE_CODES.MODE_CONFLICT)
     }
 
     const snapshot = readDeterministicConsultationSnapshot(row.questions)
-    if (!snapshot) return refuse(409, "This session is not ready")
+    if (!snapshot) return refuse(409, "This session is not ready", FINALISE_CODES.MODE_CONFLICT)
     // The stored session and the settled payment must agree. Checked before the
     // seal is read, so a mismatched row cannot hand back a handoff either.
-    if (snapshot.foundation !== trustedFoundation) return refuse(409, "This session is not ready")
-    if (snapshot.entitledLens !== trustedLens) return refuse(409, "This session is not ready")
+    if (snapshot.foundation !== trustedFoundation)
+      return refuse(409, "This session is not ready", FINALISE_CODES.CONTEXT_CONFLICT)
+    if (snapshot.entitledLens !== trustedLens)
+      return refuse(409, "This session is not ready", FINALISE_CODES.CONTEXT_CONFLICT)
 
     const slot = readDeterministicStateSlot(row.answers)
-    if (slot.status === "unreadable") return refuse(409, "This Consultation state cannot be read")
+    if (slot.status === "unreadable")
+      return refuse(409, "This Consultation state cannot be read", FINALISE_CODES.STATE_UNREADABLE)
     const stored = slot.state
 
     /* ── The seal, adjudicated before anything is built ──────────────────── */
@@ -178,7 +200,7 @@ export async function POST(req: NextRequest) {
       // right is how one customer ends up with two finalisations. Identifiers
       // and stage only — never the payload.
       console.error(`[consultation-finalise] refusing incoherent seal for ${sessionId}: ${seal.detail}`)
-      return refuse(409, "This Consultation cannot be finished")
+      return refuse(409, "This Consultation cannot be finished", FINALISE_CODES.SEAL_INCOHERENT)
     }
 
     if (seal.status === "sealed") {
@@ -190,7 +212,7 @@ export async function POST(req: NextRequest) {
         console.error(
           `[consultation-finalise] stored finalisation rejected for ${sessionId}: ${persisted.reason}`,
         )
-        return refuse(409, "This Consultation cannot be finished")
+        return refuse(409, "This Consultation cannot be finished", FINALISE_CODES.SEAL_UNREADABLE)
       }
 
       // Already done. No write, no second C1 call, no new id, no new time.
@@ -207,7 +229,8 @@ export async function POST(req: NextRequest) {
     // Only NOW does the live bank matter. Answers given against a bank that has
     // drifted are not answers to today's questions, and adopting today's would
     // silently reinterpret them.
-    if (!snapshotIsResolvable(snapshot)) return refuse(409, "This Consultation cannot be resumed")
+    if (!snapshotIsResolvable(snapshot))
+      return refuse(409, "This Consultation cannot be resumed", FINALISE_CODES.BANK_UNAVAILABLE)
 
     /*
      * The canonical builder, and the only way a finalisation is ever created.
@@ -232,18 +255,30 @@ export async function POST(req: NextRequest) {
         case "incomplete":
           // The canonical outstanding ids, as Review already returns them. No
           // interpretation added — just where to go back to.
-          return refuse(409, "Your Consultation is not finished yet", {
+          // The ONLY refusal that means the customer has something outstanding,
+          // and the only one the browser turns into an actionable message. The
+          // ids are the canonical ones Review already shows — no interpretation
+          // added, just where to go back to.
+          return refuse(409, "Your Consultation is not finished yet", FINALISE_CODES.INCOMPLETE, {
             firstQuestionId: prepared.firstQuestionId ?? null,
             missingQuestionIds: prepared.missingQuestionIds ?? [],
             invalidQuestionIds: prepared.invalidQuestionIds ?? [],
           })
         case "review-edit-active":
-          return refuse(409, "Finish the answer you are editing first")
+          return refuse(
+            409,
+            "Finish the answer you are editing first",
+            FINALISE_CODES.REVIEW_EDIT_ACTIVE,
+          )
         case "not-in-review":
-          return refuse(409, "Your Consultation is not ready to finish")
+          return refuse(
+            409,
+            "Your Consultation is not ready to finish",
+            FINALISE_CODES.NOT_IN_REVIEW,
+          )
         default:
           // bank-unavailable / bank-mismatch.
-          return refuse(409, "This Consultation cannot be resumed")
+          return refuse(409, "This Consultation cannot be resumed", FINALISE_CODES.BANK_UNAVAILABLE)
       }
     }
 
@@ -287,7 +322,7 @@ export async function POST(req: NextRequest) {
       const { data, error } = await q.select("stripe_session_id")
       if (error) {
         console.error("[consultation-finalise] write failed:", error.message)
-        return refuse(503, "Could not finish your Consultation")
+        return refuse(503, "Could not finish your Consultation", FINALISE_CODES.UNAVAILABLE)
       }
       if (data && data.length > 0) {
         return NextResponse.json({
@@ -309,10 +344,10 @@ export async function POST(req: NextRequest) {
        */
     } catch (err) {
       console.error("[consultation-finalise] write exception:", err)
-      return refuse(503, "Could not finish your Consultation")
+      return refuse(503, "Could not finish your Consultation", FINALISE_CODES.UNAVAILABLE)
     }
   }
 
   console.error(`[consultation-finalise] could not converge in ${ATTEMPTS} attempts`)
-  return refuse(503, "Could not finish your Consultation")
+  return refuse(503, "Could not finish your Consultation", FINALISE_CODES.UNAVAILABLE)
 }

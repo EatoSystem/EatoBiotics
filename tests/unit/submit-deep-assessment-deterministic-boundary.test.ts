@@ -32,15 +32,39 @@ import { createDeterministicConsultationSnapshot } from "@/lib/consultation/sess
 type Queued = { data?: unknown; error?: unknown; throws?: string }
 
 function makeSupabaseStub(queues: Record<string, Queued[]>) {
-  const writes: { table: string; method: string; payload: unknown }[] = []
+  const writes: {
+    table: string
+    method: string
+    payload: unknown
+    /** The filters the SAME chain carried. Captured by reference, so `.eq()`
+     *  calls made after `.update()` — which is how PostgREST reads — are seen. */
+    filters: Record<string, unknown>
+  }[] = []
+  /**
+   * The filters each chain was built with, in order.
+   *
+   * Recorded because the intake write's correctness is not visible in its
+   * payload: an update that sets the right columns but is guarded on nothing is
+   * exactly the unconditional write this boundary replaced, and it leaves an
+   * identical `writes` entry behind.
+   */
+  const filters: Record<string, unknown>[] = []
   const from = (table: string) => {
     const next = (): Queued => queues[table]?.shift() ?? { data: null, error: null }
     const chain: Record<string, unknown> = {}
     const self = () => chain
-    for (const m of ["select", "eq", "in", "not", "order", "limit"]) chain[m] = self
+    const applied: Record<string, unknown> = {}
+    filters.push(applied)
+    for (const m of ["select", "in", "not", "order", "limit"]) chain[m] = self
+    for (const m of ["eq", "is"] as const) {
+      chain[m] = (col: string, value: unknown) => {
+        applied[`${m}:${col}`] = value
+        return chain
+      }
+    }
     for (const m of ["insert", "update", "upsert"]) {
       chain[m] = (payload: unknown) => {
-        writes.push({ table, method: m, payload })
+        writes.push({ table, method: m, payload, filters: applied })
         return chain
       }
     }
@@ -63,7 +87,7 @@ function makeSupabaseStub(queues: Record<string, Queued[]>) {
         Promise.resolve({ data: { signedUrl: `https://signed.example.com/${p}` }, error: null }),
     }),
   }
-  return { client: { from, storage } as unknown, writes }
+  return { client: { from, storage } as unknown, writes, filters, queues }
 }
 
 /* ── Mocks ──────────────────────────────────────────────────────────────── */
@@ -126,14 +150,17 @@ function makeRequest(): NextRequest {
  */
 function queuesFor(
   boundary: Queued,
-  { idempotency = { data: null } as Queued }: { idempotency?: Queued } = {},
+  {
+    idempotency = { data: null } as Queued,
+    intake = INTAKE_LANDED,
+  }: { idempotency?: Queued; intake?: Queued } = {},
 ): Record<string, Queued[]> {
   return {
     deep_assessments: [
       idempotency,
       { data: { email: BUYER_EMAIL } },
       boundary,
-      { data: null },
+      intake,
       { data: null },
       { data: { email: BUYER_EMAIL } },
       { data: null },
@@ -142,10 +169,26 @@ function queuesFor(
   }
 }
 
-/** A boundary read that found a row holding this question set. */
-const found = (questions: unknown): Queued => ({ data: { questions } })
+const OBSERVED_UPDATED_AT = "2026-09-01T10:00:00.000Z"
+
+/** A valid stored legacy set — the shape `readQuestionSnapshot` accepts. */
+const LEGACY_QUESTIONS = [{ id: "dq1", text: "How is your digestion?", type: "scale" }]
+
+/**
+ * A boundary read that found a row.
+ *
+ * `report_json` and `updated_at` are part of the read now: the first
+ * distinguishes a historical row legitimately without a question set from a
+ * session that never had one, and the second is the CAS token the intake write
+ * is guarded on.
+ */
+const found = (questions: unknown, over: Record<string, unknown> = {}): Queued => ({
+  data: { questions, report_json: null, updated_at: OBSERVED_UPDATED_AT, ...over },
+})
 /** A boundary read that found no row at all. */
 const noRow: Queued = { data: null }
+/** The intake UPDATE proving through `.select()` that it touched a row. */
+const INTAKE_LANDED: Queued = { data: [{ stripe_session_id: SESSION_ID }] }
 
 async function callRoute() {
   const { POST } = await import("@/app/api/submit-deep-assessment/route")
@@ -224,10 +267,8 @@ describe("a deterministic Consultation is refused before any intake write", () =
 /* ══ Legacy behaviour is untouched ═════════════════════════════════════════ */
 
 describe("ordinary legacy sessions still submit", () => {
-  it("a stored DeepQuestion[] passes the boundary and writes intake", async () => {
-    const stub = makeSupabaseStub(
-      queuesFor(found([{ id: "q1", question: "How is your digestion?", type: "scale" }])),
-    )
+  it("a stored DeepQuestion[] passes the boundary and updates intake", async () => {
+    const stub = makeSupabaseStub(queuesFor(found(LEGACY_QUESTIONS)))
     mockGetSupabase.mockReturnValue(stub.client)
 
     const res = await callRoute()
@@ -235,21 +276,16 @@ describe("ordinary legacy sessions still submit", () => {
     expect(res.status).not.toBe(409)
     const writes = stub.writes.filter((w) => w.table === "deep_assessments")
     expect(writes.length).toBeGreaterThan(0)
-    expect(writes[0].method).toBe("upsert")
+    // An UPDATE, never an upsert: this route may mutate a row that still
+    // belongs to the legacy path, and may not create one.
+    expect(writes[0].method).toBe("update")
   })
 
-  it("a first submit with nothing stored passes, exactly as before", async () => {
-    const stub = makeSupabaseStub(queuesFor(noRow))
-    mockGetSupabase.mockReturnValue(stub.client)
-
-    const res = await callRoute()
-
-    expect(res.status).not.toBe(409)
-    expect(stub.writes.filter((w) => w.table === "deep_assessments").length).toBeGreaterThan(0)
-  })
-
-  it("a row whose questions column is explicitly null passes", async () => {
-    const stub = makeSupabaseStub(queuesFor(found(null)))
+  it("a row already carrying a Report still submits without a question set", async () => {
+    // Historical compatibility: rows predating the persisted snapshot
+    // legitimately have no questions, and a retry or partial-delivery re-run
+    // must keep working for them. They are not deterministic sessions.
+    const stub = makeSupabaseStub(queuesFor(found(null, { report_json: { summary: "old" } })))
     mockGetSupabase.mockReturnValue(stub.client)
 
     const res = await callRoute()
@@ -358,16 +394,23 @@ describe("a boundary read that did not happen stops the request", () => {
     )
     const marker = source.indexOf("Step 3b: the deterministic Consultation boundary")
     // From the comment's OPENING, so the strip below has a `/*` to match.
+    // Ends at Step 5, not Step 4: C2B merged the boundary and the intake write
+    // into one compare-and-set loop, so Step 4 now sits INSIDE the block under
+    // test rather than after it.
     const block = source.slice(
       source.lastIndexOf("/*", marker),
-      source.indexOf("// Step 4: Mark as analysing."),
+      source.indexOf("// Step 5: Produce the report."),
     )
     // Comments stripped before matching. The guard EXPLAINS at length why it
     // does not reuse `existingRow`, and a check that read the explanation would
     // fail on the rationale rather than on the code.
     const guard = block.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "")
-    expect(guard).toContain('.select("questions")')
+    expect(guard).toContain('.select("questions, report_json, updated_at")')
     expect(guard).toContain("boundaryError")
+    // The write is conditional on the token this read observed, and is an
+    // UPDATE — it may mutate a legacy row, never create one from the body.
+    expect(guard).toContain("nextUpdatedAt(observed.updated_at)")
+    expect(guard, "the intake write must not be an upsert").not.toContain("upsert")
     expect(guard, "the boundary must not read the best-effort idempotency row").not.toContain(
       "existingRow",
     )
@@ -413,5 +456,149 @@ describe("the boundary's remaining race is pinned as a C2B precondition", () => 
       installers,
       "a deterministic snapshot installer appeared — the legacy intake write must be made race-safe before this ships",
     ).toEqual([])
+  })
+})
+
+/* ══ The write is conditional, and never creates a row ═════════════════════ */
+
+/**
+ * Phase 3C-C2B — the structural half of the TOCTOU closure.
+ *
+ * C2A proved the boundary READ was fail-closed. That was enough only while
+ * nothing could install a deterministic snapshot on a customer path; C2B adds
+ * exactly such a path, so the WRITE has to be safe too.
+ *
+ * The window was real: read "legacy", snapshot installed, unconditional upsert
+ * lands, deterministic state envelope gone. It is closed by making the write a
+ * compare-and-set on the token the classification was derived from — whatever
+ * moves the token makes the guard match zero rows, and the retry re-reads and
+ * re-decides rather than proceeding on an expired fact.
+ */
+describe("the intake write is a compare-and-set against a still-legacy row", () => {
+  it("a missing row is refused rather than re-created from the request", async () => {
+    /*
+     * `upsert` used to insert one. That is not recovery — it is a paid
+     * assessment resurrected from a browser payload, and it would undo an
+     * account deletion that landed mid-submit.
+     */
+    const stub = makeSupabaseStub(queuesFor(noRow))
+    mockGetSupabase.mockReturnValue(stub.client)
+
+    const res = await callRoute()
+
+    expect(res.status).toBe(409)
+    expect((await res.json()).code).toBe("assessment_row_missing")
+    expect(stub.writes.filter((w) => w.table === "deep_assessments")).toEqual([])
+  })
+
+  it("a row with no questions and no Report refuses new generation", async () => {
+    // Nothing persisted to check the submitted answers against. The recovery is
+    // to reload and let generate-deep-questions install a set.
+    const stub = makeSupabaseStub(queuesFor(found(null)))
+    mockGetSupabase.mockReturnValue(stub.client)
+
+    const res = await callRoute()
+
+    expect(res.status).toBe(409)
+    expect((await res.json()).code).toBe("assessment_questions_missing")
+    expect(stub.writes.filter((w) => w.table === "deep_assessments")).toEqual([])
+  })
+
+  it("an unreadable question shape refuses, and is never overwritten", async () => {
+    const stub = makeSupabaseStub(queuesFor(found({ shape: "nothing writes this" })))
+    mockGetSupabase.mockReturnValue(stub.client)
+
+    const res = await callRoute()
+
+    expect(res.status).toBe(409)
+    expect((await res.json()).code).toBe("assessment_questions_unreadable")
+    expect(stub.writes.filter((w) => w.table === "deep_assessments")).toEqual([])
+  })
+
+  it("losing the CAS to a deterministic installation re-reads and then refuses", async () => {
+    /*
+     * The race itself. The first pass reads a legacy row and writes; the write
+     * matches zero rows because a deterministic snapshot landed in between and
+     * moved the token. The second pass sees the snapshot and refuses — the
+     * browser's answers never reach the deterministic state envelope.
+     */
+    const stub = makeSupabaseStub(
+      queuesFor(found(LEGACY_QUESTIONS), { intake: { data: [] } }),
+    )
+    // Second pass: the boundary re-read now sees the winner, then would-be write.
+    stub.queues.deep_assessments.splice(4, 0, found(snapshot()))
+    mockGetSupabase.mockReturnValue(stub.client)
+
+    const res = await callRoute()
+
+    expect(res.status).toBe(409)
+    expect((await res.json()).code).toBe("deterministic_consultation_conflict")
+    /*
+     * Exactly one write was ATTEMPTED, and it matched zero rows.
+     *
+     * The stub records attempts rather than effects, so the answers do appear
+     * in that attempted payload — what matters is that the guard rejected it
+     * and no second attempt followed. That the payload could not have landed on
+     * the deterministic row is the CAS's property, asserted structurally by
+     * "the intake UPDATE is guarded on the observed token" below.
+     */
+    expect(stub.writes.filter((w) => w.table === "deep_assessments")).toHaveLength(1)
+  })
+
+  it("the intake UPDATE is guarded on the observed token and proves it landed", async () => {
+    /*
+     * The structural half of the CAS, and the one the traces above cannot show.
+     *
+     * A write that sets the right columns but is filtered only on the session id
+     * is the unconditional write this boundary replaced — it leaves an identical
+     * payload behind and would still overwrite whatever landed in between. What
+     * makes it atomic is the pair: the guard on the token that was READ, and a
+     * moved token written back so the next writer's guard fails.
+     */
+    const stub = makeSupabaseStub(queuesFor(found(LEGACY_QUESTIONS)))
+    mockGetSupabase.mockReturnValue(stub.client)
+
+    expect((await callRoute()).status).toBe(200)
+
+    const intake = stub.writes.filter((w) => w.table === "deep_assessments" && w.method === "update")
+    expect(intake, "exactly one intake write").toHaveLength(1)
+    expect(intake[0].filters["eq:stripe_session_id"]).toBe(SESSION_ID)
+    expect(
+      intake[0].filters["eq:updated_at"],
+      "the write must be conditional on the token the boundary read",
+    ).toBe(OBSERVED_UPDATED_AT)
+    expect(
+      (intake[0].payload as { updated_at?: string }).updated_at,
+      "and must move the token, so a concurrent writer's guard fails",
+    ).not.toBe(OBSERVED_UPDATED_AT)
+  })
+
+  it("a row whose token is NULL is guarded on IS NULL, not on equality", async () => {
+    // `updated_at` is nullable, and `eq(col, null)` never matches in PostgREST.
+    // A single `.eq()` for both cases would silently never land on a fresh row.
+    const stub = makeSupabaseStub(queuesFor(found(LEGACY_QUESTIONS, { updated_at: null })))
+    mockGetSupabase.mockReturnValue(stub.client)
+
+    expect((await callRoute()).status).toBe(200)
+
+    const intake = stub.writes.find((w) => w.table === "deep_assessments" && w.method === "update")!
+    expect(intake.filters["is:updated_at"]).toBe(null)
+    expect("eq:updated_at" in intake.filters).toBe(false)
+  })
+
+  it("a CAS that never converges is a retryable 503, not a forced write", async () => {
+    const stub = makeSupabaseStub(queuesFor(found(LEGACY_QUESTIONS), { intake: { data: [] } }))
+    // Every re-read finds the same legacy row; every write matches zero rows.
+    for (let i = 0; i < 6; i += 1) {
+      stub.queues.deep_assessments.splice(4 + i * 2, 0, found(LEGACY_QUESTIONS), { data: [] })
+    }
+    mockGetSupabase.mockReturnValue(stub.client)
+
+    const res = await callRoute()
+
+    expect(res.status).toBe(503)
+    expect((await res.json()).code).toBe("report_persistence_unavailable")
+    expect(mockGeneratePDF).not.toHaveBeenCalled()
+    expect(mockSendEmail).not.toHaveBeenCalled()
   })
 })

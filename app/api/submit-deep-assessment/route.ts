@@ -19,6 +19,8 @@ import {
 } from "@/lib/report/addon-lens"
 import { sanitizeLensAnswers, withoutLensAnswers } from "@/lib/assessment/addon-questions"
 import { resolveTrustedQuestions, answersForTrustedQuestions } from "@/lib/assessment/trusted-questions"
+import { readConsultationMode } from "@/lib/consultation/session-mode"
+import { nextUpdatedAt } from "@/lib/assessment/cas-token"
 import { buildFallbackPaidReport } from "@/lib/fallback-paid-report"
 import {
   buildFoodSystemReport,
@@ -509,36 +511,76 @@ export async function POST(req: NextRequest) {
    * call the deterministic finalise route: a legacy submit arriving at a
    * deterministic session is a routing mistake, not a Consultation to finish.
    *
-   * ══ A TOCTOU THIS PHASE DOES NOT CLOSE ══════════════════════════════════
+   * ══ THE TOCTOU, AND WHY THE WRITE BELOW IS NOW CONDITIONAL ══════════════
    *
-   * This read and the write below are not one operation, so in principle a
-   * deterministic snapshot installed between them would still be overwritten.
-   * It is unreachable today — nothing installs a deterministic snapshot on any
-   * customer path — and closing it properly means making the legacy intake
-   * write conditional, which is a change to the legacy Report architecture this
-   * phase is explicitly not making.
+   * A read and a write are not one operation. Phase 3C-C2A left that window
+   * open because it was unreachable: no path could install a deterministic
+   * snapshot on a customer session, so there was nothing for the window to
+   * destroy.
    *
-   * It is therefore an explicit PRECONDITION of Phase 3C-C2B: before
-   * deterministic initialisation is wired to any customer surface, this write
-   * must become race-safe. A pinned test holds that precondition, and Migration
-   * 48's coherence CHECK is the database-level backstop meanwhile.
+   * A correction to what C2A's version of this comment claimed: Migration 48's
+   * coherence CHECK is NOT a backstop for this race. It reads
+   * `consultation_finalisation IS NULL OR (…)`, so it constrains SEALED rows
+   * only — and the row this race would destroy is an unsealed deterministic
+   * Consultation, deliberately outside it. The protection was the
+   * unreachability, and nothing else.
+   *
+   * Phase 3C-C2B adds a path that CAN install a snapshot, so the window is
+   * closed here first, structurally: the classification below is re-derived
+   * from a read that also captures `updated_at`, and the intake write is a
+   * conditional UPDATE guarded on that token rather than an unconditional
+   * upsert. A deterministic installation that lands in between moves the token,
+   * the guard matches zero rows, and the retry re-reads and refuses.
+   */
+  /**
+   * The boundary and the intake write, as ONE compare-and-set loop.
+   *
+   * They used to be a read followed by an unconditional `upsert`, which is
+   * exactly the window described above. Merged here so the classification the
+   * write depends on is always the classification of the row the write lands
+   * on: whatever moves the token between them makes the guard match zero rows,
+   * and the next pass re-reads and re-decides rather than proceeding on a fact
+   * that has expired.
+   *
+   * ══ WHY IT NEVER CREATES A ROW ══════════════════════════════════════════
+   *
+   * `upsert` would insert one, built from the request body, for a session whose
+   * row is gone. That is not a recovery — it is a paid assessment resurrected
+   * from a browser payload, and it would undo an account deletion that landed
+   * mid-submit. A vanished row is a refusal.
    */
   if (supabase) {
-    let storedQuestions: unknown
-    try {
-      const { data: boundaryRow, error: boundaryError } = await supabase
-        .from("deep_assessments")
-        .select("questions")
-        .eq("stripe_session_id", sessionId)
-        .maybeSingle()
+    const INTAKE_ATTEMPTS = 3
+    let intakeWriteError: string | null = null
+    let landed = false
 
-      if (boundaryError) {
-        // Fail closed. Proceeding would risk overwriting a deterministic
-        // Consultation on the strength of a read that did not happen.
-        console.error(
-          "[submit-deep-assessment] deterministic boundary read error:",
-          boundaryError.message,
-        )
+    for (let attempt = 0; attempt < INTAKE_ATTEMPTS && !landed; attempt++) {
+      let observed: { questions?: unknown; report_json?: unknown; updated_at?: string | null } | null
+      try {
+        const { data: boundaryRow, error: boundaryError } = await supabase
+          .from("deep_assessments")
+          .select("questions, report_json, updated_at")
+          .eq("stripe_session_id", sessionId)
+          .maybeSingle()
+
+        if (boundaryError) {
+          // Fail closed. Proceeding would risk overwriting a deterministic
+          // Consultation on the strength of a read that did not happen.
+          console.error(
+            "[submit-deep-assessment] deterministic boundary read error:",
+            boundaryError.message,
+          )
+          return NextResponse.json(
+            {
+              error: "We couldn't start your report just now. Please try again in a moment.",
+              code: "report_persistence_unavailable",
+            },
+            { status: 503 }
+          )
+        }
+        observed = (boundaryRow as typeof observed) ?? null
+      } catch (err) {
+        console.error("[submit-deep-assessment] deterministic boundary read failed:", err)
         return NextResponse.json(
           {
             error: "We couldn't start your report just now. Please try again in a moment.",
@@ -547,66 +589,126 @@ export async function POST(req: NextRequest) {
           { status: 503 }
         )
       }
-      storedQuestions = boundaryRow?.questions
-    } catch (err) {
-      console.error("[submit-deep-assessment] deterministic boundary read failed:", err)
-      return NextResponse.json(
-        {
-          error: "We couldn't start your report just now. Please try again in a moment.",
-          code: "report_persistence_unavailable",
-        },
-        { status: 503 }
-      )
-    }
 
-    if (storedQuestions !== undefined && storedQuestions !== null && !Array.isArray(storedQuestions)) {
-      console.error(
-        `[submit-deep-assessment] refusing legacy intake against a deterministic Consultation: ${sessionId}`,
-      )
-      return NextResponse.json(
-        {
-          error: "This assessment is a deterministic Consultation and cannot be submitted here.",
-          code: "deterministic_consultation_conflict",
-        },
-        { status: 409 }
-      )
-    }
-  }
-
-  // Step 4: Mark as analysing.
-  //
-  // This write is a precondition, not bookkeeping. Everything after it costs
-  // money (a Claude call), produces a PDF object, and emails the customer — and
-  // all of that is unrecoverable if no row exists to hang it on: `reportViewState`
-  // sends a buyer with no row back into the questionnaire, and the emailed PDF
-  // link expires in 7 days. So a failure here stops the request before any of it.
-  //
-  // An awaited PostgREST call RESOLVES with `{ error }` rather than throwing, so
-  // the try/catch alone never saw this — it only caught transport-level throws.
-  if (supabase) {
-    let intakeWriteError: string | null = null
-    try {
-      const { error } = await supabase.from("deep_assessments").upsert(
-        {
-          stripe_session_id: sessionId,
-          tier,
-          free_scores: {
-            overall,
-            subScores,
-            profile,
-            foundationType: freeScores.foundationType ?? null,
-            selectedAddon: freeScores.selectedAddon ?? null,
+      if (!observed) {
+        // No row to update, and this route does not create one.
+        console.error(`[submit-deep-assessment] no assessment row to submit against: ${sessionId}`)
+        return NextResponse.json(
+          {
+            error: "We couldn't find your assessment. Please reload and try again.",
+            code: "assessment_row_missing",
           },
-          email: freeScores.email ?? null,
-          answers,
-          status: "analysing",
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "stripe_session_id" }
+          { status: 409 }
+        )
+      }
+
+      const mode = readConsultationMode(observed.questions)
+
+      if (mode.kind === "deterministic") {
+        console.error(
+          `[submit-deep-assessment] refusing legacy intake against a deterministic Consultation: ${sessionId}`,
+        )
+        return NextResponse.json(
+          {
+            error: "This assessment is a deterministic Consultation and cannot be submitted here.",
+            code: "deterministic_consultation_conflict",
+          },
+          { status: 409 }
+        )
+      }
+
+      if (mode.kind === "unknown") {
+        // A stored value neither parser recognises. Nothing here writes such a
+        // shape, so it is corruption or a build that is not this one — and
+        // overwriting what cannot be characterised is the one thing this guard
+        // exists to forbid.
+        console.error(`[submit-deep-assessment] unreadable question snapshot: ${sessionId}`)
+        return NextResponse.json(
+          {
+            error: "We couldn't read your assessment. Please reload and try again.",
+            code: "assessment_questions_unreadable",
+          },
+          { status: 409 }
+        )
+      }
+
+      /*
+       * `unclaimed` splits in two.
+       *
+       * A row that already carries a Report is a HISTORICAL one: rows predating
+       * the persisted question snapshot legitimately have none, and a retry or
+       * a partial-delivery re-run must keep working for them. Those proceed.
+       *
+       * A row with neither questions nor a Report is a session that never had a
+       * question set to answer. Generating a Report from a browser payload with
+       * nothing persisted to check it against is what the trusted-questions
+       * work removed; the recovery is to reload and let
+       * `generate-deep-questions` install one.
+       */
+      if (mode.kind === "unclaimed" && !observed.report_json) {
+        console.error(
+          `[submit-deep-assessment] refusing new generation with no persisted question set: ${sessionId}`,
+        )
+        return NextResponse.json(
+          {
+            error: "Your assessment questions are still being prepared. Please reload and try again.",
+            code: "assessment_questions_missing",
+          },
+          { status: 409 }
+        )
+      }
+
+      // Step 4: Mark as analysing.
+      //
+      // This write is a precondition, not bookkeeping. Everything after it costs
+      // money (a Claude call), produces a PDF object, and emails the customer — and
+      // all of that is unrecoverable if no row exists to hang it on: `reportViewState`
+      // sends a buyer with no row back into the questionnaire, and the emailed PDF
+      // link expires in 7 days. So a failure here stops the request before any of it.
+      //
+      // An awaited PostgREST call RESOLVES with `{ error }` rather than throwing, so
+      // the try/catch alone never saw this — it only caught transport-level throws.
+      intakeWriteError = null
+      try {
+        let q = supabase
+          .from("deep_assessments")
+          .update({
+            tier,
+            free_scores: {
+              overall,
+              subScores,
+              profile,
+              foundationType: freeScores.foundationType ?? null,
+              selectedAddon: freeScores.selectedAddon ?? null,
+            },
+            email: freeScores.email ?? null,
+            answers,
+            status: "analysing",
+            // Monotonic relative to what this pass observed, so a concurrent
+            // reader holds either the pre-write token or the post-write one.
+            updated_at: nextUpdatedAt(observed.updated_at),
+          })
+          .eq("stripe_session_id", sessionId)
+        q = observed.updated_at == null ? q.is("updated_at", null) : q.eq("updated_at", observed.updated_at)
+
+        const { data, error } = await q.select("stripe_session_id")
+        if (error) intakeWriteError = error.message
+        else if (data && data.length > 0) landed = true
+        // Zero rows: somebody wrote between this pass's read and its write. The
+        // loop re-reads and re-classifies — if a deterministic installation won,
+        // the next pass refuses instead of overwriting it.
+      } catch (err) {
+        intakeWriteError = err instanceof Error ? err.message : String(err)
+      }
+
+      if (intakeWriteError) break
+    }
+
+    if (!intakeWriteError && !landed) {
+      console.error(
+        `[submit-deep-assessment] intake write could not converge for ${sessionId}`,
       )
-      if (error) intakeWriteError = error.message
-    } catch (err) {
-      intakeWriteError = err instanceof Error ? err.message : String(err)
+      intakeWriteError = "intake write did not converge"
     }
 
     if (intakeWriteError) {

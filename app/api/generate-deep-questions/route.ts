@@ -5,6 +5,7 @@ import {
   type PaidReportIntentReader,
   isCheckoutSessionSettled,
   asAddon,
+  ownedPaidAssessmentFields,
   type PaidReportHealthSystem,
   type PaidReportSummary,
   type PaidReportTier,
@@ -269,20 +270,27 @@ function trustedInputForDevMode(body: RequestBody): TrustedQuestionInput {
  * There is no body-derived branch here any more. If no trusted input could be
  * established the caller already refused, so this cannot be reached with a
  * value the customer chose.
+ *
+ * ── Phase 3C-C2B ──────────────────────────────────────────────────────────
+ * The projection itself now lives in `ownedPaidAssessmentFields`, because a
+ * THIRD writer exists: `lib/consultation/session-claim.ts` creates this row
+ * too, when a deterministic Consultation is opened before the webhook lands.
+ * Two copies of the same projection would be two descriptions of the same
+ * purchase, free to disagree about a row whose content depends on which writer
+ * happened to win a race. This function stays as the local mapping from this
+ * route's trusted input onto that shared shape, and nothing more.
  */
 function ownedAssessmentFields(
   trusted: TrustedQuestionInput
 ): { tier: string; free_scores: Record<string, unknown> } {
-  return {
+  return ownedPaidAssessmentFields({
     tier: trusted.tier,
-    free_scores: {
-      overall: trusted.overall,
-      subScores: trusted.subScores,
-      profile: trusted.profile,
-      foundationType: trusted.foundation,
-      selectedAddon: trusted.entitledAddon,
-    },
-  }
+    overall: trusted.overall,
+    subScores: trusted.subScores,
+    profile: trusted.profile,
+    foundationType: trusted.foundation,
+    selectedAddon: trusted.entitledAddon,
+  })
 }
 
 export async function POST(req: NextRequest) {

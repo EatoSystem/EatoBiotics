@@ -9,6 +9,13 @@ import { reportViewState } from "@/lib/report-status"
 import { TrackConversion } from "@/components/analytics/track-conversion"
 import { isUnverifiedPaidFlowAllowed } from "@/lib/paid-flow-policy"
 import { DeterministicConsultationClient } from "@/components/assessment/consultation/deterministic-consultation-client"
+import { PersistedConsultationClient } from "@/components/assessment/consultation/persisted-consultation-client"
+import { readConsultationMode, type ConsultationMode } from "@/lib/consultation/session-mode"
+import { claimDeterministicConsultation } from "@/lib/consultation/session-claim"
+import {
+  isNewDeterministicClaimAllowed,
+  isPersistedRuntimeEligible,
+} from "@/lib/consultation/persisted-activation-policy"
 import { asAddonType } from "@/lib/addon-types"
 
 export const metadata: Metadata = {
@@ -138,9 +145,18 @@ export default async function DeepAssessmentPage({ searchParams }: Props) {
       color: summary.profile.color ?? "var(--icon-green)",
     }
 
-    // Check Supabase for existing deep assessment progress
+    /*
+     * ── Which flow owns this session? — Phase 3C-C2B ────────────────────
+     *
+     * The stored `questions` column is the discriminator, and it is PARSED.
+     * This used to be `data.questions as DeepQuestion[]` on any truthy value,
+     * which would have handed a deterministic snapshot object to the legacy
+     * client the moment such a snapshot could exist. It could not before; the
+     * claimer below is exactly what makes it possible.
+     */
     let savedQuestions: DeepQuestion[] | null = null
     let savedAnswers: DeepAnswers | null = null
+    let mode: ConsultationMode = { kind: "unclaimed" }
 
     if (supabase) {
       const { data } = await supabase
@@ -155,14 +171,80 @@ export default async function DeepAssessmentPage({ searchParams }: Props) {
         if (reportViewState(data.status, Boolean(data.report_json)) !== "resume_questionnaire") {
           redirect(`/assessment/report?session_id=${session_id}`)
         }
-        if (data.questions) {
-          savedQuestions = data.questions as DeepQuestion[]
-        }
-        if (data.answers) {
-          savedAnswers = data.answers as DeepAnswers
+
+        mode = readConsultationMode(data.questions)
+
+        if (mode.kind === "legacy") {
+          savedQuestions = mode.questions
+          // Legacy answers only. A deterministic state envelope is not a
+          // `DeepAnswers` map, and the branch below never reaches this client.
+          if (data.answers) savedAnswers = data.answers as DeepAnswers
         }
       }
+
+      /*
+       * An unclaimed session may be opened as deterministic — but only in a
+       * runtime that has proven it is not production, AND only while the
+       * new-claim rollout is on. In production this is skipped entirely and the
+       * legacy flow continues exactly as before, which is what keeps every
+       * paying customer today on the path that actually delivers a Report.
+       *
+       * This is the ONLY decision the rollout flag makes. Turning it off stops
+       * new customers being claimed; it does not reach anyone already in a
+       * Consultation, because their session is decided below by the stored mode.
+       */
+      if (mode.kind === "unclaimed" && isNewDeterministicClaimAllowed()) {
+        const claim = await claimDeterministicConsultation({
+          supabase,
+          sessionId: session_id,
+          summary,
+        })
+        if (claim.status === "deterministic") mode = { kind: "deterministic", snapshot: claim.snapshot }
+        // The legacy generator installed a set between the read above and the
+        // claim. Left as `unclaimed` deliberately rather than re-read here: the
+        // legacy client below asks `generate-deep-questions` for the stored set,
+        // and that route already returns the winner's. Re-reading it here would
+        // be a second place that decides what a legacy session holds.
+        else if (claim.status === "legacy") mode = { kind: "unclaimed" }
+        // Every refusal — unreadable, context conflict, unknown bank, occupied,
+        // unavailable — fails closed. None of them is a reason to continue into
+        // a flow on a row whose state we could not establish.
+        else if (claim.status === "refused") mode = { kind: "unknown" }
+      }
     }
+
+    /*
+     * A stored deterministic session renders the persisted client wherever the
+     * RUNTIME can serve it — deliberately not "wherever new claims are allowed".
+     *
+     * The session already exists; the customer's answers are already in the row.
+     * Re-deciding that on the rollout flag would mean a config change stranded
+     * someone mid-Consultation, with no way back into the flow that can read
+     * their work. What the runtime check still prevents is production, where
+     * Migration 48 is unapplied and Phase 4A does not exist.
+     *
+     * Where the runtime cannot serve it, this fails closed rather than falling
+     * back to legacy: casting a snapshot into `DeepQuestion[]` is the bug this
+     * dispatcher exists to prevent, and converting the session would destroy it.
+     */
+    if (mode.kind === "deterministic") {
+      if (!isPersistedRuntimeEligible()) redirect("/assessment")
+      return (
+        <>
+          <TrackConversion
+            event="report_purchased"
+            dedupeKey={`report_purchased:${session_id}`}
+            properties={{ tier, session_id, overall_score: overall }}
+          />
+          <PersistedConsultationClient sessionId={session_id} />
+        </>
+      )
+    }
+
+    // Present, and neither format. Nothing here writes such a value, so it is
+    // corruption or a build that is not this one — either way, not something to
+    // guess through with a customer's paid session.
+    if (mode.kind === "unknown") redirect("/assessment")
 
     return (
       <>

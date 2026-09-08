@@ -346,11 +346,22 @@ describe("the Consultation ends at Review with no Report handoff", () => {
     expect(source).toContain("Report creation is not active in this preview.")
   })
 
-  it("offers no CTA that looks like the Report handoff", () => {
+  it("offers no CTA that CLAIMS a Report", () => {
+    /*
+     * Re-pointed at Phase 3C-C2B. "Finish Consultation" now exists and calls
+     * the finalise route, so a blanket ban on the word `finalise` would forbid
+     * the phase rather than the hazard.
+     *
+     * The hazard was never the word. It is copy that tells a customer a Report
+     * is being made when Phase 4A does not exist — so that is what is banned,
+     * in every file, and it stays banned.
+     */
     for (const file of experienceSources()) {
       const text = read(file)
       expect(text, file).not.toMatch(/Create My (Food System )?Report/i)
-      expect(text, file).not.toMatch(/handoffId|finalise|finalize/i)
+      expect(text, file).not.toMatch(/Generate my Report|Building your Report/i)
+      expect(text, file).not.toMatch(/Analysing your answers|Preparing recommendations/i)
+      expect(text, file).not.toMatch(/AI is working|Report will arrive/i)
     }
   })
 

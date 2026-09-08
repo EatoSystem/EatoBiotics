@@ -126,20 +126,53 @@ function makeRequest(): NextRequest {
   })
 }
 
+
+/**
+ * The stored legacy question set the intake boundary now requires.
+ *
+ * Phase 3C-C2B made the intake write conditional on a row that provably still
+ * belongs to the legacy path, so these fixtures name that row explicitly
+ * instead of relying on `upsert` to create one. Shape matters: it must satisfy
+ * `readQuestionSnapshot`, which is what classifies the row as legacy.
+ */
+const STORED_LEGACY_QUESTIONS = [
+  { id: "dq1", text: "How is your digestion?", type: "scale" },
+]
+const OBSERVED_UPDATED_AT = "2026-09-01T10:00:00.000Z"
+
+/** The boundary read: an existing legacy row, with the CAS token it observes. */
+const BOUNDARY_LEGACY: Queued = {
+  data: {
+    questions: STORED_LEGACY_QUESTIONS,
+    report_json: null,
+    updated_at: OBSERVED_UPDATED_AT,
+  },
+}
+
+/** The intake UPDATE proving, through `.select()`, that it touched a row. */
+const INTAKE_LANDED: Queued = { data: [{ stripe_session_id: SESSION_ID }] }
+
 /**
  * Order of `deep_assessments` queue hits on a fresh run:
  *  0 idempotency select → no row
  *  1 step-3 email select → buyer email
- *  2 step-3b deterministic-boundary select → no row   (Phase 3C-C2A)
- *  3 step-4 "analysing" upsert      ← intake write
+ *  2 step-3b boundary select → an existing LEGACY row   (Phase 3C-C2A/C2B)
+ *  3 step-4 "analysing" UPDATE       ← intake write, CAS-guarded
  *  4 step-6 report upsert            ← report persistence
  *  5 step-9 email select → buyer email
  *  6 step-10 final status upsert     ← delivery bookkeeping
  *
- * Position 2 is new. The boundary read is deliberately its OWN read rather than
- * a reuse of position 0: the idempotency select is allowed to fail quietly, and
- * a safety boundary must not inherit that. `{ data: null }` is "no row yet",
- * the legacy first-submit case these fixtures model, so it passes.
+ * Position 2 is the boundary's OWN read rather than a reuse of position 0: the
+ * idempotency select is allowed to fail quietly, and a safety boundary must not
+ * inherit that.
+ *
+ * Phase 3C-C2B changed what these fixtures must model. The intake write is no
+ * longer an `upsert` that creates a row from the request body — it is a
+ * conditional UPDATE against a row that provably still belongs to the legacy
+ * path — so position 2 now returns a stored legacy question set and position 3
+ * returns the `.select()` proof that a row was touched. "No row" is a refusal
+ * now, and is covered by its own test in the boundary suite rather than being
+ * the default shape here. No assertion below was weakened.
  */
 const INTAKE_WRITE = 3
 const REPORT_WRITE = 4
@@ -150,9 +183,8 @@ function freshRunQueues(): Record<string, Queued[]> {
     deep_assessments: [
       { data: null },
       { data: { email: BUYER_EMAIL } },
-      // step-3b deterministic boundary — no row, so a legacy submit proceeds.
-      { data: null },
-      { data: null },
+      BOUNDARY_LEGACY,
+      INTAKE_LANDED,
       { data: null },
       { data: { email: BUYER_EMAIL } },
       { data: null },

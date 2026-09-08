@@ -27,6 +27,34 @@ export type PaidReportSummary = {
   selectedAddon?: PaidReportHealthSystem | null
 }
 
+/**
+ * The two columns a paid `deep_assessments` row owns, from the settled session.
+ *
+ * `tier` and `free_scores` are NOT NULL with no default, so any writer creating
+ * the row has to supply them — and there are now two such writers, the legacy
+ * question generator and the deterministic Consultation claimer. Deriving them
+ * here means whichever wins the insert race, the row says the same thing about
+ * what was bought.
+ *
+ * From the settled checkout, never a request body: a paid row built from the
+ * caller's claim would describe whatever they said they bought.
+ */
+export function ownedPaidAssessmentFields(summary: PaidReportSummary): {
+  tier: PaidReportTier
+  free_scores: Record<string, unknown>
+} {
+  return {
+    tier: summary.tier,
+    free_scores: {
+      overall: summary.overall,
+      subScores: summary.subScores,
+      profile: summary.profile,
+      foundationType: summary.foundationType ?? null,
+      selectedAddon: summary.selectedAddon ?? null,
+    },
+  }
+}
+
 const VALID_FOUNDATIONS: PaidReportFoundation[] = ["you", "family"]
 
 /**
