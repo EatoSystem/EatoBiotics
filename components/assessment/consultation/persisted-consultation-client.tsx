@@ -36,6 +36,7 @@ import {
 import {
   commitMove,
   continueFrom,
+  finaliseFrom,
   skipFrom,
   withdrawFrom,
   type NavigationDeps,
@@ -165,11 +166,16 @@ export function createNavigationDeps(
     queueSkip: queue.queueSkip,
     requestReview: () => persistence.enterReview(),
     leaveReview: (questionId) => persistence.leaveReview(questionId),
+    // The adapter's, so the request shape stays in the one file that knows an
+    // endpoint exists.
+    finalise: () => persistence.finalise(),
   }
 }
 
 export type PersistedLoadState =
   | { status: "loading" }
+  /** Sealed. The completion screen, not a session. */
+  | { status: "completed" }
   | { status: "loaded"; session: ConsultationSessionState; fresh: boolean }
   | { status: "failed" }
 
@@ -227,8 +233,13 @@ export function usePersistedConsultation(
     cancelled.current = false
     ;(async () => {
       try {
-        const { session, fresh } = hydratePersistedSession(await persistence.load())
-        if (!cancelled.current) setLoad({ status: "loaded", session, fresh })
+        const hydrated = hydratePersistedSession(await persistence.load())
+        if (cancelled.current) return
+        setLoad(
+          hydrated.kind === "completed"
+            ? { status: "completed" }
+            : { status: "loaded", session: hydrated.session, fresh: hydrated.fresh },
+        )
       } catch {
         if (!cancelled.current) setLoad({ status: "failed" })
       }
@@ -267,14 +278,34 @@ export function usePersistedConsultation(
  * scratch on top of answers that exist is the worst available outcome, and it
  * is the outcome every convenient default produces.
  */
-export function hydratePersistedSession(
-  state: LoadedConsultationState,
-): { session: ConsultationSessionState; fresh: boolean } {
+export type HydratedConsultation =
+  /** A live Consultation, positioned where the server says it was. */
+  | { kind: "session"; session: ConsultationSessionState; fresh: boolean }
+  /**
+   * Finished and sealed. There is no session to render, and deliberately no
+   * way to make one: rehydrating a sealed Consultation into questions would
+   * offer edits the server will refuse, on a record that is already frozen.
+   */
+  | { kind: "completed" }
+
+export function hydratePersistedSession(state: LoadedConsultationState): HydratedConsultation {
+  /*
+   * `ready-for-report` used to throw here, which was right while nothing could
+   * produce it. Phase 3C-C2A can now persist it, so a customer refreshing after
+   * finishing would have seen the generic load-failure screen — the one message
+   * that tells someone whose Consultation succeeded that something went wrong.
+   *
+   * Checked BEFORE the bank resolves, on purpose. A sealed Consultation needs
+   * no bank: there are no questions left to render, and refusing a completed
+   * customer because today's build no longer holds the bank they answered
+   * against would be a regression, not a safety property.
+   */
+  if (state.phase === "ready-for-report") return { kind: "completed" }
+
   const bank = resolveConsultationBank(state.bankVersion)
   // Not a fallback to the current bank: resolving a session against a bank it
   // was not answered against is the exact failure the fingerprint prevents.
   if (!bank) throw new Error("unknown-bank")
-  if (state.phase === "ready-for-report") throw new Error("unsupported-phase")
 
   /*
    * Candidates are re-checked against the bank now that it is resolved.
@@ -297,6 +328,7 @@ export function hydratePersistedSession(
   const fresh = !state.started
 
   return {
+    kind: "session",
     fresh,
     session: createConsultationSession({
       // The SERVER's context, never a caller's. It is the only one that has been
@@ -351,6 +383,13 @@ export function PersistedConsultationClient({ sessionId, persistence }: Props) {
     )
   }
 
+  if (load.status === "completed") {
+    // A refresh after finishing lands here, and shows the same thing the
+    // customer saw when they finished. Not Review, not a question, not a
+    // failure.
+    return <ConsultationComplete />
+  }
+
   if (load.status === "failed") {
     // Deliberately the same message for every cause. A customer cannot act on
     // "the stored state could not be parsed", and naming the failure would put
@@ -402,6 +441,9 @@ function PersistedConsultationSession({
   const [state, setState] = useState<ConsultationSessionState>(initial)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  /** Set only once the SERVER confirms the seal. Never optimistically. */
+  const [completed, setCompleted] = useState(false)
+  const [finishError, setFinishError] = useState<string | null>(null)
 
   const question = currentQuestionOf(state)
   const progress = useMemo(() => progressOf(state), [state])
@@ -417,6 +459,52 @@ function PersistedConsultationSession({
       }),
     [state],
   )
+
+  /**
+   * Finish: flush, then seal.
+   *
+   * The ordering lives in `finaliseFrom`, which is where it can be proven —
+   * this only reflects the outcome. Completion is rendered only on a confirmed
+   * server success, so a failed request can never leave a customer believing
+   * their Consultation was finalised when it was not.
+   */
+  async function handleFinish() {
+    if (busy) return
+    setBusy(true)
+    setFinishError(null)
+    try {
+      const attempt = await finaliseFrom(navigation)
+      if (attempt.status === "finalised") {
+        setCompleted(true)
+        return
+      }
+      if (attempt.status === "save-failed") {
+        // Nothing was sealed. The answers are still on screen, and the customer
+        // stays exactly where they were.
+        setFinishError(
+          "We couldn't save your latest answer, so nothing was finalised. Please try again.",
+        )
+        return
+      }
+      if (attempt.kind === "incomplete") {
+        // The server is the authority on completeness, and it says something is
+        // outstanding. Never a completion screen.
+        setFinishError(
+          "Something in your Consultation still needs an answer. Please reload to see what is missing.",
+        )
+        return
+      }
+      if (attempt.kind === "retryable") {
+        setFinishError("We couldn't finish your Consultation just now. Please try again.")
+        return
+      }
+      // A trust refusal. Retrying cannot change the answer, and the server's
+      // reason is not something to put in front of a customer.
+      setFinishError("We couldn't finish your Consultation. Please reload and try again.")
+    } finally {
+      setBusy(false)
+    }
+  }
 
   function handleAnswer(id: string, value: ConsultationAnswer) {
     setSaveError(null)
@@ -458,6 +546,15 @@ function PersistedConsultationSession({
     : ""
 
   const onOrientation = state.phase === "questions" && state.currentQuestionId === null
+
+  // Sealed. Nothing below this is reachable any more — the Review list, the
+  // Edit controls and the Remove controls all describe a record that can no
+  // longer change.
+  //
+  // Placed AFTER every hook rather than at the top of the component: an early
+  // return above `useMemo` changes the hook order between renders, which React
+  // forbids and which would have broken the moment a customer finished.
+  if (completed) return <ConsultationComplete />
 
   return (
     <div className="min-h-screen bg-background pt-[57px]">
@@ -522,6 +619,9 @@ function PersistedConsultationSession({
           footer={
             <ReviewFooter
               onBack={() => void apply(() => commitMove(state, goBack(state), navigation))}
+              onFinish={() => void handleFinish()}
+              busy={busy}
+              error={finishError}
             />
           }
         />
@@ -556,25 +656,91 @@ function SectionTransition({ title, purpose }: { title: string; purpose: string 
 }
 
 /**
- * The end of Phase 3C-B.
+ * The Review footer — Phase 3C-C2B.
  *
- * Review is the last screen here too. No submit, no sealing of the answers, no
- * immutable trusted snapshot, and no button dressed up as one — the real handoff
- * belongs to the later phase that owns it.
+ * ══ WHAT "FINISH" MEANS, AND WHAT IT DOES NOT ═══════════════════════════════
+ *
+ * It seals the answers. It does not start a Report, because Phase 4A does not
+ * exist — so the copy says what happens and stops there. Anything that named a
+ * Report as being produced, described analysis under way, or promised an
+ * arrival time would be describing work that has not begun, to someone who has
+ * just paid €49. A guard forbids each of those phrasings by name, which is why
+ * none of them is written out here.
+ *
+ * ══ WHY THE BUSY STATE IS ONLY UX ═══════════════════════════════════════════
+ *
+ * Disabling the button while a request is in flight stops the obvious double
+ * click, but it is not what makes finishing safe: two tabs, a refresh mid-flight
+ * or a lost response all bypass it. The correctness boundary is the server's —
+ * one Consultation seals once, and a retry returns the original handoff.
  */
-function ReviewFooter({ onBack }: { onBack: () => void }) {
+function ReviewFooter({
+  onBack,
+  onFinish,
+  busy,
+  error,
+}: {
+  onBack: () => void
+  onFinish: () => void
+  busy: boolean
+  error: string | null
+}) {
   return (
     <div className="mt-12 rounded-2xl border border-border bg-secondary/40 p-6">
       <p className="font-semibold text-foreground">
         Your Consultation is ready for the next step.
       </p>
-      <button
-        type="button"
-        onClick={onBack}
-        className="mt-6 min-h-[44px] rounded-full border-2 border-border px-6 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary/60"
-      >
-        Back to the last question
-      </button>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+        Finishing saves your answers as final. You will not be able to change them
+        afterwards.
+      </p>
+
+      {error && (
+        <p role="alert" className="mt-4 text-sm leading-relaxed text-foreground">
+          {error}
+        </p>
+      )}
+
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+        <button
+          type="button"
+          onClick={onFinish}
+          disabled={busy}
+          aria-busy={busy}
+          className="min-h-[44px] rounded-full bg-foreground px-6 py-2.5 text-sm font-semibold text-background transition-opacity hover:opacity-90 disabled:opacity-60"
+        >
+          {busy ? "Finishing…" : "Finish Consultation"}
+        </button>
+        <button
+          type="button"
+          onClick={onBack}
+          disabled={busy}
+          className="min-h-[44px] rounded-full border-2 border-border px-6 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary/60 disabled:opacity-60"
+        >
+          Back to the last question
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The completion screen.
+ *
+ * Restrained on purpose. The record is sealed and that is genuinely all that
+ * has happened: there is no Report, no PDF, no email and no queue position, so
+ * there is nothing here to link to, count down to or animate. Saying more would
+ * be inventing a deliverable to fill the silence.
+ */
+export function ConsultationComplete() {
+  return (
+    <div className="mx-auto max-w-2xl px-6 py-24">
+      <h1 className="text-2xl font-semibold leading-snug text-foreground sm:text-3xl">
+        Your Consultation is complete.
+      </h1>
+      <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+        Your responses have been finalised and are ready for the next step.
+      </p>
     </div>
   )
 }

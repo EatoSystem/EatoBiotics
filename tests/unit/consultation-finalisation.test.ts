@@ -508,10 +508,13 @@ describe("finalisation is pure, dormant and produces no Report", () => {
     expect(SOURCE).not.toMatch(/(?<![=!])=\s*["']ready-for-report["']/)
   })
 
-  it("exactly one route calls it, and it is the finalise route", () => {
-    // Phase 3C-C1 defined the payload with no caller at all. Phase 3C-C2A adds
-    // the ONE route allowed to seal one. Pinned rather than removed: the value
-    // of this guard was never "nobody calls it", it was "we know who does".
+  it("exactly two routes call it: the finalise route seals, the session route reads", () => {
+    // Phase 3C-C1 defined the payload with no caller at all. Phase 3C-C2A added
+    // the ONE route allowed to seal one. Phase 3C-C2B adds the second: the
+    // session route validates a STORED seal when a Consultation loads as
+    // completed — it reads one; it never builds one. Pinned rather than removed:
+    // the value of this guard was never "nobody calls it", it was "we know who
+    // does", and each addition has to be argued for here.
     const walk = (dir: string, out: string[] = []): string[] => {
       for (const entry of readdirSync(dir, { withFileTypes: true })) {
         if (entry.name === "node_modules" || entry.name === ".next") continue
@@ -526,8 +529,9 @@ describe("finalisation is pure, dormant and produces no Report", () => {
       .filter((f) => !f.endsWith("lib/consultation/finalisation.ts"))
       .filter((f) => /from\s+["'][^"']*consultation\/finalisation["']/.test(readFileSync(f, "utf8")))
       .map((f) => f.slice(process.cwd().length + 1))
-    expect(callers, "finalisation has an unexpected caller").toEqual([
+    expect([...callers].sort(), "finalisation has an unexpected caller").toEqual([
       "app/api/consultation/finalise/route.ts",
+      "app/api/consultation/session/route.ts",
     ])
   })
 

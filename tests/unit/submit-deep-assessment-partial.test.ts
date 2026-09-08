@@ -120,12 +120,23 @@ function freshRunQueues(): Record<string, Queued[]> {
     deep_assessments: [
       { data: null },
       { data: { email: BUYER_EMAIL } },
-      // Phase 3C-C2A inserted a dedicated deterministic-boundary read between
-      // the step-3 email lookup and the step-4 intake write. `{ data: null }`
-      // is "no row yet", which is the legacy first-submit case these fixtures
-      // model, so the boundary passes and the flow continues as before.
-      { data: null },
-      { data: null },
+      /*
+       * The step-3b boundary read, then the step-4 intake write.
+       *
+       * Phase 3C-C2B made the write a conditional UPDATE against a row that
+       * provably still belongs to the legacy path, so the boundary returns a
+       * stored legacy question set and the write returns the `.select()` proof
+       * that it touched a row. "No row" is a refusal now, covered by its own
+       * test in the boundary suite.
+       */
+      {
+        data: {
+          questions: [{ id: "dq1", text: "How is your digestion?", type: "scale" }],
+          report_json: null,
+          updated_at: "2026-09-01T10:00:00.000Z",
+        },
+      },
+      { data: [{ stripe_session_id: SESSION_ID }] },
       { data: null },
       { data: { email: BUYER_EMAIL } },
       { data: null },

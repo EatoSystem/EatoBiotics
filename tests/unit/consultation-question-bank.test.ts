@@ -82,7 +82,22 @@ describe("the contract stays decoupled from live runtime", () => {
    * restating the add-on union — that guard predates this phase and found this
    * file on its first full run. Everything else must stay inside the module.
    */
-  const ALLOWED_EXTERNAL_IMPORTS = new Set(["@/lib/addon-types"])
+  /*
+   * Re-pointed at Phase 3C-C2B, extended rather than relaxed.
+   *
+   * `session-claim.ts` is a SERVER persistence module: it opens a deterministic
+   * Consultation on a paid row, so it necessarily knows the settled-checkout
+   * summary and the compare-and-set token. Both additions are leaf helpers with
+   * no UI and no further reach into the app, and the rule they serve is
+   * unchanged — the question bank itself still imports nothing but itself.
+   */
+  const ALLOWED_EXTERNAL_IMPORTS = new Set([
+    "@/lib/addon-types",
+    "@/lib/assessment/cas-token",
+    "@/lib/assessment/question-snapshot",
+    "@/lib/deep-assessment",
+    "@/lib/paid-report-session",
+  ])
 
   it("lib/consultation imports nothing from the live app", () => {
     // The strongest available proof that this bank is inert: if it never
@@ -173,10 +188,15 @@ describe("the deterministic bank has not reached the paid flow", () => {
       importers().sort(),
       "a new importer of the deterministic bank has appeared",
     ).toEqual([
+      // Phase 3C-C2B: the paid page now dispatches by stored mode, so it reads
+      // the Consultation modules directly. Pinned, not loosened — this is still
+      // the exact list of files allowed to know the bank exists.
       "app/api/consultation/finalise/route.ts",
       "app/api/consultation/progress/route.ts",
       "app/api/consultation/review/route.ts",
       "app/api/consultation/session/route.ts",
+      "app/api/submit-deep-assessment/route.ts",
+      "app/assessment/deep/page.tsx",
       "components/assessment/consultation/consultation-navigation.ts",
       "components/assessment/consultation/consultation-orientation.tsx",
       "components/assessment/consultation/consultation-persistence.ts",
@@ -188,27 +208,55 @@ describe("the deterministic bank has not reached the paid flow", () => {
     ])
   })
 
-  it("only the deterministic routes consume it server-side", () => {
-    // Never the legacy question, save or submit routes: those own legacy
-    // sessions, and a deterministic import there would be the two contracts
-    // starting to merge.
-    expect(importers().filter((f) => f.startsWith("app/api/")).sort()).toEqual([
-      // Phase 3C-C2A adds the finalise route. The list is extended rather than
-      // relaxed: it still names every server file allowed to know the bank
-      // exists, and the legacy routes below are still named as forbidden.
+  it("no legacy route reaches beyond the mode CLASSIFIER", () => {
+    /*
+     * Re-pointed at Phase 3C-C2B, and this one needed re-stating rather than
+     * extending.
+     *
+     * The old rule was "no legacy route imports anything from lib/consultation",
+     * whose purpose was to stop the two contracts merging. C2B's TOCTOU fix
+     * requires the legacy submit route to know ONE thing: whether the row it is
+     * about to write still belongs to the legacy flow. That is the classifier,
+     * and importing it is what prevents the alternative — a second, inline copy
+     * of the mode decision inside the legacy route, drifting from the real one.
+     *
+     * So the boundary moves from "which files" to "which modules". A legacy
+     * route may ask who owns a row. It may not touch the bank, the engine, the
+     * finalisation contract or anything that resolves questions — that is what
+     * merging the contracts would actually look like.
+     */
+    const LEGACY_ROUTES = [
+      "app/api/generate-deep-questions/route.ts",
+      "app/api/save-deep-progress/route.ts",
+      "app/api/submit-deep-assessment/route.ts",
+      "app/api/stripe/webhook/route.ts",
+    ]
+    const CLASSIFIER_ONLY = new Set(["@/lib/consultation/session-mode"])
+
+    for (const route of LEGACY_ROUTES) {
+      const src = readFileSync(join(repoRoot, route), "utf8")
+      const specs = [...src.matchAll(/from\s+["'](@\/lib\/consultation\/[^"']+)["']/g)].map((m) => m[1])
+      for (const spec of specs) {
+        expect(
+          CLASSIFIER_ONLY.has(spec),
+          `${route} imports "${spec}" — a legacy route may ask WHO OWNS a row and nothing more`,
+        ).toBe(true)
+      }
+    }
+  })
+
+  it("the deterministic routes are exactly these four", () => {
+    // The API surface itself stays pinned: a fifth deterministic route is how
+    // Phase 4A starting would first be visible.
+    const deterministic = importers()
+      .filter((f) => f.startsWith("app/api/consultation/"))
+      .sort()
+    expect(deterministic).toEqual([
       "app/api/consultation/finalise/route.ts",
       "app/api/consultation/progress/route.ts",
       "app/api/consultation/review/route.ts",
       "app/api/consultation/session/route.ts",
     ])
-    for (const legacy of [
-      "app/api/generate-deep-questions/route.ts",
-      "app/api/save-deep-progress/route.ts",
-      "app/api/submit-deep-assessment/route.ts",
-      "app/api/stripe/webhook/route.ts",
-    ]) {
-      expect(importers(), legacy).not.toContain(legacy)
-    }
   })
 
   it("no legacy paid surface consumes it", () => {
@@ -222,11 +270,25 @@ describe("the deterministic bank has not reached the paid flow", () => {
     }
   })
 
-  it("the deep-assessment page reaches it only through the preview component", () => {
-    // The page itself must not import the bank: it hands a context to the
-    // preview client and nothing more, so the paid branch below it cannot
-    // accidentally start resolving deterministic questions.
-    expect(importers()).not.toContain("app/assessment/deep/page.tsx")
+  it("the deep-assessment page reads the Consultation only to DISPATCH", () => {
+    /*
+     * Re-pointed at Phase 3C-C2B. The page used to be forbidden from importing
+     * anything here at all; it now has to, because deciding which flow owns a
+     * paid session is its job. What it may not do is resolve questions itself.
+     *
+     * So the rule becomes specific rather than absent: mode classification and
+     * session claiming, and none of the question/answer machinery.
+     */
+    const page = readFileSync(join(repoRoot, "app/assessment/deep/page.tsx"), "utf8")
+    const specs = [...page.matchAll(/from\s+["'](@\/lib\/consultation\/[^"']+)["']/g)].map((m) => m[1])
+    expect(specs.sort()).toEqual([
+      "@/lib/consultation/persisted-activation-policy",
+      "@/lib/consultation/session-claim",
+      "@/lib/consultation/session-mode",
+    ])
+    for (const forbidden of ["question-bank", "applicability", "completeness", "validation"]) {
+      expect(page, forbidden).not.toContain(`@/lib/consultation/${forbidden}`)
+    }
   })
 
   it("the legacy generated-question path is untouched", () => {

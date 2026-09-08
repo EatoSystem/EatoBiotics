@@ -987,12 +987,19 @@ describe("sealing a Consultation begins no Report", () => {
     expect(row.status).toBe("in_progress")
   })
 
-  it("the real paid flow still renders the legacy client", async () => {
-    // C2A creates a dormant server contract. It does not activate the product:
-    // no paying customer reaches this route until C2B says so.
+  it("the real paid flow still renders the legacy client by default", async () => {
+    /*
+     * Re-pointed at Phase 3C-C2B, which wired the persisted client into the
+     * page. The rule C2A wrote this for is unchanged — a paying customer must
+     * not reach the finalise route — but it is now enforced by the activation
+     * policy rather than by the client being absent.
+     *
+     * The page still never calls the finalise endpoint itself: sealing is the
+     * Review screen's action, through the transport adapter.
+     */
     const page = await readFile("app/assessment/deep/page.tsx")
     expect(page).toContain("DeepAssessmentClient")
-    expect(page).not.toContain("PersistedConsultationClient")
+    expect(page).toContain("isPersistedConsultationAllowed")
     expect(page).not.toContain("consultation/finalise")
   })
 })

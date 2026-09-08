@@ -11,7 +11,7 @@ import {
   withdrawOptionalAnswer,
   type ConsultationSessionState,
 } from "@/lib/consultation/session"
-import type { ReviewOutcome, SaveOutcome } from "./consultation-persistence"
+import type { FinaliseOutcome, ReviewOutcome, SaveOutcome } from "./consultation-persistence"
 
 /**
  * Moving through a PERSISTED Consultation — Phase 3C-B.
@@ -71,6 +71,8 @@ export interface NavigationDeps {
   requestReview: () => Promise<ReviewOutcome>
   /** The one phase retreat: review → questions, at a named applicable question. */
   leaveReview: (questionId: string) => Promise<SaveOutcome>
+  /** Ask the SERVER to seal the Consultation. Takes nothing — see the adapter. */
+  finalise: () => Promise<FinaliseOutcome>
 }
 
 export type NavigationOutcome =
@@ -247,4 +249,44 @@ export async function withdrawFrom(
   if (!(await deps.flush())) return { status: "save-failed" }
 
   return { status: "moved", state: withdrawOptionalAnswer(state, questionId) }
+}
+
+
+/* ══ Finishing ═════════════════════════════════════════════════════════════ */
+
+export type FinaliseAttempt =
+  /** Sealed. The Consultation is finished and cannot be changed again. */
+  | { status: "finalised" }
+  /** The pending answers could not be saved, so nothing was sealed. */
+  | { status: "save-failed" }
+  /** The server refused. `kind` says whether retrying could ever help. */
+  | { status: "refused"; kind: "incomplete" | "retryable" | "refused" }
+
+/**
+ * Finish the Consultation: flush first, then seal — Phase 3C-C2B.
+ *
+ * ══ WHY THE ORDER IS THE WHOLE FUNCTION ═════════════════════════════════════
+ *
+ * The customer's last answer may still be sitting in the autosave debounce
+ * while they look at the Review list. Sealing first would freeze a record that
+ * is missing it — permanently, because the seal is write-once — and the
+ * evidence would be a Report built from an answer the customer can see on
+ * their own screen. So the queue is flushed, and the seal is attempted ONLY if
+ * that flush is confirmed.
+ *
+ * A failed flush is not a failed finalisation. Nothing is sent, the customer
+ * stays on Review with their answers visible, and they can try again.
+ *
+ * ══ WHY THE SERVER IS STILL THE AUTHORITY ═══════════════════════════════════
+ *
+ * Completeness is not checked here. It is re-derived inside the finalise route
+ * immediately before the write, because a verdict computed in a browser is a
+ * verdict about a state the server may not have.
+ */
+export async function finaliseFrom(deps: NavigationDeps): Promise<FinaliseAttempt> {
+  if (!(await deps.flush())) return { status: "save-failed" }
+
+  const outcome = await deps.finalise()
+  if (outcome.ok) return { status: "finalised" }
+  return { status: "refused", kind: outcome.kind }
 }

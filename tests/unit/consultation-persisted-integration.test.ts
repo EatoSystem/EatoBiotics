@@ -171,6 +171,12 @@ function wireFetchToRoutes() {
       const { POST } = await import("@/app/api/consultation/review/route")
       return POST(new NextRequest(absolute, { body, headers, method: "POST" }))
     }
+    // Phase 3C-C2B: Finish goes over the wire like everything else, so the
+    // sealed row this file then reloads is one the REAL route wrote.
+    if (absolute.includes("/api/consultation/finalise")) {
+      const { POST } = await import("@/app/api/consultation/finalise/route")
+      return POST(new NextRequest(absolute, { body, headers, method: "POST" }))
+    }
     throw new Error(`unrouted request: ${absolute}`)
   }) as typeof globalThis.fetch
 }
@@ -190,6 +196,7 @@ const depsFor = (): NavigationDeps => {
     queueSkip: (id, cursor) => void p.skipOptional(id, cursor),
     requestReview: () => p.enterReview(),
     leaveReview: (id) => p.leaveReview(id),
+    finalise: () => p.finalise(),
   }
 }
 
@@ -202,7 +209,13 @@ function mustMove(outcome: NavigationOutcome, what: string): ConsultationSession
 
 /** Load from the server and hydrate, exactly as the wrapper does on mount. */
 async function load() {
-  return hydratePersistedSession(await persistence().load())
+  const hydrated = hydratePersistedSession(await persistence().load())
+  // Phase 3C-C2B: a sealed Consultation hydrates as `completed` and has no
+  // session. Every walk in this file is a live one, so this asserts rather than
+  // casts — a silently sealed fixture would otherwise read as a load failure.
+  expect(hydrated.kind, "expected a live session").toBe("session")
+  if (hydrated.kind !== "session") throw new Error("unreachable")
+  return hydrated
 }
 
 /** Answer the current question over the wire, then Continue. */
@@ -650,6 +663,7 @@ describe("a withdrawal taken from the Review list survives the round trip", () =
       queueSkip: (id, cursor) => void outstanding.push(p.skipOptional(id, cursor)),
       requestReview: () => p.enterReview(),
       leaveReview: (id) => p.leaveReview(id),
+      finalise: () => p.finalise(),
     }
     return deps
   }
@@ -782,5 +796,191 @@ describe("a withdrawal taken from the Review list survives the round trip", () =
     const resumed = await reload()
     expect(isReviewing(resumed)).toBe(false)
     expect(currentQuestion(resumed)?.id).toBe(stored.currentQuestionId)
+  })
+})
+
+/* ══ Finish, and come back to it ═══════════════════════════════════════════ */
+
+describe("a finished Consultation reloads as finished — Phase 3C-C2B", () => {
+  const CONSTRAINTS = "core_environment_constraints_v1"
+
+  /** Every applicable answer, valid, with the branch-opening choices taken. */
+  function completeAnswers(overrides: ConsultationAnswers = {}): ConsultationAnswers {
+    const answers: ConsultationAnswers = { ...overrides }
+    for (let pass = 0; pass < 4; pass += 1) {
+      for (const q of resolveApplicableQuestions({
+        questions: CONSULTATION_QUESTION_BANK,
+        context: { foundation: "you" },
+        answers,
+      })) {
+        if (q.id in answers) continue
+        if (q.type === "single") answers[q.id] = q.options![0].value
+        else if (q.type === "multi") answers[q.id] = [q.options![0].value]
+        else if (q.type === "textarea") answers[q.id] = "A sentence that is a real answer."
+        else answers[q.id] = q.min ?? 0
+      }
+    }
+    return answers
+  }
+
+  /** A row sitting on a COMPLETE Review list, ready to be finished. */
+  function seedFinishable(over: Record<string, unknown> = {}) {
+    db = makeDb({
+      stripe_session_id: SESSION,
+      tier: "personal",
+      questions: createDeterministicConsultationSnapshot({ foundation: "you", entitledLens: null }),
+      answers: {
+        kind: DETERMINISTIC_STATE_KIND,
+        schemaVersion: DETERMINISTIC_STATE_SCHEMA_VERSION,
+        candidateAnswers: completeAnswers({ [Q1]: "nothing", [CONSTRAINTS]: ["allergy"] }),
+        touchedQuestionIds: [],
+        skippedOptionalQuestionIds: [],
+        currentQuestionId: null,
+        phase: "review",
+      },
+      status: "in_progress",
+      report_json: null,
+      pdf_url: null,
+      updated_at: null,
+      consultation_finalisation: null,
+      consultation_handoff_id: null,
+      ...over,
+    })
+    mockGetSupabase.mockReturnValue(db.client)
+  }
+
+  /** Finish over the real route, through the real adapter. */
+  const finish = () => persistence().finalise()
+
+  it("Finish seals the row, and the reload comes back completed rather than editable", async () => {
+    // The property that matters to a customer: refreshing after finishing shows
+    // the same finished thing. Before C2B this threw `unsupported-phase`, i.e.
+    // the one person whose Consultation had definitely worked was shown the
+    // generic failure screen.
+    seedFinishable()
+    const outcome = await finish()
+    expect(outcome.ok, "finalise").toBe(true)
+
+    const row = db.row()
+    expect(row.consultation_finalisation, "the seal was written").toBeTruthy()
+    expect(typeof row.consultation_handoff_id).toBe("string")
+    expect((row.answers as DeterministicConsultationState).phase).toBe("ready-for-report")
+
+    const hydrated = hydratePersistedSession(await persistence().load())
+    expect(hydrated.kind).toBe("completed")
+  })
+
+  it("the reload is a plain load, not a second seal", async () => {
+    // Loading must never write. A GET that repaired or re-sealed would make the
+    // handoff depend on when it was last read.
+    seedFinishable()
+    await finish()
+    const sealed = { ...db.row() }
+
+    await persistence().load()
+    const after = db.row()
+    expect(after.consultation_finalisation).toEqual(sealed.consultation_finalisation)
+    expect(after.consultation_handoff_id).toBe(sealed.consultation_handoff_id)
+    expect(after.answers).toEqual(sealed.answers)
+  })
+
+  it("finishing twice is the same seal, and still loads as completed", async () => {
+    // C2A's idempotency, seen from the outside: a double-click, a retried
+    // request and a refresh mid-flight all converge on ONE handoff.
+    seedFinishable()
+    const first = await finish()
+    const handoff = db.row().consultation_handoff_id
+    const second = await finish()
+
+    expect(first.ok && second.ok).toBe(true)
+    if (first.ok && second.ok) expect(second.handoffId).toBe(first.handoffId)
+    expect(db.row().consultation_handoff_id).toBe(handoff)
+    expect(hydratePersistedSession(await persistence().load()).kind).toBe("completed")
+  })
+
+  it("an incomplete Consultation is refused, and stays loadable as a session", async () => {
+    // The refusal has to leave the customer somewhere they can act. A refused
+    // finish that also broke the load would strand them with no way back.
+    seedFinishable()
+    const state = db.row().answers as DeterministicConsultationState
+    const answers = { ...state.candidateAnswers }
+    delete answers[Q2]
+    ;(db.row().answers as DeterministicConsultationState) = { ...state, candidateAnswers: answers }
+
+    expect(await finish()).toEqual({ ok: false, kind: "incomplete" })
+    expect(db.row().consultation_finalisation, "nothing was sealed").toBeFalsy()
+    expect(hydratePersistedSession(await persistence().load()).kind).toBe("session")
+  })
+
+  it("ready-for-report with NO seal is refused by the session route, never served", async () => {
+    // A completion claim with nothing behind it. Serving it would show a
+    // completion screen for a record that does not exist, and repairing it would
+    // invent a handoff nobody made.
+    seedFinishable({
+      answers: {
+        kind: DETERMINISTIC_STATE_KIND,
+        schemaVersion: DETERMINISTIC_STATE_SCHEMA_VERSION,
+        candidateAnswers: completeAnswers({ [Q1]: "nothing", [CONSTRAINTS]: ["allergy"] }),
+        touchedQuestionIds: [],
+        skippedOptionalQuestionIds: [],
+        currentQuestionId: null,
+        phase: "ready-for-report",
+      },
+    })
+    await expect(persistence().load()).rejects.toThrow()
+    expect(db.row().consultation_finalisation, "and it was not repaired").toBeFalsy()
+  })
+
+  it("a sealed row whose stored payload does not match the snapshot is refused", async () => {
+    // The stored finalisation is VALIDATED against this session's snapshot, and
+    // a mismatch is a contradiction rather than a reason to rebuild. Rebuilding
+    // would replace what the customer finished with what their answers would
+    // mean today.
+    seedFinishable()
+    await finish()
+    const stored = db.row().consultation_finalisation as Record<string, unknown>
+    db.row().consultation_finalisation = { ...stored, foundation: "family" }
+
+    await expect(persistence().load()).rejects.toThrow()
+  })
+
+  it("an UNFINISHED Consultation carrying a seal is refused", async () => {
+    // The other direction of the same contradiction: a frozen record with a
+    // live session on top of it. Whatever the customer does next, one of the
+    // two is wrong.
+    seedFinishable()
+    await finish()
+    const sealed = db.row()
+    ;(sealed.answers as DeterministicConsultationState) = {
+      ...(sealed.answers as DeterministicConsultationState),
+      phase: "review",
+    }
+
+    await expect(persistence().load()).rejects.toThrow()
+  })
+
+  it("a half seal — finalisation with no handoff id — is refused", async () => {
+    // Migration 48's CHECK makes this unstorable, so seeing one means the
+    // migration is not applied or something wrote outside every route that
+    // knows these rules. Both are reasons to stop.
+    seedFinishable()
+    await finish()
+    db.row().consultation_handoff_id = null
+
+    await expect(persistence().load()).rejects.toThrow()
+  })
+
+  it("the sealed payload is never sent to the browser", async () => {
+    // The client needs to know it is finished. It does not need the trusted
+    // handoff, and shipping it would put a record built for a server pipeline
+    // into a place a customer can edit and replay.
+    seedFinishable()
+    await finish()
+
+    const loaded = (await persistence().load()) as unknown as Record<string, unknown>
+    expect(loaded.phase).toBe("ready-for-report")
+    for (const key of ["finalisation", "handoffId", "consultation_finalisation", "trustedAnswers"]) {
+      expect(key in loaded, `${key} must not be in the response`).toBe(false)
+    }
   })
 })

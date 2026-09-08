@@ -66,6 +66,26 @@ export interface ReviewRefusal {
 
 export type SaveOutcome = { ok: true } | { ok: false; retryable: boolean }
 
+/**
+ * What came back from asking the server to seal the Consultation.
+ *
+ * Four cases because the customer's next move differs in each, and collapsing
+ * any two would either hide a refusal behind a retry button or offer a retry
+ * for something that will never succeed.
+ *
+ * `handoffId` and `finalisedAt` are the server's identities for the sealed
+ * record. They are carried so a caller COULD log or correlate them; the UI
+ * shows neither, because neither means anything to the person reading it.
+ */
+export type FinaliseOutcome =
+  | { ok: true; handoffId: string; finalisedAt: string }
+  /** Canonical completeness says something is outstanding. Never show success. */
+  | { ok: false; kind: "incomplete" }
+  /** Transient — a 5xx, a rate limit, or the network. Retrying is reasonable. */
+  | { ok: false; kind: "retryable" }
+  /** The server refused on trust grounds. Retrying cannot change the answer. */
+  | { ok: false; kind: "refused" }
+
 export type ReviewOutcome =
   | { ok: true }
   | { ok: false; incomplete: ReviewRefusal }
@@ -104,6 +124,15 @@ export interface ConsultationPersistence {
    * storage.
    */
   leaveReview(questionId: string): Promise<SaveOutcome>
+  /**
+   * Ask the server to seal the Consultation — Phase 3C-C2B.
+   *
+   * Takes nothing. Everything the sealed record contains is derived server-side
+   * from the settled payment and the stored answers, and a parameter here would
+   * be a way for the browser to claim any of it. The route refuses a body
+   * carrying trusted fields rather than ignoring them.
+   */
+  finalise(): Promise<FinaliseOutcome>
 }
 
 /* ══ The strict load parser ════════════════════════════════════════════════ */
@@ -239,6 +268,36 @@ export function createHttpConsultationPersistence(sessionId: string): Consultati
           : { action: "skip", questionId, currentQuestionId },
       ),
     saveCursor: (currentQuestionId) => patch({ action: "navigate", currentQuestionId }),
+
+    async finalise() {
+      try {
+        const res = await fetch("/api/consultation/finalise", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          // The session id and nothing else. See the note on the interface.
+          body: JSON.stringify({ sessionId }),
+        })
+        if (res.ok) {
+          const data = await res.json().catch(() => null)
+          if (data && typeof data.handoffId === "string" && typeof data.finalisedAt === "string") {
+            return { ok: true as const, handoffId: data.handoffId, finalisedAt: data.finalisedAt }
+          }
+          // A 200 whose body we cannot read is not a completion we can show.
+          return { ok: false as const, kind: "retryable" as const }
+        }
+        // 409 is the "not finished yet" refusal and the only one the customer
+        // can act on. Every other 4xx is a trust decision: retrying will keep
+        // being refused, and the reason string is the server's words, not
+        // something to put in front of a customer.
+        if (res.status === 409) return { ok: false as const, kind: "incomplete" as const }
+        if (res.status >= 500 || res.status === 429) {
+          return { ok: false as const, kind: "retryable" as const }
+        }
+        return { ok: false as const, kind: "refused" as const }
+      } catch {
+        return { ok: false as const, kind: "retryable" as const }
+      }
+    },
     leaveReview: (currentQuestionId) => patch({ action: "leave-review", currentQuestionId }),
 
     async enterReview() {

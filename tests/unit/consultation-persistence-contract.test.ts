@@ -682,11 +682,32 @@ describe("the deterministic routes keep the authority boundary", () => {
 /* ══ Non-activation, still ═════════════════════════════════════════════════ */
 
 describe("Phase 3C-A changes nothing a paying customer sees", () => {
-  it("the deep-assessment page still routes paid traffic to the legacy client", () => {
+  it("the deep-assessment page still routes PRODUCTION paid traffic to the legacy client", () => {
+    /*
+     * Re-pointed at Phase 3C-C2B. The page now dispatches by stored mode, so
+     * "the word Deterministic does not appear" stopped being the rule — it
+     * appears in the claimer's name.
+     *
+     * What is unchanged, and what this asserts, is that the legacy client is
+     * still the default and that every deterministic branch sits behind the
+     * non-production policy. A production buyer reaches exactly what they
+     * reached before.
+     */
     const src = readFileSync(join(process.cwd(), "app/assessment/deep/page.tsx"), "utf8")
     const realFlow = src.slice(src.indexOf("// ── Real flow "))
+
     expect(realFlow).toContain("<DeepAssessmentClient")
-    expect(realFlow).not.toContain("Deterministic")
+
+    // Both deterministic branches — claiming an unclaimed session, and
+    // rendering a claimed one — are gated.
+    for (const branch of ["claimDeterministicConsultation", "<PersistedConsultationClient"]) {
+      const at = realFlow.indexOf(branch)
+      expect(at, `${branch} must be present`).toBeGreaterThan(-1)
+      expect(
+        realFlow.lastIndexOf("isPersistedConsultationAllowed", at),
+        `${branch} must sit behind the activation policy`,
+      ).toBeGreaterThan(-1)
+    }
   })
 
   it("no page or component calls the deterministic routes", () => {

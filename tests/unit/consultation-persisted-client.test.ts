@@ -25,6 +25,7 @@ import {
   readLoadedConsultationState,
   type ConsultationPersistence,
   type LoadedConsultationState,
+  type FinaliseOutcome,
   type ReviewOutcome,
   type SaveOutcome,
 } from "@/components/assessment/consultation/consultation-persistence"
@@ -60,6 +61,24 @@ import {
  * `tests/e2e/consultation-preview.spec.ts`.
  */
 
+/**
+ * Hydrate and require a live session.
+ *
+ * Phase 3C-C2B made `hydratePersistedSession` return a discriminated result,
+ * because a sealed Consultation has no session to position. These cases are all
+ * about positioning, so they assert the live shape rather than casting past it
+ * — a payload that started coming back `completed` should fail loudly here.
+ */
+function hydrateSession(state: Parameters<typeof hydratePersistedSession>[0]) {
+  const hydrated = hydratePersistedSession(state)
+  expect(hydrated.kind, "expected a live session, not a sealed Consultation").toBe("session")
+  if (hydrated.kind !== "session") throw new Error("unreachable")
+  return hydrated
+}
+
+const HANDOFF = "11111111-1111-4111-8111-111111111111"
+const FINALISED_AT = "2026-09-08T09:00:00.000Z"
+
 const you: ConsultationContext = { foundation: "you" }
 
 const Q1 = "core_signals_post_meal_pattern_v1"
@@ -80,6 +99,7 @@ interface FakeOptions {
   skip?: SaveOutcome
   review?: ReviewOutcome
   leave?: SaveOutcome
+  finalise?: FinaliseOutcome
 }
 
 function fakeAdapter(options: FakeOptions = {}) {
@@ -136,6 +156,10 @@ function fakeAdapter(options: FakeOptions = {}) {
       left.push(questionId)
       return options.leave ?? { ok: true }
     },
+    async finalise() {
+      calls.push("finalise")
+      return options.finalise ?? { ok: true, handoffId: HANDOFF, finalisedAt: FINALISED_AT }
+    },
   }
 
   return { persistence, calls, saved, skips, cursors, left }
@@ -159,6 +183,7 @@ function depsFor(
     queueSkip,
     requestReview: () => persistence.enterReview(),
     leaveReview: (id) => persistence.leaveReview(id),
+    finalise: () => persistence.finalise(),
   }
 }
 
@@ -184,7 +209,7 @@ const session = (answers: ConsultationAnswers = {}, over: Partial<ConsultationSe
 
 describe("server state is the authority on load", () => {
   it("hydrates answers, touches and skips exactly as stored", () => {
-    const { session: s } = hydratePersistedSession({
+    const { session: s } = hydrateSession({
       context: you,
       bankVersion: CONSULTATION_BANK_V1,
       candidateAnswers: { [Q1]: "bloating", [CONSTRAINTS]: ["allergy"] },
@@ -201,7 +226,7 @@ describe("server state is the authority on load", () => {
   })
 
   it("a brand-new session lands on Orientation, not on question one", () => {
-    const { session: s, fresh } = hydratePersistedSession({
+    const { session: s, fresh } = hydrateSession({
       context: you,
       bankVersion: CONSULTATION_BANK_V1,
       candidateAnswers: {},
@@ -219,7 +244,7 @@ describe("server state is the authority on load", () => {
   })
 
   it("a returning session resumes where it was, without Orientation", () => {
-    const { session: s, fresh } = hydratePersistedSession({
+    const { session: s, fresh } = hydrateSession({
       context: you,
       bankVersion: CONSULTATION_BANK_V1,
       candidateAnswers: { [Q1]: "bloating" },
@@ -234,7 +259,7 @@ describe("server state is the authority on load", () => {
   })
 
   it("a session stored in review hydrates onto the Review list", () => {
-    const { session: s } = hydratePersistedSession({
+    const { session: s } = hydrateSession({
       context: you,
       bankVersion: CONSULTATION_BANK_V1,
       candidateAnswers: { [Q1]: "nothing" },
@@ -248,7 +273,7 @@ describe("server state is the authority on load", () => {
   })
 
   it("an interrupted Review edit hydrates back into that edit", () => {
-    const { session: s } = hydratePersistedSession({
+    const { session: s } = hydrateSession({
       context: you,
       bankVersion: CONSULTATION_BANK_V1,
       candidateAnswers: { [Q1]: "nothing" },
@@ -264,7 +289,7 @@ describe("server state is the authority on load", () => {
 
   it("a bank this build does not hold refuses instead of falling back", () => {
     expect(() =>
-      hydratePersistedSession({
+      hydrateSession({
         context: you,
         bankVersion: "consultation-v99",
         candidateAnswers: { [Q1]: "bloating" },
@@ -279,7 +304,7 @@ describe("server state is the authority on load", () => {
 
   it("a finalisation phase this build cannot render refuses", () => {
     expect(() =>
-      hydratePersistedSession({
+      hydrateSession({
         context: you,
         bankVersion: CONSULTATION_BANK_V1,
         candidateAnswers: {},
@@ -317,7 +342,7 @@ describe("the canonical context comes from the server and nowhere else", () => {
   })
 
   it("a Family session branches and words itself as Family", () => {
-    const { session: s } = hydratePersistedSession(
+    const { session: s } = hydrateSession(
       readLoadedConsultationState(
         payload({
           context: { foundation: "family", lens: null },
@@ -336,7 +361,7 @@ describe("the canonical context comes from the server and nowhere else", () => {
   })
 
   it("a You session stays You", () => {
-    const { session: s } = hydratePersistedSession(readLoadedConsultationState(payload()))
+    const { session: s } = hydrateSession(readLoadedConsultationState(payload()))
     expect(s.context.foundation).toBe("you")
     expect(applicableQuestions(s).map((q) => q.id)).toContain(Q1)
   })
@@ -428,7 +453,7 @@ describe("a deterministic payload must be complete, or it is refused", () => {
   it("drops a stored value the canonical contract would reject, after resolving the bank", () => {
     // The parser can prove the SHAPE of the answer map but not that a value is
     // legal for its question — that needs the bank.
-    const { session: s } = hydratePersistedSession(
+    const { session: s } = hydrateSession(
       readLoadedConsultationState(
         payload({
           candidateAnswers: { [Q1]: "not-an-option", [Q2]: "steady" },
@@ -443,7 +468,7 @@ describe("a deterministic payload must be complete, or it is refused", () => {
   })
 
   it("keeps a valid answer whose branch has closed", () => {
-    const { session: s } = hydratePersistedSession(
+    const { session: s } = hydrateSession(
       readLoadedConsultationState(
         payload({
           candidateAnswers: { [Q1]: "nothing", [Q3]: ["rushed"] },
@@ -696,6 +721,10 @@ describe("the customer's newest intent for a question is what the server ends up
       async leaveReview(questionId) {
         calls.push(`leave-review:${questionId}`)
         return { ok: true }
+      },
+      async finalise() {
+        calls.push("finalise")
+        return { ok: true, handoffId: HANDOFF, finalisedAt: FINALISED_AT }
       },
     }
 
@@ -1033,12 +1062,90 @@ describe("the persisted wrapper is dormant and stays inside its boundary", () =>
   const read = (f: string) => readFileSync(join(DIR, f), "utf8")
   const files = readdirSync(DIR).filter((f) => f.endsWith(".ts") || f.endsWith(".tsx"))
 
-  it("no real paid route renders it", () => {
+  it("the paid page renders it ONLY behind the non-production policy", () => {
+    /*
+     * Phase 3C-C2B wires this into the real page, so "no paid route renders it"
+     * is no longer the rule — but the rule it stood for is unchanged: a paying
+     * customer must not reach it. That is now enforced by the policy rather
+     * than by the absence of an import, so this asserts the policy is what
+     * guards the render, and that the legacy client is still the default.
+     */
     const page = readFileSync(join(process.cwd(), "app/assessment/deep/page.tsx"), "utf8")
     const realFlow = page.slice(page.indexOf("// ── Real flow "))
+
     expect(realFlow).toContain("<DeepAssessmentClient")
-    expect(realFlow).not.toContain("Persisted")
-    expect(realFlow).not.toContain("Deterministic")
+    expect(realFlow).toContain("<PersistedConsultationClient")
+
+    // Every render of the persisted client is preceded by the policy check.
+    const renderAt = realFlow.indexOf("<PersistedConsultationClient")
+    const guardAt = realFlow.lastIndexOf("isPersistedConsultationAllowed", renderAt)
+    expect(guardAt, "the render must sit behind the policy").toBeGreaterThan(-1)
+    expect(realFlow.slice(guardAt, renderAt)).toContain("redirect(\"/assessment\")")
+
+    // And an unclaimed session is only claimed under the same policy.
+    const claimAt = realFlow.indexOf("claimDeterministicConsultation")
+    expect(claimAt).toBeGreaterThan(-1)
+    expect(realFlow.lastIndexOf("isPersistedConsultationAllowed", claimAt)).toBeGreaterThan(-1)
+  })
+
+  it("the policy decides exactly two things, and stickiness is not one of them", () => {
+    /*
+     * A rollout toggle must never convert a session that already exists.
+     *
+     * Both directions destroy the customer's work: a legacy row read as
+     * deterministic hands a `DeepQuestion[]` to a client that expects a frozen
+     * snapshot, and a deterministic row read as legacy casts a snapshot object
+     * into an array of questions. Neither is recoverable, and both would happen
+     * on a config change rather than on anything the customer did.
+     *
+     * So the policy answers exactly two questions — may an UNCLAIMED session be
+     * claimed, and may a deterministic one be rendered — and the count is part
+     * of the guard: a third check is a third place a toggle can reach a live
+     * session, wherever it happens to be written.
+     */
+    const page = readFileSync(join(process.cwd(), "app/assessment/deep/page.tsx"), "utf8")
+    const realFlow = page.slice(page.indexOf("// ── Real flow "))
+
+    expect(
+      realFlow,
+      "an unclaimed session is claimed under the policy and nothing else",
+    ).toContain('if (mode.kind === "unclaimed" && isPersistedConsultationAllowed()) {')
+    expect(realFlow, "the render fails closed").toContain(
+      'if (!isPersistedConsultationAllowed()) redirect("/assessment")',
+    )
+    expect(
+      realFlow.match(/isPersistedConsultationAllowed\(/g) ?? [],
+      "the policy must gate exactly the claim and the render",
+    ).toHaveLength(2)
+    expect(
+      realFlow,
+      "a stored legacy session stays legacy whatever the rollout says",
+    ).toContain('if (mode.kind === "legacy") {')
+  })
+
+  it("the claim is handed the settled summary and nothing from the URL", () => {
+    /*
+     * The page has `foundation` and `lens` in scope — it destructures them from
+     * the query string for the demo preview. Letting either reach the claimer
+     * would let a visitor choose which questions a paid Consultation asks, which
+     * is the single thing the deterministic snapshot exists to take out of the
+     * client's hands. The snapshot is then FROZEN, so it is not a bad answer for
+     * one request; it is a bad answer for the whole Consultation.
+     *
+     * Asserted as an exact argument list rather than as an absence, because an
+     * absence guard has to guess the shape of the next mistake.
+     */
+    const page = readFileSync(join(process.cwd(), "app/assessment/deep/page.tsx"), "utf8")
+    const start = page.indexOf("claimDeterministicConsultation({")
+    expect(start, "the claim call site").toBeGreaterThan(-1)
+    const args = page.slice(start + "claimDeterministicConsultation({".length, page.indexOf("})", start))
+    expect(
+      args
+        .split("\n")
+        .map((l) => l.trim())
+        .filter(Boolean),
+      "the claim must take only server-resolved authority",
+    ).toEqual(["supabase,", "sessionId: session_id,", "summary,"])
   })
 
   it("nothing outside this directory imports it at all", () => {
@@ -1061,7 +1168,10 @@ describe("the persisted wrapper is dormant and stays inside its boundary", () =>
           readFileSync(f, "utf8"),
         ),
       )
-    expect(importers, "the persisted wrapper has acquired a caller").toEqual([])
+    expect(
+      importers.map((f) => f.slice(process.cwd().length + 1)),
+      "the persisted wrapper has acquired an unexpected caller",
+    ).toEqual(["app/assessment/deep/page.tsx"])
   })
 
   it("only the adapter names an endpoint", () => {
