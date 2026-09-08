@@ -17,6 +17,7 @@ import {
   FINALISATION_KIND,
   FINALISATION_SCHEMA_VERSION,
   prepareConsultationFinalisation,
+  readConsultationFinalisation,
   type FinalisationResult,
 } from "@/lib/consultation/finalisation"
 import type { ConsultationAnswers, ConsultationContext } from "@/lib/consultation/types"
@@ -507,9 +508,10 @@ describe("finalisation is pure, dormant and produces no Report", () => {
     expect(SOURCE).not.toMatch(/(?<![=!])=\s*["']ready-for-report["']/)
   })
 
-  it("nothing in the app calls it yet", () => {
-    // Phase 3C-C2 owns the route. Defining the payload first is what keeps it
-    // reviewable on its own terms.
+  it("exactly one route calls it, and it is the finalise route", () => {
+    // Phase 3C-C1 defined the payload with no caller at all. Phase 3C-C2A adds
+    // the ONE route allowed to seal one. Pinned rather than removed: the value
+    // of this guard was never "nobody calls it", it was "we know who does".
     const walk = (dir: string, out: string[] = []): string[] => {
       for (const entry of readdirSync(dir, { withFileTypes: true })) {
         if (entry.name === "node_modules" || entry.name === ".next") continue
@@ -523,11 +525,17 @@ describe("finalisation is pure, dormant and produces no Report", () => {
       .flatMap((d) => walk(join(process.cwd(), d)))
       .filter((f) => !f.endsWith("lib/consultation/finalisation.ts"))
       .filter((f) => /from\s+["'][^"']*consultation\/finalisation["']/.test(readFileSync(f, "utf8")))
-    expect(callers, "finalisation has acquired a caller").toEqual([])
+      .map((f) => f.slice(process.cwd().length + 1))
+    expect(callers, "finalisation has an unexpected caller").toEqual([
+      "app/api/consultation/finalise/route.ts",
+    ])
   })
 
-  it("no finalisation API route exists", () => {
+  it("the deterministic API surface is exactly these four routes", () => {
+    // No Report route, no job route, no PDF route. Phase 4A is not started, and
+    // a directory appearing here is how that would first be visible.
     expect(readdirSync(join(process.cwd(), "app/api/consultation")).sort()).toEqual([
+      "finalise",
       "progress",
       "review",
       "session",
@@ -570,5 +578,207 @@ describe("the Science Contract version is pinned metadata", () => {
     // metadata, not an adjudication.
     expect(source).not.toContain('scienceReview: "reviewed"')
     expect(source).toContain("SPECIALIST_REVIEW")
+  })
+})
+
+/* ══ Reading one back out of storage ═══════════════════════════════════════ */
+
+/**
+ * Phase 3C-C2A — `readConsultationFinalisation`.
+ *
+ * ══ WHY THIS NEEDS ITS OWN SABOTAGE ═════════════════════════════════════════
+ *
+ * Everything above proves what the BUILDER produces. This proves what happens
+ * when something else produced it — an older build, a partial write, a hand-run
+ * UPDATE, a column that was never what we thought. The cast that would make all
+ * of those compile is exactly the cast that would make a Report be written from
+ * them, so every field is checked and every failure refuses.
+ *
+ * The one thing it must never do is treat "I cannot read this" as "so I will
+ * make a new one". That silently replaces a record of what the customer
+ * finished with a record of what their session means today.
+ */
+describe("a stored finalisation is validated, never cast", () => {
+  const valid = () => JSON.parse(JSON.stringify(mustFinalise(prepare(readyState()))))
+
+  it("a payload the builder just produced round-trips", () => {
+    const result = readConsultationFinalisation(valid())
+    expect(result.ok).toBe(true)
+    if (!result.ok) throw new Error(result.reason)
+    expect(result.finalisation).toEqual(mustFinalise(prepare(readyState())))
+  })
+
+  it.each([
+    ["not an object at all", "a string"],
+    ["null", null],
+    ["an array", []],
+  ])("%s is malformed", (_name, value) => {
+    const result = readConsultationFinalisation(value)
+    expect(result.ok).toBe(false)
+    if (result.ok) throw new Error("unreachable")
+    expect(result.reason).toBe("malformed")
+  })
+
+  it.each([
+    ["wrong kind", { kind: "something-else" }],
+    ["missing bankVersion", { bankVersion: undefined }],
+    ["empty bankVersion", { bankVersion: "   " }],
+    ["missing bankFingerprint", { bankFingerprint: undefined }],
+    ["wrong foundation", { foundation: "solo" }],
+    ["unknown entitled lens", { entitledLens: "not-a-lens" }],
+    ["applicable ids not an array", { applicableQuestionIds: "all of them" }],
+    ["applicable ids holding a non-string", { applicableQuestionIds: [1, 2] }],
+    ["trusted answers not an object", { trustedAnswers: [] }],
+    ["a trusted answer of the wrong type", { trustedAnswers: { a: { nested: true } } }],
+    ["field map not an object", { trustedAnswersByField: null }],
+    ["skips not an array", { skippedOptionalQuestionIds: {} }],
+    ["food guidance missing", { foodGuidance: undefined }],
+    ["food guidance missing a field", { foodGuidance: { knownAvoidances: [] } }],
+    ["food guidance with a non-boolean", { foodGuidance: { declaredConstraints: [], safetyConstraints: [], practicalConstraints: [], knownAvoidances: [], declaresNoConstraints: "yes", constraintsUndisclosed: false, requiresSpecificAvoidance: false, unresolvedSpecificAvoidance: false } }],
+    ["finalisedAt missing", { finalisedAt: undefined }],
+    ["finalisedAt not a date", { finalisedAt: "last Tuesday" }],
+    ["finalisedAt not in canonical form", { finalisedAt: "2026-09-06T12:00:00Z" }],
+  ])("%s is malformed", (_name, patch) => {
+    const result = readConsultationFinalisation({ ...valid(), ...patch })
+    expect(result.ok).toBe(false)
+    if (result.ok) throw new Error("unreachable")
+    expect(result.reason).toBe("malformed")
+  })
+
+  it.each([
+    ["a future schema version", { schemaVersion: 2 }],
+    ["a future contract version", { finalisationVersion: "consultation-finalisation-v2" }],
+    ["a different Science Contract", { scienceContractVersion: "science-contract-v2.0" }],
+  ])("%s is unsupported, not malformed", (_name, patch) => {
+    // Different words because they send whoever debugs it to different places:
+    // one is corruption, the other is a build that does not implement this
+    // contract. Calling the second "malformed" starts a hunt for damage.
+    const result = readConsultationFinalisation({ ...valid(), ...patch })
+    expect(result.ok).toBe(false)
+    if (result.ok) throw new Error("unreachable")
+    expect(result.reason).toBe("unsupported-version")
+  })
+
+  it.each([
+    ["foundation", { foundation: "family" }],
+    ["entitled lens", { entitledLens: "glucose" }],
+    ["bank version", { bankVersion: "consultation-bank-v99" }],
+    ["bank fingerprint", { bankFingerprint: "sha256-someone-elses" }],
+  ])("a payload whose %s disagrees with the snapshot is an identity mismatch", (_name, patch) => {
+    // It is not out of date — it belongs to a different session. The two are
+    // treated differently on purpose: a finalisation whose bank has since been
+    // revised is still the authority for its own handoff.
+    const result = readConsultationFinalisation({ ...valid(), ...patch }, snapshotFor())
+    expect(result.ok).toBe(false)
+    if (result.ok) throw new Error("unreachable")
+    expect(result.reason).toBe("identity-mismatch")
+  })
+
+  it("agreement with the snapshot passes", () => {
+    expect(readConsultationFinalisation(valid(), snapshotFor()).ok).toBe(true)
+  })
+
+  it("a Family payload reads back as Family", () => {
+    const family: ConsultationContext = { foundation: "family" }
+    const state = stateWith({ candidateAnswers: completeAnswers(family) })
+    const built = mustFinalise(prepare(state, snapshotFor("family")))
+    const result = readConsultationFinalisation(JSON.parse(JSON.stringify(built)), snapshotFor("family"))
+    expect(result.ok).toBe(true)
+    if (!result.ok) throw new Error(result.reason)
+    expect(result.finalisation.foundation).toBe("family")
+  })
+
+  it("an entitled lens survives the round trip and is never narrowed to null", () => {
+    // `null` means "bought no lens"; an unknown string means "this build does
+    // not understand what they bought". Collapsing the second into the first
+    // would quietly serve a lens-less handoff to someone who paid for a lens.
+    const built = mustFinalise(prepare(readyState(), snapshotFor("you", "glucose")))
+    const result = readConsultationFinalisation(JSON.parse(JSON.stringify(built)))
+    expect(result.ok).toBe(true)
+    if (!result.ok) throw new Error(result.reason)
+    expect(result.finalisation.entitledLens).toBe("glucose")
+  })
+
+  it("reading never mutates and never rebuilds", () => {
+    const stored = valid()
+    const before = JSON.stringify(stored)
+    readConsultationFinalisation(stored, snapshotFor())
+    expect(JSON.stringify(stored)).toBe(before)
+
+    // And a refusal produces no payload to fall back on.
+    const broken = readConsultationFinalisation({ ...valid(), foodGuidance: undefined })
+    expect(broken).not.toHaveProperty("finalisation")
+  })
+})
+
+/* ══ Unknown fields are malformed ══════════════════════════════════════════ */
+
+/**
+ * Phase 3C-C2A review fix — the v1 envelope is EXACT.
+ *
+ * The reader validated the fields it knew and ignored the rest, so a stored
+ * payload could carry anything alongside them and still read back as a valid
+ * trusted record. For an immutable versioned envelope that is the wrong default:
+ * the value of this record is that everything in it was derived under the
+ * Science Contract, and a passenger field is by definition something that was
+ * not. A real shape change is a new `finalisationVersion`, not an extra key.
+ */
+describe("a v1 finalisation has exactly the fields v1 defines", () => {
+  const valid = () => JSON.parse(JSON.stringify(mustFinalise(prepare(readyState()))))
+
+  it.each([
+    ["a downstream job identifier", "reportJobId", "job_123"],
+    ["a Report", "report", { summary: "..." }],
+    ["an inferred conclusion", "diagnosis", "IBS"],
+    ["an invented biological map", "bodySignalMap", { gut: 0.7 }],
+    ["an arbitrary unknown field", "somethingNobodyDefined", 1],
+  ])("%s is refused as malformed", (_name, key, value) => {
+    const result = readConsultationFinalisation({ ...valid(), [key]: value })
+    expect(result.ok, `${key} was accepted`).toBe(false)
+    if (result.ok) throw new Error("unreachable")
+    expect(result.reason).toBe("malformed")
+  })
+
+  it("an unknown field inside foodGuidance is refused too", () => {
+    // The frozen safety state is where an extra field would do the most damage:
+    // a `severity` or a `risk` sitting beside the derived constraints would look
+    // like part of the canonical derivation.
+    const payload = valid()
+    payload.foodGuidance = { ...payload.foodGuidance, severity: "high" }
+    const result = readConsultationFinalisation(payload)
+    expect(result.ok).toBe(false)
+    if (result.ok) throw new Error("unreachable")
+    expect(result.reason).toBe("malformed")
+  })
+
+  it("a MISSING field is malformed as well — exact means both directions", () => {
+    const payload = valid()
+    delete payload.applicableQuestionIds
+    expect(readConsultationFinalisation(payload).ok).toBe(false)
+
+    const guidance = valid()
+    delete guidance.foodGuidance.knownAvoidances
+    expect(readConsultationFinalisation(guidance).ok).toBe(false)
+  })
+
+  it("the exact key set is the C1 contract's own, not a second list", () => {
+    // If the builder gains a field and this list does not, every real payload
+    // becomes unreadable — which is a loud failure, not a silent one, and that
+    // is the intended direction.
+    const built = mustFinalise(prepare(readyState()))
+    expect(readConsultationFinalisation(JSON.parse(JSON.stringify(built))).ok).toBe(true)
+    expect(Object.keys(built)).toHaveLength(14)
+    expect(Object.keys(built.foodGuidance)).toHaveLength(8)
+  })
+
+  it("an explicit future version is still unsupported, not malformed", () => {
+    // Order matters: exactness is checked after the version gate, so a payload
+    // from a later contract reports the reason that sends someone to the right
+    // place rather than starting a hunt for corruption.
+    const future = { ...valid(), finalisationVersion: "consultation-finalisation-v2", extra: true }
+    const result = readConsultationFinalisation(future)
+    expect(result.ok).toBe(false)
+    if (result.ok) throw new Error("unreachable")
+    expect(result.reason).toBe("unsupported-version")
   })
 })

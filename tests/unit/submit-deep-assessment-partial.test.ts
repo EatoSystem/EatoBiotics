@@ -120,6 +120,11 @@ function freshRunQueues(): Record<string, Queued[]> {
     deep_assessments: [
       { data: null },
       { data: { email: BUYER_EMAIL } },
+      // Phase 3C-C2A inserted a dedicated deterministic-boundary read between
+      // the step-3 email lookup and the step-4 intake write. `{ data: null }`
+      // is "no row yet", which is the legacy first-submit case these fixtures
+      // model, so the boundary passes and the flow continues as before.
+      { data: null },
       { data: null },
       { data: null },
       { data: { email: BUYER_EMAIL } },
