@@ -7,6 +7,7 @@ import type {
   ConsultationFoundation,
 } from "@/lib/consultation/types"
 import type { ConsultationPhase } from "@/lib/consultation/session-envelope"
+import { isIncompleteRefusal } from "@/lib/consultation/finalise-codes"
 
 /**
  * The persistence contract for a deterministic Consultation — Phase 3C-B.
@@ -45,7 +46,15 @@ export interface LoadedConsultationState {
   touchedQuestionIds: readonly string[]
   skippedOptionalQuestionIds: readonly string[]
   currentQuestionId: string | null
-  phase: ConsultationPhase
+  /**
+   * Never `ready-for-report`.
+   *
+   * A finished Consultation arrives as its own `completed` kind, so a SESSION
+   * payload claiming to be sealed is a contradiction rather than a state. Said
+   * in the type as well as in the parser, so the session component cannot be
+   * handed one and left to decide what to render.
+   */
+  phase: Exclude<ConsultationPhase, "ready-for-report">
   /**
    * Has this Consultation been started?
    *
@@ -56,6 +65,31 @@ export interface LoadedConsultationState {
    */
   started: boolean
 }
+
+/**
+ * What a load can find — Phase 3C-C2B.
+ *
+ * A sealed Consultation is a different KIND of thing from a live one, and the
+ * wire says so. It used to arrive as a session payload whose `phase` happened
+ * to be `ready-for-report`, which meant the client had to infer completion from
+ * a field buried inside a shape that also promised answers, a cursor and a
+ * position — none of which a finished record has. Worse, the server could only
+ * fill those fields by sanitising against a bank it must not resolve for a
+ * historical seal.
+ *
+ * So completion is its own variant carrying only what identifies it. There is
+ * deliberately no way to turn one back into a session: rehydrating a sealed
+ * Consultation into questions would offer edits the server will refuse, on a
+ * record that is already frozen.
+ */
+export type LoadedConsultation =
+  | ({ kind: "session" } & LoadedConsultationState)
+  | {
+      kind: "completed"
+      /** The bank it was ANSWERED against. This build may no longer hold it. */
+      bankVersion: string
+      context: ConsultationContext
+    }
 
 /** Why a review-entry attempt was refused, and where to send the customer. */
 export interface ReviewRefusal {
@@ -92,8 +126,11 @@ export type ReviewOutcome =
   | { ok: false; failed: true }
 
 export interface ConsultationPersistence {
-  /** Server-sanitised state. Rejecting is fail-closed — never an empty session. */
-  load(): Promise<LoadedConsultationState>
+  /**
+   * A live session's server-sanitised state, or the fact that it is finished.
+   * Rejecting is fail-closed — never an empty session.
+   */
+  load(): Promise<LoadedConsultation>
   saveAnswer(questionId: string, value: ConsultationAnswer): Promise<SaveOutcome>
   clearAnswer(questionId: string): Promise<SaveOutcome>
   /**
@@ -184,6 +221,32 @@ function readContext(value: unknown): ConsultationContext | null {
   return { foundation: foundation as ConsultationFoundation, lens }
 }
 
+/**
+ * Throws unless the payload is a complete, well-formed load response.
+ *
+ * Two shapes, discriminated by `kind`, and neither is allowed to stand in for
+ * the other: a completion has no session fields to check, and a session that
+ * claims to be finished is a contradiction this build refuses rather than
+ * interprets (see the `ready-for-report` rule below).
+ */
+export function readLoadedConsultation(data: unknown): LoadedConsultation {
+  const fail = (): never => {
+    throw new Error("consultation-load-malformed")
+  }
+
+  if (!isPlainObject(data)) return fail()
+
+  if (data.kind === "deterministic-complete") {
+    if (data.phase !== "ready-for-report") return fail()
+    if (typeof data.bankVersion !== "string" || data.bankVersion.trim().length === 0) return fail()
+    const context = readContext(data.context)
+    if (!context) return fail()
+    return { kind: "completed", bankVersion: data.bankVersion, context }
+  }
+
+  return { kind: "session", ...readLoadedConsultationState(data) }
+}
+
 /** Throws unless the payload is a complete, well-formed deterministic state. */
 export function readLoadedConsultationState(data: unknown): LoadedConsultationState {
   const fail = (): never => {
@@ -202,6 +265,16 @@ export function readLoadedConsultationState(data: unknown): LoadedConsultationSt
   if (!isStringArray(data.skippedOptionalQuestionIds)) return fail()
   if (data.currentQuestionId !== null && typeof data.currentQuestionId !== "string") return fail()
   if (!PHASES.includes(data.phase as ConsultationPhase)) return fail()
+  /*
+   * A SESSION payload that says it is finished.
+   *
+   * The server sends completion as its own kind, so this shape can no longer
+   * occur — and if it did it would be a live, editable session sitting on top
+   * of a frozen record. Refused rather than quietly rendered as completion,
+   * which is how a client and a server start disagreeing about which of them
+   * decides a Consultation is over.
+   */
+  if (data.phase === "ready-for-report") return fail()
   // Guessing this wrong either re-shows Orientation to someone mid-Consultation
   // or hides it from someone who has never seen it.
   if (typeof data.started !== "boolean") return fail()
@@ -213,7 +286,7 @@ export function readLoadedConsultationState(data: unknown): LoadedConsultationSt
     touchedQuestionIds: data.touchedQuestionIds,
     skippedOptionalQuestionIds: data.skippedOptionalQuestionIds,
     currentQuestionId: data.currentQuestionId,
-    phase: data.phase as ConsultationPhase,
+    phase: data.phase as Exclude<ConsultationPhase, "ready-for-report">,
     started: data.started,
   }
 }
@@ -252,7 +325,7 @@ export function createHttpConsultationPersistence(sessionId: string): Consultati
       // deterministic payload, throws rather than degrading to an empty
       // Consultation — the same fail-closed rule the server applies to
       // unreadable stored state.
-      return readLoadedConsultationState(await res.json())
+      return readLoadedConsultation(await res.json())
     },
 
     saveAnswer: (questionId, value) => patch({ action: "answer", questionId, value }),
@@ -285,14 +358,38 @@ export function createHttpConsultationPersistence(sessionId: string): Consultati
           // A 200 whose body we cannot read is not a completion we can show.
           return { ok: false as const, kind: "retryable" as const }
         }
-        // 409 is the "not finished yet" refusal and the only one the customer
-        // can act on. Every other 4xx is a trust decision: retrying will keep
-        // being refused, and the reason string is the server's words, not
-        // something to put in front of a customer.
-        if (res.status === 409) return { ok: false as const, kind: "incomplete" as const }
+
+        // Transient before anything else: a 5xx or a rate limit says nothing
+        // about the Consultation, so there is no body worth classifying.
         if (res.status >= 500 || res.status === 429) {
           return { ok: false as const, kind: "retryable" as const }
         }
+
+        /*
+         * 409 is NOT "incomplete" — that was the bug.
+         *
+         * The route answers 409 to ten different situations: a legacy row, a
+         * context that disagrees with Stripe, unreadable stored state, an
+         * incoherent seal, a bank it cannot resolve, an active Review edit, a
+         * Consultation not yet at Review… and exactly one case where the
+         * customer genuinely still has something to answer. Mapping the status
+         * meant telling all ten "something still needs an answer", which sends
+         * nine of them hunting for a question that does not exist while the
+         * real refusal goes unmentioned.
+         *
+         * So the discriminator is the server's explicit code, matched as an
+         * ALLOW-LIST: anything unrecognised — including a bare 409 and codes a
+         * newer server adds — is a refusal, which is both true and safe.
+         */
+        if (res.status === 409) {
+          const data = await res.json().catch(() => null)
+          if (isIncompleteRefusal(data)) return { ok: false as const, kind: "incomplete" as const }
+          return { ok: false as const, kind: "refused" as const }
+        }
+
+        // Every other 4xx is a trust decision: retrying will keep being
+        // refused, and the reason string is the server's words, not something
+        // to put in front of a customer.
         return { ok: false as const, kind: "refused" as const }
       } catch {
         return { ok: false as const, kind: "retryable" as const }

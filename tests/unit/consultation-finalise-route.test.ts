@@ -1,9 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import { NextRequest } from "next/server"
 
 import { CONSULTATION_QUESTION_BANK } from "@/lib/consultation/question-bank"
 import { resolveApplicableQuestions } from "@/lib/consultation/applicability"
 import { prepareConsultationFinalisation } from "@/lib/consultation/finalisation"
+import { FINALISE_CODES } from "@/lib/consultation/finalise-codes"
 import {
   createDeterministicConsultationSnapshot,
   DETERMINISTIC_STATE_KIND,
@@ -713,6 +716,116 @@ describe("anything that is not a finishable deterministic Consultation refuses",
   })
 })
 
+/* ══ The refusal vocabulary ════════════════════════════════════════════════ */
+
+describe("every refusal names its category, and only one of them is incomplete", () => {
+  /**
+   * ══ WHY THE CODES ARE PINNED HERE ═════════════════════════════════════════
+   *
+   * This route answers 409 to ten different situations. The browser used to
+   * classify them by status, so all ten arrived at the customer as "something
+   * still needs an answer" — nine of them sent looking for a question that does
+   * not exist, while the real refusal went unmentioned.
+   *
+   * The fix only holds if `consultation_incomplete` stays welded to the ONE
+   * branch that means it: the canonical builder's `incomplete` outcome, which
+   * re-derives completeness immediately before the write. So these cases prove
+   * both halves — that the incomplete branch carries it, and that the trust and
+   * state refusals carry something else.
+   */
+
+  it("the incomplete branch, and only it, carries consultation_incomplete", async () => {
+    const partial = completeAnswers()
+    delete partial[Q2]
+    const db = makeDb(rowWith({ answers: stateWith({ candidateAnswers: partial, phase: "review" }) }))
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const res = await callFinalise(post({ sessionId: SESSION }))
+    const body = await jsonOf(res)
+
+    expect(res.status).toBe(409)
+    expect(body.code).toBe(FINALISE_CODES.INCOMPLETE)
+    // The canonical outstanding ids travel WITH the code, so a client acting on
+    // it has somewhere to send the customer.
+    expect(body.firstQuestionId).toBe(Q2)
+  })
+
+  it("a legacy row is a mode conflict, not an unfinished Consultation", async () => {
+    const db = makeDb(rowWith({ questions: [{ id: "dq1", text: "Legacy?", type: "scale" }] }))
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const body = await jsonOf(await callFinalise(post({ sessionId: SESSION })))
+    expect(body.code).toBe(FINALISE_CODES.MODE_CONFLICT)
+  })
+
+  it("a context that disagrees with Stripe is a context conflict", async () => {
+    const db = makeDb(rowWith({ questions: { ...snapshot(), foundation: "family" } }))
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const body = await jsonOf(await callFinalise(post({ sessionId: SESSION })))
+    expect(body.code).toBe(FINALISE_CODES.CONTEXT_CONFLICT)
+  })
+
+  it("unreadable stored state says so", async () => {
+    const db = makeDb(rowWith({ answers: { kind: "not-a-state" } }))
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const body = await jsonOf(await callFinalise(post({ sessionId: SESSION })))
+    expect(body.code).toBe(FINALISE_CODES.STATE_UNREADABLE)
+  })
+
+  it("a bank this build does not hold says so", async () => {
+    const db = makeDb(rowWith({ questions: { ...snapshot(), bankVersion: "consultation-v99" } }))
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const body = await jsonOf(await callFinalise(post({ sessionId: SESSION })))
+    expect(body.code).toBe(FINALISE_CODES.BANK_UNAVAILABLE)
+  })
+
+  it("a Consultation still in the questions phase is not-in-review", async () => {
+    const db = makeDb(
+      rowWith({ answers: stateWith({ phase: "questions", currentQuestionId: Q1 }) }),
+    )
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const body = await jsonOf(await callFinalise(post({ sessionId: SESSION })))
+    expect(body.code).toBe(FINALISE_CODES.NOT_IN_REVIEW)
+  })
+
+  it("an open Review edit is review-edit-active", async () => {
+    const db = makeDb(
+      rowWith({ answers: stateWith({ phase: "review", currentQuestionId: Q2 }) }),
+    )
+    mockGetSupabase.mockReturnValue(db.client)
+
+    const body = await jsonOf(await callFinalise(post({ sessionId: SESSION })))
+    expect(body.code).toBe(FINALISE_CODES.REVIEW_EDIT_ACTIVE)
+  })
+
+  it("no refusal in the route is left without a code", () => {
+    /*
+     * `refuse()` takes the code as a required parameter, so this cannot be
+     * forgotten — the compiler catches it. Asserted anyway, because the
+     * regression that matters is subtler than omission: a refusal added with
+     * the INCOMPLETE code copied from its neighbour would compile perfectly and
+     * would tell a customer to answer a question that is not missing.
+     */
+    const source = readFileSync(
+      join(process.cwd(), "app/api/consultation/finalise/route.ts"),
+      "utf8",
+    )
+    const incompleteUses = source.match(/FINALISE_CODES\.INCOMPLETE/g) ?? []
+    expect(incompleteUses, "exactly one branch may claim incompleteness").toHaveLength(1)
+    // Every `refuse(` call passes three or more arguments — a status, a message
+    // and a code.
+    // `[^;]` already spans newlines, so no dotAll flag is needed (and the
+    // build targets ES6, where it is not available).
+    for (const call of source.match(/refuse\(\s*\d{3},[^;]*?\)/g) ?? []) {
+      expect(call, "a refusal without a code").toMatch(/FINALISE_CODES\./)
+    }
+  })
+})
+
 /* ══ A corrupt seal is never repaired ══════════════════════════════════════ */
 
 describe("a half-written seal fails closed", () => {
@@ -999,7 +1112,11 @@ describe("sealing a Consultation begins no Report", () => {
      */
     const page = await readFile("app/assessment/deep/page.tsx")
     expect(page).toContain("DeepAssessmentClient")
-    expect(page).toContain("isPersistedConsultationAllowed")
+    // Repair round: the single conflated policy became two — a runtime gate and
+    // a new-claim rollout. Both must be present; the rule ("a paying customer
+    // does not reach this") is enforced by the first.
+    expect(page).toContain("isPersistedRuntimeEligible")
+    expect(page).toContain("isNewDeterministicClaimAllowed")
     expect(page).not.toContain("consultation/finalise")
   })
 })

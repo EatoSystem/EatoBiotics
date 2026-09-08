@@ -31,7 +31,7 @@ import { ConsultationReviewView } from "./consultation-review"
 import {
   createHttpConsultationPersistence,
   type ConsultationPersistence,
-  type LoadedConsultationState,
+  type LoadedConsultation,
 } from "./consultation-persistence"
 import {
   commitMove,
@@ -288,20 +288,21 @@ export type HydratedConsultation =
    */
   | { kind: "completed" }
 
-export function hydratePersistedSession(state: LoadedConsultationState): HydratedConsultation {
+export function hydratePersistedSession(loaded: LoadedConsultation): HydratedConsultation {
   /*
-   * `ready-for-report` used to throw here, which was right while nothing could
-   * produce it. Phase 3C-C2A can now persist it, so a customer refreshing after
-   * finishing would have seen the generic load-failure screen — the one message
-   * that tells someone whose Consultation succeeded that something went wrong.
+   * Finished, and the SERVER said so.
    *
-   * Checked BEFORE the bank resolves, on purpose. A sealed Consultation needs
-   * no bank: there are no questions left to render, and refusing a completed
-   * customer because today's build no longer holds the bank they answered
-   * against would be a regression, not a safety property.
+   * Returned before any bank is resolved, and that is the whole point: a sealed
+   * Consultation has no questions left to render, so refusing a completed
+   * customer because this build no longer holds the bank they answered against
+   * would be a regression, not a safety property. The server applies the same
+   * rule — it validates the stored seal against the stored snapshot and never
+   * touches the registry — so the two agree that completion needs no bank while
+   * an editable session does.
    */
-  if (state.phase === "ready-for-report") return { kind: "completed" }
+  if (loaded.kind === "completed") return { kind: "completed" }
 
+  const state = loaded
   const bank = resolveConsultationBank(state.bankVersion)
   // Not a fallback to the current bank: resolving a session against a bank it
   // was not answered against is the exact failure the fingerprint prevents.

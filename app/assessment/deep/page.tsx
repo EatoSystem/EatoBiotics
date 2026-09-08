@@ -12,7 +12,10 @@ import { DeterministicConsultationClient } from "@/components/assessment/consult
 import { PersistedConsultationClient } from "@/components/assessment/consultation/persisted-consultation-client"
 import { readConsultationMode, type ConsultationMode } from "@/lib/consultation/session-mode"
 import { claimDeterministicConsultation } from "@/lib/consultation/session-claim"
-import { isPersistedConsultationAllowed } from "@/lib/consultation/persisted-activation-policy"
+import {
+  isNewDeterministicClaimAllowed,
+  isPersistedRuntimeEligible,
+} from "@/lib/consultation/persisted-activation-policy"
 import { asAddonType } from "@/lib/addon-types"
 
 export const metadata: Metadata = {
@@ -181,12 +184,16 @@ export default async function DeepAssessmentPage({ searchParams }: Props) {
 
       /*
        * An unclaimed session may be opened as deterministic — but only in a
-       * runtime that has proven it is not production. In production this is
-       * skipped entirely and the legacy flow continues exactly as before, which
-       * is what keeps every paying customer today on the path that actually
-       * delivers a Report.
+       * runtime that has proven it is not production, AND only while the
+       * new-claim rollout is on. In production this is skipped entirely and the
+       * legacy flow continues exactly as before, which is what keeps every
+       * paying customer today on the path that actually delivers a Report.
+       *
+       * This is the ONLY decision the rollout flag makes. Turning it off stops
+       * new customers being claimed; it does not reach anyone already in a
+       * Consultation, because their session is decided below by the stored mode.
        */
-      if (mode.kind === "unclaimed" && isPersistedConsultationAllowed()) {
+      if (mode.kind === "unclaimed" && isNewDeterministicClaimAllowed()) {
         const claim = await claimDeterministicConsultation({
           supabase,
           sessionId: session_id,
@@ -207,13 +214,21 @@ export default async function DeepAssessmentPage({ searchParams }: Props) {
     }
 
     /*
-     * A stored deterministic session renders the persisted client — and ONLY
-     * where the policy allows it. Elsewhere it fails closed rather than falling
+     * A stored deterministic session renders the persisted client wherever the
+     * RUNTIME can serve it — deliberately not "wherever new claims are allowed".
+     *
+     * The session already exists; the customer's answers are already in the row.
+     * Re-deciding that on the rollout flag would mean a config change stranded
+     * someone mid-Consultation, with no way back into the flow that can read
+     * their work. What the runtime check still prevents is production, where
+     * Migration 48 is unapplied and Phase 4A does not exist.
+     *
+     * Where the runtime cannot serve it, this fails closed rather than falling
      * back to legacy: casting a snapshot into `DeepQuestion[]` is the bug this
      * dispatcher exists to prevent, and converting the session would destroy it.
      */
     if (mode.kind === "deterministic") {
-      if (!isPersistedConsultationAllowed()) redirect("/assessment")
+      if (!isPersistedRuntimeEligible()) redirect("/assessment")
       return (
         <>
           <TrackConversion

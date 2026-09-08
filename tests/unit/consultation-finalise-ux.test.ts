@@ -12,6 +12,7 @@ import {
 } from "@/components/assessment/consultation/consultation-persistence"
 import { hydratePersistedSession } from "@/components/assessment/consultation/persisted-consultation-client"
 import { CURRENT_CONSULTATION_BANK } from "@/lib/consultation/bank-registry"
+import { FINALISE_CODES } from "@/lib/consultation/finalise-codes"
 
 /**
  * Finishing a Consultation, from the customer's side — Phase 3C-C2B.
@@ -154,15 +155,66 @@ describe("the finalise request sends the session id and nothing else", () => {
     expect(JSON.parse(init.body as string)).toEqual({ sessionId: "cs_test_finalise_ux" })
   })
 
-  it("409 is incomplete, 5xx and 429 are retryable, other 4xx is refused", async () => {
-    respond(409)
-    expect(await persistence().finalise()).toEqual({ ok: false, kind: "incomplete" })
-    respond(503)
-    expect(await persistence().finalise()).toEqual({ ok: false, kind: "retryable" })
-    respond(429)
-    expect(await persistence().finalise()).toEqual({ ok: false, kind: "retryable" })
-    respond(403)
-    expect(await persistence().finalise()).toEqual({ ok: false, kind: "refused" })
+  it("only the explicit incomplete code is treated as incomplete", async () => {
+    /*
+     * The repair round's third fix, as a table.
+     *
+     * The route answers 409 to ten different situations and exactly ONE means
+     * the customer still has something to answer. Classified by status, all ten
+     * became "something still needs an answer" — nine customers sent hunting
+     * for a question that does not exist, while the actual refusal (a legacy
+     * row, a context conflict, an incoherent seal…) went unreported.
+     *
+     * The rule is an ALLOW-LIST, and the last three rows are why: a bare 409,
+     * an unreadable body, and a code this build has never heard of must all
+     * land in `refused`. A deny-list would classify a newer server's refusal as
+     * an incomplete Consultation.
+     */
+    const cases: Array<[unknown, "incomplete" | "refused"]> = [
+      [{ code: FINALISE_CODES.INCOMPLETE, missingQuestionIds: ["q1"] }, "incomplete"],
+      [{ code: FINALISE_CODES.NOT_IN_REVIEW }, "refused"],
+      [{ code: FINALISE_CODES.REVIEW_EDIT_ACTIVE }, "refused"],
+      [{ code: FINALISE_CODES.SEAL_INCOHERENT }, "refused"],
+      [{ code: FINALISE_CODES.SEAL_UNREADABLE }, "refused"],
+      [{ code: FINALISE_CODES.MODE_CONFLICT }, "refused"],
+      [{ code: FINALISE_CODES.CONTEXT_CONFLICT }, "refused"],
+      [{ code: FINALISE_CODES.STATE_UNREADABLE }, "refused"],
+      [{ code: FINALISE_CODES.BANK_UNAVAILABLE }, "refused"],
+      [{ error: "This Consultation cannot be finished" }, "refused"],
+      [{ code: "consultation_something_a_newer_server_added" }, "refused"],
+      [null, "refused"],
+    ]
+
+    for (const [body, expected] of cases) {
+      respond(409, body)
+      expect(await persistence().finalise(), JSON.stringify(body)).toEqual({
+        ok: false,
+        kind: expected,
+      })
+    }
+  })
+
+  it("transient failures never depend on a body at all", async () => {
+    // A 5xx or a rate limit says nothing about the Consultation, so there is no
+    // code to read and none is required — including when the body is missing or
+    // carries the incomplete code by accident.
+    for (const status of [500, 502, 503, 429]) {
+      respond(status, { code: FINALISE_CODES.INCOMPLETE })
+      expect(await persistence().finalise(), `status ${status}`).toEqual({
+        ok: false,
+        kind: "retryable",
+      })
+    }
+  })
+
+  it("every other 4xx is refused, whatever it carries", async () => {
+    for (const status of [400, 401, 402, 403, 404, 422]) {
+      respond(status, { code: FINALISE_CODES.INCOMPLETE })
+      expect(await persistence().finalise(), `status ${status}`).toEqual({
+        ok: false,
+        kind: "refused",
+      })
+    }
   })
 
   it("a 200 whose body cannot be read is NOT a completion", async () => {
@@ -212,11 +264,24 @@ describe("the component cannot show completion without the server", () => {
   })
 })
 
-/* ══ Ready-for-report is a load state, not a failure ═══════════════════════ */
+/* ══ A finished Consultation loads as finished ═════════════════════════════ */
 
 describe("a refresh after finishing shows completion, not a restart", () => {
-  const loaded = (over: Record<string, unknown> = {}) =>
+  /**
+   * Re-pointed by the C2B repair round.
+   *
+   * These used to feed `hydratePersistedSession` a SESSION payload whose phase
+   * happened to be `ready-for-report`, and assert the client inferred
+   * completion from it. That inference is now the server's statement: a sealed
+   * Consultation comes back as its own `completed` kind, carrying only what
+   * identifies it. The rule under test is unchanged — a finished Consultation
+   * shows completion rather than restarting — but the evidence is now the
+   * server's, which is where it belongs, and the REAL route is proven in
+   * `consultation-persisted-integration.test.ts`.
+   */
+  const live = (over: Record<string, unknown> = {}) =>
     ({
+      kind: "session",
       bankVersion: CURRENT_CONSULTATION_BANK,
       context: { foundation: "you" as const },
       candidateAnswers: {},
@@ -228,34 +293,36 @@ describe("a refresh after finishing shows completion, not a restart", () => {
       ...over,
     }) as Parameters<typeof hydratePersistedSession>[0]
 
-  it("ready-for-report hydrates as completed", () => {
-    // It used to throw, which was correct while nothing could produce the phase.
-    // C2A can persist it, so the throw became "your Consultation worked, here is
-    // an error screen".
-    expect(hydratePersistedSession(loaded({ phase: "ready-for-report" }))).toEqual({
+  const completed = (bankVersion = CURRENT_CONSULTATION_BANK) =>
+    ({
       kind: "completed",
-    })
+      bankVersion,
+      context: { foundation: "you" as const },
+    }) as Parameters<typeof hydratePersistedSession>[0]
+
+  it("a completion payload hydrates as completed", () => {
+    expect(hydratePersistedSession(completed())).toEqual({ kind: "completed" })
   })
 
   it("completion carries no session, so nothing sealed can be edited", () => {
-    const hydrated = hydratePersistedSession(loaded({ phase: "ready-for-report" }))
+    const hydrated = hydratePersistedSession(completed())
     expect(hydrated.kind).toBe("completed")
     expect("session" in hydrated, "a sealed record must not rehydrate into questions").toBe(false)
   })
 
   it("a sealed Consultation resolves even when this build lost the bank", () => {
-    // Deliberately checked before the bank resolves. There are no questions left
-    // to render, so refusing a finished customer over a bank they will never be
-    // asked from again would be a regression, not a safety property.
-    expect(
-      hydratePersistedSession(loaded({ phase: "ready-for-report", bankVersion: "consultation-v99" })),
-    ).toEqual({ kind: "completed" })
+    // No bank is resolved on this path at all, which is what lets a historical
+    // seal load. Refusing a finished customer over a bank they will never be
+    // asked from again would be a regression, not a safety property — and the
+    // server applies the same rule, so the two cannot disagree.
+    expect(hydratePersistedSession(completed("consultation-v99"))).toEqual({ kind: "completed" })
   })
 
-  it("every other phase still hydrates into a live session", () => {
+  it("every live phase still hydrates into a session", () => {
     for (const phase of ["questions", "review"] as const) {
-      const hydrated = hydratePersistedSession(loaded({ phase }))
-      expect(hydrated.kind, `${phase} must still render`).toBe("session")
+      expect(hydratePersistedSession(live({ phase })).kind, `${phase} must still render`).toBe(
+        "session",
+      )
     }
   })
 
@@ -263,7 +330,7 @@ describe("a refresh after finishing shows completion, not a restart", () => {
     // The completion branch is an exception for finished records only. A live
     // session resolved against the wrong bank is the failure the fingerprint
     // exists to prevent.
-    expect(() => hydratePersistedSession(loaded({ bankVersion: "consultation-v99" }))).toThrow(
+    expect(() => hydratePersistedSession(live({ bankVersion: "consultation-v99" }))).toThrow(
       "unknown-bank",
     )
   })

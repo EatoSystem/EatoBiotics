@@ -698,14 +698,23 @@ describe("Phase 3C-A changes nothing a paying customer sees", () => {
 
     expect(realFlow).toContain("<DeepAssessmentClient")
 
-    // Both deterministic branches — claiming an unclaimed session, and
-    // rendering a claimed one — are gated.
-    for (const branch of ["claimDeterministicConsultation", "<PersistedConsultationClient"]) {
+    /*
+     * Both deterministic branches are gated — by DIFFERENT gates, since the
+     * repair round. Claiming a new session needs the rollout; rendering one
+     * that already exists needs only a runtime that can serve it, because
+     * re-deciding an existing session on a rollout flag would strand whoever
+     * was mid-Consultation when it flipped. Production is denied by the runtime
+     * gate in both cases, which is what this file is actually about.
+     */
+    for (const [branch, gate] of [
+      ["claimDeterministicConsultation", "isNewDeterministicClaimAllowed"],
+      ["<PersistedConsultationClient", "isPersistedRuntimeEligible"],
+    ] as const) {
       const at = realFlow.indexOf(branch)
       expect(at, `${branch} must be present`).toBeGreaterThan(-1)
       expect(
-        realFlow.lastIndexOf("isPersistedConsultationAllowed", at),
-        `${branch} must sit behind the activation policy`,
+        realFlow.lastIndexOf(gate, at),
+        `${branch} must sit behind ${gate}`,
       ).toBeGreaterThan(-1)
     }
   })

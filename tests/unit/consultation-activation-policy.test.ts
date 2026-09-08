@@ -1,108 +1,136 @@
 /**
- * Who may open a PERSISTED deterministic Consultation — Phase 3C-C2B.
+ * Who may open, and who may continue, a persisted deterministic Consultation.
  *
- * ══ WHAT IS ACTUALLY BEING PROTECTED ════════════════════════════════════════
+ * ══ WHY THIS FILE WAS REWRITTEN ═════════════════════════════════════════════
  *
- * Two separate failures, either of which is enough on its own:
+ * It used to test ONE function that answered both questions, and its guards
+ * pinned that conflation in place — one of them asserted the same policy was
+ * called exactly twice, for the claim and for the render. That is the defect,
+ * asserted as if it were the contract.
  *
- *  1. Phase 4A does not exist. A real buyer routed into the deterministic flow
- *     would pay €49, answer twenty minutes of questions, have the record sealed
- *     at `ready-for-report` — and be standing in front of nothing.
- *  2. Migration 48 is drafted and NOT applied. `consultation_finalisation` and
- *     `consultation_handoff_id` are not columns in production, and every
- *     deterministic route selects them. Against the live schema they error.
+ * The two decisions are not the same decision:
  *
- * So this is not a feature flag with a nice default. It is the thing standing
- * between a paying customer and a dead end, and the matrix below is its whole
- * contract: anything that is not an explicit opt-in in a runtime that can be
- * PROVEN non-production must be `false`.
+ *   runtime eligibility — may this runtime execute the persisted stack at all?
+ *                         Fail-closed, because Phase 4A does not exist and
+ *                         Migration 48 is unapplied, so a real buyer routed
+ *                         here would pay €49, answer for twenty minutes, be
+ *                         sealed, and be standing in front of nothing.
+ *   new-claim rollout   — may an UNCLAIMED paid session be newly claimed?
+ *                         An opt-in on top of the above.
  *
- * Deliberately the same shape as `paid-flow-policy.test.ts`. Two safety gates
- * that disagree about what "non-production" means would be two answers to the
- * same question.
+ * Conflating them means switching the rollout off strands whoever was already
+ * mid-Consultation: their answers stay in the row, and the page stops showing
+ * them the only flow that can read it.
+ *
+ * Deliberately the same shape as `paid-flow-policy.test.ts` for the runtime
+ * half. Two safety gates that disagree about what "non-production" means would
+ * be two answers to the same question.
  */
 import { describe, it, expect } from "vitest"
-import { readFileSync } from "node:fs"
+import { readFileSync, readdirSync } from "node:fs"
 import { join } from "node:path"
 
 import {
-  isPersistedConsultationAllowed,
-  PERSISTED_CONSULTATION_FLAG,
+  isNewDeterministicClaimAllowed,
+  isPersistedRuntimeEligible,
+  NEW_DETERMINISTIC_CLAIM_FLAG,
 } from "@/lib/consultation/persisted-activation-policy"
 
 /** Build an env WITHOUT inheriting the runner's own NODE_ENV/VERCEL_ENV. */
 function env(overrides: Record<string, string | undefined>): NodeJS.ProcessEnv {
   return overrides as NodeJS.ProcessEnv
 }
-const ON = { [PERSISTED_CONSULTATION_FLAG]: "true" }
+const ON = { [NEW_DETERMINISTIC_CLAIM_FLAG]: "true" }
 
-describe("persisted activation requires an opt-in AND a provably non-production runtime", () => {
-  it("A — Vercel production + flag true → denied", () => {
-    // The single most important row. A variable pasted into the wrong Vercel
+/* ══ The truth table ═══════════════════════════════════════════════════════ */
+
+describe("runtime eligibility and new-claim rollout, as one table", () => {
+  const rows: Array<{
+    name: string
+    env: Record<string, string | undefined>
+    runtime: boolean
+    claim: boolean
+  }> = [
+    // The single most important row: a flag pasted into the wrong Vercel
     // project must not activate an unfinished product path for real buyers.
-    expect(isPersistedConsultationAllowed(env({ ...ON, VERCEL_ENV: "production" }))).toBe(false)
-  })
-
-  it("B — Vercel production + flag absent → denied", () => {
-    expect(isPersistedConsultationAllowed(env({ VERCEL_ENV: "production" }))).toBe(false)
-  })
-
-  it("C — Vercel preview + flag absent → denied", () => {
-    // Non-production is not consent. The opt-in is the other half of the rule.
-    expect(isPersistedConsultationAllowed(env({ VERCEL_ENV: "preview" }))).toBe(false)
-  })
-
-  it("D — Vercel preview + flag true → allowed", () => {
-    expect(isPersistedConsultationAllowed(env({ ...ON, VERCEL_ENV: "preview" }))).toBe(true)
-  })
-
-  it("E — Vercel development + flag true → allowed", () => {
-    expect(isPersistedConsultationAllowed(env({ ...ON, VERCEL_ENV: "development" }))).toBe(true)
-  })
-
-  it("F — no Vercel + NODE_ENV development or test + flag true → allowed", () => {
-    // The local dev server and this test runner. Both prove non-production
+    { name: "Vercel production + flag", env: { ...ON, VERCEL_ENV: "production" }, runtime: false, claim: false },
+    { name: "Vercel production, no flag", env: { VERCEL_ENV: "production" }, runtime: false, claim: false },
+    // Non-production runtime alone is NOT consent to claim — but it is enough
+    // to keep serving a session that already exists.
+    { name: "Vercel preview, no flag", env: { VERCEL_ENV: "preview" }, runtime: true, claim: false },
+    { name: "Vercel preview + flag", env: { ...ON, VERCEL_ENV: "preview" }, runtime: true, claim: true },
+    { name: "Vercel development + flag", env: { ...ON, VERCEL_ENV: "development" }, runtime: true, claim: true },
+    // The local dev server and this test runner: non-production proven
     // positively rather than by the absence of evidence.
-    expect(isPersistedConsultationAllowed(env({ ...ON, NODE_ENV: "development" }))).toBe(true)
-    expect(isPersistedConsultationAllowed(env({ ...ON, NODE_ENV: "test" }))).toBe(true)
-  })
-
-  it("G — no Vercel + NODE_ENV production + flag true → denied", () => {
+    { name: "no Vercel, NODE_ENV=development + flag", env: { ...ON, NODE_ENV: "development" }, runtime: true, claim: true },
+    { name: "no Vercel, NODE_ENV=test + flag", env: { ...ON, NODE_ENV: "test" }, runtime: true, claim: true },
+    { name: "no Vercel, NODE_ENV=test, no flag", env: { NODE_ENV: "test" }, runtime: true, claim: false },
     // A self-hosted production build has no VERCEL_ENV to check. Absence of a
     // Vercel variable is not evidence of safety.
-    expect(isPersistedConsultationAllowed(env({ ...ON, NODE_ENV: "production" }))).toBe(false)
-  })
-
-  it("H — no Vercel + no NODE_ENV at all + flag true → denied", () => {
-    // Nothing to prove anything with. Deny is the only defensible answer.
-    expect(isPersistedConsultationAllowed(env({ ...ON }))).toBe(false)
-  })
-
-  it("I — an unrecognised VERCEL_ENV + flag true → denied", () => {
+    { name: "no Vercel, NODE_ENV=production + flag", env: { ...ON, NODE_ENV: "production" }, runtime: false, claim: false },
+    { name: "nothing at all + flag", env: { ...ON }, runtime: false, claim: false },
     // Not an allow-list miss to be patched later: a runtime this policy does
     // not understand is a runtime it cannot clear.
-    expect(isPersistedConsultationAllowed(env({ ...ON, VERCEL_ENV: "staging" }))).toBe(false)
-    expect(isPersistedConsultationAllowed(env({ ...ON, VERCEL_ENV: "" }))).toBe(false)
+    { name: "unrecognised VERCEL_ENV + flag", env: { ...ON, VERCEL_ENV: "staging" }, runtime: false, claim: false },
+    { name: "empty VERCEL_ENV + flag", env: { ...ON, VERCEL_ENV: "" }, runtime: false, claim: false },
+  ]
+
+  for (const row of rows) {
+    it(`${row.name} → runtime ${row.runtime}, claim ${row.claim}`, () => {
+      expect(isPersistedRuntimeEligible(env(row.env)), "runtime eligibility").toBe(row.runtime)
+      expect(isNewDeterministicClaimAllowed(env(row.env)), "new-claim rollout").toBe(row.claim)
+    })
+  }
+
+  it("a claim is never allowed where the runtime is not", () => {
+    // The one relationship between the two. Stated as its own assertion so a
+    // future edit cannot make the claim policy a peer of the runtime check
+    // rather than a narrowing of it.
+    for (const row of rows) {
+      if (!row.runtime) {
+        expect(isNewDeterministicClaimAllowed(env(row.env)), row.name).toBe(false)
+      }
+    }
   })
 
-  it("J — only the exact string \"true\" is an opt-in", () => {
+  it("only the exact string \"true\" opts in to new claims", () => {
     // "1", "yes" and "TRUE" are the shapes a config accident takes. An accident
     // is not a decision to put customers into an unfinished flow.
-    for (const value of ["1", "yes", "TRUE", "True", "on", " true"]) {
-      expect(
-        isPersistedConsultationAllowed(env({ [PERSISTED_CONSULTATION_FLAG]: value, NODE_ENV: "test" })),
-        `"${value}" must not activate`,
-      ).toBe(false)
+    for (const value of ["1", "yes", "TRUE", "True", "on", " true", ""]) {
+      const e = env({ [NEW_DETERMINISTIC_CLAIM_FLAG]: value, NODE_ENV: "test" })
+      expect(isNewDeterministicClaimAllowed(e), `"${value}" must not enable claiming`).toBe(false)
+      // …and the runtime is still eligible, so nobody already claimed is lost.
+      expect(isPersistedRuntimeEligible(e), `"${value}" must not disable the runtime`).toBe(true)
     }
   })
 })
 
-describe("the switch cannot reach the browser", () => {
+/* ══ The switch cannot reach the browser ═══════════════════════════════════ */
+
+describe("no activation control is client-readable", () => {
   it("the flag is not NEXT_PUBLIC_ prefixed", () => {
     // A NEXT_PUBLIC_ variable is inlined into the client bundle. Activation
     // would then be a value the browser holds, and anything the browser holds
     // is something a request can imitate.
-    expect(PERSISTED_CONSULTATION_FLAG.startsWith("NEXT_PUBLIC_")).toBe(false)
+    expect(NEW_DETERMINISTIC_CLAIM_FLAG.startsWith("NEXT_PUBLIC_")).toBe(false)
+  })
+
+  it("no NEXT_PUBLIC_ variable anywhere names this activation", () => {
+    const walk = (dir: string, out: string[] = []): string[] => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        if (entry.name === "node_modules" || entry.name === ".next") continue
+        const full = join(dir, entry.name)
+        if (entry.isDirectory()) walk(full, out)
+        else if (/\.(ts|tsx|mjs)$/.test(entry.name)) out.push(full)
+      }
+      return out
+    }
+    const offenders = ["app", "components", "lib", "scripts"]
+      .flatMap((d) => walk(join(process.cwd(), d)))
+      .filter((f) =>
+        /NEXT_PUBLIC_[A-Z_]*(PERSISTED|DETERMINISTIC|CONSULTATION)/.test(readFileSync(f, "utf8")),
+      )
+    expect(offenders.map((f) => f.slice(process.cwd().length + 1))).toEqual([])
   })
 
   it("the policy module reads process.env and nothing else", () => {
@@ -117,5 +145,24 @@ describe("the switch cannot reach the browser", () => {
     for (const forbidden of ["searchParams", "headers(", "cookies(", "request", "supabase"]) {
       expect(code.includes(forbidden), `policy must not consult ${forbidden}`).toBe(false)
     }
+  })
+
+  it("the conflated predicate is gone, not merely unused", () => {
+    // An available function that answers both questions at once is an
+    // invitation to call it again — the same reasoning that deleted the Stripe
+    // metadata writer rather than leaving it unreferenced.
+    const walk = (dir: string, out: string[] = []): string[] => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        if (entry.name === "node_modules" || entry.name === ".next") continue
+        const full = join(dir, entry.name)
+        if (entry.isDirectory()) walk(full, out)
+        else if (/\.(ts|tsx)$/.test(entry.name)) out.push(full)
+      }
+      return out
+    }
+    const survivors = ["app", "components", "lib", "scripts"]
+      .flatMap((d) => walk(join(process.cwd(), d)))
+      .filter((f) => readFileSync(f, "utf8").includes("isPersistedConsultationAllowed("))
+    expect(survivors.map((f) => f.slice(process.cwd().length + 1))).toEqual([])
   })
 })

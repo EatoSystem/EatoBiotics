@@ -22,6 +22,7 @@ import {
 import type { ConsultationAnswers, ConsultationContext } from "@/lib/consultation/types"
 import {
   createHttpConsultationPersistence,
+  readLoadedConsultation,
   readLoadedConsultationState,
   type ConsultationPersistence,
   type LoadedConsultationState,
@@ -69,8 +70,16 @@ import {
  * about positioning, so they assert the live shape rather than casting past it
  * — a payload that started coming back `completed` should fail loudly here.
  */
-function hydrateSession(state: Parameters<typeof hydratePersistedSession>[0]) {
-  const hydrated = hydratePersistedSession(state)
+function hydrateSession(state: LoadedConsultationState) {
+  /*
+   * Phase 3C-C2B repair: the load response is discriminated now — a live
+   * `session` or a `completed` one — because a sealed Consultation has none of
+   * the fields below and the server must not invent them. Every case here is a
+   * live session, so the helper stamps the discriminator rather than each
+   * fixture repeating it. The completed variant has its own tests, where the
+   * discriminator IS the thing being proven.
+   */
+  const hydrated = hydratePersistedSession({ kind: "session", ...state })
   expect(hydrated.kind, "expected a live session, not a sealed Consultation").toBe("session")
   if (hydrated.kind !== "session") throw new Error("unreachable")
   return hydrated
@@ -114,6 +123,7 @@ function fakeAdapter(options: FakeOptions = {}) {
       calls.push("load")
       if (options.loadRejects) throw new Error("load failed")
       return {
+        kind: "session" as const,
         bankVersion: CONSULTATION_BANK_V1,
         context: you,
         candidateAnswers: {},
@@ -302,11 +312,25 @@ describe("server state is the authority on load", () => {
     ).toThrow()
   })
 
-  it("a finalisation phase this build cannot render refuses", () => {
+  it("a SESSION payload claiming to be finished is refused at the wire", () => {
+    /*
+     * Re-pointed by the C2B repair round, and moved to where the refusal now
+     * lives.
+     *
+     * This used to be a hydration test: feed the client a session payload whose
+     * phase happened to be `ready-for-report` and watch it refuse. Completion is
+     * now the SERVER's statement — its own payload kind — so the contradiction
+     * is caught by the strict wire parser before any state is built, which is
+     * earlier and cheaper than catching it during hydration.
+     *
+     * The rule is unchanged and still load-bearing: a live, editable session
+     * sitting on top of a frozen record is not something to interpret.
+     */
     expect(() =>
-      hydrateSession({
-        context: you,
+      readLoadedConsultation({
+        kind: "deterministic",
         bankVersion: CONSULTATION_BANK_V1,
+        context: you,
         candidateAnswers: {},
         touchedQuestionIds: [],
         skippedOptionalQuestionIds: [],
@@ -314,7 +338,34 @@ describe("server state is the authority on load", () => {
         phase: "ready-for-report",
         started: true,
       }),
-    ).toThrow()
+    ).toThrow("consultation-load-malformed")
+  })
+
+  it("a completion payload missing its identity is refused too", () => {
+    // Fail-closed both ways: a completion is only a completion if it says which
+    // bank and which context it was answered in. A payload that merely claims
+    // the kind is not evidence of a finished Consultation.
+    for (const bad of [
+      { kind: "deterministic-complete", phase: "ready-for-report", context: you },
+      { kind: "deterministic-complete", phase: "ready-for-report", bankVersion: "", context: you },
+      { kind: "deterministic-complete", phase: "ready-for-report", bankVersion: CONSULTATION_BANK_V1 },
+      { kind: "deterministic-complete", phase: "review", bankVersion: CONSULTATION_BANK_V1, context: you },
+    ]) {
+      expect(() => readLoadedConsultation(bad), JSON.stringify(bad)).toThrow()
+    }
+  })
+
+  it("a completion payload hydrates as completed, with no bank of any kind", () => {
+    // The other half of the same contract, and the reason the ordering fix in
+    // the session route matters: a sealed Consultation whose bank this build no
+    // longer holds still loads, because nothing here resolves one.
+    const hydrated = hydratePersistedSession({
+      kind: "completed",
+      bankVersion: "consultation-v99",
+      context: you,
+    })
+    expect(hydrated.kind).toBe("completed")
+    expect("session" in hydrated, "a sealed record must not rehydrate into questions").toBe(false)
   })
 })
 
@@ -521,9 +572,11 @@ describe("the HTTP adapter is the only thing that speaks to a server", () => {
         started: true,
       },
     }))
-    const state = await createHttpConsultationPersistence("cs_test_1234").load()
-    expect(state.started).toBe(true)
-    expect(state.currentQuestionId).toBe(Q2)
+    const loaded = await createHttpConsultationPersistence("cs_test_1234").load()
+    expect(loaded.kind, "a live session").toBe("session")
+    if (loaded.kind !== "session") throw new Error("unreachable")
+    expect(loaded.started).toBe(true)
+    expect(loaded.currentQuestionId).toBe(Q2)
     expect(seen[0].url).toContain("/api/consultation/session?session_id=cs_test_1234")
   })
 
@@ -1062,13 +1115,18 @@ describe("the persisted wrapper is dormant and stays inside its boundary", () =>
   const read = (f: string) => readFileSync(join(DIR, f), "utf8")
   const files = readdirSync(DIR).filter((f) => f.endsWith(".ts") || f.endsWith(".tsx"))
 
-  it("the paid page renders it ONLY behind the non-production policy", () => {
+  it("the paid page renders it behind the RUNTIME gate, and claims behind the rollout", () => {
     /*
-     * Phase 3C-C2B wires this into the real page, so "no paid route renders it"
-     * is no longer the rule — but the rule it stood for is unchanged: a paying
-     * customer must not reach it. That is now enforced by the policy rather
-     * than by the absence of an import, so this asserts the policy is what
-     * guards the render, and that the legacy client is still the default.
+     * Re-pointed by the C2B repair round, and the pairing is the point.
+     *
+     * The previous version of this guard asserted that ONE policy was consulted
+     * exactly twice — once before the claim, once before the render — which
+     * pinned the defect it was meant to prevent. Gating the render on the
+     * rollout flag means switching the rollout off strands a customer who is
+     * already mid-Consultation: their answers stay in the row, and the page
+     * stops offering the only flow that can read them.
+     *
+     * So the two gates are different gates, and each is asserted by name.
      */
     const page = readFileSync(join(process.cwd(), "app/assessment/deep/page.tsx"), "utf8")
     const realFlow = page.slice(page.indexOf("// ── Real flow "))
@@ -1076,47 +1134,42 @@ describe("the persisted wrapper is dormant and stays inside its boundary", () =>
     expect(realFlow).toContain("<DeepAssessmentClient")
     expect(realFlow).toContain("<PersistedConsultationClient")
 
-    // Every render of the persisted client is preceded by the policy check.
+    // The render is gated on what the RUNTIME can serve, and fails closed.
     const renderAt = realFlow.indexOf("<PersistedConsultationClient")
-    const guardAt = realFlow.lastIndexOf("isPersistedConsultationAllowed", renderAt)
-    expect(guardAt, "the render must sit behind the policy").toBeGreaterThan(-1)
+    const guardAt = realFlow.lastIndexOf("isPersistedRuntimeEligible", renderAt)
+    expect(guardAt, "the render must sit behind the runtime gate").toBeGreaterThan(-1)
     expect(realFlow.slice(guardAt, renderAt)).toContain("redirect(\"/assessment\")")
 
-    // And an unclaimed session is only claimed under the same policy.
-    const claimAt = realFlow.indexOf("claimDeterministicConsultation")
-    expect(claimAt).toBeGreaterThan(-1)
-    expect(realFlow.lastIndexOf("isPersistedConsultationAllowed", claimAt)).toBeGreaterThan(-1)
+    // A NEW claim additionally needs the rollout.
+    expect(realFlow).toContain(
+      'if (mode.kind === "unclaimed" && isNewDeterministicClaimAllowed()) {',
+    )
   })
 
-  it("the policy decides exactly two things, and stickiness is not one of them", () => {
+  it("the rollout flag reaches exactly one decision, and the runtime gate one other", () => {
     /*
-     * A rollout toggle must never convert a session that already exists.
+     * The counts are the guard.
      *
-     * Both directions destroy the customer's work: a legacy row read as
-     * deterministic hands a `DeepQuestion[]` to a client that expects a frozen
-     * snapshot, and a deterministic row read as legacy casts a snapshot object
-     * into an array of questions. Neither is recoverable, and both would happen
-     * on a config change rather than on anything the customer did.
+     * A second `isNewDeterministicClaimAllowed` anywhere in this flow is, by
+     * construction, the rollout reaching a session that already exists — which
+     * is the regression this round exists to fix, wherever someone writes it.
+     * A second runtime check is a second place production can be re-decided.
      *
-     * So the policy answers exactly two questions — may an UNCLAIMED session be
-     * claimed, and may a deterministic one be rendered — and the count is part
-     * of the guard: a third check is a third place a toggle can reach a live
-     * session, wherever it happens to be written.
+     * And the legacy branch is unconditional: a stored legacy session stays
+     * legacy whatever any flag says, because casting a snapshot into a question
+     * array (or the reverse) destroys the customer's Consultation either way.
      */
     const page = readFileSync(join(process.cwd(), "app/assessment/deep/page.tsx"), "utf8")
     const realFlow = page.slice(page.indexOf("// ── Real flow "))
 
     expect(
-      realFlow,
-      "an unclaimed session is claimed under the policy and nothing else",
-    ).toContain('if (mode.kind === "unclaimed" && isPersistedConsultationAllowed()) {')
-    expect(realFlow, "the render fails closed").toContain(
-      'if (!isPersistedConsultationAllowed()) redirect("/assessment")',
-    )
+      realFlow.match(/isNewDeterministicClaimAllowed\(/g) ?? [],
+      "the rollout flag must gate claiming and nothing else",
+    ).toHaveLength(1)
     expect(
-      realFlow.match(/isPersistedConsultationAllowed\(/g) ?? [],
-      "the policy must gate exactly the claim and the render",
-    ).toHaveLength(2)
+      realFlow.match(/isPersistedRuntimeEligible\(/g) ?? [],
+      "the runtime gate must guard the render and nothing else",
+    ).toHaveLength(1)
     expect(
       realFlow,
       "a stored legacy session stays legacy whatever the rollout says",

@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import { NextRequest } from "next/server"
 
 import {
@@ -61,6 +63,8 @@ type Row = Record<string, unknown>
 
 function makeDb(seed: Row) {
   const rows = new Map<string, Row>([[String(seed.stripe_session_id), { ...seed }]])
+  /** Every attempted write. A load that touches the row is a load that is not a load. */
+  const writes: Row[] = []
 
   function from(_table: string) {
     let action: "select" | "update" = "select"
@@ -73,6 +77,7 @@ function makeDb(seed: Row) {
       update(p: Row) {
         action = "update"
         payload = p
+        writes.push(p)
         return chain
       },
       eq(col: string, val: unknown) {
@@ -102,6 +107,7 @@ function makeDb(seed: Row) {
 
   return {
     client: { from } as unknown,
+    writes,
     row: () => [...rows.values()][0],
     state: () => [...rows.values()][0].answers as DeterministicConsultationState,
   }
@@ -112,6 +118,25 @@ function makeDb(seed: Row) {
 const mockGetSupabase = vi.fn()
 const mockRetrieveSession = vi.fn()
 const mockResolveSummary = vi.fn()
+
+/**
+ * The canonical finalisation builder, wrapped rather than replaced.
+ *
+ * Phase 3C-C2B repair: "loading a sealed Consultation does not rebuild it" is
+ * the property, and counting calls is the only way to see it — a rebuild that
+ * happened to produce the same bytes would be invisible in the row.
+ */
+const builderCalls = { count: 0 }
+vi.mock("@/lib/consultation/finalisation", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/consultation/finalisation")>()
+  return {
+    ...actual,
+    prepareConsultationFinalisation: (...args: Parameters<typeof actual.prepareConsultationFinalisation>) => {
+      builderCalls.count += 1
+      return actual.prepareConsultationFinalisation(...args)
+    },
+  }
+})
 
 vi.mock("@/lib/supabase", () => ({ getSupabase: () => mockGetSupabase() }))
 vi.mock("@/lib/stripe-server", () => ({
@@ -804,6 +829,21 @@ describe("a withdrawal taken from the Review list survives the round trip", () =
 describe("a finished Consultation reloads as finished — Phase 3C-C2B", () => {
   const CONSTRAINTS = "core_environment_constraints_v1"
 
+  /**
+   * ══ WHAT THE REPAIR ROUND ADDED HERE ══════════════════════════════════════
+   *
+   * The session route used to call `resumeDeterministicSession` — which
+   * resolves the live bank — BEFORE adjudicating the seal. So a Consultation
+   * that was validly finished, coherently sealed and correctly finalised became
+   * unloadable the moment its bank was revised: the customer got a 409 for a
+   * record that was complete. A client-side hydration test could not see it,
+   * because the server refused before the payload it tested ever existed.
+   *
+   * These cases therefore go through the REAL `GET /api/consultation/session`,
+   * and the historical ones are the point: a sealed record must load with no
+   * bank at all, while an editable one must still require its own.
+   */
+
   /** Every applicable answer, valid, with the branch-opening choices taken. */
   function completeAnswers(overrides: ConsultationAnswers = {}): ConsultationAnswers {
     const answers: ConsultationAnswers = { ...overrides }
@@ -823,21 +863,24 @@ describe("a finished Consultation reloads as finished — Phase 3C-C2B", () => {
     return answers
   }
 
+  const liveState = (over: Partial<DeterministicConsultationState> = {}) => ({
+    kind: DETERMINISTIC_STATE_KIND,
+    schemaVersion: DETERMINISTIC_STATE_SCHEMA_VERSION,
+    candidateAnswers: completeAnswers({ [Q1]: "nothing", [CONSTRAINTS]: ["allergy"] }),
+    touchedQuestionIds: [],
+    skippedOptionalQuestionIds: [],
+    currentQuestionId: null,
+    phase: "review" as const,
+    ...over,
+  })
+
   /** A row sitting on a COMPLETE Review list, ready to be finished. */
-  function seedFinishable(over: Record<string, unknown> = {}) {
+  function seed(over: Record<string, unknown> = {}) {
     db = makeDb({
       stripe_session_id: SESSION,
       tier: "personal",
       questions: createDeterministicConsultationSnapshot({ foundation: "you", entitledLens: null }),
-      answers: {
-        kind: DETERMINISTIC_STATE_KIND,
-        schemaVersion: DETERMINISTIC_STATE_SCHEMA_VERSION,
-        candidateAnswers: completeAnswers({ [Q1]: "nothing", [CONSTRAINTS]: ["allergy"] }),
-        touchedQuestionIds: [],
-        skippedOptionalQuestionIds: [],
-        currentQuestionId: null,
-        phase: "review",
-      },
+      answers: liveState(),
       status: "in_progress",
       report_json: null,
       pdf_url: null,
@@ -852,91 +895,157 @@ describe("a finished Consultation reloads as finished — Phase 3C-C2B", () => {
   /** Finish over the real route, through the real adapter. */
   const finish = () => persistence().finalise()
 
-  it("Finish seals the row, and the reload comes back completed rather than editable", async () => {
-    // The property that matters to a customer: refreshing after finishing shows
-    // the same finished thing. Before C2B this threw `unsupported-phase`, i.e.
-    // the one person whose Consultation had definitely worked was shown the
-    // generic failure screen.
-    seedFinishable()
-    const outcome = await finish()
-    expect(outcome.ok, "finalise").toBe(true)
-
+  /**
+   * Age the sealed row into a bank this build no longer holds.
+   *
+   * Both the stored snapshot AND the stored finalisation are re-stamped, so
+   * they still agree with each other — which is exactly the production shape of
+   * a Consultation answered before the bank was revised. `readConsultationFinalisation`
+   * compares identity against the snapshot it is handed and never consults the
+   * registry, so a correct route can still validate this pair; only one that
+   * resolves the live bank will refuse it.
+   */
+  function ageIntoHistory(bankVersion = "consultation-v-historical", fingerprint = "0f0f0f0f0f0f0f0f") {
     const row = db.row()
-    expect(row.consultation_finalisation, "the seal was written").toBeTruthy()
-    expect(typeof row.consultation_handoff_id).toBe("string")
-    expect((row.answers as DeterministicConsultationState).phase).toBe("ready-for-report")
+    row.questions = { ...(row.questions as Record<string, unknown>), bankVersion, bankFingerprint: fingerprint }
+    row.consultation_finalisation = {
+      ...(row.consultation_finalisation as Record<string, unknown>),
+      bankVersion,
+      bankFingerprint: fingerprint,
+    }
+  }
 
-    const hydrated = hydratePersistedSession(await persistence().load())
-    expect(hydrated.kind).toBe("completed")
+  const loadCompleted = async () => {
+    const loaded = await persistence().load()
+    expect(loaded.kind, "expected a completion payload").toBe("completed")
+    return loaded
+  }
+
+  beforeEach(() => {
+    builderCalls.count = 0
   })
 
-  it("the reload is a plain load, not a second seal", async () => {
-    // Loading must never write. A GET that repaired or re-sealed would make the
-    // handoff depend on when it was last read.
-    seedFinishable()
+  /* ── The ordinary case ─────────────────────────────────────────────────── */
+
+  it("1 — a sealed row loads as completed while its bank is still current", async () => {
+    seed()
+    expect((await finish()).ok, "finalise").toBe(true)
+
+    const loaded = await loadCompleted()
+    expect(hydratePersistedSession(loaded).kind).toBe("completed")
+    expect(db.row().consultation_handoff_id).toEqual(expect.any(String))
+  })
+
+  /* ── The defect this round fixes ───────────────────────────────────────── */
+
+  it("2 — a sealed row whose bank this build no longer holds STILL loads", async () => {
+    // The whole repair, in one case. Before the reorder this was a 409: a
+    // customer who had finished, paid and been sealed could not see their own
+    // completed Consultation because the questions had since been revised.
+    seed()
+    expect((await finish()).ok).toBe(true)
+    ageIntoHistory()
+
+    const loaded = await loadCompleted()
+    if (loaded.kind !== "completed") throw new Error("unreachable")
+    expect(loaded.bankVersion, "the HISTORICAL bank, not today's").toBe("consultation-v-historical")
+    expect(hydratePersistedSession(loaded).kind).toBe("completed")
+  })
+
+  it("3 — that historical load writes nothing at all", async () => {
+    seed()
     await finish()
-    const sealed = { ...db.row() }
+    ageIntoHistory()
+    const before = JSON.stringify(db.row())
+    db.writes.length = 0
 
-    await persistence().load()
-    const after = db.row()
-    expect(after.consultation_finalisation).toEqual(sealed.consultation_finalisation)
-    expect(after.consultation_handoff_id).toBe(sealed.consultation_handoff_id)
-    expect(after.answers).toEqual(sealed.answers)
+    await loadCompleted()
+
+    expect(db.writes, "a load that touches the row is not a load").toEqual([])
+    expect(JSON.stringify(db.row()), "the row is byte-identical").toBe(before)
   })
 
-  it("finishing twice is the same seal, and still loads as completed", async () => {
-    // C2A's idempotency, seen from the outside: a double-click, a retried
-    // request and a refresh mid-flight all converge on ONE handoff.
-    seedFinishable()
-    const first = await finish()
-    const handoff = db.row().consultation_handoff_id
-    const second = await finish()
+  it("4 — and it rebuilds nothing: the canonical builder is never called", async () => {
+    // Not inferred from the bytes. A rebuild that happened to produce the same
+    // payload would be invisible in the row, and would still mean the customer's
+    // finished record had been reinterpreted under today's questions.
+    seed()
+    await finish()
+    ageIntoHistory()
+    builderCalls.count = 0
 
-    expect(first.ok && second.ok).toBe(true)
-    if (first.ok && second.ok) expect(second.handoffId).toBe(first.handoffId)
-    expect(db.row().consultation_handoff_id).toBe(handoff)
-    expect(hydratePersistedSession(await persistence().load()).kind).toBe("completed")
+    await loadCompleted()
+
+    expect(builderCalls.count, "the load must not run C1").toBe(0)
   })
 
-  it("an incomplete Consultation is refused, and stays loadable as a session", async () => {
-    // The refusal has to leave the customer somewhere they can act. A refused
-    // finish that also broke the load would strand them with no way back.
-    seedFinishable()
-    const state = db.row().answers as DeterministicConsultationState
-    const answers = { ...state.candidateAnswers }
-    delete answers[Q2]
-    ;(db.row().answers as DeterministicConsultationState) = { ...state, candidateAnswers: answers }
+  /* ── An editable session still needs its own bank ──────────────────────── */
 
-    expect(await finish()).toEqual({ ok: false, kind: "incomplete" })
-    expect(db.row().consultation_finalisation, "nothing was sealed").toBeFalsy()
-    expect(hydratePersistedSession(await persistence().load()).kind).toBe("session")
+  it("5 — an UNSEALED session whose bank is unknown is refused", async () => {
+    // The other half of the contract. A live Consultation resolved against a
+    // bank it was not answered against is the exact failure the fingerprint
+    // exists to prevent, so this one must NOT get the historical dispensation.
+    seed({
+      questions: {
+        ...createDeterministicConsultationSnapshot({ foundation: "you", entitledLens: null }),
+        bankVersion: "consultation-v99",
+      },
+      answers: liveState({ phase: "questions", currentQuestionId: Q1 }),
+    })
+
+    await expect(persistence().load()).rejects.toThrow()
   })
 
-  it("ready-for-report with NO seal is refused by the session route, never served", async () => {
-    // A completion claim with nothing behind it. Serving it would show a
-    // completion screen for a record that does not exist, and repairing it would
-    // invent a handoff nobody made.
-    seedFinishable({
-      answers: {
-        kind: DETERMINISTIC_STATE_KIND,
-        schemaVersion: DETERMINISTIC_STATE_SCHEMA_VERSION,
-        candidateAnswers: completeAnswers({ [Q1]: "nothing", [CONSTRAINTS]: ["allergy"] }),
-        touchedQuestionIds: [],
-        skippedOptionalQuestionIds: [],
-        currentQuestionId: null,
-        phase: "ready-for-report",
+  it("6 — an UNSEALED session whose fingerprint has drifted is refused", async () => {
+    seed({
+      questions: {
+        ...createDeterministicConsultationSnapshot({ foundation: "you", entitledLens: null }),
+        bankFingerprint: "0000000000000000",
       },
     })
+
+    await expect(persistence().load()).rejects.toThrow()
+  })
+
+  /* ── Contradictions are refused, never repaired ────────────────────────── */
+
+  it("7 — ready-for-report with NO seal is refused, never served", async () => {
+    // A completion claim with nothing behind it. Serving it would show a
+    // completion screen for a record that does not exist; repairing it would
+    // invent a handoff nobody made.
+    seed({ answers: liveState({ phase: "ready-for-report" }) })
+
     await expect(persistence().load()).rejects.toThrow()
     expect(db.row().consultation_finalisation, "and it was not repaired").toBeFalsy()
   })
 
-  it("a sealed row whose stored payload does not match the snapshot is refused", async () => {
-    // The stored finalisation is VALIDATED against this session's snapshot, and
-    // a mismatch is a contradiction rather than a reason to rebuild. Rebuilding
-    // would replace what the customer finished with what their answers would
-    // mean today.
-    seedFinishable()
+  it("8 — a half seal — finalisation with no handoff id — is refused", async () => {
+    // Migration 48's CHECK makes this unstorable, so seeing one means the
+    // migration is not applied or something wrote outside every route that
+    // knows these rules. Both are reasons to stop.
+    seed()
+    await finish()
+    db.row().consultation_handoff_id = null
+
+    await expect(persistence().load()).rejects.toThrow()
+  })
+
+  it("9 — a malformed persisted finalisation is refused", async () => {
+    seed()
+    await finish()
+    db.row().consultation_finalisation = { kind: "not-a-finalisation" }
+    // Reset AFTER the seal above, so this counts only what the load did.
+    builderCalls.count = 0
+
+    await expect(persistence().load()).rejects.toThrow()
+    expect(builderCalls.count, "and nothing was rebuilt to cover for it").toBe(0)
+  })
+
+  it("10 — a finalisation belonging to a different snapshot is refused", async () => {
+    // Validated AGAINST this session's snapshot, so a payload that is internally
+    // valid but describes another Consultation does not pass. This is also why
+    // ageing must re-stamp both halves: one alone is this case, not history.
+    seed()
     await finish()
     const stored = db.row().consultation_finalisation as Record<string, unknown>
     db.row().consultation_finalisation = { ...stored, foundation: "family" }
@@ -944,43 +1053,92 @@ describe("a finished Consultation reloads as finished — Phase 3C-C2B", () => {
     await expect(persistence().load()).rejects.toThrow()
   })
 
-  it("an UNFINISHED Consultation carrying a seal is refused", async () => {
-    // The other direction of the same contradiction: a frozen record with a
-    // live session on top of it. Whatever the customer does next, one of the
-    // two is wrong.
-    seedFinishable()
+  /* ── Everything else the C2B round already proved ──────────────────────── */
+
+  it("finishing twice is the same seal, and still loads as completed", async () => {
+    // C2A's idempotency, seen from the outside: a double-click, a retried
+    // request and a refresh mid-flight all converge on ONE handoff.
+    seed()
+    const first = await finish()
+    const handoff = db.row().consultation_handoff_id
+    const second = await finish()
+
+    expect(first.ok && second.ok).toBe(true)
+    if (first.ok && second.ok) expect(second.handoffId).toBe(first.handoffId)
+    expect(db.row().consultation_handoff_id).toBe(handoff)
+    expect(hydratePersistedSession(await loadCompleted()).kind).toBe("completed")
+  })
+
+  it("an incomplete Consultation is refused, and stays loadable as a session", async () => {
+    // The refusal has to leave the customer somewhere they can act. A refused
+    // finish that also broke the load would strand them with no way back.
+    const answers = completeAnswers({ [Q1]: "nothing", [CONSTRAINTS]: ["allergy"] })
+    delete answers[Q2]
+    seed({ answers: liveState({ candidateAnswers: answers }) })
+
+    expect(await finish()).toMatchObject({ ok: false, kind: "incomplete" })
+    expect(db.row().consultation_finalisation, "nothing was sealed").toBeFalsy()
+
+    const loaded = await persistence().load()
+    expect(loaded.kind).toBe("session")
+    expect(hydratePersistedSession(loaded).kind).toBe("session")
+  })
+
+  it("the completion payload carries no answers, no cursor and no seal", async () => {
+    /*
+     * A sealed Consultation is not an editable session, and the wire says so.
+     *
+     * It is not served as a session with the fields emptied either — that would
+     * be a lie in the shape of data — and the honest alternative, the stored
+     * answers, is data the route cannot sanitise, because sanitising needs the
+     * bank it deliberately did not resolve.
+     */
+    seed()
     await finish()
-    const sealed = db.row()
-    ;(sealed.answers as DeterministicConsultationState) = {
-      ...(sealed.answers as DeterministicConsultationState),
-      phase: "review",
+
+    const loaded = (await loadCompleted()) as unknown as Record<string, unknown>
+    expect(Object.keys(loaded).sort()).toEqual(["bankVersion", "context", "kind"])
+    for (const key of [
+      "candidateAnswers",
+      "currentQuestionId",
+      "finalisation",
+      "handoffId",
+      "consultation_finalisation",
+      "trustedAnswers",
+      "started",
+    ]) {
+      expect(key in loaded, `${key} must not reach the browser`).toBe(false)
     }
+  })
+})
 
-    await expect(persistence().load()).rejects.toThrow()
+/* ══ Ordering is the contract ══════════════════════════════════════════════ */
+
+describe("the session route adjudicates the seal before it resolves a bank", () => {
+  it("resumeDeterministicSession is called AFTER the ready-for-report branch", () => {
+    /*
+     * A structural guard, because the defect it prevents is invisible in every
+     * ordinary test: with the bank still current, a route that resumes first
+     * behaves identically. It only breaks for the customer whose bank has since
+     * been revised — the one case nobody exercises by accident.
+     */
+    const source = readFileSync(join(process.cwd(), "app/api/consultation/session/route.ts"), "utf8")
+    const readyBranch = source.indexOf('if (stored.phase === "ready-for-report")')
+    const resumeCall = source.indexOf("resumeDeterministicSession({")
+
+    expect(readyBranch, "the sealed branch must exist").toBeGreaterThan(-1)
+    expect(resumeCall, "the live resume must exist").toBeGreaterThan(-1)
+    expect(resumeCall, "live resume must not run before the seal is adjudicated").toBeGreaterThan(
+      readyBranch,
+    )
   })
 
-  it("a half seal — finalisation with no handoff id — is refused", async () => {
-    // Migration 48's CHECK makes this unstorable, so seeing one means the
-    // migration is not applied or something wrote outside every route that
-    // knows these rules. Both are reasons to stop.
-    seedFinishable()
-    await finish()
-    db.row().consultation_handoff_id = null
-
-    await expect(persistence().load()).rejects.toThrow()
-  })
-
-  it("the sealed payload is never sent to the browser", async () => {
-    // The client needs to know it is finished. It does not need the trusted
-    // handoff, and shipping it would put a record built for a server pipeline
-    // into a place a customer can edit and replay.
-    seedFinishable()
-    await finish()
-
-    const loaded = (await persistence().load()) as unknown as Record<string, unknown>
-    expect(loaded.phase).toBe("ready-for-report")
-    for (const key of ["finalisation", "handoffId", "consultation_finalisation", "trustedAnswers"]) {
-      expect(key in loaded, `${key} must not be in the response`).toBe(false)
+  it("the sealed branch resolves no bank of any kind", () => {
+    // `resolveConsultationBank` and `snapshotIsResolvable` are what make a
+    // historical seal unloadable. Neither belongs anywhere in this route.
+    const source = readFileSync(join(process.cwd(), "app/api/consultation/session/route.ts"), "utf8")
+    for (const forbidden of ["resolveConsultationBank", "snapshotIsResolvable", "prepareConsultationFinalisation"]) {
+      expect(source.includes(forbidden), `the route must not call ${forbidden}`).toBe(false)
     }
   })
 })
