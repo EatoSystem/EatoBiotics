@@ -70,6 +70,11 @@
       "issue": 229
     },
     {
+      "table": "founding_applications",
+      "migration": 49,
+      "issue": 0
+    },
+    {
       "table": "reviews",
       "migration": 45,
       "issue": 229
