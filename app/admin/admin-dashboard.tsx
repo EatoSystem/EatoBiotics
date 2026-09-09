@@ -71,6 +71,13 @@ export function AdminDashboard({ stats }: { stats: AdminStats }) {
           </div>
           <div className="flex items-center gap-2">
             <Link
+              href="/admin/founding"
+              className="flex items-center gap-1.5 rounded-full border border-[var(--icon-green)]/30 px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-[var(--icon-green)]"
+            >
+              <Rocket size={12} />
+              Founding 100
+            </Link>
+            <Link
               href="/admin/waitlist"
               className="flex items-center gap-1.5 rounded-full border border-[var(--icon-green)]/30 px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-[var(--icon-green)]"
             >
