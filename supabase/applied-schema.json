@@ -72,7 +72,7 @@
     {
       "table": "founding_applications",
       "migration": 49,
-      "issue": 0
+      "issue": 239
     },
     {
       "table": "reviews",
