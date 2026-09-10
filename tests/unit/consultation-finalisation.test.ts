@@ -508,7 +508,7 @@ describe("finalisation is pure, dormant and produces no Report", () => {
     expect(SOURCE).not.toMatch(/(?<![=!])=\s*["']ready-for-report["']/)
   })
 
-  it("exactly two routes call it: the finalise route seals, the session route reads", () => {
+  it("exactly three callers: two routes and the pure Report composer", () => {
     // Phase 3C-C1 defined the payload with no caller at all. Phase 3C-C2A added
     // the ONE route allowed to seal one. Phase 3C-C2B adds the second: the
     // session route validates a STORED seal when a Consultation loads as
@@ -532,6 +532,12 @@ describe("finalisation is pure, dormant and produces no Report", () => {
     expect([...callers].sort(), "finalisation has an unexpected caller").toEqual([
       "app/api/consultation/finalise/route.ts",
       "app/api/consultation/session/route.ts",
+      // Phase 4A-S2: the deterministic Report composer CONSUMES a finalisation
+      // — the only thing it consumes. It imports the type and reads a trusted,
+      // already-parsed value; it never builds one, never seals one and never
+      // reads a database. That is the payload's whole purpose arriving, and
+      // pinning it here keeps the list a list rather than a category.
+      "lib/report/deterministic/compose.ts",
     ])
   })
 
