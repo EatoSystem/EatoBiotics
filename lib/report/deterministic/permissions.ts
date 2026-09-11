@@ -138,8 +138,22 @@ export interface ReportUsePermission {
   readonly allowedTargets: readonly ConsultationReportTarget[]
   /** Recorded rather than omitted, so a withdrawal is visible to a reader. */
   readonly withheldTargets: readonly ConsultationReportTarget[]
-  /** Present ⇒ every proposition from this question needs that capability. */
-  readonly capability?: ReportCapability
+  /**
+   * Capability requirements attached to a SPECIFIC GRANT, keyed by target.
+   *
+   * Not to the question. A question can legitimately support two operations
+   * with different requirements — `environment.whoPrepares` may recap who does
+   * the cooking with no gate at all, while a future named-food suggestion from
+   * that same answer needs the dietetic gate. Marking the whole question
+   * "requires specificFoods" would suppress a benign recap, and marking it
+   * ungated would let a food through; only the operation can answer.
+   *
+   * Most requirements come from the TARGET (see `TARGET_CAPABILITIES`) or from
+   * the words themselves (see `ContentTemplate.requiresCapabilities`). This
+   * field is for the rarer case where one question's grant of a target needs
+   * something the target does not need in general.
+   */
+  readonly grantCapabilities?: Readonly<Partial<Record<ConsultationReportTarget, readonly ReportCapability[]>>>
   readonly valueRules?: readonly ValueRule[]
   readonly notes: string
 }
@@ -262,9 +276,8 @@ export const REPORT_USE_PERMISSIONS: readonly ReportUsePermission[] = [
     // The bank also lists foodSystemMap and foodTools. foodSystemMap is a
     // biological diagram no self-report can populate; foodTools names foods.
     withheldTargets: ["foodSystemMap"],
-    capability: "specificFoods",
     notes:
-      "Timing only. A late first meal is not a metabolic finding, and the capability keeps any food suggestion out while the dietetic gate is open.",
+      "Timing only. A late first meal is not a metabolic finding. Its only granted target is thirtyDayLoop, which carries no food guidance; a named food would have to go through foodTools, which is gated.",
   },
 
   {
@@ -356,8 +369,8 @@ export const REPORT_USE_PERMISSIONS: readonly ReportUsePermission[] = [
     allowedUses: ["descriptive-recap", "operational-filtering", "practical-fit"],
     allowedTargets: ["thirtyDayLoop"],
     withheldTargets: [],
-    capability: "specificFoods",
-    notes: "Filters suggestions to what this kitchen actually does.",
+    notes:
+      "Filters suggestions to what this kitchen actually does. The recap itself is ungated — how often somebody cooks is not food guidance — and anything that named a food would reach foodTools, which is.",
   },
 
   {
@@ -367,8 +380,8 @@ export const REPORT_USE_PERMISSIONS: readonly ReportUsePermission[] = [
     allowedUses: ["descriptive-recap", "operational-filtering", "practical-fit"],
     allowedTargets: ["familyContext", "thirtyDayLoop"],
     withheldTargets: [],
-    capability: "specificFoods",
-    notes: "A plan addressed to the wrong person in the household is not a plan.",
+    notes:
+      "A plan addressed to the wrong person in the household is not a plan. Recapping who prepares food is ungated; naming what they should prepare is not, and would reach the gated target.",
   },
 
   {
@@ -378,12 +391,12 @@ export const REPORT_USE_PERMISSIONS: readonly ReportUsePermission[] = [
     allowedUses: ["descriptive-recap", "operational-filtering", "practical-fit"],
     allowedTargets: ["thirtyDayLoop", "priorityLever"],
     withheldTargets: [],
-    capability: "specificFoods",
-    notes: "priorityLever means practical fit with how they already shop.",
+    notes: "priorityLever means practical fit with how they already shop. Ungated: how food arrives is logistics, not food guidance.",
   },
 
   fromContract("core_environment_constraints_v1", "environment.constraints", {
-    capability: "specificFoods",
+    // No grant-level entry needed: its food-capable target is `foodTools`,
+    // which `TARGET_CAPABILITIES` already gates for every question.
     valueRules: [
       { value: "prefer-not-to-say", effect: "never-absence", reason: UNDISCLOSED_REASON },
       {
@@ -410,7 +423,6 @@ export const REPORT_USE_PERMISSIONS: readonly ReportUsePermission[] = [
     allowedUses: ["descriptive-recap", "operational-filtering"],
     allowedTargets: ["familyContext", "thirtyDayLoop"],
     withheldTargets: [],
-    capability: "specificFoods",
     valueRules: [
       {
         value: "allergies",
@@ -424,7 +436,7 @@ export const REPORT_USE_PERMISSIONS: readonly ReportUsePermission[] = [
   },
 
   fromContract("core_environment_food_avoidances_v1", "environment.foodAvoidances", {
-    capability: "specificFoods",
+    // `foodTools` is gated by TARGET_CAPABILITIES.
     valueRules: [
       {
         value: "other",
@@ -478,6 +490,58 @@ export const REPORT_USE_PERMISSIONS: readonly ReportUsePermission[] = [
       "Quotation only: never summarised, never paraphrased, never used to select any other content. The single unenumerated input, treated as data rather than signal.",
   },
 ]
+
+/* ══ Capability requirements ═══════════════════════════════════════════════ */
+
+/**
+ * Requirements that belong to a TARGET, whatever question feeds it.
+ *
+ * `foodTools` is the Report's food section: anything landing there is, by
+ * definition, food guidance, so it needs the dietetic gate no matter which
+ * answer produced it. Every other target is ungated at this level — a gate
+ * may still be required by the words (the content pack) or by one question's
+ * particular grant.
+ */
+export const TARGET_CAPABILITIES: Readonly<
+  Partial<Record<ConsultationReportTarget, readonly ReportCapability[]>>
+> = {
+  foodTools: ["specificFoods"],
+}
+
+/**
+ * Every capability one operation needs, as an immutable derived set.
+ *
+ * DERIVED, never supplied. The caller states what it is trying to do — which
+ * questions, which use, which target, which template — and this answers what
+ * that operation costs. A caller that could pass a capability in could pass a
+ * different one, and substituting `safetyNetting` for `specificFoods` would
+ * satisfy a check while naming a food.
+ *
+ * Union of three authorities, deduplicated and sorted so the set is stable:
+ *   · the target          — `foodTools` is food guidance whatever fed it
+ *   · each question's own grant of that target
+ *   · the template        — words that name a food need the gate even if the
+ *                           target would not have required it
+ */
+export function requiredCapabilitiesFor(input: {
+  sourceQuestionIds: readonly string[]
+  target: ConsultationReportTarget
+  templateCapabilities?: readonly ReportCapability[]
+}): readonly ReportCapability[] {
+  const required = new Set<ReportCapability>(TARGET_CAPABILITIES[input.target] ?? [])
+  for (const questionId of input.sourceQuestionIds) {
+    for (const capability of BY_ID.get(questionId)?.grantCapabilities?.[input.target] ?? []) {
+      required.add(capability)
+    }
+  }
+  for (const capability of input.templateCapabilities ?? []) required.add(capability)
+  /*
+   * Frozen, not merely returned. The requirement set is an authority's answer,
+   * and a caller that could splice one out afterwards would have the override
+   * this function exists to remove.
+   */
+  return Object.freeze([...required].sort())
+}
 
 /* ══ Lookup ════════════════════════════════════════════════════════════════ */
 

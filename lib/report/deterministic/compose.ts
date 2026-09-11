@@ -1,20 +1,21 @@
 import { findConsultationQuestion } from "@/lib/consultation/question-bank"
 import type { ConsultationFinalisation } from "@/lib/consultation/finalisation"
 import { SCIENCE_CONTRACT_VERSION } from "@/lib/consultation/science-contract"
-import type { ConsultationAnswers } from "@/lib/consultation/types"
 
-import { reportCapabilities, reportCapabilityEnabled } from "./capabilities"
+import { reportCapabilities, reportCapabilityEnabled, type ReportCapability } from "./capabilities"
+import { canonicalValues } from "./canonical-order"
 import { CONTENT_PACK_VERSION, STRUCTURAL_COPY, templateFor } from "./content-pack"
 import { REPORT_USE_RECORD_VERSION, permissionFor } from "./permissions"
 import { choosePriority } from "./priority"
 import { buildProposition, type ReportProposition } from "./proposition"
-import { resolveReportSafety } from "./report-safety"
+import { mayNameSpecificFoods, resolveReportSafety } from "./report-safety"
 import {
   COMPOSER_VERSION,
   REPORT_SCHEMA_VERSION,
   type LoopStep,
   type PersonalFoodSystemReportV1,
   type ReportResult,
+  type ReportSafety,
   type ReportSection,
 } from "./report-types"
 
@@ -41,17 +42,82 @@ import {
  * `trustedAnswers` is never used to drive output.
  */
 
+/**
+ * The ONE capability boundary — Phase 4A-S2 review fix.
+ *
+ * ══ WHY A SINGLE FUNCTION, APPLIED TO EVERY SECTION ═════════════════════════
+ *
+ * The first implementation checked capabilities in the constraints path and
+ * nowhere else, so a proposition carrying a disabled requirement could enter
+ * any other section untouched. Per-section checks are a list of places to
+ * remember; the place that forgot would be the hole.
+ *
+ * So nothing reaches the document except through here, and the assembled
+ * document is re-checked afterwards (`unsatisfiedIn`) — a belt that does not
+ * depend on every caller having worn the braces.
+ *
+ * ══ TWO AXES, BOTH FAIL-CLOSED ═════════════════════════════════════════════
+ *
+ * A capability is usable only when the specialist gate is closed AND this
+ * customer's own safety state permits it. Q17 suppresses specific foods even
+ * if the dietetic gate were closed tomorrow, because an unrepresented
+ * household allergy is about this Consultation, not about the taxonomy.
+ */
+function capabilityUsable(capability: ReportCapability, safety: ReportSafety): boolean {
+  if (!reportCapabilityEnabled(capability)) return false
+  if (capability === "specificFoods" && !mayNameSpecificFoods(safety)) return false
+  return true
+}
+
+/** Only propositions whose every requirement is usable. */
+function admit(
+  propositions: readonly ReportProposition[],
+  safety: ReportSafety,
+): ReportProposition[] {
+  return propositions.filter((p) => p.requiredCapabilities.every((c) => capabilityUsable(c, safety)))
+}
+
+/**
+ * A section, kept only if something survives admission.
+ *
+ * An empty titled section is a promise the Report did not keep, so a household
+ * section whose every sentence was suppressed is absent rather than blank.
+ */
+function admitSection(
+  section: ReportSection | undefined,
+  safety: ReportSafety,
+): ReportSection | undefined {
+  if (!section) return undefined
+  const propositions = admit(section.propositions, safety)
+  return propositions.length > 0 ? { ...section, propositions } : undefined
+}
+
+/**
+ * Anything that slipped past `admit`, found by inspecting the finished document.
+ *
+ * The universal enforcement the review asked for: it does not trust the
+ * sections to have filtered themselves, it reads what they produced.
+ */
+function unsatisfiedIn(
+  report: PersonalFoodSystemReportV1,
+  safety: ReportSafety,
+): readonly string[] {
+  const every: ReportProposition[] = [
+    ...report.systemSnapshot.propositions,
+    ...report.priorityLever.propositions,
+    ...report.thirtyDayLoop.map((s) => s.proposition),
+    ...report.constraints.propositions,
+    ...(report.familyContext?.propositions ?? []),
+    ...(report.quotation ? [report.quotation] : []),
+  ]
+  return every
+    .filter((p) => !p.requiredCapabilities.every((c) => capabilityUsable(c, safety)))
+    .map((p) => `${p.id} requires ${p.requiredCapabilities.join("+")}`)
+}
+
 /** Bank order for the questions this Consultation actually asked. */
 function orderedQuestionIds(finalisation: ConsultationFinalisation): readonly string[] {
   return finalisation.applicableQuestionIds
-}
-
-/** The answer values for a question, as an array whatever its type. */
-function valuesOf(answers: ConsultationAnswers, questionId: string): readonly string[] {
-  const raw = answers[questionId]
-  if (Array.isArray(raw)) return raw.filter((v): v is string => typeof v === "string")
-  if (typeof raw === "string") return [raw]
-  return []
 }
 
 /**
@@ -72,23 +138,17 @@ function recapFor(
   if (!record.allowedUses.includes("descriptive-recap")) return { propositions: [] }
   if (!record.allowedTargets.includes(target)) return { propositions: [] }
 
-  const question = findConsultationQuestion(questionId)
   /*
-   * Enumerated questions only.
+   * Enumerated questions only, in the bank's own option order.
    *
-   * A textarea's answer is the customer's own prose, not an option value, so
-   * looking it up in the content pack is a category error — it would report
-   * "no disposition" for a sentence no pack could ever hold. The free-text
-   * answer is handled once, as a quotation, by the composer.
+   * `null` is a textarea or a question unknown to this build: its answer is
+   * the customer's prose, not an option value, so looking it up in the content
+   * pack is a category error — it would report "no disposition" for a sentence
+   * no pack could ever hold. The free-text answer is handled once, as a
+   * quotation, by the composer.
    */
-  if (!question?.options || question.options.length === 0) return { propositions: [] }
-
-  const chosen = valuesOf(finalisation.trustedAnswers, questionId)
-  if (chosen.length === 0) return { propositions: [] }
-
-  // Bank option order, not answer order: two customers who selected the same
-  // things in a different sequence must get the same Report.
-  const ordered = question.options.map((o) => o.value).filter((v) => chosen.includes(v))
+  const ordered = canonicalValues(finalisation.trustedAnswers, questionId)
+  if (ordered === null || ordered.length === 0) return { propositions: [] }
 
   const propositions: ReportProposition[] = []
   for (const value of ordered) {
@@ -108,6 +168,7 @@ function recapFor(
       target,
       templateId: disposition.templateId,
       text: disposition.text,
+      templateCapabilities: disposition.requiresCapabilities,
     })
     if (!built.ok) {
       // A value-level silence reaches here as a refusal; that is expected and
@@ -244,8 +305,15 @@ export function composePersonalFoodSystemReport(input: {
    * proposition, re-framed by beat — so a loop step can never say more than
    * the proposition it rests on.
    */
+  /*
+   * Admitted FIRST, so the loop can only ever rest on a lever the document
+   * will actually contain. Re-framing a suppressed sentence four times would
+   * reintroduce it four times.
+   */
+  const admittedPriority = admit(priorityPropositions, safety)
+
   const loop: LoopStep[] = []
-  const leverForLoop = priorityPropositions[0]
+  const leverForLoop = admittedPriority[0]
   if (leverForLoop) {
     const beats = STRUCTURAL_COPY.loopBeats
     for (let i = 0; i < beats.length; i++) {
@@ -274,11 +342,9 @@ export function composePersonalFoodSystemReport(input: {
     if (!questionIds.includes(questionId)) continue
     const record = permissionFor(questionId)
     if (!record) continue
-    const question = findConsultationQuestion(questionId)
-    const chosen = valuesOf(answers, questionId)
-    const ordered = question?.options
-      ? question.options.map((o) => o.value).filter((v) => chosen.includes(v))
-      : [...chosen].sort()
+    // The same canonical order as every other section, from the same helper —
+    // and the same refusal to read a non-enumerated question as option values.
+    const ordered = canonicalValues(answers, questionId) ?? []
 
     for (const value of ordered) {
       const disposition = templateFor(questionId, value)
@@ -299,21 +365,18 @@ export function composePersonalFoodSystemReport(input: {
         target: "foodTools",
         templateId: disposition.templateId,
         text: disposition.text,
-        capability: "specificFoods",
+        templateCapabilities: disposition.requiresCapabilities,
       })
       if (!built.ok) {
         if (built.reason === "value-silenced") continue
         return { ok: false, reason: "proposition-refused", detail: built.detail }
       }
       /*
-       * These carry `capability: "specificFoods"`. While the dietetic gate is
-       * OPEN they are DROPPED, not rendered — the customer is told the Report
-       * keeps to general guidance via `safety.note`, which is structural copy
-       * rather than a food statement.
+       * NOT filtered here. Every proposition in this composer goes through the
+       * one admission boundary below — a section that did its own capability
+       * check would be a second answer, and the section that forgot to do one
+       * would be the hole.
        */
-      if (built.proposition.capability && !reportCapabilityEnabled(built.proposition.capability)) {
-        continue
-      }
       constraintPropositions.push(built.proposition)
     }
   }
@@ -334,8 +397,23 @@ export function composePersonalFoodSystemReport(input: {
     }
   }
 
+  /* ══ THE ADMISSION BOUNDARY ═════════════════════════════════════════════ */
+  /*
+   * Every section's propositions pass through `admit` here, in one place, and
+   * the finished document is re-read by `unsatisfiedIn` below. A section that
+   * checked itself would be a second answer to the same question, and the
+   * section that forgot to would be the hole.
+   */
+  const admittedSnapshot = admit(snapshot, safety)
+  const admittedConstraints = admit(constraintPropositions, safety)
+  const admittedQuotation = quotation && admit([quotation], safety).length === 1 ? quotation : undefined
+  // All four beats or none: three quarters of a loop is a broken instruction,
+  // not a shorter one.
+  const admittedLoop = loop.every((s) => admit([s.proposition], safety).length === 1) ? loop : []
+  const admittedFamily = admitSection(familyContext, safety)
+
   /* ══ Assemble ═══════════════════════════════════════════════════════════ */
-  if (snapshot.length === 0 && priorityPropositions.length === 0) {
+  if (admittedSnapshot.length === 0 && admittedPriority.length === 0) {
     return {
       ok: false,
       reason: "no-authorised-content",
@@ -346,13 +424,13 @@ export function composePersonalFoodSystemReport(input: {
   const report: PersonalFoodSystemReportV1 = {
     kind: REPORT_SCHEMA_VERSION,
     foundation,
-    systemSnapshot: { title: STRUCTURAL_COPY.systemSnapshotTitle, propositions: snapshot },
-    priorityLever: { title: STRUCTURAL_COPY.priorityLeverTitle, propositions: priorityPropositions },
-    thirtyDayLoop: loop,
-    constraints: { title: STRUCTURAL_COPY.constraintsTitle, propositions: constraintPropositions },
+    systemSnapshot: { title: STRUCTURAL_COPY.systemSnapshotTitle, propositions: admittedSnapshot },
+    priorityLever: { title: STRUCTURAL_COPY.priorityLeverTitle, propositions: admittedPriority },
+    thirtyDayLoop: admittedLoop,
+    constraints: { title: STRUCTURAL_COPY.constraintsTitle, propositions: admittedConstraints },
     safety,
-    ...(familyContext ? { familyContext } : {}),
-    ...(quotation ? { quotation } : {}),
+    ...(admittedFamily ? { familyContext: admittedFamily } : {}),
+    ...(admittedQuotation ? { quotation: admittedQuotation } : {}),
     provenance: {
       reportSchemaVersion: REPORT_SCHEMA_VERSION,
       handoffId,
@@ -367,6 +445,20 @@ export function composePersonalFoodSystemReport(input: {
       // The SEALED time. Never `new Date()` — see the determinism rules.
       finalisedAt: finalisation.finalisedAt,
     },
+  }
+
+  /*
+   * The belt. `admit` is the braces, and this does not trust them: it reads
+   * what the sections actually produced. If a future section is added and its
+   * author forgets the boundary, the Report refuses rather than ships.
+   */
+  const slipped = unsatisfiedIn(report, safety)
+  if (slipped.length > 0) {
+    return {
+      ok: false,
+      reason: "proposition-refused",
+      detail: `capability requirement unmet after assembly: ${slipped.join("; ")}`,
+    }
   }
 
   return { ok: true, report }

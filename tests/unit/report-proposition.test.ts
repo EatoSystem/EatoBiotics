@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 
 import { AGGREGATION_EVIDENCE_RULE } from "@/lib/consultation/science-contract"
 import {
@@ -168,5 +170,112 @@ describe("prohibited framings are refused, not merely discouraged", () => {
     ]) {
       expect(usesProhibitedFraming(text)).toBeNull()
     }
+  })
+})
+
+/* ══ Capability requirements are derived, never supplied ═══════════════════ */
+
+/**
+ * ══ THE DEFECT THIS BLOCK REPLACES ══════════════════════════════════════════
+ *
+ * `buildProposition` used to compute, in effect, `input.capability ??
+ * permission.capability` — so a caller could hand it a DIFFERENT capability
+ * from the one the operation actually needed. Passing `safetyNetting` for a
+ * sentence that names a food satisfied the check while the food was named.
+ *
+ * Requirements are now derived from three authorities the caller does not
+ * control — the target, the question's own grant of that target, and the
+ * reviewed template's own words — and there is no input that can replace or
+ * remove one. `templateCapabilities` can only ADD, and even then only what a
+ * content-pack entry already declared.
+ */
+describe("a caller cannot choose which capability an operation needs", () => {
+  const foodOperation = {
+    id: "test.constraint",
+    kind: "constraint" as const,
+    sourceQuestionIds: ["core_environment_constraints_v1"],
+    allowedUse: "operational-filtering" as const,
+    target: "foodTools" as const,
+    templateId: "t-food",
+    text: "You told us there is a food allergy to work around.",
+  }
+
+  it("a foodTools operation requires specificFoods", () => {
+    const result = buildProposition(foodOperation)
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.proposition.requiredCapabilities).toEqual(["specificFoods"])
+  })
+
+  it("substituting a different capability does not replace the real one", () => {
+    // The exact attack: an input shaped like the old API.
+    const substituted = buildProposition({
+      ...foodOperation,
+      capability: "safetyNetting",
+    } as unknown as Parameters<typeof buildProposition>[0])
+    expect(substituted.ok).toBe(true)
+    if (!substituted.ok) return
+    expect(substituted.proposition.requiredCapabilities).toEqual(["specificFoods"])
+    expect(substituted.proposition.requiredCapabilities).not.toContain("safetyNetting")
+  })
+
+  it("an empty template list cannot erase what the target requires", () => {
+    const result = buildProposition({ ...foodOperation, templateCapabilities: [] })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.proposition.requiredCapabilities).toEqual(["specificFoods"])
+  })
+
+  it("a template that names a food adds its requirement to an ungated target", () => {
+    const result = buildProposition({
+      id: "test.loop",
+      kind: "loop-step",
+      sourceQuestionIds: ["core_environment_food_avoidances_v1"],
+      allowedUse: "operational-filtering",
+      target: "thirtyDayLoop",
+      templateId: "t-named",
+      text: "You told us you avoid dairy.",
+      templateCapabilities: ["specificFoods"],
+    })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.proposition.requiredCapabilities).toEqual(["specificFoods"])
+  })
+
+  it("an ungated operation from the same source requires nothing", () => {
+    /*
+     * The precision half, and the reason capability cannot live on the
+     * question: the SAME answer produces a gated food operation and an
+     * ungated practical one, and only the first may be suppressed.
+     */
+    const result = buildProposition({
+      id: "test.fit",
+      kind: "recap",
+      sourceQuestionIds: ["core_environment_constraints_v1"],
+      allowedUse: "practical-fit",
+      target: "thirtyDayLoop",
+      templateId: "t-fit",
+      text: "You told us time to cook is tight.",
+    })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.proposition.requiredCapabilities).toEqual([])
+  })
+
+  it("the requirement set on a built proposition cannot be edited afterwards", () => {
+    const result = buildProposition(foodOperation)
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    const required = result.proposition.requiredCapabilities as string[]
+    expect(Object.isFrozen(required)).toBe(true)
+    expect(() => required.splice(0, 1)).toThrow()
+    expect(result.proposition.requiredCapabilities).toEqual(["specificFoods"])
+  })
+
+  it("the input type carries no capability field at all", () => {
+    const source = readFileSync(join(process.cwd(), "lib/report/deterministic/proposition.ts"), "utf8")
+    // A field would be an override; the ban is on the shape, not the usage.
+    expect(source).not.toMatch(/^\s*capability\??:/m)
+    expect(source).toContain("requiredCapabilitiesFor(")
   })
 })

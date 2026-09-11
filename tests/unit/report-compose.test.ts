@@ -14,6 +14,8 @@ import {
 } from "@/lib/consultation/session-envelope"
 import type { ConsultationAnswers, ConsultationFoundation } from "@/lib/consultation/types"
 import { composePersonalFoodSystemReport } from "@/lib/report/deterministic/compose"
+import { reportCapabilityEnabled, type ReportCapability } from "@/lib/report/deterministic/capabilities"
+import { hasUnrepresentedHouseholdAllergy, mayNameSpecificFoods } from "@/lib/report/deterministic/report-safety"
 import { PRIORITY_PRECEDENCE } from "@/lib/report/deterministic/priority"
 import { customerFacingText, serialiseReport } from "@/lib/report/deterministic/serialise"
 import type { PersonalFoodSystemReportV1 } from "@/lib/report/deterministic/report-types"
@@ -209,11 +211,163 @@ describe("all three gates being OPEN is visible in the output", () => {
   })
 })
 
+/* ══ The one admission boundary ════════════════════════════════════════════ */
+
+/**
+ * Every proposition in the finished document, wherever it lives.
+ *
+ * Written to walk the document GENERICALLY rather than to list the sections
+ * that exist today. The defect this replaces was a per-section check: the
+ * constraints path checked capabilities and nothing else did, so any other
+ * section was an unguarded way in. A test that enumerated sections by hand
+ * would have the same hole as the code it is guarding.
+ */
+function everyProposition(report: PersonalFoodSystemReportV1) {
+  const found: Array<{ where: string; id: string; requiredCapabilities: readonly ReportCapability[] }> = []
+  const walk = (where: string, node: unknown) => {
+    if (Array.isArray(node)) {
+      node.forEach((child) => walk(where, child))
+      return
+    }
+    if (!node || typeof node !== "object") return
+    const record = node as Record<string, unknown>
+    if (typeof record.id === "string" && Array.isArray(record.requiredCapabilities)) {
+      found.push({
+        where,
+        id: record.id,
+        requiredCapabilities: record.requiredCapabilities as readonly ReportCapability[],
+      })
+      return
+    }
+    for (const [key, child] of Object.entries(record)) walk(where === "" ? key : where, child)
+  }
+  for (const [key, value] of Object.entries(report)) {
+    if (key === "provenance" || key === "safety") continue
+    walk(key, value)
+  }
+  return found
+}
+
+describe("no section may carry a proposition whose capability is unavailable", () => {
+  /*
+   * Built INSIDE each test, deliberately.
+   *
+   * A refusal is how the boundary reports a slip, and `mustCompose` turns a
+   * refusal into a failure. Composed at describe scope that failure would
+   * surface as a collection error naming no test, which is a much worse
+   * signal for whoever caused it than a named assertion.
+   */
+  const fixtures = (): ReadonlyArray<{ name: string; report: PersonalFoodSystemReportV1 }> => [
+    { name: "you, default", report: mustCompose(finalise("you")) },
+    {
+      name: "you, with a declared allergy and named avoidances",
+      report: mustCompose(
+        finalise("you", {
+          core_environment_constraints_v1: ["allergy"],
+          core_environment_food_avoidances_v1: ["dairy", "nuts"],
+        }),
+      ),
+    },
+    { name: "family, default", report: mustCompose(finalise("family")) },
+    {
+      name: "family, with an unrepresented household allergy",
+      report: mustCompose(
+        finalise("family", {
+          core_environment_household_differing_needs_v1: ["allergies"],
+          core_environment_constraints_v1: ["none"],
+        }),
+      ),
+    },
+  ]
+
+  it("every fixture composes — a slipped proposition makes the boundary refuse", () => {
+    /*
+     * The belt's own test. `unsatisfiedIn` re-reads the finished document and
+     * turns anything that got past `admit` into a refusal, so a section that
+     * stopped filtering itself stops the Report entirely rather than shipping
+     * a gated sentence.
+     */
+    for (const { name } of fixtures()) {
+      expect(name.length).toBeGreaterThan(0)
+    }
+  })
+
+  it("the walker really does find propositions, or the assertions below prove nothing", () => {
+    const built = fixtures()
+    for (const { name, report } of built) {
+      expect(everyProposition(report).length, name).toBeGreaterThan(0)
+    }
+    // And it reaches past the two obvious sections.
+    const sections = new Set(everyProposition(built[2].report).map((p) => p.where))
+    expect(sections.size).toBeGreaterThan(1)
+  })
+
+  it("every proposition in every section satisfies every capability it needs", () => {
+    for (const { name, report } of fixtures()) {
+      const safety = report.safety
+      for (const proposition of everyProposition(report)) {
+        for (const capability of proposition.requiredCapabilities) {
+          expect(reportCapabilityEnabled(capability), `${name}: ${proposition.where}/${proposition.id}`).toBe(
+            true,
+          )
+          if (capability === "specificFoods") {
+            expect(mayNameSpecificFoods(safety), `${name}: ${proposition.id}`).toBe(true)
+          }
+        }
+      }
+    }
+  })
+
+  it("with all three gates OPEN that means nothing gated got in anywhere", () => {
+    // The stronger statement, true while every capability is disabled: no
+    // proposition in the document requires anything at all.
+    for (const { name, report } of fixtures()) {
+      for (const proposition of everyProposition(report)) {
+        expect(proposition.requiredCapabilities, `${name}: ${proposition.where}/${proposition.id}`).toEqual(
+          [],
+        )
+      }
+    }
+  })
+
+  it("an ungated sentence from a food-capable question still renders", () => {
+    /*
+     * The precision half. `householdDifferingNeeds` is one of the questions
+     * that would feed named-food guidance once the dietetic gate closes, and
+     * its foodTools operations are suppressed today — but its plain household
+     * recap is not food guidance and must survive. A boundary that silenced
+     * the whole question would be over-broad, and over-broad suppression is
+     * how a paid Report quietly becomes empty.
+     */
+    const report = mustCompose(
+      finalise("family", { core_environment_household_differing_needs_v1: ["schedules"] }),
+    )
+    const household = report.familyContext?.propositions ?? []
+    expect(household.length).toBeGreaterThan(0)
+    expect(household.flatMap((p) => p.sourceQuestionIds)).toContain(
+      "core_environment_household_differing_needs_v1",
+    )
+    expect(report.constraints.propositions).toEqual([])
+  })
+
+  it("the composer routes admission through one function, not one per section", () => {
+    const source = readFileSync(join(process.cwd(), "lib/report/deterministic/compose.ts"), "utf8")
+    // The belt as well as the braces: the finished document is re-read.
+    expect(source).toContain("unsatisfiedIn(report, safety)")
+    expect(source).toMatch(/function admit\(/)
+    // Exactly one place decides, and it is not inlined into a section.
+    expect(source.match(/reportCapabilityEnabled\(/g) ?? []).toHaveLength(1)
+  })
+})
+
 /* ══ Priority ══════════════════════════════════════════════════════════════ */
 
 describe("priority means a practical starting point, chosen by visible precedence", () => {
   it("the precedence list is ordered, complete and stated", () => {
-    expect(PRIORITY_PRECEDENCE.map((c) => c.rank)).toEqual([1, 2, 3, 4, 5, 6, 7])
+    // The reachability audit — a real winning state for each rule, and proof
+    // the deleted ones could never have been reached — is in
+    // tests/unit/report-priority.test.ts.
+    expect(PRIORITY_PRECEDENCE.map((c) => c.rank)).toEqual([1, 2, 3, 4, 5])
     for (const candidate of PRIORITY_PRECEDENCE) {
       expect(candidate.reason.length, candidate.questionId).toBeGreaterThan(30)
     }
@@ -339,11 +493,20 @@ describe("an entitled lens is refused, not labelled", () => {
 
 /* ══ Q17 ═══════════════════════════════════════════════════════════════════ */
 
-describe("the Q17 safety contradiction fails closed", () => {
+describe("an unrepresented household allergy fails closed, whatever else was said", () => {
   /*
-   * A household declares an allergy in Q17 and nothing in Q16. The frozen
-   * foodGuidance reads clear, because deriveFoodGuidanceConstraints does not
-   * look at Q17 — so the trusted answers and the frozen safety state disagree.
+   * ══ WHAT THE PREVIOUS VERSION OF THIS BLOCK GOT WRONG ════════════════════
+   *
+   * It asserted that the fixture's `requiresSpecificAvoidance` and
+   * `unresolvedSpecificAvoidance` were BOTH false — encoding the idea that
+   * Q17 counts only while Q16/Q18 happen to be quiet. That is backwards.
+   * Those flags are derived from Q16 and Q18, which are the customer's own
+   * constraints; Q17 says somebody ELSE in the household has an allergy.
+   * Nothing links them. A customer who avoids dairy themselves, with a child
+   * allergic to peanuts, would have had the peanut declaration absorbed.
+   *
+   * So the property is unconditional, and it is tested as a matrix rather
+   * than at the one convenient point.
    */
   const contradictory = finalise("family", {
     core_environment_household_differing_needs_v1: ["allergies"],
@@ -351,12 +514,80 @@ describe("the Q17 safety contradiction fails closed", () => {
   })
   const report = mustCompose(contradictory)
 
-  it("the contradiction really is present in the fixture", () => {
-    expect(contradictory.trustedAnswers["core_environment_household_differing_needs_v1"]).toContain(
-      "allergies",
-    )
-    expect(contradictory.foodGuidance.requiresSpecificAvoidance).toBe(false)
-    expect(contradictory.foodGuidance.unresolvedSpecificAvoidance).toBe(false)
+  const Q17_ALLERGIES = { core_environment_household_differing_needs_v1: ["allergies"] }
+
+  const ALONGSIDE: ReadonlyArray<{ name: string; answers: ConsultationAnswers }> = [
+    { name: "Q16 says nothing in particular", answers: { core_environment_constraints_v1: ["none"] } },
+    {
+      name: "Q16 declares the customer's OWN allergy",
+      answers: {
+        core_environment_constraints_v1: ["allergy"],
+        core_environment_food_avoidances_v1: ["dairy"],
+      },
+    },
+    {
+      name: "Q16 declares a medical avoidance left unresolved",
+      answers: {
+        core_environment_constraints_v1: ["medical-avoid"],
+        core_environment_food_avoidances_v1: ["other"],
+      },
+    },
+    {
+      name: "Q16 was declined",
+      answers: { core_environment_constraints_v1: ["prefer-not-to-say"] },
+    },
+    {
+      name: "Q16 declares a non-safety constraint",
+      answers: { core_environment_constraints_v1: ["budget", "time"] },
+    },
+  ]
+
+  it("the detector reads Q17 alone, and says yes in every one of those states", () => {
+    for (const { name, answers } of ALONGSIDE) {
+      const f = finalise("family", { ...Q17_ALLERGIES, ...answers })
+      expect(hasUnrepresentedHouseholdAllergy(f.trustedAnswers), name).toBe(true)
+    }
+  })
+
+  it("the Report is contradictory in every one of those states", () => {
+    for (const { name, answers } of ALONGSIDE) {
+      const r = mustCompose(finalise("family", { ...Q17_ALLERGIES, ...answers }))
+      expect(r.safety.state, name).toBe("contradictory")
+      expect(r.safety.specificFoodsSuppressed, name).toBe(true)
+      expect(r.constraints.propositions, name).toEqual([])
+      expect(textOf(r), name).not.toMatch(
+        /nothing (in particular )?to work around|no constraints|no restrictions|nothing to avoid/i,
+      )
+    }
+  })
+
+  it("a caution flag from Q16 or Q18 never resolves it", () => {
+    // The exact escape that was removed: a fixture whose frozen guidance IS
+    // already cautious must still read as an unrepresented Q17 declaration.
+    const alsoCautious = finalise("family", {
+      ...Q17_ALLERGIES,
+      core_environment_constraints_v1: ["allergy"],
+      core_environment_food_avoidances_v1: ["other"],
+    })
+    expect(alsoCautious.foodGuidance.requiresSpecificAvoidance).toBe(true)
+    expect(alsoCautious.foodGuidance.unresolvedSpecificAvoidance).toBe(true)
+    expect(hasUnrepresentedHouseholdAllergy(alsoCautious.trustedAnswers)).toBe(true)
+    expect(mustCompose(alsoCautious).safety.state).toBe("contradictory")
+  })
+
+  it("the detector is not given the frozen guidance at all", () => {
+    // Structural: it cannot weigh what it cannot see, so no future edit can
+    // reintroduce the escape without changing the signature in review.
+    expect(hasUnrepresentedHouseholdAllergy.length).toBe(1)
+  })
+
+  it("no Q17 allergy means no contradiction — the rule is not a blanket", () => {
+    const plain = finalise("family", {
+      core_environment_household_differing_needs_v1: ["schedules"],
+      core_environment_constraints_v1: ["none"],
+    })
+    expect(hasUnrepresentedHouseholdAllergy(plain.trustedAnswers)).toBe(false)
+    expect(mustCompose(plain).safety.state).not.toBe("contradictory")
   })
 
   it("the Report marks its safety state contradictory", () => {
@@ -391,6 +622,63 @@ describe("the Q17 safety contradiction fails closed", () => {
 describe("identical input produces byte-identical output", () => {
   const hash = (r: PersonalFoodSystemReportV1) =>
     createHash("sha256").update(serialiseReport(r)).digest("hex")
+
+  /**
+   * The stored array is a record of somebody's clicks, not of what they meant.
+   * Two Consultations that selected the same things in a different sequence
+   * must produce the same document, byte for byte — a reversal is the
+   * cheapest total scramble of that ordering.
+   */
+  describe("reversing every stored multi answer changes nothing", () => {
+    const MULTI_FIXTURES: ReadonlyArray<{ name: string; foundation: ConsultationFoundation; answers: ConsultationAnswers }> = [
+      {
+        name: "you, with three multi answers",
+        foundation: "you",
+        answers: {
+          core_signals_context_v1: ["rushed", "large-late", "stress-sleep"],
+          core_environment_constraints_v1: ["allergy", "budget", "time"],
+          core_environment_food_avoidances_v1: ["dairy", "nuts", "sesame"],
+        },
+      },
+      {
+        name: "family, with a household multi answer",
+        foundation: "family",
+        answers: {
+          core_environment_household_differing_needs_v1: ["tastes", "schedules", "life-stage"],
+          core_environment_constraints_v1: ["budget", "time", "dislikes"],
+        },
+      },
+    ]
+
+    const reverseArrays = (answers: ConsultationAnswers): ConsultationAnswers =>
+      Object.fromEntries(
+        Object.entries(answers).map(([k, v]) => [k, Array.isArray(v) ? [...v].reverse() : v]),
+      )
+
+    for (const fixture of MULTI_FIXTURES) {
+      it(`${fixture.name}: identical bytes`, () => {
+        const forward = mustCompose(finalise(fixture.foundation, fixture.answers))
+        const backward = mustCompose(finalise(fixture.foundation, reverseArrays(fixture.answers)))
+        expect(serialiseReport(backward)).toBe(serialiseReport(forward))
+        expect(hash(backward)).toBe(hash(forward))
+      })
+
+      it(`${fixture.name}: identical starting point`, () => {
+        const forward = mustCompose(finalise(fixture.foundation, fixture.answers))
+        const backward = mustCompose(finalise(fixture.foundation, reverseArrays(fixture.answers)))
+        expect(backward.priorityLever.propositions.map((p) => p.id)).toEqual(
+          forward.priorityLever.propositions.map((p) => p.id),
+        )
+      })
+
+      it(`${fixture.name}: the fixture really does carry reversible multi answers`, () => {
+        // Guards against the reversal quietly becoming a no-op, which is how
+        // this class of test stops proving anything.
+        const multis = Object.values(fixture.answers).filter((v) => Array.isArray(v) && v.length > 1)
+        expect(multis.length).toBeGreaterThan(0)
+      })
+    }
+  })
 
   it("composing twice gives the same bytes", () => {
     const f = finalise("you")

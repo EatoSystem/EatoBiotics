@@ -15,9 +15,12 @@ import {
   permissionFor,
   productOperationalCanInfer,
   permitsUse,
+  requiredCapabilitiesFor,
   valueIsSilenced,
   valueRuleFor,
 } from "@/lib/report/deterministic/permissions"
+import { templateFor } from "@/lib/report/deterministic/content-pack"
+import type { ReportCapability } from "@/lib/report/deterministic/capabilities"
 
 /**
  * The permission registry — Phase 4A-S2.
@@ -224,18 +227,92 @@ describe("value rules deny what the question-level grant is too coarse to", () =
 
 /* ══ The capability link ═══════════════════════════════════════════════════ */
 
-describe("every question that could name a food answers to the dietetic gate", () => {
-  it("food-capable questions carry the specificFoods capability", () => {
-    for (const id of [
-      "core_environment_constraints_v1",
-      "core_environment_food_avoidances_v1",
-      "core_environment_cooking_frequency_v1",
-      "core_environment_who_prepares_v1",
-      "core_environment_planning_v1",
-      "core_environment_household_differing_needs_v1",
-      "core_rhythm_first_meal_v1",
-    ]) {
-      expect(permissionFor(id)?.capability, id).toBe("specificFoods")
+/*
+ * The review that produced this block: capability used to be a field on the
+ * QUESTION, which is the wrong unit. `whoPrepares` can legitimately produce an
+ * ungated practical recap while a named-food sentence from the same answer
+ * must stay behind the dietetic gate. So the requirement belongs to the
+ * OPERATION — this question, this target, these words — and is derived, never
+ * declared and never supplied by a caller.
+ */
+describe("every operation that could name a food answers to the dietetic gate", () => {
+  const FOOD_CAPABLE = [
+    "core_environment_constraints_v1",
+    "core_environment_food_avoidances_v1",
+    "core_environment_cooking_frequency_v1",
+    "core_environment_who_prepares_v1",
+    "core_environment_planning_v1",
+    "core_environment_household_differing_needs_v1",
+    "core_rhythm_first_meal_v1",
+  ]
+
+  it("a foodTools operation from any of them requires specificFoods", () => {
+    for (const id of FOOD_CAPABLE) {
+      expect(
+        requiredCapabilitiesFor({ sourceQuestionIds: [id], target: "foodTools" }),
+        id,
+      ).toContain("specificFoods")
     }
+  })
+
+  it("the question itself carries no capability field — it is not the unit", () => {
+    for (const record of REPORT_USE_PERMISSIONS) {
+      expect(Object.keys(record), record.questionId).not.toContain("capability")
+    }
+  })
+
+  it("an ungated target from the same questions requires nothing", () => {
+    // The precision the review asked for: the gate suppresses food guidance,
+    // not every sentence a food-capable question can produce.
+    for (const id of FOOD_CAPABLE) {
+      for (const target of ["systemSnapshot", "thirtyDayLoop", "familyContext"] as const) {
+        expect(requiredCapabilitiesFor({ sourceQuestionIds: [id], target }), `${id}/${target}`).toEqual(
+          [],
+        )
+      }
+    }
+  })
+
+  it("words that name a food carry the requirement even where the target would not", () => {
+    // The foodAvoidances templates are the ones that say "dairy", "nuts", …
+    const named = templateFor("core_environment_food_avoidances_v1", "dairy")
+    expect(named?.requiresCapabilities).toContain("specificFoods")
+    expect(
+      requiredCapabilitiesFor({
+        sourceQuestionIds: ["core_environment_food_avoidances_v1"],
+        target: "thirtyDayLoop",
+        templateCapabilities: named?.requiresCapabilities,
+      }),
+    ).toContain("specificFoods")
+  })
+})
+
+describe("the derived requirement set cannot be weakened by its caller", () => {
+  it("is deduplicated, sorted and frozen", () => {
+    const required = requiredCapabilitiesFor({
+      sourceQuestionIds: ["core_environment_food_avoidances_v1"],
+      target: "foodTools",
+      templateCapabilities: ["specificFoods", "specificFoods", "bioticsLanguage"],
+    })
+    expect(required).toEqual(["bioticsLanguage", "specificFoods"])
+    expect(Object.isFrozen(required)).toBe(true)
+    expect(() => (required as ReportCapability[]).push("safetyNetting")).toThrow()
+  })
+
+  it("an empty template list cannot erase what the target requires", () => {
+    expect(
+      requiredCapabilitiesFor({
+        sourceQuestionIds: ["core_environment_constraints_v1"],
+        target: "foodTools",
+        templateCapabilities: [],
+      }),
+    ).toEqual(["specificFoods"])
+  })
+
+  it("two calls return independent arrays, so mutating one cannot reach the other", () => {
+    const a = requiredCapabilitiesFor({ sourceQuestionIds: ["core_rhythm_first_meal_v1"], target: "foodTools" })
+    const b = requiredCapabilitiesFor({ sourceQuestionIds: ["core_rhythm_first_meal_v1"], target: "foodTools" })
+    expect(a).not.toBe(b)
+    expect(a).toEqual(b)
   })
 })

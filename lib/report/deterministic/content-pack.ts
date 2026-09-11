@@ -1,3 +1,5 @@
+import type { ReportCapability } from "./capabilities"
+
 /**
  * The reviewed words — Phase 4A-S2.
  *
@@ -51,6 +53,15 @@ export interface ContentTemplate {
   readonly templateId: string
   /** The customer-facing sentence. Never assembled from fragments at runtime. */
   readonly text: string
+  /**
+   * Capabilities these WORDS require, independently of where they land.
+   *
+   * A sentence that names a food needs the dietetic gate even if its target
+   * would not have demanded one — the requirement belongs to what is being
+   * said, not only to which section says it. Defence in depth against a future
+   * template being moved to an ungated target and quietly becoming sayable.
+   */
+  readonly requiresCapabilities?: readonly ReportCapability[]
 }
 
 export type ContentDisposition = ContentTemplate | null
@@ -59,6 +70,13 @@ export type ContentDisposition = ContentTemplate | null
 export type QuestionContent = Readonly<Record<string, ContentDisposition>>
 
 const t = (templateId: string, text: string): ContentTemplate => ({ templateId, text })
+
+/** A template whose words name a broad food category. Always gated. */
+const food = (templateId: string, text: string): ContentTemplate => ({
+  templateId,
+  text,
+  requiresCapabilities: ["specificFoods"],
+})
 
 /* ══ Signals ═══════════════════════════════════════════════════════════════ */
 
@@ -233,13 +251,13 @@ const HOUSEHOLD_DIFFERING_NEEDS: QuestionContent = {
  * behind `specificFoods`.
  */
 const FOOD_AVOIDANCES: QuestionContent = {
-  dairy: t("environment.foodAvoidances.dairy", "You asked us to leave out dairy."),
-  eggs: t("environment.foodAvoidances.eggs", "You asked us to leave out eggs."),
-  "fish-shellfish": t("environment.foodAvoidances.fishShellfish", "You asked us to leave out fish and shellfish."),
-  nuts: t("environment.foodAvoidances.nuts", "You asked us to leave out nuts."),
-  "wheat-gluten": t("environment.foodAvoidances.wheatGluten", "You asked us to leave out wheat and gluten."),
-  soya: t("environment.foodAvoidances.soya", "You asked us to leave out soya."),
-  sesame: t("environment.foodAvoidances.sesame", "You asked us to leave out sesame."),
+  dairy: food("environment.foodAvoidances.dairy", "You asked us to leave out dairy."),
+  eggs: food("environment.foodAvoidances.eggs", "You asked us to leave out eggs."),
+  "fish-shellfish": food("environment.foodAvoidances.fishShellfish", "You asked us to leave out fish and shellfish."),
+  nuts: food("environment.foodAvoidances.nuts", "You asked us to leave out nuts."),
+  "wheat-gluten": food("environment.foodAvoidances.wheatGluten", "You asked us to leave out wheat and gluten."),
+  soya: food("environment.foodAvoidances.soya", "You asked us to leave out soya."),
+  sesame: food("environment.foodAvoidances.sesame", "You asked us to leave out sesame."),
   // Unresolved, not silent: the composer states that something is being worked
   // around without naming it. Never rendered as a clearance.
   other: null,

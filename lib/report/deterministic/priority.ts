@@ -1,5 +1,6 @@
 import type { ConsultationAnswers } from "@/lib/consultation/types"
 
+import { canonicalValues } from "./canonical-order"
 import { valueIsSilenced } from "./permissions"
 
 /**
@@ -47,16 +48,35 @@ import { valueIsSilenced } from "./permissions"
  * 4. Timing, from `signals.energyShape`. Contract meaning: WHEN a change is
  *    placed, never whether or why.
  *
- * 5. Fit, from `signals.context`. Contract meaning: relevance and practical
- *    starting point, never efficacy or a proven trigger.
- *
- * 6. Their own settled-day routine (`signals.settledDays`), which the Report
- *    may back rather than replace.
- *
- * 7. Rhythm (`rhythm.longestGap`), as a last practical foothold.
+ * 5. How food gets into the house (`environment.planning`). The point upstream
+ *    of the plate, and the only rule here a Family Consultation can still
+ *    reach once 1–3 have declined.
  *
  * A value silenced at value level is skipped, not substituted — the next rule
  * is tried, and if none applies the Report says so rather than inventing one.
+ *
+ * ══ REACHABILITY — WHY THESE FIVE AND NOT SEVEN ═════════════════════════════
+ *
+ * Every question here is `required: true`, so a complete Consultation answers
+ * all of the ones applicable to its foundation. That makes reachability
+ * checkable rather than assumed, and the check removed three rules.
+ *
+ * `signals.context`, `signals.settledDays` and `rhythm.longestGap` used to sit
+ * at 5, 6 and 7. All three are `you`-only, and so is rule 4 — which has no
+ * excluded values, so on a `you` Consultation rule 4 always answers first and
+ * nothing below it could ever be consulted. On a `family` Consultation none of
+ * the four is even applicable. Three rules, no state that could reach them.
+ * They were deleted rather than left as reassuring dead text.
+ *
+ * Deleting them exposed the real gap: rules 1–3 are the only ones a family can
+ * reach, and a household that answers `unsure`, `none-stand-out` and `none`
+ * fell off the end of the list with an empty "Where to start". Rule 5 is
+ * applicable to both foundations, so it closes that. It is unreachable on a
+ * `you` Consultation (rule 4 answers first) and reachable on a `family` one,
+ * which is what "reachable" has to mean for a foundation-sensitive list.
+ *
+ * A test constructs the winning state for each of the five. Adding a rule that
+ * nothing can reach fails it.
  */
 
 export interface PriorityCandidate {
@@ -94,18 +114,9 @@ export const PRIORITY_PRECEDENCE: readonly PriorityCandidate[] = [
   },
   {
     rank: 5,
-    questionId: "core_signals_context_v1",
-    reason: "Practical fit with the kind of day they described. Never efficacy or a trigger.",
-  },
-  {
-    rank: 6,
-    questionId: "core_signals_settled_days_v1",
-    reason: "A routine they already report, which the Report backs rather than replaces.",
-  },
-  {
-    rank: 7,
-    questionId: "core_rhythm_longest_gap_v1",
-    reason: "A last practical foothold in the shape of the day.",
+    questionId: "core_environment_planning_v1",
+    reason:
+      "How food arrives is upstream of every meal, and it is the last rule a household can still reach.",
   },
 ]
 
@@ -118,9 +129,9 @@ export const PRIORITY_PRECEDENCE: readonly PriorityCandidate[] = [
 const NOT_A_STARTING_POINT: Readonly<Record<string, readonly string[]>> = {
   core_intentions_primary_focus_v1: ["unsure"],
   core_intentions_barrier_v1: ["none"],
-  core_signals_context_v1: ["no-connection"],
-  core_signals_settled_days_v1: ["cannot-tell"],
   core_signals_household_hardest_moment_v1: ["none-stand-out"],
+  // `signals.energyShape` and `environment.planning` have no such value: every
+  // shape of day and every way food arrives names somewhere to begin.
 }
 
 export interface PriorityChoice {
@@ -138,9 +149,21 @@ export interface PriorityChoice {
  * somewhere to begin. Returns `null` when none does — the composer then states
  * that plainly instead of reaching for a fallback.
  *
- * For a multi-select, the FIRST value in bank option order is taken. Not the
- * "strongest": there is no strength here, and picking by any other criterion
- * would be the ranking metric this design excludes.
+ * ══ ORDER WITHIN AN ANSWER ══════════════════════════════════════════════════
+ *
+ * Values are read through `canonicalValues`, which returns them in the frozen
+ * bank's option order. An earlier version read the stored array, which is the
+ * order the customer's clicks happened to land in — so two Consultations that
+ * said exactly the same thing could have produced different Reports. The
+ * stored order is a record of interaction, never of meaning.
+ *
+ * Today every retained rule reads a single-select question, so the helper is
+ * doing no reordering. It is called anyway: the next rule someone adds may be
+ * a multi-select, and the defect must not be able to come back with it.
+ *
+ * Within an answer the FIRST canonical value is taken. Not the "strongest":
+ * there is no strength here, and picking by any other criterion would be the
+ * arithmetic this design excludes.
  */
 export function choosePriority(
   trustedAnswers: ConsultationAnswers,
@@ -151,8 +174,7 @@ export function choosePriority(
   for (const candidate of PRIORITY_PRECEDENCE) {
     if (!applicable.has(candidate.questionId)) continue
 
-    const raw = trustedAnswers[candidate.questionId]
-    const values = Array.isArray(raw) ? raw : typeof raw === "string" ? [raw] : []
+    const values = canonicalValues(trustedAnswers, candidate.questionId) ?? []
     if (values.length === 0) continue
 
     for (const value of values) {

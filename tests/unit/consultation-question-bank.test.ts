@@ -175,15 +175,18 @@ describe("the deterministic bank has not reached the paid flow", () => {
 
   it("exactly the deterministic experience and the deterministic routes import it", () => {
     /*
-     * Re-pointed a fourth time, at Phase 4A-S2.
+     * Re-pointed a fifth time, at the Phase 4A-S2 review repair.
      *
      * Each re-point pins the new EXACT set rather than loosening the rule.
-     * The additions this time are the deterministic Report Core — the
-     * permission registry needs the bank's answer fields, the content pack is
-     * checked against its option values, and the composer orders output in
-     * bank order. All four are pure library modules under
-     * lib/report/deterministic, none of them is reachable from a route, and
-     * the guard still fails on a twenty-second importer.
+     * The addition this time is exactly one file, and it is a REDUCTION in
+     * surface rather than a growth: `canonical-order.ts` is the single
+     * implementation of "bank option order", extracted from three ad-hoc
+     * copies that previously lived inside the composer and the priority
+     * resolver. One of those copies was reading stored insertion order, which
+     * is the determinism defect this repair exists for.
+     *
+     * It is a pure library module with no route, no page and no component
+     * behind it, and the guard still fails on a twenty-third importer.
      */
     expect(
       importers().sort(),
@@ -219,6 +222,7 @@ describe("the deterministic bank has not reached the paid flow", () => {
        * `content-pack.ts` and `serialise.ts` import nothing from the
        * Consultation at all, and their absence here is the evidence.
        */
+      "lib/report/deterministic/canonical-order.ts",
       "lib/report/deterministic/capabilities.ts",
       "lib/report/deterministic/compose.ts",
       "lib/report/deterministic/permissions.ts",

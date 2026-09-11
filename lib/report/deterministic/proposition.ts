@@ -12,6 +12,7 @@ import type { ReportCapability } from "./capabilities"
 import {
   permissionFor,
   permitsUse,
+  requiredCapabilitiesFor,
   valueIsSilenced,
   valueRuleFor,
   type PermissionBasis,
@@ -68,7 +69,14 @@ export interface ReportProposition {
   readonly text: string
   /** The weakest evidence status among the sources. */
   readonly evidenceStatus: ScienceEvidenceStatus
-  readonly capability?: ReportCapability
+  /**
+   * Every capability this proposition needs, DERIVED and immutable.
+   *
+   * A set rather than one value, because a single sentence can need more than
+   * one gate — a named food described in Biotics language needs both — and a
+   * single field would silently drop the second.
+   */
+  readonly requiredCapabilities: readonly ReportCapability[]
 }
 
 export type PropositionRefusalReason =
@@ -102,7 +110,16 @@ export interface PropositionInput {
   target: ConsultationReportTarget
   templateId: string
   text: string
-  capability?: ReportCapability
+  /**
+   * Deliberately NO `capability` field.
+   *
+   * An earlier version accepted one and fell back to the permission's own.
+   * That let a caller SUBSTITUTE: pass `safetyNetting` for a food sentence and
+   * the check passes while a food is named. Requirements are derived from the
+   * permission registry, the target and the template — authorities the caller
+   * does not control — so there is nothing here to override.
+   */
+  templateCapabilities?: readonly ReportCapability[]
 }
 
 /**
@@ -211,7 +228,11 @@ export function buildProposition(input: PropositionInput): PropositionResult {
       templateId: input.templateId,
       text: input.text,
       evidenceStatus,
-      capability: input.capability ?? records.find((r) => r.capability)?.capability,
+      requiredCapabilities: requiredCapabilitiesFor({
+        sourceQuestionIds: input.sourceQuestionIds,
+        target: input.target,
+        templateCapabilities: input.templateCapabilities,
+      }),
     },
   }
 }

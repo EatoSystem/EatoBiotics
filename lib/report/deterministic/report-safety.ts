@@ -8,22 +8,40 @@ import type { FoodSafetyState, ReportSafety } from "./report-types"
 /**
  * Where the Report decides whether it may name a food — Phase 4A-S2.
  *
- * ══ THE Q17 CONTRADICTION ═══════════════════════════════════════════════════
+ * ══ THE UNREPRESENTED HOUSEHOLD ALLERGY ═════════════════════════════════════
  *
  * `deriveFoodGuidanceConstraints` (lib/consultation/food-guidance.ts) reads
  * exactly two questions: `environment.constraints` and
  * `environment.foodAvoidances`. It does not read
  * `environment.householdDifferingNeeds`.
  *
- * So a family who selects "Yes — allergies or intolerances" in Q17, and
- * nothing in Q16, produces a frozen `foodGuidance` with
- * `requiresSpecificAvoidance: false` and `unresolvedSpecificAvoidance: false`
- * — a food-safety state that reads as clear while the trusted answers say a
- * household allergy exists.
+ * So a family who selects "Yes — allergies or intolerances" in Q17 produces a
+ * frozen `foodGuidance` that says nothing whatsoever about that declaration.
+ * The trusted answers record a household allergy; the frozen safety state was
+ * derived without ever seeing it.
  *
  * Today that is harmless: no Report names a food. It stops being harmless the
  * moment `specificFoods` is enabled, and by then the seal will already have
  * been written. So the Report detects it now and FAILS CLOSED.
+ *
+ * ══ WHY Q16 AND Q18 CANNOT RESOLVE IT ══════════════════════════════════════
+ *
+ * An earlier version of this module treated `requiresSpecificAvoidance` or
+ * `unresolvedSpecificAvoidance` as already-cautious enough, and returned
+ * "no contradiction" when either was set. That was wrong, and it was wrong in
+ * the dangerous direction.
+ *
+ * Those flags come from Q16 and Q18 — different questions, answered about a
+ * different scope. Q16 and Q18 are the customer's own constraints and
+ * avoidances; Q17 is a statement that SOMEONE ELSE IN THE HOUSEHOLD has an
+ * allergy or intolerance. There is no evidence the two describe the same
+ * person, and none at all that they describe the same avoidance. A customer
+ * who avoids dairy themselves, and whose child is allergic to peanuts, would
+ * have had the peanut declaration silently absorbed by the dairy one.
+ *
+ * So the question this module asks is not "do two derivations disagree" — it
+ * is "did the frozen guidance ever represent this declaration at all". The
+ * answer, while C1 does not consume Q17, is always no.
  *
  * ══ WHY NOT JUST FIX food-guidance.ts ══════════════════════════════════════
  *
@@ -50,29 +68,23 @@ export const HOUSEHOLD_DIFFERING_NEEDS_QUESTION_ID =
   "core_environment_household_differing_needs_v1"
 
 /**
- * Does the household declare an allergy that the frozen food-safety state does
- * not reflect?
+ * Has the household declared an allergy the frozen food-safety state never saw?
  *
- * Pure, and takes the trusted answers plus the frozen guidance — never the
- * mutable state, never the browser's answers.
+ * Unconditional by design: while `deriveFoodGuidanceConstraints` does not read
+ * Q17, EVERY Q17 `allergies` answer is unrepresented, whatever Q16 and Q18
+ * happen to contain. The frozen guidance is deliberately NOT consulted here —
+ * taking it as an argument at all would invite the next reader to weigh it,
+ * and weighing it is the defect this signature exists to prevent.
+ *
+ * Pure, and takes the trusted answers only — never the mutable state, never
+ * the browser's answers.
  */
-export function hasQ17SafetyContradiction(
+export function hasUnrepresentedHouseholdAllergy(
   trustedAnswers: ConsultationAnswers,
-  foodGuidance: FoodGuidanceConstraints,
 ): boolean {
   const raw = trustedAnswers[HOUSEHOLD_DIFFERING_NEEDS_QUESTION_ID]
-  const declared = Array.isArray(raw) ? raw : []
-  if (!declared.includes(HOUSEHOLD_ALLERGY_VALUE)) return false
-
-  /*
-   * A household allergy IS declared. The frozen guidance is consistent with it
-   * only if it already treats this Consultation cautiously — either because
-   * Q16 also named a safety constraint, or because an avoidance is unresolved.
-   * If it does neither, the two disagree.
-   */
-  const alreadyCautious =
-    foodGuidance.requiresSpecificAvoidance || foodGuidance.unresolvedSpecificAvoidance
-  return !alreadyCautious
+  const declared = Array.isArray(raw) ? raw : typeof raw === "string" ? [raw] : []
+  return declared.includes(HOUSEHOLD_ALLERGY_VALUE)
 }
 
 /**
@@ -98,7 +110,13 @@ export function resolveReportSafety(
   let state: FoodSafetyState
   let note: string | undefined
 
-  if (hasQ17SafetyContradiction(trustedAnswers, foodGuidance)) {
+  if (hasUnrepresentedHouseholdAllergy(trustedAnswers)) {
+    /*
+     * FIRST, and unconditionally. Nothing below may reclassify this into
+     * `constraints-known` or `none-declared`: a Report that told a household
+     * with a declared allergy that there is nothing to work around would be
+     * wrong in the one place it cannot afford to be.
+     */
     state = "contradictory"
     reasons.push("q17:household-allergy-not-in-frozen-food-guidance")
     // Deliberately the same customer-facing wording as an unresolved
