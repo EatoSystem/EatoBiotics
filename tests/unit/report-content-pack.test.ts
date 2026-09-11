@@ -1,11 +1,19 @@
 import { describe, it, expect } from "vitest"
+import { readFileSync, readdirSync } from "node:fs"
+import { join } from "node:path"
 
 import { CONSULTATION_QUESTION_BANK } from "@/lib/consultation/question-bank"
 import { REPORT_COMPOSITION_BOUNDARY } from "@/lib/consultation/science-contract"
 import {
   CONTENT_PACK,
   CONTENT_PACK_VERSION,
+  PRODUCTION_CONTENT_PACK_ID,
   STRUCTURAL_COPY,
+  STRUCTURAL_TEMPLATE_IDS,
+  TEST_CONTENT_PACK_PREFIX,
+  contentPackFor,
+  isStructuralTemplateId,
+  registerTestContentPack,
   templateFor,
 } from "@/lib/report/deterministic/content-pack"
 import { valueIsSilenced } from "@/lib/report/deterministic/permissions"
@@ -179,5 +187,92 @@ describe("the words obey the composition boundary", () => {
 
   it("is versioned, so a wording change is visible in provenance", () => {
     expect(CONTENT_PACK_VERSION).toBe("content-pack-v1")
+  })
+})
+
+/* ══ The test-pack registration hatch ══════════════════════════════════════ */
+
+/**
+ * `registerTestContentPack` exists so the two capabilities with no production
+ * wording can be proven through the real constructor. It is exported from
+ * shipped code, so it is guarded three ways rather than trusted.
+ */
+describe("an extra content pack can only ever be a test pack", () => {
+  it("refuses an id without the reserved prefix", () => {
+    expect(() =>
+      registerTestContentPack({ id: "content-pack-v2", version: "x", resolve: () => undefined }),
+    ).toThrow(/must begin with/)
+  })
+
+  it("refuses to shadow the production pack", () => {
+    expect(() =>
+      registerTestContentPack({
+        id: PRODUCTION_CONTENT_PACK_ID,
+        version: "x",
+        resolve: () => undefined,
+      }),
+    ).toThrow()
+  })
+
+  it("refuses to re-register an id it already holds", () => {
+    const pack = { id: `${TEST_CONTENT_PACK_PREFIX}duplicate`, version: "x", resolve: () => undefined }
+    registerTestContentPack(pack)
+    expect(() => registerTestContentPack(pack)).toThrow(/already registered/)
+  })
+
+  it("no shipped module calls it", () => {
+    /*
+     * The guard that makes the hatch a test affordance rather than a product
+     * one. A production caller could register a pack whose templates declare
+     * weaker capabilities than the words deserve, which is the defect this
+     * whole round removed — so no production caller is allowed to exist.
+     */
+    const roots = ["app", "components", "lib"]
+    const offenders: string[] = []
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const full = join(dir, entry.name)
+        if (entry.isDirectory()) {
+          if (entry.name !== "node_modules") walk(full)
+          continue
+        }
+        if (!/\.tsx?$/.test(entry.name)) continue
+        const source = readFileSync(full, "utf8")
+        // The definition itself lives in lib and is not a call.
+        if (/registerTestContentPack\s*\(/.test(source) && !full.endsWith("content-pack.ts")) {
+          offenders.push(full.replace(`${process.cwd()}/`, ""))
+        }
+      }
+    }
+    for (const root of roots) walk(join(process.cwd(), root))
+    expect(offenders, "a shipped module registers a content pack").toEqual([])
+  })
+
+  it("the production pack resolves exactly what templateFor does", () => {
+    // One authority behind two names, so the addressable form cannot drift
+    // from the one the coverage tests above exercise.
+    const pack = contentPackFor(PRODUCTION_CONTENT_PACK_ID)
+    expect(pack).toBeDefined()
+    expect(pack!.resolve("core_signals_energy_shape_v1", "steady")).toBe(
+      templateFor("core_signals_energy_shape_v1", "steady"),
+    )
+    expect(pack!.resolve("core_rhythm_recent_change_v1", "health-event")).toBe(null)
+    expect(pack!.resolve("core_signals_energy_shape_v1", "nope")).toBeUndefined()
+  })
+
+  it("an unregistered id resolves to nothing, with no fallback to production", () => {
+    expect(contentPackFor("test:never-registered")).toBeUndefined()
+  })
+})
+
+describe("structural template ids are an allow-list, not a convention", () => {
+  it("holds only the quotation", () => {
+    expect(STRUCTURAL_TEMPLATE_IDS).toEqual(["intentions.success.quotation"])
+  })
+
+  it("rejects anything else", () => {
+    expect(isStructuralTemplateId("intentions.success.quotation")).toBe(true)
+    expect(isStructuralTemplateId("environment.constraints.allergy")).toBe(false)
+    expect(isStructuralTemplateId("")).toBe(false)
   })
 })

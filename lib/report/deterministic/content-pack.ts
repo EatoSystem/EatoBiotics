@@ -328,6 +328,80 @@ export function templateFor(questionId: string, value: string): ContentDispositi
   return value in q ? q[value] : undefined
 }
 
+/* ══ The pack as an addressable authority ══════════════════════════════════ */
+
+/**
+ * A resolver that owns BOTH the words and what saying them costs.
+ *
+ * ══ WHY THE PACK IS ADDRESSABLE AND THE CALLER IS NOT TRUSTED ═══════════════
+ *
+ * `buildProposition` used to take `templateId`, `text` and the template's
+ * capabilities as three independent arguments. A caller could therefore select
+ * the reviewed words and pass no capabilities — "requirements can only be
+ * added" is no protection when adding nothing is an option. Selecting a
+ * sentence that names a food while omitting its gate was one dropped property
+ * away.
+ *
+ * So the caller now names an IDENTITY — which pack, which question, which
+ * value — and the resolver on the other side of that boundary establishes the
+ * text and `requiresCapabilities` together. They cannot disagree because they
+ * are never supplied separately. This is a runtime lookup, not a structural
+ * type, so a forged object literal cannot stand in for a reviewed template.
+ */
+export interface ContentPack {
+  readonly id: string
+  readonly version: string
+  resolve(questionId: string, value: string): ContentDisposition | undefined
+}
+
+/** The id of the pack every production proposition resolves through. */
+export const PRODUCTION_CONTENT_PACK_ID = CONTENT_PACK_VERSION
+
+const PRODUCTION_PACK: ContentPack = {
+  id: PRODUCTION_CONTENT_PACK_ID,
+  version: CONTENT_PACK_VERSION,
+  resolve: templateFor,
+}
+
+const PACKS = new Map<string, ContentPack>([[PRODUCTION_CONTENT_PACK_ID, PRODUCTION_PACK]])
+
+/** The pack for an id, or `undefined`. No fallback to production. */
+export function contentPackFor(packId: string): ContentPack | undefined {
+  return PACKS.get(packId)
+}
+
+/** Reserved prefix. Only ids under it may be registered after module load. */
+export const TEST_CONTENT_PACK_PREFIX = "test:"
+
+/**
+ * Register an additional pack, for tests only.
+ *
+ * ══ WHY THIS EXISTS, AND WHY IT IS NOT AN OVERRIDE ══════════════════════════
+ *
+ * Two of the three capabilities — `bioticsLanguage` and `safetyNetting` — have
+ * no template in the production pack, because the pack deliberately does not
+ * contain words their gates have not approved. Proving those gates only at a
+ * helper would test a layer below the one that matters, so the tests need a
+ * synthetic template that travels the REAL construction and admission path.
+ *
+ * It is not an override: it cannot replace the production pack (that id is
+ * already taken and re-registration throws), it cannot be reached without a
+ * caller naming its id explicitly, and a fixture question has no permission
+ * record, so `buildProposition` refuses it in any production path regardless.
+ *
+ * The prefix is enforced here rather than documented, and a guard asserts no
+ * module under app/, components/ or lib/ calls this function at all.
+ */
+export function registerTestContentPack(pack: ContentPack): void {
+  if (!pack.id.startsWith(TEST_CONTENT_PACK_PREFIX)) {
+    throw new Error(
+      `refusing to register content pack "${pack.id}": ids must begin with "${TEST_CONTENT_PACK_PREFIX}"`,
+    )
+  }
+  if (PACKS.has(pack.id)) throw new Error(`content pack "${pack.id}" is already registered`)
+  PACKS.set(pack.id, pack)
+}
+
 /* ══ Fixed structural copy ═════════════════════════════════════════════════ */
 
 /**
@@ -336,6 +410,22 @@ export function templateFor(questionId: string, value: string): ContentDispositi
  * Here rather than in the composer for the same reason as everything else: it
  * is customer-facing, so it is reviewed, and it is versioned with the pack.
  */
+/**
+ * Template ids the composer may use with its own text.
+ *
+ * Exactly one today: the quotation, whose words are the CUSTOMER'S and which
+ * therefore no pack could hold. Everything else customer-facing resolves
+ * through a pack. The allow-list is checked at runtime so the structural path
+ * cannot quietly become a general route into unreviewed content.
+ */
+export const STRUCTURAL_TEMPLATE_IDS = ["intentions.success.quotation"] as const
+
+export type StructuralTemplateId = (typeof STRUCTURAL_TEMPLATE_IDS)[number]
+
+export function isStructuralTemplateId(id: string): id is StructuralTemplateId {
+  return (STRUCTURAL_TEMPLATE_IDS as readonly string[]).includes(id)
+}
+
 export const STRUCTURAL_COPY = {
   systemSnapshotTitle: "What you told us",
   priorityLeverTitle: "Where to start",

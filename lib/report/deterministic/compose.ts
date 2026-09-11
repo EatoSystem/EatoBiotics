@@ -4,7 +4,8 @@ import { SCIENCE_CONTRACT_VERSION } from "@/lib/consultation/science-contract"
 
 import { reportCapabilities, reportCapabilityEnabled, type ReportCapability } from "./capabilities"
 import { canonicalValues } from "./canonical-order"
-import { CONTENT_PACK_VERSION, STRUCTURAL_COPY, templateFor } from "./content-pack"
+import { reportBankSupport } from "./report-bank"
+import { CONTENT_PACK_VERSION, STRUCTURAL_COPY } from "./content-pack"
 import { REPORT_USE_RECORD_VERSION, permissionFor } from "./permissions"
 import { choosePriority } from "./priority"
 import { buildProposition, type ReportProposition } from "./proposition"
@@ -115,6 +116,31 @@ function unsatisfiedIn(
     .map((p) => `${p.id} requires ${p.requiredCapabilities.join("+")}`)
 }
 
+/**
+ * Every stored answer this build can still read, or the ones it cannot.
+ *
+ * ══ ONE BOUNDARY, NOT A CHECK PER SECTION ═══════════════════════════════════
+ *
+ * The same argument as `admit`: a check repeated in five places is five
+ * chances to forget it. Every applicable question is examined once, before
+ * anything is interpreted, and a single unreadable value refuses the whole
+ * Report rather than shortening it.
+ *
+ * Unreachable while the bank-identity boundary holds — a supported bank
+ * offers, by construction, every value a seal against it can contain. It is
+ * the second wall, and the one that would catch a first wall written wrongly.
+ */
+function unreadableAnswers(finalisation: ConsultationFinalisation): readonly string[] {
+  const unreadable: string[] = []
+  for (const questionId of finalisation.applicableQuestionIds) {
+    const resolved = canonicalValues(finalisation.trustedAnswers, questionId)
+    if (resolved.kind === "unsupported-value") {
+      unreadable.push(`${questionId}=${resolved.values.map((v) => `"${v}"`).join(",")}`)
+    }
+  }
+  return unreadable
+}
+
 /** Bank order for the questions this Consultation actually asked. */
 function orderedQuestionIds(finalisation: ConsultationFinalisation): readonly string[] {
   return finalisation.applicableQuestionIds
@@ -147,18 +173,14 @@ function recapFor(
    * no pack could ever hold. The free-text answer is handled once, as a
    * quotation, by the composer.
    */
-  const ordered = canonicalValues(finalisation.trustedAnswers, questionId)
-  if (ordered === null || ordered.length === 0) return { propositions: [] }
+  const resolved = canonicalValues(finalisation.trustedAnswers, questionId)
+  // `unsupported-value` has already refused the Report at the answer-support
+  // boundary; reaching here it can only be a skip.
+  if (resolved.kind !== "values" || resolved.values.length === 0) return { propositions: [] }
+  const ordered = resolved.values
 
   const propositions: ReportProposition[] = []
   for (const value of ordered) {
-    const disposition = templateFor(questionId, value)
-    if (disposition === undefined) {
-      return { propositions: [], error: `${questionId}="${value}" has no content-pack disposition` }
-    }
-    // `null` is reviewed silence. Distinct from undefined above.
-    if (disposition === null) continue
-
     const built = buildProposition({
       id: `${record.answerField}.${value}`,
       kind: "recap",
@@ -166,14 +188,20 @@ function recapFor(
       sourceValues: { [questionId]: [value] },
       allowedUse: "descriptive-recap",
       target,
-      templateId: disposition.templateId,
-      text: disposition.text,
-      templateCapabilities: disposition.requiresCapabilities,
+      // An IDENTITY, not words. The pack resolves what this says and what
+      // saying it costs, together, where they cannot disagree.
+      content: { from: "content-pack", questionId, value },
     })
     if (!built.ok) {
-      // A value-level silence reaches here as a refusal; that is expected and
-      // is a skip. Anything else is a real composition fault.
-      if (built.reason === "value-silenced") continue
+      /*
+       * Two refusals are skips, and they are different kinds of skip:
+       * `value-silenced` is the permission registry declining the value,
+       * `content-silent` is the pack having reviewed it and chosen to say
+       * nothing. Everything else — including `content-unreviewed`, which
+       * means nobody decided — is a real composition fault and stops the
+       * Report rather than quietly shortening it.
+       */
+      if (built.reason === "value-silenced" || built.reason === "content-silent") continue
       return { propositions: [], error: built.detail }
     }
     propositions.push(built.proposition)
@@ -207,6 +235,31 @@ export function composePersonalFoodSystemReport(input: {
   handoffId: string
 }): ReportResult {
   const { finalisation, handoffId } = input
+
+  /* ══ Bank identity: FIRST, before anything is interpreted ═══════════════ */
+  /*
+   * Ahead of the lens check and everything after it. The permission registry,
+   * the content pack and the precedence list were authored against one bank
+   * and exhaustively tested against it; run against another they do not fail,
+   * they quietly mean something else. So before this function reads a single
+   * answer it establishes that Report v1 understands the bank the seal names.
+   *
+   * This refuses to RENDER. It does not touch, rebuild or invalidate the
+   * seal — a historical finalisation still reads perfectly at the C2B seal
+   * layer, which is the layer that owns validity.
+   */
+  const bank = reportBankSupport(finalisation.bankVersion, finalisation.bankFingerprint)
+  if (!bank.ok) return { ok: false, reason: bank.reason, detail: bank.detail }
+
+  /* ══ Answers this build can read ════════════════════════════════════════ */
+  const unreadable = unreadableAnswers(finalisation)
+  if (unreadable.length > 0) {
+    return {
+      ok: false,
+      reason: "unsupported-answer-value",
+      detail: `trusted answers hold values this bank does not offer: ${unreadable.join("; ")}`,
+    }
+  }
 
   /* ══ Lens: refuse before composing anything ═════════════════════════════ */
   if (finalisation.entitledLens !== null) {
@@ -255,8 +308,13 @@ export function composePersonalFoodSystemReport(input: {
       sourceQuestionIds: ["core_intentions_success_v1"],
       allowedUse: "descriptive-recap",
       target: "systemSnapshot",
-      templateId: "intentions.success.quotation",
-      text: `${STRUCTURAL_COPY.quotationLeadIn} “${successRaw.trim()}”`,
+      // The one structural path: these are the CUSTOMER'S words, so no pack
+      // could hold them. Bounded by the pack's own allow-list of ids.
+      content: {
+        from: "structural",
+        templateId: "intentions.success.quotation",
+        text: `${STRUCTURAL_COPY.quotationLeadIn} “${successRaw.trim()}”`,
+      },
     })
     if (!built.ok) return { ok: false, reason: "proposition-refused", detail: built.detail }
     quotation = built.proposition
@@ -266,31 +324,25 @@ export function composePersonalFoodSystemReport(input: {
   const choice = choosePriority(answers, questionIds)
   const priorityPropositions: ReportProposition[] = []
   if (choice) {
-    const disposition = templateFor(choice.questionId, choice.value)
-    if (disposition === undefined) {
-      return {
-        ok: false,
-        reason: "proposition-refused",
-        detail: `${choice.questionId}="${choice.value}" has no content-pack disposition`,
-      }
-    }
-    if (disposition !== null) {
-      const built = buildProposition({
-        id: `priority.${choice.questionId}.${choice.value}`,
-        kind: "lever",
-        sourceQuestionIds: [choice.questionId],
-        sourceValues: { [choice.questionId]: [choice.value] },
-        // Every question in the precedence list permits exactly one of these
-        // for priorityLever; the record decides which, not this function.
-        allowedUse: permissionFor(choice.questionId)?.allowedUses.includes("practical-timing")
-          ? "practical-timing"
-          : "practical-fit",
-        target: "priorityLever",
-        templateId: disposition.templateId,
-        text: disposition.text,
-      })
-      if (!built.ok) return { ok: false, reason: "proposition-refused", detail: built.detail }
-      priorityPropositions.push(built.proposition)
+    const built = buildProposition({
+      id: `priority.${choice.questionId}.${choice.value}`,
+      kind: "lever",
+      sourceQuestionIds: [choice.questionId],
+      sourceValues: { [choice.questionId]: [choice.value] },
+      // Every question in the precedence list permits exactly one of these
+      // for priorityLever; the record decides which, not this function.
+      allowedUse: permissionFor(choice.questionId)?.allowedUses.includes("practical-timing")
+        ? "practical-timing"
+        : "practical-fit",
+      target: "priorityLever",
+      content: { from: "content-pack", questionId: choice.questionId, value: choice.value },
+    })
+    if (built.ok) priorityPropositions.push(built.proposition)
+    // A silent disposition leaves the section empty rather than refusing —
+    // the precedence list chose a value the pack reviewed and had nothing to
+    // say about, which is a decision, not a fault.
+    else if (built.reason !== "content-silent") {
+      return { ok: false, reason: "proposition-refused", detail: built.detail }
     }
   }
 
@@ -324,8 +376,13 @@ export function composePersonalFoodSystemReport(input: {
         sourceQuestionIds: leverForLoop.sourceQuestionIds,
         allowedUse: leverForLoop.allowedUse,
         target: "thirtyDayLoop",
-        templateId: `${leverForLoop.templateId}.loop.${beats[i].toLowerCase()}`,
-        text: leverForLoop.text,
+        // Re-framing an already-built sentence, so it inherits that
+        // sentence's capability requirements as well as its words.
+        content: {
+          from: "proposition",
+          source: leverForLoop,
+          templateIdSuffix: `loop.${beats[i].toLowerCase()}`,
+        },
       })
       if (!built.ok) {
         // A source that permits priorityLever need not permit thirtyDayLoop.
@@ -344,18 +401,10 @@ export function composePersonalFoodSystemReport(input: {
     if (!record) continue
     // The same canonical order as every other section, from the same helper —
     // and the same refusal to read a non-enumerated question as option values.
-    const ordered = canonicalValues(answers, questionId) ?? []
+    const resolved = canonicalValues(answers, questionId)
+    const ordered = resolved.kind === "values" ? resolved.values : []
 
     for (const value of ordered) {
-      const disposition = templateFor(questionId, value)
-      if (disposition === undefined) {
-        return {
-          ok: false,
-          reason: "proposition-refused",
-          detail: `${questionId}="${value}" has no content-pack disposition`,
-        }
-      }
-      if (disposition === null) continue
       const built = buildProposition({
         id: `${record.answerField}.${value}`,
         kind: "constraint",
@@ -363,12 +412,10 @@ export function composePersonalFoodSystemReport(input: {
         sourceValues: { [questionId]: [value] },
         allowedUse: "operational-filtering",
         target: "foodTools",
-        templateId: disposition.templateId,
-        text: disposition.text,
-        templateCapabilities: disposition.requiresCapabilities,
+        content: { from: "content-pack", questionId, value },
       })
       if (!built.ok) {
-        if (built.reason === "value-silenced") continue
+        if (built.reason === "value-silenced" || built.reason === "content-silent") continue
         return { ok: false, reason: "proposition-refused", detail: built.detail }
       }
       /*

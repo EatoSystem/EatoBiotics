@@ -174,8 +174,17 @@ export function choosePriority(
   for (const candidate of PRIORITY_PRECEDENCE) {
     if (!applicable.has(candidate.questionId)) continue
 
-    const values = canonicalValues(trustedAnswers, candidate.questionId) ?? []
-    if (values.length === 0) continue
+    /*
+     * `values` only. `not-enumerated` cannot occur here — every precedence
+     * candidate is an enumerated bank question — and `unsupported-value` has
+     * already refused the whole Report at the composer's answer-support
+     * boundary, so it cannot reach this function either. Both are skipped
+     * rather than handled, because inventing a starting point from an answer
+     * this build cannot read is precisely what must not happen.
+     */
+    const resolved = canonicalValues(trustedAnswers, candidate.questionId)
+    if (resolved.kind !== "values" || resolved.values.length === 0) continue
+    const values = resolved.values
 
     for (const value of values) {
       if (valueIsSilenced(candidate.questionId, value)) continue

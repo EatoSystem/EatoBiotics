@@ -54,8 +54,8 @@ describe("answer values are read in the bank's order, never the stored one", () 
     const stored = [...bankOrder]
     const reversed = [...bankOrder].reverse()
 
-    expect(canonicalValues({ [MULTI]: stored }, MULTI)).toEqual(bankOrder)
-    expect(canonicalValues({ [MULTI]: reversed }, MULTI)).toEqual(bankOrder)
+    expect(canonicalValues({ [MULTI]: stored }, MULTI)).toEqual({ kind: "values", values: bankOrder })
+    expect(canonicalValues({ [MULTI]: reversed }, MULTI)).toEqual({ kind: "values", values: bankOrder })
     expect(canonicalValues({ [MULTI]: reversed }, MULTI)).toEqual(
       canonicalValues({ [MULTI]: stored }, MULTI),
     )
@@ -64,38 +64,47 @@ describe("answer values are read in the bank's order, never the stored one", () 
   it("a subset keeps bank order rather than selection order", () => {
     const bankOrder = findConsultationQuestion(MULTI)!.options!.map((o) => o.value)
     const [first, , third] = bankOrder
-    expect(canonicalValues({ [MULTI]: [third, first] }, MULTI)).toEqual([first, third])
+    expect(canonicalValues({ [MULTI]: [third, first] }, MULTI)).toEqual({
+      kind: "values",
+      values: [first, third],
+    })
   })
 
   it("a single-select answer is returned as a one-value list", () => {
-    expect(canonicalValues({ core_intentions_barrier_v1: "cost" }, "core_intentions_barrier_v1")).toEqual([
-      "cost",
-    ])
+    expect(canonicalValues({ core_intentions_barrier_v1: "cost" }, "core_intentions_barrier_v1")).toEqual({
+      kind: "values",
+      values: ["cost"],
+    })
   })
 
   it("nothing selected is an empty list, not a missing question", () => {
-    expect(canonicalValues({}, MULTI)).toEqual([])
+    expect(canonicalValues({}, MULTI)).toEqual({ kind: "values", values: [] })
   })
 
-  it("a value this build's bank does not offer is dropped, and that is deliberate", () => {
+  it("a value this build's bank does not offer is REPORTED, never dropped", () => {
     /*
-     * Fail-closed. The seal recorded the value under a bank version whose
-     * meaning this build cannot vouch for, and paraphrasing a value we cannot
-     * describe is worse than omitting it. Pinned so the behaviour is a
-     * decision rather than a side effect of the intersection.
+     * The second review's finding. The first version intersected the stored
+     * answer with today's options and returned the survivors, which quietly
+     * shortens an immutable trusted input — the worst outcome available,
+     * because the result is indistinguishable from a Report the customer
+     * answered less of. The unreadable value is surfaced and the composer
+     * refuses.
      */
-    expect(canonicalValues({ [MULTI]: ["rushed", "not-a-real-value"] }, MULTI)).toEqual(["rushed"])
+    expect(canonicalValues({ [MULTI]: ["rushed", "not-a-real-value"] }, MULTI)).toEqual({
+      kind: "unsupported-value",
+      values: ["not-a-real-value"],
+    })
   })
 
-  it("a free-text question is null, not an empty list", () => {
+  it("a free-text question is not-enumerated, not an empty list", () => {
     // Two different facts: "no option list exists here" vs "nothing chosen".
-    expect(canonicalValues({ core_intentions_success_v1: "Calmer mornings." }, "core_intentions_success_v1")).toBe(
-      null,
-    )
+    expect(
+      canonicalValues({ core_intentions_success_v1: "Calmer mornings." }, "core_intentions_success_v1"),
+    ).toEqual({ kind: "not-enumerated" })
   })
 
-  it("a question unknown to this build is null", () => {
-    expect(canonicalValues({ made_up_v1: ["x"] }, "made_up_v1")).toBe(null)
+  it("a question unknown to this build is not-enumerated", () => {
+    expect(canonicalValues({ made_up_v1: ["x"] }, "made_up_v1")).toEqual({ kind: "not-enumerated" })
   })
 })
 

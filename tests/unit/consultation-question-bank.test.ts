@@ -175,18 +175,24 @@ describe("the deterministic bank has not reached the paid flow", () => {
 
   it("exactly the deterministic experience and the deterministic routes import it", () => {
     /*
-     * Re-pointed a fifth time, at the Phase 4A-S2 review repair.
+     * Re-pointed a sixth time, at the second Phase 4A-S2 review repair.
      *
      * Each re-point pins the new EXACT set rather than loosening the rule.
-     * The addition this time is exactly one file, and it is a REDUCTION in
-     * surface rather than a growth: `canonical-order.ts` is the single
-     * implementation of "bank option order", extracted from three ad-hoc
-     * copies that previously lived inside the composer and the priority
-     * resolver. One of those copies was reading stored insertion order, which
-     * is the determinism defect this repair exists for.
      *
-     * It is a pure library module with no route, no page and no component
-     * behind it, and the guard still fails on a twenty-third importer.
+     * Fifth re-point (first repair round): `canonical-order.ts`, the single
+     * implementation of "bank option order", extracted from three ad-hoc
+     * copies inside the composer and the priority resolver — one of which was
+     * reading stored insertion order. An addition that REDUCED surface.
+     *
+     * Sixth (this round): `report-bank.ts`, which reads the registry for one
+     * thing only — the `consultation-v1` registry KEY, so the identity Report
+     * v1 supports is named rather than spelled. It deliberately does not use
+     * the registry's digest functions, because a computed fingerprint would
+     * track bank drift instead of catching it; the digest it compares against
+     * is typed out by hand.
+     *
+     * Both are pure library modules with no route, no page and no component
+     * behind them, and the guard still fails on a twenty-fourth importer.
      */
     expect(
       importers().sort(),
@@ -228,6 +234,7 @@ describe("the deterministic bank has not reached the paid flow", () => {
       "lib/report/deterministic/permissions.ts",
       "lib/report/deterministic/priority.ts",
       "lib/report/deterministic/proposition.ts",
+      "lib/report/deterministic/report-bank.ts",
       "lib/report/deterministic/report-safety.ts",
       "lib/report/deterministic/report-types.ts",
     ])

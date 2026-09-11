@@ -119,6 +119,22 @@ export interface PersonalFoodSystemReportV1 {
 
 export type ReportRefusalReason =
   /**
+   * The seal names a bank generation Report v1 was not written for. An
+   * interpretation refusal, never a statement that the seal is invalid.
+   */
+  | "bank-unsupported"
+  /**
+   * The bank version is one this Report knows, but its fingerprint is not —
+   * the wording or the options moved under a seal that still names it.
+   */
+  | "bank-fingerprint-unsupported"
+  /**
+   * A trusted answer holds an option value the supported bank does not offer.
+   * Refused rather than dropped: silently shortening an immutable input
+   * produces a Report that looks like one the customer answered less of.
+   */
+  | "unsupported-answer-value"
+  /**
    * The finalisation carries an entitled lens. The deterministic bank holds no
    * lens questions, so a core-only Report labelled with that entitlement would
    * claim a purchase it never asked about.

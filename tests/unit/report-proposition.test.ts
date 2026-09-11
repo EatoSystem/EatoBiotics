@@ -2,6 +2,14 @@ import { describe, it, expect } from "vitest"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
+import { templateFor } from "@/lib/report/deterministic/content-pack"
+import {
+  FIXTURE_QUESTION,
+  FIXTURE_UNGATED_TARGET,
+  FIXTURE_VALUES,
+  useFixtureContentPack,
+} from "./fixtures/report-content-pack-fixture"
+
 import { AGGREGATION_EVIDENCE_RULE } from "@/lib/consultation/science-contract"
 import {
   buildProposition,
@@ -32,8 +40,12 @@ const valid = {
   sourceQuestionIds: ["core_signals_energy_shape_v1"],
   allowedUse: "practical-timing" as const,
   target: "priorityLever" as const,
-  templateId: "t1",
-  text: "You reported an afternoon dip in your energy.",
+  // An IDENTITY, never words. The pack resolves the sentence and its gates.
+  content: {
+    from: "content-pack",
+    questionId: "core_signals_energy_shape_v1",
+    value: "afternoon-dip",
+  } as const,
 }
 
 describe("a proposition cannot exist without provenance", () => {
@@ -84,9 +96,14 @@ describe("value-level denials reach the constructor", () => {
       sourceValues: { core_rhythm_recent_change_v1: ["health-event"] },
       allowedUse: "descriptive-recap",
       target: "systemSnapshot",
-      templateId: "t",
-      text: "You told us about a health event.",
+      content: {
+        from: "content-pack",
+        questionId: "core_rhythm_recent_change_v1",
+        value: "health-event",
+      },
     })
+    // The PERMISSION registry's refusal, not the pack's. Both would decline
+    // this value; the stronger authority is the one that must be reported.
     expect(refusalOf(result)).toBe("value-silenced")
   })
 
@@ -98,8 +115,11 @@ describe("value-level denials reach the constructor", () => {
       sourceValues: { core_rhythm_recent_change_v1: ["schedule"] },
       allowedUse: "descriptive-recap",
       target: "systemSnapshot",
-      templateId: "t",
-      text: "You told us a change of schedule has affected how you eat recently.",
+      content: {
+        from: "content-pack",
+        questionId: "core_rhythm_recent_change_v1",
+        value: "schedule",
+      },
     })
     expect(result.ok).toBe(true)
   })
@@ -118,8 +138,11 @@ describe("authorities do not mix, and aggregation does not upgrade", () => {
       sourceQuestionIds: ["core_signals_energy_shape_v1", "core_rhythm_longest_gap_v1"],
       allowedUse: "practical-timing",
       target: "thirtyDayLoop",
-      templateId: "t",
-      text: "You reported an afternoon dip, and a long gap between meals.",
+      content: {
+        from: "content-pack",
+        questionId: "core_signals_energy_shape_v1",
+        value: "afternoon-dip",
+      },
     })
     expect(refusalOf(result)).toBe("mixed-basis")
   })
@@ -133,8 +156,11 @@ describe("authorities do not mix, and aggregation does not upgrade", () => {
       sourceQuestionIds: ["core_environment_constraints_v1"],
       allowedUse: "operational-filtering",
       target: "foodTools",
-      templateId: "t",
-      text: "You told us there's an allergy to work around.",
+      content: {
+        from: "content-pack",
+        questionId: "core_environment_constraints_v1",
+        value: "allergy",
+      },
     })
     expect(result.ok).toBe(true)
     if (result.ok) expect(result.proposition.evidenceStatus).toBe("SUPPORTED")
@@ -155,9 +181,19 @@ describe("prohibited framings are refused, not merely discouraged", () => {
   })
 
   it("refuses to build a proposition that uses one", () => {
+    /*
+     * Through the STRUCTURAL path, because it is the only one that still
+     * accepts caller text — and therefore the only one where a prohibited
+     * framing could originate. Pack templates are corpus-checked separately;
+     * this proves the escape hatch is checked too.
+     */
     const result = buildProposition({
       ...valid,
-      text: "This shows your energy dips in the afternoon.",
+      content: {
+        from: "structural",
+        templateId: "intentions.success.quotation",
+        text: "This shows your energy dips in the afternoon.",
+      },
     })
     expect(refusalOf(result)).toBe("prohibited-framing")
   })
@@ -189,57 +225,147 @@ describe("prohibited framings are refused, not merely discouraged", () => {
  * remove one. `templateCapabilities` can only ADD, and even then only what a
  * content-pack entry already declared.
  */
-describe("a caller cannot choose which capability an operation needs", () => {
+describe("the pack, not the caller, establishes the words and their gates", () => {
+  const FIXTURE = useFixtureContentPack()
+
   const foodOperation = {
     id: "test.constraint",
     kind: "constraint" as const,
     sourceQuestionIds: ["core_environment_constraints_v1"],
     allowedUse: "operational-filtering" as const,
     target: "foodTools" as const,
-    templateId: "t-food",
-    text: "You told us there is a food allergy to work around.",
+    content: {
+      from: "content-pack",
+      questionId: "core_environment_constraints_v1",
+      value: "allergy",
+    } as const,
   }
 
-  it("a foodTools operation requires specificFoods", () => {
-    const result = buildProposition(foodOperation)
-    expect(result.ok).toBe(true)
-    if (!result.ok) return
-    expect(result.proposition.requiredCapabilities).toEqual(["specificFoods"])
+  /** A fixture operation on a target that requires nothing of its own. */
+  const fixtureOperation = (value: string) => ({
+    id: `test.fixture.${value}`,
+    kind: "recap" as const,
+    sourceQuestionIds: [FIXTURE_QUESTION],
+    allowedUse: "descriptive-recap" as const,
+    target: FIXTURE_UNGATED_TARGET,
+    content: { from: "content-pack", packId: FIXTURE, questionId: FIXTURE_QUESTION, value } as const,
   })
 
-  it("substituting a different capability does not replace the real one", () => {
-    // The exact attack: an input shaped like the old API.
-    const substituted = buildProposition({
+  const requirementsOf = (input: Parameters<typeof buildProposition>[0]) => {
+    const result = buildProposition(input)
+    expect(result.ok, result.ok ? "" : `refused: ${result.reason} — ${result.detail}`).toBe(true)
+    if (!result.ok) throw new Error(result.reason)
+    return result.proposition.requiredCapabilities
+  }
+
+  /* ── One test per gate, all three through the real constructor ───────── */
+
+  it("a template requiring specificFoods cannot be constructed without it", () => {
+    expect(requirementsOf(foodOperation)).toEqual(["specificFoods"])
+  })
+
+  it("a template requiring bioticsLanguage carries it on an ungated target", () => {
+    // thirtyDayLoop requires nothing, and the question grants nothing extra,
+    // so the requirement can only have come from the words themselves.
+    expect(requirementsOf(fixtureOperation(FIXTURE_VALUES.biotics))).toEqual(["bioticsLanguage"])
+  })
+
+  it("a template requiring safetyNetting carries it on an ungated target", () => {
+    expect(requirementsOf(fixtureOperation(FIXTURE_VALUES.safety))).toEqual(["safetyNetting"])
+  })
+
+  it("an ungated template on the same target and question requires nothing", () => {
+    // The control. Without it the two assertions above could pass because
+    // everything from this pack is gated.
+    expect(requirementsOf(fixtureOperation(FIXTURE_VALUES.ungated))).toEqual([])
+  })
+
+  /* ── The gate travels with the words ─────────────────────────────────── */
+
+  it("moving a gated template to another permitted target does not erase its gate", () => {
+    /*
+     * `environment.constraints` permits foodTools (gated by the target) and
+     * thirtyDayLoop (gated by nothing). A food template placed on the second
+     * must still answer to the dietetic gate — the requirement belongs to
+     * what is being said, not only to which section says it.
+     */
+    const named = templateFor("core_environment_food_avoidances_v1", "dairy")
+    expect(named?.requiresCapabilities).toContain("specificFoods")
+    expect(
+      requirementsOf({
+        id: "test.moved",
+        kind: "constraint",
+        sourceQuestionIds: ["core_environment_food_avoidances_v1"],
+        allowedUse: "operational-filtering",
+        target: "thirtyDayLoop",
+        content: {
+          from: "content-pack",
+          questionId: "core_environment_food_avoidances_v1",
+          value: "dairy",
+        },
+      }),
+    ).toEqual(["specificFoods"])
+  })
+
+  it("a loop beat inherits the capabilities of the proposition it re-frames", () => {
+    // Re-framing a gated sentence four times must not ungate it once.
+    const lever = buildProposition(fixtureOperation(FIXTURE_VALUES.biotics))
+    expect(lever.ok).toBe(true)
+    if (!lever.ok) return
+    expect(
+      requirementsOf({
+        id: "test.loop.week1",
+        kind: "loop-step",
+        sourceQuestionIds: lever.proposition.sourceQuestionIds,
+        allowedUse: lever.proposition.allowedUse,
+        target: "thirtyDayLoop",
+        content: { from: "proposition", source: lever.proposition, templateIdSuffix: "loop.try" },
+      }),
+    ).toEqual(["bioticsLanguage"])
+  })
+
+  /* ── No caller argument can weaken, remove or replace a requirement ──── */
+
+  it("there is no argument for text, a template id, or template capabilities", () => {
+    const source = readFileSync(join(process.cwd(), "lib/report/deterministic/proposition.ts"), "utf8")
+    const input = source.slice(
+      source.indexOf("export interface PropositionInput"),
+      source.indexOf("/** The words and the gates"),
+    )
+    for (const banned of [/^\s*capability\??:/m, /^\s*text\??:/m, /^\s*templateId\??:/m, /^\s*templateCapabilities\??:/m]) {
+      expect(input, `PropositionInput still accepts ${banned}`).not.toMatch(banned)
+    }
+    expect(source).toContain("requiredCapabilitiesFor(")
+  })
+
+  it("extra properties shaped like the old API are ignored", () => {
+    const forged = buildProposition({
       ...foodOperation,
       capability: "safetyNetting",
+      templateCapabilities: [],
+      text: "You told us you avoid nothing at all.",
+      templateId: "forged",
     } as unknown as Parameters<typeof buildProposition>[0])
-    expect(substituted.ok).toBe(true)
-    if (!substituted.ok) return
-    expect(substituted.proposition.requiredCapabilities).toEqual(["specificFoods"])
-    expect(substituted.proposition.requiredCapabilities).not.toContain("safetyNetting")
+    expect(forged.ok).toBe(true)
+    if (!forged.ok) return
+    expect(forged.proposition.requiredCapabilities).toEqual(["specificFoods"])
+    expect(forged.proposition.templateId).toBe("environment.constraints.allergy")
+    expect(forged.proposition.text).toBe("You told us there's an allergy to work around.")
   })
 
-  it("an empty template list cannot erase what the target requires", () => {
-    const result = buildProposition({ ...foodOperation, templateCapabilities: [] })
-    expect(result.ok).toBe(true)
-    if (!result.ok) return
-    expect(result.proposition.requiredCapabilities).toEqual(["specificFoods"])
-  })
-
-  it("a template that names a food adds its requirement to an ungated target", () => {
-    const result = buildProposition({
-      id: "test.loop",
-      kind: "loop-step",
-      sourceQuestionIds: ["core_environment_food_avoidances_v1"],
-      allowedUse: "operational-filtering",
-      target: "thirtyDayLoop",
-      templateId: "t-named",
-      text: "You told us you avoid dairy.",
-      templateCapabilities: ["specificFoods"],
+  it("a forged disposition object cannot stand in for a reviewed one", () => {
+    // Runtime resolution, not structural typing: there is no argument through
+    // which an object literal reaches the constructor as a template.
+    const forged = buildProposition({
+      ...foodOperation,
+      content: {
+        from: "content-pack",
+        packId: "not-a-registered-pack",
+        questionId: "core_environment_constraints_v1",
+        value: "allergy",
+      },
     })
-    expect(result.ok).toBe(true)
-    if (!result.ok) return
-    expect(result.proposition.requiredCapabilities).toEqual(["specificFoods"])
+    expect(refusalOf(forged)).toBe("content-pack-unknown")
   })
 
   it("an ungated operation from the same source requires nothing", () => {
@@ -248,34 +374,46 @@ describe("a caller cannot choose which capability an operation needs", () => {
      * question: the SAME answer produces a gated food operation and an
      * ungated practical one, and only the first may be suppressed.
      */
-    const result = buildProposition({
-      id: "test.fit",
-      kind: "recap",
-      sourceQuestionIds: ["core_environment_constraints_v1"],
-      allowedUse: "practical-fit",
-      target: "thirtyDayLoop",
-      templateId: "t-fit",
-      text: "You told us time to cook is tight.",
-    })
-    expect(result.ok).toBe(true)
-    if (!result.ok) return
-    expect(result.proposition.requiredCapabilities).toEqual([])
+    expect(
+      requirementsOf({
+        id: "test.fit",
+        kind: "recap",
+        sourceQuestionIds: ["core_environment_constraints_v1"],
+        allowedUse: "practical-fit",
+        target: "thirtyDayLoop",
+        content: { from: "content-pack", questionId: "core_environment_constraints_v1", value: "time" },
+      }),
+    ).toEqual([])
   })
 
   it("the requirement set on a built proposition cannot be edited afterwards", () => {
-    const result = buildProposition(foodOperation)
-    expect(result.ok).toBe(true)
-    if (!result.ok) return
-    const required = result.proposition.requiredCapabilities as string[]
+    const required = requirementsOf(foodOperation) as string[]
     expect(Object.isFrozen(required)).toBe(true)
     expect(() => required.splice(0, 1)).toThrow()
-    expect(result.proposition.requiredCapabilities).toEqual(["specificFoods"])
   })
 
-  it("the input type carries no capability field at all", () => {
-    const source = readFileSync(join(process.cwd(), "lib/report/deterministic/proposition.ts"), "utf8")
-    // A field would be an override; the ban is on the shape, not the usage.
-    expect(source).not.toMatch(/^\s*capability\??:/m)
-    expect(source).toContain("requiredCapabilitiesFor(")
+  /* ── The three content refusals ──────────────────────────────────────── */
+
+  it("refuses an unreviewed value rather than inventing words for it", () => {
+    expect(refusalOf(buildProposition(fixtureOperation("nobody-decided")))).toBe("content-unreviewed")
+  })
+
+  it("reports reviewed silence as its own reason, distinct from unreviewed", () => {
+    expect(refusalOf(buildProposition(fixtureOperation(FIXTURE_VALUES.silent)))).toBe("content-silent")
+  })
+
+  it("refuses a structural id outside the pack's allow-list", () => {
+    expect(
+      refusalOf(
+        buildProposition({
+          ...foodOperation,
+          content: {
+            from: "structural",
+            templateId: "invented.id" as never,
+            text: "You told us something.",
+          },
+        }),
+      ),
+    ).toBe("structural-id-unknown")
   })
 })

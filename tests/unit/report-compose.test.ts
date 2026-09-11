@@ -14,6 +14,7 @@ import {
 } from "@/lib/consultation/session-envelope"
 import type { ConsultationAnswers, ConsultationFoundation } from "@/lib/consultation/types"
 import { composePersonalFoodSystemReport } from "@/lib/report/deterministic/compose"
+import { REPORT_V1_SUPPORTED_BANKS } from "@/lib/report/deterministic/report-bank"
 import { reportCapabilityEnabled, type ReportCapability } from "@/lib/report/deterministic/capabilities"
 import { hasUnrepresentedHouseholdAllergy, mayNameSpecificFoods } from "@/lib/report/deterministic/report-safety"
 import { PRIORITY_PRECEDENCE } from "@/lib/report/deterministic/priority"
@@ -463,6 +464,116 @@ describe("a household Report is a household Report", () => {
 
   it("aggregates no individual biology across the household", () => {
     expect(textOf(family)).not.toMatch(/average|combined score|everyone's|each member's health/i)
+  })
+})
+
+/* ══ The bank this Report understands ══════════════════════════════════════ */
+
+describe("the composer proves it understands the bank before reading anything", () => {
+  const PINNED = REPORT_V1_SUPPORTED_BANKS[0]
+
+  it("the supported fixture composes normally", () => {
+    const f = finalise("you")
+    expect(f.bankVersion).toBe(PINNED.version)
+    expect(f.bankFingerprint).toBe(PINNED.fingerprint)
+    expect(mustCompose(f).provenance.bankFingerprint).toBe(PINNED.fingerprint)
+  })
+
+  it("refuses an unknown bank version", () => {
+    const result = composePersonalFoodSystemReport({
+      finalisation: { ...finalise("you"), bankVersion: "consultation-v2" },
+      handoffId: HANDOFF,
+    })
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.reason).toBe("bank-unsupported")
+  })
+
+  it("refuses a known version whose fingerprint has drifted", () => {
+    const result = composePersonalFoodSystemReport({
+      finalisation: { ...finalise("you"), bankFingerprint: "ffffffffffffffffffffffffffffffff" },
+      handoffId: HANDOFF,
+    })
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.reason).toBe("bank-fingerprint-unsupported")
+  })
+
+  it("checks the bank BEFORE the lens, because a lens refusal is an interpretation too", () => {
+    /*
+     * Order matters and is pinned. A finalisation that is both lens-bearing
+     * and from an unsupported bank must report the bank: if we cannot vouch
+     * for the bank we cannot vouch for any field we read from the seal,
+     * including the one the lens refusal rests on.
+     */
+    const result = composePersonalFoodSystemReport({
+      finalisation: { ...finalise("you", {}, "glucose"), bankVersion: "consultation-v2" },
+      handoffId: HANDOFF,
+    })
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.reason).toBe("bank-unsupported")
+  })
+
+  it("provenance carries the finalisation's own identity, never today's", () => {
+    // The seal is the authority for what it was answered against. The Report
+    // records that, it does not restate the build's opinion.
+    const report = mustCompose(finalise("family"))
+    const f = finalise("family")
+    expect(report.provenance.bankVersion).toBe(f.bankVersion)
+    expect(report.provenance.bankFingerprint).toBe(f.bankFingerprint)
+  })
+})
+
+/* ══ Answers this build cannot read ════════════════════════════════════════ */
+
+describe("an unreadable trusted answer refuses the Report, it does not shorten it", () => {
+  const withUnknownValue = (): ConsultationFinalisation => {
+    const f = finalise("you")
+    return {
+      ...f,
+      trustedAnswers: { ...f.trustedAnswers, core_signals_context_v1: ["rushed", "not-in-this-bank"] },
+    }
+  }
+
+  it("refuses with unsupported-answer-value", () => {
+    const result = composePersonalFoodSystemReport({
+      finalisation: withUnknownValue(),
+      handoffId: HANDOFF,
+    })
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.reason).toBe("unsupported-answer-value")
+    expect(result.detail).toContain("not-in-this-bank")
+    expect(result.detail).toContain("core_signals_context_v1")
+  })
+
+  it("does not instead compose a Report missing that answer", () => {
+    /*
+     * The whole point. Dropping the value would produce a document that is
+     * indistinguishable from one the customer simply answered less of — the
+     * failure mode with no symptom.
+     */
+    const result = composePersonalFoodSystemReport({
+      finalisation: withUnknownValue(),
+      handoffId: HANDOFF,
+    })
+    expect(result.ok).toBe(false)
+  })
+
+  it("the sibling value that IS supported is not what saved it", () => {
+    // Guards against a future "refuse only if nothing survives" softening.
+    const f = withUnknownValue()
+    expect(f.trustedAnswers["core_signals_context_v1"]).toContain("rushed")
+  })
+
+  it("a fully supported answer set still composes", () => {
+    expect(
+      composePersonalFoodSystemReport({
+        finalisation: finalise("you", { core_signals_context_v1: ["rushed", "large-late"] }),
+        handoffId: HANDOFF,
+      }).ok,
+    ).toBe(true)
   })
 })
 
