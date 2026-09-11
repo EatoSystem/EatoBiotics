@@ -658,11 +658,27 @@ export const UNRESOLVED_AVOIDANCE_SEMANTICS = {
 
 /* ══ Specialist gates ══════════════════════════════════════════════════════ */
 
+/**
+ * A gate is OPEN until a named human review closes it.
+ *
+ * The union is widened to include `"CLOSED"` — while every record below still
+ * reads `"OPEN"` — for one reason: Phase 4A derives its Report capabilities
+ * from these records and from nothing else, so "closing a gate requires editing
+ * the adjudicated record" has to be expressible in the type system rather than
+ * asserted in a comment. A literal `"OPEN"` type would have forced the
+ * capability check to cast, and a cast is exactly the escape hatch that turns a
+ * specialist sign-off into a configuration detail.
+ *
+ * Widening the type adjudicates nothing. No status value changes here, and a
+ * test asserts all three are still OPEN.
+ */
+export type SpecialistGateStatus = "OPEN" | "CLOSED"
+
 export interface SpecialistGateRecord {
   gate: SpecialistGate
   scope: readonly string[]
   requiredBefore: string
-  status: "OPEN"
+  status: SpecialistGateStatus
 }
 
 /**

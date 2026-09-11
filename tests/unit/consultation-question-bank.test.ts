@@ -175,14 +175,24 @@ describe("the deterministic bank has not reached the paid flow", () => {
 
   it("exactly the deterministic experience and the deterministic routes import it", () => {
     /*
-     * Re-pointed a third time, at Phase 3C-B.
+     * Re-pointed a sixth time, at the second Phase 4A-S2 review repair.
      *
-     * Each re-point pins the new exact set rather than loosening the rule: the
-     * additions here are the Review model's view, the transport adapter, the
-     * navigation sequencer, the dormant persisted wrapper and the review-entry
-     * route — every one of them inside the deterministic surface this guard
-     * exists to bound. The legacy exclusions below are untouched, and a twelfth
-     * importer still fails.
+     * Each re-point pins the new EXACT set rather than loosening the rule.
+     *
+     * Fifth re-point (first repair round): `canonical-order.ts`, the single
+     * implementation of "bank option order", extracted from three ad-hoc
+     * copies inside the composer and the priority resolver — one of which was
+     * reading stored insertion order. An addition that REDUCED surface.
+     *
+     * Sixth (this round): `report-bank.ts`, which reads the registry for one
+     * thing only — the `consultation-v1` registry KEY, so the identity Report
+     * v1 supports is named rather than spelled. It deliberately does not use
+     * the registry's digest functions, because a computed fingerprint would
+     * track bank drift instead of catching it; the digest it compares against
+     * is typed out by hand.
+     *
+     * Both are pure library modules with no route, no page and no component
+     * behind them, and the guard still fails on a twenty-fourth importer.
      */
     expect(
       importers().sort(),
@@ -205,6 +215,28 @@ describe("the deterministic bank has not reached the paid flow", () => {
       "components/assessment/consultation/consultation-review.tsx",
       "components/assessment/consultation/deterministic-consultation-client.tsx",
       "components/assessment/consultation/persisted-consultation-client.tsx",
+      /*
+       * Phase 4A-S2 — the deterministic Report Core.
+       *
+       * This guard matches any `@/lib/consultation/` import, not only the
+       * bank, so these are the Core modules that read ANYTHING from the
+       * Consultation: the bank (answer fields, option values, output order),
+       * the science contract, the finalisation type, the food-guidance type
+       * and the shared enums. Every one is a pure library module with no
+       * route, no page and no component behind it.
+       *
+       * `content-pack.ts` and `serialise.ts` import nothing from the
+       * Consultation at all, and their absence here is the evidence.
+       */
+      "lib/report/deterministic/canonical-order.ts",
+      "lib/report/deterministic/capabilities.ts",
+      "lib/report/deterministic/compose.ts",
+      "lib/report/deterministic/permissions.ts",
+      "lib/report/deterministic/priority.ts",
+      "lib/report/deterministic/proposition.ts",
+      "lib/report/deterministic/report-bank.ts",
+      "lib/report/deterministic/report-safety.ts",
+      "lib/report/deterministic/report-types.ts",
     ])
   })
 

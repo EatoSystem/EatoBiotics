@@ -838,16 +838,43 @@ function walk(dir: string, out: string[] = []): string[] {
 }
 
 describe("S4 is still non-activating", () => {
-  it("no live route, page, component or script imports the science contract", () => {
+  it("only the deterministic Report Core imports the science contract, and it is routeless", () => {
+    /*
+     * Re-pointed at Phase 4A-S2, and the rule is unchanged rather than
+     * relaxed.
+     *
+     * S4 froze the contract as a typed record that nothing consumed, and the
+     * guard said "nobody imports it" because at that point nobody should. The
+     * contract's own purpose was always to be consumed by Phase 4A — it
+     * exists to constrain a Report — so an importer appearing is the contract
+     * working, not the boundary failing.
+     *
+     * What the boundary actually protects is that no LIVE SURFACE reaches it:
+     * no route, no page, no component, no script. That is now asserted
+     * directly, in two parts — the exact importer list, and the fact that
+     * every one of them is a pure library module. A fifth importer, or any
+     * importer under app/ or components/, still fails.
+     */
     const consumers = ["app", "components", "lib", "scripts"]
       .flatMap((d) => walk(join(process.cwd(), d)))
       .filter((f) => !f.includes(join("lib", "consultation")))
     expect(consumers.length).toBeGreaterThan(300)
 
-    const importers = consumers.filter((f) =>
-      /["']@\/lib\/consultation\/science-contract["']/.test(readFileSync(f, "utf8")),
-    )
-    expect(importers.map((f) => f.replace(`${process.cwd()}/`, ""))).toEqual([])
+    const importers = consumers
+      .filter((f) => /["']@\/lib\/consultation\/science-contract["']/.test(readFileSync(f, "utf8")))
+      .map((f) => f.replace(`${process.cwd()}/`, ""))
+      .sort()
+
+    expect(importers).toEqual([
+      "lib/report/deterministic/capabilities.ts",
+      "lib/report/deterministic/compose.ts",
+      "lib/report/deterministic/permissions.ts",
+      "lib/report/deterministic/proposition.ts",
+    ])
+    // The half that matters: none of them is a live surface.
+    for (const importer of importers) {
+      expect(importer.startsWith("lib/report/deterministic/"), importer).toBe(true)
+    }
   })
 
   it("the approved future copy is recorded but not implemented", () => {
