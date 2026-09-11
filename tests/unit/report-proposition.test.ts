@@ -4,6 +4,7 @@ import { join } from "node:path"
 
 import { STRUCTURAL_COPY, templateFor } from "@/lib/report/deterministic/content-pack"
 import {
+  FIXTURE_PACK_ID as FIXTURE_PACK,
   FIXTURE_QUESTION,
   FIXTURE_UNGATED_TARGET,
   FIXTURE_VALUES,
@@ -14,10 +15,12 @@ import { AGGREGATION_EVIDENCE_RULE } from "@/lib/consultation/science-contract"
 import {
   QUOTATION_QUESTION_ID,
   QUOTATION_TEMPLATE_ID,
+  buildLoopStepProposition,
   buildProposition,
   buildQuotationProposition,
   usesProhibitedFraming,
   type PropositionResult,
+  type ReportProposition,
 } from "@/lib/report/deterministic/proposition"
 
 /**
@@ -317,20 +320,26 @@ describe("the pack, not the caller, establishes the words and their gates", () =
     ).toEqual(["specificFoods"])
   })
 
-  it("a loop beat inherits the capabilities of the proposition it re-frames", () => {
-    // Re-framing a gated sentence four times must not ungate it once.
+  it("a loop beat re-derives the same gate from the same identity", () => {
+    /*
+     * Re-framing a gated sentence four times must not ungate it once — and
+     * the loop no longer learns the gate from the lever's finished object. It
+     * resolves the pack again from the same question and value, so the
+     * requirement is established rather than inherited.
+     */
     const lever = buildProposition(fixtureOperation(FIXTURE_VALUES.biotics))
     expect(lever.ok).toBe(true)
     if (!lever.ok) return
-    expect(
-      requirementsOf({
-        id: "test.loop.week1",
-        kind: "loop-step",
-        allowedUse: lever.proposition.allowedUse,
-        target: "thirtyDayLoop",
-        content: { from: "proposition", source: lever.proposition, templateIdSuffix: "loop.try" },
-      }),
-    ).toEqual(["bioticsLanguage"])
+    const beat = buildLoopStepProposition({
+      packId: FIXTURE,
+      questionId: FIXTURE_QUESTION,
+      value: FIXTURE_VALUES.biotics,
+      allowedUse: lever.proposition.allowedUse,
+      beat: "Try",
+    })
+    expect(beat.ok, beat.ok ? "" : `refused: ${beat.reason} — ${beat.detail}`).toBe(true)
+    if (!beat.ok) return
+    expect(beat.proposition.requiredCapabilities).toEqual(["bioticsLanguage"])
   })
 
   /* ── No caller argument can weaken, remove or replace a requirement ──── */
@@ -579,33 +588,41 @@ describe("a proposition's words and its recorded origin are one fact", () => {
     const quote = buildQuotationProposition({ answer: "Fewer rushed mornings." })
     expect(quote.ok).toBe(true)
     if (!quote.ok) return
-    const beat = buildProposition({
-      id: "one.loop",
-      kind: "loop-step",
+    const beat = buildLoopStepProposition({
+      questionId: "core_rhythm_recent_change_v1",
+      value: "schedule",
       allowedUse: "descriptive-recap",
-      target: "systemSnapshot",
-      content: { from: "proposition", source: pack.proposition, templateIdSuffix: "loop.try" },
+      beat: "Try",
     })
-    expect(beat.ok).toBe(true)
-    if (!beat.ok) return
-    for (const p of [pack.proposition, quote.proposition, beat.proposition]) {
+    // recentChange grants systemSnapshot only, never thirtyDayLoop, so this
+    // legitimately refuses — the sources assertion runs on the two that build.
+    expect(beat.ok).toBe(false)
+    for (const p of [pack.proposition, quote.proposition]) {
       expect(p.sources, p.id).toHaveLength(1)
       expect(typeof p.sources[0].value, p.id).toBe("string")
     }
   })
 
-  it("a re-framing carries the sources of the sentence it re-frames", () => {
-    const lever = buildProposition(packInput("core_rhythm_recent_change_v1", "schedule"))
-    expect(lever.ok).toBe(true)
-    if (!lever.ok) return
-    const beat = buildProposition({
-      id: "bind.loop",
-      kind: "loop-step",
-      allowedUse: "descriptive-recap",
-      target: "systemSnapshot",
-      content: { from: "proposition", source: lever.proposition, templateIdSuffix: "loop.try" },
+  it("a loop beat records the same answer the lever was built from", () => {
+    // Same identity in, same provenance out — established twice from the
+    // pack rather than copied once from a finished object.
+    const lever = buildProposition({
+      id: "lever.planning",
+      kind: "lever",
+      allowedUse: "practical-fit",
+      // planning grants priorityLever and thirtyDayLoop, never systemSnapshot.
+      target: "priorityLever",
+      content: { from: "content-pack", questionId: "core_environment_planning_v1", value: "planned" },
     })
-    expect(beat.ok).toBe(true)
+    expect(lever.ok, lever.ok ? "" : `lever refused: ${lever.reason} — ${lever.detail}`).toBe(true)
+    if (!lever.ok) return
+    const beat = buildLoopStepProposition({
+      questionId: "core_environment_planning_v1",
+      value: "planned",
+      allowedUse: "practical-fit",
+      beat: "Try",
+    })
+    expect(beat.ok, beat.ok ? "" : `refused: ${beat.reason} — ${beat.detail}`).toBe(true)
     if (!beat.ok) return
     expect(beat.proposition.sources).toEqual(lever.proposition.sources)
   })
@@ -710,5 +727,222 @@ describe("the quotation has one constructor and no arguments but the answer", ()
     for (const answer of ["", "   ", "\n\t"]) {
       expect(refusalOf(buildQuotationProposition({ answer }))).toBe("quotation-empty")
     }
+  })
+})
+
+/* ══ A completed proposition is not an authority ═══════════════════════════ */
+
+/**
+ * ══ THE DEFECT THIS BLOCK REPLACES ══════════════════════════════════════════
+ *
+ * `PropositionContent` used to permit `{ from: "proposition", source, ... }`,
+ * and `resolveContent` trusted that object's `text`, `templateId`,
+ * `requiredCapabilities` and `sources` wholesale. `ReportProposition` is an
+ * exported structural object, so a caller could clone one carrying a
+ * LEGITIMATELY PERMITTED source tuple beside arbitrary words, an arbitrary
+ * template id and emptied capability requirements. The constructor checked
+ * the source question and value — which were real — and nothing proved the
+ * object had ever come from this constructor at all. Genuine answer
+ * authority, attached to illegitimate words.
+ *
+ * The route is gone and the 30-day loop has its own constructor. These tests
+ * are behavioural: each forges one field, asserts the route refuses, and —
+ * guarded by `if (result.ok)` — asserts the forged field did not reach the
+ * output. The second assertion is what makes them distinct: a mutation that
+ * reopens one field fires only that field's test.
+ */
+describe("a forged proposition cannot lend its authority to invented words", () => {
+  const FORGED_TEXT = "You told us your gut is healing nicely."
+  const FORGED_TEMPLATE_ID = "forged.template.id"
+
+  /** A legitimate proposition, then one cloned from it with a field replaced. */
+  const legitimate = (): ReportProposition => {
+    const result = buildProposition({
+      id: "authority.lever",
+      kind: "lever",
+      allowedUse: "practical-fit",
+      target: "priorityLever",
+      content: { from: "content-pack", questionId: "core_environment_planning_v1", value: "planned" },
+    })
+    expect(result.ok, result.ok ? "" : `refused: ${result.reason}`).toBe(true)
+    if (!result.ok) throw new Error(result.reason)
+    return result.proposition
+  }
+
+  const throughForgedRoute = (source: ReportProposition) =>
+    buildProposition({
+      id: "authority.forged",
+      kind: "loop-step",
+      allowedUse: "practical-fit",
+      target: "thirtyDayLoop",
+      content: { from: "proposition", source, templateIdSuffix: "loop.try" },
+    } as unknown as Parameters<typeof buildProposition>[0])
+
+  it("the caller-facing union has no proposition variant", () => {
+    const source = readFileSync(join(process.cwd(), "lib/report/deterministic/proposition.ts"), "utf8")
+    const union = source.slice(
+      source.indexOf("export type PropositionContent"),
+      source.indexOf("The quotation route, reachable ONLY through"),
+    )
+    expect(union).not.toContain('from: "proposition"')
+    expect(union).not.toContain("ReportProposition")
+    expect(union).toContain('from: "content-pack"')
+  })
+
+  it("the route is refused at runtime, not merely absent from the type", () => {
+    expect(refusalOf(throughForgedRoute(legitimate()))).toBe("content-route-unavailable")
+  })
+
+  /*
+   * The three assertions below are shaped as CONTENT invariants, not refusal
+   * assertions: "whatever came back, it is not the forged field". They hold
+   * today because the route refuses and nothing comes back at all, and they
+   * would still hold anything that did come back to the same standard. A
+   * refusal assertion would only ever be restating the route test.
+   */
+  const producedBy = (source: ReportProposition) => {
+    const result = throughForgedRoute(source)
+    return result.ok ? result.proposition : null
+  }
+
+  it("forged text cannot become a proposition", () => {
+    expect(producedBy({ ...legitimate(), text: FORGED_TEXT })?.text ?? null).not.toBe(FORGED_TEXT)
+  })
+
+  it("forged requiredCapabilities cannot weaken a reviewed requirement", () => {
+    useFixtureContentPack()
+    const gated = buildProposition({
+      id: "authority.gated",
+      kind: "recap",
+      allowedUse: "descriptive-recap",
+      target: FIXTURE_UNGATED_TARGET,
+      content: {
+        from: "content-pack",
+        packId: FIXTURE_PACK,
+        questionId: FIXTURE_QUESTION,
+        value: FIXTURE_VALUES.biotics,
+      },
+    })
+    expect(gated.ok).toBe(true)
+    if (!gated.ok) return
+    expect(gated.proposition.requiredCapabilities).toEqual(["bioticsLanguage"])
+
+    const produced = producedBy({ ...gated.proposition, requiredCapabilities: [] })
+    expect(produced?.requiredCapabilities ?? ["bioticsLanguage"]).toEqual(["bioticsLanguage"])
+  })
+
+  it("a forged templateId cannot become canonical provenance", () => {
+    expect(producedBy({ ...legitimate(), templateId: FORGED_TEMPLATE_ID })?.templateId ?? "").not.toContain(
+      FORGED_TEMPLATE_ID,
+    )
+  })
+
+  it("a wholly fabricated proposition with a real permitted source is refused", () => {
+    /*
+     * The complete attack, assembled by hand: real question, real value, real
+     * allowed use and target — and words nobody reviewed.
+     */
+    const fabricated = {
+      id: "fabricated",
+      kind: "lever",
+      sources: [{ questionId: "core_environment_planning_v1", value: "planned" }],
+      sourceQuestionIds: ["core_environment_planning_v1"],
+      sourceFields: ["environment.planning"],
+      basis: legitimate().basis,
+      allowedUse: "practical-fit",
+      target: "priorityLever",
+      templateId: FORGED_TEMPLATE_ID,
+      text: FORGED_TEXT,
+      evidenceStatus: "CONTEXT_ONLY",
+      requiredCapabilities: [],
+    } as unknown as ReportProposition
+
+    expect(producedBy(fabricated)?.text ?? null).not.toBe(FORGED_TEXT)
+  })
+})
+
+/* ══ The loop constructor ══════════════════════════════════════════════════ */
+
+describe("a loop step is re-derived, never copied", () => {
+  const IDENTITY = { questionId: "core_environment_planning_v1", value: "planned" } as const
+
+  const beat = (name: string) =>
+    buildLoopStepProposition({ ...IDENTITY, allowedUse: "practical-fit", beat: name })
+
+  it("accepts only the four reviewed beats", () => {
+    for (const name of STRUCTURAL_COPY.loopBeats) {
+      const result = beat(name)
+      expect(result.ok, `${name}: ${result.ok ? "" : result.detail}`).toBe(true)
+    }
+    for (const name of ["Try harder", "try", "Reflect", "", "Repeat "]) {
+      expect(refusalOf(beat(name)), `"${name}" was accepted`).toBe("loop-beat-unknown")
+    }
+  })
+
+  it("derives its id, kind and target from the beat, not from a caller", () => {
+    const result = beat("Adjust")
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.proposition.id).toBe("loop.week3")
+    expect(result.proposition.kind).toBe("loop-step")
+    expect(result.proposition.target).toBe("thirtyDayLoop")
+  })
+
+  it("its input accepts nothing the pack or the registry should decide", () => {
+    const source = readFileSync(join(process.cwd(), "lib/report/deterministic/proposition.ts"), "utf8")
+    const signature = source.slice(
+      source.indexOf("export function buildLoopStepProposition"),
+      source.indexOf("}): PropositionResult {", source.indexOf("export function buildLoopStepProposition")),
+    )
+    // Declarations with an optional marker included — the sabotage-96 lesson.
+    for (const banned of ["text", "templateId", "requiredCapabilities", "sources", "kind", "target", "id", "source"]) {
+      expect(signature, `the loop input still accepts ${banned}`).not.toMatch(
+        new RegExp(`\\b${banned}\\??\\s*:`),
+      )
+    }
+    expect(signature).toContain("questionId: string")
+    expect(signature).toContain("beat: string")
+  })
+
+  it("a silenced value cannot reach a loop step, by two independent routes", () => {
+    /*
+     * `health-event` is the only `no-proposition` value in the registry, and
+     * its question grants systemSnapshot alone — so the loop's fixed
+     * thirtyDayLoop target refuses it BEFORE the value rule is reached. Both
+     * checks would stop it; the permission one gets there first.
+     *
+     * The value-rule path itself is shared with every other proposition and
+     * is covered where it is reachable, in "value-level denials reach the
+     * constructor". Asserting `value-silenced` here would be asserting an
+     * ordering the data cannot currently produce.
+     */
+    const result = buildLoopStepProposition({
+      questionId: "core_rhythm_recent_change_v1",
+      value: "health-event",
+      allowedUse: "descriptive-recap",
+      beat: "Try",
+    })
+    expect(result.ok).toBe(false)
+    expect(refusalOf(result)).toBe("use-not-permitted")
+  })
+
+  it("refuses an unreviewed value rather than inventing loop words for it", () => {
+    expect(refusalOf(buildLoopStepProposition({ ...IDENTITY, value: "nobody-decided", allowedUse: "practical-fit", beat: "Try" }))).toBe(
+      "content-unreviewed",
+    )
+  })
+
+  it("refuses a target the record does not grant, like anything else", () => {
+    // whoPrepares grants familyContext and thirtyDayLoop but not this use.
+    expect(
+      refusalOf(
+        buildLoopStepProposition({
+          questionId: "core_environment_who_prepares_v1",
+          value: "me",
+          allowedUse: "practical-timing",
+          beat: "Try",
+        }),
+      ),
+    ).toBe("use-not-permitted")
   })
 })

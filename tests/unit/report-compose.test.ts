@@ -15,6 +15,8 @@ import {
 import type { ConsultationAnswers, ConsultationFoundation } from "@/lib/consultation/types"
 import { composePersonalFoodSystemReport } from "@/lib/report/deterministic/compose"
 import { REPORT_V1_SUPPORTED_BANKS } from "@/lib/report/deterministic/report-bank"
+import { templateFor } from "@/lib/report/deterministic/content-pack"
+import { requiredCapabilitiesFor } from "@/lib/report/deterministic/permissions"
 import type { ReportProposition } from "@/lib/report/deterministic/proposition"
 import { reportCapabilityEnabled } from "@/lib/report/deterministic/capabilities"
 import { hasUnrepresentedHouseholdAllergy, mayNameSpecificFoods } from "@/lib/report/deterministic/report-safety"
@@ -423,6 +425,55 @@ describe("the loop is practical, and rests on the one starting point", () => {
     const leverSources = report.priorityLever.propositions[0].sourceQuestionIds
     for (const step of report.thirtyDayLoop) {
       expect(step.proposition.sourceQuestionIds).toEqual(leverSources)
+    }
+  })
+
+  /*
+   * ══ RE-DERIVED, NOT COPIED ═══════════════════════════════════════════════
+   *
+   * The loop used to be built by handing the constructor the finished lever
+   * proposition, which trusted that object's words, template id and gates
+   * wholesale — a structural object as its own authority. Each beat is now
+   * resolved from the pack again out of the priority decision's question and
+   * value. These assertions are what "re-derived" has to mean in the output:
+   * the same answer, the same reviewed words, the suffix and nothing else.
+   */
+  it("each step is attributed to the same answer as the lever, value included", () => {
+    const lever = report.priorityLever.propositions[0]
+    for (const step of report.thirtyDayLoop) {
+      expect(step.proposition.sources, `week ${step.week}`).toEqual(lever.sources)
+    }
+  })
+
+  it("each step says exactly what the lever says", () => {
+    const lever = report.priorityLever.propositions[0]
+    for (const step of report.thirtyDayLoop) {
+      expect(step.proposition.text, `week ${step.week}`).toBe(lever.text)
+    }
+  })
+
+  it("each step's template id is the lever's plus its own beat", () => {
+    const lever = report.priorityLever.propositions[0]
+    for (const step of report.thirtyDayLoop) {
+      expect(step.proposition.templateId, `week ${step.week}`).toBe(
+        `${lever.templateId}.loop.${step.beat.toLowerCase()}`,
+      )
+    }
+  })
+
+  it("each step's capabilities are re-derived for its own target", () => {
+    // Not merely equal to the lever's — computed fresh for thirtyDayLoop from
+    // the template and the grant, which is where a re-framing could otherwise
+    // quietly lose a gate.
+    const lever = report.priorityLever.propositions[0]
+    const expected = requiredCapabilitiesFor({
+      sourceQuestionIds: lever.sourceQuestionIds,
+      target: "thirtyDayLoop",
+      templateCapabilities: templateFor(lever.sources[0].questionId, lever.sources[0].value)
+        ?.requiresCapabilities,
+    })
+    for (const step of report.thirtyDayLoop) {
+      expect(step.proposition.requiredCapabilities, `week ${step.week}`).toEqual(expected)
     }
   })
 })

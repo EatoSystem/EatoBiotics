@@ -9,6 +9,7 @@ import { CONTENT_PACK_VERSION, STRUCTURAL_COPY } from "./content-pack"
 import { REPORT_USE_RECORD_VERSION, permissionFor } from "./permissions"
 import { choosePriority } from "./priority"
 import {
+  buildLoopStepProposition,
   buildProposition,
   buildQuotationProposition,
   type ReportProposition,
@@ -360,22 +361,27 @@ export function composePersonalFoodSystemReport(input: {
 
   const loop: LoopStep[] = []
   const leverForLoop = admittedPriority[0]
-  if (leverForLoop) {
+  if (leverForLoop && choice) {
     const beats = STRUCTURAL_COPY.loopBeats
     for (let i = 0; i < beats.length; i++) {
       const week = (i + 1) as 1 | 2 | 3 | 4
-      const built = buildProposition({
-        id: `loop.week${week}`,
-        kind: "loop-step",
+      /*
+       * The ANSWER is the authority, not the lever's finished object.
+       *
+       * `choice` is the identity the priority decision already settled, and
+       * the loop constructor resolves the reviewed words from the pack again
+       * out of it. Passing `leverForLoop` as evidence of itself was the hole
+       * this closes: a completed proposition is a structural object, and a
+       * caller could have cloned one with real provenance beside invented
+       * words. The lever is still consulted for ONE thing — whether it
+       * survived admission at all, because a suppressed sentence must not be
+       * re-framed back into the document four times.
+       */
+      const built = buildLoopStepProposition({
+        questionId: choice.questionId,
+        value: choice.value,
         allowedUse: leverForLoop.allowedUse,
-        target: "thirtyDayLoop",
-        // Re-framing an already-built sentence, so it inherits that
-        // sentence's capability requirements as well as its words.
-        content: {
-          from: "proposition",
-          source: leverForLoop,
-          templateIdSuffix: `loop.${beats[i].toLowerCase()}`,
-        },
+        beat: beats[i],
       })
       if (!built.ok) {
         // A source that permits priorityLever need not permit thirtyDayLoop.

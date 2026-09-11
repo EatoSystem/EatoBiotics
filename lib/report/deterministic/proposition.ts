@@ -146,6 +146,8 @@ export type PropositionRefusalReason =
   | "content-silent"
   /** A quotation was asked for with nothing to quote. */
   | "quotation-empty"
+  /** A loop beat outside the four reviewed ones. */
+  | "loop-beat-unknown"
   /** A content route that is not reachable through this constructor. */
   | "content-route-unavailable"
   /** No source questions at all — an unsourced sentence. */
@@ -178,36 +180,37 @@ export type PropositionResult =
  * disposition and let the authority that owns it say both what it reads and
  * what it costs.
  *
- * Two sources, and each one also SETTLES THE PROVENANCE:
+ * ONE source, and it also SETTLES THE PROVENANCE: reviewed wording keyed by
+ * question and answer value, where that key is simultaneously the primary
+ * source — so the words and the origin cannot be different answers.
  *
- *   `content-pack`  — reviewed wording, keyed by question and answer value.
- *                     That key is simultaneously the primary source, so the
- *                     words and the origin cannot be different answers.
- *   `proposition`   — a re-framing of a sentence already built and already
- *                     checked: the 30-day loop's four beats. It inherits its
- *                     source's sources AND its capability requirements,
- *                     because re-framing a gated sentence does not ungate it
- *                     and does not re-attribute it.
+ * ══ THE TWO ROUTES THAT USED TO BE HERE ═════════════════════════════════════
  *
- * There was a third, `structural`, which took an allow-listed template id and
- * ARBITRARY TEXT with arbitrary kind, use, target and provenance. The
- * allow-list constrained the id and nothing else. It existed for exactly one
- * thing — quoting the customer's own answer — so that one thing now has its
- * own constructor (`buildQuotationProposition`) and the general route is gone.
+ * `structural` took an allow-listed template id and ARBITRARY TEXT with
+ * arbitrary kind, use, target and provenance. The allow-list constrained the
+ * id and nothing else. It existed for quoting the customer's own answer, so
+ * that now has its own constructor.
+ *
+ * `proposition` took a COMPLETED `ReportProposition` and re-framed it, for
+ * the 30-day loop's four beats. `ReportProposition` is an exported structural
+ * object, so a caller could clone one carrying a legitimately permitted
+ * source tuple beside arbitrary text, an arbitrary template id and emptied
+ * capability requirements. The constructor checked the source question and
+ * value — which were real — and trusted the rest of the object wholesale.
+ * Genuine answer authority attached to illegitimate words, with no runtime
+ * proof the object had ever come from this constructor at all.
+ *
+ * Both are now dedicated constructors that re-derive from the pack, and
+ * neither is reachable through this union. A completed proposition is never
+ * evidence of itself.
  */
-export type PropositionContent =
-  | {
-      readonly from: "content-pack"
-      /** Defaults to the production pack. Tests may name a registered `test:` pack. */
-      readonly packId?: string
-      readonly questionId: string
-      readonly value: string
-    }
-  | {
-      readonly from: "proposition"
-      readonly source: ReportProposition
-      readonly templateIdSuffix: string
-    }
+export type PropositionContent = {
+  readonly from: "content-pack"
+  /** Defaults to the production pack. Tests may name a registered `test:` pack. */
+  readonly packId?: string
+  readonly questionId: string
+  readonly value: string
+}
 
 /**
  * The quotation route, reachable ONLY through `buildQuotationProposition`.
@@ -223,7 +226,23 @@ interface QuotationContent {
   readonly answer: string
 }
 
-type InternalContent = PropositionContent | QuotationContent
+/**
+ * The loop-step route, reachable ONLY through `buildLoopStepProposition`.
+ *
+ * An IDENTITY, exactly like the pack route — the question and value the
+ * priority decision already chose, plus which of the four reviewed beats this
+ * is. The words are resolved again from the pack; nothing is carried over
+ * from the lever's finished object, because that object is not an authority.
+ */
+interface LoopStepContent {
+  readonly from: "loop-step"
+  readonly packId?: string
+  readonly questionId: string
+  readonly value: string
+  readonly beat: LoopBeat
+}
+
+type InternalContent = PropositionContent | QuotationContent | LoopStepContent
 
 export interface PropositionInput {
   id: string
@@ -290,21 +309,19 @@ interface ResolvedContent {
  * or not the pack also happens to be silent about it — the stronger authority
  * names the reason.
  *
- * Both branches are total and neither consults the caller: a pack identity is
- * its own source, and a re-framing carries the sources of the sentence it
- * re-frames.
+ * Every branch is total and none consults the caller: each route names an
+ * identity, and the identity is the source.
  */
 function primarySourcesOf(content: InternalContent): readonly PropositionSource[] {
-  if (content.from === "content-pack") {
-    return [{ questionId: content.questionId, value: content.value }]
-  }
   if (content.from === "quotation") {
     // The answer IS the source value, and the words are built from it — so
     // the recorded provenance and the sentence cannot describe different
     // things here either.
     return [{ questionId: QUOTATION_QUESTION_ID, value: content.answer }]
   }
-  return content.source.sources
+  // content-pack and loop-step are the same identity; the loop adds only
+  // which beat re-frames it, never a different answer.
+  return [{ questionId: content.questionId, value: content.value }]
 }
 
 /**
@@ -347,47 +364,43 @@ function resolveContent(
     }
   }
 
-  if (content.from === "content-pack") {
-    const packId = content.packId ?? PRODUCTION_CONTENT_PACK_ID
-    const pack = contentPackFor(packId)
-    if (!pack) {
-      return { ok: false, reason: "content-pack-unknown", detail: `no content pack "${packId}"` }
-    }
-    const disposition = pack.resolve(content.questionId, content.value)
-    if (disposition === undefined) {
-      return {
-        ok: false,
-        reason: "content-unreviewed",
-        detail: `${packId}: ${content.questionId}="${content.value}" has no disposition`,
-      }
-    }
-    if (disposition === null) {
-      return {
-        ok: false,
-        reason: "content-silent",
-        detail: `${packId}: ${content.questionId}="${content.value}" is reviewed and silent`,
-      }
-    }
+  const packId = content.packId ?? PRODUCTION_CONTENT_PACK_ID
+  const pack = contentPackFor(packId)
+  if (!pack) {
+    return { ok: false, reason: "content-pack-unknown", detail: `no content pack "${packId}"` }
+  }
+  const disposition = pack.resolve(content.questionId, content.value)
+  if (disposition === undefined) {
     return {
-      ok: true,
-      resolved: {
-        templateId: disposition.templateId,
-        text: disposition.text,
-        // FROM THE PACK. Not from the caller, and not defaulted to empty.
-        requiresCapabilities: disposition.requiresCapabilities ?? [],
-      },
+      ok: false,
+      reason: "content-unreviewed",
+      detail: `${packId}: ${content.questionId}="${content.value}" has no disposition`,
     }
   }
-
+  if (disposition === null) {
+    return {
+      ok: false,
+      reason: "content-silent",
+      detail: `${packId}: ${content.questionId}="${content.value}" is reviewed and silent`,
+    }
+  }
+  /*
+   * A loop beat re-frames the priority sentence, so it says the same reviewed
+   * words under a beat-suffixed template id. It gets them by RESOLVING THE
+   * PACK AGAIN from the same identity — never by copying them off the lever's
+   * finished object, which is not an authority and cannot be checked.
+   */
+  const templateId =
+    content.from === "loop-step"
+      ? `${disposition.templateId}.loop.${content.beat.toLowerCase()}`
+      : disposition.templateId
   return {
     ok: true,
     resolved: {
-      templateId: `${content.source.templateId}.${content.templateIdSuffix}`,
-      text: content.source.text,
-      // Inherited, all three. A re-framing of a gated sentence is still
-      // gated, says the same thing, and came from the same answers — the loop
-      // beat repeats the lever, so it cannot repeat it under another name.
-      requiresCapabilities: content.source.requiredCapabilities,
+      templateId,
+      text: disposition.text,
+      // FROM THE PACK. Not from the caller, and not defaulted to empty.
+      requiresCapabilities: disposition.requiresCapabilities ?? [],
     },
   }
 }
@@ -406,7 +419,7 @@ export function buildProposition(input: PropositionInput): PropositionResult {
    * it cannot be reached generically. `buildQuotationProposition` goes to the
    * core directly.
    */
-  if (input.content.from !== "content-pack" && input.content.from !== "proposition") {
+  if (input.content.from !== "content-pack") {
     return {
       ok: false,
       reason: "content-route-unavailable",
@@ -621,6 +634,85 @@ export function buildQuotationProposition(input: { answer: string }): Propositio
     allowedUse: "descriptive-recap",
     target: "systemSnapshot",
     content: { from: "quotation", answer },
+  })
+}
+
+/* ══ The 30-day loop ═══════════════════════════════════════════════════════ */
+
+/** The four reviewed beats, owned by the content pack and nothing else. */
+export type LoopBeat = (typeof STRUCTURAL_COPY.loopBeats)[number]
+
+export function isLoopBeat(value: string): value is LoopBeat {
+  return (STRUCTURAL_COPY.loopBeats as readonly string[]).includes(value)
+}
+
+/**
+ * Build one beat of the 30-day loop — the ONLY route to a loop step.
+ *
+ * ══ WHY A COMPLETED PROPOSITION IS NOT AN AUTHORITY ═════════════════════════
+ *
+ * The loop used to be built by handing the constructor the finished lever
+ * proposition and a suffix. `ReportProposition` is an exported structural
+ * object, so a caller could clone one carrying a legitimately permitted
+ * source tuple beside arbitrary text, an arbitrary template id and emptied
+ * capability requirements. The constructor verified the source question and
+ * value — which were real — and then trusted the object's words, id and
+ * gates wholesale. Nothing proved it had ever come from here.
+ *
+ * So the loop now carries the same IDENTITY the priority decision already
+ * chose — the question and the value — and the words are resolved from the
+ * pack again. There is no argument through which a caller can supply text, a
+ * template id, capabilities, sources, a kind, a target or an id, and no
+ * argument that takes a proposition.
+ *
+ * Everything but the identity, the use and the beat is fixed:
+ *
+ *   kind      loop-step
+ *   target    thirtyDayLoop
+ *   id        loop.week{n}, from the beat's position among the four
+ *   template  the priority template's own id, beat-suffixed
+ *   words     re-resolved from the registered pack
+ *   gates     re-derived for thirtyDayLoop from the template and the grant
+ *
+ * `allowedUse` is a parameter because the record decides which of
+ * practical-timing or practical-fit a question grants, and the composer has
+ * already established that for the lever. It is checked against
+ * `thirtyDayLoop` here like any other use — a source that permits the lever
+ * need not permit the loop, and that is a legitimate absence, not a fault.
+ */
+export function buildLoopStepProposition(input: {
+  /** Defaults to the production pack, exactly as the content-pack route does. */
+  packId?: string
+  questionId: string
+  value: string
+  allowedUse: AllowedReportUse
+  beat: string
+}): PropositionResult {
+  if (!isLoopBeat(input.beat)) {
+    /*
+     * The beats are reviewed copy, not a free label. An unreviewed fifth beat
+     * would be a customer-facing word nobody approved, on a section whose
+     * whole point is that it resolves to ONE action repeated.
+     */
+    return {
+      ok: false,
+      reason: "loop-beat-unknown",
+      detail: `"${input.beat}" is not one of the reviewed loop beats`,
+    }
+  }
+  const week = STRUCTURAL_COPY.loopBeats.indexOf(input.beat) + 1
+  return buildPropositionCore({
+    id: `loop.week${week}`,
+    kind: "loop-step",
+    allowedUse: input.allowedUse,
+    target: "thirtyDayLoop",
+    content: {
+      from: "loop-step",
+      packId: input.packId,
+      questionId: input.questionId,
+      value: input.value,
+      beat: input.beat,
+    },
   })
 }
 
