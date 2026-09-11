@@ -80,12 +80,29 @@ export type PropositionKind =
 export interface PropositionSource {
   readonly questionId: string
   /**
-   * The exact value the words came from.
+   * The exact value the words came from. Never absent.
    *
-   * `null` only for a contributing question that supplied no enumerated value
-   * — never for the source a content-pack template was resolved from.
+   * ══ WHY NOT `string | null` ═════════════════════════════════════════════
+   *
+   * It was, for one round, to describe a contributing question that supplied
+   * no enumerated value — and that possibility was a fail-open. The
+   * value-level rules could only run where a value existed, so a source
+   * recorded with `null` was a source whose rules were never evaluated. A
+   * caller could name `core_rhythm_recent_change_v1` with no value and record
+   * it as contributing while `health-event` — `no-proposition` at value
+   * level — went unchecked.
+   *
+   * Rejecting `null` would not have been the fix: an arbitrary valid value
+   * from an unrelated answer passes every rule and is still a false record.
+   * The fix was removing caller-authored sources altogether, which leaves no
+   * derivation that can produce a value-less source. Narrowing the type
+   * records that, and turns "unreachable" into "unrepresentable".
+   *
+   * A later multi-source mechanism that genuinely needs a value-less source
+   * must widen this back deliberately, and be reviewed for exactly the hole
+   * above when it does.
    */
-  readonly value: string | null
+  readonly value: string
 }
 
 export interface ReportProposition {
@@ -127,8 +144,6 @@ export type PropositionRefusalReason =
   | "content-unreviewed"
   /** The pack's entry is `null` — reviewed, and deliberately silent. */
   | "content-silent"
-  /** An additional source names the question the content already came from. */
-  | "source-conflict"
   /** A quotation was asked for with nothing to quote. */
   | "quotation-empty"
   /** A content route that is not reachable through this constructor. */
@@ -235,15 +250,25 @@ export interface PropositionInput {
    * registry and this constructor derive everything else from it.
    */
   content: PropositionContent
-  /**
-   * Further answers this sentence draws on, beyond the content's own.
+  /*
+   * Deliberately NO `additionalSources` either.
    *
-   * The content's source is derived and always first; nothing here can
-   * replace, reorder or remove it. Naming the content's own question here is
-   * refused rather than merged — it is the last way left to give two accounts
-   * of one answer.
+   * The round before this one derived the PRIMARY source from the content and
+   * left secondary sources as a caller-supplied array. That kept the same
+   * invariant broken one field further along: the sentence's own origin was
+   * established by an authority, and everything else recorded beside it was
+   * merely claimed.
+   *
+   * Nothing used it. Every composer call site passes `content` alone, so the
+   * only consumers were the tests exercising the field itself — a hole with
+   * no feature behind it.
+   *
+   * If genuine multi-source wording is ever needed, the mechanism is a
+   * content identity that owns its whole source set, or a constructor over
+   * already-built propositions that DERIVES the union of theirs. Neither is
+   * a caller handing over tuples, and neither is designed here, because S2
+   * does not need it.
    */
-  additionalSources?: readonly PropositionSource[]
 }
 
 /** The words and the gates, established together by an authority. */
@@ -402,25 +427,19 @@ function buildPropositionCore(
 
   /* ── Provenance, derived from the content identity ──────────────────── */
   /*
-   * The primary source is the content's own, always first and never
-   * suppliable. Additional sources are appended; one that names a question
-   * the content already came from is refused rather than merged, because
-   * merging would be exactly the second account of one answer this design
-   * removed.
+   * THE WHOLE SOURCE SET, derived. Nothing is appended, because there is no
+   * argument through which anything could be. The authority that established
+   * the sentence is the authority that establishes where it came from.
    */
-  const primary = primarySourcesOf(input.content)
-  const primaryIds = new Set(primary.map((source) => source.questionId))
-  for (const extra of input.additionalSources ?? []) {
-    if (primaryIds.has(extra.questionId)) {
-      return refuse(
-        "source-conflict",
-        `${input.id}: ${extra.questionId} is already the content's own source and cannot be restated`,
-      )
-    }
-  }
-  const sources: readonly PropositionSource[] = [...primary, ...(input.additionalSources ?? [])]
+  const sources: readonly PropositionSource[] = primarySourcesOf(input.content)
 
   if (sources.length === 0) {
+    /*
+     * Unreachable: every branch of `primarySourcesOf` is total and returns at
+     * least one source. Kept because it is the invariant, not the branch,
+     * that matters — a future content route that returned nothing would
+     * refuse here rather than emit an unattributed sentence.
+     */
     return refuse("no-source", `${input.id} has no source question`)
   }
 
@@ -445,14 +464,18 @@ function buildPropositionCore(
 
   /* ── Value-level denials ────────────────────────────────────────────── */
   /*
-   * Over the BOUND sources, so there is no argument whose omission skips a
-   * rule. The previous shape took an optional value map: a caller that simply
-   * did not pass it got a proposition for a value the registry had silenced,
-   * which for `health-event` meant recapping a reported health event that the
-   * Science Contract had deliberately withdrawn.
+   * Over the BOUND sources, unconditionally. Two shapes used to let a rule
+   * go unevaluated and both are gone: an optional value map whose omission
+   * skipped every rule, and a nullable source value that skipped the rule
+   * for that source. Every recorded source now has a value, and every value
+   * is checked.
+   *
+   * `health-event` is the case that makes this matter — `no-proposition` at
+   * value level because the Science Contract withdrew reported health
+   * history, and previously reachable by simply not declaring it.
    */
   for (const { questionId, value } of sources) {
-    if (value !== null && valueIsSilenced(questionId, value)) {
+    if (valueIsSilenced(questionId, value)) {
       return refuse(
         "value-silenced",
         `${input.id}: ${questionId}="${value}" — ${valueRuleFor(questionId, value)?.reason ?? "silenced"}`,
@@ -461,6 +484,21 @@ function buildPropositionCore(
   }
 
   /* ── One authority per proposition ──────────────────────────────────── */
+  /*
+   * Currently unreachable, and kept on purpose.
+   *
+   * Every proposition now has exactly one derived source, so two bases
+   * cannot meet in one sentence and aggregation has nothing to weaken. Both
+   * checks below guard the multi-source mechanism a later phase may add —
+   * the moment a constructor unions several propositions' sources, this is
+   * what stops a product decision borrowing an adjudication's authority.
+   *
+   * This is the opposite call from the priority precedence audit, which
+   * deleted its unreachable rules. Those were product decisions that read as
+   * live while being dead. These are safety invariants whose entire value is
+   * firing when the shape they guard returns, and rebuilding them later,
+   * under deadline, is how they come back weaker.
+   */
   const kinds = new Set(records.map((r) => r.basis.kind))
   if (kinds.size > 1) {
     /*

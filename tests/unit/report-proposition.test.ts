@@ -137,16 +137,20 @@ describe("value-level denials reach the constructor", () => {
 })
 
 describe("authorities do not mix, and aggregation does not upgrade", () => {
-  it("refuses a sentence resting on both a science and a product authority", () => {
+  it("cannot be reached, because a proposition has exactly one source", () => {
     /*
-     * A sentence with two authorities has no single answer to "who permitted
-     * this", and the weaker one would do the work while the stronger lent its
-     * name. Split it into two propositions instead.
+     * This used to be a refusal test. It reached `mixed-basis` by handing the
+     * constructor a second source, which is exactly the caller-authored
+     * provenance the fourth repair round removed — so the state is now
+     * unrepresentable rather than refused.
+     *
+     * The check itself is KEPT in the constructor, guarding the multi-source
+     * mechanism a later phase may add. What is asserted here is the reason it
+     * cannot fire today, so nobody reads it as live behaviour.
      */
     const result = buildProposition({
-      id: "mixed",
+      id: "one-source",
       kind: "recap",
-      additionalSources: [{ questionId: "core_rhythm_longest_gap_v1", value: "over-8" }],
       allowedUse: "practical-timing",
       target: "thirtyDayLoop",
       content: {
@@ -155,7 +159,10 @@ describe("authorities do not mix, and aggregation does not upgrade", () => {
         value: "afternoon-dip",
       },
     })
-    expect(refusalOf(result)).toBe("mixed-basis")
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.proposition.sources).toHaveLength(1)
+    expect(new Set(result.proposition.sourceQuestionIds).size).toBe(1)
   })
 
   it("a combination is never stronger than its weakest source", () => {
@@ -496,41 +503,95 @@ describe("a proposition's words and its recorded origin are one fact", () => {
     expect(refusalOf(result)).not.toBe("content-silent")
   })
 
-  it("an additional source naming the content's own question is refused", () => {
-    // The last way left to give two accounts of one answer.
-    for (const value of ["schedule", "caring"]) {
-      expect(
-        refusalOf(
-          buildProposition({
-            ...packInput("core_rhythm_recent_change_v1", "schedule"),
-            additionalSources: [{ questionId: "core_rhythm_recent_change_v1", value }],
-          }),
-        ),
-        `restated with value "${value}"`,
-      ).toBe("source-conflict")
-    }
+  /* ── No caller-authored provenance, of any shape ──────────────────── */
+
+  /**
+   * The fourth repair round's subject.
+   *
+   * Primary provenance was derived, but `additionalSources` let the caller
+   * assert secondary provenance — the same invariant broken one field along.
+   * It carried a fail-open too: `PropositionSource.value` allowed `null` and
+   * value rules only ran where a value existed, so naming
+   * `core_rhythm_recent_change_v1` with no value recorded it as contributing
+   * while `health-event` went unchecked.
+   *
+   * These are behavioural, not only structural. A forged entry is not
+   * "rejected" — it is never read, so it cannot appear however it is shaped.
+   */
+  it("the input declares no additionalSources field", () => {
+    const source = readFileSync(join(process.cwd(), "lib/report/deterministic/proposition.ts"), "utf8")
+    const input = source.slice(
+      source.indexOf("export interface PropositionInput"),
+      source.indexOf("/** The words and the gates"),
+    )
+    expect(input).not.toMatch(/^\s*additionalSources\??\s*:/m)
   })
 
-  it("a multi-source proposition keeps its primary first and cannot drop it", () => {
-    const result = buildProposition({
+  const forged = (extra: unknown) =>
+    buildProposition({
       ...packInput("core_rhythm_recent_change_v1", "schedule"),
-      additionalSources: [{ questionId: "core_rhythm_week_shape_v1", value: "similar" }],
-    })
+      additionalSources: extra,
+    } as unknown as Parameters<typeof buildProposition>[0])
+
+  const DERIVED = [{ questionId: "core_rhythm_recent_change_v1", value: "schedule" }]
+
+  it("a forged null-valued secondary source cannot avoid a value rule", () => {
+    /*
+     * The exact attack the review named: name the question, give no value,
+     * and the rule that would have silenced `health-event` never runs. It
+     * cannot now, because the question is not a source at all.
+     */
+    const result = forged([{ questionId: "core_rhythm_recent_change_v1", value: null }])
     expect(result.ok).toBe(true)
     if (!result.ok) return
-    expect(result.proposition.sources[0]).toEqual({
-      questionId: "core_rhythm_recent_change_v1",
-      value: "schedule",
-    })
-    expect(result.proposition.sources).toHaveLength(2)
+    expect(result.proposition.sources).toEqual(DERIVED)
   })
 
-  it("value rules run on additional sources too", () => {
-    const result = buildProposition({
-      ...packInput("core_rhythm_week_shape_v1", "similar"),
-      additionalSources: [{ questionId: "core_rhythm_recent_change_v1", value: "health-event" }],
+  it("a forged valid-but-unrelated secondary source is not recorded", () => {
+    // Rejecting null alone would have let this through: a real value from an
+    // answer that did not produce or modify the sentence.
+    const result = forged([{ questionId: "core_rhythm_week_shape_v1", value: "similar" }])
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.proposition.sources).toEqual(DERIVED)
+    expect(result.proposition.sourceQuestionIds).not.toContain("core_rhythm_week_shape_v1")
+  })
+
+  it("a forged restatement cannot change the recorded value", () => {
+    const result = forged([{ questionId: "core_rhythm_recent_change_v1", value: "caring" }])
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.proposition.sources).toEqual(DERIVED)
+  })
+
+  it("a forged silenced secondary source neither refuses nor appears", () => {
+    // It is not read, so it neither poisons the proposition nor blocks it.
+    const result = forged([{ questionId: "core_rhythm_recent_change_v1", value: "health-event" }])
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.proposition.sources).toEqual(DERIVED)
+  })
+
+  it("every route produces exactly one source", () => {
+    const pack = buildProposition(packInput("core_rhythm_recent_change_v1", "schedule"))
+    expect(pack.ok).toBe(true)
+    if (!pack.ok) return
+    const quote = buildQuotationProposition({ answer: "Fewer rushed mornings." })
+    expect(quote.ok).toBe(true)
+    if (!quote.ok) return
+    const beat = buildProposition({
+      id: "one.loop",
+      kind: "loop-step",
+      allowedUse: "descriptive-recap",
+      target: "systemSnapshot",
+      content: { from: "proposition", source: pack.proposition, templateIdSuffix: "loop.try" },
     })
-    expect(refusalOf(result)).toBe("value-silenced")
+    expect(beat.ok).toBe(true)
+    if (!beat.ok) return
+    for (const p of [pack.proposition, quote.proposition, beat.proposition]) {
+      expect(p.sources, p.id).toHaveLength(1)
+      expect(typeof p.sources[0].value, p.id).toBe("string")
+    }
   })
 
   it("a re-framing carries the sources of the sentence it re-frames", () => {

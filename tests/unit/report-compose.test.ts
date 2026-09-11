@@ -900,6 +900,36 @@ describe("identical input produces byte-identical output", () => {
     }
   })
 
+  /**
+   * The canonical document, pinned.
+   *
+   * ══ WHY A GOLDEN HASH AND NOT A PROSE CLAIM ═════════════════════════════
+   *
+   * The fourth repair round removed `additionalSources`, an input field the
+   * composer never used. The claim that came with it — "semantically
+   * unchanged apart from unused API surface" — is exactly the kind of claim
+   * that is easy to make and impossible to check later, so it is checked
+   * here instead: these digests were taken from head 63a2890, before the
+   * removal, and the removal had to leave them alone.
+   *
+   * When a later phase changes the document DELIBERATELY, this fails, and
+   * the right response is to re-capture and say so in the change — the same
+   * discipline as the pinned bank fingerprint, and for the same reason. What
+   * it forbids is changing the artifact by accident.
+   */
+  describe("the canonical document has not moved", () => {
+    const GOLDEN: Readonly<Record<ConsultationFoundation, string>> = {
+      you: "eb8760cec7d394b70ea46a86f7c3679ca0cb03e72f77e088055461ba325694d9",
+      family: "46b23209c42d8cb436fba66d7f015ad50e8d9c0396c98e93801779fc26096cc1",
+    }
+
+    for (const foundation of ["you", "family"] as const) {
+      it(`${foundation}: byte-identical to the pinned digest`, () => {
+        expect(hash(mustCompose(finalise(foundation)))).toBe(GOLDEN[foundation])
+      })
+    }
+  })
+
   it("composing twice gives the same bytes", () => {
     const f = finalise("you")
     expect(hash(mustCompose(f))).toBe(hash(mustCompose(f)))
