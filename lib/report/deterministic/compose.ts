@@ -8,7 +8,11 @@ import { reportBankSupport } from "./report-bank"
 import { CONTENT_PACK_VERSION, STRUCTURAL_COPY } from "./content-pack"
 import { REPORT_USE_RECORD_VERSION, permissionFor } from "./permissions"
 import { choosePriority } from "./priority"
-import { buildProposition, type ReportProposition } from "./proposition"
+import {
+  buildProposition,
+  buildQuotationProposition,
+  type ReportProposition,
+} from "./proposition"
 import { mayNameSpecificFoods, resolveReportSafety } from "./report-safety"
 import {
   COMPOSER_VERSION,
@@ -184,12 +188,11 @@ function recapFor(
     const built = buildProposition({
       id: `${record.answerField}.${value}`,
       kind: "recap",
-      sourceQuestionIds: [questionId],
-      sourceValues: { [questionId]: [value] },
       allowedUse: "descriptive-recap",
       target,
-      // An IDENTITY, not words. The pack resolves what this says and what
-      // saying it costs, together, where they cannot disagree.
+      // ONE identity. The pack resolves what this says and what saying it
+      // costs, and the same key is the recorded provenance — so the words and
+      // the origin cannot be different answers.
       content: { from: "content-pack", questionId, value },
     })
     if (!built.ok) {
@@ -302,20 +305,13 @@ export function composePersonalFoodSystemReport(input: {
      * summary, no paraphrase, and it selects no other content anywhere in
      * this composer.
      */
-    const built = buildProposition({
-      id: "intentions.success.quotation",
-      kind: "quotation",
-      sourceQuestionIds: ["core_intentions_success_v1"],
-      allowedUse: "descriptive-recap",
-      target: "systemSnapshot",
-      // The one structural path: these are the CUSTOMER'S words, so no pack
-      // could hold them. Bounded by the pack's own allow-list of ids.
-      content: {
-        from: "structural",
-        templateId: "intentions.success.quotation",
-        text: `${STRUCTURAL_COPY.quotationLeadIn} “${successRaw.trim()}”`,
-      },
-    })
+    /*
+     * The dedicated quotation constructor. Source question, kind, use,
+     * target, template id and lead-in are all fixed by its contract, and the
+     * only thing this composer supplies is the customer's own answer — so
+     * there is nothing here to get wrong and nothing to substitute.
+     */
+    const built = buildQuotationProposition({ answer: successRaw })
     if (!built.ok) return { ok: false, reason: "proposition-refused", detail: built.detail }
     quotation = built.proposition
   }
@@ -327,8 +323,6 @@ export function composePersonalFoodSystemReport(input: {
     const built = buildProposition({
       id: `priority.${choice.questionId}.${choice.value}`,
       kind: "lever",
-      sourceQuestionIds: [choice.questionId],
-      sourceValues: { [choice.questionId]: [choice.value] },
       // Every question in the precedence list permits exactly one of these
       // for priorityLever; the record decides which, not this function.
       allowedUse: permissionFor(choice.questionId)?.allowedUses.includes("practical-timing")
@@ -373,7 +367,6 @@ export function composePersonalFoodSystemReport(input: {
       const built = buildProposition({
         id: `loop.week${week}`,
         kind: "loop-step",
-        sourceQuestionIds: leverForLoop.sourceQuestionIds,
         allowedUse: leverForLoop.allowedUse,
         target: "thirtyDayLoop",
         // Re-framing an already-built sentence, so it inherits that
@@ -408,8 +401,6 @@ export function composePersonalFoodSystemReport(input: {
       const built = buildProposition({
         id: `${record.answerField}.${value}`,
         kind: "constraint",
-        sourceQuestionIds: [questionId],
-        sourceValues: { [questionId]: [value] },
         allowedUse: "operational-filtering",
         target: "foodTools",
         content: { from: "content-pack", questionId, value },

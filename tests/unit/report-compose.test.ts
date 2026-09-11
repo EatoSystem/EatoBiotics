@@ -15,7 +15,8 @@ import {
 import type { ConsultationAnswers, ConsultationFoundation } from "@/lib/consultation/types"
 import { composePersonalFoodSystemReport } from "@/lib/report/deterministic/compose"
 import { REPORT_V1_SUPPORTED_BANKS } from "@/lib/report/deterministic/report-bank"
-import { reportCapabilityEnabled, type ReportCapability } from "@/lib/report/deterministic/capabilities"
+import type { ReportProposition } from "@/lib/report/deterministic/proposition"
+import { reportCapabilityEnabled } from "@/lib/report/deterministic/capabilities"
 import { hasUnrepresentedHouseholdAllergy, mayNameSpecificFoods } from "@/lib/report/deterministic/report-safety"
 import { PRIORITY_PRECEDENCE } from "@/lib/report/deterministic/priority"
 import { customerFacingText, serialiseReport } from "@/lib/report/deterministic/serialise"
@@ -224,7 +225,7 @@ describe("all three gates being OPEN is visible in the output", () => {
  * would have the same hole as the code it is guarding.
  */
 function everyProposition(report: PersonalFoodSystemReportV1) {
-  const found: Array<{ where: string; id: string; requiredCapabilities: readonly ReportCapability[] }> = []
+  const found: Array<ReportProposition & { where: string }> = []
   const walk = (where: string, node: unknown) => {
     if (Array.isArray(node)) {
       node.forEach((child) => walk(where, child))
@@ -233,11 +234,9 @@ function everyProposition(report: PersonalFoodSystemReportV1) {
     if (!node || typeof node !== "object") return
     const record = node as Record<string, unknown>
     if (typeof record.id === "string" && Array.isArray(record.requiredCapabilities)) {
-      found.push({
-        where,
-        id: record.id,
-        requiredCapabilities: record.requiredCapabilities as readonly ReportCapability[],
-      })
+      // The WHOLE proposition, so a test can assert anything about it — the
+      // walker exists to find every one, not to decide what matters.
+      found.push({ ...(node as ReportProposition), where })
       return
     }
     for (const [key, child] of Object.entries(record)) walk(where === "" ? key : where, child)
@@ -577,6 +576,116 @@ describe("an unreadable trusted answer refuses the Report, it does not shorten i
   })
 })
 
+/* ══ Provenance is bound to the words ══════════════════════════════════════ */
+
+describe("every sentence records the exact answer it came from", () => {
+  it("each proposition's primary source names a question the seal actually asked", () => {
+    for (const foundation of ["you", "family"] as const) {
+      const f = finalise(foundation)
+      const report = mustCompose(f)
+      for (const p of everyProposition(report)) {
+        const primary = p.sources[0]
+        expect(primary, `${p.where}/${p.id} has no primary source`).toBeDefined()
+        expect(f.applicableQuestionIds, `${p.id}`).toContain(primary.questionId)
+      }
+    }
+  })
+
+  it("a recap's primary value is one the customer actually chose", () => {
+    const f = finalise("you", { core_signals_context_v1: ["rushed", "large-late"] })
+    const report = mustCompose(f)
+    for (const p of everyProposition(report)) {
+      const { questionId, value } = p.sources[0]
+      if (value === null) continue
+      const stored = f.trustedAnswers[questionId]
+      const chosen = Array.isArray(stored) ? stored : [stored]
+      // The quotation's value is the free text itself, which is the answer.
+      expect(chosen, `${p.id}: ${questionId}="${value}"`).toContain(value)
+    }
+  })
+
+  it("a loop beat is attributed to the lever's answer, not re-attributed", () => {
+    const report = mustCompose(finalise("you"))
+    const lever = report.priorityLever.propositions[0]
+    for (const step of report.thirtyDayLoop) {
+      expect(step.proposition.sources).toEqual(lever.sources)
+    }
+  })
+
+  it("the recorded value is the one the template was resolved from", () => {
+    /*
+     * energyShape grants only priorityLever and thirtyDayLoop, and precedence
+     * reaches it only once the stated focus and the barrier both decline — so
+     * the fixture has to construct that state for the assertion to mean
+     * anything.
+     */
+    const report = mustCompose(
+      finalise("you", {
+        core_intentions_primary_focus_v1: "unsure",
+        core_intentions_barrier_v1: "none",
+        core_signals_energy_shape_v1: "afternoon-dip",
+      }),
+    )
+    const lever = report.priorityLever.propositions[0]
+    expect(lever.sources).toEqual([
+      { questionId: "core_signals_energy_shape_v1", value: "afternoon-dip" },
+    ])
+    expect(lever.templateId).toBe("signals.energyShape.afternoonDip")
+    expect(lever.text).toContain("afternoon dip")
+  })
+})
+
+/* ══ The quotation, in the document ════════════════════════════════════════ */
+
+describe("the customer's own words are quoted and read by nothing", () => {
+  const withAnswer = (answer: string) =>
+    mustCompose(finalise("you", { core_intentions_success_v1: answer }))
+
+  it("the quotation is attributed to the success question", () => {
+    const report = withAnswer("Fewer rushed mornings.")
+    expect(report.quotation?.sources).toEqual([
+      { questionId: "core_intentions_success_v1", value: "Fewer rushed mornings." },
+    ])
+    expect(report.quotation?.kind).toBe("quotation")
+    expect(report.quotation?.target).toBe("systemSnapshot")
+  })
+
+  it("changing only the free text changes only the quotation", () => {
+    /*
+     * The strongest available statement of "free text selects no other
+     * content": two documents built from the same answers apart from the
+     * success text are identical once the quotation is removed. If the prose
+     * influenced a template, a priority, a section or an order, this fails.
+     */
+    const strip = (r: PersonalFoodSystemReportV1) => {
+      const { quotation: _quotation, ...rest } = r
+      return serialiseReport(rest as PersonalFoodSystemReportV1)
+    }
+    expect(strip(withAnswer("Cooking more at home."))).toBe(
+      strip(withAnswer("Sleeping through the night, and less bloating.")),
+    )
+  })
+
+  it("the two quotations differ only by the customer's words", () => {
+    const a = withAnswer("Cooking more at home.").quotation
+    const b = withAnswer("Fewer rushed mornings.").quotation
+    expect(a?.templateId).toBe(b?.templateId)
+    expect(a?.text).not.toBe(b?.text)
+    expect(a?.text).toContain("Cooking more at home.")
+  })
+
+  it("the free text is never paraphrased into any other sentence", () => {
+    const report = withAnswer("Zanzibar pomegranate ritual.")
+    const elsewhere = everyProposition(report).filter((p) => p.id !== report.quotation?.id)
+    for (const p of elsewhere) {
+      expect(p.id, p.id).not.toContain("Zanzibar")
+    }
+    expect(
+      customerFacingText(report).filter((line) => line.includes("Zanzibar")),
+    ).toHaveLength(1)
+  })
+})
+
 /* ══ Lens refusal ══════════════════════════════════════════════════════════ */
 
 describe("an entitled lens is refused, not labelled", () => {
@@ -845,7 +954,13 @@ describe("every Report says what produced it", () => {
     expect(p.scienceContractVersion).toBe("science-contract-v1.0")
     expect(p.finalisationVersion).toBe("consultation-finalisation-v1")
     expect(p.reportUseRecordVersion).toBe("report-use-v1")
-    expect(p.composerVersion).toBe("composer-v1")
+    /*
+     * v2, bumped in the third review repair: every proposition now records
+     * the exact {questionId, value} its words were resolved from. No
+     * customer-facing text changed; the artifact's bytes did, and this
+     * version is how a Report says which builder produced it.
+     */
+    expect(p.composerVersion).toBe("composer-v2")
     expect(p.contentPackVersion).toBe("content-pack-v1")
     expect(p.capabilitiesAtCompose).toBeDefined()
     expect(p.finalisedAt).toBe(AT.toISOString())

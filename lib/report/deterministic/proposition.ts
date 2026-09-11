@@ -11,8 +11,8 @@ import type { ConsultationReportTarget } from "@/lib/consultation/types"
 import type { ReportCapability } from "./capabilities"
 import {
   PRODUCTION_CONTENT_PACK_ID,
+  STRUCTURAL_COPY,
   contentPackFor,
-  isStructuralTemplateId,
   type StructuralTemplateId,
 } from "./content-pack"
 import {
@@ -61,10 +61,45 @@ export type PropositionKind =
   | "quotation"
   | "provenance"
 
+/**
+ * One answer this sentence rests on — the question AND the value together.
+ *
+ * ══ WHY A TUPLE AND NOT TWO PARALLEL LISTS ══════════════════════════════════
+ *
+ * Because the constructor used to take `sourceQuestionIds` and an OPTIONAL
+ * `sourceValues` map, and resolve the words from a separate `{questionId,
+ * value}` pair. Three descriptions of one fact, reconciled nowhere: a caller
+ * could take permission and provenance from question A while the sentence came
+ * from question B, and the Report would record an origin that was not true.
+ * The optional map was worse still — omitting it skipped every value-level
+ * rule for the value that actually produced the words.
+ *
+ * A source is now one indivisible fact, and the PRIMARY one is derived from
+ * the content rather than supplied beside it.
+ */
+export interface PropositionSource {
+  readonly questionId: string
+  /**
+   * The exact value the words came from.
+   *
+   * `null` only for a contributing question that supplied no enumerated value
+   * — never for the source a content-pack template was resolved from.
+   */
+  readonly value: string | null
+}
+
 export interface ReportProposition {
   /** Stable across builds. The narrative layer of a later phase addresses these. */
   readonly id: string
   readonly kind: PropositionKind
+  /**
+   * Every answer behind this sentence, the PRIMARY one first.
+   *
+   * The primary is the source the reviewed template was resolved from. It is
+   * derived, so it is always present and always agrees with the words.
+   */
+  readonly sources: readonly PropositionSource[]
+  /** Derived from `sources`, for callers that only care which questions. */
   readonly sourceQuestionIds: readonly string[]
   readonly sourceFields: readonly string[]
   readonly basis: PermissionBasis
@@ -92,8 +127,12 @@ export type PropositionRefusalReason =
   | "content-unreviewed"
   /** The pack's entry is `null` — reviewed, and deliberately silent. */
   | "content-silent"
-  /** A structural template id outside the pack's allow-list. */
-  | "structural-id-unknown"
+  /** An additional source names the question the content already came from. */
+  | "source-conflict"
+  /** A quotation was asked for with nothing to quote. */
+  | "quotation-empty"
+  /** A content route that is not reachable through this constructor. */
+  | "content-route-unavailable"
   /** No source questions at all — an unsourced sentence. */
   | "no-source"
   /** A source question has no permission record. */
@@ -124,18 +163,22 @@ export type PropositionResult =
  * disposition and let the authority that owns it say both what it reads and
  * what it costs.
  *
- * Three sources, because there are genuinely three:
+ * Two sources, and each one also SETTLES THE PROVENANCE:
  *
  *   `content-pack`  — reviewed wording, keyed by question and answer value.
- *                     The overwhelming majority, and the only one whose text
- *                     the caller never sees before construction.
+ *                     That key is simultaneously the primary source, so the
+ *                     words and the origin cannot be different answers.
  *   `proposition`   — a re-framing of a sentence already built and already
- *                     checked: the 30-day loop's four beats. It INHERITS its
- *                     source's capability requirements, because re-framing a
- *                     gated sentence does not ungate it.
- *   `structural`    — the customer's own prose, which no pack can hold.
- *                     Bounded by an allow-list of ids so it cannot become a
- *                     general route into unreviewed content.
+ *                     checked: the 30-day loop's four beats. It inherits its
+ *                     source's sources AND its capability requirements,
+ *                     because re-framing a gated sentence does not ungate it
+ *                     and does not re-attribute it.
+ *
+ * There was a third, `structural`, which took an allow-listed template id and
+ * ARBITRARY TEXT with arbitrary kind, use, target and provenance. The
+ * allow-list constrained the id and nothing else. It existed for exactly one
+ * thing — quoting the customer's own answer — so that one thing now has its
+ * own constructor (`buildQuotationProposition`) and the general route is gone.
  */
 export type PropositionContent =
   | {
@@ -150,35 +193,57 @@ export type PropositionContent =
       readonly source: ReportProposition
       readonly templateIdSuffix: string
     }
-  | {
-      readonly from: "structural"
-      readonly templateId: StructuralTemplateId
-      readonly text: string
-    }
+
+/**
+ * The quotation route, reachable ONLY through `buildQuotationProposition`.
+ *
+ * Not part of `PropositionContent` and not exported, so no caller can name
+ * it. `buildProposition` additionally refuses it at runtime — a type that is
+ * merely unexported is closed to honest callers and open to a cast, and this
+ * is the route whose whole purpose is that it cannot be reached generically.
+ */
+interface QuotationContent {
+  readonly from: "quotation"
+  /** The customer's own trimmed answer. The only variable part of a quotation. */
+  readonly answer: string
+}
+
+type InternalContent = PropositionContent | QuotationContent
 
 export interface PropositionInput {
   id: string
   kind: PropositionKind
-  /** Non-empty. Every proposition traces to at least one answered question. */
-  sourceQuestionIds: readonly string[]
-  /** The answer values used, per question — checked against value rules. */
-  sourceValues?: Readonly<Record<string, readonly string[]>>
   allowedUse: AllowedReportUse
   target: ConsultationReportTarget
   /**
-   * Deliberately NO `templateId`, `text` or `templateCapabilities`.
+   * Deliberately NO `templateId`, `text`, `templateCapabilities`,
+   * `sourceQuestionIds` or `sourceValues`.
    *
-   * The first version of this interface took a capability, and fell back to
-   * the permission's own — so a caller could SUBSTITUTE `safetyNetting` for a
-   * food sentence and pass the check while naming a food. The second removed
-   * the substitution but still took the words and their gates as separate
-   * arguments, so a caller could select the words and add no gate at all.
+   * Every removal closed the same shape of hole — an authority the caller was
+   * trusted to relay faithfully:
    *
-   * Both holes have the same shape: an authority the caller was trusted to
-   * relay. Now the caller relays nothing — it names a disposition, and the
-   * pack, the target and the permission registry decide the rest.
+   *   1. a `capability` the caller chose, so `safetyNetting` could stand in
+   *      for a food sentence's gate;
+   *   2. the words and their gates as separate arguments, so the words could
+   *      be selected and the gate simply not added;
+   *   3. the provenance as a separate argument from the content, so the
+   *      recorded origin could be a different answer from the one the
+   *      sentence came from — and an optional value map whose omission
+   *      skipped the value-level rules entirely.
+   *
+   * The caller now names ONE identity. The pack, the target, the permission
+   * registry and this constructor derive everything else from it.
    */
   content: PropositionContent
+  /**
+   * Further answers this sentence draws on, beyond the content's own.
+   *
+   * The content's source is derived and always first; nothing here can
+   * replace, reorder or remove it. Naming the content's own question here is
+   * refused rather than merged — it is the last way left to give two accounts
+   * of one answer.
+   */
+  additionalSources?: readonly PropositionSource[]
 }
 
 /** The words and the gates, established together by an authority. */
@@ -186,6 +251,35 @@ interface ResolvedContent {
   readonly templateId: string
   readonly text: string
   readonly requiresCapabilities: readonly ReportCapability[]
+}
+
+/**
+ * The answers a content identity IS — derived, never supplied.
+ *
+ * ══ WHY THIS IS SEPARATE FROM RESOLVING THE WORDS ═══════════════════════════
+ *
+ * Because the provenance is knowable without the pack, and it has to be: the
+ * permission records and the value-level rules are checked against it, and
+ * those refusals must be reported ahead of anything the pack has to say. A
+ * value the registry has silenced should refuse as `value-silenced` whether
+ * or not the pack also happens to be silent about it — the stronger authority
+ * names the reason.
+ *
+ * Both branches are total and neither consults the caller: a pack identity is
+ * its own source, and a re-framing carries the sources of the sentence it
+ * re-frames.
+ */
+function primarySourcesOf(content: InternalContent): readonly PropositionSource[] {
+  if (content.from === "content-pack") {
+    return [{ questionId: content.questionId, value: content.value }]
+  }
+  if (content.from === "quotation") {
+    // The answer IS the source value, and the words are built from it — so
+    // the recorded provenance and the sentence cannot describe different
+    // things here either.
+    return [{ questionId: QUOTATION_QUESTION_ID, value: content.answer }]
+  }
+  return content.source.sources
 }
 
 /**
@@ -213,8 +307,21 @@ export function usesProhibitedFraming(text: string): string | null {
  * pack exists to make.
  */
 function resolveContent(
-  content: PropositionContent,
+  content: InternalContent,
 ): { ok: true; resolved: ResolvedContent } | { ok: false; reason: PropositionRefusalReason; detail: string } {
+  if (content.from === "quotation") {
+    return {
+      ok: true,
+      resolved: {
+        templateId: QUOTATION_TEMPLATE_ID,
+        // Reviewed lead-in, versioned with the pack, plus the customer's own
+        // words inside quotation marks. Assembled here and nowhere else.
+        text: `${STRUCTURAL_COPY.quotationLeadIn} \u201c${content.answer}\u201d`,
+        requiresCapabilities: [],
+      },
+    }
+  }
+
   if (content.from === "content-pack") {
     const packId = content.packId ?? PRODUCTION_CONTENT_PACK_ID
     const pack = contentPackFor(packId)
@@ -247,29 +354,16 @@ function resolveContent(
     }
   }
 
-  if (content.from === "proposition") {
-    return {
-      ok: true,
-      resolved: {
-        templateId: `${content.source.templateId}.${content.templateIdSuffix}`,
-        text: content.source.text,
-        // Inherited. A re-framing of a gated sentence is still gated — the
-        // loop beat says the same thing four times, so it costs the same.
-        requiresCapabilities: content.source.requiredCapabilities,
-      },
-    }
-  }
-
-  if (!isStructuralTemplateId(content.templateId)) {
-    return {
-      ok: false,
-      reason: "structural-id-unknown",
-      detail: `"${content.templateId}" is not a structural template id`,
-    }
-  }
   return {
     ok: true,
-    resolved: { templateId: content.templateId, text: content.text, requiresCapabilities: [] },
+    resolved: {
+      templateId: `${content.source.templateId}.${content.templateIdSuffix}`,
+      text: content.source.text,
+      // Inherited, all three. A re-framing of a gated sentence is still
+      // gated, says the same thing, and came from the same answers — the loop
+      // beat repeats the lever, so it cannot repeat it under another name.
+      requiresCapabilities: content.source.requiredCapabilities,
+    },
   }
 }
 
@@ -280,19 +374,60 @@ function resolveContent(
  * composer that could swallow one.
  */
 export function buildProposition(input: PropositionInput): PropositionResult {
+  /*
+   * The quotation route is refused here at RUNTIME, not merely left out of
+   * the exported type. An unexported variant is closed to an honest caller
+   * and open to a cast, and this is precisely the route whose purpose is that
+   * it cannot be reached generically. `buildQuotationProposition` goes to the
+   * core directly.
+   */
+  if (input.content.from !== "content-pack" && input.content.from !== "proposition") {
+    return {
+      ok: false,
+      reason: "content-route-unavailable",
+      detail: `${input.id}: that content route is not reachable through buildProposition`,
+    }
+  }
+  return buildPropositionCore(input)
+}
+
+function buildPropositionCore(
+  input: Omit<PropositionInput, "content"> & { content: InternalContent },
+): PropositionResult {
   const refuse = (reason: PropositionRefusalReason, detail: string): PropositionResult => ({
     ok: false,
     reason,
     detail,
   })
 
-  if (input.sourceQuestionIds.length === 0) {
+  /* ── Provenance, derived from the content identity ──────────────────── */
+  /*
+   * The primary source is the content's own, always first and never
+   * suppliable. Additional sources are appended; one that names a question
+   * the content already came from is refused rather than merged, because
+   * merging would be exactly the second account of one answer this design
+   * removed.
+   */
+  const primary = primarySourcesOf(input.content)
+  const primaryIds = new Set(primary.map((source) => source.questionId))
+  for (const extra of input.additionalSources ?? []) {
+    if (primaryIds.has(extra.questionId)) {
+      return refuse(
+        "source-conflict",
+        `${input.id}: ${extra.questionId} is already the content's own source and cannot be restated`,
+      )
+    }
+  }
+  const sources: readonly PropositionSource[] = [...primary, ...(input.additionalSources ?? [])]
+
+  if (sources.length === 0) {
     return refuse("no-source", `${input.id} has no source question`)
   }
 
+  const sourceQuestionIds = sources.map((source) => source.questionId)
 
   const records = []
-  for (const questionId of input.sourceQuestionIds) {
+  for (const questionId of sourceQuestionIds) {
     const record = permissionFor(questionId)
     // No record is no permission — including for a question this build has
     // never heard of. There is no recap fallback.
@@ -309,14 +444,19 @@ export function buildProposition(input: PropositionInput): PropositionResult {
   }
 
   /* ── Value-level denials ────────────────────────────────────────────── */
-  for (const [questionId, values] of Object.entries(input.sourceValues ?? {})) {
-    for (const value of values) {
-      if (valueIsSilenced(questionId, value)) {
-        return refuse(
-          "value-silenced",
-          `${input.id}: ${questionId}="${value}" — ${valueRuleFor(questionId, value)?.reason ?? "silenced"}`,
-        )
-      }
+  /*
+   * Over the BOUND sources, so there is no argument whose omission skips a
+   * rule. The previous shape took an optional value map: a caller that simply
+   * did not pass it got a proposition for a value the registry had silenced,
+   * which for `health-event` meant recapping a reported health event that the
+   * Science Contract had deliberately withdrawn.
+   */
+  for (const { questionId, value } of sources) {
+    if (value !== null && valueIsSilenced(questionId, value)) {
+      return refuse(
+        "value-silenced",
+        `${input.id}: ${questionId}="${value}" — ${valueRuleFor(questionId, value)?.reason ?? "silenced"}`,
+      )
     }
   }
 
@@ -333,7 +473,7 @@ export function buildProposition(input: PropositionInput): PropositionResult {
   }
 
   /* ── Aggregation does not upgrade evidence ──────────────────────────── */
-  const statuses: ScienceEvidenceStatus[] = input.sourceQuestionIds.map((id) => {
+  const statuses: ScienceEvidenceStatus[] = sourceQuestionIds.map((id) => {
     const contract = scienceContractFor(id)
     // A product-operational source is not adjudicated evidence at all. It is
     // treated as the weakest recognised status so it can never lift a
@@ -368,7 +508,8 @@ export function buildProposition(input: PropositionInput): PropositionResult {
     proposition: {
       id: input.id,
       kind: input.kind,
-      sourceQuestionIds: [...input.sourceQuestionIds],
+      sources,
+      sourceQuestionIds,
       sourceFields: records.map((r) => r.answerField),
       basis: records[0].basis,
       allowedUse: input.allowedUse,
@@ -377,7 +518,7 @@ export function buildProposition(input: PropositionInput): PropositionResult {
       text,
       evidenceStatus,
       requiredCapabilities: requiredCapabilitiesFor({
-        sourceQuestionIds: input.sourceQuestionIds,
+        sourceQuestionIds,
         target: input.target,
         // The PACK's answer, relayed straight from the resolver. There is no
         // caller-facing argument that reaches this parameter.
@@ -385,6 +526,64 @@ export function buildProposition(input: PropositionInput): PropositionResult {
       }),
     },
   }
+}
+
+/* ══ The quotation ═════════════════════════════════════════════════════════ */
+
+/** Fixed by contract, not by argument. */
+export const QUOTATION_QUESTION_ID = "core_intentions_success_v1"
+export const QUOTATION_TEMPLATE_ID: StructuralTemplateId = "intentions.success.quotation"
+
+/**
+ * Quote the customer's own answer — the ONLY route to a quotation.
+ *
+ * ══ WHY THIS IS A CONSTRUCTOR AND NOT A CONTENT VARIANT ═════════════════════
+ *
+ * There used to be a `structural` content variant taking an allow-listed
+ * template id and ARBITRARY TEXT, alongside a caller-supplied kind, use,
+ * target and provenance. The allow-list constrained the id and nothing else,
+ * so the single sentence it existed for was wrapped in a general-purpose
+ * route into unreviewed wording attributed to any question at all.
+ *
+ * It exists for one thing, so it is one thing. Everything here is fixed:
+ *
+ *   source question  core_intentions_success_v1
+ *   kind             quotation
+ *   allowed use      descriptive-recap
+ *   target           systemSnapshot
+ *   template id      intentions.success.quotation
+ *   lead-in          reviewed, versioned copy from the content pack
+ *
+ * The ONLY variable portion is the customer's own trusted answer, and it is
+ * reproduced inside quotation marks rather than described. Nothing here reads
+ * it: it selects no template, no priority, no section and no other sentence
+ * anywhere in the composer.
+ *
+ * ══ A NARROWED ENTRY POINT, NOT A BYPASS ════════════════════════════════════
+ *
+ * It delegates to `buildProposition` via the same permission, value-rule,
+ * authority, aggregation and framing checks as everything else. If the
+ * permission record for the success question ever stopped granting
+ * descriptive-recap to systemSnapshot, this would refuse like any other
+ * proposition.
+ */
+export function buildQuotationProposition(input: { answer: string }): PropositionResult {
+  const answer = input.answer.trim()
+  if (answer.length === 0) {
+    // An empty quotation would attribute silence to the customer.
+    return {
+      ok: false,
+      reason: "quotation-empty",
+      detail: `${QUOTATION_TEMPLATE_ID}: there is nothing to quote`,
+    }
+  }
+  return buildPropositionCore({
+    id: QUOTATION_TEMPLATE_ID,
+    kind: "quotation",
+    allowedUse: "descriptive-recap",
+    target: "systemSnapshot",
+    content: { from: "quotation", answer },
+  })
 }
 
 /**

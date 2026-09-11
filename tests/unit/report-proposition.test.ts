@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
-import { templateFor } from "@/lib/report/deterministic/content-pack"
+import { STRUCTURAL_COPY, templateFor } from "@/lib/report/deterministic/content-pack"
 import {
   FIXTURE_QUESTION,
   FIXTURE_UNGATED_TARGET,
@@ -12,7 +12,10 @@ import {
 
 import { AGGREGATION_EVIDENCE_RULE } from "@/lib/consultation/science-contract"
 import {
+  QUOTATION_QUESTION_ID,
+  QUOTATION_TEMPLATE_ID,
   buildProposition,
+  buildQuotationProposition,
   usesProhibitedFraming,
   type PropositionResult,
 } from "@/lib/report/deterministic/proposition"
@@ -37,7 +40,6 @@ const refusalOf = (result: PropositionResult) => (result.ok ? null : result.reas
 const valid = {
   id: "test.recap",
   kind: "recap" as const,
-  sourceQuestionIds: ["core_signals_energy_shape_v1"],
   allowedUse: "practical-timing" as const,
   target: "priorityLever" as const,
   // An IDENTITY, never words. The pack resolves the sentence and its gates.
@@ -58,13 +60,26 @@ describe("a proposition cannot exist without provenance", () => {
     expect(result.proposition.evidenceStatus).toBe("CONTEXT_ONLY")
   })
 
-  it("refuses an unsourced sentence", () => {
-    expect(refusalOf(buildProposition({ ...valid, sourceQuestionIds: [] }))).toBe("no-source")
+  it("records the content's own answer as its provenance", () => {
+    // The binding. One identity produced the words AND the record of where
+    // they came from, so there is nothing for them to disagree about.
+    const result = buildProposition(valid)
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.proposition.sources).toEqual([
+      { questionId: "core_signals_energy_shape_v1", value: "afternoon-dip" },
+    ])
+    expect(result.proposition.sourceQuestionIds).toEqual(["core_signals_energy_shape_v1"])
   })
 
   it("refuses a question with no permission record", () => {
     expect(
-      refusalOf(buildProposition({ ...valid, sourceQuestionIds: ["core_invented_v1"] })),
+      refusalOf(
+        buildProposition({
+          ...valid,
+          content: { from: "content-pack", questionId: "core_invented_v1", value: "x" },
+        }),
+      ),
     ).toBe("no-permission-record")
   })
 
@@ -92,8 +107,6 @@ describe("value-level denials reach the constructor", () => {
     const result = buildProposition({
       id: "recentChange.healthEvent",
       kind: "recap",
-      sourceQuestionIds: ["core_rhythm_recent_change_v1"],
-      sourceValues: { core_rhythm_recent_change_v1: ["health-event"] },
       allowedUse: "descriptive-recap",
       target: "systemSnapshot",
       content: {
@@ -111,8 +124,6 @@ describe("value-level denials reach the constructor", () => {
     const result = buildProposition({
       id: "recentChange.schedule",
       kind: "recap",
-      sourceQuestionIds: ["core_rhythm_recent_change_v1"],
-      sourceValues: { core_rhythm_recent_change_v1: ["schedule"] },
       allowedUse: "descriptive-recap",
       target: "systemSnapshot",
       content: {
@@ -135,7 +146,7 @@ describe("authorities do not mix, and aggregation does not upgrade", () => {
     const result = buildProposition({
       id: "mixed",
       kind: "recap",
-      sourceQuestionIds: ["core_signals_energy_shape_v1", "core_rhythm_longest_gap_v1"],
+      additionalSources: [{ questionId: "core_rhythm_longest_gap_v1", value: "over-8" }],
       allowedUse: "practical-timing",
       target: "thirtyDayLoop",
       content: {
@@ -153,7 +164,6 @@ describe("authorities do not mix, and aggregation does not upgrade", () => {
     const result = buildProposition({
       id: "constraints.only",
       kind: "constraint",
-      sourceQuestionIds: ["core_environment_constraints_v1"],
       allowedUse: "operational-filtering",
       target: "foodTools",
       content: {
@@ -180,22 +190,16 @@ describe("prohibited framings are refused, not merely discouraged", () => {
     }
   })
 
-  it("refuses to build a proposition that uses one", () => {
+  it("refuses a quotation whose customer text uses one", () => {
     /*
-     * Through the STRUCTURAL path, because it is the only one that still
-     * accepts caller text — and therefore the only one where a prohibited
-     * framing could originate. Pack templates are corpus-checked separately;
-     * this proves the escape hatch is checked too.
+     * The quotation is the only remaining sentence with any caller-shaped
+     * text in it, and even there the text is the CUSTOMER'S. The check still
+     * runs on the assembled sentence, so nothing reaches a Report by that
+     * route either. Pack templates are corpus-checked separately.
      */
-    const result = buildProposition({
-      ...valid,
-      content: {
-        from: "structural",
-        templateId: "intentions.success.quotation",
-        text: "This shows your energy dips in the afternoon.",
-      },
-    })
-    expect(refusalOf(result)).toBe("prohibited-framing")
+    expect(
+      refusalOf(buildQuotationProposition({ answer: "This shows my energy dips after lunch." })),
+    ).toBe("prohibited-framing")
   })
 
   it("permits the approved reporting framings", () => {
@@ -295,7 +299,6 @@ describe("the pack, not the caller, establishes the words and their gates", () =
       requirementsOf({
         id: "test.moved",
         kind: "constraint",
-        sourceQuestionIds: ["core_environment_food_avoidances_v1"],
         allowedUse: "operational-filtering",
         target: "thirtyDayLoop",
         content: {
@@ -316,7 +319,6 @@ describe("the pack, not the caller, establishes the words and their gates", () =
       requirementsOf({
         id: "test.loop.week1",
         kind: "loop-step",
-        sourceQuestionIds: lever.proposition.sourceQuestionIds,
         allowedUse: lever.proposition.allowedUse,
         target: "thirtyDayLoop",
         content: { from: "proposition", source: lever.proposition, templateIdSuffix: "loop.try" },
@@ -378,7 +380,6 @@ describe("the pack, not the caller, establishes the words and their gates", () =
       requirementsOf({
         id: "test.fit",
         kind: "recap",
-        sourceQuestionIds: ["core_environment_constraints_v1"],
         allowedUse: "practical-fit",
         target: "thirtyDayLoop",
         content: { from: "content-pack", questionId: "core_environment_constraints_v1", value: "time" },
@@ -402,18 +403,251 @@ describe("the pack, not the caller, establishes the words and their gates", () =
     expect(refusalOf(buildProposition(fixtureOperation(FIXTURE_VALUES.silent)))).toBe("content-silent")
   })
 
-  it("refuses a structural id outside the pack's allow-list", () => {
+  it("the quotation route is not reachable through the general constructor", () => {
+    /*
+     * Refused at RUNTIME, not merely absent from the exported type. An
+     * unexported variant is closed to an honest caller and open to a cast,
+     * and this is the one route whose entire purpose is that it cannot be
+     * reached generically.
+     */
     expect(
       refusalOf(
         buildProposition({
           ...foodOperation,
-          content: {
-            from: "structural",
-            templateId: "invented.id" as never,
-            text: "You told us something.",
-          },
+          content: { from: "quotation", answer: "Calmer mornings." } as never,
         }),
       ),
-    ).toBe("structural-id-unknown")
+    ).toBe("content-route-unavailable")
+  })
+})
+
+/* ══ Content identity IS provenance ════════════════════════════════════════ */
+
+/**
+ * ══ THE DEFECT THIS BLOCK REPLACES ══════════════════════════════════════════
+ *
+ * `buildProposition` took provenance as `sourceQuestionIds` plus an OPTIONAL
+ * `sourceValues` map, and took content as a separate `{questionId, value}`.
+ * It checked permission and value rules against the first and resolved the
+ * sentence from the second, and reconciled them nowhere. A caller could take
+ * permission and provenance from question A while the words came from
+ * question B, and the Report would record an origin that was not true.
+ *
+ * The optional map was the sharper edge: omitting it skipped every
+ * value-level rule for the value that actually produced the words.
+ * `health-event` is `no-proposition` at value level precisely because the
+ * Science Contract withdrew reported health history — and it was reachable by
+ * simply not declaring it.
+ *
+ * Both are now unrepresentable rather than refused, which is the stronger
+ * outcome and the reason these tests are shaped the way they are.
+ */
+describe("a proposition's words and its recorded origin are one fact", () => {
+  const packInput = (questionId: string, value: string) => ({
+    id: `bind.${questionId}.${value}`,
+    kind: "recap" as const,
+    allowedUse: "descriptive-recap" as const,
+    target: "systemSnapshot" as const,
+    content: { from: "content-pack", questionId, value } as const,
+  })
+
+  it("the input has no way to describe provenance separately", () => {
+    const source = readFileSync(join(process.cwd(), "lib/report/deterministic/proposition.ts"), "utf8")
+    const input = source.slice(
+      source.indexOf("export interface PropositionInput"),
+      source.indexOf("/** The words and the gates"),
+    )
+    for (const banned of [/^\s*sourceQuestionIds\??:/m, /^\s*sourceValues\??:/m]) {
+      expect(input, `PropositionInput still accepts ${banned}`).not.toMatch(banned)
+    }
+  })
+
+  it("a stray old-shape field cannot become the recorded source", () => {
+    // Content from recentChange, a forged provenance naming energyShape.
+    const forged = buildProposition({
+      ...packInput("core_rhythm_recent_change_v1", "schedule"),
+      sourceQuestionIds: ["core_signals_energy_shape_v1"],
+      sourceValues: { core_signals_energy_shape_v1: ["steady"] },
+    } as unknown as Parameters<typeof buildProposition>[0])
+    expect(forged.ok).toBe(true)
+    if (!forged.ok) return
+    expect(forged.proposition.sources).toEqual([
+      { questionId: "core_rhythm_recent_change_v1", value: "schedule" },
+    ])
+    expect(forged.proposition.sourceQuestionIds).not.toContain("core_signals_energy_shape_v1")
+    expect(forged.proposition.templateId).toBe("rhythm.recentChange.schedule")
+  })
+
+  it("a value-level denial cannot be bypassed by declaring no provenance", () => {
+    /*
+     * THE TEST THAT MATTERS. No provenance argument is passed, because none
+     * exists — and the rule still fires, because the value the words came
+     * from is the value the rule is checked against.
+     */
+    expect(refusalOf(buildProposition(packInput("core_rhythm_recent_change_v1", "health-event")))).toBe(
+      "value-silenced",
+    )
+  })
+
+  it("the stronger authority names the refusal when both would decline", () => {
+    // `health-event` is silenced in the permission registry AND null in the
+    // pack. The registry's refusal is reported; the pack's would be weaker.
+    const result = buildProposition(packInput("core_rhythm_recent_change_v1", "health-event"))
+    expect(refusalOf(result)).not.toBe("content-silent")
+  })
+
+  it("an additional source naming the content's own question is refused", () => {
+    // The last way left to give two accounts of one answer.
+    for (const value of ["schedule", "caring"]) {
+      expect(
+        refusalOf(
+          buildProposition({
+            ...packInput("core_rhythm_recent_change_v1", "schedule"),
+            additionalSources: [{ questionId: "core_rhythm_recent_change_v1", value }],
+          }),
+        ),
+        `restated with value "${value}"`,
+      ).toBe("source-conflict")
+    }
+  })
+
+  it("a multi-source proposition keeps its primary first and cannot drop it", () => {
+    const result = buildProposition({
+      ...packInput("core_rhythm_recent_change_v1", "schedule"),
+      additionalSources: [{ questionId: "core_rhythm_week_shape_v1", value: "similar" }],
+    })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.proposition.sources[0]).toEqual({
+      questionId: "core_rhythm_recent_change_v1",
+      value: "schedule",
+    })
+    expect(result.proposition.sources).toHaveLength(2)
+  })
+
+  it("value rules run on additional sources too", () => {
+    const result = buildProposition({
+      ...packInput("core_rhythm_week_shape_v1", "similar"),
+      additionalSources: [{ questionId: "core_rhythm_recent_change_v1", value: "health-event" }],
+    })
+    expect(refusalOf(result)).toBe("value-silenced")
+  })
+
+  it("a re-framing carries the sources of the sentence it re-frames", () => {
+    const lever = buildProposition(packInput("core_rhythm_recent_change_v1", "schedule"))
+    expect(lever.ok).toBe(true)
+    if (!lever.ok) return
+    const beat = buildProposition({
+      id: "bind.loop",
+      kind: "loop-step",
+      allowedUse: "descriptive-recap",
+      target: "systemSnapshot",
+      content: { from: "proposition", source: lever.proposition, templateIdSuffix: "loop.try" },
+    })
+    expect(beat.ok).toBe(true)
+    if (!beat.ok) return
+    expect(beat.proposition.sources).toEqual(lever.proposition.sources)
+  })
+})
+
+/* ══ The quotation ═════════════════════════════════════════════════════════ */
+
+/**
+ * The structural route used to accept an allow-listed template id plus
+ * ARBITRARY TEXT, with a caller-supplied kind, use, target and provenance.
+ * The allow-list constrained the id and nothing else. It existed for one
+ * sentence, so that sentence now has a constructor and the general route is
+ * gone — which is why most of these assertions are about what CANNOT be said.
+ */
+describe("the quotation has one constructor and no arguments but the answer", () => {
+  const ANSWER = "Fewer rushed mornings, and dinner not at nine."
+
+  const built = () => {
+    const result = buildQuotationProposition({ answer: ANSWER })
+    expect(result.ok, result.ok ? "" : `refused: ${result.reason} — ${result.detail}`).toBe(true)
+    if (!result.ok) throw new Error(result.reason)
+    return result.proposition
+  }
+
+  it("its input carries exactly one field", () => {
+    const source = readFileSync(join(process.cwd(), "lib/report/deterministic/proposition.ts"), "utf8")
+    const signature = source.slice(
+      source.indexOf("export function buildQuotationProposition"),
+      source.indexOf("PropositionResult {", source.indexOf("export function buildQuotationProposition")),
+    )
+    expect(signature).toContain("answer: string")
+    /*
+     * Matched as FIELD DECLARATIONS with an optional `?`, not as substrings.
+     * A first version banned the literal "text:" and a sabotage case walked
+     * straight past it by adding `text?: string` — the optional marker is
+     * exactly how a reopened escape would be written, since it has to keep
+     * existing callers compiling.
+     */
+    for (const banned of ["templateId", "text", "kind", "target", "allowedUse", "sourceQuestionIds", "sources"]) {
+      expect(
+        signature,
+        `the quotation input still accepts ${banned}`,
+      ).not.toMatch(new RegExp(`\\b${banned}\\??\\s*:`))
+    }
+  })
+
+  it("the general content union has no structural variant left", () => {
+    const source = readFileSync(join(process.cwd(), "lib/report/deterministic/proposition.ts"), "utf8")
+    // Exactly the union, not the internal declarations that follow it — the
+    // quotation route legitimately names itself a few lines below, and a
+    // guard that swept it up would be matching the thing it is guarding.
+    const union = source.slice(
+      source.indexOf("export type PropositionContent"),
+      source.indexOf("The quotation route, reachable ONLY through"),
+    )
+    expect(union).not.toContain('from: "structural"')
+    expect(union).not.toContain('from: "quotation"')
+    expect(union).toContain('from: "content-pack"')
+  })
+
+  it("source, kind, use, target and template id are all fixed", () => {
+    const p = built()
+    expect(p.sources).toEqual([{ questionId: QUOTATION_QUESTION_ID, value: ANSWER }])
+    expect(QUOTATION_QUESTION_ID).toBe("core_intentions_success_v1")
+    expect(p.kind).toBe("quotation")
+    expect(p.allowedUse).toBe("descriptive-recap")
+    expect(p.target).toBe("systemSnapshot")
+    expect(p.templateId).toBe(QUOTATION_TEMPLATE_ID)
+    expect(p.requiredCapabilities).toEqual([])
+  })
+
+  it("the text is the reviewed lead-in plus the customer's own words, quoted", () => {
+    const p = built()
+    expect(p.text).toBe(`${STRUCTURAL_COPY.quotationLeadIn} “${ANSWER}”`)
+    expect(p.text).toContain(ANSWER)
+  })
+
+  it("the words are derived from the supplied value, not supplied beside it", () => {
+    // Change the answer and only the answer moves.
+    const other = buildQuotationProposition({ answer: "Cooking more at home." })
+    expect(other.ok).toBe(true)
+    if (!other.ok) return
+    expect(other.proposition.text).toContain("Cooking more at home.")
+    expect(other.proposition.templateId).toBe(QUOTATION_TEMPLATE_ID)
+    expect(other.proposition.sources[0].value).toBe("Cooking more at home.")
+  })
+
+  it("surrounding whitespace is trimmed, so the same answer is one sentence", () => {
+    const a = buildQuotationProposition({ answer: `  ${ANSWER}  ` })
+    expect(a.ok).toBe(true)
+    if (!a.ok) return
+    expect(a.proposition.text).toBe(built().text)
+  })
+
+  it("two calls with the same answer are identical", () => {
+    expect(JSON.stringify(buildQuotationProposition({ answer: ANSWER }))).toBe(
+      JSON.stringify(buildQuotationProposition({ answer: ANSWER })),
+    )
+  })
+
+  it("an empty or whitespace-only answer refuses rather than quoting silence", () => {
+    for (const answer of ["", "   ", "\n\t"]) {
+      expect(refusalOf(buildQuotationProposition({ answer }))).toBe("quotation-empty")
+    }
   })
 })

@@ -77,7 +77,9 @@ function compose(foundation: ConsultationFoundation, overrides: ConsultationAnsw
     finalisation: prepared.finalisation,
     handoffId: HANDOFF,
   })
-  return { skipped: false as const, result }
+  // The finalisation travels with the result so a test can check a
+  // proposition's recorded source against the answers it was built from.
+  return { skipped: false as const, result, finalisation: prepared.finalisation }
 }
 
 /** Every (question, value) pair the bank offers, with the foundations that ask it. */
@@ -138,6 +140,25 @@ describe("every enumerated option value composes safely", () => {
             `${p.id}: ${questionId} does not permit ${p.allowedUse} → ${p.target}`,
           ).toBe(true)
         }
+      }
+
+      /*
+       * Every sentence names the answer it came from — across all 120 option
+       * values, not only on samples. A primary source is always present, its
+       * value is one the customer actually gave, and for a pack template the
+       * template id is the one that value resolves to. That is the binding
+       * the third review round introduced, checked at full width.
+       */
+      for (const p of all) {
+        const primary = p.sources[0]
+        expect(primary, `${p.id} has no primary source`).toBeDefined()
+        expect(p.sourceQuestionIds[0]).toBe(primary.questionId)
+        if (primary.value === null) continue
+        const stored = composed.finalisation.trustedAnswers[primary.questionId]
+        const chosen = Array.isArray(stored) ? stored : [stored]
+        expect(chosen, `${p.id}: ${primary.questionId}="${primary.value}" was never answered`).toContain(
+          primary.value,
+        )
       }
 
       /* A silenced value never reaches the page. */

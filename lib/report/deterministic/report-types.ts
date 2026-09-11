@@ -28,8 +28,16 @@ import type { ReportProposition } from "./proposition"
 
 export const REPORT_SCHEMA_VERSION = "personal-food-system-report-v1" as const
 
-/** Bumped when the COMPOSER's behaviour changes, independently of wording. */
-export const COMPOSER_VERSION = "composer-v1" as const
+/**
+ * Bumped when the COMPOSER's behaviour changes, independently of wording.
+ *
+ * v2 — Phase 4A-S2 third review repair. Each proposition now records the
+ * exact `{questionId, value}` sources its words were resolved from, derived
+ * rather than supplied, so a document's provenance cannot describe a
+ * different answer from the one that produced the sentence. No customer-facing
+ * text changed; the artifact's bytes did, which is what this version is for.
+ */
+export const COMPOSER_VERSION = "composer-v2" as const
 
 /**
  * What a section is: a title plus the propositions that earned their place.
