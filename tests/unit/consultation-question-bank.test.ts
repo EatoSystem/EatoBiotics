@@ -237,7 +237,37 @@ describe("the deterministic bank has not reached the paid flow", () => {
       "lib/report/deterministic/report-bank.ts",
       "lib/report/deterministic/report-safety.ts",
       "lib/report/deterministic/report-types.ts",
+      /*
+       * Phase 4A-S3 — the seventh re-point, and the first importer outside
+       * the deterministic Core.
+       *
+       * `lib/report/narrative/validate.ts` reads ONE thing from the
+       * Consultation: `REPORT_COMPOSITION_BOUNDARY.allowedFramings`, so that
+       * a restyled sentence must still open with an adjudicated customer
+       * attribution. It touches no question, no answer, no option value and
+       * no engine — a companion assertion in
+       * `consultation-science-contract-implementation.test.ts` pins the
+       * imported symbol list to exactly that one name.
+       *
+       * The narrative layer's other six modules import nothing from the
+       * Consultation at all, and their absence here is the evidence.
+       */
+      "lib/report/narrative/validate.ts",
     ])
+  })
+
+  it("every importer is a pure library module or an already-pinned surface", () => {
+    /*
+     * Added at Phase 4A-S3, because the exact list above now spans two
+     * directories and "exact" alone stops being self-explanatory. Anything
+     * under lib/report/ must be a library: no route, no page, no component.
+     */
+    for (const importer of importers().filter((f) => f.startsWith("lib/report/"))) {
+      expect(importer.endsWith(".ts"), `${importer} is not a library module`).toBe(true)
+      const source = readFileSync(join(repoRoot, importer), "utf8")
+      expect(source, `${importer} is a client component`).not.toContain('"use client"')
+      expect(source, `${importer} is a server surface`).not.toContain("next/server")
+    }
   })
 
   it("no legacy route reaches beyond the mode CLASSIFIER", () => {

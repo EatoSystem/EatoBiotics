@@ -870,11 +870,53 @@ describe("S4 is still non-activating", () => {
       "lib/report/deterministic/compose.ts",
       "lib/report/deterministic/permissions.ts",
       "lib/report/deterministic/proposition.ts",
+      /*
+       * Re-pinned at Phase 4A-S3, and narrowed rather than loosened.
+       *
+       * The narrative validator checks that a rewritten sentence still opens
+       * with an adjudicated customer-attribution framing. Those framings are
+       * `REPORT_COMPOSITION_BOUNDARY.allowedFramings`, and the alternative —
+       * a second copy of the list inside the narrative layer — is precisely
+       * the drift this contract exists to prevent: the validator would go on
+       * approving an opening the adjudicated list had dropped.
+       *
+       * It is a pure library module with no route, page or component behind
+       * it, like the four above, and the assertion below now also pins WHAT it
+       * is allowed to take from the contract.
+       */
+      "lib/report/narrative/validate.ts",
     ])
     // The half that matters: none of them is a live surface.
     for (const importer of importers) {
-      expect(importer.startsWith("lib/report/deterministic/"), importer).toBe(true)
+      expect(
+        importer.startsWith("lib/report/deterministic/") ||
+          importer.startsWith("lib/report/narrative/"),
+        importer,
+      ).toBe(true)
     }
+
+    /*
+     * And the narrower half, added with the fifth importer: the narrative
+     * layer may read the composition boundary and NOTHING else. The gates,
+     * the adjudicated per-question contracts and the prohibited-inference
+     * list are the science record itself — a product layer reaching them
+     * would be able to reason about the science, which is the conflation the
+     * two-basis registry was built to prevent.
+     */
+    const narrative = readFileSync(
+      join(process.cwd(), "lib/report/narrative/validate.ts"),
+      "utf8",
+    )
+    const imported = /import\s*\{([^}]*)\}\s*from\s*["']@\/lib\/consultation\/science-contract["']/.exec(
+      narrative,
+    )
+    expect(imported, "the narrative import changed shape").not.toBeNull()
+    expect(
+      imported![1]
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    ).toEqual(["REPORT_COMPOSITION_BOUNDARY"])
   })
 
   it("the approved future copy is recorded but not implemented", () => {
