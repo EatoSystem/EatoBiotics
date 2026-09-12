@@ -13,11 +13,20 @@ import {
 import type { ConsultationAnswers, ConsultationFoundation } from "@/lib/consultation/types"
 import { composePersonalFoodSystemReport } from "@/lib/report/deterministic/compose"
 import type { PersonalFoodSystemReportV1 } from "@/lib/report/deterministic/report-types"
+import { isEligibleKind, type EligiblePropositionKind } from "@/lib/report/narrative/contract"
+import { narrativeDigest } from "@/lib/report/narrative/digest"
+import { canonicalPropositionOrder } from "@/lib/report/narrative/order"
+import {
+  bindingKey,
+  testNarrativeVariantPack,
+  type NarrativeVariantPackV1,
+  type ReviewedNarrativeVariant,
+} from "@/lib/report/narrative/variant-pack"
 import type {
   NarrativeRewriteRequest,
   NarrativeRewriteResponse,
   NarrativeRewriter,
-} from "@/lib/report/narrative/types"
+} from "@/lib/report/narrative/authoring/rewriter"
 
 /**
  * Shared fixtures for the Phase 4A-S3 narrative suite.
@@ -28,8 +37,13 @@ import type {
  * never occurs, which is how a layer passes its own tests and fails in
  * production.
  *
- * Rewriters here are FAKES, and deliberately so: S3 wires no provider, and a
- * test that reached a network would be testing the network.
+ * Variant packs here are TEST packs, and cannot be anything else: the builder
+ * refuses a version that does not say so. The production pack is empty and
+ * mechanically required to stay empty while the gate is OPEN, so the runtime
+ * machinery could not otherwise be exercised at all.
+ *
+ * Rewriters are FAKES. S3 wires no provider, and they are reachable only from
+ * the authoring tests.
  */
 
 const AT = new Date("2026-09-10T09:00:00.000Z")
@@ -91,7 +105,51 @@ export function reportFor(
   return result.report
 }
 
-/* ══ Fakes ═════════════════════════════════════════════════════════════════ */
+/* ══ Reviewed variant packs, for tests only ════════════════════════════════ */
+
+/**
+ * A reviewed variant for every eligible proposition in a Report.
+ *
+ * Deduplicated by BINDING, not by text: the priority lever and its recap twin
+ * carry byte-identical wording in different roles, and each role is reviewed
+ * separately, so each gets its own variant. That is the property the binding
+ * exists to express, and building the fixture any other way would hide it.
+ */
+export function testPackForReport(
+  report: PersonalFoodSystemReportV1,
+  options: {
+    readonly version?: string
+    readonly restyle?: (text: string, kind: EligiblePropositionKind) => string
+  } = {},
+): NarrativeVariantPackV1 {
+  const restyle = options.restyle ?? ((text) => text.replace("You told us", "You reported"))
+  const byBinding = new Map<string, ReviewedNarrativeVariant>()
+
+  for (const proposition of canonicalPropositionOrder(report)) {
+    if (!isEligibleKind(proposition.kind)) continue
+    const variant: ReviewedNarrativeVariant = {
+      templateId: proposition.templateId,
+      propositionKind: proposition.kind,
+      canonicalTextDigest: narrativeDigest(proposition.text),
+      variantId: `v-${byBinding.size + 1}`,
+      narrativeText: restyle(proposition.text, proposition.kind),
+    }
+    const key = bindingKey(variant)
+    if (!byBinding.has(key)) byBinding.set(key, variant)
+  }
+
+  return testNarrativeVariantPack(
+    options.version ?? "test:narrative-variant-pack",
+    [...byBinding.values()],
+  )
+}
+
+/** An empty test pack — the shape of production, without production's identity. */
+export function emptyTestPack(version = "test:empty"): NarrativeVariantPackV1 {
+  return testNarrativeVariantPack(version, [])
+}
+
+/* ══ Authoring fakes ═══════════════════════════════════════════════════════ */
 
 export interface RecordingRewriter extends NarrativeRewriter {
   /** Every payload that was handed over, in call order. */
@@ -101,9 +159,9 @@ export interface RecordingRewriter extends NarrativeRewriter {
 /**
  * Records what it was sent and returns whatever `reply` says.
  *
- * The recorder is the strongest guard in the suite: the privacy claim is not
- * "the payload builder looks minimal", it is "here is every object that
- * crossed the boundary, and this is all that was in them".
+ * The recorder is the strongest guard in the authoring suite: the privacy
+ * claim is not "the payload builder looks minimal", it is "here is every
+ * object that crossed the boundary, and this is all that was in them".
  */
 export function recordingRewriter(
   reply: (request: NarrativeRewriteRequest) => unknown = (r) => ({ rewritten: r.text }),

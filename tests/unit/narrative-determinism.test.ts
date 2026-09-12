@@ -6,12 +6,12 @@ import { CONTENT_PACK_VERSION } from "@/lib/report/deterministic/content-pack"
 import { REPORT_V1_SUPPORTED_BANKS } from "@/lib/report/deterministic/report-bank"
 import { REPORT_USE_RECORD_VERSION } from "@/lib/report/deterministic/permissions"
 import { serialiseReport } from "@/lib/report/deterministic/serialise"
-import { buildNarrativeOverlay } from "@/lib/report/narrative/overlay"
 import { isEligibleKind } from "@/lib/report/narrative/contract"
 import { canonicalPropositionOrder } from "@/lib/report/narrative/order"
-import { validateRewrite } from "@/lib/report/narrative/validate"
+import { buildNarrativeOverlay } from "@/lib/report/narrative/overlay"
+import { narrativeRenderPlan } from "@/lib/report/narrative/trust"
 
-import { echoRewriter, mutatingRewriter, reportFor } from "./narrative-fixtures"
+import { reportFor, testPackForReport } from "./narrative-fixtures"
 
 /**
  * The S2 tripwires, re-asserted from S3 — Phase 4A-S3.
@@ -22,7 +22,7 @@ import { echoRewriter, mutatingRewriter, reportFor } from "./narrative-fixtures"
  * modified by this phase — its passing untouched is the primary evidence. This
  * file adds the specifically S3-shaped question: does the canonical document
  * still hash to the same value in a process where the narrative layer has been
- * imported, constructed and run? An overlay that reached the composer, the
+ * imported, built and rendered? An overlay that reached the composer, the
  * serialiser or a proposition would show up here and nowhere else.
  *
  * If anything in this file goes red, S3 crossed into the canonical layer.
@@ -39,26 +39,22 @@ const S2_GOLDEN = {
 
 describe("the S2 golden digests have not moved", () => {
   for (const foundation of ["you", "family"] as const) {
-    it(`${foundation}: unchanged with the narrative layer never invoked`, () => {
+    it(`${foundation}: unchanged with the narrative layer never used`, () => {
       expect(hash(serialiseReport(reportFor(foundation)))).toBe(S2_GOLDEN[foundation])
     })
 
-    it(`${foundation}: unchanged after an overlay has been built over it`, async () => {
+    it(`${foundation}: unchanged after an overlay has been built and rendered`, () => {
       const report = reportFor(foundation)
-      await buildNarrativeOverlay({
-        report,
-        rewriter: mutatingRewriter((text) => text.replace("You told us", "You reported")),
-        enabled: true,
-      })
+      const pack = testPackForReport(report)
+      const overlay = buildNarrativeOverlay({ report, pack, enabled: true })
+      const plan = narrativeRenderPlan({ overlay, report, pack })
+      expect(plan.usable).toBe(true)
       expect(hash(serialiseReport(report))).toBe(S2_GOLDEN[foundation])
     })
 
-    it(`${foundation}: unchanged for a freshly composed Report afterwards`, async () => {
-      await buildNarrativeOverlay({
-        report: reportFor(foundation),
-        rewriter: echoRewriter(),
-        enabled: true,
-      })
+    it(`${foundation}: unchanged for a freshly composed Report afterwards`, () => {
+      const first = reportFor(foundation)
+      buildNarrativeOverlay({ report: first, pack: testPackForReport(first), enabled: true })
       // Composing again in the same process would catch a narrative module
       // that had mutated shared Core state — a frozen list, a cached pack.
       expect(hash(serialiseReport(reportFor(foundation)))).toBe(S2_GOLDEN[foundation])
@@ -79,57 +75,44 @@ describe("the S2 version pins have not moved", () => {
 })
 
 describe("the overlay is not part of the canonical document", () => {
-  it("never reaches the serialiser", async () => {
+  it("never reaches the serialiser", () => {
     const report = reportFor("you")
-    const overlay = await buildNarrativeOverlay({
-      report,
-      rewriter: mutatingRewriter((text) => text.replace("You told us", "You reported")),
-      enabled: true,
-    })
+    const pack = testPackForReport(report)
+    buildNarrativeOverlay({ report, pack, enabled: true })
     const serialised = serialiseReport(report)
     expect(serialised).not.toContain("optional-narrative-layer-v1")
-    expect(serialised).not.toContain("narrativeText")
+    expect(serialised).not.toContain("variantId")
     expect(serialised).not.toContain("canonicalTextDigest")
-    for (const item of overlay.items) {
-      if (item.narrativeText) expect(serialised).not.toContain(item.narrativeText)
+    for (const variant of pack.variants) {
+      expect(serialised).not.toContain(variant.narrativeText)
     }
   })
 
-  it("leaves the Report deep-equal to a freshly composed one", async () => {
+  it("leaves the Report deep-equal to a freshly composed one", () => {
     const report = reportFor("family")
-    await buildNarrativeOverlay({
-      report,
-      rewriter: mutatingRewriter((text) => text.replace("You told us", "You reported")),
-      enabled: true,
-    })
+    buildNarrativeOverlay({ report, pack: testPackForReport(report), enabled: true })
     expect(report).toEqual(reportFor("family"))
   })
 })
 
-describe("the layer is deterministic", () => {
-  it("produces an identical overlay for identical input", async () => {
+describe("the runtime is deterministic", () => {
+  it("produces an identical render plan for identical input", () => {
     const report = reportFor("family")
-    const first = await buildNarrativeOverlay({
-      report,
-      rewriter: mutatingRewriter((t) => t.replace("You told us", "You reported")),
-      enabled: true,
-    })
-    const second = await buildNarrativeOverlay({
-      report,
-      rewriter: mutatingRewriter((t) => t.replace("You told us", "You reported")),
-      enabled: true,
-    })
-    expect(second).toEqual(first)
+    const pack = testPackForReport(report)
+    const plan = () =>
+      narrativeRenderPlan({
+        overlay: buildNarrativeOverlay({ report, pack, enabled: true }),
+        report,
+        pack,
+      })
+    expect(plan()).toEqual(plan())
   })
 
-  it("validates the same response identically twice", () => {
+  it("reads no clock and no random source", () => {
     const report = reportFor("you")
-    for (const proposition of canonicalPropositionOrder(report)) {
-      const candidate = proposition.text.replace("You told us", "You reported")
-      expect(validateRewrite(proposition.text, candidate)).toEqual(
-        validateRewrite(proposition.text, candidate),
-      )
-    }
+    const pack = testPackForReport(report)
+    const overlay = buildNarrativeOverlay({ report, pack, enabled: true })
+    expect(JSON.stringify(overlay)).not.toContain("Date")
   })
 })
 
@@ -141,8 +124,8 @@ describe("eligibility, as it actually stands today", () => {
    * `constraint` is an eligible kind, and no composed Report currently
    * contains one: the composer targets `foodTools`, which requires the
    * `specificFoods` capability, which is disabled while the dietetic gate is
-   * OPEN. So the sentences this layer can actually be asked to rewrite today
-   * are recaps and the priority lever, and nothing else.
+   * OPEN. So the sentences that can carry reviewed wording today are recaps
+   * and the priority lever, and nothing else.
    */
   it("only recap and lever propositions are reachable while the dietetic gate is open", () => {
     for (const foundation of ["you", "family"] as const) {

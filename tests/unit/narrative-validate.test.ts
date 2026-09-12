@@ -2,15 +2,19 @@ import { describe, it, expect } from "vitest"
 
 import { CONSULTATION_QUESTION_BANK } from "@/lib/consultation/question-bank"
 import { templateFor } from "@/lib/report/deterministic/content-pack"
-import { EXPANSION_BOUNDS, allowedLengthWindow } from "@/lib/report/narrative/contract"
+import {
+  EXPANSION_BOUNDS,
+  NARRATIVE_VALIDATOR_VERSION,
+  allowedLengthWindow,
+} from "@/lib/report/narrative/authoring/contract"
 import {
   NARRATIVE_REJECTION_CLASSES,
   validateRewrite,
   type NarrativeRejectionClass,
-} from "@/lib/report/narrative/validate"
+} from "@/lib/report/narrative/authoring/validate"
 
 /**
- * The validator — Phase 4A-S3.
+ * The authoring screen — Phase 4A-S3.
  *
  * ══ WHAT A GREEN FILE HERE DOES AND DOES NOT MEAN ═══════════════════════════
  *
@@ -53,7 +57,37 @@ const REJECTIONS: readonly Case[] = [
   { name: "a number changed", canonical: NUMERIC, rewritten: "You told us you cook 4 nights a week.", cls: "numbers" },
   { name: "a number added", canonical: FOCUS, rewritten: "You told us energy is the 1 thing you want to work on.", cls: "numbers" },
   { name: "a number dropped", canonical: NUMERIC, rewritten: "You told us you cook some nights a week.", cls: "numbers" },
-  { name: "a time added", canonical: FOCUS, rewritten: "You told us energy is what you want to work on each morning.", cls: "temporal" },
+  /*
+   * The quantity rule, and the counterexample that created it. Every pair
+   * below is drawn from the real corpus, and every one of them passed the
+   * screen before this rule existed.
+   */
+  { name: "most became least", canonical: FOCUS, rewritten: "You told us energy is what you least want to work on.", cls: "quantity" },
+  {
+    name: "almost all became few",
+    canonical: "You told us almost all of your meals are cooked at home.",
+    rewritten: "You told us few of your meals are cooked at home.",
+    cls: "quantity",
+  },
+  {
+    name: "under became over",
+    canonical: "You told us your longest gap between eating is usually under four hours.",
+    rewritten: "You told us your longest gap between eating is usually over four hours.",
+    cls: "quantity",
+  },
+  {
+    name: "a spelled numeral changed",
+    canonical: "You told us your longest gap between eating is usually four to six hours.",
+    rewritten: "You told us your longest gap between eating is usually four to eight hours.",
+    cls: "quantity",
+  },
+  {
+    name: "most of became little of",
+    canonical: "You told us you do most of the preparing.",
+    rewritten: "You told us you do little of the preparing.",
+    cls: "quantity",
+  },
+  { name: "a time added", canonical: FOCUS, rewritten: "You told us energy is what you most want to work on in the morning.", cls: "temporal" },
   {
     name: "a time changed",
     canonical: MORNINGS,
@@ -68,7 +102,7 @@ const REJECTIONS: readonly Case[] = [
     rewritten: "You told us meals are lighter or simpler on the days you experience as more settled.",
     cls: "modality",
   },
-  { name: "an absolute added", canonical: FOCUS, rewritten: "You told us energy is always what you want to work on.", cls: "modality" },
+  { name: "an absolute added", canonical: FOCUS, rewritten: "You told us energy is always what you most want to work on.", cls: "modality" },
   { name: "the opening subject changed", canonical: FOCUS, rewritten: "Energy is what you most want to work on, you said.", cls: "attribution" },
   {
     /*
@@ -80,14 +114,14 @@ const REJECTIONS: readonly Case[] = [
     name: "the opening subject changed to a different approved framing",
     canonical: FOCUS,
     rewritten:
-      "Based on the routines and constraints you described, energy is what you want to work on.",
+      "Based on the routines and constraints you described, energy is what you most want to work on.",
     cls: "attribution",
   },
   { name: "the approved framing lost", canonical: FOCUS, rewritten: "You mentioned energy is what you most want to work on.", cls: "attribution" },
   {
     name: "a prohibited framing used",
-    canonical: FOCUS,
-    rewritten: "You told us energy matters, and this shows energy is the focus.",
+    canonical: MORNINGS,
+    rewritten: "You told us mornings are hard, and this shows the day is the problem.",
     cls: "prohibited-framing",
   },
   {
@@ -96,9 +130,9 @@ const REJECTIONS: readonly Case[] = [
     rewritten: "You told us this means mornings are the hardest part of the day for your household.",
     cls: "finding-shift",
   },
-  { name: "a second sentence", canonical: FOCUS, rewritten: "You told us energy is what you want. It matters.", cls: "sentence-count" },
+  { name: "a second sentence", canonical: FOCUS, rewritten: "You told us energy is what you most want. It matters.", cls: "sentence-count" },
   { name: "expanded past the window", canonical: FOCUS, rewritten: "You told us energy is what you most want to work on, in your own view.", cls: "expansion" },
-  { name: "collapsed below the window", canonical: FOCUS, rewritten: "You told us energy.", cls: "expansion" },
+  { name: "collapsed below the window", canonical: FOCUS, rewritten: "You told us energy is most.", cls: "expansion" },
 
   /* ── C · drift ── */
   { name: "causal language", canonical: MORNINGS, rewritten: "You told us mornings are the hardest part of the day because of your household.", cls: "drift-causal" },
@@ -180,6 +214,57 @@ describe("what the validator accepts", () => {
       "You told us meals tend to feel lighter or simpler on the days you experience as more settled.",
     )
     expect(outcome.ok, outcome.ok ? "" : `${outcome.rejectionClass}: ${outcome.detail}`).toBe(true)
+  })
+})
+
+describe("what the screen does NOT catch — why a human is the authority", () => {
+  /**
+   * These are kept as PASSING cases on purpose.
+   *
+   * Each one reverses the meaning of a real reviewed sentence while leaving
+   * every tripwire untouched, and each survives the screen. Asserting that
+   * they pass is uncomfortable, which is the point: it is the mechanical
+   * record of what this file cannot do, so nobody re-reads the green suite as
+   * a preservation proof.
+   *
+   * The fix for them is not a longer denylist — antonyms are not a closed
+   * set. It is that nothing reaching a customer comes from this function. A
+   * candidate that survives here is shown to a person, who approves or
+   * discards it, and only an approved string is committed to the reviewed
+   * pack.
+   */
+  const SURVIVING_INVERSIONS: readonly { readonly name: string; readonly canonical: string; readonly rewritten: string }[] = [
+    {
+      name: "hardest became easiest",
+      canonical: MORNINGS,
+      rewritten: "You told us mornings are the easiest part of the day for your household.",
+    },
+    {
+      name: "relaxed became rushed",
+      canonical: "You told us mealtimes in your household are generally relaxed.",
+      rewritten: "You told us mealtimes in your household are usually rushed.",
+    },
+    {
+      name: "looser became tighter",
+      canonical: "You told us weekends are looser than weekdays.",
+      rewritten: "You told us weekends are tighter than weekdays.",
+    },
+  ]
+
+  for (const inversion of SURVIVING_INVERSIONS) {
+    it(`${inversion.name} — passes the screen, and only a reviewer would catch it`, () => {
+      const outcome = validateRewrite(inversion.canonical, inversion.rewritten)
+      expect(
+        outcome.ok,
+        outcome.ok ? "" : `unexpectedly rejected: ${outcome.rejectionClass}`,
+      ).toBe(true)
+    })
+  }
+
+  it("the screen's own version records that it was tightened, not fixed", () => {
+    // v2 added the quantity rule. It did not, and could not, make the screen
+    // a proof of anything.
+    expect(NARRATIVE_VALIDATOR_VERSION).toBe("narrative-validator-v2")
   })
 })
 

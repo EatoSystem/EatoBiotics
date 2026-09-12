@@ -1,219 +1,228 @@
 import { describe, it, expect } from "vitest"
-import { createHash } from "node:crypto"
 
 import { serialiseReport } from "@/lib/report/deterministic/serialise"
-import { canonicalPropositionOrder } from "@/lib/report/narrative/order"
-import { buildNarrativeOverlay, overlayMatchesReport } from "@/lib/report/narrative/overlay"
 import {
   NARRATIVE_CONTRACT_VERSION,
-  NARRATIVE_PROMPT_VERSION,
-  NARRATIVE_VALIDATOR_VERSION,
   isEligibleKind,
 } from "@/lib/report/narrative/contract"
+import { narrativeDigest } from "@/lib/report/narrative/digest"
+import { canonicalPropositionOrder } from "@/lib/report/narrative/order"
+import { buildNarrativeOverlay } from "@/lib/report/narrative/overlay"
+import { overlayMatchesReport } from "@/lib/report/narrative/trust"
+import { PRODUCTION_NARRATIVE_VARIANT_PACK } from "@/lib/report/narrative/variant-pack"
 
-import { echoRewriter, mutatingRewriter, reportFor } from "./narrative-fixtures"
+import { emptyTestPack, reportFor, testPackForReport } from "./narrative-fixtures"
 
 /**
  * The overlay's 1:1 contract — Phase 4A-S3.
  *
- * ══ WHY COMPLETENESS IS THE THING BEING TESTED ══════════════════════════════
+ * The overlay is joined to the Report positionally, so every property that
+ * makes the join safe is asserted here on both foundations: same length, same
+ * order, same ids, one item per proposition. A sparse or reordered overlay
+ * would label the right variant against the wrong sentence.
  *
- * The overlay is joined to the Report positionally. Every property that makes
- * that join safe — same length, same order, same ids, one item per
- * proposition — is asserted here, on both foundations, because a sparse or
- * reordered overlay would label the right rewrite against the wrong sentence
- * and nothing downstream could tell.
+ * It carries no wording of any kind — canonical or narrative. The reviewed
+ * pack is the sole authority for the latter, and `PersonalFoodSystemReportV1`
+ * for the former.
  */
-
-const sha256 = (value: string) => createHash("sha256").update(value, "utf8").digest("hex")
 
 describe("the overlay is exactly 1:1 with the Report", () => {
   for (const foundation of ["you", "family"] as const) {
-    it(`${foundation}: one item per proposition, in canonical order`, async () => {
-      const report = reportFor(foundation)
-      const propositions = canonicalPropositionOrder(report)
-      const overlay = await buildNarrativeOverlay({
-        report,
-        rewriter: echoRewriter(),
-        enabled: true,
-      })
+    const report = reportFor(foundation)
+    const pack = testPackForReport(report)
+    const overlay = buildNarrativeOverlay({ report, pack, enabled: true })
+    const propositions = canonicalPropositionOrder(report)
 
+    it(`${foundation}: one item per proposition, in canonical order`, () => {
       expect(overlay.items.length).toBe(propositions.length)
       expect(overlay.items.map((i) => i.propositionId)).toEqual(propositions.map((p) => p.id))
       expect(overlay.items.map((i) => i.canonicalTextDigest)).toEqual(
-        propositions.map((p) => sha256(p.text)),
+        propositions.map((p) => narrativeDigest(p.text)),
       )
     })
 
-    it(`${foundation}: binds to exactly one canonical document`, async () => {
-      const report = reportFor(foundation)
-      const overlay = await buildNarrativeOverlay({
-        report,
-        rewriter: echoRewriter(),
-        enabled: true,
-      })
-      expect(overlay.canonicalReportDigest).toBe(sha256(serialiseReport(report)))
+    it(`${foundation}: binds to one document and one pack`, () => {
+      expect(overlay.canonicalReportDigest).toBe(narrativeDigest(serialiseReport(report)))
+      expect(overlay.variantPackVersion).toBe(pack.version)
+      expect(overlay.narrativeContractVersion).toBe(NARRATIVE_CONTRACT_VERSION)
+      expect(overlay.kind).toBe("optional-narrative-layer-v1")
       expect(overlayMatchesReport(overlay, report)).toBe(true)
 
-      // The other foundation is a different document, and the overlay must
-      // refuse it rather than be reconciled against it.
       const other = reportFor(foundation === "you" ? "family" : "you")
       expect(overlayMatchesReport(overlay, other)).toBe(false)
     })
 
-    it(`${foundation}: carries the versions it was produced under`, async () => {
-      const overlay = await buildNarrativeOverlay({
-        report: reportFor(foundation),
-        rewriter: echoRewriter(),
-        enabled: true,
-      })
-      expect(overlay.kind).toBe("optional-narrative-layer-v1")
-      expect(overlay.narrativeContractVersion).toBe(NARRATIVE_CONTRACT_VERSION)
-      expect(overlay.promptVersion).toBe(NARRATIVE_PROMPT_VERSION)
-      expect(overlay.validatorVersion).toBe(NARRATIVE_VALIDATOR_VERSION)
+    it(`${foundation}: carries no wording, canonical or narrative`, () => {
+      const serialised = JSON.stringify(overlay)
+      for (const proposition of propositions) {
+        expect(serialised, `canonical wording stored: ${proposition.text}`).not.toContain(
+          proposition.text,
+        )
+      }
+      for (const variant of pack.variants) {
+        expect(serialised, "narrative wording stored").not.toContain(variant.narrativeText)
+      }
+      for (const item of overlay.items) {
+        expect(Object.keys(item)).not.toContain("narrativeText")
+        expect(Object.keys(item)).not.toContain("canonicalText")
+      }
     })
 
-    it(`${foundation}: every item is one status with the matching field`, async () => {
-      const overlay = await buildNarrativeOverlay({
-        report: reportFor(foundation),
-        rewriter: echoRewriter(),
-        enabled: true,
-      })
+    it(`${foundation}: every item is one status with the matching field`, () => {
       for (const item of overlay.items) {
-        if (item.status === "accepted") {
-          expect(typeof item.narrativeText).toBe("string")
+        if (item.status === "reviewed-variant") {
+          expect(typeof item.variantId).toBe("string")
+          expect(item.variantId.length).toBeGreaterThan(0)
           expect(item.fallbackReason).toBeUndefined()
         } else {
-          expect(item.narrativeText).toBeUndefined()
+          expect(item.variantId).toBeUndefined()
           expect(typeof item.fallbackReason).toBe("string")
         }
       }
     })
+
+    it(`${foundation}: only eligible propositions carry a variant`, () => {
+      overlay.items.forEach((item, index) => {
+        if (item.status !== "reviewed-variant") return
+        expect(isEligibleKind(propositions[index].kind), propositions[index].kind).toBe(true)
+      })
+    })
   }
 })
 
-describe("exactly one operation per eligible proposition, and none for the rest", () => {
+describe("the two exclusions", () => {
   for (const foundation of ["you", "family"] as const) {
-    it(`${foundation}: call count equals the eligible count`, async () => {
-      const report = reportFor(foundation)
-      const propositions = canonicalPropositionOrder(report)
-      const eligible = propositions.filter((p) => isEligibleKind(p.kind))
-      const rewriter = echoRewriter()
+    const report = reportFor(foundation)
+    const pack = testPackForReport(report)
+    const overlay = buildNarrativeOverlay({ report, pack, enabled: true })
+    const propositions = canonicalPropositionOrder(report)
 
-      await buildNarrativeOverlay({ report, rewriter, enabled: true })
-
-      expect(rewriter.calls.length).toBe(eligible.length)
-      // Not batched: one payload per eligible proposition, each carrying a
-      // single sentence, so a call physically cannot see a second one.
-      expect(rewriter.calls.map((c) => c.text).sort()).toEqual(
-        eligible.map((p) => p.text).sort(),
-      )
+    it(`${foundation}: the quotation is canonical-only`, () => {
+      const index = propositions.findIndex((p) => p.kind === "quotation")
+      expect(index).toBeGreaterThanOrEqual(0)
+      expect(overlay.items[index].status).toBe("canonical-only")
+      expect(overlay.items[index].fallbackReason).toBe("ineligible-quotation")
     })
 
-    it(`${foundation}: the quotation is never sent`, async () => {
-      const report = reportFor(foundation)
-      const rewriter = echoRewriter()
-      await buildNarrativeOverlay({ report, rewriter, enabled: true })
-
-      expect(report.quotation).toBeDefined()
-      for (const call of rewriter.calls) {
-        expect(call.text).not.toBe(report.quotation!.text)
-      }
-      const quotationItem = (
-        await buildNarrativeOverlay({ report, rewriter: echoRewriter(), enabled: true })
-      ).items.slice(-1)[0]
-      expect(quotationItem.status).toBe("canonical-only")
-      expect(quotationItem.fallbackReason).toBe("ineligible-quotation")
-    })
-
-    it(`${foundation}: no loop step is sent, and none copies the lever's rewrite`, async () => {
-      const report = reportFor(foundation)
-      const propositions = canonicalPropositionOrder(report)
-      const rewriter = mutatingRewriter((text) => text.replace("You told us", "You reported"))
-      const overlay = await buildNarrativeOverlay({ report, rewriter, enabled: true })
-
+    it(`${foundation}: the four loop beats are canonical-only, though their text is the lever's`, () => {
+      const lever = propositions.find((p) => p.kind === "lever")!
       const loopIndices = propositions
         .map((p, i) => (p.kind === "loop-step" ? i : -1))
         .filter((i) => i >= 0)
       expect(loopIndices.length).toBe(4)
 
       for (const index of loopIndices) {
+        // The collision the binding and the eligibility check both guard.
+        expect(propositions[index].text).toBe(lever.text)
         expect(overlay.items[index].status).toBe("canonical-only")
         expect(overlay.items[index].fallbackReason).toBe("ineligible-loop-step")
-        // The tempting shortcut — reuse the lever's accepted rewrite for the
-        // four beats — would show up here as narrative text on a loop item.
-        expect(overlay.items[index].narrativeText).toBeUndefined()
+        expect(overlay.items[index].variantId).toBeUndefined()
       }
 
+      // …and the lever itself did resolve, so the assertion above is not
+      // passing because nothing resolved anywhere.
       const leverIndex = propositions.findIndex((p) => p.kind === "lever")
-      expect(overlay.items[leverIndex].status).toBe("accepted")
+      expect(overlay.items[leverIndex].status).toBe("reviewed-variant")
     })
   }
 })
 
-describe("the overlay never touches the Report", () => {
-  it("leaves the document byte-identical", async () => {
-    const report = reportFor("family")
-    const before = serialiseReport(report)
-    await buildNarrativeOverlay({
-      report,
-      rewriter: mutatingRewriter((text) => text.replace("You told us", "You reported")),
-      enabled: true,
-    })
-    expect(serialiseReport(report)).toBe(before)
-  })
+describe("the lever and its recap twin are reviewed separately", () => {
+  const report = reportFor("you")
+  const propositions = canonicalPropositionOrder(report)
+  const pack = testPackForReport(report)
+  const overlay = buildNarrativeOverlay({ report, pack, enabled: true })
 
-  it("stores no canonical text, only a digest of it", async () => {
-    const report = reportFor("you")
-    /*
-     * A rewriter that actually changes the wording, so that "the overlay
-     * contains this sentence" can only mean it stored a canonical copy. An
-     * echo rewriter would make an accepted rewrite byte-identical to the
-     * canonical sentence and the assertion would be untestable rather than
-     * satisfied.
-     */
-    const overlay = await buildNarrativeOverlay({
-      report,
-      rewriter: mutatingRewriter((text) => text.replace("You told us", "You reported")),
-      enabled: true,
-    })
-    const serialised = JSON.stringify(overlay)
-    for (const proposition of canonicalPropositionOrder(report)) {
-      expect(serialised, `canonical wording stored: ${proposition.text}`).not.toContain(
-        proposition.text,
-      )
+  it("share their wording and not their variant", () => {
+    const leverIndex = propositions.findIndex((p) => p.kind === "lever")
+    const twinIndex = propositions.findIndex(
+      (p) => p.kind === "recap" && p.text === propositions[leverIndex].text,
+    )
+    expect(twinIndex).toBeGreaterThanOrEqual(0)
+
+    const lever = overlay.items[leverIndex]
+    const twin = overlay.items[twinIndex]
+    if (lever.status !== "reviewed-variant" || twin.status !== "reviewed-variant") {
+      throw new Error("fixture: both should resolve")
     }
-    for (const item of overlay.items) {
-      expect(Object.keys(item)).not.toContain("canonicalText")
-    }
+    // One sentence, two roles, two reviews, two variants.
+    expect(lever.variantId).not.toBe(twin.variantId)
   })
 })
 
-describe("bounded concurrency changes nothing but the timing", () => {
-  it("produces the same overlay at 1, 4 and 64 in flight", async () => {
+describe("the overlay never touches the Report", () => {
+  it("leaves the document byte-identical", () => {
     const report = reportFor("family")
-    const results = []
-    for (const concurrency of [1, 4, 64]) {
-      results.push(
-        await buildNarrativeOverlay({
-          report,
-          rewriter: mutatingRewriter((text) => text.replace("You told us", "You reported")),
-          enabled: true,
-          concurrency,
-        }),
+    const before = serialiseReport(report)
+    buildNarrativeOverlay({ report, pack: testPackForReport(report), enabled: true })
+    expect(serialiseReport(report)).toBe(before)
+  })
+})
+
+describe("off by default, and off is complete", () => {
+  const report = reportFor("you")
+  const pack = testPackForReport(report)
+
+  it("does not switch itself on", () => {
+    const overlay = buildNarrativeOverlay({ report, pack })
+    const propositions = canonicalPropositionOrder(report)
+    overlay.items.forEach((item, index) => {
+      expect(item.status).toBe("canonical-only")
+      // A quotation is not canonical-only because the switch is off today —
+      // it is canonical-only permanently, and the reason says which.
+      expect(item.fallbackReason).toBe(
+        isEligibleKind(propositions[index].kind)
+          ? "narrative-disabled"
+          : item.fallbackReason,
       )
-    }
-    expect(results[1]).toEqual(results[0])
-    expect(results[2]).toEqual(results[0])
+      if (!isEligibleKind(propositions[index].kind)) {
+        expect(item.fallbackReason).toMatch(/^ineligible-/)
+      }
+    })
   })
 
-  it("issues one call per eligible proposition however many workers there are", async () => {
+  it("disabled still produces a complete, ordered overlay", () => {
+    const overlay = buildNarrativeOverlay({ report, pack, enabled: false })
+    const propositions = canonicalPropositionOrder(report)
+    expect(overlay.items.length).toBe(propositions.length)
+    expect(overlay.items.map((i) => i.propositionId)).toEqual(propositions.map((p) => p.id))
+  })
+
+  it("an empty pack yields every position canonical-only, and that is not a failure", () => {
+    const overlay = buildNarrativeOverlay({ report, pack: emptyTestPack(), enabled: true })
+    const propositions = canonicalPropositionOrder(report)
+    overlay.items.forEach((item, index) => {
+      expect(item.status).toBe("canonical-only")
+      const expected = isEligibleKind(propositions[index].kind)
+        ? "no-approved-variant"
+        : item.fallbackReason
+      expect(item.fallbackReason).toBe(expected)
+    })
+  })
+
+  it("the production pack is the empty case", () => {
+    const overlay = buildNarrativeOverlay({
+      report,
+      pack: PRODUCTION_NARRATIVE_VARIANT_PACK,
+      enabled: true,
+    })
+    expect(overlay.items.every((i) => i.status === "canonical-only")).toBe(true)
+  })
+})
+
+describe("the builder is deterministic and synchronous", () => {
+  it("returns an overlay, not a promise", () => {
+    const report = reportFor("you")
+    const overlay = buildNarrativeOverlay({ report, pack: testPackForReport(report), enabled: true })
+    expect(overlay).not.toBeInstanceOf(Promise)
+    expect(typeof (overlay as unknown as { then?: unknown }).then).toBe("undefined")
+  })
+
+  it("produces an identical overlay for identical input", () => {
     const report = reportFor("family")
-    const eligible = canonicalPropositionOrder(report).filter((p) => isEligibleKind(p.kind))
-    for (const concurrency of [1, 2, 64]) {
-      const rewriter = echoRewriter()
-      await buildNarrativeOverlay({ report, rewriter, enabled: true, concurrency })
-      expect(rewriter.calls.length, `concurrency ${concurrency}`).toBe(eligible.length)
-    }
+    const pack = testPackForReport(report)
+    expect(buildNarrativeOverlay({ report, pack, enabled: true })).toEqual(
+      buildNarrativeOverlay({ report, pack, enabled: true }),
+    )
   })
 })

@@ -1,88 +1,73 @@
 import type {
   NARRATIVE_CONTRACT_VERSION,
-  NARRATIVE_PROMPT_VERSION,
-  NARRATIVE_VALIDATOR_VERSION,
-  NarrativeFallbackReason,
+  RuntimeNarrativeFallbackReason,
 } from "./contract"
 
 /**
- * The overlay, and the boundary the rewriter sits behind — Phase 4A-S3.
+ * The runtime overlay — Phase 4A-S3.
  *
- * ══ WHY THE OVERLAY DOES NOT CARRY CANONICAL TEXT ═══════════════════════════
+ * ══ WHY THE OVERLAY CARRIES NO WORDING AT ALL ═══════════════════════════════
  *
- * There is exactly ONE canonical-text authority: `PersonalFoodSystemReportV1`.
- * An overlay that carried a copy would be a second one, and two copies can
- * disagree — a canonical edit would leave the overlay quietly serving the old
- * wording under the new document's name.
+ * It already refused to carry canonical text, because there is exactly one
+ * canonical-text authority — `PersonalFoodSystemReportV1` — and two copies can
+ * disagree. The same argument applies to narrative text, and the reviewed
+ * pack is its single authority. So an item names WHICH approved variant
+ * applies and never what it says.
  *
- * So an item carries a DIGEST of the sentence it was derived from. That is
- * enough to prove which sentence a rewrite belongs to, and not enough to serve
- * it. A renderer always reads the words from the Report.
+ * The consequence is worth stating plainly: "somebody edited the narrative
+ * wording in the overlay while leaving every digest intact" is not a failure
+ * mode this layer detects. It is a failure mode that cannot be expressed,
+ * because there is no wording in the overlay to edit.
+ *
+ * ══ WHY THE STATUS IS NOT "accepted" ════════════════════════════════════════
+ *
+ * "Accepted" was the word that carried the old architecture's over-strong
+ * claim: it read as approved when the only established fact was that a filter
+ * had not objected. `reviewed-variant` names where the wording came from,
+ * which is the only thing this layer knows.
  */
 
-/* ══ The provider boundary ═════════════════════════════════════════════════ */
+export type NarrativeStatus = "reviewed-variant" | "canonical-only"
 
 /**
- * Everything that leaves the application, for one proposition.
+ * One position in the canonical Report.
  *
- * One field. Not a proposition id, not an opaque handle, not a question id,
- * not an answer value, not a section, not a kind, not a capability, not a
- * correlation id. With one call per proposition the caller already knows which
- * proposition a call belongs to — the promise IS the correlation — so any
- * identifier would be disclosure with no purpose.
- *
- * `ReportProposition` is deliberately NOT accepted here. It carries
- * `sources[]` (the raw answer values, and for a quotation the customer's whole
- * free text), `sourceFields`, `basis`, `templateId` and `requiredCapabilities`.
- * Passing one would hand over the answers.
+ * A discriminated union, so the impossible combinations are compile errors
+ * rather than runtime checks: a reviewed-variant item with a fallback reason,
+ * or a canonical-only item with a variant, cannot be constructed.
  */
-export interface NarrativeRewriteRequest {
-  readonly text: string
-}
+export type NarrativeItem =
+  | {
+      readonly status: "reviewed-variant"
+      /** The real id, attached from the local walk. Never sent anywhere. */
+      readonly propositionId: string
+      /** sha256 of the exact canonical sentence at this position. */
+      readonly canonicalTextDigest: string
+      /** WHICH approved variant. Deliberately not its words. */
+      readonly variantId: string
+      readonly fallbackReason?: never
+    }
+  | {
+      readonly status: "canonical-only"
+      readonly propositionId: string
+      readonly canonicalTextDigest: string
+      readonly fallbackReason: RuntimeNarrativeFallbackReason
+      readonly variantId?: never
+    }
 
-/**
- * Everything that comes back.
- *
- * No identifier either, so "the rewriter named the wrong proposition" is not a
- * failure mode to validate against — it cannot be expressed.
- */
-export interface NarrativeRewriteResponse {
-  readonly rewritten: string
-}
-
-/**
- * The injected seam. S3 wires no provider.
- *
- * Live generation, metering and persistence belong to the later runtime
- * boundary. Here there is only an interface, so every test runs against a
- * deterministic fake with no network, and provider independence is structural
- * rather than promised.
- */
-export interface NarrativeRewriter {
-  rewrite(request: NarrativeRewriteRequest): Promise<NarrativeRewriteResponse>
-}
-
-/* ══ The overlay ═══════════════════════════════════════════════════════════ */
-
-export type NarrativeStatus = "accepted" | "canonical-only"
-
-export interface NarrativeItem {
-  /** The real id, attached from the local walk. Never sent, never received. */
-  readonly propositionId: string
-  /** sha256 of the exact canonical sentence this item was derived from. */
-  readonly canonicalTextDigest: string
-  readonly status: NarrativeStatus
-  /** Present only when `status === "accepted"`. */
-  readonly narrativeText?: string
-  /** Present only when `status === "canonical-only"`. */
-  readonly fallbackReason?: NarrativeFallbackReason
-}
+export const NARRATIVE_LAYER_KIND = "optional-narrative-layer-v1" as const
 
 export interface OptionalNarrativeLayerV1 {
-  readonly kind: "optional-narrative-layer-v1"
+  readonly kind: typeof NARRATIVE_LAYER_KIND
   readonly narrativeContractVersion: typeof NARRATIVE_CONTRACT_VERSION
-  readonly promptVersion: typeof NARRATIVE_PROMPT_VERSION
-  readonly validatorVersion: typeof NARRATIVE_VALIDATOR_VERSION
+  /**
+   * The exact pack this overlay was resolved against.
+   *
+   * A renderer holding a different pack must not use the overlay: the same
+   * `variantId` in a later pack could carry different wording, and matching
+   * ids across packs is not matching content.
+   */
+  readonly variantPackVersion: string
   /**
    * sha256 of `serialiseReport(report)`.
    *
@@ -94,4 +79,12 @@ export interface OptionalNarrativeLayerV1 {
   readonly items: readonly NarrativeItem[]
 }
 
-export const NARRATIVE_LAYER_KIND = "optional-narrative-layer-v1" as const
+/*
+ * `promptVersion` and `validatorVersion` are deliberately absent.
+ *
+ * They describe how a candidate was produced and screened at authoring time,
+ * and a runtime artefact carrying authoring metadata invites a renderer to
+ * reason about it. Runtime authority is the canonical Report, the exact pack
+ * identity, and the exact binding — nothing else. The authoring provenance is
+ * kept in the committed review record, keyed by `variantId`.
+ */

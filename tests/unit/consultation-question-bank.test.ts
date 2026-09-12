@@ -241,7 +241,11 @@ describe("the deterministic bank has not reached the paid flow", () => {
        * Phase 4A-S3 — the seventh re-point, and the first importer outside
        * the deterministic Core.
        *
-       * `lib/report/narrative/validate.ts` reads ONE thing from the
+       * The path moved within the phase, when the S3 repair demoted the
+       * validator from a runtime gate to an offline authoring screen. What it
+       * reads did not change, and the symbol pin below did not move.
+       *
+       * `lib/report/narrative/authoring/validate.ts` reads ONE thing from the
        * Consultation: `REPORT_COMPOSITION_BOUNDARY.allowedFramings`, so that
        * a restyled sentence must still open with an adjudicated customer
        * attribution. It touches no question, no answer, no option value and
@@ -249,10 +253,10 @@ describe("the deterministic bank has not reached the paid flow", () => {
        * `consultation-science-contract-implementation.test.ts` pins the
        * imported symbol list to exactly that one name.
        *
-       * The narrative layer's other six modules import nothing from the
+       * The narrative layer's other twelve modules import nothing from the
        * Consultation at all, and their absence here is the evidence.
        */
-      "lib/report/narrative/validate.ts",
+      "lib/report/narrative/authoring/validate.ts",
     ])
   })
 

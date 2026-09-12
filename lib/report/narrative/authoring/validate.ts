@@ -1,7 +1,7 @@
 import { usesProhibitedFraming } from "@/lib/report/deterministic/proposition"
 import { REPORT_COMPOSITION_BOUNDARY } from "@/lib/consultation/science-contract"
 
-import { allowedLengthWindow, type NarrativeFallbackReason } from "./contract"
+import { allowedLengthWindow, type AuthoringRejectionReason } from "./contract"
 import {
   ABSOLUTE_TOKENS,
   BIOTICS_TOKENS,
@@ -11,6 +11,7 @@ import {
   HEDGE_TOKENS,
   MEDICAL_TOKENS,
   NEGATION_TOKENS,
+  QUANTITY_TOKENS,
   RECOMMENDATION_TOKENS,
   SAFETY_NETTING_TOKENS,
   SCORE_TOKENS,
@@ -18,19 +19,38 @@ import {
 } from "./lexicons"
 
 /**
- * The validator — Phase 4A-S3.
+ * The authoring screen — Phase 4A-S3.
  *
  * ══ WHAT THIS IS, AND THE CLAIM IT DOES NOT MAKE ════════════════════════════
  *
- * A REJECTION filter. Every check below can refuse a rewrite; not one of them
- * can certify a rewrite as meaning the same thing as the canonical sentence.
- * Nothing downstream may read a clean pass as proof of equivalence, and the
- * word "equivalent" appears nowhere in what this returns.
+ * A REJECTION filter, run OFFLINE, to reduce what a human reviewer has to
+ * read. Every check below can refuse a candidate; not one of them can certify
+ * a candidate as meaning the same thing as the canonical sentence. Nothing
+ * downstream may read a clean pass as proof of equivalence, and the word
+ * "equivalent" appears nowhere in what this returns.
  *
- * That asymmetry is what makes incompleteness survivable. A concept nobody
- * thought to list degrades to "an awkward sentence ships" — never "a new claim
- * ships" — because the fallback is the canonical sentence, which was reviewed
- * and approved before any of this ran.
+ * ══ THE COUNTEREXAMPLE THAT DEMOTED THIS FILE ═══════════════════════════════
+ *
+ * This screen was once the last thing between a model and a customer. Review
+ * ended that with one line:
+ *
+ *     canonical  "You told us energy is what you most want to work on."
+ *     candidate  "You told us energy is what you least want to work on."
+ *
+ * Every check passed. The customer's stated preference was reversed. The
+ * quantity rule below now catches THAT pair — but `hardest`→`easiest`,
+ * `relaxed`→`rushed` and `looser`→`tighter` still pass, and always will,
+ * because antonyms are not a closed set and no denylist over an unbounded
+ * candidate space can establish preservation. Those cases are kept as tests,
+ * asserted to pass the screen, so the limit stays visible.
+ *
+ * THE SEMANTIC AUTHORITY IS THE HUMAN REVIEWER. This file only decides what
+ * they are asked to look at.
+ *
+ * With that demotion, incompleteness here is survivable: a concept nobody
+ * thought to list means a reviewer is shown one more candidate, not that a new
+ * claim ships. Nothing this file passes reaches a customer without a person
+ * approving it into the reviewed pack afterwards.
  *
  * ══ THREE LAYERS, IN ORDER, NONE OF WHICH CAN PERMIT ════════════════════════
  *
@@ -65,6 +85,7 @@ export const NARRATIVE_REJECTION_CLASSES = [
   "structural-shape",
   "sentence-count",
   "numbers",
+  "quantity",
   "temporal",
   "negation",
   "modality",
@@ -87,13 +108,13 @@ export type ValidationOutcome =
   | { readonly ok: true }
   | {
       readonly ok: false
-      readonly reason: NarrativeFallbackReason
+      readonly reason: AuthoringRejectionReason
       readonly rejectionClass: NarrativeRejectionClass
       readonly detail: string
     }
 
 function reject(
-  reason: NarrativeFallbackReason,
+  reason: AuthoringRejectionReason,
   rejectionClass: NarrativeRejectionClass,
   detail: string,
 ): ValidationOutcome {
@@ -252,6 +273,34 @@ function preservation(canonical: string, rewritten: string): ValidationOutcome {
   const numberDiff = multisetDifference(numbersOf(canonical), numbersOf(rewritten))
   if (numberDiff) {
     return reject("preservation-failed", "numbers", `a number changed: ${numberDiff}`)
+  }
+
+  /*
+   * 1b · quantities and relations, as an exact multiset.
+   *
+   * ══ WHY THIS IS SEPARATE FROM THE NUMERIC CHECK ═══════════════════════════
+   *
+   * Because the numeric check above matches digits, and the reviewed corpus
+   * has none. Every quantity in it is spelled: "four to six hours", "more than
+   * eight hours", "within an hour", "almost all of your meals", "about half".
+   * The digit rule therefore had ZERO coverage over the real corpus, and was
+   * only ever exercised by a synthetic test sentence.
+   *
+   * The tokens are drawn from the corpus itself rather than from a general
+   * idea of quantity words, and compared as an exact multiset because these
+   * are facts, not style: `under` for `over`, `most` for `least`, `almost all`
+   * for `few` are all reversals a reader would act on.
+   *
+   * Some entries also appear in the hedge or absolute lists. That is fine and
+   * deliberate — the stricter rule simply binds first, and over-rejection at
+   * authoring time only costs candidates.
+   */
+  const quantityDiff = multisetDifference(
+    canonicalWords.filter((w) => QUANTITY_TOKENS.indexOf(w) !== -1),
+    rewrittenWords.filter((w) => QUANTITY_TOKENS.indexOf(w) !== -1),
+  )
+  if (quantityDiff) {
+    return reject("preservation-failed", "quantity", `a quantity changed: ${quantityDiff}`)
   }
 
   /* 2–3 · dates/times and negation */

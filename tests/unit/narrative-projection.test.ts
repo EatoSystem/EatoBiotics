@@ -5,8 +5,8 @@ import { join } from "node:path"
 import { CONSULTATION_QUESTION_BANK } from "@/lib/consultation/question-bank"
 import { templateFor } from "@/lib/report/deterministic/content-pack"
 import type { ReportProposition } from "@/lib/report/deterministic/proposition"
-import { projectForRewrite } from "@/lib/report/narrative/project"
-import { buildNarrativeOverlay } from "@/lib/report/narrative/overlay"
+import { projectForRewrite } from "@/lib/report/narrative/authoring/project"
+import { generateNarrativeCandidates } from "@/lib/report/narrative/authoring/generate"
 
 import { echoRewriter, reportFor } from "./narrative-fixtures"
 
@@ -105,9 +105,9 @@ describe("the projection carries one sentence and nothing else", () => {
 
   it("refuses to build a payload for an ineligible kind", () => {
     for (const [kind, reason] of [
-      ["quotation", "ineligible-quotation"],
-      ["loop-step", "ineligible-loop-step"],
-      ["provenance", "narrative-disabled"],
+      ["quotation", "ineligible-kind"],
+      ["loop-step", "ineligible-kind"],
+      ["provenance", "ineligible-kind"],
     ] as const) {
       const result = projectForRewrite(poisoned("You told us something.", kind))
       expect(result.ok).toBe(false)
@@ -134,7 +134,7 @@ describe("nothing but the sentence crosses the boundary end to end", () => {
     it(`${foundation}: every recorded payload is exactly { text }`, async () => {
       const report = reportFor(foundation)
       const rewriter = echoRewriter()
-      await buildNarrativeOverlay({ report, rewriter, enabled: true })
+      await generateNarrativeCandidates({ report, rewriter })
 
       expect(rewriter.calls.length).toBeGreaterThan(0)
       for (const call of rewriter.calls) {
@@ -145,7 +145,7 @@ describe("nothing but the sentence crosses the boundary end to end", () => {
     it(`${foundation}: no identifier, field name or provenance value is in any payload`, async () => {
       const report = reportFor(foundation)
       const rewriter = echoRewriter()
-      await buildNarrativeOverlay({ report, rewriter, enabled: true })
+      await generateNarrativeCandidates({ report, rewriter })
       const wire = JSON.stringify(rewriter.calls)
 
       const forbidden = new Set<string>()
@@ -191,7 +191,7 @@ describe("nothing but the sentence crosses the boundary end to end", () => {
     it(`${foundation}: every payload is a verbatim canonical sentence and nothing more`, async () => {
       const report = reportFor(foundation)
       const rewriter = echoRewriter()
-      await buildNarrativeOverlay({ report, rewriter, enabled: true })
+      await generateNarrativeCandidates({ report, rewriter })
 
       const canonical = new Set(
         [
@@ -209,18 +209,17 @@ describe("nothing but the sentence crosses the boundary end to end", () => {
 })
 
 describe("the payload is built in exactly one place", () => {
-  const dir = join(process.cwd(), "lib", "report", "narrative")
+  const dir = join(process.cwd(), "lib", "report", "narrative", "authoring")
   const read = (file: string) => readFileSync(join(dir, file), "utf8")
 
   it("only project.ts constructs a request object", () => {
     for (const file of [
       "contract.ts",
-      "types.ts",
-      "order.ts",
+      "generate.ts",
       "lexicons.ts",
-      "validate.ts",
       "prompt.ts",
-      "overlay.ts",
+      "rewriter.ts",
+      "validate.ts",
     ]) {
       expect(read(file), `${file} builds a payload`).not.toMatch(/\{\s*text:/)
     }

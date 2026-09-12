@@ -102,6 +102,45 @@ export const NEGATION_TOKENS: readonly string[] = [
   "isn't", "aren't", "wasn't", "weren't", "won't", "unable", "lack",
 ]
 
+/**
+ * Quantities and the relations between them, drawn from the real corpus.
+ *
+ * ══ WHY THIS LIST EXISTS ════════════════════════════════════════════════════
+ *
+ * The numeric check matches digits, and the reviewed corpus contains none:
+ * every quantity in it is spelled. "your longest gap between eating is usually
+ * under four hours" · "more than eight hours" · "almost all of your meals" ·
+ * "about half" · "you do most of the preparing". The digit rule therefore had
+ * no coverage at all over the sentences this layer actually handles — a gap
+ * found by review, not by the tests, because the only test that exercised it
+ * used a sentence marked "not from the pack".
+ *
+ * Compared as an EXACT MULTISET, because these are facts rather than style.
+ * `under` for `over`, `most` for `least`, `almost all` for `few` are all
+ * reversals a reader would act on.
+ *
+ * ══ WHAT IT DOES NOT DO ═════════════════════════════════════════════════════
+ *
+ * It catches `most`→`least`. It does not catch `hardest`→`easiest`,
+ * `relaxed`→`rushed` or `looser`→`tighter`, and it never will: antonyms are
+ * not a closed set. This is a screen, not a proof, and the tests keep those
+ * three as documented examples of what only a human catches.
+ */
+export const QUANTITY_TOKENS: readonly string[] = [
+  // spelled numerals as they appear in the corpus
+  "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+  "ten", "eleven", "twelve", "dozen",
+  // fractions and portions
+  "half", "quarter", "third", "double", "twice",
+  // comparatives and superlatives of amount
+  "most", "least", "few", "fewer", "fewest", "little", "many", "much",
+  "more", "less", "lesser", "all", "none", "some", "any", "every", "each",
+  // relations and bounds
+  "under", "over", "above", "below", "within", "between", "than",
+  "almost", "nearly", "about", "around", "roughly", "approximately",
+  "up", "at", "exactly", "only", "hardly", "barely",
+]
+
 /** References to when something happens. */
 export const TEMPORAL_TOKENS: readonly string[] = [
   "morning", "mornings", "afternoon", "afternoons", "evening", "evenings",

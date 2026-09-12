@@ -871,9 +871,13 @@ describe("S4 is still non-activating", () => {
       "lib/report/deterministic/permissions.ts",
       "lib/report/deterministic/proposition.ts",
       /*
-       * Re-pinned at Phase 4A-S3, and narrowed rather than loosened.
+       * Re-pinned at Phase 4A-S3, and narrowed twice.
        *
-       * The narrative validator checks that a rewritten sentence still opens
+       * The path moved in the S3 repair: the validator became an AUTHORING
+       * screen, run offline before a human reviews a candidate, so it now
+       * lives under `authoring/`. Nothing about what it reads changed.
+       *
+       * The narrative screen checks that a candidate sentence still opens
        * with an adjudicated customer-attribution framing. Those framings are
        * `REPORT_COMPOSITION_BOUNDARY.allowedFramings`, and the alternative —
        * a second copy of the list inside the narrative layer — is precisely
@@ -884,7 +888,7 @@ describe("S4 is still non-activating", () => {
        * it, like the four above, and the assertion below now also pins WHAT it
        * is allowed to take from the contract.
        */
-      "lib/report/narrative/validate.ts",
+      "lib/report/narrative/authoring/validate.ts",
     ])
     // The half that matters: none of them is a live surface.
     for (const importer of importers) {
@@ -904,7 +908,7 @@ describe("S4 is still non-activating", () => {
      * two-basis registry was built to prevent.
      */
     const narrative = readFileSync(
-      join(process.cwd(), "lib/report/narrative/validate.ts"),
+      join(process.cwd(), "lib/report/narrative/authoring/validate.ts"),
       "utf8",
     )
     const imported = /import\s*\{([^}]*)\}\s*from\s*["']@\/lib\/consultation\/science-contract["']/.exec(

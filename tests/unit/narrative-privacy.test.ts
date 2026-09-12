@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest"
-import { readFileSync, readdirSync } from "node:fs"
-import { join } from "node:path"
+import { readFileSync, readdirSync, statSync } from "node:fs"
+import { join, relative, sep } from "node:path"
 
 import { NARRATIVE_ACCEPTANCE_GATE } from "@/lib/report/narrative/contract"
 import { SPECIALIST_GATES } from "@/lib/consultation/science-contract"
@@ -8,37 +8,85 @@ import {
   NARRATIVE_GENERATION_SETTINGS,
   NARRATIVE_PROMPT_RULES,
   narrativeSystemPrompt,
-} from "@/lib/report/narrative/prompt"
+} from "@/lib/report/narrative/authoring/prompt"
 
 /**
  * The boundaries S3 must not cross — Phase 4A-S3.
  *
- * ══ WHAT A SOURCE GUARD IS AND IS NOT ═══════════════════════════════════════
+ * ══ WHY THIS FILE WALKS THE TREE ════════════════════════════════════════════
  *
- * A tripwire. Every claim worth making about behaviour is made behaviourally
- * elsewhere in this suite; these assertions catch the class of change that is
- * invisible at runtime until the day it matters — a database import that is
- * only reached on an error path, a log line that only fires in production.
+ * It used to call `readdirSync` once, non-recursively, and filter to `.ts`.
+ * The moment an `authoring/` subdirectory appeared, that entry was filtered
+ * out before every assertion — the exact-module list would still have passed,
+ * and four new files would have been scanned by nothing at all. The repair
+ * that introduced the subdirectory would have SILENTLY REDUCED coverage while
+ * appearing to add structure.
+ *
+ * So the walk is recursive, the runtime and authoring sets are both pinned by
+ * name, and a test asserts the walk actually reached inside `authoring/`.
+ *
+ * ══ TWO RULE SETS, NOT ONE ══════════════════════════════════════════════════
+ *
+ * Authoring may name a rewriter and may be async; that is what it is for.
+ * Runtime may do neither, and may not import authoring at all. A single rule
+ * set would have to be the looser of the two, which would stop saying anything
+ * about the code that runs in a customer's request.
  */
 
 const NARRATIVE_DIR = join(process.cwd(), "lib", "report", "narrative")
-const FILES = readdirSync(NARRATIVE_DIR).filter((f) => f.endsWith(".ts"))
+
+function walk(dir: string, out: string[] = []): string[] {
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry)
+    if (statSync(full).isDirectory()) walk(full, out)
+    else if (entry.endsWith(".ts")) out.push(full)
+  }
+  return out
+}
+
+const FILES = walk(NARRATIVE_DIR)
+  .map((f) => relative(NARRATIVE_DIR, f).split(sep).join("/"))
+  .sort()
 const SOURCE = new Map(FILES.map((f) => [f, readFileSync(join(NARRATIVE_DIR, f), "utf8")]))
 
-describe("the narrative layer reaches nothing it should not", () => {
-  it("has the expected modules and no others", () => {
-    expect(FILES.slice().sort()).toEqual([
-      "contract.ts",
-      "lexicons.ts",
-      "order.ts",
-      "overlay.ts",
-      "project.ts",
-      "prompt.ts",
-      "types.ts",
-      "validate.ts",
-    ])
+const RUNTIME_MODULES = [
+  "contract.ts",
+  "digest.ts",
+  "order.ts",
+  "overlay.ts",
+  "trust.ts",
+  "types.ts",
+  "variant-pack.ts",
+] as const
+
+const AUTHORING_MODULES = [
+  "authoring/contract.ts",
+  "authoring/generate.ts",
+  "authoring/lexicons.ts",
+  "authoring/project.ts",
+  "authoring/prompt.ts",
+  "authoring/rewriter.ts",
+  "authoring/validate.ts",
+] as const
+
+const runtimeSource = () => FILES.filter((f) => !f.startsWith("authoring/"))
+const authoringSource = () => FILES.filter((f) => f.startsWith("authoring/"))
+
+describe("the walk sees everything", () => {
+  it("is recursive, and actually reached inside authoring/", () => {
+    // The assertion that would have failed under the old non-recursive guard.
+    expect(authoringSource().length).toBeGreaterThan(0)
+    expect(FILES).toContain("authoring/validate.ts")
   })
 
+  it("pins the exact runtime and authoring module sets", () => {
+    expect(runtimeSource()).toEqual([...RUNTIME_MODULES])
+    expect(authoringSource()).toEqual([...AUTHORING_MODULES])
+    expect(FILES.length).toBe(RUNTIME_MODULES.length + AUTHORING_MODULES.length)
+  })
+})
+
+describe("every narrative module reaches nothing it should not", () => {
   it("imports no database, no model SDK and no framework runtime", () => {
     for (const [file, source] of SOURCE) {
       for (const forbidden of [
@@ -75,15 +123,70 @@ describe("the narrative layer reaches nothing it should not", () => {
 
   /*
    * `.update(` is deliberately absent from this list. It is also how a hash is
-   * fed its bytes (`createHash(...).update(...)`), which the overlay does for
-   * its digests, so banning the substring would ban the digest rather than the
-   * write. The table-scoped `.from(` covers the Supabase shape this is
-   * actually about, and the `@/lib/supabase` ban above covers the import.
+   * fed its bytes, which `digest.ts` does, so banning the substring would ban
+   * the digest rather than the write. The table-scoped `.from(` covers the
+   * Supabase shape this is actually about.
    */
   it("writes nothing down — no persistence of any kind", () => {
     for (const [file, source] of SOURCE) {
       for (const persistence of [".insert(", ".upsert(", ".from(", "localStorage", "writeFile"]) {
         expect(source, `${file} persists`).not.toContain(persistence)
+      }
+    }
+  })
+
+  /*
+   * Phrased as "reads no file", not "does not contain the path".
+   *
+   * The gate record NAMES where the human evidence will be committed, which is
+   * the point of the field — a guard banning the substring would ban the
+   * declaration rather than the dependency, and matched its own subject on the
+   * first run. What must be true is that no module opens anything.
+   */
+  it("never reads the committed review record, or any other file", () => {
+    for (const [file, source] of SOURCE) {
+      for (const read of ["readFileSync", "readFile(", "require(", "import("]) {
+        expect(source, `${file} reads from disk`).not.toContain(read)
+      }
+      expect(source, `${file} imports something named for the review`).not.toMatch(
+        /from\s+["'][^"']*review/,
+      )
+    }
+  })
+})
+
+describe("the runtime is generation-free", () => {
+  it("imports nothing from authoring/", () => {
+    for (const file of runtimeSource()) {
+      const source = SOURCE.get(file)!
+      expect(source, `${file} imports authoring`).not.toContain("./authoring/")
+      expect(source, `${file} imports authoring`).not.toContain("narrative/authoring")
+    }
+  })
+
+  it("does not so much as name a rewriter", () => {
+    for (const file of runtimeSource()) {
+      const source = SOURCE.get(file)!
+      for (const generation of ["NarrativeRewriter", "rewrite(", "NarrativeRewriteRequest"]) {
+        expect(source, `${file} names ${generation}`).not.toContain(generation)
+      }
+    }
+  })
+
+  it("is synchronous — no promise, no deadline, no worker pool", () => {
+    for (const file of runtimeSource()) {
+      const source = SOURCE.get(file)!
+      for (const asynchrony of ["async ", "await ", "Promise<", "setTimeout("]) {
+        expect(source, `${file} is asynchronous`).not.toContain(asynchrony)
+      }
+    }
+  })
+
+  it("consults no authoring screen and no expansion bound", () => {
+    for (const file of runtimeSource()) {
+      const source = SOURCE.get(file)!
+      for (const screen of ["validateRewrite", "EXPANSION_BOUNDS", "allowedLengthWindow"]) {
+        expect(source, `${file} consults ${screen}`).not.toContain(screen)
       }
     }
   })
@@ -129,8 +232,6 @@ describe("the dormant S2 invariants are not presented as live", () => {
       for (const dormant of ["mixed-basis", "no-source", "aggregateEvidenceStatus", "weakest-wins"]) {
         expect(source, `${file} reaches for ${dormant}`).not.toContain(dormant)
       }
-      // A doc comment describing composition across several answers as
-      // something this layer works with would be the same claim in prose.
       expect(source, `${file} describes multi-source composition`).not.toMatch(
         /multi-source|several answers|combine[sd]? propositions/i,
       )
@@ -140,8 +241,7 @@ describe("the dormant S2 invariants are not presented as live", () => {
 
 describe("the Narrative Acceptance Gate is a product gate, kept out of the science contract", () => {
   it("is not in SPECIALIST_GATES", () => {
-    const gateNames = Object.keys(SPECIALIST_GATES)
-    expect(gateNames).not.toContain("narrative-acceptance")
+    expect(Object.keys(SPECIALIST_GATES)).not.toContain("narrative-acceptance")
     expect(JSON.stringify(SPECIALIST_GATES)).not.toContain("narrative")
   })
 
@@ -157,11 +257,16 @@ describe("the Narrative Acceptance Gate is a product gate, kept out of the scien
     expect(NARRATIVE_ACCEPTANCE_GATE.status).toBe("OPEN")
     expect(NARRATIVE_ACCEPTANCE_GATE.kind).toBe("product-quality-and-safety")
     expect(NARRATIVE_ACCEPTANCE_GATE.safetyRule).toContain("ZERO")
-    // Deliberately unset: the readability numbers are calibrated against the
-    // corpus before activation, and a number invented here would be a guess
-    // with a constant's authority.
     expect(NARRATIVE_ACCEPTANCE_GATE.readabilityThresholds).toBeNull()
-    expect(NARRATIVE_ACCEPTANCE_GATE.corpus.length).toBeGreaterThanOrEqual(6)
+    expect(NARRATIVE_ACCEPTANCE_GATE.perVariantApprovalRequired).toBe(true)
+    expect(NARRATIVE_ACCEPTANCE_GATE.perCustomerApprovalRequired).toBe(false)
+    expect(NARRATIVE_ACCEPTANCE_GATE.corpus.length).toBeGreaterThanOrEqual(7)
+  })
+
+  it("names where the human evidence will be committed", () => {
+    expect(NARRATIVE_ACCEPTANCE_GATE.reviewRecordLocation).toBe(
+      "docs/reviews/phase-4a-s3/narrative-variant-pack-v1.review.json",
+    )
   })
 })
 
@@ -198,7 +303,9 @@ describe("the prompt is reviewed copy, and is not a safety control", () => {
   })
 
   it("offers the safe action of returning the sentence unchanged", () => {
-    expect(narrativeSystemPrompt()).toContain("Returning it unchanged is always an acceptable answer")
+    expect(narrativeSystemPrompt()).toContain(
+      "Returning it unchanged is always an acceptable answer",
+    )
   })
 
   it("pins deterministic generation settings", () => {
@@ -209,7 +316,7 @@ describe("the prompt is reviewed copy, and is not a safety control", () => {
 
   it("is wired to nothing — no module sends it anywhere", () => {
     for (const [file, source] of SOURCE) {
-      if (file === "prompt.ts") continue
+      if (file === "authoring/prompt.ts") continue
       expect(source, `${file} uses the prompt`).not.toContain("narrativeSystemPrompt")
     }
   })
