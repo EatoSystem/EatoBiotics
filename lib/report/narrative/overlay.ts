@@ -1,7 +1,7 @@
 import type { PersonalFoodSystemReportV1 } from "@/lib/report/deterministic/report-types"
 
 import { buildOverlayWithPack } from "./internal/build"
-import { currentCommittedPack } from "./registry"
+import { currentCommittedPack } from "./internal/committed-packs"
 import type { OptionalNarrativeLayerV1 } from "./types"
 
 /**

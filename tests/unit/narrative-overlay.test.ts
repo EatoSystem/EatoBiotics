@@ -8,7 +8,7 @@ import {
 import { narrativeDigest } from "@/lib/report/narrative/digest"
 import { canonicalPropositionOrder } from "@/lib/report/narrative/order"
 import { overlayMatchesReport } from "@/lib/report/narrative/trust"
-import { PRODUCTION_NARRATIVE_VARIANT_PACK } from "@/lib/report/narrative/variant-pack"
+import { committedProductionPack } from "./narrative-fixtures"
 
 import {
   buildTestOverlay,
@@ -207,7 +207,7 @@ describe("off by default, and off is complete", () => {
   it("the production pack is the empty case", () => {
     const overlay = buildTestOverlay({
       report,
-      pack: PRODUCTION_NARRATIVE_VARIANT_PACK,
+      pack: committedProductionPack(),
       enabled: true,
     })
     expect(overlay.items.every((i) => i.status === "canonical-only")).toBe(true)

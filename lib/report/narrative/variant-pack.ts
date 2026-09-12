@@ -77,29 +77,24 @@ export interface NarrativeVariantPackV1 {
   readonly variants: readonly ReviewedNarrativeVariant[]
 }
 
-/**
- * The production pack. EMPTY, and mechanically required to stay empty.
+/*
+ * ══ THE PRODUCTION PACK OBJECT IS NOT HERE ═════════════════════════════════
  *
- * The Narrative Acceptance Gate is OPEN, so nothing has been reviewed, so
- * there is nothing to ship. `validateNarrativeVariantPack` enforces that
- * rather than trusting it: a production pack holding anything while the gate
- * is OPEN is an invalid pack, and an invalid pack renders canonical.
+ * It was, and it was exported. A pack contains variants, and a variant
+ * contains `narrativeText` — so a public pack constant is reviewed wording
+ * that any production caller could read directly, without the binding, the
+ * proposition or the overlay. Empty today, which made it dormant rather than
+ * harmless.
  *
- * An empty pack is NOT a degraded mode. Every eligible proposition falls back
- * to canonical wording, which is the S2 Report exactly — complete, correct and
- * customer-ready.
+ * The committed packs now live in `internal/committed-packs.ts`, behind the
+ * same boundary as the lookups, and a repo-wide guard proves only the two
+ * public entry points, the other internal modules and files under `tests/`
+ * reach them.
+ *
+ * What remains in this module is metadata that grants nothing: the kind and
+ * version constants, the types, `bindingKey`, `reviewedTemplateText` and the
+ * validator. None of them hands anybody a sentence.
  */
-export const PRODUCTION_NARRATIVE_VARIANT_PACK: NarrativeVariantPackV1 = Object.freeze({
-  kind: NARRATIVE_VARIANT_PACK_KIND,
-  version: PRODUCTION_NARRATIVE_VARIANT_PACK_VERSION,
-  /*
-   * Frozen, and so is the array. `readonly` is a compile-time promise, and
-   * this object is the authority for what a customer may read — a caller that
-   * could push onto it would be committing a variant nobody reviewed, at
-   * runtime, with no diff.
-   */
-  variants: Object.freeze([]),
-})
 
 /* ══ The production content index ══════════════════════════════════════════ */
 

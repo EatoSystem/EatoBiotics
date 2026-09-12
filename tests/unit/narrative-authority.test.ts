@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest"
+import { existsSync, readFileSync } from "node:fs"
+import { join } from "node:path"
 
 import { customerFacingText } from "@/lib/report/deterministic/serialise"
 import { NARRATIVE_ACCEPTANCE_GATE } from "@/lib/report/narrative/contract"
@@ -9,17 +11,20 @@ import {
   COMMITTED_NARRATIVE_VARIANT_PACKS,
   CURRENT_COMMITTED_PACK_VERSION,
   committedPackForVersion,
+  committedPackVersions,
+  committedProductionPackIsEmpty,
   currentCommittedPack,
-} from "@/lib/report/narrative/registry"
+  freezeCommittedPack,
+} from "@/lib/report/narrative/internal/committed-packs"
 import { narrativeRenderPlan } from "@/lib/report/narrative/trust"
 import {
-  PRODUCTION_NARRATIVE_VARIANT_PACK,
+  NARRATIVE_VARIANT_PACK_KIND,
   PRODUCTION_NARRATIVE_VARIANT_PACK_VERSION,
   type NarrativeVariantPackV1,
   type ReviewedNarrativeVariant,
 } from "@/lib/report/narrative/variant-pack"
 
-import { reportFor, testPackForReport } from "./narrative-fixtures"
+import { committedProductionPack, reportFor, testPackForReport } from "./narrative-fixtures"
 
 /**
  * Who decides what a customer reads — Phase 4A-S3.
@@ -117,29 +122,27 @@ describe("the caller cannot supply the authority object", () => {
 
   it("the production pack object cannot be mutated into carrying a variant", () => {
     // `readonly` is a compile-time promise. This is the runtime one.
-    expect(Object.isFrozen(PRODUCTION_NARRATIVE_VARIANT_PACK)).toBe(true)
-    expect(Object.isFrozen(PRODUCTION_NARRATIVE_VARIANT_PACK.variants)).toBe(true)
+    expect(Object.isFrozen(committedProductionPack())).toBe(true)
+    expect(Object.isFrozen(committedProductionPack().variants)).toBe(true)
     expect(() => {
-      ;(PRODUCTION_NARRATIVE_VARIANT_PACK.variants as ReviewedNarrativeVariant[]).push(
+      ;(committedProductionPack().variants as ReviewedNarrativeVariant[]).push(
         forgedVariant(),
       )
     }).toThrow()
-    expect(PRODUCTION_NARRATIVE_VARIANT_PACK.variants).toEqual([])
+    expect(committedProductionPack().variants).toEqual([])
   })
 })
 
 describe("the committed registry", () => {
   it("holds exactly the current production pack today", () => {
-    expect(COMMITTED_NARRATIVE_VARIANT_PACKS).toEqual([PRODUCTION_NARRATIVE_VARIANT_PACK])
+    expect(COMMITTED_NARRATIVE_VARIANT_PACKS).toEqual([committedProductionPack()])
     expect(Object.isFrozen(COMMITTED_NARRATIVE_VARIANT_PACKS)).toBe(true)
   })
 
   it("resolves the current version internally", () => {
     expect(CURRENT_COMMITTED_PACK_VERSION).toBe(PRODUCTION_NARRATIVE_VARIANT_PACK_VERSION)
-    expect(currentCommittedPack()).toBe(PRODUCTION_NARRATIVE_VARIANT_PACK)
-    expect(committedPackForVersion(CURRENT_COMMITTED_PACK_VERSION)).toBe(
-      PRODUCTION_NARRATIVE_VARIANT_PACK,
-    )
+    expect(currentCommittedPack()).toBe(committedProductionPack())
+    expect(committedPackForVersion(CURRENT_COMMITTED_PACK_VERSION)).toBe(committedProductionPack())
   })
 
   it("resolves nothing for a version nobody committed", () => {
@@ -219,15 +222,182 @@ describe("no public module hands out narrative wording", () => {
   })
 
   it("the registry hands out packs, never sentences", async () => {
-    const registryModule = await import("@/lib/report/narrative/registry")
+    const registryModule = await import("@/lib/report/narrative/internal/committed-packs")
     expect(Object.keys(registryModule).sort()).toEqual([
       "COMMITTED_NARRATIVE_VARIANT_PACKS",
       "CURRENT_COMMITTED_PACK_VERSION",
       "committedPackForVersion",
+      "committedPackVersions",
+      "committedProductionPackIsEmpty",
       "currentCommittedPack",
+      "freezeCommittedPack",
     ])
     // And nothing it returns carries wording today, because the pack is empty.
     expect(currentCommittedPack()?.variants).toEqual([])
+  })
+})
+
+describe("no public module can hand out committed wording", () => {
+  /**
+   * A RUNTIME property, walked, not a list of forbidden names.
+   *
+   * The committed pack is empty today, so a name-based check would pass for as
+   * long as the hole is dormant and stop meaning anything on the day it is
+   * not. This walks every value each public module exports, to any depth, and
+   * fails if a `narrativeText` key exists anywhere in it — which is the shape
+   * the blocker was about, and which stays checkable once a reviewed pack is
+   * populated.
+   */
+  const PUBLIC_MODULES = [
+    "contract",
+    "digest",
+    "order",
+    "overlay",
+    "trust",
+    "types",
+    "variant-pack",
+  ] as const
+
+  function findWording(value: unknown, path: string, seen = new Set<unknown>()): string | null {
+    if (value === null || typeof value !== "object") return null
+    if (seen.has(value)) return null
+    seen.add(value)
+    if (Array.isArray(value)) {
+      for (const [index, entry] of value.entries()) {
+        const hit = findWording(entry, `${path}[${index}]`, seen)
+        if (hit) return hit
+      }
+      return null
+    }
+    for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+      if (key === "narrativeText") return `${path}.${key}`
+      const hit = findWording(entry, `${path}.${key}`, seen)
+      if (hit) return hit
+    }
+    return null
+  }
+
+  it("finds no committed wording anywhere in the public exports", async () => {
+    for (const name of PUBLIC_MODULES) {
+      const publicModule = await import(`@/lib/report/narrative/${name}`)
+      for (const [key, value] of Object.entries(publicModule)) {
+        expect(findWording(value, `${name}.${key}`), `${name}.${key} carries wording`).toBeNull()
+      }
+    }
+  })
+
+  it("the walker actually finds wording when there is some", () => {
+    // Otherwise the assertion above passes because the walk does nothing.
+    expect(findWording({ variants: [forgedVariant()] }, "fixture")).toBe(
+      "fixture.variants[0].narrativeText",
+    )
+  })
+
+  it("the removed symbols are gone from the public surface", async () => {
+    const packModule = await import("@/lib/report/narrative/variant-pack")
+    expect(Object.keys(packModule)).not.toContain("PRODUCTION_NARRATIVE_VARIANT_PACK")
+    // The public registry module is gone, not merely emptied. Asserted on the
+    // filesystem because a dynamic import of a deleted path is a compile
+    // error, and a guard that will not compile is a guard nobody can run.
+    expect(existsSync(join(process.cwd(), "lib/report/narrative/registry.ts"))).toBe(false)
+  })
+
+  it("public metadata still answers the questions that grant nothing", async () => {
+    // Versions, types and validation stay public: none of them is a sentence.
+    const packModule = await import("@/lib/report/narrative/variant-pack")
+    expect(Object.keys(packModule).sort()).toEqual([
+      "NARRATIVE_VARIANT_PACK_KIND",
+      "PRODUCTION_NARRATIVE_VARIANT_PACK_VERSION",
+      "TEST_NARRATIVE_VARIANT_PACK_PREFIX",
+      "bindingKey",
+      "reviewedTemplateText",
+      "validateNarrativeVariantPack",
+    ])
+  })
+})
+
+describe("the repo-wide importer allow-list is itself pinned", () => {
+  /*
+   * A guard on a guard, and deliberately in a DIFFERENT file.
+   *
+   * The repo-wide check lives in `narrative-privacy.test.ts` and concludes
+   * from an allow-list. Widening that list — one extra path, one extra
+   * `startsWith` — makes the check pass while permitting exactly what it
+   * exists to forbid, and nothing in that file would notice. This pins the
+   * list and the shape of the permission expression, so widening either is a
+   * failing test somewhere else.
+   *
+   * A source tripwire, not a behavioural proof, and named as one.
+   */
+  const privacySource = readFileSync(
+    join(process.cwd(), "tests/unit/narrative-privacy.test.ts"),
+    "utf8",
+  )
+
+  it("permits exactly the two entry points and the test seam", () => {
+    const start = privacySource.indexOf("const allowed = new Set([")
+    expect(start, "the allow-list moved or was renamed").toBeGreaterThan(-1)
+    const block = privacySource.slice(start, privacySource.indexOf("])", start))
+    expect(block.match(/"[^"]+"/g)).toEqual([
+      '"lib/report/narrative/overlay.ts"',
+      '"lib/report/narrative/trust.ts"',
+      '"lib/report/narrative/testing/pack-seam.ts"',
+    ])
+  })
+
+  it("and admits nothing else through a second escape hatch", () => {
+    const start = privacySource.indexOf("      const permitted =")
+    expect(start, "the permission expression moved").toBeGreaterThan(-1)
+    const block = privacySource.slice(start, privacySource.indexOf("expect(permitted", start))
+    expect(block.match(/startsWith\(/g)).toHaveLength(2)
+    expect(block).toContain('importer.startsWith("lib/report/narrative/internal/")')
+    expect(block).toContain('importer.startsWith("tests/")')
+    expect(block).toContain("allowed.has(importer)")
+  })
+})
+
+describe("committed data cannot be mutated at runtime", () => {
+  it("the pack, its array and every variant are frozen", () => {
+    const pack = committedProductionPack()
+    expect(Object.isFrozen(pack)).toBe(true)
+    expect(Object.isFrozen(pack.variants)).toBe(true)
+    for (const variant of pack.variants) expect(Object.isFrozen(variant)).toBe(true)
+  })
+
+  it("the committed list cannot be grown", () => {
+    expect(Object.isFrozen(COMMITTED_NARRATIVE_VARIANT_PACKS)).toBe(true)
+    expect(() => {
+      ;(COMMITTED_NARRATIVE_VARIANT_PACKS as NarrativeVariantPackV1[]).push(
+        committedProductionPack(),
+      )
+    }).toThrow()
+  })
+
+  it("and the freeze is proved on a POPULATED pack, not only the empty one", () => {
+    /*
+     * The committed pack holds nothing today, so the assertion above walks an
+     * empty array and would keep passing with the per-variant freeze deleted.
+     * This runs the helper the committed data actually passes through, over a
+     * pack that has an entry in it, so the line is load-bearing now rather
+     * than on the day a reviewed pack is populated.
+     */
+    const populated = freezeCommittedPack({
+      kind: NARRATIVE_VARIANT_PACK_KIND,
+      version: "test:frozen",
+      variants: [forgedVariant()],
+    })
+    expect(Object.isFrozen(populated)).toBe(true)
+    expect(Object.isFrozen(populated.variants)).toBe(true)
+    expect(Object.isFrozen(populated.variants[0])).toBe(true)
+    expect(() => {
+      ;(populated.variants[0] as { narrativeText: string }).narrativeText = "rewritten at runtime"
+    }).toThrow()
+    expect(populated.variants[0].narrativeText).toBe(forgedVariant().narrativeText)
+  })
+
+  it("metadata accessors answer without handing over a pack", () => {
+    expect(committedProductionPackIsEmpty()).toBe(true)
+    expect(committedPackVersions()).toEqual([PRODUCTION_NARRATIVE_VARIANT_PACK_VERSION])
   })
 })
 

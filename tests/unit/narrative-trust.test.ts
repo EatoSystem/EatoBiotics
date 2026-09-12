@@ -4,7 +4,7 @@ import { customerFacingText } from "@/lib/report/deterministic/serialise"
 import { narrativeDigest } from "@/lib/report/narrative/digest"
 import { canonicalPropositionOrder } from "@/lib/report/narrative/order"
 import { overlayMatchesReport } from "@/lib/report/narrative/trust"
-import { PRODUCTION_NARRATIVE_VARIANT_PACK } from "@/lib/report/narrative/variant-pack"
+import { committedProductionPack } from "./narrative-fixtures"
 import type {
   NarrativeItem,
   OptionalNarrativeLayerV1,
@@ -307,7 +307,7 @@ describe("the render plan accepts", () => {
   })
 
   it("the production pack, which is empty — and the plan is the S2 document", () => {
-    const pack = PRODUCTION_NARRATIVE_VARIANT_PACK
+    const pack = committedProductionPack()
     const overlay = buildTestOverlay({ report: REPORT, pack, enabled: true })
     const plan = renderTestPlan({ overlay, report: REPORT, pack })
     expect(plan.usable).toBe(true)
@@ -347,7 +347,7 @@ describe("the most→least string cannot reach a customer", () => {
   const INVERTED = "You told us energy is what you least want to work on."
 
   it("is absent from every render plan the runtime can produce", () => {
-    for (const pack of [PACK, emptyTestPack(), PRODUCTION_NARRATIVE_VARIANT_PACK]) {
+    for (const pack of [PACK, emptyTestPack(), committedProductionPack()]) {
       const overlay = buildTestOverlay({ report: REPORT, pack, enabled: true })
       const plan = renderTestPlan({ overlay, report: REPORT, pack })
       expect(plan.usable).toBe(true)
@@ -361,6 +361,6 @@ describe("the most→least string cannot reach a customer", () => {
     // the inversion detectable, it makes it un-reachable without a human
     // having committed that exact string for that exact binding.
     expect(PACK.variants.some((v) => v.narrativeText === INVERTED)).toBe(false)
-    expect(PRODUCTION_NARRATIVE_VARIANT_PACK.variants).toEqual([])
+    expect(committedProductionPack().variants).toEqual([])
   })
 })

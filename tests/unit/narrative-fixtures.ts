@@ -21,6 +21,7 @@ import {
   type NarrativeVariantPackV1,
   type ReviewedNarrativeVariant,
 } from "@/lib/report/narrative/variant-pack"
+import { currentCommittedPack } from "@/lib/report/narrative/internal/committed-packs"
 import {
   buildOverlayWithTestPack,
   renderPlanWithTestPack,
@@ -221,3 +222,21 @@ export function mutatingRewriter(mutate: (text: string) => string): RecordingRew
  */
 export const buildTestOverlay = buildOverlayWithTestPack
 export const renderTestPlan = renderPlanWithTestPack
+
+/* ══ The committed production pack, for tests ══════════════════════════════ */
+
+/**
+ * Reaching into `internal/` on purpose, and only from here.
+ *
+ * The committed packs are not public any more: they carry `narrativeText`, and
+ * a public export of one is reviewed wording obtainable without the authority
+ * proof. Tests still need to assert things ABOUT the committed pack — that it
+ * is empty, that it is frozen, that a version resolves — so the repo-wide
+ * importer guard permits `tests/` and nothing else outside the two entry
+ * points and the seam.
+ */
+export function committedProductionPack(): NarrativeVariantPackV1 {
+  const pack = currentCommittedPack()
+  if (!pack) throw new Error("fixture: the committed production pack did not resolve")
+  return pack
+}

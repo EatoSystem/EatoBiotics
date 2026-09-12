@@ -55,7 +55,6 @@ const RUNTIME_MODULES = [
   "digest.ts",
   "order.ts",
   "overlay.ts",
-  "registry.ts",
   "trust.ts",
   "types.ts",
   "variant-pack.ts",
@@ -64,6 +63,7 @@ const RUNTIME_MODULES = [
 /** The pack-taking implementations. Reachable from three places, pinned below. */
 const INTERNAL_MODULES = [
   "internal/build.ts",
+  "internal/committed-packs.ts",
   "internal/lookup.ts",
   "internal/render.ts",
 ] as const
@@ -283,17 +283,64 @@ describe("authority cannot be handed in by a caller", () => {
     }
   })
 
-  it("the pack-taking implementations are reachable from exactly three places", () => {
-    const allowed = new Set(["overlay.ts", "trust.ts", "testing/pack-seam.ts"])
-    for (const [file, source] of SOURCE) {
-      if (allowed.has(file)) continue
-      if (file.startsWith("internal/")) continue
-      expect(source, `${file} imports internal/`).not.toMatch(/from\s+["'][^"']*internal\//)
+  /*
+   * REPO-WIDE, not directory-scoped.
+   *
+   * This check used to iterate the narrative directory only, which meant a
+   * file under `app/` or elsewhere in `lib/` could import
+   * `@/lib/report/narrative/internal/render` and the "exactly three places"
+   * claim would not have seen it. The walk below is the same one the test seam
+   * already used, and it asserts it scanned a real tree before drawing any
+   * conclusion from an empty result.
+   *
+   * Matched on actual import specifiers — `from "…"`, `require("…")`,
+   * `import("…")` — never on prose. Several narrative files legitimately
+   * DISCUSS the internal boundary in the paragraph explaining why it exists.
+   */
+  it("the internal modules are importable only from the approved places", () => {
+    const allowed = new Set([
+      "lib/report/narrative/overlay.ts",
+      "lib/report/narrative/trust.ts",
+      "lib/report/narrative/testing/pack-seam.ts",
+    ])
+
+    const importers = repoFiles
+      .map((file) => ({
+        file: file.replace(`${process.cwd()}/`, ""),
+        source: readFileSync(file, "utf8"),
+      }))
+      .filter(({ source }) =>
+        /*
+         * Matched by MODULE NAME, not by the path prefix. The two entry points
+         * import `./internal/build` relatively, so a pattern anchored on
+         * `narrative/internal/` saw neither of them — and the guard would have
+         * concluded, from an empty list, that nothing imports the internals.
+         * The not-vacuous assertions below are what caught that.
+         */
+        INTERNAL_MODULES.map((m) => m.replace("internal/", "").replace(".ts", "")).some(
+          (name) =>
+            new RegExp(`(?:from\\s*|require\\(\\s*|import\\(\\s*)["'][^"']*internal/${name}["']`).test(
+              source,
+            ),
+        ),
+      )
+      .map(({ file }) => file)
+
+    // Not vacuous: the two entry points really do import internals.
+    expect(importers).toContain("lib/report/narrative/overlay.ts")
+    expect(importers).toContain("lib/report/narrative/trust.ts")
+
+    for (const importer of importers) {
+      const permitted =
+        allowed.has(importer) ||
+        importer.startsWith("lib/report/narrative/internal/") ||
+        importer.startsWith("tests/")
+      expect(permitted, `${importer} imports narrative/internal/`).toBe(true)
     }
   })
 
   it("the registry is source-controlled and takes no registration", () => {
-    const registry = SOURCE.get("registry.ts")!
+    const registry = SOURCE.get("internal/committed-packs.ts")!
     // No caller-facing way to add a pack: the list is a frozen literal, and a
     // `register…` entry point would be exactly the hole the argument was.
     expect(registry).not.toMatch(/export function register/)
@@ -304,32 +351,42 @@ describe("authority cannot be handed in by a caller", () => {
   })
 })
 
-describe("the test seam is a test seam", () => {
-  const repoFiles = (() => {
-    const out: string[] = []
-    const scan = (dir: string) => {
-      for (const entry of readdirSync(dir)) {
-        if (entry === "node_modules" || entry === ".next" || entry === ".git") continue
-        const full = join(dir, entry)
-        if (statSync(full).isDirectory()) scan(full)
-        else if (/\.(ts|tsx|mjs)$/.test(entry)) out.push(full)
-      }
+/**
+ * Every source file the repo can import from, walked once.
+ *
+ * Shared by the two importer proofs below, because a boundary that is only
+ * checked inside its own directory is not checked.
+ */
+const repoFiles = (() => {
+  const out: string[] = []
+  const scan = (dir: string) => {
+    for (const entry of readdirSync(dir)) {
+      if (entry === "node_modules" || entry === ".next" || entry === ".git") continue
+      const full = join(dir, entry)
+      if (statSync(full).isDirectory()) scan(full)
+      else if (/\.(ts|tsx|mjs)$/.test(entry)) out.push(full)
     }
-    for (const dir of ["app", "components", "lib", "scripts", "tests"]) {
-      const full = join(process.cwd(), dir)
-      try {
-        scan(full)
-      } catch {
-        /* a directory that does not exist is not an importer */
-      }
+  }
+  for (const dir of ["app", "components", "lib", "scripts", "tests"]) {
+    const full = join(process.cwd(), dir)
+    try {
+      scan(full)
+    } catch {
+      /* a directory that does not exist is not an importer */
     }
-    return out
-  })()
+  }
+  return out
+})()
 
+describe("the boundaries are proved against the whole repository", () => {
   it("scanned a real tree", () => {
+    // A walk that silently examined nothing would pass every assertion drawn
+    // from it.
     expect(repoFiles.length).toBeGreaterThan(300)
   })
+})
 
+describe("the test seam is a test seam", () => {
   it("is imported only by files under tests/", () => {
     const importers = repoFiles
       .filter((f) => /narrative\/testing\/pack-seam/.test(readFileSync(f, "utf8")))

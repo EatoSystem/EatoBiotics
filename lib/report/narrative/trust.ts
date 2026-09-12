@@ -3,7 +3,7 @@ import { serialiseReport } from "@/lib/report/deterministic/serialise"
 
 import { narrativeDigest } from "./digest"
 import { canonicalPropositionOrder } from "./order"
-import { committedPackForVersion } from "./registry"
+import { committedPackForVersion } from "./internal/committed-packs"
 import { renderPlanWithPack, type NarrativeRenderPlan } from "./internal/render"
 import type { OptionalNarrativeLayerV1 } from "./types"
 

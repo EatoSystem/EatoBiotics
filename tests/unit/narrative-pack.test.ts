@@ -7,7 +7,6 @@ import { canonicalPropositionOrder } from "@/lib/report/narrative/order"
 import {
   NARRATIVE_VARIANT_PACK_KIND,
   bindingKey,
-  PRODUCTION_NARRATIVE_VARIANT_PACK,
   PRODUCTION_NARRATIVE_VARIANT_PACK_VERSION,
   reviewedTemplateText,
   validateNarrativeVariantPack,
@@ -17,7 +16,7 @@ import {
 import { testNarrativeVariantPack } from "@/lib/report/narrative/testing/pack-seam"
 import { reviewedVariantForProposition } from "@/lib/report/narrative/internal/lookup"
 
-import { reportFor, testPackForReport } from "./narrative-fixtures"
+import { committedProductionPack, reportFor, testPackForReport } from "./narrative-fixtures"
 
 /**
  * The Reviewed Narrative Variant Pack — Phase 4A-S3.
@@ -71,11 +70,11 @@ describe("the fixture binds to real reviewed content", () => {
 
 describe("the production pack is empty, and required to be", () => {
   it("holds nothing", () => {
-    expect(PRODUCTION_NARRATIVE_VARIANT_PACK.variants).toEqual([])
+    expect(committedProductionPack().variants).toEqual([])
   })
 
   it("is valid while empty", () => {
-    expect(validateNarrativeVariantPack(PRODUCTION_NARRATIVE_VARIANT_PACK).ok).toBe(true)
+    expect(validateNarrativeVariantPack(committedProductionPack()).ok).toBe(true)
   })
 
   it("an OPEN gate makes a populated production pack invalid, not merely discouraged", () => {
