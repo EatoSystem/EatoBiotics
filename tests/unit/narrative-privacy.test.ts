@@ -49,15 +49,27 @@ const FILES = walk(NARRATIVE_DIR)
   .sort()
 const SOURCE = new Map(FILES.map((f) => [f, readFileSync(join(NARRATIVE_DIR, f), "utf8")]))
 
+/** The public production surface. No pack argument, no wording lookup. */
 const RUNTIME_MODULES = [
   "contract.ts",
   "digest.ts",
   "order.ts",
   "overlay.ts",
+  "registry.ts",
   "trust.ts",
   "types.ts",
   "variant-pack.ts",
 ] as const
+
+/** The pack-taking implementations. Reachable from three places, pinned below. */
+const INTERNAL_MODULES = [
+  "internal/build.ts",
+  "internal/lookup.ts",
+  "internal/render.ts",
+] as const
+
+/** The test seam. Importable only from tests/, proved by a repo walk. */
+const TESTING_MODULES = ["testing/pack-seam.ts"] as const
 
 const AUTHORING_MODULES = [
   "authoring/contract.ts",
@@ -69,8 +81,15 @@ const AUTHORING_MODULES = [
   "authoring/validate.ts",
 ] as const
 
-const runtimeSource = () => FILES.filter((f) => !f.startsWith("authoring/"))
 const authoringSource = () => FILES.filter((f) => f.startsWith("authoring/"))
+const testingSource = () => FILES.filter((f) => f.startsWith("testing/"))
+const internalSource = () => FILES.filter((f) => f.startsWith("internal/"))
+const publicSource = () =>
+  FILES.filter(
+    (f) => !f.startsWith("authoring/") && !f.startsWith("testing/") && !f.startsWith("internal/"),
+  )
+/** Everything that can run inside a customer request: public + internal. */
+const runtimeSource = () => [...publicSource(), ...internalSource()]
 
 describe("the walk sees everything", () => {
   it("is recursive, and actually reached inside authoring/", () => {
@@ -79,10 +98,17 @@ describe("the walk sees everything", () => {
     expect(FILES).toContain("authoring/validate.ts")
   })
 
-  it("pins the exact runtime and authoring module sets", () => {
-    expect(runtimeSource()).toEqual([...RUNTIME_MODULES])
+  it("pins all four module sets exactly", () => {
+    expect(publicSource()).toEqual([...RUNTIME_MODULES])
+    expect(internalSource()).toEqual([...INTERNAL_MODULES])
     expect(authoringSource()).toEqual([...AUTHORING_MODULES])
-    expect(FILES.length).toBe(RUNTIME_MODULES.length + AUTHORING_MODULES.length)
+    expect(testingSource()).toEqual([...TESTING_MODULES])
+    expect(FILES.length).toBe(
+      RUNTIME_MODULES.length +
+        INTERNAL_MODULES.length +
+        AUTHORING_MODULES.length +
+        TESTING_MODULES.length,
+    )
   })
 })
 
@@ -188,6 +214,168 @@ describe("the runtime is generation-free", () => {
       for (const screen of ["validateRewrite", "EXPANSION_BOUNDS", "allowedLengthWindow"]) {
         expect(source, `${file} consults ${screen}`).not.toContain(screen)
       }
+    }
+  })
+})
+
+describe("authority cannot be handed in by a caller", () => {
+  /*
+   * The blocker this section exists for: both public entry points used to take
+   * a pack, so the CALLER supplied the object that established reviewed
+   * wording. Pack validation accepts any `test:` version, so anybody could
+   * assemble a variant with a real template, a real role, the correct digest
+   * and arbitrary wording, and render it through the same path a customer's
+   * Report takes.
+   */
+  /*
+   * Scoped to the INPUT INTERFACE, not the whole file.
+   *
+   * Both entry points legitimately pass a pack onward — that is what resolving
+   * one means — so a file-wide ban on the word would ban the fix rather than
+   * the defect. What must be absent is a pack the CALLER can name, so the
+   * check slices each input type and looks only there.
+   */
+  const inputInterface = (source: string, name: string): string => {
+    const start = source.indexOf(`export interface ${name} {`)
+    expect(start, `${name} not found`).toBeGreaterThanOrEqual(0)
+    return source.slice(start, source.indexOf("\n}", start))
+  }
+
+  it("neither public entry point accepts a pack", () => {
+    const overlay = SOURCE.get("overlay.ts")!
+    const trust = SOURCE.get("trust.ts")!
+
+    // A FIELD DECLARATION, not the word. `enabled`'s doc comment mentions the
+    // committed pack while explaining why the switch is still worth having,
+    // and a guard that banned the noun would ban the explanation.
+    const declaresPack = /\bpack\??\s*:/
+    expect(inputInterface(overlay, "BuildNarrativeOverlayInput")).not.toMatch(declaresPack)
+    expect(inputInterface(trust, "NarrativeRenderPlanInput")).not.toMatch(declaresPack)
+    for (const [name, source] of [
+      ["overlay.ts", overlay],
+      ["trust.ts", trust],
+    ] as const) {
+      expect(source, `${name} takes a pack from its input`).not.toContain("input.pack")
+    }
+
+    // …and each resolves one itself, from the committed registry.
+    expect(overlay).toContain("currentCommittedPack()")
+    expect(trust).toContain("committedPackForVersion(")
+  })
+
+  /*
+   * Matched as an export or a call, not as a substring.
+   *
+   * `variant-pack.ts` NAMES both lookups in the paragraph explaining why they
+   * were moved out of it, and that paragraph is the most useful thing in the
+   * file for the next reader. A guard that forbade the explanation would be
+   * decoration; what must be absent is the function, not the sentence.
+   */
+  it("the public modules hand out no narrative wording", () => {
+    for (const file of publicSource()) {
+      const source = SOURCE.get(file)!
+      for (const primitive of ["variantById", "reviewedVariantForProposition", "indexByBinding"]) {
+        expect(source, `${file} exports ${primitive}`).not.toMatch(
+          new RegExp(`export\\s+(async\\s+)?function\\s+${primitive}\\b|export\\s*\\{[^}]*\\b${primitive}\\b`),
+        )
+        expect(source, `${file} calls ${primitive}`).not.toMatch(new RegExp(`${primitive}\\(`))
+      }
+    }
+  })
+
+  it("the pack-taking implementations are reachable from exactly three places", () => {
+    const allowed = new Set(["overlay.ts", "trust.ts", "testing/pack-seam.ts"])
+    for (const [file, source] of SOURCE) {
+      if (allowed.has(file)) continue
+      if (file.startsWith("internal/")) continue
+      expect(source, `${file} imports internal/`).not.toMatch(/from\s+["'][^"']*internal\//)
+    }
+  })
+
+  it("the registry is source-controlled and takes no registration", () => {
+    const registry = SOURCE.get("registry.ts")!
+    // No caller-facing way to add a pack: the list is a frozen literal, and a
+    // `register…` entry point would be exactly the hole the argument was.
+    expect(registry).not.toMatch(/export function register/)
+    expect(registry).toContain("Object.freeze")
+    for (const lookup of ["process.env", "fetch(", "supabase", "readFileSync"]) {
+      expect(registry, `the registry looks packs up via ${lookup}`).not.toContain(lookup)
+    }
+  })
+})
+
+describe("the test seam is a test seam", () => {
+  const repoFiles = (() => {
+    const out: string[] = []
+    const scan = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        if (entry === "node_modules" || entry === ".next" || entry === ".git") continue
+        const full = join(dir, entry)
+        if (statSync(full).isDirectory()) scan(full)
+        else if (/\.(ts|tsx|mjs)$/.test(entry)) out.push(full)
+      }
+    }
+    for (const dir of ["app", "components", "lib", "scripts", "tests"]) {
+      const full = join(process.cwd(), dir)
+      try {
+        scan(full)
+      } catch {
+        /* a directory that does not exist is not an importer */
+      }
+    }
+    return out
+  })()
+
+  it("scanned a real tree", () => {
+    expect(repoFiles.length).toBeGreaterThan(300)
+  })
+
+  it("is imported only by files under tests/", () => {
+    const importers = repoFiles
+      .filter((f) => /narrative\/testing\/pack-seam/.test(readFileSync(f, "utf8")))
+      .map((f) => f.replace(`${process.cwd()}/`, ""))
+
+    expect(importers.length).toBeGreaterThan(0)
+    for (const importer of importers) {
+      expect(importer.startsWith("tests/"), `${importer} imports the test seam`).toBe(true)
+    }
+  })
+
+  /*
+   * An import statement, not a mention. `overlay.ts` points a reader at the
+   * seam in the paragraph explaining why it takes no pack, which is exactly
+   * where somebody looking for it should be sent.
+   */
+  it("no narrative module imports it", () => {
+    for (const [file, source] of SOURCE) {
+      if (file.startsWith("testing/")) continue
+      expect(source, `${file} imports the test seam`).not.toMatch(
+        /from\s+["'][^"']*testing\/pack-seam/,
+      )
+    }
+  })
+
+  it("refuses to build anything that could pass for production", () => {
+    // Asserted in narrative-pack.test.ts behaviourally; pinned here as source,
+    // because a seam that stopped checking would be a seam that could mint a
+    // production-looking pack.
+    expect(SOURCE.get("testing/pack-seam.ts")!).toContain(
+      "TEST_NARRATIVE_VARIANT_PACK_PREFIX",
+    )
+  })
+
+  /*
+   * There is no separate NODE_ENV test, and that is deliberate.
+   *
+   * `process.env` is already banned outright across every narrative module by
+   * the reaches-nothing-it-should-not guard above, so any environment branch
+   * is caught there — a second check matching the bare string would only
+   * succeed at flagging the comment that explains why the seam does not use
+   * one. The isolation is the module graph, not a runtime condition.
+   */
+  it("is isolated by the module graph, not by a runtime condition", () => {
+    for (const [file, source] of SOURCE) {
+      expect(source, `${file} branches on the environment`).not.toMatch(/process\.env\./)
     }
   })
 })

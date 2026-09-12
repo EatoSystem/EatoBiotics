@@ -8,10 +8,8 @@ import { REPORT_USE_RECORD_VERSION } from "@/lib/report/deterministic/permission
 import { serialiseReport } from "@/lib/report/deterministic/serialise"
 import { isEligibleKind } from "@/lib/report/narrative/contract"
 import { canonicalPropositionOrder } from "@/lib/report/narrative/order"
-import { buildNarrativeOverlay } from "@/lib/report/narrative/overlay"
-import { narrativeRenderPlan } from "@/lib/report/narrative/trust"
 
-import { reportFor, testPackForReport } from "./narrative-fixtures"
+import { buildTestOverlay, renderTestPlan, reportFor, testPackForReport } from "./narrative-fixtures"
 
 /**
  * The S2 tripwires, re-asserted from S3 — Phase 4A-S3.
@@ -46,15 +44,15 @@ describe("the S2 golden digests have not moved", () => {
     it(`${foundation}: unchanged after an overlay has been built and rendered`, () => {
       const report = reportFor(foundation)
       const pack = testPackForReport(report)
-      const overlay = buildNarrativeOverlay({ report, pack, enabled: true })
-      const plan = narrativeRenderPlan({ overlay, report, pack })
+      const overlay = buildTestOverlay({ report, pack, enabled: true })
+      const plan = renderTestPlan({ overlay, report, pack })
       expect(plan.usable).toBe(true)
       expect(hash(serialiseReport(report))).toBe(S2_GOLDEN[foundation])
     })
 
     it(`${foundation}: unchanged for a freshly composed Report afterwards`, () => {
       const first = reportFor(foundation)
-      buildNarrativeOverlay({ report: first, pack: testPackForReport(first), enabled: true })
+      buildTestOverlay({ report: first, pack: testPackForReport(first), enabled: true })
       // Composing again in the same process would catch a narrative module
       // that had mutated shared Core state — a frozen list, a cached pack.
       expect(hash(serialiseReport(reportFor(foundation)))).toBe(S2_GOLDEN[foundation])
@@ -78,7 +76,7 @@ describe("the overlay is not part of the canonical document", () => {
   it("never reaches the serialiser", () => {
     const report = reportFor("you")
     const pack = testPackForReport(report)
-    buildNarrativeOverlay({ report, pack, enabled: true })
+    buildTestOverlay({ report, pack, enabled: true })
     const serialised = serialiseReport(report)
     expect(serialised).not.toContain("optional-narrative-layer-v1")
     expect(serialised).not.toContain("variantId")
@@ -90,7 +88,7 @@ describe("the overlay is not part of the canonical document", () => {
 
   it("leaves the Report deep-equal to a freshly composed one", () => {
     const report = reportFor("family")
-    buildNarrativeOverlay({ report, pack: testPackForReport(report), enabled: true })
+    buildTestOverlay({ report, pack: testPackForReport(report), enabled: true })
     expect(report).toEqual(reportFor("family"))
   })
 })
@@ -100,8 +98,8 @@ describe("the runtime is deterministic", () => {
     const report = reportFor("family")
     const pack = testPackForReport(report)
     const plan = () =>
-      narrativeRenderPlan({
-        overlay: buildNarrativeOverlay({ report, pack, enabled: true }),
+      renderTestPlan({
+        overlay: buildTestOverlay({ report, pack, enabled: true }),
         report,
         pack,
       })
@@ -111,7 +109,7 @@ describe("the runtime is deterministic", () => {
   it("reads no clock and no random source", () => {
     const report = reportFor("you")
     const pack = testPackForReport(report)
-    const overlay = buildNarrativeOverlay({ report, pack, enabled: true })
+    const overlay = buildTestOverlay({ report, pack, enabled: true })
     expect(JSON.stringify(overlay)).not.toContain("Date")
   })
 })

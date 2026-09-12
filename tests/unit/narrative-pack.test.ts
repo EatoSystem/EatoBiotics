@@ -10,12 +10,12 @@ import {
   PRODUCTION_NARRATIVE_VARIANT_PACK,
   PRODUCTION_NARRATIVE_VARIANT_PACK_VERSION,
   reviewedTemplateText,
-  reviewedVariantForProposition,
-  testNarrativeVariantPack,
   validateNarrativeVariantPack,
   type NarrativeVariantPackV1,
   type ReviewedNarrativeVariant,
 } from "@/lib/report/narrative/variant-pack"
+import { testNarrativeVariantPack } from "@/lib/report/narrative/testing/pack-seam"
+import { reviewedVariantForProposition } from "@/lib/report/narrative/internal/lookup"
 
 import { reportFor, testPackForReport } from "./narrative-fixtures"
 

@@ -7,11 +7,15 @@ import {
 } from "@/lib/report/narrative/contract"
 import { narrativeDigest } from "@/lib/report/narrative/digest"
 import { canonicalPropositionOrder } from "@/lib/report/narrative/order"
-import { buildNarrativeOverlay } from "@/lib/report/narrative/overlay"
 import { overlayMatchesReport } from "@/lib/report/narrative/trust"
 import { PRODUCTION_NARRATIVE_VARIANT_PACK } from "@/lib/report/narrative/variant-pack"
 
-import { emptyTestPack, reportFor, testPackForReport } from "./narrative-fixtures"
+import {
+  buildTestOverlay,
+  emptyTestPack,
+  reportFor,
+  testPackForReport,
+} from "./narrative-fixtures"
 
 /**
  * The overlay's 1:1 contract — Phase 4A-S3.
@@ -30,7 +34,7 @@ describe("the overlay is exactly 1:1 with the Report", () => {
   for (const foundation of ["you", "family"] as const) {
     const report = reportFor(foundation)
     const pack = testPackForReport(report)
-    const overlay = buildNarrativeOverlay({ report, pack, enabled: true })
+    const overlay = buildTestOverlay({ report, pack, enabled: true })
     const propositions = canonicalPropositionOrder(report)
 
     it(`${foundation}: one item per proposition, in canonical order`, () => {
@@ -94,7 +98,7 @@ describe("the two exclusions", () => {
   for (const foundation of ["you", "family"] as const) {
     const report = reportFor(foundation)
     const pack = testPackForReport(report)
-    const overlay = buildNarrativeOverlay({ report, pack, enabled: true })
+    const overlay = buildTestOverlay({ report, pack, enabled: true })
     const propositions = canonicalPropositionOrder(report)
 
     it(`${foundation}: the quotation is canonical-only`, () => {
@@ -131,7 +135,7 @@ describe("the lever and its recap twin are reviewed separately", () => {
   const report = reportFor("you")
   const propositions = canonicalPropositionOrder(report)
   const pack = testPackForReport(report)
-  const overlay = buildNarrativeOverlay({ report, pack, enabled: true })
+  const overlay = buildTestOverlay({ report, pack, enabled: true })
 
   it("share their wording and not their variant", () => {
     const leverIndex = propositions.findIndex((p) => p.kind === "lever")
@@ -154,7 +158,7 @@ describe("the overlay never touches the Report", () => {
   it("leaves the document byte-identical", () => {
     const report = reportFor("family")
     const before = serialiseReport(report)
-    buildNarrativeOverlay({ report, pack: testPackForReport(report), enabled: true })
+    buildTestOverlay({ report, pack: testPackForReport(report), enabled: true })
     expect(serialiseReport(report)).toBe(before)
   })
 })
@@ -164,7 +168,7 @@ describe("off by default, and off is complete", () => {
   const pack = testPackForReport(report)
 
   it("does not switch itself on", () => {
-    const overlay = buildNarrativeOverlay({ report, pack })
+    const overlay = buildTestOverlay({ report, pack })
     const propositions = canonicalPropositionOrder(report)
     overlay.items.forEach((item, index) => {
       expect(item.status).toBe("canonical-only")
@@ -182,14 +186,14 @@ describe("off by default, and off is complete", () => {
   })
 
   it("disabled still produces a complete, ordered overlay", () => {
-    const overlay = buildNarrativeOverlay({ report, pack, enabled: false })
+    const overlay = buildTestOverlay({ report, pack, enabled: false })
     const propositions = canonicalPropositionOrder(report)
     expect(overlay.items.length).toBe(propositions.length)
     expect(overlay.items.map((i) => i.propositionId)).toEqual(propositions.map((p) => p.id))
   })
 
   it("an empty pack yields every position canonical-only, and that is not a failure", () => {
-    const overlay = buildNarrativeOverlay({ report, pack: emptyTestPack(), enabled: true })
+    const overlay = buildTestOverlay({ report, pack: emptyTestPack(), enabled: true })
     const propositions = canonicalPropositionOrder(report)
     overlay.items.forEach((item, index) => {
       expect(item.status).toBe("canonical-only")
@@ -201,7 +205,7 @@ describe("off by default, and off is complete", () => {
   })
 
   it("the production pack is the empty case", () => {
-    const overlay = buildNarrativeOverlay({
+    const overlay = buildTestOverlay({
       report,
       pack: PRODUCTION_NARRATIVE_VARIANT_PACK,
       enabled: true,
@@ -213,7 +217,7 @@ describe("off by default, and off is complete", () => {
 describe("the builder is deterministic and synchronous", () => {
   it("returns an overlay, not a promise", () => {
     const report = reportFor("you")
-    const overlay = buildNarrativeOverlay({ report, pack: testPackForReport(report), enabled: true })
+    const overlay = buildTestOverlay({ report, pack: testPackForReport(report), enabled: true })
     expect(overlay).not.toBeInstanceOf(Promise)
     expect(typeof (overlay as unknown as { then?: unknown }).then).toBe("undefined")
   })
@@ -221,8 +225,8 @@ describe("the builder is deterministic and synchronous", () => {
   it("produces an identical overlay for identical input", () => {
     const report = reportFor("family")
     const pack = testPackForReport(report)
-    expect(buildNarrativeOverlay({ report, pack, enabled: true })).toEqual(
-      buildNarrativeOverlay({ report, pack, enabled: true }),
+    expect(buildTestOverlay({ report, pack, enabled: true })).toEqual(
+      buildTestOverlay({ report, pack, enabled: true }),
     )
   })
 })

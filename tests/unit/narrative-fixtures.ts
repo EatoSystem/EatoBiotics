@@ -18,10 +18,14 @@ import { narrativeDigest } from "@/lib/report/narrative/digest"
 import { canonicalPropositionOrder } from "@/lib/report/narrative/order"
 import {
   bindingKey,
-  testNarrativeVariantPack,
   type NarrativeVariantPackV1,
   type ReviewedNarrativeVariant,
 } from "@/lib/report/narrative/variant-pack"
+import {
+  buildOverlayWithTestPack,
+  renderPlanWithTestPack,
+  testNarrativeVariantPack,
+} from "@/lib/report/narrative/testing/pack-seam"
 import type {
   NarrativeRewriteRequest,
   NarrativeRewriteResponse,
@@ -37,10 +41,13 @@ import type {
  * never occurs, which is how a layer passes its own tests and fails in
  * production.
  *
- * Variant packs here are TEST packs, and cannot be anything else: the builder
- * refuses a version that does not say so. The production pack is empty and
- * mechanically required to stay empty while the gate is OPEN, so the runtime
- * machinery could not otherwise be exercised at all.
+ * Variant packs here are TEST packs, and reach the runtime only through
+ * `testing/pack-seam.ts` — the public entry points take no pack argument at
+ * all, so there is no parameter a test pack could travel through. The seam is
+ * importable only from `tests/`, and a guard walks the repo to prove it.
+ *
+ * The production pack is empty and mechanically required to stay empty while
+ * the gate is OPEN, so the machinery could not otherwise be exercised.
  *
  * Rewriters are FAKES. S3 wires no provider, and they are reachable only from
  * the authoring tests.
@@ -204,3 +211,13 @@ export function hangingRewriter(): RecordingRewriter {
 export function mutatingRewriter(mutate: (text: string) => string): RecordingRewriter {
   return recordingRewriter((r) => ({ rewritten: mutate(r.text) }))
 }
+
+/* ══ The production paths, driven with a test pack ═════════════════════════ */
+
+/**
+ * These go through the SAME implementations the public entry points call —
+ * `buildOverlayWithPack` and `renderPlanWithPack` — so a test exercises the
+ * real authority checks. The seam supplies a pack; it excuses nothing.
+ */
+export const buildTestOverlay = buildOverlayWithTestPack
+export const renderTestPlan = renderPlanWithTestPack

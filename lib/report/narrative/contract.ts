@@ -101,6 +101,8 @@ export type RuntimeNarrativeFallbackReason =
 export type NarrativeUnusableReason =
   | "overlay-kind-unknown"
   | "contract-version-unsupported"
+  /** The overlay names a pack version nobody committed to source control. */
+  | "variant-pack-unknown"
   | "variant-pack-invalid"
   | "variant-pack-mismatch"
   | "report-digest-mismatch"

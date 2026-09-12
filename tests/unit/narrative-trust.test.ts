@@ -3,15 +3,20 @@ import { describe, it, expect } from "vitest"
 import { customerFacingText } from "@/lib/report/deterministic/serialise"
 import { narrativeDigest } from "@/lib/report/narrative/digest"
 import { canonicalPropositionOrder } from "@/lib/report/narrative/order"
-import { buildNarrativeOverlay } from "@/lib/report/narrative/overlay"
-import { narrativeRenderPlan, overlayMatchesReport } from "@/lib/report/narrative/trust"
+import { overlayMatchesReport } from "@/lib/report/narrative/trust"
 import { PRODUCTION_NARRATIVE_VARIANT_PACK } from "@/lib/report/narrative/variant-pack"
 import type {
   NarrativeItem,
   OptionalNarrativeLayerV1,
 } from "@/lib/report/narrative/types"
 
-import { emptyTestPack, reportFor, testPackForReport } from "./narrative-fixtures"
+import {
+  buildTestOverlay,
+  emptyTestPack,
+  renderTestPlan,
+  reportFor,
+  testPackForReport,
+} from "./narrative-fixtures"
 
 /**
  * Authority to render — Phase 4A-S3.
@@ -35,7 +40,7 @@ import { emptyTestPack, reportFor, testPackForReport } from "./narrative-fixture
 const REPORT = reportFor("you")
 const PROPOSITIONS = canonicalPropositionOrder(REPORT)
 const PACK = testPackForReport(REPORT)
-const OVERLAY = buildNarrativeOverlay({ report: REPORT, pack: PACK, enabled: true })
+const OVERLAY = buildTestOverlay({ report: REPORT, pack: PACK, enabled: true })
 
 /** A structurally valid overlay with one field changed. */
 function tweak(over: Partial<OptionalNarrativeLayerV1>): OptionalNarrativeLayerV1 {
@@ -69,7 +74,7 @@ describe("structural binding is not authority", () => {
     // Every digest lines up, because the loop beat's text IS the lever's.
     expect(overlayMatchesReport(forged, REPORT)).toBe(true)
 
-    const plan = narrativeRenderPlan({ overlay: forged, report: REPORT, pack: PACK })
+    const plan = renderTestPlan({ overlay: forged, report: REPORT, pack: PACK })
     expect(plan.usable).toBe(false)
     if (plan.usable) return
     expect(plan.reason).toBe("variant-on-ineligible-kind")
@@ -196,7 +201,7 @@ describe("the render plan refuses", () => {
 
   for (const testCase of CASES) {
     it(`${testCase.name} → canonical`, () => {
-      const plan = narrativeRenderPlan({ overlay: testCase.overlay, report: REPORT, pack: PACK })
+      const plan = renderTestPlan({ overlay: testCase.overlay, report: REPORT, pack: PACK })
       expect(plan.usable, `accepted: ${testCase.name}`).toBe(false)
       if (plan.usable) return
       expect(plan.reason).toBe(testCase.reason)
@@ -210,7 +215,7 @@ describe("the render plan refuses", () => {
     )
     const recapItem = OVERLAY.items[recapIndex]
     if (recapItem.status !== "reviewed-variant") throw new Error("fixture")
-    const plan = narrativeRenderPlan({
+    const plan = renderTestPlan({
       overlay: withItem(leverIndex, {
         status: "reviewed-variant",
         propositionId: PROPOSITIONS[leverIndex].id,
@@ -232,7 +237,7 @@ describe("the render plan refuses", () => {
       (p) => p.kind === "recap" && p.text === PROPOSITIONS[leverIndex].text,
     )
     expect(twinIndex).toBeGreaterThanOrEqual(0)
-    const plan = narrativeRenderPlan({
+    const plan = renderTestPlan({
       overlay: withItem(twinIndex, {
         status: "reviewed-variant",
         propositionId: PROPOSITIONS[twinIndex].id,
@@ -249,14 +254,14 @@ describe("the render plan refuses", () => {
 
   it("an invalid pack, whatever the overlay says", () => {
     const broken = { ...PACK, kind: "not-a-pack" } as unknown as typeof PACK
-    const plan = narrativeRenderPlan({ overlay: OVERLAY, report: REPORT, pack: broken })
+    const plan = renderTestPlan({ overlay: OVERLAY, report: REPORT, pack: broken })
     expect(plan.usable).toBe(false)
     if (plan.usable) return
     expect(plan.reason).toBe("variant-pack-invalid")
   })
 
   it("in full — one bad position does not leave the rest usable", () => {
-    const plan = narrativeRenderPlan({
+    const plan = renderTestPlan({
       overlay: withItem(firstVariantIndex, {
         status: "reviewed-variant",
         propositionId: PROPOSITIONS[firstVariantIndex].id,
@@ -274,7 +279,7 @@ describe("the render plan refuses", () => {
 
 describe("the render plan accepts", () => {
   it("a correct overlay, taking every narrative string from the pack", () => {
-    const plan = narrativeRenderPlan({ overlay: OVERLAY, report: REPORT, pack: PACK })
+    const plan = renderTestPlan({ overlay: OVERLAY, report: REPORT, pack: PACK })
     expect(plan.usable, plan.usable ? "" : `${plan.reason}: ${plan.detail}`).toBe(true)
     if (!plan.usable) return
 
@@ -294,8 +299,8 @@ describe("the render plan accepts", () => {
 
   it("an empty pack, rendering the canonical Report exactly", () => {
     const pack = emptyTestPack()
-    const overlay = buildNarrativeOverlay({ report: REPORT, pack, enabled: true })
-    const plan = narrativeRenderPlan({ overlay, report: REPORT, pack })
+    const overlay = buildTestOverlay({ report: REPORT, pack, enabled: true })
+    const plan = renderTestPlan({ overlay, report: REPORT, pack })
     expect(plan.usable, plan.usable ? "" : plan.reason).toBe(true)
     if (!plan.usable) return
     expect(plan.text).toEqual(PROPOSITIONS.map((p) => p.text))
@@ -303,8 +308,8 @@ describe("the render plan accepts", () => {
 
   it("the production pack, which is empty — and the plan is the S2 document", () => {
     const pack = PRODUCTION_NARRATIVE_VARIANT_PACK
-    const overlay = buildNarrativeOverlay({ report: REPORT, pack, enabled: true })
-    const plan = narrativeRenderPlan({ overlay, report: REPORT, pack })
+    const overlay = buildTestOverlay({ report: REPORT, pack, enabled: true })
+    const plan = renderTestPlan({ overlay, report: REPORT, pack })
     expect(plan.usable).toBe(true)
     if (!plan.usable) return
 
@@ -320,8 +325,8 @@ describe("the render plan accepts", () => {
       ...PACK,
       variants: PACK.variants.slice(0, 1),
     }
-    const overlay = buildNarrativeOverlay({ report: REPORT, pack: partial, enabled: true })
-    const plan = narrativeRenderPlan({ overlay, report: REPORT, pack: partial })
+    const overlay = buildTestOverlay({ report: REPORT, pack: partial, enabled: true })
+    const plan = renderTestPlan({ overlay, report: REPORT, pack: partial })
     expect(plan.usable).toBe(true)
     if (!plan.usable) return
     const variantCount = overlay.items.filter((i) => i.status === "reviewed-variant").length
@@ -343,8 +348,8 @@ describe("the most→least string cannot reach a customer", () => {
 
   it("is absent from every render plan the runtime can produce", () => {
     for (const pack of [PACK, emptyTestPack(), PRODUCTION_NARRATIVE_VARIANT_PACK]) {
-      const overlay = buildNarrativeOverlay({ report: REPORT, pack, enabled: true })
-      const plan = narrativeRenderPlan({ overlay, report: REPORT, pack })
+      const overlay = buildTestOverlay({ report: REPORT, pack, enabled: true })
+      const plan = renderTestPlan({ overlay, report: REPORT, pack })
       expect(plan.usable).toBe(true)
       if (!plan.usable) continue
       expect(plan.text).not.toContain(INVERTED)

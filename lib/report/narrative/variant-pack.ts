@@ -1,5 +1,4 @@
 import { CONTENT_PACK } from "@/lib/report/deterministic/content-pack"
-import type { ReportProposition } from "@/lib/report/deterministic/proposition"
 
 import {
   NARRATIVE_ACCEPTANCE_GATE,
@@ -90,11 +89,17 @@ export interface NarrativeVariantPackV1 {
  * to canonical wording, which is the S2 Report exactly — complete, correct and
  * customer-ready.
  */
-export const PRODUCTION_NARRATIVE_VARIANT_PACK: NarrativeVariantPackV1 = {
+export const PRODUCTION_NARRATIVE_VARIANT_PACK: NarrativeVariantPackV1 = Object.freeze({
   kind: NARRATIVE_VARIANT_PACK_KIND,
   version: PRODUCTION_NARRATIVE_VARIANT_PACK_VERSION,
-  variants: [],
-}
+  /*
+   * Frozen, and so is the array. `readonly` is a compile-time promise, and
+   * this object is the authority for what a customer may read — a caller that
+   * could push onto it would be committing a variant nobody reviewed, at
+   * runtime, with no diff.
+   */
+  variants: Object.freeze([]),
+})
 
 /* ══ The production content index ══════════════════════════════════════════ */
 
@@ -253,73 +258,23 @@ export function validateNarrativeVariantPack(pack: NarrativeVariantPackV1): Pack
   return { ok: true }
 }
 
-/* ══ Lookup ════════════════════════════════════════════════════════════════ */
-
-/**
- * Index a validated pack by binding.
+/*
+ * ══ NO LOOKUP LIVES HERE ═══════════════════════════════════════════════════
  *
- * Deliberately NOT exported, and deliberately not reachable with a digest.
- * The only way to ask this pack a question is to hand it a real proposition,
- * because a digest-keyed primitive is exactly how a loop beat would be handed
- * the lever's reviewed wording.
- */
-function indexByBinding(pack: NarrativeVariantPackV1): ReadonlyMap<string, ReviewedNarrativeVariant> {
-  const map = new Map<string, ReviewedNarrativeVariant>()
-  for (const variant of pack.variants) map.set(bindingKey(variant), variant)
-  return map
-}
-
-/**
- * The reviewed variant for one real proposition, or null.
+ * `reviewedVariantForProposition` and `variantById` were exported from this
+ * module and are not any more. Both returned the object carrying
+ * `narrativeText`, and both took a pack the caller had in its hand — so either
+ * one was a way to obtain reviewed wording from a pack nobody committed. They
+ * now live in `internal/lookup.ts`, which only the two public entry points and
+ * the test seam may import, and a guard asserts that.
  *
- * Eligibility is decided HERE, before the binding is even constructed, so an
- * ineligible proposition has no path to a lookup. That is one of the two
- * independent defences against the loop-beat collision; the other is that the
- * binding carries the kind, so a lever's variant cannot key a loop step even
- * if this check were removed.
- */
-export function reviewedVariantForProposition(
-  pack: NarrativeVariantPackV1,
-  proposition: ReportProposition,
-): ReviewedNarrativeVariant | null {
-  if (!isEligibleKind(proposition.kind)) return null
-  const key = bindingKey({
-    templateId: proposition.templateId,
-    propositionKind: proposition.kind,
-    canonicalTextDigest: narrativeDigest(proposition.text),
-  })
-  return indexByBinding(pack).get(key) ?? null
-}
-
-/**
- * Resolve a variant by the id an overlay carries.
+ * `testNarrativeVariantPack` has moved to `testing/pack-seam.ts` for the same
+ * reason: while it lived beside the production types, a caller could build a
+ * `test:` pack and hand it to the same public render path that serves
+ * customers. The seam is now a separate module that only files under `tests/`
+ * may import.
  *
- * Id-keyed, not content-keyed, and never sufficient on its own: every caller
- * re-checks the resolved variant's binding against the actual proposition, so
- * a forged id resolves to a variant that then fails to match.
+ * What stays public here is metadata that grants nothing: the types, the
+ * versions, the frozen production pack, `bindingKey`, `reviewedTemplateText`
+ * and `validateNarrativeVariantPack`. None of them hands anybody a sentence.
  */
-export function variantById(
-  pack: NarrativeVariantPackV1,
-  variantId: string,
-): ReviewedNarrativeVariant | undefined {
-  return pack.variants.find((variant) => variant.variantId === variantId)
-}
-
-/**
- * Build a test pack, refusing anything that could pass for production.
- *
- * Mirrors `registerTestContentPack` in the Core: a test fixture that could
- * wear the production identity is a test fixture that can be mistaken for
- * reviewed content.
- */
-export function testNarrativeVariantPack(
-  version: string,
-  variants: readonly ReviewedNarrativeVariant[],
-): NarrativeVariantPackV1 {
-  if (!version.startsWith(TEST_NARRATIVE_VARIANT_PACK_PREFIX)) {
-    throw new Error(
-      `refusing to build variant pack "${version}": test pack versions must begin with "${TEST_NARRATIVE_VARIANT_PACK_PREFIX}"`,
-    )
-  }
-  return { kind: NARRATIVE_VARIANT_PACK_KIND, version, variants }
-}

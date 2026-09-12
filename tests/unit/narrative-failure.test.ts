@@ -6,14 +6,18 @@ import {
   type RuntimeNarrativeFallbackReason,
 } from "@/lib/report/narrative/contract"
 import { canonicalPropositionOrder } from "@/lib/report/narrative/order"
-import { buildNarrativeOverlay } from "@/lib/report/narrative/overlay"
-import { narrativeRenderPlan } from "@/lib/report/narrative/trust"
 import {
   NARRATIVE_VARIANT_PACK_KIND,
   type NarrativeVariantPackV1,
 } from "@/lib/report/narrative/variant-pack"
 
-import { emptyTestPack, reportFor, testPackForReport } from "./narrative-fixtures"
+import {
+  buildTestOverlay,
+  emptyTestPack,
+  renderTestPlan,
+  reportFor,
+  testPackForReport,
+} from "./narrative-fixtures"
 
 /**
  * Every way this can go wrong at runtime — Phase 4A-S3.
@@ -37,7 +41,7 @@ const REPORT = reportFor("you")
 const PROPOSITIONS = canonicalPropositionOrder(REPORT)
 
 function expectAllCanonicalOnly(
-  overlay: ReturnType<typeof buildNarrativeOverlay>,
+  overlay: ReturnType<typeof buildTestOverlay>,
   eligibleReason: RuntimeNarrativeFallbackReason,
 ) {
   expect(overlay.items.length).toBe(PROPOSITIONS.length)
@@ -55,21 +59,21 @@ function expectAllCanonicalOnly(
 describe("nothing to render from", () => {
   it("disabled: every item says so", () => {
     expectAllCanonicalOnly(
-      buildNarrativeOverlay({ report: REPORT, pack: testPackForReport(REPORT), enabled: false }),
+      buildTestOverlay({ report: REPORT, pack: testPackForReport(REPORT), enabled: false }),
       "narrative-disabled",
     )
   })
 
   it("disabled by omission: the layer does not switch itself on", () => {
     expectAllCanonicalOnly(
-      buildNarrativeOverlay({ report: REPORT, pack: testPackForReport(REPORT) }),
+      buildTestOverlay({ report: REPORT, pack: testPackForReport(REPORT) }),
       "narrative-disabled",
     )
   })
 
   it("empty pack: eligible positions have no approved variant", () => {
     expectAllCanonicalOnly(
-      buildNarrativeOverlay({ report: REPORT, pack: emptyTestPack(), enabled: true }),
+      buildTestOverlay({ report: REPORT, pack: emptyTestPack(), enabled: true }),
       "no-approved-variant",
     )
   })
@@ -117,13 +121,13 @@ describe("an unusable pack fails closed, in full", () => {
 
   for (const { name, pack } of BROKEN) {
     it(`${name}: the overlay says so and nothing resolves`, () => {
-      const overlay = buildNarrativeOverlay({ report: REPORT, pack, enabled: true })
+      const overlay = buildTestOverlay({ report: REPORT, pack, enabled: true })
       expectAllCanonicalOnly(overlay, "variant-pack-invalid")
     })
 
     it(`${name}: the render plan refuses`, () => {
-      const overlay = buildNarrativeOverlay({ report: REPORT, pack, enabled: true })
-      const plan = narrativeRenderPlan({ overlay, report: REPORT, pack })
+      const overlay = buildTestOverlay({ report: REPORT, pack, enabled: true })
+      const plan = renderTestPlan({ overlay, report: REPORT, pack })
       expect(plan.usable).toBe(false)
     })
   }
@@ -140,8 +144,8 @@ describe("no failure reaches the Report", () => {
       { ...testPackForReport(REPORT), version: "v9" },
     ]) {
       for (const enabled of [true, false]) {
-        const overlay = buildNarrativeOverlay({ report: REPORT, pack, enabled })
-        narrativeRenderPlan({ overlay, report: REPORT, pack })
+        const overlay = buildTestOverlay({ report: REPORT, pack, enabled })
+        renderTestPlan({ overlay, report: REPORT, pack })
       }
     }
 
@@ -152,7 +156,7 @@ describe("no failure reaches the Report", () => {
   it("never throws, whatever it is handed", () => {
     const nonsense = { kind: "?", version: 7, variants: null } as unknown as NarrativeVariantPackV1
     expect(() =>
-      buildNarrativeOverlay({ report: REPORT, pack: nonsense, enabled: true }),
+      buildTestOverlay({ report: REPORT, pack: nonsense, enabled: true }),
     ).not.toThrow()
   })
 
