@@ -28,7 +28,8 @@ function withPreviewNoStore(response: NextResponse): NextResponse {
   return response
 }
 
-function isEnterRoute(pathname: string): boolean {
+// Exported for unit tests.
+export function isEnterRoute(pathname: string): boolean {
   // Routes reachable while the gate is on: the public waitlist landing page
   // (/enter), the public "what's coming" waitlist destination (/waitlist —
   // launches, pricing, systems catalog; /enter links here), the waitlist
@@ -39,6 +40,9 @@ function isEnterRoute(pathname: string): boolean {
   return (
     pathname === "/enter" ||
     pathname === "/waitlist" ||
+    // Founding 100 application surfaces (public during soft-open)
+    pathname === "/apply" ||
+    pathname.startsWith("/api/founding") ||
     pathname === "/preview-access" ||
     pathname === "/privacy" ||         // legal pages linked from the waitlist footer
     pathname === "/terms" ||
@@ -46,6 +50,11 @@ function isEnterRoute(pathname: string): boolean {
     pathname.startsWith("/api/unsubscribe") ||
     pathname.startsWith("/discover") ||  // public shareable mini-report pages + OG
     pathname.startsWith("/c/") ||        // public per-country landing pages
+    // Public metadata surfaces — must never be redirected to HTML
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml" ||
+    pathname === "/manifest.json" ||
+    pathname.startsWith("/opengraph-image") ||
     pathname.startsWith("/api/enter") ||
     pathname.startsWith("/api/waitlist") ||
     // Mobile companion app routes — a native client can't hold the gate cookie.

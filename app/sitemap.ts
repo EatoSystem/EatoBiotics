@@ -18,6 +18,11 @@ const STATIC_PATHS: Array<{ path: string; priority: number; changeFrequency: Cha
   { path: "/you",               priority: 0.8, changeFrequency: "monthly" },
   { path: "/assessment",        priority: 0.9, changeFrequency: "monthly" },
   { path: "/pricing",           priority: 0.9, changeFrequency: "monthly" },
+  // Soft-open / Founding 100 application (public even while the waitlist gate is on)
+  { path: "/apply",             priority: 0.9, changeFrequency: "weekly"  },
+  // Public waitlist surfaces
+  { path: "/enter",             priority: 0.5, changeFrequency: "weekly"  },
+  { path: "/waitlist",          priority: 0.5, changeFrequency: "monthly" },
   { path: "/book",              priority: 0.8, changeFrequency: "weekly"  },
   { path: "/books",             priority: 0.6, changeFrequency: "monthly" },
   { path: "/about",             priority: 0.6, changeFrequency: "monthly" },
