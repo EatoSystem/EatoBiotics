@@ -305,10 +305,12 @@ describe("the real manifest", () => {
     const { pending } = loadManifest() as { pending: Map<string, { migration: number; issue: number }> }
     expect([...pending.keys()].sort()).toEqual([
       "feedback",
+      "founding_applications",
       "reviews",
     ])
     expect(pending.get("reviews")!.migration).toBe(45)
     expect(pending.get("feedback")!.migration).toBe(46)
+    expect(pending.get("founding_applications")!.migration).toBe(49)
     // Migration 47 (paid_report_intents + consents) was applied to production on
     // 2026-08-29 and verified live — table, RLS enabled, zero policies, all
     // constraints and indexes present — so both tables moved to `applied`. They

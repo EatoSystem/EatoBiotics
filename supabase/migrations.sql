@@ -2106,3 +2106,4 @@ CREATE TRIGGER trg_deep_assessments_seal_write_once
   BEFORE UPDATE OF consultation_finalisation, consultation_handoff_id ON deep_assessments
   FOR EACH ROW
   EXECUTE FUNCTION deep_assessments_seal_is_write_once();
+
