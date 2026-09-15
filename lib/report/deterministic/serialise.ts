@@ -1,3 +1,5 @@
+import { canonicalSerialise } from "../canonical-json"
+
 import type { PersonalFoodSystemReportV1 } from "./report-types"
 
 /**
@@ -16,26 +18,18 @@ import type { PersonalFoodSystemReportV1 } from "./report-types"
  * order in this Report is meaningful everywhere: bank order for recaps,
  * precedence for the lever, week order for the loop.
  *
- * The result is what tests hash, and what a later phase would persist.
+ * The result is what tests hash, and what Phase 4A-S4 persists.
+ *
+ * The algorithm itself now lives in `lib/report/canonical-json.ts` — a
+ * zero-import leaf — because the persisted Report decoder returns a type that
+ * is deliberately NOT assignable to `PersonalFoodSystemReportV1`, and both must
+ * produce identical bytes. One algorithm, two callers, no cast. Nothing about
+ * the rules changed; the two golden digests prove it.
  */
-
-function canonicalise(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(canonicalise)
-  if (value === null || typeof value !== "object") return value
-  const source = value as Record<string, unknown>
-  const out: Record<string, unknown> = {}
-  for (const key of Object.keys(source).sort()) {
-    // `undefined` is dropped rather than serialised, so an optional field that
-    // is absent and one that is explicitly undefined cannot differ.
-    if (source[key] === undefined) continue
-    out[key] = canonicalise(source[key])
-  }
-  return out
-}
 
 /** Deterministic, key-sorted JSON. Stable across builds for equal input. */
 export function serialiseReport(report: PersonalFoodSystemReportV1): string {
-  return JSON.stringify(canonicalise(report), null, 2)
+  return canonicalSerialise(report)
 }
 
 /**

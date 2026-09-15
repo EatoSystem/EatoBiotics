@@ -538,6 +538,11 @@ describe("finalisation is pure, dormant and produces no Report", () => {
       // reads a database. That is the payload's whole purpose arriving, and
       // pinning it here keeps the list a list rather than a category.
       "lib/report/deterministic/compose.ts",
+      // Phase 4A-S4: the CURRENT first-generation path, and only it. It reads a
+      // seal through the live reader because it is the build doing the
+      // composing — the historical read path deliberately cannot see this
+      // module at all, and its own guard proves that.
+      "lib/report/persisted/internal/first-generation.ts",
     ])
   })
 

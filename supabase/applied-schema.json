@@ -73,6 +73,11 @@
       "table": "reviews",
       "migration": 45,
       "issue": 229
+    },
+    {
+      "table": "consultation_reports",
+      "migration": 49,
+      "issue": "phase-4a-s4"
     }
   ]
 }

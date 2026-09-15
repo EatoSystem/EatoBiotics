@@ -373,6 +373,40 @@ Captured on first run of the in-app tracker (`Glp1Onboarding`); upserted via `ap
 
 Service-role only (RLS on, zero policies). One row **per submission** (not per user). Migration 46 (drafted; table not yet in `supabase/applied-schema.json`'s `applied` list — see #239's schema-drift guard). 90-day retention enforced by `app/api/feedback/retention/route.ts` (daily cron); `reviews` (Migration 45, also drafted) shares the same expiry + cascade pattern.
 
+### consultation_reports *(new — Phase 4A-S4, Migration 49, DRAFTED NOT APPLIED)*
+| Column | Type | Notes |
+|--------|------|-------|
+| consultation_handoff_id | uuid PK | the sealed handoff IS the identity — one handoff, one Report |
+| assessment_id | uuid | NOT NULL UNIQUE; composite FK `(assessment_id, consultation_handoff_id)` → `deep_assessments(id, consultation_handoff_id)` `ON DELETE CASCADE` |
+| canonical_report | text | the exact `serialiseReport()` bytes. **Not jsonb** — jsonb normalises whitespace and key order, so the stored digest would stop describing the stored bytes |
+| canonical_report_sha256 | text | `CHECK (~ '^[0-9a-f]{64}$')` — lowercase hex, 64 chars |
+| persisted_at | timestamptz | default `now()` |
+
+Service-role only (RLS on, zero policies). **Write-once**: an UPDATE trigger
+refuses any change to any column (an equal-value re-send passes); a BEFORE
+DELETE trigger refuses a direct child delete while the parent assessment
+survives, and a BEFORE TRUNCATE trigger refuses truncation. Parent deletion
+cascades, and once the parent is gone the FK prevents a Report ever being
+written for that historical handoff again. **No independent TTL and no
+Report-only deletion** — the lifecycle follows `deep_assessments`.
+
+Written by `ensurePersistedConsultationReport({ sessionId })`
+(`lib/report/persisted/ensure-report.ts`), INSERT-only. Migration 49 **depends
+on Migration 48** and neither is applied.
+
+> **ACTIVATION PREREQUISITE — before the first customer-facing deterministic
+> Report caller is enabled**, in this order: (1) explicitly authorise and apply
+> Migration 48; (2) explicitly authorise and apply Migration 49; (3) add
+> `consultation_reports` to the account portability export
+> (`app/api/account/export/route.ts`), scoped through the authorised
+> `deep_assessments` parent ids; (4) verify that export fails closed on a Report
+> read error; (5) only then permit Report generation or read activation.
+>
+> S4 deliberately does **not** touch the export or delete routes: the table does
+> not exist in production, and an unconditional query would fail the live
+> portability endpoint for every customer. A missing table **must not be masked**
+> as "this customer has no Reports".
+
 ### Other tables
 - `referrals` — `referrer_code`, `referred_email`, `referred_id`
 - `plate_data` — `user_id`, `plate`, `plants`, `updated_at`
