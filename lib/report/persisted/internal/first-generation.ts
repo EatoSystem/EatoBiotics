@@ -28,11 +28,12 @@ import {
 } from "@/lib/consultation/session-envelope"
 
 import { reportDigest } from "../digest"
-import { decodePersistedReportV1 } from "../decode-report"
 import { refuse, type EnsureReportResult } from "../outcomes"
 import {
+  readPersistedReport,
   resolveHistoricalSeal,
   type AssessmentRowForHistory,
+  type PersistedReportRow,
 } from "./historical-read"
 
 export interface ComposedReport {
@@ -104,32 +105,48 @@ export function composeForFirstGeneration(row: AssessmentRowForHistory): Compose
   }
 
   const canonicalText = serialiseReport(composed.report)
+  const digest = reportDigest(canonicalText)
 
-  /* ── The self-check, before anything is offered to the database ───────── */
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(canonicalText)
-  } catch {
-    return { ok: false, result: refuse("self-check-failed", "composed Report is not JSON") }
-  }
-  const decoded = decodePersistedReportV1(parsed)
-  if (!decoded.ok) {
-    return {
-      ok: false,
-      result: refuse("self-check-failed", `${decoded.reason}: ${decoded.detail}`),
-    }
-  }
-
-  // And the same binding the historical path will apply on every future read,
-  // run now against the frozen decoders rather than the live ones.
+  /* ── The rehearsal, before anything is offered to the database ───────── */
+  /*
+   * ══ WHAT CAN BE WRITTEN IS WHAT CAN LATER BE READ ══════════════════════
+   *
+   * An earlier version of this decoded the composed Report and compared the
+   * handoff, which is most of the check and therefore the dangerous amount. A
+   * future producer regression could have satisfied it and still emitted a
+   * document the historical reader refuses — a bankVersion that disagrees with
+   * the seal, a capability flag no producer identity claims — and the row would
+   * have been INSERTed into a table where nothing can ever correct it. The
+   * post-insert re-read would then report an immutable Report as unreadable,
+   * which is the worst outcome this phase can produce.
+   *
+   * So the candidate is put through `readPersistedReport`, the EXACT function
+   * every future read uses, against a row built exactly as the INSERT will
+   * build it. Not a copy of its checks: copies drift, and a drifting copy of
+   * this particular check would be invisible until the day it mattered.
+   */
   const frozenSeal = resolveHistoricalSeal(row)
   if (!frozenSeal.ok) return { ok: false, result: frozenSeal.result }
   if (frozenSeal.context.handoffId !== seal.handoffId) {
     return { ok: false, result: refuse("self-check-failed", "handoff disagreement between readers") }
   }
 
-  return {
-    ok: true,
-    composed: { canonicalText, digest: reportDigest(canonicalText), handoffId: seal.handoffId },
+  const candidate: PersistedReportRow = {
+    consultation_handoff_id: seal.handoffId,
+    assessment_id: row.id,
+    canonical_report: canonicalText,
+    canonical_report_sha256: digest,
   }
+
+  const rehearsal = readPersistedReport({ row, reportRow: candidate, seal: frozenSeal.context })
+  if (!rehearsal.ok) {
+    // Whatever a future read would have said about this document, said now,
+    // while refusing still costs nothing.
+    return {
+      ok: false,
+      result: refuse("self-check-failed", `${rehearsal.reason}: ${rehearsal.detail}`),
+    }
+  }
+
+  return { ok: true, composed: { canonicalText, digest, handoffId: seal.handoffId } }
 }

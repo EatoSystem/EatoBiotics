@@ -224,12 +224,26 @@ describe("first generation proves the Report is readable before storing it", () 
    * produces one, so there is no input that exercises the branch behaviourally.
    * Removing it would be invisible until the day it mattered.
    */
-  it("decodes and re-binds what it composed, and refuses on failure", () => {
+  it("rehearses the FULL historical read against a candidate row, and refuses on failure", () => {
+    /*
+     * Repair 1. This used to assert a decode and a handoff comparison — most of
+     * the check, and therefore the dangerous amount: a producer regression could
+     * satisfy it and still INSERT a Report the very next read would refuse, into
+     * a table with no UPDATE and no DELETE.
+     *
+     * What is asserted now is REUSE. A copy of the binding checks would drift,
+     * and the drift would be invisible until an immutable row had been written,
+     * so the forbidden list below is the fields a copy would have to name.
+     */
     const gen = CODE.get("internal/first-generation.ts")!
-    expect(gen).toContain("decodePersistedReportV1(parsed)")
-    expect(gen).toContain("if (!decoded.ok)")
+    expect(gen).toContain("const candidate: PersistedReportRow = {")
+    expect(gen).toContain("readPersistedReport({ row, reportRow: candidate, seal: frozenSeal.context })")
+    expect(gen).toContain("if (!rehearsal.ok)")
     expect(gen).toContain('refuse("self-check-failed"')
     expect(gen).toContain("resolveHistoricalSeal(row)")
+    for (const copied of ["bankFingerprint", "finalisedAt", "supportedEntitledLenses", "scienceContractVersion"]) {
+      expect(gen, `first generation reimplements ${copied}`).not.toContain(copied)
+    }
   })
 })
 
