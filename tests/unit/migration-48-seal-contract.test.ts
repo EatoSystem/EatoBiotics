@@ -23,7 +23,16 @@ import { readFileSync } from "node:fs"
 const RAW = readFileSync("supabase/migrations.sql", "utf8")
 
 /** Migration 48's own text, comments included — for header assertions. */
-const RAW_48 = RAW.slice(RAW.indexOf("-- Migration 48:"))
+/*
+ * Sliced to where Migration 49 begins, not to end of file.
+ *
+ * This read `RAW.slice(indexOf("-- Migration 48:"))` while 48 happened to be
+ * the last migration in the file, so "everything after the header" and
+ * "Migration 48" were the same string. Phase 4A-S4 appended Migration 49, and
+ * the assertions below — no Report table, DELETE not blocked — would then have
+ * been describing 49's DDL while claiming to describe 48's.
+ */
+const RAW_48 = RAW.slice(RAW.indexOf("-- Migration 48:"), RAW.indexOf("-- Migration 49:"))
 
 /*
  * Migration 48's STATEMENTS, comments stripped.

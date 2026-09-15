@@ -88,7 +88,14 @@ function migration48(): string {
   const raw = readFileSync("supabase/migrations.sql", "utf8")
   const start = raw.indexOf("-- Migration 48:")
   expect(start, "Migration 48 must exist").toBeGreaterThan(-1)
-  return raw.slice(start)
+  /*
+   * Stops where Migration 49 begins. This used to run to end of file, which
+   * was the same thing while 48 was last — and stopped being the same thing
+   * the moment 49 was appended, at which point "applying Migration 48 twice"
+   * would have been applying two migrations twice.
+   */
+  const end = raw.indexOf("-- Migration 49:")
+  return raw.slice(start, end > start ? end : raw.length)
 }
 
 beforeAll(() => {

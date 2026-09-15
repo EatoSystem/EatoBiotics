@@ -257,6 +257,24 @@ describe("the deterministic bank has not reached the paid flow", () => {
        * Consultation at all, and their absence here is the evidence.
        */
       "lib/report/narrative/authoring/validate.ts",
+      /*
+       * Phase 4A-S4 — the eighth re-point, and the persistence layer's ONLY
+       * importer of anything Consultation-shaped.
+       *
+       * `internal/first-generation.ts` is the path that composes a canonical
+       * Report for the first time, so it reads the seal through the live
+       * readers — it is the build doing the composing, and it must refuse a
+       * sealed contract this build does not implement.
+       *
+       * The historical read path is deliberately absent from this list, and
+       * that absence is the phase's central claim: an already-persisted Report
+       * is decoded against frozen v1 values, so a re-adjudicated Science
+       * Contract or a revised add-on vocabulary cannot make a customer's paid
+       * Report unreadable. `consultation-report-authority.test.ts` asserts the
+       * historical modules import none of this, with a non-vacuity check that
+       * this file does.
+       */
+      "lib/report/persisted/internal/first-generation.ts",
     ])
   })
 

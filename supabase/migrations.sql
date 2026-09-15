@@ -2106,3 +2106,173 @@ CREATE TRIGGER trg_deep_assessments_seal_write_once
   BEFORE UPDATE OF consultation_finalisation, consultation_handoff_id ON deep_assessments
   FOR EACH ROW
   EXECUTE FUNCTION deep_assessments_seal_is_write_once();
+
+-- ────────────────────────────────────────────────────────────
+-- Migration 49: the canonical deterministic Report, persisted once
+-- ────────────────────────────────────────────────────────────
+-- STATUS: PROPOSED — DO NOT APPLY WITHOUT EXPLICIT AUTHORISATION.
+--
+-- DEPENDS ON MIGRATION 48, and not in a soft way: the foreign key below
+-- references `deep_assessments.consultation_handoff_id`, which Migration 48
+-- adds. Applying this first is not a degraded state, it is an error — the
+-- CREATE TABLE fails. Apply 48, then 49, in one authorised sitting.
+--
+-- The status line is a fact about a day, not a standing description. Migration
+-- 41 read "DO NOT APPLY" in this file while both its tables were already live.
+-- Whoever applies this must edit this header to say so.
+--
+-- ── THE INVARIANT ──────────────────────────────────────────
+--   ONE SEALED CONSULTATION HANDOFF → ONE IMMUTABLE CANONICAL REPORT.
+--
+-- Zero Report rows before first generation is valid. After the first successful
+-- generation there is exactly one, for good: retries, refreshes, two tabs and
+-- concurrent server invocations all converge on it, because the arbiter is a
+-- unique constraint rather than application code.
+--
+-- ── WHY A SEPARATE TABLE, WHEN MIGRATION 48 ARGUED FOR COLUMNS ──
+-- Migration 48 put the seal on `deep_assessments` because sealing is one fact
+-- about one row that had to move atomically with the phase. The Report is a
+-- different artifact with a different lifecycle: it is written LATER, by a
+-- retryable operation, and it must be insert-only. `deep_assessments` already
+-- carries three writers — the answers autosave, the legacy report generator and
+-- the status columns — and "a column is not null" is not something an INSERT
+-- race can arbitrate. A row can be.
+--
+-- ── WHY THE FOREIGN KEY IS COMPOSITE ───────────────────────
+-- A child that proved only "this assessment exists" and "this handoff is
+-- unique" would still permit a Report bound to assessment A carrying handoff B.
+-- The composite key makes that state unstorable rather than merely unexpected.
+--
+-- Migration 48's `idx_deep_assessments_handoff` is PARTIAL, and PostgreSQL
+-- refuses a partial unique index as a foreign-key target — verified by
+-- execution, not by reading the manual. So this adds its own non-partial
+-- UNIQUE (id, consultation_handoff_id). It forbids nothing that was previously
+-- allowed: `id` is already the primary key, so the pair is unique by
+-- construction, and unsealed rows with a NULL handoff are untouched.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'deep_assessments_id_handoff_uq'
+      AND conrelid = 'deep_assessments'::regclass
+  ) THEN
+    ALTER TABLE deep_assessments
+      ADD CONSTRAINT deep_assessments_id_handoff_uq UNIQUE (id, consultation_handoff_id);
+  END IF;
+END $$;
+
+-- ── THE ARTIFACT ───────────────────────────────────────────
+-- `canonical_report` is TEXT, not jsonb, and that is load-bearing. The digest
+-- beside it is taken over the exact bytes `serialiseReport` produced — keys
+-- sorted at every level, `undefined` dropped, two-space indent. `jsonb`
+-- normalises: it discards whitespace, reorders keys by its own rule and
+-- de-duplicates, so a round trip through it could not reproduce those bytes and
+-- the stored digest would stop being a check on storage at all.
+--
+-- No version columns. The canonical Report already carries eleven provenance
+-- facts inside it; a copy in a column is a second authority that can disagree.
+CREATE TABLE IF NOT EXISTS consultation_reports (
+  -- The handoff IS the identity. One sealed handoff, one Report, enforced as
+  -- the primary key rather than as a rule somebody remembers.
+  consultation_handoff_id  uuid PRIMARY KEY,
+  assessment_id            uuid NOT NULL UNIQUE,
+  canonical_report         text NOT NULL,
+  -- Lowercase hex, exactly 64 characters. A length check alone would accept
+  -- uppercase, and a digest that only sometimes matches its own column is a
+  -- defect waiting for a platform that spells hex differently.
+  canonical_report_sha256  text NOT NULL CHECK (canonical_report_sha256 ~ '^[0-9a-f]{64}$'),
+  persisted_at             timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT consultation_reports_parent_fk
+    FOREIGN KEY (assessment_id, consultation_handoff_id)
+    REFERENCES deep_assessments (id, consultation_handoff_id)
+    ON DELETE CASCADE
+);
+
+-- Service-role only: RLS enabled, ZERO policies, no GRANTs. The browser never
+-- reads or writes an authoritative Report, and 4B will reach it through a
+-- server boundary that establishes who is asking.
+ALTER TABLE consultation_reports ENABLE ROW LEVEL SECURITY;  -- zero policies
+
+CREATE INDEX IF NOT EXISTS idx_consultation_reports_assessment
+  ON consultation_reports (assessment_id);
+
+-- ── WRITE-ONCE, BELOW THE APPLICATION ──────────────────────
+-- The service only ever INSERTs. This is the guarantee that survives a bug in
+-- it, a future route written by somebody who has not read this phase, and a
+-- manual UPDATE typed into a SQL console at 2am.
+--
+-- Every column is authoritative, so every column is covered. The equality
+-- branch matters: a client library that re-sends an unchanged row, or a retry
+-- that recomputes identical values, is not attempting a change and is not
+-- refused for one.
+CREATE OR REPLACE FUNCTION consultation_reports_is_write_once()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF NEW.consultation_handoff_id IS DISTINCT FROM OLD.consultation_handoff_id
+     OR NEW.assessment_id           IS DISTINCT FROM OLD.assessment_id
+     OR NEW.canonical_report        IS DISTINCT FROM OLD.canonical_report
+     OR NEW.canonical_report_sha256 IS DISTINCT FROM OLD.canonical_report_sha256
+     OR NEW.persisted_at            IS DISTINCT FROM OLD.persisted_at THEN
+    RAISE EXCEPTION 'consultation_reports rows are write-once and cannot be changed'
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_consultation_reports_write_once ON consultation_reports;
+CREATE TRIGGER trg_consultation_reports_write_once
+  BEFORE UPDATE ON consultation_reports
+  FOR EACH ROW
+  EXECUTE FUNCTION consultation_reports_is_write_once();
+
+-- ── DELETED ONLY WITH THE CONSULTATION IT BELONGS TO ───────
+-- "Immutable" must never mean "undeletable": account erasure removes
+-- `deep_assessments`, and the cascade above removes this with it. What must NOT
+-- be possible is deleting the Report while its parent survives — that would
+-- leave a sealed Consultation with no Report, and lazy generation would then
+-- write a NEW canonical Report for a historical handoff, under whatever
+-- composer happens to be current. One customer, two different accounts of what
+-- they were told.
+--
+-- During ON DELETE CASCADE the parent row is already gone when this fires, so
+-- the lookup finds nothing and the delete proceeds. A direct delete while the
+-- assessment is still there finds it, and does not. Verified by execution.
+CREATE OR REPLACE FUNCTION consultation_reports_parent_only_delete()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM deep_assessments WHERE id = OLD.assessment_id) THEN
+    RAISE EXCEPTION
+      'consultation_reports rows are deleted only with their parent assessment'
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  RETURN OLD;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_consultation_reports_parent_only_delete ON consultation_reports;
+CREATE TRIGGER trg_consultation_reports_parent_only_delete
+  BEFORE DELETE ON consultation_reports
+  FOR EACH ROW
+  EXECUTE FUNCTION consultation_reports_parent_only_delete();
+
+-- Row triggers do not fire on TRUNCATE, so that door is closed separately.
+CREATE OR REPLACE FUNCTION consultation_reports_refuse_truncate()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RAISE EXCEPTION 'consultation_reports cannot be truncated'
+    USING ERRCODE = 'restrict_violation';
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_consultation_reports_no_truncate ON consultation_reports;
+CREATE TRIGGER trg_consultation_reports_no_truncate
+  BEFORE TRUNCATE ON consultation_reports
+  FOR EACH STATEMENT
+  EXECUTE FUNCTION consultation_reports_refuse_truncate();
