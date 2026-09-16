@@ -68,7 +68,21 @@ export interface RecoveryIdentityInput {
    * already decided not to write.
    */
   readonly assessmentEmail: string | null
-  /** From `canonicalPurchaseEmail`, already normalised or null. */
+  /**
+   * The purchase-side candidate, normally from `canonicalPurchaseEmail()`.
+   *
+   * That helper normalises, and this field used to be DOCUMENTED as "already
+   * normalised or null" — which is a precondition, not a guarantee. An
+   * authority boundary that holds only while its callers are careful is not a
+   * boundary: a direct caller passing `"not-an-email"` got a `proceed`
+   * decision carrying an identity nobody can prove control of, which is the
+   * exact lockout the case split exists to prevent.
+   *
+   * So the function normalises this itself, defensively, before any branch
+   * looks at it. Passing an already-normalised value stays correct —
+   * normalisation is idempotent — and passing a malformed one is now refused
+   * rather than trusted.
+   */
   readonly canonicalPurchaseEmail: string | null
 }
 
@@ -93,12 +107,23 @@ export function decideRecoveryIdentity(input: RecoveryIdentityInput): RecoveryId
    * would satisfy the invariant on a technicality while leaving exactly the
    * lockout the invariant exists to prevent.
    */
+  // Both sides, normalised once, before anything branches on either. Nothing
+  // below may read `input.canonicalPurchaseEmail` again — see the field's
+  // contract for why trusting it was the defect.
   const storedIdentity = normaliseEmail(input.assessmentEmail)
+  const purchaseIdentity = normaliseEmail(input.canonicalPurchaseEmail)
 
   if (storedIdentity !== null) {
-    const conflict =
-      input.canonicalPurchaseEmail !== null &&
-      !sameEmailIdentity(storedIdentity, input.canonicalPurchaseEmail)
+    // `sameEmailIdentity` rather than `===`: normalisation is idempotent, so it
+    // is correct on already-normalised operands, and it keeps ONE definition of
+    // what makes two addresses the same identity.
+    //
+    // Comparing against the raw value here was a live false positive, not just
+    // a latent one: `sameEmailIdentity` returns false whenever either side
+    // fails to normalise, so a usable stored address plus a malformed purchase
+    // value computed `conflict = true` and paged somebody about two addresses
+    // disagreeing when one of them was never an address.
+    const conflict = purchaseIdentity !== null && !sameEmailIdentity(storedIdentity, purchaseIdentity)
 
     return {
       case: "assessment-email-canonical",
@@ -119,11 +144,17 @@ export function decideRecoveryIdentity(input: RecoveryIdentityInput): RecoveryId
    * something upstream wrote garbage into an identity column, and the only
    * moment anybody is looking at it is now.
    */
-  if (input.canonicalPurchaseEmail !== null) {
+  if (purchaseIdentity !== null) {
     return {
       case: "adopt-purchase-email",
       seal: "proceed",
-      write: input.canonicalPurchaseEmail,
+      // The NORMALISED value is what gets written. A caller that handed us a
+      // usable-but-unnormalised address does not get to decide the stored form
+      // of an identity that later authorises a Report.
+      write: purchaseIdentity,
+      // Keyed on the RAW column, deliberately: this alarm distinguishes "the
+      // column held junk and we discarded it" from "the column was NULL and
+      // there was nothing to discard", and only the raw value carries that.
       alarm: input.assessmentEmail !== null ? "unusable-recovery-email" : null,
     }
   }

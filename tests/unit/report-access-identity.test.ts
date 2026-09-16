@@ -294,6 +294,141 @@ describe("the recovery-identity matrix", () => {
     ).toEqual({ case: "account-owner", seal: "proceed", write: null, alarm: null })
   })
 
+  /* ── The purchase side is not trusted either ───────────────────────────── */
+
+  // Seven shapes of "cannot be an address", passed DIRECTLY to the authority
+  // function. Testing `canonicalPurchaseEmail()` upstream proves the helper
+  // normalises; it proves nothing about what happens when somebody calls this
+  // function without it.
+  const MALFORMED = ["", "   ", "not-an-email", "@example.com", "a@", "a@b@c", "has space@example.com"]
+
+  it.each(MALFORMED)(
+    "refuses to seal a guest whose only candidate is the malformed purchase value %j",
+    (purchase) => {
+      const decision = decideRecoveryIdentity({
+        userId: null,
+        assessmentEmail: null,
+        canonicalPurchaseEmail: purchase,
+      })
+      expect(decision.seal).toBe("refuse")
+      expect(decision.case).toBe("no-recovery-identity")
+      expect(decision.write).toBeNull()
+    },
+  )
+
+  it.each(MALFORMED)("refuses when BOTH sides are malformed (%j)", (purchase) => {
+    expect(
+      decideRecoveryIdentity({
+        userId: null,
+        assessmentEmail: "also-not-an-email",
+        canonicalPurchaseEmail: purchase,
+      }).seal,
+    ).toBe("refuse")
+  })
+
+  it.each(MALFORMED)(
+    "keeps a USABLE stored address and raises no false conflict against %j",
+    (purchase) => {
+      // A live false positive before the repair, not merely a latent one:
+      // `sameEmailIdentity` returns false whenever either side fails to
+      // normalise, so a malformed purchase value computed `conflict = true`
+      // and paged somebody about two addresses disagreeing when one of them
+      // was never an address.
+      expect(
+        decideRecoveryIdentity({
+          userId: null,
+          assessmentEmail: "real@x.com",
+          canonicalPurchaseEmail: purchase,
+        }),
+      ).toEqual({
+        case: "assessment-email-canonical",
+        seal: "proceed",
+        write: null,
+        alarm: null,
+      })
+    },
+  )
+
+  it("writes the NORMALISED purchase identity, not whatever it was handed", () => {
+    // A caller that hands over a usable-but-unnormalised address does not get
+    // to decide the stored form of an identity that later authorises a Report.
+    expect(
+      decideRecoveryIdentity({
+        userId: null,
+        assessmentEmail: null,
+        canonicalPurchaseEmail: "  MiXeD@X.CoM ",
+      }).write,
+    ).toBe("mixed@x.com")
+  })
+
+  it("an account owner is unaffected by a malformed purchase value", () => {
+    for (const purchase of MALFORMED) {
+      expect(
+        decideRecoveryIdentity({
+          userId: "user-1",
+          assessmentEmail: null,
+          canonicalPurchaseEmail: purchase,
+        }),
+      ).toEqual({ case: "account-owner", seal: "proceed", write: null, alarm: null })
+    }
+  })
+
+  /* ── The invariant, checked mechanically rather than case by case ───────── */
+
+  it("no guest decision proceeds without a usable recovery identity", () => {
+    // The property the whole matrix exists to hold, asserted over a generated
+    // cross product rather than by trusting that the cases above are complete.
+    //
+    //   seal === "proceed"  =>  the stored address is usable
+    //                           OR what we are about to write is usable
+    const stored = [null, "real@x.com", "  ReAl@X.CoM  ", ...MALFORMED]
+    const purchase = [null, "payer@y.com", "  PaYeR@Y.CoM  ", ...MALFORMED]
+
+    let proceeds = 0
+    let refusals = 0
+
+    for (const assessmentEmail of stored) {
+      for (const canonicalPurchaseEmail of purchase) {
+        const decision = decideRecoveryIdentity({
+          userId: null,
+          assessmentEmail,
+          canonicalPurchaseEmail,
+        })
+        const context = `stored=${JSON.stringify(assessmentEmail)} purchase=${JSON.stringify(canonicalPurchaseEmail)}`
+
+        if (decision.seal === "proceed") {
+          proceeds += 1
+          const recoverable =
+            normaliseEmail(assessmentEmail) !== null || normaliseEmail(decision.write) !== null
+          expect(recoverable, `sealed with no recovery identity: ${context}`).toBe(true)
+        } else {
+          refusals += 1
+          expect(decision.write, context).toBeNull()
+        }
+      }
+    }
+
+    // Non-vacuity. A generator that produced only refusals — or only proceeds —
+    // would satisfy the assertion above while testing nothing.
+    expect(proceeds).toBeGreaterThan(0)
+    expect(refusals).toBeGreaterThan(0)
+    expect(proceeds + refusals).toBe(stored.length * purchase.length)
+  })
+
+  it("whatever it writes is always already normalised", () => {
+    // Corollary worth pinning separately: the write is not merely usable, it is
+    // in canonical form, so a later equality check against a stored value
+    // cannot fail on spelling.
+    for (const canonicalPurchaseEmail of [null, "payer@y.com", "  PaYeR@Y.CoM  ", ...MALFORMED]) {
+      const { write } = decideRecoveryIdentity({
+        userId: null,
+        assessmentEmail: null,
+        canonicalPurchaseEmail,
+      })
+      if (write !== null) expect(write).toBe(normaliseEmail(write))
+    }
+  })
+
   it("never writes an address that is not already normalised", () => {
     const decision = decideRecoveryIdentity({
       userId: null,
