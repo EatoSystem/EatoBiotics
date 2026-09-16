@@ -236,6 +236,53 @@ describe("capability", () => {
     expect(result.ok).toBe(false)
   })
 
+  it("refuses a capability belonging to ANOTHER assessment", async () => {
+    // The repair. Checking only the handoff half of a composite identity is
+    // making, one layer up, exactly the mistake the composite foreign key
+    // exists to prevent — and the assessment half is the one a caller could
+    // influence, because the read is issued for this row's id.
+    const secret = mintSecret()
+    const result = await resolveReportAccess({
+      handoffId: HANDOFF,
+      proof: cookieProof(encodeReportCookie(HANDOFF, secret)),
+      client: client({
+        async readCapability() {
+          return {
+            ok: true,
+            row: capabilityRow(secret, { assessment_id: "00000000-0000-4000-8000-000000000000" }),
+          }
+        },
+      }),
+    })
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.external).toBe("report_not_found")
+      expect(result.severity).toBe("integrity")
+    }
+  })
+
+  it("accepts only when BOTH halves of the identity pair match", async () => {
+    // Non-vacuity for the two refusals around it: the pair check must not be
+    // refusing everything.
+    const secret = mintSecret()
+    const result = await resolveReportAccess({
+      handoffId: HANDOFF,
+      proof: cookieProof(encodeReportCookie(HANDOFF, secret)),
+      client: client({
+        async readCapability() {
+          return {
+            ok: true,
+            row: capabilityRow(secret, {
+              assessment_id: ASSESSMENT,
+              consultation_handoff_id: HANDOFF,
+            }),
+          }
+        },
+      }),
+    })
+    expect(result.ok).toBe(true)
+  })
+
   it("refuses a capability bound to a different handoff than the row's seal", async () => {
     // Unstorable under the composite foreign key. Seeing it means the
     // constraint is missing.

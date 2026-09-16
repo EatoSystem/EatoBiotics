@@ -164,11 +164,15 @@ export type OperationalSeverity =
 export type RecoveryIdentityCase =
   /** An account already owns the row. No email is required. */
   | "account-owner"
-  /** Guest with an assessment email already present. It stays canonical. */
+  /** Guest with a USABLE assessment email already present. It stays canonical. */
   | "assessment-email-canonical"
-  /** Guest with no assessment email; the purchase email becomes the recovery identity. */
+  /**
+   * Guest with no usable assessment email — the column was NULL, or held
+   * something that cannot be an address — so the purchase email becomes the
+   * recovery identity.
+   */
   | "adopt-purchase-email"
-  /** Guest with no identity of any kind. Nothing may be invented. */
+  /** Guest with no usable identity of any kind. Nothing may be invented. */
   | "no-recovery-identity"
 
 /**
@@ -184,8 +188,17 @@ export interface RecoveryIdentityDecision {
   /** Normalised, or null when nothing is to be written. */
   readonly write: string | null
   /**
-   * A differing external email is recorded and otherwise ignored. It is not a
-   * second ownership proof, and it never overwrites what the customer gave us.
+   * Two things an operator should know about, neither of which changes the
+   * seal decision.
+   *
+   * `identity-conflict` — the settled purchase email differs from the address
+   *   the customer gave us. Recorded and otherwise ignored: it is not a second
+   *   ownership proof, and it never overwrites what the customer gave us.
+   *
+   * `unusable-recovery-email` — the stored address could not be an address at
+   *   all, so it was discarded in favour of the purchase email. Worth
+   *   surfacing because it means something upstream wrote garbage into an
+   *   identity column, and this is the one moment anybody is looking at it.
    */
-  readonly alarm: "identity-conflict" | null
+  readonly alarm: "identity-conflict" | "unusable-recovery-email" | null
 }

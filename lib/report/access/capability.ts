@@ -21,6 +21,27 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto"
  * Rotation and revocation change nothing about the finalisation, the handoff or
  * the canonical Report. A rotated credential yields the identical Report.
  *
+ * ══ REVOCATION IS TERMINAL ══════════════════════════════════════════════════
+ *
+ *   mint ──→ ACTIVE ──rotate──→ ACTIVE′ ──rotate──→ ACTIVE″
+ *              │
+ *            revoke
+ *              ↓
+ *           REVOKED          ← nothing leaves this state
+ *              │
+ *           DELETE  ──→ (gone; a new credential is a NEW ROW)
+ *
+ * Migration 50 refuses every update to a revoked row: clearing `revoked_at`,
+ * re-stamping it, or rotating the hash underneath it. The rotation CAS below
+ * already carries `AND revoked_at IS NULL`, but that only binds THIS code — a
+ * revocation that a plain UPDATE can undo is not a revocation, so the rule
+ * lives in the database where nothing can route around it.
+ *
+ * Re-issuing after revocation is therefore DELETE then INSERT. That is
+ * available because a direct delete is deliberately permitted on this table,
+ * and it is the honest shape: the old secret is gone, and what replaces it is
+ * a new credential rather than an old one brought back.
+ *
  * ══ WHY THERE IS NO GENERATION COUNTER ══════════════════════════════════════
  *
  * A draft had the cookie carry a DERIVED session token, which meant rotation

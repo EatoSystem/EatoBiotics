@@ -146,11 +146,34 @@ describe("identity is immutable, the credential is not", () => {
     expect(trigger).toContain("NEW.issued_at")
   })
 
-  it("deliberately does NOT guard the credential columns", () => {
-    // Rotating and revoking are the point of this table.
-    expect(trigger).not.toContain("NEW.token_hash")
-    expect(trigger).not.toContain("NEW.rotated_at")
-    expect(trigger).not.toContain("NEW.revoked_at")
+  it("leaves the credential columns free while the capability is live", () => {
+    // Rotating is the point of this table, and it is how a lost response is
+    // recovered. The identity check must not mention the credential columns —
+    // the ONLY thing that may gate them is the revoked-at branch below.
+    const identityBranch = trigger.slice(0, trigger.indexOf("IF OLD.revoked_at"))
+    expect(identityBranch).not.toContain("NEW.token_hash")
+    expect(identityBranch).not.toContain("NEW.rotated_at")
+    expect(identityBranch).not.toContain("NEW.revoked_at")
+  })
+
+  it("makes revocation terminal, in the database and not just in the CAS", () => {
+    // The repair. The application's rotation CAS carries `AND revoked_at IS
+    // NULL`, but that only binds the application: a plain
+    // `UPDATE ... SET revoked_at = NULL` resurrects the credential, and the
+    // revoked secret starts working again.
+    const revokedBranch = trigger.slice(trigger.indexOf("IF OLD.revoked_at"))
+    expect(revokedBranch).toContain("OLD.revoked_at IS NOT NULL")
+    // All three attacks, refused by one rule: un-revoke, re-stamp, rotate under.
+    expect(revokedBranch).toContain("NEW.revoked_at")
+    expect(revokedBranch).toContain("NEW.token_hash")
+    expect(revokedBranch).toContain("NEW.rotated_at")
+    expect(revokedBranch).toContain("revocation is final")
+  })
+
+  it("points at delete-then-insert as the way back", () => {
+    // Terminal must not mean a dead end. Re-issuing is a NEW ROW, which is
+    // available because a direct delete is deliberately permitted here.
+    expect(PROSE).toContain("DELETE then INSERT")
   })
 
   it("uses IS DISTINCT FROM so an unchanged re-send is not refused", () => {

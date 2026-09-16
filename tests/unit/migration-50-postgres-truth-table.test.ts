@@ -303,6 +303,105 @@ maybe("rotation by compare-and-set", () => {
   })
 })
 
+maybe("revocation is terminal", () => {
+  /**
+   * The application's rotation CAS carries `AND revoked_at IS NULL`, so IT will
+   * not touch a revoked row. These rows are about what the DATABASE permits
+   * when something routes around the application — a plain UPDATE from a
+   * console, a future route, a bug. A revocation that can be undone below the
+   * application is not a revocation.
+   */
+  function revoked() {
+    clean()
+    psql(`INSERT INTO report_access_capabilities (assessment_id, consultation_handoff_id, token_hash, revoked_at)
+          VALUES ('${idA}', '${HANDOFF_A}', '${HASH_1}', now());`)
+  }
+
+  it("REFUSES clearing revoked_at", () => {
+    revoked()
+    const bad = psql(
+      `UPDATE report_access_capabilities SET revoked_at = NULL WHERE assessment_id = '${idA}';`,
+    )
+    expect(bad.status).not.toBe(0)
+    expect(bad.stderr).toContain("revocation is final")
+    expect(scalar(`SELECT revoked_at IS NOT NULL FROM report_access_capabilities
+                    WHERE assessment_id = '${idA}';`)).toBe("t")
+  })
+
+  it("REFUSES re-stamping revoked_at", () => {
+    revoked()
+    const bad = psql(
+      `UPDATE report_access_capabilities SET revoked_at = now() + interval '1 day'
+        WHERE assessment_id = '${idA}';`,
+    )
+    expect(bad.status).not.toBe(0)
+  })
+
+  it("REFUSES rotating the hash underneath a revocation", () => {
+    revoked()
+    const bad = psql(
+      `UPDATE report_access_capabilities SET token_hash = '${HASH_2}' WHERE assessment_id = '${idA}';`,
+    )
+    expect(bad.status).not.toBe(0)
+    expect(scalar(`SELECT token_hash FROM report_access_capabilities WHERE assessment_id = '${idA}';`))
+      .toBe(HASH_1)
+  })
+
+  it("REFUSES clearing revocation and rotating in one statement", () => {
+    // The combination, in case a single-column check were ordered so that one
+    // mutation masked the other.
+    revoked()
+    const bad = psql(`
+      UPDATE report_access_capabilities
+         SET revoked_at = NULL, token_hash = '${HASH_2}', rotated_at = now()
+       WHERE assessment_id = '${idA}';
+    `)
+    expect(bad.status).not.toBe(0)
+  })
+
+  it("permits an unchanged re-send of a revoked row", () => {
+    // Same discipline as the identity check: a client that re-sends identical
+    // values is not attempting a change and is not refused for one.
+    revoked()
+    const resend = psql(`
+      UPDATE report_access_capabilities
+         SET revoked_at = revoked_at, token_hash = token_hash, rotated_at = rotated_at
+       WHERE assessment_id = '${idA}';
+    `)
+    expect(resend.status, resend.stderr).toBe(0)
+  })
+
+  it("re-issues by DELETE then INSERT, so terminal is not a dead end", () => {
+    // Forbidding revival AND deletion would leave a customer with a permanently
+    // unusable Report and no way to mint a new credential. Deletability is what
+    // makes the terminal rule workable.
+    revoked()
+    expect(
+      psql(`DELETE FROM report_access_capabilities WHERE assessment_id = '${idA}';`).status,
+    ).toBe(0)
+    const reissued = psql(`
+      INSERT INTO report_access_capabilities (assessment_id, consultation_handoff_id, token_hash)
+      VALUES ('${idA}', '${HANDOFF_A}', '${HASH_3}');
+    `)
+    expect(reissued.status, reissued.stderr).toBe(0)
+    expect(scalar(`SELECT revoked_at IS NULL FROM report_access_capabilities
+                    WHERE assessment_id = '${idA}';`)).toBe("t")
+  })
+
+  it("still rotates freely while the capability is LIVE", () => {
+    // Non-vacuity for everything above: the terminal rule must bite only after
+    // revocation, or it would have broken ordinary rotation instead.
+    clean()
+    psql(`INSERT INTO report_access_capabilities (assessment_id, consultation_handoff_id, token_hash)
+          VALUES ('${idA}', '${HANDOFF_A}', '${HASH_1}');`)
+    const ok = psql(
+      `UPDATE report_access_capabilities SET token_hash = '${HASH_2}', rotated_at = now()
+        WHERE assessment_id = '${idA}';`,
+    )
+    expect(ok.status, ok.stderr).toBe(0)
+  })
+})
+
 maybe("identity is immutable, the credential is not", () => {
   it("permits rotating token_hash, rotated_at and revoked_at", () => {
     clean()

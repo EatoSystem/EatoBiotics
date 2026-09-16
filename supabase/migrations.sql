@@ -2375,7 +2375,7 @@ CREATE TABLE IF NOT EXISTS report_access_capabilities (
 -- even when the secret behind it is strong.
 ALTER TABLE report_access_capabilities ENABLE ROW LEVEL SECURITY;  -- zero policies
 
--- ── IDENTITY IS IMMUTABLE; THE CREDENTIAL IS NOT ───────────
+-- ── IDENTITY IS IMMUTABLE; THE CREDENTIAL IS NOT; REVOCATION IS FINAL ──────
 -- The split this whole table exists to express, enforced below the application
 -- so it survives a bug in it, a future route written by somebody who has not
 -- read this phase, and a manual UPDATE typed into a SQL console at 2am.
@@ -2386,12 +2386,28 @@ ALTER TABLE report_access_capabilities ENABLE ROW LEVEL SECURITY;  -- zero polic
 -- composite foreign key already makes unstorable, and this closes the same door
 -- from the other side.
 --
--- `token_hash`, `rotated_at` and `revoked_at` are deliberately absent from the
--- check: rotating and revoking are the point.
+-- While `revoked_at` is NULL, `token_hash` and `rotated_at` move freely:
+-- rotating is the point, and it is how a lost response is recovered.
 --
--- The equality branch matters. A client that re-sends an unchanged row, or a
--- retry that recomputes identical values, is not attempting a change and is not
--- refused for one.
+-- ── WHY REVOKED IS TERMINAL ────────────────────────────────
+-- The application's rotation CAS carries `AND revoked_at IS NULL`, so IT will
+-- not touch a revoked row. That is not the same as the row being safe. A plain
+-- `UPDATE ... SET revoked_at = NULL` resurrects the credential, and the secret
+-- that was revoked starts working again — a revocation that can be undone below
+-- the application is not a revocation at all.
+--
+-- So once `revoked_at` is set, NO update is permitted: not clearing it, not
+-- re-stamping it, not rotating the hash underneath it. One rule instead of
+-- three, and no ordering between them to get wrong.
+--
+-- Re-issuing after revocation is therefore DELETE then INSERT, which is
+-- available precisely because a direct delete is permitted on this table (see
+-- below). That is the intended shape: a new credential is a new row, not a
+-- revoked one brought back.
+--
+-- The equality branch matters in both checks. A client that re-sends an
+-- unchanged row, or a retry that recomputes identical values, is not attempting
+-- a change and is not refused for one.
 CREATE OR REPLACE FUNCTION report_access_capabilities_identity_is_immutable()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -2404,6 +2420,16 @@ BEGIN
       'report_access_capabilities identity columns are immutable; rotate token_hash instead'
       USING ERRCODE = 'restrict_violation';
   END IF;
+
+  IF OLD.revoked_at IS NOT NULL
+     AND (NEW.revoked_at  IS DISTINCT FROM OLD.revoked_at
+          OR NEW.token_hash IS DISTINCT FROM OLD.token_hash
+          OR NEW.rotated_at IS DISTINCT FROM OLD.rotated_at) THEN
+    RAISE EXCEPTION
+      'report_access_capabilities revocation is final; delete the row and issue a new credential'
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+
   RETURN NEW;
 END;
 $$;
@@ -2420,6 +2446,11 @@ CREATE TRIGGER trg_report_access_capabilities_identity
 -- available. There is therefore no parent-only-delete trigger here. Account
 -- erasure removes `deep_assessments` and the cascade above removes this with
 -- it, which is the only direction that has to be guaranteed.
+--
+-- Deletability is also what makes revocation being terminal workable rather
+-- than a dead end: a revoked row cannot be revived, so re-issuing is DELETE
+-- then INSERT. Forbidding both would leave a customer with a permanently
+-- unusable Report and no way to mint a new credential.
 --
 -- `token_hash` is NEVER included in the customer portability export. It is a
 -- credential, not customer data, and an export file is something customers are

@@ -207,21 +207,91 @@ describe("the recovery-identity matrix", () => {
     expect(refusals.every((d) => d.seal === "proceed")).toBe(true)
   })
 
-  it("keys case B on the RAW column, matching the SQL predicate", () => {
-    // Load-bearing: the write is guarded by `email IS NULL`. Deciding on a
-    // normalised value would let this choose "adopt" for a row whose column is
-    // non-null, and the CAS would then write nothing while the decision said
-    // otherwise. A structurally unusable stored address is recorded as a known
-    // narrow gap in the module, not silently promoted to case C.
+  it("C — an UNUSABLE stored address is not an identity; the purchase email replaces it", () => {
+    // The repair. A column holding something that cannot be an address leaves
+    // the guest with nothing to prove control of, so it must not be treated as
+    // a recovery identity merely because it is non-null. Overwriting it takes
+    // nothing from anyone: nobody can prove control of an unparseable string.
     const decision = decideRecoveryIdentity({
       userId: null,
       assessmentEmail: "not-an-email",
       canonicalPurchaseEmail: "real@x.com",
     })
-    expect(decision.case).toBe("assessment-email-canonical")
+    expect(decision).toEqual({
+      case: "adopt-purchase-email",
+      seal: "proceed",
+      write: "real@x.com",
+      alarm: "unusable-recovery-email",
+    })
+  })
+
+  it("D — an UNUSABLE stored address with nothing to adopt REFUSES the seal", () => {
+    // The lockout this whole matrix exists to prevent, previously reachable by
+    // storing junk in the column: an email column, and no way back to the owner.
+    const decision = decideRecoveryIdentity({
+      userId: null,
+      assessmentEmail: "   ",
+      canonicalPurchaseEmail: null,
+    })
+    expect(decision.seal).toBe("refuse")
+    expect(decision.case).toBe("no-recovery-identity")
     expect(decision.write).toBeNull()
-    // No conflict alarm either: there is nothing comparable to conflict with.
-    expect(decision.alarm).toBeNull()
+  })
+
+  it.each(["not-an-email", "@nope.com", "nope@", "a@b@c", "   ", "has space@x.com"])(
+    "refuses to seal on stored junk %j when there is nothing to adopt",
+    (junk) => {
+      expect(
+        decideRecoveryIdentity({
+          userId: null,
+          assessmentEmail: junk,
+          canonicalPurchaseEmail: null,
+        }).seal,
+      ).toBe("refuse")
+    },
+  )
+
+  it("an unusable stored address never alarms as an identity conflict", () => {
+    // Distinct signals. `identity-conflict` means two usable addresses disagree
+    // and we kept the customer's; `unusable-recovery-email` means we discarded
+    // something that was never an address. Collapsing them would hide the fact
+    // that data upstream is writing garbage.
+    const junk = decideRecoveryIdentity({
+      userId: null,
+      assessmentEmail: "not-an-email",
+      canonicalPurchaseEmail: "real@x.com",
+    })
+    const conflict = decideRecoveryIdentity({
+      userId: null,
+      assessmentEmail: "funnel@x.com",
+      canonicalPurchaseEmail: "payer@y.com",
+    })
+    expect(junk.alarm).toBe("unusable-recovery-email")
+    expect(conflict.alarm).toBe("identity-conflict")
+  })
+
+  it("adopting from a NULL column does not alarm", () => {
+    // Nothing was discarded, so there is nothing to tell anyone about. Only a
+    // non-null value that turned out to be unusable is worth surfacing.
+    expect(
+      decideRecoveryIdentity({
+        userId: null,
+        assessmentEmail: null,
+        canonicalPurchaseEmail: "real@x.com",
+      }).alarm,
+    ).toBeNull()
+  })
+
+  it("an account owner is untouched by a junk email column", () => {
+    // Account identity is durable and stronger than any address, so case A is
+    // reached before the column is even looked at.
+    expect(
+      decideRecoveryIdentity({
+        userId: "user-1",
+        assessmentEmail: "not-an-email",
+        canonicalPurchaseEmail: null,
+      }),
+    ).toEqual({ case: "account-owner", seal: "proceed", write: null, alarm: null })
   })
 
   it("never writes an address that is not already normalised", () => {

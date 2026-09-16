@@ -195,11 +195,25 @@ export async function resolveReportAccess(input: {
 
   const credential = capability.row
 
-  // A capability bound to a different handoff than its own assessment's seal is
-  // a state the composite foreign key makes unstorable. Seeing it means the
-  // constraint is missing.
-  if (credential.consultation_handoff_id !== input.handoffId) {
-    return denied("capability is bound to a different handoff", "integrity")
+  // The WHOLE identity pair, not half of it.
+  //
+  // The composite foreign key exists because neither half is sufficient alone:
+  // proving only "this assessment exists" and "this handoff is unique" still
+  // permits a credential bound to assessment A carrying handoff B. Checking
+  // only the handoff here would be making exactly that mistake one layer up —
+  // and the assessment half is the half a caller could influence, because the
+  // read is issued for `row.id` and a client that answered with someone else's
+  // row would slip through a handoff-only check whenever both Reports shared a
+  // handoff value.
+  //
+  // Both are states the foreign key makes unstorable, so observing either means
+  // the constraint is missing or was routed around. The customer is told
+  // nothing either way.
+  if (
+    credential.assessment_id !== row.id ||
+    credential.consultation_handoff_id !== input.handoffId
+  ) {
+    return denied("capability identity pair does not match the assessment", "integrity")
   }
 
   if (credential.revoked_at !== null) return denied("capability is revoked")

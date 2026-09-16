@@ -53,11 +53,19 @@ export interface RecoveryIdentityInput {
   /**
    * `deep_assessments.email`, exactly as stored and NOT pre-normalised.
    *
-   * Rawness is load-bearing: the case split below has to agree with the SQL
-   * predicate `email IS NULL` that guards the write. Deciding on a normalised
-   * value would let this function choose "adopt the purchase email" for a row
-   * whose column is non-null, and the CAS would then match zero rows and write
-   * nothing while the decision said otherwise.
+   * Passed raw so this function can tell an ABSENT address from an UNUSABLE
+   * one. The two get the same decision — neither is a recovery identity — but
+   * only one of them is worth waking somebody up about, and a caller that
+   * normalised first would have thrown that difference away.
+   *
+   * An earlier version keyed the case split on this being non-null, justified
+   * by the SQL predicate `email IS NULL` guarding the write. That predicate
+   * does not exist and must not: the seal's `updated_at` CAS token serialises
+   * against concurrent writers instead, and adding it would turn a benign
+   * webhook arrival into a failed seal for somebody who has already paid. So
+   * `SET email = :write` lands whether the column held NULL or junk, and the
+   * reasoning that produced the gap was reasoning from a predicate we had
+   * already decided not to write.
    */
   readonly assessmentEmail: string | null
   /** From `canonicalPurchaseEmail`, already normalised or null. */
@@ -75,16 +83,22 @@ export function decideRecoveryIdentity(input: RecoveryIdentityInput): RecoveryId
     return { case: "account-owner", seal: "proceed", write: null, alarm: null }
   }
 
-  /* ── B. Guest, with an address already on the row ─────────────────────────
+  /* ── B. Guest, with a USABLE address already on the row ──────────────────
    *
    * The EatoBiotics assessment/purchase email is canonical when present, and is
    * never replaced because Stripe returned a different one.
+   *
+   * "Present" means usable, not merely non-null. A column holding `"n/a"` is
+   * not an identity a customer can prove control of, and treating it as one
+   * would satisfy the invariant on a technicality while leaving exactly the
+   * lockout the invariant exists to prevent.
    */
-  if (input.assessmentEmail !== null) {
+  const storedIdentity = normaliseEmail(input.assessmentEmail)
+
+  if (storedIdentity !== null) {
     const conflict =
       input.canonicalPurchaseEmail !== null &&
-      normaliseEmail(input.assessmentEmail) !== null &&
-      !sameEmailIdentity(input.assessmentEmail, input.canonicalPurchaseEmail)
+      !sameEmailIdentity(storedIdentity, input.canonicalPurchaseEmail)
 
     return {
       case: "assessment-email-canonical",
@@ -94,43 +108,44 @@ export function decideRecoveryIdentity(input: RecoveryIdentityInput): RecoveryId
     }
   }
 
-  /* ── C. Guest, no address on the row, but the purchase carries one ───────
+  /* ── C. Guest with no usable address, and a purchase that carries one ────
    *
-   * Written by the caller in the successful seal CAS. Note the predicate the
-   * caller must NOT add: `AND email IS NULL`. Every concurrent writer of that
-   * column bumps `updated_at`, so the seal's existing `updated_at` CAS token
-   * already serialises against them, and the extra predicate would turn a
-   * benign webhook arrival into a failed seal for a paying customer.
+   * Covers both shapes of "no stored identity": the column was NULL, or it held
+   * something unparseable. Written by the caller in the successful seal CAS.
+   *
+   * Overwriting an unusable string is not dispossession. Nobody can prove
+   * control of an unparseable address, so the write can take nothing from
+   * anyone and strictly improves recoverability. It is still worth an alarm:
+   * something upstream wrote garbage into an identity column, and the only
+   * moment anybody is looking at it is now.
    */
   if (input.canonicalPurchaseEmail !== null) {
     return {
       case: "adopt-purchase-email",
       seal: "proceed",
       write: input.canonicalPurchaseEmail,
-      alarm: null,
+      alarm: input.assessmentEmail !== null ? "unusable-recovery-email" : null,
     }
   }
 
-  /* ── D. Nothing. Refuse rather than invent ───────────────────────────────
+  /* ── D. Nothing usable, and nothing to adopt. Refuse rather than invent ──
    *
    * Sealing here would produce an immutable artifact with no way back to its
    * owner, and the seal is write-once, so it could not be repaired afterwards.
+   * Reached by a guest whose column is NULL and by one whose column is junk —
+   * a stored string that cannot be an address is not a reason to seal.
    */
   return { case: "no-recovery-identity", seal: "refuse", write: null, alarm: null }
 }
 
 /*
- * ══ A KNOWN NARROW GAP, RECORDED RATHER THAN PAPERED OVER ═══════════════════
+ * ══ THE GAP THAT USED TO BE DOCUMENTED HERE ═════════════════════════════════
  *
- * Case B is keyed on the RAW column being non-null, because that is what the
- * write predicate keys on. A stored address that is non-null but structurally
- * unusable — `normaliseEmail` returns null for it — therefore satisfies the
- * letter of the frozen invariant while not being verifiable in practice: the
- * guest has an email column, and no way to prove control of it.
- *
- * It is left as case B deliberately. Treating it as case C would promise a
- * write the SQL predicate cannot perform, and inventing a fifth case would
- * change a contract that has been frozen through three review rounds. The
- * decision belongs to 4B-S4, which owns the finalisation change, and it is
- * raised there rather than resolved quietly here.
+ * This module previously carried a note explaining that a non-null but
+ * unusable `assessment.email` fell into case B, sealed, and left the guest
+ * with no provable identity — and deferred the fix. That was wrong twice: a
+ * known hole with a comment beside it is still a hole, and the reason given
+ * (the SQL write predicate) was not a real constraint. Case C now absorbs it
+ * and case D refuses when there is nothing to adopt, which needed no new case
+ * and no change to the four frozen names.
  */
