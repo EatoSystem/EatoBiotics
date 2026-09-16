@@ -306,6 +306,7 @@ describe("the real manifest", () => {
     expect([...pending.keys()].sort()).toEqual([
       "consultation_reports",
       "feedback",
+      "report_access_capabilities",
       "reviews",
     ])
     expect(pending.get("reviews")!.migration).toBe(45)
@@ -314,6 +315,12 @@ describe("the real manifest", () => {
     // Migration 48 — both drafted, neither applied — and nothing customer-facing
     // calls the service that writes it.
     expect(pending.get("consultation_reports")!.migration).toBe(49)
+    // Phase 4B-S1: the Report-access capability. Migration 50, which depends on
+    // Migration 49 (its composite foreign key targets the NON-PARTIAL unique
+    // constraint 49 adds), which depends on Migration 48. Three deep, all three
+    // drafted, none applied. Nothing reaches this table: there is no route, no
+    // endpoint and no caller outside the test suite.
+    expect(pending.get("report_access_capabilities")!.migration).toBe(50)
     // Migration 47 (paid_report_intents + consents) was applied to production on
     // 2026-08-29 and verified live — table, RLS enabled, zero policies, all
     // constraints and indexes present — so both tables moved to `applied`. They

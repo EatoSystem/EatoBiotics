@@ -78,6 +78,11 @@
       "table": "consultation_reports",
       "migration": 49,
       "issue": "phase-4a-s4"
+    },
+    {
+      "table": "report_access_capabilities",
+      "migration": 50,
+      "issue": "phase-4b-s1"
     }
   ]
 }
