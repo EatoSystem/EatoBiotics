@@ -2276,3 +2276,182 @@ CREATE TRIGGER trg_consultation_reports_no_truncate
   BEFORE TRUNCATE ON consultation_reports
   FOR EACH STATEMENT
   EXECUTE FUNCTION consultation_reports_refuse_truncate();
+
+-- ════════════════════════════════════════════════════════════
+-- Migration 50: the Report-access capability
+-- ────────────────────────────────────────────────────────────
+-- STATUS: PROPOSED — DO NOT APPLY WITHOUT EXPLICIT AUTHORISATION.
+--
+-- DEPENDS ON MIGRATION 49, which depends on Migration 48. The foreign key below
+-- references `deep_assessments (id, consultation_handoff_id)` — the NON-PARTIAL
+-- unique constraint that Migration 49 adds. Migration 48's
+-- `idx_deep_assessments_handoff` is PARTIAL, and PostgreSQL refuses a partial
+-- unique index as a foreign-key target; that was proven by execution in Phase
+-- 4A-S4, not by reading the manual. Apply 48, then 49, then this, in one
+-- authorised sitting.
+--
+-- The status line is a fact about a day, not a standing description. Migration
+-- 41 read "DO NOT APPLY" in this file while both its tables were already live.
+-- Whoever applies this must edit this header to say so.
+--
+-- Nothing in this repository applies it, and nothing reaches it: Phase 4B-S1's
+-- code and tests are written against it, but there is no route, no endpoint and
+-- no caller outside the test suite, and guards assert that.
+--
+-- ── THE INVARIANT ──────────────────────────────────────────
+--   ONE SEALED ASSESSMENT/HANDOFF → AT MOST ONE ACTIVE CAPABILITY AT A TIME.
+--
+-- Note "at a time", and note what it does NOT say. The seal and the canonical
+-- Report are immutable authority. This is a SECURITY CREDENTIAL, and the two
+-- must not share a lifecycle. Minting commits a hash and returns the plaintext
+-- once, so a response lost after commit makes that plaintext unrecoverable by
+-- construction — without rotation, a dropped packet would lock a customer out
+-- of a EUR 49 artifact permanently. Credentials need a lifecycle; authority
+-- does not.
+--
+-- Rotation and revocation change NOTHING about the finalisation, the handoff or
+-- the canonical Report. A rotated credential yields the identical Report.
+--
+-- ── WHY A SEPARATE TABLE, NOT COLUMNS ON deep_assessments ──
+-- Migration 48 put the seal on `deep_assessments` because sealing is one fact
+-- about one row that had to move atomically with the phase. This is the
+-- opposite kind of thing: mutable, rotatable, revocable, and deliberately
+-- written OUTSIDE the seal transaction. Mutable credential columns on a row
+-- protected by write-once triggers would be a contradiction sitting in one
+-- table, and the next person to add a trigger would have to guess which half
+-- they meant.
+--
+-- ── WHY THE FOREIGN KEY IS COMPOSITE ───────────────────────
+-- A child proving only "this assessment exists" would still permit a capability
+-- bound to assessment A carrying handoff B — a credential that unlocks the
+-- wrong Report. The composite key makes that state unstorable rather than
+-- merely unexpected. Same argument as Migration 49's, for the same reason.
+--
+-- ── WHY THERE IS NO generation COLUMN ──────────────────────
+-- An earlier design had the browser cookie carry a DERIVED session token, which
+-- meant rotation had to invalidate two things down two paths and needed a
+-- counter to keep them in step. The cookie now carries the SAME secret, so one
+-- write to `token_hash` kills the raw link, the capability value and every
+-- cookie minted from it simultaneously — they are all the same string.
+-- `token_hash` is the sole rotation and revocation authority, and it is also
+-- the compare-and-set state the application rotates against:
+--
+--   UPDATE report_access_capabilities
+--      SET token_hash = :new, rotated_at = now()
+--    WHERE assessment_id = :id AND token_hash = :observed AND revoked_at IS NULL
+--   RETURNING token_hash
+--
+-- The plaintext is released only by the request whose own hash comes back
+-- committed. A zero-row loser returns no secret at all, so no interleaving of
+-- two concurrent rotations can hand out two simultaneously valid secrets.
+-- ════════════════════════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS report_access_capabilities (
+  -- The primary key IS the at-most-one-active rule, and it is also what
+  -- arbitrates the first-mint race: two concurrent inserts, one winner chosen
+  -- by the database rather than by application code.
+  assessment_id            uuid PRIMARY KEY,
+  consultation_handoff_id  uuid NOT NULL UNIQUE,
+  -- SHA-256 of a 256-bit CSPRNG secret. Lowercase hex, exactly 64 characters —
+  -- a length check alone would accept uppercase, and a credential that only
+  -- sometimes matches its own column is a lockout waiting for a platform that
+  -- spells hex differently. The plaintext is NEVER stored, here or anywhere.
+  token_hash               text NOT NULL UNIQUE
+                             CHECK (token_hash ~ '^[0-9a-f]{64}$'),
+  issued_at                timestamptz NOT NULL DEFAULT now(),
+  -- Both nullable and both deliberately mutable: this row is the one part of
+  -- the Report chain that is ALLOWED to change.
+  rotated_at               timestamptz,
+  revoked_at               timestamptz,
+  CONSTRAINT report_access_capabilities_parent_fk
+    FOREIGN KEY (assessment_id, consultation_handoff_id)
+    REFERENCES deep_assessments (id, consultation_handoff_id)
+    ON DELETE CASCADE
+);
+
+-- Service-role only: RLS enabled, ZERO policies, no GRANTs. A browser must
+-- never be able to read `token_hash` — it is the stored form of the credential
+-- that authorises a Report, and a readable hash is an offline guessing target
+-- even when the secret behind it is strong.
+ALTER TABLE report_access_capabilities ENABLE ROW LEVEL SECURITY;  -- zero policies
+
+-- ── IDENTITY IS IMMUTABLE; THE CREDENTIAL IS NOT; REVOCATION IS FINAL ──────
+-- The split this whole table exists to express, enforced below the application
+-- so it survives a bug in it, a future route written by somebody who has not
+-- read this phase, and a manual UPDATE typed into a SQL console at 2am.
+--
+-- `assessment_id`, `consultation_handoff_id` and `issued_at` are identity: they
+-- say WHICH Report this credential belongs to and when it first existed.
+-- Repointing a live credential at another Report is exactly the attack the
+-- composite foreign key already makes unstorable, and this closes the same door
+-- from the other side.
+--
+-- While `revoked_at` is NULL, `token_hash` and `rotated_at` move freely:
+-- rotating is the point, and it is how a lost response is recovered.
+--
+-- ── WHY REVOKED IS TERMINAL ────────────────────────────────
+-- The application's rotation CAS carries `AND revoked_at IS NULL`, so IT will
+-- not touch a revoked row. That is not the same as the row being safe. A plain
+-- `UPDATE ... SET revoked_at = NULL` resurrects the credential, and the secret
+-- that was revoked starts working again — a revocation that can be undone below
+-- the application is not a revocation at all.
+--
+-- So once `revoked_at` is set, NO update is permitted: not clearing it, not
+-- re-stamping it, not rotating the hash underneath it. One rule instead of
+-- three, and no ordering between them to get wrong.
+--
+-- Re-issuing after revocation is therefore DELETE then INSERT, which is
+-- available precisely because a direct delete is permitted on this table (see
+-- below). That is the intended shape: a new credential is a new row, not a
+-- revoked one brought back.
+--
+-- The equality branch matters in both checks. A client that re-sends an
+-- unchanged row, or a retry that recomputes identical values, is not attempting
+-- a change and is not refused for one.
+CREATE OR REPLACE FUNCTION report_access_capabilities_identity_is_immutable()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF NEW.assessment_id           IS DISTINCT FROM OLD.assessment_id
+     OR NEW.consultation_handoff_id IS DISTINCT FROM OLD.consultation_handoff_id
+     OR NEW.issued_at            IS DISTINCT FROM OLD.issued_at THEN
+    RAISE EXCEPTION
+      'report_access_capabilities identity columns are immutable; rotate token_hash instead'
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+
+  IF OLD.revoked_at IS NOT NULL
+     AND (NEW.revoked_at  IS DISTINCT FROM OLD.revoked_at
+          OR NEW.token_hash IS DISTINCT FROM OLD.token_hash
+          OR NEW.rotated_at IS DISTINCT FROM OLD.rotated_at) THEN
+    RAISE EXCEPTION
+      'report_access_capabilities revocation is final; delete the row and issue a new credential'
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_report_access_capabilities_identity ON report_access_capabilities;
+CREATE TRIGGER trg_report_access_capabilities_identity
+  BEFORE UPDATE ON report_access_capabilities
+  FOR EACH ROW
+  EXECUTE FUNCTION report_access_capabilities_identity_is_immutable();
+
+-- ── DELETED ONLY WITH THE CONSULTATION IT BELONGS TO ───────
+-- Unlike `consultation_reports`, this row SHOULD be independently deletable:
+-- destroying a credential is revocation, and revocation must always be
+-- available. There is therefore no parent-only-delete trigger here. Account
+-- erasure removes `deep_assessments` and the cascade above removes this with
+-- it, which is the only direction that has to be guaranteed.
+--
+-- Deletability is also what makes revocation being terminal workable rather
+-- than a dead end: a revoked row cannot be revived, so re-issuing is DELETE
+-- then INSERT. Forbidding both would leave a customer with a permanently
+-- unusable Report and no way to mint a new credential.
+--
+-- `token_hash` is NEVER included in the customer portability export. It is a
+-- credential, not customer data, and an export file is something customers are
+-- encouraged to download and keep.

@@ -99,7 +99,11 @@ beforeAll(() => {
 
   const m48 = psql(migrationSlice("-- Migration 48:", "-- Migration 49:"))
   expect(m48.status, `Migration 48 did not apply: ${m48.stderr}`).toBe(0)
-  const m49 = psql(migrationSlice("-- Migration 49:"))
+  // Bounded at Migration 50. Phase 4B-S1 appended one, and an open-ended slice
+  // would apply it here too — so a defect in 50 would surface as "Migration 49
+  // did not apply", and this truth table would silently be testing two
+  // migrations while claiming to test one.
+  const m49 = psql(migrationSlice("-- Migration 49:", "-- Migration 50:"))
   expect(m49.status, `Migration 49 did not apply: ${m49.stderr}`).toBe(0)
 
   const sealed = psql(`

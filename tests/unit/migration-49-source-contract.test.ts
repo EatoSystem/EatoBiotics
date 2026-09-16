@@ -14,7 +14,12 @@ import { join } from "node:path"
  */
 
 const RAW = readFileSync(join(process.cwd(), "supabase/migrations.sql"), "utf8")
-const SQL = RAW.slice(RAW.indexOf("-- Migration 49:"))
+// Bounded at BOTH ends. Phase 4B-S1 appended Migration 50 after this one, and
+// an open-ended slice would have quietly started reading it — every "Migration
+// 49 contains X" assertion below would then be satisfiable by a later
+// migration's text. Exactly the weakening the Migration 48 slice needed fixing
+// for when this file was written.
+const SQL = RAW.slice(RAW.indexOf("-- Migration 49:"), RAW.indexOf("-- Migration 50:"))
 
 describe("Migration 48 is untouched", () => {
   it("still carries its own unapplied status and write-once trigger", () => {
