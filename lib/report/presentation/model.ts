@@ -51,13 +51,25 @@ import { renderKey, type PresentationRegion } from "./keys"
  * layer that added one would be asserting something no reviewed content pack
  * authorised.
  *
- * The loop heading is the one string the Report cannot carry itself —
- * `thirtyDayLoop` is an ARRAY, not a `ReportSection` — and it took two attempts
- * to get right. The first version invented a heading. The second read the LIVE
- * `STRUCTURAL_COPY`, which looks like the fix and is a different bug wearing
- * its clothes: it would wrap tomorrow's wording around today's immutable bytes
- * the day the pack version moves. It now comes from `frozen-copy.ts`, selected
- * by the Report's own `provenance.contentPackVersion`.
+ * Three strings the Report structurally cannot carry come from
+ * `frozen-copy.ts`, selected by the Report's own `provenance.contentPackVersion`:
+ * the document's title (the canonical Report has none), the loop heading
+ * (`thirtyDayLoop` is an ARRAY, not a `ReportSection`, so it carries no title),
+ * and the word before a week number (`LoopStep.week` is the number `1`).
+ *
+ * The loop heading took two attempts to get right. The first version invented a
+ * heading. The second read the LIVE `STRUCTURAL_COPY`, which looks like the fix
+ * and is a different bug wearing its clothes: it would wrap tomorrow's wording
+ * around today's immutable bytes the day the pack version moves.
+ *
+ * ══ THE MODEL COMPOSES; THE RENDERER PRINTS ═════════════════════════════════
+ *
+ * Where a customer-visible string has to be ASSEMBLED from parts — the reviewed
+ * word "Week" and the canonical number 4 — the assembly happens here, and the
+ * finished string crosses the boundary. Concatenation is composition, and
+ * composition belongs where the authority is. A renderer writing
+ * `Week {step.week}` in JSX would be a second copy-authoring site, in the one
+ * layer this phase requires to have none.
  *
  * ══ THE QUOTATION IS ATOMIC ═════════════════════════════════════════════════
  *
@@ -160,6 +172,18 @@ export type PresentationBlock =
       readonly title: string
       readonly steps: readonly {
         readonly key: string
+        /**
+         * The finished heading for this step — reviewed word plus canonical
+         * number, already joined.
+         *
+         * Composed HERE and not in JSX. `week` is the number `1` and "Week" is
+         * a word a customer reads, so joining them is authorship, and this
+         * layer is where the authority to compose customer-visible strings
+         * lives. A renderer that wrote `Week {step.week}` would be a second
+         * copy-authoring site, in the layer the phase rule says must have none.
+         */
+        readonly label: string
+        /** The canonical number, for `data-` hooks and ordering. Never printed alone. */
         readonly week: 1 | 2 | 3 | 4
         readonly beat: string
         readonly text: string
@@ -207,7 +231,24 @@ export type PresentationResult =
 
 export interface PresentationReport {
   readonly foundation: "you" | "family"
-  /** ISO instant, from `provenance.finalisedAt`. The only provenance field shown. */
+  /**
+   * The document's title, and the single `h1` of any page that renders it.
+   *
+   * From the frozen copy for the Report's own content-pack version. The
+   * canonical Report carries no title, and a renderer choosing one would be
+   * naming a paid document in JSX.
+   */
+  readonly documentTitle: string
+  /**
+   * ISO instant, from `provenance.finalisedAt`. The only provenance field that
+   * crosses the boundary.
+   *
+   * CARRIED, NOT DISPLAYED. S3 needs it for delivery — a filename, an email
+   * line, a PDF footer — and a model that dropped it would force that layer to
+   * reach back past this one. The web renderer deliberately does not print it,
+   * and a test asserts the rendered output does not contain it, so "available
+   * in the model" never quietly becomes "shown to the customer".
+   */
   readonly finalisedAt: string
   /** In presentation order. The ORDER IS THE MODEL'S, not the renderer's. */
   readonly blocks: readonly PresentationBlock[]
@@ -224,9 +265,10 @@ function linesFrom(section: ReportSection, region: PresentationRegion): Presenta
   }))
 }
 
-function loopStepsFrom(steps: readonly LoopStep[]) {
+function loopStepsFrom(steps: readonly LoopStep[], weekLabel: string) {
   return steps.map((step, index) => ({
     key: renderKey("loop", index),
+    label: `${weekLabel} ${step.week}`,
     week: step.week,
     beat: step.beat,
     text: step.proposition.text,
@@ -322,7 +364,7 @@ export function toPresentation(report: PersonalFoodSystemReportV1): Presentation
       region: "loop",
       key: renderKey("loop"),
       title: copy.thirtyDayLoopTitle,
-      steps: loopStepsFrom(report.thirtyDayLoop),
+      steps: loopStepsFrom(report.thirtyDayLoop, copy.weekLabel),
       accent: { accent: "lime", intent: "fill" },
       printBreak: "page-before",
     })
@@ -378,6 +420,7 @@ export function toPresentation(report: PersonalFoodSystemReportV1): Presentation
     ok: true,
     report: {
       foundation: report.foundation,
+      documentTitle: copy.documentTitle,
       finalisedAt: report.provenance.finalisedAt,
       blocks,
     },

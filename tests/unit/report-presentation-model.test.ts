@@ -6,6 +6,7 @@ import {
   CONTENT_PACK_VERSION,
   STRUCTURAL_COPY,
 } from "@/lib/report/deterministic/content-pack"
+import { PERSONAL_REPORT } from "@/lib/product-vocabulary"
 import {
   knownContentPackVersions,
   presentationCopyFor,
@@ -150,8 +151,12 @@ describe("the exposure boundary", () => {
   })
 
   it("emits exactly the allowed top-level fields", () => {
+    // A closed list, so a new field has to be argued for here before it can
+    // reach a customer's page. It has already done its job once: adding
+    // `documentTitle` failed this test before it rendered anywhere.
     expect(Object.keys(present(YOU)).sort()).toEqual([
       "blocks",
+      "documentTitle",
       "finalisedAt",
       "foundation",
     ])
@@ -331,6 +336,17 @@ describe("the frozen registry cannot drift with the live pack", () => {
         false,
       )
       expect(code.includes("STRUCTURAL_COPY"), `${file} reads STRUCTURAL_COPY`).toBe(false)
+      // The same rule for the product vocabulary, and for the same reason. The
+      // document title is TRANSCRIBED from `PERSONAL_REPORT`; importing it
+      // would look tidier and would re-title every historical Report the day
+      // that constant is edited. The tripwire below asserts the two agree —
+      // which is exactly why it cannot also be what enforces the copy: an
+      // import satisfies equality trivially, while quietly reintroducing the
+      // whole problem.
+      expect(
+        code.includes("product-vocabulary"),
+        `${file} imports the product vocabulary`,
+      ).toBe(false)
     }
   })
 
@@ -345,6 +361,14 @@ describe("the frozen registry cannot drift with the live pack", () => {
     const stripped = planted.replace(STRIP_BLOCK, "").replace(STRIP_LINE, "$1")
     expect(stripped.includes("deterministic/content-pack")).toBe(true)
     expect(stripped.includes("STRUCTURAL_COPY")).toBe(true)
+
+    const vocabulary = ["@/lib", "product-vocabulary"].join("/")
+    const plantedVocabulary = `import { ${"PERSONAL"}_REPORT } from "${vocabulary}"`
+    expect(
+      plantedVocabulary.replace(STRIP_BLOCK, "").replace(STRIP_LINE, "$1").includes(
+        "product-vocabulary",
+      ),
+    ).toBe(true)
   })
 
   it("the currently composed pack version always has a frozen snapshot", () => {
@@ -363,6 +387,92 @@ describe("the frozen registry cannot drift with the live pack", () => {
 
   it("knows exactly the versions it has frozen", () => {
     expect(knownContentPackVersions()).toEqual(["content-pack-v1"])
+  })
+
+  it("holds exactly the three strings the Report structurally cannot carry", () => {
+    // The bar for a fourth entry is that same structural impossibility, not
+    // "the renderer needed a word" — every string added here is one more place
+    // customer-visible copy lives outside the reviewed content pack.
+    expect(Object.keys(presentationCopyFor("content-pack-v1")!).sort()).toEqual([
+      "documentTitle",
+      "thirtyDayLoopTitle",
+      "weekLabel",
+    ])
+  })
+
+  it("the frozen document title matches the product vocabulary it was transcribed from", () => {
+    // A tripwire, not an import. `lib/product-vocabulary.ts` is the authority
+    // for product names; importing it here would move every historical Report
+    // the day that file moves, which is the whole bug this registry prevents.
+    //
+    // Permanent rather than self-retiring: this is the pair that must agree
+    // while v1 is the CURRENT pack. Once v2 exists it is v2's entry that has to
+    // match, and the guard above already forces v2 to have an entry at all.
+    if (CONTENT_PACK_VERSION === "content-pack-v1") {
+      expect(presentationCopyFor("content-pack-v1")!.documentTitle).toBe(PERSONAL_REPORT)
+    }
+    // The name itself, spelled out once, so a silent rename of BOTH sides still
+    // fails here rather than quietly re-titling a paid document.
+    expect(presentationCopyFor("content-pack-v1")!.documentTitle).toBe(
+      "Personal Food System Report",
+    )
+  })
+})
+
+describe("the document title", () => {
+  it("comes off the frozen copy for the Report's own pack version", () => {
+    expect(present(YOU).documentTitle).toBe(
+      presentationCopyFor(YOU.provenance.contentPackVersion)!.documentTitle,
+    )
+  })
+
+  it("is the same for a household Report — it names the product, not the reader", () => {
+    expect(present(FAMILY).documentTitle).toBe(present(YOU).documentTitle)
+  })
+
+  it("does not silently change when the frozen entry is attacked", () => {
+    const before = present(YOU).documentTitle
+    try {
+      ;(presentationCopyFor("content-pack-v1") as { documentTitle: string }).documentTitle =
+        "MUTATED"
+    } catch {
+      /* strict mode threw, which is the stronger outcome */
+    }
+    expect(present(YOU).documentTitle).toBe(before)
+  })
+})
+
+describe("a loop step's label is composed here, not in a renderer", () => {
+  it("joins the reviewed word to the canonical number", () => {
+    const loop = present(YOU).blocks.find((b) => b.kind === "loop")
+    expect(loop?.kind).toBe("loop")
+    if (loop?.kind !== "loop") return
+
+    const weekLabel = presentationCopyFor(YOU.provenance.contentPackVersion)!.weekLabel
+    expect(loop.steps.map((s) => s.label)).toEqual([
+      `${weekLabel} 1`,
+      `${weekLabel} 2`,
+      `${weekLabel} 3`,
+      `${weekLabel} 4`,
+    ])
+    // The number is still there for ordering and data hooks, and the label is
+    // what a customer reads. Both, not one or the other.
+    expect(loop.steps.map((s) => s.week)).toEqual([1, 2, 3, 4])
+  })
+
+  it("takes the four beats from the Report and freezes no second copy of them", () => {
+    // The composer writes the matching beat into every step, so the Report
+    // carries them. A frozen duplicate would be a second place the same four
+    // words live and a second place they can disagree.
+    const loop = present(YOU).blocks.find((b) => b.kind === "loop")
+    if (loop?.kind !== "loop") throw new Error("no loop block")
+    expect(loop.steps.map((s) => s.beat)).toEqual(YOU.thirtyDayLoop.map((s) => s.beat))
+    expect(loop.steps.map((s) => s.beat)).toEqual([...STRUCTURAL_COPY.loopBeats])
+
+    const frozen = JSON.stringify(presentationCopyFor("content-pack-v1"))
+    for (const beat of STRUCTURAL_COPY.loopBeats) {
+      expect(frozen.includes(beat), `${beat} was frozen a second time`).toBe(false)
+    }
   })
 })
 

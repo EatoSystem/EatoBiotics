@@ -162,3 +162,109 @@ for (const { name, path } of PAGES) {
     ).toEqual([])
   })
 }
+
+/**
+ * The canonical Report — scanned DEEP, and gated on contrast.
+ *
+ * ══ WHY THIS ONE IS DIFFERENT ═══════════════════════════════════════════════
+ *
+ * Everything above is scanned as a visitor lands on it, which means above the
+ * fold and little else: `ScrollReveal` renders its children at `opacity: 0`
+ * until they scroll in, and axe correctly skips invisible elements. Over those
+ * twenty pages that is 0 violations scanned versus ~610 with the content
+ * actually rendered. A green run on a revealed document would prove almost
+ * nothing.
+ *
+ * So this test asks the browser for `prefers-reduced-motion: reduce`, which the
+ * stylesheet already answers by showing every revealed block at once. Not a
+ * test-only hack — it is a real user setting, and it is how a reader with that
+ * preference sees this document. The whole Report is then in scope.
+ *
+ * ══ WHY CONTRAST GATES HERE AND NOWHERE ELSE ════════════════════════════════
+ *
+ * The contrast backlog above is ~1,100 pre-existing call sites painting text
+ * with a raw brand hue. This document has none: every colour it uses is chosen
+ * against the ground it sits on, and a unit test asserts no raw hue is ever
+ * used as a text colour. There is no backlog to be flaky about, so the one page
+ * that can afford the stricter gate takes it — and a €49 document is the page
+ * that should.
+ *
+ * The route is fenced to non-production runtimes and returns 404 anywhere else,
+ * so the 200 check below is also a check that the fence let a test runner in.
+ */
+test.describe("canonical Report document", () => {
+  // `reducedMotion` lives under contextOptions in this Playwright version.
+  test.use({ contextOptions: { reducedMotion: "reduce" } })
+
+  const DOCUMENT = "article[data-foundation]"
+
+  test("a11y: canonical report preview (/demo/food-system-report)", async ({ page }) => {
+    const response = await page.goto("/demo/food-system-report", {
+      waitUntil: "domcontentloaded",
+    })
+    expect(
+      response?.status(),
+      "the preview page must render before it can be scanned — a non-200 here means " +
+        "either the page is broken or the preview fence denied this runtime"
+    ).toBe(200)
+
+    // Every block visible, not just the hero. The assertion is on the LAST
+    // block in document order, so it is also a check that the reduced-motion
+    // preference actually revealed the whole document.
+    await expect(page.locator(`${DOCUMENT} blockquote`)).toBeVisible()
+
+    await page.addStyleTag({
+      content: `*, *::before, *::after {
+        transition: none !important;
+        animation: none !important;
+      }`,
+    })
+
+    const summarise = (violations: Awaited<ReturnType<AxeBuilder["analyze"]>>["violations"]) =>
+      violations.map((v) => ({
+        id: v.id,
+        impact: v.impact,
+        help: v.help,
+        nodes: v.nodes.length,
+        example: v.nodes[0]?.target.join(" "),
+      }))
+
+    // ── Scan 1: the whole page, gated like every other page above ──────────
+    //
+    // Contrast exempted here and ONLY here, because this scan includes the
+    // shared nav and footer, which carry the ~1,100-call-site backlog described
+    // in the coverage note. Gating the document on chrome it does not own would
+    // be red for reasons nobody reviewing this document can fix.
+    const wholePage = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()
+    expect(
+      summarise(
+        wholePage.violations.filter(
+          (v) => v.impact === "critical" || (v.impact === "serious" && v.id !== "color-contrast")
+        )
+      ),
+      "blocking accessibility violations on the canonical Report page"
+    ).toEqual([])
+
+    // ── Scan 2: the document itself, with NO contrast exemption ─────────────
+    //
+    // This is the €49 artifact, and it has no backlog: every colour it uses is
+    // resolved against the ground it sits on, and a unit test asserts no raw
+    // brand hue is ever used as a text colour. So the one surface that can
+    // afford the stricter gate takes it.
+    const document = await new AxeBuilder({ page })
+      .include(DOCUMENT)
+      .withTags(["wcag2a", "wcag2aa"])
+      .analyze()
+
+    // Non-vacuity: a selector that matched nothing would pass silently, which
+    // is exactly how a suite ends up reporting coverage it does not have.
+    expect(await page.locator(DOCUMENT).count()).toBe(1)
+
+    expect(
+      summarise(
+        document.violations.filter((v) => v.impact === "critical" || v.impact === "serious")
+      ),
+      "blocking accessibility violations INSIDE the canonical Report document"
+    ).toEqual([])
+  })
+})

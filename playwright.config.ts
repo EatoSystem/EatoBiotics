@@ -40,6 +40,14 @@ export default defineConfig({
     env: {
       // Render real pages, not the /enter waitlist gate.
       EATOBIOTICS_PASSWORD_GATE_DISABLED: "true",
+      // `next start` sets NODE_ENV=production, and fail-closed policies read
+      // that as "the real deployment" and deny — correctly, since they cannot
+      // otherwise tell a local test server from production. Declaring what this
+      // runtime actually is lets the preview-only canonical Report page render
+      // so it can be scanned, without loosening the policy for anyone else.
+      // It does NOT enable new deterministic claims: those still require
+      // EATOBIOTICS_ENABLE_PERSISTED_CONSULTATION_PREVIEW, which is unset here.
+      VERCEL_ENV: "preview",
     },
   },
 })

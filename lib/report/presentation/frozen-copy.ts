@@ -9,8 +9,14 @@
  * own bytes, so it is version-bound by construction — reopening a Report shows
  * the words that were composed into it, whatever the live pack says today.
  *
- * ONE string is not. `thirtyDayLoop` is an array rather than a `ReportSection`,
- * so it carries no title of its own and the presentation layer must supply one.
+ * A SMALL NUMBER are not, and each one is here because the canonical document
+ * structurally cannot carry it: the document has no title of its own, the
+ * `thirtyDayLoop` is an array rather than a `ReportSection` so it carries no
+ * heading, and `LoopStep.week` is a number rather than a phrase. Three strings,
+ * and the bar for a fourth is that same structural impossibility — not
+ * convenience, and not "the renderer needed a word".
+ *
+ * The loop heading is the one that taught the lesson.
  * The first version of this layer invented a heading. The second read
  * `STRUCTURAL_COPY` from the live content pack — which looks like the fix, and
  * is a different bug wearing its clothes:
@@ -48,9 +54,41 @@
  * edited — editing one rewrites documents people have already paid for and
  * read. Any future presentation-supplied string joins this registry rather than
  * being written inline somewhere.
+ *
+ * ══ WHICH SIDE OF THE LINE v1 IS ON, TODAY ══════════════════════════════════
+ *
+ * "Historical entries are never edited" binds from the moment a Report exists
+ * under that version. Right now ZERO Reports exist: Migrations 48, 49 and 50
+ * are drafted and unapplied, there is no customer-facing Report route, and
+ * nothing calls `ensurePersistedConsultationReport`. So v1's snapshot is still
+ * being AUTHORED, and adding a string to it rewrites nothing.
+ *
+ * It seals at activation, which CLAUDE.md's activation prerequisites already
+ * gate. After that point this entry is a historical record of what people were
+ * shown, and the only correct way to change any word in it is a new version.
+ *
+ * The distinction is written down because the next person wanting to add a
+ * string here will need to know which side of that line they are standing on,
+ * and the file gives no other way to tell.
  */
 
 export interface FrozenPresentationCopy {
+  /**
+   * The document's own title, and the page's single `h1`.
+   *
+   * The canonical Report carries no title: it has a `foundation`, sections with
+   * their own headings, and nothing that names the document. A rendered page
+   * needs one heading at the top, so this is presentation copy — and because it
+   * is the first thing a customer reads on something they paid €49 for, it is
+   * reviewed copy, not a renderer's choice of words.
+   *
+   * Transcribed from `PERSONAL_REPORT` in `lib/product-vocabulary.ts`, which is
+   * the authority for product names. Transcribed rather than imported for the
+   * same reason as everything else here: an import moves historical documents
+   * when the source moves. A tripwire asserts the two match while v1 is current.
+   */
+  readonly documentTitle: string
+
   /**
    * The heading above the four-week loop.
    *
@@ -58,6 +96,21 @@ export interface FrozenPresentationCopy {
    * `content-pack-v1`. Do not change this value; add a version instead.
    */
   readonly thirtyDayLoopTitle: string
+
+  /**
+   * The word before a loop step's week number.
+   *
+   * `LoopStep.week` is the NUMBER `1`. "Week" is a word a customer reads, so it
+   * cannot be assembled in JSX — that would make the renderer an author. The
+   * model composes the finished label from this string and the canonical
+   * number, and the renderer prints it.
+   *
+   * The four beats — Try, Notice, Adjust, Repeat — are deliberately NOT here.
+   * The composer writes the matching beat into every step, so the Report
+   * carries them, and a second copy would be a second place the same four words
+   * live and a second place they can disagree.
+   */
+  readonly weekLabel: string
 }
 
 /**
@@ -94,7 +147,9 @@ function freezeEntries(
 
 const PRESENTATION_COPY_BY_CONTENT_PACK_VERSION = freezeEntries({
   "content-pack-v1": {
+    documentTitle: "Personal Food System Report",
     thirtyDayLoopTitle: "Your next 30 days",
+    weekLabel: "Week",
   },
 })
 

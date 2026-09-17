@@ -406,6 +406,21 @@ html, body, main {
   }
 
   /* ══════════════════════════════════════════════
+     BREAK SEMANTICS AS MARKERS — canonical Report
+     ──────────────────────────────────────────────
+     The markers above name legacy report SECTIONS, so each new section needed
+     its own selector here. These two name the INTENT instead, which is what the
+     Presentation Model carries, so web and print read the same decision and
+     a new block needs no new rule. See components/report/canonical.
+  ══════════════════════════════════════════════ */
+  .rpt-break-before {
+    break-before: page !important;
+  }
+  .rpt-keep {
+    break-inside: avoid !important;
+  }
+
+  /* ══════════════════════════════════════════════
      SECTION PADDING — tighten for print
   ══════════════════════════════════════════════ */
   section {
