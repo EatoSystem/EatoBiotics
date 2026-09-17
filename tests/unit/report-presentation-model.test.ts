@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 
+import { STRUCTURAL_COPY } from "@/lib/report/deterministic/content-pack"
 import { toPresentation } from "@/lib/report/presentation/model"
 import { renderKey } from "@/lib/report/presentation/keys"
 import type { PersonalFoodSystemReportV1 } from "@/lib/report/deterministic/report-types"
@@ -155,9 +158,12 @@ describe("the model invents nothing", () => {
     }
     if (report.quotation) strings.add(report.quotation.text)
     if (report.safety.note) strings.add(report.safety.note)
-    // The one heading the presentation layer supplies, because the canonical
-    // document has no title for the loop — it is an array, not a section.
-    strings.add("Your first thirty days")
+    // The loop heading. `thirtyDayLoop` is an array, not a section, so it
+    // carries no title of its own — but the reviewed pack has one, so this is
+    // canonical copy rather than an allowance. The first version of this file
+    // whitelisted a string the model had invented; that exception is gone, and
+    // "invents nothing" now has none.
+    strings.add(STRUCTURAL_COPY.thirtyDayLoopTitle)
     return strings
   }
 
@@ -208,6 +214,42 @@ describe("the model invents nothing", () => {
     for (const word of ["score", "band", "percent", "rating", "grade", "total"]) {
       expect(serialised.toLowerCase().includes(`"${word}"`), word).toBe(false)
     }
+  })
+})
+
+describe("reviewed copy is used where it exists", () => {
+  it("takes the loop heading from the content pack, not from the renderer", () => {
+    const loop = toPresentation(YOU).blocks.find((b) => b.kind === "loop")
+    expect(loop && loop.kind === "loop" && loop.title).toBe(STRUCTURAL_COPY.thirtyDayLoopTitle)
+  })
+
+  it("does not carry the heading this file once invented", () => {
+    // Non-vacuity for the assertion above: it would also pass if the reviewed
+    // title happened to equal the invented one. It does not — the pack says
+    // "Your next 30 days".
+    expect(STRUCTURAL_COPY.thirtyDayLoopTitle).not.toBe("Your first thirty days")
+    expect(JSON.stringify(toPresentation(YOU))).not.toContain("Your first thirty days")
+  })
+})
+
+describe("the quotation is atomic", () => {
+  it("carries the lead-in and the quoted words as one unsplit string", () => {
+    // `proposition.ts` builds it as `${quotationLeadIn} “${answer}”`, and
+    // `compose.ts` records the intent: the customer's words appear in quotation
+    // marks AFTER a lead-in that attributes them. A renderer may style the
+    // whole sentence; it may not cut the reviewed string to isolate the quote.
+    const quotation = toPresentation(YOU).blocks.find((b) => b.kind === "quotation")
+    expect(quotation && quotation.kind === "quotation" && quotation.text).toBe(YOU.quotation?.text)
+  })
+
+  it("keeps the attribution attached to the words", () => {
+    const quotation = toPresentation(YOU).blocks.find((b) => b.kind === "quotation")
+    const text = quotation && quotation.kind === "quotation" ? quotation.text : ""
+    expect(text.startsWith(STRUCTURAL_COPY.quotationLeadIn)).toBe(true)
+    expect(text.length).toBeGreaterThan(STRUCTURAL_COPY.quotationLeadIn.length)
+    // The model exposes no second field holding the bare answer — the only way
+    // to render the quote is to render the whole attributed sentence.
+    expect(Object.keys(quotation ?? {}).sort()).toEqual(["key", "kind", "printBreak", "region", "text"])
   })
 })
 
@@ -298,6 +340,36 @@ describe("block composition against real composer output", () => {
  * forbids — so closing it belongs to whoever owns the content pack and the
  * gate, and it is raised in the PR rather than patched here.
  */
+describe("the pre-activation blocker is written down", () => {
+  /**
+   * Same discipline as `consultation-report-privacy.test.ts`, which guards the
+   * S4 activation prerequisite in CLAUDE.md. A blocker that lives only in a
+   * commit message is a note; a blocker somebody can delete without a test
+   * failing is a note with extra steps.
+   */
+  const claude = readFileSync(join(process.cwd(), "CLAUDE.md"), "utf8")
+
+  it("CLAUDE.md records the constraints-known blocker", () => {
+    for (const phrase of [
+      "PRE-ACTIVATION BLOCKER",
+      "constraints-known",
+      "specificFoods",
+      "CONTENT_PACK_VERSION",
+    ]) {
+      expect(claude, `CLAUDE.md does not mention ${phrase}`).toContain(phrase)
+    }
+  })
+
+  it("says plainly that the renderer must not invent the acknowledgement", () => {
+    expect(claude).toContain("must not invent the acknowledgement")
+    expect(claude).toContain("must not read trusted")
+  })
+
+  it("names the separate versioned repair rather than implying a renderer fix", () => {
+    expect(claude).toContain("separate versioned deterministic-core")
+  })
+})
+
 describe("the silent-constraints state, pinned rather than hidden", () => {
   it("a customer who declared constraints is told nothing about them", () => {
     expect(CONSTRAINTS_KNOWN.safety.state).toBe("constraints-known")

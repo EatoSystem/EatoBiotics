@@ -1,3 +1,4 @@
+import { STRUCTURAL_COPY } from "@/lib/report/deterministic/content-pack"
 import type {
   LoopStep,
   PersonalFoodSystemReportV1,
@@ -43,10 +44,36 @@ import { renderKey, type PresentationRegion } from "./keys"
  *
  * ══ THIS MODEL INVENTS NOTHING ══════════════════════════════════════════════
  *
- * Every string below is copied from the canonical Report. There are no computed
- * summaries, no derived counts, no scores, no bands. The canonical document has
- * no metric of any kind by design, and a presentation layer that added one
- * would be asserting something no reviewed content pack authorised.
+ * Every string below is copied from the canonical Report or from the reviewed
+ * content pack. There are no computed summaries, no derived counts, no scores,
+ * no bands. The canonical document has no metric of any kind by design, and a
+ * presentation layer that added one would be asserting something no reviewed
+ * content pack authorised.
+ *
+ * The loop heading is the one place this is not automatic, and it is worth
+ * naming. `thirtyDayLoop` is an ARRAY, not a `ReportSection`, so it carries no
+ * title and the presentation layer has to supply one. The first version of this
+ * file wrote its own. That was wrong: `STRUCTURAL_COPY.thirtyDayLoopTitle`
+ * already exists, is reviewed, and is versioned by `CONTENT_PACK_VERSION` —
+ * inventing a heading beside it would have put unreviewed customer-facing copy
+ * into a paid document through the one door nobody was watching.
+ *
+ * ══ THE QUOTATION IS ATOMIC ═════════════════════════════════════════════════
+ *
+ * `quotation.text` is built by `proposition.ts` as
+ *
+ *     `${STRUCTURAL_COPY.quotationLeadIn} “${answer}”`
+ *
+ * — the attribution and the customer's own quoted words are ONE reviewed
+ * string, and `compose.ts` records the intent: the words appear in quotation
+ * marks after a lead-in that attributes them to the customer.
+ *
+ * A renderer may give that whole sentence a quotation treatment. It may NOT
+ * split it to typeset the quoted half on its own. Cutting a reviewed string to
+ * restyle part of it is the presentation layer editorialising the one piece of
+ * content the architecture protects hardest — the narrative layer excludes
+ * `quotation` from rewriting entirely, so that the only words the customer
+ * wrote never leave the application in a form anybody edited.
  */
 
 /* ══ Colour, as intent rather than as a value ══════════════════════════════ */
@@ -246,7 +273,7 @@ export function toPresentation(report: PersonalFoodSystemReportV1): Presentation
       kind: "loop",
       region: "loop",
       key: renderKey("loop"),
-      title: "Your first thirty days",
+      title: STRUCTURAL_COPY.thirtyDayLoopTitle,
       steps: loopStepsFrom(report.thirtyDayLoop),
       accent: { accent: "lime", intent: "fill" },
       printBreak: "page-before",
