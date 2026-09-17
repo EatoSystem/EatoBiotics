@@ -1,9 +1,16 @@
 import { describe, it, expect } from "vitest"
-import { readFileSync } from "node:fs"
+import { readFileSync, readdirSync } from "node:fs"
 import { join } from "node:path"
 
-import { STRUCTURAL_COPY } from "@/lib/report/deterministic/content-pack"
-import { toPresentation } from "@/lib/report/presentation/model"
+import {
+  CONTENT_PACK_VERSION,
+  STRUCTURAL_COPY,
+} from "@/lib/report/deterministic/content-pack"
+import {
+  knownContentPackVersions,
+  presentationCopyFor,
+} from "@/lib/report/presentation/frozen-copy"
+import { toPresentation, type PresentationReport } from "@/lib/report/presentation/model"
 import { renderKey } from "@/lib/report/presentation/keys"
 import type { PersonalFoodSystemReportV1 } from "@/lib/report/deterministic/report-types"
 
@@ -32,6 +39,22 @@ const CONSTRAINTS_KNOWN = reportFor("you", {
 const UNDISCLOSED = reportFor("you", {
   core_environment_constraints_v1: ["prefer-not-to-say"],
 })
+
+/**
+ * Unwrap a successful projection.
+ *
+ * `toPresentation` returns a result union because an unknown content-pack
+ * version must refuse rather than fall back to today's wording. Every test
+ * below that is not ABOUT that refusal asserts success first, so a regression
+ * that starts refusing everything fails loudly here instead of quietly
+ * satisfying assertions about an empty model.
+ */
+function present(report: PersonalFoodSystemReportV1): PresentationReport {
+  const result = toPresentation(report)
+  expect(result.ok, result.ok ? "" : result.reason).toBe(true)
+  if (!result.ok) throw new Error(result.reason)
+  return result.report
+}
 
 /**
  * Every field on the canonical document that must never cross the boundary.
@@ -89,7 +112,7 @@ describe("the exposure boundary", () => {
     ["constraints-known", CONSTRAINTS_KNOWN],
     ["undisclosed", UNDISCLOSED],
   ])("emits no engine field anywhere in the %s model", (_name, report) => {
-    const keys = everyKey(toPresentation(report))
+    const keys = everyKey(present(report))
     // Non-vacuity: a walker that found nothing would pass every assertion below.
     expect(keys.size).toBeGreaterThan(5)
     for (const forbidden of FORBIDDEN_KEYS) {
@@ -109,14 +132,14 @@ describe("the exposure boundary", () => {
     ].map((p) => p.id)
 
     expect(ids.length).toBeGreaterThan(3)
-    const serialised = JSON.stringify(toPresentation(YOU))
+    const serialised = JSON.stringify(present(YOU))
     for (const id of ids) {
       expect(serialised.includes(id), `leaked id: ${id}`).toBe(false)
     }
   })
 
   it("never carries a templateId or a bank fingerprint as a value", () => {
-    const serialised = JSON.stringify(toPresentation(YOU))
+    const serialised = JSON.stringify(present(YOU))
     for (const template of YOU.systemSnapshot.propositions.map((p) => p.templateId)) {
       expect(serialised.includes(template), `leaked template: ${template}`).toBe(false)
     }
@@ -126,7 +149,7 @@ describe("the exposure boundary", () => {
   })
 
   it("emits exactly the allowed top-level fields", () => {
-    expect(Object.keys(toPresentation(YOU)).sort()).toEqual([
+    expect(Object.keys(present(YOU)).sort()).toEqual([
       "blocks",
       "finalisedAt",
       "foundation",
@@ -134,7 +157,7 @@ describe("the exposure boundary", () => {
   })
 
   it("carries finalisedAt, and no other provenance", () => {
-    const model = toPresentation(YOU)
+    const model = present(YOU)
     expect(model.finalisedAt).toBe(YOU.provenance.finalisedAt)
     expect(JSON.stringify(model).includes(YOU.provenance.scienceContractVersion)).toBe(false)
   })
@@ -173,7 +196,7 @@ describe("the model invents nothing", () => {
     ["undisclosed", UNDISCLOSED],
   ])("every customer-visible string in the %s model is canonical", (_name, report) => {
     const allowed = canonicalStrings(report)
-    const model = toPresentation(report)
+    const model = present(report)
 
     let checked = 0
     for (const block of model.blocks) {
@@ -210,25 +233,133 @@ describe("the model invents nothing", () => {
   it("adds no score, band or metric of any kind", () => {
     // The canonical document has no metric by design. A presentation layer that
     // computed one would be asserting something no content pack authorised.
-    const serialised = JSON.stringify(toPresentation(YOU))
+    const serialised = JSON.stringify(present(YOU))
     for (const word of ["score", "band", "percent", "rating", "grade", "total"]) {
       expect(serialised.toLowerCase().includes(`"${word}"`), word).toBe(false)
     }
   })
 })
 
-describe("reviewed copy is used where it exists", () => {
-  it("takes the loop heading from the content pack, not from the renderer", () => {
-    const loop = toPresentation(YOU).blocks.find((b) => b.kind === "loop")
-    expect(loop && loop.kind === "loop" && loop.title).toBe(STRUCTURAL_COPY.thirtyDayLoopTitle)
+describe("presentation copy is bound to the Report's own version", () => {
+  /**
+   * The loop heading is the one customer-visible string a Report cannot carry
+   * itself. This layer got it wrong twice: it invented one, then read the LIVE
+   * content pack — which would wrap tomorrow's wording around today's immutable
+   * bytes the day `CONTENT_PACK_VERSION` moves. It now comes from a frozen
+   * registry keyed by the Report's own recorded version.
+   */
+
+  it("a v1 Report always receives the frozen v1 title", () => {
+    expect(YOU.provenance.contentPackVersion).toBe("content-pack-v1")
+    const loop = present(YOU).blocks.find((b) => b.kind === "loop")
+    expect(loop && loop.kind === "loop" && loop.title).toBe(
+      presentationCopyFor("content-pack-v1")?.thirtyDayLoopTitle,
+    )
+  })
+
+  it("the LIVE pack is not the runtime authority for a v1 Report", () => {
+    // The heart of the repair. A Report recorded under v1 is presented while a
+    // different "current" wording exists; the v1 output must not move. Asserted
+    // against the frozen registry rather than the live constant, so the day the
+    // live constant changes this test still describes v1.
+    const frozenV1 = presentationCopyFor("content-pack-v1")!.thirtyDayLoopTitle
+    const pretendCurrent = "A LATER PACK WOULD SAY SOMETHING ELSE"
+    expect(frozenV1).not.toBe(pretendCurrent)
+
+    const loop = present(YOU).blocks.find((b) => b.kind === "loop")
+    const title = loop && loop.kind === "loop" ? loop.title : ""
+    expect(title).toBe(frozenV1)
+    expect(title).not.toBe(pretendCurrent)
+  })
+
+  it("an unknown content-pack version fails closed", () => {
+    // Never a fallback to the newest entry: that would silently re-word exactly
+    // the Reports too old for this build to describe.
+    const fromTheFuture: PersonalFoodSystemReportV1 = {
+      ...YOU,
+      provenance: { ...YOU.provenance, contentPackVersion: "content-pack-v99" },
+    }
+    const result = toPresentation(fromTheFuture)
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.reason).toBe("unsupported-content-pack-version")
+  })
+
+  it("refuses before building any block, so nothing half-rendered escapes", () => {
+    const blank: PersonalFoodSystemReportV1 = {
+      ...YOU,
+      provenance: { ...YOU.provenance, contentPackVersion: "" },
+    }
+    const result = toPresentation(blank)
+    expect(result.ok).toBe(false)
+    expect("report" in result).toBe(false)
+  })
+
+  it("never emits contentPackVersion into a successful model", () => {
+    const serialised = JSON.stringify(present(YOU))
+    expect(serialised).not.toContain("contentPackVersion")
+    expect(serialised).not.toContain(YOU.provenance.contentPackVersion)
   })
 
   it("does not carry the heading this file once invented", () => {
-    // Non-vacuity for the assertion above: it would also pass if the reviewed
-    // title happened to equal the invented one. It does not — the pack says
-    // "Your next 30 days".
-    expect(STRUCTURAL_COPY.thirtyDayLoopTitle).not.toBe("Your first thirty days")
-    expect(JSON.stringify(toPresentation(YOU))).not.toContain("Your first thirty days")
+    expect(presentationCopyFor("content-pack-v1")!.thirtyDayLoopTitle).not.toBe(
+      "Your first thirty days",
+    )
+    expect(JSON.stringify(present(YOU))).not.toContain("Your first thirty days")
+  })
+})
+
+describe("the frozen registry cannot drift with the live pack", () => {
+  const STRIP_BLOCK = /\/\*[\s\S]*?\*\//g
+  const STRIP_LINE = /(^|[^:])\/\/.*$/gm
+
+  it("no file under lib/report/presentation imports the content pack", () => {
+    // The assertion that matters most: it makes the bug impossible rather than
+    // merely fixed, and it is the whole reason the strings are transcribed
+    // instead of imported. Comments are stripped first — this layer TALKS about
+    // the live pack at length, and a guard that matched its own explanation
+    // would be "fixed" by deleting the explanation.
+    const dir = join(process.cwd(), "lib/report/presentation")
+    const files = readdirSync(dir).filter((f) => f.endsWith(".ts"))
+    expect(files.length).toBeGreaterThanOrEqual(3)
+
+    for (const file of files) {
+      const code = readFileSync(join(dir, file), "utf8")
+        .replace(STRIP_BLOCK, "")
+        .replace(STRIP_LINE, "$1")
+      expect(code.includes("deterministic/content-pack"), `${file} imports the live pack`).toBe(
+        false,
+      )
+      expect(code.includes("STRUCTURAL_COPY"), `${file} reads STRUCTURAL_COPY`).toBe(false)
+    }
+  })
+
+  it("the guard would catch a real import", () => {
+    // Non-vacuity: the comment-stripping must not have removed so much that
+    // nothing could ever match.
+    // Assembled from pieces rather than written as a literal: a literal copy of
+    // the real import line is indistinguishable from the real import line, and
+    // the last edit to this file rewrote it along with the genuine one.
+    const packPath = ["@/lib", "report", "deterministic", "content-pack"].join("/")
+    const planted = `import { ${"STRUCTURAL"}_COPY } from "${packPath}"`
+    const stripped = planted.replace(STRIP_BLOCK, "").replace(STRIP_LINE, "$1")
+    expect(stripped.includes("deterministic/content-pack")).toBe(true)
+    expect(stripped.includes("STRUCTURAL_COPY")).toBe(true)
+  })
+
+  it("v1 was transcribed correctly, while v1 is still current", () => {
+    // A tripwire, not a coupling. Duplication risks being wrong from day one,
+    // so while CONTENT_PACK_VERSION is v1 the frozen wording must match the
+    // live wording. Guarded on the current version so it retires itself when v2
+    // lands rather than failing for the wrong reason — the same shape as S4's
+    // Migration 48 digest pin. Tests may import the live pack; source may not.
+    if (CONTENT_PACK_VERSION !== "content-pack-v1") return
+    expect(presentationCopyFor("content-pack-v1")!.thirtyDayLoopTitle).toBe(
+      STRUCTURAL_COPY.thirtyDayLoopTitle,
+    )
+  })
+
+  it("knows exactly the versions it has frozen", () => {
+    expect(knownContentPackVersions()).toEqual(["content-pack-v1"])
   })
 })
 
@@ -238,12 +369,12 @@ describe("the quotation is atomic", () => {
     // `compose.ts` records the intent: the customer's words appear in quotation
     // marks AFTER a lead-in that attributes them. A renderer may style the
     // whole sentence; it may not cut the reviewed string to isolate the quote.
-    const quotation = toPresentation(YOU).blocks.find((b) => b.kind === "quotation")
+    const quotation = present(YOU).blocks.find((b) => b.kind === "quotation")
     expect(quotation && quotation.kind === "quotation" && quotation.text).toBe(YOU.quotation?.text)
   })
 
   it("keeps the attribution attached to the words", () => {
-    const quotation = toPresentation(YOU).blocks.find((b) => b.kind === "quotation")
+    const quotation = present(YOU).blocks.find((b) => b.kind === "quotation")
     const text = quotation && quotation.kind === "quotation" ? quotation.text : ""
     expect(text.startsWith(STRUCTURAL_COPY.quotationLeadIn)).toBe(true)
     expect(text.length).toBeGreaterThan(STRUCTURAL_COPY.quotationLeadIn.length)
@@ -256,7 +387,7 @@ describe("the quotation is atomic", () => {
 describe("structural render keys", () => {
   it("are unique across a whole Report", () => {
     for (const report of [YOU, FAMILY, UNDISCLOSED]) {
-      const model = toPresentation(report)
+      const model = present(report)
       const keys: string[] = []
       for (const block of model.blocks) {
         keys.push(block.key)
@@ -270,8 +401,8 @@ describe("structural render keys", () => {
   })
 
   it("are derived from position, so they are identical across two compositions", () => {
-    const first = toPresentation(reportFor("you"))
-    const second = toPresentation(reportFor("you"))
+    const first = present(reportFor("you"))
+    const second = present(reportFor("you"))
     expect(JSON.stringify(first)).toBe(JSON.stringify(second))
   })
 
@@ -283,7 +414,7 @@ describe("structural render keys", () => {
 
 describe("block composition against real composer output", () => {
   it("orders the you Report snapshot → lever → loop → quotation", () => {
-    expect(toPresentation(YOU).blocks.map((b) => b.region)).toEqual([
+    expect(present(YOU).blocks.map((b) => b.region)).toEqual([
       "snapshot",
       "lever",
       "loop",
@@ -292,7 +423,7 @@ describe("block composition against real composer output", () => {
   })
 
   it("places household context after the loop and before the quotation", () => {
-    expect(toPresentation(FAMILY).blocks.map((b) => b.region)).toEqual([
+    expect(present(FAMILY).blocks.map((b) => b.region)).toEqual([
       "snapshot",
       "lever",
       "loop",
@@ -302,26 +433,26 @@ describe("block composition against real composer output", () => {
   })
 
   it("carries exactly one priority lever", () => {
-    const lever = toPresentation(YOU).blocks.find((b) => b.kind === "lever")
+    const lever = present(YOU).blocks.find((b) => b.kind === "lever")
     expect(lever).toBeDefined()
     expect(lever && "line" in lever && typeof lever.line.text).toBe("string")
   })
 
   it("carries four loop beats, in week order", () => {
-    const loop = toPresentation(YOU).blocks.find((b) => b.kind === "loop")
+    const loop = present(YOU).blocks.find((b) => b.kind === "loop")
     expect(loop && loop.kind === "loop" && loop.steps.map((s) => s.week)).toEqual([1, 2, 3, 4])
   })
 
   it("surfaces the reviewed safety note when the state calls for one", () => {
     expect(UNDISCLOSED.safety.note).toBeTruthy()
-    const note = toPresentation(UNDISCLOSED).blocks.find((b) => b.kind === "note")
+    const note = present(UNDISCLOSED).blocks.find((b) => b.kind === "note")
     expect(note && note.kind === "note" && note.text).toBe(UNDISCLOSED.safety.note)
   })
 
   it("omits the constraints block rather than rendering an empty heading", () => {
     // A heading with nothing under it reads as a hole where a promise was.
     expect(YOU.constraints.propositions).toHaveLength(0)
-    expect(toPresentation(YOU).blocks.some((b) => b.region === "constraints")).toBe(false)
+    expect(present(YOU).blocks.some((b) => b.region === "constraints")).toBe(false)
   })
 })
 
@@ -376,7 +507,7 @@ describe("the silent-constraints state, pinned rather than hidden", () => {
     expect(CONSTRAINTS_KNOWN.constraints.propositions).toHaveLength(0)
     expect(CONSTRAINTS_KNOWN.safety.note).toBeUndefined()
 
-    const regions = toPresentation(CONSTRAINTS_KNOWN).blocks.map((b) => b.region)
+    const regions = present(CONSTRAINTS_KNOWN).blocks.map((b) => b.region)
     expect(regions).not.toContain("constraints")
     expect(regions).not.toContain("safety")
   })

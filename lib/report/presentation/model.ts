@@ -1,4 +1,3 @@
-import { STRUCTURAL_COPY } from "@/lib/report/deterministic/content-pack"
 import type {
   LoopStep,
   PersonalFoodSystemReportV1,
@@ -6,6 +5,7 @@ import type {
 } from "@/lib/report/deterministic/report-types"
 import type { VisualAccent } from "@/lib/report/visual-token"
 
+import { presentationCopyFor } from "./frozen-copy"
 import { renderKey, type PresentationRegion } from "./keys"
 
 /**
@@ -44,19 +44,20 @@ import { renderKey, type PresentationRegion } from "./keys"
  *
  * ══ THIS MODEL INVENTS NOTHING ══════════════════════════════════════════════
  *
- * Every string below is copied from the canonical Report or from the reviewed
- * content pack. There are no computed summaries, no derived counts, no scores,
- * no bands. The canonical document has no metric of any kind by design, and a
- * presentation layer that added one would be asserting something no reviewed
- * content pack authorised.
+ * Every customer-visible string is copied from the canonical Report, or from
+ * reviewed copy FROZEN FOR THAT REPORT'S RECORDED CONTENT-PACK VERSION. There
+ * are no computed summaries, no derived counts, no scores, no bands. The
+ * canonical document has no metric of any kind by design, and a presentation
+ * layer that added one would be asserting something no reviewed content pack
+ * authorised.
  *
- * The loop heading is the one place this is not automatic, and it is worth
- * naming. `thirtyDayLoop` is an ARRAY, not a `ReportSection`, so it carries no
- * title and the presentation layer has to supply one. The first version of this
- * file wrote its own. That was wrong: `STRUCTURAL_COPY.thirtyDayLoopTitle`
- * already exists, is reviewed, and is versioned by `CONTENT_PACK_VERSION` —
- * inventing a heading beside it would have put unreviewed customer-facing copy
- * into a paid document through the one door nobody was watching.
+ * The loop heading is the one string the Report cannot carry itself —
+ * `thirtyDayLoop` is an ARRAY, not a `ReportSection` — and it took two attempts
+ * to get right. The first version invented a heading. The second read the LIVE
+ * `STRUCTURAL_COPY`, which looks like the fix and is a different bug wearing
+ * its clothes: it would wrap tomorrow's wording around today's immutable bytes
+ * the day the pack version moves. It now comes from `frozen-copy.ts`, selected
+ * by the Report's own `provenance.contentPackVersion`.
  *
  * ══ THE QUOTATION IS ATOMIC ═════════════════════════════════════════════════
  *
@@ -184,6 +185,26 @@ export type PresentationBlock =
       readonly printBreak: PrintBreak
     }
 
+/**
+ * What the projection can answer.
+ *
+ * A refusal is a VALUE, following the rule `lib/report/persisted/outcomes.ts`
+ * sets for the persistence service: throwing here would make "this build cannot
+ * present this Report faithfully" indistinguishable from a crash, at the one
+ * boundary that decides whether a customer is shown a document or an apology.
+ *
+ * A union rather than `PresentationReport | null` so a second reason can arrive
+ * without reshaping every caller, and so a customer-facing route can map it
+ * onto the frozen external outcomes when one eventually exists.
+ */
+export type PresentationResult =
+  | { readonly ok: true; readonly report: PresentationReport }
+  | {
+      readonly ok: false
+      readonly reason: "unsupported-content-pack-version"
+      readonly detail: string
+    }
+
 export interface PresentationReport {
   readonly foundation: "you" | "family"
   /** ISO instant, from `provenance.finalisedAt`. The only provenance field shown. */
@@ -238,7 +259,26 @@ function loopStepsFrom(steps: readonly LoopStep[]) {
  * state so it cannot drift unnoticed, and closing it belongs to whoever owns
  * the content pack and the gate.
  */
-export function toPresentation(report: PersonalFoodSystemReportV1): PresentationReport {
+export function toPresentation(report: PersonalFoodSystemReportV1): PresentationResult {
+  /*
+   * The Report's OWN recorded version selects the wording, before a single
+   * block is built. Read server-side and never emitted — the exposure tests
+   * forbid `provenance` anywhere in the output and name this field directly.
+   *
+   * An unknown version refuses. Falling back to the newest entry is the one
+   * thing that must not happen: it would silently re-word exactly those
+   * Reports too old for this build to describe, which are the documents least
+   * able to survive being re-worded.
+   */
+  const copy = presentationCopyFor(report.provenance.contentPackVersion)
+  if (!copy) {
+    return {
+      ok: false,
+      reason: "unsupported-content-pack-version",
+      detail: `no frozen presentation copy for ${report.provenance.contentPackVersion}`,
+    }
+  }
+
   const blocks: PresentationBlock[] = []
 
   blocks.push({
@@ -273,7 +313,7 @@ export function toPresentation(report: PersonalFoodSystemReportV1): Presentation
       kind: "loop",
       region: "loop",
       key: renderKey("loop"),
-      title: STRUCTURAL_COPY.thirtyDayLoopTitle,
+      title: copy.thirtyDayLoopTitle,
       steps: loopStepsFrom(report.thirtyDayLoop),
       accent: { accent: "lime", intent: "fill" },
       printBreak: "page-before",
@@ -327,8 +367,11 @@ export function toPresentation(report: PersonalFoodSystemReportV1): Presentation
   }
 
   return {
-    foundation: report.foundation,
-    finalisedAt: report.provenance.finalisedAt,
-    blocks,
+    ok: true,
+    report: {
+      foundation: report.foundation,
+      finalisedAt: report.provenance.finalisedAt,
+      blocks,
+    },
   }
 }
