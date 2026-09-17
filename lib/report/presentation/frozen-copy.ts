@@ -60,13 +60,43 @@ export interface FrozenPresentationCopy {
   readonly thirtyDayLoopTitle: string
 }
 
-const PRESENTATION_COPY_BY_CONTENT_PACK_VERSION: Readonly<
-  Record<string, FrozenPresentationCopy>
-> = {
+/**
+ * Every entry is frozen ON THE WAY IN.
+ *
+ * `readonly` and `const` are erased at runtime, so the first version of this
+ * file handed callers the registry's own mutable object — one
+ * `(copy as any).thirtyDayLoopTitle = "..."` anywhere in the process and every
+ * subsequent v1 Report rendered different wording. The exact guarantee this
+ * module exists to provide, defeated from inside instead of by a version bump.
+ *
+ * This codebase has already been bitten one level down:
+ * `narrative/internal/committed-packs.ts` records that "the array and the pack
+ * were already frozen; each VARIANT was not, so a populated pack would have
+ * shipped mutable `narrativeText`". Its fix is the shape copied here — entries
+ * pass through a freeze on the way in, so a later addition "does not have to
+ * remember".
+ *
+ * That is the part that matters. Freezing today's single entry inline would
+ * work today; the risk is the NEXT entry. `content-pack-v2` is already on the
+ * roadmap, and it cannot be added unfrozen through this door.
+ *
+ * `Object.freeze` is shallow, which is a complete freeze only while every value
+ * is a primitive. A test asserts exactly that, so the day somebody adds a
+ * nested field the assumption fails loudly rather than leaving a mutable object
+ * sitting behind a frozen wrapper.
+ */
+function freezeEntries(
+  raw: Record<string, FrozenPresentationCopy>,
+): Readonly<Record<string, FrozenPresentationCopy>> {
+  for (const copy of Object.values(raw)) Object.freeze(copy)
+  return Object.freeze(raw)
+}
+
+const PRESENTATION_COPY_BY_CONTENT_PACK_VERSION = freezeEntries({
   "content-pack-v1": {
     thirtyDayLoopTitle: "Your next 30 days",
   },
-}
+})
 
 /**
  * The reviewed presentation copy for one recorded content-pack version.
@@ -80,6 +110,20 @@ export function presentationCopyFor(
   contentPackVersion: string,
 ): FrozenPresentationCopy | undefined {
   return PRESENTATION_COPY_BY_CONTENT_PACK_VERSION[contentPackVersion]
+}
+
+/**
+ * Whether the registry CONTAINER is frozen.
+ *
+ * A boolean, deliberately, and not the registry itself. `committed-packs.ts`
+ * exports its freeze helper "INTERNALLY ... only so a guard can prove the
+ * per-variant freeze", and the same need applies here — but exporting the
+ * container so a test can try to mutate it would hand production code the exact
+ * handle this module exists to withhold. A guard can prove the property without
+ * being given the thing.
+ */
+export function registryIsFrozen(): boolean {
+  return Object.isFrozen(PRESENTATION_COPY_BY_CONTENT_PACK_VERSION)
 }
 
 /** The versions this build can present. Exposed for tests and for audit. */

@@ -275,6 +275,14 @@ export function toPresentation(report: PersonalFoodSystemReportV1): Presentation
     return {
       ok: false,
       reason: "unsupported-content-pack-version",
+      /*
+       * SERVER-SIDE ONLY. This names an internal pack version, so when a
+       * customer-facing route eventually exists it must map onto the frozen
+       * external outcome `report_cannot_be_produced` and never reach a browser
+       * — S1's external-outcome map already forbids `detail` crossing that
+       * boundary. Noted here because this is where the next person wiring a
+       * route will be looking.
+       */
       detail: `no frozen presentation copy for ${report.provenance.contentPackVersion}`,
     }
   }

@@ -9,6 +9,7 @@ import {
 import {
   knownContentPackVersions,
   presentationCopyFor,
+  registryIsFrozen,
 } from "@/lib/report/presentation/frozen-copy"
 import { toPresentation, type PresentationReport } from "@/lib/report/presentation/model"
 import { renderKey } from "@/lib/report/presentation/keys"
@@ -346,20 +347,89 @@ describe("the frozen registry cannot drift with the live pack", () => {
     expect(stripped.includes("STRUCTURAL_COPY")).toBe(true)
   })
 
-  it("v1 was transcribed correctly, while v1 is still current", () => {
-    // A tripwire, not a coupling. Duplication risks being wrong from day one,
-    // so while CONTENT_PACK_VERSION is v1 the frozen wording must match the
-    // live wording. Guarded on the current version so it retires itself when v2
-    // lands rather than failing for the wrong reason — the same shape as S4's
-    // Migration 48 digest pin. Tests may import the live pack; source may not.
-    if (CONTENT_PACK_VERSION !== "content-pack-v1") return
-    expect(presentationCopyFor("content-pack-v1")!.thirtyDayLoopTitle).toBe(
-      STRUCTURAL_COPY.thirtyDayLoopTitle,
-    )
+  it("the currently composed pack version always has a frozen snapshot", () => {
+    // Permanent, not self-retiring. The earlier version of this test only ran
+    // while CONTENT_PACK_VERSION was v1, so it switched itself off at exactly
+    // the moment it became useful. Stated this way it buys two guarantees at
+    // once: historical versions never move, AND a new current pack version must
+    // add its own frozen snapshot before newly composed Reports can render.
+    //
+    // So when 4A-S2R1 creates content-pack-v2 and forgets this file, THIS fails
+    // clearly, instead of every newly composed Report refusing at runtime.
+    const current = presentationCopyFor(CONTENT_PACK_VERSION)
+    expect(current, `no frozen presentation copy for ${CONTENT_PACK_VERSION}`).toBeDefined()
+    expect(current!.thirtyDayLoopTitle).toBe(STRUCTURAL_COPY.thirtyDayLoopTitle)
   })
 
   it("knows exactly the versions it has frozen", () => {
     expect(knownContentPackVersions()).toEqual(["content-pack-v1"])
+  })
+})
+
+describe("the frozen registry is frozen at runtime, not only in the types", () => {
+  /**
+   * `readonly` and `const` are erased at runtime. The first version of this
+   * registry handed callers its own mutable object, so one assignment anywhere
+   * in the process would have re-worded every subsequent v1 Report — the
+   * guarantee defeated from inside rather than by a version bump.
+   *
+   * Iterated over `knownContentPackVersions()` rather than hardcoding v1, so
+   * these cover entries that do not exist yet.
+   */
+
+  it("every frozen copy is Object.isFrozen", () => {
+    const versions = knownContentPackVersions()
+    expect(versions.length).toBeGreaterThan(0)
+    for (const version of versions) {
+      expect(Object.isFrozen(presentationCopyFor(version)), version).toBe(true)
+    }
+  })
+
+  it("every value is a primitive, so the shallow freeze is a complete one", () => {
+    // Object.freeze does not reach nested objects. This is what makes the
+    // shallow freeze sufficient — and what fails the day somebody adds a
+    // nested field, instead of leaving a mutable object behind a frozen shell.
+    for (const version of knownContentPackVersions()) {
+      for (const [field, value] of Object.entries(presentationCopyFor(version)!)) {
+        expect(typeof value, `${version}.${field}`).toBe("string")
+      }
+    }
+  })
+
+  it("an attempted mutation cannot change the title returned afterwards", () => {
+    const before = presentationCopyFor("content-pack-v1")!.thirtyDayLoopTitle
+    try {
+      // Silently ignored in sloppy mode, throws in strict — either is fine, and
+      // the assertion is about what comes back next, not about which happened.
+      ;(presentationCopyFor("content-pack-v1") as { thirtyDayLoopTitle: string }).thirtyDayLoopTitle =
+        "MUTATED"
+    } catch {
+      /* strict mode threw, which is the stronger outcome */
+    }
+    expect(presentationCopyFor("content-pack-v1")!.thirtyDayLoopTitle).toBe(before)
+    expect(presentationCopyFor("content-pack-v1")!.thirtyDayLoopTitle).not.toBe("MUTATED")
+  })
+
+  it("presentation output is unchanged after an attempted mutation", () => {
+    // The assertion that matters: not that the object resisted, but that a
+    // customer's document did.
+    const before = present(YOU)
+    try {
+      ;(presentationCopyFor("content-pack-v1") as { thirtyDayLoopTitle: string }).thirtyDayLoopTitle =
+        "MUTATED"
+    } catch {
+      /* as above */
+    }
+    expect(JSON.stringify(present(YOU))).toBe(JSON.stringify(before))
+    expect(JSON.stringify(present(YOU))).not.toContain("MUTATED")
+  })
+
+  it("the registry container itself is frozen", () => {
+    // Proven through a boolean rather than by handing a test the container:
+    // exporting it so somebody could try to mutate it would give production
+    // code the handle this module exists to withhold.
+    expect(registryIsFrozen()).toBe(true)
+    expect(presentationCopyFor("content-pack-v99")).toBeUndefined()
   })
 })
 
