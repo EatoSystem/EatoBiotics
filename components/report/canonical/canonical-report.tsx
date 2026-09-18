@@ -4,6 +4,7 @@ import type {
   PresentationAccent,
   PresentationBlock,
   PresentationReport,
+  PrintBreak,
 } from "@/lib/report/presentation/model"
 import { accentFill, accentText, accentTextOnTint } from "@/lib/report/visual-token"
 
@@ -46,6 +47,27 @@ import { printMarker } from "./print-markers"
  * Typography, rhythm, colour resolution, and where the reader's eye rests.
  * Order, inclusion and page breaks are the model's — they are read, never
  * re-derived. Notice there is no `.filter()` and no `.sort()` below.
+ *
+ * ══ NOT ONE PAGE BREAK IS DECIDED HERE ══════════════════════════════════════
+ *
+ * Every break marker in this file comes from `printMarker(<a model field>)`.
+ * There is no marker-class literal anywhere below, and a guard proves it, so
+ * the intent S3's PDF reads is the intent the web target obeyed.
+ *
+ * It did not start that way, and the way it failed is worth keeping. Each loop
+ * step carried a hardcoded keep-together class in its JSX. That looked
+ * harmless — it produced the right paper — and it put a rule into one target's
+ * markup that the model did not hold and the other target could not read.
+ * Exactly the drift `printBreak` exists to prevent, one level below where the
+ * field had been placed. The fix was to give a step its own `printBreak`, not
+ * to leave the decision here and describe it.
+ *
+ * The legacy report's band classes were the same defect wearing better
+ * clothes. They bundle appearance (a dark ground, print padding, forced colour
+ * inheritance) together with break semantics — one sets `break-after: page`,
+ * the other `break-inside: avoid` — so wearing one to get the ground silently
+ * imports a break decision nobody authorised. This document's bands therefore
+ * carry their own appearance inline and take their breaks only from the model.
  *
  * ══ FINALISED-AT IS CARRIED, NOT SHOWN ══════════════════════════════════════
  *
@@ -115,7 +137,14 @@ function tint(accent: PresentationAccent, percent: number): string {
 
 /* ══ Blocks ═══════════════════════════════════════════════════════════════ */
 
-function section(printBreak: PresentationBlock["printBreak"], extra: string): string {
+/**
+ * Class list for a block, with its break marker appended.
+ *
+ * The ONLY route by which a break marker reaches the markup. Typed against the
+ * model's field so a caller cannot pass a string it made up, and used for loop
+ * STEPS as well as blocks — a step is where the hardcoded break used to be.
+ */
+function section(printBreak: PrintBreak, extra: string): string {
   const marker = printMarker(printBreak)
   return marker ? `${extra} ${marker}` : extra
 }
@@ -233,7 +262,10 @@ function LoopBlock({
             <li
               key={step.key}
               data-week={step.week}
-              className="rpt-keep rounded-2xl border border-border bg-background px-5 py-5 sm:px-7 sm:py-6"
+              className={section(
+                step.printBreak,
+                "rounded-2xl border border-border bg-background px-5 py-5 sm:px-7 sm:py-6",
+              )}
               style={{ boxShadow: CARD_SHADOW }}
             >
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -304,7 +336,8 @@ function NoteBlock({ block }: { block: Extract<PresentationBlock, { kind: "note"
 function QuotationBlock({ block }: { block: Extract<PresentationBlock, { kind: "quotation" }> }) {
   return (
     <section
-      className={section(block.printBreak, "rpt-quote px-5 py-14 sm:py-20")}
+      data-band="closing"
+      className={section(block.printBreak, "px-5 py-14 sm:py-20")}
       // Explicit colour for the same reason as the hero: print forces
       // `color: inherit` inside this band, and an undeclared colour inherits
       // dark-on-dark from `body`.
@@ -349,7 +382,8 @@ export function CanonicalReportDocument({
         customer did.
       */}
       <header
-        className="rpt-hero px-5 py-16 sm:py-24"
+        data-band="opening"
+        className="px-5 py-16 sm:py-24"
         style={{ background: "var(--foreground)", color: "#ffffff" }}
       >
         <div className="mx-auto max-w-2xl">

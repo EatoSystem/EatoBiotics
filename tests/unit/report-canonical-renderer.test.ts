@@ -448,25 +448,112 @@ describe("print break intent travels as a marker", () => {
     expect(html).toContain("rpt-keep")
   })
 
+  it("carries a loop STEP's break intent from the model too", () => {
+    // The repair. Each step's `<li>` used to hardcode the keep-together class
+    // in JSX while the model held no per-step field — a break rule living in
+    // one target's markup, invisible to the other target that is supposed to
+    // read the same intent. It produced the right paper, which is exactly why
+    // it survived review of the output.
+    const model = present(YOU)
+    const loop = model.blocks.find((b) => b.kind === "loop")
+    if (loop?.kind !== "loop") throw new Error("no loop block")
+    expect(loop.steps.length).toBe(4)
+
+    const html = render(model)
+    for (const step of loop.steps) {
+      const marker = printMarker(step.printBreak)
+      expect(marker, `${step.key} has no break marker to emit`).not.toBe("")
+      // Anchored to the step's own element, not merely present in the document:
+      // the loop block also emits a marker, so a document-wide search would pass
+      // on a renderer that dropped every step's.
+      const li = html.slice(html.indexOf(`data-week="${step.week}"`))
+      expect(
+        li.slice(0, li.indexOf(">")).includes(marker),
+        `${step.key} lost its ${step.printBreak} marker`,
+      ).toBe(true)
+    }
+  })
+
+  it("decides no page break of its own — every marker comes from printMarker", () => {
+    /*
+     * The guard the repair is worth nothing without.
+     *
+     * Three classes were hardcoded in this renderer, and all three carried
+     * break semantics the model never authorised: the loop step's
+     * keep-together, and the legacy report's two band classes, which bundle a
+     * dark ground and print padding together with `break-after: page` and
+     * `break-inside: avoid`. Wearing one to get the ground imports the break.
+     *
+     * So the rule is stated as "no marker-class literal in this directory at
+     * all, except in the lookup itself" — a stricter thing than the two names,
+     * and the only version that would have caught the bands.
+     */
+    const MARKER_LITERALS = ["rpt-break-before", "rpt-keep", "rpt-hero", "rpt-quote", "rpt-"]
+    for (const file of readdirSync(DIR_CANONICAL)) {
+      if (file === "print-markers.ts") continue
+      if (!file.endsWith(".ts") && !file.endsWith(".tsx")) continue
+      const source = readFileSync(join(DIR_CANONICAL, file), "utf8")
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/(^|[^:])\/\/.*$/gm, "$1")
+        .replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
+      for (const literal of MARKER_LITERALS) {
+        expect(
+          source.includes(literal),
+          `${file} names the marker ${literal} directly instead of reading the model`,
+        ).toBe(false)
+      }
+    }
+
+    // And the lookup is still the place they live, so the check above is a
+    // statement about WHERE they are rather than that they stopped existing.
+    const lookup = readFileSync(join(DIR_CANONICAL, "print-markers.ts"), "utf8")
+    expect(lookup).toContain("rpt-break-before")
+    expect(lookup).toContain("rpt-keep")
+  })
+
   it("the markers it emits are actually styled for print", () => {
     // A marker class nothing styles is a decoration that looks like a decision.
     const css = readFileSync(join(process.cwd(), "app/globals.css"), "utf8")
     expect(css).toContain(".rpt-break-before")
     expect(css).toContain(".rpt-keep")
-    expect(css).toContain(".rpt-hero")
-    expect(css).toContain(".rpt-quote")
+  })
+
+  it("print un-hides every scroll reveal, because paper does not scroll", () => {
+    /*
+     * `.js .sr-reveal` is opacity 0 until IntersectionObserver reveals it.
+     * Printing does not scroll, so a reader who hits Print before reaching the
+     * bottom prints blank space where the rest of their Report should be.
+     *
+     * The unconditional reveal was behind `prefers-reduced-motion: reduce`,
+     * which most readers do not set — and which the Report's own accessibility
+     * test does set, so that suite could not see this.
+     *
+     * Asserted against the print block specifically. The rule exists elsewhere
+     * in the file for a different reason, and a whole-file search would pass on
+     * the broken version.
+     */
+    const css = readFileSync(join(process.cwd(), "app/globals.css"), "utf8")
+    const printBlock = css.slice(css.indexOf("@media print {"))
+    const reveal = printBlock.slice(0, printBlock.indexOf(".rpt-break-before"))
+    expect(reveal).toContain(".sr-reveal")
+    expect(reveal).toMatch(/\.sr-reveal[\s\S]{0,200}opacity:\s*1\s*!important/)
+    expect(reveal).toMatch(/\.sr-reveal[\s\S]{0,200}transform:\s*none\s*!important/)
   })
 
   it("dark bands declare their own text colour, so print cannot black them out", () => {
-    // The print sheet forces `color: inherit` inside a dark band. With no colour
-    // declared on the band itself that inherits from `body`, which print sets to
-    // the same dark green as the band's background — invisible on paper only,
-    // and only for a customer.
+    // The legacy band class forced `color: inherit` on everything inside it,
+    // which inherits from `body` — print sets that to the same dark green as
+    // the band's background. This document no longer wears that class, and
+    // declares its colour anyway: belt and braces on the one failure that is
+    // invisible on screen and only ever reaches a customer.
     const html = render(present(YOU))
-    const hero = html.slice(html.indexOf("rpt-hero"), html.indexOf("section-divider"))
-    expect(hero).toContain("color:#ffffff")
-    const quote = html.slice(html.indexOf("rpt-quote"))
-    expect(quote).toContain("color:#ffffff")
+    const opening = html.slice(
+      html.indexOf('data-band="opening"'),
+      html.indexOf("section-divider"),
+    )
+    expect(opening).toContain("color:#ffffff")
+    const closing = html.slice(html.indexOf('data-band="closing"'))
+    expect(closing).toContain("color:#ffffff")
   })
 
   it("none means no marker, rather than a class that does nothing", () => {

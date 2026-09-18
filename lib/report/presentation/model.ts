@@ -187,6 +187,21 @@ export type PresentationBlock =
         readonly week: 1 | 2 | 3 | 4
         readonly beat: string
         readonly text: string
+        /**
+         * What print should do at this STEP, as distinct from the loop.
+         *
+         * A step is a self-contained instruction for one week, and a step split
+         * across a sheet boundary is the one break in this document that
+         * actually costs the reader something.
+         *
+         * It lives here because that is a break decision, and break decisions
+         * are the model's. The renderer had it hardcoded in JSX — which looked
+         * harmless, produced the right paper, and quietly put a rule S3's PDF
+         * could not read into a web target's markup. That is precisely the
+         * drift `printBreak` exists to prevent, one level further down than the
+         * field was first placed.
+         */
+        readonly printBreak: PrintBreak
       }[]
       readonly accent: PresentationAccent
       readonly printBreak: PrintBreak
@@ -272,6 +287,9 @@ function loopStepsFrom(steps: readonly LoopStep[], weekLabel: string) {
     week: step.week,
     beat: step.beat,
     text: step.proposition.text,
+    // One week's instruction, kept whole. The loop itself starts a fresh sheet;
+    // its steps must not be torn across one.
+    printBreak: "avoid-inside" as const,
   }))
 }
 

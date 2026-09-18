@@ -460,6 +460,27 @@ describe("a loop step's label is composed here, not in a renderer", () => {
     expect(loop.steps.map((s) => s.week)).toEqual([1, 2, 3, 4])
   })
 
+  it("carries each step's own break intent, so no target has to invent one", () => {
+    // A step is one week's instruction, and tearing one across a sheet boundary
+    // is the only break in this document that costs the reader anything.
+    //
+    // It lives on the model because it is a break decision, and break decisions
+    // are the model's — S3's PDF has to read the same intent the web target
+    // obeyed. The renderer held it in JSX first, which produced correct paper
+    // and left the other target unable to see the rule.
+    const loop = present(YOU).blocks.find((b) => b.kind === "loop")
+    if (loop?.kind !== "loop") throw new Error("no loop block")
+    expect(loop.steps.map((s) => s.printBreak)).toEqual([
+      "avoid-inside",
+      "avoid-inside",
+      "avoid-inside",
+      "avoid-inside",
+    ])
+    // The loop opens a sheet; its steps stay whole on it. Two different
+    // decisions, which is why one field could not have served both.
+    expect(loop.printBreak).toBe("page-before")
+  })
+
   it("takes the four beats from the Report and freezes no second copy of them", () => {
     // The composer writes the matching beat into every step, so the Report
     // carries them. A frozen duplicate would be a second place the same four
