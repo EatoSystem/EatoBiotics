@@ -508,7 +508,7 @@ describe("finalisation is pure, dormant and produces no Report", () => {
     expect(SOURCE).not.toMatch(/(?<![=!])=\s*["']ready-for-report["']/)
   })
 
-  it("exactly three callers: two routes and the pure Report composer", () => {
+  it("exactly five callers: two routes, the composer, the seal reader and a preview fixture", () => {
     // Phase 3C-C1 defined the payload with no caller at all. Phase 3C-C2A added
     // the ONE route allowed to seal one. Phase 3C-C2B adds the second: the
     // session route validates a STORED seal when a Consultation loads as
@@ -543,6 +543,15 @@ describe("finalisation is pure, dormant and produces no Report", () => {
       // composing — the historical read path deliberately cannot see this
       // module at all, and its own guard proves that.
       "lib/report/persisted/internal/first-generation.ts",
+      // Phase 4B-S2: the fixture behind the preview-only canonical Report page.
+      // It BUILDS a finalisation, which is why it has to be argued for rather
+      // than waved through — and the argument is that it builds one from
+      // answers it invented, for a page fenced to non-production runtimes, and
+      // never writes it anywhere. Nothing it produces is a customer's document.
+      //
+      // `server-only` is imported there, so an accidental client import fails
+      // the build rather than shipping the finalisation builder to a browser.
+      "lib/report/preview/fixture.ts",
     ])
   })
 

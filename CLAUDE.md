@@ -407,6 +407,33 @@ on Migration 48** and neither is applied.
 > portability endpoint for every customer. A missing table **must not be masked**
 > as "this customer has no Reports".
 
+> **PRE-ACTIVATION BLOCKER — `constraints-known` acknowledgement.** Before
+> deterministic paid Report activation, the canonical Report must provide
+> reviewed customer-visible acknowledgement when
+> `ReportSafety.state === "constraints-known"` while specific-food guidance
+> remains suppressed. Today it provides none: all fifteen constraint sentences
+> are suppressed through the open `specificFoods` dietetic gate, and
+> `resolveReportSafety` (`lib/report/deterministic/report-safety.ts`) sets a
+> note for `unresolved-avoidance`, `undisclosed` and `contradictory` but **not**
+> for `constraints-known`. So the states where we know LESS each get a reviewed
+> sentence, and the one where the customer actually told us — an allergy, a
+> medical avoidance, a religious requirement, a budget — gets silence.
+>
+> Found in Phase 4B-S2 and pinned by
+> `tests/unit/report-presentation-model.test.ts` rather than patched. It must be
+> resolved in a **separate versioned deterministic-core / content-pack repair**
+> (Phase 4A-S2R1), because reviewed wording travels in `CONTENT_PACK_VERSION`,
+> which travels in Report provenance, which moves goldens and touches S4
+> producer compatibility. The preferred shape is a fourth reviewed
+> `STRUCTURAL_COPY` note that acknowledges without naming or interpreting the
+> constraint — **not** reopening the constraint section and **not** weakening
+> the `specificFoods` gate.
+>
+> **The renderer must not invent the acknowledgement, and must not read trusted
+> answers directly to compensate.** A presentation layer that filled this
+> silence would be asserting something no reviewed content pack authorised, in
+> the one place a Report cannot afford to be wrong.
+
 ### Other tables
 - `referrals` — `referrer_code`, `referred_email`, `referred_id`
 - `plate_data` — `user_id`, `plate`, `plants`, `updated_at`

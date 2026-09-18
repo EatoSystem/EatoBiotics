@@ -344,6 +344,30 @@ html, body, main {
     position: static !important;
   }
 
+  /* ══════════════════════════════════════════════
+     SCROLL REVEALS — always visible on paper
+     ──────────────────────────────────────────────
+     .js .sr-reveal starts at opacity 0 and is revealed by IntersectionObserver
+     when it scrolls into view. Printing does not scroll, so a reader who hits
+     Print before reaching the bottom of a page prints the sections they reached
+     and BLANK SPACE where the rest should be. Nothing further down the
+     stylesheet rescues it: killing transitions and animations does not change
+     an opacity that was never animated, and the unconditional reveal is behind
+     prefers-reduced-motion, which most readers do not set.
+
+     Found on the canonical Report, whose accessibility test runs under reduced
+     motion and therefore could not see it — but the rule belongs here rather
+     than beside that document, because it is true of all ~136 call sites.
+
+     An entrance animation is a screen affordance. On paper there is no entrance.
+  ══════════════════════════════════════════════ */
+  .sr-reveal,
+  .js .sr-reveal,
+  .js .sr-reveal[data-revealed="false"] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
   /* ── Remove blur/filter effects (print-unfriendly) ── */
   [style*="filter: blur"],
   [style*="blur("] {
@@ -403,6 +427,21 @@ html, body, main {
   .rpt-roadmap,
   .rpt-final {
     break-before: page !important;
+  }
+
+  /* ══════════════════════════════════════════════
+     BREAK SEMANTICS AS MARKERS — canonical Report
+     ──────────────────────────────────────────────
+     The markers above name legacy report SECTIONS, so each new section needed
+     its own selector here. These two name the INTENT instead, which is what the
+     Presentation Model carries, so web and print read the same decision and
+     a new block needs no new rule. See components/report/canonical.
+  ══════════════════════════════════════════════ */
+  .rpt-break-before {
+    break-before: page !important;
+  }
+  .rpt-keep {
+    break-inside: avoid !important;
   }
 
   /* ══════════════════════════════════════════════

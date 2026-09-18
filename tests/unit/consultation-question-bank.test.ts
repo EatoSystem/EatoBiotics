@@ -275,6 +275,24 @@ describe("the deterministic bank has not reached the paid flow", () => {
        * this file does.
        */
       "lib/report/persisted/internal/first-generation.ts",
+      /*
+       * Phase 4B-S2 — the ninth re-point, and the only importer here that
+       * MANUFACTURES answers rather than consuming real ones.
+       *
+       * `lib/report/preview/fixture.ts` composes a fixture Report for the
+       * preview-only canonical Report page: real bank, real applicability
+       * resolution, real finalisation builder, real composer. It exists so the
+       * paid document can be designed against the shape the composer actually
+       * emits rather than against a hand-written literal.
+       *
+       * It reads the bank to answer the first option of every applicable
+       * question, which is exactly why it has to be argued for here. What
+       * contains it is not this list: the page behind it is fenced to
+       * non-production runtimes with no flag, header or query parameter that
+       * can override it, nothing it produces is persisted or delivered, and
+       * `server-only` keeps the question bank out of any browser bundle.
+       */
+      "lib/report/preview/fixture.ts",
     ])
   })
 

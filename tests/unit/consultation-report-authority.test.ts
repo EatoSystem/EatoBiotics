@@ -367,8 +367,20 @@ describe("internal and testing boundaries", () => {
   it("no application route calls the service, and none queries the table", () => {
     const appFiles = repoFiles.filter((f) => f.includes(`${sep}app${sep}`))
     expect(appFiles.length).toBeGreaterThan(50)
+
+    /*
+     * Comments stripped, for the reason this file already states about its own
+     * CODE map: a page that explains the boundary by NAMING what it deliberately
+     * does not reach — "no database, no Stripe, no
+     * `ensurePersistedConsultationReport`" — is honouring the rule, not breaking
+     * it, and a guard that flagged it would be asking for the explanation to be
+     * deleted to keep the rule. What must be absent is the CALL.
+     */
+    const strip = (source: string) =>
+      source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1")
+
     for (const file of appFiles) {
-      const source = readFileSync(file, "utf8")
+      const source = strip(readFileSync(file, "utf8"))
       expect(
         source.includes("ensurePersistedConsultationReport"),
         `${file} calls the S4 service`,
@@ -377,6 +389,12 @@ describe("internal and testing boundaries", () => {
         false,
       )
     }
+
+    // Non-vacuity: stripping must not have removed so much that nothing could
+    // ever match. Assembled from pieces, so a future edit that rewrites the real
+    // identifier cannot silently rewrite the planted one alongside it.
+    const planted = `await ${"ensurePersisted"}ConsultationReport({ sessionId })`
+    expect(strip(planted).includes("ensurePersistedConsultationReport")).toBe(true)
   })
 
   it("S4 adds no Report route", () => {
