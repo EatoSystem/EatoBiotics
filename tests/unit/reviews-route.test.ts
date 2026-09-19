@@ -29,6 +29,25 @@ let upsertError: { message: string } | null = null
 let dbConfigured = true
 const upsertSpy = vi.fn(async (_payload: unknown, _opts: unknown) => ({ error: upsertError }))
 
+/*
+ * ── The V1 scope gate is opened FOR THESE TESTS, deliberately ──────────────
+ *
+ * Feedback capture is outside the V1 surface (see `lib/v1-scope.ts`), so the
+ * production constant is `false` and this handler refuses with 404 before it
+ * does anything at all.
+ *
+ * These tests keep the IMPLEMENTATION covered anyway, because the promise made
+ * when the surface was withdrawn was that switching it back on would be a small
+ * change. That promise is only true if the behaviour behind the gate is still
+ * proven. Deleting this file would have made reinstatement an unreviewed
+ * rewrite; skipping it would have hidden the same gap more quietly.
+ *
+ * `tests/unit/v1-surface-feedback.test.ts` asserts the opposite and is the one
+ * that speaks for production: nothing mounts the widget, and the gate is the
+ * first statement in the handler.
+ */
+vi.mock("@/lib/v1-scope", () => ({ FEEDBACK_CAPTURE_ENABLED: true }))
+
 vi.mock("@/lib/supabase", () => ({
   getSupabase: () => (dbConfigured ? { from: () => ({ upsert: upsertSpy }) } : null),
 }))
@@ -179,5 +198,23 @@ describe("/api/reviews POST distinguishes stored, refused and unavailable", () =
     const { POST } = await load()
     expect((await POST(post({ rating: 5 }))).status).toBe(429)
     expect(upsertSpy).not.toHaveBeenCalled()
+  })
+})
+
+describe("the V1 scope gate", () => {
+  /**
+   * The other half of the mock at the top of this file. With the gate closed —
+   * which is production — the handler must refuse before touching anything,
+   * and that is asserted HERE rather than only in the surface guard, so the
+   * route's own suite covers both states.
+   */
+  it("refuses with 404 and does no work when capture is out of scope", async () => {
+    vi.resetModules()
+    vi.doMock("@/lib/v1-scope", () => ({ FEEDBACK_CAPTURE_ENABLED: false }))
+    const { POST } = await import("@/app/api/reviews/route")
+    const res = await POST(post({ rating: 5 }))
+    expect(res.status).toBe(404)
+    vi.doUnmock("@/lib/v1-scope")
+    vi.resetModules()
   })
 })
