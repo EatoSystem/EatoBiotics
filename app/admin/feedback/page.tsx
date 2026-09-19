@@ -3,6 +3,8 @@ import { getSupabase } from "@/lib/supabase"
 import { ADMIN_COOKIE, verifyAdminCookie } from "@/lib/admin-auth"
 import { AdminLogin } from "../admin-login"
 import type { FeedbackRow } from "@/lib/feedback/types"
+import { notFound } from "next/navigation"
+import { FEEDBACK_CAPTURE_ENABLED } from "@/lib/v1-scope"
 
 export const metadata = {
   title: "Feedback — EatoBiotics Admin",
@@ -33,6 +35,15 @@ export default async function AdminFeedbackPage({
 }: {
   searchParams: Promise<{ error?: string }>
 }) {
+  /*
+   * OUT OF V1 SCOPE — see lib/v1-scope.ts.
+   *
+   * `notFound()` rather than an explanatory page: this dashboard reads the
+   * `feedback` table, which is drafted and unapplied, so with capture disabled
+   * it has nothing to show and would render an error to whoever opened it.
+   */
+  if (!FEEDBACK_CAPTURE_ENABLED) notFound()
+
   const params = await searchParams
   const cookieStore = await cookies()
   if (!verifyAdminCookie(cookieStore.get(ADMIN_COOKIE)?.value)) {
