@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test"
-import { readFileSync, mkdirSync, writeFileSync } from "node:fs"
+import { execFileSync } from "node:child_process"
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { tmpdir } from "node:os"
 import { join } from "node:path"
 
 /**
@@ -36,10 +38,30 @@ import { join } from "node:path"
  * A golden image breaks on a react-pdf upgrade, a font revision or a hinting
  * change, none of which is a defect, and a gate that cries wolf gets deleted.
  * These assert properties a real defect violates and a version bump does not.
+ *
+ * ══ WHY THE PDF IS GENERATED HERE, INTO A DIRECTORY THIS RUN OWNS ═══════════
+ *
+ * The first version read a gitignored artifact the unit suite had written
+ * earlier. CI was safe only because it does a clean checkout and runs the
+ * suites in that order — the PIPELINE held the property, not the test. On a
+ * developer machine a stale PDF from an older head survives, and this gate
+ * would pass against yesterday's document while appearing to report on today's
+ * code.
+ *
+ * It cannot generate the PDF in-process: Playwright's module loader cannot
+ * link `@react-pdf/primitives`, which is ESM-only, so the renderer is not
+ * importable here at all. So it spawns the generator and points it at a fresh
+ * temporary directory, removed afterwards.
+ *
+ * There is therefore no file that can go stale, and the bytes under inspection
+ * are produced by the source currently on disk — proven, not sequenced.
  */
 
-const FIXTURE = join(process.cwd(), "tests/.artifacts/canonical-report.pdf")
 const ARTIFACTS = join(process.cwd(), "tests/.artifacts")
+const GENERATOR = "tests/unit/canonical-pdf-fixture.test.ts"
+
+// Spawning the generator costs a few seconds beyond the suite default.
+test.setTimeout(180_000)
 
 /** Rendered page measurements, taken in the browser. */
 interface PageShot {
@@ -52,16 +74,23 @@ interface PageShot {
 }
 
 test("the canonical Report PDF paints, and paints the right colours", async ({ page }) => {
-  // Built by the unit suite, which owns generation. If it is missing the whole
-  // gate is meaningless, so say so rather than skipping quietly.
+  const workspace = mkdtempSync(join(tmpdir(), "canonical-report-pdf-"))
+  const generated = join(workspace, "canonical-report.pdf")
+
   let pdf: Buffer
   try {
-    pdf = readFileSync(FIXTURE)
-  } catch {
-    throw new Error(
-      `${FIXTURE} is missing — run the unit suite first; it writes the fixture this gate reads`,
-    )
+    // Generated NOW, from the source on disk, into a directory this run made.
+    execFileSync("npx", ["vitest", "run", "--reporter=dot", GENERATOR], {
+      cwd: process.cwd(),
+      env: { ...process.env, CANONICAL_PDF_OUT: generated },
+      stdio: "pipe",
+      timeout: 120_000,
+    })
+    pdf = readFileSync(generated)
+  } finally {
+    rmSync(workspace, { recursive: true, force: true })
   }
+
   expect(pdf.subarray(0, 5).toString()).toBe("%PDF-")
 
   await page.goto("about:blank")

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, vi } from "vitest"
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs"
+import { readFileSync, readdirSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 import React from "react"
 
@@ -619,37 +619,6 @@ describe("colour is solid and resolved against its ground", () => {
   })
 })
 
-/* ══ Hand-off to the visual gate ══════════════════════════════════════════ */
-
-describe("the document is published for the visual gate", () => {
-  /**
-   * Generation lives here; LOOKING at the page lives in
-   * `tests/e2e/report-pdf-visual.spec.ts`, which rasterises this file in a
-   * real browser.
-   *
-   * Why not rasterise here: pdfjs draws through canvas APIs that the Node
-   * canvas binding does not fully implement, and the mismatch moves with every
-   * version pair — pdfjs 5.6 failed with "Value is none of these types
-   * `String`, `Path`", pdfjs 4.10 failed in `paintChar`, both on the project's
-   * actual Node 20. A browser canvas is pdfjs's supported target and Chromium
-   * is already a CI dependency, so the visual gate crossed the runner boundary
-   * rather than acquiring a native one.
-   */
-  it(
-    "writes the fixture the visual gate reads",
-    async () => {
-      const pdf = await pdfFor(FIXTURES.family)
-      expect(pdf.subarray(0, 5).toString()).toBe("%PDF-")
-      expect(await pdfPageCount(pdf)).toBeGreaterThan(1)
-
-      const dir = join(process.cwd(), "tests/.artifacts")
-      mkdirSync(dir, { recursive: true })
-      writeFileSync(join(dir, "canonical-report.pdf"), pdf)
-    },
-    TIMEOUT,
-  )
-})
-
 /* ══ The extractors are test tooling, not product ═════════════════════════ */
 
 describe("the PDF extractor stays out of the application", () => {
@@ -738,5 +707,90 @@ describe("the PDF extractor stays out of the application", () => {
     expect(pinned, "the extractor must be pinned exactly").toMatch(/^\d+\.\d+\.\d+$/)
     // And the project still declares the Node it actually targets.
     expect(pkg.engines?.node).toBe(">=20 <21")
+  })
+})
+
+/* ══ The visual gate inspects THIS head ═══════════════════════════════════ */
+
+describe("the visual gate cannot validate a stale document", () => {
+  /**
+   * The property, expressed where the sabotage harness can reach it.
+   *
+   * The visual gate itself runs under Playwright, and the differential suite
+   * drives vitest — so a case that broke the gate's freshness would not be
+   * caught by breaking the gate. These assertions put the property in the unit
+   * suite instead, so it has a guard that can fail.
+   *
+   * What went wrong before: the unit run wrote a gitignored PDF and the visual
+   * gate read it later. CI was safe only because a clean checkout runs the
+   * suites in that order — the pipeline held the property, not the test. A
+   * stale artifact on a developer machine would have been inspected happily,
+   * and the gate would have reported on code that was not there any more.
+   * Proven by planting a good artifact, breaking the band colour and watching
+   * the repaired gate fail anyway.
+   */
+  const SPEC = readFileSync(join(process.cwd(), "tests/e2e/report-pdf-visual.spec.ts"), "utf8")
+  const CODE = SPEC.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1")
+
+  it("generates the document it inspects, rather than reading one", () => {
+    /*
+     * Asserted at the CALL, not by the symbol appearing somewhere in the file.
+     *
+     * The first version checked that the generator's path and `execFileSync`
+     * were each present anywhere in the source. Sabotage 366 replaced the spawn
+     * with `execFileSync("true", [])` and the guard passed, because the path
+     * still sat in a `const` declaration above it — the same shape of hole the
+     * review found in the font-gate guard, which matched one spelling instead
+     * of resolving the import.
+     */
+    const call = CODE.slice(CODE.indexOf("execFileSync("))
+    const args = call.slice(0, call.indexOf("})"))
+    expect(args, "the gate no longer spawns anything").toContain("execFileSync(")
+    expect(args, "the spawn does not run the generator").toContain("GENERATOR")
+    expect(args, "the spawn does not run the test runner").toContain("vitest")
+    expect(args, "the spawn does not direct output at this run").toContain("CANONICAL_PDF_OUT")
+  })
+
+  it("writes into a directory it creates for the run, and removes it", () => {
+    // Again at the use site: `mkdtempSync` in the import list is not evidence
+    // that the workspace is per-run. Sabotage 368 pointed the workspace at the
+    // shared directory and the import kept the old assertion green.
+    const workspace = CODE.split("\n").find((line) => line.includes("const workspace"))
+    expect(workspace, "no workspace is created").toBeDefined()
+    expect(workspace!, "the workspace is not per-run").toContain("mkdtempSync")
+    expect(workspace!, "the workspace is not a temporary directory").toContain("tmpdir()")
+    expect(CODE, "the workspace is never removed").toContain("rmSync(workspace")
+  })
+
+  it("never reads its input from the shared artifacts directory", () => {
+    // PNGs may be WRITTEN there for review. The PDF under inspection may not
+    // be read from there — that is precisely the stale path.
+    const reads = [...CODE.matchAll(/readFileSync\(([^)]*)\)/g)].map((m) => m[1])
+    expect(reads.length).toBeGreaterThan(0)
+    for (const argument of reads) {
+      expect(argument.includes("ARTIFACTS"), `reads its input from ${argument}`).toBe(false)
+    }
+  })
+
+  it("the generator honours the per-run output path, through the real entry point", () => {
+    const source = readFileSync(
+      join(process.cwd(), "tests/unit/canonical-pdf-fixture.test.ts"),
+      "utf8",
+    )
+    const code = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1")
+
+    expect(code).toContain("process.env.CANONICAL_PDF_OUT")
+
+    // The AWAITED CALL, not the import. Sabotage 370 swapped the render for a
+    // fabricated buffer and left the import in place, which satisfied a
+    // whole-file check while the font gate stopped being exercised at all.
+    expect(code, "the generator no longer renders through the gated entry point").toMatch(
+      /await\s+renderCanonicalReportPdf\(/,
+    )
+    // And it must not reach the document directly, which would render past the
+    // font gate exactly as a production caller would.
+    expect(code.includes("canonical-report-pdf"), "the generator bypasses the font gate").toBe(
+      false,
+    )
   })
 })
