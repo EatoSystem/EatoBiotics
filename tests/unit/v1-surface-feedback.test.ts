@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest"
 import { readFileSync, readdirSync } from "node:fs"
 import { join } from "node:path"
+import ts from "typescript"
 
 import { FEEDBACK_CAPTURE_ENABLED } from "@/lib/v1-scope"
 
@@ -76,39 +77,145 @@ describe("the V1 surface mounts no feedback capture", () => {
   })
 })
 
-describe("the capture endpoints refuse before doing any work", () => {
+describe("the capture endpoints refuse as their FIRST executable action", () => {
+  /**
+   * ══ WHY THIS IS PARSED AND NOT MATCHED ════════════════════════════════════
+   *
+   * The first version of this guard located `FEEDBACK_CAPTURE_ENABLED` and
+   * checked it appeared before a hardcoded list — `req.json()`, `getUser`,
+   * `rateLimit(`, `guardAiUsage`, `anthropic`, `supabase`. That proves the gate
+   * precedes SIX KNOWN THINGS. It does not prove the property the test claims,
+   * and a realistic mutation walks straight through it:
+   *
+   *     export async function POST(req: NextRequest) {
+   *       const raw = await req.text()          // ← not on the list
+   *       if (!FEEDBACK_CAPTURE_ENABLED) return new NextResponse(null, { status: 404 })
+   *
+   * The request has been consumed before the refusal, and the guard stays
+   * green. Extending the list would keep the same weakness and simply move the
+   * next hole one identifier further out.
+   *
+   * So the file is PARSED. `body.statements[0]` is the first executable
+   * statement by definition — comments are trivia and never appear, whitespace
+   * is irrelevant, imports and declarations elsewhere in the file are different
+   * nodes, and a second `FEEDBACK_CAPTURE_ENABLED` further down is not at
+   * index 0. Anything inserted above the gate takes that index and the
+   * assertion fails, whatever it happens to be called.
+   *
+   * This is the fifth instance in this engagement of a structural guard
+   * proving the presence or relative position of selected symbols rather than
+   * the execution relationship it documents. The standing rule is to prove the
+   * relationship; here that means reading the syntax tree.
+   */
+
   const ROUTES = [
     { name: "feedback", path: "app/api/feedback/route.ts" },
     { name: "reviews", path: "app/api/reviews/route.ts" },
   ] as const
 
-  for (const route of ROUTES) {
-    it(`${route.name}: the gate is the first thing in POST`, () => {
-      const code = STRIP(readFileSync(join(ROOT, route.path), "utf8"))
-      const post = code.indexOf("export async function POST")
-      expect(post, "no POST handler").toBeGreaterThan(-1)
-
-      const gate = code.indexOf("FEEDBACK_CAPTURE_ENABLED", post)
-      expect(gate, `${route.name} has no V1 scope gate`).toBeGreaterThan(-1)
-
-      // Everything expensive must come AFTER it. An out-of-scope endpoint that
-      // still parses a body, checks a session, consumes a rate-limit token or
-      // calls an AI provider is only cosmetically switched off.
-      for (const work of ["req.json()", "getUser", "rateLimit(", "guardAiUsage", "anthropic", "supabase"]) {
-        const at = code.indexOf(work, post)
-        if (at === -1) continue
-        expect(gate, `${route.name}: "${work}" runs before the gate`).toBeLessThan(at)
+  /** The `POST` export's body, from the real parser. */
+  function postBody(source: string, label: string): ts.Block {
+    const sourceFile = ts.createSourceFile(label, source, ts.ScriptTarget.ESNext, true)
+    let body: ts.Block | undefined
+    for (const statement of sourceFile.statements) {
+      if (
+        ts.isFunctionDeclaration(statement) &&
+        statement.name?.text === "POST" &&
+        statement.body
+      ) {
+        body = statement.body
       }
-    })
+    }
+    expect(body, `${label}: no exported POST function declaration`).toBeDefined()
+    return body!
+  }
 
-    it(`${route.name}: refuses with 404, not a retryable error`, () => {
-      const code = STRIP(readFileSync(join(ROOT, route.path), "utf8"))
-      const gateLine = code.slice(code.indexOf("if (!FEEDBACK_CAPTURE_ENABLED)"))
-      expect(gateLine.slice(0, 120)).toContain("404")
-      // 503 would invite a retry that can never succeed.
-      expect(gateLine.slice(0, 120)).not.toContain("503")
+  /** Is this node `!FEEDBACK_CAPTURE_ENABLED`? */
+  function isDisabledScopeCheck(node: ts.Expression): boolean {
+    return (
+      ts.isPrefixUnaryExpression(node) &&
+      node.operator === ts.SyntaxKind.ExclamationToken &&
+      ts.isIdentifier(node.operand) &&
+      node.operand.text === "FEEDBACK_CAPTURE_ENABLED"
+    )
+  }
+
+  for (const route of ROUTES) {
+    it(`${route.name}: statement zero of POST is the disabled-scope refusal`, () => {
+      const body = postBody(readFileSync(join(ROOT, route.path), "utf8"), route.path)
+
+      const first = body.statements[0]
+      expect(first, `${route.path}: POST has an empty body`).toBeDefined()
+
+      expect(
+        ts.isIfStatement(first),
+        `${route.path}: the first executable statement is not a conditional — it is ` +
+          `\`${first.getText().split("\n")[0].trim()}\``,
+      ).toBe(true)
+
+      const gate = first as ts.IfStatement
+      expect(
+        isDisabledScopeCheck(gate.expression),
+        `${route.path}: the first statement is a conditional, but not the V1 scope gate — ` +
+          `it tests \`${gate.expression.getText()}\``,
+      ).toBe(true)
+
+      // …and it must refuse, with the status the scope decision calls for.
+      const refusal = gate.thenStatement.getText()
+      expect(refusal, `${route.path}: the gate does not return`).toContain("return")
+      expect(refusal, `${route.path}: the gate does not refuse with 404`).toContain("404")
+      expect(refusal, `${route.path}: 503 invites a retry that can never succeed`).not.toContain("503")
+
+      // Nothing may precede it, which index 0 already establishes — asserted
+      // explicitly so the intent survives a future edit of this test.
+      expect(body.statements.indexOf(gate)).toBe(0)
     })
   }
+
+  it("the parse-based check rejects work inserted above the gate", () => {
+    /*
+     * Non-vacuity, against the exact mutation the previous guard missed.
+     * Built as source text here rather than by editing a real file, so the
+     * counterfactual runs on every CI pass and not only under the sabotage
+     * harness.
+     */
+    const withPreGateWork = `
+      export async function POST(req: NextRequest) {
+        const raw = await req.text()
+        if (!FEEDBACK_CAPTURE_ENABLED) return new NextResponse(null, { status: 404 })
+        return new NextResponse(null, { status: 200 })
+      }
+    `
+    const body = postBody(withPreGateWork, "mutated.ts")
+    expect(ts.isIfStatement(body.statements[0])).toBe(false)
+
+    // The same source with nothing above the gate passes, so the check is
+    // discriminating rather than simply strict.
+    const clean = `
+      export async function POST(req: NextRequest) {
+        // a comment, which is trivia and must not count as a statement
+        if (!FEEDBACK_CAPTURE_ENABLED) return new NextResponse(null, { status: 404 })
+        const raw = await req.text()
+        return new NextResponse(null, { status: 200 })
+      }
+    `
+    const cleanBody = postBody(clean, "clean.ts")
+    expect(ts.isIfStatement(cleanBody.statements[0])).toBe(true)
+    expect(isDisabledScopeCheck((cleanBody.statements[0] as ts.IfStatement).expression)).toBe(true)
+  })
+
+  it("a later occurrence of the constant cannot satisfy the check", () => {
+    // Property 6: the gate must be FIRST, not merely present somewhere.
+    const lateGate = `
+      export async function POST(req: NextRequest) {
+        const raw = await req.text()
+        if (!FEEDBACK_CAPTURE_ENABLED) return new NextResponse(null, { status: 404 })
+      }
+    `
+    const body = postBody(lateGate, "late.ts")
+    expect(body.statements.some((s) => ts.isIfStatement(s))).toBe(true)
+    expect(ts.isIfStatement(body.statements[0])).toBe(false)
+  })
 
   it("the admin dashboard is unreachable while capture is off", () => {
     const code = STRIP(readFileSync(join(ROOT, "app/admin/feedback/page.tsx"), "utf8"))
