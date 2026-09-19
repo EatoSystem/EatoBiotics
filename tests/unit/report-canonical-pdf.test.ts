@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, vi } from "vitest"
-import { readFileSync, readdirSync } from "node:fs"
-import { join } from "node:path"
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs"
+import { dirname, join, resolve } from "node:path"
 import React from "react"
 
 import { fontsRegistered } from "@/lib/pdf/pdf-fonts"
@@ -11,7 +11,6 @@ import type { PersonalFoodSystemReportV1 } from "@/lib/report/deterministic/repo
 
 import { reportFor } from "./narrative-fixtures"
 import { normaliseSpace, pdfPageCount, pdfVisibleText } from "./pdf-text"
-import { rasterisePdf } from "./pdf-raster"
 
 /**
  * The canonical Report PDF — Phase 4B-S3A.
@@ -435,25 +434,79 @@ describe("branded fonts are mandatory", () => {
   })
 
   it("the document is not a second production entry point", () => {
-    // Anything importing the document directly renders past the gate. Only the
-    // entry point and the tests may do so.
+    /*
+     * Anything importing the document directly renders past the font gate.
+     *
+     * The first version of this guard searched for the literal
+     * "delivery/pdf/canonical-report-pdf", which catches an aliased import and
+     * MISSES the two spellings most likely to appear — `./canonical-report-pdf`
+     * from a sibling in the same directory, and `../pdf/canonical-report-pdf`
+     * from next door. It could have reported "only render.ts imports it" with a
+     * real bypass sitting beside it.
+     *
+     * So specifiers are RESOLVED rather than matched. Any spelling that points
+     * at the same file is the same import, which is the property the guard was
+     * always trying to express.
+     */
+    const ROOT = process.cwd()
+    const DOCUMENT = join(ROOT, "lib/report/delivery/pdf/canonical-report-pdf")
+    const ENTRY = join(ROOT, "lib/report/delivery/pdf/render.ts")
+
+    /** Every module specifier in a file: static, dynamic and require. */
+    function specifiers(source: string): string[] {
+      const found: string[] = []
+      for (const re of [
+        /\bfrom\s*["']([^"']+)["']/g,
+        /\bimport\s*\(\s*["']([^"']+)["']\s*\)/g,
+        /\brequire\s*\(\s*["']([^"']+)["']\s*\)/g,
+        /\bimport\s+["']([^"']+)["']/g,
+      ]) {
+        for (const match of source.matchAll(re)) found.push(match[1])
+      }
+      return found
+    }
+
+    /** Absolute, extension-stripped, or null for a bare package specifier. */
+    function resolveSpecifier(fromFile: string, specifier: string): string | null {
+      let absolute: string
+      if (specifier.startsWith("@/")) absolute = join(ROOT, specifier.slice(2))
+      else if (specifier.startsWith(".")) absolute = resolve(dirname(fromFile), specifier)
+      else return null
+      return absolute.replace(/\.(ts|tsx|js|jsx|mjs)$/, "")
+    }
+
     const offenders: string[] = []
     const walk = (dir: string) => {
       for (const entry of readdirSync(dir, { withFileTypes: true })) {
         if (["node_modules", ".next", ".git", "tests"].includes(entry.name)) continue
         const full = join(dir, entry.name)
-        if (entry.isDirectory()) walk(full)
-        else if (/\.(ts|tsx)$/.test(entry.name)) {
-          if (full.endsWith(join("delivery", "pdf", "render.ts"))) continue
-          if (full.endsWith(join("delivery", "pdf", "canonical-report-pdf.tsx"))) continue
-          if (readFileSync(full, "utf8").includes("delivery/pdf/canonical-report-pdf")) {
-            offenders.push(full.slice(process.cwd().length + 1))
+        if (entry.isDirectory()) {
+          walk(full)
+          continue
+        }
+        if (!/\.(ts|tsx)$/.test(entry.name)) continue
+        if (full === ENTRY) continue
+        if (full === `${DOCUMENT}.tsx`) continue
+
+        for (const specifier of specifiers(readFileSync(full, "utf8"))) {
+          if (resolveSpecifier(full, specifier) === DOCUMENT) {
+            offenders.push(`${full.slice(ROOT.length + 1)} -> ${specifier}`)
           }
         }
       }
     }
-    for (const top of ["app", "lib", "components", "scripts"]) walk(join(process.cwd(), top))
+    for (const top of ["app", "lib", "components", "scripts"]) walk(join(ROOT, top))
     expect(offenders, "these bypass the font gate").toEqual([])
+
+    // Non-vacuity, in all three spellings the resolver must treat alike.
+    const sibling = join(ROOT, "lib/report/delivery/pdf/pdf-tokens.ts")
+    expect(resolveSpecifier(sibling, "./canonical-report-pdf")).toBe(DOCUMENT)
+    expect(resolveSpecifier(sibling, "../pdf/canonical-report-pdf")).toBe(DOCUMENT)
+    expect(resolveSpecifier(sibling, "@/lib/report/delivery/pdf/canonical-report-pdf")).toBe(
+      DOCUMENT,
+    )
+    // …and a bare package is not mistaken for one.
+    expect(resolveSpecifier(sibling, "@react-pdf/renderer")).toBeNull()
   })
 
   it("no operational failure is thrown across the boundary", () => {
@@ -566,78 +619,40 @@ describe("colour is solid and resolved against its ground", () => {
   })
 })
 
-/* ══ The raster gate ══════════════════════════════════════════════════════ */
+/* ══ Hand-off to the visual gate ══════════════════════════════════════════ */
 
-describe("the pages actually paint", () => {
+describe("the document is published for the visual gate", () => {
   /**
-   * The assurance text equality cannot give.
+   * Generation lives here; LOOKING at the page lives in
+   * `tests/e2e/report-pdf-visual.spec.ts`, which rasterises this file in a
+   * real browser.
    *
-   * `lib/pdf/pdf-brand.ts` records a faint green border rendering as SALMON,
-   * twice, and states that "the element tree, the tests, and a valid %PDF-
-   * header all looked identical either way. This class of defect is invisible
-   * to everything except looking at the page."
-   *
-   * Deliberately NOT pixel-golden: a react-pdf upgrade or a font revision
-   * would break a golden image without breaking the document, and a gate that
-   * cries wolf gets deleted. These are properties a real defect violates and a
-   * version bump does not.
+   * Why not rasterise here: pdfjs draws through canvas APIs that the Node
+   * canvas binding does not fully implement, and the mismatch moves with every
+   * version pair — pdfjs 5.6 failed with "Value is none of these types
+   * `String`, `Path`", pdfjs 4.10 failed in `paintChar`, both on the project's
+   * actual Node 20. A browser canvas is pdfjs's supported target and Chromium
+   * is already a CI dependency, so the visual gate crossed the runner boundary
+   * rather than acquiring a native one.
    */
-  let pages: Awaited<ReturnType<typeof rasterisePdf>> = []
+  it(
+    "writes the fixture the visual gate reads",
+    async () => {
+      const pdf = await pdfFor(FIXTURES.family)
+      expect(pdf.subarray(0, 5).toString()).toBe("%PDF-")
+      expect(await pdfPageCount(pdf)).toBeGreaterThan(1)
 
-  beforeAll(async () => {
-    pages = await rasterisePdf(await pdfFor(FIXTURES.you))
-  }, TIMEOUT)
-
-  it("rasterised something, on every page", () => {
-    expect(pages.length).toBeGreaterThan(1)
-    for (const [i, page] of pages.entries()) {
-      expect(page.width, `page ${i + 1} has no width`).toBeGreaterThan(500)
-      expect(page.height, `page ${i + 1} has no height`).toBeGreaterThan(700)
-      // A4 portrait: taller than wide, whatever the scale.
-      expect(page.height).toBeGreaterThan(page.width)
-    }
-  })
-
-  it("leaves no blank page", () => {
-    // A page that paints nothing is the failure mode a page-count assertion
-    // cannot see, and the one a reader notices first.
-    for (const [i, page] of pages.entries()) {
-      expect(page.ink, `page ${i + 1} is blank`).toBeGreaterThan(0.002)
-    }
-  })
-
-  it("paints the opening band dark, not salmon and not white", () => {
-    // The top strip of page 1 is the title band: ink #1A2E12. If a colour
-    // regression of the kind this repository has already shipped happens here,
-    // this is what catches it.
-    const [r, g, b] = pages[0].sample(0.1, 0.03, 0.8, 0.06)
-    expect(r, `band red channel was ${r}`).toBeLessThan(90)
-    expect(g, `band green channel was ${g}`).toBeLessThan(90)
-    expect(b, `band blue channel was ${b}`).toBeLessThan(90)
-    // Green-dominant, so a black or salmon band fails rather than passing as
-    // "dark enough".
-    expect(g).toBeGreaterThanOrEqual(r)
-  })
-
-  it("keeps the body light, so the document is not one dark slab", () => {
-    const [r, g, b] = pages[0].sample(0.1, 0.45, 0.8, 0.1)
-    expect(Math.min(r, g, b), "the body region is not light").toBeGreaterThan(200)
-  })
-
-  it("the ink measurement is not trivially satisfied", () => {
-    // Non-vacuity: a sampler that always returned white, or an ink count that
-    // always returned 1, would satisfy the assertions above in one direction
-    // or the other. A real page is neither blank nor solid.
-    for (const page of pages) {
-      expect(page.ink).toBeLessThan(0.9)
-      expect(page.png.subarray(1, 4).toString()).toBe("PNG")
-    }
-  })
+      const dir = join(process.cwd(), "tests/.artifacts")
+      mkdirSync(dir, { recursive: true })
+      writeFileSync(join(dir, "canonical-report.pdf"), pdf)
+    },
+    TIMEOUT,
+  )
 })
 
 /* ══ The extractors are test tooling, not product ═════════════════════════ */
 
-describe("pdfjs and the canvas stay out of the application", () => {
+describe("the PDF extractor stays out of the application", () => {
   const ROOT = process.cwd()
 
   /*
@@ -650,9 +665,7 @@ describe("pdfjs and the canvas stay out of the application", () => {
    * exclusion, because an exclusion also hides a real future offender with the
    * same path.
    */
-  const PDFJS = ["pdfjs", "dist"].join("-")
-  const CANVAS = ["@napi-rs", "canvas"].join("/")
-  const LIBRARIES = [PDFJS, CANVAS]
+  const LIBRARIES = [["pdfjs", "dist"].join("-")]
 
   it("are devDependencies, not dependencies", () => {
     const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as {
@@ -692,14 +705,38 @@ describe("pdfjs and the canvas stay out of the application", () => {
     expect(offenders, "these would ship a test-only library to production").toEqual([])
   })
 
-  it("only the two test helpers import them", () => {
-    const users = readdirSync(join(ROOT, "tests/unit"))
-      .filter((f) => f.endsWith(".ts"))
-      .filter((f) => {
-        const s = readFileSync(join(ROOT, "tests/unit", f), "utf8")
-        return LIBRARIES.some((name) => s.includes(name))
-      })
-      .sort()
-    expect(users).toEqual(["pdf-raster.ts", "pdf-text.ts"])
+  it("is named in exactly two places, both of them tests", () => {
+    // The text helper, and the browser-side visual gate. Pinned so a third
+    // user has to be argued for here rather than appearing.
+    const users: string[] = []
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const full = join(dir, entry.name)
+        if (entry.isDirectory()) walk(full)
+        else if (/\.(ts|tsx)$/.test(entry.name)) {
+          const source = readFileSync(full, "utf8")
+          if (LIBRARIES.some((name) => source.includes(name))) {
+            users.push(full.slice(join(ROOT, "tests").length + 1))
+          }
+        }
+      }
+    }
+    walk(join(ROOT, "tests"))
+    expect(users.sort()).toEqual(["e2e/report-pdf-visual.spec.ts", "unit/pdf-text.ts"])
+  })
+
+  it("is pinned to an exact version the project's Node can run", () => {
+    // Not a range. pdfjs 6.x requires Node >= 22.13 and calls
+    // `Promise.withResolvers`, which Node 20 does not have — the version this
+    // PR first carried passed locally on Node 22 and took CI down on Node 20.
+    // A caret would let that back in on the next lockfile refresh.
+    const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as {
+      devDependencies?: Record<string, string>
+      engines?: { node?: string }
+    }
+    const pinned = pkg.devDependencies?.[LIBRARIES[0]]
+    expect(pinned, "the extractor must be pinned exactly").toMatch(/^\d+\.\d+\.\d+$/)
+    // And the project still declares the Node it actually targets.
+    expect(pkg.engines?.node).toBe(">=20 <21")
   })
 })
