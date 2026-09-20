@@ -53,10 +53,10 @@ export function AnxietyHero() {
         <ScrollReveal delay={180}>
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
-              href="/assessment-mind"
+              href="/assessment/you"
               className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:opacity-90"
             >
-              Take the Mind Assessment
+              Take the Food System Assessment
               <ArrowRight size={16} />
             </Link>
             <Link

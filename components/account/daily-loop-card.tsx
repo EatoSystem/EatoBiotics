@@ -69,19 +69,10 @@ export function DailyLoopCard({ data, firstName }: { data: DailyLoopData; firstN
           </div>
         )}
 
-        {/* CTA */}
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <Link
-            href="/analyse"
-            className="inline-flex items-center justify-center rounded-full bg-white px-5 py-2.5 text-sm font-bold transition-transform hover:scale-[1.02]"
-            style={{ color: "var(--icon-green)" }}
-          >
-            {streak.loggedToday ? t.common.logAnotherMeal : t.common.logMeal}
-          </Link>
-          <Link href="/account/family" className="text-sm font-semibold text-white/90 underline-offset-2 hover:underline">
-            {t.family.title} →
-          </Link>
-        </div>
+        {/* The CTA row linked to /analyse and /account/family. Meal analysis
+            and Family are both outside the V1 launch surface
+            (lib/v1-surface.ts), so the card now reports the day rather than
+            offering a way out of it. */}
       </div>
     </div>
   )

@@ -46,12 +46,6 @@ export function AnxietyBody() {
         <ScrollReveal delay={240}>
           <div className="flex flex-wrap gap-3">
             <Link
-              href="/gut-brain"
-              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/50 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
-            >
-              The gut-brain connection →
-            </Link>
-            <Link
               href="/biotics"
               className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/50 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
             >
