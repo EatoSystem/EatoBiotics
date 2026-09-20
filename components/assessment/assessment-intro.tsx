@@ -347,12 +347,6 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
               <p className="text-xs text-muted-foreground/50">
                 Free · No credit card · Unsubscribe anytime
               </p>
-              <Link
-                href="/assessment/demo"
-                className="shrink-0 text-xs text-muted-foreground/50 underline-offset-2 hover:text-muted-foreground hover:underline transition-colors"
-              >
-                Preview demo →
-              </Link>
             </div>
           </div>
         </div>

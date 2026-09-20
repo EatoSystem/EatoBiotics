@@ -11,14 +11,13 @@ import {
   Calendar, Target, Activity, User, Trash2, AlertTriangle, Plus,
 } from "lucide-react"
 import {
-  Glp1CompanionCard, StabilityCard, AssessmentJourneyCard, VoiceConsultCard, ReferralCard, ScoreRing, MiniRing, ScoreBar,
+  AssessmentJourneyCard, ReferralCard, ScoreRing, MiniRing, ScoreBar,
   Tag, SectionLabel, GradientButton, ringColors,
 } from "@/components/account/dashboard-parts"
 import { TwinStage } from "@/components/account/twin/twin-stage"
 import { PlantsThisWeek } from "@/components/account/plants-this-week"
 import { GutTrend } from "@/components/account/gut-trend"
 import { mealMemory } from "@/lib/account/meal-memory"
-import { ExperienceNav } from "@/components/account/experience-nav"
 import { RetestCard } from "@/components/account/retest-card"
 import type { RetestState } from "@/lib/account/retest"
 import { TodayStrip } from "@/components/account/twin/today-strip"
@@ -961,15 +960,12 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
               }}>
                 Good {timeOfDay},<br />{displayName}.
               </p>
+              {/* The Today and My Food System pills linked to /account/today and
+                  /account/twin. Both are Living Twin surfaces, outside the V1
+                  launch product and refused at runtime — see lib/v1-surface.ts.
+                  The streak and score chips below are in-page state, not doors,
+                  so they stay. */}
               <div className="mt-4 flex flex-wrap items-center gap-2.5">
-                <Link href="/account/today" className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-bold transition-colors hover:bg-black/[0.03]" style={{ borderColor: "var(--icon-green)", color: "var(--icon-green)" }}>
-                  <Calendar size={13} /> Today
-                </Link>
-                {twin && (
-                  <Link href="/account/twin" className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-bold transition-colors hover:bg-black/[0.03]" style={{ borderColor: "var(--icon-teal)", color: "var(--icon-teal)" }}>
-                    <Activity size={13} /> My Food System
-                  </Link>
-                )}
                 {displayStreak > 0 && (
                   <span className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold text-white"
                     style={{ background: "linear-gradient(135deg, #F5C518, #F5A623)", boxShadow: "0 2px 10px rgba(245,166,35,0.35)" }}>
@@ -1103,13 +1099,7 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             firstName={name?.split(" ")[0] ?? null}
             streak={displayStreak}
             onAddMeal={() => setQuickLogOpen(true)}
-            todayHref="/account/today"
           />
-          <div style={{ background: "#0B1607" }}>
-            <div className="mx-auto max-w-6xl px-4 pb-3 md:px-8">
-              <ExperienceNav variant="dark" />
-            </div>
-          </div>
           <TwinStage
             twin={twin}
             visual={twinVisual}
@@ -1321,24 +1311,14 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
 
           </>)}
 
-          {/* GLP-1 Companion — compact, self-selecting entry point */}
-          <div className="mt-5">
-            <Glp1CompanionCard />
-          </div>
-
-          {/* EatoBiotics Stability */}
-          <div className="mt-5">
-            <StabilityCard />
-          </div>
+          {/* The GLP-1 Companion, Stability and voice-consultation entry cards
+              are not mounted: each is a single Link into a route outside the V1
+              launch surface (lib/v1-surface.ts). The components survive in
+              dashboard-parts.tsx, so restoring them is one line each. */}
 
           {/* Assessment journey + combined report (renders only when a foundation exists) */}
           <div className="mt-5">
             <AssessmentJourneyCard />
-          </div>
-
-          {/* Talk to EatoBiotic — voice consultation */}
-          <div className="mt-5">
-            <VoiceConsultCard />
           </div>
 
           {/* Refer a friend */}
@@ -1884,20 +1864,16 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
                     </div>
                   </div>
 
-                  {/* CTA — link to latest report if available, else tab switch */}
-                  {weeklyReport ? (
-                    <Link href={`/account/report/${weeklyReport.id}`}
-                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold transition-opacity hover:opacity-90"
-                      style={{ background: "white", color: "var(--icon-green)", boxShadow: "0 2px 8px rgba(0,0,0,0.10)" }}>
-                      View your latest report <ChevronRight size={13} />
-                    </Link>
-                  ) : (
+                  {/* CTA — the tab switch. This used to deep-link to
+                      /account/report/<id> when a weekly check-in existed; that
+                      route is the weekly check-in report, not the €49 Personal
+                      Food System Report, and it is outside the V1 launch
+                      surface. The in-page tab was already the fallback. */}
                   <button onClick={() => setTab("consultations")}
                     className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold transition-opacity hover:opacity-90"
                     style={{ background: "white", color: "var(--icon-green)", boxShadow: "0 2px 8px rgba(0,0,0,0.10)" }}>
                     View past consultations <ChevronRight size={13} />
                   </button>
-                  )}
 
                 </div>
               </div>
@@ -1928,17 +1904,10 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
               </div>
             </div>
 
-            {/* GLP-1 Companion — compact, self-selecting entry point */}
-            <Glp1CompanionCard />
-
-            {/* EatoBiotics Stability */}
-            <StabilityCard />
+            {/* GLP-1, Stability and voice cards unmounted — see above. */}
 
             {/* Assessment journey + combined report (renders only when a foundation exists) */}
             <AssessmentJourneyCard />
-
-            {/* Talk to EatoBiotic — voice consultation */}
-            <VoiceConsultCard />
 
             {/* Refer a friend */}
             <ReferralCard code={referralCode} />
@@ -2122,8 +2091,11 @@ export function LiveDashboard(props: LiveDashboardProps = {}) {
             pullQuote:        rj?.pullQuote ?? null,
             focusAction:      rj?.focusAction ?? null,
             mealCount:        rj?.mealCount ?? null,
-            reportHref:       `/account/report/${r.id}`,
-            chatHref:         `/account/report/${r.id}#chat`,
+            // Null for the same reason the mock cards are: /account/report/<id>
+            // is outside the V1 launch surface. ReportCard already renders the
+            // no-link shape.
+            reportHref:       null,
+            chatHref:         null,
           }
         })
 

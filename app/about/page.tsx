@@ -466,21 +466,21 @@ export default function AboutPage() {
           <ScrollReveal>
             <h2 className="font-serif text-3xl font-semibold text-foreground sm:text-4xl md:text-5xl text-balance">
               Start with{" "}
-              <GradientText>your plate.</GradientText>
+              <GradientText>your Food System.</GradientText>
             </h2>
           </ScrollReveal>
           <ScrollReveal delay={100}>
             <p className="mx-auto mt-6 max-w-lg text-base leading-relaxed text-muted-foreground">
-              Build your personal EatoBiotics Plate in 30 seconds, subscribe to the Substack for weekly insights, or explore the bigger vision.
+              Take your free Food System Assessment, subscribe to the Substack for weekly insights, or explore the bigger vision.
             </p>
           </ScrollReveal>
           <ScrollReveal delay={200}>
             <div className="mt-10 flex flex-col items-center gap-4">
               <a
-                href="/myplate"
+                href="/assessment/you"
                 className="brand-gradient inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-lg shadow-icon-green/20 transition-all hover:shadow-xl hover:shadow-icon-green/30 hover:opacity-90"
               >
-                Build Your Plate
+                Take the Food System Assessment
                 <ArrowUpRight size={16} />
               </a>
               <a

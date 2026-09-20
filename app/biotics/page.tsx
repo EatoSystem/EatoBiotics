@@ -429,12 +429,6 @@ export default function BioticsPage() {
                 >
                   <Zap size={16} /> Get My Free Biotics Score
                 </Link>
-                <Link
-                  href="/weekly"
-                  className="inline-flex items-center gap-2 rounded-full border border-border px-8 py-4 text-base font-semibold text-foreground transition-all hover:bg-muted"
-                >
-                  See the weekly plates <ArrowRight size={15} />
-                </Link>
               </div>
               <p className="mt-4 text-xs text-muted-foreground">
                 Free. No card required. Takes about 3 minutes.

@@ -4,6 +4,7 @@ import { DEV_COOKIE, OLD_DEV_COOKIES, devPasswordToken, getDevPassword, isPasswo
 import { verifyAdminCookieEdge } from "@/lib/admin-auth-edge"
 import { LANDING_SLUGS, resolveMarket } from "@/lib/market"
 import { isLocale, LOCALE_COOKIE } from "@/lib/i18n/config"
+import { isServableInV1 } from "@/lib/v1-surface"
 
 // ── Site-wide password gate ───────────────────────────────────────────────
 async function hasSiteAccess(request: NextRequest, password: string): Promise<boolean> {
@@ -27,6 +28,25 @@ function withPreviewNoStore(response: NextResponse): NextResponse {
   })
   return response
 }
+
+// ── V1 launch surface ─────────────────────────────────────────────────────
+/**
+ * Refuse a page that is not part of the V1 launch product.
+ *
+ * A rewrite to Next's own `/_not-found` route rather than a bare body, so a
+ * customer who followed an old link gets the site's 404 page instead of two
+ * words of plain text. The rewrite is to a route that genuinely exists in the
+ * build manifest, and it carries 404 — verified against a production server,
+ * because a 200 here would be a soft 404: the page would say "not found" while
+ * every crawler and monitor was told the request succeeded.
+ */
+function v1Unavailable(request: NextRequest): NextResponse {
+  const url = request.nextUrl.clone()
+  url.pathname = "/_not-found"
+  url.search = ""
+  return NextResponse.rewrite(url, { status: 404 })
+}
+// ──────────────────────────────────────────────────────────────────────────
 
 function isEnterRoute(pathname: string): boolean {
   // Routes reachable while the gate is on: the public waitlist landing page
@@ -111,6 +131,24 @@ export async function proxy(request: NextRequest) {
     url.pathname = "/assessment/family"
     return NextResponse.redirect(url, 301)
   }
+
+  // ── V1 launch surface gate ──────────────────────────────────────────────
+  // Only the sixteen-page V1 product, its essential mechanics, the public
+  // content library and internal tooling are served. Everything else — the
+  // food systems V1 does not sell, Living Twin, Plate Builder, meal analysis,
+  // the demo experiences, the superseded product doors — refuses here, before
+  // the password gate and before any Supabase session work, so a direct URL
+  // cannot turn a Post-V1 product back on.
+  //
+  // It runs AFTER the country rewrite and the legacy 301s above, so /ie and
+  // /assessment-family reach their canonical destinations rather than being
+  // judged on a pathname the app never serves. `/admin`, `/cms` and every
+  // /api route pass straight through to the controls that actually own them:
+  // this is a launch-surface gate, not authorisation. See lib/v1-surface.ts.
+  if (!isServableInV1(pathname)) {
+    return v1Unavailable(request)
+  }
+  // ────────────────────────────────────────────────────────────────────────
 
   // Site password check. During redevelopment, DEV_PASSWORD enables the gate.
   if (isPasswordGateEnabled()) {

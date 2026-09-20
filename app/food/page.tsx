@@ -122,10 +122,7 @@ export default function FoodLibraryPage() {
       <section className="bg-secondary/40 px-6 py-10 md:py-14">
         <div className="mx-auto max-w-[1200px]">
           <ScrollReveal>
-            <Link
-              href="/today"
-              className="group flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between"
-            >
+            <div className="group flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
               {/* Left: label + food info */}
               <div className="flex items-center gap-5">
                 {/* Emoji badge */}
@@ -174,7 +171,7 @@ export default function FoodLibraryPage() {
                   <ArrowUpRight size={14} />
                 </span>
               </div>
-            </Link>
+            </div>
           </ScrollReveal>
         </div>
       </section>
@@ -285,10 +282,7 @@ export default function FoodLibraryPage() {
                   Foods that support the gut-brain connection
                 </h2>
                 <p className="mt-2 text-sm text-muted-foreground max-w-xl">
-                  Your gut produces 90–95% of your body&apos;s serotonin. These foods directly nourish the microbiome-brain axis — supporting mood, focus, and mental clarity.{" "}
-                  <Link href="/gut-brain" className="underline underline-offset-2 hover:text-foreground transition-colors">
-                    Learn the science →
-                  </Link>
+                  Your gut produces 90–95% of your body&apos;s serotonin. These foods directly nourish the microbiome-brain axis — supporting mood, focus, and mental clarity.
                 </p>
               </ScrollReveal>
 

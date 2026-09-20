@@ -1,5 +1,4 @@
 import Image from "next/image"
-import Link from "next/link"
 import { ArrowUpRight } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import {
@@ -11,11 +10,21 @@ import {
 } from "@/lib/systems"
 
 /**
- * The homepage Systems section — one living Food System, supported through
- * three families of systems (Foundation / Health / Life). Catalog-driven from
- * `lib/systems.ts` so the taxonomy never drifts. Live systems link to their
- * landing; scaffold systems read as a calm "Coming soon". Life systems carry a
+ * The Systems section — one living Food System, supported through three
+ * families of systems (Foundation / Health / Life). Catalog-driven from
+ * `lib/systems.ts` so the taxonomy never drifts. Life systems carry a
  * non-medical safety line (they are food-first education only).
+ *
+ * Rendered on /enter and /c/<country>, the two pre-launch entry points.
+ *
+ * ══ WHY NO CARD LINKS ANY MORE ═════════════════════════════════════════════
+ *
+ * Every system landing — You, Family, Stability, Glucose, Mind, Performance
+ * and the rest — is outside the V1 launch product and refuses at runtime (see
+ * lib/v1-surface.ts). The six cards marked "live" used to be links, so this
+ * section was a door into six 404s. The catalog still tells the platform
+ * story; it just no longer offers a way in. Restoring the links is one `Link`
+ * away once those routes come back inside the launch surface.
  */
 
 const LIFE_SAFETY_LINE =
@@ -98,22 +107,11 @@ function SystemCard({ system, size }: { system: SystemDef; size: "large" | "smal
     </div>
   )
 
-  const shell = "group block h-full rounded-2xl"
-  if (!live) {
-    return (
-      <div className={shell} style={{ ["--accent" as string]: system.accent }}>
-        {inner}
-      </div>
-    )
-  }
+  // Not a Link, for any status. See the file header.
   return (
-    <Link
-      href={system.href}
-      className={`${shell} transition-shadow duration-300 hover:shadow-[0_24px_48px_-18px_color-mix(in_srgb,var(--accent)_45%,transparent)]`}
-      style={{ ["--accent" as string]: system.accent }}
-    >
+    <div className="group block h-full rounded-2xl" style={{ ["--accent" as string]: system.accent }}>
       {inner}
-    </Link>
+    </div>
   )
 }
 
@@ -204,17 +202,6 @@ export function Ecosystem() {
           </ScrollReveal>
         </div>
 
-        {/* Discovery: the flagship platform story */}
-        <ScrollReveal>
-          <div className="mt-12 text-center">
-            <Link
-              href="/food-systems"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-icon-green underline underline-offset-4 transition-colors hover:text-icon-teal"
-            >
-              Explore all Food Systems <ArrowUpRight size={15} />
-            </Link>
-          </div>
-        </ScrollReveal>
       </div>
     </section>
   )
