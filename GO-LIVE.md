@@ -90,6 +90,13 @@ Verify events fire in Statsig/PostHog on a production smoke run before launch.
 
 ## 6. Smoke test (production, one pass)
 
+> **Partly stale — not rewritten here.** Several rows below name surfaces that
+> Steps 3 and 5 took out of V1: `/digital-twin` is refused, the Twin and
+> QuickLog surfaces are Post-V1, and the week-inside cron is unscheduled. They
+> are left as written rather than quietly edited inside a verification phase;
+> reconciling this list is Step 10's job. **For the €49 journey, use §7 —
+> that is the current, authoritative commercial check.**
+
 - [ ] Assessment → results → magic link → `/account` (Twin renders, stage + mood)
 - [ ] QuickLog a meal (text AND photo) → score returns → Twin bursts → feed updates
 - [ ] Daily ritual taps persist after a hard refresh AND on a second device (Migration 36)
@@ -97,3 +104,37 @@ Verify events fire in Statsig/PostHog on a production smoke run before launch.
 - [ ] `/method`, `/digital-twin`, `/pricing` load logged-out; nav + footer links resolve
 - [ ] Week-inside cron: manual bearer curl → email received once, second run skipped (idempotent)
 - [ ] Share my Twin downloads a PNG on desktop and opens the share sheet on mobile
+
+---
+
+## 7. The €49 commercial journey (external verification — REQUIRED)
+
+The automated proof for the paid journey runs in a container with no Stripe
+credentials and no route to `api.stripe.com`, so it proves the **handlers** —
+real webhook signatures, duplicate/replayed/concurrent delivery, idempotency,
+and the entitlement window — against a **database double**. It proves nothing
+about this Stripe account's configuration, storage, or real email delivery.
+
+Those are a separate, human step:
+
+- [ ] Complete **`docs/v1-step7-commercial-runbook.md`** in Stripe **test
+      mode**, against a non-production deployment and a non-production Supabase
+      project. Record the sign-off block at the end.
+
+**Do not treat the €49 path as launch-verified until that runbook is signed
+off.** Step 7 is reported as *implementation and CI proof complete, external
+commercial verification pending* until then.
+
+### The one item that can block launch
+
+- [ ] **Runbook step R2 — which payment methods are enabled?**
+      `/api/checkout` sets no `payment_method_types`, so the enabled set comes
+      from the Stripe Dashboard. If any **delayed-notification** method is
+      reachable (SEPA Direct Debit, iDEAL, Bancontact, Sofort, Przelewy24,
+      BLIK, multibanco, customer balance), a buyer can pay €49 and receive
+      nothing: `checkout.session.completed` arrives `payment_status: "unpaid"`,
+      the handler breaks, the event is marked processed, and
+      `checkout.session.async_payment_succeeded` is not handled at all.
+      Current behaviour is pinned in `tests/unit/v1-paid-journey.test.ts`.
+      **All methods synchronous → deferred. Any delayed method → repair before
+      launch.**
