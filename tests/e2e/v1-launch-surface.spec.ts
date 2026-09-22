@@ -54,8 +54,16 @@ const CONTENT: Array<[string, string]> = [
   ["/anxiety", "a condition explainer"],
 ]
 
-/** Step 4 owns these. Step 3 must not have disturbed them. */
-const PUBLISHING_EXPORTS = ["/book-chapter-7/print", "/book-chapter-7/reedsy", "/book-chapter-7/substack"]
+/**
+ * The publishing exports moved behind the admin cookie in step 4.
+ *
+ * Step 3 asserted here that they answered 200 anonymously, on the premise —
+ * which its own dependency check later disproved — that they were unlinked
+ * from production UI. They were linked from all twenty-five public chapter
+ * pages. That assertion is now wrong on purpose; both halves of the gate,
+ * refused anonymously and served to an author, live in
+ * tests/e2e/publishing-exports.spec.ts.
+ */
 
 /** One route from each excluded product group. */
 const REFUSED: Array<[string, string]> = [
@@ -105,12 +113,6 @@ test.describe("public content stays public", () => {
     })
   }
 
-  for (const path of PUBLISHING_EXPORTS) {
-    test(`the publishing export ${path} is untouched`, async ({ page }) => {
-      const res = await page.goto(path, { waitUntil: "domcontentloaded" })
-      expect(res?.status(), path).toBe(200)
-    })
-  }
 })
 
 test.describe("Post-V1 products cannot be entered by URL", () => {

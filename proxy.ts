@@ -4,7 +4,7 @@ import { DEV_COOKIE, OLD_DEV_COOKIES, devPasswordToken, getDevPassword, isPasswo
 import { verifyAdminCookieEdge } from "@/lib/admin-auth-edge"
 import { LANDING_SLUGS, resolveMarket } from "@/lib/market"
 import { isLocale, LOCALE_COOKIE } from "@/lib/i18n/config"
-import { isServableInV1 } from "@/lib/v1-surface"
+import { isServableInV1, requiresAdminSurface } from "@/lib/v1-surface"
 
 // ── Site-wide password gate ───────────────────────────────────────────────
 async function hasSiteAccess(request: NextRequest, password: string): Promise<boolean> {
@@ -147,6 +147,20 @@ export async function proxy(request: NextRequest) {
   // this is a launch-surface gate, not authorisation. See lib/v1-surface.ts.
   if (!isServableInV1(pathname)) {
     return v1Unavailable(request)
+  }
+
+  // The publishing exports are an internal authoring surface, not product and
+  // not public content. They pass the check above — they are kept, and an
+  // author still uses them in production — but only with the admin cookie the
+  // /cms default-deny at the top of this function already relies on. Same
+  // mechanism, same fail-closed behaviour when no admin secret is configured;
+  // no second authentication system, and no per-page check across 76 files.
+  //
+  // The refusal is the ordinary 404, so an anonymous visitor cannot tell an
+  // export route from any other route outside the launch surface.
+  if (requiresAdminSurface(pathname)) {
+    const authed = await verifyAdminCookieEdge(request.cookies.get("admin_auth")?.value)
+    if (!authed) return v1Unavailable(request)
   }
   // ────────────────────────────────────────────────────────────────────────
 

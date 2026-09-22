@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ArrowLeft, ArrowRight, BookOpen, ArrowUpRight, FileDown } from "lucide-react"
+import { ArrowLeft, ArrowRight, BookOpen, ArrowUpRight } from "lucide-react"
 import type { Chapter } from "@/lib/chapters"
 import { PART_COLORS, partIndex } from "@/lib/chapters"
 
@@ -67,31 +67,20 @@ export function ChapterNav({ current, prev, next }: ChapterNavProps) {
         )}
       </div>
 
-      {/* Export links */}
-      <div className="mt-8 flex items-center justify-center gap-3">
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
-          <FileDown size={11} className="mr-1.5 inline -translate-y-px" />
-          Export
-        </p>
-        <Link
-          href={`/book-chapter-${current.number}/substack`}
-          className="rounded-full border border-border px-4 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-icon-green hover:text-icon-green"
-        >
-          Copy for Substack
-        </Link>
-        <Link
-          href={`/book-chapter-${current.number}/reedsy`}
-          className="rounded-full border border-border px-4 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-icon-green hover:text-icon-green"
-        >
-          Copy for Reedsy
-        </Link>
-        <Link
-          href={`/book-chapter-${current.number}/print`}
-          className="rounded-full border border-border px-4 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-icon-green hover:text-icon-green"
-        >
-          Print / PDF
-        </Link>
-      </div>
+      {/*
+        Copy for Substack · Copy for Reedsy · Print / PDF used to sit here, on
+        every one of the twenty-five public chapter pages. They are an authoring
+        tool — the author copies a chapter into the publishing platform — and
+        they were being offered to every reader of the book.
+
+        The routes are kept and now require the admin cookie (lib/v1-surface.ts
+        `requiresAdminSurface`, enforced in proxy.ts). They are reached from
+        /admin/book-exports rather than from here, because `admin_auth` is
+        httpOnly so no client component can see it, and reading cookies() in
+        this page's server parent would drop all twenty-five statically
+        prerendered chapter pages into dynamic rendering — a real cost to public
+        content, paid for an author's convenience.
+      */}
 
       {/* Substack CTA — white card matching site style */}
       <div className="mt-8 overflow-hidden rounded-2xl border border-border bg-background">

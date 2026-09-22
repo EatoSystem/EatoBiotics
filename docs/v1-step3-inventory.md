@@ -13,7 +13,7 @@ unclassified, so the two cannot drift.
 | `V1_SUPPORTING` | KEEP PRODUCT | Serve | 7 |
 | `V1_ESSENTIAL` | KEEP PRODUCT | Serve | 8 |
 | `PUBLIC_CONTENT` | KEEP PUBLIC CONTENT | Serve, stay indexed | 41 |
-| `PUBLISHING_EXPORT` | LEAVE FOR STEP 4 | Serve unchanged | 76 |
+| `PUBLISHING_EXPORT` | INTERNAL AUTHORING SURFACE | Admin cookie required (Step 4) | 76 |
 | `INTERNAL` | INTERNAL ONLY | Pass through to its own auth | 12 |
 | `LEGACY_REDIRECT` | REDIRECT | Serve the redirect | 2 |
 | `FIXTURE_SELF_GATED` | RUNTIME REFUSE (by the page) | Pass through; the page refuses | 1 |
@@ -58,13 +58,49 @@ The 25 canonical book chapters (`/book-chapter-1` … `/book-chapter-25`), plus:
 
 `/adhd`, `/anxiety`, `/biotics`, `/bipolar`, `/book`, `/book-family`, `/book-mind`, `/books`, `/depression`, `/eatosystem`, `/food`, `/food/[slug]`, `/food/for/[goal]`, `/podcast`, `/recipe/[slug]`, `/roadmap`
 
-## PUBLISHING_EXPORT — LEAVE FOR STEP 4
+## PUBLISHING_EXPORT — INTERNAL AUTHORING SURFACE
 
-The 25 chapters' print/reedsy/substack variants plus /book/print. Already noindexed and unlinked.
+75 chapter variants (`/book-chapter-1..25` × `print`/`reedsy`/`substack`) plus
+`/book/print`.
 
-*Runtime:* Serve unchanged. *Consequence:* Step 4 isolates, verifies the publishing dependency, then decides. Step 3 must not disturb them, and an e2e test proves it did not.
+*Runtime:* served only with a valid `admin_auth` cookie, enforced once in
+`proxy.ts` via `requiresAdminSurface`. Anonymous requests get the ordinary 404.
+*Consequence:* the author's publishing workflow is preserved in production and
+is reached from `/admin/book-exports`; no reader can enter it.
 
-75 chapter variants (`/book-chapter-1..25` × `print`/`reedsy`/`substack`) plus `/book/print`.
+### ⚠ Correction — Step 4 disproved this section's original premise
+
+This section first read *"Already noindexed and unlinked."* **The second half
+was wrong**, and the claim was inherited from the launch audit rather than
+checked. `components/book/chapter/chapter-nav.tsx` rendered **Copy for
+Substack · Copy for Reedsy · Print / PDF** inside `ChapterNav`, which
+`chapter-page-factory.tsx` renders on **all 25 public chapter pages**. An
+internal authoring tool was advertised to every reader of the book. `noindex`
+was doing no access-control work, and never could.
+
+The corrected evidence, gathered in Step 4:
+
+| Question | Answer |
+|---|---|
+| Does a script or CI job fetch them? | No — nothing in `scripts/` or `.github/`. |
+| Does an external system pull them? | No. `components/book/substack/copy-button.tsx` is a clipboard button; the workflow is a human copying and pasting. |
+| Is the output canonical anywhere? | No. `docs/cms-chapter-import-spec.md` §1.1 names these as public routes the CMS import never changes; `content/book/chapter-N.mdx` is the source of truth. |
+| Were they linked? | The 75 chapter variants: from all 25 public chapter pages. `/book/print`: **from nowhere at all.** |
+| Last substantive change | `37b4e7a` (2026-08-05), an incidental sitewide copy pass. |
+
+So the dependency is real and human, and **nothing was deleted**. What ended
+was the public exposure.
+
+### Recorded findings, deliberately not acted on in Step 4
+
+- **The 75 export pages are near-identical.** Each differs from the others only
+  by `CHAPTER_NUMBER` and which template it imports — roughly 2,700 lines of
+  duplication that one dynamic route would replace. That is a routing refactor,
+  not an isolation, and it would need its own proof that all 75 URLs preserve
+  their current output and the author's workflow.
+- **`/book/print` has no inbound production link.** It is reachable only by URL
+  and is now listed on `/admin/book-exports`. Whether to keep it is a later
+  keep-or-delete decision, not Step 4's.
 
 ## INTERNAL — INTERNAL ONLY
 

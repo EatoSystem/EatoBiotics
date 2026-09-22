@@ -48,6 +48,15 @@ export default defineConfig({
       // It does NOT enable new deterministic claims: those still require
       // EATOBIOTICS_ENABLE_PERSISTED_CONSULTATION_PREVIEW, which is unset here.
       VERCEL_ENV: "preview",
+      // A test-only admin secret so tests/e2e/publishing-exports.spec.ts can
+      // prove BOTH sides of the publishing-export gate: refused without a
+      // valid admin cookie, served with one. Without a secret configured,
+      // verifyAdminCookieEdge fails closed and only the refusal is testable,
+      // which would leave "an author can still do their job" unproven.
+      //
+      // It changes nothing for the other suites: an unauthenticated request
+      // is still refused, so the /cms default-deny assertions stand.
+      ADMIN_PASSWORD: "playwright-admin-secret",
     },
   },
 })
