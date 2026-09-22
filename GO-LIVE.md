@@ -27,6 +27,12 @@ Fail-closed items — the feature is OFF or erroring without them:
 
 - [ ] `CRON_SECRET` — ALL cron routes return 503 without it
 - [ ] `ADMIN_SESSION_SECRET` (or `ADMIN_PASSWORD`) — admin login fails closed
+- [ ] `UNSUBSCRIBE_SECRET` — **required.** Without it no unsubscribe token can
+      be signed, so the RFC 8058 one-click `List-Unsubscribe` header is omitted
+      entirely and mail clients show no one-click button. The footer link and
+      the /unsubscribe page still work. There is deliberately NO fallback: a
+      signing secret that lives in the repository would let anyone opt a
+      stranger out of their own mail
 - [ ] `STATSIG_SERVER_KEY` — without it every server funnel event (signup,
       first meal, checkout, churn) is silently dropped
 - [ ] `NEXT_PUBLIC_POSTHOG_KEY` (+ host) — browser analytics & error capture
@@ -38,12 +44,19 @@ Fail-closed items — the feature is OFF or erroring without them:
 - [ ] `NEXT_PUBLIC_SITE_URL=https://eatobiotics.com`
 - [ ] Optional: `ELEVENLABS_API_KEY` + `ELEVENLABS_AGENT_ID` (voice), promo coupon IDs
 
-## 3. Remove the dev gate fallback
+## 3. Decide the preview gate explicitly
 
-- [ ] `lib/dev-password-gate.ts` contains a TEMPORARY hardcoded fallback
-      password — **delete it** and set the gate env explicitly:
-      `EATOBIOTICS_PASSWORD_GATE_DISABLED=true` (public launch) or a strong
-      `DEV_PASSWORD` (private beta).
+The hardcoded fallback password this section used to warn about is **already
+gone** from `lib/dev-password-gate.ts`, which now fails open rather than
+closed: with no `DEV_PASSWORD` and no explicit `EATOBIOTICS_PASSWORD_GATE`,
+the gate is OFF and the site is public. So this is a decision to make, not a
+deletion to perform.
+
+- [ ] Public launch → set `EATOBIOTICS_PASSWORD_GATE_DISABLED=true` (the
+      kill-switch always wins), **or**
+- [ ] Private beta → set a strong `DEV_PASSWORD`. Leaving both unset takes the
+      site public by default, which is the one outcome nobody should reach by
+      accident.
 
 ## 4. Cron schedule (vercel.json — verify after deploy)
 
