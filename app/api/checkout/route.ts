@@ -9,6 +9,7 @@ import {
   type PaidReportTier,
 } from "@/lib/paid-report-session"
 import { getSupabase } from "@/lib/supabase"
+import { getClientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit"
 import {
   HEALTH_CONSENT_FIELD,
   HEALTH_CONSENT_REQUIRED_MESSAGE,
@@ -34,6 +35,28 @@ const TIER_CONFIG = {
 } as const
 
 export async function POST(req: NextRequest) {
+  /*
+   * ══ THE LIMIT SITS FIRST, AND IT IS DELIBERATELY GENEROUS ════════════════
+   *
+   * First, because everything below it costs something real: a Stripe checkout
+   * session, a `paid_report_intents` row, a consent record. A limit placed
+   * after any of those is not a limit, it is a log line.
+   *
+   * Generous, because this is the €49 path. An honest buyer needs one or two
+   * attempts; office NAT and mobile CGNAT put many genuine buyers behind a
+   * single address, and refusing a real purchase is the most expensive false
+   * positive this product has. 20 per ten minutes is far above any buyer and
+   * far below a useful abuse loop. `submit-lead` is deliberately tighter at 5
+   * — a different job, with a different cost of being wrong.
+   *
+   * Per serverless instance (lib/rate-limit.ts), like every other limiter here.
+   */
+  const limit = rateLimit(`checkout:${getClientIp(req)}`, 20, 10 * 60_000)
+  if (!limit.allowed) {
+    const { body, init } = rateLimitResponse(limit)
+    return NextResponse.json(body, init)
+  }
+
   if (!process.env.STRIPE_SECRET_KEY) {
     return NextResponse.json(
       { error: "Stripe is not configured. Add STRIPE_SECRET_KEY to .env.local" },

@@ -2,12 +2,39 @@ import { NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
 import { createClient } from "@supabase/supabase-js"
 import { buildMagicLinkEmail } from "@/lib/email/magic-link-email"
+import { getClientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit"
+
+/**
+ * Send a passwordless sign-in link.
+ *
+ * ══ WHY THIS NEEDED A LIMIT ════════════════════════════════════════════════
+ *
+ * It is unauthenticated and takes an arbitrary address. Without a limit, a
+ * loop mails sign-in links to anyone — a third party's inbox filled on our
+ * domain and our reputation — and mints a Supabase magic link per call at our
+ * expense. 5 per IP per ten minutes matches the other mail-sending routes
+ * (send-results-email, email-report) and is far above what a person signing in
+ * needs.
+ *
+ * The address is validated in the same breath, BEFORE Supabase or Resend is
+ * touched, so a malformed one costs nothing downstream.
+ *
+ * Per serverless instance, like every other limiter here (lib/rate-limit.ts).
+ */
+
+const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
 
 export async function POST(req: NextRequest) {
   try {
+    const limit = rateLimit(`send-magic-link:${getClientIp(req)}`, 5, 10 * 60_000)
+    if (!limit.allowed) {
+      const { body, init } = rateLimitResponse(limit)
+      return NextResponse.json(body, init)
+    }
+
     const { email, name } = await req.json() as { email?: string; name?: string }
 
-    if (!email) {
+    if (!email || !isValidEmail(email)) {
       return NextResponse.json({ error: "Missing email" }, { status: 400 })
     }
 
