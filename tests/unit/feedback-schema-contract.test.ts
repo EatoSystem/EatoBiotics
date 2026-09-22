@@ -130,11 +130,20 @@ describe("nothing reads text the retention policy says is gone", () => {
   }
 
   it("the set of files touching either table is exactly what we expect", () => {
+    /*
+     * `app/api/feedback/retention/route.ts` left this list in the V1 scope
+     * freeze (step 5). Both tables are drafted and unapplied, and because the
+     * sweep returned 500 on the first read error, their presence at the front
+     * of RETAINED_TABLES meant `paid_report_intents` was never reached — the
+     * 30-day purchase-intent window was not being enforced at all. The list
+     * was narrowed to what production has; feedback and reviews return to it
+     * when Migrations 45 and 46 are deliberately applied, and this expectation
+     * returns with them.
+     */
     expect(tableTouchers()).toEqual(
       [
         "app/admin/feedback/page.tsx",
         "app/api/feedback/digest/route.ts",
-        "app/api/feedback/retention/route.ts",
         "app/api/feedback/route.ts",
         "app/api/reviews/route.ts",
       ].sort(),

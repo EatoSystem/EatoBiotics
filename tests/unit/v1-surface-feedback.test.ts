@@ -273,10 +273,29 @@ describe("nothing else was changed by taking feedback out of V1", () => {
      * `schema-drift-tables:` marker comment above it. Same defect this
      * engagement has now found four times: proving a symbol EXISTS rather than
      * proving it is USED. The table has to be in the list that gets swept.
+     *
+     * The second version sliced the source from "RETAINED_TABLES" to the first
+     * "]", which broke the moment step 5 gave the declaration the type
+     * annotation `readonly RetainedTable[]` — the slice stopped at the "]" in
+     * the TYPE and read no entries at all. It was a false alarm, but a guard
+     * that cries wolf over a type annotation is one someone will eventually
+     * loosen. So the declaration's initialiser is parsed.
      */
-    const code = STRIP(retention)
-    const list = code.slice(code.indexOf("RETAINED_TABLES"))
-    const entries = list.slice(0, list.indexOf("]"))
+    const sourceFile = ts.createSourceFile("route.ts", retention, ts.ScriptTarget.ESNext, true)
+    let initialiser: ts.Expression | undefined
+    ;(function visit(node: ts.Node) {
+      if (
+        ts.isVariableDeclaration(node) &&
+        ts.isIdentifier(node.name) &&
+        node.name.text === "RETAINED_TABLES"
+      ) {
+        initialiser = node.initializer
+      }
+      ts.forEachChild(node, visit)
+    })(sourceFile)
+
+    expect(initialiser, "RETAINED_TABLES is gone").toBeDefined()
+    const entries = initialiser!.getText()
     expect(entries, "paid_report_intents is no longer swept").toContain("paid_report_intents")
     expect(entries, "the sweep list is empty").toMatch(/table:\s*"paid_report_intents"/)
   })
