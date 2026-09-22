@@ -47,17 +47,25 @@ Fail-closed items — the feature is OFF or erroring without them:
 
 ## 4. Cron schedule (vercel.json — verify after deploy)
 
+The V1 scope freeze reduced scheduled automation from nine jobs to **one**.
+
 | Route | Schedule | Purpose |
 |---|---|---|
-| `/api/weekly-checkin` | `0 8 * * 1` | Member weekly check-in generation |
-| `/api/email/week-inside` | `0 9 * * 1` | "Your Food System This Week" Monday story email |
-| `/api/stability/reminder` | `0 9 * * *` | Stability tracking nudge |
-| `/api/email/sequence` | `0 9 * * *` | Lifecycle sequences |
-| `/api/email/trial-winback` | `0 10 * * *` | Trial pre/post-expiry |
-| `/api/email/paid-onboarding` | `0 11 * * *` | Paid onboarding drip |
-| `/api/glp1/reminder` | `0 18 * * *` | GLP-1 daily log nudge |
+| `/api/feedback/retention` | `0 3 * * *` | Deletes `paid_report_intents` rows past their 30-day `expires_at` — the only thing enforcing that retention promise |
 
-- [ ] Each returns 503/401 when curled WITHOUT the bearer (fail-closed check).
+- [ ] It returns 503/401 when curled WITHOUT the bearer (fail-closed check).
+- [ ] It returns `{"ok":true}` with the bearer, and `deleted.paid_report_intents`
+      is a number rather than the job reporting a skip. A skip means the table
+      is missing, which would mean something is wrong with the deploy.
+
+**Dormant — on disk, protected by `CRON_SECRET`, but NOT scheduled.** Nothing
+here should run in V1, and finding any of them on the schedule means the set
+drifted: `/api/email/sequence`, `/api/weekly-checkin`, `/api/email/week-inside`,
+`/api/stability/reminder`, `/api/email/trial-winback`,
+`/api/email/paid-onboarding`, `/api/glp1/reminder`, `/api/feedback/digest`.
+
+`tests/unit/v1-cron-surface.test.ts` pins the scheduled set exactly, in both
+directions, so this table and `vercel.json` cannot drift apart silently.
 
 ## 5. Launch metrics (agree the definitions before day one)
 

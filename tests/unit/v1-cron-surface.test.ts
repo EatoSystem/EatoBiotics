@@ -8,7 +8,7 @@ import ts from "typescript"
  *
  * ══ WHY THIS IS PINNED AS A SET ═════════════════════════════════════════════
  *
- * `vercel.json` scheduled nine jobs. Seven of them drove products V1 does not
+ * `vercel.json` scheduled nine jobs. Eight of them drove products V1 does not
  * sell, legacy tiers, or the feedback capture step 2 withdrew — two of them
  * emailing customers links into routes step 3 now refuses. Deleting the
  * entries is a one-line change per cron and nothing would notice a later
@@ -34,14 +34,15 @@ function scheduledCrons(): CronEntry[] {
   return cfg.crons ?? []
 }
 
-/** The V1 scheduled set. Two jobs, and the reason each one is here. */
+/**
+ * The V1 scheduled set. ONE job.
+ *
+ * `/api/feedback/retention` is the only thing enforcing the 30-day window on
+ * `paid_report_intents` — health-derived score summaries held between
+ * checkout and report generation. Nothing else about V1 requires a machine to
+ * wake up on a timer.
+ */
 const V1_CRONS: Record<string, string> = {
-  // The free Food System Assessment → €49 Consultation nurture. Reads `leads`,
-  // and its template links only to /assessment and /pricing.
-  "/api/email/sequence": "0 9 * * *",
-  // The only thing enforcing the 30-day window on `paid_report_intents` —
-  // health-derived score summaries held between checkout and report
-  // generation.
   "/api/feedback/retention": "0 3 * * *",
 }
 
@@ -51,6 +52,13 @@ const V1_CRONS: Record<string, string> = {
  * `vercel.json` entry and this list.
  */
 const UNSCHEDULED: Array<[string, string]> = [
+  // Dispositioned as not required for V1. It was briefly kept on the schedule
+  // on the grounds that its template links only to /assessment and /pricing —
+  // which is the WRONG TEST. A clean template proves an email would not send
+  // anyone into a refused route; it says nothing about whether V1 needs the
+  // automation to run. Content validity and scheduling necessity are separate
+  // questions, and this entry is here so the conflation is not repeated.
+  ["/api/email/sequence", "not required for V1 — a V1-safe template is not a V1-required job"],
   ["/api/weekly-checkin", "Transform-only weekly check-ins — a Claude call per member for a tier V1 does not sell"],
   ["/api/email/week-inside", "renders the Living Twin 'This Week' story; links to /account/twin and the non-existent /account/week-story"],
   ["/api/glp1/reminder", "GLP-1 is Post-V1; /account/glp1 refuses"],
@@ -61,12 +69,12 @@ const UNSCHEDULED: Array<[string, string]> = [
 ]
 
 describe("the V1 scheduled set", () => {
-  it("is exactly two jobs — no more, and no fewer", () => {
+  it("is exactly one job — no more, and no fewer", () => {
     const paths = scheduledCrons().map((c) => c.path).sort()
     expect(paths).toEqual(Object.keys(V1_CRONS).sort())
   })
 
-  it("keeps each one at its agreed time", () => {
+  it("keeps it at its agreed time", () => {
     for (const cron of scheduledCrons()) {
       expect(cron.schedule, `${cron.path} runs at an unexpected time`).toBe(V1_CRONS[cron.path])
     }
@@ -95,9 +103,9 @@ describe("the V1 scheduled set", () => {
 
 describe("the unscheduled jobs are dormant, not deleted", () => {
   it("the list is the real one", () => {
-    // Non-vacuity: nine scheduled before this phase, two kept, seven removed.
-    expect(UNSCHEDULED).toHaveLength(7)
-    expect(Object.keys(V1_CRONS)).toHaveLength(2)
+    // Non-vacuity: nine scheduled before this phase, one kept, eight removed.
+    expect(UNSCHEDULED).toHaveLength(8)
+    expect(Object.keys(V1_CRONS)).toHaveLength(1)
   })
 
   for (const [path, why] of UNSCHEDULED) {

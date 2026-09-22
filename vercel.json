@@ -1,10 +1,6 @@
 {
   "crons": [
     {
-      "path": "/api/email/sequence",
-      "schedule": "0 9 * * *"
-    },
-    {
       "path": "/api/feedback/retention",
       "schedule": "0 3 * * *"
     }
