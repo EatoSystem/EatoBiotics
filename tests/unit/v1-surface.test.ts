@@ -6,6 +6,9 @@ import ts from "typescript"
 import {
   classifyPageRoute,
   isServableInV1,
+  requiresAdminSurface,
+  PUBLISHING_EXPORT_VARIANTS,
+  BOOK_CHAPTER_COUNT,
   V1_CORE_ROUTES,
   V1_SUPPORTING_ROUTES,
   POST_V1_ROUTES,
@@ -335,6 +338,9 @@ describe("proxy.ts refuses Post-V1 routes before it does anything expensive", ()
   interface GateShape {
     v1: number
     v1Count: number
+    adminSurface: number
+    adminSurfaceCount: number
+    adminSurfaceVerifies: boolean
     passwordGate: number
     countryRewrite: number
     total: number
@@ -352,6 +358,9 @@ describe("proxy.ts refuses Post-V1 routes before it does anything expensive", ()
     const statements = body!.statements
     let v1 = -1
     let v1Count = 0
+    let adminSurface = -1
+    let adminSurfaceCount = 0
+    let adminSurfaceVerifies = false
     let passwordGate = -1
     let countryRewrite = -1
     let returnsInside = false
@@ -383,6 +392,20 @@ describe("proxy.ts refuses Post-V1 routes before it does anything expensive", ()
         }
         return
       }
+      // `if (requiresAdminSurface(pathname))`
+      if (
+        ts.isCallExpression(cond) &&
+        ts.isIdentifier(cond.expression) &&
+        cond.expression.text === "requiresAdminSurface"
+      ) {
+        adminSurfaceCount += 1
+        if (adminSurface === -1) {
+          adminSurface = i
+          const body = st.thenStatement.getText()
+          adminSurfaceVerifies = /verifyAdminCookieEdge\s*\(/.test(body) && /\breturn\b/.test(body)
+        }
+        return
+      }
       // `if (isPasswordGateEnabled())`
       if (
         ts.isCallExpression(cond) &&
@@ -398,7 +421,10 @@ describe("proxy.ts refuses Post-V1 routes before it does anything expensive", ()
       }
     })
 
-    return { v1, v1Count, passwordGate, countryRewrite, total: statements.length, returnsInside }
+    return {
+      v1, v1Count, adminSurface, adminSurfaceCount, adminSurfaceVerifies,
+      passwordGate, countryRewrite, total: statements.length, returnsInside,
+    }
   }
 
   const shape = readProxy(readFileSync(join(ROOT, "proxy.ts"), "utf8"))
@@ -475,6 +501,77 @@ describe("proxy.ts refuses Post-V1 routes before it does anything expensive", ()
     expect(d.v1).toBeLessThan(d.countryRewrite)
   })
 
+  it("the publishing-export admin check is a statement too, right after it", () => {
+    expect(shape.adminSurface, "no `if (requiresAdminSurface(pathname))` statement in proxy()").toBeGreaterThan(-1)
+    expect(shape.adminSurfaceCount, "more than one admin-surface check").toBe(1)
+    expect(
+      shape.adminSurfaceVerifies,
+      "the admin-surface branch does not verify the cookie and return",
+    ).toBe(true)
+
+    // Order matters in both directions. It must come AFTER the launch-surface
+    // gate — an export route moved out of the surface should be refused before
+    // a cookie is even read — and BEFORE the password gate, like everything
+    // else that decides whether a request is served at all.
+    expect(shape.adminSurface).toBe(shape.v1 + 1)
+    expect(shape.adminSurface).toBeLessThan(shape.passwordGate)
+  })
+
+  it("the parse rejects an admin check that is missing, duplicated or misordered", () => {
+    const missing = `
+      export async function proxy(request: NextRequest) {
+        const { pathname } = request.nextUrl
+        if (LANDING_SLUGS.includes(seg)) { return NextResponse.rewrite(url) }
+        if (!isServableInV1(pathname)) { return v1Unavailable(request) }
+        if (isPasswordGateEnabled()) { return NextResponse.redirect(url) }
+      }
+    `
+    expect(readProxy(missing).adminSurface).toBe(-1)
+
+    const before = `
+      export async function proxy(request: NextRequest) {
+        const { pathname } = request.nextUrl
+        if (requiresAdminSurface(pathname)) {
+          const authed = await verifyAdminCookieEdge(c)
+          if (!authed) return v1Unavailable(request)
+        }
+        if (LANDING_SLUGS.includes(seg)) { return NextResponse.rewrite(url) }
+        if (!isServableInV1(pathname)) { return v1Unavailable(request) }
+        if (isPasswordGateEnabled()) { return NextResponse.redirect(url) }
+      }
+    `
+    const b = readProxy(before)
+    expect(b.adminSurface).toBeLessThan(b.v1)   // the real assertion would fail
+
+    const toothless = `
+      export async function proxy(request: NextRequest) {
+        const { pathname } = request.nextUrl
+        if (LANDING_SLUGS.includes(seg)) { return NextResponse.rewrite(url) }
+        if (!isServableInV1(pathname)) { return v1Unavailable(request) }
+        if (requiresAdminSurface(pathname)) { console.log("export") }
+        if (isPasswordGateEnabled()) { return NextResponse.redirect(url) }
+      }
+    `
+    expect(readProxy(toothless).adminSurfaceVerifies).toBe(false)
+
+    const good = `
+      export async function proxy(request: NextRequest) {
+        const { pathname } = request.nextUrl
+        if (LANDING_SLUGS.includes(seg)) { return NextResponse.rewrite(url) }
+        if (!isServableInV1(pathname)) { return v1Unavailable(request) }
+        if (requiresAdminSurface(pathname)) {
+          const authed = await verifyAdminCookieEdge(c)
+          if (!authed) return v1Unavailable(request)
+        }
+        if (isPasswordGateEnabled()) { return NextResponse.redirect(url) }
+      }
+    `
+    const g = readProxy(good)
+    expect(g.adminSurface).toBe(g.v1 + 1)
+    expect(g.adminSurfaceCount).toBe(1)
+    expect(g.adminSurfaceVerifies).toBe(true)
+  })
+
   it("the refusal carries 404, not a redirect into an unrelated page", () => {
     const src = readFileSync(join(ROOT, "proxy.ts"), "utf8")
     const sf = ts.createSourceFile("proxy.ts", src, ts.ScriptTarget.ESNext, true)
@@ -486,6 +583,122 @@ describe("proxy.ts refuses Post-V1 routes before it does anything expensive", ()
     const text = helper!.getText()
     expect(text).toContain("404")
     expect(text).not.toContain("NextResponse.redirect")
+  })
+})
+
+/* ── 4b. The publishing exports are an internal authoring surface ───────── */
+
+describe("the publishing exports require an admin, not merely a URL", () => {
+  /**
+   * ══ WHAT THE DEPENDENCY CHECK FOUND ═══════════════════════════════════════
+   *
+   * Step 3 left these serving on the inherited premise that they were "already
+   * unindexed and unlinked from production UI". The second half was false:
+   * components/book/chapter/chapter-nav.tsx rendered Copy for Substack, Copy
+   * for Reedsy and Print / PDF on all twenty-five PUBLIC chapter pages.
+   *
+   * Nothing automated consumes them — no script, no CI job, no external fetch
+   * — so they are an authoring tool, they are kept, and they move behind the
+   * admin cookie the /cms boundary already uses.
+   */
+  const EXPORTS: string[] = [
+    "/book/print",
+    ...Array.from({ length: BOOK_CHAPTER_COUNT }, (_, i) => i + 1).flatMap((n) =>
+      PUBLISHING_EXPORT_VARIANTS.map((v) => `/book-chapter-${n}/${v}`),
+    ),
+  ]
+
+  it("covers all seventy-six of them", () => {
+    expect(EXPORTS.length).toBe(BOOK_CHAPTER_COUNT * PUBLISHING_EXPORT_VARIANTS.length + 1)
+    for (const route of EXPORTS) {
+      expect(classifyPageRoute(route), route).toBe("PUBLISHING_EXPORT")
+      expect(requiresAdminSurface(route), route).toBe(true)
+    }
+  })
+
+  it("every one of them exists on disk", () => {
+    for (const route of EXPORTS) {
+      expect(existsSync(join(ROOT, "app", route, "page.tsx")), route).toBe(true)
+    }
+  })
+
+  it("the public chapter pages themselves stay outside the admin gate", () => {
+    for (let n = 1; n <= BOOK_CHAPTER_COUNT; n += 1) {
+      expect(requiresAdminSurface(`/book-chapter-${n}`), `chapter ${n}`).toBe(false)
+      expect(classifyPageRoute(`/book-chapter-${n}`)).toBe("PUBLIC_CONTENT")
+    }
+  })
+
+  it("nothing else is swept into the admin class", () => {
+    const others = [
+      "/", "/assessment", "/assessment/you", "/pricing", "/login", "/account",
+      "/privacy", "/help", "/book", "/books", "/food", "/food/kefir", "/adhd",
+      "/enter", "/unsubscribe", "/auth/callback", "/reports",
+      // /admin and /cms are INTERNAL: their own controls decide, and naming
+      // them here too would create a second opinion about who may enter.
+      "/admin", "/admin/waitlist", "/admin/book-exports", "/cms", "/cms/library",
+      "/api/health", "/sitemap.xml",
+    ]
+    for (const route of others) expect(requiresAdminSurface(route), route).toBe(false)
+  })
+
+  it("a new export variant is unclassified rather than inheriting access", () => {
+    // The realistic mutation: somebody adds app/book-chapter-7/newsletter/.
+    expect(classifyPageRoute("/book-chapter-7/newsletter")).toBe("UNCLASSIFIED")
+    expect(isServableInV1("/book-chapter-7/newsletter")).toBe(false)
+    expect(requiresAdminSurface("/book-chapter-7/newsletter")).toBe(false)
+  })
+
+  /**
+   * ══ THE PATTERN, AND WHY IT LOOKS LIKE THIS ═══════════════════════════════
+   *
+   * Every link in chapter-nav.tsx is a TEMPLATE LITERAL —
+   * `href={`/book-chapter-${current.number}/substack`}` — because the chapter
+   * number is interpolated. A first version of this guard excluded braces from
+   * the captured text, so it matched none of them: it passed because the links
+   * were already gone, not because it could see them. Sabotage 605 put one
+   * back and the guard stayed green.
+   *
+   * So the pattern captures whatever sits between matching quotes or
+   * backticks, braces included, and `${…}` is then substituted with a real
+   * chapter number before classifying. The non-vacuity check below asserts
+   * that a templated export href IS matched, which is the thing that failed.
+   */
+  const HREF = /href=\{?([`"'])((?:(?!\1).)*)\1/g
+
+  function hrefTargets(source: string): string[] {
+    return [...source.matchAll(HREF)].map((m) => m[2].replace(/\$\{[^}]*\}/g, "7"))
+  }
+
+  it("the href pattern can see a templated export link", () => {
+    const sample = "<Link href={`/book-chapter-${current.number}/substack`}>x</Link>"
+    expect(hrefTargets(sample)).toEqual(["/book-chapter-7/substack"])
+    expect(requiresAdminSurface(hrefTargets(sample)[0])).toBe(true)
+  })
+
+  it("the public chapter pages no longer link to any export", () => {
+    const nav = readFileSync(join(ROOT, "components/book/chapter/chapter-nav.tsx"), "utf8")
+    const targets = hrefTargets(nav)
+    // Non-vacuity: the file still has links, so an empty result would mean the
+    // pattern stopped working rather than that the exports went away.
+    expect(targets.length, "no hrefs found in chapter-nav.tsx").toBeGreaterThan(0)
+    const offenders = targets.filter((t) => requiresAdminSurface(t))
+    expect(offenders, `chapter-nav links exports: ${offenders.join(", ")}`).toEqual([])
+  })
+
+  it("the author still has a way in, behind the same gate", () => {
+    const page = join(ROOT, "app/admin/book-exports/page.tsx")
+    expect(existsSync(page)).toBe(true)
+    const src = readFileSync(page, "utf8")
+    const sf = ts.createSourceFile("page.tsx", src, ts.ScriptTarget.ESNext, true)
+    const calls = new Set<string>()
+    ;(function visit(node: ts.Node) {
+      if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) calls.add(node.expression.text)
+      ts.forEachChild(node, visit)
+    })(sf)
+    expect(calls.has("verifyAdminCookie"), "the export index does not verify the admin cookie").toBe(true)
+    // It is under /admin, so proxy.ts does not gate it — its own check is the control.
+    expect(classifyPageRoute("/admin/book-exports")).toBe("INTERNAL")
   })
 })
 

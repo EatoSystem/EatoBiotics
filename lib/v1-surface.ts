@@ -29,8 +29,9 @@
  *                            offline shell, and the four routes proxy.ts
  *                            already allowlists through the private-beta gate.
  *   PUBLIC_CONTENT           intentional, indexed, not product.
- *   PUBLISHING_EXPORT        the chapter print/reedsy/substack variants. Step 4
- *                            owns them; step 3 must not disturb them.
+ *   PUBLISHING_EXPORT        the chapter print/reedsy/substack variants. An
+ *                            internal authoring surface: served only to an
+ *                            authenticated admin (see `requiresAdminSurface`).
  *   INTERNAL                 admin and CMS. Their own gates decide.
  *   LEGACY_REDIRECT          a superseded door with a true V1 equivalent.
  *   FIXTURE_SELF_GATED       a fixture route whose own page already refuses
@@ -152,7 +153,31 @@ export const PUBLIC_CONTENT_ROUTES = [
 /** Chapters run 1..25; the numbers are literal directories under app/. */
 export const BOOK_CHAPTER_COUNT = 25
 
-/** The chapter export variants. Step 4 decides their fate; step 3 leaves them. */
+/**
+ * The chapter export variants.
+ *
+ * ══ WHAT THESE ARE, AFTER THE STEP 4 DEPENDENCY CHECK ═══════════════════════
+ *
+ * An authoring tool, not a product. The author opens a chapter's `substack` or
+ * `reedsy` view, clicks the copy button and pastes the result into the
+ * publishing platform; `print` is the same content laid out for a PDF. Nothing
+ * automated consumes them — no script, no CI job, no external fetch — and
+ * `docs/cms-chapter-import-spec.md` names them as public routes the CMS import
+ * never touches, with `content/book/chapter-N.mdx` as the source of truth.
+ *
+ * ══ WHY THEY ARE NOT PUBLIC ═════════════════════════════════════════════════
+ *
+ * Step 3 left them serving on the inherited premise that they were "already
+ * unindexed and unlinked from production UI". Half of that was wrong:
+ * `components/book/chapter/chapter-nav.tsx` rendered Copy for Substack, Copy
+ * for Reedsy and Print / PDF on all twenty-five public chapter pages, so an
+ * internal tool was advertised to every reader of the book. `noindex` was
+ * never an access control.
+ *
+ * They are kept — the author's workflow depends on them — and moved behind the
+ * admin cookie the CMS boundary already uses. The author reaches them from
+ * /admin/book-exports.
+ */
 export const PUBLISHING_EXPORT_VARIANTS = ["print", "reedsy", "substack"] as const
 
 /* ── Superseded doors ───────────────────────────────────────────────────── */
@@ -447,4 +472,25 @@ export function classifyPageRoute(pathname: string): V1SurfaceClass {
 export function isServableInV1(pathname: string): boolean {
   const cls = classifyPageRoute(pathname)
   return cls !== "POST_V1" && cls !== "UNCLASSIFIED"
+}
+
+/**
+ * Does this route require an authenticated admin, on top of passing the launch
+ * surface?
+ *
+ * Only the publishing exports. `/admin` and `/cms` are NOT here on purpose:
+ * they are classified INTERNAL and their own controls — proxy.ts's `/cms`
+ * default-deny, `app/cms/layout.tsx`, `requireCmsAdmin`, and the
+ * `verifyAdminCookie` check at the top of every `/admin/*` page — decide them.
+ * Naming them twice would create a second opinion about who may enter, and the
+ * weaker opinion always wins an argument like that.
+ *
+ * Separate from `isServableInV1` deliberately: that question is about the
+ * launch surface and is answerable from the pathname alone, while this one is
+ * the trigger for a check that needs the request. proxy.ts asks them in that
+ * order, so an export route that were ever moved out of the launch surface
+ * would be refused before the cookie was even read.
+ */
+export function requiresAdminSurface(pathname: string): boolean {
+  return classifyPageRoute(pathname) === "PUBLISHING_EXPORT"
 }
