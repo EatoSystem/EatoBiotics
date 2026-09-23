@@ -114,10 +114,11 @@ function settledSession(overrides: Record<string, unknown> = {}) {
     amount_total: 4900,
     currency: "eur",
     livemode: false,
-    // Real sessions always carry this. It is the purchase-correlated fallback
-    // the entitlement uses when no durable row is readable, and it is stable
-    // across every event about this session.
-    created: Math.floor(Date.UTC(2026, 0, 1) / 1000),
+    // Real sessions always carry this, and it IS the purchase record the
+    // entitlement is anchored to — deliberately not the row's created_at,
+    // which is only "when some writer got here first". Recent, because a
+    // purchase whose 30 days have already elapsed correctly grants nothing.
+    created: Math.floor((Date.now() - 60 * 60 * 1000) / 1000),
     customer_details: { email: BUYER },
     metadata: {
       summary_token: INTENT_TOKEN,
@@ -195,10 +196,87 @@ async function deliver(
   )
 }
 
+const MEMBER_PRICE = "price_member_test"
+const CUSTOMER = "cus_test_step7"
+const SUB_ID = "sub_test_step7"
+/** When the subscription was created — the founding-member and started-at source. */
+const SUB_CREATED = Math.floor((Date.now() - 2 * 60 * 60 * 1000) / 1000)
+const PERIOD_END = Math.floor((Date.now() + 25 * 24 * 60 * 60 * 1000) / 1000)
+
+function subscriptionEvent(
+  type: string,
+  eventId: string,
+  subOverrides: Record<string, unknown> = {},
+) {
+  return {
+    id: eventId,
+    object: "event",
+    created: Math.floor(Date.now() / 1000),
+    type,
+    livemode: false,
+    data: {
+      object: {
+        id: SUB_ID,
+        object: "subscription",
+        customer: CUSTOMER,
+        status: "active",
+        created: SUB_CREATED,
+        current_period_end: PERIOD_END,
+        items: { data: [{ price: { id: MEMBER_PRICE, unit_amount: 2499, currency: "eur", recurring: { interval: "month" } } }] },
+        ...subOverrides,
+      },
+    },
+  }
+}
+
+/** An account that already has a Stripe customer but no membership yet. */
+function subscriptionDb() {
+  return new PostgrestDouble({
+    stripe_processed_events: { primaryKey: "event_id", rows: [] },
+    profiles: {
+      primaryKey: "id",
+      rows: [
+        {
+          id: "user_1",
+          email: BUYER,
+          name: "A Buyer",
+          stripe_customer_id: CUSTOMER,
+          membership_tier: "free",
+          membership_status: "inactive",
+          stripe_subscription_id: null,
+          membership_started_at: null,
+          is_founding_member: false,
+          membership_expires_at: null,
+          trial_expires_at: null,
+        },
+      ],
+    },
+    subscription_events: { primaryKey: "id", rows: [] },
+    deep_assessments: { primaryKey: "stripe_session_id", rows: [] },
+  })
+}
+
+/** The durable entitlement facts a crash must not be able to lose. */
+function durableState(db: PostgrestDouble) {
+  const p = db.rowsOf("profiles")[0]
+  return {
+    membership_tier: p.membership_tier,
+    membership_status: p.membership_status,
+    stripe_subscription_id: p.stripe_subscription_id,
+    membership_started_at: p.membership_started_at,
+    is_founding_member: p.is_founding_member,
+    membership_expires_at: p.membership_expires_at,
+  }
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   vi.resetModules()
   process.env.STRIPE_WEBHOOK_SECRET = WEBHOOK_SECRET
+  process.env.STRIPE_MEMBER_PRICE_ID = MEMBER_PRICE
+  // Every subscription in these fixtures is created before the cutoff, so
+  // founding-member status is a real benefit that a crash could destroy.
+  process.env.FOUNDING_MEMBER_CUTOFF_DATE = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
   hoisted.db = freshDb()
 })
 
@@ -505,5 +583,179 @@ describe("PINNED CURRENT BEHAVIOUR: delayed-notification payment methods", () =>
     expect(hoisted.db!.rowsOf("deep_assessments")).toHaveLength(0)
     expect(hoisted.db!.rowsOf("profiles")[0].membership_tier).toBe("free")
     expect(logServerEvent.mock.calls.filter((c) => c[0] === "report_purchased")).toHaveLength(0)
+  })
+})
+
+/* ══ 9. The subscription lifecycle converges to Stripe truth ══════════════
+ *
+ * The atomic claim traded one failure for another: the old design lost nothing
+ * on a crash (it duplicated on concurrency instead), while claim-first loses
+ * whatever the handler had not yet done. For the €49 path that trade is fine —
+ * the row is recreated and the entitlement is recovered at sign-in. For
+ * subscriptions it was not: `is_founding_member`, `membership_started_at` and
+ * `stripe_subscription_id` were written ONLY by `customer.subscription.created`.
+ *
+ * Process death is modelled as "the claim committed and the side effects never
+ * ran" — which is exactly what it leaves behind, and what makes Stripe's retry
+ * a no-op.
+ */
+describe("subscription state converges to Stripe, not to one historical event", () => {
+  function claimAlreadyTaken(db: PostgrestDouble, eventId: string) {
+    db.rowsOf("stripe_processed_events").push({ event_id: eventId, event_type: "customer.subscription.created" })
+  }
+
+  it("1. a lost `created` is fully repaired by a later `updated`", async () => {
+    hoisted.db = subscriptionDb()
+    claimAlreadyTaken(hoisted.db, "evt_sub_created")
+
+    // Stripe retries the created event; it is deduped, so nothing happens.
+    const retried = await deliver(subscriptionEvent("customer.subscription.created", "evt_sub_created"))
+    expect(await retried.json()).toEqual({ received: true, deduped: true })
+    expect(durableState(hoisted.db).membership_tier).toBe("free")
+
+    // A later legitimate event repairs EVERY durable field.
+    await deliver(subscriptionEvent("customer.subscription.updated", "evt_sub_updated"))
+
+    expect(durableState(hoisted.db)).toEqual({
+      membership_tier: "member",
+      membership_status: "active",
+      stripe_subscription_id: SUB_ID,
+      membership_started_at: new Date(SUB_CREATED * 1000).toISOString(),
+      is_founding_member: true,
+      membership_expires_at: new Date(PERIOD_END * 1000).toISOString(),
+    })
+  })
+
+  it("2. a replayed `created` does not duplicate or drift durable state", async () => {
+    hoisted.db = subscriptionDb()
+    await deliver(subscriptionEvent("customer.subscription.created", "evt_sub_c1"))
+    const first = durableState(hoisted.db)
+
+    // A genuine replay: same subscription, a different event id.
+    await deliver(subscriptionEvent("customer.subscription.created", "evt_sub_c2"))
+
+    expect(durableState(hoisted.db)).toEqual(first)
+    expect(hoisted.db.rowsOf("profiles")).toHaveLength(1)
+  })
+
+  it("3. `updated` alone establishes the entitlement, with no `created` ever", async () => {
+    hoisted.db = subscriptionDb()
+
+    await deliver(subscriptionEvent("customer.subscription.updated", "evt_sub_only_update"))
+
+    expect(durableState(hoisted.db)).toEqual({
+      membership_tier: "member",
+      membership_status: "active",
+      stripe_subscription_id: SUB_ID,
+      membership_started_at: new Date(SUB_CREATED * 1000).toISOString(),
+      is_founding_member: true,
+      membership_expires_at: new Date(PERIOD_END * 1000).toISOString(),
+    })
+  })
+
+  it("4. a lost cancellation still converges to no access, with no further event", async () => {
+    // Stripe sends NOTHING more about a deleted subscription, so there is no
+    // later event to repair this one. Convergence has to come from data the
+    // profile already holds.
+    hoisted.db = subscriptionDb()
+
+    // A member whose period has already ended (a cancel-at-period-end).
+    const endedAt = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString()
+    Object.assign(hoisted.db.rowsOf("profiles")[0], {
+      membership_tier: "member",
+      membership_status: "active",
+      stripe_subscription_id: SUB_ID,
+      membership_expires_at: endedAt,
+    })
+
+    // The claim committed; the process died before the downgrade ran.
+    hoisted.db.rowsOf("stripe_processed_events").push({
+      event_id: "evt_sub_deleted",
+      event_type: "customer.subscription.deleted",
+    })
+    const retried = await deliver(
+      subscriptionEvent("customer.subscription.deleted", "evt_sub_deleted", { status: "canceled" }),
+    )
+    expect(await retried.json()).toEqual({ received: true, deduped: true })
+
+    // The stored row is still, wrongly, "active member" — nothing downgraded it.
+    const p = hoisted.db.rowsOf("profiles")[0]
+    expect(p.membership_status).toBe("active")
+    expect(p.membership_tier).toBe("member")
+
+    // But it carries the paid-through date, and that is what the access check
+    // bounds by, so the entitlement lapses anyway. That the read path turns
+    // exactly this row into "free" is proven in
+    // tests/unit/membership-convergence.test.ts.
+    expect(p.membership_expires_at).toBe(endedAt)
+    expect(new Date(p.membership_expires_at as string).getTime()).toBeLessThan(Date.now())
+  })
+
+  it("5. replaying `updated` after convergence is harmless", async () => {
+    hoisted.db = subscriptionDb()
+    await deliver(subscriptionEvent("customer.subscription.updated", "evt_u1"))
+    const converged = durableState(hoisted.db)
+
+    await deliver(subscriptionEvent("customer.subscription.updated", "evt_u2"))
+    await deliver(subscriptionEvent("customer.subscription.updated", "evt_u3"))
+
+    expect(durableState(hoisted.db)).toEqual(converged)
+  })
+
+  it("6. a lost `created` costs the welcome email and the analytics — and ONLY those", async () => {
+    hoisted.db = subscriptionDb()
+    claimAlreadyTaken(hoisted.db, "evt_sub_created")
+    await deliver(subscriptionEvent("customer.subscription.created", "evt_sub_created"))
+    await deliver(subscriptionEvent("customer.subscription.updated", "evt_sub_updated"))
+
+    // ENTITLEMENT: fully recovered.
+    expect(durableState(hoisted.db).membership_tier).toBe("member")
+    expect(durableState(hoisted.db).is_founding_member).toBe(true)
+
+    // COMMUNICATION and ANALYTICS: permanently lost, and asserted separately
+    // so the two can never be conflated by a later reading. A welcome email is
+    // a one-time message, not an entitlement; `subscription_started` is a
+    // revenue event, not access.
+    expect(sendEmail).not.toHaveBeenCalled()
+    expect(logServerEvent.mock.calls.filter((c) => c[0] === "subscription_started")).toHaveLength(0)
+  })
+
+  it("a subscription ending does NOT erase a separately-bought €49 entitlement", async () => {
+    // Two different purchases. A subscription lapsing says nothing about a
+    // report someone bought on its own, and clearing the report's window here
+    // would silently destroy access they paid €49 for.
+    hoisted.db = subscriptionDb()
+    const reportWindow = new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString()
+    Object.assign(hoisted.db.rowsOf("profiles")[0], { trial_expires_at: reportWindow })
+
+    await deliver(
+      subscriptionEvent("customer.subscription.updated", "evt_sub_past_due", {
+        status: "past_due",
+      }),
+    )
+
+    expect(hoisted.db.rowsOf("profiles")[0].trial_expires_at).toBe(reportWindow)
+    expect(hoisted.db.rowsOf("profiles")[0].membership_status).toBe("past_due")
+  })
+
+  it("a live subscription does supersede a pending report window", async () => {
+    hoisted.db = subscriptionDb()
+    Object.assign(hoisted.db.rowsOf("profiles")[0], {
+      trial_expires_at: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
+    })
+
+    await deliver(subscriptionEvent("customer.subscription.updated", "evt_sub_active"))
+
+    expect(hoisted.db.rowsOf("profiles")[0].trial_expires_at).toBeNull()
+  })
+
+  it("does not grant a membership for a price we do not sell", async () => {
+    hoisted.db = subscriptionDb()
+    await deliver(
+      subscriptionEvent("customer.subscription.updated", "evt_unknown_price", {
+        items: { data: [{ price: { id: "price_not_ours", currency: "eur" } }] },
+      }),
+    )
+    expect(hoisted.db.rowsOf("profiles")[0].membership_tier).toBe("free")
   })
 })

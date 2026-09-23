@@ -100,28 +100,82 @@ export function decideTrialActivation(
 }
 
 /**
- * The qualifying purchase for the entitlement decision: the MOST RECENT paid
- * row's `created_at`.
+ * Resolves when a checkout actually happened, from its session id.
+ *
+ * Injected rather than imported so this module keeps no payment dependency and
+ * stays testable without one. The auth routes supply the real implementation.
+ */
+export type PurchasedAtResolver = (sessionId: string) => Promise<string | null>
+
+/** At most this many sessions are resolved per sign-in. */
+const MAX_SESSIONS_RESOLVED = 5
+
+/**
+ * The qualifying purchase for the entitlement decision: the most recent time
+ * at which one of this account's paid checkouts actually happened.
+ *
+ * ══ WHY THIS IS NOT `deep_assessments.created_at` ═══════════════════════════
+ *
+ * Because that column is "when this row was first written", and three
+ * different writers can write it first: the Stripe webhook (seconds after
+ * settlement), the question generator, and the Consultation claimer. The
+ * `success_url` sends the buyer straight to `/assessment/deep`, so in the
+ * healthy case the webhook and the questionnaire race within seconds and the
+ * row lands next to the purchase either way — which is exactly why anchoring
+ * to it looked correct.
+ *
+ * But the identity repair above exists BECAUSE the webhook may never run. In
+ * that case the row is created whenever the buyer gets round to starting, and
+ * a buyer who purchased on day 0 and opened the questionnaire on day 10 would
+ * be granted access until day 40. Durable is not the same as meaning the
+ * purchase, and the first version of this function confused the two.
+ *
+ * The durable record of the purchase is Stripe's own Checkout Session, and
+ * `deep_assessments.stripe_session_id` is a durable key into it. `created` on
+ * a session we have already proven settled is:
+ *
+ *   • present on EVERY settled session, including a 100%-promo
+ *     `no_payment_required` one, which has no PaymentIntent to read instead;
+ *   • never later than settlement, and bounded before it — a Checkout Session
+ *     expires 24h after creation, so a session that settled did so within 24h;
+ *   • identical across every delivery, redelivery and later read, which is
+ *     what makes repeated calls idempotent.
  *
  * Most recent, not earliest, because a genuine second purchase should open a
- * new window from itself. Exported so the webhook and the sign-in path derive
- * the entitlement from the identical durable record — the two paths sharing
- * one function is what stops them disagreeing about when access ends.
+ * new window from itself.
  *
- * Returns null when no row carries a usable timestamp, which
- * `decideTrialActivation` treats as "grant nothing" rather than "grant now".
+ * Returns null when no purchase time can be established — which
+ * `decideTrialActivation` treats as "grant nothing". It must never fall back to
+ * the row or to the clock: that fallback IS the defect.
  */
-export function latestPurchaseAt(
-  rows: { created_at?: string | null }[] | null | undefined,
-): string | null {
+export async function latestPurchaseAt(
+  rows: { stripe_session_id?: string | null }[] | null | undefined,
+  resolve: PurchasedAtResolver,
+): Promise<string | null> {
+  const sessionIds = [
+    ...new Set(
+      (rows ?? [])
+        .map((r) => r?.stripe_session_id)
+        .filter((id): id is string => typeof id === "string" && id.length > 0),
+    ),
+  ].slice(0, MAX_SESSIONS_RESOLVED)
+
   let latest: string | null = null
   let latestMs = -Infinity
-  for (const row of rows ?? []) {
-    if (!row?.created_at) continue
-    const ms = new Date(row.created_at).getTime()
+
+  for (const sessionId of sessionIds) {
+    let purchasedAt: string | null = null
+    try {
+      purchasedAt = await resolve(sessionId)
+    } catch {
+      // An unreachable payment provider is not evidence of a purchase time.
+      continue
+    }
+    if (!purchasedAt) continue
+    const ms = new Date(purchasedAt).getTime()
     if (Number.isNaN(ms) || ms <= latestMs) continue
     latestMs = ms
-    latest = row.created_at
+    latest = purchasedAt
   }
   return latest
 }
@@ -145,7 +199,15 @@ export interface ReconcileResult {
 export async function reconcileAccountAfterAuth(
   adminSupabase: SupabaseClient,
   userId: string,
-  email: string
+  email: string,
+  options?: {
+    /**
+     * How to find out when a checkout actually happened. Without it no
+     * entitlement is granted here — deliberately: the alternative is to guess
+     * from a row timestamp, which is the defect this repair exists for.
+     */
+    resolvePurchasedAt?: PurchasedAtResolver
+  }
 ): Promise<ReconcileResult> {
   const normalisedEmail = email.toLowerCase().trim()
   const result: ReconcileResult = { trialGranted: false, linkedReports: 0 }
@@ -176,10 +238,10 @@ export async function reconcileAccountAfterAuth(
     //    the paid_report_intents row have gone.
     const { data: paidRows } = await adminSupabase
       .from("deep_assessments")
-      .select("created_at")
+      .select("stripe_session_id")
       .eq("user_id", userId)
 
-    const rows = (paidRows ?? []) as { created_at?: string | null }[]
+    const rows = (paidRows ?? []) as { stripe_session_id?: string | null }[]
     result.linkedReports = rows.length
 
     const { data: profile } = await adminSupabase
@@ -188,10 +250,20 @@ export async function reconcileAccountAfterAuth(
       .eq("id", userId)
       .maybeSingle()
 
+    // Resolve the purchase time only when a decision is actually live: a paid
+    // row exists AND the account is one this could upgrade. A subscriber, or an
+    // account with no purchase, needs no call to the payment provider.
+    const tier = (profile?.membership_tier as string | null) ?? "free"
+    const resolve = options?.resolvePurchasedAt
+    const purchasedAt =
+      rows.length > 0 && TRIAL_ELIGIBLE_TIERS.includes(tier) && resolve
+        ? await latestPurchaseAt(rows, resolve)
+        : null
+
     const decision = decideTrialActivation(
       profile?.membership_tier as string | null,
       profile?.trial_expires_at as string | null,
-      latestPurchaseAt(rows)
+      purchasedAt
     )
 
     if (decision.activate) {

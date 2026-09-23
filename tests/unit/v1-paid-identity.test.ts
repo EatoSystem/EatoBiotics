@@ -78,7 +78,7 @@ describe("the shared paid-row projection carries identity", () => {
 /* ══ The invariant, end to end, without the webhook ═══════════════════════ */
 
 describe("a purchase stays claimable when the webhook never runs", () => {
-  it("a row written by the questionnaire is findable by email and grants the bought window", () => {
+  it("a row written by the questionnaire is findable by email and grants the bought window", async () => {
     const purchasedAt = "2026-01-01T00:00:00.000Z"
     // What generate-deep-questions now writes, with no webhook involved.
     const row = {
@@ -92,10 +92,15 @@ describe("a purchase stays claimable when the webhook never runs", () => {
 
     // And the entitlement it then grants is the one that was bought — measured
     // from the purchase, even though reconciliation happens 10 days later.
+    // The purchase time comes from Stripe via the row's session id, NOT from
+    // the row's own created_at.
+    const resolved = await latestPurchaseAt([row], async (id) =>
+      id === "cs_test_no_webhook" ? purchasedAt : null,
+    )
     const decision = decideTrialActivation(
       "free",
       null,
-      latestPurchaseAt([row]),
+      resolved,
       Date.parse(purchasedAt) + 10 * 24 * 60 * 60 * 1000,
     )
     expect(decision.activate).toBe(true)
@@ -285,6 +290,9 @@ const DAY = 24 * 60 * 60 * 1000
 /** Three days ago: inside the window a real buyer would be signing in during. */
 const PURCHASE_AT = new Date(Date.now() - 3 * DAY).toISOString()
 
+/** Stripe's record of when the checkout that settled was created. */
+const STRIPE_SESSION_CREATED = PURCHASE_AT
+
 function accountDb(rowOverrides: Record<string, unknown> = {}) {
   return new PostgrestDouble({
     leads: { primaryKey: "email", rows: [] },
@@ -293,6 +301,8 @@ function accountDb(rowOverrides: Record<string, unknown> = {}) {
       rows: [
         {
           stripe_session_id: "cs_test_reconcile",
+          // The row is written by whichever writer got there first. It is NOT
+          // the purchase — see the day-10 case below.
           email: "buyer@example.com",
           tier: "personal",
           free_scores: { overall: 56 },
@@ -311,11 +321,12 @@ function accountDb(rowOverrides: Record<string, unknown> = {}) {
   })
 }
 
-async function signIn(db: PostgrestDouble) {
+async function signIn(db: PostgrestDouble, purchasedAt: string | null = PURCHASE_AT) {
   return reconcileAccountAfterAuth(
     db.client() as unknown as SupabaseClient,
     "user_1",
     "Buyer@Example.com",
+    { resolvePurchasedAt: async () => purchasedAt },
   )
 }
 
@@ -344,6 +355,32 @@ describe("reconcileAccountAfterAuth grants the purchase window, once", () => {
     expect(db.rowsOf("profiles")[0].trial_expires_at).toBe(first)
   })
 
+  it("does not call the payment provider for an account it could never upgrade", async () => {
+    // A paying subscriber's entitlement does not come from a report purchase,
+    // so resolving one would be a Stripe round-trip on every single sign-in
+    // that could not change the outcome. Asserted because the short-circuit is
+    // invisible in behaviour — `decideTrialActivation` refuses a subscriber
+    // either way — so nothing else would notice if it were removed.
+    const db = accountDb()
+    Object.assign(db.rowsOf("profiles")[0], { membership_tier: "member" })
+
+    const calls: string[] = []
+    await reconcileAccountAfterAuth(
+      db.client() as unknown as SupabaseClient,
+      "user_1",
+      "buyer@example.com",
+      {
+        resolvePurchasedAt: async (id) => {
+          calls.push(id)
+          return PURCHASE_AT
+        },
+      },
+    )
+
+    expect(calls).toEqual([])
+    expect(db.rowsOf("profiles")[0].membership_tier).toBe("member")
+  })
+
   it("cannot find a paid row that carries no email — the defect being prevented", async () => {
     const db = accountDb({ email: null })
     const result = await signIn(db)
@@ -351,5 +388,95 @@ describe("reconcileAccountAfterAuth grants the purchase window, once", () => {
     expect(result.linkedReports).toBe(0)
     expect(result.trialGranted).toBe(false)
     expect(db.rowsOf("profiles")[0].membership_tier).toBe("free")
+  })
+})
+
+/* ══ The day-10 case: the row is NOT the purchase ════════════════════════
+ *
+ * `checkout`'s success_url sends the buyer straight to /assessment/deep, so in
+ * the healthy case the webhook and the questionnaire race within seconds and
+ * `deep_assessments.created_at` lands next to the purchase either way. That is
+ * why this never showed up in the first Step 7 harness.
+ *
+ * But repair #1 exists precisely BECAUSE the webhook may never run. In that
+ * case the row is first created whenever the buyer gets round to starting, and
+ * anchoring to it grants a window measured from the wrong event.
+ */
+describe("the entitlement is anchored to the purchase, not to the row", () => {
+  const DAY0 = new Date(Date.now() - 10 * DAY).toISOString() // bought 10 days ago
+  const DAY10 = new Date().toISOString()                     // row written today
+
+  function lateStartDb() {
+    return new PostgrestDouble({
+      leads: { primaryKey: "email", rows: [] },
+      deep_assessments: {
+        primaryKey: "stripe_session_id",
+        rows: [
+          {
+            stripe_session_id: "cs_test_late_start",
+            email: "buyer@example.com",
+            tier: "personal",
+            free_scores: { overall: 56 },
+            user_id: null,
+            // The webhook never ran. The questionnaire created this row today.
+            created_at: DAY10,
+          },
+        ],
+      },
+      profiles: {
+        primaryKey: "id",
+        rows: [
+          { id: "user_1", email: "buyer@example.com", membership_tier: "free", trial_expires_at: null },
+        ],
+      },
+    })
+  }
+
+  it("bought on day 0, first touched the questionnaire on day 10 — expires day 30, not day 40", async () => {
+    const db = lateStartDb()
+
+    await reconcileAccountAfterAuth(
+      db.client() as unknown as SupabaseClient,
+      "user_1",
+      "buyer@example.com",
+      // Stripe is the durable record of the purchase; the row is not.
+      { resolvePurchasedAt: async () => DAY0 },
+    )
+
+    const expiry = db.rowsOf("profiles")[0].trial_expires_at as string
+    expect(new Date(expiry).getTime()).toBe(Date.parse(DAY0) + 30 * DAY)
+
+    // The failure this pins: anchoring to the row would grant day 40.
+    expect(new Date(expiry).getTime()).not.toBe(Date.parse(DAY10) + 30 * DAY)
+  })
+
+  it("grants nothing when the purchase time cannot be established", async () => {
+    const db = lateStartDb()
+
+    await reconcileAccountAfterAuth(
+      db.client() as unknown as SupabaseClient,
+      "user_1",
+      "buyer@example.com",
+      { resolvePurchasedAt: async () => null },
+    )
+
+    // Fails CLOSED. Falling back to the row or to now is the defect itself.
+    expect(db.rowsOf("profiles")[0].membership_tier).toBe("free")
+    expect(db.rowsOf("profiles")[0].trial_expires_at).toBeNull()
+  })
+
+  it("retries on the next sign-in once Stripe answers", async () => {
+    const db = lateStartDb()
+    const client = db.client() as unknown as SupabaseClient
+
+    await reconcileAccountAfterAuth(client, "user_1", "buyer@example.com", {
+      resolvePurchasedAt: async () => null,
+    })
+    expect(db.rowsOf("profiles")[0].membership_tier).toBe("free")
+
+    await reconcileAccountAfterAuth(client, "user_1", "buyer@example.com", {
+      resolvePurchasedAt: async () => DAY0,
+    })
+    expect(db.rowsOf("profiles")[0].membership_tier).toBe("trial")
   })
 })

@@ -150,27 +150,64 @@ describe("the entitlement window is anchored to the purchase", () => {
   })
 })
 
-describe("latestPurchaseAt", () => {
-  it("returns the most recent timestamp, so a later purchase wins", () => {
+describe("latestPurchaseAt resolves the PURCHASE, not the row", () => {
+  const resolver = (map: Record<string, string | null>) => async (id: string) => map[id] ?? null
+
+  it("returns the most recent resolved purchase, so a later purchase wins", async () => {
     expect(
-      latestPurchaseAt([
-        { created_at: "2026-01-01T00:00:00.000Z" },
-        { created_at: "2026-03-01T00:00:00.000Z" },
-        { created_at: "2026-02-01T00:00:00.000Z" },
-      ]),
+      await latestPurchaseAt(
+        [{ stripe_session_id: "a" }, { stripe_session_id: "b" }, { stripe_session_id: "c" }],
+        resolver({
+          a: "2026-01-01T00:00:00.000Z",
+          b: "2026-03-01T00:00:00.000Z",
+          c: "2026-02-01T00:00:00.000Z",
+        }),
+      ),
     ).toBe("2026-03-01T00:00:00.000Z")
   })
 
-  it("returns null for no rows, empty rows or unusable timestamps", () => {
-    expect(latestPurchaseAt([])).toBeNull()
-    expect(latestPurchaseAt(null)).toBeNull()
-    expect(latestPurchaseAt([{ created_at: null }])).toBeNull()
-    expect(latestPurchaseAt([{ created_at: "nonsense" }])).toBeNull()
+  it("returns null when nothing can be resolved — it never guesses", async () => {
+    expect(await latestPurchaseAt([], resolver({}))).toBeNull()
+    expect(await latestPurchaseAt(null, resolver({}))).toBeNull()
+    expect(await latestPurchaseAt([{ stripe_session_id: "a" }], resolver({ a: null }))).toBeNull()
+    expect(await latestPurchaseAt([{ stripe_session_id: null }], resolver({}))).toBeNull()
   })
 
-  it("ignores unusable rows without discarding usable ones", () => {
+  it("ignores an unresolvable session without discarding a resolvable one", async () => {
     expect(
-      latestPurchaseAt([{ created_at: null }, { created_at: "2026-01-01T00:00:00.000Z" }]),
+      await latestPurchaseAt(
+        [{ stripe_session_id: "gone" }, { stripe_session_id: "a" }],
+        resolver({ gone: null, a: "2026-01-01T00:00:00.000Z" }),
+      ),
     ).toBe("2026-01-01T00:00:00.000Z")
+  })
+
+  it("treats a throwing resolver as no evidence, not as a reason to guess", async () => {
+    const thrower = async () => {
+      throw new Error("stripe unreachable")
+    }
+    expect(await latestPurchaseAt([{ stripe_session_id: "a" }], thrower)).toBeNull()
+  })
+
+  it("bounds how many sessions it will resolve in one sign-in", async () => {
+    const seen: string[] = []
+    const rows = Array.from({ length: 20 }, (_, i) => ({ stripe_session_id: `s${i}` }))
+    await latestPurchaseAt(rows, async (id) => {
+      seen.push(id)
+      return null
+    })
+    expect(seen.length).toBeLessThanOrEqual(5)
+  })
+
+  it("does not resolve the same session twice", async () => {
+    const seen: string[] = []
+    await latestPurchaseAt(
+      [{ stripe_session_id: "a" }, { stripe_session_id: "a" }],
+      async (id) => {
+        seen.push(id)
+        return null
+      },
+    )
+    expect(seen).toEqual(["a"])
   })
 })

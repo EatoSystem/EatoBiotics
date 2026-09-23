@@ -154,7 +154,43 @@ describing the buyer's answers or health data.**
 - [ ] Restore, let Stripe retry, and confirm the event processes **exactly
       once**.
 
-## R12 — Refusals
+## R12 — The entitlement is anchored to the purchase
+
+*Added by the Step 7 review repair. The 30-day window is now derived from
+Stripe's Checkout Session, not from when any database row happened to be
+written, so retrieval is part of the mechanism rather than a convenience.*
+
+- [ ] **Retrieve an old session.** Take a `cs_test_…` id from a checkout made
+      as long ago as this account has one and call
+      `stripe.checkout.sessions.retrieve`. Confirm it still returns, and still
+      carries `created`. The entitlement resolves this at sign-in, so if Stripe
+      stops returning sessions at some age, the window silently stops being
+      grantable. **Record the oldest age you could retrieve.**
+      *(Failure here is safe, not wrong: the resolver fails closed, so the
+      worst case is a grant deferred to the next sign-in — never a wrong one.)*
+- [ ] **The day-10 case.** Buy, then do **not** open the questionnaire. Wait
+      (or use a test clock), then start it and sign in. `trial_expires_at` must
+      be **30 days after the purchase**, not 30 days after the questionnaire.
+- [ ] **A 100%-promo checkout** (`no_payment_required`, no PaymentIntent) still
+      yields an entitlement — this is why `session.created` is the datum.
+
+## R13 — Cancellation converges
+
+*`customer.subscription.deleted` is terminal: Stripe sends nothing further, so
+nothing can repair a handler that did not finish. Access is therefore bounded
+by the paid-through date.*
+
+- [ ] Subscribe, then cancel. Confirm `membership_expires_at` holds the period
+      end and access ends at it (plus the 3-day renewal grace).
+- [ ] **Simulate the lost cancellation**: leave a profile at
+      `membership_status: "active"` with a past `membership_expires_at` and
+      confirm `getUserMembershipTier` returns `free`.
+- [ ] **Renewal is not disrupted**: let a live subscription renew and confirm
+      `membership_expires_at` moves forward and access is unbroken.
+- [ ] Confirm a profile with a **null** `membership_expires_at` still has
+      access — the deliberate fail-open residual.
+
+## R14 — Refusals
 
 - [ ] A request with a bad signature → 400.
 - [ ] A replayed body older than Stripe's tolerance → 400.
@@ -190,6 +226,12 @@ Record here anything neither CI nor this run established. Known entries:
   the buyer's next sign-in from the paid row's email.
 - **Production database behaviour.** Every CI database assertion is against a
   double.
+- **How long Stripe keeps a Checkout Session retrievable.** R12 measures it.
+  The entitlement resolves `session.created` at sign-in; the resolver fails
+  closed, so the risk is a deferred grant, not a wrong one.
+- **The welcome email and subscription analytics** remain a bounded loss if a
+  process dies mid-handler. Durable membership state converges; a one-time
+  message does not. Recorded separately on purpose.
 - **Concurrency as Postgres actually schedules it.** CI proves the handler has
   a check-then-act window and that the claim closes it; it does not prove
   Postgres's isolation behaviour.

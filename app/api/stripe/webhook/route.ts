@@ -8,7 +8,7 @@ import { logServerEvent } from "@/lib/statsig-server"
 import { welcomeSubscriptionEmailHtml } from "@/lib/email/welcome-subscription-email"
 import { cancellationEmail } from "@/lib/email/paid-onboarding-email"
 import { resolvePaidReportSummary, isCheckoutSessionSettled } from "@/lib/paid-report-session"
-import { decideTrialActivation, latestPurchaseAt } from "@/lib/auth/reconcile-account"
+import { decideTrialActivation } from "@/lib/auth/reconcile-account"
 import { reportError } from "@/lib/report-error"
 
 // Stripe v20 with the clover API version uses slightly different type shapes.
@@ -196,21 +196,21 @@ export async function POST(req: NextRequest) {
         // to now — so a redelivered or replayed event recomputes the same
         // expiry instead of sliding it forward.
         //
-        // Two purchase-correlated sources, both stable across every delivery of
-        // every event about this session: the durable paid row written above
-        // (the same record the sign-in path reads, so the two agree), and the
-        // checkout session's own creation time when no row is readable.
-        const { data: paidRow } = await supabase
-          .from("deep_assessments")
-          .select("created_at")
-          .eq("stripe_session_id", session.id)
-          .maybeSingle()
-
+        // The settled session itself is the purchase record, and this handler
+        // is holding it. `created` is identical across every delivery and
+        // redelivery of every event about this session, which is what makes a
+        // replay recompute the same expiry instead of sliding it.
+        //
+        // This deliberately does NOT read `deep_assessments.created_at`. That
+        // column is "when the row was first written", and the row can be
+        // created by the questionnaire days after the purchase whenever this
+        // webhook did not run — which would grant a window measured from the
+        // wrong event. The sign-in path resolves the same `session.created`
+        // through `stripe_session_id`, so both paths agree.
         const purchasedAt =
-          latestPurchaseAt(paidRow ? [paidRow as { created_at?: string | null }] : []) ??
-          (typeof session.created === "number"
+          typeof session.created === "number"
             ? new Date(session.created * 1000).toISOString()
-            : null)
+            : null
 
         const decision = decideTrialActivation(
           profile.membership_tier as string | null,
@@ -349,13 +349,41 @@ export async function POST(req: NextRequest) {
           paused:             "inactive",
         }
 
+        /* ══ CONVERGENCE: THIS BRANCH WRITES THE WHOLE DURABLE TRUTH ═══════
+         *
+         * `stripe_subscription_id`, `membership_started_at` and
+         * `is_founding_member` used to be written ONLY by
+         * `customer.subscription.created`. That was survivable while a failed
+         * handler left the event unmarked and Stripe's retry re-ran it — but
+         * the claim above is taken BEFORE the side effects, so a process that
+         * dies mid-handler leaves the event marked handled and those fields
+         * never written. Founding-member status is a real benefit; losing it
+         * to a crash is not acceptable, and it is not analytics.
+         *
+         * Every one of them is derivable from the Stripe object this branch is
+         * already holding, so membership state converges to Stripe's truth
+         * instead of depending on one historical event having completed. A
+         * later legitimate `updated` fully repairs a lost `created`.
+         *
+         * Derived, never incremented or toggled, so a replay recomputes the
+         * same values and changes nothing.
+         */
         const pe2 = field<number>(sub, "current_period_end")
+        const status = statusMap[sub.status] ?? "inactive"
         const updates: Record<string, unknown> = {
-          membership_status:    statusMap[sub.status] ?? "inactive",
-          membership_expires_at: pe2 ? new Date(pe2 * 1000).toISOString() : null,
+          membership_status:      status,
+          membership_expires_at:  pe2 ? new Date(pe2 * 1000).toISOString() : null,
+          stripe_subscription_id: sub.id,
+          membership_started_at:  new Date(sub.created * 1000).toISOString(),
+          is_founding_member:     isFoundingMember(new Date(sub.created * 1000)),
         }
 
         if (newTier) updates.membership_tier = newTier
+
+        // Only while the subscription is actually live. Clearing it on a
+        // cancellation or a failed payment would destroy a separately-bought
+        // €49 report entitlement that has nothing to do with this subscription.
+        if (status === "active") updates.trial_expires_at = null
 
         await supabase.from("profiles").update(updates).eq("id", profile.id)
 

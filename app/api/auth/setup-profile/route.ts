@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getSupabaseServer } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"
 import { reconcileAccountAfterAuth } from "@/lib/auth/reconcile-account"
+import { purchasedAtFromStripe } from "@/lib/auth/purchased-at"
 
 function generateReferralCode(): string {
   return Math.random().toString(36).substring(2, 8).toUpperCase()
@@ -68,7 +69,9 @@ export async function POST() {
 
     // Link prior anonymous assessments to this user AND activate the deferred
     // 30-day report trial if they paid before signing up. Idempotent.
-    await reconcileAccountAfterAuth(adminSupabase, user.id, user.email!)
+    await reconcileAccountAfterAuth(adminSupabase, user.id, user.email!, {
+        resolvePurchasedAt: purchasedAtFromStripe,
+      })
   } catch (err) {
     console.error("[setup-profile] error (non-fatal):", err)
   }
