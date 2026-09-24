@@ -41,7 +41,7 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js"
 import {
   decideTrialActivation,
-  latestPurchaseAt,
+  latestEntitlementAnchor,
   reconcileAccountAfterAuth,
 } from "@/lib/auth/reconcile-account"
 import { PostgrestDouble } from "./support/postgrest-double"
@@ -94,7 +94,7 @@ describe("a purchase stays claimable when the webhook never runs", () => {
     // from the purchase, even though reconciliation happens 10 days later.
     // The purchase time comes from Stripe via the row's session id, NOT from
     // the row's own created_at.
-    const resolved = await latestPurchaseAt([row], async (id) =>
+    const resolved = await latestEntitlementAnchor([row], async (id: string) =>
       id === "cs_test_no_webhook" ? purchasedAt : null,
     )
     const decision = decideTrialActivation(
@@ -326,7 +326,7 @@ async function signIn(db: PostgrestDouble, purchasedAt: string | null = PURCHASE
     db.client() as unknown as SupabaseClient,
     "user_1",
     "Buyer@Example.com",
-    { resolvePurchasedAt: async () => purchasedAt },
+    { resolveEntitlementAnchor: async () => purchasedAt },
   )
 }
 
@@ -370,7 +370,7 @@ describe("reconcileAccountAfterAuth grants the purchase window, once", () => {
       "user_1",
       "buyer@example.com",
       {
-        resolvePurchasedAt: async (id) => {
+        resolveEntitlementAnchor: async (id: string) => {
           calls.push(id)
           return PURCHASE_AT
         },
@@ -440,7 +440,7 @@ describe("the entitlement is anchored to the purchase, not to the row", () => {
       "user_1",
       "buyer@example.com",
       // Stripe is the durable record of the purchase; the row is not.
-      { resolvePurchasedAt: async () => DAY0 },
+      { resolveEntitlementAnchor: async () => DAY0 },
     )
 
     const expiry = db.rowsOf("profiles")[0].trial_expires_at as string
@@ -457,7 +457,7 @@ describe("the entitlement is anchored to the purchase, not to the row", () => {
       db.client() as unknown as SupabaseClient,
       "user_1",
       "buyer@example.com",
-      { resolvePurchasedAt: async () => null },
+      { resolveEntitlementAnchor: async () => null },
     )
 
     // Fails CLOSED. Falling back to the row or to now is the defect itself.
@@ -470,12 +470,12 @@ describe("the entitlement is anchored to the purchase, not to the row", () => {
     const client = db.client() as unknown as SupabaseClient
 
     await reconcileAccountAfterAuth(client, "user_1", "buyer@example.com", {
-      resolvePurchasedAt: async () => null,
+      resolveEntitlementAnchor: async () => null,
     })
     expect(db.rowsOf("profiles")[0].membership_tier).toBe("free")
 
     await reconcileAccountAfterAuth(client, "user_1", "buyer@example.com", {
-      resolvePurchasedAt: async () => DAY0,
+      resolveEntitlementAnchor: async () => DAY0,
     })
     expect(db.rowsOf("profiles")[0].membership_tier).toBe("trial")
   })

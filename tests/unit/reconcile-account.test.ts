@@ -19,7 +19,7 @@
    idempotent: the same purchase always computes the same expiry.
 ──────────────────────────────────────────────────────────────────────── */
 import { describe, it, expect } from "vitest"
-import { decideTrialActivation, latestPurchaseAt } from "@/lib/auth/reconcile-account"
+import { decideTrialActivation, latestEntitlementAnchor } from "@/lib/auth/reconcile-account"
 
 const NOW = Date.UTC(2026, 0, 1) // fixed clock
 const DAY = 24 * 60 * 60 * 1000
@@ -150,12 +150,12 @@ describe("the entitlement window is anchored to the purchase", () => {
   })
 })
 
-describe("latestPurchaseAt resolves the PURCHASE, not the row", () => {
+describe("latestEntitlementAnchor resolves the PURCHASE, not the row", () => {
   const resolver = (map: Record<string, string | null>) => async (id: string) => map[id] ?? null
 
   it("returns the most recent resolved purchase, so a later purchase wins", async () => {
     expect(
-      await latestPurchaseAt(
+      await latestEntitlementAnchor(
         [{ stripe_session_id: "a" }, { stripe_session_id: "b" }, { stripe_session_id: "c" }],
         resolver({
           a: "2026-01-01T00:00:00.000Z",
@@ -167,15 +167,15 @@ describe("latestPurchaseAt resolves the PURCHASE, not the row", () => {
   })
 
   it("returns null when nothing can be resolved — it never guesses", async () => {
-    expect(await latestPurchaseAt([], resolver({}))).toBeNull()
-    expect(await latestPurchaseAt(null, resolver({}))).toBeNull()
-    expect(await latestPurchaseAt([{ stripe_session_id: "a" }], resolver({ a: null }))).toBeNull()
-    expect(await latestPurchaseAt([{ stripe_session_id: null }], resolver({}))).toBeNull()
+    expect(await latestEntitlementAnchor([], resolver({}))).toBeNull()
+    expect(await latestEntitlementAnchor(null, resolver({}))).toBeNull()
+    expect(await latestEntitlementAnchor([{ stripe_session_id: "a" }], resolver({ a: null }))).toBeNull()
+    expect(await latestEntitlementAnchor([{ stripe_session_id: null }], resolver({}))).toBeNull()
   })
 
   it("ignores an unresolvable session without discarding a resolvable one", async () => {
     expect(
-      await latestPurchaseAt(
+      await latestEntitlementAnchor(
         [{ stripe_session_id: "gone" }, { stripe_session_id: "a" }],
         resolver({ gone: null, a: "2026-01-01T00:00:00.000Z" }),
       ),
@@ -186,13 +186,13 @@ describe("latestPurchaseAt resolves the PURCHASE, not the row", () => {
     const thrower = async () => {
       throw new Error("stripe unreachable")
     }
-    expect(await latestPurchaseAt([{ stripe_session_id: "a" }], thrower)).toBeNull()
+    expect(await latestEntitlementAnchor([{ stripe_session_id: "a" }], thrower)).toBeNull()
   })
 
   it("bounds how many sessions it will resolve in one sign-in", async () => {
     const seen: string[] = []
     const rows = Array.from({ length: 20 }, (_, i) => ({ stripe_session_id: `s${i}` }))
-    await latestPurchaseAt(rows, async (id) => {
+    await latestEntitlementAnchor(rows, async (id: string) => {
       seen.push(id)
       return null
     })
@@ -201,9 +201,9 @@ describe("latestPurchaseAt resolves the PURCHASE, not the row", () => {
 
   it("does not resolve the same session twice", async () => {
     const seen: string[] = []
-    await latestPurchaseAt(
+    await latestEntitlementAnchor(
       [{ stripe_session_id: "a" }, { stripe_session_id: "a" }],
-      async (id) => {
+      async (id: string) => {
         seen.push(id)
         return null
       },

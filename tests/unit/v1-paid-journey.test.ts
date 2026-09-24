@@ -88,6 +88,11 @@ const BUYER = "buyer@example.com"
 const SESSION_ID = "cs_test_step7_primary"
 const INTENT_TOKEN = "a".repeat(64)
 
+/** A checkout started an hour ago, expiring 24h after it was created.
+ *  Floored to a whole second, because that is the resolution Stripe uses. */
+const SESSION_CREATED = Math.floor((Date.now() - 60 * 60 * 1000) / 1000) * 1000
+const SESSION_EXPIRES = SESSION_CREATED + 24 * 60 * 60 * 1000
+
 const SUMMARY = {
   tier: "personal",
   overall: 56,
@@ -118,7 +123,11 @@ function settledSession(overrides: Record<string, unknown> = {}) {
     // entitlement is anchored to — deliberately not the row's created_at,
     // which is only "when some writer got here first". Recent, because a
     // purchase whose 30 days have already elapsed correctly grants nothing.
-    created: Math.floor((Date.now() - 60 * 60 * 1000) / 1000),
+    created: Math.floor(SESSION_CREATED / 1000),
+    // The latest instant this checkout could have settled. The entitlement
+    // anchors here, not at `created`, so a buyer who finished late is never
+    // sold 30 days and given 29.
+    expires_at: Math.floor(SESSION_EXPIRES / 1000),
     customer_details: { email: BUYER },
     metadata: {
       summary_token: INTENT_TOKEN,
@@ -326,12 +335,17 @@ describe("a normal settled €49 purchase", () => {
     expect((rows[0].free_scores as Record<string, unknown>).overall).toBe(56)
   })
 
-  it("grants the 30-day access exactly once", async () => {
+  it("grants the 30-day access exactly once, measured from the settlement bound", async () => {
     await deliver(checkoutCompleted())
     const profile = hoisted.db!.rowsOf("profiles")[0]
     expect(profile.membership_tier).toBe("trial")
     expect(profile.membership_status).toBe("active")
-    expect(profile.trial_expires_at).toBeTruthy()
+
+    // Anchored at expires_at, so a buyer settling any time inside this session
+    // receives at least the full 30 days they paid for.
+    expect(new Date(profile.trial_expires_at as string).getTime()).toBe(
+      SESSION_EXPIRES + 30 * 24 * 60 * 60 * 1000,
+    )
 
     const trialEvents = logServerEvent.mock.calls.filter((c) => c[0] === "trial_started")
     expect(trialEvents).toHaveLength(1)

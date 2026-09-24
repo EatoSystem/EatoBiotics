@@ -170,7 +170,16 @@ written, so retrieval is part of the mechanism rather than a convenience.*
       worst case is a grant deferred to the next sign-in — never a wrong one.)*
 - [ ] **The day-10 case.** Buy, then do **not** open the questionnaire. Wait
       (or use a test clock), then start it and sign in. `trial_expires_at` must
-      be **30 days after the purchase**, not 30 days after the questionnaire.
+      be derived from the **checkout**, not from when the questionnaire was
+      first opened.
+- [ ] **The clock starts at the settlement bound, and never under-delivers.**
+      For the test session, record `created`, `expires_at` and the actual
+      settlement time, and confirm `created ≤ settled ≤ expires_at`.
+      `trial_expires_at` must equal `expires_at + 30 days`, so the buyer
+      receives **at least** 30 days after settling. **Record the observed
+      over-grant** (`expires_at − settled`); it should be under 24 hours.
+      *(If `settled > expires_at` ever appears, a delayed-notification method
+      is in play — see R2, and the bound must be revisited.)*
 - [ ] **A 100%-promo checkout** (`no_payment_required`, no PaymentIntent) still
       yields an entitlement — this is why `session.created` is the datum.
 

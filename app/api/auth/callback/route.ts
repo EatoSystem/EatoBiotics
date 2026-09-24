@@ -3,7 +3,7 @@ import { getSupabaseServer } from "@/lib/supabase-server"
 import { getSupabase } from "@/lib/supabase"  // service role client for admin ops
 import { logServerEvent } from "@/lib/statsig-server"
 import { reconcileAccountAfterAuth } from "@/lib/auth/reconcile-account"
-import { purchasedAtFromStripe } from "@/lib/auth/purchased-at"
+import { entitlementAnchorFromStripe } from "@/lib/auth/entitlement-anchor"
 
 function generateReferralCode(): string {
   return Math.random().toString(36).substring(2, 8).toUpperCase()
@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
       // activate the deferred 30-day report trial if they paid before signing up.
       // Idempotent — safe to run on every callback.
       await reconcileAccountAfterAuth(adminSupabase, user.id, user.email!.toLowerCase(), {
-        resolvePurchasedAt: purchasedAtFromStripe,
+        resolveEntitlementAnchor: entitlementAnchorFromStripe,
       })
     } catch (err) {
       console.error("Profile creation error (non-fatal):", err)

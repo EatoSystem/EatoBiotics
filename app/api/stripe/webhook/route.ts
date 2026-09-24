@@ -9,6 +9,7 @@ import { welcomeSubscriptionEmailHtml } from "@/lib/email/welcome-subscription-e
 import { cancellationEmail } from "@/lib/email/paid-onboarding-email"
 import { resolvePaidReportSummary, isCheckoutSessionSettled } from "@/lib/paid-report-session"
 import { decideTrialActivation } from "@/lib/auth/reconcile-account"
+import { entitlementAnchorFromSession } from "@/lib/auth/entitlement-anchor"
 import { reportError } from "@/lib/report-error"
 
 // Stripe v20 with the clover API version uses slightly different type shapes.
@@ -196,26 +197,23 @@ export async function POST(req: NextRequest) {
         // to now — so a redelivered or replayed event recomputes the same
         // expiry instead of sliding it forward.
         //
-        // The settled session itself is the purchase record, and this handler
-        // is holding it. `created` is identical across every delivery and
-        // redelivery of every event about this session, which is what makes a
-        // replay recompute the same expiry instead of sliding it.
+        // The 30-day clock starts at the LATEST instant this checkout could
+        // have settled — not at `created`, which is when the buyer STARTED
+        // checkout. Anchoring at the start would sell 30 days and deliver 29
+        // to anyone who finished late. The same pure rule runs on the sign-in
+        // path, so the two can never compute different expiries for one
+        // purchase. See lib/auth/entitlement-anchor.ts for the proof.
         //
-        // This deliberately does NOT read `deep_assessments.created_at`. That
+        // This deliberately does NOT read `deep_assessments.created_at`: that
         // column is "when the row was first written", and the row can be
         // created by the questionnaire days after the purchase whenever this
-        // webhook did not run — which would grant a window measured from the
-        // wrong event. The sign-in path resolves the same `session.created`
-        // through `stripe_session_id`, so both paths agree.
-        const purchasedAt =
-          typeof session.created === "number"
-            ? new Date(session.created * 1000).toISOString()
-            : null
+        // webhook did not run.
+        const anchorAt = entitlementAnchorFromSession(session)
 
         const decision = decideTrialActivation(
           profile.membership_tier as string | null,
           profile.trial_expires_at as string | null,
-          purchasedAt,
+          anchorAt,
         )
         let trialGranted = false
         if (decision.activate) {

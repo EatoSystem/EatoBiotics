@@ -56,12 +56,12 @@ export interface TrialDecision {
  * sliding window, and the claim is what made it survive review. Found in
  * Step 7 by a replay assertion that failed by two milliseconds.
  *
- * Deriving the expiry from `purchasedAt` makes repeated calls genuinely
+ * Deriving the expiry from the anchor makes repeated calls genuinely
  * idempotent: the same purchase always computes the same expiry, so the
  * `existing >= proposed` guard below actually holds on the second call.
  *
  * - Only `free`/`trial` accounts are eligible (never downgrade a subscriber).
- * - No qualifying purchase (`purchasedAt` null) → nothing to grant.
+ * - No qualifying purchase (`anchorAt` null) → nothing to grant.
  * - An unreadable purchase timestamp fails CLOSED. Granting a fresh window
  *   from `now` is the exact defect being repaired, so it is not the fallback.
  * - A window that has already elapsed is not revived.
@@ -70,19 +70,25 @@ export interface TrialDecision {
 export function decideTrialActivation(
   currentTier: string | null | undefined,
   currentExpiry: string | null | undefined,
-  /** When the qualifying purchase happened. `null` = no qualifying purchase. */
-  purchasedAt: string | number | Date | null | undefined,
+  /**
+   * When the 30-day clock starts for the qualifying purchase — the LATEST
+   * instant that checkout could have settled, not the purchase time. See
+   * lib/auth/entitlement-anchor.ts for why, and for the proof that the buyer
+   * therefore always receives at least the 30 days they were sold.
+   * `null` = no qualifying purchase, or its anchor could not be established.
+   */
+  anchorAt: string | number | Date | null | undefined,
   now: number = Date.now()
 ): TrialDecision {
-  if (purchasedAt === null || purchasedAt === undefined) return { activate: false }
+  if (anchorAt === null || anchorAt === undefined) return { activate: false }
 
-  const purchased = new Date(purchasedAt).getTime()
-  if (Number.isNaN(purchased)) return { activate: false }
+  const anchor = new Date(anchorAt).getTime()
+  if (Number.isNaN(anchor)) return { activate: false }
 
   const tier = currentTier ?? "free"
   if (!TRIAL_ELIGIBLE_TIERS.includes(tier)) return { activate: false }
 
-  const proposed = purchased + THIRTY_DAYS_MS
+  const proposed = anchor + THIRTY_DAYS_MS
 
   // The window this purchase bought has already run out. Signing in later does
   // not revive it.
@@ -105,7 +111,7 @@ export function decideTrialActivation(
  * Injected rather than imported so this module keeps no payment dependency and
  * stays testable without one. The auth routes supply the real implementation.
  */
-export type PurchasedAtResolver = (sessionId: string) => Promise<string | null>
+export type EntitlementAnchorResolver = (sessionId: string) => Promise<string | null>
 
 /** At most this many sessions are resolved per sign-in. */
 const MAX_SESSIONS_RESOLVED = 5
@@ -148,9 +154,9 @@ const MAX_SESSIONS_RESOLVED = 5
  * `decideTrialActivation` treats as "grant nothing". It must never fall back to
  * the row or to the clock: that fallback IS the defect.
  */
-export async function latestPurchaseAt(
+export async function latestEntitlementAnchor(
   rows: { stripe_session_id?: string | null }[] | null | undefined,
-  resolve: PurchasedAtResolver,
+  resolve: EntitlementAnchorResolver,
 ): Promise<string | null> {
   const sessionIds = [
     ...new Set(
@@ -164,18 +170,18 @@ export async function latestPurchaseAt(
   let latestMs = -Infinity
 
   for (const sessionId of sessionIds) {
-    let purchasedAt: string | null = null
+    let anchor: string | null = null
     try {
-      purchasedAt = await resolve(sessionId)
+      anchor = await resolve(sessionId)
     } catch {
       // An unreachable payment provider is not evidence of a purchase time.
       continue
     }
-    if (!purchasedAt) continue
-    const ms = new Date(purchasedAt).getTime()
+    if (!anchor) continue
+    const ms = new Date(anchor).getTime()
     if (Number.isNaN(ms) || ms <= latestMs) continue
     latestMs = ms
-    latest = purchasedAt
+    latest = anchor
   }
   return latest
 }
@@ -206,7 +212,7 @@ export async function reconcileAccountAfterAuth(
      * entitlement is granted here — deliberately: the alternative is to guess
      * from a row timestamp, which is the defect this repair exists for.
      */
-    resolvePurchasedAt?: PurchasedAtResolver
+    resolveEntitlementAnchor?: EntitlementAnchorResolver
   }
 ): Promise<ReconcileResult> {
   const normalisedEmail = email.toLowerCase().trim()
@@ -254,16 +260,16 @@ export async function reconcileAccountAfterAuth(
     // row exists AND the account is one this could upgrade. A subscriber, or an
     // account with no purchase, needs no call to the payment provider.
     const tier = (profile?.membership_tier as string | null) ?? "free"
-    const resolve = options?.resolvePurchasedAt
-    const purchasedAt =
+    const resolve = options?.resolveEntitlementAnchor
+    const anchorAt =
       rows.length > 0 && TRIAL_ELIGIBLE_TIERS.includes(tier) && resolve
-        ? await latestPurchaseAt(rows, resolve)
+        ? await latestEntitlementAnchor(rows, resolve)
         : null
 
     const decision = decideTrialActivation(
       profile?.membership_tier as string | null,
       profile?.trial_expires_at as string | null,
-      purchasedAt
+      anchorAt
     )
 
     if (decision.activate) {
