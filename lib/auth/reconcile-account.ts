@@ -37,30 +37,153 @@ export interface TrialDecision {
  * Pure decision for the deferred report trial. Extracted so it can be unit
  * tested without a database.
  *
+ * ══ THE WINDOW IS ANCHORED TO THE PURCHASE, NEVER TO `now` ══════════════════
+ *
+ * One qualifying €49 purchase grants ONE fixed 30-day window, measured from
+ * that purchase. Reconciliation may RECOVER that entitlement; it may never
+ * move its expiry forward.
+ *
+ * This used to compute `now + 30d` and activate whenever that beat the stored
+ * expiry — and `reconcileAccountAfterAuth` calls it on EVERY sign-in. So the
+ * window slid forward on each visit:
+ *
+ *     purchase day 0 → day 30 · sign in day 2 → day 32
+ *     sign in day 29 → day 59 · sign in day 400 → day 430
+ *
+ * The "30 days of EatoBiotics access" sold with the Report never expired for
+ * anyone who kept signing in, and a redelivered webhook slid it too. The
+ * comment here claimed "this also makes repeated calls idempotent"; it was a
+ * sliding window, and the claim is what made it survive review. Found in
+ * Step 7 by a replay assertion that failed by two milliseconds.
+ *
+ * Deriving the expiry from the anchor makes repeated calls genuinely
+ * idempotent: the same purchase always computes the same expiry, so the
+ * `existing >= proposed` guard below actually holds on the second call.
+ *
  * - Only `free`/`trial` accounts are eligible (never downgrade a subscriber).
- * - Requires the user to actually have a paid report on file.
- * - Never *shortens* an existing trial: if the current expiry is already later
- *   than the proposed +30d, leave it. This also makes repeated calls idempotent.
+ * - No qualifying purchase (`anchorAt` null) → nothing to grant.
+ * - An unreadable purchase timestamp fails CLOSED. Granting a fresh window
+ *   from `now` is the exact defect being repaired, so it is not the fallback.
+ * - A window that has already elapsed is not revived.
+ * - A genuine LATER purchase legitimately opens a new window from itself.
  */
 export function decideTrialActivation(
   currentTier: string | null | undefined,
   currentExpiry: string | null | undefined,
-  hasPaidReport: boolean,
+  /**
+   * When the 30-day clock starts for the qualifying purchase — the LATEST
+   * instant that checkout could have settled, not the purchase time. See
+   * lib/auth/entitlement-anchor.ts for why, and for the proof that the buyer
+   * therefore always receives at least the 30 days they were sold.
+   * `null` = no qualifying purchase, or its anchor could not be established.
+   */
+  anchorAt: string | number | Date | null | undefined,
   now: number = Date.now()
 ): TrialDecision {
-  if (!hasPaidReport) return { activate: false }
+  if (anchorAt === null || anchorAt === undefined) return { activate: false }
+
+  const anchor = new Date(anchorAt).getTime()
+  if (Number.isNaN(anchor)) return { activate: false }
+
   const tier = currentTier ?? "free"
   if (!TRIAL_ELIGIBLE_TIERS.includes(tier)) return { activate: false }
 
-  const proposed = now + THIRTY_DAYS_MS
+  const proposed = anchor + THIRTY_DAYS_MS
+
+  // The window this purchase bought has already run out. Signing in later does
+  // not revive it.
+  if (proposed <= now) return { activate: false }
+
   if (currentExpiry) {
     const existing = new Date(currentExpiry).getTime()
     if (!Number.isNaN(existing) && existing >= proposed) {
-      // Already has equal/longer access — nothing to do.
+      // Already has equal/longer access — nothing to do. With the expiry
+      // anchored to the purchase, this is the branch every repeat call takes.
       return { activate: false }
     }
   }
   return { activate: true, expiresAt: new Date(proposed).toISOString() }
+}
+
+/**
+ * Resolves when a checkout actually happened, from its session id.
+ *
+ * Injected rather than imported so this module keeps no payment dependency and
+ * stays testable without one. The auth routes supply the real implementation.
+ */
+export type EntitlementAnchorResolver = (sessionId: string) => Promise<string | null>
+
+/** At most this many sessions are resolved per sign-in. */
+const MAX_SESSIONS_RESOLVED = 5
+
+/**
+ * The qualifying purchase for the entitlement decision: the most recent time
+ * at which one of this account's paid checkouts actually happened.
+ *
+ * ══ WHY THIS IS NOT `deep_assessments.created_at` ═══════════════════════════
+ *
+ * Because that column is "when this row was first written", and three
+ * different writers can write it first: the Stripe webhook (seconds after
+ * settlement), the question generator, and the Consultation claimer. The
+ * `success_url` sends the buyer straight to `/assessment/deep`, so in the
+ * healthy case the webhook and the questionnaire race within seconds and the
+ * row lands next to the purchase either way — which is exactly why anchoring
+ * to it looked correct.
+ *
+ * But the identity repair above exists BECAUSE the webhook may never run. In
+ * that case the row is created whenever the buyer gets round to starting, and
+ * a buyer who purchased on day 0 and opened the questionnaire on day 10 would
+ * be granted access until day 40. Durable is not the same as meaning the
+ * purchase, and the first version of this function confused the two.
+ *
+ * The durable record of the purchase is Stripe's own Checkout Session, and
+ * `deep_assessments.stripe_session_id` is a durable key into it. `created` on
+ * a session we have already proven settled is:
+ *
+ *   • present on EVERY settled session, including a 100%-promo
+ *     `no_payment_required` one, which has no PaymentIntent to read instead;
+ *   • never later than settlement, and bounded before it — a Checkout Session
+ *     expires 24h after creation, so a session that settled did so within 24h;
+ *   • identical across every delivery, redelivery and later read, which is
+ *     what makes repeated calls idempotent.
+ *
+ * Most recent, not earliest, because a genuine second purchase should open a
+ * new window from itself.
+ *
+ * Returns null when no purchase time can be established — which
+ * `decideTrialActivation` treats as "grant nothing". It must never fall back to
+ * the row or to the clock: that fallback IS the defect.
+ */
+export async function latestEntitlementAnchor(
+  rows: { stripe_session_id?: string | null }[] | null | undefined,
+  resolve: EntitlementAnchorResolver,
+): Promise<string | null> {
+  const sessionIds = [
+    ...new Set(
+      (rows ?? [])
+        .map((r) => r?.stripe_session_id)
+        .filter((id): id is string => typeof id === "string" && id.length > 0),
+    ),
+  ].slice(0, MAX_SESSIONS_RESOLVED)
+
+  let latest: string | null = null
+  let latestMs = -Infinity
+
+  for (const sessionId of sessionIds) {
+    let anchor: string | null = null
+    try {
+      anchor = await resolve(sessionId)
+    } catch {
+      // An unreachable payment provider is not evidence of a purchase time.
+      continue
+    }
+    if (!anchor) continue
+    const ms = new Date(anchor).getTime()
+    if (Number.isNaN(ms) || ms <= latestMs) continue
+    latestMs = ms
+    latest = anchor
+  }
+  return latest
 }
 
 /** Mask an email for logs: `jason@example.com` → `j***@example.com`. */
@@ -82,7 +205,15 @@ export interface ReconcileResult {
 export async function reconcileAccountAfterAuth(
   adminSupabase: SupabaseClient,
   userId: string,
-  email: string
+  email: string,
+  options?: {
+    /**
+     * How to find out when a checkout actually happened. Without it no
+     * entitlement is granted here — deliberately: the alternative is to guess
+     * from a row timestamp, which is the defect this repair exists for.
+     */
+    resolveEntitlementAnchor?: EntitlementAnchorResolver
+  }
 ): Promise<ReconcileResult> {
   const normalisedEmail = email.toLowerCase().trim()
   const result: ReconcileResult = { trialGranted: false, linkedReports: 0 }
@@ -104,12 +235,20 @@ export async function reconcileAccountAfterAuth(
 
     // 2. Deferred trial activation. Presence of a deep_assessments row means the
     //    user paid for a report (those rows are only created at checkout time).
-    const { count: paidReportCount } = await adminSupabase
+    //
+    //    The rows are read rather than counted because the DECISION needs the
+    //    purchase timestamp, not just its existence — see decideTrialActivation.
+    //    `created_at` carries DEFAULT now() and neither writer sets it
+    //    explicitly, so it is the durable record of when this purchase landed,
+    //    and it is still readable at sign-in long after the Stripe session and
+    //    the paid_report_intents row have gone.
+    const { data: paidRows } = await adminSupabase
       .from("deep_assessments")
-      .select("*", { count: "exact", head: true })
+      .select("stripe_session_id")
       .eq("user_id", userId)
 
-    result.linkedReports = paidReportCount ?? 0
+    const rows = (paidRows ?? []) as { stripe_session_id?: string | null }[]
+    result.linkedReports = rows.length
 
     const { data: profile } = await adminSupabase
       .from("profiles")
@@ -117,10 +256,20 @@ export async function reconcileAccountAfterAuth(
       .eq("id", userId)
       .maybeSingle()
 
+    // Resolve the purchase time only when a decision is actually live: a paid
+    // row exists AND the account is one this could upgrade. A subscriber, or an
+    // account with no purchase, needs no call to the payment provider.
+    const tier = (profile?.membership_tier as string | null) ?? "free"
+    const resolve = options?.resolveEntitlementAnchor
+    const anchorAt =
+      rows.length > 0 && TRIAL_ELIGIBLE_TIERS.includes(tier) && resolve
+        ? await latestEntitlementAnchor(rows, resolve)
+        : null
+
     const decision = decideTrialActivation(
       profile?.membership_tier as string | null,
       profile?.trial_expires_at as string | null,
-      (paidReportCount ?? 0) > 0
+      anchorAt
     )
 
     if (decision.activate) {

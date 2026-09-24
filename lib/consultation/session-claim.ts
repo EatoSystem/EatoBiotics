@@ -204,8 +204,10 @@ export async function claimDeterministicConsultation(
     try {
       const { error } = await supabase.from("deep_assessments").insert({
         stripe_session_id: sessionId,
+        // `email` arrives with the shared projection — see
+        // ownedPaidAssessmentFields. It used to be set separately here, which
+        // made this the only non-webhook writer that recorded it.
         ...ownedPaidAssessmentFields(summary),
-        email: summary.email ?? null,
         questions: opening.snapshot,
         answers: EMPTY_DETERMINISTIC_STATE,
         status: "questions_generated",

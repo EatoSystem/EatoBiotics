@@ -9,6 +9,7 @@ import { welcomeSubscriptionEmailHtml } from "@/lib/email/welcome-subscription-e
 import { cancellationEmail } from "@/lib/email/paid-onboarding-email"
 import { resolvePaidReportSummary, isCheckoutSessionSettled } from "@/lib/paid-report-session"
 import { decideTrialActivation } from "@/lib/auth/reconcile-account"
+import { entitlementAnchorFromSession } from "@/lib/auth/entitlement-anchor"
 import { reportError } from "@/lib/report-error"
 
 // Stripe v20 with the clover API version uses slightly different type shapes.
@@ -76,18 +77,73 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Database not configured" }, { status: 503 })
   }
 
-  // Idempotency: Stripe redelivers events on retry. Skip any we've already
-  // processed so we don't double-apply membership changes or log duplicates.
-  // (If the stripe_processed_events table isn't present yet, this read errors
-  //  harmlessly and processing continues as before.)
-  const { data: alreadyProcessed } = await supabase
+  /* ══ IDEMPOTENCY: READ FAILS CLOSED, THEN CLAIM BEFORE ANY SIDE EFFECT ════
+   *
+   * Stripe redelivers on retry, and two deliveries of one event can overlap.
+   *
+   * This used to read, then run every side effect, then insert the marker —
+   * and swallow the insert's 23505. Two concurrent deliveries therefore both
+   * passed the read and both ran: two `report_purchased` revenue events, two
+   * `subscription_events` rows. The unique violation was caught, but it was
+   * caught far too late to prevent anything. The read also discarded its own
+   * error, so any transient read failure silently read as "not processed yet"
+   * and re-ran everything — fail-open idempotency.
+   *
+   * Both are repaired here:
+   *
+   *   1. A read error is fatal. If the store cannot say whether this event was
+   *      handled, the safe answer is not "run all the side effects again" —
+   *      it is to fail and let Stripe retry. (The old comment justified the
+   *      swallow with "if the table isn't present yet"; `stripe_processed_
+   *      events` has been in production since Migration 17, verified.)
+   *
+   *   2. The marker is INSERTED AS A CLAIM before any side effect. The primary
+   *      key makes that atomic, so exactly one of two concurrent deliveries
+   *      can win it; the loser sees 23505 and stops. The winner owns the
+   *      outcome — and if its handler fails, it DELETES the claim on the way
+   *      out so Stripe's retry can claim it cleanly.
+   *
+   * ══ THE RESIDUAL WINDOW, STATED RATHER THAN IMPLIED ══════════════════════
+   *
+   * If the process dies between claiming and completing, no compensating
+   * delete runs and that event's side effects are lost. Closing that needs an
+   * explicit claimed/completed state with takeover-after-staleness, which
+   * needs a column on `stripe_processed_events`, which is a migration — and
+   * migrations are drafted, never applied by an agent session. It is not
+   * written here on the strength of a hypothetical.
+   *
+   * What bounds the damage today: the one commercially load-bearing effect —
+   * the 30-day entitlement — is recoverable without this event, because the
+   * paid row carries the buyer's email and `reconcileAccountAfterAuth` grants
+   * the purchase-anchored window at their next sign-in.
+   */
+  const { data: alreadyProcessed, error: idempotencyReadError } = await supabase
     .from("stripe_processed_events")
     .select("event_id")
     .eq("event_id", event.id)
     .maybeSingle()
 
+  if (idempotencyReadError) {
+    console.error("[webhook] idempotency read failed:", idempotencyReadError.message)
+    return NextResponse.json({ error: "Idempotency store unavailable" }, { status: 500 })
+  }
+
   if (alreadyProcessed) {
     return NextResponse.json({ received: true, deduped: true })
+  }
+
+  const { error: claimError } = await supabase
+    .from("stripe_processed_events")
+    .insert({ event_id: event.id, event_type: event.type })
+
+  if (claimError) {
+    // 23505: a concurrent delivery claimed it first. That run owns the
+    // outcome, including retrying if it fails, so this one stops here.
+    if (claimError.code === "23505") {
+      return NextResponse.json({ received: true, deduped: true })
+    }
+    console.error("[webhook] could not claim event:", claimError.message)
+    return NextResponse.json({ error: "Idempotency store unavailable" }, { status: 500 })
   }
 
   try {
@@ -137,11 +193,27 @@ export async function POST(req: NextRequest) {
 
         // Activate the 30-day report trial. Shared decision with the auth path so
         // both behave identically: only free/trial accounts (never downgrade a
-        // subscriber), never shorten an existing trial, idempotent.
+        // subscriber), and the window is anchored to the PURCHASE rather than
+        // to now — so a redelivered or replayed event recomputes the same
+        // expiry instead of sliding it forward.
+        //
+        // The 30-day clock starts at the LATEST instant this checkout could
+        // have settled — not at `created`, which is when the buyer STARTED
+        // checkout. Anchoring at the start would sell 30 days and deliver 29
+        // to anyone who finished late. The same pure rule runs on the sign-in
+        // path, so the two can never compute different expiries for one
+        // purchase. See lib/auth/entitlement-anchor.ts for the proof.
+        //
+        // This deliberately does NOT read `deep_assessments.created_at`: that
+        // column is "when the row was first written", and the row can be
+        // created by the questionnaire days after the purchase whenever this
+        // webhook did not run.
+        const anchorAt = entitlementAnchorFromSession(session)
+
         const decision = decideTrialActivation(
           profile.membership_tier as string | null,
           profile.trial_expires_at as string | null,
-          true // a settled payment just landed
+          anchorAt,
         )
         let trialGranted = false
         if (decision.activate) {
@@ -275,13 +347,41 @@ export async function POST(req: NextRequest) {
           paused:             "inactive",
         }
 
+        /* ══ CONVERGENCE: THIS BRANCH WRITES THE WHOLE DURABLE TRUTH ═══════
+         *
+         * `stripe_subscription_id`, `membership_started_at` and
+         * `is_founding_member` used to be written ONLY by
+         * `customer.subscription.created`. That was survivable while a failed
+         * handler left the event unmarked and Stripe's retry re-ran it — but
+         * the claim above is taken BEFORE the side effects, so a process that
+         * dies mid-handler leaves the event marked handled and those fields
+         * never written. Founding-member status is a real benefit; losing it
+         * to a crash is not acceptable, and it is not analytics.
+         *
+         * Every one of them is derivable from the Stripe object this branch is
+         * already holding, so membership state converges to Stripe's truth
+         * instead of depending on one historical event having completed. A
+         * later legitimate `updated` fully repairs a lost `created`.
+         *
+         * Derived, never incremented or toggled, so a replay recomputes the
+         * same values and changes nothing.
+         */
         const pe2 = field<number>(sub, "current_period_end")
+        const status = statusMap[sub.status] ?? "inactive"
         const updates: Record<string, unknown> = {
-          membership_status:    statusMap[sub.status] ?? "inactive",
-          membership_expires_at: pe2 ? new Date(pe2 * 1000).toISOString() : null,
+          membership_status:      status,
+          membership_expires_at:  pe2 ? new Date(pe2 * 1000).toISOString() : null,
+          stripe_subscription_id: sub.id,
+          membership_started_at:  new Date(sub.created * 1000).toISOString(),
+          is_founding_member:     isFoundingMember(new Date(sub.created * 1000)),
         }
 
         if (newTier) updates.membership_tier = newTier
+
+        // Only while the subscription is actually live. Clearing it on a
+        // cancellation or a failed payment would destroy a separately-bought
+        // €49 report entitlement that has nothing to do with this subscription.
+        if (status === "active") updates.trial_expires_at = null
 
         await supabase.from("profiles").update(updates).eq("id", profile.id)
 
@@ -436,17 +536,26 @@ export async function POST(req: NextRequest) {
     }
   } catch (err) {
     await reportError("stripe-webhook", err)
-    // Don't record as processed — let Stripe retry this event.
+
+    // Release the claim so Stripe's retry can take it. Without this the event
+    // would stay marked as handled while none of its side effects happened —
+    // turning a transient failure into permanent event loss, which is a worse
+    // bug than the duplicate processing the claim exists to prevent.
+    const { error: releaseError } = await supabase
+      .from("stripe_processed_events")
+      .delete()
+      .eq("event_id", event.id)
+    if (releaseError) {
+      console.error(
+        `[webhook] could not release the claim on ${event.id} after a handler failure:`,
+        releaseError.message,
+      )
+    }
+
     return NextResponse.json({ error: "Handler error" }, { status: 500 })
   }
 
-  // Record only after successful handling so a failed run can be safely retried.
-  const { error: recordError } = await supabase
-    .from("stripe_processed_events")
-    .insert({ event_id: event.id, event_type: event.type })
-  if (recordError && recordError.code !== "23505") {
-    console.error("[webhook] Failed to record processed event:", recordError.message)
-  }
-
+  // The claim was taken before processing and survives it, so there is nothing
+  // to record here — see the idempotency block above.
   return NextResponse.json({ received: true })
 }
