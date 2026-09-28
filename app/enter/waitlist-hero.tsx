@@ -42,10 +42,7 @@ export function WaitlistHero() {
         {/* Right: waitlist content */}
         <div className="flex-1 text-left max-w-[560px] w-full">
           <ScrollReveal>
-            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              <span className="h-1.5 w-1.5 rounded-full" style={{ background: GRADIENT_BAR }} />
-              Coming soon · Join the waitlist
-            </span>
+            <EarlyAccessBadge />
             <WaitlistSocialProof />
           </ScrollReveal>
 
@@ -143,12 +140,15 @@ export function foundingAccessDeadline(
   return closes.toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" })
 }
 
-function EarlyAccessNote() {
-  const deadline = foundingAccessDeadline()
+/**
+ * The count, shared by the badge and the note so they cannot disagree.
+ *
+ * Both need the same number and neither owns it, so the fetch lives here. It
+ * is the endpoint the social-proof line already calls; nothing new is counted.
+ */
+function useEarlyAccess() {
   const [total, setTotal] = useState<number | null>(null)
 
-  // The same endpoint the social-proof line already uses. Nothing new is
-  // counted; this asks the existing counter a different question.
   useEffect(() => {
     let active = true
     fetch("/api/waitlist/count")
@@ -162,37 +162,64 @@ function EarlyAccessNote() {
     }
   }, [])
 
-  const places = earlyAccessState(total)
+  return earlyAccessState(total)
+}
+
+/**
+ * The scarcity, where a visitor actually meets it.
+ *
+ * ══ WHY IT MOVED HERE ═══════════════════════════════════════════════════════
+ *
+ * It used to live only in the paragraph below the stat row — which measured
+ * 1372px down the page, beneath the whole discovery card, in small grey body
+ * text, inside a ScrollReveal that holds its children at `opacity: 0` until
+ * they are scrolled to. It was, in every sense that matters, not on the
+ * holding page.
+ *
+ * Every test I had written asserted `toContainText`, which passes for an
+ * element at zero opacity a thousand pixels below the fold. The text was in
+ * the DOM and invisible to a human, and nothing in the suite could tell the
+ * difference. Screenshots could, immediately.
+ *
+ * So the campaign now replaces the pill that is the FIRST thing read on the
+ * page, above the fold, and the note below keeps the plain-English promise
+ * without repeating the number.
+ *
+ * With no count it reads exactly as it did before — this must never
+ * manufacture urgency it has not counted.
+ */
+function EarlyAccessBadge() {
+  const places = useEarlyAccess()
+
+  const label = !places
+    ? "Coming soon · Join the waitlist"
+    : places.isOpen
+      ? `${places.remaining} of ${EARLY_ACCESS_PLACES} early-access places left`
+      : `The first ${EARLY_ACCESS_PLACES} places are taken`
+
+  return (
+    <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: GRADIENT_BAR }} />
+      {label}
+    </span>
+  )
+}
+
+function EarlyAccessNote() {
+  const deadline = foundingAccessDeadline()
+  const places = useEarlyAccess()
 
   return (
     <p className="mt-6 max-w-md text-sm leading-relaxed text-muted-foreground">
-      {places && !places.isOpen ? (
-        // One template string rather than JSX text around an expression: the
-        // literal form rendered as "The first 100places are taken", because JSX
-        // collapsed the whitespace between the expression and the word after
-        // it. Caught by rendering the page, not by reading it.
-        <>{`The first ${EARLY_ACCESS_PLACES} places are taken — join the waitlist and you'll still hear first.`}</>
-      ) : (
+      {places && !places.isOpen
+        ? `Join the waitlist and you'll still hear first.`
+        : `Joining puts you in before the doors open — you'll be the first to take the Food System Assessment and get your Biotics Score™.`}
+      {deadline ? (
         <>
-          Joining puts you in before the doors open — you&apos;ll be the first to take the
-          Food System Assessment and get your Biotics Score&trade;.
-          {places ? (
-            <>
-              {" "}
-              <span className="font-medium text-foreground">
-                {places.remaining} of {EARLY_ACCESS_PLACES}
-              </span>{" "}
-              early-access places left.
-            </>
-          ) : null}
-          {deadline ? (
-            <>
-              {" "}Founding access closes{" "}
-              <span className="font-medium text-foreground">{deadline}</span>.
-            </>
-          ) : null}
+          {" "}Founding access closes{" "}
+          <span className="font-medium text-foreground">{deadline}</span>.
         </>
-      )}
+      ) : null}
     </p>
   )
 }
