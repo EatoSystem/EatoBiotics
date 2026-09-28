@@ -167,10 +167,11 @@ function EarlyAccessNote() {
   return (
     <p className="mt-6 max-w-md text-sm leading-relaxed text-muted-foreground">
       {places && !places.isOpen ? (
-        <>
-          The first {EARLY_ACCESS_PLACES} places are taken — join the waitlist and
-          you&apos;ll still hear first.
-        </>
+        // One template string rather than JSX text around an expression: the
+        // literal form rendered as "The first 100places are taken", because JSX
+        // collapsed the whitespace between the expression and the word after
+        // it. Caught by rendering the page, not by reading it.
+        <>{`The first ${EARLY_ACCESS_PLACES} places are taken — join the waitlist and you'll still hear first.`}</>
       ) : (
         <>
           Joining puts you in before the doors open — you&apos;ll be the first to take the
