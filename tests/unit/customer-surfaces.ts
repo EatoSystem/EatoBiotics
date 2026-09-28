@@ -157,6 +157,16 @@ export const SAMPLE_REPORT_SURFACES = [
 /** Public marketing and commercial pages. */
 export const MARKETING_SURFACES = [
   "app/page.tsx",
+  // The holding page — the ONLY page a visitor sees while the password gate is
+  // on, and until Step 7B the only customer-facing surface no guard was
+  // reading. It linked to /waitlist ("See what's coming — Book, App & Course")
+  // and /waitlist sold "three launches", a pre-order price and waitlist-only
+  // early-bird pricing, none of which EatoBiotics has ever sold under the V1
+  // commercial model. That page is refused now; this one is guarded, which is
+  // the half that stops it happening again.
+  "app/enter/page.tsx",
+  "app/enter/waitlist-hero.tsx",
+  ...filesIn("components/waitlist"),
   "components/home/membership-teaser.tsx",
   "components/home/feed-seed-heal.tsx",
   "app/start/page.tsx",

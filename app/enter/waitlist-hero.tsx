@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { DiscoverFlow } from "@/components/waitlist/discover-flow"
 import { WaitlistSocialProof } from "@/components/waitlist/social-proof"
@@ -98,15 +97,63 @@ export function WaitlistHero() {
           </ScrollReveal>
 
           <ScrollReveal delay={340}>
-            <Link
-              href="/waitlist"
-              className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
-            >
-              See what&apos;s coming — Book, App &amp; Course
-            </Link>
+            <EarlyAccessNote />
           </ScrollReveal>
         </div>
       </div>
     </section>
+  )
+}
+
+/**
+ * What joining early actually gets you — and nothing more than that.
+ *
+ * This replaced a link to `/waitlist` reading "See what's coming — Book, App &
+ * Course". EatoBiotics does not sell a book, an app or a course: V1 sells the
+ * free Food System Assessment, the €49 Personal Food System Consultation, and
+ * EatoBiotics Member. `/waitlist` made the same promise at greater length and
+ * is now refused; this is the one holding page, so it carries one promise.
+ *
+ * ══ WHY A DATE AND NOT "THE FIRST 100" ══════════════════════════════════════
+ *
+ * There is no counter anywhere in this system, and a genuine rank-based cap
+ * needs durable, race-safe state — a migration, which an agent session may
+ * draft but never apply. A cap that miscounts under concurrency is a public
+ * promise broken in public. A date does the same scarcity work with no state
+ * to get wrong, and `FOUNDING_MEMBER_CUTOFF_DATE` already decides founding
+ * status in the Stripe webhook and on the pricing page.
+ *
+ * ══ IT SAYS NOTHING WHEN IT KNOWS NOTHING ═══════════════════════════════════
+ *
+ * With no cutoff configured this renders nothing at all, rather than naming a
+ * deadline nobody set or implying a discount that does not exist. Early access
+ * here means exactly one thing: being in before the doors open.
+ */
+export function foundingAccessDeadline(
+  value: string | undefined = process.env.NEXT_PUBLIC_FOUNDING_MEMBER_CUTOFF_DATE,
+  now: number = Date.now(),
+): string | null {
+  if (!value) return null
+  const closes = new Date(value)
+  if (Number.isNaN(closes.getTime())) return null
+  // A deadline that has already passed is not scarcity, it is a stale promise.
+  if (closes.getTime() <= now) return null
+  return closes.toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" })
+}
+
+function EarlyAccessNote() {
+  const deadline = foundingAccessDeadline()
+
+  return (
+    <p className="mt-6 max-w-md text-sm leading-relaxed text-muted-foreground">
+      Joining puts you in before the doors open — you&apos;ll be the first to take the
+      Food System Assessment and get your Biotics Score&trade;.
+      {deadline ? (
+        <>
+          {" "}Founding access closes{" "}
+          <span className="font-medium text-foreground">{deadline}</span>.
+        </>
+      ) : null}
+    </p>
   )
 }

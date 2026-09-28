@@ -121,8 +121,29 @@ export const V1_ESSENTIAL_ROUTES = [
   "/offline",
   "/enter",
   "/preview-access",
-  "/waitlist",
 ] as const
+
+/*
+ * `/waitlist` was here, and is deliberately POST_V1 now.
+ *
+ * It was kept as essential because `proxy.ts`'s gate allowlist named it and
+ * `/enter` linked to it. What nobody checked was what it SAYS: "Be first in
+ * line for the EatoBiotics book, app, and course. One subscription — three
+ * launches", "Pre-order price locked in", "Waitlist-only early bird pricing".
+ *
+ * V1 sells the free Food System Assessment, the €49 Personal Food System
+ * Consultation and EatoBiotics Member. There is no book, no app, no course and
+ * no pre-order, so every commercial promise on that page is one the product
+ * cannot keep. It also sat outside `tests/unit/customer-surfaces.ts`, which is
+ * the precise failure that manifest exists to prevent — a live surface
+ * carrying a competing product model because no guard was reading it.
+ *
+ * `/enter` is the page the gate actually serves, and it now carries the one
+ * promise. Refusing this route, removing it from the gate allowlist, and
+ * dropping `/enter`'s link to it are one change in three files: doing any of
+ * them alone leaves either a reachable retired offer or a dead link on the
+ * only page a visitor can currently see.
+ */
 
 /* ── Intentional public content ─────────────────────────────────────────── */
 
@@ -348,6 +369,11 @@ export const POST_V1_ROUTES = [
   "/report-you",
   "/report-mind",
   "/report-family",
+  // The pre-launch waitlist page. Refused for what it SELLS, not for where it
+  // sits: a book, an app, a course, "three launches", "pre-order price locked
+  // in", "waitlist-only early bird pricing" — none of which exists. `/enter`
+  // is the holding page the gate serves and now carries the one promise.
+  "/waitlist",
   "/start",
   "/start-mind",
   "/start-family",
