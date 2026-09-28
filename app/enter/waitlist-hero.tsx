@@ -1,6 +1,8 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { ScrollReveal } from "@/components/scroll-reveal"
+import { earlyAccessState, EARLY_ACCESS_PLACES } from "@/lib/waitlist/early-access"
 import { DiscoverFlow } from "@/components/waitlist/discover-flow"
 import { WaitlistSocialProof } from "@/components/waitlist/social-proof"
 import { HeroVideo } from "@/components/hero-video"
@@ -143,17 +145,53 @@ export function foundingAccessDeadline(
 
 function EarlyAccessNote() {
   const deadline = foundingAccessDeadline()
+  const [total, setTotal] = useState<number | null>(null)
+
+  // The same endpoint the social-proof line already uses. Nothing new is
+  // counted; this asks the existing counter a different question.
+  useEffect(() => {
+    let active = true
+    fetch("/api/waitlist/count")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (active && data?.ok && typeof data.total === "number") setTotal(data.total)
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const places = earlyAccessState(total)
 
   return (
     <p className="mt-6 max-w-md text-sm leading-relaxed text-muted-foreground">
-      Joining puts you in before the doors open — you&apos;ll be the first to take the
-      Food System Assessment and get your Biotics Score&trade;.
-      {deadline ? (
+      {places && !places.isOpen ? (
         <>
-          {" "}Founding access closes{" "}
-          <span className="font-medium text-foreground">{deadline}</span>.
+          The first {EARLY_ACCESS_PLACES} places are taken — join the waitlist and
+          you&apos;ll still hear first.
         </>
-      ) : null}
+      ) : (
+        <>
+          Joining puts you in before the doors open — you&apos;ll be the first to take the
+          Food System Assessment and get your Biotics Score&trade;.
+          {places ? (
+            <>
+              {" "}
+              <span className="font-medium text-foreground">
+                {places.remaining} of {EARLY_ACCESS_PLACES}
+              </span>{" "}
+              early-access places left.
+            </>
+          ) : null}
+          {deadline ? (
+            <>
+              {" "}Founding access closes{" "}
+              <span className="font-medium text-foreground">{deadline}</span>.
+            </>
+          ) : null}
+        </>
+      )}
     </p>
   )
 }

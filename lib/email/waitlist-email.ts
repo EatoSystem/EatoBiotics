@@ -4,7 +4,19 @@
  */
 import { unsubscribeUrl } from "./unsubscribe"
 
-export function waitlistConfirmationEmail(email?: string): { subject: string; html: string } {
+export function waitlistConfirmationEmail(
+  email?: string,
+  /**
+   * Their place in the first 100, when the signup landed inside it.
+   *
+   * This is what makes the early-access promise honourable later: the cohort
+   * is derived from `created_at` ordering at launch, and this tells the person
+   * the same number that derivation will produce. Omitted — and silent —
+   * outside the first 100 or when the count was unavailable, because a place
+   * the product cannot stand behind is worse than no place at all.
+   */
+  earlyAccessPlace?: number | null,
+): { subject: string; html: string } {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://eatobiotics.com"
   const subject = "You're on the EatoBiotics waitlist 🌱"
   const unsubLink = email
@@ -36,7 +48,7 @@ export function waitlistConfirmationEmail(email?: string): { subject: string; ht
             <td style="padding:36px 40px;">
               <p style="margin:0 0 16px;color:#1A2E12;font-size:18px;font-weight:600;">Welcome to EatoBiotics 👋</p>
               <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.65;">
-                Thank you for joining the waitlist. You&rsquo;re now first in line for early access to
+                ${earlyAccessPlace ? `You&rsquo;re <strong>#${earlyAccessPlace} of the first 100</strong>. ` : ""}Thank you for joining the waitlist. You&rsquo;re now first in line for early access to
                 the EatoBiotics assessment, your personal report, AI meal scoring, recipes, and
                 membership. We&rsquo;ll email you the moment it opens.
               </p>
