@@ -40,7 +40,6 @@ import { usePrefersReducedMotion } from "@/components/assessment/result/use-redu
 import { HealthConsentCheckbox } from "@/components/health-consent-checkbox"
 import { HEALTH_CONSENT_REQUIRED_MESSAGE } from "@/lib/health-consent"
 import { useTranslations } from "@/components/i18n/locale-provider"
-import { interpolate } from "@/lib/i18n/config"
 import { AGE_BRACKETS } from "@/lib/age-brackets"
 import { resolveMarket, DEFAULT_MARKET, type FoodProfile } from "@/lib/market"
 import { submitWaitlistJoin, type WaitlistUtm } from "@/lib/waitlist/join"
@@ -151,7 +150,6 @@ export function FoodSystemExperience({
 
   const [referredBy, setReferredBy] = useState<string | null>(null)
   const [utm, setUtm] = useState<WaitlistUtm>({})
-  const [barsMounted, setBarsMounted] = useState(false)
 
   const answeredCount = Object.keys(answers).length
   const question = QUICK_QUESTIONS[step]
@@ -211,10 +209,6 @@ export function FoodSystemExperience({
     const id = setTimeout(() => setPhase("reveal"), 1600)
     return () => clearTimeout(id)
   }, [phase, reducedMotion])
-
-  useEffect(() => {
-    if (phase === "reveal") setBarsMounted(true)
-  }, [phase])
 
   useEffect(() => {
     if (phase === "reveal" && result) {
@@ -375,9 +369,7 @@ export function FoodSystemExperience({
         {phase === "reveal" && result && (
           <RevealStage
             result={result}
-            barsMounted={barsMounted}
             cohort={cohort}
-            biggestOppTemplate={tw.reveal.biggestOpp}
             onClaim={() => setPhase("claim")}
           />
         )}
@@ -631,22 +623,64 @@ function BuildingStage({ figure, campaign }: { figure: React.ReactNode; campaign
  * something a person does, postbiotics are what bacteria produce — and
  * tests/unit/score-hierarchy.test.ts refuses an action used as a score label.
  */
-const COMPONENTS: { pillar: QuickPillar; key: "prebiotics" | "probiotics" | "postbiotics" }[] = [
-  { pillar: "prebiotics", key: "prebiotics" },
-  { pillar: "probiotics", key: "probiotics" },
-  { pillar: "postbiotics", key: "postbiotics" },
+/**
+ * The Three Biotics, as the scientific foundation — with no personal number.
+ *
+ * ══ WHY THE NUMBERS ARE GONE ════════════════════════════════════════════════
+ *
+ * This rendered `Prebiotics — Feed 67`, `Probiotics — Seed 67`,
+ * `Postbiotics — Rejuvenate 67` with bars. `Postbiotics — 67` is a personal
+ * postbiotic state expressed as a number, which `POSTBIOTICS_INFERENCE_BOUNDARY`
+ * prohibits by name: "personal Postbiotics state", "low Postbiotics", and the
+ * relationships quantify / indicate / reflect. The other two were the same
+ * shape of claim with a weaker spotlight on them.
+ *
+ * Under the strict ISAPP definitions the product now holds, none of the three
+ * is a thing a questionnaire can measure in a person: a prebiotic is a
+ * substrate that is selectively utilised AND confers a benefit; a probiotic is
+ * a characterised live organism with a demonstrated benefit; a postbiotic is a
+ * preparation. Self-report reaches none of them.
+ *
+ * So the Biotics keep equal status and become what they are — the foundation
+ * the product teaches. The number that remains is the overall score, which is
+ * computed from the same answers by the same untouched arithmetic.
+ *
+ * The scored dimensions that will eventually sit here (Diversity, Plants &
+ * Fibre, Fermented Foods, Food Quality, Meal Rhythm) are FSS-v1 CANDIDATE
+ * domains — frozen for scientific review and NOT yet approved. Shipping
+ * numbers for them now would be the same mistake in a new costume.
+ */
+const FOUNDATION: { pillar: QuickPillar; teaches: string }[] = [
+  { pillar: "prebiotics", teaches: "Substrates your microbes can use, with a demonstrated benefit." },
+  { pillar: "probiotics", teaches: "Live microorganisms with a demonstrated benefit — not every fermented food has them." },
+  { pillar: "postbiotics", teaches: "Preparations of inanimate microorganisms, or their components, with a demonstrated benefit." },
 ]
 
+/**
+ * The priority, named as the food behaviour rather than the Biotic.
+ *
+ * `insights[0].label` is "Prebiotics" / "Probiotics" / "Postbiotics", so
+ * printing it directly says "your biggest opportunity is Postbiotics" — a
+ * personal claim about a Biotic, only without a number attached. The behaviour
+ * is what the questions actually asked about, and it is also the thing a
+ * person can act on.
+ */
+const PRIORITY_BEHAVIOUR: Record<string, string> = {
+  Prebiotics: "plant variety and fibre",
+  Probiotics: "fermented foods",
+  Postbiotics: "your eating rhythm",
+}
+
 function RevealStage({
-  result, barsMounted, cohort, biggestOppTemplate, onClaim,
+  result, cohort, onClaim,
 }: {
   result: ReturnType<typeof computeQuickResult>
-  barsMounted: boolean
   cohort: ReturnType<typeof useCohort>
-  biggestOppTemplate: string
   onClaim: () => void
 }) {
   const claimLabel = joinCtaLabel(cohort)
+  const priority = result.insights[0]
+  const behaviour = priority ? PRIORITY_BEHAVIOUR[priority.label] ?? null : null
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col items-center py-6 text-center">
@@ -672,39 +706,12 @@ function RevealStage({
         {result.profile.type}
       </h2>
 
-      <ul className="mt-10 flex w-full flex-col gap-5">
-        {COMPONENTS.map(({ pillar, key }) => {
-          const engine = ENGINES[pillar]
-          const value = result.subScores[key]
-          return (
-            <li key={key} className="flex flex-col gap-2 text-left">
-              <div className="flex items-baseline justify-between gap-3">
-                <span className="text-sm font-semibold text-foreground">
-                  {engine.label}{" "}
-                  <span className="font-normal text-muted-foreground">— {engine.verb}</span>
-                </span>
-                {/* The number is text, so the bar is never the only carrier. */}
-                <span className="font-serif text-lg font-bold" style={{ color: engine.color }}>
-                  {value}
-                </span>
-              </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-border">
-                <div
-                  className="h-full rounded-full transition-[width] duration-1000 ease-out motion-reduce:transition-none"
-                  style={{ width: barsMounted ? `${value}%` : "0%", background: engine.gradient }}
-                />
-              </div>
-            </li>
-          )
-        })}
-      </ul>
-
-      {result.insights[0] ? (
-        <p className="mt-9 max-w-md text-base leading-relaxed text-muted-foreground">
+      {behaviour && priority ? (
+        <p className="mt-6 max-w-md text-base leading-relaxed text-muted-foreground">
           <span className="font-semibold text-foreground">
-            {interpolate(biggestOppTemplate, { label: result.insights[0].label })}
+            Your biggest opportunity: {behaviour}.
           </span>{" "}
-          {result.insights[0].action}
+          {priority.action}
         </p>
       ) : null}
 
@@ -716,6 +723,47 @@ function RevealStage({
         {claimLabel} <ArrowRight size={18} aria-hidden />
       </button>
       <CohortLine cohort={cohort} className="mt-6" />
+
+      {/*
+        The foundation. Equal status, no numbers — see the docblock above.
+
+        It sits AFTER the claim, and that position was measured rather than
+        chosen. The three numbered bars this replaced were ~150px shorter, so
+        with the panel above the button the CTA landed 259px below the fold at
+        390px and 86px below it at 1280px. The order now reads: your score,
+        what to do about it, the next step, and then the science it rests on —
+        which is also the honest hierarchy, since the Biotics are taught here
+        rather than measured. tests/e2e/food-system-experience.spec.ts measures
+        the CTA against the viewport at three widths, so this cannot drift back
+        silently.
+      */}
+      <div className="mt-12 w-full rounded-2xl border border-border bg-card p-6 text-left">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+          Built on the Three Biotics
+        </p>
+        <ul className="mt-5 flex flex-col gap-4">
+          {FOUNDATION.map(({ pillar, teaches }) => {
+            const engine = ENGINES[pillar]
+            return (
+              <li key={pillar} className="flex gap-3">
+                <span
+                  aria-hidden
+                  className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ background: engine.gradient }}
+                />
+                <span>
+                  <span className="text-sm font-semibold text-foreground">{engine.label}</span>
+                  <span className="block text-sm leading-relaxed text-muted-foreground">{teaches}</span>
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+        <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
+          EatoBiotics teaches the science of all three. This assessment measures food
+          patterns — not your personal prebiotic, probiotic or postbiotic state.
+        </p>
+      </div>
     </div>
   )
 }

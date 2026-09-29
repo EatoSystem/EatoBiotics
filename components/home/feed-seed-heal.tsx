@@ -80,10 +80,10 @@ const PILLARS = [
     gradientFrom: "var(--icon-green)",
     gradientTo: "var(--icon-teal)",
     image: "/probiotics-1.png",
-    line: "Support beneficial living cultures through appropriate fermented foods and food patterns.",
+    line: "Bring fermented foods into the week, in whatever form your kitchen already knows.",
     description:
-      "Yoghurt with live cultures, kefir, kimchi, sauerkraut, lassi, miso — every food culture has its own living foods. Small, regular amounts count.",
-    scienceLine: "The living cultures found in fermented foods.",
+      "Yoghurt, kefir, kimchi, sauerkraut, lassi, miso — every food culture has its own fermented foods. Small, regular amounts count.",
+    scienceLine: "Foods transformed by fermentation.",
   },
   {
     number: "03",

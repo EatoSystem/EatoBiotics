@@ -14,7 +14,7 @@ const STEPS = [
   {
     number: "02",
     title: "Score",
-    line: "See your Food System Score instantly.",
+    line: "See your Biotics Score™ instantly.",
     color: "var(--icon-green)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
     bgGradient: "linear-gradient(160deg, color-mix(in srgb, var(--icon-green) 10%, transparent), transparent 60%)",

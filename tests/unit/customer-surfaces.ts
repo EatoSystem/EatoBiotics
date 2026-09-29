@@ -175,6 +175,11 @@ export const MARKETING_SURFACES = [
   // the copy on it stayed unguarded — the same shape as the gap that list was
   // added to close.
   "components/home/the-framework.tsx",
+  // The four-step explainer, on the homepage AND the holding page. It shipped
+  // "See your Food System Score instantly." — a banned term, on the only page a
+  // visitor can currently reach — and no guard was reading it. Same gap as
+  // the-framework.tsx above, found the same way: by looking, not by CI.
+  "components/home/how-it-works.tsx",
   "app/start/page.tsx",
   ...filesIn("components/start"),
   "app/pricing/page.tsx",

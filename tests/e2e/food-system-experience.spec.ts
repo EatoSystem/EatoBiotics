@@ -137,6 +137,44 @@ test("five answers reach a score, and the score shown is the score computed", as
   }
 })
 
+test("the reveal's call to action is on the first screen at every width", async ({ page }) => {
+  /*
+   * The same measurement as the hero's, on the other screen that has to
+   * convert — and it is here because it caught a live regression.
+   *
+   * The reveal used to carry three compact biotic bars. Phase 1 replaced them
+   * with a taller foundation panel (the Biotics are taught, not scored), and
+   * with the panel above the button the claim CTA landed 259px below the fold
+   * at 390px and 86px below it at 1280px. Nothing in the suite noticed: every
+   * other reveal assertion is `toBeVisible` or `toContainText`, and both pass
+   * for something a person would have to go looking for.
+   *
+   * One run, three viewports, for the CI-budget reason recorded on the hero
+   * test above.
+   */
+  await withTotal(page, 1)
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await page.goto("/enter")
+  await start(page)
+  await runQuestions(page)
+  await expect(scoreLabel(page)).toBeVisible({ timeout: 10_000 })
+
+  const cta = page.getByRole("button", { name: /join the first/i })
+  await expect(cta).toBeVisible()
+
+  for (const [width, height] of [[1280, 900], [834, 1112], [390, 844]] as const) {
+    await page.setViewportSize({ width, height })
+    await page.waitForTimeout(250)
+
+    const box = await cta.boundingBox()
+    expect(box, `no claim CTA box at ${width}px`).not.toBeNull()
+    expect(
+      box!.y + box!.height,
+      `claim CTA below the fold at ${width}px`,
+    ).toBeLessThanOrEqual(height)
+  }
+})
+
 test("the components are named by the biotic, never by the action", async ({ page }) => {
   await withTotal(page, 1)
   await page.goto("/enter")

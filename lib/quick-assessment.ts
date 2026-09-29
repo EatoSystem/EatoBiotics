@@ -48,8 +48,8 @@ export const ENGINES: Record<QuickPillar, Engine> = {
     verb: "Seed",
     color: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
-    blurb: "The living reinforcements you send in.",
-    fact: "Fermented foods deliver living bacteria straight to your gut — the most direct, practical way to reseed and diversify it.",
+    blurb: "Foods transformed by fermentation.",
+    fact: "Fermentation is one of the oldest ways people have transformed food, and nearly every food culture has its own — from kefir to kimchi to miso.",
   },
   postbiotics: {
     index: 3,
@@ -72,9 +72,9 @@ export const ANSWER_REACTIONS: Record<QuickPillar, [string, string, string, stri
   ],
   probiotics: [
     "Easy win ahead — one daily fermented food shifts this fast.",
-    "A start — a little more reseeding goes a long way.",
-    "Great — you're regularly sending in reinforcements.",
-    "Outstanding — living foods are a daily habit.",
+    "A start — a little more variety goes a long way.",
+    "Great — fermented foods are a regular part of how you eat.",
+    "Outstanding — fermented foods are a daily habit.",
   ],
   postbiotics: [
     "Your gut is asking for more rhythm and colour.",
@@ -129,13 +129,13 @@ export const QUICK_QUESTIONS: QuickQuestion[] = [
   {
     id: "fermented",
     pillar: "probiotics",
-    text: "How often do living foods reach your gut?",
-    subtitle: "Yoghurt, kefir, kimchi, sauerkraut, miso — they seed new life into your microbiome.",
+    text: "How often do you eat fermented foods?",
+    subtitle: "Yoghurt, kefir, kimchi, sauerkraut, miso — foods transformed by fermentation.",
     options: [
       { value: 0, label: "Almost never", description: "Not part of my routine" },
       { value: 1, label: "Now and then", description: "Occasionally" },
       { value: 2, label: "A few times a week", description: "A regular habit" },
-      { value: 3, label: "Most days", description: "Living foods feature daily" },
+      { value: 3, label: "Most days", description: "Fermented foods feature daily" },
     ],
   },
   {

@@ -40,7 +40,7 @@ const biotics = [
     gradientTo: "var(--icon-teal)",
     image: "/probiotics-1.png",
     description:
-      "Living microorganisms found in fermented foods like yogurt, kimchi, sauerkraut, and kefir. They replenish and diversify the bacterial community in your gut.",
+      "Foods transformed by fermentation — yoghurt, kefir, kimchi, sauerkraut, miso. Whether live microorganisms survive to be eaten depends on the food and how it is made, which is why we measure the food pattern rather than the organisms.",
     stat: "2–3 servings/week",
   },
   {
