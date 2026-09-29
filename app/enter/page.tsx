@@ -4,8 +4,6 @@ import { HowItWorks } from "@/components/home/how-it-works"
 import { TheFramework } from "@/components/home/the-framework"
 import { ScorePreview } from "@/components/home/score-preview"
 import { Ecosystem } from "@/components/home/ecosystem"
-import { StateOfProduct } from "@/components/home/state-of-product"
-import { GlobalDirection } from "@/components/home/global-direction"
 import { PreviewGuard } from "@/components/waitlist/preview-guard"
 import { LiveSignups } from "@/components/waitlist/live-signups"
 
@@ -41,7 +39,16 @@ export default function WaitlistPage() {
 
       {/* ── Homepage showcase (mirrors app/page.tsx) ───────────────────────
           Wrapped in PreviewGuard so its CTAs don't navigate into the gated
-          main site. The same sections on app/page.tsx are NOT guarded. */}
+          main site. The same sections on app/page.tsx are NOT guarded.
+
+          `StateOfProduct` ("Honest By Design") and `GlobalDirection` ("The
+          science is global") were removed from the holding page. Both
+          components remain on disk and unchanged — this is a decision about
+          what a pre-launch visitor should be shown, not a deletion — and
+          neither is rendered anywhere else, so nothing else changes. The page
+          now ends on Ecosystem, and the divider that used to separate the two
+          removed sections went with them rather than leaving a rule under
+          nothing. */}
       <PreviewGuard>
         <div style={{ height: "2px", background: GRADIENT_BAR }} />
         <PowersEverything />
@@ -50,9 +57,6 @@ export default function WaitlistPage() {
         <ScorePreview />
         <SoftDivider />
         <Ecosystem />
-        <SoftDivider />
-        <StateOfProduct />
-        <GlobalDirection />
       </PreviewGuard>
 
       {/* Subtle "just joined" social-proof card (fixed, page-level so it escapes

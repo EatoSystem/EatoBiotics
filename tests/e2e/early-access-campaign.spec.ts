@@ -127,6 +127,28 @@ test("the closed state is visible on arrival too", async ({ page }) => {
 test("NON-VACUITY: something genuinely below the fold is not reported as seen", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 })
   await withTotal(page, 1)
-  // If this read as "seen on arrival", the check would be measuring nothing.
-  expect(await seenOnArrival(page, /The science is global/i)).toBe(false)
+
+  /*
+   * This anchored on "The science is global" until that section was removed
+   * from the holding page — at which point the check would still have PASSED,
+   * because the text was simply absent. A non-vacuity guard that goes green
+   * when its subject disappears is the thing it exists to prevent.
+   *
+   * So it anchors on a section that is still rendered, and asserts BOTH halves:
+   * the text exists on the page, and it is not in the first screenful.
+   */
+  await expect(page.locator("body")).toContainText("One Food System")
+  expect(await seenOnArrival(page, /One Food System/i)).toBe(false)
+})
+
+test("the two withdrawn sections are gone from the holding page", async ({ page }) => {
+  await withTotal(page, 1)
+  const body = page.locator("body")
+  await expect(body).not.toContainText("Honest By Design")
+  await expect(body).not.toContainText("What you can use today")
+  await expect(body).not.toContainText("The science is global")
+  await expect(body).not.toContainText("Every way the world eats")
+  // The rest of the showcase still stands, so this is a removal, not a break.
+  await expect(body).toContainText("Three biotics")
+  await expect(body).toContainText("One Food System")
 })
