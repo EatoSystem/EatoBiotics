@@ -1,16 +1,27 @@
 /**
- * The first 100 early-access places.
+ * Staged access: the First 100, then the First Course.
  *
  * ══ WHY THIS NEEDS NO MIGRATION ═════════════════════════════════════════════
  *
  * The count already exists. `app/api/waitlist/count/route.ts` returns an exact
  * head-count of `leads` filtered to `assessment_type = "waitlist"`, and the
- * holding page already fetches it for social proof. Everything below is
- * arithmetic on a number the product was already computing.
+ * holding page already fetches it. Everything below is arithmetic on a number
+ * the product was already computing.
  *
- * Who the first 100 ARE is a query, not a stored flag: waitlist leads ordered
- * by `created_at` ascending, first 100. That is derivable from data already
- * written, so nothing needs a new column — see `EARLY_ACCESS_COHORT_ORDER`.
+ * Who is in a cohort is a query, not a stored flag: waitlist leads ordered by
+ * `created_at` ascending. That is derivable from data already written, so
+ * nothing needs a new column — see `EARLY_ACCESS_COHORT_ORDER`.
+ *
+ * ══ THE LADDER ══════════════════════════════════════════════════════════════
+ *
+ * Access opens in cohorts so the product can be watched, corrected and
+ * improved before it is scaled. `through` is CUMULATIVE — the First Course of
+ * 1,000 Founding Members INCLUDES the first 100, it does not sit after them.
+ * So signup number 100 closes the First 100, and numbers 101–1,000 are the
+ * rest of the First Course.
+ *
+ * Adding a rung is adding a row. Nothing else in the file knows how many
+ * there are.
  *
  * ══ THE RACE, AND WHY IT IS A FOOTNOTE ══════════════════════════════════════
  *
@@ -21,55 +32,183 @@
  * durable allocator — or the migration — that avoiding it would need.
  *
  * What would NOT be acceptable is showing a number the product has not
- * actually counted. Hence the nullable return below.
+ * actually counted. Hence the nullable returns below. Every function here
+ * answers "I don't know" rather than guessing, and every caller is expected to
+ * render nothing at all in that case.
  */
 
-/** How many early-access places the campaign offers. One definition, shared by
- *  the holding page and the confirmation email so they cannot disagree. */
-export const EARLY_ACCESS_PLACES = 100
+export interface Cohort {
+  /** Stable id — safe to use as a key or an analytics property. */
+  id: string
+  /** What it is called in customer copy. */
+  name: string
+  /** CUMULATIVE: this cohort is full once the waitlist total reaches it. */
+  through: number
+}
+
+/**
+ * The rungs, in the order they open. Ascending `through`, always — a ladder
+ * that is not sorted would open a later cohort before an earlier one filled.
+ * `cohortLadderIsAscending()` proves it rather than trusting it.
+ */
+export const COHORTS: readonly Cohort[] = [
+  { id: "first-100", name: "The First 100", through: 100 },
+  { id: "first-course", name: "The First Course", through: 1000 },
+] as const
+
+/** The whole programme's size — the last rung. Used in copy about the future. */
+export const FIRST_COURSE_MEMBERS = COHORTS[COHORTS.length - 1].through
+
+/**
+ * The first cohort's size.
+ *
+ * Derived, never re-typed: this used to be a standalone `= 100` and the ladder
+ * now owns that number. Two literals would be two things to keep in step.
+ */
+export const EARLY_ACCESS_PLACES = COHORTS[0].through
 
 /** The cohort is the EARLIEST signups. Ascending, never descending — newest
  *  first would invite exactly the wrong hundred people. */
 export const EARLY_ACCESS_COHORT_ORDER = "created_at:asc" as const
 
-export interface EarlyAccessState {
-  /** Places taken, capped at the total on offer. */
+/** True when every rung is larger than the one before it. */
+export function cohortLadderIsAscending(ladder: readonly Cohort[] = COHORTS): boolean {
+  return ladder.every((c, i) => i === 0 || c.through > ladder[i - 1].through)
+}
+
+export interface CohortState {
+  /** The cohort a new signup would land in — or the last one, once full. */
+  cohort: Cohort
+  /** Its position in the ladder, 0-based. */
+  index: number
+  /** How many places this cohort holds on its own (not cumulative). */
+  capacity: number
+  /** How many of ITS places are taken. */
   claimed: number
-  /** Places left. Never negative. */
+  /** How many of ITS places are left. Never negative. */
   remaining: number
-  /** Whether a new signup still lands inside the first 100. */
+  /** Whether a new signup still lands inside this cohort. */
   isOpen: boolean
+  /** Whether this is the last rung, so "next cohort" language is wrong. */
+  isFinal: boolean
+}
+
+function normaliseTotal(total: number | null | undefined): number | null {
+  if (typeof total !== "number" || !Number.isFinite(total) || total < 0) return null
+  return Math.floor(total)
 }
 
 /**
- * Turn a waitlist total into what the page should say.
+ * Which cohort is open, and how much of it is left.
  *
  * Returns `null` when the total is unknown — a failed fetch, an unconfigured
  * database, a malformed response. The page then says nothing about places,
  * rather than inventing scarcity. Manufactured numbers are the one failure
  * mode a campaign like this cannot come back from.
+ *
+ * When every rung is full it returns the LAST cohort with `isOpen: false`
+ * rather than null, so a page can say "the First Course is full" instead of
+ * falling silent as though the count had failed. Those two states are
+ * different and must not render the same.
  */
-export function earlyAccessState(total: number | null | undefined): EarlyAccessState | null {
-  if (typeof total !== "number" || !Number.isFinite(total) || total < 0) return null
+export function openCohort(
+  total: number | null | undefined,
+  /**
+   * The ladder to read. Defaults to the real one; injectable ONLY so the
+   * refusal below can be exercised. Without a parameter here the
+   * `cohortLadderIsAscending` check is unreachable from any test — the shipped
+   * ladder is ascending — so deleting it changed nothing observable and a
+   * sabotage case walked straight through it. An unreachable guard is not a
+   * guard.
+   */
+  ladder: readonly Cohort[] = COHORTS,
+): CohortState | null {
+  const t = normaliseTotal(total)
+  if (t === null) return null
+  if (ladder.length === 0 || !cohortLadderIsAscending(ladder)) return null
 
-  const claimed = Math.min(Math.floor(total), EARLY_ACCESS_PLACES)
-  const remaining = Math.max(EARLY_ACCESS_PLACES - Math.floor(total), 0)
+  const index = ladder.findIndex((c) => t < c.through)
+  const isFull = index === -1
+  const i = isFull ? ladder.length - 1 : index
+  const cohort = ladder[i]
+  const floor = i === 0 ? 0 : ladder[i - 1].through
+  const capacity = cohort.through - floor
 
-  return { claimed, remaining, isOpen: remaining > 0 }
+  const claimed = Math.min(Math.max(t - floor, 0), capacity)
+  const remaining = isFull ? 0 : Math.max(cohort.through - t, 0)
+
+  return {
+    cohort,
+    index: i,
+    capacity,
+    claimed,
+    remaining,
+    isOpen: !isFull && remaining > 0,
+    isFinal: i === ladder.length - 1,
+  }
 }
 
 /**
- * The place a given signup took, 1-based, or null if it landed outside the
- * first 100.
+ * What the status line says — or null, meaning say nothing at all.
+ *
+ * Extracted from the component because a React element's decisions are not
+ * reachable from vitest: deleting the null guard inside the component changed
+ * no test, so "invent a number when nothing was counted" — the one failure
+ * this campaign cannot come back from — was unguarded. The same repair the
+ * founding-access deadline needed for the same reason.
+ */
+export function cohortLineText(cohort: CohortState | null): string | null {
+  if (!cohort) return null
+  if (cohort.isOpen) return `${cohort.remaining} of ${cohort.capacity} places remaining`
+  if (cohort.isFinal) {
+    return `All ${FIRST_COURSE_MEMBERS.toLocaleString("en-IE")} places are taken — join the waitlist`
+  }
+  return "Full — the next cohort opens soon"
+}
+
+/**
+ * The cohort's name inside a sentence.
+ *
+ * The name is a title — "The First 100" — so concatenating it produces "Join
+ * The First 100", with a capital T mid-sentence. Storing a second lowercase
+ * name would be two strings to keep in step, so the article is lowered here
+ * and the title is left alone.
+ */
+export function cohortNameInSentence(cohort: Cohort): string {
+  return cohort.name.replace(/^The /, "the ")
+}
+
+/** "Join the First 100" / "Join the First Course" — one label, one source. */
+export function joinCtaLabel(cohort: CohortState | null): string {
+  if (!cohort || !cohort.isOpen) return "Join the waitlist"
+  return `Join ${cohortNameInSentence(cohort.cohort)}`
+}
+
+export interface EarlyAccessPlace {
+  /** 1-based position across the WHOLE programme, not within the cohort. */
+  place: number
+  /** The cohort that place falls in. */
+  cohort: Cohort
+}
+
+/**
+ * The place a given signup took, and which cohort it lands in.
  *
  * `totalBefore` is how many waitlist signups already existed. Kept separate
- * from `earlyAccessState` because the page asks "how many are left" while the
- * confirmation email asks "which one was I" — the same constant, two questions.
+ * from `openCohort` because the page asks "how many are left" while the
+ * confirmation email asks "which one was I" — the same ladder, two questions.
+ *
+ * Returns `null` past the final rung, or when the count was unavailable. The
+ * place is numbered across the programme rather than within the cohort, so
+ * member 137 is "#137 of the First Course" and not a second "#37".
  */
-export function earlyAccessPlace(totalBefore: number | null | undefined): number | null {
-  if (typeof totalBefore !== "number" || !Number.isFinite(totalBefore) || totalBefore < 0) {
-    return null
-  }
-  const place = Math.floor(totalBefore) + 1
-  return place <= EARLY_ACCESS_PLACES ? place : null
+export function earlyAccessPlace(
+  totalBefore: number | null | undefined,
+): EarlyAccessPlace | null {
+  const t = normaliseTotal(totalBefore)
+  if (t === null) return null
+
+  const place = t + 1
+  const cohort = COHORTS.find((c) => place <= c.through)
+  return cohort ? { place, cohort } : null
 }

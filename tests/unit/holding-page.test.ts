@@ -30,7 +30,7 @@ import { describe, it, expect } from "vitest"
 import { readFileSync, existsSync } from "node:fs"
 import { classifyPageRoute, isServableInV1 } from "@/lib/v1-surface"
 import { MARKETING_SURFACES } from "./customer-surfaces"
-import { foundingAccessDeadline } from "@/app/enter/waitlist-hero"
+import { foundingAccessDeadline } from "@/lib/waitlist/founding-access"
 
 /** Everything that made the retired offer, in the words it used. */
 const RETIRED_OFFER = [
@@ -82,10 +82,21 @@ describe("the retired waitlist offer is not reachable", () => {
 })
 
 describe("no served page still advertises it", () => {
-  /** Every page that survives V1, as source. */
+  /**
+   * Every page that survives V1, as source.
+   *
+   * The three waitlist components are here because app/enter/waitlist-hero.tsx
+   * is now a four-line wrapper. Reading only the wrapper would have kept these
+   * checks green over a holding page that had gone back to advertising a book,
+   * an app and a course — the guard passing because there was nothing left in
+   * the file it was pointed at.
+   */
   const SERVED_SOURCES = [
     "app/enter/page.tsx",
     "app/enter/waitlist-hero.tsx",
+    "components/waitlist/food-system-experience.tsx",
+    "components/waitlist/cohort-line.tsx",
+    "components/waitlist/first-course.tsx",
     "app/book/page.tsx",
     "app/books/page.tsx",
     "app/book-family/page.tsx",
@@ -97,7 +108,13 @@ describe("no served page still advertises it", () => {
     expect(readFileSync(file, "utf-8")).not.toContain('href="/waitlist"')
   })
 
-  it.each(["app/enter/page.tsx", "app/enter/waitlist-hero.tsx"])(
+  it.each([
+    "app/enter/page.tsx",
+    "app/enter/waitlist-hero.tsx",
+    "components/waitlist/food-system-experience.tsx",
+    "components/waitlist/cohort-line.tsx",
+    "components/waitlist/first-course.tsx",
+  ])(
     "%s does not carry the retired offer's words",
     (file) => {
       const source = renderedSource(file)
@@ -150,15 +167,47 @@ describe("the holding page is inside the guard corpus", () => {
   })
 })
 
+/*
+ * ══ THIS BLOCK FOLLOWED ITS SUBJECT, TWICE OVER ═════════════════════════════
+ *
+ * It read app/enter/waitlist-hero.tsx, which used to hold every word on the
+ * top of the holding page. That file is now a four-line wrapper: the copy
+ * lives in the experience, the cohort line and the First Course section. Left
+ * pointed at the wrapper, these checks would have gone on passing over a file
+ * with no copy in it — green because there was nothing left to fail.
+ *
+ * The "no rank" clause is also GONE ON PURPOSE, not lost in the move. It was
+ * written when early access was framed by a DATE and a rank was the thing
+ * being avoided, because there was no counter to stand behind one. There is a
+ * counter now, the cohort is real and deliberate, and naming it is the point.
+ * What must still never appear is a price or a discount.
+ */
 describe("early access promises access, not a discount", () => {
-  const hero = () => readFileSync("app/enter/waitlist-hero.tsx", "utf-8")
+  const COPY_SURFACES = [
+    "components/waitlist/food-system-experience.tsx",
+    "components/waitlist/cohort-line.tsx",
+    "components/waitlist/first-course.tsx",
+  ]
 
-  it("names no price, no discount and no rank", () => {
-    const source = renderedSource("app/enter/waitlist-hero.tsx")
-    // "%" alone is not a claim — it is a CSS unit, and colour-mix uses it all
-    // over this file. The check looks for discount-SHAPED copy instead.
-    for (const claim of ["€", "% off", "discount", "half price", "first 100", "First 100"]) {
-      expect(source, `the holding page must not claim "${claim}"`).not.toContain(claim)
+  it("names no price and no discount, anywhere it speaks", () => {
+    // "%" alone is not a claim — it is a CSS unit, and these files use it for
+    // widths. The check looks for discount-SHAPED copy instead.
+    for (const file of COPY_SURFACES) {
+      const source = renderedSource(file)
+      for (const claim of ["€", "% off", "discount", "half price", "free trial"]) {
+        expect(source, `${file} must not claim "${claim}"`).not.toContain(claim)
+      }
+    }
+  })
+
+  it("applies no pressure the product has not counted", () => {
+    // The cohort is real. Everything in this list is theatre, and the brief
+    // ruled all of it out explicitly.
+    for (const file of COPY_SURFACES) {
+      const source = renderedSource(file)
+      for (const trick of ["HURRY", "Hurry", "countdown", "people viewing", "Only ", "act now", "Act now"]) {
+        expect(source, `${file} must not use "${trick}"`).not.toContain(trick)
+      }
     }
   })
 
@@ -190,9 +239,61 @@ describe("early access promises access, not a discount", () => {
     expect(deadline).toContain("December")
   })
 
+  /*
+   * renderedSource, not readFileSync — and this is the THIRD time in this
+   * engagement that a guard matched the comment explaining the thing it was
+   * supposed to be checking. Deleting the sentence that names the free product
+   * left the guard green, because the docblock above it also says "Food System
+   * Assessment". Developer notes are not customer copy.
+   */
   it("uses the current product vocabulary", () => {
-    const source = hero()
+    const source = COPY_SURFACES.map((f) => renderedSource(f)).join("\n")
     expect(source).toContain("Food System Assessment")
     expect(source).toContain("Biotics Score")
+  })
+
+  /*
+   * The free product is named where the PROMISE is, not merely somewhere.
+   *
+   * "Food System Assessment" appears in two places: the claim step, where
+   * someone is deciding to hand over an email, and the First Course section,
+   * which is the page's actual explanation of what joining gets you. Because
+   * it is in two places, deleting either one leaves the joined-source check
+   * above green — which is how a sabotage case that removed it from the
+   * experience walked through. Naming the file makes the important one
+   * load-bearing rather than incidental.
+   */
+  it("names the free product in the section that explains joining", () => {
+    expect(renderedSource("components/waitlist/first-course.tsx")).toContain(
+      "Food System Assessment",
+    )
+  })
+
+  /*
+   * The five-question score is never presented as the full product.
+   *
+   * The free Food System Assessment is fifteen questions and is what produces
+   * a person's Biotics Score™. This flow is five, and it must therefore always
+   * say "first". Without this the product ends up with one name for two
+   * different numbers, and nothing else in the suite would notice.
+   */
+  it("calls the five-question result a FIRST Biotics Score, never the full one", () => {
+    const source = renderedSource("components/waitlist/food-system-experience.tsx")
+
+    const scoreMentions = source.match(/[A-Za-z’'\s]{0,24}Biotics(?:&nbsp;| )Score/g) ?? []
+    expect(scoreMentions.length, "no Biotics Score mention found — this reads nothing").toBeGreaterThan(0)
+
+    const unqualified = scoreMentions.filter((m) => !/first/i.test(m))
+    expect(
+      unqualified,
+      `every reveal-facing mention must be qualified:\n${unqualified.join("\n")}`,
+    ).toEqual([])
+  })
+
+  it("NON-VACUITY: an unqualified score claim would be caught", () => {
+    const sabotaged = "Your Biotics Score"
+    const found = (sabotaged.match(/[A-Za-z’'\s]{0,24}Biotics(?:&nbsp;| )Score/g) ?? [])
+      .filter((m) => !/first/i.test(m))
+    expect(found.length).toBe(1)
   })
 })

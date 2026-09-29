@@ -22,14 +22,21 @@ const PAGES = [
   { path: "/enter", name: "holding page" },
 ]
 
-/** Reveal everything: ScrollReveal renders at opacity 0 until observed. */
+/**
+ * Reveal everything: ScrollReveal renders at opacity 0 until observed.
+ *
+ * This walked the page in 600px steps waiting 80ms at each. That worked until
+ * /enter grew a First Course section, at which point the walk started hitting
+ * the 45s test timeout under parallel workers — a test failing for being slow,
+ * on a page that was fine. Overriding the `.sr-reveal` rule is instant, has no
+ * dependence on page length, and is what the a11y suite already does for the
+ * same reason: a scan over unrevealed content proves almost nothing.
+ */
 async function revealAll(page: Page) {
-  const height = await page.evaluate(() => document.body.scrollHeight)
-  for (let y = 0; y < height; y += 600) {
-    await page.evaluate((v) => window.scrollTo(0, v), y)
-    await page.waitForTimeout(80)
-  }
-  await page.waitForTimeout(400)
+  await page.addStyleTag({
+    content: `.sr-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }`,
+  })
+  await page.waitForTimeout(150)
 }
 
 for (const { path, name } of PAGES) {

@@ -11,7 +11,7 @@ import { waitlistConfirmationEmail } from "@/lib/email/waitlist-email"
 import { waitlistResultEmail } from "@/lib/email/waitlist-result-email"
 import { sendEmail } from "@/lib/email/send"
 import { generateShareCode } from "@/lib/waitlist-result"
-import { earlyAccessPlace } from "@/lib/waitlist/early-access"
+import { earlyAccessPlace, type EarlyAccessPlace } from "@/lib/waitlist/early-access"
 import { logServerEvent } from "@/lib/statsig-server"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
 
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
     // a quiz result is present; reused on repeat submissions so the link is stable.
     let shareCode: string | undefined
     const referredBy = clean(body.referredBy)
-    let place: number | null = null
+    let place: EarlyAccessPlace | null = null
     const supabase = getSupabase()
     if (supabase) {
       // Only when a quiz result is present — that is the only case where health
