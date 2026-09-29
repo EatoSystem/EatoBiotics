@@ -84,10 +84,24 @@ export const PILLARS: Record<PillarKey, Pillar> = {
     label: "Probiotics",
     aliasLabel: "Seed",
     color: "var(--icon-teal)",
-    tagline: "Seed new life.",
+    // "Seed new life." until Phase 1. Seed stays — it is the ACTION, and the
+    // action framework is preserved — but "new life" asserted that eating a
+    // fermented food establishes new organisms in a person's gut. That is
+    // colonisation, which is not what the evidence supports and not something
+    // this product measures.
+    tagline: "Seed with fermented foods.",
+    // "Live-culture and fermented foods that introduce beneficial bacteria into
+    // your gut" until Phase 1 — two claims in one sentence: that fermented
+    // foods carry live organisms, and that eating them introduces those
+    // organisms. Under the strict ISAPP definition a probiotic is a
+    // characterised live organism given in an adequate amount with a
+    // demonstrated benefit; most fermented foods are not that, and several are
+    // heated or pasteurised before they are eaten.
     whatItDoes:
-      "Live-culture and fermented foods that introduce beneficial bacteria into your gut.",
-    nudge: "Try a fermented food like yoghurt, kimchi, or kombucha for live probiotics.",
+      "Foods transformed by fermentation — yoghurt, kefir, kimchi, sauerkraut, miso. Whether live microorganisms survive to be eaten depends on the food and how it is made.",
+    // "…for live probiotics" until Phase 1, which promised the customer
+    // something the food may not contain. The behaviour is the honest ask.
+    nudge: "Try a fermented food like yoghurt, kimchi, or kombucha this week.",
     foodExamples: ["yoghurt", "kefir", "kimchi", "sauerkraut", "miso", "kombucha"],
   },
   postbiotics: {
@@ -140,4 +154,37 @@ export const PILLAR_LABELS: Record<string, string> = {
 /** Resolves a pillar key (canonical or alias) to its display label, falling back to the key. */
 export function pillarLabel(key: string): string {
   return resolvePillar(key)?.label ?? key
+}
+
+/**
+ * The observable food behaviour behind each Biotic — for naming a person's
+ * priority without naming a personal Biotic state.
+ *
+ * ══ WHY THIS EXISTS ═════════════════════════════════════════════════════════
+ *
+ * Surfaces that pick out a strongest or weakest pillar used to print the
+ * Biotic's own label: "Your biggest opportunity: Postbiotics." That is a
+ * personal postbiotic state in words rather than in digits, and
+ * POSTBIOTICS_INFERENCE_BOUNDARY prohibits it by name ("low Postbiotics").
+ * Removing the number from a bar while leaving this sentence in place would
+ * move the claim, not retire it.
+ *
+ * What the questions actually asked about is a food behaviour, and a behaviour
+ * is both honest and actionable — it is the thing a person can change. So the
+ * priority names the behaviour and the Biotics stay where they belong, as the
+ * foundation the product teaches.
+ *
+ * Keyed by DISPLAY LABEL because that is what insight rows carry; keyed off
+ * `PILLARS` so a label rename cannot leave this map behind.
+ */
+export const PILLAR_BEHAVIOUR: Record<string, string> = {
+  [PILLARS.prebiotics.label]: "plant variety and fibre",
+  [PILLARS.probiotics.label]: "fermented foods",
+  [PILLARS.postbiotics.label]: "your eating rhythm",
+}
+
+/** The food behaviour for a pillar label, or null when the label names no Biotic. */
+export function pillarBehaviour(label: string | null | undefined): string | null {
+  if (!label) return null
+  return PILLAR_BEHAVIOUR[label] ?? null
 }

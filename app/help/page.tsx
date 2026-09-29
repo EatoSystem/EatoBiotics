@@ -56,7 +56,15 @@ const FAQS: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "What's the difference between prebiotics, probiotics, and postbiotics?",
-    a: "Prebiotics are fibre-rich plant foods that feed your gut bacteria (vegetables, wholegrains, legumes, seeds). Probiotics are live cultures from fermented foods (yogurt, kefir, kimchi, sauerkraut, miso). Postbiotics are the beneficial compounds your bacteria produce when they're well fed (found in aged cheese, sourdough, extra-virgin olive oil, and made inside you). A strong food system includes all three.",
+    /* Rewritten in Phase 1 to the strict ISAPP definitions. The previous answer
+     * made all three of the equivalences the product no longer stands behind:
+     * "Probiotics are live cultures from fermented foods" (a fermented food is
+     * not a probiotic — many are pasteurised or heated before eating), fibre
+     * read as prebiotic by definition, and postbiotics located IN named foods,
+     * which lib/pillars.ts's house rule forbids outright: no food is a
+     * postbiotic. This is the page that teaches the framework, so it is the
+     * one place the definitions have to be exactly right. */
+    a: "Prebiotics are substrates your gut microbes can use, with a demonstrated benefit — in practice that means fibre-rich plant foods: vegetables, wholegrains, legumes and seeds. Probiotics are live microorganisms that, in adequate amounts, have a demonstrated benefit; fermented foods like yoghurt, kefir, kimchi, sauerkraut and miso are the everyday route to them, though whether microorganisms survive to be eaten depends on the food and how it is made. Postbiotics are preparations of inanimate microorganisms or their components — and the beneficial compounds your own bacteria produce when they are well fed. No food is a postbiotic; foods like sourdough, aged cheese and extra-virgin olive oil support the process rather than being it. A strong food system includes all three.",
   },
   {
     q: "What do the memberships include?",

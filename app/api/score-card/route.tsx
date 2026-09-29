@@ -1,6 +1,7 @@
 // app/api/score-card/route.ts
 // Generates a 1200×630 OG image for the shareable EatoBiotics score card.
-// Route: GET /api/score-card?score=62&feed=71&seed=38&heal=67&profile=Emerging+Balance
+// Route: GET /api/score-card?score=62&profile=Emerging+Balance
+// (Older links also carry &feed=&seed=&heal= — ignored, see below.)
 //
 // Uses Next.js built-in ImageResponse — no additional packages required.
 
@@ -15,25 +16,39 @@ export async function GET(req: NextRequest) {
   // feed/seed/heal, but its only caller has always sent the canonical pillar
   // names — so every card rendered 0 / 0 / 0. Reading both repairs the live
   // path and keeps any card URL already shared in the wild working.
+  //
+  // ══ THE SUB-SCORES ARE NO LONGER READ, AND OLD LINKS STILL WORK ═══════════
+  //
+  // The card rendered a bar and a value for each Biotic, read from
+  // ?feed=&seed=&heal= (with ?prebiotics=&probiotics=&postbiotics= accepted as
+  // a second spelling, because the caller and the route once disagreed and
+  // every card rendered 0 / 0 / 0 until #179).
+  //
+  // A number per Biotic is a personal biological state —
+  // POSTBIOTICS_INFERENCE_BOUNDARY prohibits it for Postbiotics by name, and
+  // under strict ISAPP a questionnaire reaches none of the three. This is the
+  // most public form of that claim: it travels into social feeds as an image,
+  // where nobody at EatoBiotics ever sees it again.
+  //
+  // So the bars go and the three Biotics stay, named, as the foundation the
+  // card is about. Nothing needs to be parsed to keep old links working: a
+  // query parameter this route does not read is simply ignored, so every card
+  // URL already posted still resolves to a valid image.
+  //
+  // Consequence, accepted deliberately: a card shared last month renders
+  // without those three numbers the next time someone opens it. The image is
+  // generated per request, not sealed at share time, so there is no historical
+  // artefact being rewritten — only a live endpoint that was making a claim.
   const score    = Number(searchParams.get("score") ?? 0)
-  const feed     = Number(searchParams.get("feed") ?? searchParams.get("prebiotics")  ?? 0)
-  const seed     = Number(searchParams.get("seed") ?? searchParams.get("probiotics")  ?? 0)
-  const heal     = Number(searchParams.get("heal") ?? searchParams.get("postbiotics") ?? 0)
   const profile  = searchParams.get("profile") ?? "Biotics Score"
 
-  // Bars are the SCIENTIFIC pathways, not the actions. Feed / Seed / Rejuvenate
-  // are things a person does; a score is not an action. The query keys stay
-  // feed/seed/heal — see the ?heal= note below — so every card shared before
-  // this change still renders with the right numbers under the right bar.
+  // The SCIENTIFIC pathways, not the actions. Feed / Seed / Rejuvenate are
+  // things a person does; these are what the product teaches. Named only —
+  // see the note above for why no value travels with them.
   const pillars = [
-    { label: "Prebiotics",  score: feed,  color: "#7fc47e", gradient: "linear-gradient(90deg, #7fc47e, #4caf7d)" },
-    { label: "Probiotics",  score: seed,  color: "#3ab0a0", gradient: "linear-gradient(90deg, #4caf7d, #3ab0a0)" },
-    // Displayed as "Postbiotics"; the `heal` query param is kept, because cards
-    // shared before 68f1f94 link with `?heal=` and must keep working.
-    // The two bugs previously noted here — the Satori 500 and the caller/route
-    // parameter mismatch that rendered every card 0/0/0 — were fixed in #179.
-    // See the dual-spelling reads above and the explicit `display` below.
-    { label: "Postbiotics", score: heal, color: "#e6b84a", gradient: "linear-gradient(90deg, #e6b84a, #e07b4a)" },
+    { label: "Prebiotics",  color: "#7fc47e" },
+    { label: "Probiotics",  color: "#3ab0a0" },
+    { label: "Postbiotics", color: "#e6b84a" },
   ]
 
   // Score band colour
@@ -129,33 +144,20 @@ export async function GET(req: NextRequest) {
             </span>
           </div>
 
-          {/* Right: pillar bars */}
+          {/* Right: the three Biotics, named */}
           <div style={{ display: "flex", flex: 1, flexDirection: "column", gap: 24 }}>
-            {pillars.map(({ label, score: pScore, color, gradient }) => (
-              <div key={label} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: 20, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>{label}</span>
-                  <span style={{ fontSize: 24, fontWeight: 800, color }}>{pScore}</span>
-                </div>
-                {/* Bar background */}
+            {pillars.map(({ label, color }) => (
+              <div key={label} style={{ display: "flex", alignItems: "center", gap: 16 }}>
                 <div
                   style={{
-                    height: 12,
-                    borderRadius: 6,
-                    background: "rgba(255,255,255,0.08)",
+                    width: 14,
+                    height: 14,
+                    borderRadius: 7,
+                    background: color,
                     display: "flex",
-                    overflow: "hidden",
                   }}
-                >
-                  <div
-                    style={{
-                      width: `${pScore}%`,
-                      height: "100%",
-                      borderRadius: 6,
-                      background: gradient,
-                    }}
-                  />
-                </div>
+                />
+                <span style={{ fontSize: 24, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>{label}</span>
               </div>
             ))}
 

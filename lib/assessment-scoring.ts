@@ -138,9 +138,9 @@ export function getProfile(overall: number, sub: SubScores): AssessmentProfile {
     if (weakest === "probiotics") {
       return {
         type: "Developing System",
-        tagline: "Live and fermented foods are the thinnest part of your answers.",
+        tagline: "Fermented foods are the thinnest part of your answers.",
         description:
-          "Your answers suggest real strengths in fibre and meal rhythm, with live and fermented foods appearing less often — your Probiotics score. That makes this pathway the most focused place to start. Adding one fermented food to a meal you already eat is a small, repeatable change; notice how it settles before adding more.",
+          "Your answers suggest real strengths in fibre and meal rhythm, with fermented foods appearing less often — the Probiotics pathway. That makes this pathway the most focused place to start. Adding one fermented food to a meal you already eat is a small, repeatable change; notice how it settles before adding more.",
         color: "var(--icon-yellow)",
       }
     }
@@ -206,7 +206,7 @@ const PILLAR_META: Record<
     color: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
     strength:
-      "Your answers suggest live and fermented foods appear regularly. These add microbial exposure rather than only feeding what is already there, which is a distinct contribution — and worth keeping steady rather than intensifying.",
+      "Your answers suggest fermented foods appear regularly. These can add microbial exposure rather than only feeding what is already there, which is a distinct contribution — and worth keeping steady rather than intensifying.",
     opportunity:
       "Fermented and live foods are the most direct way to introduce new microbes rather than only feeding existing ones. Small, regular amounts — yoghurt, miso, or a tablespoon of sauerkraut — are associated with more benefit than occasional large ones, and need no change to the rest of the meal.",
     actionLow:

@@ -331,7 +331,7 @@ export default function AboutPage() {
           </ScrollReveal>
           <ScrollReveal delay={100}>
             <p className="mt-8 text-base leading-relaxed text-foreground md:text-lg">
-              Prebiotics feed your beneficial bacteria. Probiotics add living cultures to diversify them. Postbiotics are the beneficial compounds your microbiome produces when the first two are working well — short-chain fatty acids, vitamins, neurotransmitters. That&apos;s the 3 Biotics framework. Prebiotics. Probiotics. Postbiotics.
+              Prebiotics feed your beneficial bacteria. Probiotics are live microorganisms with a demonstrated benefit, which fermented foods are the everyday route to. Postbiotics are the beneficial compounds your microbiome produces when the first two are working well — short-chain fatty acids, vitamins, neurotransmitters. That&apos;s the 3 Biotics framework. Prebiotics. Probiotics. Postbiotics.
             </p>
           </ScrollReveal>
           <ScrollReveal delay={200}>

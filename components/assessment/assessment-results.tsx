@@ -151,9 +151,6 @@ export function AssessmentResults({ result, onRetake, leadEmail, winnerCode }: A
           <ScrollReveal>
               <ScoreCard
                 score={result.overall}
-                feed={result.subScores.prebiotics ?? result.subScores.feed ?? 0}
-                seed={result.subScores.probiotics ?? result.subScores.seed ?? 0}
-                heal={result.subScores.postbiotics ?? result.subScores.heal ?? 0}
                 profile={result.profile.type}
               />
           </ScrollReveal>

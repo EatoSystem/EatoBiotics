@@ -357,7 +357,7 @@ export default function TrilogyPage() {
                   icon: "🦠",
                   label: "Probiotics",
                   color: "var(--icon-green)",
-                  text: "Live cultures from fermented foods. Consistent, realistic, and adaptable to any kitchen or life stage.",
+                  text: "Foods transformed by fermentation. Consistent, realistic, and adaptable to any kitchen or life stage.",
                 },
                 {
                   icon: "✨",

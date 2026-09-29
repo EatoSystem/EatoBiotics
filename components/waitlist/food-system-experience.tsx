@@ -41,6 +41,7 @@ import { HealthConsentCheckbox } from "@/components/health-consent-checkbox"
 import { HEALTH_CONSENT_REQUIRED_MESSAGE } from "@/lib/health-consent"
 import { useTranslations } from "@/components/i18n/locale-provider"
 import { AGE_BRACKETS } from "@/lib/age-brackets"
+import { pillarBehaviour } from "@/lib/pillars"
 import { resolveMarket, DEFAULT_MARKET, type FoodProfile } from "@/lib/market"
 import { submitWaitlistJoin, type WaitlistUtm } from "@/lib/waitlist/join"
 import { CONSUMER_CAMPAIGN, type CampaignContext } from "@/lib/waitlist/campaign"
@@ -664,12 +665,13 @@ const FOUNDATION: { pillar: QuickPillar; teaches: string }[] = [
  * personal claim about a Biotic, only without a number attached. The behaviour
  * is what the questions actually asked about, and it is also the thing a
  * person can act on.
+ *
+ * The map itself lives in lib/pillars.ts, the canonical vocabulary module, so
+ * the reveal, /assessment/results and /discover/[code] share one mapping. It
+ * started here as a local constant and was moved the moment a second surface
+ * needed it — three copies of this drifting apart is exactly how the product
+ * ended up with two answers to the same question in the first place.
  */
-const PRIORITY_BEHAVIOUR: Record<string, string> = {
-  Prebiotics: "plant variety and fibre",
-  Probiotics: "fermented foods",
-  Postbiotics: "your eating rhythm",
-}
 
 function RevealStage({
   result, cohort, onClaim,
@@ -680,7 +682,7 @@ function RevealStage({
 }) {
   const claimLabel = joinCtaLabel(cohort)
   const priority = result.insights[0]
-  const behaviour = priority ? PRIORITY_BEHAVIOUR[priority.label] ?? null : null
+  const behaviour = pillarBehaviour(priority?.label)
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col items-center py-6 text-center">

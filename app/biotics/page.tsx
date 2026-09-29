@@ -37,11 +37,21 @@ const BIOTICS = [
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
     image: "/probiotics-1.png",
     tagBg: "color-mix(in srgb, var(--icon-teal) 12%, var(--background))",
+    /* Phase 1: this section carried three claims the strict ISAPP definition
+       does not support — that probiotics are FOUND IN fermented foods, that
+       eating them INTRODUCES NEW RESIDENTS to your gut, and that fermented
+       foods REPLENISH what has been lost. A probiotic is a characterised live
+       organism given in an adequate amount with a demonstrated benefit; most
+       fermented foods are not that, several are pasteurised or heated before
+       eating, and what survives passage is largely transient rather than
+       resident. The page keeps teaching probiotics — that is the point of it —
+       and states what is actually known. See app/biotics's own house rule for
+       Postbiotics below, which this now matches in discipline. */
     summary:
-      "Living bacteria and yeasts found in fermented foods that replenish and diversify the microbial community in your gut.",
-    body: "Probiotics are live beneficial bacteria and yeasts found primarily in fermented foods. When you eat yogurt, kimchi, kefir, or miso, you introduce new living residents into your gut ecosystem. Modern diets, antibiotics, stress, and ultra-processed food all deplete gut bacteria diversity. Fermented foods are the most direct and practical way to replenish what has been lost — ideally daily, and from varied sources.",
+      "Live microorganisms that, in adequate amounts, have a demonstrated benefit — met in practice through foods transformed by fermentation.",
+    body: "Probiotics are live microorganisms that, in adequate amounts, confer a health benefit. Fermented foods — yogurt, kimchi, kefir, miso — are the everyday route to them, though not every fermented food carries them: some are pasteurised or heated before you eat them, and what does survive the journey mostly passes through rather than taking up residence. Modern diets, antibiotics, stress, and ultra-processed food are all associated with lower gut bacteria diversity. Eating fermented foods regularly, from varied sources, is the most practical everyday habit in this pathway — which is why we measure the food pattern rather than the organisms.",
     whyItMatters:
-      "Gut bacteria diversity is one of the strongest predictors of long-term health. The more varied your probiotic sources, the more resilient and capable your microbiome becomes.",
+      "Gut bacteria diversity is one of the strongest predictors of long-term health. A varied, regular fermented-food habit is the part of that you can actually act on.",
     foods: ["Yogurt", "Kimchi", "Sauerkraut", "Kefir", "Miso", "Tempeh", "Kombucha", "Natto", "Aged Cheese", "Lassi"],
   },
   {

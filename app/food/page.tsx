@@ -14,7 +14,7 @@ const GOAL_TEASE: Record<string, string> = {
   immunity: "Prebiotic + postbiotic-supporting foods that strengthen your defences",
   mood: "Gut-brain foods linked to serotonin and cognitive health",
   recovery: "Protein + postbiotic-supporting foods for repair and inflammation",
-  sleep: "Prebiotic-rich foods that support the gut-sleep axis",
+  sleep: "Fibre-rich plant foods that support the gut-sleep axis",
   "gut-health": "All three biotics for a diverse microbiome",
   bloating: "Gentle prebiotic + probiotic foods for a calmer gut",
   inflammation: "Postbiotic-supporting + prebiotic foods that calm inflammation",
@@ -52,7 +52,7 @@ const categories: {
     label: "Probiotic Foods",
     accent: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
-    description: "Fermented foods that add live cultures to your microbiome.",
+    description: "Foods transformed by fermentation — yoghurt, kefir, kimchi, sauerkraut, miso.",
   },
   {
     biotic: "postbiotic",
