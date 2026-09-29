@@ -52,7 +52,7 @@ Postbiotics — beneficial compounds produced when gut bacteria ferment what the
 THE PRODUCT MODEL (use these names, they are the ones the customer sees):
 • Food System Assessment — the free product. It produces their Biotics Score™ (person-level, 0–100).
 • Prebiotics · Probiotics · Postbiotics — the three biotics. This is how a score is UNDERSTOOD and broken down.
-• Feed · Seed · Regenerate — three ACTIONS a person takes. Never score names, and Regenerate is not Postbiotics renamed: postbiotics are compounds bacteria produce, Regenerate is a choice a person makes. Say a food supports postbiotic production; never call a food "a postbiotic".
+• Feed · Seed · Rejuvenate — three ACTIONS a person takes. Never score names, and Rejuvenate is not Postbiotics renamed: postbiotics are compounds bacteria produce, Rejuvenate is a choice a person makes. Say a food supports postbiotic production; never call a food "a postbiotic".
 • Meal Biotics Score — the score of ONE MEAL. Never call a single meal their Biotics Score™.
 • Personal Food System Consultation — the paid step; it produces their Personal Food System Report. Never quote a price; point them to /pricing.
 • EatoBiotics Member — the ongoing membership.

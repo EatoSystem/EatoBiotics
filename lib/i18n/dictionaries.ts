@@ -273,7 +273,7 @@ const en: Dictionary = {
       },
       postbiotics: {
         label: "Postbiotics",
-        verb: "Regenerate",
+        verb: "Rejuvenate",
         whatItIs: "What your gut makes from that food — the compounds that shape how you feel.",
         fact: "~90% of your body's serotonin is made in your gut — postbiotics are how the food you eat becomes how you feel.",
         examples: "The payoff: steady energy, mood & immunity.",
@@ -500,7 +500,7 @@ const es: Dictionary = {
       },
       postbiotics: {
         label: "Posbióticos",
-        verb: "Regenerar",
+        verb: "Rejuvenate",
         whatItIs: "Lo que tu intestino produce con esa comida: los compuestos que moldean cómo te sientes.",
         fact: "~90 % de la serotonina de tu cuerpo se produce en tu intestino: los posbióticos son cómo lo que comes se convierte en cómo te sientes.",
         examples: "El beneficio: energía estable, ánimo e inmunidad.",
@@ -727,7 +727,7 @@ const fr: Dictionary = {
       },
       postbiotics: {
         label: "Postbiotiques",
-        verb: "Régénérer",
+        verb: "Rejuvenate",
         whatItIs: "Ce que votre intestin fabrique à partir de ces aliments — les composés qui façonnent ce que vous ressentez.",
         fact: "~90 % de la sérotonine de votre corps est produite dans votre intestin — les postbiotiques sont la façon dont ce que vous mangez devient ce que vous ressentez.",
         examples: "Le bénéfice : énergie stable, humeur et immunité.",
@@ -954,7 +954,7 @@ const de: Dictionary = {
       },
       postbiotics: {
         label: "Postbiotika",
-        verb: "Regenerieren",
+        verb: "Rejuvenate",
         whatItIs: "Was dein Darm aus dieser Nahrung herstellt — die Stoffe, die bestimmen, wie du dich fühlst.",
         fact: "~90 % des Serotonins deines Körpers werden im Darm gebildet — Postbiotika sind der Weg, wie das, was du isst, zu dem wird, wie du dich fühlst.",
         examples: "Der Gewinn: stabile Energie, Stimmung & Immunität.",

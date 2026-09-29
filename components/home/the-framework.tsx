@@ -31,7 +31,7 @@ const biotics = [
   {
     number: "03",
     title: "Postbiotics",
-    subtitle: "Regenerate",
+    subtitle: "Rejuvenate",
     color: "var(--icon-orange)",
     gradientFrom: "var(--icon-yellow)",
     gradientTo: "var(--icon-orange)",

@@ -3,9 +3,9 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 import { Eyebrow, Section, SectionHeading } from "./section-shared"
 
 /**
- * Feed. Seed. Regenerate. — the homepage's foundation section.
+ * Feed. Seed. Rejuvenate. — the homepage's foundation section.
  *
- * The third pillar reads "Regenerate" here, positioning the brand around continuous
+ * The third pillar reads "Rejuvenate" here, positioning the brand around continuous
  * biological renewal rather than healing. That label is now consistent everywhere —
  * this branch renames it in lib/pillars.ts, app/api/score-card, paid-report-email and
  * the dashboard, and #181 did the same for the surfaces that read "Produce".
@@ -87,7 +87,7 @@ const PILLARS = [
   },
   {
     number: "03",
-    title: "Regenerate",
+    title: "Rejuvenate",
     science: "Postbiotics",
     color: "var(--icon-orange)",
     gradientFrom: "var(--icon-yellow)",
@@ -107,11 +107,11 @@ export function FeedSeedHeal() {
         <div className="mx-auto mb-16 max-w-2xl text-center">
           <Eyebrow>The Foundation of EatoBiotics</Eyebrow>
           <SectionHeading>
-            Feed. Seed. <span className="brand-gradient-text">Regenerate.</span>
+            Feed. Seed. <span className="brand-gradient-text">Rejuvenate.</span>
           </SectionHeading>
           {/* Primary explanatory sentence — carries the progression. */}
           <p className="mx-auto mt-6 max-w-xl text-lg font-medium leading-relaxed text-foreground">
-            Feed your body. Seed your microbiome. Regenerate the{" "}
+            Feed your body. Seed your microbiome. Rejuvenate the{" "}
             <span className="font-semibold text-icon-green">Food System Inside You</span>.
           </p>
           {/* Scientific foundation — quieter, supporting line. */}
@@ -141,8 +141,8 @@ export function FeedSeedHeal() {
                 </span>
                 <h3 className="mt-6 font-serif text-xl font-semibold text-foreground">{p.title}</h3>
                 {/* "Inspired by", not the bare science word. Printed alone under
-                  * the action title, "Regenerate / POSTBIOTICS" reads as a rename —
-                  * and Regenerate is an action a person takes, while postbiotics are
+                  * the action title, "Rejuvenate / POSTBIOTICS" reads as a rename —
+                  * and Rejuvenate is an action a person takes, while postbiotics are
                   * what bacteria produce. The relationship is real; the equation is
                   * not. The "Scientific foundation:" chip below says the same thing
                   * the same way. */}
@@ -181,10 +181,10 @@ export function FeedSeedHeal() {
             <Eyebrow>From Words To Plate</Eyebrow>
             <h3 className="mt-4 font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
               One plate.{" "}
-              <span className="brand-gradient-text">Feed, Seed, and Regenerate together.</span>
+              <span className="brand-gradient-text">Feed, Seed, and Rejuvenate together.</span>
             </h3>
             <p className="mt-6 text-base leading-relaxed text-muted-foreground">
-              Feed, Seed, and Regenerate are not a diet — they are a way of seeing any plate,
+              Feed, Seed, and Rejuvenate are not a diet — they are a way of seeing any plate,
               bowl, or shared meal. Each part of the plate supports a different part of the food
               system inside you.
             </p>

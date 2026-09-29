@@ -631,9 +631,13 @@ Vocabulary that goes with it, and must not drift:
   Snapshot", not "Snapshot", not "Food System Score", and not "Biotics Score" —
   the Assessment is the product, the Biotics Score™ is what it produces.
 - **Prebiotics · Probiotics · Postbiotics** is how a score is understood.
-  **Feed · Seed · Regenerate** is how a person acts. Never score names, and
-  Regenerate is not Postbiotics renamed. "Heal" is a stored key, never a
-  customer-facing pathway name.
+  **Feed · Seed · Rejuvenate** is how a person acts. Never score names, and
+  Rejuvenate is not Postbiotics renamed. "Heal" is a stored key, never a
+  customer-facing pathway name — and **"Regenerate" is now retired the same
+  way**: the third action was renamed when EatoSystem became The Rejuvenative
+  Food System. Capital-R "Regenerate" is no longer a pathway name; lowercase
+  "regenerate" remains correct for a genuine biological, microbial, tissue,
+  soil or ecological process, and for UI verbs that mean "run it again".
 - One meal gets a **Meal Biotics Score**, never the person's Biotics Score™.
 - Product names live in `lib/product-vocabulary.ts` (pure, client-safe, zero
   imports). Prices live with their product, in the two modules named above.

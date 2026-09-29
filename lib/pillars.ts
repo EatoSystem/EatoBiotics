@@ -35,7 +35,7 @@ export type PillarKey = "prebiotics" | "probiotics" | "postbiotics"
  * The brand-facing alias keys for the same three pillars.
  *
  * NOTE the split between key and label: the brand words are Feed / Seed /
- * **Regenerate**, but the third *key* stays `"heal"` because it is written into
+ * **Rejuvenate**, but the third *key* stays `"heal"` because it is written into
  * stored assessment records and shared score-card URLs (`?heal=67`). Renaming
  * the key would silently zero historical scores. Rename `aliasLabel`, never this.
  */
@@ -44,7 +44,7 @@ export type PillarAliasKey = "feed" | "seed" | "heal"
 export interface Pillar {
   /** Canonical key used in scoring and storage. */
   key: PillarKey
-  /** Brand alias key for the same pillar. Legacy — `"heal"` is displayed as "Regenerate". */
+  /** Brand alias key for the same pillar. Legacy — `"heal"` is displayed as "Rejuvenate". */
   aliasKey: PillarAliasKey
   /** Canonical display label, e.g. "Prebiotics". */
   label: string
@@ -94,9 +94,9 @@ export const PILLARS: Record<PillarKey, Pillar> = {
     key: "postbiotics",
     aliasKey: "heal",
     label: "Postbiotics",
-    aliasLabel: "Regenerate",
+    aliasLabel: "Rejuvenate",
     color: "var(--icon-yellow)",
-    tagline: "Regenerate and renew.",
+    tagline: "Rejuvenate and renew.",
     whatItDoes:
       "The beneficial compounds your gut bacteria produce when they ferment prebiotic fibre — they calm inflammation and strengthen the gut lining.",
     // Postbiotics are produced, never eaten — so this nudge names foods that give

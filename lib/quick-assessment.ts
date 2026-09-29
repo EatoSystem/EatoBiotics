@@ -25,7 +25,7 @@ export type QuickPillar = "prebiotics" | "probiotics" | "postbiotics"
 export interface Engine {
   index: number
   label: string   // clinical name, shown in eyebrows/progress/reveal
-  verb: string    // brand sub-descriptor (Feed/Seed/Regenerate)
+  verb: string    // brand sub-descriptor (Feed/Seed/Rejuvenate)
   color: string
   gradient: string
   blurb: string
@@ -54,7 +54,7 @@ export const ENGINES: Record<QuickPillar, Engine> = {
   postbiotics: {
     index: 3,
     label: "Postbiotics",
-    verb: "Regenerate",
+    verb: "Rejuvenate",
     color: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     blurb: "What your gut gives back to you.",

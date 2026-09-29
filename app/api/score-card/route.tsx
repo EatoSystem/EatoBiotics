@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
   const heal     = Number(searchParams.get("heal") ?? searchParams.get("postbiotics") ?? 0)
   const profile  = searchParams.get("profile") ?? "Biotics Score"
 
-  // Bars are the SCIENTIFIC pathways, not the actions. Feed / Seed / Regenerate
+  // Bars are the SCIENTIFIC pathways, not the actions. Feed / Seed / Rejuvenate
   // are things a person does; a score is not an action. The query keys stay
   // feed/seed/heal — see the ?heal= note below — so every card shared before
   // this change still renders with the right numbers under the right bar.

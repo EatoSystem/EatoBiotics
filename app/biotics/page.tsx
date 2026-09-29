@@ -8,7 +8,7 @@ import { ReadingProgress } from "@/components/reading-progress"
 export const metadata: Metadata = {
   title: "The 3 Biotics | EatoBiotics",
   description:
-    "Prebiotics, Probiotics, and Postbiotics — the three pillars of the EatoBiotics food system. Learn how to Feed, Seed, and Regenerate your way to a stronger microbiome.",
+    "Prebiotics, Probiotics, and Postbiotics — the three pillars of the EatoBiotics food system. Learn how to Feed, Seed, and Rejuvenate your way to a stronger microbiome.",
 }
 
 /* ── Data ──────────────────────────────────────────────────────────────── */
@@ -47,7 +47,7 @@ const BIOTICS = [
   {
     number: "03",
     title: "Postbiotics",
-    action: "Regenerate",
+    action: "Rejuvenate",
     color: "var(--icon-orange)",
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     image: "/postbiotics-1.png",
@@ -108,7 +108,7 @@ export default function BioticsPage() {
                   className="absolute bottom-10 left-2 rounded-full border border-border bg-background/90 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm"
                   style={{ color: "var(--icon-orange)" }}
                 >
-                  Postbiotics — Regenerate
+                  Postbiotics — Rejuvenate
                 </div>
               </div>
             </ScrollReveal>
@@ -123,7 +123,7 @@ export default function BioticsPage() {
                   Feed.{" "}
                   <span className="brand-gradient-text">Seed.</span>
                   <br />
-                  Regenerate.
+                  Rejuvenate.
                 </h1>
                 <p className="mt-6 max-w-lg text-lg leading-relaxed text-muted-foreground">
                   Three types of biotics. One connected system. Every plate you build either

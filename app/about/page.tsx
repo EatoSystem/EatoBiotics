@@ -369,7 +369,7 @@ export default function AboutPage() {
           </ScrollReveal>
           <ScrollReveal delay={200}>
             <p className="mt-6 max-w-[680px] text-base leading-relaxed text-foreground md:text-lg">
-              That&apos;s why I&apos;m also building EatoSystem — Ireland&apos;s regenerative food transformation initiative. County by county, community by community, redesigning how food is grown, processed, and distributed so that the food system around you supports the food system inside you.
+              That&apos;s why I&apos;m also building EatoSystem — Ireland&apos;s rejuvenative food transformation initiative. County by county, community by community, redesigning how food is grown, processed, and distributed so that the food system around you supports the food system inside you.
             </p>
           </ScrollReveal>
 
@@ -401,7 +401,7 @@ export default function AboutPage() {
                   EatoSystem
                 </h3>
                 <p className="mt-4 flex-1 text-sm leading-relaxed text-muted-foreground">
-                  Ireland&apos;s regenerative food transformation. 32 counties. Local farmers, local knowledge, local food — rebuilding the external system so the internal one has something worthy to work with.
+                  Ireland&apos;s rejuvenative food transformation. 32 counties. Local farmers, local knowledge, local food — rebuilding the external system so the internal one has something worthy to work with.
                 </p>
               </div>
             </ScrollReveal>
