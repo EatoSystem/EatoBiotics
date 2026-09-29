@@ -140,6 +140,13 @@ describe("the holding page is inside the guard corpus", () => {
     // copy on this page answer to the same rules as every other surface.
     expect(MARKETING_SURFACES).toContain("app/enter/page.tsx")
     expect(MARKETING_SURFACES).toContain("app/enter/waitlist-hero.tsx")
+    // The page wrapper being guarded is not the same as its copy being guarded.
+    // app/enter/page.tsx mostly renders sections defined elsewhere, and the
+    // framework cards — the largest block of product copy on the page — sat
+    // outside every guard until this was added. Asserting membership here is
+    // what makes the removal visible: dropping the file from the corpus simply
+    // scans one file fewer, so no other guard can notice it going.
+    expect(MARKETING_SURFACES).toContain("components/home/the-framework.tsx")
   })
 })
 

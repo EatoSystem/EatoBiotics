@@ -140,27 +140,37 @@ export function FeedSeedHeal() {
                   {p.number}
                 </span>
                 <h3 className="mt-6 font-serif text-xl font-semibold text-foreground">{p.title}</h3>
-                {/* "Inspired by", not the bare science word. Printed alone under
-                  * the action title, "Rejuvenate / POSTBIOTICS" reads as a rename —
-                  * and Rejuvenate is an action a person takes, while postbiotics are
-                  * what bacteria produce. The relationship is real; the equation is
-                  * not. The "Scientific foundation:" chip below says the same thing
-                  * the same way. */}
+                {/* The biotic name, on its own, under the action it belongs to.
+                  *
+                  * This read "Inspired by {p.science}" until the founder took the
+                  * hedge off the card. The reasoning it replaced is worth keeping
+                  * legible: Rejuvenate is something a person chooses to do, while
+                  * postbiotics are what bacteria produce, so the two are related
+                  * and not equal — and an earlier comment here argued that
+                  * printing the science word alone reads as a rename.
+                  *
+                  * What makes the bare label safe is that the relationship is
+                  * still stated, once, in the section intro above: "Three simple
+                  * actions inspired by the science of Prebiotics, Probiotics, and
+                  * Postbiotics." Do not delete that sentence — it now carries for
+                  * the whole section what these three labels used to carry each,
+                  * and score-hierarchy.test.ts asserts it by its full phrase.
+                  *
+                  * What remains prohibited is equating them in a sentence
+                  * ("Rejuvenate = Postbiotics"), which the same guard refuses for
+                  * every action/biotic pair. /biotics ships the same bare pairing
+                  * in its "Postbiotics — Rejuvenate" pill. */}
                 <p className="mt-1 text-sm font-semibold uppercase tracking-wider" style={{ color: p.color }}>
-                  Inspired by {p.science}
+                  {p.science}
                 </p>
                 <p className="mt-4 text-sm font-medium leading-relaxed text-foreground">{p.line}</p>
                 <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">{p.description}</p>
-                <span
-                  className="mt-5 inline-flex w-fit items-center rounded-full px-3.5 py-1.5 text-sm font-bold"
-                  style={{
-                    background: `color-mix(in srgb, ${p.color} 15%, transparent)`,
-                    color: `color-mix(in srgb, ${p.color} 78%, var(--foreground))`,
-                  }}
-                >
-                  Scientific foundation: {p.science}
-                </span>
-                <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{p.scienceLine}</p>
+                {/* The "Scientific foundation: {p.science}" chip stood here. With
+                  * the biotic name now leading the card it printed the same word
+                  * twice; the explanatory line below keeps the context. Its mt-5
+                  * moves down with it, because the chip was carrying the gap
+                  * between the flex-1 description and this closing sentence. */}
+                <p className="mt-5 text-xs leading-relaxed text-muted-foreground">{p.scienceLine}</p>
                 <div className="mt-6">
                   <div
                     className="h-2 w-20 rounded-full"

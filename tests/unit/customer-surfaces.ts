@@ -169,6 +169,12 @@ export const MARKETING_SURFACES = [
   ...filesIn("components/waitlist"),
   "components/home/membership-teaser.tsx",
   "components/home/feed-seed-heal.tsx",
+  // The framework cards the holding page and /c/[country] actually render.
+  // app/enter/page.tsx joined this list in Step 7B, but the sections it renders
+  // did not, so the three vocabulary guards were reading a page wrapper while
+  // the copy on it stayed unguarded — the same shape as the gap that list was
+  // added to close.
+  "components/home/the-framework.tsx",
   "app/start/page.tsx",
   ...filesIn("components/start"),
   "app/pricing/page.tsx",

@@ -638,6 +638,15 @@ Vocabulary that goes with it, and must not drift:
   Food System. Capital-R "Regenerate" is no longer a pathway name; lowercase
   "regenerate" remains correct for a genuine biological, microbial, tissue,
   soil or ecological process, and for UI verbs that mean "run it again".
+- **The framework cards pair the two adjacently, by design.** Homepage and
+  holding page both read action-first — "Feed" as the heading, "PREBIOTICS" as
+  the label beneath — and `/biotics` ships the same pairing as a
+  "Postbiotics — Rejuvenate" pill. The cards carried "Inspired by Prebiotics"
+  until that hedge was deliberately removed; the relationship is now stated
+  once, in the homepage section intro, rather than three times on the cards.
+  **Do not restore the per-card hedge as a "fix".** What is prohibited is
+  equating the two *in a sentence* — "Rejuvenate = Postbiotics" — which
+  `tests/unit/score-hierarchy.test.ts` refuses for every action/biotic pair.
 - One meal gets a **Meal Biotics Score**, never the person's Biotics Score™.
 - Product names live in `lib/product-vocabulary.ts` (pure, client-safe, zero
   imports). Prices live with their product, in the two modules named above.

@@ -3,11 +3,26 @@ import Link from "next/link"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { ArrowUpRight } from "lucide-react"
 
+/**
+ * The framework cards read action-first: "Feed" as the heading, "PREBIOTICS" as
+ * the label beneath it — the same order as the homepage's feed-seed-heal.tsx.
+ *
+ * They were the other way round (heading "Prebiotics", label "FEED") until the
+ * holding page and the homepage were brought into line. The fields are named
+ * `action` / `science` rather than `title` / `subtitle` for one specific reason:
+ * the flip could have been a one-line swap of two values, and that would have
+ * left `alt={biotic.title}` describing a photograph of garlic, onions and oats
+ * as "Feed". Nothing in the gate would have caught it — axe checks that alt
+ * text EXISTS, not that it is true. Named fields make the image's alt provably
+ * the biotic, not the verb.
+ *
+ * This component renders on /enter (the holding page) and /c/[country].
+ */
 const biotics = [
   {
     number: "01",
-    title: "Prebiotics",
-    subtitle: "Feed",
+    action: "Feed",
+    science: "Prebiotics",
     color: "var(--icon-lime)",
     gradientFrom: "var(--icon-lime)",
     gradientTo: "var(--icon-green)",
@@ -18,8 +33,8 @@ const biotics = [
   },
   {
     number: "02",
-    title: "Probiotics",
-    subtitle: "Seed",
+    action: "Seed",
+    science: "Probiotics",
     color: "var(--icon-teal)",
     gradientFrom: "var(--icon-green)",
     gradientTo: "var(--icon-teal)",
@@ -30,8 +45,8 @@ const biotics = [
   },
   {
     number: "03",
-    title: "Postbiotics",
-    subtitle: "Rejuvenate",
+    action: "Rejuvenate",
+    science: "Postbiotics",
     color: "var(--icon-orange)",
     gradientFrom: "var(--icon-yellow)",
     gradientTo: "var(--icon-orange)",
@@ -116,7 +131,7 @@ export function TheFramework() {
                   <div className="w-full overflow-hidden">
                     <Image
                       src={biotic.image}
-                      alt={biotic.title}
+                      alt={biotic.science}
                       width={600}
                       height={360}
                       className="w-full h-auto"
@@ -130,13 +145,13 @@ export function TheFramework() {
                       {biotic.number}
                     </span>
                     <h3 className="mt-6 font-serif text-xl font-semibold text-foreground">
-                      {biotic.title}
+                      {biotic.action}
                     </h3>
                     <p
                       className="mt-1 text-sm font-semibold uppercase tracking-wider"
                       style={{ color: biotic.color }}
                     >
-                      {biotic.subtitle}
+                      {biotic.science}
                     </p>
                     <p className="mt-4 flex-1 text-sm leading-relaxed text-muted-foreground">
                       {biotic.description}
