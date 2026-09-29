@@ -87,11 +87,32 @@ async function start(page: Page) {
 
 test("the hero's call to action is on the first screen at every width", async ({ page }) => {
   await withTotal(page, 1)
+
+  /*
+   * One navigation, three viewports — not three navigations.
+   *
+   * This reloaded /enter per width and passed locally in 2.6s. On the CI
+   * runner it blew the whole 45s test budget inside the FIRST page.goto and
+   * failed twice: /enter carries the hero video, `goto` waits for load, and
+   * three cold loads of it on a shared runner is a different proposition to
+   * three on a warm local box.
+   *
+   * Resizing is also the better test. The hero is responsive, so what matters
+   * is that the layout puts the CTA on the first screen at each width — which
+   * a resize exercises directly, and a reload only incidentally.
+   */
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await page.goto("/enter", { waitUntil: "domcontentloaded" })
+
+  const cta = page.getByRole("button", { name: /start my 60-second assessment/i })
+  await expect(cta).toBeVisible()
+
   for (const [width, height] of [[1280, 900], [834, 1112], [390, 844]] as const) {
     await page.setViewportSize({ width, height })
-    await page.goto("/enter")
-    const cta = page.getByRole("button", { name: /start my 60-second assessment/i })
-    await expect(cta).toBeVisible()
+    // Let the layout settle after the resize before measuring it.
+    await page.waitForTimeout(250)
+
+    await expect(cta, `CTA not rendered at ${width}px`).toBeVisible()
     const box = await cta.boundingBox()
     expect(box, `no CTA box at ${width}px`).not.toBeNull()
     // Below the fold is the same as absent. This shipped once already.
