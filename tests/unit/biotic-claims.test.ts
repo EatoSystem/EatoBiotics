@@ -43,7 +43,7 @@
  */
 import { describe, it, expect } from "vitest"
 import { readFileSync } from "node:fs"
-import { MARKETING_SURFACES } from "./customer-surfaces"
+import { MARKETING_SURFACES, AI_PROMPT_SURFACES } from "./customer-surfaces"
 import { reachableSourceFiles, servablePageCount } from "./reachable-surfaces"
 
 /** Source with comments stripped — developer notes are not customer copy. */
@@ -92,8 +92,30 @@ const REACHABLE_SURFACES = [
   "lib/pillars.ts",
 ]
 
+/**
+ * Tranche 2B — the system prompts.
+ *
+ * None is reachable by a customer today: every route that calls one classifies
+ * as POST_V1. They are here anyway, and first in priority among the unreached,
+ * because a prompt sentence does not stay one sentence — it is regenerated into
+ * many customer-facing forms, addressed to one person at a time, in wording
+ * nobody reviews.
+ *
+ * They are named rather than derived. `reachableSourceFiles()` seeds from page
+ * routes, so its import closure never reaches an API route and the ledger below
+ * cannot see a prompt at all. Stated plainly so nobody reads that ledger as
+ * covering these.
+ */
+const PROMPT_SURFACES = [
+  "lib/biotics-prompt.ts",
+  "app/api/consult/route.ts",
+  "app/api/demo/consult/route.ts",
+  "app/api/report-chat/route.ts",
+  "app/api/food-intelligence/route.ts",
+]
+
 /** Everything the claim rules are enforced against. */
-const GUARDED_SURFACES = [...LIVE_SURFACES, ...REACHABLE_SURFACES]
+const GUARDED_SURFACES = [...LIVE_SURFACES, ...REACHABLE_SURFACES, ...PROMPT_SURFACES]
 
 /** English dictionary copy is checked separately — same rules, one locale. */
 const EN_DICTIONARY = "lib/i18n/dictionaries.ts"
@@ -152,8 +174,27 @@ const FERMENTED_LIVE_CLAIMS: [string, RegExp][] = [
    /\b(live|living)\b[^.!?]{0,50}\b(found|present|contained)\b[^.!?]{0,40}ferment/i],
   ["live or living foods as a product category",
    /\b(live|living) foods?\b(?!\s+system)/i],
+  /*
+   * One narrow exemption, and it is worth reading because the first attempt at
+   * it was wrong.
+   *
+   * "Live cultures" is the claim — "Probiotics: live cultures from fermented
+   * foods". But "live-culture cheese" names a product type that genuinely
+   * exists, and it sits inside prompt food lists that Tranche 2B froze
+   * deliberately so no Meal Biotics Score could move on a wording edit.
+   *
+   * The first fix allowed any hyphenated SINGULAR, reasoning that a compound
+   * modifier is an adjective. That let `"live-culture exposure"` through in
+   * lib/report/subscores.ts — a claim about a person, not a product, and one
+   * the ledger was correctly holding. A structural rule about hyphens cannot
+   * tell the two apart, because the difference is what the word modifies.
+   *
+   * So the exemption is ENUMERATED instead: exactly the cheese phrasing the
+   * frozen food lists contain, and nothing else. Small enough to read, and it
+   * cannot quietly widen. Both directions are pinned below.
+   */
   ["live cultures asserted of food",
-   /\blive[- ]cultures?\b|\bliving cultures?\b/i],
+   /\blive[- ]cultures?\b(?!\s+(and aged\s+)?cheese)|\bliving cultures?\b/i],
   ["fermented food equated with probiotics",
    /ferment\w*\s+(foods?\s+)?(are|is)\s+(a\s+)?probiotics?\b|\bfor live probiotics\b/i],
   ["colonisation or reseeding claimed",
@@ -200,6 +241,10 @@ describe("the corpus this guard reads cannot silently shrink", () => {
   it("GUARDED_SURFACES is exactly the set signed off, in both tranches", () => {
     expect([...GUARDED_SURFACES].sort()).toEqual([
       "app/about/page.tsx",
+      "app/api/consult/route.ts",
+      "app/api/demo/consult/route.ts",
+      "app/api/food-intelligence/route.ts",
+      "app/api/report-chat/route.ts",
       "app/api/score-card/route.tsx",
       "app/biotics/page.tsx",
       "app/books/page.tsx",
@@ -214,6 +259,7 @@ describe("the corpus this guard reads cannot silently shrink", () => {
       "components/home/the-framework.tsx",
       "components/waitlist/food-system-experience.tsx",
       "lib/assessment/biotics.ts",
+      "lib/biotics-prompt.ts",
       "lib/pillars.ts",
       "lib/quick-assessment.ts",
     ])
@@ -269,6 +315,34 @@ describe("fermented food is never equated with live organisms or probiotics", ()
     for (const line of asItWas) {
       const caught = [...FERMENTED_LIVE_CLAIMS, ...FIBRE_PREBIOTIC_CLAIMS].some(([, p]) => p.test(line))
       expect(caught, `not caught: ${line}`).toBe(true)
+    }
+  })
+
+  it("the cheese exemption covers a product, and nothing else", () => {
+    /*
+     * The enumerated exemption, pinned in both directions. Its whole risk is
+     * quiet widening: an exemption that grew to cover "live-culture exposure"
+     * or "live-culture foods" would excuse the claim it was written around.
+     */
+    const stillCaught = [
+      "Probiotics: live cultures from fermented foods (yoghurt, kefir, kimchi)",
+      "Adding (fermented and live-culture foods)",
+      "probiotics: \"live-culture exposure\"",
+      "Greek yogurt = probiotic (live cultures)",
+      "Foods with living cultures",
+    ]
+    for (const line of stillCaught) {
+      const caught = FERMENTED_LIVE_CLAIMS.some(([, p]) => p.test(line))
+      expect(caught, `exemption widened — not caught: ${line}`).toBe(true)
+    }
+
+    const exempt = [
+      "kombucha, sourdough, live-culture and aged cheese, etc.",
+      "kimchi, sauerkraut, miso, tempeh, kombucha, live-culture cheese",
+    ]
+    for (const line of exempt) {
+      const caught = FERMENTED_LIVE_CLAIMS.some(([, p]) => p.test(line))
+      expect(caught, `frozen food-list entry wrongly flagged: ${line}`).toBe(false)
     }
   })
 
@@ -547,5 +621,204 @@ describe("no reachable surface carries a claim outside the ledger", () => {
       (f) => !ALL_RULES.some(([, p]) => p.test(renderedSource(f))),
     )
     expect(stale, "corrected — remove from KNOWN_UNCORRECTED").toEqual([])
+  })
+})
+
+/**
+ * ══ THE RUBRIC CANNOT MOVE ON A CLAIMS EDIT ═════════════════════════════════
+ *
+ * These prompts are claims and scoring rubrics in the same sentence:
+ * "Probiotics — live cultures from fermented foods … (up to 25 pts)". Rewording
+ * the first half while nudging the second is the exact way a claims repair
+ * would become a silent scoring change, and nothing else in this repository
+ * would notice — a prompt has no golden output to diff.
+ *
+ * So Tranche 2B's rule was: words only, every point value and threshold frozen.
+ * This is what makes that a checked fact rather than an assurance. It pins the
+ * allocations by value, so a wording edit that also moves a number fails here
+ * even though the claim rules stay green.
+ *
+ * Deliberately NOT asserted: that the three rubrics agree with each other. They
+ * do not, and that is recorded rather than repaired — see the note below.
+ */
+const MEAL_RUBRIC = [
+  "• Prebiotic richness — up to 45 pts: 4+ different plant/fibre foods=45 | 3=40 | 2=32 | 1=20 | 0=0",
+  "• Probiotic presence — up to 25 pts: 2+ fermented foods=25 | 1=20 | none=10",
+  "• Postbiotic support — up to 15 pts: 1+ food that supports postbiotic production=15 | none=5",
+  "• Protein quality — up to 15 pts: high-quality protein=15 | some=12 | none=0",
+]
+
+describe("the meal scoring rubric survives the claims repair unchanged", () => {
+  it.each([
+    "lib/biotics-prompt.ts",
+    "app/api/consult/route.ts",
+    "app/api/demo/consult/route.ts",
+  ])("%s carries the rubric byte-for-byte", (file) => {
+    const src = readFileSync(file, "utf-8")
+    for (const line of MEAL_RUBRIC) {
+      expect(src, `${file} — rubric line changed: ${line}`).toContain(line)
+    }
+  })
+
+  it("food-intelligence's point ceilings are unchanged", () => {
+    const src = readFileSync("app/api/food-intelligence/route.ts", "utf-8")
+    for (const line of [
+      "- Prebiotic richness (fibre-rich plant foods): up to 45 pts",
+      "- Probiotic presence (foods transformed by fermentation): up to 25 pts",
+      "- Postbiotic presence (health compounds from fermentation): up to 15 pts",
+      "- Protein quality for gut lining: up to 15 pts",
+    ]) {
+      expect(src).toContain(line)
+    }
+  })
+
+  it("NON-VACUITY: moving a single point value would be caught", () => {
+    const sabotaged = MEAL_RUBRIC[1].replace("none=10", "none=12")
+    expect(MEAL_RUBRIC.includes(sabotaged)).toBe(false)
+  })
+})
+
+describe("no prompt states a weighting it did not get from the implementation", () => {
+  /*
+   * ══ A LEGACY INCONSISTENCY, PRESERVED ON PURPOSE ════════════════════════
+   *
+   * The prompts disagree about the scoring model. consult, biotics-prompt and
+   * food-intelligence all use 45 / 25 / 15 / 15 (prebiotic / probiotic /
+   * postbiotic / protein). report-chat told members "prebiotic 45% + probiotic
+   * 30% + postbiotic 25%" — different weights, and no protein at all.
+   *
+   * It is NOT reconciled here. Aligning them means deciding which is correct,
+   * which is a scoring decision, and it belongs to the FSS-v1 methodology
+   * review alongside the 20-point floor and the 40/20/40 question-count
+   * artefact. 45/30/25 is not propagated anywhere and report-chat is not
+   * aligned to 45/25/15/15.
+   *
+   * What IS enforced is narrower and safe: report-chat computes nothing — it
+   * receives already-calculated scores and answers questions about them — so
+   * its weighting sentence was pure prose, and prose that disagreed with the
+   * implementation. It now says the score comes from the scoring model, and
+   * tells the model not to invent a weighting. That last clause matters:
+   * deleting a stated weighting without it would invite a fabricated one,
+   * which is worse than a wrong one, because nobody could predict it.
+   */
+  const CHAT = readFileSync("app/api/report-chat/route.ts", "utf-8")
+
+  it("report-chat states no weighting", () => {
+    expect(CHAT, "a percentage weighting is back in report-chat").not.toMatch(
+      /prebiotic\s*\d+%|probiotic\s*\d+%|postbiotic\s*\d+%/i,
+    )
+  })
+
+  it("report-chat forbids inventing one", () => {
+    expect(CHAT).toMatch(/do not invent a weighting/i)
+  })
+
+  it("NON-VACUITY: the weighting that was shipping would be caught", () => {
+    const asItWas = "Overall = prebiotic 45% + probiotic 30% + postbiotic 25%."
+    expect(/prebiotic\s*\d+%|probiotic\s*\d+%|postbiotic\s*\d+%/i.test(asItWas)).toBe(true)
+  })
+
+  it("the operative rubrics are untouched — this rule is not applied to them", () => {
+    /*
+     * The other half of the condition. consult and biotics-prompt APPLY their
+     * rubric to produce a Meal Biotics Score; neutralising those would change
+     * scoring semantics outright, so they keep their point allocations and are
+     * deliberately outside this rule. Asserted so the exemption is visible
+     * rather than implied by absence.
+     */
+    for (const file of ["app/api/consult/route.ts", "lib/biotics-prompt.ts"]) {
+      expect(readFileSync(file, "utf-8"), `${file} must keep its operative rubric`).toContain(
+        "up to 45 pts",
+      )
+    }
+  })
+})
+
+describe("the prompts keep the discipline they already had", () => {
+  /*
+   * ══ TYPE D, ENFORCED ════════════════════════════════════════════════════
+   *
+   * Educational Biotics content is preserved and improved, never demoted. The
+   * three teaching prompts were already exemplary about Postbiotics before any
+   * of this work — "Postbiotics are OUTPUTS, never ingredients", "never say a
+   * food is a postbiotic" — and the risk in a claims sweep is not that someone
+   * adds a claim there but that someone deletes the sentence stopping one.
+   *
+   * Sabotage case 988 did exactly that and walked straight through: every
+   * claim rule stayed green while the prohibition was replaced with the claim
+   * it prohibits. A rule set that only bans things cannot notice the loss of a
+   * safeguard, so this asserts the safeguard's presence — the one place where
+   * a presence assertion is the right instrument, because presence is the
+   * property.
+   */
+  const POSTBIOTIC_DISCIPLINE: [string, RegExp][] = [
+    ["lib/biotics-prompt.ts", /never say a food "is a postbiotic"/i],
+    ["lib/biotics-prompt.ts", /Never describe a food as "a postbiotic"/i],
+    ["app/api/consult/route.ts", /No food is "a postbiotic"/i],
+    ["app/api/demo/consult/route.ts", /No food is "a postbiotic"/i],
+  ]
+
+  it.each(POSTBIOTIC_DISCIPLINE)("%s keeps its postbiotic prohibition", (file, rule) => {
+    expect(readFileSync(file, "utf-8"), `${file} lost its postbiotic prohibition`).toMatch(rule)
+  })
+
+  it("no prompt calls a food a postbiotic", () => {
+    /*
+     * The negative half, and it took two tries to get right.
+     *
+     * The obvious rule — a copula, `(is|are) (a )?postbiotic` — cannot work
+     * here. These prompts QUOTE the forbidden phrase in order to forbid it
+     * ("No food is \"a postbiotic\""), and one of them writes "If someone asks
+     * which foods are postbiotics, correct the premise warmly". A rule that
+     * fires on a file for defending itself is worse than no rule: the only way
+     * to green it is to delete the safeguard. It is the comment-vs-code trap
+     * wearing a third costume.
+     *
+     * So the copula rule is gone. What remains matches the LOCATION claim —
+     * postbiotics said to be in food — which is the shape the prohibition
+     * exists to stop and which no safeguard sentence uses. The deletion of a
+     * safeguard is caught by the presence assertions above instead, which is
+     * the right instrument for it.
+     */
+    const FOOD_IS_POSTBIOTIC: [string, RegExp][] = [
+      ["foods described as postbiotic-rich", /\bpostbiotic-rich\b(?!")/i],
+      ["postbiotics located in food",
+       /\bpostbiotics?\b[^.!?]{0,60}\b(in|inside|within)\s+(these\s+|the\s+|your\s+)?foods?\b/i],
+    ]
+    for (const file of PROMPT_SURFACES) {
+      const src = renderedSource(file)
+      for (const [name, pattern] of FOOD_IS_POSTBIOTIC) {
+        const hit = src.match(pattern)
+        expect(hit?.[0] ?? null, `${file} — ${name}: "${hit?.[0]}"`).toBeNull()
+      }
+    }
+  })
+
+  it("NON-VACUITY: the location claim is caught, the safeguard is not", () => {
+    const located = /\bpostbiotics?\b[^.!?]{0,60}\b(in|inside|within)\s+(these\s+|the\s+|your\s+)?foods?\b/i
+    // Exactly what sabotage case 988 wrote in place of the prohibition.
+    expect(located.test("Postbiotics are the beneficial compounds in these foods.")).toBe(true)
+    expect(/\bpostbiotic-rich\b(?!")/i.test("Eat postbiotic-rich foods daily.")).toBe(true)
+    // And the sentences that FORBID the claim must not trip it, or the only
+    // way to a green suite would be to delete the safeguard.
+    for (const safeguard of [
+      'No food is "a postbiotic" and none is "postbiotic-rich"',
+      "If someone asks which foods are postbiotics, correct the premise warmly",
+      'never say a food "is a postbiotic" or is "postbiotic-rich"',
+    ]) {
+      expect(located.test(safeguard), `fires on the safeguard: ${safeguard}`).toBe(false)
+    }
+  })
+})
+
+describe("every prompt this guard names is in the shared prompt corpus", () => {
+  /*
+   * Sabotage case 987 removed lib/biotics-prompt.ts from AI_PROMPT_SURFACES and
+   * nothing failed, because this file keeps its own PROMPT_SURFACES list. Two
+   * lists that can disagree are two lists that eventually will — the argument
+   * customer-surfaces.ts makes in its own docblock, applied to itself.
+   */
+  it.each(PROMPT_SURFACES)("%s is in AI_PROMPT_SURFACES", (file) => {
+    expect(AI_PROMPT_SURFACES, `${file} must stay in AI_PROMPT_SURFACES`).toContain(file)
   })
 })

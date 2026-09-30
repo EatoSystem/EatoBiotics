@@ -31,7 +31,7 @@
  */
 export const BIOTIC_CLASSIFICATION = `For each food, classify it as ONE of:
 - prebiotic: fibrous plant foods that feed good gut bacteria (ALL vegetables, fruits, wholegrains, legumes, garlic, onion, leeks, asparagus, peas, oats, bananas, seeds like hemp/flax/chia, avocado, olive oil, etc.)
-- probiotic: live cultures / fermented foods (yogurt, kefir, kimchi, sauerkraut, miso, tempeh, kombucha, sourdough, live-culture and aged cheese, etc.)
+- probiotic: foods transformed by fermentation (yogurt, kefir, kimchi, sauerkraut, miso, tempeh, kombucha, sourdough, live-culture and aged cheese, etc.)
 - postbiotic: the postbiotic-SUPPORTING bucket — foods that give bacteria what they need to PRODUCE postbiotics: polyphenol-rich foods (turmeric, ginger, green tea, dark chocolate 70%+, cocoa, berries, pomegranate, walnuts), resistant starch (cooked-and-cooled potato or rice), fermentation-derived acids (apple cider vinegar), and bone broth
 - protein: meat, fish, eggs, or legumes when serving as the primary protein source
 
@@ -42,8 +42,8 @@ Classification notes:
 - Asparagus, peas, edamame = prebiotic (high in FOSs and resistant starch)
 - Seeds (hemp, flax, sesame, pumpkin, sunflower) = prebiotic
 - Legumes like lentils/chickpeas = prebiotic (if a side dish) or protein (if the main protein)
-- Greek yogurt = probiotic (live cultures)
-- Aged cheddar/parmesan and sourdough = probiotic (live and fermentation-derived cultures)
+- Greek yogurt = probiotic (fermented dairy)
+- Aged cheddar/parmesan and sourdough = probiotic (fermentation-derived)
 - Extra-virgin olive oil = prebiotic (its polyphenols also support postbiotic production)`
 
 /**
@@ -52,7 +52,7 @@ Classification notes:
  */
 export const BIOTICS_FRAMEWORK = `THE 3 BIOTICS FRAMEWORK (developed by Jason Curry):
 - Prebiotics — plant fibres that feed beneficial gut bacteria. Foods: garlic, onion, leek, asparagus, Jerusalem artichoke, oats, barley, slightly-underripe banana, flaxseed, apples, chicory root, extra-virgin olive oil.
-- Probiotics — live cultures from fermented foods that diversify the microbiome. Foods: live yoghurt, kefir, kimchi, sauerkraut, miso, tempeh, kombucha, sourdough, aged cheese.
+- Probiotics — live microorganisms that, in adequate amounts, have a demonstrated benefit. Foods transformed by fermentation are the everyday route to them, though whether microorganisms survive to be eaten depends on the food and how it is made, so describe the food pattern rather than the organisms. Foods: live yoghurt, kefir, kimchi, sauerkraut, miso, tempeh, kombucha, sourdough, aged cheese.
 - Postbiotics — the beneficial compounds your bacteria PRODUCE (short-chain fatty acids like butyrate, plus vitamins B12/K2 and serotonin precursors) when they ferment what you have eaten. You do not eat postbiotics — you earn them. Foods that support their production: polyphenol-rich foods (dark chocolate 70%+, green tea, berries, pomegranate, turmeric, ginger, walnuts, cocoa), resistant starch (cooked-and-cooled potato or rice), and apple cider vinegar.
 
 Never describe a food as "a postbiotic" or "postbiotic-rich". Postbiotics are what a well-fed, well-seeded system makes. If someone asks which foods are postbiotics, correct the premise warmly and explain what to eat to produce more of them.`

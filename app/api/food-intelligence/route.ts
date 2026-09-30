@@ -30,7 +30,7 @@ You will receive a structured summary of a member's meal history — individual 
 
 The EatoBiotics framework scores meals 0–100:
 - Prebiotic richness (fibre-rich plant foods): up to 45 pts
-- Probiotic presence (fermented foods with live cultures): up to 25 pts
+- Probiotic presence (foods transformed by fermentation): up to 25 pts
 - Postbiotic presence (health compounds from fermentation): up to 15 pts
 - Protein quality for gut lining: up to 15 pts
 

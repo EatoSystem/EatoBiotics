@@ -197,11 +197,26 @@ export const MARKETING_SURFACES = [
   "app/roadmap/page.tsx",
 ]
 
-/** Live system prompts. Judged separately — an instruction is not page copy. */
+/**
+ * Live system prompts. Judged separately — an instruction is not page copy.
+ *
+ * Three were missing until Tranche 2B, and the omission had teeth: a prompt
+ * sentence is regenerated into many customer-facing forms, in wording nobody
+ * reviews. `app/api/eatobiotic/route.ts` WAS listed and carried no claim of
+ * its own, because the claim lived in `lib/biotics-prompt.ts` — which was not
+ * listed. A guard reading the importer and not the imported module is the same
+ * gap `the-framework.tsx` and `how-it-works.tsx` fell through.
+ */
 export const AI_PROMPT_SURFACES = [
   "app/api/consult/route.ts",
   "app/api/demo/consult/route.ts",
   "app/api/eatobiotic/route.ts",
+  "app/api/report-chat/route.ts",
+  "app/api/food-intelligence/route.ts",
+  // The shared classifier and framework text behind /api/analyse,
+  // /api/analyse/stream, /api/analyse-plate, /api/create-plate and
+  // /api/eatobiotic — the prompt that actually assigns a Meal Biotics Score.
+  "lib/biotics-prompt.ts",
 ]
 
 /** Everything a customer can read, by group. */
