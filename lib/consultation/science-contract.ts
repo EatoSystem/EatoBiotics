@@ -426,7 +426,11 @@ export const REMOVED_BY_SCIENCE_CONTRACT: readonly RemovedQuestionRecord[] = [
     prohibitedPersonalisation: [
       "Feed",
       "Seed",
+      // Both spellings of the third action. The prohibition is on the
+      // personalisation, not on a particular word, so the rename must widen
+      // this list and never move it.
       "Regenerate",
+      "Rejuvenate",
       "probiotics",
       "fermented foods",
       "fibre prescriptions",
@@ -561,15 +565,44 @@ export const POSTBIOTICS_INFERENCE_BOUNDARY = {
 } as const
 
 /**
- * The `Regenerate` boundary.
+ * The `Rejuvenate` boundary.
  *
- * The Feed · Seed · Regenerate action language is preserved and NOT renamed.
- * What is bounded is what `Regenerate` may be taken to mean scientifically. A
- * future science/brand-language pass may define it positively; this contract
- * only says what it does not mean today.
+ * What is bounded is what the third action may be taken to mean
+ * scientifically. This contract only says what it does not mean today.
+ *
+ * ══ THE RENAME, AND WHY THE VERSION DID NOT MOVE ════════════════════════════
+ *
+ * This block previously read "The Feed · Seed · Regenerate action language is
+ * preserved and NOT renamed", while anticipating "a future science/brand-language
+ * pass". That pass has happened: EatoSystem became **The Rejuvenative Food
+ * System**, so the third EatoBiotics action is **Rejuvenate**.
+ *
+ * `SCIENCE_CONTRACT_VERSION` stays at v1.0 on purpose. The change is
+ * terminology, not substance — `mustNotMean` below is untouched, and the new
+ * word is bounded exactly as the old one was. Bumping a contract version for a
+ * label would make every downstream version check noisy without protecting
+ * anything.
+ *
+ * What makes renaming in place safe rather than a rewrite of history:
+ *
+ *   • v1.0 was never used to finalise a production consultation — Migrations 48
+ *     and 49 are unapplied and `consultation_reports` does not exist in
+ *     production, so nothing was ever sealed under it;
+ *   • the rename therefore landed BEFORE any sealed output depended on the old
+ *     branded language;
+ *   • no historical finalised output is being rewritten, because none exists;
+ *   • scientific uses of "regeneration" remain valid and are deliberately kept
+ *     elsewhere in the codebase — a mucus layer regenerates, a brand does not.
+ *
+ * If a consultation is ever finalised under v1.0, this reasoning expires: a
+ * later label change would then need a version bump, because a sealed record
+ * would be describing a term this file no longer contains.
  */
 export const REGENERATE_BOUNDARY = {
-  term: "Regenerate",
+  term: "Rejuvenate",
+  /** The retired label this boundary used to carry. Kept so a reader of a
+   *  historical document can still find the boundary that governed it. */
+  retiredTerm: "Regenerate",
   preservedAsActionLanguage: true,
   mustNotMean: [
     "increase Postbiotics",

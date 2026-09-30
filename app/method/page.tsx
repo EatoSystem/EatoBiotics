@@ -18,7 +18,11 @@ export const metadata: Metadata = {
 const PILLARS = [
   { key: "diversity", label: "Plant Diversity", blurb: "How many different plants reach your plate — variety is the single strongest food signal for a thriving inner ecosystem." },
   { key: "feeding", label: "Feeding", blurb: "How well your meals feed your resident microbes — fibre-rich wholefoods, legumes, and wholegrains." },
-  { key: "adding", label: "Live Foods", blurb: "How often fermented, live-culture foods appear — kefir, live yoghurt, kimchi, sauerkraut." },
+  // Label was "Live Foods". The KEY stays "adding" — it is written into
+  // leads.sub_scores and renaming it would silently zero historical results.
+  // "Fermented Foods" is what the questions actually observe; whether live
+  // microorganisms survive to be eaten depends on the food and how it is made.
+  { key: "adding", label: "Fermented Foods", blurb: "How often fermented foods appear — kefir, yoghurt, kimchi, sauerkraut." },
   { key: "consistency", label: "Consistency", blurb: "Your rhythm — the same good patterns repeated beat occasional perfection." },
   { key: "feeling", label: "How You Feel", blurb: "Your own signal — energy, comfort and mood day to day. You are part of the data." },
 ]
@@ -35,8 +39,8 @@ const BIOTICS = [
     label: "Probiotics",
     color: "#2DAA6E",
     icon: FlaskConical,
-    what: "The living cultures — microbes in fermented foods that join and diversify your inner community.",
-    scored: "Each meal is scored for live-culture foods like kefir, yoghurt, kimchi and miso.",
+    what: "Live microorganisms that, in adequate amounts, have a demonstrated benefit. Not every fermented food contains them.",
+    scored: "Each meal is scored for fermented foods like kefir, yoghurt, kimchi and miso — the food pattern, not the organisms.",
   },
   {
     label: "Postbiotics",
@@ -137,7 +141,8 @@ export default function MethodPage() {
         </h2>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed md:text-base" style={{ color: "var(--muted-foreground)" }}>
           Decades of well-established nutrition and microbiome science point to the same simple
-          triad: feed your microbes, add living cultures, and let them give back. We score every
+          triad: feed your microbes, bring fermented foods into the week, and let the system give
+          back. We score every
           meal against all three.
         </p>
         <div className="mt-8 grid gap-4 md:grid-cols-3">

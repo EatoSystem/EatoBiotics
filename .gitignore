@@ -29,3 +29,6 @@ next-env.d.ts
 # playwright
 /test-results/
 /playwright-report/
+
+# Sabotage harness bytecode
+tools/sabotage/__pycache__/

@@ -58,11 +58,12 @@ describe("the current commercial model", () => {
 
   it("keeps the two frameworks apart", () => {
     expect([...BIOTICS]).toEqual(["Prebiotics", "Probiotics", "Postbiotics"])
-    expect([...ACTIONS]).toEqual(["Feed", "Seed", "Regenerate"])
+    expect([...ACTIONS]).toEqual(["Feed", "Seed", "Rejuvenate"])
     // No name may appear in both lists — the moment one does, an action has
     // become a score or a score has become an action.
     for (const a of ACTIONS) expect(BIOTICS as readonly string[]).not.toContain(a)
-    // And "Regenerates" is never the label.
+    // And no plural is ever the label — "Rejuvenates" no more than the
+    // retired "Regenerates".
     for (const a of ACTIONS) expect(a).not.toMatch(/s$/)
   })
 

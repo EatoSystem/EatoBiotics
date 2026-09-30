@@ -1,112 +1,48 @@
 "use client"
 
-import Link from "next/link"
-import { ScrollReveal } from "@/components/scroll-reveal"
-import { DiscoverFlow } from "@/components/waitlist/discover-flow"
-import { WaitlistSocialProof } from "@/components/waitlist/social-proof"
-import { HeroVideo } from "@/components/hero-video"
-
-const GRADIENT_BAR =
-  "linear-gradient(90deg, var(--icon-lime), var(--icon-green), var(--icon-teal), var(--icon-yellow), var(--icon-orange))"
+import { useCallback, useState } from "react"
+import { FoodSystemExperience } from "@/components/waitlist/food-system-experience"
+import { HundredSystems } from "@/components/waitlist/hundred-systems"
 
 /**
- * Waitlist hero for the gated landing page. The right-hand column hosts the
- * "Discover Your Food System Type" flow (a short quiz → profile reveal →
- * waitlist signup), which posts to /api/waitlist. Everything below it on /enter
- * reuses the real homepage showcase sections.
+ * The top of the holding page: the hero, and 100 Systems beneath it.
+ *
+ * ── Why this file holds state at all ────────────────────────────────────────
+ *
+ * It used to be four lines wrapping the experience. The experience replaces
+ * the hero IN PLACE — the page is not a hero containing a flow, it is one flow
+ * whose first state is the hero — and 100 Systems now sits directly under it.
+ *
+ * So the two have to know about each other exactly once: while someone is
+ * answering question three, "Add My System" must not be sitting underneath the
+ * question competing for the same decision. One boolean, owned here, is the
+ * whole seam. The phase machine stays inside the experience where every other
+ * transition lives; this only learns whether the hero is still the hero.
+ *
+ * `useCallback` because the experience notifies through an effect keyed on the
+ * callback — a new function each render would fire it on every render.
+ *
+ * ── What left, and where it went ────────────────────────────────────────────
+ *
+ * `foundingAccessDeadline` used to add "Founding access closes <date>" here.
+ * It is gone from this page: a date-framed deadline and a counted programme
+ * are two different scarcity stories, and running both means neither is the
+ * reason to act. The count is real, so the count wins. The function lives on
+ * in lib/waitlist/founding-access.ts, whose docblock records that nothing
+ * renders it.
+ *
+ * The `#start` anchor is what the 100 Systems CTA scrolls to.
  */
 export function WaitlistHero() {
+  const [idle, setIdle] = useState(true)
+  const onIdleChange = useCallback((next: boolean) => setIdle(next), [])
+
   return (
-    <section className="relative px-6 pt-24 pb-16 md:pb-20">
-      <div className="relative z-10 mx-auto flex max-w-[1200px] flex-col items-center gap-12 md:flex-row md:gap-16 lg:gap-20">
-
-        {/* Left: gut hero illustration with brand glow */}
-        <ScrollReveal delay={60} className="flex-1 flex items-center justify-center w-full max-w-[520px]">
-          <div className="relative w-full">
-            <div
-              aria-hidden
-              className="absolute inset-0 -z-10 blur-3xl"
-              style={{ background: "radial-gradient(60% 60% at 50% 48%, rgba(76,182,72,0.22), rgba(245,166,35,0.12) 55%, transparent 78%)" }}
-            />
-            <HeroVideo
-              posterSrc="/videos/food-system-hero-poster.jpg"
-              webmSrc="/videos/food-system-hero.webm"
-              mp4Src="/videos/food-system-hero.mp4"
-              alt="The food system inside you — animated gut microbiome figure"
-              className="w-full h-auto max-h-[70vw] object-contain md:max-h-none"
-            />
-          </div>
-        </ScrollReveal>
-
-        {/* Right: waitlist content */}
-        <div className="flex-1 text-left max-w-[560px] w-full">
-          <ScrollReveal>
-            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              <span className="h-1.5 w-1.5 rounded-full" style={{ background: GRADIENT_BAR }} />
-              Coming soon · Join the waitlist
-            </span>
-            <WaitlistSocialProof />
-          </ScrollReveal>
-
-          <ScrollReveal delay={80}>
-            <h1 className="mt-5 font-serif text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl text-balance">
-              <span style={{ color: "var(--icon-green)" }}>The Food System</span>{" "}
-              <span
-                style={{
-                  background: GRADIENT_BAR,
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                }}
-              >
-                Inside You
-              </span>
-            </h1>
-          </ScrollReveal>
-
-          <ScrollReveal delay={140}>
-            <p className="mt-5 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Take the 60-second discovery to meet the living food system inside you — then
-              join the waitlist for early access when EatoBiotics launches.
-            </p>
-          </ScrollReveal>
-
-          {/* Discover Your Food System Type flow */}
-          <ScrollReveal delay={200}>
-            <div className="mt-8 w-full">
-              <DiscoverFlow />
-            </div>
-          </ScrollReveal>
-
-          {/* Stat row — matches homepage */}
-          <ScrollReveal delay={300}>
-            <div className="mt-8 flex items-center gap-6">
-              {[
-                { num: "Free", label: "To join" },
-                { num: "Early", label: "Access" },
-                { num: "2026", label: "Launching" },
-              ].map((s, i) => (
-                <div key={s.label} className="flex items-center gap-5">
-                  {i > 0 && <div className="h-5 w-px bg-border" />}
-                  <div>
-                    <p className="font-serif text-lg font-bold text-foreground">{s.num}</p>
-                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{s.label}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </ScrollReveal>
-
-          <ScrollReveal delay={340}>
-            <Link
-              href="/waitlist"
-              className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
-            >
-              See what&apos;s coming — Book, App &amp; Course
-            </Link>
-          </ScrollReveal>
-        </div>
+    <>
+      <div id="start">
+        <FoodSystemExperience onIdleChange={onIdleChange} />
       </div>
-    </section>
+      {idle ? <HundredSystems /> : null}
+    </>
   )
 }

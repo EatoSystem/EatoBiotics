@@ -631,9 +631,22 @@ Vocabulary that goes with it, and must not drift:
   Snapshot", not "Snapshot", not "Food System Score", and not "Biotics Score" —
   the Assessment is the product, the Biotics Score™ is what it produces.
 - **Prebiotics · Probiotics · Postbiotics** is how a score is understood.
-  **Feed · Seed · Regenerate** is how a person acts. Never score names, and
-  Regenerate is not Postbiotics renamed. "Heal" is a stored key, never a
-  customer-facing pathway name.
+  **Feed · Seed · Rejuvenate** is how a person acts. Never score names, and
+  Rejuvenate is not Postbiotics renamed. "Heal" is a stored key, never a
+  customer-facing pathway name — and **"Regenerate" is now retired the same
+  way**: the third action was renamed when EatoSystem became The Rejuvenative
+  Food System. Capital-R "Regenerate" is no longer a pathway name; lowercase
+  "regenerate" remains correct for a genuine biological, microbial, tissue,
+  soil or ecological process, and for UI verbs that mean "run it again".
+- **The framework cards pair the two adjacently, by design.** Homepage and
+  holding page both read action-first — "Feed" as the heading, "PREBIOTICS" as
+  the label beneath — and `/biotics` ships the same pairing as a
+  "Postbiotics — Rejuvenate" pill. The cards carried "Inspired by Prebiotics"
+  until that hedge was deliberately removed; the relationship is now stated
+  once, in the homepage section intro, rather than three times on the cards.
+  **Do not restore the per-card hedge as a "fix".** What is prohibited is
+  equating the two *in a sentence* — "Rejuvenate = Postbiotics" — which
+  `tests/unit/score-hierarchy.test.ts` refuses for every action/biotic pair.
 - One meal gets a **Meal Biotics Score**, never the person's Biotics Score™.
 - Product names live in `lib/product-vocabulary.ts` (pure, client-safe, zero
   imports). Prices live with their product, in the two modules named above.

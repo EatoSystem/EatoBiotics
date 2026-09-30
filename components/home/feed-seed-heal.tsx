@@ -3,9 +3,9 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 import { Eyebrow, Section, SectionHeading } from "./section-shared"
 
 /**
- * Feed. Seed. Regenerate. — the homepage's foundation section.
+ * Feed. Seed. Rejuvenate. — the homepage's foundation section.
  *
- * The third pillar reads "Regenerate" here, positioning the brand around continuous
+ * The third pillar reads "Rejuvenate" here, positioning the brand around continuous
  * biological renewal rather than healing. That label is now consistent everywhere —
  * this branch renames it in lib/pillars.ts, app/api/score-card, paid-report-email and
  * the dashboard, and #181 did the same for the surfaces that read "Produce".
@@ -80,14 +80,14 @@ const PILLARS = [
     gradientFrom: "var(--icon-green)",
     gradientTo: "var(--icon-teal)",
     image: "/probiotics-1.png",
-    line: "Support beneficial living cultures through appropriate fermented foods and food patterns.",
+    line: "Bring fermented foods into the week, in whatever form your kitchen already knows.",
     description:
-      "Yoghurt with live cultures, kefir, kimchi, sauerkraut, lassi, miso — every food culture has its own living foods. Small, regular amounts count.",
-    scienceLine: "The living cultures found in fermented foods.",
+      "Yoghurt, kefir, kimchi, sauerkraut, lassi, miso — every food culture has its own fermented foods. Small, regular amounts count.",
+    scienceLine: "Foods transformed by fermentation.",
   },
   {
     number: "03",
-    title: "Regenerate",
+    title: "Rejuvenate",
     science: "Postbiotics",
     color: "var(--icon-orange)",
     gradientFrom: "var(--icon-yellow)",
@@ -107,11 +107,11 @@ export function FeedSeedHeal() {
         <div className="mx-auto mb-16 max-w-2xl text-center">
           <Eyebrow>The Foundation of EatoBiotics</Eyebrow>
           <SectionHeading>
-            Feed. Seed. <span className="brand-gradient-text">Regenerate.</span>
+            Feed. Seed. <span className="brand-gradient-text">Rejuvenate.</span>
           </SectionHeading>
           {/* Primary explanatory sentence — carries the progression. */}
           <p className="mx-auto mt-6 max-w-xl text-lg font-medium leading-relaxed text-foreground">
-            Feed your body. Seed your microbiome. Regenerate the{" "}
+            Feed your body. Seed your microbiome. Rejuvenate the{" "}
             <span className="font-semibold text-icon-green">Food System Inside You</span>.
           </p>
           {/* Scientific foundation — quieter, supporting line. */}
@@ -140,27 +140,37 @@ export function FeedSeedHeal() {
                   {p.number}
                 </span>
                 <h3 className="mt-6 font-serif text-xl font-semibold text-foreground">{p.title}</h3>
-                {/* "Inspired by", not the bare science word. Printed alone under
-                  * the action title, "Regenerate / POSTBIOTICS" reads as a rename —
-                  * and Regenerate is an action a person takes, while postbiotics are
-                  * what bacteria produce. The relationship is real; the equation is
-                  * not. The "Scientific foundation:" chip below says the same thing
-                  * the same way. */}
+                {/* The biotic name, on its own, under the action it belongs to.
+                  *
+                  * This read "Inspired by {p.science}" until the founder took the
+                  * hedge off the card. The reasoning it replaced is worth keeping
+                  * legible: Rejuvenate is something a person chooses to do, while
+                  * postbiotics are what bacteria produce, so the two are related
+                  * and not equal — and an earlier comment here argued that
+                  * printing the science word alone reads as a rename.
+                  *
+                  * What makes the bare label safe is that the relationship is
+                  * still stated, once, in the section intro above: "Three simple
+                  * actions inspired by the science of Prebiotics, Probiotics, and
+                  * Postbiotics." Do not delete that sentence — it now carries for
+                  * the whole section what these three labels used to carry each,
+                  * and score-hierarchy.test.ts asserts it by its full phrase.
+                  *
+                  * What remains prohibited is equating them in a sentence
+                  * ("Rejuvenate = Postbiotics"), which the same guard refuses for
+                  * every action/biotic pair. /biotics ships the same bare pairing
+                  * in its "Postbiotics — Rejuvenate" pill. */}
                 <p className="mt-1 text-sm font-semibold uppercase tracking-wider" style={{ color: p.color }}>
-                  Inspired by {p.science}
+                  {p.science}
                 </p>
                 <p className="mt-4 text-sm font-medium leading-relaxed text-foreground">{p.line}</p>
                 <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">{p.description}</p>
-                <span
-                  className="mt-5 inline-flex w-fit items-center rounded-full px-3.5 py-1.5 text-sm font-bold"
-                  style={{
-                    background: `color-mix(in srgb, ${p.color} 15%, transparent)`,
-                    color: `color-mix(in srgb, ${p.color} 78%, var(--foreground))`,
-                  }}
-                >
-                  Scientific foundation: {p.science}
-                </span>
-                <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{p.scienceLine}</p>
+                {/* The "Scientific foundation: {p.science}" chip stood here. With
+                  * the biotic name now leading the card it printed the same word
+                  * twice; the explanatory line below keeps the context. Its mt-5
+                  * moves down with it, because the chip was carrying the gap
+                  * between the flex-1 description and this closing sentence. */}
+                <p className="mt-5 text-xs leading-relaxed text-muted-foreground">{p.scienceLine}</p>
                 <div className="mt-6">
                   <div
                     className="h-2 w-20 rounded-full"
@@ -181,10 +191,10 @@ export function FeedSeedHeal() {
             <Eyebrow>From Words To Plate</Eyebrow>
             <h3 className="mt-4 font-serif text-3xl font-semibold text-foreground sm:text-4xl text-balance">
               One plate.{" "}
-              <span className="brand-gradient-text">Feed, Seed, and Regenerate together.</span>
+              <span className="brand-gradient-text">Feed, Seed, and Rejuvenate together.</span>
             </h3>
             <p className="mt-6 text-base leading-relaxed text-muted-foreground">
-              Feed, Seed, and Regenerate are not a diet — they are a way of seeing any plate,
+              Feed, Seed, and Rejuvenate are not a diet — they are a way of seeing any plate,
               bowl, or shared meal. Each part of the plate supports a different part of the food
               system inside you.
             </p>

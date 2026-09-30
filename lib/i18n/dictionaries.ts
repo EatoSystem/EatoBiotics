@@ -210,7 +210,7 @@ const en: Dictionary = {
   },
   pillarNudges: {
     prebiotics: "Add a prebiotic food like garlic, onions, or oats to feed your good bacteria.",
-    probiotics: "Try a fermented food like yoghurt, kimchi, or kombucha for live probiotics.",
+    probiotics: "Try a fermented food like yoghurt, kimchi or kombucha this week.",
     postbiotics: "Support postbiotic production with polyphenol-rich foods like turmeric, dark chocolate, or green tea.",
   },
   relationships: { self: "Self", child: "Child", partner: "Partner", parent: "Parent", sibling: "Sibling", other: "Other" },
@@ -267,13 +267,13 @@ const en: Dictionary = {
       probiotics: {
         label: "Probiotics",
         verb: "Seed",
-        whatItIs: "The living bacteria you send in to reseed and diversify your gut.",
-        fact: "Fermented foods deliver living bacteria straight to your gut — the most direct, practical way to reseed and diversify it.",
+        whatItIs: "Live microorganisms that, in the right amounts, have a demonstrated benefit. Not every fermented food contains them.",
+        fact: "Fermentation is one of the oldest ways people have transformed food, and nearly every food culture has its own — from kefir to kimchi to miso.",
         examples: "Found in: yoghurt, kefir, kimchi, sauerkraut & miso.",
       },
       postbiotics: {
         label: "Postbiotics",
-        verb: "Regenerate",
+        verb: "Rejuvenate",
         whatItIs: "What your gut makes from that food — the compounds that shape how you feel.",
         fact: "~90% of your body's serotonin is made in your gut — postbiotics are how the food you eat becomes how you feel.",
         examples: "The payoff: steady energy, mood & immunity.",
@@ -288,9 +288,9 @@ const en: Dictionary = {
       ],
       probiotics: [
         "Easy win ahead — one daily fermented food shifts this fast.",
-        "A start — a little more reseeding goes a long way.",
-        "Great — you're regularly sending in reinforcements.",
-        "Outstanding — living foods are a daily habit.",
+        "A start — a little more variety goes a long way.",
+        "Great — fermented foods are a regular part of how you eat.",
+        "Outstanding — fermented foods are a daily habit.",
       ],
       postbiotics: [
         "Your gut is asking for more rhythm and colour.",
@@ -321,13 +321,13 @@ const en: Dictionary = {
         ],
       },
       fermented: {
-        text: "How often do living foods reach your gut?",
-        subtitle: "Yoghurt, kefir, kimchi, sauerkraut, miso — they seed new life into your microbiome.",
+        text: "How often do you eat fermented foods?",
+        subtitle: "Yoghurt, kefir, kimchi, sauerkraut, miso — foods transformed by fermentation.",
         options: [
           { label: "Almost never", description: "Not part of my routine" },
           { label: "Now and then", description: "Occasionally" },
           { label: "A few times a week", description: "A regular habit" },
-          { label: "Most days", description: "Living foods feature daily" },
+          { label: "Most days", description: "Fermented foods feature daily" },
         ],
       },
       rhythm: {
@@ -351,7 +351,7 @@ const en: Dictionary = {
         ],
       },
     },
-    probioticsSubtitle: "{foods} — they seed new life into your microbiome.",
+    probioticsSubtitle: "{foods} — foods transformed by fermentation.",
     context: {
       goalBadge: "One more thing",
       challengeBadge: "Last one",
@@ -437,7 +437,7 @@ const es: Dictionary = {
   },
   pillarNudges: {
     prebiotics: "Añade un alimento prebiótico como ajo, cebolla o avena para alimentar tus bacterias buenas.",
-    probiotics: "Prueba un alimento fermentado como yogur, kimchi o kombucha para probióticos vivos.",
+    probiotics: "Prueba esta semana un alimento fermentado como yogur, kimchi o kombucha.",
     postbiotics: "Favorece la producción de posbióticos con alimentos ricos en polifenoles como la cúrcuma, el chocolate negro o el té verde.",
   },
   relationships: { self: "Yo", child: "Hijo/a", partner: "Pareja", parent: "Padre/Madre", sibling: "Hermano/a", other: "Otro" },
@@ -494,13 +494,13 @@ const es: Dictionary = {
       probiotics: {
         label: "Probióticos",
         verb: "Sembrar",
-        whatItIs: "Las bacterias vivas que envías para repoblar y diversificar tu intestino.",
-        fact: "Los alimentos fermentados llevan bacterias vivas directamente a tu intestino: la forma más directa y práctica de repoblarlo y diversificarlo.",
+        whatItIs: "Microorganismos vivos que, en las cantidades adecuadas, tienen un beneficio demostrado. No todos los alimentos fermentados los contienen.",
+        fact: "La fermentación es una de las formas más antiguas de transformar los alimentos, y casi cada cultura tiene la suya: del kéfir al kimchi al miso.",
         examples: "Se encuentran en: yogur, kéfir, kimchi, chucrut y miso.",
       },
       postbiotics: {
         label: "Posbióticos",
-        verb: "Regenerar",
+        verb: "Rejuvenate",
         whatItIs: "Lo que tu intestino produce con esa comida: los compuestos que moldean cómo te sientes.",
         fact: "~90 % de la serotonina de tu cuerpo se produce en tu intestino: los posbióticos son cómo lo que comes se convierte en cómo te sientes.",
         examples: "El beneficio: energía estable, ánimo e inmunidad.",
@@ -515,9 +515,9 @@ const es: Dictionary = {
       ],
       probiotics: [
         "Una victoria fácil por delante — un fermentado al día cambia esto rápido.",
-        "Un comienzo — un poco más de repoblación ayuda mucho.",
-        "Genial — envías refuerzos con regularidad.",
-        "Excepcional — los alimentos vivos son un hábito diario.",
+        "Un comienzo — un poco más de variedad ayuda mucho.",
+        "Genial — los alimentos fermentados forman parte habitual de cómo comes.",
+        "Excepcional — los alimentos fermentados son un hábito diario.",
       ],
       postbiotics: [
         "Tu intestino pide más ritmo y más color.",
@@ -548,13 +548,13 @@ const es: Dictionary = {
         ],
       },
       fermented: {
-        text: "¿Con qué frecuencia llegan alimentos vivos a tu intestino?",
-        subtitle: "Yogur, kéfir, kimchi, chucrut, miso — siembran nueva vida en tu microbioma.",
+        text: "¿Con qué frecuencia comes alimentos fermentados?",
+        subtitle: "Yogur, kéfir, kimchi, chucrut, miso — alimentos transformados por la fermentación.",
         options: [
           { label: "Casi nunca", description: "No forma parte de mi rutina" },
           { label: "De vez en cuando", description: "Ocasionalmente" },
           { label: "Unas veces por semana", description: "Un hábito regular" },
-          { label: "Casi todos los días", description: "Los alimentos vivos están a diario" },
+          { label: "Casi todos los días", description: "Los alimentos fermentados están a diario" },
         ],
       },
       rhythm: {
@@ -578,7 +578,7 @@ const es: Dictionary = {
         ],
       },
     },
-    probioticsSubtitle: "{foods} — siembran nueva vida en tu microbioma.",
+    probioticsSubtitle: "{foods} — alimentos transformados por la fermentación.",
     context: {
       goalBadge: "Una cosa más",
       challengeBadge: "La última",
@@ -664,7 +664,7 @@ const fr: Dictionary = {
   },
   pillarNudges: {
     prebiotics: "Ajoutez un aliment prébiotique comme l'ail, l'oignon ou l'avoine pour nourrir vos bonnes bactéries.",
-    probiotics: "Essayez un aliment fermenté comme le yaourt, le kimchi ou le kombucha pour des probiotiques vivants.",
+    probiotics: "Essayez cette semaine un aliment fermenté comme le yaourt, le kimchi ou le kombucha.",
     postbiotics: "Favorisez la production de postbiotiques avec des aliments riches en polyphénols comme le curcuma, le chocolat noir ou le thé vert.",
   },
   relationships: { self: "Moi", child: "Enfant", partner: "Partenaire", parent: "Parent", sibling: "Frère/Sœur", other: "Autre" },
@@ -721,13 +721,13 @@ const fr: Dictionary = {
       probiotics: {
         label: "Probiotiques",
         verb: "Ensemencer",
-        whatItIs: "Les bactéries vivantes que vous envoyez pour réensemencer et diversifier votre intestin.",
-        fact: "Les aliments fermentés apportent des bactéries vivantes directement à votre intestin — le moyen le plus direct et pratique de le réensemencer et de le diversifier.",
+        whatItIs: "Des micro-organismes vivants qui, en quantités suffisantes, ont un bénéfice démontré. Tous les aliments fermentés n'en contiennent pas.",
+        fact: "La fermentation est l'une des plus anciennes façons de transformer les aliments, et presque chaque culture a la sienne — du kéfir au kimchi au miso.",
         examples: "On les trouve dans : yaourt, kéfir, kimchi, choucroute et miso.",
       },
       postbiotics: {
         label: "Postbiotiques",
-        verb: "Régénérer",
+        verb: "Rejuvenate",
         whatItIs: "Ce que votre intestin fabrique à partir de ces aliments — les composés qui façonnent ce que vous ressentez.",
         fact: "~90 % de la sérotonine de votre corps est produite dans votre intestin — les postbiotiques sont la façon dont ce que vous mangez devient ce que vous ressentez.",
         examples: "Le bénéfice : énergie stable, humeur et immunité.",
@@ -742,9 +742,9 @@ const fr: Dictionary = {
       ],
       probiotics: [
         "Une victoire facile en vue — un aliment fermenté par jour change vite la donne.",
-        "Un début — un peu plus de réensemencement fait beaucoup.",
-        "Super — vous envoyez des renforts régulièrement.",
-        "Remarquable — les aliments vivants sont une habitude quotidienne.",
+        "Un début — un peu plus de variété fait beaucoup.",
+        "Super — les aliments fermentés font régulièrement partie de vos repas.",
+        "Remarquable — les aliments fermentés sont une habitude quotidienne.",
       ],
       postbiotics: [
         "Votre intestin réclame plus de rythme et de couleur.",
@@ -775,13 +775,13 @@ const fr: Dictionary = {
         ],
       },
       fermented: {
-        text: "À quelle fréquence des aliments vivants atteignent-ils votre intestin ?",
-        subtitle: "Yaourt, kéfir, kimchi, choucroute, miso — ils ensemencent une nouvelle vie dans votre microbiome.",
+        text: "À quelle fréquence mangez-vous des aliments fermentés ?",
+        subtitle: "Yaourt, kéfir, kimchi, choucroute, miso — des aliments transformés par la fermentation.",
         options: [
           { label: "Presque jamais", description: "Pas dans mes habitudes" },
           { label: "De temps en temps", description: "Occasionnellement" },
           { label: "Quelques fois par semaine", description: "Une habitude régulière" },
-          { label: "La plupart des jours", description: "Les aliments vivants sont quotidiens" },
+          { label: "La plupart des jours", description: "Les aliments fermentés sont quotidiens" },
         ],
       },
       rhythm: {
@@ -805,7 +805,7 @@ const fr: Dictionary = {
         ],
       },
     },
-    probioticsSubtitle: "{foods} — ils ensemencent une nouvelle vie dans votre microbiome.",
+    probioticsSubtitle: "{foods} — des aliments transformés par la fermentation.",
     context: {
       goalBadge: "Encore une chose",
       challengeBadge: "La dernière",
@@ -891,7 +891,7 @@ const de: Dictionary = {
   },
   pillarNudges: {
     prebiotics: "Füge ein präbiotisches Lebensmittel wie Knoblauch, Zwiebeln oder Hafer hinzu, um deine guten Bakterien zu nähren.",
-    probiotics: "Probiere ein fermentiertes Lebensmittel wie Joghurt, Kimchi oder Kombucha für lebende Probiotika.",
+    probiotics: "Probiere diese Woche ein fermentiertes Lebensmittel wie Joghurt, Kimchi oder Kombucha.",
     postbiotics: "Unterstütze die Postbiotika-Produktion mit polyphenolreichen Lebensmitteln wie Kurkuma, dunkler Schokolade oder grünem Tee.",
   },
   relationships: { self: "Ich", child: "Kind", partner: "Partner/in", parent: "Elternteil", sibling: "Geschwister", other: "Andere" },
@@ -948,13 +948,13 @@ const de: Dictionary = {
       probiotics: {
         label: "Probiotika",
         verb: "Aussäen",
-        whatItIs: "Die lebenden Bakterien, die du hineinschickst, um deinen Darm neu zu besiedeln und zu diversifizieren.",
-        fact: "Fermentierte Lebensmittel bringen lebende Bakterien direkt in deinen Darm — der direkteste, praktischste Weg, ihn neu zu besiedeln und zu diversifizieren.",
+        whatItIs: "Lebende Mikroorganismen, die in ausreichender Menge einen nachgewiesenen Nutzen haben. Nicht jedes fermentierte Lebensmittel enthält sie.",
+        fact: "Fermentation ist eine der ältesten Arten, Lebensmittel zu verwandeln, und fast jede Esskultur hat ihre eigene — von Kefir über Kimchi bis Miso.",
         examples: "Enthalten in: Joghurt, Kefir, Kimchi, Sauerkraut & Miso.",
       },
       postbiotics: {
         label: "Postbiotika",
-        verb: "Regenerieren",
+        verb: "Rejuvenate",
         whatItIs: "Was dein Darm aus dieser Nahrung herstellt — die Stoffe, die bestimmen, wie du dich fühlst.",
         fact: "~90 % des Serotonins deines Körpers werden im Darm gebildet — Postbiotika sind der Weg, wie das, was du isst, zu dem wird, wie du dich fühlst.",
         examples: "Der Gewinn: stabile Energie, Stimmung & Immunität.",
@@ -969,9 +969,9 @@ const de: Dictionary = {
       ],
       probiotics: [
         "Ein leichter Gewinn voraus — ein fermentiertes Lebensmittel täglich verändert das schnell.",
-        "Ein Anfang — etwas mehr Neubesiedlung bewirkt viel.",
-        "Klasse — du schickst regelmäßig Verstärkung.",
-        "Hervorragend — lebendige Lebensmittel sind eine tägliche Gewohnheit.",
+        "Ein Anfang — etwas mehr Vielfalt bewirkt viel.",
+        "Klasse — fermentierte Lebensmittel gehören regelmäßig dazu.",
+        "Hervorragend — fermentierte Lebensmittel sind eine tägliche Gewohnheit.",
       ],
       postbiotics: [
         "Dein Darm wünscht sich mehr Rhythmus und Farbe.",
@@ -1002,13 +1002,13 @@ const de: Dictionary = {
         ],
       },
       fermented: {
-        text: "Wie oft erreichen lebendige Lebensmittel deinen Darm?",
-        subtitle: "Joghurt, Kefir, Kimchi, Sauerkraut, Miso — sie säen neues Leben in dein Mikrobiom.",
+        text: "Wie oft isst du fermentierte Lebensmittel?",
+        subtitle: "Joghurt, Kefir, Kimchi, Sauerkraut, Miso — durch Fermentation verwandelte Lebensmittel.",
         options: [
           { label: "Fast nie", description: "Gehört nicht zu meiner Routine" },
           { label: "Ab und zu", description: "Gelegentlich" },
           { label: "Ein paar Mal pro Woche", description: "Eine regelmäßige Gewohnheit" },
-          { label: "An den meisten Tagen", description: "Lebendige Lebensmittel täglich" },
+          { label: "An den meisten Tagen", description: "Fermentierte Lebensmittel täglich" },
         ],
       },
       rhythm: {
@@ -1032,7 +1032,7 @@ const de: Dictionary = {
         ],
       },
     },
-    probioticsSubtitle: "{foods} — sie säen neues Leben in dein Mikrobiom.",
+    probioticsSubtitle: "{foods} — durch Fermentation verwandelte Lebensmittel.",
     context: {
       goalBadge: "Noch eine Sache",
       challengeBadge: "Die letzte",
@@ -1118,7 +1118,7 @@ const ar: Dictionary = {
   },
   pillarNudges: {
     prebiotics: "أضِف طعامًا بريبيوتيك مثل الثوم أو البصل أو الشوفان لتغذية بكتيريا أمعائك النافعة.",
-    probiotics: "جرّب طعامًا مخمّرًا مثل الزبادي أو الكيمتشي أو الكمبوتشا للحصول على بروبيوتيك حي.",
+    probiotics: "جرّب هذا الأسبوع طعامًا مخمّرًا مثل الزبادي أو الكيمتشي أو الكمبوتشا.",
     postbiotics: "ادعم إنتاج البوستبيوتيك بأطعمة غنية بالبوليفينولات مثل الكركم أو الشوكولاتة الداكنة أو الشاي الأخضر.",
   },
   relationships: { self: "أنا", child: "ابن/ابنة", partner: "شريك", parent: "أحد الوالدين", sibling: "أخ/أخت", other: "آخر" },
@@ -1174,8 +1174,8 @@ const ar: Dictionary = {
       probiotics: {
         label: "بروبيوتيك",
         verb: "بذر",
-        whatItIs: "البكتيريا الحيّة التي ترسلها لإعادة بذر أمعائك وتنويعها.",
-        fact: "توصِل الأطعمة المخمّرة بكتيريا حيّة مباشرة إلى أمعائك — وهي أسرع وأعمل طريقة لإعادة بذرها وتنويعها.",
+        whatItIs: "كائنات دقيقة حيّة لها فائدة مثبتة بكميات كافية. ولا تحتوي عليها كل الأطعمة المخمّرة.",
+        fact: "التخمير من أقدم الطرق التي حوّل بها الناس طعامهم، ولكل ثقافة غذائية تقريبًا نسختها — من الكفير إلى الكيمتشي إلى الميسو.",
         examples: "توجد في: الزبادي والكفير والكيمتشي والملفوف المخمّر والميسو.",
       },
       postbiotics: {
@@ -1195,9 +1195,9 @@ const ar: Dictionary = {
       ],
       probiotics: [
         "مكسب سهل قادم — طعام مخمّر واحد يوميًا يغيّر هذا بسرعة.",
-        "بداية — قليل من إعادة البذر يحدث فرقًا كبيرًا.",
-        "رائع — أنت ترسل التعزيزات بانتظام.",
-        "متميّز — الأطعمة الحيّة عادة يومية.",
+        "بداية — قليل من التنوع يحدث فرقًا كبيرًا.",
+        "رائع — الأطعمة المخمّرة جزء منتظم من طعامك.",
+        "متميّز — الأطعمة المخمّرة عادة يومية.",
       ],
       postbiotics: [
         "أمعاؤك تطلب مزيدًا من الإيقاع والتنوع.",
@@ -1228,13 +1228,13 @@ const ar: Dictionary = {
         ],
       },
       fermented: {
-        text: "كم مرة تصل الأطعمة الحيّة إلى أمعائك؟",
-        subtitle: "الزبادي والكفير والكيمتشي والملفوف المخمّر والميسو — تبذر حياة جديدة في ميكروبيومك.",
+        text: "كم مرة تأكل أطعمة مخمّرة؟",
+        subtitle: "الزبادي والكفير والكيمتشي والملفوف المخمّر والميسو — أطعمة حوّلها التخمير.",
         options: [
           { label: "نادرًا جدًا", description: "ليست جزءًا من روتيني" },
           { label: "من حين لآخر", description: "أحيانًا" },
           { label: "بضع مرات في الأسبوع", description: "عادة منتظمة" },
-          { label: "معظم الأيام", description: "الأطعمة الحيّة حاضرة يوميًا" },
+          { label: "معظم الأيام", description: "الأطعمة المخمّرة حاضرة يوميًا" },
         ],
       },
       rhythm: {
@@ -1258,7 +1258,7 @@ const ar: Dictionary = {
         ],
       },
     },
-    probioticsSubtitle: "{foods} — تبذر حياة جديدة في ميكروبيومك.",
+    probioticsSubtitle: "{foods} — أطعمة حوّلها التخمير.",
     context: {
       goalBadge: "أمر أخير",
       challengeBadge: "الأخير",

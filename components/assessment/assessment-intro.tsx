@@ -44,7 +44,7 @@ const PILLARS = [
   {
     icon: FlaskConical,
     label: "Probiotics",
-    description: "The live and fermented foods you introduce.",
+    description: "The fermented foods you bring into the week.",
     color: "var(--icon-teal)",
     gradient: "linear-gradient(135deg, var(--icon-green), var(--icon-teal))",
   },

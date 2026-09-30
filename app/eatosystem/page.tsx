@@ -207,7 +207,7 @@ export default function EatosystemPage() {
               </h2>
               <p className="mt-6 text-base leading-relaxed text-muted-foreground md:text-lg">
                 Each county has its own dedicated AI agent -- collecting local food intelligence,
-                guiding communities through regenerative food practices, and feeding data into
+                guiding communities through rejuvenative food practices, and feeding data into
                 a national learning system that gets smarter with every interaction.
               </p>
             </div>
@@ -418,7 +418,7 @@ export default function EatosystemPage() {
                 color: "var(--icon-yellow)",
                 gradientTo: "var(--icon-orange)",
                 description:
-                  "Licensing isn't one-way. Partner regions share their own local intelligence back, creating a two-way exchange that strengthens both food systems and builds a global regenerative knowledge network.",
+                  "Licensing isn't one-way. Partner regions share their own local intelligence back, creating a two-way exchange that strengthens both food systems and builds a global rejuvenative knowledge network.",
               },
               {
                 icon: Leaf,

@@ -171,7 +171,14 @@ test.describe("navigation offers no refused destination", () => {
    * catalog. This can, because by the time the browser has the page the
    * expression has been evaluated.
    */
-  const CRAWLED = ["/", "/assessment", "/pricing", "/about", "/help", "/food", "/book", "/adhd"]
+  /*
+   * `/enter` is in this list because it is the holding page — the only thing a
+   * visitor sees while the password gate is on — and it was NOT crawled when
+   * it carried a link to `/waitlist`. Refusing that route without this would
+   * have put a dead link on the single page the product was showing the world,
+   * and nothing in the suite would have said so.
+   */
+  const CRAWLED = ["/", "/assessment", "/pricing", "/about", "/help", "/food", "/book", "/adhd", "/enter"]
 
   for (const from of CRAWLED) {
     test(`every in-site link on ${from} resolves`, async ({ page, request }) => {

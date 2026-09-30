@@ -168,8 +168,8 @@ function TodayTab({
     // as `prebiotic` (:100, :126). Swapped for foods that are actually in the
     // postbiotic-supporting bucket, so the dashboard agrees with the food library.
     // The `heal` key stays — it is what stored records contain — but displays as
-    // "Regenerate".
-    heal: { label: "Regenerate — Recovery & Rhythm", color: "var(--icon-yellow)", icon: "⚡", foods: ["Dark Chocolate", "Turmeric", "Walnuts", "Green Tea", "Cooled Potato"] },
+    // "Rejuvenate".
+    heal: { label: "Rejuvenate — Recovery & Rhythm", color: "var(--icon-yellow)", icon: "⚡", foods: ["Dark Chocolate", "Turmeric", "Walnuts", "Green Tea", "Cooled Potato"] },
   }
   const focus = PILLAR_META[weakestPillar] ?? PILLAR_META.seed
 
@@ -214,7 +214,7 @@ function TodayTab({
           )}
           {/* The variables stay feed/seed/heal — they read stored keys. The
             * LABELS are the three biotics, because these are scores, and Feed /
-            * Seed / Regenerate are actions a person takes. A number beside an
+            * Seed / Rejuvenate are actions a person takes. A number beside an
             * action name turns the action framework into a scoring model. */}
           {feedScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Prebiotics: {feedScore}</span>}
           {seedScore !== null && <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Probiotics: {seedScore}</span>}

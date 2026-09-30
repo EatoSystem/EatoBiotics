@@ -228,8 +228,32 @@ describe("each Biotic arrives with its meaning and its score", () => {
     expect(BIOTICS).toMatch(/BIOTIC_INTRO/)
   })
 
-  it("ties every score to a name rather than to a colour", () => {
-    expect(BIOTICS).toMatch(/\{insight\.label\}: \{insight\.score\} out of 100/)
+  it("ties every Biotic to a name and a meaning rather than to a colour", () => {
+    /*
+     * This asserted `{insight.label}: {insight.score} out of 100` — a visually
+     * hidden announcement that existed so a per-Biotic score was never carried
+     * by bar length or colour alone.
+     *
+     * Phase 1 removed the per-Biotic score itself. "Postbiotics: 64 out of 100"
+     * is a personal postbiotic state expressed as a number, which
+     * POSTBIOTICS_INFERENCE_BOUNDARY prohibits by name, and under the strict
+     * ISAPP definitions a questionnaire reaches none of the three. With no
+     * number and no bar there is nothing left for colour to carry.
+     *
+     * So the assertion is REPOINTED, not deleted: what must still be true is
+     * that each Biotic arrives named and explained. Deleting it outright would
+     * have left this file silently proving one thing fewer — the same failure
+     * this suite exists to catch. tests/unit/biotic-claims.test.ts asserts the
+     * other half, that no per-Biotic value can come back.
+     */
+    expect(BIOTICS, "each card must render the Biotic's name").toMatch(/\{insight\.label\}/)
+    expect(BIOTICS, "each card must render its meaning").toMatch(/\{meaning\}/)
+    // Comment-stripped: the component's own docblock explains what
+    // `{insight.score}` used to be, and a raw match would find that sentence
+    // and call it a regression. Same trap as the three earlier occurrences of
+    // comment-vs-code matching in this repository.
+    const code = BIOTICS.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ")
+    expect(code, "no per-Biotic score may return").not.toMatch(/insight\.score/)
   })
 
   it("claims no measurement the Assessment cannot make", () => {

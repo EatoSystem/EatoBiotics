@@ -90,7 +90,7 @@ export function Hero() {
 
           {/* Credibility, not a feature list. The three terms are deliberately
               one colour: tinting them with the lime/teal/orange pillar hues
-              would draw a one-to-one Feed = Prebiotics mapping, and Regenerate
+              would draw a one-to-one Feed = Prebiotics mapping, and Rejuvenate
               is defined in feed-seed-heal.tsx as rhythm, pace and rest rather
               than as postbiotic foods. The dots are decorative elements, not
               text, so they carry no contrast obligation and screen readers read

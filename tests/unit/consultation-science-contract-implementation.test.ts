@@ -10,6 +10,7 @@ import {
   POSTBIOTICS_INFERENCE_BOUNDARY,
   QUESTION_SCIENCE_CONTRACTS,
   REGENERATE_BOUNDARY,
+  SCIENCE_CONTRACT_VERSION,
   REMOVED_BY_SCIENCE_CONTRACT,
   REPORT_COMPOSITION_BOUNDARY,
   REVIEWED_QUESTION_IDS,
@@ -746,10 +747,33 @@ describe("P. the postbiotics boundary closes the softer verbs too", () => {
   })
 })
 
-describe("Q. the Regenerate boundary bounds without redefining", () => {
-  it("preserves the action language", () => {
-    expect(REGENERATE_BOUNDARY.term).toBe("Regenerate")
+describe("Q. the Rejuvenate boundary bounds without redefining", () => {
+  it("bounds the current action word, and remembers the retired one", () => {
+    // The boundary follows the brand: the third action is Rejuvenate since
+    // EatoSystem became The Rejuvenative Food System. `retiredTerm` is kept so
+    // a reader of a historical document can still find the boundary that
+    // governed it.
+    expect(REGENERATE_BOUNDARY.term).toBe("Rejuvenate")
+    expect(REGENERATE_BOUNDARY.retiredTerm).toBe("Regenerate")
     expect(REGENERATE_BOUNDARY.preservedAsActionLanguage).toBe(true)
+  })
+
+  it("did not move the contract version for a terminology change", () => {
+    // Substance is unchanged — `mustNotMean` below is identical — so a version
+    // bump would make every downstream check noisy while protecting nothing.
+    // Safe only because nothing was ever finalised under v1.0; see the note in
+    // lib/consultation/science-contract.ts.
+    expect(SCIENCE_CONTRACT_VERSION).toBe("science-contract-v1.0")
+  })
+
+  it("prohibits the personalisation under BOTH spellings", () => {
+    // Widened, not moved: a prohibition that followed the rename would stop
+    // covering text written under the old word.
+    const prohibited = REMOVED_BY_SCIENCE_CONTRACT.find(
+      (q) => q.questionId === "core_rhythm_antibiotics_v1",
+    )
+    expect(prohibited?.prohibitedPersonalisation).toContain("Regenerate")
+    expect(prohibited?.prohibitedPersonalisation).toContain("Rejuvenate")
   })
 
   it.each([

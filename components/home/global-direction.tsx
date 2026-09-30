@@ -21,11 +21,11 @@ import { Eyebrow, Section, SectionHeading, StatusBadge } from "./section-shared"
  * argued against the copy it sat beneath; the biotic photos that would fit are already
  * used in the section directly above.
  *
- * Colours match the Feed/Seed/Regenerate pillars in feed-seed-heal.tsx exactly, so the
+ * Colours match the Feed/Seed/Rejuvenate pillars in feed-seed-heal.tsx exactly, so the
  * two sections read as one idea.
  */
 
-/** Only Feed and Seed pair foods. See the note on Regenerate below PAIRINGS. */
+/** Only Feed and Seed pair foods. See the note on Rejuvenate below PAIRINGS. */
 const PAIRINGS = [
   {
     a: "Sauerkraut",
@@ -57,7 +57,7 @@ const PAIRINGS = [
 ]
 
 /*
- * No Regenerate pairing, on purpose. The third pillar is defined in feed-seed-heal.tsx
+ * No Rejuvenate pairing, on purpose. The third pillar is defined in feed-seed-heal.tsx
  * as meal rhythm, eating pace and rest — "No single food does this on its own." Pairing
  * two foods under it would contradict the framework this section reinforces.
  */

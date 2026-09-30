@@ -95,13 +95,28 @@ export const BIOTICS_LINE = BIOTICS.join(" · ")
 /**
  * The action framework. Three things a person DOES.
  *
- * These are never score names, and Regenerate is never Postbiotics renamed —
- * postbiotics are what bacteria produce, Regenerate is what a person chooses to
+ * ══ THE THIRD ACTION IS `Rejuvenate` ════════════════════════════════════════
+ *
+ * It read `Regenerate` until the EatoSystem brand architecture settled on
+ * **The Rejuvenative Food System**, which makes Rejuvenate the third step here:
+ * it names improving and renewing the whole internal food system.
+ *
+ * `Regenerate` is now a RETIRED pathway name, alongside `Heal` — and, like
+ * `Heal`, only as a capitalised brand label. Lowercase "regenerate" remains
+ * correct English for a genuine biological, microbial, tissue, soil or
+ * ecological process, and is deliberately still used in that sense elsewhere.
+ * The two are not interchangeable and the rename does not merge them.
+ *
+ * These are never score names, and Rejuvenate is never Postbiotics renamed —
+ * postbiotics are what bacteria produce, Rejuvenate is what a person chooses to
  * do. Copy may say the actions are inspired by the science; it may not equate
- * one to one. The singular "Regenerate" is the label; "Regenerates" is not a
+ * one to one. The singular "Rejuvenate" is the label; "Rejuvenates" is not a
  * form this word takes here.
+ *
+ * The stored pillar key is still `"heal"` (see lib/pillars.ts). Labels change;
+ * values written into rows do not.
  */
-export const ACTIONS = ["Feed", "Seed", "Regenerate"] as const
+export const ACTIONS = ["Feed", "Seed", "Rejuvenate"] as const
 
-/** "Feed · Seed · Regenerate" — the action framework as one line. */
+/** "Feed · Seed · Rejuvenate" — the action framework as one line. */
 export const ACTIONS_LINE = ACTIONS.join(" · ")

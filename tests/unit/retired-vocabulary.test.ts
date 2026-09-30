@@ -90,11 +90,25 @@ function journeySurfaces(): string[] {
  * sentence, which is the half more likely to be written casually.
  */
 const RETIRED: Array<[string, RegExp]> = [
-  // Feed · Seed · Regenerate is the action vocabulary. It never labels a score,
-  // and Regenerate is never Postbiotics renamed. `Heal` stays case-sensitive:
+  // Feed · Seed · Rejuvenate is the action vocabulary. It never labels a score,
+  // and Rejuvenate is never Postbiotics renamed. `Heal` stays case-sensitive:
   // lowercase "heal" is an ordinary English verb that appears in legitimate
   // educational prose, whereas capital-H Heal is the retired pathway name.
-  ["Heal or Regenerate as a pathway name", /\bHeal\b|\bRegenerates\b/],
+  //
+  // `Regenerate` joined `Heal` in retirement when EatoSystem became The
+  // Rejuvenative Food System. Same case-sensitivity logic, and the same
+  // reason: lowercase "regenerate" is ordinary English for a biological
+  // process the copy is still allowed to describe.
+  ["Heal or a retired pathway plural", /\bHeal\b|\bRegenerates\b|\bRejuvenates\b/],
+  // `Regenerate` as the THIRD ACTION — which is what "beside Feed or Seed"
+  // means. Deliberately not a blanket \bRegenerate\b: "Regenerate plan" and
+  // "Regenerate report" are UI verbs meaning run-it-again, they live in the
+  // account dashboard which IS in this corpus, and banning them outright would
+  // have meant weakening this rule until it passed.
+  [
+    "Regenerate still used as the third action",
+    /\b(Feed|Seed)\b[^.]{0,60}\bRegenerate\b|\bRegenerate\b[^.]{0,60}\b(Feed|Seed)\b/,
+  ],
   ["five-pillar model", /\b(five|5) pillars\b/i],
   // "Your Three Pillars" shipped as the heading above the three-biotic
   // breakdown and no rule caught it: the five-pillar rule is about the RETIRED
@@ -168,10 +182,11 @@ const RETIRED: Array<[string, RegExp]> = [
   ["the included 30 days called a free trial", /\bfree trial\b|\bstart your trial\b|\btrial starts\b/i],
   // Phase 6 activation semantics, promised before they exist.
   ["future 30-day activation semantics", /\b30 days start (after|when)\b|\bpractice[- ]ready\b|\breport[- ]ready\b|\bactivation window\b/i],
-  // Feed/Seed/Regenerate are actions. A score is not an action.
-  ["actions used as score names", /\b(feed|seed|regenerate)\s+score\b|\bscores? across feed\b|\bfeed\s*[·/]\s*seed\s*[·/]\s*regenerate\b(?=[^.]{0,40}\bscore)/i],
-  // Regenerate is not Postbiotics renamed, in either direction.
-  ["Regenerate equated with Postbiotics", /\bregenerate\s*(=|\u2014|-|:)\s*postbiotics\b|\bpostbiotics,?\s+(also |now )?(called|known as|renamed)\s+regenerate\b/i],
+  // Feed/Seed/Rejuvenate are actions. A score is not an action. Both spellings
+  // of the third action, because the rule is about the shape, not the word.
+  ["actions used as score names", /\b(feed|seed|regenerate|rejuvenate)\s+score\b|\bscores? across feed\b|\bfeed\s*[·/]\s*seed\s*[·/]\s*(regenerate|rejuvenate)\b(?=[^.]{0,40}\bscore)/i],
+  // The third action is not Postbiotics renamed, in either direction.
+  ["the third action equated with Postbiotics", /\b(regenerate|rejuvenate)\s*(=|\u2014|-|:)\s*postbiotics\b|\bpostbiotics,?\s+(also |now )?(called|known as|renamed)\s+(regenerate|rejuvenate)\b/i],
   // ── Phase 1 completion pass ────────────────────────────────────────────
   // Every rule below exists because a live surface carried the shape and no
   // guard was reading that file. Independent review found them, not CI.
@@ -190,7 +205,7 @@ const RETIRED: Array<[string, RegExp]> = [
   // number or an interpolation is the shape a CUSTOMER sees; lowercase plus a
   // value is code. Matching both would have meant weakening the rule until it
   // passed, which is how a guard becomes decoration.
-  ["an action used as a score label", /\b(Feed|Seed|Regenerate):\s*[{\d]/],
+  ["an action used as a score label", /\b(Feed|Seed|Regenerate|Rejuvenate):\s*[{\d]/],
   // The 30 days are INCLUDED in a €49 purchase. Calling them free makes the
   // paid thing sound free and the included thing sound conditional.
   //
@@ -491,7 +506,9 @@ describe("the live journey uses only current vocabulary", () => {
     expect(surfaces).toContain("lib/email/paid-report-email.ts")
 
     const probes: Array<[string, string]> = [
-      ["Regenerates your gut", "Heal or Regenerate as a pathway name"],
+      ["Regenerates your gut", "Heal or a retired pathway plural"],
+      ["Rejuvenates your gut", "Heal or a retired pathway plural"],
+      ["Feed, Seed and Regenerate", "Regenerate still used as the third action"],
       ["Your 5 Pillars at a Glance", "five-pillar model"],
       ["Your Full Report is ready", "retired report titles"],
       ["Start Restore today", "Grow/Restore/Transform as a current offer"],

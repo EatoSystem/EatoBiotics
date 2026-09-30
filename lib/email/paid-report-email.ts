@@ -38,9 +38,9 @@ const PILLAR_LABELS: Record<string, string> = {
   // legacy STORAGE keys that stored reports still contain; they map to the
   // pathway they hold, never to an action word.
   //
-  // These previously read "Feed" / "Seed" / "Regenerate", which broke two rules
-  // at once: Feed · Seed · Regenerate is the ACTION vocabulary and is not a set
-  // of scores, and Regenerate is not Postbiotics renamed. A buyer's email is
+  // These previously read "Feed" / "Seed" / "Rejuvenate", which broke two rules
+  // at once: Feed · Seed · Rejuvenate is the ACTION vocabulary and is not a set
+  // of scores, and Rejuvenate is not Postbiotics renamed. A buyer's email is
   // the last place that distinction should blur.
   prebiotics: "Prebiotics",
   probiotics: "Probiotics",

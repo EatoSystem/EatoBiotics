@@ -157,8 +157,29 @@ export const SAMPLE_REPORT_SURFACES = [
 /** Public marketing and commercial pages. */
 export const MARKETING_SURFACES = [
   "app/page.tsx",
+  // The holding page — the ONLY page a visitor sees while the password gate is
+  // on, and until Step 7B the only customer-facing surface no guard was
+  // reading. It linked to /waitlist ("See what's coming — Book, App & Course")
+  // and /waitlist sold "three launches", a pre-order price and waitlist-only
+  // early-bird pricing, none of which EatoBiotics has ever sold under the V1
+  // commercial model. That page is refused now; this one is guarded, which is
+  // the half that stops it happening again.
+  "app/enter/page.tsx",
+  "app/enter/waitlist-hero.tsx",
+  ...filesIn("components/waitlist"),
   "components/home/membership-teaser.tsx",
   "components/home/feed-seed-heal.tsx",
+  // The framework cards the holding page and /c/[country] actually render.
+  // app/enter/page.tsx joined this list in Step 7B, but the sections it renders
+  // did not, so the three vocabulary guards were reading a page wrapper while
+  // the copy on it stayed unguarded — the same shape as the gap that list was
+  // added to close.
+  "components/home/the-framework.tsx",
+  // The four-step explainer, on the homepage AND the holding page. It shipped
+  // "See your Food System Score instantly." — a banned term, on the only page a
+  // visitor can currently reach — and no guard was reading it. Same gap as
+  // the-framework.tsx above, found the same way: by looking, not by CI.
+  "components/home/how-it-works.tsx",
   "app/start/page.tsx",
   ...filesIn("components/start"),
   "app/pricing/page.tsx",
@@ -176,11 +197,26 @@ export const MARKETING_SURFACES = [
   "app/roadmap/page.tsx",
 ]
 
-/** Live system prompts. Judged separately — an instruction is not page copy. */
+/**
+ * Live system prompts. Judged separately — an instruction is not page copy.
+ *
+ * Three were missing until Tranche 2B, and the omission had teeth: a prompt
+ * sentence is regenerated into many customer-facing forms, in wording nobody
+ * reviews. `app/api/eatobiotic/route.ts` WAS listed and carried no claim of
+ * its own, because the claim lived in `lib/biotics-prompt.ts` — which was not
+ * listed. A guard reading the importer and not the imported module is the same
+ * gap `the-framework.tsx` and `how-it-works.tsx` fell through.
+ */
 export const AI_PROMPT_SURFACES = [
   "app/api/consult/route.ts",
   "app/api/demo/consult/route.ts",
   "app/api/eatobiotic/route.ts",
+  "app/api/report-chat/route.ts",
+  "app/api/food-intelligence/route.ts",
+  // The shared classifier and framework text behind /api/analyse,
+  // /api/analyse/stream, /api/analyse-plate, /api/create-plate and
+  // /api/eatobiotic — the prompt that actually assigns a Meal Biotics Score.
+  "lib/biotics-prompt.ts",
 ]
 
 /** Everything a customer can read, by group. */

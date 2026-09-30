@@ -11,6 +11,7 @@ import { waitlistConfirmationEmail } from "@/lib/email/waitlist-email"
 import { waitlistResultEmail } from "@/lib/email/waitlist-result-email"
 import { sendEmail } from "@/lib/email/send"
 import { generateShareCode } from "@/lib/waitlist-result"
+import { earlyAccessPlace, type EarlyAccessPlace } from "@/lib/waitlist/early-access"
 import { logServerEvent } from "@/lib/statsig-server"
 import type { AssessmentResult } from "@/lib/assessment-scoring"
 
@@ -108,6 +109,7 @@ export async function POST(req: NextRequest) {
     // a quiz result is present; reused on repeat submissions so the link is stable.
     let shareCode: string | undefined
     const referredBy = clean(body.referredBy)
+    let place: EarlyAccessPlace | null = null
     const supabase = getSupabase()
     if (supabase) {
       // Only when a quiz result is present — that is the only case where health
@@ -124,6 +126,19 @@ export async function POST(req: NextRequest) {
         .eq("assessment_type", "waitlist")
         .maybeSingle()
       isNew = !existing
+
+      // How many waitlist signups existed BEFORE this one — the place this
+      // person takes. Counted only for a genuinely new signup, so a repeat
+      // submission never renumbers anyone, and only from the same filtered
+      // count the holding page shows. Best-effort: if it fails, the email
+      // simply does not claim a place.
+      if (isNew) {
+        const { count } = await supabase
+          .from("leads")
+          .select("*", { count: "exact", head: true })
+          .eq("assessment_type", "waitlist")
+        place = earlyAccessPlace(count)
+      }
 
       if (result) {
         shareCode = (existing?.share_code as string | undefined) ?? generateShareCode()
@@ -186,7 +201,7 @@ export async function POST(req: NextRequest) {
       const ownerEmail = process.env.OWNER_EMAIL
       const { subject, html } = result
         ? waitlistResultEmail(result, clean(body.name), shareCode, email)
-        : waitlistConfirmationEmail(email)
+        : waitlistConfirmationEmail(email, place)
       const sent = await sendEmail({
         to: email,
         bcc: ownerEmail ? [ownerEmail] : undefined,

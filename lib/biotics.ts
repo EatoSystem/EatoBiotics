@@ -39,7 +39,7 @@ export const BIOTICS_CARDS: BioticCard[] = [
   {
     number: "03",
     title: "Postbiotics",
-    verb: "Regenerate",
+    verb: "Rejuvenate",
     accent: "var(--icon-teal)",
     gradient: "linear-gradient(90deg, var(--icon-teal), var(--icon-yellow))",
     body: "The compounds your gut bacteria produce in return — driving energy, immunity, mood, and long-term health.",

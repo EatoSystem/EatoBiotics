@@ -63,7 +63,12 @@ export const FOOD_TOKENS: readonly string[] = [
 export const BIOTICS_TOKENS: readonly string[] = [
   "prebiotic", "probiotic", "postbiotic", "biotic", "microbiome", "microbiota",
   "gut flora", "gut bacteria", "microbial", "strain", "feed", "seed",
-  "regenerate",
+  // Both, deliberately. "Regenerate" was the branded third action until it
+  // became "Rejuvenate"; replacing the token rather than adding to it would
+  // have left the NEW brand word un-withheld while the claims gate is open —
+  // silently opening the gate this list exists to hold shut. The retired word
+  // stays because historical text still contains it.
+  "regenerate", "rejuvenate",
 ]
 
 /** Measurement and risk language. The Report has no score of any kind. */
