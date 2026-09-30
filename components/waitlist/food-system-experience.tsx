@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * The first sixty seconds of EatoBiotics.
+ * The opening of EatoBiotics — hero, assessment, score, and the place claimed.
  *
  * One component owns the whole opening, because it is one experience:
  *
@@ -27,7 +27,8 @@
  * something the visitor receives rather than something they are charged for.
  * The two segmentation questions (goal, challenge) moved into the claim step:
  * they are not scored, and asking them mid-run would have made a five-question
- * assessment a seven-question one while the headline promised sixty seconds.
+ * assessment a seven-question one, which is a different product from a five-
+ * question one.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -67,36 +68,40 @@ const COUNTRIES = [
   "New Zealand", "Germany", "France", "Spain", "Netherlands", "Other",
 ]
 
-/**
- * How long one question is expected to take, in seconds.
+/*
+ * SECONDS_PER_QUESTION was here.
  *
- * Five questions × twelve seconds is the sixty the headline promises, so the
- * two numbers come from the same place instead of one being marketing and the
- * other being arithmetic. If a question is ever added, the estimate moves with
- * it — and `progressCue` stops claiming a number it cannot support.
+ * It existed so the headline's "sixty seconds" and the in-flow estimate came
+ * from one number rather than one being marketing and the other arithmetic —
+ * a good rule, for a claim the product no longer makes. With no time claim
+ * anywhere on this page there is nothing left for it to keep honest, and an
+ * exported constant nobody can explain is worse than one that explains itself.
+ *
+ * Removed rather than left unused. `progressCue` below now reports position,
+ * not pace.
  */
-export const SECONDS_PER_QUESTION = 12
 
 /**
  * What the progress line says, given how many questions are answered.
  *
- * Qualitative near the end rather than counting down to "~12 seconds left",
- * which reads as precision the product does not have — nobody's remaining time
- * is knowable to the second. "Question 3 of 5" is deliberately not the primary
- * cue; the visible count is announced to assistive technology instead, where
- * position genuinely helps.
+ * ══ IT NO LONGER COUNTS SECONDS ═════════════════════════════════════════════
  *
- * Pure, exported and tested: this is the one place the "sixty seconds" claim
- * turns into words, so it is the place a false one would appear.
+ * This returned "~45 seconds left", derived from SECONDS_PER_QUESTION. The
+ * arithmetic was honest and the framing was not: EatoBiotics is about
+ * understanding a food system and improving it over time, and a stopwatch in
+ * the corner argues the opposite on every screen. Removing the claim from the
+ * hero while leaving it running mid-flow would have moved it, not retired it.
+ *
+ * What remains is position, which is the thing a progress cue is actually for:
+ * how far through am I, and am I nearly done. No number that implies a pace,
+ * and nothing replacing one time claim with another.
  */
 export function progressCue(answered: number, total: number): string {
   const left = Math.max(total - answered, 0)
-  if (left <= 1) return "Almost there"
-  const seconds = left * SECONDS_PER_QUESTION
-  // Rounded to five. "~48 seconds left" reads as a measurement of this
-  // person's pace, which it is not — it is a constant times a count.
-  const rounded = Math.round(seconds / 5) * 5
-  return `~${rounded} seconds left`
+  if (left <= 0) return "Almost there"
+  if (left === 1) return "Last question"
+  if (answered === 0) return "Let's begin"
+  return `${left} to go`
 }
 
 /**
@@ -125,7 +130,25 @@ const GRADIENT_BAR =
 
 export function FoodSystemExperience({
   campaign = CONSUMER_CAMPAIGN,
-}: { campaign?: CampaignContext } = {}) {
+  onIdleChange,
+}: {
+  campaign?: CampaignContext
+  /**
+   * Called with `false` the moment the hero is replaced by the assessment, and
+   * `true` if the visitor comes back to it.
+   *
+   * The page needs this because the experience swaps the hero IN PLACE: the
+   * 100 Systems section now sits directly beneath, so without it a visitor on
+   * question three would have "Add My System" sitting under the question — a
+   * second call to action competing with the one they are already answering.
+   * The old layout avoided that only by distance.
+   *
+   * A callback rather than lifted state: the phase machine stays owned here,
+   * where every transition already lives, and the page learns the one bit of
+   * it that affects layout.
+   */
+  onIdleChange?: (idle: boolean) => void
+} = {}) {
   const t = useTranslations()
   const tw = t.waitlist
   const reducedMotion = usePrefersReducedMotion()
@@ -288,6 +311,13 @@ export function FoodSystemExperience({
   }
 
   const begin = () => { setPhase("intro"); track("waitlist_experience_opened") }
+
+  // One effect, one boundary. Deliberately not called inside `begin`: the phase
+  // can also leave and re-enter `idle` by other paths, and a notification tied
+  // to one button would be wrong for the others.
+  useEffect(() => {
+    onIdleChange?.(phase === "idle")
+  }, [phase, onIdleChange])
   const startQuestions = () => { setStep(0); setPhase("questions") }
 
   /*
@@ -432,13 +462,21 @@ function HeroStage({
         </span>
       </h1>
 
-      <p className="mt-4 font-serif text-lg text-foreground sm:text-xl">
-        Understand {campaign.possessive} in 60 seconds.
-      </p>
+      {/*
+        The proposition, not a stopwatch.
 
-      <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-muted-foreground">
-        Discover how you Feed, Seed and Rejuvenate — and receive your first
-        personal Biotics&nbsp;Score™.
+        This read "Understand yours in 60 seconds." Sixty seconds was a useful
+        pre-launch mechanism and it is not what EatoBiotics is: the product is
+        understanding a food system and improving it over time, which is the
+        opposite of a claim about speed. No other time claim replaces it.
+
+        Longer than the line it replaced, so the measure is set deliberately
+        rather than inherited — `max-w-[22ch]` on the smallest breakpoint keeps
+        it to two balanced lines on a phone instead of one orphaned word.
+      */}
+      <p className="mx-auto mt-5 max-w-[24ch] font-serif text-lg leading-snug text-foreground text-balance sm:max-w-[34ch] sm:text-xl">
+        Understand your own food system, what shapes it, and how to improve it
+        over time.
       </p>
 
       {/* The figure is the product, so it gets the room. No card, no border. */}
@@ -450,7 +488,7 @@ function HeroStage({
           onClick={onBegin}
           className="brand-gradient inline-flex min-h-[56px] w-full max-w-sm items-center justify-center gap-2.5 whitespace-nowrap rounded-full px-10 py-4 text-base font-semibold text-white shadow-xl shadow-icon-green/25 transition-all hover:opacity-90 sm:w-auto sm:max-w-none sm:text-lg"
         >
-          Start my 60-second assessment <ArrowRight size={20} aria-hidden />
+          Understand My Food System <ArrowRight size={20} aria-hidden />
         </button>
         <a
           href="#how-it-works"
@@ -460,7 +498,15 @@ function HeroStage({
         </a>
       </div>
 
-      <CohortLine cohort={cohort} className="mt-6" />
+      {/* Restrained on purpose. It replaces a sentence that named Feed, Seed
+        * and Rejuvenate and promised a score — three ideas competing under a
+        * CTA. The framework is taught further down the page; here it only has
+        * to say what kind of product this is. */}
+      <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+        Science-backed insights. A healthier you.
+      </p>
+
+      <CohortLine cohort={cohort} className="mt-5" />
     </div>
   )
 }
@@ -475,7 +521,7 @@ function IntroStage({ campaign, onStart }: { campaign: CampaignContext; onStart:
         Let&rsquo;s meet your food system.
       </h2>
       <p className="mt-5 text-base leading-relaxed text-muted-foreground sm:text-lg">
-        60 seconds. Five simple questions. Your first Biotics&nbsp;Score™ at the end.
+        Five simple questions. Your first Biotics&nbsp;Score™ at the end.
       </p>
       <button
         type="button"
@@ -845,8 +891,8 @@ function ClaimStage(props: {
         </div>
 
         {/* Segmentation, not scoring. These two used to interrupt the run as
-            questions six and seven; they belong here, where they cost nobody
-            their sixty seconds. */}
+            questions six and seven; they belong here, after the score, where
+            they do not make a five-question assessment a seven-question one. */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="claim-goal" className="mb-2 block text-sm font-medium text-foreground">

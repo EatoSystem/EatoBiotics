@@ -129,7 +129,7 @@ const EN_DICTIONARY = "lib/i18n/dictionaries.ts"
 const PRE_LAUNCH = [
   "app/enter/page.tsx",
   "components/waitlist/food-system-experience.tsx",
-  "components/waitlist/first-course.tsx",
+  "components/waitlist/hundred-systems.tsx",
   "components/home/how-it-works.tsx",
 ]
 
@@ -275,8 +275,8 @@ describe("the corpus this guard reads cannot silently shrink", () => {
     expect([...PRE_LAUNCH].sort()).toEqual([
       "app/enter/page.tsx",
       "components/home/how-it-works.tsx",
-      "components/waitlist/first-course.tsx",
       "components/waitlist/food-system-experience.tsx",
+      "components/waitlist/hundred-systems.tsx",
     ])
   })
 })

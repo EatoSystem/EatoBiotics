@@ -81,7 +81,7 @@ async function watchForBuildingStage(page: Page) {
 }
 
 async function start(page: Page) {
-  await page.getByRole("button", { name: /start my 60-second assessment/i }).click()
+  await page.getByRole("button", { name: /understand my food system/i }).click()
   await page.getByRole("button", { name: /^begin$/i }).click()
 }
 
@@ -104,7 +104,7 @@ test("the hero's call to action is on the first screen at every width", async ({
   await page.setViewportSize({ width: 1280, height: 900 })
   await page.goto("/enter", { waitUntil: "domcontentloaded" })
 
-  const cta = page.getByRole("button", { name: /start my 60-second assessment/i })
+  const cta = page.getByRole("button", { name: /understand my food system/i })
   await expect(cta).toBeVisible()
 
   for (const [width, height] of [[1280, 900], [834, 1112], [390, 844]] as const) {
@@ -159,7 +159,7 @@ test("the reveal's call to action is on the first screen at every width", async 
   await runQuestions(page)
   await expect(scoreLabel(page)).toBeVisible({ timeout: 10_000 })
 
-  const cta = page.getByRole("button", { name: /join the first/i })
+  const cta = page.getByRole("button", { name: /add my system/i })
   await expect(cta).toBeVisible()
 
   for (const [width, height] of [[1280, 900], [834, 1112], [390, 844]] as const) {
@@ -195,7 +195,7 @@ test("the whole run is completable with the keyboard alone", async ({ page }) =>
   await withTotal(page, 1)
   await page.goto("/enter")
 
-  await page.getByRole("button", { name: /start my 60-second assessment/i }).focus()
+  await page.getByRole("button", { name: /understand my food system/i }).focus()
   await page.keyboard.press("Enter")
   await page.getByRole("button", { name: /^begin$/i }).focus()
   await page.keyboard.press("Enter")
@@ -257,39 +257,98 @@ test("it says nothing about places when it has not counted any", async ({ page }
   await page.goto("/enter")
 
   const body = page.locator("body")
-  await expect(body).not.toContainText(/places remaining/i)
+  await expect(body).not.toContainText(/systems remaining/i)
   await expect(body).not.toContainText(/of 100/i)
   // The page still works — the proposition does not depend on scarcity.
-  await expect(page.getByRole("button", { name: /start my 60-second assessment/i })).toBeVisible()
+  await expect(page.getByRole("button", { name: /understand my food system/i })).toBeVisible()
 })
 
-test("the counted cohort is shown, and rolls to the First Course when full", async ({ page }) => {
+test("the counted programme is shown, and rolls to 1,000 Systems when full", async ({ page }) => {
   await withTotal(page, 1)
   await page.goto("/enter")
-  await expect(page.locator("body")).toContainText("99 of 100 places remaining")
+  await expect(page.locator("body")).toContainText("99 of 100 systems remaining")
 
   await page.unroute("**/api/waitlist/count*")
   await withTotal(page, 250)
   await page.goto("/enter")
   const body = page.locator("body")
-  await expect(body).toContainText("The First Course")
-  await expect(body).toContainText("750 of 900 places remaining")
+  await expect(body).toContainText("1,000 Systems")
+  await expect(body).toContainText("750 of 900 systems remaining")
 })
 
-test("the First Course section explains staged access without pressure", async ({ page }) => {
+test("the 100 Systems section explains staged access without pressure", async ({ page }) => {
+  /*
+   * Was "the First Course section". That section sat at the FOOT of the page
+   * and carried a bullet list, a three-rung ladder and a second CTA. It is
+   * replaced by 100 Systems, directly beneath the hero, saying one thing.
+   *
+   * The assertions move with it: what must still be true is that the section
+   * explains why a hundred, states availability from a counted number, and
+   * applies no pressure. The roadmap rungs ("Open wider", "Founding Members")
+   * are gone on purpose — a reader who has just met the product does not need
+   * its roadmap — so asserting them would be asserting the old design.
+   */
   await withTotal(page, 1)
   await page.goto("/enter")
-  const section = page.locator("#first-course")
+  const section = page.locator("#hundred-systems")
   await section.scrollIntoViewIfNeeded()
 
-  await expect(section).toContainText("The First Course")
-  await expect(section).toContainText("Be one of the first 100")
-  await expect(section).toContainText("1,000 Founding Members")
-  await expect(section).toContainText("Open wider")
+  await expect(section).toContainText("100 Systems")
+  await expect(section).toContainText("100 people. 100 food systems.")
+  await expect(section).toContainText("99")
+  await expect(section.getByRole("link", { name: /add my system/i })).toBeVisible()
+
+  // And none of the vocabulary it replaced.
+  for (const retired of ["First Course", "First 100", "Founding", "founding", "pioneer"]) {
+    await expect(section, `the section must not say "${retired}"`).not.toContainText(retired)
+  }
 
   // No manufactured urgency anywhere on the page.
   const text = await page.locator("body").innerText()
   for (const trick of ["HURRY", "Hurry", "people viewing", "Offer ends", "Act now"]) {
     expect(text, `the page must not say "${trick}"`).not.toContain(trick)
   }
+})
+
+test("the page makes no claim about how long it takes", async ({ page }) => {
+  /*
+   * The 60-second framing was the whole hero proposition: "Understand yours in
+   * 60 seconds", "Start my 60-second assessment", and a "~45 seconds left"
+   * countdown running through the assessment. It was a useful pre-launch
+   * mechanism and it is not what EatoBiotics is.
+   *
+   * Checked on the RENDERED page, at the hero and mid-assessment, because the
+   * claim lived in three different components and a source guard would have to
+   * know all three. Any unit of time is refused, not just "60" — replacing one
+   * speed claim with another is the failure this is watching for.
+   */
+  await withTotal(page, 1)
+  await page.goto("/enter")
+
+  /*
+   * Scoped to the first screen, NOT the whole page — and that distinction is
+   * the point rather than a convenience.
+   *
+   * Further down, HowItWorks and ScorePreview say "Takes about 5 minutes. No
+   * account required." That is the canonical fifteen-question Food System
+   * Assessment, it is true, and it was decided some time ago that those lines
+   * stay. What was retired is selling THIS page on speed. A rule that swept
+   * the whole body would have demanded the honest statement go too, and the
+   * only way to green it would be to delete something true.
+   */
+  const NO_TIME = /\b\d+[-\s]*(seconds?|secs?|minutes?|mins?)\b/i
+  const firstScreen = page.locator("#start, #hundred-systems")
+  for (const text of await firstScreen.allInnerTexts()) {
+    expect(text, "the first screen claims a duration").not.toMatch(NO_TIME)
+  }
+
+  await start(page)
+  // Two answers in, so the assertion lands while the progress cue is showing.
+  for (let i = 0; i < 2; i++) {
+    await page.locator("fieldset label").nth(2).click()
+    await page.waitForTimeout(250)
+  }
+  // Scoped the same way, and for the same reason: the sections below still
+  // state the fifteen-question Assessment's honest five minutes.
+  expect(await page.locator("#start").innerText(), "mid-assessment").not.toMatch(NO_TIME)
 })

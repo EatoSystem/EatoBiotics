@@ -96,7 +96,7 @@ describe("no served page still advertises it", () => {
     "app/enter/waitlist-hero.tsx",
     "components/waitlist/food-system-experience.tsx",
     "components/waitlist/cohort-line.tsx",
-    "components/waitlist/first-course.tsx",
+    "components/waitlist/hundred-systems.tsx",
     "app/book/page.tsx",
     "app/books/page.tsx",
     "app/book-family/page.tsx",
@@ -113,7 +113,7 @@ describe("no served page still advertises it", () => {
     "app/enter/waitlist-hero.tsx",
     "components/waitlist/food-system-experience.tsx",
     "components/waitlist/cohort-line.tsx",
-    "components/waitlist/first-course.tsx",
+    "components/waitlist/hundred-systems.tsx",
   ])(
     "%s does not carry the retired offer's words",
     (file) => {
@@ -186,7 +186,7 @@ describe("early access promises access, not a discount", () => {
   const COPY_SURFACES = [
     "components/waitlist/food-system-experience.tsx",
     "components/waitlist/cohort-line.tsx",
-    "components/waitlist/first-course.tsx",
+    "components/waitlist/hundred-systems.tsx",
   ]
 
   it("names no price and no discount, anywhere it speaks", () => {
@@ -255,16 +255,28 @@ describe("early access promises access, not a discount", () => {
   /*
    * The free product is named where the PROMISE is, not merely somewhere.
    *
-   * "Food System Assessment" appears in two places: the claim step, where
-   * someone is deciding to hand over an email, and the First Course section,
-   * which is the page's actual explanation of what joining gets you. Because
-   * it is in two places, deleting either one leaves the joined-source check
-   * above green — which is how a sabotage case that removed it from the
-   * experience walked through. Naming the file makes the important one
-   * load-bearing rather than incidental.
+   * ══ THIS GUARD LOST ONE OF ITS TWO SUBJECTS, AND SAYS SO ═════════════════
+   *
+   * "Food System Assessment" used to appear twice: in the claim step, where
+   * someone is deciding to hand over an email, and in the First Course
+   * section's bullet list. Because it was in two places, deleting either left
+   * the joined-source check above green — which is how a sabotage case that
+   * removed it from the experience once walked through. Naming the file made
+   * the second one load-bearing.
+   *
+   * The First Course section is gone. What replaced it, 100 Systems, explains
+   * why a hundred people are being started with — not what a person receives —
+   * and padding the founder's copy with a product name to keep a guard company
+   * would be writing marketing to satisfy a test.
+   *
+   * So this is repointed to the one place the promise is now made, and the
+   * property it was protecting is restored a different way: the claim step is
+   * now the SOLE mention, which makes it unambiguously load-bearing, and
+   * sabotage case 993 deletes it to prove this turns red. One place that must
+   * hold is stronger than two places where either may quietly go.
    */
-  it("names the free product in the section that explains joining", () => {
-    expect(renderedSource("components/waitlist/first-course.tsx")).toContain(
+  it("names the free product where the promise is made", () => {
+    expect(renderedSource("components/waitlist/food-system-experience.tsx")).toContain(
       "Food System Assessment",
     )
   })
@@ -295,5 +307,157 @@ describe("early access promises access, not a discount", () => {
     const found = (sabotaged.match(/[A-Za-z’'\s]{0,24}Biotics(?:&nbsp;| )Score/g) ?? [])
       .filter((m) => !/first/i.test(m))
     expect(found.length).toBe(1)
+  })
+})
+
+/**
+ * ══ THE REDESIGNED FIRST SCREEN ═════════════════════════════════════════════
+ *
+ * The hero sold the product on speed — "Understand yours in 60 seconds",
+ * "Start my 60-second assessment", and a countdown running through the
+ * assessment. That was a pre-launch mechanism, not the proposition:
+ * EatoBiotics is about understanding a food system and improving it over
+ * time, which is the opposite argument to a stopwatch.
+ *
+ * And the staged-access story moved from the foot of the page to directly
+ * under the hero, as 100 Systems, losing the vocabulary it carried.
+ *
+ * Five sabotage cases walked straight through the guards as first written
+ * (957, 959, 992, 993, 994) — each of these exists because one of them did.
+ */
+describe("the first screen makes no claim about time", () => {
+  const FIRST_SCREEN = [
+    "app/enter/page.tsx",
+    "app/enter/waitlist-hero.tsx",
+    "components/waitlist/food-system-experience.tsx",
+    "components/waitlist/hundred-systems.tsx",
+    "components/waitlist/cohort-line.tsx",
+  ]
+
+  /*
+   * Any unit of time, not just "60". The failure being watched for is not the
+   * old number coming back — it is one speed claim being swapped for another,
+   * which a rule naming "60 seconds" would wave straight through.
+   */
+  // `[-\s]*` and not `\s*`: the CTA said "60-second assessment", hyphenated,
+  // and the first version of this rule let it straight through.
+  const TIME_CLAIM = /\b\d+[-\s]*(seconds?|secs?|minutes?|mins?)\b/i
+
+  it.each(FIRST_SCREEN)("%s states no duration", (file) => {
+    const copy = renderedSource(file)
+    const hit = copy.match(TIME_CLAIM)
+    expect(hit?.[0] ?? null, `${file} claims a duration: "${hit?.[0]}"`).toBeNull()
+  })
+
+  it("NON-VACUITY: the claims that were shipping would be caught", () => {
+    for (const line of [
+      "Understand yours in 60 seconds.",
+      "Start my 60-second assessment",
+      "60 seconds. Five simple questions.",
+      "~45 seconds left",
+      "Takes about 2 minutes",
+    ]) {
+      expect(TIME_CLAIM.test(line), `not caught: ${line}`).toBe(true)
+    }
+  })
+})
+
+describe("the programme is 100 Systems, and says so", () => {
+  const SECTION = "components/waitlist/hundred-systems.tsx"
+
+  /*
+   * The words the programme no longer uses. "founding member", "First Course"
+   * and "pioneer" all framed joining as a status; "100 Systems" counts food
+   * systems, which is what the product is actually collecting and what lets
+   * the name extend to 1,000 and 10,000 without a new metaphor.
+   */
+  const RETIRED_PROGRAMME = [
+    /first course/i,
+    /\bfirst 100\b/i,
+    /founding member/i,
+    /\bfounding\b/i,
+    /\bpioneer/i,
+    /\bearly adopter/i,
+    /\bbeta tester/i,
+    /*
+     * "The First" on its own, because the heading composes its number from a
+     * binding — `The First {first.through}` never appears as the literal "The
+     * First 100" in source, so a rule naming the whole phrase reads clean over
+     * a section that renders it. Same limit that let two equations through in
+     * the framework cards: a source guard cannot see what a data binding will
+     * say. The framing is what is retired, so the framing is what is matched.
+     */
+    /\bThe First\b/,
+  ]
+
+  it.each([
+    "app/enter/page.tsx",
+    "app/enter/waitlist-hero.tsx",
+    "components/waitlist/hundred-systems.tsx",
+    "components/waitlist/cohort-line.tsx",
+    "lib/waitlist/early-access.ts",
+  ])("%s uses none of the retired programme vocabulary", (file) => {
+    const copy = renderedSource(file)
+    for (const rule of RETIRED_PROGRAMME) {
+      const hit = copy.match(rule)
+      expect(hit?.[0] ?? null, `${file} still says "${hit?.[0]}"`).toBeNull()
+    }
+  })
+
+  it("NON-VACUITY: the vocabulary that was shipping would be caught", () => {
+    for (const line of [
+      "The First Course",
+      "Be one of the first 100.",
+      "1,000 Founding Members",
+      "our founding cohort",
+      "EatoBiotics pioneers",
+    ]) {
+      expect(RETIRED_PROGRAMME.some((r) => r.test(line)), `not caught: ${line}`).toBe(true)
+    }
+  })
+
+  it("says nothing about availability when nothing was counted", () => {
+    /*
+     * The rule the whole campaign rests on: a number the product has not
+     * counted is the one failure it cannot come back from. `useCohort` returns
+     * null on a failed fetch, so the section's availability block must be
+     * gated on a non-null cohort — checked structurally, because the silent
+     * branch is the one no screenshot will ever show.
+     */
+    const src = renderedSource(SECTION)
+    expect(src, "availability must be gated on a counted cohort").toMatch(
+      /\{\s*cohort\s*&&\s*cohort\.isOpen\s*\?/,
+    )
+    expect(src, "the section must not render a number it was not given").not.toMatch(
+      /cohort\s*===\s*null\s*\|\|/,
+    )
+  })
+
+  it("reads its number from the ladder rather than retyping it", () => {
+    const src = renderedSource(SECTION)
+    expect(src).toContain("COHORTS")
+    expect(src, "the section must not hardcode the cohort size").not.toMatch(/>\s*100\s*Systems/)
+  })
+})
+
+describe("100 Systems steps aside while the assessment runs", () => {
+  /*
+   * The experience replaces the hero IN PLACE, and 100 Systems now sits
+   * directly beneath it. Without a gate, someone on question three would have
+   * "Add My System" under the question — a second call to action competing
+   * with the one they are answering. The old layout avoided this only by
+   * distance, which is not a mechanism.
+   */
+  it("the page renders it only while the hero is still the hero", () => {
+    const src = renderedSource("app/enter/waitlist-hero.tsx")
+    expect(src, "the section must be conditional on the idle phase").toMatch(
+      /\{\s*idle\s*\?\s*<HundredSystems\s*\/>\s*:\s*null\s*\}/,
+    )
+    expect(src, "the experience must report the phase boundary").toMatch(/onIdleChange/)
+  })
+
+  it("NON-VACUITY: rendering it unconditionally would be caught", () => {
+    const sabotaged = "      <HundredSystems />"
+    expect(/\{\s*idle\s*\?\s*<HundredSystems\s*\/>\s*:\s*null\s*\}/.test(sabotaged)).toBe(false)
   })
 })

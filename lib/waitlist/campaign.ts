@@ -1,5 +1,5 @@
 /**
- * Who the 60-second experience is being run for.
+ * Who the food-system experience is being run for.
  *
  * The consumer product asks a person about their own food system. The same
  * experience is intended to run later for an organisation — "EatoBiotics @
@@ -25,13 +25,18 @@ export interface CampaignContext {
    * Kept as the bare subject so the headline can break it onto its own line.
    */
   subject: string
-  /** The possessive used in "Understand <yours> in 60 seconds." */
-  possessive: string
 }
+
+/*
+ * `possessive` was here. It existed for exactly one line — "Understand
+ * <yours> in 60 seconds." — and that line is gone, because the product is
+ * about understanding a food system over time rather than in a minute. The
+ * seam this module exists for is unaffected: a campaign still only needs to
+ * say what it is called and whose food system it is about.
+ */
 
 export const CONSUMER_CAMPAIGN: CampaignContext = {
   id: "consumer",
   brand: "EatoBiotics",
   subject: "You",
-  possessive: "yours",
 }

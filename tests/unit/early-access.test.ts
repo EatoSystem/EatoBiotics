@@ -34,7 +34,7 @@ import {
   COHORTS,
   EARLY_ACCESS_PLACES,
   EARLY_ACCESS_COHORT_ORDER,
-  FIRST_COURSE_MEMBERS,
+  PROGRAMME_SYSTEMS,
   cohortLadderIsAscending,
   cohortLineText,
   cohortNameInSentence,
@@ -45,7 +45,6 @@ import {
 import {
   progressCue,
   resultForAnswers,
-  SECONDS_PER_QUESTION,
 } from "@/components/waitlist/food-system-experience"
 import { QUICK_QUESTIONS, computeQuickResult } from "@/lib/quick-assessment"
 import { buildWaitlistJoinBody } from "@/lib/waitlist/join"
@@ -63,24 +62,34 @@ describe("the cohort ladder", () => {
 
   it("keeps one number for the first cohort, derived rather than retyped", () => {
     expect(EARLY_ACCESS_PLACES).toBe(COHORTS[0].through)
-    expect(FIRST_COURSE_MEMBERS).toBe(COHORTS[COHORTS.length - 1].through)
+    expect(PROGRAMME_SYSTEMS).toBe(COHORTS[COHORTS.length - 1].through)
   })
 
-  it("is cumulative — the First Course INCLUDES the first hundred", () => {
-    // If `through` were per-cohort, 1000 would mean 1100 founding members.
-    expect(FIRST_COURSE_MEMBERS).toBeGreaterThan(EARLY_ACCESS_PLACES)
+  it("is cumulative — 1,000 Systems INCLUDES the first hundred", () => {
+    // If `through` were per-cohort, 1000 would mean 1100 systems.
+    expect(PROGRAMME_SYSTEMS).toBeGreaterThan(EARLY_ACCESS_PLACES)
   })
 })
 
 describe("the join label reads as a sentence", () => {
   it("lowers the article without touching the title", () => {
-    expect(cohortNameInSentence(COHORTS[0])).toBe("the First 100")
-    expect(COHORTS[0].name, "the title itself is untouched").toBe("The First 100")
+    // The names no longer carry an article, so this passes the name through
+    // untouched. The helper stays because a future rung might.
+    expect(cohortNameInSentence(COHORTS[0])).toBe("100 Systems")
+    expect(COHORTS[0].name).toBe("100 Systems")
+    expect(COHORTS[1].name).toBe("1,000 Systems")
+    // And the IDS did not move with the names. `id` is sent as an analytics
+    // property, so renaming it would split every signup already recorded
+    // from every signup after it — a cosmetic gain, paid for in history.
+    expect(COHORTS.map((c) => c.id)).toEqual(["first-100", "first-course"])
   })
 
   it("names the open cohort, and falls back honestly when there is none", () => {
-    expect(joinCtaLabel(openCohort(1))).toBe("Join the First 100")
-    expect(joinCtaLabel(openCohort(500))).toBe("Join the First Course")
+    // One label wherever a system can still be added — the 100 Systems CTA
+    // and the reveal's claim button read the same, because the person is
+    // doing the same thing either way.
+    expect(joinCtaLabel(openCohort(1))).toBe("Add My System")
+    expect(joinCtaLabel(openCohort(500))).toBe("Add My System")
     // Full, and unknown, both become the plain waitlist ask — neither may
     // invite someone into a cohort that is not open.
     expect(joinCtaLabel(openCohort(5000))).toBe("Join the waitlist")
@@ -167,7 +176,7 @@ describe("earlyAccessPlace", () => {
     // carries the cohort it belongs to.
     const p = earlyAccessPlace(136)
     expect(p?.place).toBe(137)
-    expect(p?.cohort.name).toBe("The First Course")
+    expect(p?.cohort.name).toBe("1,000 Systems")
   })
 
   it("puts the hundredth signup inside the first cohort and the next outside", () => {
@@ -188,8 +197,8 @@ describe("earlyAccessPlace", () => {
       expect(openCohort(c.through - 1)?.isOpen, `${c.name} open at its last place`).toBe(true)
       expect(earlyAccessPlace(c.through - 1)?.cohort.id).toBe(c.id)
     }
-    expect(openCohort(FIRST_COURSE_MEMBERS)?.isOpen).toBe(false)
-    expect(earlyAccessPlace(FIRST_COURSE_MEMBERS)).toBeNull()
+    expect(openCohort(PROGRAMME_SYSTEMS)?.isOpen).toBe(false)
+    expect(earlyAccessPlace(PROGRAMME_SYSTEMS)).toBeNull()
   })
 })
 
@@ -226,9 +235,9 @@ describe("a ladder that is not a ladder is refused, not guessed at", () => {
 describe("the status line says nothing it has not counted", () => {
   it("is null when there is no count, and a sentence when there is", () => {
     expect(cohortLineText(null)).toBeNull()
-    expect(cohortLineText(openCohort(1))).toBe("99 of 100 places remaining")
-    expect(cohortLineText(openCohort(250))).toBe("750 of 900 places remaining")
-    expect(cohortLineText(openCohort(5000))).toContain("places are taken")
+    expect(cohortLineText(openCohort(1))).toBe("99 of 100 systems remaining")
+    expect(cohortLineText(openCohort(250))).toBe("750 of 900 systems remaining")
+    expect(cohortLineText(openCohort(5000))).toContain("systems are taken")
   })
 })
 
@@ -270,20 +279,42 @@ describe("the score belongs to a finished run", () => {
   })
 })
 
-describe("the sixty seconds is arithmetic, not a slogan", () => {
-  it("the estimate and the headline come from the same number", () => {
-    expect(QUICK_QUESTIONS.length * SECONDS_PER_QUESTION).toBe(60)
-  })
-
-  it("counts down, then stops claiming precision it cannot have", () => {
-    expect(progressCue(0, 5)).toBe("~60 seconds left")
-    expect(progressCue(1, 5)).toBe("~50 seconds left")
-    expect(progressCue(3, 5)).toBe("~25 seconds left")
-    // The last question is qualitative — nobody's remaining time is knowable
-    // to the second, and "~12 seconds left" asserts that it is.
-    expect(progressCue(4, 5)).toBe("Almost there")
+describe("the progress cue reports position, never pace", () => {
+  /*
+   * This block used to prove the opposite: that "sixty seconds" was
+   * arithmetic rather than a slogan — five questions times a stated twelve
+   * seconds — and that `progressCue` counted down honestly from it.
+   *
+   * The arithmetic was sound and the claim is gone. EatoBiotics is about
+   * understanding a food system and improving it over time, and a stopwatch
+   * on every screen argues the opposite. `SECONDS_PER_QUESTION` went with
+   * it, because a constant that exists to keep a claim honest has nothing
+   * left to do once the claim is retired.
+   *
+   * Repointed rather than deleted: what must still be true is that the cue
+   * helps and does not promise. So it is asserted to report POSITION, and
+   * asserted to contain no unit of time at all — the second half being the
+   * one that would catch a countdown creeping back in any wording.
+   */
+  it("says how far through, not how long left", () => {
+    expect(progressCue(0, 5)).toBe("Let's begin")
+    expect(progressCue(1, 5)).toBe("4 to go")
+    expect(progressCue(3, 5)).toBe("2 to go")
+    expect(progressCue(4, 5)).toBe("Last question")
     expect(progressCue(5, 5)).toBe("Almost there")
     expect(progressCue(9, 5), "never negative").toBe("Almost there")
+  })
+
+  it("never states a unit of time, at any position", () => {
+    for (let answered = 0; answered <= 6; answered++) {
+      expect(progressCue(answered, 5), `at ${answered} answered`).not.toMatch(
+        /second|minute|\bmin\b|\bsec\b/i,
+      )
+    }
+  })
+
+  it("NON-VACUITY: a countdown would be caught", () => {
+    expect(/second|minute|\bmin\b|\bsec\b/i.test("~45 seconds left")).toBe(true)
   })
 })
 
@@ -295,12 +326,12 @@ describe("the confirmation email names the cohort it actually means", () => {
    */
   it("says the First 100 inside the first hundred", () => {
     const { html } = waitlistConfirmationEmail("a@b.c", earlyAccessPlace(36))
-    expect(html).toContain("#37 of The First 100")
+    expect(html).toContain("#37 of 100 Systems")
   })
 
   it("says the First Course beyond it, not the first hundred", () => {
     const { html } = waitlistConfirmationEmail("a@b.c", earlyAccessPlace(136))
-    expect(html).toContain("#137 of The First Course")
+    expect(html).toContain("#137 of 1,000 Systems")
     expect(html, "must not still claim the first hundred").not.toContain("of the first 100")
   })
 
@@ -389,7 +420,10 @@ describe("the cohort is derivable, which is why no column was added", () => {
 describe("the holding page and the email cannot disagree", () => {
   it("both read the one constant", () => {
     const line = renderedSource("components/waitlist/cohort-line.tsx")
-    const section = renderedSource("components/waitlist/first-course.tsx")
+    // Was first-course.tsx; the section is 100 Systems now and sits under
+    // the hero rather than at the foot of the page. The invariant is
+    // unchanged: whichever section states a number reads it from the ladder.
+    const section = renderedSource("components/waitlist/hundred-systems.tsx")
     const route = renderedSource("app/api/waitlist/route.ts")
 
     // Every surface that names a number reads it from the ladder.
@@ -398,7 +432,7 @@ describe("the holding page and the email cannot disagree", () => {
     expect(route).toContain("earlyAccessPlace")
 
     // None of them may retype the numbers beside the module that owns them.
-    for (const [name, src] of [["cohort-line", line], ["first-course", section]] as const) {
+    for (const [name, src] of [["cohort-line", line], ["hundred-systems", section]] as const) {
       expect(src, `${name} must not hardcode a cohort size`).not.toMatch(/\b100\b|\b1,?000\b/)
     }
   })

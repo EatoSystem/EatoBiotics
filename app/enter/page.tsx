@@ -4,7 +4,6 @@ import { HowItWorks } from "@/components/home/how-it-works"
 import { TheFramework } from "@/components/home/the-framework"
 import { ScorePreview } from "@/components/home/score-preview"
 import { Ecosystem } from "@/components/home/ecosystem"
-import { FirstCourse } from "@/components/waitlist/first-course"
 import { PreviewGuard } from "@/components/waitlist/preview-guard"
 import { LiveSignups } from "@/components/waitlist/live-signups"
 
@@ -35,7 +34,10 @@ function SoftDivider() {
 export default function WaitlistPage() {
   return (
     <div className="relative overflow-hidden bg-background">
-      {/* Waitlist hero + email capture */}
+      {/* The hero, and 100 Systems directly beneath it.
+          Both live in WaitlistHero because the experience replaces the hero in
+          place and the section has to step aside while it runs — see its
+          docblock. */}
       <WaitlistHero />
 
       {/* ── Homepage showcase (mirrors app/page.tsx) ───────────────────────
@@ -59,11 +61,6 @@ export default function WaitlistPage() {
         <SoftDivider />
         <Ecosystem />
       </PreviewGuard>
-
-      {/* The First Course sits OUTSIDE PreviewGuard: its CTA scrolls to #start
-          on this same page rather than navigating into the gated site, so the
-          guard would only be intercepting a link that never leaves. */}
-      <FirstCourse />
 
       {/* Subtle "just joined" social-proof card (fixed, page-level so it escapes
           any transformed/overflow wrappers above). */}

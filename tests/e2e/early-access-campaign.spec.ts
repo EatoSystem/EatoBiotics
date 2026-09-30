@@ -21,7 +21,7 @@
  * ══ IT FOLLOWED ITS SUBJECT ═════════════════════════════════════════════════
  *
  * The copy these cases read used to be a pill saying "63 of 100 early-access
- * places left". The campaign became a LADDER — the First 100, then the First
+ * places left". The campaign became a LADDER — 100 Systems, then 1,000
  * Course — and the pill became components/waitlist/cohort-line.tsx. The
  * assertions moved with it rather than being deleted: what this file uniquely
  * owns is not the wording but `seenOnArrival`, and that discipline applies to
@@ -79,41 +79,44 @@ test("counts the places down, with a space between the number and the word", asy
   // The spacing is not a nitpick: JSX once collapsed the gap around the
   // expression and shipped "The first 100places are taken".
   await withTotal(page, 37)
-  await expect(page.locator("body")).toContainText("63 of 100 places remaining")
+  await expect(page.locator("body")).toContainText("63 of 100 systems remaining")
 })
 
 test("offers every place before anyone has joined", async ({ page }) => {
   await withTotal(page, 0)
-  await expect(page.locator("body")).toContainText("100 of 100 places remaining")
+  await expect(page.locator("body")).toContainText("100 of 100 systems remaining")
 })
 
 test("has one place left at ninety-nine", async ({ page }) => {
   await withTotal(page, 99)
-  await expect(page.locator("body")).toContainText("1 of 100 places remaining")
+  await expect(page.locator("body")).toContainText("1 of 100 systems remaining")
 })
 
-test("rolls into the First Course at a hundred rather than closing the door", async ({ page }) => {
+test("rolls into 1,000 Systems at a hundred rather than closing the door", async ({ page }) => {
   await withTotal(page, 100)
   const body = page.locator("body")
-  await expect(body).toContainText("The First Course")
-  await expect(body).toContainText("900 of 900 places remaining")
-  await expect(body).not.toContainText("100 of 100 places remaining")
+  await expect(body).toContainText("1,000 Systems")
+  await expect(body).toContainText("900 of 900 systems remaining")
+  await expect(body).not.toContainText("100 of 100 systems remaining")
 })
 
 test("stays on the last rung past the end rather than going negative", async ({ page }) => {
   await withTotal(page, 4321)
   const body = page.locator("body")
-  await expect(body).toContainText("places are taken")
+  await expect(body).toContainText("systems are taken")
   await expect(body).not.toContainText("-3321")
 })
 
 test("invents no scarcity when the count cannot be fetched", async ({ page }) => {
   await withTotal(page, null)
   const body = page.locator("body")
-  await expect(body).not.toContainText("places remaining")
-  await expect(body).not.toContainText("places are taken")
+  await expect(body).not.toContainText("systems remaining")
+  await expect(body).not.toContainText("systems are taken")
   // The invitation still stands — the proposition never depended on scarcity.
-  await expect(body).toContainText("Understand yours in 60 seconds")
+  // The line it checks changed with the hero: the product is no longer sold
+  // on how long it takes, so what must survive an unknown count is the
+  // proposition itself.
+  await expect(body).toContainText("Understand your own food system")
   await expect(body).toContainText("Food System Assessment")
 })
 
@@ -123,7 +126,7 @@ test("the places are visible on arrival, without scrolling", async ({ page }) =>
   await page.setViewportSize({ width: 1280, height: 900 })
   await withTotal(page, 1)
   expect(
-    await seenOnArrival(page, /places remaining/i),
+    await seenOnArrival(page, /systems remaining/i),
     "the campaign must be in the first screenful, painted — not merely in the DOM",
   ).toBe(true)
 })
@@ -131,13 +134,13 @@ test("the places are visible on arrival, without scrolling", async ({ page }) =>
 test("and on a phone", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await withTotal(page, 1)
-  expect(await seenOnArrival(page, /places remaining/i)).toBe(true)
+  expect(await seenOnArrival(page, /systems remaining/i)).toBe(true)
 })
 
 test("the full state is visible on arrival too", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 })
   await withTotal(page, 4321)
-  expect(await seenOnArrival(page, /places are taken/i)).toBe(true)
+  expect(await seenOnArrival(page, /systems are taken/i)).toBe(true)
 })
 
 test("NON-VACUITY: something genuinely below the fold is not reported as seen", async ({ page }) => {

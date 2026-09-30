@@ -6,7 +6,7 @@ import { openCohort, type CohortState } from "@/lib/waitlist/early-access"
 /**
  * Which cohort is open, counted — never guessed.
  *
- * The hero, the reveal's claim CTA and the First Course section all need the
+ * The hero, the reveal's claim CTA and the 100 Systems section all need the
  * same number and none of them owns it, so the fetch lives here. It is the
  * endpoint the social-proof line already calls; nothing new is counted.
  *
