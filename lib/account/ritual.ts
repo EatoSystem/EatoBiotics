@@ -34,7 +34,7 @@ export interface RitualCheck {
 }
 
 export const RITUAL_CHECKS: RitualCheck[] = [
-  { key: "fermented", label: "Fermented food", ack: "Lovely — live cultures on their way to me.", color: "#2DAA6E", effect: "Live cultures light up your probiotic network", node: { x: 54, y: 56 } },
+  { key: "fermented", label: "Fermented food", ack: "Lovely — something fermented on its way to me.", color: "#2DAA6E", effect: "A fermented food lights up your probiotic network", node: { x: 54, y: 56 } },
   { key: "plants", label: "5+ plants", ack: "Variety noted — that's what I thrive on.", color: "#A8E063", effect: "Plant variety expands your fibre pathways", node: { x: 47, y: 62 } },
   { key: "moved", label: "Moved today", ack: "Movement — I can feel the energy flowing faster.", color: "#4CB648", effect: "Movement helps energy flow and recovery brighten", node: { x: 48, y: 46 } },
   { key: "slept", label: "Slept well", ack: "Good rest — that's when I recover and rebuild.", color: "#F5C518", effect: "Deep rest is when your system recovers and rebuilds", node: { x: 48, y: 30 } },

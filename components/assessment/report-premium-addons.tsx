@@ -585,7 +585,7 @@ export function ReportPremiumAddons({ addons, claudeReport }: ReportPremiumAddon
                 <h2 className="font-serif text-2xl font-semibold text-foreground">
                   12-Month Seasonal Food Calendar
                 </h2>
-                <p className="text-xs text-muted-foreground">The best prebiotic-rich foods to prioritise each month</p>
+                <p className="text-xs text-muted-foreground">The best fibre-rich plant foods to prioritise each month</p>
               </div>
             </div>
           </ScrollReveal>

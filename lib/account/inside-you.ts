@@ -77,7 +77,7 @@ export function buildInsideYouChapters(twin: FoodSystemDigitalTwin): InsideYouCh
     {
       key: "probiotics",
       label: "Probiotics work",
-      title: "Live cultures join the community",
+      title: "A fermented food arrives",
       narration:
         "Fermented foods add live microbes that work alongside your own — a busier, more diverse inner community.",
       value: pro,

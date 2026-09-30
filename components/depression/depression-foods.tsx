@@ -5,11 +5,11 @@ import { getFoodBySlug, bioticLabels } from "@/lib/foods"
 
 const FOOD_SLUGS_WITH_BENEFIT = [
   { slug: "oats", benefit: "Tryptophan and fibre to support serotonin production" },
-  { slug: "kefir", benefit: "Live cultures that diversify the gut microbiome" },
+  { slug: "kefir", benefit: "Fermented with a wider mix of microorganisms than most yoghurt" },
   { slug: "blueberries", benefit: "Polyphenols that support gut-brain signalling" },
   { slug: "wild-salmon", benefit: "Omega-3 fats that may reduce neuroinflammation" },
   { slug: "yogurt", benefit: "Probiotic bacteria that may support mood pathways" },
-  { slug: "kimchi", benefit: "Fermented food rich in diverse live cultures" },
+  { slug: "kimchi", benefit: "Vegetables transformed by lacto-fermentation" },
 ]
 
 export function DepressionFoods() {

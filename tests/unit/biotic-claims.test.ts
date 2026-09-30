@@ -77,6 +77,13 @@ const LIVE_SURFACES = [
  * which the rule no longer treats as a claim.
  */
 const REACHABLE_SURFACES = [
+  // The classifier of record. It left the ledger in Tranche 2D: its last two
+  // matches were a LABEL-READING INSTRUCTION ("look for 'live cultures' on the
+  // label") and the category term "prebiotic-rich" applied to inulin — which
+  // genuinely IS a prebiotic under strict ISAPP. Both were reworded rather
+  // than exempted, so the rules keep their edge and this file is now guarded
+  // like any other rather than allowed wholesale.
+  "lib/foods.ts",
   "app/help/page.tsx",
   "app/biotics/page.tsx",
   "app/method/page.tsx",
@@ -305,6 +312,7 @@ describe("the corpus this guard reads cannot silently shrink", () => {
       "lib/email/results-email.ts",
       "lib/email/sequence-email.ts",
       "lib/email/trial-winback-email.ts",
+      "lib/foods.ts",
       "lib/pillars.ts",
       "lib/quick-assessment.ts",
     ])
@@ -668,26 +676,32 @@ describe("the pre-launch surface does not promise the canonical score", () => {
  * so that nobody has to trust a comment to know why it is absent.
  */
 const KNOWN_UNCORRECTED = [
-  // 2C — the canonical assessment's own data and scoring
-  "lib/assessment-data.ts", // q6 is inside the methodology freeze
-  "lib/assessment-scoring.ts",
-  "lib/foods.ts",
-  "lib/food-goals.ts",
-  "lib/conditions.ts",
-  "lib/chapters.ts",
-  // 2D — account, twin and condition surfaces behind refused routes today
-  "components/account/live-dashboard.tsx",
-  "components/account/twin/meal-reveal.tsx",
-  "components/account/twin/quick-log.tsx",
-  "components/assessment/report-premium-addons.tsx",
-  "components/bipolar/bipolar-foods.tsx",
-  "components/depression/depression-foods.tsx",
-  "components/home/score-preview.tsx",
-  "lib/account/evolution.ts",
-  "lib/account/inside-you.ts",
-  "lib/account/meal-impact.ts",
-  "lib/account/ritual.ts",
-  // Not debt — the module that prohibits the claim the rule matches.
+  /*
+   * ══ WHAT IS LEFT, AND WHY EACH ONE IS LEFT ═════════════════════════════════
+   *
+   * Tranche 2C cleared the €49 Report path and lifecycle email; Tranche 2D
+   * cleared the account, twin, condition and demo surfaces. Twenty-two entries
+   * became three, and none of the three is unfinished work — each is blocked
+   * on a decision that is not a claims decision.
+   */
+
+  /*
+   * q6 — "Do you regularly eat prebiotic-rich foods…" — is INSIDE the
+   * methodology-freeze hash. Its wording is a scoring input: changing the
+   * examples changes what people answer, and score provenance does not exist
+   * yet, so old and new results would be silently incomparable. Deferred to
+   * FSS Phase 3, gated on scientific sign-off. Correcting it to make a ledger
+   * green would be the exact trade this phase refuses.
+   */
+  "lib/assessment-data.ts",
+
+
+  /*
+   * Not debt. This is the module that PROHIBITS the claim the rule matches —
+   * it lists "reseeding" among the inferences the contract forbids. A guard
+   * that flagged its own contract would be asking us to delete the
+   * prohibition. Permanent, justified exception.
+   */
   "lib/consultation/science-contract.ts",
 ]
 

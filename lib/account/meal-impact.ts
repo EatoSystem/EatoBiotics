@@ -56,8 +56,8 @@ export function mealImpact(input: MealImpactInput): MealImpactRow[] {
     label: "Probiotic network",
     level: probioticBoost ? "strong" : levelFor(input.probiotic_score),
     color: TEAL,
-    effect: probioticBoost || input.probiotic_score >= 40 ? "Live cultures light up your probiotic network" : "Quiet on the probiotic side this time",
-    why: "Fermented foods carry living microbes that join and diversify your inner community — one serving a day is one of the fastest levers your Food System has.",
+    effect: probioticBoost || input.probiotic_score >= 40 ? "A fermented food lights up your probiotic network" : "Quiet on the probiotic side this time",
+    why: "Foods transformed by fermentation are the one pathway that brings microbial material in from outside rather than only feeding what is already there — one serving a day is one of the fastest levers your Food System has.",
   })
 
   /* Fibre / prebiotic pathways */
@@ -132,7 +132,7 @@ export function mealImpact(input: MealImpactInput): MealImpactRow[] {
       input.postbiotic_score >= 40
         ? "Well-fed microbes can give back — postbiotic potential rises"
         : "Low follow-through — feed the first two and this rises",
-    why: "When fibre and live cultures are fed well, your microbes typically produce postbiotic compounds associated with comfort and steady energy — the system giving back.",
+    why: "When fibre and fermented foods both feature regularly, your microbes typically produce postbiotic compounds associated with comfort and steady energy — the system giving back.",
   })
 
   // Strongest signals first; strain always surfaces near the top.

@@ -63,6 +63,11 @@ ASSESSREPORT = "lib/assessment-report.ts"
 SEQEMAIL = "lib/email/sequence-email.ts"
 RESULTSEMAIL = "lib/email/results-email.ts"
 CORPUSTEST = "tests/unit/biotic-claims.test.ts"
+FOODS = "lib/foods.ts"
+MEALIMPACT = "lib/account/meal-impact.ts"
+SCOREPREVIEW = "components/home/score-preview.tsx"
+DEPFOODS = "components/depression/depression-foods.tsx"
+ASCORING = "lib/assessment-scoring.ts"
 CONSULT = "app/api/consult/route.ts"
 DEMOCONSULT = "app/api/demo/consult/route.ts"
 CHAT = "app/api/report-chat/route.ts"
@@ -565,5 +570,39 @@ CASES = [
     (1006, "lifecycle email is dropped from the claims corpus", CORPUSTEST,
      '  "lib/email/sequence-email.ts",\n  "lib/email/results-email.ts",\n',
      '  "lib/email/results-email.ts",\n',
+     BIOTIC),
+
+    # ── Tranche 2D — account, twin, condition and demo surfaces ─────────────
+
+    (1007, "a meal insight asserts colonisation again", MEALIMPACT,
+     '    why: "Foods transformed by fermentation are the one pathway that brings microbial material in from outside',
+     '    why: "Fermented foods carry living microbes that join and diversify your inner community, bringing material in from outside',
+     BIOTIC),
+
+    (1008, "the dashboard says a food delivers live cultures", SCOREPREVIEW,
+     '      description: "Fermented foods",',
+     '      description: "Fermented & live foods",',
+     BIOTIC),
+
+    (1009, "a condition page re-asserts what a fermented food contains",
+     DEPFOODS,
+     '  { slug: "kimchi", benefit: "Vegetables transformed by lacto-fermentation" },',
+     '  { slug: "kimchi", benefit: "Fermented food rich in diverse live cultures" },',
+     BIOTIC),
+
+    (1010, "the food knowledge base asserts direct introduction again", FOODS,
+     '{ title: "Lacto-fermented", detail: "Fermented by Lactobacillus rather than preserved in vinegar',
+     '{ title: "Adds Live Cultures", detail: "Introduces Lactobacillus directly into your gut rather than preserved in vinegar',
+     BIOTIC),
+
+    (1011, "the scoring module reintroduces live foods as a category", ASCORING,
+     '"Foods transformed by fermentation are the one pathway that brings microbial material in from outside',
+     '"Fermented and live foods are the most direct way to introduce new microbes, bringing material in from outside',
+     BIOTIC),
+
+    (1012, "a corrected file is left behind in the ledger as a stale allowance",
+     CORPUSTEST,
+     '  "lib/assessment-data.ts",\n',
+     '  "lib/assessment-data.ts",\n  "lib/account/meal-impact.ts",\n',
      BIOTIC),
 ]

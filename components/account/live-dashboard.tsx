@@ -215,7 +215,7 @@ const MOCK_MEALS: { date: string; meals: MealEntry[] }[] = [
     meals: [
       {
         image: "/food-5.webp", name: "Greek yoghurt, berries & oats", time: "9:00am", type: "Breakfast", score: 69,
-        insight: "Yoghurt delivers live cultures and the berries add polyphenol diversity that feeds beneficial bacteria. Oats are a strong prebiotic source. Your best breakfast pattern — the berry variety is key.",
+        insight: "Yoghurt is fermented, and the berries add polyphenol diversity that feeds beneficial bacteria. Oats are a strong fibre source. Your best breakfast pattern — the berry variety is key.",
         biotics:   { prebiotic: 55, probiotic: 58, postbiotic: 44 },
         quality:   { diversity: 60, antiInflammatory: 70 },
         nutrition: { calories: 295, protein: 14, carbs: 44, fat: 8, fibre: 6 },
@@ -231,7 +231,7 @@ const MOCK_MEALS: { date: string; meals: MealEntry[] }[] = [
       },
       {
         image: "/food-7.webp", name: "Chicken, roasted veg & kefir", time: "7:45pm", type: "Dinner", score: 81,
-        insight: "Best meal this week. Kefir delivers live cultures across multiple strains, the diverse roasted veg builds your prebiotic base, and the chicken provides the protein your gut lining needs for repair. This is the gold standard pattern.",
+        insight: "Best meal this week. Kefir is fermented with a wide mix of microorganisms, the diverse roasted veg builds your fibre base, and the chicken provides protein. This is the gold standard pattern.",
         biotics:   { prebiotic: 75, probiotic: 65, postbiotic: 58 },
         quality:   { diversity: 78, antiInflammatory: 72 },
         nutrition: { calories: 445, protein: 38, carbs: 28, fat: 14, fibre: 7 },

@@ -32,7 +32,7 @@ export const REVEAL_ROW_STEP_MS = 450
 
 /** Where each impact's pathway node sits on the figure (% of orb stage). */
 const PATHWAY_NODE: Record<string, { x: number; y: number }> = {
-  probiotic: { x: 57, y: 50 },  // the gut — home of the live cultures
+  probiotic: { x: 57, y: 50 },  // the gut
   fibre: { x: 48, y: 59 },      // lower gut — where fibre feeds the microbes
   plants: { x: 50, y: 22 },     // upper body ambience — whole-system lift
   fats: { x: 44, y: 34 },       // chest — the calm, steady side
