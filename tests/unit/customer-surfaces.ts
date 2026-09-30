@@ -132,6 +132,10 @@ export const EMAIL_SURFACES = [
   "lib/email/trial-winback-email.ts",
   "lib/email/paid-report-email.ts",
   "lib/email/meal-analysis-email.ts",
+  // In NO guard's corpus until Tranche 2C, while carrying the same "Live
+  // Foods" pillar label the other three did. A group is only as good as its
+  // membership.
+  "lib/email/nudge-email.ts",
   "app/api/email/nurture/route.ts",
 ]
 

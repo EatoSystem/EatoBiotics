@@ -2,7 +2,7 @@
 // Shared template builder for the EatoBiotics email nurture sequence.
 // Uses the same inline-styles HTML table pattern as results-email.ts.
 
-import { PILLAR_LABELS } from "@/lib/pillars"
+import { PILLAR_LABELS, pillarBehaviour } from "@/lib/pillars"
 import { REPORT_OFFER_SENTENCE, REPORT_PRICE_EUR } from "@/lib/report/offer"
 
 export interface SequenceEmailOpts {
@@ -11,9 +11,12 @@ export interface SequenceEmailOpts {
   score: number
   profileType: string
   weakestPillar: "feed" | "seed" | "heal"
-  feedScore: number
-  seedScore: number
-  healScore: number
+  /*
+   * The three per-Biotic sub-scores used to arrive here and be rendered as
+   * numbers and bars. They are gone from the CONTRACT, not just from the
+   * markup — a field the template still accepted would be an invitation to
+   * render it again, and that is exactly how this claim has returned before.
+   */
   dayOffset: number // 0, 1, 2, 3, 5, 7, 10, 14, 21, 28
 }
 
@@ -32,9 +35,9 @@ const PILLAR_ACTIONS: Record<string, string> = {
 }
 
 const PILLAR_INSIGHT: Record<string, string> = {
-  feed: "Your Prebiotics score reflects how much fibre and plant diversity you're giving your gut bacteria. Gut bacteria ferment these fibres into short-chain fatty acids, which research associates with gut-lining integrity and inflammatory balance.",
-  seed: "Your Probiotics score reflects how regularly you introduce live, fermented foods. They carry live cultures, and regular intake of fermented foods is associated in studies with greater microbial diversity.",
-  heal: "Your Postbiotics score reflects your meal rhythm and polyphenol intake. The gut keeps a daily rhythm, and regular meal timing is associated with better-anticipated digestion — which may help you get more from food you are already eating.",
+  feed: "Your answers described how much fibre and plant variety reaches your gut. Gut bacteria ferment those fibres into short-chain fatty acids, which research associates with gut-lining integrity and inflammatory balance.",
+  seed: "Your answers described how regularly foods transformed by fermentation appear in your week. Whether live microorganisms survive to be eaten depends on the food and how it is made — but regular intake of fermented foods is associated in studies with greater microbial diversity.",
+  heal: "Your answers described your meal rhythm and the polyphenol-rich foods you eat. The gut keeps a daily rhythm, and regular meal timing is associated with better-anticipated digestion — which may help you get more from food you are already eating.",
 }
 
 /* ── Day-specific email content ─────────────────────────────────────── */
@@ -52,6 +55,15 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
   const { name, score, profileType, weakestPillar, dayOffset } = opts
   const firstName = name.split(" ")[0] || "there"
   const pillarLabel = PILLAR_LABELS[weakestPillar] ?? "Seed"
+  /*
+   * The priority names the BEHAVIOUR, not the Biotic. "Your Postbiotics score
+   * is holding you back" is a personal postbiotic state in an inbox, which
+   * POSTBIOTICS_INFERENCE_BOUNDARY prohibits by name — and it is the same
+   * claim Tranche 2A removed from the reveal, the result and the share card.
+   * It survived here because no guard was reading email. Shared mapping, so
+   * the reveal, the results page, /discover and this template cannot drift.
+   */
+  const priority = pillarBehaviour(pillarLabel) ?? "your food rhythm"
   const baseUrl = "https://eatobiotics.com"
 
   switch (dayOffset) {
@@ -59,7 +71,7 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
       return {
         subject: `Your Biotics Score™ is ${score}/100`,
         headline: `${firstName}, your Biotics Score™ is ${score}/100`,
-        body: `You've completed your Food System Assessment and your Biotics Score™ reflects something real about how your food system is working right now. Your profile is <strong>${profileType}</strong> — and below you'll see exactly how your three Biotics compare.<br /><br />Prebiotics, Probiotics, and Postbiotics each measure a different dimension of your food system. The one with the lowest score is usually the most useful place to start.`,
+        body: `You've completed your Food System Assessment and your Biotics Score™ reflects something real about how your food system is working right now. Your profile is <strong>${profileType}</strong>.<br /><br />Prebiotics, Probiotics and Postbiotics are the foundation the score is built on. Right now the most useful place to start is <strong>${priority}</strong>.`,
         cta: "See My Score Breakdown",
         ctaUrl: `${baseUrl}/assessment`,
         showScores: true,
@@ -69,7 +81,7 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
       return {
         subject: `What your score of ${score} actually means`,
         headline: `${firstName}, here's what your ${score} means`,
-        body: `A score of ${score} puts you in the <strong>${profileType}</strong> category. That means your food system has ${score >= 65 ? "strong foundations with clear refinement opportunities" : score >= 50 ? "a developing base that's ready to compound quickly with consistency" : "real room to grow, and a clear place to start"}.<br /><br />Your score isn't a verdict. It's a starting point. Focusing on one pathway first — rather than all three at once — is what makes a change easy enough to keep. Your <strong>${pillarLabel}</strong> score is your biggest lever right now.`,
+        body: `A score of ${score} puts you in the <strong>${profileType}</strong> category. That means your food system has ${score >= 65 ? "strong foundations with clear refinement opportunities" : score >= 50 ? "a developing base that's ready to compound quickly with consistency" : "real room to grow, and a clear place to start"}.<br /><br />Your score isn't a verdict. It's a starting point. Focusing on one pathway first — rather than all three at once — is what makes a change easy enough to keep. Your biggest lever right now is <strong>${priority}</strong>.`,
         cta: `Begin My Consultation — €${REPORT_PRICE_EUR}`,
         ctaUrl: `${baseUrl}/assessment`,
         showScores: false,
@@ -77,9 +89,9 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
 
     case 2:
       return {
-        subject: `Your ${pillarLabel} score is holding you back`,
-        headline: `Your ${pillarLabel} score: the gap worth closing`,
-        body: `${PILLAR_INSIGHT[weakestPillar]}<br /><br />Moving your ${pillarLabel} score starts with a single daily habit rather than a complete overhaul. Here's the one we'd start with:<br /><br /><strong>${PILLAR_ACTIONS[weakestPillar]}</strong>`,
+        subject: `The one thing worth changing first`,
+        headline: `${priority.charAt(0).toUpperCase()}${priority.slice(1)}: the gap worth closing`,
+        body: `${PILLAR_INSIGHT[weakestPillar]}<br /><br />Shifting ${priority} starts with a single daily habit rather than a complete overhaul. Here's the one we'd start with:<br /><br /><strong>${PILLAR_ACTIONS[weakestPillar]}</strong>`,
         cta: `Begin My Consultation — €${REPORT_PRICE_EUR}`,
         ctaUrl: `${baseUrl}/pricing`,
         showScores: false,
@@ -88,8 +100,8 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
     case 3:
       return {
         subject: "One food change. Real difference.",
-        headline: `One change for your ${pillarLabel} score`,
-        body: `${firstName}, here's something worth trying today: ${PILLAR_ACTIONS[weakestPillar].toLowerCase()}<br /><br />This isn't generic advice — it's specifically the right move for your ${pillarLabel} score of ${opts[`${weakestPillar}Score` as keyof SequenceEmailOpts] as number}. Small and consistent beats sporadic and ambitious every time when it comes to gut health.`,
+        headline: `One change worth making today`,
+        body: `${firstName}, here's something worth trying today: ${PILLAR_ACTIONS[weakestPillar].toLowerCase()}<br /><br />This isn't generic advice — it's specifically the right move for ${priority}, which your answers pointed to. Small and consistent beats sporadic and ambitious every time when it comes to gut health.`,
         cta: `Begin My Consultation — €${REPORT_PRICE_EUR}`,
         ctaUrl: `${baseUrl}/pricing`,
         showScores: false,
@@ -99,7 +111,7 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
       return {
         subject: "Why consistency beats perfection for your gut",
         headline: "Consistency is the most underrated gut health tool",
-        body: `Research on diet and the gut tends to look at habits held over time rather than short bursts of effort — the same inputs at roughly the same times, day after day.<br /><br />That is the case for small consistent actions on your ${pillarLabel} score over occasional perfect days: they are the ones you can still be doing next month.<br /><br />If you tried the one action from day 3, you have the hard part done. Three more days and it stops being something you have to remember.`,
+        body: `Research on diet and the gut tends to look at habits held over time rather than short bursts of effort — the same inputs at roughly the same times, day after day.<br /><br />That is the case for small consistent actions on ${priority} over occasional perfect days: they are the ones you can still be doing next month.<br /><br />If you tried the one action from day 3, you have the hard part done. Three more days and it stops being something you have to remember.`,
         cta: `Begin My Consultation — €${REPORT_PRICE_EUR}`,
         ctaUrl: `${baseUrl}/pricing`,
         showScores: false,
@@ -109,7 +121,7 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
       return {
         subject: `${firstName}, one week in — are you making progress?`,
         headline: "Week one check-in",
-        body: `It's been a week since you got your Biotics Score of <strong>${score}</strong>. If you've made a start on your ${pillarLabel} score, that's the hard part — most people never get past reading the result.<br /><br />Your Personal Food System Consultation takes it further: ${REPORT_OFFER_SENTENCE}`,
+        body: `It's been a week since you got your Biotics Score of <strong>${score}</strong>. If you've made a start on ${priority}, that's the hard part — most people never get past reading the result.<br /><br />Your Personal Food System Consultation takes it further: ${REPORT_OFFER_SENTENCE}`,
         cta: `Begin My Consultation — €${REPORT_PRICE_EUR}`,
         ctaUrl: `${baseUrl}/pricing`,
         showScores: true,
@@ -149,7 +161,7 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
       return {
         subject: "Last chance: your 30-day plan is waiting",
         headline: `${firstName}, your gut health window is closing`,
-        body: `This is the last email in your EatoBiotics sequence. Your score of <strong>${score}</strong> — and everything it tells you about your ${pillarLabel} gap — stays relevant as long as you act on it.<br /><br />The Food System Report is €${REPORT_PRICE_EUR}. ${REPORT_OFFER_SENTENCE}`,
+        body: `This is the last email in your EatoBiotics sequence. Your score of <strong>${score}</strong> — and everything your answers said about ${priority} — stays relevant as long as you act on it.<br /><br />The Food System Report is €${REPORT_PRICE_EUR}. ${REPORT_OFFER_SENTENCE}`,
         cta: `Begin My Consultation — €${REPORT_PRICE_EUR}`,
         ctaUrl: `${baseUrl}/pricing`,
         showScores: true,
@@ -159,7 +171,7 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
       return {
         subject: `Your Biotics Score™: ${score}/100`,
         headline: `${firstName}, your gut health update`,
-        body: `Your Biotics Score™ is <strong>${score}/100</strong>. Your ${pillarLabel} score is your biggest opportunity. ${PILLAR_ACTIONS[weakestPillar]}`,
+        body: `Your Biotics Score™ is <strong>${score}/100</strong>. Your biggest opportunity is ${priority}. ${PILLAR_ACTIONS[weakestPillar]}`,
         cta: `Begin My Consultation — €${REPORT_PRICE_EUR}`,
         ctaUrl: `${baseUrl}/pricing`,
         showScores: false,
@@ -171,41 +183,39 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
 
 export function buildSequenceEmail(opts: SequenceEmailOpts): { subject: string; html: string } {
   const content = getEmailContent(opts)
-  const { feedScore, seedScore, healScore } = opts
 
+  /*
+   * ══ THE THREE BIOTICS ARE NAMED, NOT SCORED ═══════════════════════════════
+   *
+   * This rendered a number and a filled bar per Biotic — "Probiotics 54/100" —
+   * into a customer's inbox. That is a personal biological state as a number,
+   * which POSTBIOTICS_INFERENCE_BOUNDARY prohibits for Postbiotics by name and
+   * which strict ISAPP definitions put out of reach of a questionnaire for all
+   * three.
+   *
+   * It is the same artefact Tranche 1 removed from the reveal, Tranche 2A
+   * removed from /assessment/you, the share card and the generated OG image —
+   * and it was still being SENT, because no guard read lib/email. An email is
+   * the least recoverable surface of the lot: once delivered it cannot be
+   * re-rendered or corrected.
+   *
+   * The Biotics stay, named, with their colour, as the foundation the score is
+   * built on. The overall Biotics Score™ is untouched: it is the product's
+   * score and the arithmetic behind it has not changed.
+   */
   const pillarsHtml = content.showScores
     ? `
       <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 20px;">
         ${(["feed", "seed", "heal"] as const)
           .map((key) => {
-            const score = key === "feed" ? feedScore : key === "seed" ? seedScore : healScore
             const label = PILLAR_LABELS[key]
             const color = PILLAR_COLORS[key]
-            const pct = Math.round(score)
             return `
           <tr>
             <td style="padding: 4px 0;">
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #f7f7f7; border-radius: 8px; border-left: 3px solid ${color};">
                 <tr>
-                  <td style="padding: 8px 12px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                      <tr>
-                        <td style="font-size: 12px; font-weight: bold; color: #333333; font-family: Arial, sans-serif;">${label}</td>
-                        <td style="text-align: right; font-size: 13px; font-weight: bold; color: ${color}; font-family: Arial, sans-serif;">${pct}/100</td>
-                      </tr>
-                      <tr>
-                        <td colspan="2" style="padding-top: 4px;">
-                          <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                            <tr>
-                              <td style="background: #e0e0e0; border-radius: 4px; height: 5px;">
-                                <div style="background: ${color}; width: ${pct}%; height: 5px; border-radius: 4px;"></div>
-                              </td>
-                            </tr>
-                          </table>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
+                  <td style="padding: 10px 12px; font-size: 13px; font-weight: bold; color: #333333; font-family: Arial, sans-serif;">${label}</td>
                 </tr>
               </table>
             </td>

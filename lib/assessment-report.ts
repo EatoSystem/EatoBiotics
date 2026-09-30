@@ -124,7 +124,7 @@ const PILLAR_DEEP_DIVES: Record<
       },
       {
         food: "Sauerkraut (unpasteurised)",
-        why: "Naturally fermented cabbage contains hundreds of millions of live bacteria per gram — including Lactobacillus plantarum, linked to immune modulation.",
+        why: "Naturally fermented cabbage. Whether it is still unpasteurised when it reaches you is the thing that matters: buy refrigerated, since shelf-stable jars are usually heat-treated after fermentation.",
         howToUse: "1–2 tablespoons alongside meals. Refrigerated, unpasteurised versions only.",
       },
       {
@@ -139,14 +139,14 @@ const PILLAR_DEEP_DIVES: Record<
       },
       {
         food: "Kombucha (low sugar)",
-        why: "Fermented tea containing organic acids and live cultures. Lower-sugar versions provide the microbial benefit without the glycaemic spike.",
+        why: "A fermented tea, which is where its organic acids come from. Lower-sugar versions keep that without the glycaemic spike.",
         howToUse: "Drink 150–200ml with or between meals. Choose brands with <5g sugar per 100ml.",
       },
     ],
     reduce: [
       {
         food: "Pasteurised fermented products",
-        reason: "Pasteurisation kills the live cultures that give fermented foods their gut benefit. Yoghurts and krauts labelled 'heat-treated' after fermentation provide no live bacteria.",
+        reason: "Pasteurisation after fermentation kills the microorganisms. Yoghurts and krauts labelled 'heat-treated' have been fermented and then heated, so they arrive without them — which is the distinction worth learning to read on a label.",
       },
       {
         food: "Frequent alcohol",
@@ -244,7 +244,7 @@ function buildWeeklyHabits(
     seed: [
       ["Add one fermented food to one meal daily", "Natural yoghurt at breakfast, sauerkraut with lunch, miso broth at dinner. Rotate them across the week."],
       ["Buy three fermented foods you haven't tried", "Kefir, kimchi, and kombucha are good starting points. Introduce one new one each week."],
-      ["Make miso broth your daily snack or side", "Dissolve a teaspoon of miso paste in warm water. Takes 60 seconds and delivers live cultures."],
+      ["Make miso broth your daily snack or side", "Dissolve a teaspoon of miso paste in warm — not boiling — water. Takes 60 seconds, and keeping it off the heat is what preserves the fermentation."],
     ],
     heal: [
       ["Set three fixed meal times and protect them", "Choose your usual breakfast, lunch, and dinner window. Within 30 minutes is close enough to stabilise your gut rhythm."],
@@ -608,7 +608,7 @@ function buildPremiumAddons(
         "Drizzle of sesame oil",
         "Optional: 1 soft-boiled egg",
       ],
-      method: "Dissolve miso in warm (not boiling) water to preserve live cultures. Add ginger, greens, and nori. Top with spring onion and sesame oil. Drink immediately. This quick lunch delivers live cultures, prebiotic fibre, and minerals in under 10 minutes.",
+      method: "Dissolve miso in warm (not boiling) water — boiling undoes the fermentation. Add ginger, greens, and nori. Top with spring onion and sesame oil. Drink immediately. A fermented food, plant fibre and minerals in under 10 minutes.",
     },
     heal: {
       name: "Golden Gut Overnight Oats",

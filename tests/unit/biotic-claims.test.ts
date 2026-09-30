@@ -114,8 +114,43 @@ const PROMPT_SURFACES = [
   "app/api/food-intelligence/route.ts",
 ]
 
+/**
+ * Lifecycle email templates — Tranche 2C.
+ *
+ * ── The gap these close, which was the worst one yet ─────────────────────────
+ *
+ * These templates were inside `EMAIL_SURFACES` in customer-surfaces.ts, so the
+ * three VOCABULARY guards read them. No CLAIM rule ever did. The result:
+ * `sequence-email.ts` was still rendering a number and a filled bar for each
+ * Biotic — "Probiotics 54/100" — and still writing "Your Postbiotics score
+ * reflects…", months after Tranche 1 removed exactly that from the reveal and
+ * Tranche 2A removed it from /assessment/you, the share card and the generated
+ * OG image.
+ *
+ * Being in one guard's corpus is not being guarded. That is the same shape as
+ * the-framework.tsx, how-it-works.tsx and the three unlisted prompt modules,
+ * and it is the fourth time it has been found by looking rather than by CI.
+ *
+ * An email is also the least recoverable surface in the product: a page can be
+ * corrected and re-rendered, a share card regenerates per request, but a
+ * delivered email is final.
+ */
+const EMAIL_SURFACES = [
+  "lib/email/sequence-email.ts",
+  "lib/email/results-email.ts",
+  "lib/email/paid-report-email.ts",
+  "lib/email/nudge-email.ts",
+  "lib/email/trial-winback-email.ts",
+  "lib/email/meal-analysis-email.ts",
+]
+
 /** Everything the claim rules are enforced against. */
-const GUARDED_SURFACES = [...LIVE_SURFACES, ...REACHABLE_SURFACES, ...PROMPT_SURFACES]
+const GUARDED_SURFACES = [
+  ...LIVE_SURFACES,
+  ...REACHABLE_SURFACES,
+  ...PROMPT_SURFACES,
+  ...EMAIL_SURFACES,
+]
 
 /** English dictionary copy is checked separately — same rules, one locale. */
 const EN_DICTIONARY = "lib/i18n/dictionaries.ts"
@@ -260,6 +295,16 @@ describe("the corpus this guard reads cannot silently shrink", () => {
       "components/waitlist/food-system-experience.tsx",
       "lib/assessment/biotics.ts",
       "lib/biotics-prompt.ts",
+      // Tranche 2C — lifecycle email. Added deliberately, and the reason is
+      // worth keeping: these were read by the vocabulary guards and by no
+      // claim rule, which is how a per-Biotic number and bar survived in
+      // sequence-email.ts long after every page had lost it.
+      "lib/email/meal-analysis-email.ts",
+      "lib/email/nudge-email.ts",
+      "lib/email/paid-report-email.ts",
+      "lib/email/results-email.ts",
+      "lib/email/sequence-email.ts",
+      "lib/email/trial-winback-email.ts",
       "lib/pillars.ts",
       "lib/quick-assessment.ts",
     ])
@@ -417,6 +462,33 @@ describe("fibre is never classified as prebiotic", () => {
  * guard asserting the presence of selected symbols rather than the property it
  * documents, which is the recurring defect in this codebase.
  */
+/**
+ * The personal per-Biotic state, written as a SENTENCE rather than rendered as
+ * a number.
+ *
+ * NO_PERSONAL_BIOTIC_NUMBER below is structural and per-file: it refuses the
+ * expressions that would put a value on screen. It cannot see prose, and prose
+ * is where the claim actually survived longest — `sequence-email.ts` was still
+ * saying "Your Postbiotics score reflects your meal rhythm" after every bar
+ * and digit had been removed from every page.
+ *
+ * A sentence asserting a personal Biotic score is the same claim as the digit.
+ * POSTBIOTICS_INFERENCE_BOUNDARY prohibits "personal Postbiotics state" and
+ * "low Postbiotics" as SUBJECTS, not as number formats.
+ *
+ * The overall Biotics Score™ is deliberately untouched by these rules — it is
+ * the product's score, it is computed by the same arithmetic as ever, and
+ * "Your Biotics Score is 74/100" is a true statement about a thing we measure.
+ */
+const BIOTICS = "(?:Prebiotics|Probiotics|Postbiotics)"
+const PERSONAL_BIOTIC_STATE: [string, RegExp][] = [
+  ["a personal score attributed to a Biotic",
+   new RegExp(String.raw`\b(?:Your|My|your|my)\s+${BIOTICS}\s+score\b`)],
+  ["a Biotic given a numeric value", new RegExp(String.raw`\b${BIOTICS}\b[^.!?\n]{0,30}\b\d{1,3}\s*(?:\/\s*100|out of 100)\b`)],
+  ["a Biotic described as high or low for a person",
+   new RegExp(String.raw`\b(?:low|high|weak|strong)\s+${BIOTICS}\b`)],
+]
+
 const NO_PERSONAL_BIOTIC_NUMBER: [string, string, RegExp[]][] = [
   [
     "components/waitlist/food-system-experience.tsx",
@@ -432,6 +504,11 @@ const NO_PERSONAL_BIOTIC_NUMBER: [string, string, RegExp[]][] = [
     "components/assessment/score-card.tsx",
     "the share card must not take the three sub-scores at all — the props are gone, and the share text was where the claim actually travelled",
     [/\b(feed|seed|heal)\b/],
+  ],
+  [
+    "lib/email/sequence-email.ts",
+    "the nurture email must not take the three sub-scores at all — the fields are gone from its contract, because a field it still accepted would be an invitation to render it again",
+    [/\b(feedScore|seedScore|healScore)\b/],
   ],
   [
     "app/api/score-card/route.tsx",
@@ -456,6 +533,42 @@ describe("no Biotic carries a personal number", () => {
     const src = renderedSource(file)
     for (const pattern of patterns) {
       expect(src, `${file} — ${why}`).not.toMatch(pattern)
+    }
+  })
+
+  it.each(GUARDED_SURFACES)("%s asserts no personal Biotic state in prose", (file) => {
+    const src = renderedSource(file)
+    for (const [why, pattern] of PERSONAL_BIOTIC_STATE) {
+      const hit = src.match(pattern)
+      expect(hit?.[0] ?? null, `${file} — ${why}: "${hit?.[0]}"`).toBeNull()
+    }
+  })
+
+  it("NON-VACUITY: the sentences that were shipping would each be caught", () => {
+    for (const line of [
+      "Your Prebiotics score reflects how much fibre you eat.",
+      "My Postbiotics score went up this month.",
+      "Postbiotics: 64 out of 100",
+      "Probiotics 54/100",
+      "a low Postbiotics result",
+    ]) {
+      expect(
+        PERSONAL_BIOTIC_STATE.some(([, r]) => r.test(line)),
+        `not caught: ${line}`,
+      ).toBe(true)
+    }
+  })
+
+  it("NON-VACUITY: the overall score and the unscored Biotics are NOT caught", () => {
+    for (const line of [
+      "Your Biotics Score™ is 74/100.",
+      "Prebiotics, Probiotics and Postbiotics are the foundation the score is built on.",
+      "Postbiotics are what your gut bacteria produce when they ferment fibre.",
+    ]) {
+      expect(
+        PERSONAL_BIOTIC_STATE.some(([, r]) => r.test(line)),
+        `false positive: ${line}`,
+      ).toBe(false)
     }
   })
 
@@ -555,11 +668,6 @@ describe("the pre-launch surface does not promise the canonical score", () => {
  * so that nobody has to trust a comment to know why it is absent.
  */
 const KNOWN_UNCORRECTED = [
-  // 2C — the €49 Report path
-  "lib/report/build-food-system-report.ts",
-  "lib/report/food-swaps.ts",
-  "lib/report/subscores.ts",
-  "lib/assessment-report.ts",
   // 2C — the canonical assessment's own data and scoring
   "lib/assessment-data.ts", // q6 is inside the methodology freeze
   "lib/assessment-scoring.ts",

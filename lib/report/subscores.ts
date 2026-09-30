@@ -58,7 +58,7 @@ export const PATHWAY_LABEL: Record<BioticScoreKey, string> = {
 /** What each pathway actually means, for surfaces with room to say so. */
 export const PATHWAY_MEANING: Record<BioticScoreKey, string> = {
   prebiotics: "what feeds your microbes",
-  probiotics: "live-culture exposure",
+  probiotics: "fermented foods in your week",
   postbiotics: "recovery, rhythm, resilience",
 }
 

@@ -56,6 +56,13 @@ HELP = "app/help/page.tsx"
 BIOTICSPAGE = "app/biotics/page.tsx"
 PILLARS = "lib/pillars.ts"
 BPROMPT = "lib/biotics-prompt.ts"
+REPORTBUILD = "lib/report/build-food-system-report.ts"
+SWAPS = "lib/report/food-swaps.ts"
+SUBSCORES = "lib/report/subscores.ts"
+ASSESSREPORT = "lib/assessment-report.ts"
+SEQEMAIL = "lib/email/sequence-email.ts"
+RESULTSEMAIL = "lib/email/results-email.ts"
+CORPUSTEST = "tests/unit/biotic-claims.test.ts"
 CONSULT = "app/api/consult/route.ts"
 DEMOCONSULT = "app/api/demo/consult/route.ts"
 CHAT = "app/api/report-chat/route.ts"
@@ -375,9 +382,13 @@ CASES = [
      '',
      BIOTIC),
 
+    # RE-ANCHORED in Tranche 2C. This named lib/report/food-swaps.ts, which was
+    # corrected and removed from the ledger -- the anchor was legitimately
+    # invalidated rather than the case being wrong, so it moves to a file still
+    # in the ledger instead of being deleted.
     (977, "a ledger entry is deleted while the file still carries the claim",
      BIOTICTEST,
-     '  "lib/report/food-swaps.ts",\n',
+     '  "lib/foods.ts",\n',
      '',
      BIOTIC),
 
@@ -500,4 +511,59 @@ CASES = [
      '              alt="A crowd of people, each figure carrying their own lit food system"\n',
      '              alt="Individual food systems, each one a person"\n',
      HOLDING),
+
+    # ── Tranche 2C — the EUR49 Report path and lifecycle email ──────────────
+
+    (998, "the Report's probiotics definition reverts to the equivalence", REPORTBUILD,
+     '    "Probiotics are live microorganisms that, in adequate amounts, have a demonstrated benefit.',
+     '    "Probiotics are the live cultures in fermented foods.',
+     BIOTIC),
+
+    (999, "the Report reintroduces live foods as a category", REPORTBUILD,
+     '      "Your answers suggest fermented foods are rare at the moment.',
+     '      "Your answers suggest live foods are rare at the moment.',
+     BIOTIC),
+
+    (1000, "a swap reason asserts a live-culture count again", SWAPS,
+     'reason: "Vinegar pickles are not fermented at all',
+     'reason: "Vinegar pickles have no live cultures. Lacto-fermented versions provide hundreds of millions of bacteria per serving. Also not fermented at all',
+     BIOTIC),
+
+    (1001, "the pathway meaning reverts to live-culture exposure", SUBSCORES,
+     '  probiotics: "fermented foods in your week",',
+     '  probiotics: "live-culture exposure",',
+     BIOTIC),
+
+    (1002, "the assessment report re-asserts what a fermented food contains",
+     ASSESSREPORT,
+     '        why: "Naturally fermented cabbage. Whether it is still unpasteurised',
+     '        why: "Naturally fermented cabbage contains hundreds of millions of live bacteria per gram. Whether it is still unpasteurised',
+     BIOTIC),
+
+    (1003, "the nurture email states a personal Biotic score again", SEQEMAIL,
+     '  feed: "Your answers described how much fibre and plant variety reaches your gut.',
+     '  feed: "Your Prebiotics score reflects how much fibre and plant diversity you are giving your gut bacteria.',
+     BIOTIC),
+
+    # RE-AIMED in Tranche 2C. The first form fabricated a digit from
+    # String(key).length -- not a regression anyone would write, and the
+    # sub-score fields had already been removed from the template's contract,
+    # so it tested an impossibility rather than a risk. It now mutates the way
+    # this would actually come back: by reading a sub-score again.
+    (1004, "the email's pillar block reads a per-Biotic sub-score again",
+     SEQEMAIL,
+     '            const label = PILLAR_LABELS[key]\n',
+     '            const label = PILLAR_LABELS[key] + " " + (opts as unknown as { feedScore: number }).feedScore\n',
+     BIOTIC),
+
+    (1005, "the retired Fermented Foods label reverts in a live email",
+     RESULTSEMAIL,
+     '  adding: "Fermented Foods",',
+     '  adding: "Live Foods",',
+     BIOTIC),
+
+    (1006, "lifecycle email is dropped from the claims corpus", CORPUSTEST,
+     '  "lib/email/sequence-email.ts",\n  "lib/email/results-email.ts",\n',
+     '  "lib/email/results-email.ts",\n',
+     BIOTIC),
 ]
