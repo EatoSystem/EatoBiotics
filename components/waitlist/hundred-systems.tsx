@@ -81,19 +81,25 @@ export function HundredSystems() {
         </ScrollReveal>
 
         {/*
-          The artwork, and an honest note about it.
+          The artwork — the real one now, not the substitute.
 
           The direction for this section was a crowd of individual figures, each
-          with their own food system. No such asset exists: the library holds
-          one- and two-figure compositions, and `family-hero.png` — the nearest
-          to a group — is the Family product's artwork and would signal the
-          wrong product here.
+          with their own food system, and no such asset existed. It ran on
+          `eatobiotic-hero.png` — two figures and a third receding into a node
+          network, the closest the library got — recorded in this comment as a
+          substitute rather than passed off as the brief.
 
-          This is the closest the library gets, and the only one whose
-          composition suggests more people than are in frame: two figures, and a
-          third receding into a network of connected nodes. It is a substitute,
-          recorded as one, and swapping in the real artwork is a one-line
-          change.
+          The founder supplied the intended artwork, so it is in: many distinct
+          people, each carrying their own lit food system, receding into a
+          crowd. `hundred-systems.png` is its own asset at the same 1672×941 as
+          the file it replaces, so the height cap below is unchanged geometry.
+          `eatobiotic-hero.png` stays where it was — /eatobiotic still renders
+          it, and it was never this section's to consume.
+
+          The alt text moved with the picture. It described a composition this
+          image no longer has, and nothing in the gate can see that: axe checks
+          that alt EXISTS, not that it is true — the same trap that made
+          `the-framework.tsx` rename its fields rather than swap two values.
         */}
         <ScrollReveal delay={80} className="w-full">
           {/* `-mx-6 sm:mx-0`: on a phone the image is bounded by the section's
@@ -102,8 +108,8 @@ export function HundredSystems() {
             * and edge-to-edge artwork is the right idiom for it anyway. */}
           <div className="relative -mx-6 mt-14 w-[calc(100%+3rem)] max-w-none sm:mx-auto sm:w-full sm:max-w-[980px]" style={{ maxHeight: "min(46vh, 480px)" }}>
             <Image
-              src="/eatobiotic-hero.png"
-              alt="Individual food systems, each one a person"
+              src="/hundred-systems.png"
+              alt="A crowd of people, each figure carrying their own lit food system"
               width={1672}
               height={941}
               sizes="(max-width: 768px) 94vw, 980px"

@@ -438,6 +438,43 @@ describe("the programme is 100 Systems, and says so", () => {
     expect(src).toContain("COHORTS")
     expect(src, "the section must not hardcode the cohort size").not.toMatch(/>\s*100\s*Systems/)
   })
+
+  /*
+   * ── The picture and the sentence describing it move together ──────────────
+   *
+   * The section ran on `eatobiotic-hero.png` as an acknowledged substitute
+   * until the real crowd artwork arrived. Swapping the src is one line; the
+   * alt text is the line people forget, and NOTHING ELSE IN THE GATE CAN SEE
+   * IT — axe asserts that alt exists, not that it is true, which is exactly
+   * why `the-framework.tsx` renamed its fields rather than swap two values
+   * and hand a photograph of garlic the alt text "Feed".
+   *
+   * So the two are asserted together: this section renders its own asset, and
+   * its alt describes the crowd that asset shows. Borrowing another product's
+   * artwork back is caught by the same rule — `family-hero.png` was rejected
+   * for signalling the wrong product, and a later "it's the closest we have"
+   * would reintroduce that silently.
+   */
+  it("shows its own artwork, described truthfully", () => {
+    const src = renderedSource(SECTION)
+
+    expect(src, "the section must render its own asset").toContain('src="/hundred-systems.png"')
+    for (const borrowed of ["eatobiotic-hero.png", "family-hero.png", "hero-gut.png"]) {
+      expect(src, `the section must not render ${borrowed}`).not.toContain(`src="/${borrowed}"`)
+    }
+
+    const alt = src.match(/alt="([^"]+)"/)?.[1] ?? ""
+    expect(alt, "the artwork must carry alt text").not.toBe("")
+    expect(alt, `alt must describe the crowd, not the substitute: "${alt}"`).toMatch(
+      /\b(crowd|many|people)\b/i,
+    )
+  })
+
+  it("NON-VACUITY: the substitute's src and its alt would both be caught", () => {
+    const wasShipping = '<Image src="/eatobiotic-hero.png" alt="Individual food systems, each one a person" />'
+    expect(wasShipping.includes('src="/hundred-systems.png"')).toBe(false)
+    expect(/\b(crowd|many|people)\b/i.test(wasShipping.match(/alt="([^"]+)"/)?.[1] ?? "")).toBe(false)
+  })
 })
 
 describe("100 Systems steps aside while the assessment runs", () => {
