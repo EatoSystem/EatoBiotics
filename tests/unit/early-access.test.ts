@@ -433,7 +433,18 @@ describe("the holding page and the email cannot disagree", () => {
 
     // None of them may retype the numbers beside the module that owns them.
     for (const [name, src] of [["cohort-line", line], ["hundred-systems", section]] as const) {
-      expect(src, `${name} must not hardcode a cohort size`).not.toMatch(/\b100\b|\b1,?000\b/)
+      /*
+       * A CSS LENGTH is not a cohort size. `w-[calc(100%+3rem)]` bleeds the
+       * artwork to the screen edges on a phone and has nothing to do with how
+       * many people are in the programme — the same distinction the discount
+       * rule above already draws about "%".
+       *
+       * Narrowed rather than dropped: what must not appear is the NUMBER
+       * retyped beside the module that owns it.
+       */
+      expect(src, `${name} must not hardcode a cohort size`).not.toMatch(
+        /\b(100|1,?000)\b(?!\s*(%|px|rem|em|vh|vw|ch|fr|s\b))/,
+      )
     }
   })
 

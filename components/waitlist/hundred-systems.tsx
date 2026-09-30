@@ -42,20 +42,41 @@ export function HundredSystems() {
   const first = COHORTS[0]
 
   return (
-    <section id="hundred-systems" className="px-6 pb-24 pt-8 md:pb-32 md:pt-12">
-      <div className="mx-auto flex max-w-[760px] flex-col items-center text-center">
+    <section id="hundred-systems" className="px-6 pb-28 pt-16 md:pb-40 md:pt-24">
+      {/*
+        The container is the HERO's width, not a text column.
+
+        It was max-w-[760px], which was fine while the artwork was small and
+        became the thing stopping it growing: the image is 1672×941, so at a
+        480px height cap it wants ~850px of width and a 760px box simply
+        refuses it. The measure that matters is the PARAGRAPH's, and that is
+        set on the paragraph. Everything else may use the room.
+      */}
+      <div className="mx-auto flex max-w-[1100px] flex-col items-center text-center">
         <ScrollReveal>
-          <h2 className="font-serif text-[2.75rem] font-bold leading-[1.05] tracking-tight text-foreground sm:text-5xl md:text-6xl">
+          {/* The page's SECOND major moment, so it is sized like one. The
+            * headline was a step below the hero's and read as a sub-section. */}
+          <h2 className="font-serif text-[3.5rem] font-bold leading-[1.02] tracking-tight text-foreground sm:text-6xl md:text-7xl">
             {first.through} Systems
           </h2>
-          <p className="mt-4 font-serif text-xl font-semibold sm:text-2xl">
+          <p className="mt-5 font-serif text-2xl font-semibold sm:text-3xl">
             <span style={{ color: "var(--icon-green)" }}>{first.through} people.</span>{" "}
             <span style={{ color: "var(--icon-orange)" }}>{first.through} food systems.</span>
           </p>
-          <p className="mx-auto mt-6 max-w-[52ch] text-base leading-relaxed text-muted-foreground sm:text-lg">
-            EatoBiotics is beginning with {first.through} people and their individual food
-            systems. Each one will help us learn how EatoBiotics can better understand,
-            support and evolve The Food System Inside You.
+          {/* Two sentences, set as two lines. The rhythm the shorter copy buys
+            * is only visible if the break survives — reflowed into one block it
+            * reads as the paragraph it replaced. */}
+          {/* Two sentences, set as two blocks and BALANCED individually.
+            * Without text-balance the first one dropped "systems." onto a line
+            * of its own at desktop, which is exactly the carelessness an
+            * editorial page cannot afford in its second headline moment. */}
+          <p className="mx-auto mt-7 max-w-[52ch] text-lg leading-relaxed text-muted-foreground sm:text-xl">
+            <span className="block text-balance">
+              EatoBiotics is beginning with {first.through} people and their individual food systems.
+            </span>
+            <span className="mt-1.5 block text-balance">
+              Each one will help us learn, improve and evolve The Food System Inside You.
+            </span>
           </p>
         </ScrollReveal>
 
@@ -75,15 +96,19 @@ export function HundredSystems() {
           change.
         */}
         <ScrollReveal delay={80} className="w-full">
-          <div className="relative mx-auto mt-10 w-full max-w-[720px]" style={{ maxHeight: "min(34vh, 340px)" }}>
+          {/* `-mx-6 sm:mx-0`: on a phone the image is bounded by the section's
+            * horizontal padding, not by the height cap — 342px of a 390px
+            * screen. Reaching the edges is the only growth available there,
+            * and edge-to-edge artwork is the right idiom for it anyway. */}
+          <div className="relative -mx-6 mt-14 w-[calc(100%+3rem)] max-w-none sm:mx-auto sm:w-full sm:max-w-[980px]" style={{ maxHeight: "min(46vh, 480px)" }}>
             <Image
               src="/eatobiotic-hero.png"
               alt="Individual food systems, each one a person"
               width={1672}
               height={941}
-              sizes="(max-width: 768px) 92vw, 720px"
+              sizes="(max-width: 768px) 94vw, 980px"
               className="h-auto w-full object-contain"
-              style={{ maxHeight: "min(34vh, 340px)" }}
+              style={{ maxHeight: "min(46vh, 480px)" }}
             />
           </div>
         </ScrollReveal>
@@ -91,21 +116,23 @@ export function HundredSystems() {
         <ScrollReveal delay={140} className="w-full">
           {/* Counted, or absent. Never estimated. */}
           {cohort && cohort.isOpen ? (
-            <div className="mt-8 flex flex-col items-center">
-              <p className="font-serif text-4xl font-bold" style={{ color: "var(--icon-green)" }}>
+            <div className="mt-12 flex flex-col items-center">
+              {/* A fact about a small programme, sized to be read rather than
+                * noticed. It was microcopy under a large image and disappeared. */}
+              <p className="font-serif text-5xl font-bold sm:text-6xl" style={{ color: "var(--icon-green)" }}>
                 {cohort.remaining}{" "}
-                <span className="font-sans text-base font-medium tracking-normal text-muted-foreground">
+                <span className="font-sans text-lg font-medium tracking-normal text-muted-foreground sm:text-xl">
                   systems remaining
                 </span>
               </p>
               {/* One dot per system. Informational, not a countdown — it shows
                 * how far along a deliberately small programme is, which is the
                 * opposite argument to urgency. */}
-              <div aria-hidden className="mt-4 flex max-w-[420px] flex-wrap justify-center gap-[5px]">
+              <div aria-hidden className="mt-6 flex max-w-[560px] flex-wrap justify-center gap-[7px]">
                 {Array.from({ length: cohort.capacity }, (_, i) => (
                   <span
                     key={i}
-                    className="h-[7px] w-[7px] rounded-full"
+                    className="h-[9px] w-[9px] rounded-full"
                     style={{
                       background:
                         i < cohort.claimed
@@ -117,14 +144,14 @@ export function HundredSystems() {
               </div>
             </div>
           ) : cohort ? (
-            <p className="mt-8 text-sm font-semibold uppercase tracking-[0.16em] text-foreground">
+            <p className="mt-12 text-base font-semibold uppercase tracking-[0.16em] text-foreground">
               {cohort.cohort.name} is full
             </p>
           ) : null}
 
           <a
             href="#start"
-            className="brand-gradient mt-9 inline-flex min-h-[56px] w-full max-w-sm items-center justify-center gap-2.5 whitespace-nowrap rounded-full px-10 py-4 text-base font-semibold text-white shadow-xl shadow-icon-green/25 transition-all hover:opacity-90 sm:w-auto sm:max-w-none sm:text-lg"
+            className="brand-gradient mt-11 inline-flex min-h-[64px] w-full max-w-md items-center justify-center gap-3 whitespace-nowrap rounded-full px-12 py-5 text-lg font-semibold text-white shadow-xl shadow-icon-green/25 transition-all hover:opacity-90 sm:w-auto sm:max-w-none sm:text-xl"
           >
             {joinCtaLabel(cohort)}
             <ArrowRight size={18} aria-hidden />
@@ -143,7 +170,9 @@ export function HundredSystems() {
             about what a place gets, in the same register as "Takes about 5
             minutes. No account required." further down the page.
           */}
-          <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
+          {/* Quieter than before, deliberately: the CTA above it grew, and a
+            * footnote that keeps pace with the button stops being a footnote. */}
+          <p className="mt-6 text-xs leading-relaxed text-muted-foreground/80">
             Your place includes the full Food System Assessment when EatoBiotics opens.
           </p>
         </ScrollReveal>

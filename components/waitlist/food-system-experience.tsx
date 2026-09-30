@@ -329,9 +329,19 @@ export function FoodSystemExperience({
    * call to action cannot be seen without scrolling is not a hero, and this
    * was measured rather than eyeballed because the same mistake has already
    * shipped once on this page.
+   *
+   * The cap was min(40vh, 400px) and is now min(41vh, 415px) — the figure is
+   * the brand's emotional anchor and had more white space around it than it
+   * needed. The ceiling is set by MEASUREMENT, not by taste.
+   *
+   * It was briefly min(44vh, 450px), and that was too far: the CTA still fit
+   * the first screen at every width, but the COHORT LINE beneath it did not,
+   * and tests/e2e/early-access-campaign.spec.ts caught what my own
+   * measurement had missed by watching only the button. The hero's first
+   * screen is everything down to the counted programme, not the CTA alone.
    */
   const figure = (
-    <div className="relative mx-auto flex w-full max-w-[560px] items-center justify-center" style={{ maxHeight: "min(40vh, 400px)" }}>
+    <div className="relative mx-auto flex w-full max-w-[620px] items-center justify-center" style={{ maxHeight: "min(41vh, 415px)" }}>
       <div
         aria-hidden
         className="absolute inset-0 -z-10 blur-3xl"
@@ -345,7 +355,7 @@ export function FoodSystemExperience({
         webmSrc="/videos/food-system-hero.webm"
         mp4Src="/videos/food-system-hero.mp4"
         alt="The food system inside you — an animated figure showing the gut microbiome"
-        className="max-h-[min(40vh,400px)] w-full object-contain"
+        className="max-h-[min(41vh,415px)] w-full object-contain"
       />
     </div>
   )
