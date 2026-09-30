@@ -298,6 +298,52 @@ describe("demo and fixture routes cannot be entered", () => {
       expect([...calls].some((c) => /Eligible$|Allowed$/.test(c)), `${route} never calls its policy`).toBe(true)
       expect(calls.has("notFound"), `${route} never calls notFound()`).toBe(true)
     })
+
+    it(`${route} is rendered per REQUEST, not baked at build time`, () => {
+      /*
+       * ══ THE GAP THIS CLOSES, FOUND BY RUNNING THE SERVER ══════════════════
+       *
+       * A self-gated page whose policy reads `process.env` is only self-gated
+       * if the policy runs when somebody asks for the page. Next prerenders a
+       * server component with no dynamic inputs at BUILD time, so without
+       * `force-dynamic` the answer is computed once during `next build` and
+       * baked into static HTML.
+       *
+       * /preview/food-system-v1 shipped exactly that way and 404'd under
+       * VERCEL_ENV=preview, because the build had run without it. Every
+       * assertion above passed: the policy was imported, called, and notFound()
+       * was reached. The page was structurally perfect and functionally inert.
+       *
+       * It failed SAFE, which is why it needed running to find — a gate that is
+       * accidentally too strict is indistinguishable from one that works, until
+       * the people meant to review the thing cannot reach it either.
+       *
+       * The same shape as this file's own note about the edge runtime
+       * compiling process.env at build time. Different runtime, same mistake,
+       * so it is now asserted for every route in the class rather than left to
+       * whoever writes the next one remembering.
+       */
+      const src = readFileSync(join(ROOT, "app", route, "page.tsx"), "utf8")
+      const sf = ts.createSourceFile("page.tsx", src, ts.ScriptTarget.ESNext, true)
+
+      const dynamicExport = sf.statements.find(
+        (st) =>
+          ts.isVariableStatement(st) &&
+          st.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword) &&
+          st.declarationList.declarations.some(
+            (d) => ts.isIdentifier(d.name) && d.name.text === "dynamic",
+          ),
+      ) as ts.VariableStatement | undefined
+
+      expect(
+        dynamicExport,
+        `${route} does not export \`dynamic\`, so its policy runs at build time and reports the ` +
+          `build's environment rather than the request's`,
+      ).toBeTruthy()
+
+      const value = dynamicExport!.declarationList.declarations[0].initializer?.getText(sf)
+      expect(value, `${route} exports dynamic = ${value}`).toBe('"force-dynamic"')
+    })
   }
 
   it("that page-level check would fail if the policy were dropped", () => {

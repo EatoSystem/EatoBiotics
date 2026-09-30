@@ -38,6 +38,9 @@ science stays taught. Both survive, each doing its own job.
 ## 1. The architecture
 
 ```
+VISION           Build the food system inside you —
+                 and help build the food system around you.
+
 BRAND            EatoBiotics — The Food System Inside You
 
 SCIENCE          Prebiotics · Probiotics · Postbiotics
@@ -60,7 +63,35 @@ LONGITUDINAL     My Food System
 
 LOOP             Understand → Score → Explain → Prioritise →
                  Feed · Seed · Rejuvenate → Act → Reassess → Learn → Evolve
+
+SCALE            100 → 1,000 → 10,000 → 100,000 →
+                 1M → 10M → 100M Systems
 ```
+
+### The two halves of the vision
+
+**Inside you** is everything above the Scale line: the science, the
+measurement, the actions, My Food System. It is what one person's food system
+is and how it changes.
+
+**Around you** is the Scale line. A hundred people with their own food systems
+is not a hundred customers — it is the first version of a food system larger
+than any of them, which is what EatoBiotics is ultimately for.
+
+### Scale is above the measurement, and touches none of it
+
+The ladder is a **growth and learning** structure. It is the order in which
+EatoBiotics meets people and learns from them.
+
+**It is referenced by no scoring document, and must not become one.** A cohort
+is not a covariate. Nothing about which rung a person joined at may reach the
+Food System Score, its domains, its weights, its bands or its interpretation —
+the Score describes the food patterns somebody reported, and when they arrived
+is not one of them.
+
+Each rung is a real, counted population, never an aspiration. The campaign rule
+holds at every scale: **counted, or absent.** A rung nobody has counted is an
+invented number, and the product does not print those.
 
 ---
 
@@ -110,7 +141,7 @@ about them.** A changed answer is a changed answer.
 | What it produces | **Biotics Score™** | — |
 | One meal | **Meal Biotics Score** | the person's Biotics Score |
 | The third action | **Rejuvenate** | Regenerate (retired) · Heal (stored key only) |
-| The programme | **100 Systems → 1,000 Systems → 10,000 Systems → 100,000 Systems → 1M → 10M → 100M** | First Course · First 100 · founder · founding · founding member · pioneer |
+| The programme | **100 Systems → 1,000 Systems → 10,000 Systems → …** (the Scale layer, §1) | First Course · First 100 · founder · founding · founding member · pioneer |
 
 **Stored keys never move.** `heal`, `adding`, `feed`, `seed` and the cohort
 `id` values are written into rows and analytics. Labels change; values written

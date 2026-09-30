@@ -81,17 +81,60 @@ describe("CHANGING A FROZEN ITEM FAILS RESOLUTION", () => {
     expect(pinOf(reworded)).toBe(pinOf(sample))
   })
 
+  /*
+   * ══ THESE EXERCISE THE RESOLVER, NOT THE DATA ═══════════════════════════════
+   *
+   * The first version of this block asserted that a wrong pin differs from the
+   * real one and that the real manifest resolves — both true, and neither
+   * touching the code that enforces the pin. Sabotage case 1020 then replaced
+   * the comparison with `if (false)` and the whole suite stayed green: every
+   * pin matches, so a disabled check behaves identically to a working one.
+   *
+   * A check only exercised by data that satisfies it is not exercised. So the
+   * manifest is injectable now and these hand the resolver input that SHOULD
+   * be refused.
+   */
   it("resolution throws, and names the question, when a pin no longer matches", () => {
-    const entry = LEGACY_REFS[0]
-    const id = entry.id
-    const wrong = { ...(entry as { pin: string }), pin: "0".repeat(64) }
-    // Resolve the one entry directly rather than mutating module state: the
-    // behaviour under test is the comparison, and a test that rewrites a
-    // frozen file to prove a point is a worse test.
-    const q = legacyQuestion(id)!
-    expect(pinOf(q)).not.toBe(wrong.pin)
+    const broken = QUESTION_SET_V1.map((e) =>
+      e.kind === "legacy-ref" && e.id === "q6" ? { ...e, pin: "0".repeat(64) } : e,
+    )
+    expect(() => resolveQuestionSetV1(broken)).toThrow(QuestionSetResolutionError)
+    expect(() => resolveQuestionSetV1(broken)).toThrow(/q6/)
+    // And it says what to do instead of repinning.
+    expect(() => resolveQuestionSetV1(broken)).toThrow(/methodology change/)
+  })
 
-    // And the real resolver refuses the real manifest only when it should.
+  it("resolution throws when a referenced question no longer exists", () => {
+    const missing = QUESTION_SET_V1.map((e) =>
+      e.kind === "legacy-ref" && e.id === "q6" ? { ...e, id: "q99" } : e,
+    )
+    expect(() => resolveQuestionSetV1(missing)).toThrow(/q99/)
+  })
+
+  it("resolution throws on a duplicate item", () => {
+    const dupe = [...QUESTION_SET_V1, QUESTION_SET_V1[0]]
+    expect(() => resolveQuestionSetV1(dupe)).toThrow(/more than once/)
+  })
+
+  it("resolution throws when a scored item names no domain", () => {
+    const noDomain = QUESTION_SET_V1.map((e) =>
+      e.kind === "legacy-ref" && e.id === "q1" ? { ...e, domain: undefined } : e,
+    )
+    expect(() => resolveQuestionSetV1(noDomain)).toThrow(/names no domain/)
+  })
+
+  it("resolution throws when an UNSCORED item claims a domain", () => {
+    /*
+     * The one that matters most: a domain on a Food Context item is how "these
+     * never reach the Score" quietly stops being true.
+     */
+    const contextScored = QUESTION_SET_V1.map((e) =>
+      e.id === "fc1" ? ({ ...e, domain: "mealRhythm" } as typeof e) : e,
+    )
+    expect(() => resolveQuestionSetV1(contextScored)).toThrow(/reach the Score by no path/)
+  })
+
+  it("the real manifest resolves cleanly", () => {
     expect(() => resolveQuestionSetV1()).not.toThrow()
   })
 })

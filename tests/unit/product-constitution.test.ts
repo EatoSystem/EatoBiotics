@@ -188,6 +188,19 @@ describe("the claims boundary refuses to weaken the contract", () => {
 describe("the constitution agrees with the code it governs", () => {
   const src = read(CONSTITUTION)
 
+  /*
+   * The SECOND time hard-wrapping has broken a rule in this file, so it is
+   * fixed once here rather than per-assertion. Markdown wraps at ~80 columns,
+   * so any sentence long enough to be worth asserting is likely to span two
+   * lines — and a regex written as a sentence then fails on a newline that has
+   * nothing to do with meaning. `flat` joins paragraph lines back together;
+   * `src` stays available for assertions that genuinely care about layout.
+   */
+  const flat = src
+    .split(/\n\s*\n/)
+    .map((p) => p.replace(/\s*\n\s*/g, " "))
+    .join("\n")
+
   it("keeps the retired programme vocabulary as prohibitions only", () => {
     /*
      * The constitution must NAME the retired terms — a vocabulary authority
@@ -202,7 +215,41 @@ describe("the constitution agrees with the code it governs", () => {
   })
 
   it("records the Systems ladder in order", () => {
-    expect(src).toMatch(/100 Systems\s*→\s*1,000 Systems\s*→\s*10,000 Systems/)
+    expect(src).toMatch(/100\s*→\s*1,000\s*→\s*10,000\s*→\s*100,000\s*→\s*\n?\s*1M\s*→\s*10M\s*→\s*100M Systems/)
+  })
+
+  it("carries the vision, in both halves", () => {
+    expect(flat).toMatch(/Build the food system inside you/)
+    expect(flat).toMatch(/help build the food system around you/)
+  })
+
+  it("SCALE IS NOT A SCORING INPUT, and the constitution says so", () => {
+    /*
+     * The load-bearing separation. The ladder is a growth and learning
+     * structure; a cohort is not a covariate. If which rung somebody joined at
+     * ever reached the Score, its domains, weights or bands, the Score would
+     * stop describing the food patterns a person reported and start describing
+     * when they arrived.
+     */
+    expect(flat).toMatch(/referenced by no scoring document/i)
+    expect(flat).toMatch(/A cohort is not a covariate/)
+  })
+
+  it("no FSS document references the Systems ladder", () => {
+    /*
+     * The other direction, and the one that would fail silently. The
+     * constitution can promise separation all it likes; this is what checks it.
+     */
+    for (const doc of FSS_DOCS) {
+      const text = read(doc)
+      for (const rung of ["100 Systems", "1,000 Systems", "10,000 Systems", "100M Systems"]) {
+        expect(text.includes(rung), `${doc} references the Scale ladder ("${rung}")`).toBe(false)
+      }
+    }
+  })
+
+  it("the Scale ladder keeps the counted-or-absent rule", () => {
+    expect(flat).toMatch(/counted, or absent/i)
   })
 
   it("states that stored keys never move", () => {

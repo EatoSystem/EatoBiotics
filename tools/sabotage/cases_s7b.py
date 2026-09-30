@@ -68,6 +68,22 @@ CONSTITUTION = "docs/EATOBIOTICS_PRODUCT_CONSTITUTION_v1.md"
 FSSSPEC = "docs/fss/FSS_V1_SPEC.md"
 CLAIMSB = "docs/fss/FSS_V1_CLAIMS_BOUNDARY.md"
 CONSTTEST = ["tests/unit/product-constitution.test.ts"]
+
+# ── Gate 2 ──────────────────────────────────────────────────────────────
+QV1 = "lib/fss/questions/v1.ts"
+QRESOLVE = "lib/fss/questions/resolve.ts"
+FWEIGHTS = "lib/fss/engine/weights.ts"
+FSCORE = "lib/fss/engine/score.ts"
+FCOMPARE = "lib/fss/engine/compare.ts"
+FBANDS = "lib/fss/interpretation/bands.ts"
+FPOLICY = "lib/fss/preview/preview-policy.ts"
+FPAGE = "app/preview/food-system-v1/page.tsx"
+FLOCAL = "lib/fss/persistence/local.ts"
+QSET = ["tests/unit/fss-question-set.test.ts"]
+FENGINE = ["tests/unit/fss-engine.test.ts"]
+FINTERP = ["tests/unit/fss-interpretation.test.ts"]
+FGATE = ["tests/unit/fss-preview-gate.test.ts", "tests/unit/v1-surface.test.ts"]
+FPERSIST = ["tests/unit/fss-persistence.test.ts"]
 MEALIMPACT = "lib/account/meal-impact.ts"
 SCOREPREVIEW = "components/home/score-preview.tsx"
 DEPFOODS = "components/depression/depression-foods.tsx"
@@ -631,4 +647,81 @@ CASES = [
      '**Stored keys never move.**',
      '**Stored keys may be renamed for clarity.**',
      CONSTTEST),
+
+    # ── Gate 2 — the candidate model ────────────────────────────────────────
+
+    (1017, "a legacy question pin is silently updated to whatever it is now",
+     QV1,
+     '{ kind: "legacy-ref", id: "q6", pin: "223dab5d7ca24c1a55bc7d2b50e498454f3d05b6baeb6507368b3d920a64a6e2"',
+     '{ kind: "legacy-ref", id: "q6", pin: "0000000000000000000000000000000000000000000000000000000000000000"',
+     QSET),
+
+    (1018, "a scored item is quietly moved into an unscored layer", QV1,
+     'part: "what-you-eat", sectionTitle: "Diversity", contributes: "fss", domain: "diversity" },\n  { kind: "legacy-ref", id: "q2"',
+     'part: "what-you-eat", sectionTitle: "Diversity", contributes: "what-you-notice" },\n  { kind: "legacy-ref", id: "q2"',
+     QSET),
+
+    (1019, "Food Context is given a domain, so it can reach the Score", QV1,
+     "const YOUR_FOOD_CONTEXT: ManifestEntry[] = CANDIDATE_ITEMS.filter(\n  (i) => i.contributes === \"food-context\",\n)",
+     "const YOUR_FOOD_CONTEXT: ManifestEntry[] = CANDIDATE_ITEMS.filter(\n  (i) => i.contributes === \"food-context\",\n).map((i) => ({ ...i, contributes: \"fss\" as const, domain: \"mealRhythm\" as const }))",
+     QSET),
+
+    (1020, "the resolver stops checking pins", QRESOLVE,
+     '  if (actual !== entry.pin) {',
+     '  if (false) {',
+     QSET),
+
+    (1021, "an approved-weights export appears beside the fixture", FWEIGHTS,
+     'export const DEV_ONLY_FSS_V1_FIXTURE_WEIGHTS: DomainWeights = {',
+     'export const APPROVED_FSS_V1_WEIGHTS: DomainWeights = {\n  diversity: 0.2, plantsAndFibre: 0.2, fermentedFoods: 0.2, foodQuality: 0.2, mealRhythm: 0.2,\n}\nexport const DEV_ONLY_FSS_V1_FIXTURE_WEIGHTS: DomainWeights = {',
+     FENGINE),
+
+    (1022, "the fixture context becomes optional, so weights need no permission",
+     FWEIGHTS,
+     '  if (context?.__nonProductionFixture !== "DEV_ONLY — not approved methodology") {',
+     '  if (false) {',
+     FENGINE),
+
+    (1023, "the 20-point floor returns", FSCORE,
+     '  return { domain, state: "scored", score: Math.round((mean / 3) * 100), answered, total }',
+     '  return { domain, state: "scored", score: Math.max(Math.round((mean / 3) * 100), 20), answered, total }',
+     FENGINE),
+
+    (1024, "an insufficient domain is scored as zero instead of withholding",
+     FSCORE,
+     '  if (insufficient.length > 0) {',
+     '  if (false) {',
+     FENGINE),
+
+    (1025, "a legacy-unversioned score becomes comparable", FCOMPARE,
+     '  if (isLegacyUnversioned(a) || isLegacyUnversioned(b)) {',
+     '  if (false) {',
+     FENGINE),
+
+    (1026, "two band ladders are silently merged into one threshold set",
+     FBANDS,
+     '    { label: "Strong Foundation", color: "var(--icon-lime)", min: 65 },',
+     '    { label: "Strong Foundation", color: "var(--icon-lime)", min: 60 },',
+     FINTERP),
+
+    (1027, "getScoreBand gains a default version, so callers stop choosing",
+     FBANDS,
+     'export function getScoreBand(score: number, interpretationVersion: string): Band {',
+     'export function getScoreBand(score: number, interpretationVersion = "interpretation-legacy-account"): Band {',
+     FINTERP),
+
+    (1028, "the preview gate lets an environment variable turn it on", FPOLICY,
+     '  if (vercelEnv === "production") return false',
+     '  if (env.ENABLE_FSS_PREVIEW === "true") return true\n  if (vercelEnv === "production") return false',
+     FGATE),
+
+    (1029, "the preview page is baked at build time again", FPAGE,
+     'export const dynamic = "force-dynamic"',
+     'export const revalidate = 3600',
+     FGATE),
+
+    (1030, "the candidate runtime is pointed at Supabase", FLOCAL,
+     '  return new LocalStorageRepository()',
+     '  return process.env.VERCEL_ENV ? new SupabaseRepositoryDisabled() : new LocalStorageRepository()',
+     FPERSIST),
 ]

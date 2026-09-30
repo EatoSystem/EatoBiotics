@@ -81,8 +81,25 @@ function resolveEntry(entry: ManifestEntry, order: number): ResolvedQuestion {
  * that is not the one that would be produced — and none of them is recoverable
  * by carrying on.
  */
-export function resolveQuestionSetV1(): ResolvedQuestionSet {
-  const questions = QUESTION_SET_V1.map((entry, i) => resolveEntry(entry, i + 1))
+export function resolveQuestionSetV1(
+  /*
+   * The manifest is a PARAMETER so the refusal paths are reachable from a
+   * test. That is not a testing convenience bolted on — it is the difference
+   * between a guard and a claim.
+   *
+   * Sabotage case 1020 disabled the pin comparison outright (`if (false)`) and
+   * NOTHING failed, because every pin currently matches: a check that is only
+   * exercised by data that satisfies it is not exercised at all. The suite
+   * proved the pins were correct and proved nothing about the code that
+   * enforces them.
+   *
+   * With the manifest injectable, a test can hand this a deliberately wrong
+   * pin, a missing id, a duplicate and a mislabelled item, and assert that each
+   * throws. Defaults to the real manifest, so every caller is unchanged.
+   */
+  manifest: readonly ManifestEntry[] = QUESTION_SET_V1,
+): ResolvedQuestionSet {
+  const questions = manifest.map((entry, i) => resolveEntry(entry, i + 1))
 
   const seen = new Set<string>()
   for (const q of questions) {
