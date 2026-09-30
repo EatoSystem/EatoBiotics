@@ -64,6 +64,10 @@ SEQEMAIL = "lib/email/sequence-email.ts"
 RESULTSEMAIL = "lib/email/results-email.ts"
 CORPUSTEST = "tests/unit/biotic-claims.test.ts"
 FOODS = "lib/foods.ts"
+CONSTITUTION = "docs/EATOBIOTICS_PRODUCT_CONSTITUTION_v1.md"
+FSSSPEC = "docs/fss/FSS_V1_SPEC.md"
+CLAIMSB = "docs/fss/FSS_V1_CLAIMS_BOUNDARY.md"
+CONSTTEST = ["tests/unit/product-constitution.test.ts"]
 MEALIMPACT = "lib/account/meal-impact.ts"
 SCOREPREVIEW = "components/home/score-preview.tsx"
 DEPFOODS = "components/depression/depression-foods.tsx"
@@ -605,4 +609,26 @@ CASES = [
      '  "lib/assessment-data.ts",\n',
      '  "lib/assessment-data.ts",\n  "lib/account/meal-impact.ts",\n',
      BIOTIC),
+
+    # ── Work Package B — the constitution and the FSS-v1 documents ──────────
+
+    (1013, "the candidate label is dropped from the constitution", CONSTITUTION,
+     '> ### FSS-v1 Candidate Domains — Frozen for Scientific Review, Not Yet Scientifically Approved',
+     '> ### The Five FSS-v1 Domains',
+     CONSTTEST),
+
+    (1014, "the specification calls the candidate model validated", FSSSPEC,
+     '**Status: CANDIDATE. Specification only. Nothing here is implemented, and\nimplementing it would not validate it.**',
+     '**Status: the FSS-v1 methodology is scientifically validated and ready to ship.**',
+     CONSTTEST),
+
+    (1015, "the claims boundary stops refusing to relax the contract", CLAIMSB,
+     '> **If review concludes the rule must be relaxed to permit the name, that is\n> the signal the name is wrong — not the rule.**',
+     '> Where the rule blocks the name, the rule should be relaxed accordingly.',
+     CONSTTEST),
+
+    (1016, "the constitution drops the stored-key protection", CONSTITUTION,
+     '**Stored keys never move.**',
+     '**Stored keys may be renamed for clarity.**',
+     CONSTTEST),
 ]

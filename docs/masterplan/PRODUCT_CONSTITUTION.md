@@ -1,5 +1,11 @@
 # The EatoBiotics Product Constitution
 
+> **This is the VALUES constitution** — what the product is for and how it
+> should behave toward people. The **architecture** constitution, which
+> governs what each layer may claim and which words mean which thing, is
+> `docs/EATOBIOTICS_PRODUCT_CONSTITUTION_v1.md`. Neither supersedes the
+> other, and neither is edited to accommodate the other without saying so.
+
 > The Food System is the product. Everything else exists to help people
 > understand it, strengthen it, and live with it.
 
