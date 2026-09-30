@@ -49,6 +49,20 @@ async function withTotal(page: import("@playwright/test").Page, total: number | 
  * runs a 700ms fade, so a single measurement taken too early reports "not
  * seen" for a line that does appear. A line that NEVER appears still fails,
  * which is the case that matters.
+ *
+ * ── WHOLE box, not its top edge ────────────────────────────────────────────
+ *
+ * This asked `box.y >= height`, which is true only when the element STARTS
+ * below the fold. So a line whose first row was visible and whose second row
+ * was cut off passed as "seen on arrival" — and one was: at 390×844 the
+ * cohort line occupied y 823–859 and this returned true for it, in the guard
+ * whose whole purpose is that the counted programme is not something a
+ * visitor has to go looking for. Half a sentence about how many places are
+ * left is worse than none, because the half that survives is the number.
+ *
+ * It now requires the entire box inside the viewport. A guard that measures
+ * only the near edge of an element is measuring whether it BEGINS on screen,
+ * which is not what "visible without scrolling" means to a reader.
  */
 async function seenOnArrival(page: import("@playwright/test").Page, text: RegExp) {
   const el = page.locator("span,p", { hasText: text }).first()
@@ -59,7 +73,7 @@ async function seenOnArrival(page: import("@playwright/test").Page, text: RegExp
     const ok = await (async () => {
       if (!(await el.isVisible().catch(() => false))) return false
       const box = await el.boundingBox().catch(() => null)
-      if (!box || box.y >= height) return false
+      if (!box || box.y < 0 || box.y + box.height > height) return false
       const opacity = await el
         .evaluate((n) =>
           getComputedStyle((n as HTMLElement).closest(".sr-reveal") ?? (n as HTMLElement)).opacity,

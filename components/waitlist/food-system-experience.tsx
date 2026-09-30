@@ -489,10 +489,18 @@ function HeroStage({
         over time.
       </p>
 
-      {/* The figure is the product, so it gets the room. No card, no border. */}
-      <div className="mt-6 w-full">{figure}</div>
+      {/*
+        The figure is the product, so it gets the room. No card, no border.
 
-      <div className="mt-7 flex w-full flex-col items-center">
+        The four gaps between here and the cohort line tighten at PHONE width
+        only (`sm:` restores each one), because at 390×844 the counted
+        programme's second line fell 15px past the fold. Recovering it by
+        shrinking the figure would have traded the brand's anchor for a
+        margin; recovering it from the rhythm costs nothing a reader can name.
+      */}
+      <div className="mt-4 w-full sm:mt-6">{figure}</div>
+
+      <div className="mt-5 flex w-full flex-col items-center sm:mt-7">
         <button
           type="button"
           onClick={onBegin}
@@ -502,7 +510,7 @@ function HeroStage({
         </button>
         <a
           href="#how-it-works"
-          className="mt-4 text-sm font-medium text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
+          className="mt-3 text-sm font-medium text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground sm:mt-4"
         >
           See how it works
         </a>
@@ -512,11 +520,11 @@ function HeroStage({
         * and Rejuvenate and promised a score — three ideas competing under a
         * CTA. The framework is taught further down the page; here it only has
         * to say what kind of product this is. */}
-      <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+      <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground sm:mt-6">
         Science-backed insights. A healthier you.
       </p>
 
-      <CohortLine cohort={cohort} className="mt-5" />
+      <CohortLine cohort={cohort} className="mt-4 sm:mt-5" />
     </div>
   )
 }
