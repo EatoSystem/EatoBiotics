@@ -631,7 +631,7 @@ describe("the withheld score name is confined to the gated candidate preview", (
 
   /** Derived, so a new Gate 3 file is covered the moment it exists. */
   const candidateFiles = () =>
-    execSync("git ls-files lib/fss components/fss app/preview/food-system-v1", {
+    execSync("git ls-files --cached --others --exclude-standard lib/fss components/fss app/preview/food-system-v1", {
       encoding: "utf-8",
     })
       .trim()

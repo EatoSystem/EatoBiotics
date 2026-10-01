@@ -158,10 +158,15 @@ describe("understand versus act", () => {
    * to lose that is to write `Record<FssDomain, ActionCategory>` or to print an
    * action beside a Biotic with an operator between them — and until now no rule
    * in this file could see either, because the candidate tree was in no corpus.
+   *
+   * `--others` matters: `git ls-files` alone sees only STAGED files, so a
+   * module written but not yet added would pass these rules by not being read.
+   * That happened on Gate 3's own first three modules.
    */
-  const CANDIDATE_ACTION_SURFACES = execSync("git ls-files lib/fss components/fss", {
-    encoding: "utf-8",
-  })
+  const CANDIDATE_ACTION_SURFACES = execSync(
+    "git ls-files --cached --others --exclude-standard lib/fss components/fss",
+    { encoding: "utf-8" },
+  )
     .trim()
     .split("\n")
     .filter((f) => /\.(ts|tsx)$/.test(f))

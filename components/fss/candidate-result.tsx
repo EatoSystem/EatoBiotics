@@ -5,7 +5,8 @@ import { usePrefersReducedMotion } from "@/components/assessment/result/use-redu
 import type { FoodSystemScore } from "@/lib/fss/engine/score"
 import type { ResolvedQuestionSet } from "@/lib/fss/questions/types"
 import type { Answers } from "@/lib/fss/engine/score"
-import { DOMAIN_PRESENTATION, priorityFor } from "@/lib/fss/presentation/domains"
+import { DOMAIN_PRESENTATION, PRIORITY_COPY } from "@/lib/fss/presentation/domains"
+import { resolvePriorities } from "@/lib/fss/action/priority"
 
 /**
  * The candidate result — Your Food System Score™ through Your Priority.
@@ -49,7 +50,13 @@ export function CandidateResult({
   onRestart: () => void
 }) {
   const reducedMotion = usePrefersReducedMotion()
-  const priorities = priorityFor(score)
+  /*
+   * ONE selector, shared with the plan below. Gate 2 called `priorityFor` here
+   * and Gate 3 moved the selection into the action layer — a second selector
+   * over the same five domains would drift, and the first symptom would be this
+   * section and Your Plan disagreeing about what matters most.
+   */
+  const priorities = resolvePriorities({ score, set, answers })
 
   return (
     <div className="mx-auto w-full max-w-[860px] px-6 py-12">
@@ -169,17 +176,50 @@ export function CandidateResult({
           list of everything that could be better.
         </p>
         <div className="mt-6 space-y-4">
+          {priorities.length === 0 && (
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {PRIORITY_COPY.noneAvailable}
+            </p>
+          )}
           {priorities.map((p) => (
             <div
-              key={p.domain}
+              key={p.id}
               className="rounded-2xl border p-6"
               style={{ borderColor: "var(--border)", background: "var(--card)" }}
             >
-              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: DOMAIN_PRESENTATION[p.domain].color }}>
-                {DOMAIN_PRESENTATION[p.domain].label}
+              <p
+                className="text-xs font-semibold uppercase tracking-wider"
+                style={{ color: DOMAIN_PRESENTATION[p.sourceDomain].color }}
+              >
+                {DOMAIN_PRESENTATION[p.sourceDomain].label}
               </p>
-              <p className="mt-2 font-serif text-xl font-bold">{DOMAIN_PRESENTATION[p.domain].priorityHeadline}</p>
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{p.why}</p>
+              <p className="mt-2 font-serif text-xl font-bold">{p.headline}</p>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{p.explanation}</p>
+
+              {/*
+                The evidence — the answers this rests on, quoted.
+
+                This is the "Why this?" the gate asks for, and it is the whole
+                argument for a structured priority: the reason points at a
+                question that was asked and an answer that was given, neither
+                interpreted. A card that said only "this is your priority"
+                would be asking to be trusted; this one shows its working.
+              */}
+              {p.evidence.length > 0 && (
+                <details className="mt-4">
+                  <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    What this is based on
+                  </summary>
+                  <dl className="mt-3 space-y-3 text-sm">
+                    {p.evidence.map((e) => (
+                      <div key={e.questionId}>
+                        <dt className="text-muted-foreground">{e.question}</dt>
+                        <dd className="mt-0.5 font-medium text-foreground">{e.answer}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </details>
+              )}
             </div>
           ))}
         </div>

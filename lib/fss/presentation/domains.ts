@@ -1,5 +1,4 @@
 import type { FssDomain } from "@/lib/fss/questions/types"
-import type { FoodSystemScore } from "@/lib/fss/engine/score"
 
 /* ════════════════════════════════════════════════════════════════════════
    The reviewed copy for the five candidate domains.
@@ -155,46 +154,53 @@ export const DOMAIN_PRESENTATION: Record<FssDomain, DomainPresentation> = {
   },
 }
 
-export interface Priority {
-  readonly domain: FssDomain
-  readonly why: string
-}
+/* ════════════════════════════════════════════════════════════════════════
+   The reviewed copy a priority is described with.
 
-/**
- * One to three priorities — never forty.
- *
- * ── How they are chosen, and what is deliberately absent ──────────────────
- *
- * The lowest-scoring domains, and nothing cleverer. Specifically there is NO
- * "close enough" tolerance: a tolerance is a number nobody chose, and the
- * existing result component records that same refusal for the same reason.
- *
- * Ties are broken by the domain order in the scored set, which is stable — so
- * the same answers always produce the same priorities. A priority that moved
- * between two identical walks would be worse than an arbitrary one.
- *
- * `insufficient` domains are excluded: a domain we could not characterise
- * cannot be the thing we are most confident about.
- *
- * The `why` names the reported behaviour, never a Biotic. "Your biggest
- * opportunity is Postbiotics" is a personal Biotic state in words, which
- * POSTBIOTICS_INFERENCE_BOUNDARY prohibits — the same correction made across
- * every other surface in Phase 1.
- */
-export function priorityFor(score: FoodSystemScore): readonly Priority[] {
-  const scored = score.domains
-    .filter((d): d is Extract<typeof d, { state: "scored" }> => d.state === "scored")
-    .slice()
-    .sort((a, b) => a.score - b.score)
+   ── Why the SELECTION moved out and the COPY stayed ───────────────────────
 
-  if (scored.length === 0) return []
+   Gate 2 had `priorityFor` here, returning `{ domain, why }` where `why` was
+   one constant sentence. Gate 3 needs the whole chain — evidence, rationale,
+   confidence, provenance — so the selection moved to
+   `lib/fss/action/priority.ts`. It MOVED rather than being duplicated: two
+   selectors over the same five domains would drift, and the first symptom
+   would be the result page and the plan disagreeing about what matters most.
 
-  const lowest = scored[0].score
-  const chosen = scored.filter((d) => d.score === lowest).slice(0, 3)
-  const picked = chosen.length > 0 ? chosen : scored.slice(0, 1)
+   The copy stayed, because this is the module that answers to the claims
+   boundary and the component may not author a sentence.
 
-  return picked.slice(0, 3).map((d) => ({
-    domain: d.domain,
-    why: `Of the five, this is where your answers described the least — which usually makes it the most direct place to start rather than the most important one.`,
-  }))
-}
+   ── The sentence is unchanged, deliberately ───────────────────────────────
+
+   `explanation` is byte-identical to Gate 2's `why`. The restructuring must not
+   change a word a person reads, or it stops being a restructuring.
+   ════════════════════════════════════════════════════════════════════════ */
+
+export const PRIORITY_COPY = {
+  /**
+   * What a person reads. Names a RANK among reported answers, and explicitly
+   * declines to call it the most important thing — because "lowest score" and
+   * "matters most" are different claims and only the first is supported.
+   */
+  explanation:
+    "Of the five, this is where your answers described the least — which usually makes it the most direct place to start rather than the most important one.",
+
+  /**
+   * The auditable reason, for the record rather than for the page.
+   *
+   * States the arithmetic that produced the choice and says in so many words
+   * that it is a rank. `PRIORITY_MUST_NOT_MEAN` lists what it is not.
+   */
+  rationale: (domainScore: number, scoredDomains: number) =>
+    `Selected by rank: lowest of ${scoredDomains} scored domains at ${domainScore}/100, ties included. ` +
+    `A rank among reported answers, not a cause and not a judgement of the person.`,
+
+  /** When no priority can be named at all. */
+  noneAvailable:
+    "Not enough of the assessment was answered to name a place to start. Answering more of it would give us something to work with.",
+
+  /**
+   * Shown when a stored answer names an option the instrument no longer
+   * offers. Visible on purpose — a blank would read as an unanswered question.
+   */
+  unknownAnswer: "an answer this version no longer offers",
+} as const

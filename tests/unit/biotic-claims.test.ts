@@ -193,16 +193,34 @@ const EMAIL_SURFACES = [
  * moment it exists, which is the property every previous tranche lacked, and
  * the thing a developer would have to do to escape the rules is delete a
  * directory from CANDIDATE_ROOTS — which a test below refuses.
+ *
+ * ── Why `--others`, which is not decoration ──────────────────────────────────
+ *
+ * `git ls-files` alone lists TRACKED files, so a module that exists on disk but
+ * has not been staged is invisible to it. That was true the first time this ran
+ * against Gate 3's own new files: three modules sat in `lib/fss/action/`, the
+ * corpus reported the same count as before, and every rule passed by not
+ * looking. In CI it would never show, because CI only ever sees committed work —
+ * which makes it precisely the kind of hole that is found late.
+ *
+ * `--others --exclude-standard` adds untracked-but-not-ignored files, so the
+ * guard reads what a developer has written rather than what they have staged.
+ * "Guarded the moment it exists" is otherwise just a comment.
  */
 const CANDIDATE_ROOTS = ["lib/fss", "components/fss", "app/preview/food-system-v1"]
 
-const CANDIDATE_SURFACES = execSync(`git ls-files ${CANDIDATE_ROOTS.join(" ")}`, {
-  encoding: "utf-8",
-})
-  .trim()
-  .split("\n")
-  .filter((f) => /\.(ts|tsx)$/.test(f))
-  .sort()
+/** Tracked AND untracked-not-ignored, so a file is guarded the moment it exists. */
+function candidateTree(): string[] {
+  return execSync(`git ls-files --cached --others --exclude-standard ${CANDIDATE_ROOTS.join(" ")}`, {
+    encoding: "utf-8",
+  })
+    .trim()
+    .split("\n")
+    .filter((f) => /\.(ts|tsx)$/.test(f))
+    .sort()
+}
+
+const CANDIDATE_SURFACES = candidateTree()
 
 /** Everything the claim rules are enforced against. */
 const GUARDED_SURFACES = [
@@ -400,11 +418,7 @@ describe("the corpus this guard reads cannot silently shrink", () => {
       ).toBe(true)
     }
 
-    const tracked = execSync(`git ls-files ${CANDIDATE_ROOTS.join(" ")}`, { encoding: "utf-8" })
-      .trim()
-      .split("\n")
-      .filter((f) => /\.(ts|tsx)$/.test(f))
-    for (const file of tracked) {
+    for (const file of candidateTree()) {
       expect(GUARDED_SURFACES, `${file} is in the candidate tree but not guarded`).toContain(file)
     }
   })
