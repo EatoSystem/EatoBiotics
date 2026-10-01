@@ -410,6 +410,16 @@ describe("there is only ONE priority selector", () => {
       src,
       "selection is a recorded decision — the component receives it, it does not make it",
     ).not.toMatch(/resolvePriorities\(|buildPlan\(/)
+    /*
+     * AND IT MUST NOT IMPORT ONE EITHER, which the call check alone misses: an
+     * import statement has no parenthesis, so adding `import { resolvePriorities }`
+     * back — the first half of reintroducing the second selector, and the half
+     * a reviewer would wave through — slipped straight past the version above.
+     * Found by a sabotage case, not by reading.
+     */
+    expect(src, "importing a selector is the first half of calling one").not.toMatch(
+      /import[\s\S]{0,120}(resolvePriorities|buildPlan)/,
+    )
     // NON-VACUITY: it does still render priorities, so this is not passing
     // because the component stopped having anything to do with them.
     expect(src).toMatch(/priorities/)

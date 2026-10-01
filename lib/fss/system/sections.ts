@@ -1,4 +1,3 @@
-import { DOMAIN_PRESENTATION } from "@/lib/fss/presentation/domains"
 import { SECTION_COPY, SECTION_ORDER, type SectionId } from "@/lib/fss/presentation/system"
 import type { ScoreProvenance } from "@/lib/fss/engine/provenance"
 import type { FssDomain } from "@/lib/fss/questions/types"
@@ -76,7 +75,36 @@ export interface TodaySlice {
   /** Absent when the score was withheld. Not a zero. */
   readonly score: number | null
   readonly review: ReviewPoint
-  /** One reviewed sentence about the focus domain. The only prose beyond labels. */
+  /**
+   * One reviewed sentence explaining the focus. The only prose beyond labels.
+   *
+   * ── IT IS `PRIORITY_COPY.explanation`, AND IT USED TO BE `whereYouAre` ────
+   *
+   * The plan for this gate specified `DOMAIN_PRESENTATION[d].whereYouAre`, on
+   * the reasoning that it is one already-reviewed observed-behaviour sentence
+   * about the focus domain. That was wrong, and only READING THE RENDERED
+   * SCREEN showed why. On the all-2s sheet it produced:
+   *
+   *     YOUR FOCUS   Diversity: widen the range, not the amount
+   *     …
+   *     Your answers described a wide range of plant foods across a typical week.
+   *
+   * Both sentences are reviewed and both are true. Adjacent, they contradict
+   * each other: the focus says widen the range, the insight says the range is
+   * already wide. It happens because a tie at 67 makes Diversity the lowest of
+   * five AND puts it in the top band of its own ladder — "lowest of five" and
+   * "low" are different claims, and this screen had been putting them side by
+   * side as though they agreed.
+   *
+   * `explanation` cannot contradict the focus, because it explains the RANKING
+   * rather than describing the domain: "Of the five, this is where your answers
+   * described the least — which usually makes it the most direct place to start
+   * rather than the most important one." It also happens to be the sentence
+   * that handles a tie honestly.
+   *
+   * `whereYouAre` is not lost: it is where it belongs, in My Food, next to the
+   * domain it describes and beside the other four.
+   */
   readonly insight: string | null
   /** Set when the stored decisions could not be read back. */
   readonly unresolved: PriorityResolution | PlanResolution | null
@@ -112,9 +140,10 @@ export const TODAY: SectionDescriptor<TodaySlice> = {
       weekRemaining: week.filter((a) => a.state === "planned").length,
       score: typeof system.score.score === "number" ? system.score.score : null,
       review: system.review,
-      insight: focus
-        ? DOMAIN_PRESENTATION[focus.sourceDomain].whereYouAre(focus.domainScore)
-        : null,
+      // `focus.explanation` IS `PRIORITY_COPY.explanation`, carried on the
+      // priority rather than looked up again — so the sentence on Today is the
+      // same object the priority was described with, not a second copy of it.
+      insight: focus ? focus.explanation : null,
       unresolved:
         priorities.state === "unresolvable"
           ? priorities

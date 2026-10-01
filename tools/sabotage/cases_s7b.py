@@ -891,10 +891,22 @@ CASES = [
      '    category: "rejuvenate",\n    timeHorizon: "today",\n    title: "Protect today\'s meal that usually slips",',
      '    category: "seed",\n    timeHorizon: "today",\n    title: "Protect today\'s meal that usually slips",',
      ACATT),
+    # ── RE-ANCHORED IN GATE 4 ────────────────────────────────────────────────
+    #
+    # `bind` was exported as `bindRecommendation` and `thirtyDayFocus` as
+    # `describeThirtyDayFocus`, so Gate 4's stored-decision reader could bind
+    # recorded catalogue ids through the SAME functions rather than a second
+    # copy of them. Both anchors below named the old symbols and became
+    # unresolvable — caught by the anchor audit, not by the suite, which
+    # reported 171/171 either way.
+    #
+    # The invariants under test are untouched: ONE action for the plan rather
+    # than one per priority, and ONE priority for the month. Only the symbol
+    # names moved.
 
     (1046, "Today returns one action per priority instead of one for the plan", APLAN,
-     '      today = bind(candidate, p, provenance)\n      break',
-     '      today = bind(candidate, p, provenance)',
+     '      today = bindRecommendation(candidate, p, provenance)\n      break',
+     '      today = bindRecommendation(candidate, p, provenance)',
      APLANT),
 
     (1047, "the weekly set fills from the first priority only", APLAN,
@@ -918,8 +930,8 @@ CASES = [
      APLANT + AMODEL),
 
     (1049, "the thirty-day focus takes every priority rather than one", APLAN,
-     '    thirtyDays: thirtyDayFocus(priorities[0]),',
-     '    thirtyDays: thirtyDayFocus(priorities[priorities.length - 1]),',
+     '    thirtyDays: describeThirtyDayFocus(priorities[0]),',
+     '    thirtyDays: describeThirtyDayFocus(priorities[priorities.length - 1]),',
      APLANT),
 
     (1050, "a recommendation loses its claim boundary", ACATALOGUE,

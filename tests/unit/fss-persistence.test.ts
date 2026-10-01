@@ -109,6 +109,49 @@ describe("the local adapter is the active backend", () => {
     await expect(repo.loadAssessment("x")).resolves.toBeNull()
   })
 
+  it("but a STRICT write reports the same failure rather than swallowing it", async () => {
+    /*
+     * The other half of the two write behaviours, and the half that had no
+     * assertion until a sabotage case pointed it out.
+     *
+     * The no-window test below covers one way a strict write can fail. This
+     * covers the one that actually happens to people: `setItem` throwing at
+     * quota, or in private browsing. With a window PRESENT and `setItem`
+     * throwing, the lenient path and the strict path run the same code until
+     * the catch — so a `catch {}` in `writeStrict` would look identical to the
+     * correct version from everywhere except here.
+     *
+     * If this swallowed, establishment would write the `system.current`
+     * pointer after a score that was never stored.
+     */
+    ;(globalThis as { window?: unknown }).window = {
+      localStorage: {
+        getItem() { return null },
+        setItem() { throw new Error("QuotaExceededError") },
+      },
+    }
+    const repo = new LocalStorageRepository()
+    const score = {
+      id: "score_quota", assessmentId: "a", state: "scored" as const, score: 50,
+      domains: [], completeness: 1,
+      provenance: {
+        fssMethodVersion: "fss-v1.0", assessmentVersion: "assessment-v1.0",
+        questionSetVersion: "questions-v1.0", calculationVersion: "calc-v1.0",
+        interpretationVersion: "interpretation-v1.0",
+      },
+      computedAt: "",
+    }
+    await expect(repo.saveScore(score)).rejects.toThrow(RepositoryWriteFailed)
+    await expect(repo.setCurrentSystem("system_x")).rejects.toThrow(RepositoryWriteFailed)
+
+    // And the lenient one still does not, with the same storage underneath.
+    await expect(
+      repo.saveAssessment({
+        id: "x", assessmentVersion: "a", questionSetVersion: "q", answers: {}, startedAt: "",
+      }),
+    ).resolves.toBeUndefined()
+  })
+
   it("reads server-side, where there is no window at all", async () => {
     ;(globalThis as { window?: unknown }).window = undefined
     const repo = new LocalStorageRepository()
