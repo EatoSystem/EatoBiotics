@@ -147,23 +147,89 @@ export function resolvePriorities(args: {
    */
   const chosen = scored.filter((d) => d.score === lowest).slice(0, PRIORITY_MAX)
 
-  return chosen.map((d) => {
-    const presentation = DOMAIN_PRESENTATION[d.domain]
-    return {
-      id: `priority:${d.domain}`,
-      sourceDomain: d.domain,
+  return chosen.map((d) =>
+    describePriority({
+      domain: d.domain,
       domainScore: d.score,
-      evidence: evidenceFor(set, answers, d.domain),
-      rationale: PRIORITY_COPY.rationale(d.score, scored.length),
-      explanation: PRIORITY_COPY.explanation,
-      headline: presentation.priorityHeadline,
-      confidence: {
-        answered: d.answered,
-        total: d.total,
-        completeness: d.total === 0 ? 0 : d.answered / d.total,
-      },
-      status: "candidate-pending-review",
+      answered: d.answered,
+      total: d.total,
+      scoredDomains: scored.length,
+      set,
+      answers,
       provenance,
-    }
-  })
+    }),
+  )
+}
+
+/**
+ * Describe ONE priority, for a domain somebody has already selected.
+ *
+ * ── Why selection and description are two functions ───────────────────────
+ *
+ * Because Gate 4 persists the SELECTION and derives the DESCRIPTION, and those
+ * two halves must not be able to disagree.
+ *
+ * `resolvePriorities` is the selection: it reads the scored domains, finds the
+ * lowest, and decides. That decision is a versioned product decision — it is
+ * stored, under `SYSTEM_MODEL_VERSION`, because reopening a Food System six
+ * months from now must not silently re-decide it under a newer rule.
+ *
+ * This is the description: given a domain that was chosen, it produces the
+ * evidence, the rationale, the reviewed sentence and the confidence. All of
+ * that regenerates from versioned inputs, so persisting it would make a copy
+ * edit a data migration.
+ *
+ * The split is structural rather than stylistic: `resolvePriorities` calls
+ * THIS, so there is exactly one place a priority is described, and a stored
+ * decision read back through it is described identically to a fresh one. Two
+ * code paths would drift, and the first symptom would be a historical plan
+ * whose explanation no longer matched its own selection.
+ *
+ * ── It makes no selection claim ───────────────────────────────────────────
+ *
+ * It does not check that `domain` is the lowest, and it must not: the caller
+ * either just selected it or is reading back a selection that was made under a
+ * policy this code no longer implements. Re-asserting the rule here would turn
+ * a historical record into a disagreement with the present.
+ */
+export function describePriority(args: {
+  domain: FssDomain
+  domainScore: number
+  answered: number
+  total: number
+  /** How many domains were scored, for the auditable rank sentence. */
+  scoredDomains: number
+  set: ResolvedQuestionSet
+  answers: Answers
+  provenance: ScoreProvenance
+}): ResolvedPriority {
+  const { domain, domainScore, answered, total, scoredDomains, set, answers, provenance } = args
+  return {
+    id: priorityIdFor(domain),
+    sourceDomain: domain,
+    domainScore,
+    evidence: evidenceFor(set, answers, domain),
+    rationale: PRIORITY_COPY.rationale(domainScore, scoredDomains),
+    explanation: PRIORITY_COPY.explanation,
+    headline: DOMAIN_PRESENTATION[domain].priorityHeadline,
+    confidence: {
+      answered,
+      total,
+      completeness: total === 0 ? 0 : answered / total,
+    },
+    status: "candidate-pending-review",
+    provenance,
+  }
+}
+
+/**
+ * The stable id for a priority on one domain.
+ *
+ * Derived from the domain and never from a counter, which is what lets a
+ * stored decision reference it and a later read find it again. One function so
+ * the format exists once: a second literal `priority:${domain}` somewhere else
+ * would be a second definition of an identity.
+ */
+export function priorityIdFor(domain: FssDomain): string {
+  return `priority:${domain}`
 }

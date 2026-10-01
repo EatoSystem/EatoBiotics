@@ -52,8 +52,16 @@ import {
    Every horizon says WHEN YOU DO IT and never when it works. See `horizons.ts`.
    ════════════════════════════════════════════════════════════════════════ */
 
-/** Bind reviewed content to one person's priority. */
-function bind(
+/**
+ * Bind reviewed content to one person's priority.
+ *
+ * Exported because Gate 4 reads a STORED plan decision back and must bind the
+ * recorded catalogue ids through this same function. A second binder would be
+ * a second definition of what a recommendation is, and the first symptom would
+ * be a historical plan whose recommendations carried a different
+ * `actionSetVersion` than the plan that produced them.
+ */
+export function bindRecommendation(
   entry: CatalogueEntry,
   priority: ResolvedPriority,
   provenance: ScoreProvenance,
@@ -111,7 +119,7 @@ function weeklySet(
       if (out.length >= THIS_WEEK_MAX) break
       const next = q.rest.shift()
       if (!next) continue
-      out.push(bind(next, q.p, provenance))
+      out.push(bindRecommendation(next, q.p, provenance))
       progressed = true
     }
   }
@@ -126,7 +134,7 @@ function weeklySet(
  * a month spent holding none. `whyThisOne` is reviewed copy per domain, and
  * nothing here composes a sentence.
  */
-function thirtyDayFocus(priority: ResolvedPriority): ThirtyDayFocus {
+export function describeThirtyDayFocus(priority: ResolvedPriority): ThirtyDayFocus {
   const copy = THIRTY_DAY_FOCUS[priority.sourceDomain]
   return {
     sourcePriorityId: priority.id,
@@ -187,7 +195,7 @@ export function buildPlan(args: {
   for (const p of priorities) {
     const candidate = offerable(p, "today", context)[0]
     if (candidate) {
-      today = bind(candidate, p, provenance)
+      today = bindRecommendation(candidate, p, provenance)
       break
     }
   }
@@ -196,6 +204,6 @@ export function buildPlan(args: {
     ...base,
     today,
     thisWeek: weeklySet(priorities, context, provenance),
-    thirtyDays: thirtyDayFocus(priorities[0]),
+    thirtyDays: describeThirtyDayFocus(priorities[0]),
   }
 }

@@ -1,4 +1,4 @@
-import type { StoredAction } from "@/lib/fss/persistence/repository"
+import type { ActionState, StoredAction } from "@/lib/fss/persistence/repository"
 import { ACTION_CATALOGUE } from "./catalogue"
 import { ACTION_SET_VERSION, type Recommendation } from "./types"
 
@@ -50,10 +50,16 @@ export function toStoredAction(args: {
   id: string
   scoreId: string
   recommendation: Recommendation
-  status: StoredAction["status"]
+  state: ActionState
   createdAt: string
+  /**
+   * When the state last moved. Defaults to `createdAt`, so a freshly created
+   * action reports "never changed" as a real timestamp rather than a null the
+   * reader has to interpret.
+   */
+  changedAt?: string
 }): StoredAction {
-  const { id, scoreId, recommendation: r, status, createdAt } = args
+  const { id, scoreId, recommendation: r, state, createdAt } = args
   return {
     id,
     scoreId,
@@ -64,9 +70,29 @@ export function toStoredAction(args: {
     timeHorizon: r.timeHorizon,
     provenance: r.provenance,
     actionSetVersion: r.actionSetVersion,
-    status,
+    state,
     createdAt,
+    changedAt: args.changedAt ?? createdAt,
   }
+}
+
+/**
+ * Move one action to a new state.
+ *
+ * Returns a NEW record — nothing is mutated — and takes the time as a
+ * parameter for the same reason `toStoredAction` does: a caller decides when
+ * something happened, and a test can say so exactly.
+ *
+ * It asserts nothing about what the move means. There is no outcome parameter,
+ * no benefit, and no effect: a person marking an action done is reporting what
+ * they did, and this product cannot see what it did inside them.
+ */
+export function withActionState(
+  stored: StoredAction,
+  state: ActionState,
+  changedAt: string,
+): StoredAction {
+  return { ...stored, state, changedAt }
 }
 
 /**

@@ -380,12 +380,39 @@ describe("there is only ONE priority selector", () => {
     ).not.toMatch(/export function priorityFor/)
   })
 
-  it("and the result component reads the new one", () => {
+  it("and the result component calls NO selector at all", () => {
+    /*
+     * ── REPOINTED IN GATE 4, AND THE DIRECTION IS WORTH STATING ───────────
+     *
+     * This asserted `resolvePriorities(` was PRESENT in the result component.
+     * Gate 4 moved selection out of it, so the old assertion would now fail —
+     * which is the right reason for a guard to fail, so it is repointed rather
+     * than deleted, and the invariant it protects gets stronger rather than
+     * weaker.
+     *
+     * The invariant was "there is only one priority selector". Gate 3 satisfied
+     * it by having the component call the single shared one. Gate 4 cannot: a
+     * selection is now a DECISION, written down under `SYSTEM_MODEL_VERSION`
+     * and read back, so a component that selected for itself would be a second
+     * selector again — agreeing today, diverging the first time the rule moved,
+     * and showing a result page that disagreed with the Food System it had just
+     * created.
+     *
+     * So the component now calls NEITHER selector and receives the selection as
+     * a prop. Both halves are asserted: the Gate 2 function is still gone, and
+     * the Gate 3 one is not called here either.
+     */
     const src = code("components/fss/candidate-result.tsx")
-    expect(src).toMatch(/resolvePriorities\(/)
     expect(src, "the component must not still call the Gate 2 selector").not.toMatch(
       /priorityFor\(/,
     )
+    expect(
+      src,
+      "selection is a recorded decision — the component receives it, it does not make it",
+    ).not.toMatch(/resolvePriorities\(|buildPlan\(/)
+    // NON-VACUITY: it does still render priorities, so this is not passing
+    // because the component stopped having anything to do with them.
+    expect(src).toMatch(/priorities/)
   })
 
   it("NON-VACUITY: the stripper does not hide a real call", () => {

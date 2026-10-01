@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ArrowLeft, ArrowRight } from "lucide-react"
 import type { AssessmentPart, ResolvedQuestion, ResolvedQuestionSet } from "@/lib/fss/questions/types"
 import type { Answers } from "@/lib/fss/engine/score"
@@ -57,6 +57,38 @@ const PART_META: Record<AssessmentPart, { n: string; title: string; note?: strin
   },
 }
 
+/* ════════════════════════════════════════════════════════════════════════
+   GATE 4 — three writer defects, fixed because a persistent home exposes them.
+
+   All three were harmless while the walk ended at a result page and all three
+   are load-bearing once a Food System is established from what this writes.
+
+   1. `startedAt` WAS RECOMPUTED ON EVERY ANSWER. `new Date().toISOString()`
+      sat inside the per-answer save, so the field named "started at" actually
+      meant "last answered at" and drifted forward twenty times during one
+      assessment. A Food System established from it would record a start time
+      later than several of its own answers.
+
+   2. `completedAt` WAS NEVER WRITTEN. The type has carried it as optional
+      since Gate 2 and nothing set it, so "finished" and "abandoned on the last
+      question" were the same stored state.
+
+   3. THE QUESTION INDEX WAS NOT PERSISTED. A refresh restored every answer and
+      then returned the person to question one, which reads as having lost the
+      work it had in fact kept. The index is restored from the answers rather
+      than stored as a separate field — the first unanswered question in asked
+      order IS the resume point, and a stored cursor could disagree with the
+      answers it was meant to describe.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/** The resume point: the first question in asked order with no answer yet. */
+function resumeIndex(questions: readonly ResolvedQuestion[], answers: Answers): number {
+  const next = questions.findIndex((q) => typeof answers[q.id] !== "number")
+  // All answered: sit on the last question rather than past the end, so a
+  // person who refreshes after finishing sees something rather than nothing.
+  return next === -1 ? Math.max(0, questions.length - 1) : next
+}
+
 export function CandidateAssessment({
   set,
   onComplete,
@@ -67,6 +99,13 @@ export function CandidateAssessment({
   const [answers, setAnswers] = useState<Answers>({})
   const [index, setIndex] = useState(0)
   const [hydrated, setHydrated] = useState(false)
+  /*
+   * The real start time, written once and then carried.
+   *
+   * Held in a ref rather than state because nothing renders it and a re-render
+   * on the first answer would be a side effect of recording a timestamp.
+   */
+  const startedAt = useRef<string | null>(null)
 
   const questions = set.questions
   const current = questions[index]
@@ -79,22 +118,30 @@ export function CandidateAssessment({
       const stored = await foodSystemRepository().loadAssessment("candidate")
       if (!cancelled && stored && stored.questionSetVersion === set.questionSetVersion) {
         setAnswers(stored.answers)
+        // Defect 1: the stored start time is kept, not overwritten.
+        startedAt.current = stored.startedAt
+        // Defect 3: resume where they left off, not at question one.
+        setIndex(resumeIndex(set.questions, stored.answers))
       }
       if (!cancelled) setHydrated(true)
     })()
     return () => {
       cancelled = true
     }
-  }, [set.questionSetVersion])
+  }, [set.questionSetVersion, set.questions])
 
   const persist = useCallback(
-    (next: Answers) => {
+    (next: Answers, completed: boolean) => {
+      // Defect 1: set once, on the first save of this walk, and never again.
+      startedAt.current ??= new Date().toISOString()
       void foodSystemRepository().saveAssessment({
         id: "candidate",
         assessmentVersion: set.assessmentVersion,
         questionSetVersion: set.questionSetVersion,
         answers: next,
-        startedAt: new Date().toISOString(),
+        startedAt: startedAt.current,
+        // Defect 2: written exactly when the last answer arrives.
+        ...(completed ? { completedAt: new Date().toISOString() } : {}),
       })
     },
     [set.assessmentVersion, set.questionSetVersion],
@@ -103,9 +150,10 @@ export function CandidateAssessment({
   const answer = useCallback(
     (value: number) => {
       const next = { ...answers, [current.id]: value }
+      const isLast = index + 1 >= questions.length
       setAnswers(next)
-      persist(next)
-      if (index + 1 < questions.length) setIndex(index + 1)
+      persist(next, isLast)
+      if (!isLast) setIndex(index + 1)
       else onComplete(next)
     },
     [answers, current, index, questions.length, onComplete, persist],

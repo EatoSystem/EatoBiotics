@@ -1,10 +1,14 @@
 "use client"
 
 import {
+  RepositoryWriteFailed,
   RepositoryWriteRefused,
   type FoodSystemRepository,
   type StoredAction,
   type StoredAssessment,
+  type StoredFoodSystem,
+  type StoredPlanDecision,
+  type StoredPriorityDecision,
   type StoredScore,
 } from "./repository"
 
@@ -18,9 +22,33 @@ import {
  * has blocked site data. A candidate assessment that crashes because storage
  * is unavailable would be a worse failure than one that simply does not
  * remember.
+ *
+ * ══ TWO WRITE BEHAVIOURS, NAMED APART ═══════════════════════════════════════
+ *
+ * There is one lenient write and one strict write, and the difference is not a
+ * style choice — it is the only thing standing between a failed storage write
+ * and a half-created Food System being presented as current.
+ *
+ *   `write`        swallows the failure. Used for the ASSESSMENT IN PROGRESS,
+ *                  saved on every answer. Someone twenty questions in should
+ *                  not be shown an error because their browser is in private
+ *                  mode. Losing the answers is recoverable; crashing is not.
+ *
+ *   `writeStrict`  throws `RepositoryWriteFailed`. Used for EVERYTHING ELSE.
+ *                  Establishing a Food System is an ordered sequence ending in
+ *                  the `system.current` pointer, and `localStorage` has no
+ *                  transactions — so the order IS the guarantee. A silent
+ *                  failure at step 2 followed by a successful step 7 would make
+ *                  a system current that has no score behind it.
+ *
+ * One behaviour used for two jobs would have had to pick which failure to
+ * accept. Two behaviours let each job have the one that is right for it.
  */
 
 const PREFIX = "eatobiotics.fss.v1."
+
+/** The one unkeyed slot in the store, and the commit point of establishment. */
+const CURRENT_SYSTEM_KEY = "system.current"
 
 function read<T>(key: string): T | null {
   if (typeof window === "undefined") return null
@@ -32,6 +60,7 @@ function read<T>(key: string): T | null {
   }
 }
 
+/** Lenient. For the assessment in progress only. See the docblock. */
 function write(key: string, value: unknown): void {
   if (typeof window === "undefined") return
   try {
@@ -42,9 +71,29 @@ function write(key: string, value: unknown): void {
   }
 }
 
+/**
+ * Strict. Reports failure to its caller.
+ *
+ * Also throws when there is no `window`, which matters: a server-rendered call
+ * that silently did nothing would look like a successful write to the
+ * establishment path, and the path would go on to write the pointer.
+ */
+function writeStrict(key: string, value: unknown): void {
+  if (typeof window === "undefined") {
+    throw new RepositoryWriteFailed(key, "no window — this write only happens in the browser")
+  }
+  try {
+    window.localStorage.setItem(PREFIX + key, JSON.stringify(value))
+  } catch (cause) {
+    throw new RepositoryWriteFailed(key, cause)
+  }
+}
+
 export class LocalStorageRepository implements FoodSystemRepository {
   readonly backend = "local" as const
   readonly writable = true
+
+  /* ── The assessment: lenient ───────────────────────────────────────────── */
 
   async loadAssessment(id: string): Promise<StoredAssessment | null> {
     return read<StoredAssessment>(`assessment.${id}`)
@@ -54,12 +103,14 @@ export class LocalStorageRepository implements FoodSystemRepository {
     write(`assessment.${assessment.id}`, assessment)
   }
 
-  async loadLatestScore(): Promise<StoredScore | null> {
-    return read<StoredScore>("score.latest")
+  /* ── Everything else: strict ───────────────────────────────────────────── */
+
+  async loadScore(id: string): Promise<StoredScore | null> {
+    return read<StoredScore>(`score.${id}`)
   }
 
   async saveScore(score: StoredScore): Promise<void> {
-    write("score.latest", score)
+    writeStrict(`score.${score.id}`, score)
   }
 
   async loadActions(scoreId: string): Promise<readonly StoredAction[]> {
@@ -68,7 +119,54 @@ export class LocalStorageRepository implements FoodSystemRepository {
 
   async saveAction(action: StoredAction): Promise<void> {
     const existing = await this.loadActions(action.scoreId)
-    write(`actions.${action.scoreId}`, [...existing.filter((a) => a.id !== action.id), action])
+    writeStrict(`actions.${action.scoreId}`, [
+      ...existing.filter((a) => a.id !== action.id),
+      action,
+    ])
+  }
+
+  async loadPriorityDecision(scoreId: string): Promise<StoredPriorityDecision | null> {
+    return read<StoredPriorityDecision>(`priority-decision.${scoreId}`)
+  }
+
+  async savePriorityDecision(decision: StoredPriorityDecision): Promise<void> {
+    writeStrict(`priority-decision.${decision.scoreId}`, decision)
+  }
+
+  async loadPlanDecision(scoreId: string): Promise<StoredPlanDecision | null> {
+    return read<StoredPlanDecision>(`plan-decision.${scoreId}`)
+  }
+
+  async savePlanDecision(decision: StoredPlanDecision): Promise<void> {
+    writeStrict(`plan-decision.${decision.scoreId}`, decision)
+  }
+
+  async loadSystem(id: string): Promise<StoredFoodSystem | null> {
+    return read<StoredFoodSystem>(`system.${id}`)
+  }
+
+  async saveSystem(system: StoredFoodSystem): Promise<void> {
+    writeStrict(`system.${system.id}`, system)
+  }
+
+  /* ── The pointer. Written last, by its own call. ───────────────────────── */
+
+  async loadCurrentSystemId(): Promise<string | null> {
+    return read<string>(CURRENT_SYSTEM_KEY)
+  }
+
+  async setCurrentSystem(systemId: string): Promise<void> {
+    writeStrict(CURRENT_SYSTEM_KEY, systemId)
+  }
+
+  async clearCurrentSystem(): Promise<void> {
+    if (typeof window === "undefined") return
+    try {
+      window.localStorage.removeItem(PREFIX + CURRENT_SYSTEM_KEY)
+    } catch {
+      // Nothing to do and nothing to report: the pointer is already
+      // unreadable, which is the state this call was asked to produce.
+    }
   }
 }
 
@@ -109,7 +207,7 @@ export class SupabaseRepositoryDisabled implements FoodSystemRepository {
   async saveAssessment(): Promise<void> {
     this.refuse()
   }
-  async loadLatestScore(): Promise<StoredScore | null> {
+  async loadScore(): Promise<StoredScore | null> {
     return null
   }
   async saveScore(): Promise<void> {
@@ -119,6 +217,33 @@ export class SupabaseRepositoryDisabled implements FoodSystemRepository {
     return []
   }
   async saveAction(): Promise<void> {
+    this.refuse()
+  }
+  async loadPriorityDecision(): Promise<StoredPriorityDecision | null> {
+    return null
+  }
+  async savePriorityDecision(): Promise<void> {
+    this.refuse()
+  }
+  async loadPlanDecision(): Promise<StoredPlanDecision | null> {
+    return null
+  }
+  async savePlanDecision(): Promise<void> {
+    this.refuse()
+  }
+  async loadSystem(): Promise<StoredFoodSystem | null> {
+    return null
+  }
+  async saveSystem(): Promise<void> {
+    this.refuse()
+  }
+  async loadCurrentSystemId(): Promise<string | null> {
+    return null
+  }
+  async setCurrentSystem(): Promise<void> {
+    this.refuse()
+  }
+  async clearCurrentSystem(): Promise<void> {
     this.refuse()
   }
 }
