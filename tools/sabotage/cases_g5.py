@@ -17,6 +17,8 @@
 # claims in Gate 3.6; that lesson is what these cases are aimed at.
 
 PATTERNS = "lib/account/patterns.ts"
+DASHBOARD = "components/account/dashboard-client-data.ts"
+EMAIL = "lib/email/sequence-email.ts"
 
 CLAIMS = ["tests/unit/agent-loop-claims.test.ts"]
 
@@ -60,5 +62,38 @@ CASES = [
      "tests/unit/agent-loop-claims.test.ts",
      "    weekendFixture(true),\n    weekendFixture(false),\n    repeatFixture(),\n    rhythmFixture(),",
      "  ",
+     CLAIMS),
+
+    # ── Step 0.5 · the two remaining known claims ───────────────────────────
+    #
+    # Each restores one personal-biology claim. The guard that catches them
+    # CALLS `getProfileInfo` over every key in the table rather than scanning
+    # the file, because a rule aimed at one entry says nothing about the other
+    # seven — and three of the eight were asserting a biological state.
+    (1306, "the demo dashboard asserts an inner food system is working", DASHBOARD,
+     'tagline: "Your answers described a wide range of foods, arriving consistently."',
+     'tagline: "Your inner food system is working hard in your favour."',
+     CLAIMS),
+
+    (1307, "a legacy profile asserts food system health is performing", DASHBOARD,
+     'tagline: "Your answers described strong, steady food patterns across the week."',
+     'tagline: "Your food system health is performing at its peak."',
+     CLAIMS),
+
+    (1308, "a legacy profile asserts the gut is ready for more", DASHBOARD,
+     'tagline: "Your answers described room for more — more variety, more plants, more fibre."',
+     'tagline: "Your gut is ready for more — more variety, more plants, more life."',
+     CLAIMS),
+
+    (1309, "the lifecycle email turns the score into a claim about the body", EMAIL,
+     "your Biotics Score\u2122 summarises patterns in the answers you gave about how you currently eat",
+     "your Biotics Score\u2122 reflects something real about how your food system is working right now",
+     CLAIMS),
+
+    # And the guard's own coverage: narrowing it to one tagline must fail,
+    # because that is precisely how three of eight went unread.
+    (1310, "the tagline guard stops reading the whole table", "tests/unit/agent-loop-claims.test.ts",
+     "      ...Object.values(PROFILE_INFO).map((p) => p.tagline),",
+     "      PROFILE_INFO[\"Strong Foundation\"].tagline,",
      CLAIMS),
 ]

@@ -15,6 +15,12 @@ import { systemMapState } from "@/lib/account/system-map"
 import { loopBehaviour, mealBehaviour, behaviourFor } from "@/lib/agent-loop/behaviour"
 import { BIOTIC_LABELS } from "@/lib/agent-loop/biotics"
 import { pillarBehaviour } from "@/lib/pillars"
+import { buildSequenceEmail } from "@/lib/email/sequence-email"
+import {
+  DEFAULT_PROFILE_INFO,
+  PROFILE_INFO,
+  getProfileInfo,
+} from "@/components/account/dashboard-client-data"
 import type { BioticKey, BioticsSource } from "@/lib/agent-loop/types"
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -655,6 +661,106 @@ describe("NON-VACUITY", () => {
 
   it("the harness itself is not vacuous — assertClean fails on a known claim", () => {
     expect(() => assertClean("probe", ["Your Postbiotics slipped 8 points"])).toThrow()
+  })
+
+  /* ══ GATE 5 step 0.5 — the profile taglines, READ RATHER THAN SCANNED ══════
+   *
+   * `getProfileInfo` is a lookup, not a generator, so the obvious guard would
+   * be a per-file source pin. This calls it instead, over EVERY key the table
+   * holds plus the default and an unknown type, because step 0's lesson was
+   * that a guard sees only what it is handed: three live pattern generators had
+   * never had a sentence read because the fixture never produced them.
+   *
+   * A table is the easy version of that problem — a rule aimed at one entry
+   * says nothing about the other seven, and three of the eight here were
+   * asserting a biological state.
+   */
+  it("no profile tagline asserts a biological state", () => {
+    const BIOLOGY_CLAIM =
+      /\b(?:your (?:inner )?(?:food system|gut|system|body|microbiome))\b[^.!?]{0,40}\b(?:is|are|working|performing|ready|thriving|healthy)\b|\bfood system health\b/i
+
+    const taglines = [
+      ...Object.values(PROFILE_INFO).map((p) => p.tagline),
+      DEFAULT_PROFILE_INFO.tagline,
+      getProfileInfo(null).tagline,
+      getProfileInfo("Not A Real Profile").tagline,
+    ]
+
+    // Non-vacuity: every entry in the table was actually inspected.
+    expect(taglines.length).toBeGreaterThanOrEqual(Object.keys(PROFILE_INFO).length + 1)
+
+    for (const tagline of taglines) {
+      expect(tagline, `a tagline asserts a biological state: ${tagline}`).not.toMatch(
+        BIOLOGY_CLAIM,
+      )
+      // And the claim rules the rest of this file runs apply here too.
+      assertClean(`tagline ${JSON.stringify(tagline)}`, [tagline])
+    }
+  })
+
+  it("NON-VACUITY: the three removed taglines would all have failed", () => {
+    /*
+     * Kept as literals because the module no longer contains them — a
+     * non-vacuity case that read its subject from the corrected table would
+     * prove only that the table is corrected.
+     */
+    const BIOLOGY_CLAIM =
+      /\b(?:your (?:inner )?(?:food system|gut|system|body|microbiome))\b[^.!?]{0,40}\b(?:is|are|working|performing|ready|thriving|healthy)\b|\bfood system health\b/i
+
+    for (const was of [
+      "Your inner food system is working hard in your favour.",
+      "Your food system health is performing at its peak.",
+      "Your gut is ready for more — more variety, more plants, more life.",
+    ]) {
+      expect(was, `the rule would not have caught: ${was}`).toMatch(BIOLOGY_CLAIM)
+    }
+
+    // …and the replacements pass, so the rule did not simply delete the voice.
+    for (const now of [
+      "Your answers described a wide range of foods, arriving consistently.",
+      "Your answers described strong, steady food patterns across the week.",
+      "Your answers described room for more — more variety, more plants, more fibre.",
+    ]) {
+      expect(now).not.toMatch(BIOLOGY_CLAIM)
+    }
+  })
+
+  it("the lifecycle email describes the measurement, not the biology", () => {
+    /*
+     * `sequence-email.ts` has form here: it was still rendering a per-Biotic
+     * number and a filled bar months after every page had lost them, and it is
+     * where the Tranche 2C audit found a personal-Postbiotic sentence. An inbox
+     * is the surface nobody re-reads.
+     */
+    const day0 = buildSequenceEmail({
+      name: "Sam",
+      email: "sam@example.com",
+      score: 67,
+      profileType: "Emerging Balance",
+      weakestPillar: "feed",
+      dayOffset: 0,
+    })
+    /*
+     * ── `assertClean` IS THE WRONG INSTRUMENT HERE, AND THAT IS THE POINT ──
+     *
+     * The first version of this test called it on the rendered html and failed
+     * on "Prebiotics" — because `GENERATED_CLAIM_RULES` refuses ANY mention of
+     * a Biotic. That strictness is correct for the generators above, which
+     * "have no educational register to protect", and wrong for an email whose
+     * reviewed Tranche 2C wording deliberately NAMES the three as the
+     * foundation the score is built on.
+     *
+     * Running it anyway would have deleted true education to satisfy a rule
+     * aimed at something else — the same over-reach that nearly removed
+     * `/biotics`'s own heading in Gate 3.6. `PERSONAL_BIOTIC_STATE` already
+     * covers this file through the `biotic-claims.test.ts` corpus; what is
+     * asserted here is the one thing that corpus cannot see, which is whether
+     * the score is described as a summary of answers or as a working system.
+     */
+    expect(day0.html, "the score summarises answers, not a working system").not.toMatch(
+      /how your food system is working/i,
+    )
+    expect(day0.html).toMatch(/summarises patterns in the answers you gave/i)
   })
 
   /**

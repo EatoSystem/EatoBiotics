@@ -71,7 +71,22 @@ function getEmailContent(opts: SequenceEmailOpts): EmailContent {
       return {
         subject: `Your Biotics Score™ is ${score}/100`,
         headline: `${firstName}, your Biotics Score™ is ${score}/100`,
-        body: `You've completed your Food System Assessment and your Biotics Score™ reflects something real about how your food system is working right now. Your profile is <strong>${profileType}</strong>.<br /><br />Prebiotics, Probiotics and Postbiotics are the foundation the score is built on. Right now the most useful place to start is <strong>${priority}</strong>.`,
+        /*
+         * GATE 5 — describe the measurement, not the biology.
+         *
+         * This read: "your Biotics Score™ reflects something real about how
+         * your food system is working right now". It turned a
+         * questionnaire-derived number into an assertion about the person's
+         * underlying system — the boundary several gates have been spent
+         * tightening, in an inbox, where nobody reviews it twice.
+         *
+         * The score summarises ANSWERS. That is all it has ever seen. The rest
+         * of this email is unchanged: the profile type, the Three Biotics
+         * foundation line and the priority all stay as Tranche 2C left them,
+         * because a correction is never an excuse to rewrite what was already
+         * reviewed.
+         */
+        body: `You've completed your Food System Assessment, and your Biotics Score™ summarises patterns in the answers you gave about how you currently eat. Your profile is <strong>${profileType}</strong>.<br /><br />Prebiotics, Probiotics and Postbiotics are the foundation the score is built on. Right now the most useful place to start is <strong>${priority}</strong>.`,
         cta: "See My Score Breakdown",
         ctaUrl: `${baseUrl}/assessment`,
         showScores: true,
