@@ -431,15 +431,24 @@ export const THIRTY_DAY_FOCUS: Record<FssDomain, ThirtyDayCopy> = {
 /**
  * Where a reassessment sits, and what it would be allowed to say.
  *
- * Computes nothing. The comparability rule is taken from the Gate 2 comparison
- * primitive rather than restated, so there is one place that decides what two
- * results may be said about each other — and
- * `COMPARISON_LANGUAGE.methodChanged` is the sentence that refuses the
- * comparison when the method has moved.
+ * Computes nothing. The rule is taken from the Gate 2 comparison primitive
+ * rather than restated, so there is one place that decides what two results may
+ * be said about each other.
+ *
+ * ── It uses `rule`, and the first version used `methodChanged` ────────────
+ *
+ * That was wrong, and only reading the rendered page caught it.
+ * `methodChanged` is PAST TENSE — "the way we calculate this changed between
+ * these two results" — and it was being shown to somebody who had taken the
+ * assessment once, announcing a change between two results they did not have.
+ * A sentence asserting something that has not happened is exactly the class of
+ * defect this layer exists to prevent, so it is worth the note: the test suite
+ * was green, because every test asserted the two strings were EQUAL rather
+ * than asking whether the sentence was true where it appeared.
  */
 export const REASSESSMENT: ReassessmentPoint = {
   afterDays: 30,
   whatItCompares:
     "The answers you would give then, against the ones you gave today. Reported food patterns — not biology, and not a measure of health.",
-  comparabilityRule: COMPARISON_LANGUAGE.methodChanged,
+  comparabilityRule: COMPARISON_LANGUAGE.rule,
 }

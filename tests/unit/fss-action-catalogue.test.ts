@@ -410,10 +410,29 @@ describe("every authored entry is reachable", () => {
 describe("the reassessment point states a rule rather than computing one", () => {
   it("delegates comparability to the Gate 2 primitive", () => {
     expect(REASSESSMENT.afterDays).toBe(30)
+    /*
+     * REPOINTED, and the reason is the finding.
+     *
+     * This asserted `methodChanged` — which is correct about PROVENANCE (the
+     * sentence does come from compare.ts) and wrong about MEANING.
+     * `methodChanged` is past tense: "the way we calculate this changed
+     * between these two results". It was being shown to somebody who had taken
+     * the assessment once, announcing a change between two results they did
+     * not have.
+     *
+     * The test passed throughout, because it asked where the string came from
+     * and never whether it was true where it appeared. `COMPARISON_LANGUAGE`
+     * now carries `rule` for the prospective statement, and the two are pinned
+     * apart in `fss-action-claims.test.ts`.
+     */
     expect(
       REASSESSMENT.comparabilityRule,
       "the rule must come from compare.ts, not be restated here",
-    ).toBe(COMPARISON_LANGUAGE.methodChanged)
+    ).toBe(COMPARISON_LANGUAGE.rule)
+    expect(
+      REASSESSMENT.comparabilityRule,
+      "a forward-looking note must not announce a change that has not happened",
+    ).not.toBe(COMPARISON_LANGUAGE.methodChanged)
   })
 
   it("compares reported behaviour, and says so", () => {

@@ -60,7 +60,7 @@ export const PLAN_COPY = {
    * plan is smaller.
    */
   contextRespected: (described: string) =>
-    `You told us about ${described}, so nothing above asks for more of it.`,
+    `You told us about ${described} — so the suggestions above are the ones that work around that.`,
 
   /**
    * Shown when Part 4 was left blank.
@@ -85,16 +85,39 @@ export const PLAN_COPY = {
  * How each constraint is named to a person.
  *
  * Separate from the internal keys on purpose: `kitchen` is a field name, and
- * "your kitchen and how confident you feel in it" is what a person told us
- * about. Reviewed phrasing, in the same register as the Food Context questions
- * themselves — circumstances, not choices.
+ * "your kitchen setup" is what a person told us about. Reviewed phrasing, in
+ * the same register as the Food Context questions themselves — circumstances,
+ * not choices.
+ *
+ * ── NO LABEL CONTAINS "and", AND THAT IS A CONSTRAINT NOT A COINCIDENCE ───
+ *
+ * `describeConstraints` joins these with "and". The kitchen label first read
+ * "your kitchen and how confident you feel in it", which produced, on the real
+ * page with all four reported:
+ *
+ *   "…what food costs, your kitchen and how confident you feel in it and time
+ *    on a weekday, so nothing above asks for more of it."
+ *
+ * Two "and"s colliding, and a run-on nobody would have written on purpose. The
+ * unit test passed because it joined short fixture strings; only reading the
+ * rendered page showed it. A test below now refuses an "and" in any label.
  */
 export const CONSTRAINT_LABELS: Readonly<Record<ContextConstraint, string>> = {
   time: "time on a weekday",
   cost: "what food costs",
   access: "getting hold of fresh food",
-  kitchen: "your kitchen and how confident you feel in it",
+  kitchen: "your kitchen setup",
 }
+
+/**
+ * The order constraints are read out in.
+ *
+ * The instrument's own order — fc1 time, fc2 cost, fc3 access, fc4 kitchen —
+ * rather than alphabetical, which is what `ReportedContext.limiting` sorts by
+ * so that it renders identically on every machine. Alphabetical is the right
+ * answer for a stable array and the wrong one for a sentence.
+ */
+const SPOKEN_ORDER: readonly ContextConstraint[] = ["time", "cost", "access", "kitchen"]
 
 /**
  * Join the reported constraints into one phrase.
@@ -103,7 +126,7 @@ export const CONSTRAINT_LABELS: Readonly<Record<ContextConstraint, string>> = {
  * customer-visible sentence, and composition is authoring.
  */
 export function describeConstraints(limiting: readonly ContextConstraint[]): string {
-  const parts = limiting.map((c) => CONSTRAINT_LABELS[c])
+  const parts = SPOKEN_ORDER.filter((c) => limiting.includes(c)).map((c) => CONSTRAINT_LABELS[c])
   if (parts.length === 0) return ""
   if (parts.length === 1) return parts[0]
   return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`

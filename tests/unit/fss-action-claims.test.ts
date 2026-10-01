@@ -29,6 +29,7 @@
  */
 import { describe, it, expect } from "vitest"
 import { ACTION_CATALOGUE, REASSESSMENT, THIRTY_DAY_FOCUS } from "@/lib/fss/action/catalogue"
+import { COMPARISON_LANGUAGE } from "@/lib/fss/engine/compare"
 import { ACTION_CATEGORIES } from "@/lib/fss/action/categories"
 import { TIME_HORIZONS } from "@/lib/fss/action/horizons"
 import { CONSTRAINT_LABELS, PLAN_COPY, describeConstraints } from "@/lib/fss/presentation/plan"
@@ -313,6 +314,89 @@ describe("the context note reports a circumstance without judging it", () => {
     expect(describeConstraints(["time", "cost", "access"])).toBe(
       `${CONSTRAINT_LABELS.time}, ${CONSTRAINT_LABELS.cost} and ${CONSTRAINT_LABELS.access}`,
     )
+  })
+
+  /*
+   * ── THE DEFECT THE UNIT TEST ABOVE DID NOT CATCH ──────────────────────────
+   *
+   * The test above passes with short fixture strings. On the real page, with
+   * all four constraints reported, it produced:
+   *
+   *   "…what food costs, your kitchen and how confident you feel in it and
+   *    time on a weekday, so nothing above asks for more of it."
+   *
+   * Two "and"s colliding, because the kitchen LABEL contained one — and an
+   * alphabetical reading order, because `limiting` is sorted for stable
+   * rendering, which is right for an array and wrong for a sentence.
+   *
+   * Only walking the page showed it. These three assertions are what it should
+   * have taken.
+   */
+  it("no label contains 'and', because the joiner uses one", () => {
+    for (const [key, label] of Object.entries(CONSTRAINT_LABELS)) {
+      expect(label, `the ${key} label would collide with the joiner: "${label}"`).not.toMatch(
+        /\band\b/i,
+      )
+    }
+  })
+
+  it("the full four-constraint sentence reads as one sentence", () => {
+    const all = describeConstraints(["access", "cost", "kitchen", "time"])
+    // Exactly one "and" — the joiner's — however many parts there are.
+    expect((all.match(/\band\b/gi) ?? []).length, `"${all}"`).toBe(1)
+    expect(all).toBe(
+      "time on a weekday, what food costs, getting hold of fresh food and your kitchen setup",
+    )
+    const sentence = PLAN_COPY.contextRespected(all)
+    expect(sentence).not.toMatch(/\bit\.$/)
+    expect(sentence.endsWith(".")).toBe(true)
+  })
+
+  it("reads in the instrument's order, not the sorted one", () => {
+    // `ReportedContext.limiting` is alphabetical so it renders identically
+    // everywhere; the sentence puts it back into fc1..fc4 order.
+    expect(describeConstraints(["access", "cost", "kitchen", "time"])).toBe(
+      describeConstraints(["time", "cost", "access", "kitchen"]),
+    )
+    expect(describeConstraints(["kitchen", "time"])).toBe(
+      `${CONSTRAINT_LABELS.time} and ${CONSTRAINT_LABELS.kitchen}`,
+    )
+  })
+})
+
+describe("the reassessment note does not assert something that has not happened", () => {
+  /*
+   * ── THE SECOND DEFECT THE PAGE SHOWED AND THE SUITE DID NOT ──────────────
+   *
+   * `REASSESSMENT.comparabilityRule` was wired to
+   * `COMPARISON_LANGUAGE.methodChanged`, which is PAST TENSE — "the way we
+   * calculate this changed between these two results". It was being shown to
+   * somebody who had taken the assessment once, announcing a change between
+   * two results they did not have.
+   *
+   * Every test passed, because they all asserted the two strings were EQUAL
+   * rather than asking whether the sentence was true where it appeared. A
+   * guard can check provenance and still miss a lie.
+   */
+  it("states the rule prospectively, in the present tense", () => {
+    expect(REASSESSMENT.comparabilityRule).toBe(COMPARISON_LANGUAGE.rule)
+    expect(REASSESSMENT.comparabilityRule).not.toBe(COMPARISON_LANGUAGE.methodChanged)
+  })
+
+  it("claims no change has happened", () => {
+    const ASSERTS_A_PAST_CHANGE =
+      /\b(changed|has changed|was changed)\b[^.]{0,60}\bbetween these two results\b|\bthese two results\b/i
+    expect(
+      REASSESSMENT.comparabilityRule,
+      "the reassessment note announces a method change to somebody with one result",
+    ).not.toMatch(ASSERTS_A_PAST_CHANGE)
+    // NON-VACUITY: the sentence it used to carry would be caught.
+    expect(COMPARISON_LANGUAGE.methodChanged).toMatch(ASSERTS_A_PAST_CHANGE)
+  })
+
+  it("still comes from the comparison primitive, so there is one source", () => {
+    expect(COMPARISON_LANGUAGE.rule.length).toBeGreaterThan(60)
+    expect(COMPARISON_LANGUAGE.rule).toMatch(/same version of the method/i)
   })
 })
 

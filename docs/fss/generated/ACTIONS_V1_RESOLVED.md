@@ -256,7 +256,7 @@ Action categories, not score categories. **No number is attached to any of them*
 - **Why:** Your answers described mostly ready-made food, and one whole-ingredient meal is something you can repeat rather than a new routine.
 - **How often:** Once this week.
 - **Claim class:** **Observed behaviour** — describes what the answers said
-- **Circumstances:** Needs: time on a weekday, your kitchen and how confident you feel in it. Not offered to anyone who described one of those as being in the way.
+- **Circumstances:** Needs: time on a weekday, your kitchen setup. Not offered to anyone who described one of those as being in the way.
 
 ### The next 30 days
 
@@ -309,7 +309,7 @@ Action categories, not score categories. **No number is attached to any of them*
 - **Why:** A meal that needs a decision late in a difficult day is the one most likely to be skipped.
 - **How often:** Once, covering two or three meals.
 - **Claim class:** **General education** — about food, impersonal, not about the person
-- **Circumstances:** Needs: time on a weekday, your kitchen and how confident you feel in it. Not offered to anyone who described one of those as being in the way.
+- **Circumstances:** Needs: time on a weekday, your kitchen setup. Not offered to anyone who described one of those as being in the way.
 
 ### The next 30 days
 
@@ -320,7 +320,7 @@ Action categories, not score categories. **No number is attached to any of them*
 
 - **After:** 30 days
 - **Compares:** The answers you would give then, against the ones you gave today. Reported food patterns — not biology, and not a measure of health.
-- **Comparability rule:** The way we calculate this changed between these two results, so they are shown separately rather than compared.
+- **Comparability rule:** Two results can only be compared when they came from the same version of the method. If it changes in between, we show them separately rather than drawing a line between them.
 
 Nothing in this version computes a comparison. The rule is taken from `lib/fss/engine/compare.ts`, which refuses cross-version comparison by default, so there is one place that decides what two results may be said about each other.
 

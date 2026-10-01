@@ -110,6 +110,23 @@ export const COMPARISON_LANGUAGE = {
   increased: (what: string) => `Your reported ${what} increased.`,
   decreased: (what: string) => `Your reported ${what} decreased.`,
   unchanged: (what: string) => `Your reported ${what} is about the same.`,
+  /**
+   * Shown when a method change has ALREADY happened between two results.
+   *
+   * Past tense, and that matters: it asserts that something changed. Gate 3
+   * first wired this into the thirty-day reassessment note, where it was read
+   * by somebody who had taken the assessment once — telling them the
+   * calculation had changed between two results they did not have. Use `rule`
+   * for the forward-looking statement.
+   */
   methodChanged:
     "The way we calculate this changed between these two results, so they are shown separately rather than compared.",
+  /**
+   * The rule itself, stated before anything has happened.
+   *
+   * Prospective, so a surface can explain what a future comparison would be
+   * allowed to do without claiming a change has occurred.
+   */
+  rule:
+    "Two results can only be compared when they came from the same version of the method. If it changes in between, we show them separately rather than drawing a line between them.",
 } as const
