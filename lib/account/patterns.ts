@@ -57,6 +57,61 @@ export interface TwinPattern {
    the moment meal scoring changes version, silently. Wiring `canCompare` into
    the account surface is Gate 5 ("Reassess / What Changed") and would change
    what a live dashboard computes, so it does not belong inside a wording gate.
+
+   ══ GATE 5 — SIX CAUSAL AND OUTCOME CLAIMS, REMOVED ═════════════════════════
+
+   Gate 5 adopts a fifth product rule:
+
+     Compare measurements. Describe observations. Record actions.
+     DO NOT INVENT CAUSATION.
+
+   This file was violating it on a live surface before Gate 5 wrote a line.
+   `detectPatterns` reaches `app/account/page.tsx` via `buildAccountTwin`, plus
+   `/account/this-week` and the weekly `week-inside` email. Six strings, and the
+   audit that found them was looking for one:
+
+     "whatever changed, it's working"        causation, stated outright
+     "one weekend swap would close most
+      of the gap"                            a predicted outcome of an action
+     "one targeted meal would bring it back" the same, on the down branch
+     "your weekdays would love some of it"   a predicted benefit of transferring
+                                             a behaviour
+     "a proven winner"                       efficacy, asserted of a meal
+     "exactly how I learn what actually
+      works for you"                         a claim that this product can
+                                             determine what works
+
+   ── WHY ALL SIX RATHER THAN THE ONE THAT WAS REPORTED ─────────────────────
+
+   Because scoping a fix to the form rather than the rule is the failure this
+   programme keeps repeating: Tranche 1, 2A and 2C each removed one shape of
+   personal-Biotic claim and left the others standing, and Gate 3.6's audit of
+   nine sites found fifteen. One sentence here was named in the Gate 5 plan; an
+   audit of its class in this file found six.
+
+   ── WHAT THE REPLACEMENTS DO ──────────────────────────────────────────────
+
+   Each states what the logged meals DESCRIBED and stops. Two still name an
+   action to try, which is allowed — a suggestion is not a promise — but
+   neither says what the action would produce. The trend branches now say "not
+   why they changed" in so many words, because this product watched two windows
+   of self-logged meals and knows nothing about what happened between them.
+
+   ── WHAT WAS NOT TOUCHED, AND IS REPORTED INSTEAD ─────────────────────────
+
+   Two strings of an adjacent class were found by the same audit and are NOT
+   changed here, because this step is scoped to the live `/account` surface:
+
+     `components/account/dashboard-client-data.ts` — "Your inner food system is
+     working hard in your favour." A personal-biology claim rather than a causal
+     one, on the DEMO-only dashboard (`/account-you`, `/demo/account/[tier]`).
+
+     `lib/email/sequence-email.ts` — "your Biotics Score™ reflects something
+     real about how your food system is working."
+
+   Both belong to a claims tranche rather than to this gate, and widening a
+   step-0 repair into them without saying so is how scope stops meaning
+   anything.
    ══════════════════════════════════════════════════════════════════════════ */
 
 type BioticK = MealBioticKey
@@ -99,13 +154,13 @@ function weekendGap(meals: AccountTwinMeal[]): TwinPattern | null {
     ? {
         id: "weekend-dip",
         title: `I noticed your weekends dip ${gap} points`,
-        detail: "Your weekday meals score higher — one weekend swap would close most of the gap.",
+        detail: "Your weekday meals scored higher than your weekend ones. A weekend meal built like a weekday one is the smallest thing to try.",
         icon: "momentum",
       }
     : {
         id: "weekend-lift",
         title: `Your weekends run ${-gap} points stronger`,
-        detail: "Whatever you do at weekends, your weekdays would love some of it.",
+        detail: "Your weekend meals scored higher than your weekday ones. Whatever is different at weekends is the thing to try on a weekday.",
         icon: "momentum",
       }
 }
@@ -147,7 +202,7 @@ function repeatWinner(meals: AccountTwinMeal[]): TwinPattern | null {
   return {
     id: "repeat-winner",
     title: `"${best.name}" keeps delivering`,
-    detail: `You've logged it ${best.count} times at an average of ${best.score} — a proven winner worth keeping in rotation.`,
+    detail: `You've logged it ${best.count} times, at an average of ${best.score} — one of your highest-scoring repeats.`,
     icon: "meal",
   }
 }
@@ -177,13 +232,13 @@ function fortnightTrend(meals: AccountTwinMeal[], now: number): TwinPattern | nu
     ? {
         id: `trend-up-${bestKey}`,
         title: `Your meals climbed ${rounded} points on ${mealBehaviour(bestKey)} this week`,
-        detail: "Compared with the week before — whatever changed, it's working.",
+        detail: "Compared with the week before. That is what the meals you logged described, not why they changed.",
         icon: "momentum",
       }
     : {
         id: `trend-down-${bestKey}`,
         title: `Your meals slipped ${-rounded} points on ${mealBehaviour(bestKey)} this week`,
-        detail: "Compared with the week before — one targeted meal would bring it back.",
+        detail: "Compared with the week before. That is what the meals you logged described, not why they changed.",
         icon: "biotic",
       }
 }
@@ -198,7 +253,7 @@ function weeklyRhythm(meals: AccountTwinMeal[], now: number): TwinPattern | null
   return {
     id: "rhythm",
     title: `You've shown me meals on ${days.size} of the last 7 days`,
-    detail: "That rhythm is exactly how I learn what actually works for you.",
+    detail: "The more meals I see, the more of your pattern I can describe.",
     icon: "streak",
   }
 }

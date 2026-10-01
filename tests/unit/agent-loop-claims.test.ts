@@ -83,6 +83,58 @@ const GENERATED_CLAIM_RULES: [string, RegExp][] = [
     ),
   ],
   ["a live-organism claim", /\blive[- ]cultures?\b|\badd live microbes\b/i],
+
+  /* ══ GATE 5 — CAUSATION, THE FIFTH PRODUCT RULE ════════════════════════════
+   *
+   *   Compare measurements. Describe observations. Record actions.
+   *   DO NOT INVENT CAUSATION.
+   *
+   * ── Why this rule lives HERE and not in a per-file pin ──────────────────
+   *
+   * Because this file CALLS the generators. `detectPatterns` is already
+   * invoked below and its output already runs through these rules — so the
+   * rule that refuses a causal claim reads what a customer would actually be
+   * shown, rather than the source that assembles it. That distinction is the
+   * whole reason this file exists: a source scan of the 22-file corpus caught
+   * 1 of 9 interpolated Biotic claims in Gate 3.6.
+   *
+   * ── What it refuses, in three shapes ────────────────────────────────────
+   *
+   *   ASSERTED CAUSE        "whatever changed, it's working" · "because you
+   *                         added…" · "thanks to" · "led to" · "that's why"
+   *   PREDICTED OUTCOME     "one weekend swap WOULD CLOSE most of the gap" —
+   *                         an action with a result attached to it
+   *   ASSERTED EFFICACY     "a proven winner" · "what actually works for you"
+   *
+   * All three were live on `/account` when Gate 5 opened, in
+   * `lib/account/patterns.ts`, reaching the dashboard, `/account/this-week`
+   * and the weekly email.
+   *
+   * ── What it deliberately permits ────────────────────────────────────────
+   *
+   * A SUGGESTION. "A weekend meal built like a weekday one is the smallest
+   * thing to try" names an action and promises nothing, which is what the
+   * action layer has always been allowed to do. The rule targets a RESULT
+   * attached to an action, not the action.
+   *
+   * Also permitted: "because" in a non-causal sense ("you receive this because
+   * you're a member"), which is why the cause shapes are anchored to a
+   * person's own doing rather than to the connective alone. The first draft of
+   * this rule, run as an audit, flagged three unsubscribe footers.
+   *
+   * Gate 5 step 4 widens this to a `CAUSAL_CLAIMS` rule across the full
+   * customer-surface corpus. This is the seeded version, so step 0's repair
+   * cannot regress before step 4 arrives.
+   */
+  [
+    "an asserted cause",
+    /\bit'?s working\b|\bthey'?re working\b|\bthanks to\b|\bled to\b|\bresulted in\b|\bpaying off\b|\bthat'?s why\b|\bbecause you (?:ate|added|logged|chose|swapped|started|kept)\b/i,
+  ],
+  [
+    "a predicted outcome attached to an action",
+    /\bwould (?:close|bring|fix|raise|lift|boost|improve|love|help)\b|\bwill (?:close|bring|fix|raise|lift|boost|improve|help)\b/i,
+  ],
+  ["an asserted efficacy", /\bproven\b|\bwhat actually works\b|\bworking for you\b/i],
 ]
 
 /*
@@ -310,6 +362,120 @@ describe("detectPatterns is clean on every branch it can take", () => {
     expect(ids.some((id) => id.startsWith("trend-up")), "no up-trend fixture").toBe(true)
     expect(ids.some((id) => id.startsWith("trend-down")), "no down-trend fixture").toBe(true)
   })
+
+  /* ══ GATE 5 — THREE OF FIVE GENERATORS HAD NEVER BEEN READ ════════════════
+   *
+   * The assertion above forces both branches of ONE generator and was taken as
+   * covering the module. It did not. Running the fixtures and printing the ids
+   * they produce gives:
+   *
+   *     reached      trend-up-* · trend-down-* · best-lean-*
+   *     NEVER        weekend-dip · weekend-lift · repeat-winner · rhythm
+   *
+   * So `weekendGap`, `repeatWinner` and `weeklyRhythm` — three live generators
+   * on `/account` — had never had a single sentence read by this guard. Two of
+   * the six causal claims Gate 5 removed lived in them, which is exactly why
+   * they survived a file this thorough.
+   *
+   * It is the recurring defect: A CHECK EXERCISED ONLY BY DATA THAT SATISFIES
+   * IT. The fixture decided what the guard could see, and nothing asserted the
+   * fixture was enough.
+   *
+   * ── The repair, which is the generalisation of the line above ───────────
+   *
+   * Fixtures that reach every generator, plus an assertion that the set of ids
+   * reached EQUALS the set the module can produce — pinned by value, so adding
+   * a sixth generator fails here until it is covered.
+   */
+
+  /** Weekday meals scoring well above weekend ones. Reaches `weekendGap`. */
+  function weekendFixture(dip: boolean) {
+    // Anchored to a known Monday so the weekday/weekend split is not
+    // whatever today happens to be — a fixture that drifts with the calendar
+    // is a fixture that passes on Tuesdays.
+    const monday = Date.parse("2026-09-07T12:00:00.000Z")
+    const at = (offsetDays: number) =>
+      new Date(monday + offsetDays * 86_400_000).toISOString()
+    const meal = (name: string, score: number, offsetDays: number) => ({
+      name,
+      score,
+      createdAt: at(offsetDays),
+      prebiotic: 40,
+      probiotic: 40,
+      postbiotic: 40,
+    })
+    const weekdayScore = dip ? 80 : 50
+    const weekendScore = dip ? 50 : 80
+    return [
+      meal("Weekday A", weekdayScore, 0),
+      meal("Weekday B", weekdayScore, 1),
+      meal("Weekday C", weekdayScore, 2),
+      meal("Weekend A", weekendScore, 5),
+      meal("Weekend B", weekendScore, 6),
+      meal("Weekend C", weekendScore, 12),
+    ] as AccountTwinInput["meals"]
+  }
+
+  /** The same meal twice, averaging ≥70. Reaches `repeatWinner`. */
+  function repeatFixture() {
+    return [
+      { name: "Kefir bowl", score: 84, createdAt: day(1), prebiotic: 40, probiotic: 40, postbiotic: 40 },
+      { name: "Kefir bowl", score: 80, createdAt: day(3), prebiotic: 40, probiotic: 40, postbiotic: 40 },
+    ] as AccountTwinInput["meals"]
+  }
+
+  /** Meals on five distinct days inside the last seven. Reaches `weeklyRhythm`. */
+  function rhythmFixture() {
+    return [1, 2, 3, 4, 5].map((i) => ({
+      name: `Day ${i}`,
+      score: 60,
+      createdAt: day(i),
+      prebiotic: 40,
+      probiotic: 40,
+      postbiotic: 40,
+    })) as AccountTwinInput["meals"]
+  }
+
+  const EVERY_FIXTURE = () => [
+    ...(["prebiotic", "probiotic", "postbiotic"] as const).flatMap((lead) =>
+      [true, false].map((rising) => mealsFixture(lead, rising)),
+    ),
+    weekendFixture(true),
+    weekendFixture(false),
+    repeatFixture(),
+    rhythmFixture(),
+  ]
+
+  it("every generator in the module is reached by a fixture", () => {
+    const reached = new Set<string>()
+    for (const meals of EVERY_FIXTURE()) {
+      for (const p of detectPatterns(meals)) {
+        // Collapse the interpolated suffixes to the GENERATOR they came from.
+        reached.add(p.id.replace(/^(trend-up|trend-down|best-lean)-.*$/, "$1"))
+      }
+    }
+    expect([...reached].sort(), "a generator is unreachable by every fixture").toEqual([
+      "best-lean",
+      "repeat-winner",
+      "rhythm",
+      "trend-down",
+      "trend-up",
+      "weekend-dip",
+      "weekend-lift",
+    ])
+  })
+
+  it("and every sentence every generator produces is clean", () => {
+    let seen = 0
+    for (const meals of EVERY_FIXTURE()) {
+      for (const p of detectPatterns(meals)) {
+        assertClean(`pattern ${p.id}`, [p.title, p.detail])
+        seen += 1
+      }
+    }
+    // Non-vacuity: the loop above asserted something for every generator.
+    expect(seen).toBeGreaterThanOrEqual(7)
+  })
 })
 
 /* ── 5 · the three remaining /account generators ──────────────────────────── */
@@ -489,6 +655,48 @@ describe("NON-VACUITY", () => {
 
   it("the harness itself is not vacuous — assertClean fails on a known claim", () => {
     expect(() => assertClean("probe", ["Your Postbiotics slipped 8 points"])).toThrow()
+  })
+
+  /**
+   * The six sentences `lib/account/patterns.ts` was generating when Gate 5
+   * opened, as literals.
+   *
+   * Kept here rather than read from the module for the reason `PRE_FIX` gives:
+   * the module no longer contains them, so a non-vacuity case that read its
+   * subject from the corrected code would prove only that the code is
+   * corrected — not that the rule would catch a regression.
+   *
+   * All six were live. `detectPatterns` reaches `app/account/page.tsx` through
+   * `buildAccountTwin`, plus `/account/this-week` and the weekly email.
+   */
+  const PRE_FIX_CAUSAL = [
+    "Compared with the week before — whatever changed, it's working.",
+    "Your weekday meals score higher — one weekend swap would close most of the gap.",
+    "Compared with the week before — one targeted meal would bring it back.",
+    "Whatever you do at weekends, your weekdays would love some of it.",
+    "You've logged it 4 times at an average of 81 — a proven winner worth keeping in rotation.",
+    "That rhythm is exactly how I learn what actually works for you.",
+  ]
+
+  it.each(PRE_FIX_CAUSAL)("the causation rules would have caught: %s", (claim) => {
+    expect(() => assertClean("pre-fix", [claim])).toThrow()
+  })
+
+  it("but a suggestion with no result attached still passes", () => {
+    /*
+     * The line this rule must NOT cross. Naming an action is what the action
+     * layer is for; attaching a result to it is the claim. A rule that refused
+     * both would delete the product's reason to speak, which is the same
+     * over-reach that nearly deleted `/biotics`'s educational heading in
+     * Gate 3.6.
+     */
+    expect(() =>
+      assertClean("suggestion", [
+        "Your weekday meals scored higher than your weekend ones. A weekend meal built like a weekday one is the smallest thing to try.",
+        "Compared with the week before. That is what the meals you logged described, not why they changed.",
+        "The more meals I see, the more of your pattern I can describe.",
+      ]),
+    ).not.toThrow()
   })
 
   /*
