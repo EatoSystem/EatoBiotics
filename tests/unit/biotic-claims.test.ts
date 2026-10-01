@@ -120,6 +120,21 @@ const PROMPT_SURFACES = [
   "app/api/demo/consult/route.ts",
   "app/api/report-chat/route.ts",
   "app/api/food-intelligence/route.ts",
+  /*
+   * Gate 3.7 — the SIXTH prompt module, and it had never been in any corpus.
+   *
+   * Tranche 2B's own docblock above records finding a fifth
+   * (`lib/biotics-prompt.ts`) after an audit had named four. This is the same
+   * miss one layer out: `app/api/menu-scan/route.ts` builds a system prompt and
+   * a per-request user message, and no guard had ever opened it. Its prompt told
+   * the model "The member's weakest biotic is ${weakest}" and asked for "what it
+   * feeds" — the exact model Gate 3.6 removed from fifteen surfaces, waiting
+   * behind a refused route for someone to turn it on.
+   *
+   * Listed rather than derived, for the reason stated above: the ledger seeds
+   * from page routes, so its import closure never reaches an API route.
+   */
+  "app/api/menu-scan/route.ts",
 ]
 
 /**
@@ -386,6 +401,30 @@ const FERMENTED_LIVE_CLAIMS: [string, RegExp][] = [
    /ferment\w*\s+(foods?\s+)?(are|is)\s+(a\s+)?probiotics?\b|\bfor live probiotics\b/i],
   ["colonisation or reseeding claimed",
    /\b(reseed|re-seed|reseeding|seed new life|repopulat\w+|colonis\w+|coloniz\w+)\b/i],
+  /*
+   * Added in Gate 3.7, and the gap it closes is embarrassing in a useful way.
+   *
+   * The rule above refuses `colonis\w+` by name. `app/biotics/page.tsx` — a
+   * live page, inside this very corpus since Tranche 2A — said "New living
+   * bacteria JOIN THE COLONY" in its cycle diagram, four screens below the
+   * Probiotics card whose Phase 1 comment records removing the identical claim
+   * ("eating them INTRODUCES NEW RESIDENTS to your gut"). It passed for one
+   * reason: "colony" is not "colonise".
+   *
+   * ── WHY THE NOUN ALONE IS NOT THE RULE ───────────────────────────────────
+   *
+   * "Colony" is ordinary, correct microbiology in impersonal description —
+   * colony-forming units, a bacterial colony — and a rule that refused the word
+   * would make the page less accurate, not more. What cannot be said is
+   * organisms ARRIVING AT or JOINING one, because that is establishment, which
+   * is what the evidence does not support for fermented food and what this
+   * product does not measure.
+   *
+   * So the rule needs the verb and the noun together, which is also why it is
+   * narrow enough to state in one line.
+   */
+  ["organisms joining or establishing in a colony",
+   /\b(join\w*|enter\w*|settl\w+|establish\w*|arriv\w*|add\w*|introduc\w*)\b[^.!?]{0,40}\bcolon(y|ies)\b/i],
   // Added in Tranche 2A. "Live and fermented foods" reads as one category with
   // two names, which is the equivalence in its quietest form — and it was the
   // most visible claim left on the corrected free result, sitting directly
@@ -484,6 +523,8 @@ describe("the corpus this guard reads cannot silently shrink", () => {
       "app/api/consult/route.ts",
       "app/api/demo/consult/route.ts",
       "app/api/food-intelligence/route.ts",
+      // Gate 3.7 — the sixth prompt module, found by looking rather than by CI.
+      "app/api/menu-scan/route.ts",
       "app/api/report-chat/route.ts",
       "app/api/score-card/route.tsx",
       "app/biotics/page.tsx",
@@ -649,10 +690,44 @@ describe("fermented food is never equated with live organisms or probiotics", ()
       "Live foods (Probiotics)",
       "Probiotics add living cultures to diversify them.",
       "Prebiotic-rich foods that support the gut-sleep axis",
+      // Gate 3.7 — live on app/biotics/page.tsx's cycle diagram, inside this
+      // corpus since Tranche 2A, and caught by nothing because "colony" is not
+      // "colonise".
+      "New living bacteria join the colony",
     ]
     for (const line of asItWas) {
       const caught = [...FERMENTED_LIVE_CLAIMS, ...FIBRE_PREBIOTIC_CLAIMS].some(([, p]) => p.test(line))
       expect(caught, `not caught: ${line}`).toBe(true)
+    }
+  })
+
+  it("the colony rule refuses establishment, not the word", () => {
+    /*
+     * The risk in this rule is over-reach, not under-reach: "colony" is
+     * ordinary microbiology, and a page that could not say it would be less
+     * accurate rather than more careful. So both directions are pinned.
+     */
+    const caught = [
+      "New living bacteria join the colony",
+      "Fermented foods introduce new bacteria to the colony",
+      "live cultures that settle into the existing colonies",
+    ]
+    for (const line of caught) {
+      expect(
+        FERMENTED_LIVE_CLAIMS.some(([, p]) => p.test(line)),
+        `establishment not caught: ${line}`,
+      ).toBe(true)
+    }
+
+    const allowed = [
+      "A bacterial colony is a visible cluster grown from a single cell.",
+      "Diversity is measured in colony-forming units per gram.",
+      "The colonies in your gut outnumber your own cells.",
+      "Beneficial bacteria multiply",
+    ]
+    for (const line of allowed) {
+      const hits = FERMENTED_LIVE_CLAIMS.filter(([, p]) => p.test(line))
+      expect(hits.map((h) => h[0]), `false positive: ${line}`).toEqual([])
     }
   })
 
@@ -940,6 +1015,52 @@ const NO_PERSONAL_BIOTIC_NUMBER: [string, string, RegExp[]][] = [
     "lib/account/share-card.ts",
     "the card's data contract must not carry per-Biotic rows, so no caller can supply them",
     [/\bbiotics\b/],
+  ],
+  /*
+   * ── TWO MORE PINS, ADDED AFTER CASES 1096 AND 1097 SLIPPED ───────────────
+   *
+   * 1096 reverted `/biotics`'s postbiotics card to "They reduce inflammation,
+   * strengthen the gut lining, regulate immune response, and directly influence
+   * how you feel" and NOTHING caught it. The hedged register — "associated
+   * with", "may" — is used consistently across the product and enforced
+   * nowhere, so it was a convention, not a rule.
+   *
+   * A general rule was considered and rejected. Whether an outcome claim needs
+   * hedging depends on the claim: "Prebiotic fibre is what keeps that inner
+   * ecosystem thriving" is fine, "postbiotics reduce inflammation" is not, and
+   * the difference is epistemic rather than lexical. A regex that caught the
+   * second would catch the first, and the cost of over-reach here is deleting
+   * true education — the trap Tranche 2A hit with the brand lens and Gate 3.6
+   * hit with "Postbiotics produced". So the four verbs are pinned to the one
+   * file whose card made them, which is what this table is for.
+   *
+   * 1097 reverted the menu-scan prompt to "The member's weakest biotic is
+   * ${weakest}". Also uncaught, for two compounding reasons: "biotic" singular
+   * and lowercase is not in BIOTICS_ANY, and `${weakest}` is an interpolation,
+   * so the Biotic name is nowhere in the source. A prompt is the worst place
+   * for an invisible claim, because the model turns one sentence into many.
+   */
+  [
+    "app/biotics/page.tsx",
+    "the education page states mechanisms, not guaranteed outcomes — the register used everywhere else in the product (case 1096)",
+    [
+      /\bThey reduce inflammation\b/,
+      /\bstrengthen the gut lining\b/,
+      /\bregulate immune response\b/,
+      /\bdirectly influence how you feel\b/,
+      /\bwell-populated\b/,
+      /\bmakes you feel better every day\b/,
+    ],
+  ],
+  [
+    "app/api/menu-scan/route.ts",
+    "the prompt is given a food pattern, never the member's Biotic — neither the words nor the interpolated key (case 1097)",
+    [
+      /weakest biotic/i,
+      /biotic they most need/i,
+      /what it feeds/i,
+      /\$\{weakest\}/,
+    ],
   ],
   [
     "components/account/twin/meal-reveal.tsx",

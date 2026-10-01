@@ -244,6 +244,13 @@ export const AI_PROMPT_SURFACES = [
   // /api/analyse/stream, /api/analyse-plate, /api/create-plate and
   // /api/eatobiotic — the prompt that actually assigns a Meal Biotics Score.
   "lib/biotics-prompt.ts",
+  /*
+   * Gate 3.7. Behind /account/twin, which V1 refuses — listed anyway, because a
+   * prompt is where a removed claim waits patiently for the route to come back.
+   * Its system prompt told the model the member's "weakest biotic" and asked it
+   * for "what it feeds", months after every page had lost both.
+   */
+  "app/api/menu-scan/route.ts",
 ]
 
 /** Everything a customer can read, by group. */
