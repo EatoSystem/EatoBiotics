@@ -989,8 +989,13 @@ CASES = [
      "tend to move your Food System Score most.`",
      RETIRED),
 
+    # RE-ANCHORED in Gate 3.6. The sentence this case pins said "your answers";
+    # buildAccountTwin assembles the week story from MEALS, so Gate 3.6
+    # corrected the attribution and the old anchor no longer exists. The case's
+    # intent is untouched — the mutation still credits the meals for moving a
+    # number, which is the claim it was written to catch.
     (1067, "the week story credits the meals for the change", WEEKSTORY,
-     '? "That is what your answers said this time. Let us see whether it holds."',
+     '? "That is what your meals said this time. Let us see whether it holds."',
      '? "Your meals are moving the number \u2014 I can feel the momentum."',
      RETIRED),
 
@@ -1101,8 +1106,11 @@ CASES = [
      '        "Fermented foods add live microbes that work alongside your own \u2014 a busier, more diverse inner community.",',
      ALCLAIMS + BCLAIMS),
 
+    # RE-ANCHORED within Gate 3.6: the title was restructured after reading it
+    # rendered — the phrase as sentence subject gave a lowercase opening, and
+    # the sibling detail line gave "fermented foods IS where…".
     (1087, "the week story says a Biotic led the week", WEEKSTORY,
-     "    title: `${weekBehaviour(strongest)} led your week.`,",
+     "    title: `Your week leaned on ${weekBehaviour(strongest)}.`,",
      "    title: `${strongest[0].toUpperCase()}${strongest.slice(1)} led your week.`,",
      ALCLAIMS),
 

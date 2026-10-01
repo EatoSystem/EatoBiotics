@@ -109,9 +109,19 @@ export function buildWeekStory(twin: FoodSystemDigitalTwin): WeekStorySlide[] {
 
   slides.push({
     key: "biotics",
-    eyebrow: "Your three biotics",
-    title: `${weekBehaviour(strongest)} led your week.`,
-    detail: `${weekBehaviour(weakest)} is where I'd love more help — that's your biggest opportunity.`,
+    /*
+     * The eyebrow said "Your three biotics" while the slide reported a
+     * personal Biotic state. It now reports food patterns, so it says so.
+     *
+     * Both sentences were restructured after READING them: the phrase as a
+     * sentence subject gave "fibre-rich plants led your week." with a
+     * lowercase opening, and "fermented foods IS where I'd love more help"
+     * — the agreement trap `lib/agent-loop/behaviour.ts` warns about, walked
+     * into one file away from the warning.
+     */
+    eyebrow: "Your food patterns",
+    title: `Your week leaned on ${weekBehaviour(strongest)}.`,
+    detail: `Where I'd love more help: ${weekBehaviour(weakest)} — that's your biggest opportunity.`,
     accent: "#2DAA6E",
   })
 
@@ -152,7 +162,10 @@ export function buildWeekStory(twin: FoodSystemDigitalTwin): WeekStorySlide[] {
           : "Holding steady.",
     detail:
       delta > 0
-        ? "That is what your answers said this time. Let us see whether it holds."
+        // "your answers" until Gate 3.6: buildAccountTwin assembles this from
+        // MEALS, so the answers had nothing to do with it — the same
+        // misattribution the provider's rationale carried.
+        ? "That is what your meals said this time. Let us see whether it holds."
         : "Rhythm beats perfection. Next week we build again.",
     accent: "#A8E063",
   })
