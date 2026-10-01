@@ -176,16 +176,7 @@ describe("Your Food Context cannot reach the Score", () => {
     ).toBeLessThan(offerable(free).length)
   })
 
-  it("a scored answer cannot influence a constraint, even if one is passed", () => {
-    /*
-     * The module resolves each id through the instrument and checks
-     * `contributes` before trusting it, so the crossing the architecture
-     * forbids — reading an input to the Score in order to shape the plan —
-     * degrades to "unknown" rather than happening quietly.
-     *
-     * Behavioural, not a source grep: what matters is that q1's value does not
-     * move a constraint, whatever the implementation looks like.
-     */
+  it("a stray scored answer is simply not read", () => {
     const withScoredAnswer = readFoodContext(SET, { ...answers(2, 3), q1: 0 })
     expect(withScoredAnswer.states.time).toBe("free")
     expect(withScoredAnswer.limiting).toEqual([])
@@ -193,6 +184,64 @@ describe("Your Food Context cannot reach the Score", () => {
     // And the proof that it is reading the Food Context at all: changing the
     // Food Context answer DOES move it.
     expect(readFoodContext(SET, answers(2, 0)).states.time).toBe("limiting")
+  })
+
+  /*
+   * ── THE CROSSING THE ARCHITECTURE FORBIDS, MADE FALSIFIABLE ───────────────
+   *
+   * The test above cannot fail if the `contributes` check is deleted, because
+   * with the real map the check can never fire: fc1–fc4 are all unscored. So
+   * sabotage case 1040 — removing that check entirely — walked straight
+   * through, and the guard for the most important boundary in this layer was
+   * proving nothing.
+   *
+   * Gate 2 hit the same shape in the question-set resolver (case 1020: every
+   * pin matched, so disabling the pin check was a no-op) and fixed it by
+   * making the input injectable. Same repair here.
+   *
+   * Passing a map that names SCORED items is the case the check exists for:
+   * if the plan could read an input to the Score, it would be shaping itself
+   * from the thing Your Food Context is defined never to touch.
+   */
+  it("a map naming a SCORED item yields unknown, rather than reading the Score's input", () => {
+    const scoredIds = SET.questions.filter((q) => q.contributes === "fss").map((q) => q.id)
+    expect(scoredIds.length).toBeGreaterThanOrEqual(4)
+
+    const misdirected = {
+      time: scoredIds[0],
+      cost: scoredIds[1],
+      access: scoredIds[2],
+      kitchen: scoredIds[3],
+    }
+
+    // Those scored items are answered 0 — "limiting", if they were read.
+    const answersWithLowScored = Object.fromEntries(
+      SET.questions.map((q) => [q.id, q.contributes === "fss" ? 0 : 3]),
+    )
+
+    const got = readFoodContext(SET, answersWithLowScored, misdirected)
+    expect(got.limiting, "a scored answer reached the plan's constraints").toEqual([])
+    expect(got.answered, "a scored answer was counted as a Food Context answer").toBe(false)
+    for (const c of Object.keys(CONTEXT_ITEMS) as ContextConstraint[]) {
+      expect(got.states[c]).toBe("workable")
+    }
+  })
+
+  it("NON-VACUITY: the same map over UNSCORED items is read normally", () => {
+    // Proving the refusal above is about `contributes` and not about the
+    // injection itself — otherwise the test would pass for the wrong reason.
+    const unscored = SET.questions
+      .filter((q) => q.contributes === "food-context")
+      .map((q) => q.id)
+    const remapped = {
+      time: unscored[3],
+      cost: unscored[2],
+      access: unscored[1],
+      kitchen: unscored[0],
+    }
+    const got = readFoodContext(SET, answers(2, 0), remapped)
+    expect(got.answered).toBe(true)
+    expect(got.limiting).toEqual(["access", "cost", "kitchen", "time"])
   })
 })
 

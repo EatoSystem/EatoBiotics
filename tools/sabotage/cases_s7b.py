@@ -104,6 +104,35 @@ BIOTIC = ["tests/unit/biotic-claims.test.ts"]
 RETIRED = ["tests/unit/retired-vocabulary.test.ts"]
 VOCAB = ["tests/unit/retired-vocabulary.test.ts"]
 
+# ── Gate 3 — the action model. Cases 1031+. ─────────────────────────────
+#
+# The invariants under test:
+#   an action category carries no number and no Biotic;
+#   no table maps a domain to an action category;
+#   a recommendation carries its claim boundary and both versions;
+#   Your Food Context shapes the plan and reaches the Score by no path;
+#   the most constrained person still gets a plan;
+#   Today is one action for the PLAN, not one per priority;
+#   a priority is selected by exact ties, with no tolerance;
+#   a stored action is refused rather than resolved against moved content;
+#   the candidate tree stays inside the guard corpus.
+ACATS = "lib/fss/action/categories.ts"
+ATYPES = "lib/fss/action/types.ts"
+APRIORITY = "lib/fss/action/priority.ts"
+ACONTEXT = "lib/fss/action/context.ts"
+ACATALOGUE = "lib/fss/action/catalogue.ts"
+APLAN = "lib/fss/action/plan.ts"
+ASTORED = "lib/fss/action/stored.ts"
+AHORIZONS = "lib/fss/action/horizons.ts"
+APRESENT = "lib/fss/presentation/plan.ts"
+FDOMAINS = "lib/fss/presentation/domains.ts"
+AMODEL = ["tests/unit/fss-action-model.test.ts"]
+APRIORT = ["tests/unit/fss-priority.test.ts"]
+APLANT = ["tests/unit/fss-plan.test.ts"]
+ACATT = ["tests/unit/fss-action-catalogue.test.ts"]
+ACLAIMS = ["tests/unit/fss-action-claims.test.ts"]
+AFENCE = ["tests/unit/fss-action-fence.test.ts"]
+
 CASES = [
     (930, "/waitlist is served again", SURFACE,
      '  "/waitlist",\n  "/start",\n',
@@ -419,8 +448,11 @@ CASES = [
 
     (978, "the reachable closure is narrowed until it proves nothing",
      REACHTEST,
-     '    return route !== null && classifyPageRoute(route) !== "POST_V1"\n  })\n\n  const reachable = new Set<string>()',
-     '    return route !== null && classifyPageRoute(route) === "NOTHING_MATCHES_THIS"\n  })\n\n  const reachable = new Set<string>()',
+     # RE-ANCHORED for Gate 3 step 0, which extracted the seed filter into
+     # isSeed() so a second notion of "reachable" could exist. The mutation is
+     # unchanged in intent: narrow the closure until it proves nothing.
+     '  if (klass === "POST_V1") return false',
+     '  if (klass !== "NOTHING_MATCHES_THIS") return false',
      BIOTIC),
 
     (979, "the canonical nudge promises live probiotics again", PILLARS,
@@ -724,4 +756,177 @@ CASES = [
      '  return new LocalStorageRepository()',
      '  return process.env.VERCEL_ENV ? new SupabaseRepositoryDisabled() : new LocalStorageRepository()',
      FPERSIST),
+    # ── Gate 3 — the action model ─────────────────────────────────────────
+
+    (1031, "an action category gains a numeric value", ACATS,
+     '    color: "var(--icon-green)",',
+     '    color: "var(--icon-green)",\n    weight: 0.4,',
+     AMODEL),
+
+    (1032, "a domain is mapped straight to an action category", ACATS,
+     'export function actionCategory(',
+     'export const DOMAIN_CATEGORY = { mealRhythm: "rejuvenate" } as const\n\nexport function actionCategory(',
+     AMODEL),
+
+    (1033, "a biological-inference claim class is added", ATYPES,
+     '  | "personalised-recommendation"\n\n/**',
+     '  | "personalised-recommendation"\n  | "biological-inference"\n\n/**',
+     AMODEL),
+
+    (1034, "the claim-class list drops a member, so the union and the data drift", ATYPES,
+     '  "general-education",\n  "personalised-recommendation",\n]',
+     '  "general-education",\n]',
+     AMODEL),
+
+    (1035, "the priority selector gains a tolerance", APRIORITY,
+     '  const chosen = scored.filter((d) => d.score === lowest).slice(0, PRIORITY_MAX)',
+     '  const chosen = scored.filter((d) => d.score <= lowest + 10).slice(0, PRIORITY_MAX)',
+     APRIORT),
+
+    (1036, "priorities stop excluding insufficient domains", APRIORITY,
+     '    (d): d is Extract<typeof d, { state: "scored" }> => d.state === "scored",',
+     '    (d): d is Extract<typeof d, { state: "scored" }> => true,',
+     APRIORT),
+
+    (1037, "a priority quotes an item from another domain as its evidence", APRIORITY,
+     '    .filter((q) => q.contributes === "fss" && q.domain === domain)',
+     '    .filter((q) => q.contributes === "fss")',
+     APRIORT),
+
+    (1038, "unscored items reach the evidence", APRIORITY,
+     '    .filter((q) => q.contributes === "fss" && q.domain === domain)',
+     '    .filter((q) => q.domain === domain || q.contributes === "food-context")',
+     APRIORT),
+
+    (1039, "the Gate 2 priority sentence is quietly reworded", FDOMAINS,
+     'which usually makes it the most direct place to start rather than the most important one.',
+     'which makes it the most important thing for you to fix.',
+     APRIORT),
+
+    (1040, "Your Food Context reaches the score path", ACONTEXT,
+     '    const usable = q !== undefined && q.contributes === "food-context"',
+     '    const usable = q !== undefined',
+     ACATT),
+
+    (1041, "an unanswered context item is read as limiting, starving the plan", ACONTEXT,
+     'const UNKNOWN_STATE: ConstraintState = "workable"',
+     'const UNKNOWN_STATE: ConstraintState = "limiting"',
+     ACATT),
+
+    (1042, "the context filter stops filtering", ACONTEXT,
+     '  return requires.every((c) => context.states[c] !== "limiting")',
+     '  return true',
+     APLANT),
+
+    (1043, "the unconditional options are removed, so a constrained person gets nothing",
+     ACATALOGUE,
+     '    claimClass: "observed-behaviour",\n    requires: [],\n  },\n  {\n    id: "diversity-week-rotate",',
+     '    claimClass: "observed-behaviour",\n    requires: ["time"],\n  },\n  {\n    id: "diversity-week-rotate",',
+     ACATT),
+
+    (1044, "a thirty-day entry is added, making the month a fourth list", ACATALOGUE,
+     '    timeHorizon: "this-week",\n    title: "Rotate instead of repeating",',
+     '    timeHorizon: "thirty-days",\n    title: "Rotate instead of repeating",',
+     ACATT),
+
+    (1045, "every domain is padded to all three categories", ACATALOGUE,
+     '    category: "rejuvenate",\n    timeHorizon: "today",\n    title: "Protect today\'s meal that usually slips",',
+     '    category: "seed",\n    timeHorizon: "today",\n    title: "Protect today\'s meal that usually slips",',
+     ACATT),
+
+    (1046, "Today returns one action per priority instead of one for the plan", APLAN,
+     '      today = bind(candidate, p, provenance)\n      break',
+     '      today = bind(candidate, p, provenance)',
+     APLANT),
+
+    (1047, "the weekly set fills from the first priority only", APLAN,
+     '      const next = q.rest.shift()',
+     '      const next = queues[0].rest.shift()',
+     APLANT),
+
+    # RE-AIMED TWICE, and the second time found the real defect.
+    #
+    # v1 removed the outer `while` condition — not the binding cap, so a no-op.
+    # v2 removed the inner `break` — also a no-op, because PRIORITY_MAX is 3 and
+    # one pass of the loop can therefore add at most 3.
+    #
+    # v3 raises the cap itself, which is what somebody would actually do. That
+    # exposed the real weakness: the plan test asserted
+    # `length <= THIS_WEEK_MAX`, which is a tautology — raising the constant
+    # raises the bound being checked. The test now asserts the LITERAL 3.
+    (1048, "the weekly cap is raised, so the plan becomes a list", ATYPES,
+     'export const THIS_WEEK_MAX = 3',
+     'export const THIS_WEEK_MAX = 12',
+     APLANT + AMODEL),
+
+    (1049, "the thirty-day focus takes every priority rather than one", APLAN,
+     '    thirtyDays: thirtyDayFocus(priorities[0]),',
+     '    thirtyDays: thirtyDayFocus(priorities[priorities.length - 1]),',
+     APLANT),
+
+    (1050, "a recommendation loses its claim boundary", ACATALOGUE,
+     '    claimClass: "general-education",\n    requires: ["cost", "access"],',
+     '    claimClass: "observed-behaviour",\n    requires: ["cost", "access"],',
+     ACLAIMS),
+
+    (1051, "an outcome prediction is attached to a horizon", AHORIZONS,
+     '      "One behaviour, held for a month. What survives an ordinary week is the part that has actually changed.",',
+     '      "One behaviour, held for a month. You will feel the difference by then.",',
+     AMODEL),
+
+    (1052, "a recommendation promises to raise the score", ACATALOGUE,
+     '      "Across this week, swap in three plant foods you do not usually buy, rather than more of the ones you already do.",',
+     '      "Across this week, swap in three plant foods you do not usually buy. This will raise your score.",',
+     ACLAIMS),
+
+    (1053, "a rationale reads a deficiency into the answers", ACATALOGUE,
+     '      "Your answers described a steady amount coming from a narrow set of sources.",',
+     '      "Your answers described a likely fibre deficiency.",',
+     ACLAIMS),
+
+    (1054, "the plan imports the paid Report's deterministic core", APLAN,
+     'import { ACTION_CATALOGUE, REASSESSMENT, THIRTY_DAY_FOCUS } from "./catalogue"',
+     'import { choosePriority } from "@/lib/report/deterministic/priority"\nimport { ACTION_CATALOGUE, REASSESSMENT, THIRTY_DAY_FOCUS } from "./catalogue"',
+     AFENCE),
+
+    (1055, "the action layer reaches for the Biotic pillar vocabulary", ACATS,
+     'import { ACTIONS } from "@/lib/product-vocabulary"',
+     'import { PILLARS } from "@/lib/pillars"\nimport { ACTIONS } from "@/lib/product-vocabulary"',
+     AFENCE),
+
+    (1056, "the plan surface asks for a band with the unregistered version", APRESENT,
+     'export const PLAN_COPY = {',
+     'import { getScoreBand } from "@/lib/fss/interpretation/bands"\n\nexport const PLAN_COPY = {',
+     AFENCE),
+
+    (1057, "a stored action resolves against moved content instead of refusing", ASTORED,
+     '  if (stored.actionSetVersion !== ACTION_SET_VERSION) {\n    return unresolvable("content-version-moved")\n  }',
+     '',
+     FPERSIST),
+
+    (1058, "a withdrawn entry falls back to the first in the catalogue", ASTORED,
+     '  if (!entry) return unresolvable("entry-withdrawn")',
+     '  const resolved = entry ?? ACTION_CATALOGUE[0]\n  if (!resolved) return unresolvable("entry-withdrawn")',
+     FPERSIST),
+
+    (1059, "a stored action keeps the prose instead of the id", ASTORED,
+     '    recommendationId: r.id,',
+     '    recommendationId: r.practicalAction,',
+     FPERSIST),
+
+    (1060, "the candidate tree leaves the claims corpus", BIOTICTEST,
+     'const CANDIDATE_ROOTS = ["lib/fss", "components/fss", "app/preview/food-system-v1"]',
+     'const CANDIDATE_ROOTS = ["app/preview/food-system-v1"]',
+     BIOTIC),
+
+    (1061, "the derived corpus goes back to staged files only", BIOTICTEST,
+     'return execSync(`git ls-files --cached --others --exclude-standard ${CANDIDATE_ROOTS.join(" ")}`, {',
+     'return execSync(`git ls-files ${CANDIDATE_ROOTS.join(" ")}`, {',
+     BIOTIC),
+
+    (1062, "the withheld score name becomes reachable from a servable page",
+     "app/pricing/page.tsx",
+     'export default',
+     'const LEAK = "Your Food System Score"\n\nexport default',
+     RETIRED),
 ]

@@ -42,7 +42,7 @@
  * that says where it stops.
  */
 import { describe, it, expect } from "vitest"
-import { readFileSync } from "node:fs"
+import { readFileSync, writeFileSync, existsSync, rmSync } from "node:fs"
 import { execSync } from "node:child_process"
 import { MARKETING_SURFACES, AI_PROMPT_SURFACES } from "./customer-surfaces"
 import { reachableSourceFiles, servablePageCount } from "./reachable-surfaces"
@@ -421,6 +421,41 @@ describe("the corpus this guard reads cannot silently shrink", () => {
     for (const file of candidateTree()) {
       expect(GUARDED_SURFACES, `${file} is in the candidate tree but not guarded`).toContain(file)
     }
+  })
+
+  /*
+   * ── "GUARDED THE MOMENT IT EXISTS", PROVEN RATHER THAN CLAIMED ────────────
+   *
+   * The docblock above says a new candidate file is guarded as soon as it is
+   * written, not as soon as it is staged. That claim rests entirely on
+   * `--others`, and nothing could see the difference: by the time the suite
+   * runs in CI everything is committed, so `git ls-files` alone would give the
+   * same answer. Sabotage case 1061 — dropping `--others` — slipped for
+   * exactly that reason.
+   *
+   * So the test creates the case. An untracked file under a candidate root
+   * must appear in the corpus; with `--others` gone it would not.
+   *
+   * Removed in `finally`, including if an assertion throws, because a stray
+   * file left in `lib/fss` would be picked up by every other derived corpus in
+   * the repository and the failure would look like something else entirely.
+   */
+  it("sees a candidate file that exists but has not been staged", () => {
+    const probe = "lib/fss/__corpus_probe__.ts"
+    expect(existsSync(probe), "the probe path must be free before the test").toBe(false)
+
+    try {
+      writeFileSync(probe, "export const PROBE = true\n", "utf-8")
+      expect(
+        candidateTree(),
+        "an unstaged candidate file is invisible to the corpus — has --others been dropped?",
+      ).toContain(probe)
+    } finally {
+      if (existsSync(probe)) rmSync(probe)
+    }
+
+    expect(existsSync(probe), "the probe must not survive the test").toBe(false)
+    expect(candidateTree()).not.toContain(probe)
   })
 
   it("the rendered marketing surfaces are in the shared vocabulary corpus too", () => {

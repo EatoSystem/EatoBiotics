@@ -101,10 +101,21 @@ describe("Today is one action for the whole plan", () => {
 })
 
 describe("This Week is a small set, not a list", () => {
-  it("is capped at THIS_WEEK_MAX", () => {
+  it("is capped, and the cap is a LITERAL three", () => {
+    /*
+     * Asserting against THIS_WEEK_MAX alone is a tautology: raising the
+     * constant would raise the bound the test checks, and the plan could grow
+     * into the long list this layer exists to replace while the suite stayed
+     * green. Sabotage case 1048 is exactly that mutation.
+     *
+     * So the literal is here, and `fss-action-model.test.ts` separately pins
+     * THIS_WEEK_MAX to 3 — two assertions, because "small set" is a product
+     * decision and a number nobody can quietly change.
+     */
+    expect(THIS_WEEK_MAX).toBe(3)
     for (const answers of [lowDomain("diversity"), lowDomain("mealRhythm"), allTied()]) {
       const plan = planFor(answers)
-      expect(plan.thisWeek.length).toBeLessThanOrEqual(THIS_WEEK_MAX)
+      expect(plan.thisWeek.length, "the weekly set has become a list").toBeLessThanOrEqual(3)
       expect(plan.thisWeek.length).toBeGreaterThan(0)
     }
   })

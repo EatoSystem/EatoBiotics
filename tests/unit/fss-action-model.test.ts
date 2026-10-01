@@ -113,6 +113,58 @@ describe("the claim classes separate four kinds of statement, and offer no fifth
     }
     expect(Object.keys(exhaustive).sort()).toEqual([...CLAIM_CLASSES].sort())
   })
+
+  /*
+   * ── THE CHECK ABOVE IS NOT ENOUGH, AND A SLIPPED MUTATION PROVED IT ───────
+   *
+   * Sabotage case 1033 adds `| "biological-inference"` to the ClaimClass union
+   * and walked straight through every assertion in this block. The reason is
+   * worth stating: a union is a TYPE, so adding a member changes nothing any
+   * runtime assertion can see, and the `Record<ClaimClass, true>` check above
+   * is only enforced by `tsc` — which vitest does not run.
+   *
+   * So the suite was green while the thing it exists to prevent was in the
+   * file. That is the recurring defect in this codebase wearing a new costume:
+   * a guard asserting the shape of the DATA while the DECLARATION drifts.
+   *
+   * The repair reads the union out of the source and compares it to the
+   * values. A source check is weaker than a behavioural one as a rule, and
+   * here it is the only thing that can see the union at all.
+   */
+  it("the DECLARED union has exactly the four members, and no fifth", () => {
+    const src = readFileSync("lib/fss/action/types.ts", "utf-8")
+    const declaration = src.match(/export type ClaimClass =([\s\S]*?)\n\n/)
+    expect(declaration, "the ClaimClass declaration must be findable").not.toBeNull()
+
+    const declared = [...declaration![1].matchAll(/\|\s*"([^"]+)"/g)].map((m) => m[1])
+    expect(declared.length, "the parse found no members — the regex has gone stale").toBe(4)
+    expect(
+      declared.sort(),
+      "the union and CLAIM_CLASSES have drifted, or a fifth member was added",
+    ).toEqual([...CLAIM_CLASSES].sort())
+
+    for (const c of declared) {
+      expect(c, `the union declares a biological class: "${c}"`).not.toMatch(
+        /biolog|physiolog|microbiom|metabol|clinical|diagnos|infer/i,
+      )
+    }
+  })
+
+  it("NON-VACUITY: the parse would see a fifth member", () => {
+    const sabotaged = `export type ClaimClass =
+  | "observed-behaviour"
+  | "self-reported"
+  | "general-education"
+  | "personalised-recommendation"
+  | "biological-inference"
+
+/** next thing */`
+    const declared = [
+      ...sabotaged.match(/export type ClaimClass =([\s\S]*?)\n\n/)![1].matchAll(/\|\s*"([^"]+)"/g),
+    ].map((m) => m[1])
+    expect(declared).toHaveLength(5)
+    expect(declared).toContain("biological-inference")
+  })
 })
 
 describe("Feed · Seed · Rejuvenate are action categories, carrying no number", () => {

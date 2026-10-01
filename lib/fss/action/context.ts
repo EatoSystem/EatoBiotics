@@ -102,17 +102,34 @@ function stateOf(value: number | undefined): ConstraintState {
  */
 const UNKNOWN_STATE: ConstraintState = "workable"
 
-/** Read Your Food Context back. Never reads a scored item. */
-export function readFoodContext(set: ResolvedQuestionSet, answers: Answers): ReportedContext {
+/**
+ * Read Your Food Context back. Never reads a scored item.
+ *
+ * ── Why the item map is a PARAMETER ───────────────────────────────────────
+ *
+ * The `contributes === "food-context"` check below is belt and braces — with
+ * the real map it can never fire, because fc1–fc4 are all unscored. Which
+ * means that with the map hard-wired, DELETING the check changed nothing
+ * observable, and sabotage case 1040 walked straight through: the guard for
+ * the architecture's most important boundary was unfalsifiable.
+ *
+ * Gate 2 hit the identical problem with the question-set resolver — every pin
+ * matched, so disabling the pin check was a no-op — and fixed it the same way:
+ * make the input injectable, so a test can supply the case the check exists
+ * for. The parameter is for testing, and it says so rather than pretending to
+ * be a feature.
+ */
+export function readFoodContext(
+  set: ResolvedQuestionSet,
+  answers: Answers,
+  items: Readonly<Record<ContextConstraint, string>> = CONTEXT_ITEMS,
+): ReportedContext {
   const byId = new Map(set.questions.map((q) => [q.id, q]))
 
   const states = {} as Record<ContextConstraint, ConstraintState>
   let anyAnswered = false
 
-  for (const [constraint, id] of Object.entries(CONTEXT_ITEMS) as [
-    ContextConstraint,
-    string,
-  ][]) {
+  for (const [constraint, id] of Object.entries(items) as [ContextConstraint, string][]) {
     const q = byId.get(id)
     /*
      * Belt and braces, in the same spirit as the engine asserting its own
