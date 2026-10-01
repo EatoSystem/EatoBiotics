@@ -74,7 +74,7 @@ export class DeterministicProvider implements LoopIntelligenceProvider {
 
     const rationale =
       `Your ${BIOTIC_LABELS[strongest]} look settled, while ${BIOTIC_LABELS[weakest]} ` +
-      `appear lower. Small, repeatable food changes here tend to move your Food System Score most.`
+      `appear lower. Small, repeatable food changes here are usually the most direct place to start.`
 
     return {
       changes,

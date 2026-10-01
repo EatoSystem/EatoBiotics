@@ -653,47 +653,39 @@ describe("the withheld score name is confined to the gated candidate preview", (
   })
 
   /*
-   * ── COUNTED DEBT, found by this block and deliberately not repaired here ───
+   * ── THE LEDGER, CLEARED IN GATE 3.5 ──────────────────────────────────────
    *
-   * Asking the question properly — "does any file a customer can reach carry
-   * the withheld name?" — turned up THIRTEEN, none of them the candidate. They
-   * are the surfaces the Food System Score architecture review named in its
+   * This block found THIRTEEN customer-reachable files carrying the withheld
+   * name — the surfaces the Food System Score architecture review named in its
    * opening finding: *"the retired name is shipping right now, in about thirty
-   * places."* Phase 1a corrected the ones a visitor meets at the gate; these
-   * sit deeper in the account, the agent loop and the share card, and nothing
-   * has ever read them, because `journeySurfaces()` does not reach them either.
+   * places."* Eleven are now corrected: the live product's person-level score
+   * is the Biotics Score™, and that is what they say.
    *
-   * The sharpest is `components/account/retest-card.tsx:91`, which offers a
-   * share string reading "My Food System Score went from X to Y" — a
-   * longitudinal change claim, under a withheld name, on a model that cannot
-   * yet support one. The review flagged that exact line.
+   * Two remain, each for a reason that is not "we did not get to it".
    *
-   * ── Why it is a ledger and not a fix ──────────────────────────────────────
+   * ── Why an exception is not the same as a backlog entry ──────────────────
    *
-   * Repairing thirteen files across the account dashboard, the Living Twin, the
-   * agent loop, the share-card renderer and the CMS taxonomy is a vocabulary
-   * pass, and folding one into an action-layer gate is how a diff stops being
-   * reviewable. It is also not all one thing: some are rendered copy, while
-   * `lib/cms/taxonomy.ts` is a STORED tag value, where a rename is a data
-   * question rather than a copy question — exactly the distinction this file's
-   * header warns against collapsing.
+   * `lib/cms/taxonomy.ts` holds a STORED tag value. CMS rows are tagged with
+   * the literal string, so renaming it orphans every row already carrying it —
+   * which makes this a data question, not a copy question. The file's own
+   * neighbours already carry the deprecated "Heal" for exactly this reason,
+   * and this file's header warns against demanding a data migration to satisfy
+   * a naming rule.
    *
-   * So the set is pinned by value, in BOTH directions. A fourteenth file turns
-   * this red, and a file that is fixed must leave the ledger — so the list
-   * cannot sit here looking like coverage after the thing it covers is gone.
+   * `lib/assessment/registry.ts` keeps "Family Food System Score" — only that
+   * one label; the You/foundation label was corrected. Family product naming
+   * is explicitly deferred out of Phase 1, the whole Family funnel
+   * (`components/start-family/*`, eight files) is POST_V1-refused and so is
+   * not in this closure at all, and inventing a "Family Biotics Score" HERE
+   * would be taking a product-naming decision inside a vocabulary pass. The
+   * refused funnel and this label should be renamed together, by someone
+   * naming the Family product deliberately.
+   *
+   * Pinned in BOTH directions, as before: a third file turns this red, and a
+   * file that gets fixed must leave the list rather than sit here looking like
+   * coverage.
    */
   const WITHHELD_NAME_UNCORRECTED = [
-    "components/account/retest-card.tsx",
-    "components/account/twin/twin-sections.tsx",
-    "components/assessment/report-starter.tsx",
-    "components/eatosystem/national-pulse.tsx",
-    "lib/account/inside-you.ts",
-    "lib/account/share-card.ts",
-    "lib/account/week-story.ts",
-    "lib/agent-loop/engine.ts",
-    "lib/agent-loop/providers/deterministic.ts",
-    "lib/agent-loop/stages.ts",
-    "lib/agent-loop/twin/twin-builder.ts",
     "lib/assessment/registry.ts",
     "lib/cms/taxonomy.ts",
   ]
@@ -770,5 +762,113 @@ describe("the withheld score name is confined to the gated candidate preview", (
     const rule = RETIRED.find(([n]) => n === WITHHELD)![1]
     expect(copyOf('<h1>Your Food System Score™</h1>')).toMatch(rule)
     expect(copyOf('<h1>Your Biotics Score™</h1>')).not.toMatch(rule)
+  })
+})
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Longitudinal claims on scores that carry no provenance — Gate 3.5.
+
+   ── What this guards, and why the vocabulary rules above cannot ─────────────
+
+   The rules above police the NAME. They say nothing about what a surface
+   claims the difference between two scores MEANS, and that is the other half
+   of the problem the ledger exposed.
+
+   `lib/account/retest.ts` stores `ScorePoint` as `{ score, at }`. There is no
+   method version on it, and `leads.score_history` holds bare numbers. In
+   practice both points come from the same instrument — one route writes the
+   column, keyed on (email, assessment_type), and the fifteen questions sit
+   inside the methodology freeze — but that is a property of what happened to
+   be true, not something recorded. The day the instrument changes, every
+   historical pair becomes a comparison between two different things and
+   nothing would notice.
+
+   So the two numbers may be shown: each is true, and each is what the person
+   was told at the time. What may not be shown is the ACHIEVEMENT framing — the
+   difference presented as a result the person earned, or as something their
+   meals caused.
+
+   Gate 3.5 corrected exactly that on two surfaces, and sabotage cases
+   1063, 1064 and 1067 then walked straight through, because the corrections
+   were copy and nothing asserted copy. These are the assertions that were
+   missing.
+   ════════════════════════════════════════════════════════════════════════════ */
+describe("no surface claims an improvement from scores that cannot be compared", () => {
+  const LONGITUDINAL_SURFACES = [
+    "components/account/retest-card.tsx",
+    "lib/account/week-story.ts",
+  ]
+
+  const CLAIMS: [string, RegExp][] = [
+    [
+      "a before/after score claim",
+      /went from \S+ to \S+|from \$\{[^}]*baseline[^}]*\} to \$\{[^}]*latest[^}]*\}/i,
+    ],
+    [
+      "the difference credited to the person's food",
+      /\b(your )?meals are moving\b|\bmeals actually changed\b|\byour food moved\b/i,
+    ],
+    [
+      "the difference framed as progress earned",
+      /\bshare my progress\b|\byour progress so far\b|\byou improved\b|\bimprovement of \d/i,
+    ],
+    [
+      "a biological improvement claim",
+      /\byour (gut|microbiome|biology|health) (has )?improved\b/i,
+    ],
+  ]
+
+  it.each(LONGITUDINAL_SURFACES)("%s makes no improvement claim", (file) => {
+    const copy = copyOf(readFileSync(file, "utf8"))
+    for (const [why, rule] of CLAIMS) {
+      const hit = copy.match(rule)
+      expect(hit?.[0] ?? null, `${file} — ${why}: "${hit?.[0]}"`).toBeNull()
+    }
+  })
+
+  it("NON-VACUITY: each rule catches the sentence it exists for", () => {
+    const probes: [string, string][] = [
+      ["a before/after score claim", "My Biotics Score went from 61 to 72 in 90 days."],
+      ["the difference credited to the person's food", "Your meals are moving the number."],
+      ["the difference framed as progress earned", "Share my progress"],
+      ["a biological improvement claim", "Your gut has improved."],
+    ]
+    for (const [name, probe] of probes) {
+      const rule = CLAIMS.find(([n]) => n === name)
+      expect(rule, `no rule named "${name}"`).toBeDefined()
+      expect(probe, `"${probe}" must be refused by ${name}`).toMatch(rule![1])
+    }
+  })
+
+  it("NON-VACUITY: the shipped copy is not caught", () => {
+    // The rules must leave the honest version alone, or the next person to
+    // find them inconvenient will weaken them rather than the copy.
+    for (const honest of [
+      "I'm tracking my Biotics Score with EatoBiotics — currently 72/100.",
+      "Both numbers came from the same assessment, taken 90 days apart.",
+      "That is what your answers said this time.",
+      "Share my score",
+    ]) {
+      for (const [why, rule] of CLAIMS) {
+        expect(honest, `${why} fired on honest copy: "${honest}"`).not.toMatch(rule)
+      }
+    }
+  })
+
+  /*
+   * The positive half. Showing two numbers and a delta without saying what
+   * they are leaves the reader to supply the meaning, and the meaning they
+   * will supply is "I got better" — which is the claim being avoided.
+   */
+  it("the retest card says what the two numbers are", () => {
+    const copy = copyOf(readFileSync("components/account/retest-card.tsx", "utf8"))
+    expect(
+      copy,
+      "the card shows a delta; it must also say the difference describes the answers",
+    ).toMatch(/describes what your answers said/i)
+    expect(
+      copy,
+      "and must say plainly that it is not a health measurement",
+    ).toMatch(/not a measurement of your health/i)
   })
 })

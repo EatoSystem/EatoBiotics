@@ -5,7 +5,7 @@
  *  - TwinLearnedToday  → "What Your Food System Learned Today" (the learning feed as cards)
  *  - TwinNextAction    → the single next best action (reuses NextBestActionCard,
  *                        with local complete/skip acknowledgement — no backend write yet)
- *  - TwinScorePanel    → premium Food System Score (ScoreRing + trend + biotics)
+ *  - TwinScorePanel    → premium Biotics Score™ (ScoreRing + trend + biotics)
  * All read from the shared FoodSystemDigitalTwin. Brand palette, non-medical tone.
  */
 
@@ -127,13 +127,13 @@ export function TwinNextAction({ twin, bare = false }: { twin: FoodSystemDigital
   )
 }
 
-/* ── Your Food System Score ────────────────────────────────────────── */
+/* ── Your Biotics Score™ ────────────────────────────────────────── */
 export function TwinScorePanel({ twin, visual }: { twin: FoodSystemDigitalTwin; visual: TwinVisualState }) {
   const delta = twin.progress.scoreDelta
   const deltaLabel = delta > 0 ? `+${delta} since baseline` : delta < 0 ? `${delta} since baseline` : "Holding at baseline"
   return (
     <section className="mx-auto max-w-5xl px-4 pt-8 md:px-8">
-      <SectionHeading eyebrow="Food System Score" title="Your Food System, today" />
+      <SectionHeading eyebrow="Biotics Score™" title="Your Food System, today" />
       <div className="grid gap-5 lg:grid-cols-[auto_1fr] lg:items-center">
         <div className="flex flex-col items-center rounded-2xl border border-border bg-card p-6" style={{ boxShadow: "0 2px 12px rgba(26,46,18,0.05)" }}>
           <ScoreRing score={visual.ringScore} color="var(--icon-green)" gradientId="account-twin-score-ring" profileType={visual.momentumLabel} className="relative h-44 w-44" />

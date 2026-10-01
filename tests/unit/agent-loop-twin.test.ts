@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest"
+import { SCORE_TREND_LABEL } from "@/lib/agent-loop/twin/twin-builder"
 import {
   buildBaseline,
   buildFoodSystemTwin,
@@ -56,7 +57,7 @@ describe("Food System Digital Twin", () => {
     )
     const twin = buildFoodSystemTwin(next)
     expect(twin.currentScore.value).toBe(71)
-    const scoreTrend = twin.trends.find((t) => t.label === "Food System Score")
+    const scoreTrend = twin.trends.find((t) => t.label === SCORE_TREND_LABEL)
     expect(scoreTrend?.direction).toBe("up")
     expect(scoreTrend?.detail).toContain("+11")
   })

@@ -124,7 +124,7 @@ export function buildWeekStory(twin: FoodSystemDigitalTwin): WeekStorySlide[] {
 
   slides.push({
     key: "score",
-    eyebrow: "Food System Score",
+    eyebrow: "Biotics Score™",
     stat: String(score),
     title:
       delta > 0
@@ -134,7 +134,7 @@ export function buildWeekStory(twin: FoodSystemDigitalTwin): WeekStorySlide[] {
           : "Holding steady.",
     detail:
       delta > 0
-        ? "Your meals are moving the number — I can feel the momentum."
+        ? "That is what your answers said this time. Let us see whether it holds."
         : "Rhythm beats perfection. Next week we build again.",
     accent: "#A8E063",
   })

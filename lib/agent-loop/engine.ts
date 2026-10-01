@@ -226,7 +226,7 @@ export function generateLoopSummary(session: AgentLoopSession): string {
   const latest = [...session.turns].reverse().find((t) => t.recommendation)?.recommendation
   if (!latest) {
     return (
-      `Your ${sys.label} loop is ready. Your Food System Score is ` +
+      `Your ${sys.label} loop is ready. Your Biotics Score™ is ` +
       `${session.baseline.foodSystemScore.value} (${session.baseline.foodSystemScore.label}). ` +
       `Add an observation to begin. ${LOOP_DISCLAIMER}`
     )

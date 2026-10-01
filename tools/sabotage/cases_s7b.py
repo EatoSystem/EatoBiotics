@@ -133,6 +133,12 @@ ACATT = ["tests/unit/fss-action-catalogue.test.ts"]
 ACLAIMS = ["tests/unit/fss-action-claims.test.ts"]
 AFENCE = ["tests/unit/fss-action-fence.test.ts"]
 
+# ── Gate 3.5 — live vocabulary clean ───────────────────────────────────
+RETEST = "components/account/retest-card.tsx"
+DETERM = "lib/agent-loop/providers/deterministic.ts"
+TWINBUILD = "lib/agent-loop/twin/twin-builder.ts"
+WEEKSTORY = "lib/account/week-story.ts"
+
 CASES = [
     (930, "/waitlist is served again", SURFACE,
      '  "/waitlist",\n  "/start",\n',
@@ -928,5 +934,41 @@ CASES = [
      "app/pricing/page.tsx",
      'export default',
      'const LEAK = "Your Food System Score"\n\nexport default',
+     RETIRED),
+    # ── Gate 3.5 — the withheld name, and the comparability claim ─────────
+
+    (1063, "the retest card claims a before/after improvement again", RETEST,
+     "  const shareText = `I'm tracking my Biotics Score\u2122 with EatoBiotics",
+     "  const shareText = `My Biotics Score went from ${state.baseline.score} to ${state.latest.score}` + `I'm tracking my Biotics Score\u2122 with EatoBiotics",
+     RETIRED),
+
+    # RE-AIMED. v1 removed only the FIRST of the sentence's two wrapped lines,
+    # leaving "describes what your answers said — not a measurement of your
+    # health." in place — which is the half the guard asserts, so the mutation
+    # did not do what its own description said. The whole paragraph goes now.
+    (1064, "the retest card drops the line saying what the two numbers are", RETEST,
+     "        Both numbers came from the same assessment, taken {state.days} days apart. The difference\n        describes what your answers said \u2014 not a measurement of your health.",
+     "        ",
+     RETIRED),
+
+    (1065, "a live surface takes the withheld score name back", TWINBUILD,
+     'export const SCORE_TREND_LABEL = "Biotics Score\u2122"',
+     'export const SCORE_TREND_LABEL = "Food System Score"',
+     RETIRED),
+
+    (1066, "the agent provider predicts a score movement again", DETERM,
+     "are usually the most direct place to start.`",
+     "tend to move your Food System Score most.`",
+     RETIRED),
+
+    (1067, "the week story credits the meals for the change", WEEKSTORY,
+     '? "That is what your answers said this time. Let us see whether it holds."',
+     '? "Your meals are moving the number \u2014 I can feel the momentum."',
+     RETIRED),
+
+    (1068, "the cleared ledger is widened again instead of a surface being fixed",
+     "tests/unit/retired-vocabulary.test.ts",
+     '    "lib/assessment/registry.ts",\n    "lib/cms/taxonomy.ts",\n  ]',
+     '    "lib/assessment/registry.ts",\n    "lib/cms/taxonomy.ts",\n    "lib/account/share-card.ts",\n  ]',
      RETIRED),
 ]

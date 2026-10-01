@@ -2,7 +2,7 @@
  * EatoBiotics — shareable Digital Twin card (pure Canvas 2D, no deps).
  *
  * Draws a 1080×1350 portrait card in the dark-stage brand language: layered
- * aura glows, the giant Food System Score, momentum, the three biotic bars and
+ * aura glows, the giant Biotics Score™, momentum, the three biotic bars and
  * the wordmark. Consumed by components/account/twin/share-twin.tsx, which
  * rasterises it for the Web Share API / PNG download.
  */
@@ -76,7 +76,7 @@ export function drawTwinCard(ctx: CanvasRenderingContext2D, data: ShareCardData)
   ctx.fillText(String(data.score), cx, cy + 105)
   ctx.fillStyle = "rgba(253,251,247,0.4)"
   ctx.font = `600 44px ${SANS}`
-  ctx.fillText("Food System Score / 100", cx, cy + 185)
+  ctx.fillText("Biotics Score / 100", cx, cy + 185)
 
   /* momentum chip */
   const chipText = data.delta > 0 ? `▲ +${data.delta} and improving` : data.momentumLabel

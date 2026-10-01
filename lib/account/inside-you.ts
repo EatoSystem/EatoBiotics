@@ -61,7 +61,7 @@ export function buildInsideYouChapters(twin: FoodSystemDigitalTwin): InsideYouCh
       narration:
         "Each plate you build sends instructions to the living Food System inside you — your Food System listens to every one.",
       value: score,
-      valueLabel: "Your Food System Score today",
+      valueLabel: "Your Biotics Score™ today",
       takeaway: `Your Food System has learned from ${twin.observations.length} signal${twin.observations.length === 1 ? "" : "s"} so far — every meal teaches it more.`,
     },
     {

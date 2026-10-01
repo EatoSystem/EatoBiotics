@@ -116,7 +116,7 @@ export function ReportStarter({ result, isDemo, claudeReport }: ReportStarterPro
               Your Pathways at a Glance
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              How your food system scores across each area.
+              How each area of your food system looks.
             </p>
           </ScrollReveal>
           <div className="mt-5 space-y-3">
@@ -205,7 +205,7 @@ export function ReportStarter({ result, isDemo, claudeReport }: ReportStarterPro
               The 3 Biotics Explained
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              The three forces driving your food system score — and your food system health.
+              The three forces behind your Biotics Score™.
             </p>
           </ScrollReveal>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
