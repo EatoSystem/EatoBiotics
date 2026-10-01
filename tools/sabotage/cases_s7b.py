@@ -161,6 +161,12 @@ INSIDEYOU = "lib/account/inside-you.ts"
 MENUSCAN = "components/account/twin/menu-scan.tsx"
 MEALREVEAL = "components/account/twin/meal-reveal.tsx"
 BCLAIMSFILE = "tests/unit/biotic-claims.test.ts"
+
+# ── Gate 3.7 — the Gate 4 pre-flight ──────────────────────────────────────
+BIOTICSPAGE = "app/biotics/page.tsx"
+MENUSCAN_ROUTE = "app/api/menu-scan/route.ts"
+CLAUDEMD = "CLAUDE.md"
+CMDTEST = ["tests/unit/claude-md-accuracy.test.ts"]
 ALCLAIMS = ["tests/unit/agent-loop-claims.test.ts"]
 BCLAIMS = ["tests/unit/biotic-claims.test.ts"]
 EDUTAIN = ["tests/unit/twin-edutainment.test.ts"]
@@ -184,8 +190,13 @@ CASES = [
      '        <a\n          href="#how-it-works"\n',
      HOLDING),
 
+    # DISAMBIGUATED in Gate 3.7: app/book/page.tsx carries two byte-identical
+    # substack link blocks (~129 and ~230). Anchored on the first through its
+    # wrapper's margin class, the only thing that differs between them.
     (933, "a book page links back into the refused route", BOOK,
+     '            <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">\n'
      '              <a\n                href="https://eatobiotics.substack.com/"\n',
+     '            <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">\n'
      '              <a href="/waitlist">See all three launches</a>\n'
      '              <a\n                href="https://eatobiotics.substack.com/"\n',
      HOLDING + SURFACET),
@@ -411,9 +422,14 @@ CASES = [
      '    line: "See your Food System Score instantly.",\n',
      RETIRED),
 
+    # DISAMBIGUATED in Gate 3.7: the 2-space tranche entry is a SUBSTRING of
+    # the same path indented 6 spaces in the value-pinned list, so the anchor
+    # matched twice and did not say which list it meant. Widened onto its
+    # neighbour, whose sort order differs between the two lists. The mutation
+    # and the invariant are unchanged.
     (968, "a surface is quietly dropped from the claims corpus", BIOTICTEST,
-     '  "components/home/feed-seed-heal.tsx",\n',
-     '',
+     '  "components/home/the-framework.tsx",\n  "components/home/feed-seed-heal.tsx",\n',
+     '  "components/home/the-framework.tsx",\n',
      BIOTIC),
 
     (969, "the fermented-food tip promises live probiotics again", DICT,
@@ -464,20 +480,28 @@ CASES = [
      '   /\\b(live|living) foods?\\b/i],\n',
      BIOTIC),
 
+    # DISAMBIGUATED in Gate 3.7: the 2-space tranche entry is a SUBSTRING of
+    # the same path indented 6 spaces in the value-pinned list, so the anchor
+    # matched twice and did not say which list it meant. Widened onto its
+    # neighbour, whose sort order differs between the two lists.
     (976, "a corrected reachable surface is dropped from the guarded set",
      BIOTICTEST,
-     '  "app/biotics/page.tsx",\n',
-     '',
+     '  "app/help/page.tsx",\n  "app/biotics/page.tsx",\n',
+     '  "app/help/page.tsx",\n',
      BIOTIC),
 
     # RE-ANCHORED in Tranche 2C. This named lib/report/food-swaps.ts, which was
     # corrected and removed from the ledger -- the anchor was legitimately
     # invalidated rather than the case being wrong, so it moves to a file still
     # in the ledger instead of being deleted.
+    # DISAMBIGUATED in Gate 3.7: the 2-space tranche entry is a SUBSTRING of
+    # the same path indented 6 spaces in the value-pinned list, so the anchor
+    # matched twice and did not say which list it meant. Widened onto its
+    # neighbour, whose sort order differs between the two lists.
     (977, "a ledger entry is deleted while the file still carries the claim",
      BIOTICTEST,
-     '  "lib/foods.ts",\n',
-     '',
+     '  "lib/foods.ts",\n  "app/help/page.tsx",\n',
+     '  "app/help/page.tsx",\n',
      BIOTIC),
 
     (978, "the reachable closure is narrowed until it proves nothing",
@@ -1150,4 +1174,47 @@ CASES = [
      "        assertClean(\"analysis.rationale\", [turn.analysis!.rationale])",
      "        assertClean(\"analysis.rationale\", [])",
      ALCLAIMS),
+    # ── Gate 3.7 — the pre-flight ───────────────────────────────
+
+    (1094, "the cycle diagram claims organisms join the colony again", BIOTICSPAGE,
+     'desc: "Live microorganisms may arrive, depending on the food"',
+     'desc: "New living bacteria join the colony"',
+     BCLAIMS),
+
+    # The counterfactual for the rule itself: "colony" must stay sayable, and a
+    # rule that refused the noun would make the page less accurate, not safer.
+    (1095, "the colony rule is widened to refuse the word itself", BCLAIMSFILE,
+     '   /\\b(join\\w*|enter\\w*|settl\\w+|establish\\w*|arriv\\w*|add\\w*|introduc\\w*)\\b[^.!?]{0,40}\\bcolon(y|ies)\\b/i],',
+     '   /\\bcolon(y|ies)\\b/i],',
+     BCLAIMS),
+
+    (1096, "the postbiotics card asserts health outcomes flat again", BIOTICSPAGE,
+     'They are associated with lower inflammation, a stronger gut lining, better-regulated immune response, and how you feel day to day.',
+     'They reduce inflammation, strengthen the gut lining, regulate immune response, and directly influence how you feel.',
+     BCLAIMS),
+
+    (1097, "the menu-scan prompt is told the member's weakest biotic again", MENUSCAN_ROUTE,
+     'content: `The food pattern to favour is: ${pattern}.',
+     'content: `The member\'s weakest biotic is ${weakest} \u2014 bias the picks toward it.',
+     BCLAIMS),
+
+    (1098, "the menu-scan prompt asks the model what a dish feeds", MENUSCAN_ROUTE,
+     '- "why" names the FOODS in the dish and why they suit the pattern. Do not describe what happens',
+     '- "why" should mention what the dish feeds inside your Prebiotics. Do not describe what happens',
+     BCLAIMS),
+
+    (1099, "the sixth prompt module leaves the claims corpus", BCLAIMSFILE,
+     '  "app/api/menu-scan/route.ts",\n]',
+     ']',
+     BCLAIMS),
+
+    (1100, "the permanent product rule is deleted from CLAUDE.md", CLAUDEMD,
+     '> **Measure the food system we can observe. Teach the biology accurately. Never\n> present the biology as personally measured when it isn\'t.**',
+     '',
+     CMDTEST),
+
+    (1101, "the rule stops requiring a new generator to join the behavioural guard", CLAUDEMD,
+     '**A new generator of customer-facing prose belongs in\n  that file, not only in a corpus list.**',
+     'It is thorough.',
+     CMDTEST),
 ]

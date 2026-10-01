@@ -614,6 +614,67 @@ New AI routes must call `guardAiUsage` (or implement an equivalent cap).
 
 ---
 
+## The permanent product rule (binding on every surface)
+
+> **Measure the food system we can observe. Teach the biology accurately. Never
+> present the biology as personally measured when it isn't.**
+
+Three clauses, and the third is the one that gets broken.
+
+**Measure what we observe.** The instrument asks about food: plant variety and
+fibre, fermented foods, eating rhythm, processing, meal timing. Those are the
+things a score may describe, and they are also the things a person can change.
+
+**Teach the biology accurately.** Prebiotics · Probiotics · Postbiotics are the
+scientific foundation and stay prominent everywhere — in `/biotics`, the
+framework cards, `PILLARS[*].whatItDoes`, the Three Biotics panel. A correction
+is never a deletion: educational Biotics content is preserved and improved, never
+demoted for being unscored.
+
+**Never present the biology as personally measured.** No surface may state,
+imply or render a member's own Prebiotic, Probiotic or Postbiotic state — not as
+a number, not as a bar, not as a band word, not as a superlative, not as a
+possessive, and not as a mechanism ("this fed your Prebiotics"). A questionnaire
+and a meal photo reach none of the three, and
+`POSTBIOTICS_INFERENCE_BOUNDARY` prohibits a personal Postbiotics state by name.
+
+### Why this is a rule and not a preference
+
+It has been broken repeatedly, in every form, and each time the fix was scoped
+to the form rather than the rule:
+
+| | |
+|---|---|
+| Tranche 1 | per-Biotic numbers in the pre-launch reveal |
+| Tranche 2A | the same on `/assessment/results`, the share card, the generated OG image |
+| Tranche 2C | the same in `sequence-email.ts`, months after every page had lost it |
+| Gate 3.6 | **fifteen** sites across the agent loop and `/account` — including the member's three Biotic scores drawn onto a public share PNG, and prose stating which Biotic was their "strongest area" |
+
+### What enforces it
+
+- `PERSONAL_BIOTIC_STATE` in `tests/unit/biotic-claims.test.ts` — nine rules
+  over the source of 22+ named surfaces, with the false-positive cases that keep
+  education passing;
+- `NO_PERSONAL_BIOTIC_NUMBER` — per-file pins where the invariant is a file's
+  wiring rather than its English;
+- **`tests/unit/agent-loop-claims.test.ts` — the one that matters.** It CALLS
+  the generators and reads what they return, because a source scan of the whole
+  corpus catches 1 of 9 interpolated claims: `${BIOTIC_LABELS[k]}` puts no
+  Biotic word in any file. **A new generator of customer-facing prose belongs in
+  that file, not only in a corpus list.**
+
+### The corollary, learned the hard way
+
+Describe the input you actually have. On `/account` the agent loop's sub-scores
+come from averaged **meals**, not assessment answers, so "your answers
+described…" was false there — which is why `FoodSystemBaseline` carries a
+required `bioticsSource` and `lib/agent-loop/behaviour.ts` keeps two
+vocabularies: a meal's third bucket is polyphenol-rich and resistant-starch
+foods, while the assessment's third dimension is eating rhythm. They are not
+interchangeable, and a keyed lookup between them is the `food-swaps.ts` bug.
+
+---
+
 ## The current commercial model (Phase 1 — frozen)
 
 **These three are the only things EatoBiotics currently sells.** Anything else

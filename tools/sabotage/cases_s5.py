@@ -73,8 +73,14 @@ CASES = [
     # Anchor corrected: this route names the variable `denied`, not
     # `unauthorised`. count=1 in the driver mutates only the first handler,
     # which is enough — the guard requires EVERY exported handler to call it.
-    (708, "a dormant route loses its fail-closed cron check", DIGEST,
-     '  const denied = verifyCronRequest(req)',
-     '  const denied = null',
+    # DISAMBIGUATED in Gate 3.7. `verifyCronRequest(req)` is called twice in
+    # this route — once in GET, once in POST — so the bare line matched both and
+    # the case did not say which handler it was breaking. It mutated GET only
+    # (run.py caps at one replacement) while reading as though it covered the
+    # route, so the POST handler's check was never the subject of any case. The
+    # anchor now names GET explicitly; the invariant tested is unchanged.
+    (708, "a dormant route's GET handler loses its fail-closed cron check", DIGEST,
+     'export async function GET(req: NextRequest) {\n  const denied = verifyCronRequest(req)',
+     'export async function GET(req: NextRequest) {\n  const denied = null',
      CRON),
 ]
