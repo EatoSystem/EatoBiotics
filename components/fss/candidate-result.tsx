@@ -6,9 +6,8 @@ import type { FoodSystemScore } from "@/lib/fss/engine/score"
 import type { ResolvedQuestionSet } from "@/lib/fss/questions/types"
 import type { Answers } from "@/lib/fss/engine/score"
 import { DOMAIN_PRESENTATION, PRIORITY_COPY } from "@/lib/fss/presentation/domains"
-import { resolvePriorities } from "@/lib/fss/action/priority"
-import { buildPlan } from "@/lib/fss/action/plan"
 import { CandidatePlan } from "@/components/fss/candidate-plan"
+import type { FoodSystemPlan, ResolvedPriority } from "@/lib/fss/action/types"
 
 /**
  * The candidate result — Your Food System Score™ through Your Plan.
@@ -49,21 +48,40 @@ export function CandidateResult({
   score,
   set,
   answers,
+  priorities,
+  plan,
   onRestart,
+  onContinue,
 }: {
   score: FoodSystemScore
   set: ResolvedQuestionSet
   answers: Answers
+  /*
+   * GATE 4 — the selection arrives as a prop; this page no longer makes it.
+   *
+   * Gate 2 selected here. Gate 3 moved the selection into the action layer
+   * because "a second selector over the same five domains would drift, and the
+   * first symptom would be this section and Your Plan disagreeing about what
+   * matters most". Gate 4 finishes that move for the same reason, one level up.
+   *
+   * A selection is now a DECISION that is written down under a policy version,
+   * so it has to be made exactly once — in `lib/fss/system/establish.ts` — and
+   * everything else reads what was recorded. While this page selected for
+   * itself there were two selectors again: this one, and the one whose answer
+   * got persisted. They agree today, deterministically, over the same answers.
+   * They would stop agreeing the first time the rule moved, and the symptom
+   * would be a result page disagreeing with the Food System it just created.
+   *
+   * Nothing a person reads changed. The sentences, the sections and their order
+   * are exactly as Gate 3 reviewed them; only where the selection comes from.
+   */
+  priorities: readonly ResolvedPriority[]
+  plan: FoodSystemPlan
   onRestart: () => void
+  /** Enter the Food System that was just established. Absent in a fixture. */
+  onContinue?: () => void
 }) {
   const reducedMotion = usePrefersReducedMotion()
-  /*
-   * ONE selector, shared with the plan below. Gate 2 called `priorityFor` here
-   * and Gate 3 moved the selection into the action layer — a second selector
-   * over the same five domains would drift, and the first symptom would be this
-   * section and Your Plan disagreeing about what matters most.
-   */
-  const priorities = resolvePriorities({ score, set, answers })
 
   return (
     <div className="mx-auto w-full max-w-[860px] px-6 py-12">
@@ -236,14 +254,32 @@ export function CandidateResult({
         Gate 3. This is where "Feed · Seed · Rejuvenate — the actions that
         follow from a priority — are not built yet" used to sit.
 
-        The plan is built from the same score, set and answers the result
-        already has, and from the SAME priorities rendered above — `buildPlan`
-        calls `resolvePriorities` internally, so the two sections cannot
+        The plan arrives as a prop, built once by establishment from the SAME
+        priorities rendered above — one selection, recorded under a policy
+        version, so this section and Your Plan cannot
         disagree about what matters most.
       */}
-      <CandidatePlan plan={buildPlan({ score, set, answers })} />
+      <CandidatePlan plan={plan} />
 
-      <div className="mt-16 text-center">
+      {/*
+        GATE 4 — the result page now leads somewhere.
+
+        Before this gate the walk ended here: a score, a priority, a plan, and
+        then nothing. The primary action is entering the Food System that was
+        just established, and "Walk it again" drops below it as the secondary —
+        because starting over is now the unusual thing to want.
+      */}
+      <div className="mt-16 flex flex-col items-center gap-5">
+        {onContinue && (
+          <button
+            type="button"
+            onClick={onContinue}
+            className="inline-flex min-h-[52px] items-center rounded-full px-8 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+            style={{ background: "var(--icon-green)" }}
+          >
+            Go to My Food System
+          </button>
+        )}
         <button
           type="button"
           onClick={onRestart}
