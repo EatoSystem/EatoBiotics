@@ -22,7 +22,9 @@ import { fileURLToPath } from "node:url"
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.resolve(__dirname, "..")
 
-/** Manual recursive walk — avoids fs.globSync, which needs Node 22+ (CI runs Node 20). */
+/** Manual recursive walk. Kept after the Node 24 bump: fs.globSync is now
+ *  available, but a dependency-free walk that already works is not worth
+ *  rewriting, and this one is the guard the whole script rests on. */
 function findRouteFilesUnder(dir) {
   const out = []
   for (const entry of readdirSync(dir)) {
