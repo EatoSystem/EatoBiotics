@@ -19,12 +19,20 @@ import {
   type FoodSystemRepository,
   type StoredAction,
   type StoredAssessment,
+  type StoredAssessmentDraft,
   type StoredFoodSystem,
   type StoredPlanDecision,
   type StoredPriorityDecision,
   type StoredScore,
 } from "@/lib/fss/persistence/repository"
 import { establishFoodSystem } from "@/lib/fss/system/establish"
+import {
+  abandonDraft,
+  loadCurrentDraft,
+  reconcileIndex,
+  startDraft,
+  updateDraft,
+} from "@/lib/fss/system/draft"
 import { loadCurrentFoodSystem } from "@/lib/fss/system/load"
 import { moveAction } from "@/lib/fss/system/actions"
 import { toAiContext } from "@/lib/fss/system/ai-context"
@@ -34,7 +42,11 @@ import { toStoredPlanDecision, toStoredPriorityDecision } from "@/lib/fss/system
 import { composeMyFoodSystem } from "@/lib/fss/system/compose"
 import { MY_FOOD_SYSTEM_KEYS } from "@/lib/fss/system/types"
 import { resolveReviewPoint, daysUntil } from "@/lib/fss/system/review"
-import { SYSTEM_CHECKS, validateFoodSystem } from "@/lib/fss/system/validate"
+import {
+  LEGACY_ASSESSMENT_ID,
+  SYSTEM_CHECKS,
+  validateFoodSystem,
+} from "@/lib/fss/system/validate"
 import { BIOTICS, SECTIONS, SECTION_LIST, TODAY, PROGRESS } from "@/lib/fss/system/sections"
 import {
   DEFAULT_SECTION,
@@ -145,6 +157,7 @@ function records(answers: Answers = allTwos(), overrides: Partial<Records> = {})
       establishedAt: NOW,
       systemModelVersion: SYSTEM_MODEL_VERSION,
       actionSetVersion: ACTION_SET_VERSION,
+      previousSystemId: null,
     },
     assessment,
     score: stored,
@@ -927,13 +940,16 @@ describe("the AI context package is an interface and nothing more", () => {
 function memoryRepo(options: { failAt?: string } = {}): FoodSystemRepository & {
   readonly writes: string[]
   readonly store: Map<string, unknown>
+  /** Start or stop failing mid-life, so one repo can hold a baseline AND fail. */
+  failAt: (prefix: string | undefined) => void
 } {
   const store = new Map<string, unknown>()
   const writes: string[] = []
+  let failing = options.failAt
 
   const strict = (key: string, value: unknown) => {
     writes.push(key)
-    if (options.failAt && key.startsWith(options.failAt)) {
+    if (failing && key.startsWith(failing)) {
       throw new RepositoryWriteFailed(key)
     }
     store.set(key, value)
@@ -944,13 +960,16 @@ function memoryRepo(options: { failAt?: string } = {}): FoodSystemRepository & {
     writable: true,
     writes,
     store,
+    failAt(prefix) {
+      failing = prefix
+    },
     async loadAssessment(id) {
       return (store.get(`assessment.${id}`) as StoredAssessment) ?? null
     },
     async saveAssessment(a) {
       writes.push(`assessment.${a.id}`)
       // Lenient: a failure here is swallowed, as in the real adapter.
-      if (!options.failAt || !`assessment.${a.id}`.startsWith(options.failAt)) {
+      if (!failing || !`assessment.${a.id}`.startsWith(failing)) {
         store.set(`assessment.${a.id}`, a)
       }
     },
@@ -995,10 +1014,55 @@ function memoryRepo(options: { failAt?: string } = {}): FoodSystemRepository & {
       writes.push("clear")
       store.delete("system.current")
     },
+    /* ── The draft namespace: lenient, exactly like the real adapter ─────── */
+    async loadDraft(id) {
+      return (store.get(`assessment.draft.${id}`) as StoredAssessmentDraft) ?? null
+    },
+    async saveDraft(d) {
+      writes.push(`assessment.draft.${d.id}`)
+      if (!failing || !`assessment.draft.${d.id}`.startsWith(failing)) {
+        store.set(`assessment.draft.${d.id}`, d)
+      }
+    },
+    async deleteDraft(id) {
+      writes.push("delete-draft")
+      store.delete(`assessment.draft.${id}`)
+    },
+    async loadCurrentDraftId() {
+      return (store.get("assessment.draft.current") as string) ?? null
+    },
+    async setCurrentDraft(id) {
+      store.set("assessment.draft.current", id)
+    },
+    async clearCurrentDraft() {
+      store.delete("assessment.draft.current")
+    },
   }
 }
 
-function establishArgs(repo: FoodSystemRepository, answers: Answers = allTwos()) {
+let draftSeq = 0
+
+/** A completed draft, ready to be established from. */
+function draftFor(answers: Answers, previousSystemId: string | null = null): StoredAssessmentDraft {
+  return {
+    // NOT derived from `previousSystemId`: a fixture id that embedded it made
+    // a substring assertion below match the NEW assessment's key and report it
+    // as a write to the OLD system. Distinct, and independent of the chain.
+    id: `assessment_fixture_${draftSeq++}`,
+    previousSystemId,
+    assessmentVersion: SET.assessmentVersion,
+    questionSetVersion: SET.questionSetVersion,
+    startedAt: "2026-10-01T08:40:00.000Z",
+    answers,
+    index: 0,
+  }
+}
+
+function establishArgs(
+  repo: FoodSystemRepository,
+  answers: Answers = allTwos(),
+  previousSystemId: string | null = null,
+) {
   return {
     repo,
     set: SET,
@@ -1009,14 +1073,7 @@ function establishArgs(repo: FoodSystemRepository, answers: Answers = allTwos())
       weights: DEV_ONLY_FSS_V1_FIXTURE_WEIGHTS,
       fixtureContext: FIXTURE,
     }),
-    assessment: {
-      id: "candidate",
-      assessmentVersion: SET.assessmentVersion,
-      questionSetVersion: SET.questionSetVersion,
-      answers,
-      startedAt: "2026-10-01T08:40:00.000Z",
-      completedAt: NOW,
-    },
+    draft: draftFor(answers, previousSystemId),
     now: NOW,
   }
 }
@@ -1033,7 +1090,28 @@ describe("establishment writes in order, and the pointer is the commit point", (
     expect(kinds).toContain("priority-decision")
     expect(kinds).toContain("plan-decision")
     expect(kinds).toContain("actions")
-    expect(repo.writes[repo.writes.length - 1]).toBe("system.current")
+
+    /*
+     * THE POINTER IS THE LAST THING THAT MAKES ANYTHING TRUE — and the draft
+     * deletion comes after it, which is the Gate 5 rule stated as an order:
+     *
+     *   …records → system.current → delete the draft
+     *
+     * Clearing the draft before the pointer would discard somebody's answers
+     * while the establishment could still fail, leaving them with neither the
+     * new system nor the attempt they spent ten minutes on.
+     */
+    const pointerAt = repo.writes.indexOf("system.current")
+    /*
+     * The FIRST deletion, not the last. `lastIndexOf` let a mutation that
+     * ADDED an early `abandonDraft` slip, because the later one was still
+     * after the pointer — so the assertion was true and the defect was real.
+     */
+    const draftGoneAt = repo.writes.indexOf("delete-draft")
+    expect(pointerAt).toBeGreaterThan(-1)
+    expect(draftGoneAt, "the draft outlived the commit point").toBeGreaterThan(pointerAt)
+    // Nothing else is written after the pointer.
+    expect(repo.writes.slice(pointerAt + 1).filter((w) => w !== "delete-draft")).toEqual([])
   })
 
   it("a composed view loads back from exactly what was written", async () => {
@@ -1100,6 +1178,348 @@ describe("establishment writes in order, and the pointer is the commit point", (
   })
 })
 
+/* ════════════════════════════════════════════════════════════════════════════
+   GATE 5 step 1 · THE DEFINING INVARIANT OF LONGITUDINAL EATOBIOTICS
+
+     A reassessment creates a new Food System state in history.
+     It never rewrites the one that came before it.
+
+   Every assertion below fails on the Gate 4 code, and not subtly: the
+   in-progress assessment was written to the literal `"candidate"`, so a second
+   assessment landed on the first one's record. `validateFoodSystem` could not
+   catch it either, because its identity check compared `"candidate"` with
+   `"candidate"` and found them equal — the baseline would have kept its score,
+   its decisions and its actions while silently presenting the NEW answers as
+   the evidence behind them.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+describe("a reassessment creates history and never rewrites it", () => {
+  /** Everything stored about one system, as bytes, for comparison. */
+  function snapshotOf(repo: ReturnType<typeof memoryRepo>, systemId: string): string {
+    const system = repo.store.get(`system.${systemId}`) as StoredFoodSystem
+    const keys = [
+      `system.${systemId}`,
+      `assessment.${system.assessmentId}`,
+      `score.${system.scoreId}`,
+      `priority-decision.${system.scoreId}`,
+      `plan-decision.${system.scoreId}`,
+      `actions.${system.scoreId}`,
+    ]
+    return JSON.stringify(keys.map((k) => [k, repo.store.get(k) ?? null]))
+  }
+
+  async function establishChain(repo: ReturnType<typeof memoryRepo>, sheets: Answers[]) {
+    const ids: string[] = []
+    for (const answers of sheets) {
+      const previousSystemId = await repo.loadCurrentSystemId()
+      const result = await establishFoodSystem(establishArgs(repo, answers, previousSystemId))
+      expect(result.ok, "fixture: establishment failed").toBe(true)
+      if (!result.ok) throw new Error("fixture")
+      ids.push(result.systemId)
+    }
+    return ids
+  }
+
+  it("THE INVARIANT — every baseline record is byte-identical afterwards", async () => {
+    const repo = memoryRepo()
+    const [a] = await establishChain(repo, [allTwos()])
+    const baselineBefore = snapshotOf(repo, a)
+
+    await establishChain(repo, [fermentedAtZero()])
+
+    expect(
+      snapshotOf(repo, a),
+      "the baseline changed when a second system was established",
+    ).toBe(baselineBefore)
+  })
+
+  it("the chain links backwards, and only the baseline has no predecessor", async () => {
+    const repo = memoryRepo()
+    const [a, b, c] = await establishChain(repo, [allTwos(), fermentedAtZero(), allTwos()])
+
+    const sys = (id: string) => repo.store.get(`system.${id}`) as StoredFoodSystem
+    expect(sys(a).previousSystemId, "the baseline must have no predecessor").toBeNull()
+    expect(sys(b).previousSystemId).toBe(a)
+    expect(sys(c).previousSystemId).toBe(b)
+
+    // And the current pointer is the newest, not the first.
+    expect(await repo.loadCurrentSystemId()).toBe(c)
+  })
+
+  it("A AND B are both byte-identical after C is created", async () => {
+    const repo = memoryRepo()
+    const [a, b] = await establishChain(repo, [allTwos(), fermentedAtZero()])
+    const before = [snapshotOf(repo, a), snapshotOf(repo, b)]
+
+    await establishChain(repo, [allTwos()])
+
+    expect([snapshotOf(repo, a), snapshotOf(repo, b)]).toEqual(before)
+  })
+
+  it("no system is ever updated to point FORWARD at its successor", async () => {
+    /*
+     * The other half of "backward-linked". A forward pointer would mean
+     * writing to a finished system every time a later one is created, which is
+     * two-sided mutation — and is the thing that makes "immutable" stop being
+     * true while every byte-comparison above still passes, because the
+     * comparison would simply include the mutated field.
+     */
+    const repo = memoryRepo()
+    const [a] = await establishChain(repo, [allTwos()])
+    const writesBefore = [...repo.writes]
+
+    await establishChain(repo, [fermentedAtZero()])
+
+    /*
+     * EXACT keys belonging to A, not a substring sweep. The first version of
+     * this used `k.includes(a)` and matched the new assessment's key, because
+     * the fixture happened to build its id out of the predecessor's — a test
+     * reporting a defect that was not there, which is as bad as missing one.
+     */
+    const systemA = repo.store.get(`system.${a}`) as StoredFoodSystem
+    const keysOfA = new Set([
+      `system.${a}`,
+      `assessment.${systemA.assessmentId}`,
+      `score.${systemA.scoreId}`,
+      `priority-decision.${systemA.scoreId}`,
+      `plan-decision.${systemA.scoreId}`,
+      `actions.${systemA.scoreId}`,
+    ])
+    const touchedA = repo.writes.slice(writesBefore.length).filter((k) => keysOfA.has(k))
+    expect(touchedA, "an earlier system's records were written to").toEqual([])
+
+    const src = readFileSync("lib/fss/system/establish.ts", "utf-8")
+      .replace(/\/\*[\s\S]*?\*\//g, " ")
+      .replace(/^\s*\/\/.*$/gm, " ")
+    expect(src, "establishment must never write a successor onto an older record").not.toMatch(
+      /nextSystemId|successorId|saveSystem\(\s*previous/,
+    )
+  })
+
+  it("every assessment in the chain has its own minted id", async () => {
+    const repo = memoryRepo()
+    const [a, b] = await establishChain(repo, [allTwos(), fermentedAtZero()])
+    const sys = (id: string) => repo.store.get(`system.${id}`) as StoredFoodSystem
+
+    expect(sys(a).assessmentId).not.toBe(sys(b).assessmentId)
+    expect(sys(a).assessmentId).not.toBe("candidate")
+    // Both records still exist. The second did not land on the first.
+    expect(repo.store.get(`assessment.${sys(a).assessmentId}`)).toBeTruthy()
+    expect(repo.store.get(`assessment.${sys(b).assessmentId}`)).toBeTruthy()
+  })
+
+  it("the link is the attempt's predecessor, not whatever is current at the end", async () => {
+    /*
+     * An attempt begun against A must chain to A, even if the pointer moved in
+     * between — two tabs, or a reassessment finished elsewhere. Reading the
+     * pointer at completion would claim a lineage that never happened.
+     *
+     * Nothing distinguished the two while every fixture had them equal, which
+     * is how a sabotage case found it rather than a test.
+     */
+    const repo = memoryRepo()
+    const [a] = await establishChain(repo, [allTwos()])
+
+    // An attempt begun against A…
+    const draft = draftFor(fermentedAtZero(), a)
+
+    // …while the pointer moves to B underneath it.
+    const [b] = await establishChain(repo, [allTwos()])
+    expect(await repo.loadCurrentSystemId()).toBe(b)
+
+    const result = await establishFoodSystem({
+      repo,
+      set: SET,
+      answers: fermentedAtZero(),
+      score: computeFoodSystemScore({
+        set: SET,
+        answers: fermentedAtZero(),
+        weights: DEV_ONLY_FSS_V1_FIXTURE_WEIGHTS,
+        fixtureContext: FIXTURE,
+      }),
+      draft,
+      now: NOW,
+    })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+
+    const made = repo.store.get(`system.${result.systemId}`) as StoredFoodSystem
+    expect(made.previousSystemId, "the chain followed the pointer, not the attempt").toBe(a)
+  })
+
+  it("a system naming a predecessor that is gone FAILS CLOSED", async () => {
+    const repo = memoryRepo()
+    const [a] = await establishChain(repo, [allTwos(), fermentedAtZero()])
+    repo.store.delete(`system.${a}`)
+
+    const load = await loadCurrentFoodSystem({ repo, set: SET })
+    expect(load.state).toBe("unavailable")
+    if (load.state !== "unavailable") return
+    expect(load.failed).toBe("previous-system-unresolvable")
+  })
+
+  it("a legacy `candidate` assessment is accepted, and never rewritten", () => {
+    /*
+     * Anyone holding a baseline from before Gate 5 has one. It is valid — it
+     * simply predates minted ids — and silently re-keying it would be exactly
+     * the rewrite this gate refuses, performed on the record the whole
+     * invariant is about.
+     */
+    const r = records()
+    const legacy = validateFoodSystem({
+      ...r,
+      system: { ...r.system, assessmentId: LEGACY_ASSESSMENT_ID },
+      assessment: { ...r.assessment, id: LEGACY_ASSESSMENT_ID },
+      score: { ...r.score, assessmentId: LEGACY_ASSESSMENT_ID },
+    })
+    expect(legacy.ok).toBe(true)
+
+    // But an id that is neither minted nor the legacy one is refused.
+    const nonsense = validateFoodSystem({
+      ...r,
+      system: { ...r.system, assessmentId: "whatever" },
+      assessment: { ...r.assessment, id: "whatever" },
+      score: { ...r.score, assessmentId: "whatever" },
+    })
+    expect(nonsense.ok).toBe(false)
+    if (nonsense.ok) return
+    expect(nonsense.failed).toBe("assessment-id-not-minted")
+  })
+})
+
+describe("an attempt in progress changes nothing that is established", () => {
+  it("ABANDONED REASSESSMENT — the baseline is still current and unchanged", async () => {
+    const repo = memoryRepo()
+    const established = await establishFoodSystem(establishArgs(repo))
+    expect(established.ok).toBe(true)
+    if (!established.ok) return
+
+    const before = JSON.stringify([...repo.store.entries()].sort())
+    const currentBefore = await repo.loadCurrentSystemId()
+
+    // Begin an attempt and answer several questions into it.
+    const draft = await startDraft({
+      repo,
+      set: SET,
+      previousSystemId: currentBefore,
+      now: NOW,
+    })
+    const partial = Object.fromEntries(SET.questions.slice(0, 5).map((q) => [q.id, 1]))
+    await updateDraft({ repo, draft, answers: partial, index: 5 })
+
+    // The pointer has not moved and the Food System still loads.
+    expect(await repo.loadCurrentSystemId()).toBe(currentBefore)
+    expect((await loadCurrentFoodSystem({ repo, set: SET })).state).toBe("ready")
+
+    // Abandon it. Everything that was there before is exactly as it was.
+    await abandonDraft({ repo, draftId: draft.id })
+    expect(await repo.loadCurrentSystemId()).toBe(currentBefore)
+    expect(JSON.stringify([...repo.store.entries()].sort())).toBe(before)
+  })
+
+  it("FAILED SECOND ESTABLISHMENT — at every stage, the baseline stays current", async () => {
+    for (const failAt of ["score.", "priority-decision.", "actions.", "system.system_"]) {
+      const repo = memoryRepo()
+      const first = await establishFoodSystem(establishArgs(repo))
+      expect(first.ok).toBe(true)
+      if (!first.ok) return
+
+      const baselineBefore = JSON.stringify([...repo.store.entries()].sort())
+
+      // Now make the SECOND establishment fail at this stage.
+      repo.failAt(failAt)
+      const second = await establishFoodSystem(
+        establishArgs(repo, fermentedAtZero(), first.systemId),
+      )
+      repo.failAt(undefined)
+
+      expect(second.ok, `${failAt} should have failed`).toBe(false)
+      expect(await repo.loadCurrentSystemId(), `${failAt} moved the pointer`).toBe(first.systemId)
+
+      const load = await loadCurrentFoodSystem({ repo, set: SET })
+      expect(load.state, `${failAt} left a partial system current`).toBe("ready")
+      if (load.state === "ready") expect(load.system.systemId).toBe(first.systemId)
+
+      // Orphans may exist; the BASELINE's own records are untouched.
+      const stillThere = JSON.stringify(
+        [...repo.store.entries()].filter(([k]) => baselineBefore.includes(k)).sort(),
+      )
+      expect(stillThere.length).toBeGreaterThan(0)
+    }
+  })
+
+  it("a failed establishment leaves the DRAFT recoverable, not discarded", async () => {
+    const repo = memoryRepo()
+    const first = await establishFoodSystem(establishArgs(repo))
+    if (!first.ok) throw new Error("fixture")
+
+    const draft = await startDraft({
+      repo,
+      set: SET,
+      previousSystemId: first.systemId,
+      now: NOW,
+    })
+    await updateDraft({ repo, draft, answers: allTwos(), index: 3 })
+
+    repo.failAt("score.")
+    const second = await establishFoodSystem({
+      repo,
+      set: SET,
+      answers: allTwos(),
+      score: computeFoodSystemScore({
+        set: SET,
+        answers: allTwos(),
+        weights: DEV_ONLY_FSS_V1_FIXTURE_WEIGHTS,
+        fixtureContext: FIXTURE,
+      }),
+      draft,
+      now: NOW,
+    })
+    repo.failAt(undefined)
+
+    expect(second.ok).toBe(false)
+    // The attempt survives, with its answers, so it can be resumed.
+    const after = await loadCurrentDraft({ repo, set: SET })
+    expect(after.state, "a failure discarded somebody's answers").toBe("open")
+    if (after.state !== "open") return
+    expect(Object.keys(after.draft.answers).length).toBeGreaterThan(0)
+  })
+
+  it("a stale draft is reported, not resumed and not deleted", async () => {
+    const repo = memoryRepo()
+    const draft = await startDraft({ repo, set: SET, previousSystemId: null, now: NOW })
+    await updateDraft({ repo, draft, answers: allTwos(), index: 4 })
+
+    // The instrument moved under the attempt.
+    const moved = { ...SET, questionSetVersion: "questions-v2.0" }
+    const state = await loadCurrentDraft({ repo, set: moved })
+    expect(state.state).toBe("stale")
+    // And the answers are still there — the person decides, not the code.
+    expect(await repo.loadDraft(draft.id)).toBeTruthy()
+  })
+
+  it("the resume cursor is a hint; the answers are the authority", () => {
+    const answered = Object.fromEntries(SET.questions.slice(0, 6).map((q) => [q.id, 2]))
+    const base = { ...draftFor(answered), answers: answered }
+
+    // Paged backwards and left: honoured, because it does not skip work.
+    expect(reconcileIndex(SET, { ...base, index: 2 })).toBe(2)
+    /*
+     * IN RANGE and still too far — the case that matters, and the one the
+     * first version of this test missed by only ever passing out-of-range
+     * numbers, which the bounds check rejected before the reconciliation was
+     * reached. A cursor at question 10 with six answers would put somebody in
+     * the middle of work they have not done.
+     */
+    expect(reconcileIndex(SET, { ...base, index: 10 })).toBe(6)
+    // Out of range: the answers win too.
+    expect(reconcileIndex(SET, { ...base, index: 40 })).toBe(6)
+    // Nonsense: the answers win.
+    expect(reconcileIndex(SET, { ...base, index: -3 })).toBe(6)
+    expect(reconcileIndex(SET, { ...base, index: 9_999 })).toBe(6)
+  })
+})
+
 describe("the loader names the right failure and changes nothing", () => {
   async function established() {
     const repo = memoryRepo()
@@ -1119,7 +1539,15 @@ describe("the loader names the right failure and changes nothing", () => {
   })
 
   it.each([
-    ["assessment-missing", (r: ReturnType<typeof memoryRepo>) => r.store.delete("assessment.candidate")],
+    [
+      "assessment-missing",
+      (r: ReturnType<typeof memoryRepo>) =>
+        // A MINTED key now, not the `"candidate"` literal — which is the whole
+        // of Gate 5 step 1 visible in one line of a fixture.
+        [...r.store.keys()]
+          .filter((k) => k.startsWith("assessment_") || /^assessment\.(?!draft)/.test(k))
+          .forEach((k) => r.store.delete(k)),
+    ],
     [
       "score-missing",
       (r: ReturnType<typeof memoryRepo>) =>
@@ -1144,7 +1572,8 @@ describe("the loader names the right failure and changes nothing", () => {
   it("and a failed load DELETES NOTHING — the pointer survives", async () => {
     const repo = await established()
     const before = new Set(repo.store.keys())
-    repo.store.delete("assessment.candidate")
+    const assessmentKey = [...repo.store.keys()].find((k) => /^assessment\.(?!draft)/.test(k))!
+    repo.store.delete(assessmentKey)
 
     const load = await loadCurrentFoodSystem({ repo, set: SET })
     expect(load.state).toBe("unavailable")
@@ -1152,7 +1581,7 @@ describe("the loader names the right failure and changes nothing", () => {
     expect(repo.writes).not.toContain("clear")
     // Only the key the test removed is gone. Nothing else was touched.
     const after = new Set(repo.store.keys())
-    expect([...before].filter((k) => !after.has(k))).toEqual(["assessment.candidate"])
+    expect([...before].filter((k) => !after.has(k))).toEqual([assessmentKey])
   })
 })
 

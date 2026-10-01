@@ -195,6 +195,90 @@ describe("the local adapter is the active backend", () => {
   })
 })
 
+describe("a draft can never land on a canonical assessment key", () => {
+  /*
+   * ── WHY THIS TEST EXISTS, AND WHAT IT CAUGHT ────────────────────────────
+   *
+   * The whole of Gate 5 step 1 rests on one structural fact: a draft and a
+   * completed assessment cannot share a key. Every other test about it ran
+   * against an in-memory fixture that hard-codes its own key strings — so
+   * changing the REAL adapter's `DRAFT_PREFIX` back to `"assessment."` broke
+   * nothing, and a sabotage case found that the unit suite could not see the
+   * one line the invariant depends on.
+   *
+   * This exercises the real `LocalStorageRepository` and reads the keys it
+   * actually writes.
+   */
+  beforeEach(() => {
+    const store = new Map<string, string>()
+    ;(globalThis as { window?: unknown }).window = {
+      localStorage: {
+        getItem: (k: string) => store.get(k) ?? null,
+        setItem: (k: string, v: string) => void store.set(k, v),
+        removeItem: (k: string) => void store.delete(k),
+        get length() {
+          return store.size
+        },
+        key: (i: number) => [...store.keys()][i] ?? null,
+      },
+    }
+  })
+
+  const draft = {
+    id: "assessment_abc",
+    previousSystemId: null,
+    assessmentVersion: "assessment-v1.0",
+    questionSetVersion: "questions-v1.0",
+    startedAt: "2026-10-01T09:00:00.000Z",
+    answers: { q1: 2 },
+    index: 0,
+  }
+
+  it("the draft and an assessment with the SAME id are different records", async () => {
+    const repo = new LocalStorageRepository()
+    await repo.saveDraft(draft)
+    await repo.saveAssessment({
+      id: draft.id,
+      assessmentVersion: draft.assessmentVersion,
+      questionSetVersion: draft.questionSetVersion,
+      answers: { q1: 0, q2: 0 },
+      startedAt: draft.startedAt,
+      completedAt: "2026-10-01T10:00:00.000Z",
+    })
+
+    // Neither overwrote the other.
+    expect((await repo.loadDraft(draft.id))?.answers).toEqual({ q1: 2 })
+    expect((await repo.loadAssessment(draft.id))?.answers).toEqual({ q1: 0, q2: 0 })
+  })
+
+  it("and the key it writes is namespaced, read from storage itself", async () => {
+    const repo = new LocalStorageRepository()
+    await repo.saveDraft(draft)
+    const ls = (globalThis as { window: { localStorage: Storage } }).window.localStorage
+    const keys = Array.from({ length: ls.length }, (_, i) => ls.key(i)!)
+
+    const draftKeys = keys.filter((k) => k.includes(draft.id))
+    expect(draftKeys).toHaveLength(1)
+    expect(
+      draftKeys[0],
+      "a draft written to a canonical assessment key is the Gate 5 defect",
+    ).toContain("assessment.draft.")
+  })
+
+  it("the draft pointer is not the system pointer", async () => {
+    const repo = new LocalStorageRepository()
+    await repo.saveDraft(draft)
+    await repo.setCurrentDraft(draft.id)
+    await repo.setCurrentSystem("system_xyz")
+
+    // Clearing one leaves the other exactly as it was — which is the property
+    // that makes starting a reassessment safe.
+    await repo.clearCurrentDraft()
+    expect(await repo.loadCurrentDraftId()).toBeNull()
+    expect(await repo.loadCurrentSystemId()).toBe("system_xyz")
+  })
+})
+
 describe("the Supabase adapter refuses every write", () => {
   const repo = new SupabaseRepositoryDisabled()
 

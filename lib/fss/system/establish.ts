@@ -8,10 +8,12 @@ import type {
   FoodSystemRepository,
   StoredAction,
   StoredAssessment,
+  StoredAssessmentDraft,
   StoredFoodSystem,
   StoredScore,
 } from "@/lib/fss/persistence/repository"
 import { toStoredPlanDecision, toStoredPriorityDecision } from "./decisions"
+import { abandonDraft } from "./draft"
 import { newId } from "./identity"
 import { validateFoodSystem, type SystemCheck } from "./validate"
 import { SYSTEM_MODEL_VERSION } from "./version"
@@ -105,19 +107,55 @@ function initialActions(args: {
  * `now` is a parameter. The three timestamps written here — `computedAt`,
  * `decidedAt`, `establishedAt` — are all this one instant, which is true (they
  * happen in one act) and makes the records diffable in a test.
+ *
+ * ══ IT CREATES. IT NEVER REWRITES WHAT CAME BEFORE. ═════════════════════════
+ *
+ * Called for the baseline AND for every reassessment, and the only difference
+ * is `previousSystemId`. Nothing here reads, updates, re-keys or deletes a
+ * record belonging to an earlier system — not the assessment, not the score,
+ * not the decisions, not the actions, and not the earlier `StoredFoodSystem`
+ * itself. The new record points BACK; the old one is never touched.
+ *
+ * That is what makes the chain safe to walk and the baseline safe to trust:
+ * `tests/unit/my-food-system.test.ts` asserts every baseline record is
+ * byte-identical after a second and a third system are established, which is
+ * the defining invariant of longitudinal EatoBiotics.
+ *
+ * ══ THE ASSESSMENT ID IS MINTED HERE, FROM A DRAFT ══════════════════════════
+ *
+ * The caller passes the DRAFT. This mints the immutable assessment out of it.
+ * Before Gate 5 the caller passed an assessment keyed by the literal
+ * `"candidate"`, so a second one landed on the first one's record — and the
+ * identity check could not see it, because `"candidate" === "candidate"`.
  */
 export async function establishFoodSystem(args: {
   repo: FoodSystemRepository
   set: ResolvedQuestionSet
   answers: Answers
   score: FoodSystemScore
-  assessment: StoredAssessment
+  /** The attempt this is being established from. Its `id` becomes the assessment's. */
+  draft: StoredAssessmentDraft
   now: string
 }): Promise<EstablishResult> {
-  const { repo, set, answers, score, assessment, now } = args
+  const { repo, set, answers, score, draft, now } = args
 
   const scoreId = newId("score")
   const systemId = newId("system")
+
+  /*
+   * The completed assessment: minted from the draft, immutable from here.
+   *
+   * `completedAt` is set exactly once, now. `startedAt` is the draft's, which
+   * is the real one — the moment this attempt began, not the moment it ended.
+   */
+  const assessment: StoredAssessment = {
+    id: draft.id,
+    assessmentVersion: draft.assessmentVersion,
+    questionSetVersion: draft.questionSetVersion,
+    answers,
+    startedAt: draft.startedAt,
+    completedAt: now,
+  }
 
   /* ── 1 · the assessment, persisted and verified by read-back ──────────── */
   await repo.saveAssessment(assessment)
@@ -162,6 +200,15 @@ export async function establishFoodSystem(args: {
     establishedAt: now,
     systemModelVersion: SYSTEM_MODEL_VERSION,
     actionSetVersion: ACTION_SET_VERSION,
+    /*
+     * The link is taken from the DRAFT, not read fresh from the pointer here.
+     *
+     * The draft recorded which system this attempt was started against. If the
+     * pointer had moved in between — two tabs, say — reading it now would
+     * chain this system to one the person never saw, and the chain would claim
+     * a lineage that did not happen.
+     */
+    previousSystemId: draft.previousSystemId,
   }
 
   /* ── 2-5 · every write strict, each step reporting its own number ─────── */
@@ -194,6 +241,18 @@ export async function establishFoodSystem(args: {
     priorityDecision: await repo.loadPriorityDecision(scoreId),
     planDecision: await repo.loadPlanDecision(scoreId),
     actions: await repo.loadActions(scoreId),
+    /*
+     * The predecessor is RESOLVED here, not assumed.
+     *
+     * Validation refuses a non-baseline system whose predecessor is not there,
+     * and this is the step that has to satisfy it — which means a reassessment
+     * cannot be committed against a system that has vanished from storage
+     * between the attempt starting and finishing. The chain is checked before
+     * the pointer moves, not after somebody is already looking at it.
+     */
+    ...(system.previousSystemId !== null
+      ? { previousSystem: await repo.loadSystem(system.previousSystemId) }
+      : {}),
   })
   if (!verdict.ok) {
     return { ok: false, failure: { step: 6, reason: "validation-failed", failed: verdict.failed } }
@@ -202,6 +261,22 @@ export async function establishFoodSystem(args: {
   /* ── 7 · the commit point ─────────────────────────────────────────────── */
   failure = await step(7, () => repo.setCurrentSystem(systemId))
   if (failure) return { ok: false, failure }
+
+  /*
+   * ── 8 · AND ONLY NOW IS THE DRAFT CLEARED ───────────────────────────────
+   *
+   * After the pointer, never before. Every earlier return in this function
+   * leaves the draft exactly where it is, so a failed establishment leaves the
+   * OLD system current and the attempt recoverable. Clearing it on a failure
+   * path would discard somebody's answers to tidy up after ourselves.
+   *
+   * Its own step, and deliberately NOT one whose failure fails the
+   * establishment: the system is already current and correct at this point. A
+   * draft that survives is a stale record, which the loader reports and the
+   * person can discard — strictly better than reporting a successful
+   * establishment as a failure.
+   */
+  await abandonDraft({ repo, draftId: draft.id }).catch(() => {})
 
   return { ok: true, systemId, scoreId }
 }

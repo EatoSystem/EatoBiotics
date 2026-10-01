@@ -1,7 +1,7 @@
 "use client"
 
 import { DOMAIN_PRESENTATION } from "@/lib/fss/presentation/domains"
-import { TODAY_COPY, UNRESOLVABLE_COPY } from "@/lib/fss/presentation/system"
+import { TODAY_COPY, UNRESOLVABLE_COPY, WALK_COPY } from "@/lib/fss/presentation/system"
 import { daysUntil } from "@/lib/fss/system/review"
 import type { TodaySlice } from "@/lib/fss/system/sections"
 
@@ -37,7 +37,16 @@ import type { TodaySlice } from "@/lib/fss/system/sections"
  * composer can be pure, and it is why a test can state which day it is
  * pretending to be.
  */
-export function TodaySection({ slice, now }: { slice: TodaySlice; now: Date }) {
+export function TodaySection({
+  slice,
+  now,
+  onReassess,
+}: {
+  slice: TodaySlice
+  now: Date
+  /** Absent in a fixture. Present on the real surface once a system exists. */
+  onReassess?: () => void
+}) {
   const { focus, today, weekTotal, weekRemaining, score, review, insight, unresolved } = slice
 
   return (
@@ -113,6 +122,27 @@ export function TodaySection({ slice, now }: { slice: TodaySlice; now: Date }) {
           about the focus domain — not a summary of five. */}
       {insight && (
         <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">{insight}</p>
+      )}
+
+      {/*
+        The reassessment entry point sits with the review date, because that is
+        the line it answers. Pressing it starts an ATTEMPT — this Food System
+        stays current, and stays on screen, until a new one is established.
+
+        It is NOT gated on the review date having arrived. Refusing early would
+        assert that thirty days is required, which is a methodology claim
+        nobody has reviewed; `REASSESSMENT.afterDays` says when reassessing
+        makes sense, not when it is permitted.
+      */}
+      {onReassess && (
+        <button
+          type="button"
+          onClick={onReassess}
+          className="inline-flex min-h-[48px] items-center rounded-full border px-6 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+          style={{ borderColor: "var(--border)" }}
+        >
+          {WALK_COPY.reassessCta}
+        </button>
       )}
 
       <p className="max-w-xl text-xs leading-relaxed text-muted-foreground">

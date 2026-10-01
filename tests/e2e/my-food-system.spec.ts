@@ -33,6 +33,20 @@ const PREFIX = "eatobiotics.fss.v1."
 /** The all-2s sheet: every question answered with the third option. */
 async function completeAssessment(page: Page) {
   await page.goto(ROUTE)
+  /*
+   * GATE 5: the walk opens on a start screen, because an assessment is now an
+   * ATTEMPT that has to be begun — a draft — rather than something the route
+   * falls into. A reassessment enters the same component the same way.
+   *
+   * WAITED FOR, not probed. The first version called `count()` immediately
+   * after `goto` and raced hydration: the component renders null until BOTH
+   * pointers have been read, so the button was not there yet, the click was
+   * skipped, and all eleven tests then waited for a radiogroup that was never
+   * going to appear.
+   */
+  const start = page.getByRole("button", { name: "Start the assessment" })
+  await expect(start).toBeVisible()
+  await start.click()
   await expect(page.getByRole("radiogroup")).toBeVisible()
 
   // The walk advances on answer, so this loops until the radiogroup is gone.
@@ -177,7 +191,12 @@ test.describe("Gate 4 · the counterfactuals", () => {
 
     await page.evaluate(() => localStorage.clear())
     await page.reload()
-    await expect(page.getByRole("radiogroup")).toBeVisible()
+    /*
+     * GATE 5: back to the START SCREEN, not straight into questions. Cleared
+     * storage means no system AND no attempt, so there is nothing to resume —
+     * the person begins one, exactly as a first-time visitor does.
+     */
+    await expect(page.getByRole("button", { name: "Start the assessment" })).toBeVisible()
     await expect(page.getByRole("heading", { name: "My Food System" })).toHaveCount(0)
   })
 
@@ -264,6 +283,9 @@ test.describe("Gate 4 · the counterfactuals", () => {
       await page.goto(ROUTE)
       await page.evaluate(() => localStorage.clear())
       await page.goto(ROUTE)
+      const start = page.getByRole("button", { name: "Start the assessment" })
+      await expect(start).toBeVisible()
+      await start.click()
       await expect(page.getByRole("radiogroup")).toBeVisible()
 
       for (let i = 0; i < 60; i += 1) {
@@ -319,4 +341,121 @@ test.describe("Gate 4 · it fits, at three widths", () => {
       }
     })
   }
+})
+
+test.describe("Gate 5 · a reassessment creates history and never rewrites it", () => {
+  /** Everything stored, as bytes, keyed — so a baseline can be compared exactly. */
+  async function allKeys(page: Page): Promise<Record<string, string>> {
+    return storage(page)
+  }
+
+  async function answerAll(page: Page, option: number) {
+    for (let i = 0; i < 60; i += 1) {
+      const group = page.getByRole("radiogroup")
+      if ((await group.count()) === 0) break
+      await group.first().getByRole("radio").nth(option).click()
+      await page.waitForTimeout(40)
+    }
+  }
+
+  test("THE INVARIANT — the baseline survives a reassessment byte-identically", async ({ page }) => {
+    await completeAssessment(page)
+    await page.getByRole("button", { name: "Go to My Food System" }).click()
+    await expect(page.getByRole("heading", { name: "My Food System" })).toBeVisible()
+
+    const before = await allKeys(page)
+    const systemA = before["system.current"]
+    expect(systemA).toBeTruthy()
+
+    // The baseline's own records, captured exactly.
+    const recordsOfA = Object.fromEntries(
+      Object.entries(before).filter(([k]) => k !== "system.current"),
+    )
+
+    /* ── Reassess, with a DIFFERENT sheet ───────────────────────────────── */
+    await page.getByRole("button", { name: "Reassess my Food System" }).click()
+    await expect(page.getByRole("radiogroup")).toBeVisible()
+    await answerAll(page, 3)
+
+    await expect(page.getByText("Your Food System Score™").first()).toBeVisible()
+    await page.getByRole("button", { name: "Go to My Food System" }).click()
+    await expect(page.getByRole("heading", { name: "My Food System" })).toBeVisible()
+
+    const after = await allKeys(page)
+
+    // A new system is current…
+    expect(after["system.current"]).not.toBe(systemA)
+    // …and it points BACK at the baseline.
+    const systemB = JSON.parse(after[`system.${JSON.parse(after["system.current"])}`])
+    expect(systemB.previousSystemId).toBe(JSON.parse(systemA))
+
+    // THE INVARIANT: every baseline record is byte-identical.
+    for (const [key, value] of Object.entries(recordsOfA)) {
+      expect(after[key], `the baseline's ${key} was rewritten`).toBe(value)
+    }
+
+    // And the assessments are two distinct records, both still present.
+    const systemARecord = JSON.parse(after[`system.${JSON.parse(systemA)}`])
+    expect(systemARecord.assessmentId).not.toBe(systemB.assessmentId)
+    expect(after[`assessment.${systemARecord.assessmentId}`]).toBeTruthy()
+    expect(after[`assessment.${systemB.assessmentId}`]).toBeTruthy()
+  })
+
+  test("ABANDONED — an attempt in progress leaves the Food System current", async ({ page }) => {
+    await completeAssessment(page)
+    await page.getByRole("button", { name: "Go to My Food System" }).click()
+    const before = await allKeys(page)
+
+    // Begin a reassessment and answer a few questions into it.
+    await page.getByRole("button", { name: "Reassess my Food System" }).click()
+    await expect(page.getByRole("radiogroup")).toBeVisible()
+    for (let i = 0; i < 4; i += 1) {
+      await page.getByRole("radiogroup").first().getByRole("radio").nth(1).click()
+      await page.waitForTimeout(40)
+    }
+
+    // The pointer has not moved, and the draft is somewhere else entirely.
+    const during = await allKeys(page)
+    expect(during["system.current"]).toBe(before["system.current"])
+    expect(Object.keys(during).some((k) => k.startsWith("assessment.draft."))).toBe(true)
+
+    // Reload mid-attempt: the attempt resumes, and the system is still there.
+    await page.reload()
+    await expect(page.getByRole("radiogroup")).toBeVisible()
+    expect((await allKeys(page))["system.current"]).toBe(before["system.current"])
+
+    // Every record the baseline had is exactly as it was.
+    for (const [key, value] of Object.entries(before)) {
+      expect((await allKeys(page))[key], `${key} changed during an attempt`).toBe(value)
+    }
+  })
+
+  test("a stale draft is reported, not resumed and not deleted", async ({ page }) => {
+    await completeAssessment(page)
+    await page.getByRole("button", { name: "Go to My Food System" }).click()
+    await page.getByRole("button", { name: "Reassess my Food System" }).click()
+    await expect(page.getByRole("radiogroup")).toBeVisible()
+    await page.getByRole("radiogroup").first().getByRole("radio").nth(1).click()
+    await page.waitForTimeout(80)
+
+    // The instrument moves under the attempt.
+    await page.evaluate((prefix) => {
+      const id = JSON.parse(localStorage.getItem(`${prefix}assessment.draft.current`)!)
+      const key = `${prefix}assessment.draft.${id}`
+      const draft = JSON.parse(localStorage.getItem(key)!)
+      draft.questionSetVersion = "questions-v2.0"
+      localStorage.setItem(key, JSON.stringify(draft))
+    }, PREFIX)
+    await page.reload()
+
+    await expect(page.getByText(/given to a different set of questions/)).toBeVisible()
+    // The promise that matters, and it is true.
+    await expect(page.getByText(/existing Food System has not been touched/)).toBeVisible()
+    // The answers are still there until the person says otherwise.
+    expect(Object.keys(await allKeys(page)).some((k) => k.startsWith("assessment.draft."))).toBe(true)
+
+    // Discarding touches the attempt and nothing else.
+    await page.getByRole("button", { name: "Discard the unfinished attempt" }).click()
+    await expect(page.getByRole("heading", { name: "My Food System" })).toBeVisible()
+  })
 })

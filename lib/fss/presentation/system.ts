@@ -164,6 +164,33 @@ export const TODAY_COPY = {
  * The sentence states what was answered and what followed from it. It does not
  * congratulate anybody for having no constraints.
  */
+/**
+ * The walk's own states: starting, and an attempt the instrument outgrew.
+ *
+ * ── `staleSystemIntact` IS THE LOAD-BEARING SENTENCE ──────────────────────
+ *
+ * Somebody shown a message about a reassessment they cannot continue will
+ * assume the worst about the Food System they already had. The screen says
+ * plainly that it is untouched, because it IS untouched — abandoning an
+ * attempt clears a draft and its pointer and nothing else.
+ */
+export const WALK_COPY = {
+  startTitle: "Tell us about your Food System",
+  startIntro:
+    "Four short parts. Two are scored, and two are not — what you notice and the circumstances you are working with are recorded and read back, never marked.",
+  startCta: "Start the assessment",
+
+  staleTitle: "These answers were given to a different set of questions",
+  staleIntro:
+    "The assessment has changed since you started this one, so continuing would mix two versions of the questions inside one set of answers. We are not going to do that quietly.",
+  staleSystemIntact:
+    "Your existing Food System has not been touched. Discarding this unfinished attempt leaves it exactly as it was.",
+  staleDiscard: "Discard the unfinished attempt",
+
+  /** On Today, once a Food System exists. */
+  reassessCta: "Reassess my Food System",
+} as const
+
 export const CONTEXT_COPY = {
   noneLimiting:
     "You told us about your circumstances and did not describe any of them as being in the way, so nothing was left out of your plan on that basis.",
@@ -275,6 +302,10 @@ export const UNAVAILABLE_COPY: Record<SystemCheck, string> = {
     "Your plan refers to a version of our reviewed suggestions this app no longer has.",
   "action-references-unknown-entry":
     "One of your actions refers to a suggestion that is not in our reviewed set.",
+  "assessment-id-not-minted":
+    "Your Food System points at an assessment we cannot identify, so we cannot tell which answers it was built from.",
+  "previous-system-unresolvable":
+    "This Food System follows an earlier one that is not in this browser's storage, so we cannot show you where it sits in your history.",
 } as const
 
 export const UNAVAILABLE_FRAME = {

@@ -9,7 +9,16 @@ import type {
   StoredPriorityDecision,
   StoredScore,
 } from "@/lib/fss/persistence/repository"
+import { isMintedId } from "./identity"
 import { isCurrentSystemModel } from "./version"
+
+/**
+ * The one assessment id this product ever used before ids were minted.
+ *
+ * Pinned as a constant rather than inlined so there is exactly one place that
+ * knows the legacy key, and so a reader can find every acceptance of it.
+ */
+export const LEGACY_ASSESSMENT_ID = "candidate"
 
 /* ════════════════════════════════════════════════════════════════════════
    VALIDATING A CURRENT FOOD SYSTEM, AND FAILING CLOSED.
@@ -72,6 +81,24 @@ export type SystemCheck =
   | "policy-version-unresolvable"
   | "action-set-version-unresolvable"
   | "action-references-unknown-entry"
+  /**
+   * The system names an assessment id this code never minted.
+   *
+   * The check Gate 4 could not make. While the in-progress assessment was
+   * written to the literal `"candidate"`, a second one landed on the first's
+   * record and the identity check compared two equal literals and found
+   * nothing wrong. A minted id makes "is this the assessment this system was
+   * built from" an answerable question rather than a tautology.
+   */
+  | "assessment-id-not-minted"
+  /**
+   * A non-baseline system whose predecessor does not resolve.
+   *
+   * `previousSystemId` is null ONLY for the baseline. Anything else is a chain
+   * with a hole in it, and a history with a hole is not a history — so it is
+   * refused rather than rendered as though the missing system never existed.
+   */
+  | "previous-system-unresolvable"
 
 export const SYSTEM_CHECKS: readonly SystemCheck[] = [
   "system-record-missing",
@@ -84,6 +111,8 @@ export const SYSTEM_CHECKS: readonly SystemCheck[] = [
   "policy-version-unresolvable",
   "action-set-version-unresolvable",
   "action-references-unknown-entry",
+  "assessment-id-not-minted",
+  "previous-system-unresolvable",
 ]
 
 /** Everything a Food System needs in order to be shown. */
@@ -94,6 +123,15 @@ export interface FoodSystemRecords {
   readonly priorityDecision: StoredPriorityDecision | null
   readonly planDecision: StoredPlanDecision | null
   readonly actions: readonly StoredAction[]
+  /**
+   * The predecessor, when the system names one.
+   *
+   * `null` means "not found" and `undefined` means "not looked for" — the
+   * caller passes it only when `system.previousSystemId` is set, so a loader
+   * that forgot to resolve the chain cannot look like a system that has no
+   * predecessor.
+   */
+  readonly previousSystem?: StoredFoodSystem | null
 }
 
 export type SystemValidation =
@@ -151,7 +189,8 @@ function provenanceWellFormed(p: ScoreProvenance | undefined): boolean {
  * where that refusal belongs.
  */
 export function validateFoodSystem(records: FoodSystemRecords): SystemValidation {
-  const { system, assessment, score, priorityDecision, planDecision, actions } = records
+  const { system, assessment, score, priorityDecision, planDecision, actions, previousSystem } =
+    records
 
   const fail = (failed: SystemCheck) => ({ ok: false, failed }) as const
 
@@ -172,6 +211,31 @@ export function validateFoodSystem(records: FoodSystemRecords): SystemValidation
   }
 
   if (!provenanceWellFormed(score.provenance)) return fail("provenance-malformed")
+
+  /*
+   * A LEGACY `"candidate"` RECORD IS ACCEPTED, DELIBERATELY.
+   *
+   * Anyone holding a baseline established before Gate 5 has one, and it is
+   * perfectly valid — it simply predates minted ids. It is read and never
+   * rewritten: silently re-keying somebody's records would be exactly the
+   * rewrite this gate refuses, and it would do it to the record the whole
+   * invariant is about.
+   *
+   * What such a system cannot do is gain a successor, because the next
+   * establishment mints an id and the chain starts from there. That is a
+   * smaller cost than touching a baseline.
+   */
+  if (!isMintedId(system.assessmentId, "assessment") && system.assessmentId !== LEGACY_ASSESSMENT_ID) {
+    return fail("assessment-id-not-minted")
+  }
+
+  if (system.previousSystemId !== null) {
+    // Named a predecessor, so one must have been found. `undefined` means the
+    // caller never looked, which is a loader bug and fails the same way.
+    if (!previousSystem || previousSystem.id !== system.previousSystemId) {
+      return fail("previous-system-unresolvable")
+    }
+  }
 
   if (!isCurrentSystemModel(system.systemModelVersion)) return fail("policy-version-unresolvable")
   if (system.actionSetVersion !== ACTION_SET_VERSION) {

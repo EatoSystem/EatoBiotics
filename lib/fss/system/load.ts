@@ -58,6 +58,14 @@ export async function loadCurrentFoodSystem(args: {
     priorityDecision: await repo.loadPriorityDecision(system.scoreId),
     planDecision: await repo.loadPlanDecision(system.scoreId),
     actions: await repo.loadActions(system.scoreId),
+    /*
+     * Resolved only when the system names one, so `undefined` ("never looked")
+     * and `null` ("looked, not there") stay different answers. A loader that
+     * forgot to resolve the chain must not look like a baseline.
+     */
+    ...(system.previousSystemId !== null
+      ? { previousSystem: await repo.loadSystem(system.previousSystemId) }
+      : {}),
   })
 
   if (!verdict.ok) return { state: "unavailable", failed: verdict.failed, systemId }

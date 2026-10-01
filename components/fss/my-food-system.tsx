@@ -59,11 +59,19 @@ import { LearnSection } from "@/components/fss/system/learn"
 export function MyFoodSystemView({
   system,
   onReload,
+  onReassess,
   now: injectedNow,
 }: {
   system: MyFoodSystem
   /** Re-read from storage after a write. The shell never patches its own copy. */
   onReload: () => void
+  /**
+   * Begin a reassessment.
+   *
+   * It starts an ATTEMPT and changes nothing else — this system stays current
+   * and stays rendered until a new one is successfully established.
+   */
+  onReassess?: () => void
   /** Only a test passes this. The component is the clock's home otherwise. */
   now?: Date
 }) {
@@ -123,7 +131,9 @@ export function MyFoodSystemView({
        * the call is made and discarded rather than skipped, which is what keeps
        * the pattern uniform and the omission deliberate rather than accidental.
        */}
-      {section === "today" && <TodaySection slice={TODAY.select(system)} now={now} />}
+      {section === "today" && (
+        <TodaySection slice={TODAY.select(system)} now={now} onReassess={onReassess} />
+      )}
       {section === "score" && <ScoreSection slice={SCORE.select(system)} />}
       {section === "my-food" && <MyFoodSection slice={MY_FOOD.select(system)} />}
       {section === "biotics" && BIOTICS.select(system) === null && <BioticsSection />}

@@ -19,8 +19,15 @@
 PATTERNS = "lib/account/patterns.ts"
 DASHBOARD = "components/account/dashboard-client-data.ts"
 EMAIL = "lib/email/sequence-email.ts"
+ESTABLISH = "lib/fss/system/establish.ts"
+DRAFT = "lib/fss/system/draft.ts"
+VALIDATE = "lib/fss/system/validate.ts"
+REPO = "lib/fss/persistence/repository.ts"
+ASSESS_TSX = "components/fss/candidate-assessment.tsx"
 
 CLAIMS = ["tests/unit/agent-loop-claims.test.ts"]
+SYSTEM = ["tests/unit/my-food-system.test.ts"]
+PERSIST = ["tests/unit/fss-persistence.test.ts"]
 
 CASES = [
     (1300, "the trend detail asserts the change was caused by something", PATTERNS,
@@ -96,4 +103,65 @@ CASES = [
      "      ...Object.values(PROFILE_INFO).map((p) => p.tagline),",
      "      PROFILE_INFO[\"Strong Foundation\"].tagline,",
      CLAIMS),
+
+    # ── Step 1 · a reassessment creates history and never rewrites it ───────
+    #
+    # The defect this step exists to prevent, restored: the in-progress
+    # assessment written to a canonical slot, so a second one lands on the
+    # first one's record.
+    (1311, "the draft is written to a canonical assessment slot", "lib/fss/persistence/local.ts",
+     'const DRAFT_PREFIX = "assessment.draft."',
+     'const DRAFT_PREFIX = "assessment."',
+     # TEST LIST CORRECTED: the guard that reads the REAL adapter's keys lives
+     # in the persistence suite. The system suite runs against an in-memory
+     # fixture that hard-codes its own key strings, which is exactly why this
+     # one line went unguarded until a sabotage case asked.
+     PERSIST),
+
+    (1312, "the completed assessment reuses one id for every attempt", ESTABLISH,
+     "    id: draft.id,\n    assessmentVersion: draft.assessmentVersion,",
+     '    id: "candidate",\n    assessmentVersion: draft.assessmentVersion,',
+     SYSTEM),
+
+    (1313, "the chain link is dropped, so history collapses to a single system", ESTABLISH,
+     "    previousSystemId: draft.previousSystemId,",
+     "    previousSystemId: null,",
+     SYSTEM),
+
+    (1314, "the predecessor is read fresh instead of from the attempt", ESTABLISH,
+     "    previousSystemId: draft.previousSystemId,",
+     "    previousSystemId: await repo.loadCurrentSystemId(),",
+     SYSTEM),
+
+    (1315, "a missing predecessor stops failing closed", VALIDATE,
+     '    if (!previousSystem || previousSystem.id !== system.previousSystemId) {\n      return fail("previous-system-unresolvable")\n    }',
+     '    if (false) {\n      return fail("previous-system-unresolvable")\n    }',
+     SYSTEM),
+
+    (1316, "any assessment id is accepted again, minted or not", VALIDATE,
+     '  if (!isMintedId(system.assessmentId, "assessment") && system.assessmentId !== LEGACY_ASSESSMENT_ID) {\n    return fail("assessment-id-not-minted")\n  }',
+     '  if (false) {\n    return fail("assessment-id-not-minted")\n  }',
+     SYSTEM),
+
+    # The draft cleared BEFORE the commit point: a failed establishment then
+    # loses somebody's answers as well as their new system.
+    (1317, "the draft is discarded before the pointer is written", ESTABLISH,
+     "  failure = await step(7, () => repo.setCurrentSystem(systemId))\n  if (failure) return { ok: false, failure }",
+     "  await abandonDraft({ repo, draftId: draft.id }).catch(() => {})\n  failure = await step(7, () => repo.setCurrentSystem(systemId))\n  if (failure) return { ok: false, failure }",
+     SYSTEM),
+
+    (1318, "a stale draft is resumed under an instrument that has moved", DRAFT,
+     '  if (draft.questionSetVersion !== set.questionSetVersion) return { state: "stale", draft }',
+     '  if (false) return { state: "stale", draft }',
+     SYSTEM),
+
+    (1319, "a stored cursor is trusted over the answers it describes", DRAFT,
+     "  return stored <= derived ? stored : derived",
+     "  return stored",
+     SYSTEM),
+
+    (1320, "abandoning an attempt also clears the established system", DRAFT,
+     "  await args.repo.clearCurrentDraft()\n  await args.repo.deleteDraft(args.draftId)",
+     "  await args.repo.clearCurrentDraft()\n  await args.repo.deleteDraft(args.draftId)\n  await args.repo.clearCurrentSystem()",
+     SYSTEM),
 ]

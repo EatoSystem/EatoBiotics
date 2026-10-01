@@ -6,6 +6,7 @@ import {
   type FoodSystemRepository,
   type StoredAction,
   type StoredAssessment,
+  type StoredAssessmentDraft,
   type StoredFoodSystem,
   type StoredPlanDecision,
   type StoredPriorityDecision,
@@ -50,6 +51,20 @@ const PREFIX = "eatobiotics.fss.v1."
 /** The one unkeyed slot in the store, and the commit point of establishment. */
 const CURRENT_SYSTEM_KEY = "system.current"
 
+/**
+ * Where a reassessment in progress lives — NEVER a canonical assessment slot.
+ *
+ * `assessment.draft.<id>` cannot collide with `assessment.<id>`, because a
+ * minted id never begins with "draft.". That is the whole structural defence
+ * against the defect Gate 5 opened on: a second assessment landing on the
+ * first one's key, with the identity check comparing two equal literals and
+ * finding nothing wrong.
+ */
+const DRAFT_PREFIX = "assessment.draft."
+
+/** Which attempt is in progress. Entirely separate from `system.current`. */
+const CURRENT_DRAFT_KEY = "assessment.draft.current"
+
 function read<T>(key: string): T | null {
   if (typeof window === "undefined") return null
   try {
@@ -68,6 +83,21 @@ function write(key: string, value: unknown): void {
   } catch {
     // Storage unavailable or full. The walk continues without memory, which is
     // the right trade: losing the answers is recoverable, crashing is not.
+  }
+}
+
+/**
+ * Remove one key, reporting nothing.
+ *
+ * A failure here leaves the key unreadable, which is the state the call was
+ * asked to produce — so there is nothing to report and nothing to decide.
+ */
+function remove(key: string): void {
+  if (typeof window === "undefined") return
+  try {
+    window.localStorage.removeItem(PREFIX + key)
+  } catch {
+    // See above.
   }
 }
 
@@ -101,6 +131,32 @@ export class LocalStorageRepository implements FoodSystemRepository {
 
   async saveAssessment(assessment: StoredAssessment): Promise<void> {
     write(`assessment.${assessment.id}`, assessment)
+  }
+
+  /* ── The reassessment draft: its own namespace, lenient writes ─────────── */
+
+  async loadDraft(id: string): Promise<StoredAssessmentDraft | null> {
+    return read<StoredAssessmentDraft>(`${DRAFT_PREFIX}${id}`)
+  }
+
+  async saveDraft(draft: StoredAssessmentDraft): Promise<void> {
+    write(`${DRAFT_PREFIX}${draft.id}`, draft)
+  }
+
+  async deleteDraft(id: string): Promise<void> {
+    remove(`${DRAFT_PREFIX}${id}`)
+  }
+
+  async loadCurrentDraftId(): Promise<string | null> {
+    return read<string>(CURRENT_DRAFT_KEY)
+  }
+
+  async setCurrentDraft(draftId: string): Promise<void> {
+    write(CURRENT_DRAFT_KEY, draftId)
+  }
+
+  async clearCurrentDraft(): Promise<void> {
+    remove(CURRENT_DRAFT_KEY)
   }
 
   /* ── Everything else: strict ───────────────────────────────────────────── */
@@ -160,13 +216,7 @@ export class LocalStorageRepository implements FoodSystemRepository {
   }
 
   async clearCurrentSystem(): Promise<void> {
-    if (typeof window === "undefined") return
-    try {
-      window.localStorage.removeItem(PREFIX + CURRENT_SYSTEM_KEY)
-    } catch {
-      // Nothing to do and nothing to report: the pointer is already
-      // unreadable, which is the state this call was asked to produce.
-    }
+    remove(CURRENT_SYSTEM_KEY)
   }
 }
 
@@ -205,6 +255,24 @@ export class SupabaseRepositoryDisabled implements FoodSystemRepository {
     return null
   }
   async saveAssessment(): Promise<void> {
+    this.refuse()
+  }
+  async loadDraft(): Promise<StoredAssessmentDraft | null> {
+    return null
+  }
+  async saveDraft(): Promise<void> {
+    this.refuse()
+  }
+  async deleteDraft(): Promise<void> {
+    this.refuse()
+  }
+  async loadCurrentDraftId(): Promise<string | null> {
+    return null
+  }
+  async setCurrentDraft(): Promise<void> {
+    this.refuse()
+  }
+  async clearCurrentDraft(): Promise<void> {
     this.refuse()
   }
   async loadScore(): Promise<StoredScore | null> {

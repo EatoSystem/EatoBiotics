@@ -14,6 +14,13 @@ import type { ResolvedQuestionSet } from "@/lib/fss/questions/types"
 import { foodSystemRepository } from "@/lib/fss/persistence/local"
 import { establishFoodSystem } from "@/lib/fss/system/establish"
 import { loadCurrentFoodSystem, type FoodSystemLoad } from "@/lib/fss/system/load"
+import {
+  abandonDraft,
+  loadCurrentDraft,
+  startDraft,
+  type DraftState,
+} from "@/lib/fss/system/draft"
+import { WALK_COPY } from "@/lib/fss/presentation/system"
 
 /**
  * The walk: assessment → score → result → MY FOOD SYSTEM.
@@ -53,19 +60,58 @@ import { loadCurrentFoodSystem, type FoodSystemLoad } from "@/lib/fss/system/loa
  */
 export function CandidateWalk({ set }: { set: ResolvedQuestionSet }) {
   const [load, setLoad] = useState<FoodSystemLoad | null>(null)
+  const [draft, setDraft] = useState<DraftState | null>(null)
   const [justEstablished, setJustEstablished] = useState<FoodSystemScore | null>(null)
   const [establishFailed, setEstablishFailed] = useState<string | null>(null)
 
+  /*
+   * Both pointers are read on every reload, and they are INDEPENDENT.
+   *
+   * `system.current` says what is established. `assessment.draft.current` says
+   * whether an attempt is in progress. Neither affects the other: starting or
+   * abandoning a reassessment leaves the established Food System exactly where
+   * it is, which is the property that makes reassessing safe to begin.
+   */
   const reload = useCallback(() => {
     void (async () => {
-      setLoad(await loadCurrentFoodSystem({ repo: foodSystemRepository(), set }))
+      const repo = foodSystemRepository()
+      setLoad(await loadCurrentFoodSystem({ repo, set }))
+      setDraft(await loadCurrentDraft({ repo, set }))
     })()
   }, [set])
 
   useEffect(reload, [reload])
 
+  /** Begin an attempt, against whatever is current right now. */
+  const beginDraft = useCallback(() => {
+    void (async () => {
+      const repo = foodSystemRepository()
+      await startDraft({
+        repo,
+        set,
+        previousSystemId: await repo.loadCurrentSystemId(),
+        now: new Date().toISOString(),
+      })
+      setJustEstablished(null)
+      reload()
+      window.scrollTo({ top: 0 })
+    })()
+  }, [set, reload])
+
+  /** Abandon an attempt. Touches the draft and nothing else. */
+  const discardDraft = useCallback(
+    (draftId: string) => {
+      void (async () => {
+        await abandonDraft({ repo: foodSystemRepository(), draftId })
+        reload()
+      })()
+    },
+    [reload],
+  )
+
   const complete = useCallback(
     (given: Answers) => {
+      if (!draft || draft.state !== "open") return
       void (async () => {
         const repo = foodSystemRepository()
         const score = computeFoodSystemScore({
@@ -74,30 +120,27 @@ export function CandidateWalk({ set }: { set: ResolvedQuestionSet }) {
           weights: DEV_ONLY_FSS_V1_FIXTURE_WEIGHTS,
           fixtureContext: nonProductionFixture("FSS-v1 candidate preview"),
         })
-        const now = new Date().toISOString()
 
+        /*
+         * Establishment mints the immutable assessment out of the draft and
+         * chains the new system to the one the attempt was started against.
+         * Nothing belonging to that earlier system is read, rewritten or
+         * cleared — the new record points back, and that is the whole of it.
+         */
         const established = await establishFoodSystem({
           repo,
           set,
           answers: given,
           score,
-          assessment: {
-            id: "candidate",
-            assessmentVersion: set.assessmentVersion,
-            questionSetVersion: set.questionSetVersion,
-            answers: given,
-            startedAt: (await repo.loadAssessment("candidate"))?.startedAt ?? now,
-            completedAt: now,
-          },
-          now,
+          draft: draft.draft,
+          now: new Date().toISOString(),
         })
 
         if (!established.ok) {
           /*
-           * No result page on a failed establishment. The score exists only in
-           * memory at this point, so a result page would be showing something
-           * that is not saved, above a button leading to a Food System that was
-           * never created.
+           * No result page, and — just as important — NO CLEANUP. The draft is
+           * still there and the previous system is still current, so the
+           * person can try again or discard the attempt themselves.
            */
           setEstablishFailed(
             established.failure.reason === "validation-failed"
@@ -108,21 +151,19 @@ export function CandidateWalk({ set }: { set: ResolvedQuestionSet }) {
         }
 
         setJustEstablished(score)
-        setLoad(await loadCurrentFoodSystem({ repo, set }))
+        reload()
         window.scrollTo({ top: 0 })
       })()
     },
-    [set],
+    [set, draft, reload],
   )
 
   const restart = useCallback(() => {
     void (async () => {
       /*
-       * Clearing the POINTER only. Every record stays exactly where it is —
-       * `clearCurrentSystem` removes one key and touches nothing else, so a
-       * person who starts again has not had their previous Food System deleted
-       * out from under them. Gate 5's reassessment is what will give those
-       * records a second home; until then they are simply no longer current.
+       * Clearing the POINTER only. Every record stays exactly where it is, so
+       * a person who starts again has not had their previous Food System
+       * deleted out from under them.
        */
       await foodSystemRepository().clearCurrentSystem()
       setJustEstablished(null)
@@ -141,18 +182,49 @@ export function CandidateWalk({ set }: { set: ResolvedQuestionSet }) {
     )
   }
 
-  if (load === null) return null
+  if (load === null || draft === null) return null
 
   if (load.state === "unavailable") {
     return <SystemUnavailable failed={load.failed} systemId={load.systemId} onRestart={restart} />
   }
 
-  if (load.state === "none") {
-    return <CandidateAssessment set={set} onComplete={complete} />
+  /*
+   * An attempt in progress is answered, whatever else exists.
+   *
+   * When a system is already current it stays current throughout — it is not
+   * unmounted, not modified, and immediately rendered again if the attempt is
+   * abandoned.
+   */
+  if (draft.state === "open") {
+    return <CandidateAssessment set={set} draft={draft.draft} onComplete={complete} />
   }
 
   /*
-   * Just established: show the result, built from the RECORDED decisions.
+   * A draft from a different question set is NOT resumed and NOT deleted.
+   *
+   * Its answers describe questions that may no longer exist or may no longer
+   * mean the same thing, so continuing would mix two instruments inside one
+   * assessment. The person decides; their answers stay until they do.
+   */
+  if (draft.state === "stale") {
+    return (
+      <StaleDraft
+        onDiscard={() => discardDraft(draft.draft.id)}
+        hasSystem={load.state === "ready"}
+      />
+    )
+  }
+
+  if (load.state === "none") {
+    /*
+     * Nothing established and no attempt open. Start one — this is a person's
+     * first visit, and the baseline begins with `previousSystemId: null`.
+     */
+    return <StartFirst onStart={beginDraft} />
+  }
+
+  /*
+   * Just established: the result, built from the RECORDED decisions.
    *
    * When either decision did not resolve there is no result page to show — the
    * person is taken straight to My Food System, which renders the refusal
@@ -179,5 +251,46 @@ export function CandidateWalk({ set }: { set: ResolvedQuestionSet }) {
     )
   }
 
-  return <MyFoodSystemView system={load.system} onReload={reload} />
+  return <MyFoodSystemView system={load.system} onReload={reload} onReassess={beginDraft} />
+}
+
+/** The first visit: nothing established, nothing in progress. */
+function StartFirst({ onStart }: { onStart: () => void }) {
+  return (
+    <div className="mx-auto w-full max-w-[640px] px-6 py-16 text-center">
+      <h1 className="font-serif text-3xl font-bold">{WALK_COPY.startTitle}</h1>
+      <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{WALK_COPY.startIntro}</p>
+      <button
+        type="button"
+        onClick={onStart}
+        className="mt-8 inline-flex min-h-[52px] items-center rounded-full px-8 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+        style={{ background: "var(--icon-green)" }}
+      >
+        {WALK_COPY.startCta}
+      </button>
+    </div>
+  )
+}
+
+/** An attempt begun under a question set that has since moved. */
+function StaleDraft({ onDiscard, hasSystem }: { onDiscard: () => void; hasSystem: boolean }) {
+  return (
+    <div className="mx-auto w-full max-w-[640px] px-6 py-16">
+      <h1 className="font-serif text-3xl font-bold">{WALK_COPY.staleTitle}</h1>
+      <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{WALK_COPY.staleIntro}</p>
+      {hasSystem && (
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+          {WALK_COPY.staleSystemIntact}
+        </p>
+      )}
+      <button
+        type="button"
+        onClick={onDiscard}
+        className="mt-8 inline-flex min-h-[48px] items-center rounded-full border px-6 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+        style={{ borderColor: "var(--border)" }}
+      >
+        {WALK_COPY.staleDiscard}
+      </button>
+    </div>
+  )
 }

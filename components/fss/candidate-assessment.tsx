@@ -1,10 +1,12 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { ArrowLeft, ArrowRight } from "lucide-react"
 import type { AssessmentPart, ResolvedQuestion, ResolvedQuestionSet } from "@/lib/fss/questions/types"
 import type { Answers } from "@/lib/fss/engine/score"
 import { foodSystemRepository } from "@/lib/fss/persistence/local"
+import type { StoredAssessmentDraft } from "@/lib/fss/persistence/repository"
+import { reconcileIndex, updateDraft } from "@/lib/fss/system/draft"
 
 /**
  * "Tell us about your Food System" — the candidate canonical assessment.
@@ -60,103 +62,85 @@ const PART_META: Record<AssessmentPart, { n: string; title: string; note?: strin
 /* ════════════════════════════════════════════════════════════════════════
    GATE 4 — three writer defects, fixed because a persistent home exposes them.
 
-   All three were harmless while the walk ended at a result page and all three
-   are load-bearing once a Food System is established from what this writes.
-
-   1. `startedAt` WAS RECOMPUTED ON EVERY ANSWER. `new Date().toISOString()`
-      sat inside the per-answer save, so the field named "started at" actually
-      meant "last answered at" and drifted forward twenty times during one
-      assessment. A Food System established from it would record a start time
-      later than several of its own answers.
-
-   2. `completedAt` WAS NEVER WRITTEN. The type has carried it as optional
-      since Gate 2 and nothing set it, so "finished" and "abandoned on the last
+   1. `startedAt` WAS RECOMPUTED ON EVERY ANSWER, so the field named "started
+      at" actually meant "last answered at".
+   2. `completedAt` WAS NEVER WRITTEN, so "finished" and "abandoned on the last
       question" were the same stored state.
+   3. THE QUESTION INDEX WAS NOT PERSISTED, so a refresh restored every answer
+      and then returned the person to question one.
 
-   3. THE QUESTION INDEX WAS NOT PERSISTED. A refresh restored every answer and
-      then returned the person to question one, which reads as having lost the
-      work it had in fact kept. The index is restored from the answers rather
-      than stored as a separate field — the first unanswered question in asked
-      order IS the resume point, and a stored cursor could disagree with the
-      answers it was meant to describe.
+   GATE 5 — AND THE RECORD IT WRITES TO IS NO LONGER THE BASELINE.
+
+   All three fixes stand. What changed is WHERE they are written. This component
+   now answers into a DRAFT (`assessment.draft.<id>`), never into a canonical
+   assessment slot — because until Gate 5 it saved to `assessment.candidate`,
+   the same key an established baseline was read from. A second assessment
+   would have landed on the first one's record, and `validateFoodSystem` could
+   not have seen it: its identity check compared `"candidate"` with
+   `"candidate"` and found them equal.
+
+   The draft is minted into an immutable assessment by `establishFoodSystem`
+   and never promoted. Defect 1's `startedAt` now lives on the draft, where it
+   is set once when the attempt begins rather than on the first save; defect
+   3's resume point is reconciled by `reconcileIndex`, which honours a stored
+   cursor only when it does not skip past unanswered work.
    ════════════════════════════════════════════════════════════════════════ */
-
-/** The resume point: the first question in asked order with no answer yet. */
-function resumeIndex(questions: readonly ResolvedQuestion[], answers: Answers): number {
-  const next = questions.findIndex((q) => typeof answers[q.id] !== "number")
-  // All answered: sit on the last question rather than past the end, so a
-  // person who refreshes after finishing sees something rather than nothing.
-  return next === -1 ? Math.max(0, questions.length - 1) : next
-}
 
 export function CandidateAssessment({
   set,
+  draft,
   onComplete,
 }: {
   set: ResolvedQuestionSet
+  /** The attempt being answered into. Created by the walk, never by this. */
+  draft: StoredAssessmentDraft
   onComplete: (answers: Answers) => void
 }) {
-  const [answers, setAnswers] = useState<Answers>({})
-  const [index, setIndex] = useState(0)
-  const [hydrated, setHydrated] = useState(false)
-  /*
-   * The real start time, written once and then carried.
-   *
-   * Held in a ref rather than state because nothing renders it and a re-render
-   * on the first answer would be a side effect of recording a timestamp.
-   */
-  const startedAt = useRef<string | null>(null)
+  const [answers, setAnswers] = useState<Answers>(draft.answers)
+  const [index, setIndex] = useState(() => reconcileIndex(set, draft))
 
   const questions = set.questions
   const current = questions[index]
 
-  /* Restore a walk in progress. A refresh mid-assessment losing twenty answers
-   * is the kind of thing that makes a preview useless for review. */
-  useEffect(() => {
-    let cancelled = false
-    void (async () => {
-      const stored = await foodSystemRepository().loadAssessment("candidate")
-      if (!cancelled && stored && stored.questionSetVersion === set.questionSetVersion) {
-        setAnswers(stored.answers)
-        // Defect 1: the stored start time is kept, not overwritten.
-        startedAt.current = stored.startedAt
-        // Defect 3: resume where they left off, not at question one.
-        setIndex(resumeIndex(set.questions, stored.answers))
-      }
-      if (!cancelled) setHydrated(true)
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [set.questionSetVersion, set.questions])
-
+  /*
+   * Every answer and every move is recorded on the draft.
+   *
+   * Lenient by design — `saveDraft` swallows a storage failure, because losing
+   * somebody's place is recoverable and crashing them out of a half-finished
+   * reassessment is not. Nothing is established from a draft until the commit
+   * path mints an assessment from it.
+   */
   const persist = useCallback(
-    (next: Answers, completed: boolean) => {
-      // Defect 1: set once, on the first save of this walk, and never again.
-      startedAt.current ??= new Date().toISOString()
-      void foodSystemRepository().saveAssessment({
-        id: "candidate",
-        assessmentVersion: set.assessmentVersion,
-        questionSetVersion: set.questionSetVersion,
+    (next: Answers, nextIndex: number) => {
+      void updateDraft({
+        repo: foodSystemRepository(),
+        draft,
         answers: next,
-        startedAt: startedAt.current,
-        // Defect 2: written exactly when the last answer arrives.
-        ...(completed ? { completedAt: new Date().toISOString() } : {}),
+        index: nextIndex,
       })
     },
-    [set.assessmentVersion, set.questionSetVersion],
+    [draft],
   )
 
   const answer = useCallback(
     (value: number) => {
       const next = { ...answers, [current.id]: value }
       const isLast = index + 1 >= questions.length
+      const nextIndex = isLast ? index : index + 1
       setAnswers(next)
-      persist(next, isLast)
-      if (!isLast) setIndex(index + 1)
+      persist(next, nextIndex)
+      if (!isLast) setIndex(nextIndex)
       else onComplete(next)
     },
     [answers, current, index, questions.length, onComplete, persist],
+  )
+
+  const move = useCallback(
+    (to: number) => {
+      setIndex(to)
+      persist(answers, to)
+    },
+    [answers, persist],
   )
 
   const partStart = useMemo(
@@ -166,7 +150,7 @@ export function CandidateAssessment({
 
   const answeredCount = questions.filter((q) => typeof answers[q.id] === "number").length
 
-  if (!hydrated || !current) return null
+  if (!current) return null
 
   const meta = PART_META[current.part]
   const partQuestions = questions.filter((q) => q.part === current.part)
@@ -215,7 +199,7 @@ export function CandidateAssessment({
       <div className="mt-8 flex items-center justify-between">
         <button
           type="button"
-          onClick={() => setIndex(Math.max(0, index - 1))}
+          onClick={() => move(Math.max(0, index - 1))}
           disabled={index === 0}
           className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
         >
@@ -224,7 +208,7 @@ export function CandidateAssessment({
         {typeof answers[current.id] === "number" && index + 1 < questions.length && (
           <button
             type="button"
-            onClick={() => setIndex(index + 1)}
+            onClick={() => move(index + 1)}
             className="inline-flex items-center gap-2 text-sm font-semibold text-foreground"
           >
             Next <ArrowRight size={16} aria-hidden />

@@ -291,6 +291,88 @@ export interface StoredFoodSystem {
   readonly systemModelVersion: string
   /** Content: the reviewed recommendation catalogue. */
   readonly actionSetVersion: string
+  /**
+   * The system this one directly follows. `null` ONLY for the baseline.
+   *
+   * ── A BACKWARD-LINKED CHAIN, AND THE DIRECTION IS THE POINT ─────────────
+   *
+   * A reassessment creates a new Food System state in history. It never
+   * rewrites the one that came before it — so the new record points back, and
+   * the old record is not touched. A forward pointer would mean updating a
+   * finished system every time a later one is created, which is two-sided
+   * mutation and is the thing that makes "immutable" stop being true.
+   *
+   * It also means the chain is discoverable without a registry: every system
+   * knows its predecessor, so walking back from `system.current` enumerates
+   * the whole history, and there is no separate index that could disagree
+   * with the records it describes.
+   *
+   * A non-baseline system whose predecessor does not resolve is a VALIDATION
+   * FAILURE rather than a tolerated state. See `validateFoodSystem`.
+   */
+  readonly previousSystemId: string | null
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   A REASSESSMENT IN PROGRESS.
+
+   ══ THE DRAFT BELONGS TO AN ATTEMPT; THE ASSESSMENT BELONGS TO HISTORY ═════
+
+   These are two different things and conflating them is how a baseline gets
+   overwritten. A draft is MUTABLE and RESUMABLE: somebody is part-way through
+   answering, changing their mind, paging back. A completed `StoredAssessment`
+   is IMMUTABLE: it is the evidence a Food System was built from, and nothing
+   writes to it again for as long as that system exists.
+
+   Finishing a draft MINTS a new assessment. It does not promote the draft
+   record, and it does not turn an existing assessment into something else.
+
+   ══ WHY A NAMESPACE OF ITS OWN ═════════════════════════════════════════════
+
+   Drafts live at `assessment.draft.<id>`, never in a canonical assessment
+   slot. Until Gate 5, the in-progress assessment was written to
+   `assessment.candidate` — the same key the established baseline was read
+   from. A second assessment would have landed on the first one's record, and
+   `validateFoodSystem` could not have caught it, because its identity check
+   compared `"candidate"` with `"candidate"` and found them equal. The baseline
+   would have kept its score, its decisions and its actions, and silently begun
+   presenting the new answers as the evidence behind them.
+
+   ══ STARTING OR ABANDONING A DRAFT CHANGES NOTHING ELSE ════════════════════
+
+   `system.current` is untouched for the whole life of a draft. The person's
+   existing Food System stays intact and fully readable while they answer, and
+   only a SUCCESSFUL establishment moves the pointer. The draft is cleared
+   after that write succeeds — never before, so a failure leaves the old system
+   current and the draft still there to resume or discard.
+   ════════════════════════════════════════════════════════════════════════ */
+
+export interface StoredAssessmentDraft {
+  /** The id the COMPLETED assessment will take. Minted when the draft starts. */
+  readonly id: string
+  /** The system this attempt would follow. `null` when there is no system yet. */
+  readonly previousSystemId: string | null
+  readonly assessmentVersion: string
+  readonly questionSetVersion: string
+  readonly startedAt: string
+  readonly answers: Answers
+  /**
+   * Where they were, so a resume lands where they left off.
+   *
+   * ── IT IS A HINT, NOT AN AUTHORITY, AND THAT IS DELIBERATE ──────────────
+   *
+   * Gate 4 refused to store this at all, on the reasoning that "a stored
+   * cursor could disagree with the answers it was meant to describe", and
+   * derived the resume point from the first unanswered question instead.
+   *
+   * That derivation is right about correctness and wrong about one real case:
+   * somebody who paged BACKWARDS to re-read an earlier question and closed the
+   * tab there is returned to the end of their answers rather than to where
+   * they actually were. So the cursor is stored — and RECONCILED on read. When
+   * it disagrees with the answers, the derived point wins. A stale or tampered
+   * number can never put somebody on a question their own answers contradict.
+   */
+  readonly index: number
 }
 
 /**
@@ -313,6 +395,24 @@ export interface FoodSystemRepository {
    * and `lib/fss/system/establish.ts` explains why the difference matters. */
   loadAssessment(id: string): Promise<StoredAssessment | null>
   saveAssessment(assessment: StoredAssessment): Promise<void>
+
+  /* ── The reassessment draft — also lenient, and for the same reason ──────
+   *
+   * A draft IS the assessment in progress, saved on every answer. A thrown
+   * error here would lose somebody's place mid-reassessment to protect a
+   * record nothing depends on yet. Nothing is established from a draft until
+   * `establishFoodSystem` mints an immutable assessment out of it.
+   *
+   * `deleteDraft` is the one DESTRUCTIVE call in this interface, and it is
+   * called in exactly two places: after `setCurrentSystem` succeeds, and when
+   * a person explicitly abandons an attempt. Never on a failure path. */
+  loadDraft(id: string): Promise<StoredAssessmentDraft | null>
+  saveDraft(draft: StoredAssessmentDraft): Promise<void>
+  deleteDraft(id: string): Promise<void>
+
+  loadCurrentDraftId(): Promise<string | null>
+  setCurrentDraft(draftId: string): Promise<void>
+  clearCurrentDraft(): Promise<void>
 
   /* ── Everything below is STRICT: it throws `RepositoryWriteFailed` rather
    * than losing a write quietly. Establishing a Food System has an ORDER, and
