@@ -54,6 +54,36 @@ function routeOf(file: string): string | null {
   return m ? `/${m[1]}` : null
 }
 
+/**
+ * Is this page file a seed, and for which notion of "reachable"?
+ *
+ * Two notions, and the difference is load-bearing:
+ *
+ *   SERVABLE    everything `classifyPageRoute` does not refuse. Includes
+ *               FIXTURE_SELF_GATED, because the PROXY serves those routes —
+ *               the refusal happens inside the page, in the Node runtime.
+ *   PRODUCTION  servable MINUS the fixture-self-gated routes, i.e. what a
+ *               customer can actually reach on eatobiotics.com.
+ *
+ * The first is the right question for "could a claim be read by anyone,
+ * anywhere, including a reviewer". The second is the right question for
+ * "could a customer read this", which is what the vocabulary bans are about —
+ * a name being withheld until the methodology earns it is withheld from
+ * CUSTOMERS, not from the people reviewing whether it has.
+ *
+ * Keeping both means an exemption for a preview surface can be stated as a
+ * property of the route's gate rather than as a directory name somebody
+ * remembered to skip.
+ */
+function isSeed(file: string, notion: "servable" | "production"): boolean {
+  const route = routeOf(file)
+  if (route === null) return false
+  const klass = classifyPageRoute(route)
+  if (klass === "POST_V1") return false
+  if (notion === "production" && klass === "FIXTURE_SELF_GATED") return false
+  return true
+}
+
 /** An import specifier resolved to a tracked file, or null when it leaves the tree. */
 function resolveImport(spec: string, from: string, all: Set<string>): string | null {
   let base: string
@@ -67,21 +97,12 @@ function resolveImport(spec: string, from: string, all: Set<string>): string | n
   return null
 }
 
-/**
- * Every file in the import closure of the servable page routes.
- *
- * Sorted, so a failure message reads the same on every machine.
- */
-export function reachableSourceFiles(): string[] {
+/** The import closure of a set of seeds. Sorted, so failures read identically. */
+function closureOf(notion: "servable" | "production"): string[] {
   const all = allSourceFiles()
 
-  const seeds = [...all].filter((f) => {
-    const route = routeOf(f)
-    return route !== null && classifyPageRoute(route) !== "POST_V1"
-  })
-
   const reachable = new Set<string>()
-  const queue = [...seeds]
+  const queue = [...all].filter((f) => isSeed(f, notion))
   while (queue.length) {
     const file = queue.pop()!
     if (reachable.has(file)) continue
@@ -96,11 +117,38 @@ export function reachableSourceFiles(): string[] {
   return [...reachable].sort()
 }
 
+/**
+ * Every file in the import closure of the servable page routes.
+ *
+ * Sorted, so a failure message reads the same on every machine.
+ */
+export function reachableSourceFiles(): string[] {
+  return closureOf("servable")
+}
+
+/**
+ * Every file a CUSTOMER can reach — the servable closure minus whatever is
+ * only reachable through a fixture-self-gated route.
+ *
+ * This is the closure a withheld-vocabulary ban should be asked about. The
+ * FSS-v1 candidate preview renders "Your Food System Score™" deliberately,
+ * because a reviewer cannot judge a name they are not shown; it is the one
+ * place in the repository where that name is legitimate, and the thing that
+ * makes it legitimate is the fail-closed gate on its route. So the exemption
+ * is expressed as absence from THIS set, and the day somebody imports the
+ * candidate result from a servable page, the exemption stops applying on its
+ * own rather than because anyone remembered to re-check it.
+ */
+export function productionReachableSourceFiles(): string[] {
+  return closureOf("production")
+}
+
 /** The seed count, exported so a guard can refuse a closure that found nothing. */
 export function servablePageCount(): number {
-  const all = allSourceFiles()
-  return [...all].filter((f) => {
-    const route = routeOf(f)
-    return route !== null && classifyPageRoute(route) !== "POST_V1"
-  }).length
+  return [...allSourceFiles()].filter((f) => isSeed(f, "servable")).length
+}
+
+/** The production seed count — strictly fewer, and a guard asserts that. */
+export function productionPageCount(): number {
+  return [...allSourceFiles()].filter((f) => isSeed(f, "production")).length
 }

@@ -17,6 +17,7 @@
  */
 import { describe, it, expect } from "vitest"
 import { readFileSync, existsSync } from "node:fs"
+import { execSync } from "node:child_process"
 import { copyOf } from "./helpers/marketing-language"
 import { BIOTICS, ACTIONS } from "@/lib/product-vocabulary"
 import { MEAL_SURFACES } from "./customer-surfaces"
@@ -138,6 +139,35 @@ describe("understand versus act", () => {
   ]
 
   /**
+   * The FSS-v1 candidate, which is where the action framework is being REBUILT.
+   *
+   * ── Why this list is derived and the one above is not ────────────────────────
+   *
+   * The two files above are finished surfaces; naming them is honest. The
+   * candidate is under construction and about to acquire a whole action layer —
+   * categories, a recommendation catalogue, a plan — so a named list would be
+   * guarded only as far as somebody remembered to extend it, and the first file
+   * they forgot would be the one that reintroduced the conflation.
+   *
+   * ── Why it matters more here than anywhere else ──────────────────────────────
+   *
+   * Every other surface inherited Feed · Seed · Rejuvenate already attached to a
+   * Biotic, and the work was prising them apart. The candidate starts clean: the
+   * engine contains no Biotic at all, and the architecture's whole claim is that
+   * the domains are the scored layer and the actions are not. The cheapest way
+   * to lose that is to write `Record<FssDomain, ActionCategory>` or to print an
+   * action beside a Biotic with an operator between them — and until now no rule
+   * in this file could see either, because the candidate tree was in no corpus.
+   */
+  const CANDIDATE_ACTION_SURFACES = execSync("git ls-files lib/fss components/fss", {
+    encoding: "utf-8",
+  })
+    .trim()
+    .split("\n")
+    .filter((f) => /\.(ts|tsx)$/.test(f))
+    .sort()
+
+  /**
    * The relationship, stated as a whole phrase rather than two words. Matching
    * the full sentence is the point: it can only pass while the sentence is
    * actually there, so deleting it turns this red.
@@ -189,7 +219,7 @@ describe("understand versus act", () => {
   })
 
   it("never equates an action with a biotic", () => {
-    for (const f of ACTION_SECTIONS) {
+    for (const f of [...ACTION_SECTIONS, ...CANDIDATE_ACTION_SURFACES]) {
       const copy = read(f)
       for (const { label, pattern } of equations()) {
         expect(copy, `${f} must not assert "${label}"`).not.toMatch(pattern)
@@ -201,6 +231,39 @@ describe("understand versus act", () => {
         ).not.toMatch(pattern)
       }
     }
+  })
+
+  /**
+   * And the candidate must not label anything with an action name.
+   *
+   * `label:` is the shape the rule above the framework cards already refuses on
+   * the score-card route, and it is the shape an action-category record would
+   * naturally take — `{ label: "Feed", … }`. Permitted everywhere it is a key
+   * (`feed:`), refused everywhere it is a rendered label, which is the same
+   * case-sensitive distinction `retired-vocabulary.test.ts` draws and for the
+   * same reason: a stored key is not copy.
+   *
+   * The counterfactual is below, so this is not another presence check.
+   */
+  const actionAsLabel = () => ACTIONS.map((a) => new RegExp(`label:\\s*"${a}"`))
+
+  it("the candidate never uses an action name as a label", () => {
+    expect(CANDIDATE_ACTION_SURFACES.length).toBeGreaterThanOrEqual(16)
+    for (const f of CANDIDATE_ACTION_SURFACES) {
+      const copy = read(f)
+      for (const [i, pattern] of actionAsLabel().entries()) {
+        expect(copy, `${f} must not label anything "${ACTIONS[i]}"`).not.toMatch(pattern)
+      }
+    }
+  })
+
+  it("NON-VACUITY: an action used as a label would be caught, a key would not", () => {
+    const hits = (s: string) => actionAsLabel().some((p) => p.test(s))
+    expect(hits('{ label: "Feed", color: "var(--icon-green)" }')).toBe(true)
+    expect(hits('{ label: "Rejuvenate" }')).toBe(true)
+    // A stored key is not copy, and the candidate is free to use one.
+    expect(hits('{ feed: 0.2, seed: 0.2 }')).toBe(false)
+    expect(hits('category: "feed"')).toBe(false)
   })
 
   /**

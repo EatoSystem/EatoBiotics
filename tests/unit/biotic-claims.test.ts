@@ -43,6 +43,7 @@
  */
 import { describe, it, expect } from "vitest"
 import { readFileSync } from "node:fs"
+import { execSync } from "node:child_process"
 import { MARKETING_SURFACES, AI_PROMPT_SURFACES } from "./customer-surfaces"
 import { reachableSourceFiles, servablePageCount } from "./reachable-surfaces"
 
@@ -151,12 +152,65 @@ const EMAIL_SURFACES = [
   "lib/email/meal-analysis-email.ts",
 ]
 
+/**
+ * The FSS-v1 candidate — a fifth tranche, and the first one guarded BEFORE it
+ * can be reached rather than after.
+ *
+ * ── Why it is its own list ────────────────────────────────────────────────────
+ *
+ * The four lists above each carry a tranche meaning: live, customer-reachable,
+ * a prompt, an email. The candidate is none of those. It sits behind a
+ * fail-closed preview gate, nothing links to it, and production refuses it
+ * outright. Appending it to one of those lists would make that list's docblock
+ * false, so it joins as a fifth and says what it is.
+ *
+ * ── Why it needs guarding at all, given nobody can reach it ──────────────────
+ *
+ * Because "nobody can reach it" is a property of a gate, and a gate is one edit
+ * from being wrong — and because this is the layer that will carry the
+ * product's recommendations. Every earlier tranche was added AFTER a claim had
+ * already shipped: Tranche 1 after the reveal, 2A after the result page and the
+ * share image, 2C after `sequence-email.ts` had been rendering per-Biotic
+ * numbers for months. Each time the finding came from reading rather than from
+ * CI, and each time the file was simply in no corpus.
+ *
+ * ── What it was checked by until now, which was not nothing but was close ────
+ *
+ * The derived ledger at the bottom of this file, and only that. Because
+ * `/preview/food-system-v1` classifies FIXTURE_SELF_GATED rather than POST_V1,
+ * it seeds `reachableSourceFiles()`, so the candidate closure was inside the
+ * ledger corpus — which runs exactly two rule sets, the fermented-live and
+ * fibre-prebiotic ones. `PERSONAL_BIOTIC_STATE` and the per-file number rules
+ * never saw it. It passes all of them today; the point is that it was passing
+ * unobserved.
+ *
+ * ── DERIVED, not hand-kept, and that is the whole repair ─────────────────────
+ *
+ * Every other tranche here is a named list, which is defensible for finished
+ * surfaces and indefensible for one still being built: a list is guarded
+ * because somebody remembered, and Gate 3 adds a module a week. So these three
+ * roots are enumerated from the tree. A new candidate file is guarded the
+ * moment it exists, which is the property every previous tranche lacked, and
+ * the thing a developer would have to do to escape the rules is delete a
+ * directory from CANDIDATE_ROOTS — which a test below refuses.
+ */
+const CANDIDATE_ROOTS = ["lib/fss", "components/fss", "app/preview/food-system-v1"]
+
+const CANDIDATE_SURFACES = execSync(`git ls-files ${CANDIDATE_ROOTS.join(" ")}`, {
+  encoding: "utf-8",
+})
+  .trim()
+  .split("\n")
+  .filter((f) => /\.(ts|tsx)$/.test(f))
+  .sort()
+
 /** Everything the claim rules are enforced against. */
 const GUARDED_SURFACES = [
   ...LIVE_SURFACES,
   ...REACHABLE_SURFACES,
   ...PROMPT_SURFACES,
   ...EMAIL_SURFACES,
+  ...CANDIDATE_SURFACES,
 ]
 
 /** English dictionary copy is checked separately — same rules, one locale. */
@@ -280,8 +334,15 @@ describe("the corpus this guard reads cannot silently shrink", () => {
    * two are data modules. They are pinned by (1) instead, which is why (1)
    * exists rather than deferring wholesale to the shared corpus.
    */
-  it("GUARDED_SURFACES is exactly the set signed off, in both tranches", () => {
-    expect([...GUARDED_SURFACES].sort()).toEqual([
+  /*
+   * The named tranches are pinned by value; the candidate tranche is pinned by
+   * its RULE instead, below. Two different disciplines for two different kinds
+   * of list, and conflating them would break the one that matters: a finished
+   * surface should not leave the corpus silently, and an unfinished one should
+   * not have to be remembered into it.
+   */
+  it("the named tranches are exactly the set signed off", () => {
+    expect([...LIVE_SURFACES, ...REACHABLE_SURFACES, ...PROMPT_SURFACES, ...EMAIL_SURFACES].sort()).toEqual([
       "app/about/page.tsx",
       "app/api/consult/route.ts",
       "app/api/demo/consult/route.ts",
@@ -316,6 +377,36 @@ describe("the corpus this guard reads cannot silently shrink", () => {
       "lib/pillars.ts",
       "lib/quick-assessment.ts",
     ])
+  })
+
+  /*
+   * The candidate tranche's invariant is coverage, not membership. These three
+   * assertions are what stop the derivation becoming decorative:
+   *
+   *   1. it found something — an empty glob would pass every rule vacuously,
+   *      which is how a derived corpus fails silently;
+   *   2. all three roots are represented — so deleting one from CANDIDATE_ROOTS
+   *      to make a file pass is a visible failure rather than a quiet one;
+   *   3. every tracked .ts/.tsx under those roots is in GUARDED_SURFACES — the
+   *      actual property, asserted directly.
+   */
+  it("every candidate file is guarded, and the derivation is not empty", () => {
+    expect(CANDIDATE_SURFACES.length).toBeGreaterThanOrEqual(16)
+
+    for (const root of CANDIDATE_ROOTS) {
+      expect(
+        CANDIDATE_SURFACES.some((f) => f.startsWith(`${root}/`)),
+        `no file was collected from ${root} — has the root been removed or renamed?`,
+      ).toBe(true)
+    }
+
+    const tracked = execSync(`git ls-files ${CANDIDATE_ROOTS.join(" ")}`, { encoding: "utf-8" })
+      .trim()
+      .split("\n")
+      .filter((f) => /\.(ts|tsx)$/.test(f))
+    for (const file of tracked) {
+      expect(GUARDED_SURFACES, `${file} is in the candidate tree but not guarded`).toContain(file)
+    }
   })
 
   it("the rendered marketing surfaces are in the shared vocabulary corpus too", () => {

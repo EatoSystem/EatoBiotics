@@ -25,6 +25,7 @@
  */
 import { describe, it, expect } from "vitest"
 import { readFileSync, existsSync, readdirSync, statSync } from "node:fs"
+import { execSync } from "node:child_process"
 import { join } from "node:path"
 import { copyOf } from "./helpers/marketing-language"
 import {
@@ -32,6 +33,12 @@ import {
   AI_PROMPT_SURFACES,
   manifestProblems,
 } from "./customer-surfaces"
+import {
+  productionReachableSourceFiles,
+  productionPageCount,
+  reachableSourceFiles,
+  servablePageCount,
+} from "./reachable-surfaces"
 
 /**
  * The customer-facing journey. Demo and preview routes are excluded on purpose:
@@ -575,5 +582,193 @@ describe("the live journey uses only current vocabulary", () => {
         expect(copy, `${name} fired on internal value: ${internal}`).not.toMatch(rule)
       }
     }
+  })
+})
+
+/* ════════════════════════════════════════════════════════════════════════════
+   The one surface allowed to say "Food System Score" — and what makes it so.
+
+   ── The finding this block exists to record ─────────────────────────────────
+
+   `components/fss/candidate-result.tsx` renders, at the time of writing:
+
+       Your Food System Score™
+       Your Food System Score is {score.score} out of 100.
+
+   RETIRED bans that by name — "a competing branded score", /\bfood system
+   score\b/i — and this file's own non-vacuity probe uses "Your Food System
+   Score is 72" as its example of the violation. So the candidate renders,
+   almost character for character, the exact string the guard holds up as what
+   must never ship.
+
+   It was green for one reason: `journeySurfaces()` skips any directory named
+   `preview` and never walks `lib/fss` or `components/fss`. A rule and the code
+   that breaks it coexisted because the corpus did not reach it.
+
+   ── Why the right answer is an exemption and not a repair ───────────────────
+
+   Because the name is SUPPOSED to be there. The whole purpose of
+   /preview/food-system-v1 is that the candidate methodology can be walked and
+   judged before it ships, and a reviewer cannot judge a name they are not
+   shown. The architecture review's conclusion is that the name ships LAST,
+   gated on scientific sign-off — not that it may never be written down.
+
+   The ban's real subject is therefore CUSTOMERS, and the exemption's real
+   condition is the gate on the route. So this block states both, and makes the
+   condition the thing that is tested:
+
+     · the withheld name appears in NO production-reachable file;
+     · the candidate files are outside the production closure — so the day one
+       is imported from a servable page, the exemption lapses by itself;
+     · every OTHER retired rule still applies to the candidate in full.
+
+   That last clause is why this is a strengthening rather than a hole. Before,
+   no retired rule reached the candidate at all. Now exactly one is lifted, for
+   a stated reason, on a tested condition.
+   ════════════════════════════════════════════════════════════════════════════ */
+describe("the withheld score name is confined to the gated candidate preview", () => {
+  const WITHHELD = "a competing branded score"
+
+  /** Derived, so a new Gate 3 file is covered the moment it exists. */
+  const candidateFiles = () =>
+    execSync("git ls-files lib/fss components/fss app/preview/food-system-v1", {
+      encoding: "utf-8",
+    })
+      .trim()
+      .split("\n")
+      .filter((f) => /\.(ts|tsx)$/.test(f))
+      .sort()
+
+  it("the rule and the exemption both still refer to something real", () => {
+    expect(RETIRED.find(([n]) => n === WITHHELD), `the "${WITHHELD}" rule must exist`).toBeDefined()
+    expect(candidateFiles().length).toBeGreaterThanOrEqual(16)
+
+    // The exemption is pointless if nothing in the candidate actually uses the
+    // name — and an exemption nobody needs is an exemption nobody notices has
+    // stopped being justified.
+    const rule = RETIRED.find(([n]) => n === WITHHELD)![1]
+    const users = candidateFiles().filter((f) => rule.test(copyOf(readFileSync(f, "utf8"))))
+    expect(users, "no candidate file uses the withheld name — is this exemption still needed?").not
+      .toEqual([])
+  })
+
+  /*
+   * ── COUNTED DEBT, found by this block and deliberately not repaired here ───
+   *
+   * Asking the question properly — "does any file a customer can reach carry
+   * the withheld name?" — turned up THIRTEEN, none of them the candidate. They
+   * are the surfaces the Food System Score architecture review named in its
+   * opening finding: *"the retired name is shipping right now, in about thirty
+   * places."* Phase 1a corrected the ones a visitor meets at the gate; these
+   * sit deeper in the account, the agent loop and the share card, and nothing
+   * has ever read them, because `journeySurfaces()` does not reach them either.
+   *
+   * The sharpest is `components/account/retest-card.tsx:91`, which offers a
+   * share string reading "My Food System Score went from X to Y" — a
+   * longitudinal change claim, under a withheld name, on a model that cannot
+   * yet support one. The review flagged that exact line.
+   *
+   * ── Why it is a ledger and not a fix ──────────────────────────────────────
+   *
+   * Repairing thirteen files across the account dashboard, the Living Twin, the
+   * agent loop, the share-card renderer and the CMS taxonomy is a vocabulary
+   * pass, and folding one into an action-layer gate is how a diff stops being
+   * reviewable. It is also not all one thing: some are rendered copy, while
+   * `lib/cms/taxonomy.ts` is a STORED tag value, where a rename is a data
+   * question rather than a copy question — exactly the distinction this file's
+   * header warns against collapsing.
+   *
+   * So the set is pinned by value, in BOTH directions. A fourteenth file turns
+   * this red, and a file that is fixed must leave the ledger — so the list
+   * cannot sit here looking like coverage after the thing it covers is gone.
+   */
+  const WITHHELD_NAME_UNCORRECTED = [
+    "components/account/retest-card.tsx",
+    "components/account/twin/twin-sections.tsx",
+    "components/assessment/report-starter.tsx",
+    "components/eatosystem/national-pulse.tsx",
+    "lib/account/inside-you.ts",
+    "lib/account/share-card.ts",
+    "lib/account/week-story.ts",
+    "lib/agent-loop/engine.ts",
+    "lib/agent-loop/providers/deterministic.ts",
+    "lib/agent-loop/stages.ts",
+    "lib/agent-loop/twin/twin-builder.ts",
+    "lib/assessment/registry.ts",
+    "lib/cms/taxonomy.ts",
+  ]
+
+  const withheldOffenders = () => {
+    const rule = RETIRED.find(([n]) => n === WITHHELD)![1]
+    return productionReachableSourceFiles().filter((f) =>
+      rule.test(copyOf(readFileSync(f, "utf8"))),
+    )
+  }
+
+  it("the production closure is real, so this is not passing vacuously", () => {
+    // An empty or tiny closure would satisfy every assertion below by finding
+    // nothing, which is how a derived corpus fails without saying so.
+    expect(productionReachableSourceFiles().length).toBeGreaterThan(50)
+    expect(productionPageCount()).toBeGreaterThan(10)
+  })
+
+  it("no customer-reachable file carries the withheld name except the counted ledger", () => {
+    expect(
+      withheldOffenders().filter((f) => !WITHHELD_NAME_UNCORRECTED.includes(f)),
+      "a NEW customer-reachable surface carries the withheld score name",
+    ).toEqual([])
+  })
+
+  it("the ledger has no entry that is already clean", () => {
+    const hits = new Set(withheldOffenders())
+    expect(
+      WITHHELD_NAME_UNCORRECTED.filter((f) => !hits.has(f)),
+      "ledger entries that no longer match — remove them so the count stays honest",
+    ).toEqual([])
+  })
+
+  it("and the candidate is not in that ledger — its use of the name is gated, not debt", () => {
+    for (const f of candidateFiles()) {
+      expect(
+        WITHHELD_NAME_UNCORRECTED,
+        `${f} is a gated candidate surface and must not be counted as uncorrected debt`,
+      ).not.toContain(f)
+    }
+  })
+
+  it("the candidate is reachable only through the fixture-gated route", () => {
+    // The condition the exemption rests on, asserted directly rather than
+    // inferred from the route classification somewhere else.
+    const reachable = new Set(productionReachableSourceFiles())
+    for (const f of candidateFiles()) {
+      expect(
+        reachable.has(f),
+        `${f} is now reachable from a servable page, so it may no longer render the withheld name`,
+      ).toBe(false)
+    }
+  })
+
+  it("every OTHER retired rule still applies to the candidate in full", () => {
+    const offenders: string[] = []
+    for (const file of candidateFiles()) {
+      const copy = copyOf(readFileSync(file, "utf8"))
+      for (const [name, rule] of RETIRED) {
+        if (name === WITHHELD) continue
+        const hit = copy.match(rule)
+        if (hit) offenders.push(`${file} → ${name}: "${hit[0]}"`)
+      }
+    }
+    expect(offenders, "retired vocabulary in the FSS-v1 candidate").toEqual([])
+  })
+
+  it("NON-VACUITY: the production closure is strictly smaller, and the rule bites", () => {
+    // If the two closures were equal the exemption would be meaningless, and
+    // the "candidate is unreachable" assertion above would be trivially true.
+    expect(productionPageCount()).toBeLessThan(servablePageCount())
+    expect(productionReachableSourceFiles().length).toBeLessThan(reachableSourceFiles().length)
+
+    const rule = RETIRED.find(([n]) => n === WITHHELD)![1]
+    expect(copyOf('<h1>Your Food System Score™</h1>')).toMatch(rule)
+    expect(copyOf('<h1>Your Biotics Score™</h1>')).not.toMatch(rule)
   })
 })
