@@ -44,7 +44,11 @@ export const SYSTEM_HOTSPOTS: SystemHotspot[] = [
     y: 33,
     biotic: "postbiotics",
     what: "Much of your body's defence lives along the gut. Postbiotic compounds made by well-fed microbes are associated with a stronger gut barrier and everyday resilience.",
-    action: "Feed the producers: cooked-and-cooled oats, legumes and onions help your microbes make more.",
+    // GATE 3.6: read "Feed the producers: … help your microbes make more." —
+    // a microbial-production mechanism, asserted of this person, on /account.
+    // Found by the behavioural guard, not by either audit or the source scan.
+    // The foods are unchanged; what goes is the claim about what they cause.
+    action: "Add resistant starch this week — cooked-and-cooled oats or potato, legumes, onions.",
   },
   {
     key: "digestion",
@@ -66,29 +70,45 @@ export const SYSTEM_HOTSPOTS: SystemHotspot[] = [
   },
 ]
 
-export interface SystemHotspotState extends SystemHotspot {
-  /** The member's live level for this system's biotic (0–100). */
-  score: number
-  /** Band label for the score, e.g. "Strong", "Building". */
-  level: string
-  /** Name of the feeding biotic, capitalised for display ("Prebiotics"). */
-  bioticLabel: string
-}
+/* ═══════════════════════════════════════════════════════════════════════════
+   GATE 3.6 — the most serious live finding, and it was not in the audit.
 
-function levelLabel(score: number): string {
-  if (score >= 70) return "Strong"
-  if (score >= 45) return "Building"
-  return "Needs feeding"
-}
+   This state object used to carry three fields, and `TwinStage` rendered all
+   three inside the hotspot panel on /account, which is V1_CORE:
 
-export function systemMapState(twin: FoodSystemDigitalTwin): SystemHotspotState[] {
-  return SYSTEM_HOTSPOTS.map((h) => {
-    const band = twin.biotics[h.biotic]
-    return {
-      ...h,
-      score: band.score,
-      level: band.label || levelLabel(band.score),
-      bioticLabel: h.biotic.charAt(0).toUpperCase() + h.biotic.slice(1),
-    }
-  })
+     score   → "Building · 45"  and a bar at width: ${score}%
+     level   → the band word, also on the hotspot's aria-label
+     bioticLabel → "Fed by Postbiotics"
+
+   `score` came straight from `twin.biotics[h.biotic].score`, so that chip and
+   that bar were a PERSONAL BIOTIC NUMBER — the identical model Tranche 1
+   removed from the reveal, 2A from /assessment/results and the share card, and
+   2C from sequence-email.ts, reconstructed here out of a different component.
+   "Fed by Postbiotics" is a feeding mechanism naming a Biotic, which
+   POSTBIOTICS_INFERENCE_BOUNDARY refuses.
+
+   ── THE FIELDS ARE REMOVED, NOT BLANKED ──────────────────────────
+
+   `SystemHotspotState` is now `SystemHotspot` with nothing added. A renderer
+   cannot show a personal Biotic state because it is no longer handed one — the
+   same reason `BioticsProgressPanel` lost its prop in this gate and
+   `ScoreRing` lost `percentile` before it. Leaving the fields and declining to
+   render them would last exactly until the next person who wanted a chip.
+
+   `biotic` survives on `SystemHotspot` as a DATA KEY: it is how the hotspot
+   knows which food action to offer. It is never printed. `levelLabel` goes with
+   the fields — it was an eleventh band ladder, and nothing may print it.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+export type SystemHotspotState = SystemHotspot
+
+/**
+ * The hotspots, as the stage renders them.
+ *
+ * Takes the twin so the signature is stable for callers and so a future
+ * genuinely-measured field has somewhere to arrive, but reads nothing
+ * per-Biotic out of it — see the block above.
+ */
+export function systemMapState(_twin: FoodSystemDigitalTwin): SystemHotspotState[] {
+  return SYSTEM_HOTSPOTS.map((h) => ({ ...h }))
 }

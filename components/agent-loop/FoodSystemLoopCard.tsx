@@ -63,7 +63,7 @@ export function FoodSystemLoopCard({
         </div>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
-          <BioticsProgressPanel biotics={twin.biotics} />
+          <BioticsProgressPanel />
           {recommendation ? (
             <NextBestActionCard
               recommendation={recommendation}

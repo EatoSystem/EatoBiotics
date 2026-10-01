@@ -141,7 +141,7 @@ export function TwinScorePanel({ twin, visual }: { twin: FoodSystemDigitalTwin; 
             <span className="rounded-full px-3 py-1 text-xs font-bold text-white" style={{ background: delta >= 0 ? "linear-gradient(135deg,#4CB648,#2DAA6E)" : "linear-gradient(135deg,#F5C518,#F5A623)" }}>{deltaLabel}</span>
           </div>
         </div>
-        <BioticsProgressPanel biotics={twin.biotics} />
+        <BioticsProgressPanel />
       </div>
     </section>
   )

@@ -29,8 +29,7 @@
 
 import { useState } from "react"
 import { UtensilsCrossed, Leaf, Sparkles } from "lucide-react"
-import { BEHAVIOUR_UNKNOWN, loopBehaviour } from "@/lib/agent-loop/behaviour"
-import type { BioticKey } from "@/lib/agent-loop"
+import { BEHAVIOUR_UNKNOWN, mealBehaviour } from "@/lib/agent-loop/behaviour"
 
 interface MenuPick {
   name: string
@@ -46,9 +45,14 @@ interface MenuPick {
  * unknown key reads as the honest fallback, never as an empty string.
  */
 function behaviourFor(key: string): string {
-  return key === "prebiotics" || key === "probiotics" || key === "postbiotics"
-    ? loopBehaviour(key as BioticKey)
-    : BEHAVIOUR_UNKNOWN
+  switch (key) {
+    // Dishes, so the MEAL vocabulary — a menu pick is scored on food
+    // categories, not on the rhythm of somebody's week.
+    case "prebiotics": return mealBehaviour("prebiotic")
+    case "probiotics": return mealBehaviour("probiotic")
+    case "postbiotics": return mealBehaviour("postbiotic")
+    default: return BEHAVIOUR_UNKNOWN
+  }
 }
 
 const BIOTIC_COLOR: Record<MenuPick["biotic"], string> = {
@@ -133,7 +137,7 @@ export function MenuScan({ mock = false }: { mock?: boolean }) {
         ) : (
           <>
             <p className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest" style={{ background: "color-mix(in srgb, var(--icon-green) 10%, white)", border: "1px solid var(--border)", color: "var(--icon-green)" }}>
-              <Sparkles size={10} /> Chosen for {behaviourFor(result.weakest)}
+              <Sparkles size={10} /> Chosen for your {behaviourFor(result.weakest)}
             </p>
             <div className="mt-3 space-y-2.5">
               {result.picks.map((p, i) => (

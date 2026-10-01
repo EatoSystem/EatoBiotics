@@ -11,7 +11,23 @@ export interface ShareCardData {
   score: number
   delta: number
   momentumLabel: string
-  biotics: { label: string; value: number; color: string }[]
+  /*
+   * GATE 3.6: the `biotics` field is GONE, not emptied.
+   *
+   * It was three `{ label, value }` pairs — the person's Prebiotics,
+   * Probiotics and Postbiotics scores — drawn onto a PNG that people post
+   * publicly. Tranche 2A removed exactly this from
+   * components/assessment/score-card.tsx and app/api/score-card/route.tsx,
+   * calling it "the most public form of the claim and the one we cannot see".
+   * It was still live here, reached from TwinStage on /account.
+   *
+   * Removing the parameter rather than passing `[]` is the point: a field that
+   * still exists is an invitation to fill it. Same reason BioticsProgressPanel
+   * lost its prop and SystemHotspotState lost its three.
+   *
+   * The card keeps the overall Biotics Score™, the delta and the momentum
+   * label — a result, not a claim.
+   */
 }
 
 export const SHARE_CARD_W = 1080
@@ -91,29 +107,6 @@ export function drawTwinCard(ctx: CanvasRenderingContext2D, data: ShareCardData)
   ctx.stroke()
   ctx.fillStyle = "#A8E063"
   ctx.fillText(chipText, cx, cy + 280)
-
-  /* biotic bars */
-  const barX = 170
-  const barW = W - barX * 2
-  let y = 930
-  ctx.textAlign = "left"
-  for (const b of data.biotics) {
-    ctx.fillStyle = "rgba(253,251,247,0.75)"
-    ctx.font = `800 28px ${SANS}`
-    ctx.fillText(b.label.toUpperCase(), barX, y)
-    ctx.textAlign = "right"
-    ctx.fillStyle = b.color
-    ctx.font = `700 34px ${SERIF}`
-    ctx.fillText(String(b.value), barX + barW, y)
-    ctx.textAlign = "left"
-    roundRect(ctx, barX, y + 16, barW, 16, 8)
-    ctx.fillStyle = "rgba(253,251,247,0.12)"
-    ctx.fill()
-    roundRect(ctx, barX, y + 16, Math.max(24, (Math.min(100, b.value) / 100) * barW), 16, 8)
-    ctx.fillStyle = b.color
-    ctx.fill()
-    y += 92
-  }
 
   /* footer wordmark */
   ctx.textAlign = "center"

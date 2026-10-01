@@ -17,7 +17,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowRight, Leaf, Target, Utensils, UtensilsCrossed, X } from "lucide-react"
+import { ArrowRight, Target, Utensils, UtensilsCrossed, X } from "lucide-react"
 import { HeroVideo } from "@/components/hero-video"
 import { DigitalTwinFigure } from "@/components/digital-twin/parts"
 import { MealReactionBurst } from "./meal-reaction"
@@ -392,7 +392,7 @@ export function TwinStage({
                   type="button"
                   onClick={() => setSelected(isActive ? null : h.key)}
                   aria-pressed={isActive}
-                  aria-label={`${h.label} — ${h.level}`}
+                  aria-label={`Inside you — ${h.label}`}
                   className="eb-reveal absolute z-10 -translate-x-1/2 -translate-y-1/2"
                   style={{ left: `${h.x}%`, top: `${h.y}%`, animationDelay: `${900 + i * 120}ms` }}
                 >
@@ -435,7 +435,6 @@ export function TwinStage({
                     }}
                   >
                     {h.label}
-                    <span style={{ color: c }}>{h.score}</span>
                   </span>
                 </button>
               )
@@ -587,14 +586,15 @@ export function TwinStage({
                 <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: HOTSPOT_COLOR[active.key] }}>
                   Inside you · {active.label}
                 </p>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <span className="rounded-full px-2.5 py-1 text-xs font-bold" style={{ background: HOTSPOT_COLOR[active.key], color: "#0B1607" }}>
-                    {active.level} · {active.score}
-                  </span>
-                  <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold" style={{ background: "rgba(253,251,247,0.08)", border: "1px solid rgba(253,251,247,0.18)", color: "#A8E063" }}>
-                    <Leaf size={11} /> Fed by {active.bioticLabel}
-                  </span>
-                </div>
+                {/*
+                  GATE 3.6: two chips and a bar used to live here —
+                  "Building · 45" (a personal Biotic number with a band word)
+                  and "Fed by Postbiotics" (a feeding mechanism naming a
+                  Biotic), over a bar whose width was that same score. All
+                  three are gone, and `SystemHotspotState` no longer carries
+                  the fields, so they cannot be rendered again by accident.
+                  What a hotspot now says is what it teaches and what to eat.
+                */}
               </div>
               <button
                 type="button"
@@ -605,9 +605,6 @@ export function TwinStage({
               >
                 <X size={13} />
               </button>
-            </div>
-            <div className="mt-3 h-[7px] max-w-md overflow-hidden rounded-full" style={{ background: "rgba(253,251,247,0.10)" }}>
-              <div className="eb-shimmer h-full rounded-full transition-[width] duration-700" style={{ width: `${Math.max(4, Math.min(100, active.score))}%`, backgroundColor: HOTSPOT_COLOR[active.key] }} />
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-2 md:gap-6">
               <p className="text-sm leading-relaxed" style={{ color: "rgba(253,251,247,0.85)" }}>{active.what}</p>

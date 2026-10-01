@@ -17,6 +17,7 @@ function sampleBaseline(over: Partial<Parameters<typeof buildBaseline>[0]> = {})
     score: 60,
     scoreLabel: "Strong Foundation",
     biotics: { prebiotics: 42, probiotics: 72, postbiotics: 55 },
+    bioticsSource: "assessment",
     strengths: ["Fermented foods"],
     priorities: ["Fibre diversity"],
     ...over,

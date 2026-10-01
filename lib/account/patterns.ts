@@ -4,11 +4,12 @@
  * The Twin visibly gets smarter over time: `detectPatterns` reads the member's
  * meal history (up to 30 days from twin-data) and reports only the patterns the
  * data genuinely supports — weekday/weekend gaps, what their best meals share,
- * repeat winners, fortnight biotic trends, and weekly rhythm. First-person
+ * repeat winners, fortnight food-pattern trends, and weekly rhythm. First-person
  * voice, never medical, silent rather than speculative.
  */
 
 import type { AccountTwinMeal } from "@/lib/agent-loop/account-twin"
+import { mealBehaviour, type MealBioticKey } from "@/lib/agent-loop/behaviour"
 
 export interface TwinPattern {
   id: string
@@ -17,13 +18,61 @@ export interface TwinPattern {
   icon: "momentum" | "biotic" | "streak" | "meal"
 }
 
-const BIOTIC_LABEL = { prebiotic: "Prebiotics", probiotic: "Probiotics", postbiotic: "Postbiotics" } as const
-type BioticK = keyof typeof BIOTIC_LABEL
+/* ═══════════════════════════════════════════════════════════════════════════
+   GATE 3.6 — the worst of the nine sites, and the last one anybody looked at.
 
+   These titles render in the "what your Food System learned" feed on /account,
+   which is V1_CORE. Before this they read:
+
+     "Your Postbiotics climbed 8 points this week"
+     "Your Postbiotics slipped 8 points this week"
+     "Your best meals lean on Prebiotics"
+
+   The first two are three prohibited things in one sentence: a personal
+   Postbiotics state, a number attached to it, and a change claim across two
+   weeks. Tranche 1 removed exactly that shape from the pre-launch reveal, 2A
+   from /assessment/results, the share card and the generated OG image, and 2C
+   from sequence-email.ts. It was still live here because no claims guard had
+   ever read this file.
+
+   ── THE NUMBER STAYS, AND THE REASON MATTERS ────────────────────────
+
+   `fortnightTrend` computes a real delta between two averages of measured meal
+   sub-scores over two defined seven-day windows. That is a change in REPORTED
+   FOOD PATTERNS, which `COMPARISON_LANGUAGE` permits and which the product
+   should say. What was never permitted is the Biotic as its subject.
+
+   ── AND BIOTIC_HINT.postbiotic WAS A MECHANISM CLAIM ─────────────────
+
+   It read "your meals feed the producers well" — friendly words for microbial
+   production, which POSTBIOTICS_INFERENCE_BOUNDARY lists by name under
+   `be-produced-by`. No regex catches it, because it names no Biotic; the pin
+   below is what stops it coming back.
+
+   ── REPORTED, NOT FIXED HERE ──────────────────────────────────
+
+   `fortnightTrend` compares two windows with NO method-version check — the
+   thing `canCompare` (lib/fss/engine/compare.ts) exists to refuse. It is sound
+   today because both windows come from one instrument; it stops being sound
+   the moment meal scoring changes version, silently. Wiring `canCompare` into
+   the account surface is Gate 5 ("Reassess / What Changed") and would change
+   what a live dashboard computes, so it does not belong inside a wording gate.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+type BioticK = MealBioticKey
+
+/**
+ * The closing clause on the best-meals signal.
+ *
+ * Each names a food category the meal was actually scored on. `postbiotic`
+ * no longer claims a meal fed anything: the bucket is polyphenol-rich and
+ * resistant-starch foods (lib/biotics-prompt.ts:35), and no food is a
+ * postbiotic.
+ */
 const BIOTIC_HINT: Record<BioticK, string> = {
   prebiotic: "plant variety is your superpower",
   probiotic: "fermented foods are your superpower",
-  postbiotic: "your meals feed the producers well",
+  postbiotic: "polyphenol-rich foods are your superpower",
 }
 
 const avg = (xs: number[]) => xs.reduce((s, x) => s + x, 0) / xs.length
@@ -74,8 +123,8 @@ function bestMealSignal(meals: AccountTwinMeal[]): TwinPattern | null {
   const lead = (Object.keys(totals) as BioticK[]).sort((a, b) => totals[b] - totals[a])[0]
   return {
     id: `best-lean-${lead}`,
-    title: `Your best meals lean on ${BIOTIC_LABEL[lead]}`,
-    detail: `Across your top-scoring meals, ${BIOTIC_LABEL[lead].toLowerCase()} lead the way — ${BIOTIC_HINT[lead]}.`,
+    title: `Your best meals lean on ${mealBehaviour(lead)}`,
+    detail: `That is the common thread across your top-scoring meals — ${BIOTIC_HINT[lead]}.`,
     icon: "biotic",
   }
 }
@@ -127,13 +176,13 @@ function fortnightTrend(meals: AccountTwinMeal[], now: number): TwinPattern | nu
   return rounded > 0
     ? {
         id: `trend-up-${bestKey}`,
-        title: `Your ${BIOTIC_LABEL[bestKey]} climbed ${rounded} points this week`,
+        title: `Your meals climbed ${rounded} points on ${mealBehaviour(bestKey)} this week`,
         detail: "Compared with the week before — whatever changed, it's working.",
         icon: "momentum",
       }
     : {
         id: `trend-down-${bestKey}`,
-        title: `Your ${BIOTIC_LABEL[bestKey]} slipped ${-rounded} points this week`,
+        title: `Your meals slipped ${-rounded} points on ${mealBehaviour(bestKey)} this week`,
         detail: "Compared with the week before — one targeted meal would bring it back.",
         icon: "biotic",
       }
