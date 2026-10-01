@@ -238,7 +238,7 @@ export const ACTION_CATALOGUE: readonly CatalogueEntry[] = [
     practicalAction:
       "Pick the single fermented food you would happily eat again, and keep that one in. Variety can come later.",
     rationale:
-      "Foods transformed by fermentation differ widely in taste, and a pattern built on something you dislike rarely lasts a week.",
+      "Foods transformed by fermentation differ widely in taste, and a pattern built on something unpleasant rarely lasts a week.",
     suggestedFrequency: "The same one, most days this week.",
     claimClass: "general-education",
     requires: [],
@@ -368,7 +368,7 @@ export const ACTION_CATALOGUE: readonly CatalogueEntry[] = [
     practicalAction:
       "Make or portion something ahead for the meal you most often skip, so the decision is already taken when the day goes wrong.",
     rationale:
-      "A meal that needs a decision when you are already short of time is the one most likely to be skipped.",
+      "A meal that needs a decision late in a difficult day is the one most likely to be skipped.",
     suggestedFrequency: "Once, covering two or three meals.",
     claimClass: "general-education",
     requires: ["time", "kitchen"],

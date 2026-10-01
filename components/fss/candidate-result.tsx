@@ -7,9 +7,11 @@ import type { ResolvedQuestionSet } from "@/lib/fss/questions/types"
 import type { Answers } from "@/lib/fss/engine/score"
 import { DOMAIN_PRESENTATION, PRIORITY_COPY } from "@/lib/fss/presentation/domains"
 import { resolvePriorities } from "@/lib/fss/action/priority"
+import { buildPlan } from "@/lib/fss/action/plan"
+import { CandidatePlan } from "@/components/fss/candidate-plan"
 
 /**
- * The candidate result — Your Food System Score™ through Your Priority.
+ * The candidate result — Your Food System Score™ through Your Plan.
  *
  * ══ THE ORDER IS AN ARGUMENT ════════════════════════════════════════════════
  *
@@ -17,7 +19,12 @@ import { resolvePriorities } from "@/lib/fss/action/priority"
  *   What Shapes It       five domains, each answering four questions
  *   What You Notice      no score, and it says so
  *   Your Food Context    no score, and it says why
- *   Your Priority        one to three, never forty
+ *   Your Priority        one to three, never forty — with its evidence
+ *   Your Plan            Feed · Seed · Rejuvenate, across three horizons
+ *
+ * Understanding before action, and the action layer last, because a
+ * recommendation a person cannot trace back to something they said is a
+ * recommendation asking to be trusted.
  *
  * ══ WHY EACH DOMAIN ANSWERS FOUR QUESTIONS AND NOT ONE ══════════════════════
  *
@@ -223,15 +230,18 @@ export function CandidateResult({
             </div>
           ))}
         </div>
-        {/*
-         * Gate 3 builds Feed · Seed · Rejuvenate here. Named as absent rather
-         * than left as a gap, so the shape of what comes next is visible to
-         * whoever reviews this.
-         */}
-        <p className="mt-6 text-xs text-muted-foreground">
-          Feed · Seed · Rejuvenate — the actions that follow from a priority — are not built yet.
-        </p>
       </section>
+
+      {/*
+        Gate 3. This is where "Feed · Seed · Rejuvenate — the actions that
+        follow from a priority — are not built yet" used to sit.
+
+        The plan is built from the same score, set and answers the result
+        already has, and from the SAME priorities rendered above — `buildPlan`
+        calls `resolvePriorities` internally, so the two sections cannot
+        disagree about what matters most.
+      */}
+      <CandidatePlan plan={buildPlan({ score, set, answers })} />
 
       <div className="mt-16 text-center">
         <button
