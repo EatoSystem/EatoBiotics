@@ -222,6 +222,68 @@ function candidateTree(): string[] {
 
 const CANDIDATE_SURFACES = candidateTree()
 
+/**
+ * Tranche 2E — the agent loop, and the account surfaces it writes prose for.
+ *
+ * ── Why it is a sixth list and not an append ──────────────────────────────
+ *
+ * It is none of the five above: not live marketing, not a customer-reachable
+ * page, not a prompt, not an email, not the FSS candidate. It is a
+ * DETERMINISTIC GENERATOR — rule-based, no AI — whose sentences are rendered
+ * on `/account`, which is V1_CORE. Appending it to a tranche whose docblock
+ * describes something else would make that docblock false, which is the same
+ * reason CANDIDATE_SURFACES got its own list.
+ *
+ * ── The gap, which was two gaps wearing one coat ──────────────────────────
+ *
+ * `reachableSourceFiles()` has ALWAYS included these files — `/account` is
+ * V1_CORE, so every agent-loop module is in its import closure, under both the
+ * servable and the production notion. But the ledger that reads that closure
+ * runs `[...FERMENTED_LIVE_CLAIMS, ...FIBRE_PREBIOTIC_CLAIMS]` and nothing
+ * else, so PERSONAL_BIOTIC_STATE never saw them. Meanwhile
+ * `customer-surfaces.ts` lists `live-dashboard.tsx` — the file that MOUNTS
+ * these sentences — while every file that WRITES them sat outside it. The
+ * guard read the importer and not the imported module, which is verbatim what
+ * that file's own docblock says went wrong with `biotics-prompt.ts`.
+ *
+ * ── AND WHY THIS LIST ALONE DOES NOT CLOSE IT ─────────────────────────────
+ *
+ * A source scan of all fourteen files catches exactly ONE of the nine known
+ * sites — `menu-scan.tsx`, the only one written as a literal. The other eight
+ * interpolate: `${BIOTIC_LABELS[k]}`, `${BIOTIC_NAME[tb]}`,
+ * `${BIOTIC_LABEL[bestKey]}`. No source-text rule can see them, which is the
+ * same limit recorded below for `three-biotics-result.tsx` and the hole
+ * sabotage cases 947/948 walked through.
+ *
+ * So this list is necessary and insufficient, and the thing that actually
+ * closes the defect is `tests/unit/agent-loop-claims.test.ts`, which CALLS
+ * `analyse`, `recommend`, `deriveGaps`, `buildAccountTwin` and
+ * `detectPatterns` and asserts on the strings they return. Membership here
+ * stops a future LITERAL; the behavioural guard stops a future interpolation.
+ * Both are needed and neither is decoration.
+ *
+ * `BioticsProgressPanel` and all three of its consumers are included even
+ * though two of them sit behind POST_V1 refusals, so a reinstated
+ * `/account/twin` cannot bring the per-Biotic number model back with it.
+ */
+const AGENT_LOOP_SURFACES = [
+  "lib/agent-loop/providers/deterministic.ts",
+  "lib/agent-loop/baseline.ts",
+  "lib/agent-loop/behaviour.ts",
+  "lib/agent-loop/biotics.ts",
+  "lib/agent-loop/account-twin.ts",
+  "lib/agent-loop/engine.ts",
+  "lib/agent-loop/stages.ts",
+  "lib/agent-loop/twin/twin-builder.ts",
+  "lib/account/patterns.ts",
+  "components/agent-loop/BioticsProgressPanel.tsx",
+  "components/agent-loop/NextBestActionCard.tsx",
+  "components/agent-loop/FoodSystemLoopCard.tsx",
+  "components/account/twin/twin-sections.tsx",
+  "components/account/twin/twin-dashboard.tsx",
+  "components/account/twin/menu-scan.tsx",
+]
+
 /** Everything the claim rules are enforced against. */
 const GUARDED_SURFACES = [
   ...LIVE_SURFACES,
@@ -229,6 +291,7 @@ const GUARDED_SURFACES = [
   ...PROMPT_SURFACES,
   ...EMAIL_SURFACES,
   ...CANDIDATE_SURFACES,
+  ...AGENT_LOOP_SURFACES,
 ]
 
 /** English dictionary copy is checked separately — same rules, one locale. */
@@ -360,7 +423,10 @@ describe("the corpus this guard reads cannot silently shrink", () => {
    * not have to be remembered into it.
    */
   it("the named tranches are exactly the set signed off", () => {
-    expect([...LIVE_SURFACES, ...REACHABLE_SURFACES, ...PROMPT_SURFACES, ...EMAIL_SURFACES].sort()).toEqual([
+    expect([
+      ...LIVE_SURFACES, ...REACHABLE_SURFACES, ...PROMPT_SURFACES, ...EMAIL_SURFACES,
+      ...AGENT_LOOP_SURFACES,
+    ].sort()).toEqual([
       "app/about/page.tsx",
       "app/api/consult/route.ts",
       "app/api/demo/consult/route.ts",
@@ -373,12 +439,31 @@ describe("the corpus this guard reads cannot silently shrink", () => {
       "app/food/page.tsx",
       "app/help/page.tsx",
       "app/method/page.tsx",
+      // Tranche 2E — the agent loop and the account surfaces it writes for.
+      // `/account` is V1_CORE, so these sentences are the ones a paying member
+      // actually reads. Membership here stops a future literal; the
+      // behavioural guard in agent-loop-claims.test.ts stops an interpolation.
+      "components/account/twin/menu-scan.tsx",
+      "components/account/twin/twin-dashboard.tsx",
+      "components/account/twin/twin-sections.tsx",
+      "components/agent-loop/BioticsProgressPanel.tsx",
+      "components/agent-loop/FoodSystemLoopCard.tsx",
+      "components/agent-loop/NextBestActionCard.tsx",
       "components/assessment/assessment-intro.tsx",
       "components/assessment/result/three-biotics-result.tsx",
       "components/assessment/score-card.tsx",
       "components/home/feed-seed-heal.tsx",
       "components/home/the-framework.tsx",
       "components/waitlist/food-system-experience.tsx",
+      "lib/account/patterns.ts",
+      "lib/agent-loop/account-twin.ts",
+      "lib/agent-loop/baseline.ts",
+      "lib/agent-loop/behaviour.ts",
+      "lib/agent-loop/biotics.ts",
+      "lib/agent-loop/engine.ts",
+      "lib/agent-loop/providers/deterministic.ts",
+      "lib/agent-loop/stages.ts",
+      "lib/agent-loop/twin/twin-builder.ts",
       "lib/assessment/biotics.ts",
       "lib/biotics-prompt.ts",
       // Tranche 2C — lifecycle email. Added deliberately, and the reason is
@@ -629,12 +714,82 @@ describe("fibre is never classified as prebiotic", () => {
  * "Your Biotics Score is 74/100" is a true statement about a thing we measure.
  */
 const BIOTICS = "(?:Prebiotics|Probiotics|Postbiotics)"
+
+/**
+ * The same three, plus the lowercase and singular forms.
+ *
+ * `BIOTICS` alone misses "your probiotic side" (menu-scan.tsx) and "your
+ * prebiotic intake" — a Biotic attributed to a person reads the same whether
+ * the word is capitalised or singular, and the adjectival form is the one a
+ * writer reaches for when describing somebody.
+ */
+const BIOTICS_ANY = "(?:Prebiotics|Probiotics|Postbiotics|prebiotics?|probiotics?|postbiotics?)"
+
+/* ════════════════════════════════════════════════════════════════════════════
+   GATE 3.6 — the grammar these rules were missing.
+
+   ── What the first three rules could and could not see ────────────────────
+
+   They knew exactly three shapes: "your X score", "X … N/100", and "low X".
+   The agent loop speaks none of them. It writes:
+
+     "Prebiotics remains your strongest area."
+     "Your Prebiotics look settled, while Postbiotics appear lower."
+     "Postbiotics appear lower than the others"
+     "This fed your Prebiotics · meal score 72"
+     "Your Postbiotics slipped 8 points this week"
+
+   Every one of those PASSED all three rules when run against the rendered
+   sentence, not merely against the source. Rule 1 wants the literal word
+   `score` immediately after the Biotic, so "· meal score 72" misses by two
+   words. Rule 2 wants a denominator, so "slipped 8 points" misses. Rule 3
+   wants the adjective BEFORE the Biotic and in the positive degree, so
+   "remains your strongest area" misses twice over.
+
+   So this was never only a corpus gap. The defect speaks in POSSESSIVES and
+   SUPERLATIVES, and the rule set knew neither.
+
+   ── Why `is` and `are` are deliberately NOT state verbs here ──────────────
+
+   The obvious fourth rule is "a Biotic as the subject of a copula" —
+   `${BIOTICS}\s+(?:is|are|remains|appears|looks)`. It is wrong, and the
+   existing false-positive cases below say why: "Prebiotics, Probiotics and
+   Postbiotics are the foundation the score is built on" and "Postbiotics are
+   what your gut bacteria produce when they ferment fibre" are both EDUCATION,
+   both correct, and both match it. A rule that deleted those would be the
+   identity risk this whole sweep is run to avoid.
+
+   `remains / appears / looks / seems` are HEDGED state verbs. Education does
+   not hedge about what a Biotic is; a personal verdict does. That is the
+   discriminator, and it is why the copulas are absent.
+
+   ── And why the possessive rule is scoped to the Biotic itself ────────────
+
+   "your Prebiotics" is prohibited. "Postbiotics are what your gut bacteria
+   produce" is not — the possessive there belongs to the bacteria. So the rule
+   requires `your` IMMEDIATELY before the Biotic rather than anywhere near it.
+   All fifteen educational and science-contract phrasings below pass.
+   ════════════════════════════════════════════════════════════════════════════ */
 const PERSONAL_BIOTIC_STATE: [string, RegExp][] = [
   ["a personal score attributed to a Biotic",
    new RegExp(String.raw`\b(?:Your|My|your|my)\s+${BIOTICS}\s+score\b`)],
   ["a Biotic given a numeric value", new RegExp(String.raw`\b${BIOTICS}\b[^.!?\n]{0,30}\b\d{1,3}\s*(?:\/\s*100|out of 100)\b`)],
   ["a Biotic described as high or low for a person",
    new RegExp(String.raw`\b(?:low|high|weak|strong)\s+${BIOTICS}\b`)],
+
+  // Gate 3.6. Each one is proven against a real shipped sentence below.
+  ["a Biotic claimed as a person's own",
+   new RegExp(String.raw`\b(?:[Yy]our|[Mm]y)\s+${BIOTICS_ANY}\b`)],
+  ["a Biotic given a comparative or directional verdict",
+   new RegExp(String.raw`\b${BIOTICS}\b[^.!?\n]{0,40}\b(?:strongest|weakest|most room to grow|climbed|slipped|trending|settled|appears? lower|appears? higher)\b`)],
+  ["a comparative verdict placed before a Biotic",
+   new RegExp(String.raw`\b(?:strongest|weakest)\s+${BIOTICS}\b`)],
+  ["a Biotic as the subject of a personal state verb",
+   new RegExp(String.raw`\b${BIOTICS}\s+(?:remains?|appears?|looks?|seems?)\b`)],
+  ["a Biotic fed, boosted or improved for a person",
+   new RegExp(String.raw`\b(?:fed|feeds|feeding|boost\w*|improv\w*|replenish\w*|rais\w*)\b[^.!?\n]{0,25}\b(?:your|my)\s+${BIOTICS_ANY}\b`)],
+  ["a person's own meals characterised as a Biotic",
+   new RegExp(String.raw`\b(?:[Yy]our|[Mm]y)\s+(?:\w+\s+){0,2}(?:meals?|plate|diet|food)\b[^.!?\n]{0,30}\b${BIOTICS}\b`)],
 ]
 
 const NO_PERSONAL_BIOTIC_NUMBER: [string, string, RegExp[]][] = [
@@ -692,6 +847,46 @@ describe("no Biotic carries a personal number", () => {
     }
   })
 
+  /*
+   * ── GATE 3.6: THESE ARE NOT HYPOTHETICALS ────────────────────────────
+   *
+   * Every string below is a sentence the product was RENDERING when this was
+   * written, reproduced as a customer received it. Seven came out of
+   * `lib/agent-loop`, and four of those reached `/account`, which is V1_CORE.
+   *
+   * They are asserted as LITERALS rather than read back from the modules, and
+   * that is the point: once the modules are corrected these sentences exist
+   * nowhere else, so a case that read its subject from the fixed code would
+   * prove only that the code is fixed — not that the rule catches the
+   * regression. These strings ARE the regression.
+   */
+  it("NON-VACUITY: every sentence the agent loop was shipping is caught", () => {
+    for (const line of [
+      // lib/agent-loop/providers/deterministic.ts — rationale + why, live on /account
+      "Prebiotics remains your strongest area.",
+      "Postbiotics appears lower — a gentle place to focus next.",
+      "Your Prebiotics look settled, while Postbiotics appear lower.",
+      " Focusing on Postbiotics supports the area with the most room to grow.",
+      // lib/agent-loop/baseline.ts — deriveGaps
+      "Postbiotics appear lower than the others",
+      // lib/agent-loop/account-twin.ts — the learning feed, live on /account
+      "This fed your Prebiotics · meal score 72",
+      // lib/account/patterns.ts — live on /account, numeric and longitudinal
+      "Your Postbiotics slipped 8 points this week",
+      "Your Prebiotics climbed 8 points this week",
+      "Your best meals lean on Prebiotics",
+      // components/account/twin/menu-scan.tsx
+      "The miso brings live cultures — exactly what your probiotic side needs.",
+      // lib/email/meal-analysis-email.ts — exposed by widening these rules
+      "produces your Biotics Score™ — your Prebiotics, Probiotics and Postbiotics",
+    ]) {
+      expect(
+        PERSONAL_BIOTIC_STATE.some(([, r]) => r.test(line)),
+        `not caught: ${line}`,
+      ).toBe(true)
+    }
+  })
+
   it("NON-VACUITY: the sentences that were shipping would each be caught", () => {
     for (const line of [
       "Your Prebiotics score reflects how much fibre you eat.",
@@ -704,6 +899,39 @@ describe("no Biotic carries a personal number", () => {
         PERSONAL_BIOTIC_STATE.some(([, r]) => r.test(line)),
         `not caught: ${line}`,
       ).toBe(true)
+    }
+  })
+
+  /*
+   * ── THE HALF THAT STOPS THIS BEING A DELETION ────────────────────────
+   *
+   * The possessive rule is the aggressive one, and an over-broad version of it
+   * would delete the Three Biotics from the product while reporting success.
+   * The two science-contract lines are here for the same reason
+   * `lib/consultation/science-contract.ts` is a named permanent exception
+   * elsewhere in this file: the module that PROHIBITS a claim has to be
+   * allowed to state the claim it prohibits.
+   *
+   * Note what this list proves about the rule design. `is` and `are` are
+   * absent from the state-verb rule precisely so the educational lines pass;
+   * adding them back is the obvious "improvement" that would break education.
+   */
+  it("NON-VACUITY: educational and science-contract phrasing is NOT caught", () => {
+    for (const line of [
+      "Prebiotics are the fibres your gut bacteria use.",
+      "Postbiotics — Rejuvenate",
+      "Three simple actions inspired by the science of Prebiotics, Probiotics, and Postbiotics",
+      "Postbiotics — what your food system gives back. We teach it; we don't score it.",
+      "no personal Postbiotics state may be inferred from self-report",
+      "Probiotics are live microorganisms that, when administered in adequate amounts, confer a health benefit.",
+      "Feed · Seed · Rejuvenate are actions, never score names.",
+      "Foods transformed by fermentation are not automatically Probiotics.",
+      "An Assessment that produces your Biotics Score™ — built on Prebiotics, Probiotics and Postbiotics.",
+    ]) {
+      expect(
+        PERSONAL_BIOTIC_STATE.some(([, r]) => r.test(line)),
+        `false positive: ${line}`,
+      ).toBe(false)
     }
   })
 
