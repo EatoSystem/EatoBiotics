@@ -60,7 +60,10 @@ of its way and fixes what it explicitly left out of scope.
    a blocked bundle degrades to unanimated rather than blank across 136 files;
    a skip link added, with `<main id="main">` to target.
 
-5. **Node pinned** via `.nvmrc` and `engines`, matching CI's Node 20.
+5. **Node pinned** via `.nvmrc` and `engines`, matching CI's Node 24.
+   Moved from 20 when Vercel discontinued that line; 24 "Krypton" is the
+   current LTS. All three pins move together, or CI verifies a runtime
+   production does not use.
 
 ### Corrections to the external review
 
@@ -80,7 +83,7 @@ of its way and fixes what it explicitly left out of scope.
   fails while `serious` is report-only — and neither defect fixed above is
   detectable by axe at all.
 - **"Validation/build baseline unavailable"** — that was the reviewer's local
-  npm failure. CI runs `npm ci` on Node 20 then lint, vitest, `tsc --noEmit`,
+  npm failure. CI runs `npm ci` on Node 24 then lint, vitest, `tsc --noEmit`,
   two guard scripts, `next build` and the axe suite. Only genuine gap was the
   missing Node pin, now added.
 
