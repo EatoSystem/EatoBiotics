@@ -1,11 +1,23 @@
 import { describe, it, expect, beforeEach } from "vitest"
 import { readFileSync } from "node:fs"
+import { execSync } from "node:child_process"
 import {
   LocalStorageRepository,
   SupabaseRepositoryDisabled,
   foodSystemRepository,
 } from "@/lib/fss/persistence/local"
 import { RepositoryWriteRefused } from "@/lib/fss/persistence/repository"
+import { resolveQuestionSetV1 } from "@/lib/fss/questions/resolve"
+import { computeFoodSystemScore } from "@/lib/fss/engine/score"
+import {
+  DEV_ONLY_FSS_V1_FIXTURE_WEIGHTS,
+  nonProductionFixture,
+} from "@/lib/fss/engine/weights"
+import { FSS_V1_PROVENANCE } from "@/lib/fss/engine/provenance"
+import { buildPlan } from "@/lib/fss/action/plan"
+import { ACTION_CATALOGUE } from "@/lib/fss/action/catalogue"
+import { resolveStoredAction, toStoredAction } from "@/lib/fss/action/stored"
+import { ACTION_SET_VERSION } from "@/lib/fss/action/types"
 
 /**
  * ══ THE SEAM, AND THE REFUSAL ═══════════════════════════════════════════════
@@ -165,5 +177,150 @@ describe("no FSS migration exists, drafted or applied", () => {
     for (const table of ["food_system_scores", "fss_scores", "fss_assessments", "candidate_scores"]) {
       expect(sql.includes(table), `migrations.sql already defines ${table}`).toBe(false)
     }
+  })
+})
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Gate 3 — the StoredAction contract, completed and deliberately uncalled.
+
+   `StoredAction` was declared empty in Gate 2 "so that the shape Gate 3 has to
+   satisfy is agreed while the reasoning is fresh rather than invented alongside
+   the content". These assertions are that shape, plus the refusal that would be
+   hardest to add later — once there are stored rows, a convenient fallback to
+   today's wording would quietly paper over the thing this exists to prevent.
+   ════════════════════════════════════════════════════════════════════════════ */
+describe("a stored action keeps ids and versions, never the prose", () => {
+  const SET = resolveQuestionSetV1()
+  const FIXTURE = nonProductionFixture("unit test")
+
+  const answers = Object.fromEntries(
+    SET.questions.map((q) => [
+      q.id,
+      q.contributes === "fss" && q.domain === "fermentedFoods" ? 0 : 3,
+    ]),
+  )
+
+  const plan = buildPlan({
+    score: computeFoodSystemScore({
+      set: SET,
+      answers,
+      weights: DEV_ONLY_FSS_V1_FIXTURE_WEIGHTS,
+      fixtureContext: FIXTURE,
+    }),
+    set: SET,
+    answers,
+  })
+
+  const stored = toStoredAction({
+    id: "action-1",
+    scoreId: "score-1",
+    recommendation: plan.today!,
+    status: "proposed",
+    createdAt: "2026-10-01T09:00:00.000Z",
+  })
+
+  it("carries both versions, the ids, and no sentence", () => {
+    expect(Object.keys(stored).sort()).toEqual([
+      "actionCategory",
+      "actionSetVersion",
+      "createdAt",
+      "id",
+      "provenance",
+      "recommendationId",
+      "scoreId",
+      "sourceDomain",
+      "sourcePriority",
+      "status",
+      "timeHorizon",
+    ])
+    expect(stored.actionSetVersion).toBe(ACTION_SET_VERSION)
+    expect(stored.provenance).toEqual(FSS_V1_PROVENANCE)
+
+    // The prose is absent, and that is the point: it is looked up, not copied.
+    const asText = JSON.stringify(stored)
+    expect(asText).not.toContain(plan.today!.practicalAction)
+    expect(asText).not.toContain(plan.today!.rationale)
+    expect(asText).not.toContain(plan.today!.title)
+  })
+
+  it("the two versions are separate fields, because they move independently", () => {
+    // A content rewording must be expressible without touching the scoring
+    // method, and vice versa. One combined field could not say that.
+    expect(Object.keys(stored.provenance)).not.toContain("actionSetVersion")
+    expect(stored.actionSetVersion).not.toBe(stored.provenance.fssMethodVersion)
+  })
+
+  it("round-trips back to the recommendation it was", () => {
+    const resolution = resolveStoredAction(stored)
+    expect(resolution.state).toBe("resolved")
+    if (resolution.state !== "resolved") return
+    expect(resolution.recommendation.id).toBe(plan.today!.id)
+    expect(resolution.recommendation.practicalAction).toBe(plan.today!.practicalAction)
+    expect(resolution.recommendation.rationale).toBe(plan.today!.rationale)
+    expect(resolution.recommendation.sourceDomain).toBe(plan.today!.sourceDomain)
+    expect(resolution.recommendation.priorityId).toBe(plan.today!.priorityId)
+  })
+
+  it("REFUSES when the content version has moved — no fallback to today's wording", () => {
+    const old = { ...stored, actionSetVersion: "actions-v0.9" }
+    const resolution = resolveStoredAction(old)
+    expect(resolution.state).toBe("unresolvable")
+    if (resolution.state !== "unresolvable") return
+    expect(resolution.reason).toBe("content-version-moved")
+    expect(resolution.storedVersion).toBe("actions-v0.9")
+  })
+
+  it("refuses even when the id still exists under the new version", () => {
+    /*
+     * The case the version check exists for, and the reason it runs FIRST: an
+     * id matching tells us nothing once the content set has moved, because the
+     * sentence under that id may have been reworded. Resolving it would show a
+     * person a sentence they were never shown.
+     */
+    const old = { ...stored, actionSetVersion: "actions-v0.9" }
+    expect(ACTION_CATALOGUE.some((e) => e.id === old.recommendationId)).toBe(true)
+    expect(resolveStoredAction(old).state).toBe("unresolvable")
+  })
+
+  it("refuses when the entry has been withdrawn", () => {
+    const gone = { ...stored, recommendationId: "diversity-week-something-removed" }
+    const resolution = resolveStoredAction(gone)
+    expect(resolution.state).toBe("unresolvable")
+    if (resolution.state !== "unresolvable") return
+    expect(resolution.reason).toBe("entry-withdrawn")
+    expect(resolution.storedRecommendationId).toBe("diversity-week-something-removed")
+  })
+
+  it("and the refusal is the ONLY failure mode — no partial or closest match", () => {
+    const src = readFileSync("lib/fss/action/stored.ts", "utf-8")
+      .replace(/\/\*[\s\S]*?\*\//g, " ")
+      .replace(/^\s*\/\/.*$/gm, " ")
+    expect(src, "a fallback to the current catalogue would defeat the refusal").not.toMatch(
+      /\?\?\s*ACTION_CATALOGUE|ACTION_CATALOGUE\[0\]|findClosest|fuzzy/i,
+    )
+  })
+})
+
+describe("the contract is complete but still has no caller", () => {
+  it("saveAction and saveScore are both uncalled, and that is deliberate", () => {
+    /*
+     * Your Plan is deterministic from the answers, so nothing about it needs
+     * storing. StoredAction.scoreId would need a StoredScore.id, and the walk
+     * holds its score in component state — so both calls arrive together or
+     * not at all. Minting a scoreId for nothing would be half a feature.
+     *
+     * This test is here so that when a later gate DOES wire them, it has to
+     * come past this assertion and say so.
+     */
+    const callers = execSync(
+      "git grep -l -E 'saveAction\\(|saveScore\\(' -- 'lib/**' 'components/**' 'app/**' || true",
+      { encoding: "utf-8" },
+    )
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .filter((f) => !f.startsWith("lib/fss/persistence/"))
+
+    expect(callers, "a caller appeared — wire the pair together and update this").toEqual([])
   })
 })

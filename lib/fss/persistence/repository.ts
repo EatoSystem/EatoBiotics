@@ -1,5 +1,6 @@
 import type { Answers } from "@/lib/fss/engine/score"
 import type { ScoreProvenance } from "@/lib/fss/engine/provenance"
+import type { ActionCategory, TimeHorizon } from "@/lib/fss/action/types"
 
 /* ════════════════════════════════════════════════════════════════════════
    The persistence seam.
@@ -60,10 +61,44 @@ export interface StoredScore {
 }
 
 /**
- * A recommendation. Gate 2 stores none — this is the CONTRACT Gate 3 fills.
+ * A recommendation, as stored. Gate 2 declared this; Gate 3 completed it.
  *
- * Declared now, empty, so that the shape Gate 3 has to satisfy is agreed while
- * the reasoning is fresh rather than invented alongside the content.
+ * ── IT STORES IDS AND VERSIONS, AND NEVER THE PROSE ───────────────────────
+ *
+ * The sentence a person was shown is reconstructed from the versioned
+ * catalogue, not copied in here. That is the whole reason the two version
+ * fields exist: a stored action whose `actionSetVersion` no longer resolves
+ * must read as *recommended under a method that has moved*, rather than
+ * silently showing today's wording for yesterday's recommendation.
+ *
+ * It is the same refusal `legacy-unversioned` makes for scores, one layer up,
+ * and `lib/fss/action/stored.ts` is where it is enforced.
+ *
+ * ── WHY THERE ARE TWO VERSIONS AND NOT ONE ────────────────────────────────
+ *
+ * `provenance` says which METHOD scored the person. `actionSetVersion` says
+ * which CONTENT recommended to them. Both are needed to reconstruct why
+ * EatoBiotics said something, and they move independently — reviewed wording
+ * can change without any arithmetic changing.
+ *
+ * The obvious move would be a sixth field on `ScoreProvenance`. It is refused:
+ * that type's five fields are asserted by value in Gate 2's tests, and
+ * widening it would change what every existing candidate score claims about
+ * itself. The €49 Report reached the same conclusion independently, carrying
+ * `composerVersion` and `contentPackVersion` beside its schema version rather
+ * than inside it.
+ *
+ * ── AND WHY IT STILL HAS NO CALLER ────────────────────────────────────────
+ *
+ * Because Your Plan is deterministic from the answers, so nothing about it
+ * needs storing, and nothing about a person's intent should be persisted
+ * before anybody asked for it. The only thing that would genuinely belong here
+ * is a person's own relationship to a recommendation — started, dismissed —
+ * which no surface offers yet.
+ *
+ * `scoreId` also has no source yet: the walk holds its score in component
+ * state and `saveScore` is likewise uncalled. Those two calls arrive together
+ * or not at all; minting a `scoreId` for nothing would be half a feature.
  */
 export interface StoredAction {
   readonly id: string
@@ -71,8 +106,15 @@ export interface StoredAction {
   /** Which priority produced this, and from which domain. */
   readonly sourcePriority: string
   readonly sourceDomain: string
+  /** The catalogue entry this was, so the prose is looked up and never copied. */
+  readonly recommendationId: string
+  /** Feed · Seed · Rejuvenate. Carried so a stored action is legible on its own. */
+  readonly actionCategory: ActionCategory
+  readonly timeHorizon: TimeHorizon
   /** The methodology in force when it was recommended — see the docblock. */
   readonly provenance: ScoreProvenance
+  /** The content version in force when it was recommended. */
+  readonly actionSetVersion: string
   readonly status: "proposed" | "accepted" | "completed" | "dismissed"
   readonly createdAt: string
 }

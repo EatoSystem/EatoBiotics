@@ -22,6 +22,8 @@
  * looks like coverage.
  */
 import { describe, it, expect } from "vitest"
+import { readFileSync } from "node:fs"
+import { execFileSync } from "node:child_process"
 import { resolveQuestionSetV1 } from "@/lib/fss/questions/resolve"
 import {
   computeFoodSystemScore,
@@ -368,5 +370,68 @@ describe("the reassessment point states a rule rather than computing one", () =>
   it("compares reported behaviour, and says so", () => {
     expect(REASSESSMENT.whatItCompares).toMatch(/reported food patterns/i)
     expect(REASSESSMENT.whatItCompares).toMatch(/not biology/i)
+  })
+})
+
+describe("the catalogue renders as one artefact for scientific review", () => {
+  const ARTEFACT = "docs/fss/generated/ACTIONS_V1_RESOLVED.md"
+
+  it("the committed artefact matches what the catalogue resolves to", () => {
+    /*
+     * Regenerated and compared, not merely "exists". A generated document that
+     * has drifted from its source describes a recommendation set nobody is
+     * serving, which is worse than no document — a reviewer would sign off the
+     * wrong thing.
+     */
+    expect(() =>
+      execFileSync("npx", ["tsx", "scripts/generate-actions-v1-artefact.ts", "--check"], {
+        encoding: "utf-8",
+        stdio: "pipe",
+      }),
+    ).not.toThrow()
+  })
+
+  it("names every recommendation, with its reason, cadence and claim class", () => {
+    const doc = readFileSync(ARTEFACT, "utf-8")
+    for (const e of ACTION_CATALOGUE) {
+      expect(doc, `${e.id} missing from the artefact`).toContain(`\`${e.id}\``)
+      expect(doc, `${e.id} title missing`).toContain(e.title)
+      expect(doc, `${e.id} action missing`).toContain(e.practicalAction)
+      expect(doc, `${e.id} rationale missing`).toContain(e.rationale)
+      expect(doc, `${e.id} frequency missing`).toContain(e.suggestedFrequency)
+    }
+    for (const d of DOMAINS) {
+      expect(doc).toContain(THIRTY_DAY_FOCUS[d].behaviour)
+      expect(doc).toContain(THIRTY_DAY_FOCUS[d].whyThisOne)
+    }
+  })
+
+  it("says plainly that nothing in it is approved, or medical", () => {
+    const doc = readFileSync(ARTEFACT, "utf-8")
+    expect(doc).toContain("Not Yet Scientifically Approved")
+    expect(doc).toMatch(/What this document does not establish/)
+    expect(doc).toMatch(/no named scientific reviewer/)
+    expect(doc).toMatch(/candidate-pending-review/)
+    expect(doc).toMatch(/Nor is any of it medical advice/)
+  })
+
+  it("records the category gaps rather than hiding them", () => {
+    const doc = readFileSync(ARTEFACT, "utf-8")
+    expect(doc).toMatch(/No priority is padded to fill a category/)
+    // The month shows zero recommendations, on purpose, and says why.
+    expect(doc).toMatch(/a month is one behaviour to hold, not a list/)
+  })
+
+  it("is not in FSS_DOCS, and the generated directory is why", () => {
+    /*
+     * `product-constitution.test.ts` pins FSS_DOCS to four documents and runs
+     * the candidate-label, non-stub and Scale-ladder checks over them. A fifth
+     * `docs/fss/FSS_V1_*.md` would sit outside that list and inherit none of
+     * them — a document that looks governed and is not. So this one is
+     * generated, governed by the drift test above, and lives in generated/.
+     */
+    expect(ARTEFACT.startsWith("docs/fss/generated/")).toBe(true)
+    const constitutionTest = readFileSync("tests/unit/product-constitution.test.ts", "utf-8")
+    expect(constitutionTest).not.toContain("ACTIONS_V1_RESOLVED")
   })
 })
