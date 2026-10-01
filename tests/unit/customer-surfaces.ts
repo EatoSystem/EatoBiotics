@@ -115,6 +115,29 @@ export const ACCOUNT_SURFACES = [
   "components/account/monthly-progress-card.tsx",
   "components/account/seven-day-guide.tsx",
   "components/account/upgrade-gate.tsx",
+  /*
+   * ── GATE 3.6: THE PRODUCERS, NOT ONLY THE MOUNTER ─────────────────
+   *
+   * `live-dashboard.tsx` has been first in this list from the beginning. Every
+   * file BELOW was outside it — and those are the files that actually WRITE
+   * the sentences live-dashboard renders: the loop's rationale, the learning
+   * feed, the week story, the Inside You chapters, the body-map hotspots.
+   *
+   * So the guard read the importer and not the imported module, which is
+   * verbatim what this file's own docblock says went wrong with
+   * `biotics-prompt.ts` — the surface was listed, and the module that gave it
+   * its words was not. Gate 3.6 found five live personal-Biotic claims in
+   * here, including the member's three Biotic scores drawn onto a public PNG.
+   *
+   * A COPY SOURCE COUNTS AS A SURFACE, which this list already says of
+   * `dashboard-client-data.ts`. These are the same thing, generated at runtime.
+   */
+  "components/account/twin/twin-stage.tsx",
+  "components/account/twin/twin-sections.tsx",
+  "components/account/twin/share-twin.tsx",
+  "components/account/twin/meal-reveal.tsx",
+  "components/agent-loop/NextBestActionCard.tsx",
+  "components/agent-loop/BioticsProgressPanel.tsx",
 ]
 
 /**

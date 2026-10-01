@@ -276,6 +276,16 @@ const AGENT_LOOP_SURFACES = [
   "lib/agent-loop/stages.ts",
   "lib/agent-loop/twin/twin-builder.ts",
   "lib/account/patterns.ts",
+  // Added DURING Gate 3.6, not planned: the sweep of /account's import closure
+  // found four more live sites the audit had missed, including the person's
+  // three Biotic scores drawn onto a public share PNG.
+  "lib/account/inside-you.ts",
+  "lib/account/share-card.ts",
+  "lib/account/system-map.ts",
+  "lib/account/week-story.ts",
+  "components/account/twin/meal-reveal.tsx",
+  "components/account/twin/share-twin.tsx",
+  "components/account/twin/twin-stage.tsx",
   "components/agent-loop/BioticsProgressPanel.tsx",
   "components/agent-loop/NextBestActionCard.tsx",
   "components/agent-loop/FoodSystemLoopCard.tsx",
@@ -422,6 +432,49 @@ describe("the corpus this guard reads cannot silently shrink", () => {
    * surface should not leave the corpus silently, and an unfinished one should
    * not have to be remembered into it.
    */
+  /*
+   * ── ADDED AFTER SABOTAGE CASE 1090 SLIPPED ───────────────────────────────
+   *
+   * The value-pinned test below spreads the tranche lists DIRECTLY:
+   *
+   *   [...LIVE_SURFACES, ..., ...AGENT_LOOP_SURFACES].sort()
+   *
+   * So it never looks at `GUARDED_SURFACES`. Deleting `...AGENT_LOOP_SURFACES`
+   * from the composition left every assertion green while fifteen files
+   * silently stopped being scanned — the suite simply read fewer files, which
+   * is the exact failure sabotage case 950 found in a sibling guard and the
+   * reason the pinning test exists at all. The repair there was "assert the
+   * membership, not just the rules"; it had been applied to the lists and not
+   * to the thing composed FROM the lists.
+   *
+   * Asserted for all six tranches rather than just the new one, because the
+   * hole was never specific to tranche 2E.
+   */
+  it("every tranche actually reaches GUARDED_SURFACES", () => {
+    const tranches: [string, readonly string[]][] = [
+      ["LIVE_SURFACES", LIVE_SURFACES],
+      ["REACHABLE_SURFACES", REACHABLE_SURFACES],
+      ["PROMPT_SURFACES", PROMPT_SURFACES],
+      ["EMAIL_SURFACES", EMAIL_SURFACES],
+      ["CANDIDATE_SURFACES", CANDIDATE_SURFACES],
+      ["AGENT_LOOP_SURFACES", AGENT_LOOP_SURFACES],
+    ]
+    for (const [name, list] of tranches) {
+      expect(list.length, `${name} is empty`).toBeGreaterThan(0)
+      for (const file of list) {
+        expect(
+          GUARDED_SURFACES,
+          `${file} is in ${name} but GUARDED_SURFACES does not include it`,
+        ).toContain(file)
+      }
+    }
+    // And nothing else is in there, so a file cannot be guarded by accident.
+    const union = new Set(tranches.flatMap(([, l]) => l))
+    for (const file of GUARDED_SURFACES) {
+      expect(union, `${file} is guarded but belongs to no tranche`).toContain(file)
+    }
+  })
+
   it("the named tranches are exactly the set signed off", () => {
     expect([
       ...LIVE_SURFACES, ...REACHABLE_SURFACES, ...PROMPT_SURFACES, ...EMAIL_SURFACES,
@@ -443,9 +496,12 @@ describe("the corpus this guard reads cannot silently shrink", () => {
       // `/account` is V1_CORE, so these sentences are the ones a paying member
       // actually reads. Membership here stops a future literal; the
       // behavioural guard in agent-loop-claims.test.ts stops an interpolation.
+      "components/account/twin/meal-reveal.tsx",
       "components/account/twin/menu-scan.tsx",
+      "components/account/twin/share-twin.tsx",
       "components/account/twin/twin-dashboard.tsx",
       "components/account/twin/twin-sections.tsx",
+      "components/account/twin/twin-stage.tsx",
       "components/agent-loop/BioticsProgressPanel.tsx",
       "components/agent-loop/FoodSystemLoopCard.tsx",
       "components/agent-loop/NextBestActionCard.tsx",
@@ -455,7 +511,11 @@ describe("the corpus this guard reads cannot silently shrink", () => {
       "components/home/feed-seed-heal.tsx",
       "components/home/the-framework.tsx",
       "components/waitlist/food-system-experience.tsx",
+      "lib/account/inside-you.ts",
       "lib/account/patterns.ts",
+      "lib/account/share-card.ts",
+      "lib/account/system-map.ts",
+      "lib/account/week-story.ts",
       "lib/agent-loop/account-twin.ts",
       "lib/agent-loop/baseline.ts",
       "lib/agent-loop/behaviour.ts",
@@ -790,6 +850,32 @@ const PERSONAL_BIOTIC_STATE: [string, RegExp][] = [
    new RegExp(String.raw`\b(?:fed|feeds|feeding|boost\w*|improv\w*|replenish\w*|rais\w*)\b[^.!?\n]{0,25}\b(?:your|my)\s+${BIOTICS_ANY}\b`)],
   ["a person's own meals characterised as a Biotic",
    new RegExp(String.raw`\b(?:[Yy]our|[Mm]y)\s+(?:\w+\s+){0,2}(?:meals?|plate|diet|food)\b[^.!?\n]{0,30}\b${BIOTICS}\b`)],
+
+  /*
+   * ── A RULE CONSIDERED AND REJECTED, WHICH IS WORTH THE LINES ─────────────
+   *
+   * Case 1088 slipped: `meal-reveal.tsx`'s journey caption read "Postbiotics
+   * produced", asserting that this person's meal made postbiotics, and it
+   * matched nothing here — no state verb, no number, no possessive, no
+   * comparative.
+   *
+   * The obvious fix was a general rule, `${BIOTICS}\s+produced`. It was
+   * written, run, and withdrawn, because it flagged
+   * `app/biotics/page.tsx:79`:
+   *
+   *   { step: "05", label: "Postbiotics produced", desc: "Butyrate, vitamins" }
+   *
+   * That is step five of an impersonal five-step diagram of how the biology
+   * works, on the page whose whole job is teaching it. The two strings are
+   * BYTE-IDENTICAL; what differs is whether the surface is describing a
+   * process or describing this reader. No regex can tell those apart, and a
+   * rule that deleted the second would be the identity risk this sweep exists
+   * to avoid — the same trap as the "living food system" brand lens in
+   * Tranche 2A, caught that time before it shipped.
+   *
+   * So the claim is pinned PER FILE below instead, which is the instrument for
+   * an invariant about one surface's wiring rather than about English.
+   */
 ]
 
 const NO_PERSONAL_BIOTIC_NUMBER: [string, string, RegExp[]][] = [
@@ -812,6 +898,58 @@ const NO_PERSONAL_BIOTIC_NUMBER: [string, string, RegExp[]][] = [
     "lib/email/sequence-email.ts",
     "the nurture email must not take the three sub-scores at all — the fields are gone from its contract, because a field it still accepted would be an invitation to render it again",
     [/\b(feedScore|seedScore|healScore)\b/],
+  ],
+  /*
+   * ── FOUR PINS ADDED AFTER SABOTAGE SLIPPED ───────────────────────────────
+   *
+   * Cases 1080, 1081, 1084 and 1089 all walked through the prose rules for one
+   * reason: the Biotic name is never in the source. It is a prop name, a
+   * numeric literal beside an interpolated label, an object key, or
+   * `{result.weakest}`. A rule that reads sentences cannot see any of them.
+   *
+   * Per-file pins are the right instrument for exactly this — the same reason
+   * this table already exists for the reveal, the free result and the OG
+   * route — because the invariant is about a FILE's wiring, not about English.
+   */
+  [
+    "components/agent-loop/BioticsProgressPanel.tsx",
+    "the biotics panel is educational: it takes no personal state, renders no number, no bar and no band word",
+    [
+      /*
+       * The PROP, not the word. `/\bbiotics\b/` was the first attempt and it
+       * flagged the panel's own `<h3>The three biotics</h3>` — the educational
+       * heading the redesign exists to keep. The signature is what must stay
+       * clean (case 1080).
+       */
+      /function BioticsProgressPanel\([^)]*biotics/,
+      /biotics\s*\?\s*:/,
+      // Nor render a figure, a percentage or a bar (case 1081).
+      /\d{1,3}\s*\/\s*100/,
+      /\bwidth:/,
+      /\$\{[^}]*score[^}]*\}/,
+      // Nor the per-Biotic band ladder's words.
+      /\b(?:Thriving|Emerging|strongest|most room to grow)\b/,
+    ],
+  ],
+  [
+    "components/account/twin/share-twin.tsx",
+    "the share PNG must not take the three sub-scores at all — a shared image is the one surface we cannot correct after the fact",
+    [/\bbiotics\b/],
+  ],
+  [
+    "lib/account/share-card.ts",
+    "the card's data contract must not carry per-Biotic rows, so no caller can supply them",
+    [/\bbiotics\b/],
+  ],
+  [
+    "components/account/twin/meal-reveal.tsx",
+    "the per-meal journey must not say a Biotic was produced — identical wording is correct on /biotics, which teaches the process, and wrong here, which narrates this plate (case 1088)",
+    [/Postbiotics produced/, /Prebiotics feed your/],
+  ],
+  [
+    "components/account/twin/menu-scan.tsx",
+    "the menu pill must name the food pattern, never the raw Biotic key it was chosen from",
+    [/\{\s*result\.weakest\s*\}/, /\{\s*p\.biotic\s*\}/],
   ],
   [
     "app/api/score-card/route.tsx",

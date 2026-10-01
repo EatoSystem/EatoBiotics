@@ -139,6 +139,34 @@ DETERM = "lib/agent-loop/providers/deterministic.ts"
 TWINBUILD = "lib/agent-loop/twin/twin-builder.ts"
 WEEKSTORY = "lib/account/week-story.ts"
 
+# ── Gate 3.6 — personal Biotic prose clean ───────────────────────
+#
+# Every mutation below restores a sentence or a number that was SHIPPING when
+# Gate 3.6 began, four of them on /account, which is V1_CORE.
+#
+# The test list that matters here is ALCLAIMS — tests/unit/agent-loop-claims.
+# test.ts, which CALLS the generators and reads their output. The claims corpus
+# in biotic-claims.test.ts is also listed where the mutation is a literal,
+# because for those two it is the corpus that catches it. Where it is an
+# interpolation, only the behavioural guard can.
+BEHAVIOUR = "lib/agent-loop/behaviour.ts"
+BASELINE = "lib/agent-loop/baseline.ts"
+ACCTWIN = "lib/agent-loop/account-twin.ts"
+PATTERNS = "lib/account/patterns.ts"
+BPANEL = "components/agent-loop/BioticsProgressPanel.tsx"
+SYSMAP = "lib/account/system-map.ts"
+SHARECARD = "lib/account/share-card.ts"
+SHARETWIN = "components/account/twin/share-twin.tsx"
+INSIDEYOU = "lib/account/inside-you.ts"
+MENUSCAN = "components/account/twin/menu-scan.tsx"
+MEALREVEAL = "components/account/twin/meal-reveal.tsx"
+BCLAIMSFILE = "tests/unit/biotic-claims.test.ts"
+ALCLAIMS = ["tests/unit/agent-loop-claims.test.ts"]
+BCLAIMS = ["tests/unit/biotic-claims.test.ts"]
+EDUTAIN = ["tests/unit/twin-edutainment.test.ts"]
+TPATTERNS = ["tests/unit/twin-patterns.test.ts"]
+ALOOP = ["tests/unit/agent-loop.test.ts"]
+
 CASES = [
     (930, "/waitlist is served again", SURFACE,
      '  "/waitlist",\n  "/start",\n',
@@ -971,4 +999,147 @@ CASES = [
      '    "lib/assessment/registry.ts",\n    "lib/cms/taxonomy.ts",\n  ]',
      '    "lib/assessment/registry.ts",\n    "lib/cms/taxonomy.ts",\n    "lib/account/share-card.ts",\n  ]',
      RETIRED),
+    # ── Gate 3.6 — the provider's prose ──────────────────────────
+
+    (1069, "the provider's rationale names the Biotics again", DETERM,
+     "`${described} ${behaviourFor(strongest, src)} as one of your steadier patterns, `",
+     "`Your ${BIOTIC_LABELS[strongest]} look settled, while ${BIOTIC_LABELS[weakest]} appear lower. `",
+     ALCLAIMS),
+
+    (1070, "the improving line goes back to a superlative on a Biotic", DETERM,
+     "improving.push(`One of your stronger patterns: ${behaviourFor(strongest, src)}.`)",
+     "improving.push(`${BIOTIC_LABELS[strongest]} remains your strongest area.`)",
+     ALCLAIMS),
+
+    (1071, "the next-best-action's why names the Biotic it targets", DETERM,
+     "` Focusing on ${behaviourFor(target, baseline.bioticsSource)} is where there is the most room right now.`",
+     "` Focusing on ${BIOTIC_LABELS[target]} supports the area with the most room to grow.`",
+     ALCLAIMS),
+
+    # The attribution, not the vocabulary. On /account the numbers are averaged
+    # MEALS; "your answers described" is a false claim about where a finding
+    # came from, and it is the kind that reads as harmless.
+    (1072, "the provider claims the finding came from the assessment on every path", DETERM,
+     'const described = src === "meals" ? "Your recent meals describe" : "Your answers described"',
+     'const described = "Your answers described"',
+     ALCLAIMS),
+
+    (1073, "the two vocabularies collapse back into one", BEHAVIOUR,
+     "  const hint = BIOTIC_FOOD_HINTS[MEAL_TO_LOOP[key]]\n  if (!hint) return BEHAVIOUR_UNKNOWN\n  return hint.split(\" like \")[0]",
+     "  return loopBehaviour(MEAL_TO_LOOP[key])",
+     ALCLAIMS),
+
+    # The doubled-possessive repair. Only rendering the sentence shows it.
+    (1074, "loopBehaviour stops stripping the leading possessive", BEHAVIOUR,
+     '  return phrase.replace(/^your\\s+/i, "")',
+     "  return phrase",
+     ALCLAIMS),
+
+    (1075, "loopBehaviour returns the Biotic label instead of the behaviour", BEHAVIOUR,
+     "  const phrase = pillarBehaviour(BIOTIC_LABELS[key])",
+     "  const phrase: string | null = BIOTIC_LABELS[key]",
+     ALCLAIMS),
+
+    # ── the baseline and the /account feed ───────────────────────
+
+    (1076, "deriveGaps names a Biotic as lower than the others", BASELINE,
+     "gaps.push(`Room to grow in ${where}: ${behaviourFor(k, source)}`)",
+     "gaps.push(`${k[0].toUpperCase()}${k.slice(1)} appear lower than the others`)",
+     ALCLAIMS),
+
+    (1077, "the learning feed says a meal fed the member's Prebiotics", ACCTWIN,
+     "      detail: `This meal brought ${mealBehaviour(tb)} \u00b7 meal score ${m.score}`,",
+     "      detail: `This fed your ${tb[0].toUpperCase()}${tb.slice(1)}s \u00b7 meal score ${m.score}`,",
+     ALCLAIMS),
+
+    # The worst single claim found: personal, numeric, directional, longitudinal.
+    (1078, "the fortnight trend makes a Biotic its subject again", PATTERNS,
+     "        title: `Your meals climbed ${rounded} points on ${mealBehaviour(bestKey)} this week`,",
+     "        title: `Your ${bestKey[0].toUpperCase()}${bestKey.slice(1)}s climbed ${rounded} points this week`,",
+     ALCLAIMS),
+
+    (1079, "the best-meals hint claims the meals feed the producers", PATTERNS,
+     '  postbiotic: "polyphenol-rich foods are your superpower",',
+     '  postbiotic: "your meals feed the producers well",',
+     ALCLAIMS),
+
+    # ── the panels and surfaces that lost their data ────────────────
+
+    (1080, "the biotics panel takes a personal score prop back", BPANEL,
+     'export function BioticsProgressPanel({ className = "" }: { className?: string }) {',
+     'export function BioticsProgressPanel({ className = "", biotics }: { className?: string; biotics?: { prebiotics: { score: number } } }) {\n  void biotics?.prebiotics.score',
+     BCLAIMS),
+
+    (1081, "the biotics panel renders a per-Biotic number again", BPANEL,
+     "                <p className=\"text-sm font-medium text-foreground\">{pillar.label}</p>",
+     "                <p className=\"text-sm font-medium text-foreground\">{pillar.label} 67 / 100</p>",
+     BCLAIMS),
+
+    (1082, "the system map hands the stage a personal Biotic score again", SYSMAP,
+     "export function systemMapState(_twin: FoodSystemDigitalTwin): SystemHotspotState[] {\n  return SYSTEM_HOTSPOTS.map((h) => ({ ...h }))",
+     "export function systemMapState(_twin: FoodSystemDigitalTwin): SystemHotspotState[] {\n  return SYSTEM_HOTSPOTS.map((h) => ({ ...h, score: _twin.biotics[h.biotic].score }))",
+     ALCLAIMS + EDUTAIN),
+
+    (1083, "a hotspot action claims it feeds the producers", SYSMAP,
+     '    action: "Add resistant starch this week \u2014 cooked-and-cooled oats or potato, legumes, onions.",',
+     '    action: "Feed the producers: cooked-and-cooled oats, legumes and onions help your microbes make more.",',
+     ALCLAIMS),
+
+    # The most public form of the claim, and the one nobody can see once posted.
+    (1084, "the share card draws the member's three Biotic scores again", SHARETWIN,
+     "        momentumLabel: visual.momentumLabel,\n      })",
+     "        momentumLabel: visual.momentumLabel,\n        biotics: [{ label: \"Prebiotics\", value: twin.biotics.prebiotics.score, color: \"#A8E063\" }],\n      })",
+     BCLAIMS),
+
+    (1085, "the Inside You chapters carry a personal Biotic level again", INSIDEYOU,
+     '      value: null,\n      valueLabel: "",\n      takeaway:\n        "Plant variety is what moves this one',
+     '      value: twin.biotics.prebiotics.score,\n      valueLabel: "Your prebiotic level today",\n      takeaway:\n        "Plant variety is what moves this one',
+     ALCLAIMS + EDUTAIN),
+
+    (1086, "the Inside You narration says fermented foods add live microbes", INSIDEYOU,
+     '        "Foods transformed by fermentation \u2014 yoghurt, kefir, kimchi, sauerkraut, miso. Whether live microorganisms survive to be eaten depends on the food and how it is made.",',
+     '        "Fermented foods add live microbes that work alongside your own \u2014 a busier, more diverse inner community.",',
+     ALCLAIMS + BCLAIMS),
+
+    (1087, "the week story says a Biotic led the week", WEEKSTORY,
+     "    title: `${weekBehaviour(strongest)} led your week.`,",
+     "    title: `${strongest[0].toUpperCase()}${strongest.slice(1)} led your week.`,",
+     ALCLAIMS),
+
+    (1088, "the meal journey claims postbiotics were produced", MEALREVEAL,
+     '  "The give-back stage",',
+     '  "Postbiotics produced",',
+     ALCLAIMS + BCLAIMS),
+
+    (1089, "the menu scan tells the member it chose for their probiotics", MENUSCAN,
+     "Chosen for your {behaviourFor(result.weakest)}",
+     "Chosen for your {result.weakest}",
+     BCLAIMS),
+
+    # ── the guards themselves ───────────────────────────────
+
+    (1090, "the agent loop leaves the claims corpus again", BCLAIMSFILE,
+     "  ...AGENT_LOOP_SURFACES,\n]",
+     "]",
+     BCLAIMS),
+
+    (1091, "the possessive rule is dropped from PERSONAL_BIOTIC_STATE", BCLAIMSFILE,
+     '  ["a Biotic claimed as a person\'s own",\n   new RegExp(String.raw`\\b(?:[Yy]our|[Mm]y)\\s+${BIOTICS_ANY}\\b`)],',
+     "",
+     BCLAIMS),
+
+    (1092, "the state-verb rule readmits the copulas, breaking education", BCLAIMSFILE,
+     "   new RegExp(String.raw`\\b${BIOTICS}\\s+(?:remains?|appears?|looks?|seems?)\\b`)],",
+     "   new RegExp(String.raw`\\b${BIOTICS}\\s+(?:remains?|appears?|looks?|seems?|is|are)\\b`)],",
+     BCLAIMS),
+
+    # THE COUNTERFACTUAL FOR THE WHOLE GATE. A source scan of the 22 corpus
+    # files catches 1 of the 9 original claims, because the rest interpolate.
+    # If the behavioural guard stops CALLING the generators and inspects source
+    # text instead, it goes green while every claim is back. This case is the
+    # proof that calling them is what closed the defect.
+    (1093, "the behavioural guard stops calling the generators", "tests/unit/agent-loop-claims.test.ts",
+     "        assertClean(\"analysis.rationale\", [turn.analysis!.rationale])",
+     "        assertClean(\"analysis.rationale\", [])",
+     ALCLAIMS),
 ]
