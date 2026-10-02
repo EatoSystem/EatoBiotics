@@ -61,13 +61,31 @@ function leafValues(value: unknown): unknown[] {
   return [value]
 }
 
-describe("the claim classes separate four kinds of statement, and offer no fifth", () => {
-  it("there are exactly four", () => {
+describe("the claim classes separate six kinds of statement, and offer no seventh", () => {
+  /*
+   * ── GREW FOUR → SIX IN GATE 6, AND THESE PINS MOVED ON PURPOSE ──────────
+   *
+   * `CLAIM_CLASSES` was pinned so a taxonomy change could not pass quietly. A
+   * change that passed quietly would defeat the reason for pinning it — so
+   * growing the union HAD to break four assertions in this block, and did:
+   * this value pin, the `describe` name, the exhaustive `Record` below, and
+   * the source-read drift test.
+   *
+   * `system-fact` and `plan-explanation` were added because EatoBiotics
+   * Intelligence needed two kinds of statement the first four did not cover,
+   * and a SECOND taxonomy beside this one would have been two sources of truth
+   * about what a sentence may be. Three further names the AI layer proposed
+   * resolve to members that already existed and are deliberately NOT
+   * duplicated — see the mapping in `lib/fss/action/types.ts`.
+   */
+  it("there are exactly six", () => {
     expect(CLAIM_CLASSES).toEqual([
       "observed-behaviour",
       "self-reported",
       "general-education",
       "personalised-recommendation",
+      "system-fact",
+      "plan-explanation",
     ])
   })
 
@@ -110,6 +128,8 @@ describe("the claim classes separate four kinds of statement, and offer no fifth
       "self-reported": true,
       "general-education": true,
       "personalised-recommendation": true,
+      "system-fact": true,
+      "plan-explanation": true,
     }
     expect(Object.keys(exhaustive).sort()).toEqual([...CLAIM_CLASSES].sort())
   })
@@ -131,16 +151,16 @@ describe("the claim classes separate four kinds of statement, and offer no fifth
    * values. A source check is weaker than a behavioural one as a rule, and
    * here it is the only thing that can see the union at all.
    */
-  it("the DECLARED union has exactly the four members, and no fifth", () => {
+  it("the DECLARED union has exactly the six members, and no seventh", () => {
     const src = readFileSync("lib/fss/action/types.ts", "utf-8")
     const declaration = src.match(/export type ClaimClass =([\s\S]*?)\n\n/)
     expect(declaration, "the ClaimClass declaration must be findable").not.toBeNull()
 
     const declared = [...declaration![1].matchAll(/\|\s*"([^"]+)"/g)].map((m) => m[1])
-    expect(declared.length, "the parse found no members — the regex has gone stale").toBe(4)
+    expect(declared.length, "the parse found the wrong count — the regex has gone stale").toBe(6)
     expect(
       declared.sort(),
-      "the union and CLAIM_CLASSES have drifted, or a fifth member was added",
+      "the union and CLAIM_CLASSES have drifted, or a seventh member was added",
     ).toEqual([...CLAIM_CLASSES].sort())
 
     for (const c of declared) {

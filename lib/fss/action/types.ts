@@ -123,38 +123,81 @@ export type ContextConstraint = "time" | "cost" | "access" | "kitchen"
 export type ConstraintState = "limiting" | "workable" | "free"
 
 /**
- * WHAT KIND OF STATEMENT a sentence is. Four members, and the missing one is
- * the point.
+ * WHAT KIND OF STATEMENT a sentence is. Six members, and the missing one is
+ * still the point.
  *
  * ── Requirement 7, made unrepresentable rather than merely forbidden ──────
  *
- * The scientific boundary asks that four things stay clearly separated:
- * observable behaviour, general educational science, a personalised
- * recommendation, and biological inference — with the last unavailable. A
- * comment saying "do not make biological claims" is a hope. A union with no
- * member for them is a property of the code.
+ * The scientific boundary asks that observable behaviour, general educational
+ * science, a personalised recommendation and biological inference stay clearly
+ * separated — with the last unavailable. A comment saying "do not make
+ * biological claims" is a hope. A union with no member for them is a property
+ * of the code.
  *
  * So there is no `biological-inference`. A sentence that needed it has nowhere
  * to go, and ADDING one is a diff a reviewer cannot miss — which is exactly the
  * visibility that was wanted.
  *
- * The forms map onto the claims boundary's own table:
+ * ══ GATE 6 GREW THIS FROM FOUR TO SIX, DELIBERATELY ════════════════════════
+ *
+ * EatoBiotics Intelligence needed two kinds of statement the first four did
+ * not cover, and the choice was between extending this union or standing up a
+ * second taxonomy beside it for AI-generated language. A second taxonomy is
+ * two sources of truth about what a sentence is allowed to be, which is the
+ * failure mode this whole layer is built against — so ONE taxonomy spans
+ * deterministic and AI-generated product language.
+ *
+ * Three names the AI layer proposed resolve to members that already existed,
+ * and are not duplicated: `reported-observation` IS `self-reported`,
+ * `approved-education` IS `general-education`, and `practical-suggestion` is
+ * `personalised-recommendation` narrowed to "how to carry out an action that
+ * was already approved".
+ *
+ * The six forms, mapped onto the claims boundary's own table:
  *
  *   observed-behaviour           "Your answers described…"
  *   self-reported                "You reported…" / "You told us…"
  *   general-education            impersonal present, about food, not about you
  *   personalised-recommendation  "you could…" — an action, never its result
+ *   system-fact                  a value or state the deterministic system OWNS
+ *   plan-explanation             why a PERSISTED decision is what it is
  */
 export type ClaimClass =
   | "observed-behaviour"
   | "self-reported"
   | "general-education"
   | "personalised-recommendation"
+  /**
+   * A value or state **directly owned by the deterministic EatoBiotics
+   * system**. "Your Food System Score™ is 67."
+   *
+   * Distinct from `observed-behaviour`, which is the SENTENCE ABOUT the
+   * answers ("your answers described a wide range"). This is the number
+   * itself. Nothing in the first four covered a bare value, so prose quoting
+   * one had no class to be.
+   */
+  | "system-fact"
+  /**
+   * An explanation of a **persisted deterministic decision**. "Diversity is
+   * your current focus because it was the priority established for this Food
+   * System."
+   *
+   * ── IT CANNOT SELECT, REPLACE, REPRIORITISE OR APPEAL THAT DECISION ─────
+   *
+   * This is the member most likely to be misread once prompts exist, so the
+   * limit is stated here rather than left to a plan. A statement of this class
+   * explains a choice that was already made, under a named policy version, by
+   * a selection engine the AI layer may not import. "Meal Rhythm is actually
+   * more important for you" is not a `plan-explanation` of a Diversity
+   * priority — it is an appeal, and `lib/fss/system/ai-claims.ts` refuses it
+   * at the BINDING rather than by reading the sentence.
+   */
+  | "plan-explanation"
 
 /**
  * Every claim class, as values, so a guard can count them.
  *
- * A union is invisible at runtime, so "exactly four, and none of them
+ * A union is invisible at runtime, so "exactly six, and none of them
  * biological" could not otherwise be asserted — and an unasserted invariant in
  * this position is the whole defect class this engagement keeps finding.
  */
@@ -163,6 +206,8 @@ export const CLAIM_CLASSES: readonly ClaimClass[] = [
   "self-reported",
   "general-education",
   "personalised-recommendation",
+  "system-fact",
+  "plan-explanation",
 ]
 
 /**

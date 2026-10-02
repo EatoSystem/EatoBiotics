@@ -827,13 +827,21 @@ CASES = [
      AMODEL),
 
     (1033, "a biological-inference claim class is added", ATYPES,
-     '  | "personalised-recommendation"\n\n/**',
-     '  | "personalised-recommendation"\n  | "biological-inference"\n\n/**',
+     # REPOINTED in Gate 6.0. The old anchor keyed on a blank line after
+     # `personalised-recommendation`, which was the union's last member; Gate 6
+     # grew the union to six and put JSDoc between members, so that anchor no
+     # longer exists. Same mutation, aimed at the new end of the union — the
+     # case is unchanged in what it proves.
+     '  | "plan-explanation"\n\n/**',
+     '  | "plan-explanation"\n  | "biological-inference"\n\n/**',
      AMODEL),
 
     (1034, "the claim-class list drops a member, so the union and the data drift", ATYPES,
-     '  "general-education",\n  "personalised-recommendation",\n]',
-     '  "general-education",\n]',
+     # REPOINTED in Gate 6.0, same cause as 1033: CLAIM_CLASSES grew to six, so
+     # the old tail of the value list no longer exists. Same mutation — drop a
+     # member from the DATA while the union keeps it — aimed at the new tail.
+     '  "system-fact",\n  "plan-explanation",\n]',
+     '  "system-fact",\n]',
      AMODEL),
 
     (1035, "the priority selector gains a tolerance", APRIORITY,
