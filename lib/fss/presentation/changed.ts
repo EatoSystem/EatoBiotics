@@ -120,9 +120,18 @@ export const CHANGED_COPY = {
   scoreNote:
     "Both numbers come from the same version of the assessment, so the change describes a change in the answers you gave about how you eat. It is not a measurement of your gut, and it does not say what caused the difference.",
 
-  /** Equal numbers. Said plainly, because "no change" sounds like a failure. */
+  /**
+   * Equal numbers. Said plainly, because "no change" sounds like a failure.
+   *
+   * ── AND IT NAMES NO DURATION, WHICH IT ORIGINALLY DID ────────────────────
+   *
+   * It read "Two months landing in the same place". Nothing here knows the
+   * interval — two assessments can be a week or a year apart — so that was a
+   * factual claim the copy had no basis for, found by reading it rendered
+   * against a one-month fixture.
+   */
   scoreSame:
-    "Your Food System Score™ is the same as at your previous assessment. Two months landing in the same place is a real result, not a missing one.",
+    "Your Food System Score™ is the same as at your previous assessment. Landing in the same place is a real result, not a missing one.",
 
   /** Comparable, but one of the two had no number to compare. */
   scoreUnavailable:
@@ -168,6 +177,30 @@ export const CHANGED_COPY = {
   observationSame: "Same answer",
   observationNew: "Answered this time, not last time",
   observationDropped: "Answered last time, not this time",
+  observationNeither: "Not answered either time",
+
+  /**
+   * ── THREE LINES SAYING NOTHING HAPPENED IS THE SAME NOISE AS FOUR ───────
+   *
+   * The Context block had this and reading it rendered fixed it. What You
+   * Notice had it too, one line per question, each true and the block useless.
+   * So the all-same case gets one sentence.
+   */
+  observationsNoneChanged:
+    "Your answers to all of these are the same as at your previous assessment.",
+
+  /**
+   * The trailing line when SOME changed, and the difference from Context.
+   *
+   * Context items that did not change are dropped entirely, because a
+   * constraint nobody mentioned is not information. An unchanged observation
+   * still carries the person's current answer, so the count is named rather
+   * than the items silently disappearing.
+   */
+  observationsRestUnchanged: (n: number) =>
+    n === 1
+      ? "One other answer here is the same as last time."
+      : `${n} other answers here are the same as last time.`,
 
   observationsNotComparable:
     "The questions themselves changed between these two assessments, so your answers to them are shown separately rather than compared.",
@@ -276,4 +309,50 @@ export const CHANGED_COPY = {
    */
   nextNote:
     "This is the priority recorded when you completed this assessment. It was not re-decided from the comparison.",
+} as const
+
+/* ════════════════════════════════════════════════════════════════════════
+   THE REVIEW THIS COPY HAS NOT HAD — a named dependency, not a note.
+
+   ══ WHY THIS IS A CONSTANT AND A TEST RATHER THAN A COMMENT ═══════════════
+
+   Because the fifteen `DOMAIN_CHANGE_COPY` sentences are the one thing in this
+   module that asserts a DIRECTION, and a direction is the step from "your
+   answers described X" to "your answers described MORE X than before". The
+   arithmetic behind it is sound — two numbers from one instrument — but
+   whether each sentence's wording stays inside that and goes no further is a
+   content judgement nobody has made.
+
+   A comment saying "unapproved" expires silently. This does not: `state` is
+   pinned `"pending"` by a test whose failure message names the six questions
+   below, so graduating the copy is a decision somebody takes rather than a
+   default that lapses while nobody is looking. The same shape the
+   `consultation_reports` activation prerequisite and the `constraints-known`
+   pre-activation blocker use in CLAUDE.md.
+
+   ══ AND THE FENCE IS THE OTHER HALF ═══════════════════════════════════════
+
+   A test asserts no file outside the candidate roots imports this module. That
+   is what stops Gate 6 making these sentences canonical because the AI needed
+   explanatory language to hand — which is exactly how unreviewed copy has
+   graduated before.
+   ════════════════════════════════════════════════════════════════════════ */
+
+export const COMPARATIVE_COPY_REVIEW = {
+  /** `"pending"` until a named human has answered all six questions below. */
+  state: "pending",
+  reviewedBy: null,
+  reviewedAt: null,
+  /**
+   * What the review must establish, recorded verbatim so it cannot be
+   * narrowed on the way to passing it.
+   */
+  criteria: [
+    "whether they merely describe answers",
+    "whether they imply direction",
+    "whether direction is justified",
+    "whether they imply health improvement",
+    "whether they imply causality",
+    "whether they accidentally turn relative ranking into absolute health status",
+  ],
 } as const

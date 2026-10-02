@@ -88,6 +88,54 @@ is"*, *"Your metabolism is"*, *"Your system is"*.
 improved"*, *"your gut health improved"*, or *"your biology improved"*. A
 changed answer is a changed answer.
 
+### 6.1 The fifteen comparative sentences — a named review dependency
+
+Gate 5 produced `DOMAIN_CHANGE_COPY` (`lib/fss/presentation/changed.ts`): five
+domains × `{ higher, lower, similar }`, each written out in full. They are the
+only place in the product that asserts a **direction** about a person's
+reported behaviour.
+
+The arithmetic behind a direction is sound — two numbers from one instrument,
+with `canCompare` and `canCompareDomains` both permitting the pair. What has
+**not** been established is whether each sentence's wording stays inside that
+and goes no further.
+
+**They are CANDIDATE content and are fenced to the gated preview.** They do not
+appear on any customer surface, and `tests/unit/my-food-system.test.ts` asserts
+that nothing outside `lib/fss`, `components/fss` and
+`app/preview/food-system-v1` imports them.
+
+Graduation is blocked by `COMPARATIVE_COPY_REVIEW`, whose `state` is pinned
+`"pending"`. A named human must answer all six of these first, and
+`reviewedBy` must record who:
+
+1. whether they merely describe answers;
+2. whether they imply direction;
+3. whether direction is justified;
+4. whether they imply health improvement;
+5. whether they imply causality;
+6. whether they accidentally turn relative ranking into absolute health status.
+
+This is a **finite review exercise, not an architectural redesign.** In
+particular it must not be settled by a downstream need: a later gate wanting
+explanatory language for an AI surface is not a reason to approve copy, and the
+fence exists because that is how unreviewed wording has graduated before.
+
+### 6.2 What may be said about a changed self-report
+
+An observation comparison carries **no direction and no number** — only the two
+option labels, quoted. "You reported afternoon energy dips less often" embeds an
+interpretation of the option ordering, and EatoBiotics has no reviewed ordinal
+model for any What You Notice question. What it knows is that the person
+selected one option before and another now, so that is what it shows:
+
+> **Previously** Mostly stable · **Now** Consistently steady
+
+The three classes are `changed-selection`, `same-selection` and
+`not-comparable` (one side has no selection). A directional sentence here needs
+both a reviewed ordinal model for the question **and** approved comparative
+copy — two dependencies, neither met.
+
 ## 7. The transitional vocabulary policy
 
 "Food System Score" is **transitional**, not retired — forbidden on some

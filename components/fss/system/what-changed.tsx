@@ -113,12 +113,39 @@ export function WhatChangedBlock({ changed }: { changed: WhatChanged }) {
       <Block label={CHANGED_COPY.observationsLabel}>
         {observations ? (
           <>
-            <ul className="space-y-4">
-              {observations.map((o) => (
-                <Observation key={o.questionId} item={o} />
-              ))}
-            </ul>
-            <Note>{CHANGED_COPY.observationsNote}</Note>
+            {/*
+              * ── THE CLASS-LEVEL REFUSAL IS THE `else` BELOW, NOT THIS ──────
+              *
+              * Reaching here means the answers ARE comparable. Everything in
+              * this branch is about what they say; whether they may be
+              * compared at all was decided one layer up, by the absence of
+              * this array.
+              */}
+            {observations.every((o) => o.state === "same-selection") ? (
+              /*
+               * The note below is NOT shown here. It reads "these are your own
+               * answers, quoted" — and in this branch nothing is quoted, so it
+               * would be describing a list that is not on the page. Found by
+               * reading it rendered.
+               */
+              <p className="text-sm leading-relaxed">{CHANGED_COPY.observationsNoneChanged}</p>
+            ) : (
+              <>
+                <ul className="space-y-4">
+                  {observations
+                    .filter((o) => o.state !== "same-selection")
+                    .map((o) => (
+                      <Observation key={o.questionId} item={o} />
+                    ))}
+                </ul>
+                {unchangedCount(observations) > 0 && (
+                  <Note>
+                    {CHANGED_COPY.observationsRestUnchanged(unchangedCount(observations))}
+                  </Note>
+                )}
+                <Note>{CHANGED_COPY.observationsNote}</Note>
+              </>
+            )}
           </>
         ) : (
           <Note>{CHANGED_COPY.observationsNotComparable}</Note>
@@ -209,22 +236,35 @@ export function WhatChangedBlock({ changed }: { changed: WhatChanged }) {
  * either, so this cannot characterise the change even by accident — it shows
  * what the person said then and what they say now.
  */
+function unchangedCount(items: readonly ObservationChange[]): number {
+  return items.filter((o) => o.state === "same-selection").length
+}
+
 function Observation({ item }: { item: ObservationChange }) {
   return (
     <li>
       <p className="text-sm font-semibold leading-relaxed">{item.question}</p>
-      {item.state === "same" ? (
+      {item.state === "same-selection" ? (
         <p className="mt-1 text-sm text-muted-foreground">
           {CHANGED_COPY.observationSame}
           {item.current ? ` — ${item.current}` : ""}
         </p>
-      ) : item.state === "newly-answered" ? (
+      ) : item.state === "not-comparable" ? (
+        /*
+         * WHICH SIDE IS MISSING IS DERIVED, not stored.
+         *
+         * `previous` and `current` are already nullable, so the three
+         * sentences come from the data the item carries. That is why
+         * `newly-answered` and `no-longer-answered` could collapse into one
+         * honest state without losing a word of what a person reads.
+         */
         <p className="mt-1 text-sm text-muted-foreground">
-          {CHANGED_COPY.observationNew}
-          {item.current ? ` — ${item.current}` : ""}
+          {item.previous === null && item.current === null
+            ? CHANGED_COPY.observationNeither
+            : item.previous === null
+              ? `${CHANGED_COPY.observationNew} — ${item.current}`
+              : CHANGED_COPY.observationDropped}
         </p>
-      ) : item.state === "no-longer-answered" ? (
-        <p className="mt-1 text-sm text-muted-foreground">{CHANGED_COPY.observationDropped}</p>
       ) : (
         <dl className="mt-1 grid gap-1 text-sm sm:grid-cols-2">
           <div>

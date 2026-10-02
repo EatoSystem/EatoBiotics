@@ -4,8 +4,12 @@ import { execSync } from "node:child_process"
 import { resolveQuestionSetV1 } from "@/lib/fss/questions/resolve"
 import { DOMAIN_SCHEMA_VERSION, FSS_DOMAINS } from "@/lib/fss/questions/domain-schema"
 import { compareSystems } from "@/lib/fss/system/compare-systems"
-import { readWhatChanged } from "@/lib/fss/system/changed"
-import { CHANGED_COPY, DOMAIN_CHANGE_COPY } from "@/lib/fss/presentation/changed"
+import { OBSERVATION_COMPARISONS, readWhatChanged } from "@/lib/fss/system/changed"
+import {
+  CHANGED_COPY,
+  COMPARATIVE_COPY_REVIEW,
+  DOMAIN_CHANGE_COPY,
+} from "@/lib/fss/presentation/changed"
 import { CONSTRAINT_LABELS, SPOKEN_ORDER } from "@/lib/fss/presentation/plan"
 import { canCompare } from "@/lib/fss/engine/compare"
 import { computeFoodSystemScore, type Answers } from "@/lib/fss/engine/score"
@@ -2336,8 +2340,8 @@ describe("what changed is structured before it is phrased", () => {
     expect(w.observations?.length).toBeGreaterThan(0)
     expect(w.context?.length).toBe(4)
 
-    // Every answer moved 2 → 3, so every observation is `different`.
-    expect(w.observations?.every((o) => o.state === "different")).toBe(true)
+    // Every answer moved 2 → 3, so every observation changed its selection.
+    expect(w.observations?.every((o) => o.state === "changed-selection")).toBe(true)
 
     /*
      * AN OBSERVATION HAS NO DIRECTION AND NO NUMBER. Asserted on the real
@@ -2726,5 +2730,256 @@ describe("no account surface subtracts two windows without a verdict", () => {
     // And the analyses writer really does record no version, which is why.
     const writer = readFileSync("app/api/analyses/log/route.ts", "utf8")
     expect(writer).not.toMatch(/rubric_version|prompt_version|model_version/)
+  })
+})
+
+/* ════════════════════════════════════════════════════════════════════════════
+   14 · THE OBSERVATION CONTENT MODEL — Gate 5 step 2d
+
+   Three classes, made explicit in the model rather than effectively produced
+   by the derivation. No new interpretation: just types, and the tests that
+   stop a fourth appearing or two of them collapsing.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+describe("an observation comparison is one of exactly three classes", () => {
+  it("the three are pinned by value, so a fourth cannot arrive quietly", () => {
+    expect([...OBSERVATION_COMPARISONS].sort()).toEqual([
+      "changed-selection",
+      "not-comparable",
+      "same-selection",
+    ])
+  })
+
+  /*
+   * ── AND THE UNION IS READ FROM SOURCE, BECAUSE THE PIN ABOVE IS BLIND ───
+   *
+   * Sabotage 1351 added `| "improved"` to `ObservationComparison` and slipped:
+   * the value pin describes the LIST, and a widened TYPE is invisible to
+   * vitest. `changed.ts` now fails `tsc` if the two diverge, but a build
+   * failure is not a caught mutation — the harness runs vitest.
+   *
+   * IF THIS FAILS: a class was added or removed. That is a content-model
+   * change, and it needs the renderer, the derivation and this suite updated
+   * together — do not edit the list to match.
+   */
+  it("the union in SOURCE and the list are the same set", () => {
+    const src = readFileSync("lib/fss/system/changed.ts", "utf8")
+    const decl = /export type ObservationComparison =([^\n]*)/.exec(src)
+    expect(decl, "the union was renamed or moved").not.toBeNull()
+    const inSource = [...(decl?.[1] ?? "").matchAll(/"([a-z-]+)"/g)].map((m) => m[1])
+
+    expect(inSource.length).toBeGreaterThan(0)
+    expect([...inSource].sort()).toEqual([...OBSERVATION_COMPARISONS].sort())
+  })
+
+  /** Build A→B over two sheets, differing only in the answers given. */
+  async function observationsFor(before: Answers, after: Answers) {
+    const repo = memoryRepo()
+    const a = await chainOne(repo, null, "2026-10-01T09:00:00.000Z", before)
+    const b = await chainOne(repo, a, "2026-11-01T09:00:00.000Z", after)
+    const w = await readWhatChanged({ repo, set: SET, systemId: b })
+    if (w.state !== "available") throw new Error(w.state)
+    return w
+  }
+
+  /** The What You Notice ids, so a fixture can move exactly one of them. */
+  const noticeIds = () =>
+    SET.questions.filter((q) => q.contributes === "what-you-notice").map((q) => q.id)
+
+  it("both answered and equal → same-selection", async () => {
+    const w = await observationsFor(allTwos(), allTwos())
+    expect(w.observations?.map((o) => o.state)).toEqual(
+      noticeIds().map(() => "same-selection"),
+    )
+  })
+
+  it("both answered and different → changed-selection, with both labels", async () => {
+    const id = noticeIds()[0]
+    const w = await observationsFor({ ...allTwos(), [id]: 1 }, { ...allTwos(), [id]: 3 })
+    const moved = w.observations?.find((o) => o.questionId === id)
+
+    expect(moved?.state).toBe("changed-selection")
+    expect(typeof moved?.previous).toBe("string")
+    expect(typeof moved?.current).toBe("string")
+    expect(moved?.previous).not.toBe(moved?.current)
+
+    // And the rest did not move, which is what makes the trailing line honest.
+    expect(w.observations?.filter((o) => o.state === "same-selection").length).toBe(
+      noticeIds().length - 1,
+    )
+  })
+
+  /*
+   * ── ONE SIDE MISSING IS `not-comparable`, AND THAT NAME IS THE POINT ────
+   *
+   * It read `newly-answered` / `no-longer-answered`, which are one fact under
+   * two names and invite a sentence about what the person DID. There is
+   * nothing to compare at an item with no selection on one side, so the state
+   * says that and the surface derives which side from the nullable labels.
+   */
+  it("one side unanswered → not-comparable, either way round", async () => {
+    const id = noticeIds()[0]
+    const { [id]: _dropped, ...withoutIt } = allTwos()
+
+    const gained = await observationsFor(withoutIt as Answers, allTwos())
+    const g = gained.observations?.find((o) => o.questionId === id)
+    expect(g?.state).toBe("not-comparable")
+    expect(g?.previous).toBeNull()
+    expect(typeof g?.current).toBe("string")
+
+    const lost = await observationsFor(allTwos(), withoutIt as Answers)
+    const l = lost.observations?.find((o) => o.questionId === id)
+    expect(l?.state).toBe("not-comparable")
+    expect(typeof l?.previous).toBe("string")
+    expect(l?.current).toBeNull()
+  })
+
+  it("neither side answered → same-selection, not not-comparable", async () => {
+    const id = noticeIds()[0]
+    const { [id]: _gone, ...withoutIt } = allTwos()
+    const w = await observationsFor(withoutIt as Answers, withoutIt as Answers)
+    const item = w.observations?.find((o) => o.questionId === id)
+    /*
+     * "You have not answered this either time" is a statement about sameness,
+     * not a lost comparison. Collapsing it into `not-comparable` would make
+     * the item-level state mean two different things at once.
+     */
+    expect(item?.state).toBe("same-selection")
+    expect(item?.previous).toBeNull()
+    expect(item?.current).toBeNull()
+  })
+
+  /*
+   * ── THE ITEM-LEVEL AND CLASS-LEVEL REFUSALS ARE DIFFERENT SHAPES ────────
+   *
+   * The trap in this refinement. "You skipped this question" and "the
+   * instrument changed under you" are not the same statement, and only the
+   * second refuses the comparison — so the class-level case must never render
+   * as a list of `not-comparable` items.
+   */
+  it("a moved question set is ABSENCE, never an array of not-comparable items", async () => {
+    const repo = memoryRepo()
+    const a = await chainOne(repo, null, "2026-10-01T09:00:00.000Z", allTwos())
+    const b = await chainOne(repo, a, "2026-11-01T09:00:00.000Z", allThrees())
+    await tamperScore(repo, b, (s) => ({
+      ...s,
+      provenance: { ...s.provenance, questionSetVersion: "questions-v1.1" },
+    }))
+
+    const refused = await readWhatChanged({ repo, set: SET, systemId: b })
+    if (refused.state !== "available") throw new Error(refused.state)
+    expect("observations" in refused).toBe(false)
+
+    // And an item-level refusal still yields a PRESENT array, with items in it.
+    const id = noticeIds()[0]
+    const { [id]: _gone, ...withoutIt } = allTwos()
+    const perItem = await observationsFor(withoutIt as Answers, allTwos())
+    expect(perItem.observations?.length).toBe(noticeIds().length)
+    expect(perItem.observations?.some((o) => o.state === "not-comparable")).toBe(true)
+  })
+
+  it("no observation carries a direction or a number, in any class", async () => {
+    const id = noticeIds()[0]
+    const { [id]: _gone, ...withoutIt } = allTwos()
+    const seen = new Set<string>()
+
+    for (const [before, after] of [
+      [allTwos(), allTwos()],
+      [{ ...allTwos(), [id]: 1 }, { ...allTwos(), [id]: 3 }],
+      [withoutIt as Answers, allTwos()],
+    ] as const) {
+      const w = await observationsFor(before as Answers, after as Answers)
+      for (const o of w.observations ?? []) {
+        seen.add(o.state)
+        expect(Object.keys(o).sort()).toEqual([
+          "current",
+          "order",
+          "previous",
+          "question",
+          "questionId",
+          "state",
+        ])
+        for (const value of Object.values(o)) {
+          expect(typeof value === "number" ? o.order === value : true).toBe(true)
+        }
+      }
+    }
+
+    // NON-VACUITY: all three classes were actually produced and inspected.
+    expect([...seen].sort()).toEqual(["changed-selection", "not-comparable", "same-selection"])
+  })
+
+  it("the consolidated sentences exist for both shapes", () => {
+    expect(CHANGED_COPY.observationsNoneChanged).toMatch(/the same as at your previous assessment/)
+    expect(CHANGED_COPY.observationsRestUnchanged(1)).toBe(
+      "One other answer here is the same as last time.",
+    )
+    expect(CHANGED_COPY.observationsRestUnchanged(3)).toBe(
+      "3 other answers here are the same as last time.",
+    )
+    // Neither asserts a direction or an outcome.
+    for (const s of [
+      CHANGED_COPY.observationsNoneChanged,
+      CHANGED_COPY.observationsRestUnchanged(2),
+      CHANGED_COPY.observationNeither,
+    ]) {
+      expect(s).not.toMatch(/\b(improved|better|worse|more often|less often|increased)\b/i)
+    }
+  })
+})
+
+/* ── The fifteen comparative sentences: a named, pinned dependency ──────── */
+
+describe("the comparative copy has not been reviewed, and cannot graduate quietly", () => {
+  /*
+   * ── WHY A TEST AND NOT A COMMENT ────────────────────────────────────────
+   *
+   * A comment saying "unapproved" expires in silence. This fails, and its
+   * message names what has to happen first — so the fifteen sentences
+   * graduate because somebody decided to, not because nobody noticed.
+   */
+  it("the review is PENDING, and the six criteria are recorded verbatim", () => {
+    expect(
+      COMPARATIVE_COPY_REVIEW.state,
+      "the comparative copy review was marked complete — the six criteria below must be " +
+        "answered by a named human first, and `reviewedBy` must say who",
+    ).toBe("pending")
+    expect(COMPARATIVE_COPY_REVIEW.reviewedBy).toBeNull()
+    expect(COMPARATIVE_COPY_REVIEW.reviewedAt).toBeNull()
+
+    // Pinned by value, so the review cannot be narrowed on the way to passing.
+    expect([...COMPARATIVE_COPY_REVIEW.criteria]).toEqual([
+      "whether they merely describe answers",
+      "whether they imply direction",
+      "whether direction is justified",
+      "whether they imply health improvement",
+      "whether they imply causality",
+      "whether they accidentally turn relative ranking into absolute health status",
+    ])
+  })
+
+  /*
+   * ── THE FENCE: the copy stays inside the gated candidate preview ────────
+   *
+   * The same roots `tests/unit/biotic-claims.test.ts` fences the withheld
+   * score name to. This is what stops Gate 6 making these sentences canonical
+   * because the AI needed explanatory language to hand.
+   */
+  it("nothing outside the candidate roots imports the comparative copy", () => {
+    const CANDIDATE_ROOTS = ["lib/fss", "components/fss", "app/preview/food-system-v1"]
+    const importers = execSync(
+      "git grep -l \"presentation/changed\" -- app components lib || true",
+      { encoding: "utf8" },
+    )
+      .split("\n")
+      .filter(Boolean)
+
+    expect(importers.length, "nothing imports it at all — is this fence still real?").toBeGreaterThan(0)
+
+    const escaped = importers.filter((f) => !CANDIDATE_ROOTS.some((r) => f.startsWith(r)))
+    expect(
+      escaped,
+      "unreviewed comparative copy reached a file outside the gated candidate preview",
+    ).toEqual([])
   })
 })

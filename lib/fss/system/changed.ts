@@ -73,8 +73,65 @@ export interface ObservationChange {
   /** The option label chosen at the previous assessment, or null if skipped. */
   readonly previous: string | null
   readonly current: string | null
-  readonly state: "same" | "different" | "newly-answered" | "no-longer-answered"
+  readonly state: ObservationComparison
 }
+
+/**
+ * THE THREE CLASSES, AND THERE IS NO FOURTH.
+ *
+ * ── Why it is three and was briefly four ──────────────────────────────────
+ *
+ * It read `same | different | newly-answered | no-longer-answered`, and the
+ * last two were one fact wearing two names: ONE SIDE HAS NO SELECTION, so
+ * there is nothing to compare at that item. `not-comparable` says that.
+ * "newly-answered" invites a sentence about what the person DID, which is a
+ * different claim and not one this type is for.
+ *
+ * Nothing is lost by collapsing them: `previous` and `current` are already
+ * nullable, so a surface derives which side is missing from data it holds.
+ *
+ * ── AND `not-comparable` HERE IS NOT THE CLASS-LEVEL REFUSAL ──────────────
+ *
+ * Two different statements, and conflating them would undo the distinction
+ * this module was built around:
+ *
+ *   ITEM   you did not answer this one      → `state: "not-comparable"`
+ *   CLASS  the questions themselves moved   → `observations` is ABSENT
+ *
+ * "You skipped this question" and "the instrument changed under you" are not
+ * the same thing, and only the second refuses the comparison. So the
+ * class-level refusal is never expressed as an array of `not-comparable`
+ * items — that would read as "we could not compare any of these" when the
+ * truth is "you left them blank".
+ */
+export type ObservationComparison = "changed-selection" | "same-selection" | "not-comparable"
+
+/** Every class, for a guard that must iterate them rather than guess. */
+export const OBSERVATION_COMPARISONS = [
+  "changed-selection",
+  "same-selection",
+  "not-comparable",
+] as const
+
+/*
+ * ── THE BRIDGE BETWEEN THE UNION AND THE LIST ─────────────────────────────
+ *
+ * The same mechanism `lib/fss/questions/domain-schema.ts` uses, and for the
+ * same reason: sabotage 1351 added `| "improved"` to the union and slipped,
+ * because a value pin on the LIST says nothing about the union. A widened type
+ * is invisible to vitest, which is how four Gate 4 mutations got through.
+ *
+ * So `tsc` breaks if either side moves alone, and the test additionally reads
+ * the union from SOURCE — because the harness runs vitest, and a build failure
+ * is not a caught mutation.
+ */
+type Assert<T extends true> = T
+type Listed = (typeof OBSERVATION_COMPARISONS)[number]
+type NotListed = Exclude<ObservationComparison, Listed>
+type NotInUnion = Exclude<Listed, ObservationComparison>
+
+type _EveryClassIsListed = Assert<[NotListed] extends [never] ? true : false>
+type _EveryListedIsAClass = Assert<[NotInUnion] extends [never] ? true : false>
 
 /**
  * One Food Context constraint, across two assessments.
@@ -226,16 +283,20 @@ function readObservationChanges(
       const previous = labelFor(set, q.id, a)
       const current = labelFor(set, q.id, b)
 
-      const state: ObservationChange["state"] =
+      /*
+       * Both unanswered reads as `same-selection`: there is no selection to
+       * compare on either side, and "you have not answered this either time"
+       * is a statement about sameness rather than about a lost comparison.
+       * One side missing is where a comparison genuinely cannot be made.
+       */
+      const state: ObservationComparison =
         previous === null && current === null
-          ? "same"
-          : previous === null
-            ? "newly-answered"
-            : current === null
-              ? "no-longer-answered"
-              : a === b
-                ? "same"
-                : "different"
+          ? "same-selection"
+          : previous === null || current === null
+            ? "not-comparable"
+            : a === b
+              ? "same-selection"
+              : "changed-selection"
 
       return { questionId: q.id, order: q.order, question: q.text, previous, current, state }
     })

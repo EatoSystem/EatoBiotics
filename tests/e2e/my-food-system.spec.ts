@@ -694,6 +694,64 @@ test.describe("Gate 5 · what changed, as a person reads it", () => {
     expect(text).toContain("is the same as at your previous assessment")
     expect(text).toContain("a real result, not a missing one")
     expect(text, "a delta appeared between two identical sheets").not.toMatch(/\d+\s*→\s*\d+/)
+
+    /*
+     * Step 2d: the unchanged observations consolidate to ONE sentence rather
+     * than one line per question. Reading the previous version rendered showed
+     * three "Same answer" lines above a longer note — each true, the block
+     * useless, and the same noise the Context block already had.
+     */
+    expect(text).toContain("Your answers to all of these are the same")
+    expect(text, "the consolidated sentence did not replace the per-question lines").not.toContain(
+      "Same answer",
+    )
+  })
+
+  test("a changed observation quotes both answers and asserts no direction", async ({ page }) => {
+    await completeAssessment(page)
+    await page.getByRole("button", { name: "Go to My Food System" }).click()
+    await reassess(page, 3)
+    await openSection(page, "Progress")
+
+    /*
+     * SCOPED TO THE OBSERVATIONS BLOCK, not the page.
+     *
+     * The first version scanned the whole body and failed on "fermented foods
+     * arriving MORE OFTEN" — a DOMAIN sentence, where a direction is arithmetic
+     * on two numbers from one instrument and is permitted. The prohibition is
+     * on directional language about a SELF-REPORT, so the assertion has to be
+     * about that block or it is asking the wrong question loudly.
+     */
+    const notice = page
+      .locator("section[aria-labelledby='what-changed'] > div")
+      .filter({ has: page.locator("h3", { hasText: /what you notice/i }) })
+    await expect(notice).toHaveCount(1)
+    const noticeText = await notice.innerText()
+    const lower = noticeText.toLowerCase()
+
+    /* Both answers are shown, labelled, with nothing between them. */
+    expect(lower).toContain("previously")
+    expect(lower).toContain("now")
+
+    /*
+     * NO DIRECTIONAL VERB about a self-report. `ObservationChange` carries no
+     * direction, so there is nowhere for one to come from — and this asserts
+     * the page agrees. A directional sentence here would need both a reviewed
+     * ordinal model for the question and approved comparative copy.
+     */
+    for (const forbidden of [
+      /\b(less|more) often\b/i,
+      /\b(improved|worsened|better|worse)\b/i,
+      /\b(increased|decreased)\b/i,
+    ]) {
+      expect(
+        noticeText,
+        `a directional claim about a self-report: ${forbidden}`,
+      ).not.toMatch(forbidden)
+    }
+
+    /* NON-VACUITY: the block really did render two quoted answers. */
+    expect(noticeText.length).toBeGreaterThan(80)
   })
 })
 

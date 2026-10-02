@@ -368,4 +368,61 @@ CASES = [
      "    scoresAvailable: system.previousSystemId === null ? 1 : 2,",
      "    scoresAvailable: 1,",
      SYSTEM),
+# ── STEP 2D · the observation content model, made explicit ───────────────
+    #
+    # Three classes and no fourth; the item-level and class-level refusals kept
+    # apart; and the fifteen comparative sentences pinned behind a named review.
+
+    (1351, "a fourth observation class is added", CHANGED,
+     'export type ObservationComparison = "changed-selection" | "same-selection" | "not-comparable"',
+     'export type ObservationComparison = "changed-selection" | "same-selection" | "not-comparable" | "improved"',
+     SYSTEM),
+
+    (1352, "the class list stops matching the union it describes", CHANGED,
+     '  "changed-selection",\n  "same-selection",\n  "not-comparable",\n]',
+     '  "changed-selection",\n  "same-selection",\n]',
+     SYSTEM),
+
+    # One side missing collapsed into sameness: "you skipped this" becomes
+    # "nothing changed", which is a claim about an answer nobody gave.
+    (1353, "an unanswered side is reported as the same selection", CHANGED,
+     '          : previous === null || current === null\n            ? "not-comparable"',
+     '          : previous === null || current === null\n            ? "same-selection"',
+     SYSTEM),
+
+    # Both unanswered turned into a lost comparison, which makes the item-level
+    # state mean two different things at once.
+    (1354, "never-answered is reported as not-comparable", CHANGED,
+     '        previous === null && current === null\n          ? "same-selection"',
+     '        previous === null && current === null\n          ? "not-comparable"',
+     SYSTEM),
+
+    # THE CLASS-LEVEL REFUSAL RENDERED AS AN EMPTY LIST, which reads as
+    # "nothing changed" — a comparison claim where none was permitted.
+    (1355, "a refused observation class becomes an empty array", CHANGED,
+     '    return { state: "available", comparison, actions }\n  }\n\n  const previousAssessment',
+     '    return { state: "available", comparison, actions, observations: [] }\n  }\n\n  const previousAssessment',
+     SYSTEM),
+
+    (1356, "an observation gains a direction field", CHANGED,
+     "      return { questionId: q.id, order: q.order, question: q.text, previous, current, state }",
+     '      return { questionId: q.id, order: q.order, question: q.text, previous, current, state, direction: (b ?? 0) > (a ?? 0) ? "higher" : "lower" }',
+     SYSTEM),
+
+    # ── the named review dependency ──────────────────────────────────────────
+
+    (1357, "the comparative copy review is marked complete", CHANGED_COPY,
+     '  state: "pending",\n  reviewedBy: null,',
+     '  state: "approved",\n  reviewedBy: null,',
+     SYSTEM),
+
+    (1358, "a review criterion is quietly dropped", CHANGED_COPY,
+     '    "whether they accidentally turn relative ranking into absolute health status",',
+     "",
+     SYSTEM),
+
+    (1359, "the consolidated sentence is replaced by a directional claim", CHANGED_COPY,
+     '    "Your answers to all of these are the same as at your previous assessment.",',
+     '    "Your answers to all of these improved since your previous assessment.",',
+     SYSTEM),
 ]
