@@ -22,7 +22,7 @@ import { resolvePriorities } from "@/lib/fss/action/priority"
 import { DOMAIN_PRESENTATION, PRIORITY_COPY } from "@/lib/fss/presentation/domains"
 import { buildPlan } from "@/lib/fss/action/plan"
 import { toStoredAction } from "@/lib/fss/action/stored"
-import { ACTION_SET_VERSION } from "@/lib/fss/action/types"
+import { ACTION_SET_VERSION, CLAIM_CLASSES } from "@/lib/fss/action/types"
 import {
   ACTION_STATES,
   RepositoryWriteFailed,
@@ -54,6 +54,15 @@ import {
 } from "@/lib/fss/system/ai-context"
 import { SYSTEM_MODEL_VERSION } from "@/lib/fss/system/version"
 import { isMintedId, newId } from "@/lib/fss/system/identity"
+import {
+  FOCUS_ATOM_SLOTS,
+  FOCUS_RESPONSE_KEYS,
+  atomsComplete,
+  focusGrounding,
+  resolveAtoms,
+  validateFocusToday,
+  validateFraming,
+} from "@/lib/fss/system/focus-today"
 import {
   CLAIM_BASIS_KEYS,
   validateClaimBinding,
@@ -944,7 +953,13 @@ describe("the AI context package is an interface and nothing more", () => {
    * visible diff.
    */
   it("the AI layer imports no methodology", () => {
-    const AI_MODULES = ["lib/fss/system/ai-context.ts", "lib/fss/system/ai-claims.ts"]
+    const AI_MODULES = [
+      "lib/fss/system/ai-context.ts",
+      "lib/fss/system/ai-claims.ts",
+      // Gate 6.1. The pinned list made adding a third AI module a visible diff,
+      // which is exactly what the Gate 6.0d comment said it was for.
+      "lib/fss/system/focus-today.ts",
+    ]
     const FORBIDDEN = [
       "computeFoodSystemScore",
       "resolvePriorities",
@@ -1028,7 +1043,13 @@ describe("the AI context package is an interface and nothing more", () => {
    * is renamed.
    */
   it("the AI layer imports no comparative prose, reviewed or otherwise", () => {
-    const AI_MODULES = ["lib/fss/system/ai-context.ts", "lib/fss/system/ai-claims.ts"]
+    const AI_MODULES = [
+      "lib/fss/system/ai-context.ts",
+      "lib/fss/system/ai-claims.ts",
+      // Gate 6.1. The pinned list made adding a third AI module a visible diff,
+      // which is exactly what the Gate 6.0d comment said it was for.
+      "lib/fss/system/focus-today.ts",
+    ]
     const present = AI_MODULES.filter((f) => existsSync(f))
     expect(present.length, "both AI modules are gone — is this guard still aimed at anything?")
       .toBeGreaterThan(0)
@@ -1974,6 +1995,103 @@ describe("context is capability: each intent receives exactly its contract", () 
     expect("score" in ctx).toBe(false)
   })
 
+  /* ══ GATE 6.1a · THE REVIEWED CONTENT INSIDE ALREADY-GRANTED FIELDS ═══════
+   *
+   * `priority` and `todayAction` were granted from Gate 6.0 and carried nothing
+   * a model could read: `AiAction` was six ids and flags, so a model asked to
+   * make today's action practical was told "action_x, category feed, horizon
+   * today" and never what the action IS.
+   *
+   * The repair is reviewed content inside fields already granted — NOT a wider
+   * contract. The next test pins that `INTENT_FIELDS` did not move.
+   * ═══════════════════════════════════════════════════════════════════════ */
+
+  it("the priority carries its reviewed headline and explanation, read through", () => {
+    const system = compose(records(fermentedAtZero()))
+    if (system.priorities.state !== "resolved") throw new Error("fixture")
+    const top = system.priorities.priorities[0]
+
+    const ctx = toAiContext("explain-current-priority", { system })
+
+    // Identical to the resolved priority's — carried, never re-composed here.
+    expect(ctx.priority.headline).toBe(top.headline)
+    expect(ctx.priority.explanation).toBe(top.explanation)
+    expect(ctx.priority.headline.length).toBeGreaterThan(0)
+    expect(ctx.priority.explanation.length).toBeGreaterThan(0)
+  })
+
+  it("today's action carries its reviewed catalogue content and its own class", () => {
+    const system = compose(records(fermentedAtZero()))
+    const ctx = toAiContext("help-today-action", { system })
+    const action = ctx.todayAction
+    expect(action, "this fixture needs a today action").toBeTruthy()
+    if (!action) return
+
+    const stored = system.actions.find((a) => a.id === action.actionId)
+    if (!stored || stored.content.state !== "resolved") throw new Error("fixture")
+    const entry = stored.content.recommendation
+
+    expect(action.title).toBe(entry.title)
+    expect(action.practicalAction).toBe(entry.practicalAction)
+    expect(action.rationale).toBe(entry.rationale)
+    // The entry's OWN class, carried rather than re-derived.
+    expect(action.claimClass).toBe(entry.claimClass)
+    expect(CLAIM_CLASSES).toContain(action.claimClass)
+  })
+
+  /*
+   * ── ALL FOUR NULL TOGETHER, AND THE ABSENCE IS THE DESIGN ───────────────
+   *
+   * A stored action whose catalogue entry was withdrawn has no recoverable
+   * wording. A title without its practical step would invite a model to supply
+   * the step, which is the one thing the catalogue exists to have reviewed.
+   */
+  it("an unresolvable action carries no reviewed content at all", () => {
+    const r = records(fermentedAtZero())
+    const system = compose({
+      ...r,
+      actions: r.actions.map((a) => ({ ...a, recommendationId: "withdrawn-entry-id" })),
+    })
+
+    const ctx = toAiContext("help-today-action", { system })
+    const action = ctx.todayAction
+    expect(action).toBeTruthy()
+    if (!action) return
+
+    expect(action.resolvable).toBe(false)
+    expect(action.title).toBeNull()
+    expect(action.practicalAction).toBeNull()
+    expect(action.rationale).toBeNull()
+    expect(action.claimClass).toBeNull()
+    // The identity survives — what is lost is the wording, not the record.
+    expect(action.actionId).toBeTruthy()
+  })
+
+  it("the reviewed content did NOT arrive by widening any intent contract", () => {
+    /*
+     * The whole point of 6.1a: the thinness was in the ceiling's SHAPE. If a
+     * later edit solves a prose problem by granting a field instead, this is
+     * the test that says so.
+     */
+    expect([...INTENT_FIELDS["help-today-action"]]).toEqual([
+      "systemId",
+      "priority",
+      "todayAction",
+      "actionSetVersion",
+      "limitingConstraints",
+      "contextAnswered",
+      "claimBoundary",
+    ])
+    expect([...INTENT_FIELDS["explain-current-priority"]]).toEqual([
+      "systemId",
+      "provenance",
+      "systemModelVersion",
+      "priority",
+      "decisionsUnresolvable",
+      "claimBoundary",
+    ])
+  })
+
   /*
    * The ANSWER Gate 5 reached, not the ingredients to reach another one.
    */
@@ -1997,15 +2115,73 @@ describe("context is capability: each intent receives exactly its contract", () 
    * The structural reason this matters: COMPARATIVE_COPY_REVIEW is "pending",
    * so pending copy → model context → generated customer copy would route
    * around the review entirely.
+   *
+   * ── THIS CHECKED A PREFIX AND NOW CHECKS THE SENTENCES ──────────────────
+   *
+   * It asserted the serialised context did not contain the string "Your
+   * answers described", as a proxy for the fifteen `DOMAIN_CHANGE_COPY`
+   * sentences. Gate 6.1 broke the proxy in BOTH directions at once, which is
+   * why it is now the real property:
+   *
+   *   FALSE POSITIVE — the reviewed Gate 3 catalogue rationale for
+   *   `diversity-today-one-new` opens "Your answers described a narrower range
+   *   of plant foods than of amounts…". That is approved catalogue content
+   *   comparing range against amount WITHIN one set of answers, not two
+   *   assessments, and it is exactly the reviewed material the model needs.
+   *
+   *   FALSE NEGATIVE — `CHANGED_COPY.observationsNoneChanged` reads "Your
+   *   answers to all of these are the same as at your previous assessment."
+   *   It is pending comparative copy and does NOT match the prefix, so the
+   *   proxy would have waved it straight through.
+   *
+   * So the test now iterates the ACTUAL constants. Same false-positive class
+   * as `caused` inside a disclaimer and `proven` inside `provenance`: a rule
+   * matching a shape rather than the thing.
    */
   it("no intent's object carries a reviewed comparative sentence", async () => {
     const changed = await whatChangedFixture()
+
+    /** Every pending comparative sentence, by value, from both packs. */
+    const comparativeSentences: string[] = [
+      ...Object.values(DOMAIN_CHANGE_COPY as Record<string, Record<string, string>>).flatMap(
+        (byDirection) => Object.values(byDirection),
+      ),
+      /*
+       * `CHANGED_COPY` holds both strings and formatter functions, and it is
+       * `as const` — so its values are literal types and a `v is string`
+       * predicate over them will not compile. Widened to `unknown` first, which
+       * is what makes the narrowing legal.
+       */
+      ...Object.values(CHANGED_COPY as Record<string, unknown>).filter(
+        (v): v is string => typeof v === "string",
+      ),
+    ]
+
+    // NON-VACUITY: the fifteen plus the consolidation sentences are really here.
+    expect(comparativeSentences.length).toBeGreaterThanOrEqual(15)
+    expect(
+      comparativeSentences.some((s) => s.includes("than at your previous assessment")),
+      "the comparative pack no longer contains its own anchor phrase",
+    ).toBe(true)
+
     for (const intent of AI_INTENTS) {
       const serialised = JSON.stringify(toAiContext(intent, { system: compose(), changed }))
-      expect(serialised, `${intent} carried comparative prose`).not.toContain(
+
+      /*
+       * The anchor phrase, which appears in all fifteen and in no reviewed
+       * non-comparative copy. Kept as an independent second check so a new
+       * comparative sentence is caught even before it joins a pack.
+       */
+      expect(serialised, `${intent} carried the comparative anchor phrase`).not.toContain(
         "than at your previous assessment",
       )
-      expect(serialised).not.toContain("Your answers described")
+
+      for (const sentence of comparativeSentences) {
+        expect(
+          serialised.includes(sentence),
+          `${intent} carried pending comparative copy: ${sentence.slice(0, 60)}…`,
+        ).toBe(false)
+      }
     }
   })
 
@@ -3767,5 +3943,434 @@ describe("a claim binding is checked structurally, never semantically", () => {
     }
     // NON-VACUITY: the stripped code still holds the validator.
     expect(code).toMatch(/export function validateClaimBinding/)
+  })
+})
+
+/* ════════════════════════════════════════════════════════════════════════════
+   GATE 6.1 · FOCUS TODAY — the first live capability
+
+   Not one test here calls a model. The validators are pure functions over a
+   response object, which is what lets the sabotage harness mutate them: the
+   harness edits source and runs vitest, so a suite making live calls would be
+   both non-deterministic and unsabotageable.
+
+   The invariant the whole block defends:
+
+     Canonical product wording is assembled by EatoBiotics from the bound
+     deterministic state. The model has no selection or authorship authority
+     over it.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+describe("Focus Today gives the model authority over exactly one string", () => {
+  const LABELS = Object.fromEntries(
+    FSS_DOMAINS.map((d) => [d, DOMAIN_PRESENTATION[d].label]),
+  ) as Record<(typeof FSS_DOMAINS)[number], string>
+
+  /** A system with one unambiguous priority and a today action. */
+  const sys = () => compose(records(fermentedAtZero()))
+
+  const goodResponse = (system: ReturnType<typeof compose>) => {
+    const g = focusGrounding(system)
+    if (!g.ok) throw new Error("fixture has no grounding")
+    return {
+      priorityIdEcho: g.priorityId,
+      focusDomainEcho: g.domain,
+      actionIdEcho: g.actionId,
+      practicalFraming: "A simple way to approach this is to add it to a meal you were already making.",
+    }
+  }
+
+  /* ── The response schema is four fields, and that is the capability ───── */
+
+  it("the response carries no canonical text and no selector over it", () => {
+    expect([...FOCUS_RESPONSE_KEYS].sort()).toEqual([
+      "actionIdEcho",
+      "focusDomainEcho",
+      "practicalFraming",
+      "priorityIdEcho",
+    ])
+
+    /*
+     * The removed designs, refused by name. `atomRefs` was in a reviewed draft
+     * of this gate and taken out: the four atoms are fully determined by the
+     * bound ids, so a selection field selected nothing while costing an output
+     * field, a validator and a pre-authorised capability.
+     *
+     * Output fields are capability too.
+     */
+    for (const forbidden of [
+      "atomRefs",
+      "quotedPriorityHeadline",
+      "quotedPriorityExplanation",
+      "quotedActionTitle",
+      "quotedPracticalAction",
+      "suggestedPriority",
+      "alternativeDomain",
+    ]) {
+      expect(FOCUS_RESPONSE_KEYS).not.toContain(forbidden)
+    }
+  })
+
+  it("an undeclared field is refused, not ignored", () => {
+    const system = sys()
+    const withExtra = { ...goodResponse(system), atomRefs: ["priority.headline"] }
+    const result = validateFocusToday({ system, raw: withExtra, domainLabels: LABELS })
+    expect(result.state, "an extra key was silently dropped").toBe("refused")
+    if (result.state === "refused") expect(result.because).toBe("response-malformed")
+  })
+
+  /* ── The slot union, visible to vitest ───────────────────────────────── */
+
+  it("FOCUS_ATOM_SLOTS matches the declared union, read from source", () => {
+    expect([...FOCUS_ATOM_SLOTS]).toEqual([
+      "priority.headline",
+      "priority.explanation",
+      "action.title",
+      "action.practicalAction",
+    ])
+
+    const src = readFileSync("lib/fss/system/focus-today.ts", "utf-8")
+    const decl = src.match(/export type FocusAtomSlot =([\s\S]*?)\n\n/)
+    expect(decl, "the FocusAtomSlot declaration moved").not.toBeNull()
+    const declared = [...decl![1].matchAll(/\|\s*"([^"]+)"/g)].map((m) => m[1])
+    expect(declared.length, "the parse found the wrong count — the regex is stale").toBe(4)
+    expect(declared.sort()).toEqual([...FOCUS_ATOM_SLOTS].sort())
+  })
+
+  /* ── Grounding: refuse before spending a call ────────────────────────── */
+
+  it("grounding passes on a system with a resolved priority and a today action", () => {
+    const g = focusGrounding(sys())
+    expect(g.ok).toBe(true)
+    if (g.ok) {
+      expect(g.priorityId).toBe(priorityIdFor("fermentedFoods"))
+      expect(g.domain).toBe("fermentedFoods")
+      expect(g.actionId).toBeTruthy()
+    }
+  })
+
+  it("an unresolvable priority decision explains nothing", () => {
+    const r = records(fermentedAtZero())
+    const system = compose({
+      ...r,
+      priorityDecision: { ...r.priorityDecision, systemModelVersion: "system-model-v9.9" },
+    })
+    const g = focusGrounding(system)
+    expect(g.ok).toBe(false)
+    if (!g.ok) expect(g.because).toBe("decision-unresolvable")
+  })
+
+  it("no action today is a real product state, not an error", () => {
+    const r = records(fermentedAtZero())
+    const system = compose({
+      ...r,
+      actions: r.actions.filter((a) => a.timeHorizon !== "today"),
+    })
+    const g = focusGrounding(system)
+    expect(g.ok).toBe(false)
+    if (!g.ok) expect(g.because).toBe("no-action-today")
+  })
+
+  it("an action whose reviewed wording is unrecoverable is refused, never restated", () => {
+    const r = records(fermentedAtZero())
+    const system = compose({
+      ...r,
+      actions: r.actions.map((a) => ({ ...a, recommendationId: "withdrawn" })),
+    })
+    const g = focusGrounding(system)
+    expect(g.ok).toBe(false)
+    if (!g.ok) expect(g.because).toBe("action-content-unresolvable")
+  })
+
+  /* ── resolveAtoms: the signature IS the safety property ──────────────── */
+
+  it("resolveAtoms does not take the model response, and the source says so", () => {
+    const src = readFileSync("lib/fss/system/focus-today.ts", "utf-8")
+    const sig = src.match(/export function resolveAtoms\(([\s\S]*?)\):/)
+    expect(sig, "resolveAtoms moved").not.toBeNull()
+    const params = sig![1]
+
+    /*
+     * The whole architecture in one assertion. If a `response` parameter ever
+     * appears here, model-supplied wording has a path to the customer and the
+     * two withdrawn designs have come back.
+     */
+    for (const forbidden of ["response", "raw", "model", "atomRefs", "text"]) {
+      expect(params, `resolveAtoms accepts ${forbidden} — canonical wording is reachable`).not.toContain(
+        forbidden,
+      )
+    }
+    expect(params).toContain("system")
+    expect(params).toContain("priorityId")
+    expect(params).toContain("actionId")
+  })
+
+  it("the atoms are the composed system's own reviewed strings", () => {
+    const system = sys()
+    const g = focusGrounding(system)
+    if (!g.ok) throw new Error("fixture")
+    const atoms = resolveAtoms(system, g.priorityId, g.actionId)
+    expect(atoms).toBeTruthy()
+    if (!atoms) return
+
+    if (system.priorities.state !== "resolved") throw new Error("fixture")
+    const priority = system.priorities.priorities[0]
+    const action = system.actions.find((a) => a.id === g.actionId)
+    if (!action || action.content.state !== "resolved") throw new Error("fixture")
+    const entry = action.content.recommendation
+
+    expect(atoms["priority.headline"].text).toBe(priority.headline)
+    expect(atoms["priority.explanation"].text).toBe(priority.explanation)
+    expect(atoms["action.title"].text).toBe(entry.title)
+    expect(atoms["action.practicalAction"].text).toBe(entry.practicalAction)
+
+    // Every atom carries a real reviewed class and a version.
+    for (const slot of FOCUS_ATOM_SLOTS) {
+      expect(CLAIM_CLASSES).toContain(atoms[slot].claimClass)
+      expect(atoms[slot].sourceVersion.length).toBeGreaterThan(0)
+      expect(atoms[slot].slot).toBe(slot)
+    }
+  })
+
+  it("an atom from another priority is unreachable rather than refused", () => {
+    const system = sys()
+    const g = focusGrounding(system)
+    if (!g.ok) throw new Error("fixture")
+
+    // A different domain's priority id does not resolve at all.
+    expect(resolveAtoms(system, priorityIdFor("mealRhythm"), g.actionId)).toBeNull()
+    // Nor does an action from no plan.
+    expect(resolveAtoms(system, g.priorityId, "action_from_elsewhere")).toBeNull()
+  })
+
+  it("completeness is checked, because the Record is invisible to vitest", () => {
+    const system = sys()
+    const g = focusGrounding(system)
+    if (!g.ok) throw new Error("fixture")
+    const atoms = resolveAtoms(system, g.priorityId, g.actionId)!
+    expect(atomsComplete(atoms)).toBe(true)
+
+    const { "action.title": _dropped, ...missingOne } = atoms
+    expect(atomsComplete(missingOne), "an incomplete set passed").toBe(false)
+
+    const blanked = { ...atoms, "action.title": { ...atoms["action.title"], text: "" } }
+    expect(atomsComplete(blanked), "an empty atom passed").toBe(false)
+  })
+
+  /* ── The framing, which is the only thing the model owns ─────────────── */
+
+  it("the honest framing passes", () => {
+    const v = validateFraming({
+      framing: "A simple way to approach this is to add it to a meal you were already making.",
+      boundDomain: "fermentedFoods",
+      domainLabels: LABELS,
+    })
+    expect(v.clean, "the permitted example was refused").toBe(true)
+  })
+
+  it("framing that nominates another priority is refused", () => {
+    for (const framing of [
+      "You should focus on Meal Rhythm instead.",
+      "A more important issue is your food quality.",
+      "Your real priority is something else.",
+      "I would prioritise the variety question first.",
+      "Honestly, consistency matters more than this.",
+    ]) {
+      const v = validateFraming({ framing, boundDomain: "fermentedFoods", domainLabels: LABELS })
+      expect(v.clean, `reranking framing passed: ${framing}`).toBe(false)
+    }
+  })
+
+  /*
+   * ── CONTEXT FRAMES THE ACTION; IT DOES NOT EXPLAIN THE PERSON ──────────
+   *
+   * The finer half of the rule. Both sentences below adapt to a constraint the
+   * plan already recognised; only the second asserts something about who the
+   * person is, which no deterministic component concluded.
+   */
+  it("framing that turns reported context into a personal assertion is refused", () => {
+    for (const framing of [
+      "Because you're too busy to cook, just buy it ready-made.",
+      "Since you are too short on time, skip the prep.",
+      "Because you don't have the equipment, try the tinned version.",
+      "You clearly find this difficult, so start small.",
+    ]) {
+      const v = validateFraming({ framing, boundDomain: "fermentedFoods", domainLabels: LABELS })
+      expect(v.clean, `context-as-assertion passed: ${framing}`).toBe(false)
+    }
+  })
+
+  it("framing naming a foreign domain is refused even with correct ids", () => {
+    const v = validateFraming({
+      framing: "Add one to a meal you were already making, though Plants & Fibre is the real gap.",
+      boundDomain: "fermentedFoods",
+      domainLabels: LABELS,
+    })
+    expect(v.clean).toBe(false)
+  })
+
+  it("an incomplete label map THROWS rather than silently disabling the check", () => {
+    /*
+     * The first draft skipped falsy labels, so an empty map waved every
+     * cross-domain framing through — a guard passing because it was handed
+     * nothing to check. A wiring bug is not a model failure and must not be
+     * reported as a refusal.
+     */
+    expect(() =>
+      validateFraming({
+        framing: "anything at all",
+        boundDomain: "fermentedFoods",
+        domainLabels: {} as Record<(typeof FSS_DOMAINS)[number], string>,
+      }),
+    ).toThrow(/label for every domain/)
+  })
+
+  /* ── End to end, over recorded responses ─────────────────────────────── */
+
+  it("a well-bound response produces a capability whose wording is canonical", () => {
+    const system = sys()
+    const result = validateFocusToday({ system, raw: goodResponse(system), domainLabels: LABELS })
+    expect(result.state, "the honest case was refused").toBe("answered")
+    if (result.state !== "answered") return
+
+    const cap = result.capability
+    expect(Object.keys(cap).sort()).toEqual([
+      "actionId",
+      "atoms",
+      "focusDomain",
+      "practicalFraming",
+      "priorityId",
+    ])
+    expect(cap.focusDomain).toBe("fermentedFoods")
+    expect(atomsComplete(cap.atoms)).toBe(true)
+
+    // The model's string is present; nothing else about the answer is its work.
+    expect(cap.practicalFraming).toBe(goodResponse(system).practicalFraming)
+  })
+
+  it("a response naming a different priority is refused by the Gate 6.0c authority", () => {
+    const system = sys()
+    const result = validateFocusToday({
+      system,
+      raw: {
+        ...goodResponse(system),
+        priorityIdEcho: priorityIdFor("mealRhythm"),
+        focusDomainEcho: "mealRhythm",
+      },
+      domainLabels: LABELS,
+    })
+    expect(result.state).toBe("refused")
+    if (result.state === "refused") {
+      expect(result.because).toBe("binding-refused")
+      expect(result.binding?.bound).toBe(false)
+    }
+  })
+
+  /*
+   * Plan membership is not the same as being TODAY's action. A thirty-day
+   * action binds perfectly and answers a different question.
+   */
+  it("a response naming a later action in the same plan is refused", () => {
+    const system = sys()
+    const later = system.actions.find((a) => a.timeHorizon !== "today")
+    expect(later, "this fixture needs a non-today action").toBeTruthy()
+    if (!later) return
+
+    const result = validateFocusToday({
+      system,
+      raw: { ...goodResponse(system), actionIdEcho: later.id },
+      domainLabels: LABELS,
+    })
+    expect(result.state).toBe("refused")
+    if (result.state === "refused") {
+      expect(result.because).toBe("binding-refused")
+      expect(result.explain).toMatch(/not\s+today's action/)
+    }
+  })
+
+  it("a refused framing produces no partial answer", () => {
+    const system = sys()
+    const result = validateFocusToday({
+      system,
+      raw: { ...goodResponse(system), practicalFraming: "Focus on Meal Rhythm instead." },
+      domainLabels: LABELS,
+    })
+    expect(result.state).toBe("refused")
+    if (result.state === "refused") expect(result.because).toBe("framing-refused")
+    // No capability field exists on a refusal at all.
+    expect("capability" in result).toBe(false)
+  })
+
+  it("NON-VACUITY: every focus refusal is produced by some case", () => {
+    const system = sys()
+    const r = records(fermentedAtZero())
+    const produced = new Set<string>()
+
+    const cases: { system: ReturnType<typeof compose>; raw: unknown }[] = [
+      {
+        system: compose({
+          ...r,
+          priorityDecision: { ...r.priorityDecision, systemModelVersion: "system-model-v9.9" },
+        }),
+        raw: goodResponse(system),
+      },
+      {
+        system: compose({ ...r, actions: r.actions.filter((a) => a.timeHorizon !== "today") }),
+        raw: goodResponse(system),
+      },
+      {
+        system: compose({
+          ...r,
+          actions: r.actions.map((a) => ({ ...a, recommendationId: "withdrawn" })),
+        }),
+        raw: goodResponse(system),
+      },
+      { system, raw: { nope: true } },
+      {
+        system,
+        raw: {
+          ...goodResponse(system),
+          priorityIdEcho: priorityIdFor("foodQuality"),
+          focusDomainEcho: "foodQuality",
+        },
+      },
+      { system, raw: { ...goodResponse(system), practicalFraming: "Do Meal Rhythm instead." } },
+    ]
+
+    for (const c of cases) {
+      const v = validateFocusToday({ ...c, domainLabels: LABELS })
+      if (v.state === "refused") produced.add(v.because)
+    }
+
+    expect([...produced].sort()).toEqual([
+      "action-content-unresolvable",
+      "binding-refused",
+      "decision-unresolvable",
+      "framing-refused",
+      "no-action-today",
+      "response-malformed",
+    ])
+  })
+
+  /* ── And the module makes no model call ──────────────────────────────── */
+
+  it("the validators are pure — no provider, no clock, no store", () => {
+    const src = readFileSync("lib/fss/system/focus-today.ts", "utf-8")
+    const code = src.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/\/\/.*$/gm, " ")
+
+    for (const forbidden of [
+      "getAnthropic",
+      "anthropic",
+      "CLAUDE_MODEL",
+      "messages.create",
+      "Date.now",
+      "new Date",
+      "getSupabase",
+      "fetch(",
+    ]) {
+      expect(code, `focus-today.ts reaches for ${forbidden}`).not.toContain(forbidden)
+    }
+    // NON-VACUITY: the stripped code still holds the validator.
+    expect(code).toMatch(/export function validateFocusToday/)
   })
 })

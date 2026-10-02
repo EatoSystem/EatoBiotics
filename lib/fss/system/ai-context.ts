@@ -119,6 +119,23 @@ export interface AiDomainState {
  * deterministic system already ranked them; handing over all five invites the
  * model to rediscover the ranking, and a model that rediscovers a ranking is
  * one keystroke from disagreeing with it.
+ *
+ * ── THE REVIEWED STRINGS, AND WHY THEY ARE NOT A WIDENED CONTRACT ─────────
+ *
+ * `headline` and `explanation` are reviewed copy this person is ALREADY shown
+ * on the candidate surface. They arrive here because Gate 6.1 found that
+ * `priority` was granted while carrying nothing a model could read — the
+ * thinness was in this SHAPE, not in `INTENT_FIELDS`, so no field was added to
+ * any intent's contract.
+ *
+ * They are context, not output. A model receives them so it knows what the
+ * priority means; it never sends them back, and the canonical wording a
+ * customer sees is assembled by EatoBiotics from the bound deterministic state.
+ * See `lib/fss/system/focus-today.ts`.
+ *
+ * And note where they come from: `ResolvedPriority`, which resolved them inside
+ * `lib/fss/action/priority.ts`. This module imports no presentation layer, so
+ * the Gate 6.0d prose fence stands unmodified.
  */
 export interface AiPriority {
   readonly priorityId: string
@@ -132,11 +149,33 @@ export interface AiPriority {
     readonly question: string
     readonly answer: string
   }[]
+  /** Reviewed. The headline for this domain as a priority. */
+  readonly headline: string
+  /** Reviewed. What being a priority does and does not mean. */
+  readonly explanation: string
   /** What a priority must never be taken to mean. Carried, not paraphrased. */
   readonly mustNotMean: readonly string[]
 }
 
-/** One action's identity and where the person stands on it. */
+/**
+ * One action's identity, the person's state, and the reviewed content.
+ *
+ * ── WHY THE REVIEWED STRINGS BELONG HERE ──────────────────────────────────
+ *
+ * Without them this type said `{ actionId, recommendationId, category,
+ * timeHorizon, state, resolvable }` — so a model asked to make today's action
+ * practical was told "action_x, category feed, horizon today" and never what
+ * the action IS. It could not have answered honestly.
+ *
+ * Every string here is reviewed catalogue content already shown to this person.
+ * `claimClass` is the entry's OWN class, carried rather than re-derived, so the
+ * reviewed classification travels with the reviewed words.
+ *
+ * All four are `null` when `resolvable` is false: a stored action whose
+ * catalogue entry has been withdrawn or whose content version has moved has no
+ * recoverable wording, and inventing some would be the substitution this whole
+ * layer refuses.
+ */
 export interface AiAction {
   readonly actionId: string
   readonly recommendationId: string | null
@@ -145,6 +184,14 @@ export interface AiAction {
   readonly state: ActionState
   /** False when the stored content could not be resolved. */
   readonly resolvable: boolean
+  /** Reviewed. A short name for the action. Null when unresolvable. */
+  readonly title: string | null
+  /** Reviewed. What to actually do. An action, never its result. */
+  readonly practicalAction: string | null
+  /** Reviewed. Why this was suggested. Names the reported behaviour. */
+  readonly rationale: string | null
+  /** The catalogue entry's own class for its `rationale`. */
+  readonly claimClass: ClaimClass | null
 }
 
 /** The boundary, as data rather than as a sentence for a model to read. */
@@ -381,6 +428,14 @@ function aiPriority(system: MyFoodSystem): AiPriority {
       rank: -1,
       scoredDomainCount: 0,
       evidence: [],
+      /*
+       * Empty, not a placeholder sentence. There is no priority, so there is no
+       * reviewed wording about one, and a cheerful default here would be the
+       * first customer-facing sentence in this programme with no reviewed
+       * source. `ai-claims.ts` refuses a basis against this anyway.
+       */
+      headline: "",
+      explanation: "",
       mustNotMean: PRIORITY_MUST_NOT_MEAN,
     }
   }
@@ -397,6 +452,8 @@ function aiPriority(system: MyFoodSystem): AiPriority {
       question: e.question,
       answer: e.answer,
     })),
+    headline: top.headline,
+    explanation: top.explanation,
     mustNotMean: PRIORITY_MUST_NOT_MEAN,
   }
 }
@@ -407,13 +464,23 @@ function todayAction(system: MyFoodSystem): AiAction | null {
 }
 
 function aiAction(a: MyFoodSystem["actions"][number]): AiAction {
+  const resolved = a.content.state === "resolved" ? a.content.recommendation : null
   return {
     actionId: a.id,
-    recommendationId: a.content.state === "resolved" ? a.content.recommendation.id : null,
+    recommendationId: resolved ? resolved.id : null,
     category: a.actionCategory,
     timeHorizon: a.timeHorizon,
     state: a.state,
-    resolvable: a.content.state === "resolved",
+    resolvable: resolved !== null,
+    /*
+     * Reviewed catalogue content, or null together. There is no partial action:
+     * a title without its practical step would invite a model to supply the
+     * step, which is the one thing the catalogue exists to have reviewed.
+     */
+    title: resolved ? resolved.title : null,
+    practicalAction: resolved ? resolved.practicalAction : null,
+    rationale: resolved ? resolved.rationale : null,
+    claimClass: resolved ? resolved.claimClass : null,
   }
 }
 
