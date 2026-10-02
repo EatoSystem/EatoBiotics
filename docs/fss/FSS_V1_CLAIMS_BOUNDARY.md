@@ -121,6 +121,57 @@ particular it must not be settled by a downstream need: a later gate wanting
 explanatory language for an AI surface is not a reason to approve copy, and the
 fence exists because that is how unreviewed wording has graduated before.
 
+#### Review pass of 2026-10-02 — 6 approved, 9 revised, 0 rejected
+
+Run against the six criteria, each sentence read against its own domain's
+reviewed `whatItMeans` and band wording rather than against an assumption.
+**The review itself remains PENDING**: this pass fixed nine sentences and is
+not a sign-off, because the thing being certified is a human judgement.
+
+| Domain | Verdict | Why |
+|---|---|---|
+| `diversity` | **approved** | "range" is the domain's own word, and it says "the range rather than the amount" |
+| `plantsAndFibre` | **revised** | restored the dropped "**whole**" — the domain says "fibre-rich whole plant food" |
+| `fermentedFoods` | **revised** | "arriving" → "**appearing**", the domain's own verb |
+| `foodQuality` | **revised** | see below — the substantive finding |
+| `mealRhythm` | **approved** | "steadier" is the domain's own word; limitation recorded below |
+
+**`foodQuality` carried two defects at once.** It read *"less heavily
+processed food"*, which is (a) grammatically ambiguous — "less
+[heavily-processed food]" is a quantity, "[less heavily] processed food" is a
+degree, and the sentence chose neither — and (b) written in vocabulary the
+domain does not use. The approved wording is *"how much of what you eat is
+prepared from whole ingredients rather than arriving ready-made"*; "heavily
+processed" was introduced by the comparative copy and is more loaded than the
+word a reviewer signed off. Now: *"more / less / about as much of your food
+starting from whole ingredients"*.
+
+**`mealRhythm`'s recorded limitation.** The domain's `whatItMeans` is "when you
+eat, how regularly, **and what a typical main meal is made of**". "Eating
+rhythm" covers only the timing half, so the sentence **under**-describes what
+the domain scores. Under-describing is the safe direction, so it is approved
+with this noted rather than patched with wording nobody has reviewed.
+
+#### An open presentation question, recorded rather than decided
+
+The fifteen render in a block headed "Your food patterns" **directly above a
+score that moved**. Five directional statements stacked above `67 → 72` read as
+corroboration — work that no individual sentence does. Every sentence passes
+the health-improvement criterion alone; **the block may not.**
+
+This is a layout question, not a wording one, so it was deliberately not
+touched during a copy review. It needs its own decision before these sentences
+reach any customer surface.
+
+#### Excluded from AI context
+
+The two demo-only predicted-outcome taglines in
+`components/account/dashboard-client-data.ts` — *"targeted effort will
+accelerate it"* and *"Consistency is your next big unlock"* — remain on the
+claims ledger. They **must not reach Gate 6 context or any generated AI
+language**: a predicted outcome entering an explanation layer is how an
+explanation becomes a promise.
+
 ### 6.2 What may be said about a changed self-report
 
 An observation comparison carries **no direction and no number** — only the two

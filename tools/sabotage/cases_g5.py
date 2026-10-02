@@ -425,4 +425,34 @@ CASES = [
      '    "Your answers to all of these are the same as at your previous assessment.",',
      '    "Your answers to all of these improved since your previous assessment.",',
      SYSTEM),
+# ── H1 · the comparative copy review ────────────────────────────────────
+    #
+    # Each restores a defect the 2026-10-02 pass found. They are copy cases, so
+    # the guard is the fifteen-sentence pin plus the claim rules over the pack.
+
+    (1360, "the foodQuality sentence returns to ambiguous, unreviewed wording", CHANGED_COPY,
+     '      "Your answers described more of your food starting from whole ingredients than at your previous assessment.",',
+     '      "Your answers described less heavily processed food than at your previous assessment.",',
+     SYSTEM),
+
+    (1361, "the fermented sentence stops using the domain's own verb", CHANGED_COPY,
+     '      "Your answers described fermented foods appearing more often than at your previous assessment.",',
+     '      "Your answers described fermented foods arriving more often than at your previous assessment.",',
+     SYSTEM),
+
+    (1362, "the fibre sentence drops `whole` again", CHANGED_COPY,
+     '      "Your answers described more fibre-rich whole plant food than at your previous assessment.",',
+     '      "Your answers described more fibre-rich plant food than at your previous assessment.",',
+     SYSTEM),
+
+    # The guard that has to survive ratification: approval without a human.
+    (1363, "the copy is approved with nobody recorded as reviewer", CHANGED_COPY,
+     '  state: "pending",\n  reviewedBy: null,\n  reviewedAt: null,',
+     '  state: "approved",\n  reviewedBy: null,\n  reviewedAt: null,',
+     SYSTEM),
+
+    (1364, "a reviewer is named while the review is still open", CHANGED_COPY,
+     '  state: "pending",\n  reviewedBy: null,',
+     '  state: "pending",\n  reviewedBy: "someone",',
+     SYSTEM),
 ]

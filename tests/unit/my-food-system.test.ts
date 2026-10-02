@@ -2959,6 +2959,153 @@ describe("the comparative copy has not been reviewed, and cannot graduate quietl
   })
 
   /*
+   * ── "APPROVED" CANNOT EXIST WITHOUT A NAMED HUMAN AND A DATE ────────────
+   *
+   * The pin above refuses `"approved"` outright today, which is right while
+   * the review is open — and useless the moment somebody legitimately clears
+   * it, because then the only guard left is the one that just got edited.
+   *
+   * This is the guard that survives ratification. Whatever `state` says,
+   * "approved" requires a `reviewedBy` and a `reviewedAt` that parses. So the
+   * flag cannot be flipped as a flag: clearing the review means recording WHO
+   * cleared it and WHEN, which is the whole content of the claim.
+   */
+  it("whatever the state, approval requires a reviewer and a date", () => {
+    const review = COMPARATIVE_COPY_REVIEW as {
+      state: string
+      reviewedBy: string | null
+      reviewedAt: string | null
+    }
+
+    if (review.state === "approved") {
+      expect(
+        review.reviewedBy,
+        "the comparative copy is marked approved with nobody recorded as having reviewed it",
+      ).toBeTruthy()
+      expect(review.reviewedAt, "approved with no date").toBeTruthy()
+      expect(
+        Number.isNaN(Date.parse(review.reviewedAt ?? "")),
+        "`reviewedAt` is not a parseable date",
+      ).toBe(false)
+    } else {
+      // Not approved, so nobody may be named as having approved it.
+      expect(review.reviewedBy, "a reviewer is named but the review is not approved").toBeNull()
+      expect(review.reviewedAt).toBeNull()
+    }
+
+    /*
+     * NON-VACUITY: the branch above must actually bite. Asserted on stand-ins
+     * rather than on the real constant, which can only be in one state.
+     */
+    const approvedWithoutReviewer = { state: "approved", reviewedBy: null, reviewedAt: null }
+    expect(approvedWithoutReviewer.state === "approved" && !approvedWithoutReviewer.reviewedBy).toBe(
+      true,
+    )
+    expect(Number.isNaN(Date.parse("not-a-date"))).toBe(true)
+  })
+
+  /*
+   * ── THE REVIEW'S VERDICTS, MADE LOAD-BEARING ────────────────────────────
+   *
+   * Sabotage 1360-1362 reverted the three revised sentences and SLIPPED: the
+   * pin above checks structure — opens "Your answers described", anchored to
+   * "your previous assessment", no causal vocabulary — and "less heavily
+   * processed food" satisfies every one of those.
+   *
+   * The invariant the review actually found is narrower and more useful:
+   *
+   *   A COMPARATIVE SENTENCE MAY ONLY USE VOCABULARY ITS OWN DOMAIN'S
+   *   REVIEWED COPY USES.
+   *
+   * That is what the `foodQuality` defect was. "Heavily processed" is not a
+   * phrase any reviewer signed off; the domain says "whole ingredients" and
+   * "ready-made". A sentence that invents its own words for a domain is
+   * asserting something adjacent to what was approved, and "adjacent to
+   * approved" is how a claim drifts.
+   *
+   * So each domain declares what its sentences MUST say and what they MUST
+   * NOT, taken straight from the 2026-10-02 verdicts.
+   */
+  const DOMAIN_VOCABULARY: Record<
+    string,
+    { readonly requires: string; readonly refuses: readonly string[] }
+  > = {
+    // "the range rather than the amount", in the domain's own words.
+    diversity: { requires: "range of plant foods", refuses: ["amount of plant", "variety score"] },
+    // The dropped "whole", restored.
+    plantsAndFibre: { requires: "fibre-rich whole plant food", refuses: ["fibre-rich plant food"] },
+    // The domain's verb is "appear", not "arrive".
+    fermentedFoods: { requires: "fermented foods appearing", refuses: ["arriving", "probiotic"] },
+    // The substantive finding: unreviewed, loaded, and grammatically ambiguous.
+    foodQuality: {
+      requires: "starting from whole ingredients",
+      refuses: ["heavily processed", "ultra-processed", "junk"],
+    },
+    mealRhythm: { requires: "eating rhythm", refuses: ["discipline", "willpower"] },
+  }
+
+  it("every comparative sentence uses only its own domain's reviewed vocabulary", () => {
+    for (const domain of FSS_DOMAINS) {
+      const rule = DOMAIN_VOCABULARY[domain]
+      expect(rule, `${domain} has no vocabulary rule — add one with its verdict`).toBeDefined()
+
+      for (const direction of ["higher", "lower", "similar"] as const) {
+        const sentence = DOMAIN_CHANGE_COPY[domain][direction]
+        expect(
+          sentence,
+          `${domain}/${direction} lost the domain's own phrase "${rule.requires}"`,
+        ).toContain(rule.requires)
+
+        for (const refused of rule.refuses) {
+          expect(
+            sentence.toLowerCase().includes(refused.toLowerCase()),
+            `${domain}/${direction} uses vocabulary the review rejected: "${refused}" — ` +
+              `the domain's reviewed copy does not use it`,
+          ).toBe(false)
+        }
+      }
+    }
+  })
+
+  /*
+   * And the required phrase really does come from the domain's own reviewed
+   * copy, rather than from a second list that happens to agree. Without this
+   * the table above is just two places to edit.
+   */
+  it("NON-VACUITY: each required phrase appears in the domain's own presentation", () => {
+    for (const domain of FSS_DOMAINS) {
+      const presentation = DOMAIN_PRESENTATION[domain]
+      const reviewed = [
+        presentation.whatItMeans,
+        presentation.whatYouCouldDo,
+        presentation.whereYouAre(90),
+        presentation.whereYouAre(50),
+        presentation.whereYouAre(10),
+      ]
+        .join(" ")
+        .toLowerCase()
+
+      /*
+       * Matched on the distinctive HEAD NOUN, because a comparative inflects
+       * ("wider range" vs the domain's "wide range") and a test demanding an
+       * exact phrase match would fail on correct copy.
+       */
+      const head = {
+        diversity: "range of plant foods",
+        plantsAndFibre: "whole plant food",
+        fermentedFoods: "fermentation",
+        foodQuality: "whole ingredients",
+        mealRhythm: "rhythm",
+      }[domain]
+
+      expect(
+        reviewed.includes(head.toLowerCase()),
+        `${domain}: the comparative copy's vocabulary is not in the domain's reviewed copy`,
+      ).toBe(true)
+    }
+  })
+
+  /*
    * ── THE FENCE: the copy stays inside the gated candidate preview ────────
    *
    * The same roots `tests/unit/biotic-claims.test.ts` fences the withheld

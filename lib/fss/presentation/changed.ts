@@ -64,27 +64,27 @@ export const DOMAIN_CHANGE_COPY: Record<FssDomain, Record<ChangeDirection, strin
   },
   plantsAndFibre: {
     higher:
-      "Your answers described more fibre-rich plant food than at your previous assessment.",
+      "Your answers described more fibre-rich whole plant food than at your previous assessment.",
     lower:
-      "Your answers described less fibre-rich plant food than at your previous assessment.",
+      "Your answers described less fibre-rich whole plant food than at your previous assessment.",
     similar:
-      "Your answers described about as much fibre-rich plant food as at your previous assessment.",
+      "Your answers described about as much fibre-rich whole plant food as at your previous assessment.",
   },
   fermentedFoods: {
     higher:
-      "Your answers described fermented foods arriving more often than at your previous assessment.",
+      "Your answers described fermented foods appearing more often than at your previous assessment.",
     lower:
-      "Your answers described fermented foods arriving less often than at your previous assessment.",
+      "Your answers described fermented foods appearing less often than at your previous assessment.",
     similar:
-      "Your answers described fermented foods arriving about as often as at your previous assessment.",
+      "Your answers described fermented foods appearing about as often as at your previous assessment.",
   },
   foodQuality: {
     higher:
-      "Your answers described less heavily processed food than at your previous assessment.",
+      "Your answers described more of your food starting from whole ingredients than at your previous assessment.",
     lower:
-      "Your answers described more heavily processed food than at your previous assessment.",
+      "Your answers described less of your food starting from whole ingredients than at your previous assessment.",
     similar:
-      "Your answers described about as much heavily processed food as at your previous assessment.",
+      "Your answers described about as much of your food starting from whole ingredients as at your previous assessment.",
   },
   mealRhythm: {
     higher:
@@ -338,8 +338,80 @@ export const CHANGED_COPY = {
    graduated before.
    ════════════════════════════════════════════════════════════════════════ */
 
+/* ── THE REVIEW PASS OF 2026-10-02, AND WHAT IT CHANGED ───────────────────
+ *
+ * The six criteria were run over all fifteen sentences, each read against its
+ * own domain's reviewed `whatItMeans` and `whereYouAre` bands in
+ * `./domains.ts` rather than against anybody's memory of what the domain
+ * measures. Outcome: 6 approved, 9 revised, 0 rejected.
+ *
+ * All fifteen passed four criteria outright — they describe answers rather
+ * than biology, assert no causality, name no health improvement, and are
+ * comparatives explicitly anchored "than at your previous assessment" rather
+ * than absolute judgements. Ten imply a direction, which is by design and is
+ * justified: `DomainChange.direction` is arithmetic on two sub-scores produced
+ * only when BOTH `canCompare` and `canCompareDomains` permit the pair.
+ *
+ * ── REVISED · `foodQuality` × 3, the substantive finding ─────────────────
+ *
+ * It read "less heavily processed food", which is two defects at once.
+ *
+ *   AMBIGUOUS: "less [heavily-processed food]" (a smaller quantity of it) or
+ *   "[less heavily] processed food" (processed to a lesser degree). Different
+ *   claims, and the sentence chose neither.
+ *
+ *   UNREVIEWED VOCABULARY: the domain's approved wording is "how much of what
+ *   you eat is prepared from whole ingredients rather than arriving
+ *   ready-made", with bands "starting from whole ingredients" / "ready-made".
+ *   "Heavily processed" was introduced here and is more loaded than the word a
+ *   reviewer actually signed off.
+ *
+ * Now in the domain's own vocabulary, and unambiguous.
+ *
+ * ── REVISED · `fermentedFoods` × 3 ───────────────────────────────────────
+ *
+ * "arriving" → "appearing". The domain's own verb is appear: "how often foods
+ * transformed by fermentation APPEAR in your week".
+ *
+ * ── REVISED · `plantsAndFibre` × 3 ───────────────────────────────────────
+ *
+ * The dropped "whole" restored. The domain says "fibre-rich WHOLE plant food";
+ * this said "fibre-rich plant food". It changed no claim, and one phrase beats
+ * two that nearly agree.
+ *
+ * ── APPROVED · `diversity` × 3 ───────────────────────────────────────────
+ *
+ * "Range" is the domain's own word, and `whatItMeans` says "the range rather
+ * than the amount" explicitly. The copy says range and not amount.
+ *
+ * ── APPROVED · `mealRhythm` × 3, with a recorded limitation ──────────────
+ *
+ * "Steadier" is the domain's own word ("a steady rhythm across the week"). But
+ * `whatItMeans` is "when you eat, how regularly, AND WHAT A TYPICAL MAIN MEAL
+ * IS MADE OF" — so "eating rhythm" describes only part of what the domain
+ * scores. It UNDER-describes, which is the safe direction, so the limitation
+ * is recorded rather than patched with wording nobody reviewed.
+ *
+ * ── REPORTED, NOT ACTED ON · the juxtaposition ───────────────────────────
+ *
+ * These render in a block headed "Your food patterns" directly above a score
+ * that moved. Five directional statements stacked above `67 → 72` read as
+ * corroboration — work no individual sentence does. Every sentence passes the
+ * health-improvement criterion on its own; the BLOCK may not. That is a
+ * presentation question rather than a wording one, so it is recorded in
+ * `docs/fss/FSS_V1_CLAIMS_BOUNDARY.md` for a deliberate decision.
+ * ───────────────────────────────────────────────────────────────────────── */
+
 export const COMPARATIVE_COPY_REVIEW = {
-  /** `"pending"` until a named human has answered all six questions below. */
+  /**
+   * `"pending"` until a named human has answered all six questions below.
+   *
+   * STILL PENDING AFTER THE 2026-10-02 PASS, deliberately. That pass fixed
+   * nine sentences; it is not itself a sign-off, because an agent recording
+   * its own analysis as a completed human review is exactly the failure this
+   * flag exists to prevent. The revised fifteen are now in place to be read
+   * and ratified.
+   */
   state: "pending",
   reviewedBy: null,
   reviewedAt: null,
