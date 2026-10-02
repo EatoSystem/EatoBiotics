@@ -54,6 +54,12 @@ import {
 } from "@/lib/fss/system/ai-context"
 import { SYSTEM_MODEL_VERSION } from "@/lib/fss/system/version"
 import { isMintedId, newId } from "@/lib/fss/system/identity"
+import {
+  CLAIM_BASIS_KEYS,
+  validateClaimBinding,
+  type ClaimBasis,
+} from "@/lib/fss/system/ai-claims"
+import { priorityIdFor } from "@/lib/fss/action/priority"
 import { toStoredPlanDecision, toStoredPriorityDecision } from "@/lib/fss/system/decisions"
 import { composeMyFoodSystem } from "@/lib/fss/system/compose"
 import { MY_FOOD_SYSTEM_KEYS } from "@/lib/fss/system/types"
@@ -3411,5 +3417,294 @@ describe("the comparative copy has not been reviewed, and cannot graduate quietl
       escaped,
       "unreviewed comparative copy reached a file outside the gated candidate preview",
     ).toEqual([])
+  })
+})
+
+/* ════════════════════════════════════════════════════════════════════════════
+   GATE 6.0c · CLAIM BINDINGS
+
+   Validate the claim binding deterministically. Guard the language separately.
+
+   Every test here reads ids and domains. None reads a sentence, because there
+   is no sentence parameter to read — the first design of this module was a
+   prose validator and was withdrawn for being a second decision engine.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+describe("a claim binding is checked structurally, never semantically", () => {
+  /** The system whose priority is unambiguous: fermentedFoods at the floor. */
+  const fermentedSystem = () => compose(records(fermentedAtZero()))
+
+  /*
+   * A system with a TIE at the lowest, so `selected` genuinely holds three.
+   *
+   * `fermentedSystem` has exactly one priority, which is the normal case and
+   * the right fixture for the honest binding. But the two appeals the
+   * amendment added are about RANK and about borrowing evidence BETWEEN
+   * selected priorities, and neither case exists when there is only one.
+   *
+   * All-2s ties every domain, so `resolvePriorities` returns the first three in
+   * instrument order — diversity, plantsAndFibre, fermentedFoods — and
+   * `foodQuality` and `mealRhythm` stay UNSELECTED. That matters: it keeps
+   * them usable here as the inconsistent and not-selected cases, so one
+   * fixture covers every refusal.
+   */
+  const tiedSystem = () => compose(records(allTwos()))
+
+  const basisFor = (system: ReturnType<typeof compose>, over: Partial<ClaimBasis> = {}) => {
+    if (system.priorities.state !== "resolved") throw new Error("fixture")
+    const top = system.priorities.priorities[0]
+    return {
+      claimClass: "plan-explanation" as const,
+      priorityId: top.id,
+      priorityDomain: top.sourceDomain,
+      evidenceIds: top.evidence.map((e) => e.questionId),
+      ...over,
+    }
+  }
+
+  it("the basis has nowhere to nominate an alternative priority", () => {
+    expect([...CLAIM_BASIS_KEYS].sort()).toEqual([
+      "actionId",
+      "claimClass",
+      "evidenceIds",
+      "priorityDomain",
+      "priorityId",
+    ])
+    /*
+     * The point of the pin: `alternatives`, `consideredDomains`,
+     * `suggestedPriority` and `confidence` are not keys, so an appeal is not a
+     * thing the type can hold. Adding one fails here.
+     */
+    for (const forbidden of ["alternatives", "consideredDomains", "suggestedPriority", "confidence"]) {
+      expect(CLAIM_BASIS_KEYS).not.toContain(forbidden)
+    }
+  })
+
+  it("a basis bound to the persisted current priority is permitted", () => {
+    const system = fermentedSystem()
+    const verdict = validateClaimBinding({ system, basis: basisFor(system) })
+    expect(verdict.bound, "the honest case was refused").toBe(true)
+  })
+
+  /*
+   * ── THE CASE THE AMENDMENT WAS WRITTEN FOR ──────────────────────────────
+   *
+   * Persisted priority is fermentedFoods; the basis claims diversity. Under
+   * the withdrawn design this needed a regex to read "Meal Rhythm is actually
+   * more important for you" and decide it disagreed. Here the ids simply do
+   * not match a selected priority, and the refusal is exact.
+   */
+  it("a basis naming a DIFFERENT priority is refused", () => {
+    const system = fermentedSystem()
+    const verdict = validateClaimBinding({
+      system,
+      basis: basisFor(system, {
+        priorityId: priorityIdFor("mealRhythm"),
+        priorityDomain: "mealRhythm",
+        evidenceIds: [],
+      }),
+    })
+    expect(verdict.bound).toBe(false)
+    if (!verdict.bound) {
+      expect(verdict.because).toBe("not-a-selected-priority")
+      expect(verdict.explain).toMatch(/nominating a priority rather than explaining one/)
+    }
+  })
+
+  it("an internally inconsistent basis is refused before anything else", () => {
+    const system = fermentedSystem()
+    const verdict = validateClaimBinding({
+      system,
+      // The id says one domain, the field says another.
+      basis: basisFor(system, { priorityId: priorityIdFor("foodQuality") }),
+    })
+    expect(verdict.bound).toBe(false)
+    if (!verdict.bound) expect(verdict.because).toBe("basis-internally-inconsistent")
+  })
+
+  /*
+   * ── SUBTLE APPEAL 1 · SELECTED, BUT NOT THE FOCUS ───────────────────────
+   *
+   * Added by the amendment. `selected` holds up to three, so every id here is
+   * genuinely a priority this system chose — and presenting rank 1 or 2 as
+   * "your current focus" reorders a persisted decision while looking correct.
+   */
+  it("a basis bound to a selected priority at a LOWER RANK is refused", () => {
+    const system = tiedSystem()
+    if (system.priorities.state !== "resolved") throw new Error("fixture")
+    const selected = system.priorities.priorities
+    expect(selected.length, "this fixture needs more than one priority").toBeGreaterThan(1)
+
+    const second = selected[1]
+    const verdict = validateClaimBinding({
+      system,
+      basis: {
+        claimClass: "plan-explanation",
+        priorityId: second.id,
+        priorityDomain: second.sourceDomain,
+        evidenceIds: second.evidence.map((e) => e.questionId),
+      },
+    })
+    expect(verdict.bound, "a rank-1 priority passed as the current focus").toBe(false)
+    if (!verdict.bound) {
+      expect(verdict.because).toBe("not-the-current-priority")
+      expect(verdict.explain).toMatch(/reorder a persisted decision/)
+    }
+  })
+
+  /*
+   * ── SUBTLE APPEAL 2 · THE RIGHT PRIORITY, THE WRONG EVIDENCE ────────────
+   *
+   * Also added by the amendment. "Diversity is your focus because [evidence
+   * about Meal Rhythm]" has valid ids throughout and argues for a different
+   * domain under the right heading.
+   */
+  it("evidence from another domain is refused even under the right priority", () => {
+    const system = tiedSystem()
+    if (system.priorities.state !== "resolved") throw new Error("fixture")
+    const top = system.priorities.priorities[0]
+    const other = system.priorities.priorities.find((p) => p.sourceDomain !== top.sourceDomain)
+    expect(other, "this fixture needs a second domain to borrow evidence from").toBeTruthy()
+
+    const verdict = validateClaimBinding({
+      system,
+      basis: {
+        claimClass: "plan-explanation",
+        priorityId: top.id,
+        priorityDomain: top.sourceDomain,
+        evidenceIds: other!.evidence.map((e) => e.questionId),
+      },
+    })
+    expect(verdict.bound, "borrowed evidence passed").toBe(false)
+    if (!verdict.bound) {
+      expect(verdict.because).toBe("evidence-outside-priority-domain")
+      expect(verdict.explain).toMatch(/argues for another domain/)
+    }
+  })
+
+  it("an action from another plan is refused", () => {
+    const system = fermentedSystem()
+    const verdict = validateClaimBinding({
+      system,
+      basis: basisFor(system, { actionId: "action_from_somewhere_else" }),
+    })
+    expect(verdict.bound).toBe(false)
+    if (!verdict.bound) {
+      expect(verdict.because).toBe("action-outside-plan")
+      expect(verdict.explain).toMatch(/never substitute a different one/)
+    }
+  })
+
+  it("an action that IS in the plan is permitted", () => {
+    const system = fermentedSystem()
+    expect(system.actions.length).toBeGreaterThan(0)
+    const verdict = validateClaimBinding({
+      system,
+      basis: basisFor(system, { actionId: system.actions[0].id }),
+    })
+    expect(verdict.bound).toBe(true)
+  })
+
+  /*
+   * A product that cannot read its own decision back does not get to explain
+   * it. This inherits Gate 4's version refusal rather than adding an anchor.
+   */
+  it("an unresolvable decision explains nothing", () => {
+    const r = records(fermentedAtZero())
+    const system = compose({
+      ...r,
+      priorityDecision: { ...r.priorityDecision, systemModelVersion: "system-model-v9.9" },
+    })
+    expect(system.priorities.state).not.toBe("resolved")
+
+    const verdict = validateClaimBinding({
+      system,
+      basis: {
+        claimClass: "plan-explanation",
+        priorityId: priorityIdFor("fermentedFoods"),
+        priorityDomain: "fermentedFoods",
+        evidenceIds: [],
+      },
+    })
+    expect(verdict.bound).toBe(false)
+    if (!verdict.bound) expect(verdict.because).toBe("decision-unresolvable")
+  })
+
+  /*
+   * NON-VACUITY over the refusal union: every member is reachable. A refusal
+   * nothing can produce is a branch nobody has tested, and this suite would
+   * otherwise pass while one of the six appeals was unreachable.
+   */
+  it("NON-VACUITY: every binding refusal is produced by some case", () => {
+    const produced = new Set<string>()
+    const system = tiedSystem()
+    if (system.priorities.state !== "resolved") throw new Error("fixture")
+    const selected = system.priorities.priorities
+    const r = records(allTwos())
+
+    const cases: { system: ReturnType<typeof compose>; basis: ClaimBasis }[] = [
+      { system, basis: basisFor(system, { priorityId: priorityIdFor("foodQuality") }) },
+      {
+        system: compose({
+          ...r,
+          priorityDecision: { ...r.priorityDecision, systemModelVersion: "system-model-v9.9" },
+        }),
+        basis: basisFor(system),
+      },
+      {
+        system,
+        basis: basisFor(system, {
+          priorityId: priorityIdFor("mealRhythm"),
+          priorityDomain: "mealRhythm",
+          evidenceIds: [],
+        }),
+      },
+      {
+        system,
+        basis: {
+          claimClass: "plan-explanation",
+          priorityId: selected[1].id,
+          priorityDomain: selected[1].sourceDomain,
+          evidenceIds: [],
+        },
+      },
+      {
+        system,
+        basis: basisFor(system, { evidenceIds: ["definitely-not-an-evidence-id"] }),
+      },
+      { system, basis: basisFor(system, { actionId: "nope" }) },
+    ]
+
+    for (const c of cases) {
+      const v = validateClaimBinding(c)
+      if (!v.bound) produced.add(v.because)
+    }
+
+    expect([...produced].sort()).toEqual([
+      "action-outside-plan",
+      "basis-internally-inconsistent",
+      "decision-unresolvable",
+      "evidence-outside-priority-domain",
+      "not-a-selected-priority",
+      "not-the-current-priority",
+    ])
+  })
+
+  /*
+   * ── AND THE VALIDATOR READS NO PROSE ───────────────────────────────────
+   *
+   * The structural statement of the amendment. If a `sentence` parameter ever
+   * appears here, the withdrawn design has come back.
+   */
+  it("the module takes no sentence and runs no language rule", () => {
+    const src = readFileSync("lib/fss/system/ai-claims.ts", "utf-8")
+    const code = src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "")
+    for (const forbidden of ["sentence", "prose", "text:", "toMatch", "RegExp"]) {
+      expect(code, `ai-claims.ts reads ${forbidden} — it must bind, not interpret`).not.toContain(
+        forbidden,
+      )
+    }
+    // NON-VACUITY: the stripped code still holds the validator.
+    expect(code).toMatch(/export function validateClaimBinding/)
   })
 })
