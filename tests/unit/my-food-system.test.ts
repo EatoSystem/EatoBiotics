@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { execSync } from "node:child_process"
 import { resolveQuestionSetV1 } from "@/lib/fss/questions/resolve"
 import { DOMAIN_SCHEMA_VERSION, FSS_DOMAINS } from "@/lib/fss/questions/domain-schema"
@@ -45,7 +45,13 @@ import {
 } from "@/lib/fss/system/draft"
 import { loadCurrentFoodSystem } from "@/lib/fss/system/load"
 import { moveAction } from "@/lib/fss/system/actions"
-import { toAiContext } from "@/lib/fss/system/ai-context"
+import {
+  AI_INTENTS,
+  INTENT_DENIED,
+  INTENT_FIELDS,
+  toAiContext,
+  type AiIntent,
+} from "@/lib/fss/system/ai-context"
 import { SYSTEM_MODEL_VERSION } from "@/lib/fss/system/version"
 import { isMintedId, newId } from "@/lib/fss/system/identity"
 import { toStoredPlanDecision, toStoredPriorityDecision } from "@/lib/fss/system/decisions"
@@ -918,9 +924,55 @@ describe("the AI context package is an interface and nothing more", () => {
     expect(callers, "Gate 6 is where this gets a caller, and it needs its own review").toEqual([])
   })
 
+  /*
+   * ── NO METHODOLOGY MAY ENTER THE AI LAYER ───────────────────────────────
+   *
+   * The import-level form of the one-engine rule, and the thing that would
+   * erode first: a selection or scoring function imported "just to check".
+   * This layer receives VERDICTS AND DECISIONS, never the functions that make
+   * them.
+   *
+   * Pinned BY FILENAME rather than by directory glob. A glob silently covers a
+   * new file — which sounds like a feature until the directory is renamed and
+   * it silently covers nothing. A pinned list makes adding a third AI module a
+   * visible diff.
+   */
+  it("the AI layer imports no methodology", () => {
+    const AI_MODULES = ["lib/fss/system/ai-context.ts", "lib/fss/system/ai-claims.ts"]
+    const FORBIDDEN = [
+      "computeFoodSystemScore",
+      "resolvePriorities",
+      "buildPlan",
+      "canCompare",
+      "canCompareDomains",
+      "compareSystems",
+      "readWhatChanged",
+      "getScoreBand",
+      "resolveWeights",
+      "DEV_ONLY_FSS_V1_FIXTURE_WEIGHTS",
+    ]
+
+    for (const file of AI_MODULES) {
+      if (!existsSync(file)) continue
+      const src = readFileSync(file, "utf-8")
+      const imports = [...src.matchAll(/^import[\s\S]*?from "[^"]+"/gm)].map((m) => m[0]).join("\n")
+      for (const fn of FORBIDDEN) {
+        expect(
+          imports.includes(fn),
+          `${file} imports ${fn} — the AI layer receives verdicts, not the engines`,
+        ).toBe(false)
+      }
+    }
+
+    // NON-VACUITY: at least one module exists and really does import things.
+    const present = AI_MODULES.filter((f) => existsSync(f))
+    expect(present.length).toBeGreaterThan(0)
+    expect(readFileSync(present[0], "utf-8")).toMatch(/^import/m)
+  })
+
   it("and it has no prompt field, which is the interface's whole content", () => {
     const src = readFileSync("lib/fss/system/ai-context.ts", "utf-8")
-    const body = src.slice(src.indexOf("export interface FoodSystemAiContext"))
+    const body = src.slice(src.indexOf("export interface FoodSystemAiContextCeiling"))
     for (const field of ["systemPrompt", "instructions", "narrative", "persona", "tone"]) {
       expect(body, `${field} would be a second source for methodology`).not.toMatch(
         new RegExp(`\\breadonly ${field}\\b`),
@@ -1721,11 +1773,242 @@ describe("moveAction records a state and nothing else", () => {
   })
 })
 
-describe("toAiContext is an interface, and calling it says so", () => {
-  it("it throws rather than returning a hollow object", () => {
-    // A `return {} as FoodSystemAiContext` would satisfy every type and every
-    // source scan while pretending the package exists.
-    expect(() => toAiContext(compose())).toThrow(/interface, not an implementation/)
+/* ════════════════════════════════════════════════════════════════════════════
+   GATE 6.0 · THE AI CONTEXT BOUNDARY
+
+   ── TWO ANCHORS GATE 6 LEGITIMATELY INVALIDATED ───────────────────────────
+
+   `toAiContext` threw, and two assertions said so: that it throws, and that
+   its source says it throws. `ai-context.ts`'s own header anticipated this —
+   "Gate 6 is where something uses it" — and this is that gate. Both are
+   replaced by the real contract rather than deleted.
+
+   The NO-CALLER guard above is NOT replaced. It scopes to lib/, components/
+   and app/, so it keeps passing while the only callers are tests, and it must
+   keep passing through the whole of 6.0. It gets re-pointed deliberately when
+   6.1 introduces the first real caller.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+describe("context is capability: each intent receives exactly its contract", () => {
+  const whatChangedFixture = async () => {
+    const repo = memoryRepo()
+    const a = await chainOne(repo, null, "2026-10-01T09:00:00.000Z", allTwos())
+    const b = await chainOne(repo, a, "2026-11-01T09:00:00.000Z", allThrees())
+    return readWhatChanged({ repo, set: SET, systemId: b })
+  }
+
+  it("the intents are a closed set of three, pinned by value", () => {
+    expect([...AI_INTENTS]).toEqual([
+      "explain-current-priority",
+      "help-today-action",
+      "explain-what-changed",
+    ])
+  })
+
+  /*
+   * ── EXACT, NOT SUBSET, IN BOTH DIRECTIONS ───────────────────────────────
+   *
+   * A missing required field is as much a failure as an undeclared extra one.
+   * Subset-only validation silently drops grounding, and a model missing its
+   * grounding substitutes something — which is the whole failure mode this
+   * boundary exists to prevent, arriving by omission instead of excess.
+   */
+  it("every intent's key set EQUALS its declaration, pinned by value", async () => {
+    const changed = await whatChangedFixture()
+    const expected: Record<AiIntent, readonly string[]> = {
+      "explain-current-priority": [
+        "claimBoundary",
+        "decisionsUnresolvable",
+        "priority",
+        "provenance",
+        "systemId",
+        "systemModelVersion",
+      ],
+      "help-today-action": [
+        "actionSetVersion",
+        "claimBoundary",
+        "contextAnswered",
+        "limitingConstraints",
+        "priority",
+        "systemId",
+        "todayAction",
+      ],
+      "explain-what-changed": [
+        "claimBoundary",
+        "comparisonVerdict",
+        "previousSystemId",
+        "provenance",
+        "systemId",
+        "whatChanged",
+      ],
+    }
+
+    for (const intent of AI_INTENTS) {
+      const ctx = toAiContext(intent, { system: compose(), changed })
+      expect(Object.keys(ctx).sort(), `${intent} does not match its contract`).toEqual(
+        [...expected[intent]],
+      )
+      // And it matches the DECLARATION, not just this list.
+      expect(Object.keys(ctx).sort()).toEqual([...INTENT_FIELDS[intent]].sort())
+    }
+  })
+
+  /*
+   * The denied list is the reviewed statement of the limit, so it is asserted
+   * against the built object rather than only against the declaration — `not
+   * in`, never "is undefined". A field present and undefined has still been
+   * handed over.
+   */
+  it("no denied field is present on any intent's object", async () => {
+    const changed = await whatChangedFixture()
+    for (const intent of AI_INTENTS) {
+      const ctx = toAiContext(intent, { system: compose(), changed }) as Record<string, unknown>
+      for (const denied of INTENT_DENIED[intent]) {
+        expect(denied in ctx, `${intent} received denied field "${denied}"`).toBe(false)
+      }
+    }
+  })
+
+  it("the declaration and the deny-list never intersect", () => {
+    for (const intent of AI_INTENTS) {
+      const allowed = new Set<string>(INTENT_FIELDS[intent])
+      for (const denied of INTENT_DENIED[intent]) {
+        expect(allowed.has(denied), `${intent} both allows and denies "${denied}"`).toBe(false)
+      }
+      // NON-VACUITY: both lists are real.
+      expect(INTENT_FIELDS[intent].length).toBeGreaterThan(3)
+      expect(INTENT_DENIED[intent].length).toBeGreaterThan(3)
+    }
+  })
+
+  /*
+   * ── THE TWO TIGHTENINGS, ASSERTED ON THE REAL OBJECT ────────────────────
+   *
+   * Both exist so that `toAiContext` makes no relevance judgement of its own,
+   * which would be selection by a quieter name.
+   */
+  it("the priority intent gets rank and a count, NOT the other four scores", () => {
+    const ctx = toAiContext("explain-current-priority", { system: compose() })
+    expect("domains" in ctx, "all five domain scores reached the model").toBe(false)
+    expect(ctx.priority.rank).toBe(0)
+    expect(ctx.priority.scoredDomainCount).toBeGreaterThan(1)
+    // "The lowest of five" is explainable from rank + count alone.
+    expect(typeof ctx.priority.domainScore).toBe("number")
+    expect(ctx.priority.evidence.length).toBeGreaterThan(0)
+  })
+
+  it("the action intent gets the LIMITING constraints only", () => {
+    // fc1 limiting, the rest not — so a filtered set is distinguishable.
+    const ctx = toAiContext("help-today-action", {
+      system: compose(records({ ...allTwos(), fc1: 0 })),
+    })
+    expect(ctx.limitingConstraints).toEqual(["time"])
+    expect("observations" in ctx).toBe(false)
+    expect("score" in ctx).toBe(false)
+  })
+
+  /*
+   * The ANSWER Gate 5 reached, not the ingredients to reach another one.
+   */
+  it("the what-changed intent gets facts and cannot rebuild the comparison", async () => {
+    const changed = await whatChangedFixture()
+    const ctx = toAiContext("explain-what-changed", { system: compose(), changed })
+
+    expect(ctx.whatChanged?.state).toBe("available")
+    expect(ctx.comparisonVerdict?.comparable).toBe(true)
+    expect(ctx.previousSystemId).toBeTruthy()
+
+    // No raw answers anywhere in the object, at any depth.
+    const serialised = JSON.stringify(ctx)
+    expect(serialised).not.toContain("\"answers\"")
+    expect("observations" in ctx, "raw observations reached the comparison intent").toBe(false)
+  })
+
+  /*
+   * ── NO COMPARATIVE PROSE, AT ANY DEPTH ──────────────────────────────────
+   *
+   * The structural reason this matters: COMPARATIVE_COPY_REVIEW is "pending",
+   * so pending copy → model context → generated customer copy would route
+   * around the review entirely.
+   */
+  it("no intent's object carries a reviewed comparative sentence", async () => {
+    const changed = await whatChangedFixture()
+    for (const intent of AI_INTENTS) {
+      const serialised = JSON.stringify(toAiContext(intent, { system: compose(), changed }))
+      expect(serialised, `${intent} carried comparative prose`).not.toContain(
+        "than at your previous assessment",
+      )
+      expect(serialised).not.toContain("Your answers described")
+    }
+  })
+
+  it("the ceiling is a TYPE: no value of that shape is exported", () => {
+    const src = readFileSync("lib/fss/system/ai-context.ts", "utf-8")
+    // Declared as an interface, never as a const.
+    expect(src).toMatch(/export interface FoodSystemAiContextCeiling/)
+    expect(src).not.toMatch(/export const (?:FOOD_SYSTEM_AI_CONTEXT|ceiling|CEILING)/)
+
+    /*
+     * The escape-hatch scan runs over CODE, not comments. The first version
+     * scanned the whole file and fired on the module's own sentence recording
+     * that there is no `"raw"` and no `"all"` — a comment documenting an
+     * absence, flagged for naming it. The same false-positive class as
+     * "caused" inside a disclaimer and `proven` inside `provenance`.
+     */
+    const code = src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "")
+    expect(code, "an escape-hatch intent exists").not.toMatch(/"raw"|"all"|"everything"/)
+    // NON-VACUITY: the stripped code still holds the module.
+    expect(code).toMatch(/export function toAiContext/)
+  })
+
+  /*
+   * ── THE SOURCE BRIDGE, BECAUSE A TYPE IS INVISIBLE TO VITEST ────────────
+   *
+   * Fourth application of the lesson this session kept relearning: a field
+   * added to the ceiling TYPE and to no intent is invisible to every runtime
+   * assertion above. This reads the ceiling's keys out of the source and
+   * asserts every one is either granted by some intent or explicitly recorded
+   * as ungranted — so a new ceiling field cannot sit there unclassified.
+   */
+  it("every ceiling field is either granted to an intent or recorded as ungranted", () => {
+    const src = readFileSync("lib/fss/system/ai-context.ts", "utf-8")
+    const block = /export interface FoodSystemAiContextCeiling \{([\s\S]*?)\n\}/.exec(src)
+    expect(block, "the ceiling declaration moved").not.toBeNull()
+    /*
+     * Anchored to the interface's OWN indentation level. An unanchored match
+     * also captured `question` and `answer` from the inline object inside
+     * `observations`, which are not ceiling fields and have no intent to be
+     * granted to.
+     */
+    const declared = [...(block?.[1] ?? "").matchAll(/^ {2}readonly (\w+)[?]?:/gm)].map((m) => m[1])
+    expect(declared.length).toBeGreaterThan(15)
+
+    const granted = new Set<string>(AI_INTENTS.flatMap((i) => [...INTENT_FIELDS[i]]))
+
+    /*
+     * Present in the ceiling and granted to NO intent. Each is here because it
+     * is a plausible future grant that no current question needs — recorded by
+     * value so adding a ceiling field is a visible decision rather than a
+     * field nobody classified.
+     */
+    const UNGRANTED = [
+      "actions",
+      "completeness",
+      "domains",
+      "observations",
+      "score",
+      "scoreId",
+      "scoreState",
+    ]
+
+    const unclassified = declared.filter((f) => !granted.has(f) && !UNGRANTED.includes(f))
+    expect(
+      unclassified,
+      "a ceiling field is neither granted to an intent nor recorded as ungranted",
+    ).toEqual([])
+
+    // Pinned in both directions: an entry that became granted must leave.
+    expect(UNGRANTED.filter((f) => granted.has(f))).toEqual([])
   })
 })
 
