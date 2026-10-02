@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest"
+import { readFileSync } from "node:fs"
+import { execSync } from "node:child_process"
 import { buildBaseline } from "@/lib/agent-loop/baseline"
 import {
   createAgentLoopSession,
@@ -365,8 +367,111 @@ describe("detectPatterns is clean on every branch it can take", () => {
       ...detectPatterns(mealsFixture("prebiotic", true)).map((p) => p.id),
       ...detectPatterns(mealsFixture("prebiotic", false)).map((p) => p.id),
     ]
-    expect(ids.some((id) => id.startsWith("trend-up")), "no up-trend fixture").toBe(true)
-    expect(ids.some((id) => id.startsWith("trend-down")), "no down-trend fixture").toBe(true)
+    /*
+     * ── THIS ASSERTION'S ANCHOR WAS LEGITIMATELY INVALIDATED, AND INVERTED ──
+     *
+     * It asserted both trend branches were reached. Gate 5 step 2c routed
+     * `fortnightTrend` through `canCompare` and the verdict is a PERMANENT
+     * refusal: no rubric version is recorded on an `analyses` row, and the
+     * scoring model is an env var, so which instrument produced a stored meal
+     * score cannot be established. That is `legacy-unversioned` by definition.
+     *
+     * So the branches are now unreachable BY DESIGN, and the honest assertion
+     * is the opposite one. Inverted rather than deleted: a silent removal here
+     * would also pass if somebody re-enabled the claim.
+     */
+    expect(ids.some((id) => id.startsWith("trend-up")), "the trend claim is live again").toBe(false)
+    expect(
+      ids.some((id) => id.startsWith("trend-down")),
+      "the trend claim is live again",
+    ).toBe(false)
+  })
+
+  /*
+   * ── AND THE SUPPRESSION IS CAUSED BY THE VERDICT, NOT BY DELETED CODE ────
+   *
+   * The inversion above would pass equally if `fortnightTrend` had simply been
+   * deleted, or if its thresholds had been set unreachably high. Neither would
+   * be the repair this step specified, and both would leave the next person
+   * believing a comparability gate exists where none does.
+   */
+  it("the trend is suppressed BY `canCompare`, with a stated reason", async () => {
+    const { mealWindowProvenance } = await import("@/lib/account/patterns")
+    const { canCompare } = await import("@/lib/fss/engine/compare")
+
+    const verdict = canCompare(mealWindowProvenance([]), mealWindowProvenance([]))
+    expect(verdict.comparable).toBe(false)
+    if (!verdict.comparable) {
+      // The honest reason: we cannot say which instrument scored these meals.
+      expect(verdict.because).toBe("legacy-unversioned")
+    }
+
+    // And the call really is in the module, ahead of the arithmetic.
+    const src = readFileSync("lib/account/patterns.ts", "utf8")
+    expect(src).toMatch(/if \(!canCompare\(mealWindowProvenance\(prior\), mealWindowProvenance\(recent\)\)\.comparable\)/)
+  })
+
+  /*
+   * ── THE DORMANT SENTENCES STAY COVERED ──────────────────────────────────
+   *
+   * The two trend sentences are still in the module, behind the gate, with a
+   * documented revival path (a rubric version on the row). A generator that
+   * nothing reads is exactly where an unreviewed claim survives — Gate 3.7
+   * found the menu-scan prompt that way.
+   *
+   * So they are read FROM SOURCE and run through the same rules, rather than
+   * copied into this file where they could drift from what would actually
+   * ship if the gate reopened.
+   */
+  /*
+   * ── THE GATED GENERATOR IS CALLED, NOT SCANNED ──────────────────────────
+   *
+   * A source scan was tried first and could not do the job. Sabotage 1078
+   * restores the worst claim Gate 3.6 found — "Your Prebiotics climbed N
+   * points this week" — by interpolating `${bestKey}`, so the Biotic words
+   * appear NOWHERE in the file. Exactly the finding that made this suite
+   * exist: a corpus scan caught 1 of 9 interpolated claims.
+   *
+   * So `dormantFortnightTrend` is exported past its own gate and CALLED here.
+   * The sentences a person would read if the gate ever reopened are read by
+   * the guard today, which is the only arrangement that survives
+   * interpolation.
+   */
+  it("the gated trend sentences are still claim-clean, read by calling them", async () => {
+    const { dormantFortnightTrend } = await import("@/lib/account/patterns")
+
+    const seen: string[] = []
+    for (const [lead, rising] of [
+      ["prebiotic", true],
+      ["probiotic", false],
+      ["postbiotic", true],
+    ] as const) {
+      const p = dormantFortnightTrend(mealsFixture(lead, rising), Date.now())
+      expect(p, `the gated generator produced nothing for ${lead}/${rising}`).toBeTruthy()
+      if (!p) continue
+      seen.push(p.title, p.detail)
+      assertClean(`gated trend ${p.id}`, [p.title, p.detail])
+      expect(
+        `${p.title} ${p.detail}`.match(/\b(Pre|Pro|Post)biotics?\b/i)?.[0] ?? null,
+        `a gated trend sentence names a Biotic: ${JSON.stringify(p.title)}`,
+      ).toBeNull()
+    }
+
+    // Both branches, and non-vacuity on what was actually read.
+    expect(seen.length).toBeGreaterThanOrEqual(6)
+
+    // And it stays OUT of the product: only this suite may import it.
+    const importers = execSync(
+      "git grep -l 'dormantFortnightTrend' -- app components lib tests || true",
+      { encoding: "utf8" },
+    )
+      .split("\n")
+      .filter(Boolean)
+      .sort()
+    expect(importers, "the gated generator escaped into the product").toEqual([
+      "lib/account/patterns.ts",
+      "tests/unit/agent-loop-claims.test.ts",
+    ])
   })
 
   /* ══ GATE 5 — THREE OF FIVE GENERATORS HAD NEVER BEEN READ ════════════════
@@ -460,12 +565,19 @@ describe("detectPatterns is clean on every branch it can take", () => {
         reached.add(p.id.replace(/^(trend-up|trend-down|best-lean)-.*$/, "$1"))
       }
     }
+    /*
+     * FOUR, not five. `fortnightTrend` is gated by a permanent `canCompare`
+     * refusal (step 2c), so no fixture can reach it and pretending otherwise
+     * would make this pin unsatisfiable. The two tests above are what hold the
+     * gated generator: one proves the suppression is caused by the verdict,
+     * the other keeps its sentences under the claim rules while dormant.
+     *
+     * Still pinned BY VALUE, so a SIXTH generator fails here until covered.
+     */
     expect([...reached].sort(), "a generator is unreachable by every fixture").toEqual([
       "best-lean",
       "repeat-winner",
       "rhythm",
-      "trend-down",
-      "trend-up",
       "weekend-dip",
       "weekend-lift",
     ])
@@ -480,7 +592,7 @@ describe("detectPatterns is clean on every branch it can take", () => {
       }
     }
     // Non-vacuity: the loop above asserted something for every generator.
-    expect(seen).toBeGreaterThanOrEqual(7)
+    expect(seen).toBeGreaterThanOrEqual(5)
   })
 })
 

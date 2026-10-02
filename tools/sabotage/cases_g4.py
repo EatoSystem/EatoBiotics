@@ -232,7 +232,7 @@ CASES = [
      SYSTEM),
 
     (1231, "marking an action done moves a number in Progress", COMPOSE,
-     "    baselineEstablishedAt: system.establishedAt,\n    scoresAvailable: 1,",
+     "    baselineEstablishedAt: system.establishedAt,\n    scoresAvailable: system.previousSystemId === null ? 1 : 2,",
      "    baselineEstablishedAt: system.establishedAt,\n    scoresAvailable: 1,\n    adjusted: (score.score ?? 0) + actions.filter((a) => a.state === \"done\").length,",
      SYSTEM),
 

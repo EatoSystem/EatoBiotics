@@ -117,7 +117,13 @@ export const CONSTRAINT_LABELS: Readonly<Record<ContextConstraint, string>> = {
  * so that it renders identically on every machine. Alphabetical is the right
  * answer for a stable array and the wrong one for a sentence.
  */
-const SPOKEN_ORDER: readonly ContextConstraint[] = ["time", "cost", "access", "kitchen"]
+/**
+ * The order constraints are spoken in — the instrument's own (fc1…fc4).
+ *
+ * EXPORTED in Gate 5 step 2c, because What Changed listed them alphabetically
+ * and read as a different product. One order, in one place.
+ */
+export const SPOKEN_ORDER: readonly ContextConstraint[] = ["time", "cost", "access", "kitchen"]
 
 /**
  * Join the reported constraints into one phrase.

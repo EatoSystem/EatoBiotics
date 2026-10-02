@@ -1,0 +1,279 @@
+import type { FssDomain } from "@/lib/fss/questions/types"
+
+/* ════════════════════════════════════════════════════════════════════════
+   WHAT CHANGED — the reviewed copy.
+
+   ══ UNAPPROVED CONTENT, NAMED AS SUCH ══════════════════════════════════════
+
+   Every sentence here is a CANDIDATE. No reviewer has signed off a word of it,
+   and the fifteen `comparedToPrevious` lines in particular are the item Gate 5
+   adds to the "still visibly unresolved" list. They ship behind the preview
+   route and nowhere else.
+
+   ══ WHY FIFTEEN SENTENCES AND NOT THREE WITH A DOMAIN SLOT ════════════════
+
+   Because interpolating a domain phrase into a verb frame is what produced
+   "fermented foods has room" in Gate 3.6. Five phrases × three directions
+   cannot be made to agree grammatically from one template — "a wider range",
+   "fermented foods", "eating rhythm" need different verbs — and the agreement
+   problem has no solution that a reviewer could check line by line. So each
+   line is written out in full and read as a whole.
+
+   ══ THE ANCHOR IS THE IMMEDIATE PREDECESSOR ════════════════════════════════
+
+   "than at your previous assessment", not "than at baseline". Viewing C
+   compares B↔C, so baseline language would be false for every system after the
+   second.
+
+   ══ THE SENTENCE-LEVEL RULES, THE SAME FOUR AS `domains.ts` ════════════════
+
+     measured food behaviour      "Your answers described…"
+     self-reported observation    "You reported…" / the answer, quoted
+     scientific education         impersonal present
+     biological inference         NOT AVAILABLE
+
+   So: nothing here says a person's microbiome changed, nothing says anything
+   improved, and nothing attributes a change to an action. A direction is
+   arithmetic on two numbers from one instrument; "better" is a verdict, and
+   this layer does not have one.
+
+   ══ AND NOTHING HERE JOINS TWO CLASSES IN ONE SENTENCE ═════════════════════
+
+   There is no function taking actions and changes together. `coOccurrence` is
+   ONE reviewed constant with counts interpolated, and it says in so many words
+   that the two sit side by side rather than one explaining the other.
+   ════════════════════════════════════════════════════════════════════════ */
+
+export type ChangeDirection = "higher" | "lower" | "similar"
+
+/**
+ * Five domains × three directions, each written out.
+ *
+ * `similar` is NOT "no change" — two assessments a month apart landing in the
+ * same place is a real finding, and calling it nothing would make the honest
+ * outcome read as a failure of the product.
+ */
+export const DOMAIN_CHANGE_COPY: Record<FssDomain, Record<ChangeDirection, string>> = {
+  diversity: {
+    higher:
+      "Your answers described a wider range of plant foods than at your previous assessment.",
+    lower:
+      "Your answers described a narrower range of plant foods than at your previous assessment.",
+    similar:
+      "Your answers described about the same range of plant foods as at your previous assessment.",
+  },
+  plantsAndFibre: {
+    higher:
+      "Your answers described more fibre-rich plant food than at your previous assessment.",
+    lower:
+      "Your answers described less fibre-rich plant food than at your previous assessment.",
+    similar:
+      "Your answers described about as much fibre-rich plant food as at your previous assessment.",
+  },
+  fermentedFoods: {
+    higher:
+      "Your answers described fermented foods arriving more often than at your previous assessment.",
+    lower:
+      "Your answers described fermented foods arriving less often than at your previous assessment.",
+    similar:
+      "Your answers described fermented foods arriving about as often as at your previous assessment.",
+  },
+  foodQuality: {
+    higher:
+      "Your answers described less heavily processed food than at your previous assessment.",
+    lower:
+      "Your answers described more heavily processed food than at your previous assessment.",
+    similar:
+      "Your answers described about as much heavily processed food as at your previous assessment.",
+  },
+  mealRhythm: {
+    higher:
+      "Your answers described a steadier eating rhythm than at your previous assessment.",
+    lower:
+      "Your answers described a less steady eating rhythm than at your previous assessment.",
+    similar:
+      "Your answers described about the same eating rhythm as at your previous assessment.",
+  },
+}
+
+/**
+ * Everything structural around those fifteen.
+ *
+ * ── `scoreNote` IS THE SENTENCE THIS WHOLE GATE TURNS ON ──────────────────
+ *
+ * A score that moved is the one number a person will read as a verdict on
+ * themselves, so it is the one place the product has to say what the number is
+ * and is not. It names the input — answers about food — and declines the two
+ * inferences a reader will reach for unprompted.
+ */
+export const CHANGED_COPY = {
+  title: "What changed",
+
+  says:
+    "Two sets of answers, side by side. This describes what is different between them — not why it is different, which is not something a questionnaire can tell us.",
+
+  /* ── The score ───────────────────────────────────────────────────────── */
+
+  scoreLabel: "Your Food System Score™",
+  scoreMove: (previous: number, current: number) => `${previous} → ${current}`,
+
+  scoreNote:
+    "Both numbers come from the same version of the assessment, so the change describes a change in the answers you gave about how you eat. It is not a measurement of your gut, and it does not say what caused the difference.",
+
+  /** Equal numbers. Said plainly, because "no change" sounds like a failure. */
+  scoreSame:
+    "Your Food System Score™ is the same as at your previous assessment. Two months landing in the same place is a real result, not a missing one.",
+
+  /** Comparable, but one of the two had no number to compare. */
+  scoreUnavailable:
+    "One of these two assessments was not complete enough to produce a score, so there is no change to show. The answers that were given are still below.",
+
+  /* ── The domains ─────────────────────────────────────────────────────── */
+
+  domainsLabel: "Your food patterns",
+
+  /**
+   * Shown when the score compares and the domains do not.
+   *
+   * The one state 2a was built for, and it needs its own sentence: saying
+   * nothing would read as "nothing changed in your food patterns", which is a
+   * claim, and the honest statement is that the parts were renamed.
+   */
+  domainsNotComparable:
+    "The five parts of the score were defined differently between these two assessments, so they are not compared here. The overall score still is.",
+
+  /** A domain that was not scored in one of the two. */
+  domainNotBothScored: (label: string) =>
+    `Not enough of the ${label} questions were answered at one of the two assessments to compare them.`,
+
+  /* ── What You Notice ─────────────────────────────────────────────────── */
+
+  observationsLabel: "What you notice",
+
+  /**
+   * ── WHY THE ANSWERS ARE QUOTED AND NOT CHARACTERISED ──────────────────
+   *
+   * The obvious sentence is "you reported afternoon energy dips less often" —
+   * and it needs an ordinal model of every option list, which nobody has
+   * reviewed, plus a comparative frame interpolated per question, which is the
+   * Gate 3.6 agreement bug. Quoting both answers conveys the change exactly and
+   * asserts no direction: the person reads what they said then and what they
+   * say now, and EatoBiotics claims no relation between the two.
+   */
+  observationsNote:
+    "These are your own answers, quoted. They are not scored and they are not part of your Food System Score™ — reading them beside it is the point of asking.",
+
+  observationThen: "Previously",
+  observationNow: "Now",
+  observationSame: "Same answer",
+  observationNew: "Answered this time, not last time",
+  observationDropped: "Answered last time, not this time",
+
+  observationsNotComparable:
+    "The questions themselves changed between these two assessments, so your answers to them are shown separately rather than compared.",
+
+  /* ── Your Context ────────────────────────────────────────────────────── */
+
+  contextLabel: "Your context",
+
+  /**
+   * A constraint disappearing is NOT an outcome, and this says so.
+   *
+   * It is the sentence that stops the most tempting false reading in the whole
+   * section: somebody who reported time as a constraint and no longer does has
+   * described a different circumstance, not an improvement the product caused.
+   */
+  contextNote:
+    "What you told us about time, cost, access and your kitchen. These are never scored and never counted against you — they shape what we suggest, and a constraint lifting is a change in your circumstances rather than a result.",
+
+  /**
+   * The constraint label sits MID-SENTENCE in all three, and that is a
+   * constraint on the copy rather than a stylistic choice.
+   *
+   * `CONSTRAINT_LABELS` are lowercase phrases built for joining — "time on a
+   * weekday", "what food costs" — because `plan.ts` reads them out in a list.
+   * A sentence starting with one would render "time on a weekday is now…".
+   * Reusing that one set and writing around it beats a second set of
+   * capitalised labels, which is how two surfaces come to disagree about what
+   * somebody said.
+   */
+  contextAppeared: (label: string) => `You now describe ${label} as being in the way.`,
+  contextDisappeared: (label: string) => `You no longer describe ${label} as being in the way.`,
+  contextUnchanged: (label: string) => `No change in what you said about ${label}.`,
+
+  /**
+   * ── FOUR LINES SAYING NOTHING HAPPENED IS NOISE ─────────────────────────
+   *
+   * Reading this rendered showed the whole block as "No change in what you
+   * said about getting hold of fresh food." four times over, above a longer
+   * note. Each line was true and the block was useless — and a section that
+   * reads as filler is a section a person learns to skip, including on the
+   * visits where it has something to say.
+   *
+   * So the all-unchanged case gets ONE sentence, and the per-constraint lines
+   * are kept for the constraints that actually moved.
+   */
+  contextNoneChanged:
+    "Nothing you told us about your circumstances changed between these two assessments.",
+
+  /* ── Your Actions ────────────────────────────────────────────────────── */
+
+  actionsLabel: "Your actions",
+
+  /** Factual history. "Marked" and not "did", because that is what we know. */
+  actionsFacts: (done: number, total: number) =>
+    `You marked ${done} of ${total} planned actions done during this period.`,
+
+  actionsSkipped: (skipped: number) => `${skipped} were marked skipped.`,
+
+  actionsNone:
+    "There were no actions on the plan from your previous assessment to mark either way.",
+
+  /* ── The one sentence that touches two classes, and refuses to join them ─ */
+
+  /**
+   * CO-OCCURRENCE IS NOT CAUSATION, stated to the person rather than only in a
+   * comment. One constant, two counts interpolated, and no argument.
+   *
+   * This is the sentence a product like this one is most tempted to write
+   * causally, and the one it has least evidence for: nobody controlled
+   * anything, nothing was randomised, a month passed, and a great many other
+   * things happened in it.
+   */
+  coOccurrence: (done: number) =>
+    `You marked ${done} actions done in the same period that these answers changed. Both happened; we cannot tell you that one produced the other, and a month holds a great deal besides.`,
+
+  /* ── Refusal, which is still a useful product state ──────────────────── */
+
+  refusedLabel: "Shown separately",
+
+  refusedNote:
+    "These two results were produced under versions of the assessment that EatoBiotics does not treat as directly comparable, so they are shown side by side rather than as a change. Each one is still a complete record of what you described at the time.",
+
+  previousLabel: "Previous assessment",
+  currentLabel: "This assessment",
+
+  /* ── Nothing to compare yet ──────────────────────────────────────────── */
+
+  noPredecessor:
+    "This is your first Food System, so there is nothing yet to compare it with. Reassessing later is what gives this section something to say.",
+
+  /** A record the comparison needed is not in this browser's storage. */
+  unavailable:
+    "Part of the record this comparison needs is not in this browser's storage, so no comparison is shown. Nothing has been changed or removed.",
+
+  /* ── What's next ─────────────────────────────────────────────────────── */
+
+  nextLabel: "What's next",
+
+  /**
+   * The priority and plan this system ALREADY COMMITTED TO, not a new one.
+   *
+   * A comparison must not re-decide anything. The selection happened once, when
+   * this system was established, under a named policy version — re-running it
+   * from the comparison would silently replace a recorded decision with a
+   * fresher one and make the record unauditable.
+   */
+  nextNote:
+    "This is the priority recorded when you completed this assessment. It was not re-decided from the comparison.",
+} as const

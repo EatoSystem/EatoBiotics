@@ -143,10 +143,11 @@ export function composeMyFoodSystem(input: {
  * They are two different questions, and conflating them is how a product ends
  * up drawing a line through a methodology change.
  *
- *   `scoresAvailable: 1`  there is NO comparison. Full stop. No trend, no
- *                         delta, no arrow, no "since" — unavailable by
- *                         construction, because the type cannot hold a second
- *                         score until Gate 5 widens it on purpose.
+ *   `scoresAvailable`     is there a PAIR on this screen at all? Read from
+ *                         `previousSystemId`, which is a fact on the record —
+ *                         so this stays pure and needs no second load. `1`
+ *                         means no comparison exists to attempt; `2` means one
+ *                         does, and says NOTHING about whether it is permitted.
  *   `comparability`       could this score EVER be compared? For a
  *                         `legacy-unversioned` provenance the answer is no,
  *                         permanently, and that is worth telling somebody
@@ -163,7 +164,7 @@ function countProgress(
 ): ProgressFacts {
   return {
     baselineEstablishedAt: system.establishedAt,
-    scoresAvailable: 1,
+    scoresAvailable: system.previousSystemId === null ? 1 : 2,
     actionsPlanned: actions.filter((a) => a.state === "planned").length,
     actionsDone: actions.filter((a) => a.state === "done").length,
     actionsSkipped: actions.filter((a) => a.state === "skipped").length,

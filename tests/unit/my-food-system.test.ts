@@ -4,6 +4,10 @@ import { execSync } from "node:child_process"
 import { resolveQuestionSetV1 } from "@/lib/fss/questions/resolve"
 import { DOMAIN_SCHEMA_VERSION, FSS_DOMAINS } from "@/lib/fss/questions/domain-schema"
 import { compareSystems } from "@/lib/fss/system/compare-systems"
+import { readWhatChanged } from "@/lib/fss/system/changed"
+import { CHANGED_COPY, DOMAIN_CHANGE_COPY } from "@/lib/fss/presentation/changed"
+import { CONSTRAINT_LABELS, SPOKEN_ORDER } from "@/lib/fss/presentation/plan"
+import { canCompare } from "@/lib/fss/engine/compare"
 import { computeFoodSystemScore, type Answers } from "@/lib/fss/engine/score"
 import {
   DEV_ONLY_FSS_V1_FIXTURE_WEIGHTS,
@@ -2234,6 +2238,9 @@ describe("only the comparison module subtracts two scores", () => {
         .replace(/\/\*[\s\S]*?\*\//g, "")
         .replace(/\/\/.*$/gm, "")
       for (const [i, line] of code.split("\n").entries()) {
+        // A sort comparator orders one list at one moment — see the note in
+        // the lib/account guard below for why that needs no verdict.
+        if (/\.sort\(/.test(line)) continue
         if (SUBTRACTION.test(line)) offenders.push(`${file}:${i + 1} ${line.trim()}`)
       }
     }
@@ -2242,5 +2249,482 @@ describe("only the comparison module subtracts two scores", () => {
       offenders,
       "a delta computed outside lib/fss/system/compare-systems.ts, where canCompare cannot gate it",
     ).toEqual([])
+  })
+})
+
+/* ════════════════════════════════════════════════════════════════════════════
+   13 · WHAT CHANGED — Gate 5 step 2c
+
+   2b decided whether a comparison is allowed. This is what may be said about
+   an allowed one — and the facts are asserted before any sentence is.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+describe("what changed is structured before it is phrased", () => {
+  it("a baseline has nothing to compare, and that is not a failure", async () => {
+    const repo = memoryRepo()
+    const a = await chainOne(repo, null, "2026-10-01T09:00:00.000Z")
+    const w = await readWhatChanged({ repo, set: SET, systemId: a })
+    expect(w.state).toBe("no-predecessor")
+  })
+
+  /*
+   * ── THE ACTIONS COUNTED ARE THE PREVIOUS SYSTEM'S ───────────────────────
+   *
+   * The single most consequential call in this step, and the one that is wrong
+   * in the obvious implementation. A's actions are the plan that was in force
+   * during the period being compared — what the person marked while living
+   * between the two assessments. B's were created moments ago by the
+   * reassessment and are all still `planned`.
+   *
+   * So counting B's would show "0 of N done" immediately after EVERY
+   * reassessment, erasing the period's record at the exact moment somebody
+   * came back to look at it.
+   */
+  it("counts the actions from the system being compared FROM, not the new one", async () => {
+    const repo = memoryRepo()
+    const a = await chainOne(repo, null, "2026-10-01T09:00:00.000Z", allTwos())
+
+    // Live the period: mark A's plan.
+    const aSystem = (await repo.loadSystem(a))!
+    const aActions = await repo.loadActions(aSystem.scoreId)
+    expect(aActions.length).toBeGreaterThan(1)
+    await moveAction({
+      repo,
+      scoreId: aSystem.scoreId,
+      actionId: aActions[0].id,
+      state: "done",
+      now: "2026-10-15T09:00:00.000Z",
+    })
+    /*
+     * And one SKIPPED, which the first version of this test did not do — so
+     * sabotage 1341 (a total that adds only `planned + done`) slipped. A
+     * skipped action silently leaving the denominator turns "7 of 9" into
+     * "7 of 8" and quietly improves the person's record for them.
+     */
+    await moveAction({
+      repo,
+      scoreId: aSystem.scoreId,
+      actionId: aActions[1].id,
+      state: "skipped",
+      now: "2026-10-16T09:00:00.000Z",
+    })
+
+    const b = await chainOne(repo, a, "2026-11-01T09:00:00.000Z", allThrees())
+    const w = await readWhatChanged({ repo, set: SET, systemId: b })
+    if (w.state !== "available") throw new Error(w.state)
+
+    expect(w.actions.done, "the new system's untouched plan was counted").toBe(1)
+    expect(w.actions.skipped).toBe(1)
+    expect(w.actions.planned).toBe(aActions.length - 2)
+    // THE DENOMINATOR COVERS ALL THREE STATES, skipped included.
+    expect(w.actions.total, "a state dropped out of the total").toBe(aActions.length)
+    expect(w.actions.total).toBe(w.actions.planned + w.actions.done + w.actions.skipped)
+    // And the new system's own actions really were all still planned.
+    const bSystem = (await repo.loadSystem(b))!
+    const bActions = await repo.loadActions(bSystem.scoreId)
+    expect(bActions.every((x) => x.state === "planned")).toBe(true)
+  })
+
+  it("the unscored classes are present when the score verdict permits", async () => {
+    const repo = memoryRepo()
+    const a = await chainOne(repo, null, "2026-10-01T09:00:00.000Z", allTwos())
+    const b = await chainOne(repo, a, "2026-11-01T09:00:00.000Z", allThrees())
+
+    const w = await readWhatChanged({ repo, set: SET, systemId: b })
+    if (w.state !== "available") throw new Error(w.state)
+
+    expect(w.observations?.length).toBeGreaterThan(0)
+    expect(w.context?.length).toBe(4)
+
+    // Every answer moved 2 → 3, so every observation is `different`.
+    expect(w.observations?.every((o) => o.state === "different")).toBe(true)
+
+    /*
+     * AN OBSERVATION HAS NO DIRECTION AND NO NUMBER. Asserted on the real
+     * object rather than on the type, because a type is invisible to vitest —
+     * the Gate 4 lesson. Both answers are carried so a surface can QUOTE them.
+     */
+    for (const o of w.observations ?? []) {
+      expect(Object.keys(o).sort()).toEqual([
+        "current",
+        "order",
+        "previous",
+        "question",
+        "questionId",
+        "state",
+      ])
+      expect(typeof o.previous).toBe("string")
+      expect(typeof o.current).toBe("string")
+    }
+
+    /* A CONTEXT CHANGE CARRIES NO VALUE. Three states and a name. */
+    for (const c of w.context ?? []) {
+      expect(Object.keys(c).sort()).toEqual(["constraint", "state"])
+    }
+  })
+
+  /*
+   * The boundary flagged in 2b and taken rather than invented: observations
+   * have no provenance, but comparing two answers still needs the same
+   * question set — and `canCompare` already refuses `different-question-set`.
+   * So a refused score verdict declines them too, rather than a sixth axis.
+   */
+  it("a refused score verdict withholds the observations ENTIRELY", async () => {
+    const repo = memoryRepo()
+    const a = await chainOne(repo, null, "2026-10-01T09:00:00.000Z", allTwos())
+    const b = await chainOne(repo, a, "2026-11-01T09:00:00.000Z", allThrees())
+
+    await tamperScore(repo, b, (s) => ({
+      ...s,
+      provenance: { ...s.provenance, questionSetVersion: "questions-v1.1" },
+    }))
+
+    const w = await readWhatChanged({ repo, set: SET, systemId: b })
+    if (w.state !== "available") throw new Error(w.state)
+
+    /*
+     * ABSENT, not empty. An empty list renders as "nothing changed", which is
+     * a claim — and the honest statement is that we cannot tell.
+     */
+    expect("observations" in w, "a refused comparison still compared answers").toBe(false)
+    expect("context" in w).toBe(false)
+    // The action facts survive: counting what somebody marked needs no permission.
+    expect(w.actions.total).toBeGreaterThan(0)
+  })
+
+  it("a moved domain schema keeps the observations and drops the domains", async () => {
+    const repo = memoryRepo()
+    const a = await chainOne(repo, null, "2026-10-01T09:00:00.000Z", allTwos())
+    const b = await chainOne(repo, a, "2026-11-01T09:00:00.000Z", allThrees())
+    await tamperScore(repo, b, (s) => ({ ...s, domainSchemaVersion: "domains-v2.0" }))
+
+    const w = await readWhatChanged({ repo, set: SET, systemId: b })
+    if (w.state !== "available") throw new Error(w.state)
+    expect(w.comparison.state).toBe("score-only-comparable")
+    expect("domains" in w.comparison).toBe(false)
+    // The questions did not move, so the answers are still comparable.
+    expect(w.observations?.length).toBeGreaterThan(0)
+  })
+
+  /*
+   * A KEY-SET PIN over the aggregate. The thing it exists to refuse is a field
+   * that joins two classes — `causedBy`, `because`, `attribution`, or a
+   * `headline` that could hold one. Adding any of them fails here.
+   */
+  it("the aggregate's keys are pinned, so nothing can join two classes", async () => {
+    const repo = memoryRepo()
+    const a = await chainOne(repo, null, "2026-10-01T09:00:00.000Z", allTwos())
+    const b = await chainOne(repo, a, "2026-11-01T09:00:00.000Z", allThrees())
+    const w = await readWhatChanged({ repo, set: SET, systemId: b })
+
+    expect(Object.keys(w).sort()).toEqual([
+      "actions",
+      "comparison",
+      "context",
+      "observations",
+      "state",
+    ])
+    if (w.state !== "available") return
+    expect(Object.keys(w.actions).sort()).toEqual(["done", "planned", "skipped", "total"])
+  })
+
+  it("Progress reports two scores available once there is a predecessor", async () => {
+    const repo = memoryRepo()
+    const a = await chainOne(repo, null, "2026-10-01T09:00:00.000Z")
+    const first = await loadCurrentFoodSystem({ repo, set: SET })
+    if (first.state !== "ready") throw new Error(first.state)
+    expect(first.system.progress.scoresAvailable).toBe(1)
+
+    await chainOne(repo, a, "2026-11-01T09:00:00.000Z")
+    const second = await loadCurrentFoodSystem({ repo, set: SET })
+    if (second.state !== "ready") throw new Error(second.state)
+    expect(second.system.progress.scoresAvailable).toBe(2)
+
+    /*
+     * Still no delta anywhere on `ProgressFacts`. `scoresAvailable: 2` says a
+     * comparison is possible to attempt; `WhatChanged` says whether it was
+     * permitted and what came of it. Pinned so the widening did not smuggle
+     * a number in beside it.
+     */
+    expect(Object.keys(second.system.progress).sort()).toEqual([
+      "actionsDone",
+      "actionsPlanned",
+      "actionsSkipped",
+      "baselineEstablishedAt",
+      "comparability",
+      "scoresAvailable",
+    ])
+  })
+
+  /* ── A context constraint lifting is never rendered as an outcome ─────── */
+
+  it("a constraint that lifted reads as a changed circumstance", async () => {
+    const repo = memoryRepo()
+    // fc1 (time) limiting at the first assessment, free at the second.
+    const constrained = { ...allTwos(), fc1: 0 }
+    const eased = { ...allTwos(), fc1: 3 }
+    const a = await chainOne(repo, null, "2026-10-01T09:00:00.000Z", constrained)
+    const b = await chainOne(repo, a, "2026-11-01T09:00:00.000Z", eased)
+
+    const w = await readWhatChanged({ repo, set: SET, systemId: b })
+    if (w.state !== "available") throw new Error(w.state)
+    const time = w.context?.find((c) => c.constraint === "time")
+    expect(time?.state).toBe("disappeared")
+
+    /*
+     * THE INSTRUMENT'S ORDER, not alphabetical. Reading the page rendered
+     * showed "access, cost, kitchen, time" — an order nothing else in the
+     * product uses. `plan.ts` already answered this question, so this asserts
+     * the two orders are the SAME array rather than two copies that agree
+     * today.
+     */
+    expect(w.context?.map((c) => c.constraint)).toEqual([...SPOKEN_ORDER])
+    expect(SPOKEN_ORDER).toEqual(["time", "cost", "access", "kitchen"])
+
+    // The reviewed sentence describes the person's own description, not a result.
+    const sentence = CHANGED_COPY.contextDisappeared(CONSTRAINT_LABELS.time)
+    expect(sentence).toMatch(/you no longer describe/i)
+    expect(sentence).not.toMatch(/\b(improved|better|easier|progress|thanks to)\b/i)
+  })
+})
+
+/* ── The reviewed copy ─────────────────────────────────────────────────── */
+
+describe("the What Changed copy says what it may and no more", () => {
+  it("fifteen sentences: five domains by three directions, each written out", () => {
+    const all: string[] = []
+    for (const domain of FSS_DOMAINS) {
+      for (const direction of ["higher", "lower", "similar"] as const) {
+        const s = DOMAIN_CHANGE_COPY[domain][direction]
+        expect(typeof s, `${domain}/${direction} is missing`).toBe("string")
+        all.push(s)
+      }
+    }
+    expect(all.length).toBe(15)
+    // Written out, not interpolated: no two are the same sentence.
+    expect(new Set(all).size).toBe(15)
+
+    for (const s of all) {
+      // The anchor is the immediate predecessor, never "baseline".
+      expect(s, s).toMatch(/your previous assessment/)
+      expect(s, s).not.toMatch(/baseline/i)
+      // Measured food behaviour, in the one permitted frame.
+      expect(s, s).toMatch(/^Your answers described/)
+    }
+  })
+
+  /*
+   * ── NO CAUSAL, OUTCOME OR BIOLOGICAL VOCABULARY, ANYWHERE IN THE PACK ───
+   *
+   * Run over every string the module exports — the fifteen plus all of
+   * `CHANGED_COPY`, including the values the functions RETURN, because a rule
+   * that only reads string constants cannot see a template literal. That is
+   * the Gate 3.6 defect, which caught 1 of 9 interpolated claims.
+   */
+  it("no sentence asserts a cause, an outcome, or a biological state", () => {
+    const rendered: string[] = [
+      ...Object.values(DOMAIN_CHANGE_COPY).flatMap((d) => Object.values(d)),
+      ...Object.values(CHANGED_COPY).map((v) =>
+        typeof v === "function"
+          ? // Called with plausible arguments, so the interpolated form is read.
+            (v as (...a: unknown[]) => string)(7, 9)
+          : v,
+      ),
+    ]
+    expect(rendered.length).toBeGreaterThan(30)
+
+    const FORBIDDEN: readonly [string, RegExp][] = [
+      ["an asserted cause", /\bbecause (you|your|of)\b|\bcaused\b|\bled to\b|\bresulted in\b/i],
+      ["an efficacy claim", /\b(it is|that is|this is) working\b|\bproven\b|\bwhat works for you\b/i],
+      ["an outcome attributed to an action", /\b(these|those|your) actions (improved|raised|moved|changed)\b/i],
+      ["a score moved by behaviour", /\bmoved your (score|number)\b|\bthis action changed\b/i],
+      ["a biological state", /\byour (gut|microbiome|microbes|biology) (is|are|has|have|improved)\b/i],
+      ["a personal Biotic state", /\byour (pre|pro|post)biotics?\b/i],
+      ["a verdict on the person", /\b(healthier|unhealthier|better overall|worse overall)\b/i],
+    ]
+
+    /*
+     * ── A DENIAL IS NOT AN ASSERTION, AND MY FIRST RULE COULD NOT TELL ─────
+     *
+     * This fired on `scoreNote`, which exists to REFUSE causation: "it does
+     * not say what caused the difference." A rule that bans the word "caused"
+     * bans the sentence that declines to use it — the same false-positive
+     * class as `proven` inside `provenance`, and as the unsubscribe footers
+     * that tripped the step 0 audit.
+     *
+     * So each sentence is split on clause boundaries and a clause carrying an
+     * explicit negation of the claim is skipped. The assertion is still made
+     * on every other clause, so a causal claim sitting NEXT TO a disclaimer is
+     * still caught.
+     */
+    const DENIAL = /\b(?:not|never|cannot|can't|does not|doesn't|do not|don't|no)\b/i
+
+    let clausesChecked = 0
+    for (const s of rendered) {
+      if (typeof s !== "string") continue
+      for (const clause of s.split(/(?<=[.;])\s+|,\s+(?=and |we |it |both )/)) {
+        if (DENIAL.test(clause)) continue
+        clausesChecked += 1
+        for (const [why, rule] of FORBIDDEN) {
+          expect(clause.match(rule)?.[0] ?? null, `${why}: ${JSON.stringify(clause)}`).toBeNull()
+        }
+      }
+    }
+    // NON-VACUITY: the skip above must not have swallowed the whole pack.
+    expect(clausesChecked).toBeGreaterThan(40)
+
+    // NON-VACUITY: the rules bite on the sentences this gate exists to refuse,
+    // and the denial skip does NOT swallow an assertion that merely sits near
+    // a negation elsewhere in the sentence.
+    expect("Because you completed three actions, your score rose".match(FORBIDDEN[0][1])).toBeTruthy()
+    expect("Whatever changed, it is working".match(FORBIDDEN[1][1])).toBeTruthy()
+    expect("Your gut is improved".match(FORBIDDEN[4][1])).toBeTruthy()
+    expect(DENIAL.test("It does not say what caused the difference.")).toBe(true)
+    expect(DENIAL.test("Those actions improved your energy.")).toBe(false)
+  })
+
+  /*
+   * The one sentence touching two classes. It must name both and join
+   * neither — so it is asserted to CONTAIN the refusal, not merely to lack a
+   * causal verb.
+   */
+  it("the co-occurrence sentence refuses the join out loud", () => {
+    const s = CHANGED_COPY.coOccurrence(7)
+    expect(s).toContain("7")
+    expect(s).toMatch(/cannot tell you that one produced the other/i)
+  })
+
+  it("the action facts say `marked`, because that is what we know", () => {
+    expect(CHANGED_COPY.actionsFacts(7, 9)).toBe(
+      "You marked 7 of 9 planned actions done during this period.",
+    )
+    expect(CHANGED_COPY.actionsFacts(7, 9)).not.toMatch(/\b(completed|achieved|did)\b/)
+  })
+})
+
+/* ── One longitudinal authority, including on the live account surface ──── */
+
+describe("no account surface subtracts two windows without a verdict", () => {
+  it("lib/account computes no delta that canCompare has not permitted", () => {
+    const files = execSync("git ls-files lib/account", { encoding: "utf8" })
+      .split("\n")
+      .filter((f) => /\.ts$/.test(f))
+
+    expect(files.length).toBeGreaterThan(5)
+
+    const TOKEN = String.raw`(?:\w+\??\.)*(?:\w*[Ss]core\w*|previous\w*|current\w*|recent\w*|prior\w*|baseline\w*)(?:\??\.\w+)*`
+    const SUBTRACTION = new RegExp(`${TOKEN}\\s*-\\s*${TOKEN}`)
+
+    // Non-vacuity for the rule itself.
+    expect(SUBTRACTION.test("const d = avg(recent) - avg(prior)")).toBe(false)
+    expect(SUBTRACTION.test("const d = recentScore - priorScore")).toBe(true)
+    expect(SUBTRACTION.test('id: "score-missing",')).toBe(false)
+    // The comparator exclusion, asserted rather than assumed.
+    expect(/\.sort\(/.test("[...meals].sort((a, b) => b.score - a.score)[0]")).toBe(true)
+
+    /*
+     * ── A SORT COMPARATOR IS NOT A LONGITUDINAL DELTA ─────────────────────
+     *
+     * This flagged `week-story.ts`'s `[...meals].sort((a, b) => b.score -
+     * a.score)` — ordering one list at one moment. Comparability is a question
+     * about two measurements ACROSS TIME from possibly different instruments;
+     * ranking today's meals against each other needs no verdict, and a guard
+     * that demands one would be asking the wrong question loudly.
+     *
+     * The same exclusion is applied to the `lib/fss` guard above, where no
+     * sort-by-score exists yet but would otherwise trip it later.
+     */
+    for (const file of files) {
+      const code = readFileSync(file, "utf8")
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/\/\/.*$/gm, "")
+      const lines = code.split("\n").filter((l) => !/\.sort\(/.test(l))
+      if (!lines.some((l) => SUBTRACTION.test(l))) continue
+      /*
+       * A file that subtracts must ASK. This is the one-authority rule made
+       * mechanical: `fortnightTrend` was the only window-to-window comparison
+       * on /account, and it held its comparability assumption privately.
+       */
+      expect(code, `${file} subtracts two score-like values without calling canCompare`).toMatch(
+        /canCompare\(/,
+      )
+    }
+  })
+
+  /*
+   * ── THE PROPERTY THAT MAKES THE DAY-75 COMPARISON SOUND ────────────────
+   *
+   * `lib/account/retest.ts` subtracts two scores from `leads.score_history`
+   * on the LIVE dashboard. Step 2c routed it through `canCompare`, and the
+   * verdict is "comparable" — which is only honest while one instrument writes
+   * those points. `RETEST_PROVENANCE` asserts the version rather than reading
+   * it off the row, so the constant alone proves nothing: compared with
+   * itself it can never refuse.
+   *
+   * THIS is the real guard. A second caller of `appendScore`, or a caller
+   * passing something other than the fifteen-item result, makes every stored
+   * pair a comparison between two different things — and that is what fails
+   * here, rather than being noticed years later.
+   */
+  it("exactly one writer feeds the retest history, which is why it compares", () => {
+    const callers = execSync(
+      "git grep -l 'appendScore' -- app lib || true",
+      { encoding: "utf8" },
+    )
+      .split("\n")
+      .filter(Boolean)
+      .filter((f) => f !== "lib/account/retest.ts")
+
+    expect(callers, "a second writer of score_history — the Day-75 pair may no longer be comparable").toEqual([
+      "app/api/send-results-email/route.ts",
+    ])
+
+    // And that one caller passes the fifteen-item foundation result.
+    const writer = readFileSync("app/api/send-results-email/route.ts", "utf8")
+    expect(writer).toMatch(/appendScore\(parseScoreHistory\([^)]*\), result\.overall\)/)
+    expect(writer).toMatch(/from "@\/lib\/assessment-scoring"/)
+  })
+
+  it("the retest refuses rather than subtracting when the instrument moves", async () => {
+    const { retestState, RETEST_PROVENANCE } = await import("@/lib/account/retest")
+    const history = [
+      { score: 54, at: "2026-06-01T09:00:00.000Z" },
+      { score: 71, at: "2026-09-01T09:00:00.000Z" },
+    ]
+    const fallback = { score: null, at: null }
+
+    // Today: one instrument, so a delta is permitted.
+    const ok = retestState(history, fallback, new Date("2026-09-02T09:00:00.000Z"))
+    expect(ok?.kind).toBe("compare")
+
+    // The instrument moves between the two points.
+    const moved = retestState(history, fallback, new Date("2026-09-02T09:00:00.000Z"), {
+      previous: RETEST_PROVENANCE,
+      latest: { ...RETEST_PROVENANCE, fssMethodVersion: "foundation-assessment-v2" },
+    })
+    expect(moved?.kind).toBe("compare-refused")
+    // Both records survive; only the relationship is suppressed.
+    if (moved?.kind === "compare-refused") {
+      expect(moved.baseline.score).toBe(54)
+      expect(moved.latest.score).toBe(71)
+      expect("delta" in moved, "a refused retest carried a delta").toBe(false)
+      expect(moved.because).toMatch(/different methods/i)
+    }
+  })
+
+  it("the meal window's provenance is honest about being unknown", async () => {
+    const { mealWindowProvenance } = await import("@/lib/account/patterns")
+    const p = mealWindowProvenance([])
+    /*
+     * `legacy-unversioned`, and the reason is checked rather than assumed:
+     * `analyses` records no rubric version and CLAUDE_MODEL is an env var, so
+     * which instrument scored a stored meal cannot be established.
+     */
+    expect(p.fssMethodVersion).toBe("legacy-unversioned")
+    expect(canCompare(p, p).comparable).toBe(false)
+
+    // And the analyses writer really does record no version, which is why.
+    const writer = readFileSync("app/api/analyses/log/route.ts", "utf8")
+    expect(writer).not.toMatch(/rubric_version|prompt_version|model_version/)
   })
 })

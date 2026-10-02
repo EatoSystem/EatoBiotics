@@ -83,14 +83,36 @@ describe("detectPatterns", () => {
    * change between two averages of measured meal sub-scores; what is refused
    * is the Biotic as its subject.
    */
-  it("spots a fortnight trend, as a change in meals and not in a Biotic", () => {
+  /*
+   * ── THIS TEST'S ANCHOR WAS INVALIDATED BY STEP 2C, AND IS INVERTED ──────
+   *
+   * It required the fortnight trend to be PRODUCED. Step 2c routed that
+   * comparison through `canCompare`, and the verdict is a permanent refusal:
+   * no rubric version is recorded on an `analyses` row and the scoring model
+   * is an environment variable, so which instrument produced a stored meal
+   * score cannot be established — `legacy-unversioned` by definition.
+   *
+   * The data that used to produce a trend now produces none, and that is the
+   * specified outcome rather than a regression: "prevented from making
+   * longitudinal claims until equivalent provenance exists". Inverted rather
+   * than deleted, so re-enabling the claim fails a test instead of passing
+   * quietly. `tests/unit/agent-loop-claims.test.ts` holds the two companion
+   * guards: that the suppression is caused by the verdict, and that the gated
+   * sentences are still claim-clean.
+   */
+  it("no longer asserts a fortnight trend, because the meal rubric is unversioned", () => {
     const recent = [1, 2, 3].map((d) => meal(d, 70, { prebiotic: 80 }))
     const prior = [8, 9, 10].map((d) => meal(d, 70, { prebiotic: 60 }))
-    const p = detectPatterns([...recent, ...prior], NOW).find((x) => x.id === "trend-up-prebiotic")
-    expect(p).toBeTruthy()
-    expect(p!.title).toMatch(/climbed \d+ points/)
-    expect(p!.title).toContain("fibre-rich plants")
-    expect(p!.title, p!.title).not.toMatch(/\b(Prebiotics|Probiotics|Postbiotics)\b/)
+    const all = detectPatterns([...recent, ...prior], NOW)
+
+    expect(all.find((x) => x.id.startsWith("trend-"))).toBeUndefined()
+
+    /*
+     * NON-VACUITY: the fixture still reaches the module and still produces
+     * other patterns, so this is not passing because `detectPatterns` is
+     * broken or because the fixture stopped qualifying.
+     */
+    expect(all.length).toBeGreaterThan(0)
   })
 
   it("recognises a weekly rhythm (≥4 distinct days in 7)", () => {

@@ -14,6 +14,7 @@ import type { ResolvedQuestionSet } from "@/lib/fss/questions/types"
 import { foodSystemRepository } from "@/lib/fss/persistence/local"
 import { establishFoodSystem } from "@/lib/fss/system/establish"
 import { loadCurrentFoodSystem, type FoodSystemLoad } from "@/lib/fss/system/load"
+import { readWhatChanged, type WhatChanged } from "@/lib/fss/system/changed"
 import {
   abandonDraft,
   loadCurrentDraft,
@@ -60,6 +61,7 @@ import { WALK_COPY } from "@/lib/fss/presentation/system"
  */
 export function CandidateWalk({ set }: { set: ResolvedQuestionSet }) {
   const [load, setLoad] = useState<FoodSystemLoad | null>(null)
+  const [changed, setChanged] = useState<WhatChanged | null>(null)
   const [draft, setDraft] = useState<DraftState | null>(null)
   const [justEstablished, setJustEstablished] = useState<FoodSystemScore | null>(null)
   const [establishFailed, setEstablishFailed] = useState<string | null>(null)
@@ -75,8 +77,19 @@ export function CandidateWalk({ set }: { set: ResolvedQuestionSet }) {
   const reload = useCallback(() => {
     void (async () => {
       const repo = foodSystemRepository()
-      setLoad(await loadCurrentFoodSystem({ repo, set }))
+      const next = await loadCurrentFoodSystem({ repo, set })
+      setLoad(next)
       setDraft(await loadCurrentDraft({ repo, set }))
+      /*
+       * Read for the system that is CURRENT, so the pair follows that system's
+       * own `previousSystemId`. Cleared when nothing is ready, rather than left
+       * holding a comparison that belonged to a system no longer on screen.
+       */
+      setChanged(
+        next.state === "ready"
+          ? await readWhatChanged({ repo, set, systemId: next.system.systemId })
+          : null,
+      )
     })()
   }, [set])
 
@@ -251,7 +264,14 @@ export function CandidateWalk({ set }: { set: ResolvedQuestionSet }) {
     )
   }
 
-  return <MyFoodSystemView system={load.system} onReload={reload} onReassess={beginDraft} />
+  return (
+    <MyFoodSystemView
+      system={load.system}
+      onReload={reload}
+      onReassess={beginDraft}
+      changed={changed ?? undefined}
+    />
+  )
 }
 
 /** The first visit: nothing established, nothing in progress. */

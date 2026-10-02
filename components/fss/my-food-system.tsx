@@ -15,6 +15,7 @@ import {
   TODAY,
 } from "@/lib/fss/system/sections"
 import type { ActionState } from "@/lib/fss/persistence/repository"
+import type { WhatChanged } from "@/lib/fss/system/changed"
 import type { MyFoodSystem } from "@/lib/fss/system/types"
 import { TodaySection } from "@/components/fss/system/today"
 import { ScoreSection } from "@/components/fss/system/score"
@@ -60,9 +61,16 @@ export function MyFoodSystemView({
   system,
   onReload,
   onReassess,
+  changed,
   now: injectedNow,
 }: {
   system: MyFoodSystem
+  /**
+   * The comparison with this system's immediate predecessor, loaded at the
+   * edge because it needs the repository. Absent until it has loaded, and
+   * absent forever for a baseline — Progress renders its own copy for both.
+   */
+  changed?: WhatChanged
   /** Re-read from storage after a write. The shell never patches its own copy. */
   onReload: () => void
   /**
@@ -140,7 +148,9 @@ export function MyFoodSystemView({
       {section === "my-plan" && (
         <MyPlanSection slice={MY_PLAN.select(system)} onMove={onMove} pending={pending} />
       )}
-      {section === "progress" && <ProgressSection slice={PROGRESS.select(system)} now={now} />}
+      {section === "progress" && (
+        <ProgressSection slice={PROGRESS.select(system)} now={now} changed={changed} />
+      )}
       {section === "learn" && <LearnSection slice={LEARN.select(system)} />}
     </div>
   )

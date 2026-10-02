@@ -728,16 +728,69 @@ describe("the withheld score name is confined to the gated candidate preview", (
     }
   })
 
-  it("the candidate is reachable only through the fixture-gated route", () => {
-    // The condition the exemption rests on, asserted directly rather than
-    // inferred from the route classification somewhere else.
+  /*
+   * ── THE CONDITION, MADE PRECISE IN GATE 5 STEP 2C ───────────────────────
+   *
+   * This asserted that NO candidate file is production-reachable. That was a
+   * PROXY for the property the exemption actually rests on:
+   *
+   *     no production-reachable file renders the withheld name.
+   *
+   * The proxy was exact while nothing crossed. Step 2c made something cross,
+   * for a reason the gate required: `lib/account/patterns.ts` must ask the
+   * SAME comparability authority the candidate product asks, because "there
+   * should not be canonical comparison logic and separately agent-loop
+   * comparison logic." That pulls `lib/fss/engine/compare.ts` and its one
+   * import, `provenance.ts`, into the production closure.
+   *
+   * Neither carries the withheld name, or any product naming at all — they are
+   * version primitives. So the property held and only the proxy broke.
+   *
+   * ── WHY THIS IS NOT A WEAKENING ─────────────────────────────────────────
+   *
+   * The blanket rule never had to check the NAME on a reachable candidate
+   * file, because no such file existed. This checks it. A candidate file that
+   * crosses into production AND renders the name now fails on the real ground
+   * rather than on a proxy, and the crossing set itself is pinned BY VALUE —
+   * so a third file crossing is a visible decision, not a quiet one.
+   *
+   * What is no longer refused is a clean primitive being shared. That was
+   * never the thing the exemption protected.
+   */
+  const CANDIDATE_FILES_IN_PRODUCTION_CLOSURE = [
+    "lib/fss/engine/compare.ts",
+    "lib/fss/engine/provenance.ts",
+  ]
+
+  it("no production-reachable candidate file renders the withheld name", () => {
+    const rule = RETIRED.find(([n]) => n === WITHHELD)![1]
     const reachable = new Set(productionReachableSourceFiles())
-    for (const f of candidateFiles()) {
-      expect(
-        reachable.has(f),
-        `${f} is now reachable from a servable page, so it may no longer render the withheld name`,
-      ).toBe(false)
+    const crossing = candidateFiles().filter((f) => reachable.has(f))
+
+    expect(
+      crossing.filter((f) => rule.test(copyOf(readFileSync(f, "utf8")))),
+      "a candidate file reachable from a servable page renders the withheld score name",
+    ).toEqual([])
+  })
+
+  it("and the set of candidate files crossing into production is pinned", () => {
+    const reachable = new Set(productionReachableSourceFiles())
+    expect(
+      candidateFiles().filter((f) => reachable.has(f)).sort(),
+      "a candidate file started or stopped being reachable from a servable page",
+    ).toEqual(CANDIDATE_FILES_IN_PRODUCTION_CLOSURE)
+  })
+
+  it("NON-VACUITY: the crossing files really are in the closure, and really are clean", () => {
+    // Both halves matter. An empty crossing set would satisfy the name check
+    // above by finding nothing, and a pin listing files that are NOT reachable
+    // would look like coverage while asserting nothing.
+    const reachable = new Set(productionReachableSourceFiles())
+    for (const f of CANDIDATE_FILES_IN_PRODUCTION_CLOSURE) {
+      expect(reachable.has(f), `${f} is pinned as crossing but is not reachable`).toBe(true)
     }
+    const rule = RETIRED.find(([n]) => n === WITHHELD)![1]
+    expect(rule.test(copyOf("Your Food System Score is 72"))).toBe(true)
   })
 
   it("every OTHER retired rule still applies to the candidate in full", () => {

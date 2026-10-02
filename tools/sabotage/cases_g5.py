@@ -26,6 +26,10 @@ REPO = "lib/fss/persistence/repository.ts"
 ASSESS_TSX = "components/fss/candidate-assessment.tsx"
 COMPARE = "lib/fss/engine/compare.ts"
 COMPARE_SYS = "lib/fss/system/compare-systems.ts"
+CHANGED = "lib/fss/system/changed.ts"
+CHANGED_COPY = "lib/fss/presentation/changed.ts"
+RETEST = "lib/account/retest.ts"
+COMPOSE = "lib/fss/system/compose.ts"
 SCHEMA = "lib/fss/questions/domain-schema.ts"
 QTYPES = "lib/fss/questions/types.ts"
 
@@ -275,5 +279,93 @@ CASES = [
     (1335, "the comparison gains a prose field", COMPARE_SYS,
      '  return { state: "fully-comparable", ...common, scoreVerdict, domainVerdict, score, domains }',
      '  return { state: "fully-comparable", ...common, scoreVerdict, domainVerdict, score, domains, headline: "Your score moved" }',
+     SYSTEM),
+# ── STEP 2C · what can be honestly said changed ──────────────────────────
+    #
+    # 2b decided whether comparison is allowed; these attack what is said about
+    # an allowed one. The causality boundary is the subject of most of them.
+
+    # THE CALL THIS STEP TURNS ON. B's actions were created moments ago and are
+    # all `planned`, so counting them shows "0 of N done" right after every
+    # reassessment and erases the period's record.
+    (1336, "the new system's untouched plan is counted instead of the lived one", CHANGED,
+     "  const actions = countActions(await repo.loadActions(previous.scoreId))",
+     "  const actions = countActions(await repo.loadActions(current.scoreId))",
+     SYSTEM),
+
+    (1337, "a refused comparison still compares the unscored answers", CHANGED,
+     "  if (!comparison.scoreVerdict.comparable) {\n    return { state: \"available\", comparison, actions }\n  }",
+     "",
+     SYSTEM),
+
+    # An empty list renders as "nothing changed", which is a claim.
+    (1338, "withheld observations become an empty list instead of absent", CHANGED,
+     "    return { state: \"available\", comparison, actions }\n  }\n\n  const previousAssessment",
+     "    return { state: \"available\", comparison, actions, observations: [], context: [] }\n  }\n\n  const previousAssessment",
+     SYSTEM),
+
+    # A direction on an observation is the first step to "your energy improved".
+    (1339, "an observation change gains a direction", CHANGED,
+     "      return { questionId: q.id, order: q.order, question: q.text, previous, current, state }",
+     "      return { questionId: q.id, order: q.order, question: q.text, previous, current, state, direction: (b ?? 0) > (a ?? 0) ? \"higher\" : \"lower\" }",
+     SYSTEM),
+
+    (1340, "a context change carries the value behind it", CHANGED,
+     "      state: was === is ? \"unchanged\" : is ? \"appeared\" : \"disappeared\",",
+     "      state: was === is ? \"unchanged\" : is ? \"appeared\" : \"disappeared\",\n      value: b.states[constraint],",
+     SYSTEM),
+
+    (1341, "the action total stops iterating the state union", CHANGED,
+     "  const total = ACTION_STATES.reduce((n, s) => n + of(s), 0)",
+     "  const total = of(\"planned\") + of(\"done\")",
+     SYSTEM),
+
+    # ── the copy ─────────────────────────────────────────────────────────────
+
+    (1342, "the co-occurrence sentence drops its refusal of the join", CHANGED_COPY,
+     "`You marked ${done} actions done in the same period that these answers changed. Both happened; we cannot tell you that one produced the other, and a month holds a great deal besides.`",
+     "`You marked ${done} actions done, and these answers changed because of it.`",
+     SYSTEM),
+
+    (1343, "the score note claims a measurement of the body", CHANGED_COPY,
+     '"Both numbers come from the same version of the assessment, so the change describes a change in the answers you gave about how you eat. It is not a measurement of your gut, and it does not say what caused the difference.",',
+     '"Both numbers come from the same version of the assessment, so your gut has measurably improved.",',
+     SYSTEM),
+
+    (1344, "a constraint lifting is rendered as an improvement", CHANGED_COPY,
+     "  contextDisappeared: (label: string) => `You no longer describe ${label} as being in the way.`,",
+     "  contextDisappeared: (label: string) => `${label} improved for you since last time.`,",
+     SYSTEM),
+
+    (1345, "the action facts claim the person did the thing", CHANGED_COPY,
+     "    `You marked ${done} of ${total} planned actions done during this period.`,",
+     "    `You completed ${done} of ${total} actions, and it is working.`,",
+     SYSTEM),
+
+    (1346, "a domain change sentence is anchored to baseline again", CHANGED_COPY,
+     '      "Your answers described a wider range of plant foods than at your previous assessment.",',
+     '      "Your answers described a wider range of plant foods than at baseline.",',
+     SYSTEM),
+
+    # ── one longitudinal authority ───────────────────────────────────────────
+
+    (1347, "the meal window claims a provenance it does not have", PATTERNS,
+     "  return LEGACY_PROVENANCE",
+     "  return FSS_V1_PROVENANCE",
+     CLAIMS),
+
+    (1348, "the fortnight trend subtracts without asking", PATTERNS,
+     "  if (!canCompare(mealWindowProvenance(prior), mealWindowProvenance(recent)).comparable) {\n    return null\n  }",
+     "",
+     CLAIMS),
+
+    (1349, "the Day-75 retest subtracts without asking", RETEST,
+     "    const verdict = canCompare(provenance.previous, provenance.latest)\n    if (!verdict.comparable) {\n      return { kind: \"compare-refused\", baseline, latest, days, because: verdict.explain }\n    }",
+     "",
+     SYSTEM),
+
+    (1350, "Progress reports one score when there are two", COMPOSE,
+     "    scoresAvailable: system.previousSystemId === null ? 1 : 2,",
+     "    scoresAvailable: 1,",
      SYSTEM),
 ]

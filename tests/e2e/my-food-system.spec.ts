@@ -459,3 +459,268 @@ test.describe("Gate 5 · a reassessment creates history and never rewrites it", 
     await expect(page.getByRole("heading", { name: "My Food System" })).toBeVisible()
   })
 })
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Gate 5 step 2c · WHAT CHANGED, rendered
+
+   The structure is unit-tested. This is the part only a browser can answer:
+   what a returning person actually reads, in what order, and whether the
+   refusal states are legible rather than blank.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+test.describe("Gate 5 · what changed, as a person reads it", () => {
+  async function answerAll(page: Page, option: number) {
+    for (let i = 0; i < 60; i += 1) {
+      const group = page.getByRole("radiogroup")
+      if ((await group.count()) === 0) break
+      await group.first().getByRole("radio").nth(option).click()
+      await page.waitForTimeout(40)
+    }
+  }
+
+  /** Establish a successor from whatever is current, with a given sheet. */
+  async function reassess(page: Page, option: number) {
+    /*
+     * Today owns the Reassess button, so a test that was last on My Plan has
+     * to come back for it. Omitting this timed out on a click rather than
+     * failing on an assertion, which reads like a product bug and is not one.
+     */
+    await openSection(page, "Today")
+    await page.getByRole("button", { name: "Reassess my Food System" }).click()
+    await expect(page.getByRole("radiogroup")).toBeVisible()
+    await answerAll(page, option)
+    await expect(page.getByText("Your Food System Score™").first()).toBeVisible()
+    await page.getByRole("button", { name: "Go to My Food System" }).click()
+    await expect(page.getByRole("heading", { name: "My Food System" })).toBeVisible()
+  }
+
+  test("the five classes appear, the score is LAST, and nothing is causal", async ({ page }) => {
+    await completeAssessment(page)
+    await page.getByRole("button", { name: "Go to My Food System" }).click()
+
+    /*
+     * Live the period: mark one action done and one skipped — and ASSERT the
+     * marks landed. The first version used `if (await count()) click()`, so a
+     * missed click silently produced zero completions and the co-occurrence
+     * sentence below went missing for a reason that read like a product bug.
+     */
+    await openSection(page, "My Plan")
+    await expect(page.getByRole("heading", { name: "Where you are on each" })).toBeVisible()
+    await page.getByRole("button", { name: "Mark done" }).first().click()
+    await expect(page.getByText("Done", { exact: false }).first()).toBeVisible()
+    await page.getByRole("button", { name: "Skip" }).nth(1).click()
+
+    await openSection(page, "Progress")
+    await expect(page.getByText("Marked done on this device")).toBeVisible()
+
+    await reassess(page, 3)
+    await openSection(page, "Progress")
+
+    await expect(page.getByRole("heading", { name: "What changed" })).toBeVisible()
+
+    const text = await page.locator("body").innerText()
+    /*
+     * CASE-INSENSITIVE, because the section labels carry Tailwind's `uppercase`
+     * and `innerText` returns the CSS-transformed text. The first version of
+     * this asserted title case and failed on copy that was rendering perfectly.
+     */
+    const lower = text.toLowerCase()
+
+    /* ── The five classes are all present ──────────────────────────────── */
+    expect(lower).toContain("your food patterns")
+    expect(lower).toContain("what you notice")
+    expect(lower).toContain("your context")
+    expect(lower).toContain("your actions")
+    expect(lower).toContain("your food system score™")
+
+    /* ── THE SCORE IS LAST of the five ────────────────────────────────── */
+    /*
+     * Read from the DOM headings, not from text indices.
+     *
+     * `indexOf` found "your food system score™" inside the What You Notice
+     * NOTE — "they are not part of your Food System Score™" — which is
+     * deliberate copy sitting two blocks earlier, so the ordering assertion was
+     * reading the wrong occurrence and failing on a page that was correct.
+     * The block headings are the actual hierarchy.
+     */
+    const headings = (
+      await page.locator("section[aria-labelledby='what-changed'] h3").allInnerTexts()
+    ).map((h) => h.trim().toLowerCase())
+
+    expect(headings, "a What Changed block is missing or renamed").toEqual([
+      "your food patterns",
+      "what you notice",
+      "your context",
+      "your actions",
+      "your food system score™",
+    ])
+
+    /* ── The baseline sentence is gone, because there are two now ─────── */
+    expect(text).not.toContain("nothing to compare it with")
+
+    /* ── A real move is described, anchored to the PREVIOUS assessment ── */
+    expect(text).toContain("than at your previous assessment")
+    expect(text).not.toMatch(/\bat baseline\b/i)
+
+    /* ── NO CAUSAL ATTRIBUTION, anywhere on the rendered page ─────────── */
+    for (const forbidden of [
+      /\bbecause you\b/i,
+      /\bcaused your\b/i,
+      /\bit'?s working\b/i,
+      /\bthese actions (improved|raised|moved)\b/i,
+      /\bmoved your score\b/i,
+      /\bwhat works for you\b/i,
+      /\bmost improved\b/i,
+      /\byour gut (is|has) (improved|better)\b/i,
+    ]) {
+      expect(text, `a causal or ranking claim reached the page: ${forbidden}`).not.toMatch(forbidden)
+    }
+
+    /* ── And the co-occurrence sentence refuses the join out loud ─────── */
+    expect(text).toContain("we cannot tell you that one produced the other")
+  })
+
+  test("A ← B ← C: viewing C compares B↔C, and reload keeps that pair", async ({ page }) => {
+    await completeAssessment(page)
+    await page.getByRole("button", { name: "Go to My Food System" }).click()
+
+    await reassess(page, 3) // B, from a better sheet than A
+    await reassess(page, 0) // C, from the worst sheet
+
+    const keys = await storage(page)
+    const systemC = JSON.parse(keys["system.current"])
+    const recordC = JSON.parse(keys[`system.${systemC}`])
+    const systemB = recordC.previousSystemId
+    const recordB = JSON.parse(keys[`system.${systemB}`])
+    const systemA = recordB.previousSystemId
+    expect(systemA).toBeTruthy()
+    expect(systemA).not.toBe(systemB)
+
+    await openSection(page, "Progress")
+    const text = await page.locator("body").innerText()
+
+    /*
+     * C answered 0 everywhere and B answered 3, so B↔C must read LOWER. A
+     * answered 2, so an accidental A↔C would also read lower — which is why
+     * the discriminating assertion is on the stored scores, not the adjective.
+     */
+    const scoreB = JSON.parse(keys[`score.${recordB.scoreId}`]).score
+    const scoreC = JSON.parse(keys[`score.${recordC.scoreId}`]).score
+    expect(text, "the rendered pair is not B→C").toContain(`${scoreB} → ${scoreC}`)
+
+    const scoreA = JSON.parse(keys[`score.${JSON.parse(keys[`system.${systemA}`]).scoreId}`]).score
+    if (scoreA !== scoreB) {
+      expect(text, "viewing C compared against A by accident").not.toContain(`${scoreA} → ${scoreC}`)
+    }
+
+    /* Reload: the same pair, because it comes from `previousSystemId`. */
+    await page.reload()
+    await expect(page.getByRole("heading", { name: "My Food System" })).toBeVisible()
+    await openSection(page, "Progress")
+    expect(await page.locator("body").innerText()).toContain(`${scoreB} → ${scoreC}`)
+  })
+
+  test("a moved question set refuses: two scores, labelled, and NO delta", async ({ page }) => {
+    await completeAssessment(page)
+    await page.getByRole("button", { name: "Go to My Food System" }).click()
+    await reassess(page, 3)
+
+    /* Tamper the CURRENT score's question-set version, in storage. */
+    /*
+     * Through the REAL adapter's prefix. The first version of this omitted it
+     * and read null — a reminder that `storage()` above strips the prefix, so
+     * a key copied out of its result is not a localStorage key.
+     */
+    await page.evaluate((prefix) => {
+      const get = (k: string) => JSON.parse(localStorage.getItem(prefix + k)!)
+      const current = get("system.current")
+      const system = get(`system.${current}`)
+      const key = `score.${system.scoreId}`
+      const score = get(key)
+      score.provenance.questionSetVersion = "questions-v1.1"
+      localStorage.setItem(prefix + key, JSON.stringify(score))
+    }, PREFIX)
+    await page.reload()
+    await expect(page.getByRole("heading", { name: "My Food System" })).toBeVisible()
+    await openSection(page, "Progress")
+
+    const text = await page.locator("body").innerText()
+    const lower = text.toLowerCase()
+    expect(lower).toContain("shown separately")
+    expect(lower).toContain("does not treat as directly comparable")
+    expect(lower).toContain("previous assessment")
+    expect(lower).toContain("this assessment")
+    // No arrow, because there is no permitted relationship.
+    expect(text, "a refused comparison rendered a delta").not.toMatch(/\d+\s*→\s*\d+/)
+    // But the records are still legible — the refusal suppressed the relationship only.
+    expect(text).toContain("still a complete record")
+  })
+
+  test("a moved domain schema: the score compares, the domains do not", async ({ page }) => {
+    await completeAssessment(page)
+    await page.getByRole("button", { name: "Go to My Food System" }).click()
+    await reassess(page, 3)
+
+    await page.evaluate((prefix) => {
+      const get = (k: string) => JSON.parse(localStorage.getItem(prefix + k)!)
+      const current = get("system.current")
+      const system = get(`system.${current}`)
+      const key = `score.${system.scoreId}`
+      const score = get(key)
+      score.domainSchemaVersion = "domains-v2.0"
+      localStorage.setItem(prefix + key, JSON.stringify(score))
+    }, PREFIX)
+    await page.reload()
+    await expect(page.getByRole("heading", { name: "My Food System" })).toBeVisible()
+    await openSection(page, "Progress")
+
+    const text = await page.locator("body").innerText()
+    // The overall score still moves…
+    expect(text).toMatch(/\d+\s*→\s*\d+/)
+    // …and the five parts are explicitly not compared.
+    expect(text).toContain("defined differently between these two assessments")
+    expect(text, "a domain sentence survived a moved schema").not.toContain(
+      "than at your previous assessment",
+    )
+  })
+
+  test("identical answers twice: `the same`, and no manufactured movement", async ({ page }) => {
+    await completeAssessment(page)
+    await page.getByRole("button", { name: "Go to My Food System" }).click()
+    await reassess(page, 2) // completeAssessment answers 2s as well
+
+    await openSection(page, "Progress")
+    const text = await page.locator("body").innerText()
+    expect(text).toContain("is the same as at your previous assessment")
+    expect(text).toContain("a real result, not a missing one")
+    expect(text, "a delta appeared between two identical sheets").not.toMatch(/\d+\s*→\s*\d+/)
+  })
+})
+
+/* ── And it reads at every width ───────────────────────────────────────── */
+
+for (const [label, width] of [["phone", 390], ["tablet", 834], ["desktop", 1280]] as const) {
+  test(`What Changed has no horizontal overflow at ${label} (${width})`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await completeAssessment(page)
+    await page.getByRole("button", { name: "Go to My Food System" }).click()
+
+    await page.getByRole("button", { name: "Reassess my Food System" }).click()
+    await expect(page.getByRole("radiogroup")).toBeVisible()
+    for (let i = 0; i < 60; i += 1) {
+      const group = page.getByRole("radiogroup")
+      if ((await group.count()) === 0) break
+      await group.first().getByRole("radio").nth(3).click()
+      await page.waitForTimeout(40)
+    }
+    await expect(page.getByText("Your Food System Score™").first()).toBeVisible()
+    await page.getByRole("button", { name: "Go to My Food System" }).click()
+    await openSection(page, "Progress")
+    await expect(page.getByRole("heading", { name: "What changed" })).toBeVisible()
+
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+    )
+    expect(overflow, `What Changed overflows horizontally at ${width}px`).toBe(false)
+  })
+}

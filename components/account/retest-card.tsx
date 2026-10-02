@@ -51,6 +51,7 @@ export function RetestCard({ state }: { state: RetestState }) {
           {state.kind === "countdown" && <Countdown state={state} />}
           {state.kind === "due" && <Due state={state} />}
           {state.kind === "compare" && <Compare state={state} />}
+          {state.kind === "compare-refused" && <CompareRefused state={state} />}
         </div>
       </div>
     </div>
@@ -101,6 +102,42 @@ function Due({ state }: { state: Extract<RetestState, { kind: "due" }> }) {
       >
         Retake my assessment <ArrowRight size={15} />
       </Link>
+    </div>
+  )
+}
+
+/**
+ * Two scores, shown separately, with the reason.
+ *
+ * Gate 5 step 2c. `retestState` now asks `canCompare` before subtracting, so
+ * the day the foundation instrument moves this is what a person sees instead of
+ * a delta between two different things — the state the card's own header asked
+ * for in Gate 3.5b ("the day the instrument does change… nothing here would
+ * notice").
+ *
+ * Dormant while one instrument writes both points, and present on purpose: a
+ * refusal path added at the moment it is needed is a refusal path nobody has
+ * ever seen rendered.
+ */
+function CompareRefused({ state }: { state: Extract<RetestState, { kind: "compare-refused" }> }) {
+  return (
+    <div>
+      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        Shown separately
+      </p>
+      <div className="mt-4 flex flex-wrap items-center gap-6">
+        <div className="text-center">
+          <p className="font-serif text-4xl font-bold text-muted-foreground">{state.baseline.score}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{fmtDate(state.baseline.at)}</p>
+        </div>
+        <div className="text-center">
+          <p className="font-serif text-4xl font-bold text-foreground">{state.latest.score}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{fmtDate(state.latest.at)}</p>
+        </div>
+      </div>
+      <p className="mt-4 max-w-prose text-sm leading-relaxed text-muted-foreground">
+        {state.because}
+      </p>
     </div>
   )
 }

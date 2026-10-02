@@ -10,6 +10,8 @@
 
 import type { AccountTwinMeal } from "@/lib/agent-loop/account-twin"
 import { mealBehaviour, type MealBioticKey } from "@/lib/agent-loop/behaviour"
+import { canCompare } from "@/lib/fss/engine/compare"
+import { LEGACY_PROVENANCE, type ScoreProvenance } from "@/lib/fss/engine/provenance"
 
 export interface TwinPattern {
   id: string
@@ -207,8 +209,85 @@ function repeatWinner(meals: AccountTwinMeal[]): TwinPattern | null {
   }
 }
 
-/** 4. Fortnight biotic trend: last 7 days vs the 7 before (needs ≥3 meals each, ±6). */
-function fortnightTrend(meals: AccountTwinMeal[], now: number): TwinPattern | null {
+/* ════════════════════════════════════════════════════════════════════════════
+   THE MEAL WINDOW'S PROVENANCE — and why it is `legacy-unversioned`.
+
+   Gate 5 step 2c required this comparison to route through the SAME authority
+   the candidate product uses, rather than hold a private assumption:
+
+     > There should not be canonical comparison logic and separately
+     > agent-loop comparison logic.
+
+   The plan allowed two outcomes and asked for the one that happened to be
+   named out loud. THIS IS THE SECOND: the longitudinal claim is REMOVED,
+   because the one-rubric assumption could not be verified. Two facts settled
+   it, and both were checked rather than assumed:
+
+     1. The `analyses` table records NO rubric version. Its insert writes
+        `biotics_score`, `meal_description` and `tier_at_time_of_analysis`
+        (`app/api/analyses/log/route.ts`) and nothing about the instrument.
+     2. The scoring model is `CLAUDE_MODEL` — an ENVIRONMENT VARIABLE
+        (`lib/anthropic.ts`). It can change between one week and the next with
+        no code change, no deploy marker and no record on the rows.
+
+   So two seven-day windows may have been scored by different models under
+   different prompt text, and which produced a given row cannot be
+   established. That is not "probably fine": it is the exact situation
+   `LEGACY_UNVERSIONED` was defined for — "the generating method of a
+   historical row CANNOT be known, so the honest value is 'we do not know'".
+
+   `canCompare` therefore refuses, permanently, including against another
+   window of the same kind. `fortnightTrend` returns null and the pattern does
+   not appear. A real number that may be an artefact of a model swap is worse
+   than no number, because the person cannot tell which they are looking at.
+
+   ── WHAT WOULD BRING IT BACK, STATED SO IT IS ACTIONABLE ──────────────────
+
+   A rubric version recorded ON THE ROW at analysis time — a column on
+   `analyses` naming the prompt version and the model that scored it. Then this
+   function returns a real `ScoreProvenance` built from the two windows' rows,
+   `canCompare` has something to compare, and the claim returns unchanged. That
+   is a migration and a schema decision, so it is not taken here: agent
+   sessions are read-only against production, and no column is named for a
+   feature this file can live without.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * What produced the scores in a window of meals.
+ *
+ * Takes the meals so that a future version can read their recorded rubric
+ * version; today there is none to read, and the signature is the honest shape
+ * rather than a parameterless constant that would have to change later.
+ */
+export function mealWindowProvenance(_meals: readonly AccountTwinMeal[]): ScoreProvenance {
+  return LEGACY_PROVENANCE
+}
+
+/**
+ * 4. Fortnight trend — GATED. `detectPatterns` can never return this.
+ *
+ * The gate and the generator are SPLIT, and the split exists for the guard.
+ *
+ * Sabotage 1078 restores "Your Prebiotics climbed N points this week" by
+ * interpolating `${bestKey}` into the title — so the words "Prebiotics",
+ * "Probiotics" and "Postbiotics" appear NOWHERE in this file's source. A
+ * source-scanning guard is blind to it; only calling the generator and reading
+ * what comes back can see it. That is the Gate 3.6 finding, which caught 1 of 9
+ * interpolated claims by scanning the corpus.
+ *
+ * Gating the generator made the behavioural guard blind too, because
+ * `detectPatterns` stopped returning the pattern. So the generator is exported
+ * for the guard to call directly, and the gate lives in the caller below.
+ *
+ * ── THIS EXPORT IS FOR THE GUARD, NOT FOR A SURFACE ───────────────────────
+ *
+ * `tests/unit/agent-loop-claims.test.ts` asserts that nothing outside the test
+ * corpus imports it, so it cannot quietly become a way around the gate.
+ */
+export function dormantFortnightTrend(
+  meals: AccountTwinMeal[],
+  now: number,
+): TwinPattern | null {
   const week = 7 * 86_400_000
   const recent = meals.filter((m) => now - new Date(m.createdAt).getTime() < week)
   const prior = meals.filter((m) => {
@@ -216,6 +295,8 @@ function fortnightTrend(meals: AccountTwinMeal[], now: number): TwinPattern | nu
     return age >= week && age < 2 * week
   })
   if (recent.length < 3 || prior.length < 3) return null
+
+
   const keys: BioticK[] = ["prebiotic", "probiotic", "postbiotic"]
   let bestKey: BioticK | null = null
   let bestDelta = 0
@@ -241,6 +322,26 @@ function fortnightTrend(meals: AccountTwinMeal[], now: number): TwinPattern | nu
         detail: "Compared with the week before. That is what the meals you logged described, not why they changed.",
         icon: "biotic",
       }
+}
+
+/**
+ * The gate, and the only thing `detectPatterns` calls.
+ *
+ * THE VERDICT COMES BEFORE THE GENERATOR RUNS, not after it as a caveat. A
+ * function that computes a delta and then decides whether to show it will
+ * eventually show it; this one never reaches the arithmetic.
+ */
+function fortnightTrend(meals: AccountTwinMeal[], now: number): TwinPattern | null {
+  const week = 7 * 86_400_000
+  const recent = meals.filter((m) => now - new Date(m.createdAt).getTime() < week)
+  const prior = meals.filter((m) => {
+    const age = now - new Date(m.createdAt).getTime()
+    return age >= week && age < 2 * week
+  })
+  if (!canCompare(mealWindowProvenance(prior), mealWindowProvenance(recent)).comparable) {
+    return null
+  }
+  return dormantFortnightTrend(meals, now)
 }
 
 /** 5. Weekly rhythm: meals on ≥4 distinct days in the last 7. */

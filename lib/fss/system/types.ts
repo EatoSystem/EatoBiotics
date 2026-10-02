@@ -190,11 +190,25 @@ export type ReviewPoint =
 /**
  * What Progress is allowed to say, which is four facts and no fifth.
  *
- * ── `scoresAvailable: 1` is a literal type on purpose ─────────────────────
+ * ── `scoresAvailable` IS `1 | 2`, AND THE WIDENING IS THE DELIBERATE ACT ──
  *
- * With one score there is nothing to compare, so every trend, delta, arrow and
- * "since" is unavailable by construction rather than by discipline. Gate 5
- * widening this to a number is a deliberate, visible act.
+ * It was the literal `1` through Gate 4, so that every trend, delta, arrow and
+ * "since" was unavailable by construction rather than by discipline, and that
+ * comment recorded that widening it would have to be "a deliberate, visible
+ * act". This is that act, and it is as narrow as the evidence allows.
+ *
+ * `2` means THIS SCREEN HAS A PAIR TO SPEAK ABOUT, not that two scores exist
+ * somewhere. Viewing C in a three-system chain still reads `2`, because the
+ * pair is C and its immediate predecessor — the count describes what may be
+ * compared here, and `previousSystemId` is what decides that.
+ *
+ * It is NOT `number`. A count that can be 7 invites a chart, and a chart over
+ * seven assessments whose comparability was never checked pairwise is the
+ * defect `canCompare` exists to refuse, drawn as a line.
+ *
+ * Note what it still does NOT carry: any delta. `scoresAvailable: 2` says a
+ * comparison is possible to attempt; `WhatChanged` says whether it was
+ * permitted and what came of it.
  *
  * ── Why `comparability` is here when no comparison exists ─────────────────
  *
@@ -206,7 +220,7 @@ export type ReviewPoint =
  */
 export interface ProgressFacts {
   readonly baselineEstablishedAt: string
-  readonly scoresAvailable: 1
+  readonly scoresAvailable: 1 | 2
   readonly actionsPlanned: number
   readonly actionsDone: number
   readonly actionsSkipped: number

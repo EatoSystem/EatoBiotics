@@ -2,7 +2,9 @@
 
 import { PROGRESS_COPY, SECTION_COPY, TODAY_COPY } from "@/lib/fss/presentation/system"
 import { daysUntil } from "@/lib/fss/system/review"
+import type { WhatChanged } from "@/lib/fss/system/changed"
 import type { ProgressSlice } from "@/lib/fss/system/sections"
+import { WhatChangedBlock } from "@/components/fss/system/what-changed"
 
 /**
  * Progress — four facts, and no fifth.
@@ -34,7 +36,23 @@ import type { ProgressSlice } from "@/lib/fss/system/sections"
  * storage really is per-device, so a person on their phone would otherwise
  * wonder where their record went.
  */
-export function ProgressSection({ slice, now }: { slice: ProgressSlice; now: Date }) {
+export function ProgressSection({
+  slice,
+  now,
+  changed,
+}: {
+  slice: ProgressSlice
+  now: Date
+  /**
+   * Passed in rather than selected, because building it needs the REPOSITORY.
+   *
+   * `PROGRESS.select` is pure and reads one `MyFoodSystem`; a comparison needs
+   * a second system loaded by id, which is async. So the edge loads it and
+   * hands it down, and `MyFoodSystem` stays a composition of ONE system's
+   * trusted objects rather than quietly becoming a two-system record.
+   */
+  changed?: WhatChanged
+}) {
   const { progress, review } = slice
 
   return (
@@ -45,6 +63,13 @@ export function ProgressSection({ slice, now }: { slice: ProgressSlice; now: Dat
           {SECTION_COPY.progress.says}
         </p>
       </header>
+
+      {/*
+       * WHAT CHANGED comes first, because it is the thing a returning person
+       * came back for. The four facts below it are the record of this system;
+       * this is the relationship between two of them.
+       */}
+      {changed && <WhatChangedBlock changed={changed} />}
 
       <dl className="grid gap-3 sm:grid-cols-2">
         <Fact label={PROGRESS_COPY.baselineLabel}>
@@ -74,9 +99,17 @@ export function ProgressSection({ slice, now }: { slice: ProgressSlice; now: Dat
          * it either, and somebody is entitled to know that before waiting a
          * month for a comparison that cannot happen.
          */}
-        <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-          {PROGRESS_COPY.noComparison}
-        </p>
+        {/*
+         * Only true with ONE score. `scoresAvailable` was the literal `1`
+         * through Gate 4, so this was unconditional and correct; now that it is
+         * `1 | 2` the sentence has to be conditional or it would tell somebody
+         * holding two assessments that they have nothing to compare.
+         */}
+        {progress.scoresAvailable === 1 && (
+          <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
+            {PROGRESS_COPY.noComparison}
+          </p>
+        )}
         {!progress.comparability.comparable && (
           <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
             {PROGRESS_COPY.neverComparable(progress.comparability.explain)}
