@@ -58,6 +58,33 @@ export interface StoredScore {
   readonly domains: readonly { readonly domain: string; readonly state: string; readonly score?: number }[]
   readonly completeness: number
   readonly provenance: ScoreProvenance
+  /**
+   * WHICH PARTS the `domains` array above describes.
+   *
+   * ── Why it is here and not inside `provenance` ──────────────────────────
+   *
+   * Because `ScoreProvenance` cannot grow — its five keys are pinned by value
+   * in `tests/unit/fss-action-model.test.ts`, and widening it would change
+   * what every score already written claims about itself. `actionSetVersion`
+   * reached the same conclusion for the same reason and sits beside
+   * provenance too. The argument is in `lib/fss/questions/domain-schema.ts`.
+   *
+   * ── Why `domain` above is a `string` and stays one ──────────────────────
+   *
+   * Nothing at the type level guarantees a stored domain name belongs to
+   * today's `FssDomain` union, because a record read back from storage was
+   * written under whatever schema was current then. That is exactly the gap
+   * this version closes AT THE VALUE LEVEL, and retyping the field would
+   * claim a guarantee the data cannot keep.
+   *
+   * ── A record written before this field is REFUSED, not assumed current ──
+   *
+   * Required by the type; absent from the JSON of every score written before
+   * this anchor existed. `canCompareDomains` refuses an absent version rather
+   * than defaulting it, because the records that most need refusing are
+   * precisely the ones that predate the field.
+   */
+  readonly domainSchemaVersion: string
   readonly computedAt: string
 }
 

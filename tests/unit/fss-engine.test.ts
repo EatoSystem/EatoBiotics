@@ -20,7 +20,13 @@ import {
   LEGACY_UNVERSIONED,
   isLegacyUnversioned,
 } from "@/lib/fss/engine/provenance"
-import { canCompare, COMPARABLE_METHODS } from "@/lib/fss/engine/compare"
+import {
+  canCompare,
+  canCompareDomains,
+  COMPARABLE_DOMAIN_SCHEMAS,
+  COMPARABLE_METHODS,
+} from "@/lib/fss/engine/compare"
+import { DOMAIN_SCHEMA_VERSION, FSS_DOMAINS } from "@/lib/fss/questions/domain-schema"
 
 const SET = resolveQuestionSetV1()
 const FIXTURE = nonProductionFixture("unit test")
@@ -299,5 +305,126 @@ describe("comparison refuses by default", () => {
     for (const other of [FSS_V1_PROVENANCE, LEGACY_PROVENANCE, { ...FSS_V1_PROVENANCE, fssMethodVersion: "x" }]) {
       expect(canCompare(LEGACY_PROVENANCE, other).comparable).toBe(false)
     }
+  })
+})
+
+/* ══ The domain schema — the fifth comparability axis ══════════════════════
+   Gate 5 step 2a. The question this answers is NOT the one `canCompare`
+   answers, and the whole point is that the two can disagree:
+
+     > Do not assume that because the overall FSS is comparable, every nested
+     > construct is automatically comparable.
+
+   A domain can be renamed, split or recomposed while the method version, the
+   calculation and the wording all stay still — and a per-domain delta across
+   that change looks perfectly well-formed while describing two different
+   things under one name.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+describe("the domain schema is a version, and it is pinned", () => {
+  it("the version is the one records were written under", () => {
+    expect(DOMAIN_SCHEMA_VERSION).toBe("domains-v1.0")
+  })
+
+  it("the five, by value and in order", () => {
+    expect(FSS_DOMAINS).toEqual([
+      "diversity",
+      "plantsAndFibre",
+      "fermentedFoods",
+      "foodQuality",
+      "mealRhythm",
+    ])
+  })
+
+  /*
+   * THE LOAD-BEARING TEST OF STEP 2A.
+   *
+   * `domain-schema.ts` already fails `tsc` if the union and the list diverge.
+   * That is not enough on its own: the sabotage harness runs vitest, and a
+   * widened TYPE is invisible to vitest — the exact gap that let four Gate 4
+   * mutations through. So this reads the union from SOURCE and compares it to
+   * the value, which makes the divergence a test failure as well as a build
+   * failure.
+   *
+   * IF THIS FAILS: the scored domains moved. That is a methodology change, and
+   * a per-domain comparison across it is meaningless under an unchanged
+   * `fssMethodVersion`. Move `DOMAIN_SCHEMA_VERSION` — do not edit this list to
+   * match. Every score already written stays on the old version, and
+   * `canCompareDomains` refuses the pair, which is the correct outcome.
+   */
+  it("the union in SOURCE and the list are the same set", () => {
+    const src = readFileSync("lib/fss/questions/types.ts", "utf8")
+    const block = /export type FssDomain =([\s\S]*?)\n\n/.exec(src)
+    expect(block).not.toBeNull()
+    const inSource = [...(block?.[1] ?? "").matchAll(/"([a-zA-Z]+)"/g)].map((m) => m[1])
+
+    expect(inSource.length).toBeGreaterThan(0)
+    expect([...inSource].sort()).toEqual([...FSS_DOMAINS].sort())
+  })
+})
+
+describe("domain comparability is asked separately, and refuses by default", () => {
+  const V1 = DOMAIN_SCHEMA_VERSION
+
+  it("the allowlist is empty, and that is correct", () => {
+    expect(COMPARABLE_DOMAIN_SCHEMAS).toEqual([])
+  })
+
+  it("the same schema compares, and says which question it answered", () => {
+    expect(canCompareDomains(V1, V1)).toEqual({ comparable: true, via: "same-domain-schema" })
+  })
+
+  it("a different schema refuses, and says the score may still compare", () => {
+    const v = canCompareDomains(V1, "domains-v2.0")
+    expect(v.comparable).toBe(false)
+    if (!v.comparable) {
+      expect(v.because).toBe("different-domain-schema")
+      expect(v.explain).toMatch(/overall score may still be comparable/)
+    }
+  })
+
+  /*
+   * The records that most need refusing are the ones that predate the field.
+   * Two of them are EQUAL — both absent — so an implementation that checked
+   * equality first would let exactly that pair through. Asserted on both
+   * sides and on the pair, because one-sided would pass a short-circuit.
+   */
+  it("an ABSENT schema refuses, including against another absent one", () => {
+    for (const pair of [["", V1], [V1, ""], ["", ""]] as const) {
+      const v = canCompareDomains(pair[0], pair[1])
+      expect(v.comparable).toBe(false)
+      if (!v.comparable) expect(v.because).toBe("different-domain-schema")
+    }
+  })
+
+  /*
+   * A version this code has never heard of is still comparable WITH ITSELF.
+   *
+   * Two scores written under domains-v9 share a composition, so comparing them
+   * is sound; whether today's reviewed copy can NAME their domains is a
+   * different question with a different answer, and it belongs to whatever
+   * renders the result. Collapsing the two here would refuse a sound
+   * comparison for a presentation reason — so this test exists to stop a
+   * future `isCurrentDomainSchema` check being added to the equality path.
+   */
+  it("an unrecognised schema compares with itself, and not with another", () => {
+    expect(canCompareDomains("domains-v9.0", "domains-v9.0").comparable).toBe(true)
+    expect(canCompareDomains("domains-v9.0", V1).comparable).toBe(false)
+  })
+
+  it("NON-VACUITY: nothing returns comparable across two different schemas", () => {
+    for (const other of ["", V1, "domains-v3.0", "domains-v1.1"]) {
+      if (other === "domains-v2.0") continue
+      expect(canCompareDomains("domains-v2.0", other).comparable).toBe(false)
+    }
+  })
+
+  /*
+   * The two axes are independent, which is the counterfactual this step was
+   * built for: the score may still compare while the domains do not.
+   */
+  it("the score verdict and the domain verdict can DISAGREE", () => {
+    expect(canCompare(FSS_V1_PROVENANCE, FSS_V1_PROVENANCE).comparable).toBe(true)
+    expect(canCompareDomains(DOMAIN_SCHEMA_VERSION, "domains-v2.0").comparable).toBe(false)
   })
 })

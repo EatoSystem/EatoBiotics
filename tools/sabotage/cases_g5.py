@@ -24,10 +24,14 @@ DRAFT = "lib/fss/system/draft.ts"
 VALIDATE = "lib/fss/system/validate.ts"
 REPO = "lib/fss/persistence/repository.ts"
 ASSESS_TSX = "components/fss/candidate-assessment.tsx"
+COMPARE = "lib/fss/engine/compare.ts"
+SCHEMA = "lib/fss/questions/domain-schema.ts"
+QTYPES = "lib/fss/questions/types.ts"
 
 CLAIMS = ["tests/unit/agent-loop-claims.test.ts"]
 SYSTEM = ["tests/unit/my-food-system.test.ts"]
 PERSIST = ["tests/unit/fss-persistence.test.ts"]
+ENGINE = ["tests/unit/fss-engine.test.ts"]
 
 CASES = [
     (1300, "the trend detail asserts the change was caused by something", PATTERNS,
@@ -163,5 +167,51 @@ CASES = [
     (1320, "abandoning an attempt also clears the established system", DRAFT,
      "  await args.repo.clearCurrentDraft()\n  await args.repo.deleteDraft(args.draftId)",
      "  await args.repo.clearCurrentDraft()\n  await args.repo.deleteDraft(args.draftId)\n  await args.repo.clearCurrentSystem()",
+     SYSTEM),
+
+    # ── STEP 2A · the fifth comparability axis ───────────────────────────────
+    #
+    # These mutate the BOUNDARY, not a delta, because step 2a produces no
+    # delta. The cases that restore a per-domain change under a moved schema
+    # belong to 2b, where the first subtraction exists.
+    #
+    # 1324 is the one this step was built around: a sixth domain added without
+    # moving the version. It breaks `tsc` too — but the harness runs vitest,
+    # and a widened TYPE is invisible to vitest. That is precisely how four
+    # Gate 4 mutations got through, so the guard reads the union as SOURCE.
+
+    (1321, "domain comparability stops refusing a schema that moved", COMPARE,
+     '  if (a === b) return { comparable: true, via: "same-domain-schema" }',
+     '  return { comparable: true, via: "same-domain-schema" }\n  if (a === b) return { comparable: true, via: "same-domain-schema" }',
+     ENGINE),
+
+    # The pair that is EQUAL because both are absent. An implementation that
+    # checks equality before presence lets exactly these through, and they are
+    # every score written before the anchor existed.
+    (1322, "an absent domain schema is treated as a match", COMPARE,
+     "  if (!a || !b) {",
+     "  if (false) {",
+     ENGINE),
+
+    (1323, "a compatibility pair is invented for the domain schema", COMPARE,
+     "export const COMPARABLE_DOMAIN_SCHEMAS: readonly (readonly [string, string])[] = []",
+     'export const COMPARABLE_DOMAIN_SCHEMAS: readonly (readonly [string, string])[] = [\n  ["domains-v1.0", "domains-v2.0"],\n]',
+     ENGINE),
+
+    (1324, "a sixth scored domain appears without the schema version moving", QTYPES,
+     '  | "mealRhythm"',
+     '  | "mealRhythm"\n  | "hydration"',
+     ENGINE),
+
+    (1325, "the domain list diverges from the union it is meant to mirror", SCHEMA,
+     '  "mealRhythm",\n] as const',
+     '] as const',
+     ENGINE),
+
+    # Present in memory, absent from storage — the shape where a field looks
+    # written and is not. The guard reads it back THROUGH the repository.
+    (1326, "the stored score stops recording which domains composed it", ESTABLISH,
+     "    domainSchemaVersion: DOMAIN_SCHEMA_VERSION,",
+     "    ...(false ? { domainSchemaVersion: DOMAIN_SCHEMA_VERSION } : {}),",
      SYSTEM),
 ]

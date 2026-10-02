@@ -1,4 +1,5 @@
 import type { Answers, FoodSystemScore } from "@/lib/fss/engine/score"
+import { DOMAIN_SCHEMA_VERSION } from "@/lib/fss/questions/domain-schema"
 import type { ResolvedQuestionSet } from "@/lib/fss/questions/types"
 import { buildPlan } from "@/lib/fss/action/plan"
 import { resolvePriorities } from "@/lib/fss/action/priority"
@@ -188,6 +189,14 @@ export async function establishFoodSystem(args: {
     })),
     completeness: score.completeness,
     provenance: score.provenance,
+    /*
+     * Recorded AT WRITE TIME, which is the only moment it is knowable.
+     *
+     * The `domains` array above was composed under today's schema. Reading the
+     * constant later and assuming it applied would be the backfill that
+     * `LEGACY_UNVERSIONED` exists to refuse one layer down.
+     */
+    domainSchemaVersion: DOMAIN_SCHEMA_VERSION,
     computedAt: now,
   }
 

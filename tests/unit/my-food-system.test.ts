@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest"
 import { readFileSync } from "node:fs"
 import { execSync } from "node:child_process"
 import { resolveQuestionSetV1 } from "@/lib/fss/questions/resolve"
+import { DOMAIN_SCHEMA_VERSION } from "@/lib/fss/questions/domain-schema"
 import { computeFoodSystemScore, type Answers } from "@/lib/fss/engine/score"
 import {
   DEV_ONLY_FSS_V1_FIXTURE_WEIGHTS,
@@ -135,6 +136,7 @@ function records(answers: Answers = allTwos(), overrides: Partial<Records> = {})
     })),
     completeness: score.completeness,
     provenance: score.provenance,
+    domainSchemaVersion: DOMAIN_SCHEMA_VERSION,
     computedAt: NOW,
   }
 
@@ -1112,6 +1114,39 @@ describe("establishment writes in order, and the pointer is the commit point", (
     expect(draftGoneAt, "the draft outlived the commit point").toBeGreaterThan(pointerAt)
     // Nothing else is written after the pointer.
     expect(repo.writes.slice(pointerAt + 1).filter((w) => w !== "delete-draft")).toEqual([])
+  })
+
+  /*
+   * ── THE SCORE RECORDS WHICH PARTS IT IS MADE OF ─────────────────────────
+   *
+   * Gate 5 step 2a. Read back through the repository rather than asserted on
+   * the object `establishFoodSystem` returned, because the question is whether
+   * the field SURVIVED THE WRITE — a value present in memory and absent from
+   * storage is the whole defect, and it is what the GLP-1-shaped version of
+   * this bug looks like.
+   *
+   * Without this, dropping the field from the write site changes no behaviour
+   * any test can see: the type says required, `tsc` would catch a missing
+   * literal, and nothing in vitest would notice a `delete` or a conditional
+   * spread. The sabotage case needs a behavioural assertion to land on.
+   */
+  it("the stored score records the domain schema it was composed under", async () => {
+    const repo = memoryRepo()
+    const result = await establishFoodSystem(establishArgs(repo))
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+
+    const stored = await repo.loadScore(result.scoreId)
+    expect(stored).not.toBeNull()
+    expect(stored?.domainSchemaVersion).toBe(DOMAIN_SCHEMA_VERSION)
+
+    /*
+     * And it is NOT inside provenance. The five keys are pinned by value in
+     * `fss-action-model.test.ts` for the reason `repository.ts` gives —
+     * widening them changes what every score already written claims about
+     * itself — so this asserts the field landed beside provenance, not in it.
+     */
+    expect(Object.keys(stored?.provenance ?? {})).not.toContain("domainSchemaVersion")
   })
 
   it("a composed view loads back from exactly what was written", async () => {

@@ -139,6 +139,7 @@ describe("the local adapter is the active backend", () => {
         questionSetVersion: "questions-v1.0", calculationVersion: "calc-v1.0",
         interpretationVersion: "interpretation-v1.0",
       },
+      domainSchemaVersion: "domains-v1.0",
       computedAt: "",
     }
     await expect(repo.saveScore(score)).rejects.toThrow(RepositoryWriteFailed)
@@ -179,6 +180,7 @@ describe("the local adapter is the active backend", () => {
         questionSetVersion: "questions-v1.0", calculationVersion: "calc-v1.0",
         interpretationVersion: "interpretation-v1.0",
       },
+      domainSchemaVersion: "domains-v1.0",
       computedAt: "",
     })).rejects.toThrow(RepositoryWriteFailed)
     await expect(repo.setCurrentSystem("system_x")).rejects.toThrow(RepositoryWriteFailed)
