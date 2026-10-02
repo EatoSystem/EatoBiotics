@@ -57,6 +57,22 @@ def run(case):
         print(f"  {number}  UNRUNNABLE  tests vitest cannot collect: {tests}")
         return "unrunnable"
 
+    # ── A MISSING FILE REPORTS, IT DOES NOT CRASH ────────────────────────────
+    #
+    # `read_bytes` on an absent path raises, and the raise happens BEFORE the
+    # anchor report below — so one case whose target file does not exist in this
+    # checkout took down the whole suite with a traceback, and the suite printed
+    # no verdict at all. `cases_s3a` was in exactly that state: 33 of its cases
+    # target files that live on unmerged PR #274, which is documented, and the
+    # documented consequence should be 33 lines saying so, not a crash that
+    # hides the other 25 cases' results.
+    #
+    # It returns "anchor" because that is what it is: no mutation happened, so
+    # nothing was proved. A missing file can never make a case appear caught.
+    if not path.exists():
+        print(f"  {number}  FILE MISSING: {rel}")
+        return "anchor"
+
     original = path.read_bytes()
     before = sha(path)
 
