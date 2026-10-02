@@ -984,6 +984,67 @@ describe("the AI context package is an interface and nothing more", () => {
         new RegExp(`\\breadonly ${field}\\b`),
       )
     }
+
+    /*
+     * ── AND NO METHODOLOGY FIELD, WHICH IS THE SAME DEFECT BY DATA ──────────
+     *
+     * The import guard above stops a function arriving. This stops the NUMBERS
+     * arriving without it — weights, band thresholds, a ranking rule — which
+     * would let a model recompute a score or a band and reach a figure no
+     * deterministic component produced. The ceiling carries values and
+     * versions the engine PRODUCED, never the parameters it used.
+     */
+    for (const field of [
+      "weights",
+      "weight",
+      "bands",
+      "bandThresholds",
+      "thresholds",
+      "ranking",
+      "scoringRule",
+    ]) {
+      expect(body, `${field} would let the model recompute what the engine decided`).not.toMatch(
+        new RegExp(`\\breadonly ${field}\\b`),
+      )
+    }
+  })
+
+  /*
+   * ── THE COMPARATIVE COPY CANNOT ENTER THIS LAYER AT ALL ─────────────────
+   *
+   * The behavioural test below ("no intent's object carries a reviewed
+   * comparative sentence") catches prose that reaches the built object. This
+   * catches it one step earlier, at the import — because a sentence that is in
+   * the module is a sentence one edit away from being in the object, and
+   * `COMPARATIVE_COPY_REVIEW.state` is "pending".
+   *
+   * The route it closes is specific: pending copy → model context → newly
+   * generated customer copy, which would route around the review entirely
+   * through a door the `CANDIDATE_ROOTS` fence does not watch — that fence
+   * permits `lib/fss`, and this layer lives there.
+   *
+   * Pinned by filename for the same reason the methodology guard is: a glob
+   * silently covers a new file, and silently covers nothing once the directory
+   * is renamed.
+   */
+  it("the AI layer imports no comparative prose, reviewed or otherwise", () => {
+    const AI_MODULES = ["lib/fss/system/ai-context.ts", "lib/fss/system/ai-claims.ts"]
+    const present = AI_MODULES.filter((f) => existsSync(f))
+    expect(present.length, "both AI modules are gone — is this guard still aimed at anything?")
+      .toBeGreaterThan(0)
+
+    for (const file of present) {
+      const src = readFileSync(file, "utf-8")
+      const imports = [...src.matchAll(/^import[\s\S]*?from "([^"]+)"/gm)].map((m) => m[1])
+      for (const specifier of imports) {
+        expect(
+          /presentation\/changed|presentation\/domains|DOMAIN_CHANGE_COPY/.test(specifier),
+          `${file} imports ${specifier} — the AI layer takes facts, never sentences`,
+        ).toBe(false)
+      }
+      // NON-VACUITY: the parser found this file's real imports.
+      expect(imports.length, `${file} parsed to zero imports`).toBeGreaterThan(0)
+    }
   })
 })
 

@@ -267,14 +267,32 @@ CASES = [
      SYSTEM),
 
     # ── K · the AI interface ────────────────────────────────────────────────
+    # REPOINTED in Gate 6.0b. `FoodSystemAiContext` became the type-level
+    # ceiling `FoodSystemAiContextCeiling`, so the old section-comment anchor is
+    # gone. Same mutation, same guard, aimed at the new declaration — and the
+    # guard it fires is now wider, refusing methodology fields as well as prompt
+    # ones.
     (1237, "the AI context gains a prompt field", AICTX,
-     "  /* ── Identity and provenance ─────────────────────────────────────────── */\n  readonly systemId: string",
-     "  readonly systemPrompt: string\n  /* ── Identity and provenance ─────────────────────────────────────────── */\n  readonly systemId: string",
+     "export interface FoodSystemAiContextCeiling {\n  readonly systemId: string",
+     "export interface FoodSystemAiContextCeiling {\n  readonly systemPrompt: string\n  readonly systemId: string",
      SYSTEM),
 
-    (1238, "the interface-only package is given a working body", AICTX,
-     "  throw new Error(\n    \"toAiContext is an interface, not an implementation.",
-     "  return {} as FoodSystemAiContext\n  throw new Error(\n    \"toAiContext is an interface, not an implementation.",
+    # ── REPOINTED, AND THE ONLY CASE IN THIS PROGRAMME WHOSE PREMISE WAS
+    #    RETIRED ON PURPOSE RATHER THAN DRIFTING ──────────────────────────────
+    #
+    # This case asserted that `toAiContext` still threw. Gate 6.0 gave it a
+    # body, which the module's own Gate 4 header anticipated in writing: "Gate 6
+    # is where something uses it." So the mutation no longer describes a defect
+    # — it describes the gate.
+    #
+    # Deleting it would lose a slot that is still needed, because Gate 6.0's
+    # containment has a NEW thing to protect in the same file and the same
+    # spirit: the closed intent union. The plan prohibited an escape hatch by
+    # name — no `toAiContext("raw")`, no `"all"`, no `undefined` — and nothing
+    # else in the harness tries one. So this case now opens that hatch.
+    (1238, "an escape-hatch intent is added to the closed union", AICTX,
+     '  "explain-what-changed",\n]',
+     '  "explain-what-changed",\n  "raw" as AiIntent,\n]',
      SYSTEM),
 
     # ── L · the fences ──────────────────────────────────────────────────────
