@@ -2,7 +2,8 @@ import { describe, it, expect } from "vitest"
 import { readFileSync } from "node:fs"
 import { execSync } from "node:child_process"
 import { resolveQuestionSetV1 } from "@/lib/fss/questions/resolve"
-import { DOMAIN_SCHEMA_VERSION } from "@/lib/fss/questions/domain-schema"
+import { DOMAIN_SCHEMA_VERSION, FSS_DOMAINS } from "@/lib/fss/questions/domain-schema"
+import { compareSystems } from "@/lib/fss/system/compare-systems"
 import { computeFoodSystemScore, type Answers } from "@/lib/fss/engine/score"
 import {
   DEV_ONLY_FSS_V1_FIXTURE_WEIGHTS,
@@ -76,6 +77,11 @@ const NOW = "2026-10-01T09:00:00.000Z"
 /** The all-2s sheet the gate's walk uses. */
 function allTwos(): Answers {
   return Object.fromEntries(SET.questions.map((q) => [q.id, 2]))
+}
+
+/** Every answer one notch better, so a comparison has real movement to find. */
+function allThrees(): Answers {
+  return Object.fromEntries(SET.questions.map((q) => [q.id, 3]))
 }
 
 /** A sheet with one domain at the floor, so the priority is unambiguous. */
@@ -1832,5 +1838,409 @@ describe("ids are minted, not derived from content", () => {
     expect(isMintedId(newId("action"), "score")).toBe(false)
     expect(isMintedId("candidate")).toBe(false)
     expect(isMintedId("")).toBe(false)
+  })
+})
+
+/* ════════════════════════════════════════════════════════════════════════════
+   12 · COMPARING TWO FOOD SYSTEMS — Gate 5 step 2b
+
+   "Can these two be compared, and in what ways?" and nothing beyond that.
+   No prose is produced here, so nothing here reads one.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/** Establish a system against `previousSystemId`, at a distinct instant. */
+async function chainOne(
+  repo: FoodSystemRepository,
+  previousSystemId: string | null,
+  now: string,
+  answers: Answers = allTwos(),
+): Promise<string> {
+  const result = await establishFoodSystem({
+    repo,
+    set: SET,
+    answers,
+    score: computeFoodSystemScore({
+      set: SET,
+      answers,
+      weights: DEV_ONLY_FSS_V1_FIXTURE_WEIGHTS,
+      fixtureContext: FIXTURE,
+    }),
+    draft: draftFor(answers, previousSystemId),
+    now,
+  })
+  if (!result.ok) throw new Error(`fixture: ${result.failure.reason}`)
+  return result.systemId
+}
+
+/** Overwrite a stored score in place, to stage a provenance counterfactual. */
+async function tamperScore(
+  repo: FoodSystemRepository & { store: Map<string, unknown> },
+  systemId: string,
+  patch: (s: StoredScore) => StoredScore,
+): Promise<void> {
+  const system = (await repo.loadSystem(systemId))!
+  const score = (await repo.loadScore(system.scoreId))!
+  repo.store.set(`score.${score.id}`, patch(score))
+}
+
+describe("a comparison is a relationship between two systems, not two scores", () => {
+  it("a baseline has no predecessor, and that is not a failure", async () => {
+    const repo = memoryRepo()
+    const a = await chainOne(repo, null, "2026-10-01T09:00:00.000Z")
+    const c = await compareSystems({ repo, systemId: a })
+    expect(c.state).toBe("no-predecessor")
+  })
+
+  it("two systems from one instrument are fully comparable", async () => {
+    const repo = memoryRepo()
+    const a = await chainOne(repo, null, "2026-10-01T09:00:00.000Z", allTwos())
+    const b = await chainOne(repo, a, "2026-11-01T09:00:00.000Z", allThrees())
+
+    const c = await compareSystems({ repo, systemId: b })
+    expect(c.state).toBe("fully-comparable")
+    if (c.state !== "fully-comparable") return
+
+    expect(c.previousSystemId).toBe(a)
+    expect(c.currentSystemId).toBe(b)
+    expect(c.score).not.toBeNull()
+    // Better answers, so the number went up. Arithmetic, not interpretation.
+    expect(c.score?.direction).toBe("higher")
+    expect(c.score?.delta).toBe((c.score?.current ?? 0) - (c.score?.previous ?? 0))
+    expect(c.domains.length).toBe(FSS_DOMAINS.length)
+  })
+
+  it("identical answers twice produce `same`, not manufactured movement", async () => {
+    const repo = memoryRepo()
+    const a = await chainOne(repo, null, "2026-10-01T09:00:00.000Z", allTwos())
+    const b = await chainOne(repo, a, "2026-11-01T09:00:00.000Z", allTwos())
+
+    const c = await compareSystems({ repo, systemId: b })
+    if (c.state !== "fully-comparable") throw new Error(c.state)
+    expect(c.score?.delta).toBe(0)
+    expect(c.score?.direction).toBe("same")
+    for (const d of c.domains) {
+      if (d.state === "both-scored") expect(d.direction).toBe("same")
+    }
+  })
+
+  /*
+   * ── THE TEST THAT MAKES "THE PAIR IS RESOLVED, NEVER CHOSEN" PROVABLE ───
+   *
+   * Asking only "viewing C compares B↔C" cannot distinguish the chain from
+   * "the latest two by date" — both answer B↔C. So this views B while C
+   * exists and is newer. The chain says A↔B; any date-ordering implementation
+   * says B↔C, and fails here.
+   */
+  it("viewing B compares A↔B even though C exists and is newer", async () => {
+    const repo = memoryRepo()
+    const a = await chainOne(repo, null, "2026-10-01T09:00:00.000Z")
+    const b = await chainOne(repo, a, "2026-11-01T09:00:00.000Z")
+    const cc = await chainOne(repo, b, "2026-12-01T09:00:00.000Z")
+
+    const viewingB = await compareSystems({ repo, systemId: b })
+    expect(viewingB.state).not.toBe("unavailable")
+    if (viewingB.state === "no-predecessor" || viewingB.state === "unavailable") return
+    expect(viewingB.previousSystemId, "the pair was chosen by date, not by the chain").toBe(a)
+    expect(viewingB.currentSystemId).toBe(b)
+
+    const viewingC = await compareSystems({ repo, systemId: cc })
+    if (viewingC.state === "no-predecessor" || viewingC.state === "unavailable") return
+    expect(viewingC.previousSystemId).toBe(b)
+    expect(viewingC.currentSystemId).toBe(cc)
+  })
+
+  /* ── The two axes, and the state that exists because they disagree ────── */
+
+  it("a moved QUESTION SET refuses, and still carries both scores", async () => {
+    const repo = memoryRepo()
+    const a = await chainOne(repo, null, "2026-10-01T09:00:00.000Z")
+    const b = await chainOne(repo, a, "2026-11-01T09:00:00.000Z")
+
+    await tamperScore(repo, b, (s) => ({
+      ...s,
+      provenance: { ...s.provenance, questionSetVersion: "questions-v1.1" },
+    }))
+
+    const c = await compareSystems({ repo, systemId: b })
+    expect(c.state).toBe("refused")
+    if (c.state !== "refused") return
+    expect(c.scoreVerdict.comparable).toBe(false)
+    // The RECORDS survive a refusal. Only the relationship is suppressed.
+    expect(c.previousScore.id).toBeTruthy()
+    expect(c.currentScore.id).toBeTruthy()
+    expect("score" in c, "a refusal carried a delta").toBe(false)
+    expect("domains" in c, "a refusal carried domain deltas").toBe(false)
+  })
+
+  it("a moved DOMAIN SCHEMA compares the score and NOT the domains", async () => {
+    const repo = memoryRepo()
+    const a = await chainOne(repo, null, "2026-10-01T09:00:00.000Z", allTwos())
+    const b = await chainOne(repo, a, "2026-11-01T09:00:00.000Z", allThrees())
+
+    await tamperScore(repo, b, (s) => ({ ...s, domainSchemaVersion: "domains-v2.0" }))
+
+    const c = await compareSystems({ repo, systemId: b })
+    expect(c.state).toBe("score-only-comparable")
+    if (c.state !== "score-only-comparable") return
+
+    expect(c.scoreVerdict.comparable).toBe(true)
+    expect(c.domainVerdict.comparable).toBe(false)
+    expect(c.score?.direction).toBe("higher")
+
+    /*
+     * THE POINT OF THE THIRD STATE. Not "domains is empty" — the field is not
+     * there at all, so a renderer cannot reach for it and find nothing
+     * interesting to say. It has nowhere to look.
+     */
+    expect("domains" in c, "a moved domain schema still produced domain deltas").toBe(false)
+  })
+
+  it("a legacy score refuses, and is NOT upgraded by its neighbour", async () => {
+    const repo = memoryRepo()
+    const a = await chainOne(repo, null, "2026-10-01T09:00:00.000Z")
+    const b = await chainOne(repo, a, "2026-11-01T09:00:00.000Z")
+
+    await tamperScore(repo, a, (s) => ({ ...s, provenance: LEGACY_PROVENANCE }))
+
+    const c = await compareSystems({ repo, systemId: b })
+    expect(c.state).toBe("refused")
+    if (c.state !== "refused") return
+    expect(c.scoreVerdict.comparable).toBe(false)
+    if (!c.scoreVerdict.comparable) expect(c.scoreVerdict.because).toBe("legacy-unversioned")
+  })
+
+  /*
+   * A score written before `domainSchemaVersion` existed — the pre-2a record
+   * sitting in somebody's localStorage right now. The score still compares;
+   * the domains cannot, because nothing records which parts they were.
+   */
+  it("a score with no recorded domain schema loses its domains, not its score", async () => {
+    const repo = memoryRepo()
+    const a = await chainOne(repo, null, "2026-10-01T09:00:00.000Z", allTwos())
+    const b = await chainOne(repo, a, "2026-11-01T09:00:00.000Z", allThrees())
+
+    await tamperScore(repo, a, (s) => {
+      const { domainSchemaVersion: _gone, ...rest } = s
+      return rest as StoredScore
+    })
+
+    const c = await compareSystems({ repo, systemId: b })
+    expect(c.state).toBe("score-only-comparable")
+    if (c.state !== "score-only-comparable") return
+    expect(c.score).not.toBeNull()
+  })
+
+  /* ── Availability is not comparability ───────────────────────────────── */
+
+  it("a WITHHELD score yields a null change, and still compares", async () => {
+    const repo = memoryRepo()
+    const a = await chainOne(repo, null, "2026-10-01T09:00:00.000Z")
+    const b = await chainOne(repo, a, "2026-11-01T09:00:00.000Z")
+
+    await tamperScore(repo, b, (s) => ({ ...s, state: "withheld", score: undefined }))
+
+    const c = await compareSystems({ repo, systemId: b })
+    /*
+     * NOT "refused". The methods agree; there is simply no number. Reporting a
+     * method change here would say something false about why the product is
+     * quiet — and treating the absence as 0 would invent a collapse.
+     */
+    expect(c.state).toBe("fully-comparable")
+    if (c.state !== "fully-comparable") return
+    expect(c.score, "a withheld score produced a number").toBeNull()
+  })
+
+  /* ── Record problems report themselves as record problems ────────────── */
+
+  it("a missing predecessor record is UNAVAILABLE, never a refusal", async () => {
+    const repo = memoryRepo()
+    const a = await chainOne(repo, null, "2026-10-01T09:00:00.000Z")
+    const b = await chainOne(repo, a, "2026-11-01T09:00:00.000Z")
+
+    repo.store.delete(`system.${a}`)
+
+    const c = await compareSystems({ repo, systemId: b })
+    expect(c.state).toBe("unavailable")
+    if (c.state !== "unavailable") return
+    expect(c.failed).toBe("previous-system-record-missing")
+  })
+
+  it("a system id that resolves to nothing is unavailable", async () => {
+    const repo = memoryRepo()
+    const c = await compareSystems({ repo, systemId: "system_nope" })
+    expect(c.state).toBe("unavailable")
+    if (c.state !== "unavailable") return
+    expect(c.failed).toBe("system-record-missing")
+  })
+
+  /*
+   * The schema version said these were composed of the same parts and they are
+   * not. That is provenance having stopped being reliable, so it FAILS rather
+   * than quietly comparing the intersection — the same posture `canCompare`
+   * takes when a method version lies about its question set.
+   */
+  it("agreeing schema versions over disagreeing domain sets FAILS", async () => {
+    const repo = memoryRepo()
+    const a = await chainOne(repo, null, "2026-10-01T09:00:00.000Z")
+    const b = await chainOne(repo, a, "2026-11-01T09:00:00.000Z")
+
+    await tamperScore(repo, b, (s) => ({
+      ...s,
+      domains: [...s.domains.slice(1), { domain: "hydration", state: "scored", score: 50 }],
+    }))
+
+    const c = await compareSystems({ repo, systemId: b })
+    expect(c.state).toBe("unavailable")
+    if (c.state !== "unavailable") return
+    expect(c.failed).toBe("domain-sets-disagree")
+  })
+})
+
+describe("the comparison carries facts, and has nowhere to put a sentence", () => {
+  /*
+   * A KEY-SET PIN, the same instrument that keeps `ScoreProvenance` at five
+   * fields. Adding `headline: string` — or any other prose field — fails here
+   * rather than shipping, which is what makes "this module writes no prose" a
+   * property instead of a comment.
+   */
+  it("each state's keys are pinned by value", async () => {
+    const repo = memoryRepo()
+    const a = await chainOne(repo, null, "2026-10-01T09:00:00.000Z", allTwos())
+    const b = await chainOne(repo, a, "2026-11-01T09:00:00.000Z", allThrees())
+
+    const full = await compareSystems({ repo, systemId: b })
+    expect(Object.keys(full).sort()).toEqual([
+      "currentScore",
+      "currentSystemId",
+      "domainVerdict",
+      "domains",
+      "previousScore",
+      "previousSystemId",
+      "score",
+      "scoreVerdict",
+      "state",
+    ])
+
+    await tamperScore(repo, b, (s) => ({ ...s, domainSchemaVersion: "domains-v2.0" }))
+    const scoreOnly = await compareSystems({ repo, systemId: b })
+    expect(Object.keys(scoreOnly).sort()).toEqual([
+      "currentScore",
+      "currentSystemId",
+      "domainVerdict",
+      "previousScore",
+      "previousSystemId",
+      "score",
+      "scoreVerdict",
+      "state",
+    ])
+
+    await tamperScore(repo, b, (s) => ({
+      ...s,
+      provenance: { ...s.provenance, fssMethodVersion: "fss-v2.0" },
+    }))
+    const refused = await compareSystems({ repo, systemId: b })
+    expect(Object.keys(refused).sort()).toEqual([
+      "currentScore",
+      "currentSystemId",
+      "domainVerdict",
+      "previousScore",
+      "previousSystemId",
+      "scoreVerdict",
+      "state",
+    ])
+  })
+
+  it("the module reaches for no interpretation and no selection engine", () => {
+    const src = readFileSync("lib/fss/system/compare-systems.ts", "utf8")
+    const code = src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "")
+
+    // `interpretation-v1.0` is deliberately unregistered and getScoreBand throws.
+    expect(code).not.toMatch(/getScoreBand|interpretation|scoreBand/i)
+    // A comparison must not re-decide anything. B owns its own decisions.
+    expect(code).not.toMatch(/resolvePriorities|buildPlan/)
+    // And it resolves the pair from the chain, never from the pointer or a date.
+    expect(code).not.toMatch(/loadCurrentSystemId|establishedAt/)
+  })
+
+  /*
+   * NON-VACUITY. The three assertions above are negative, so they would all
+   * pass over an empty file. This proves the module really does hold the two
+   * things it is supposed to hold.
+   */
+  it("NON-VACUITY: it really does call both comparability authorities", () => {
+    const src = readFileSync("lib/fss/system/compare-systems.ts", "utf8")
+    const code = src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "")
+    expect(code).toMatch(/canCompare\(/)
+    expect(code).toMatch(/canCompareDomains\(/)
+    expect(code).toMatch(/previousSystemId/)
+  })
+})
+
+/*
+ * NO SUBTRACTION OUTSIDE THE COMPARISON MODULE.
+ *
+ * Invariant 3 of step 2b, and it starts from a verified-clean baseline: before
+ * this was written, a search of these roots found zero score subtraction. So
+ * the guard grandfathers nothing, and the first component that computes its own
+ * delta fails it.
+ */
+describe("only the comparison module subtracts two scores", () => {
+  it("no candidate surface computes its own delta", () => {
+    const files = execSync(
+      "git ls-files lib/fss components/fss app/preview/food-system-v1 " +
+        "&& git ls-files --others --exclude-standard lib/fss components/fss app/preview/food-system-v1",
+      { encoding: "utf8" },
+    )
+      .split("\n")
+      .filter((f) => /\.tsx?$/.test(f))
+      .filter((f) => f !== "lib/fss/system/compare-systems.ts")
+
+    expect(files.length).toBeGreaterThan(10)
+
+    /*
+     * BOTH SIDES must be score-ish, because a delta is a subtraction between
+     * two score-like things. The first draft of this rule only constrained the
+     * LEFT side and produced ten false positives — every one a hyphen inside a
+     * string literal (`"score-missing"`, `"previous-system-unresolvable"`) or a
+     * kebab-case import path (`score-ring`). Asking for both sides rejects all
+     * of them on their own terms: `missing`, `ring` and `system` are not
+     * scores. It also leaves `i - 1` and date arithmetic alone, which matters
+     * because a guard that cries wolf gets switched off.
+     *
+     * HONEST ABOUT ITS REACH: `getScore(b) - getScore(a)` is not matched, and
+     * nor is a subtraction against a literal. This catches the natural way a
+     * component would compute a delta, not every conceivable spelling — the
+     * TYPE is what makes the refused and score-only states unrenderable, and
+     * this is the backstop for the surfaces the type does not reach.
+     */
+    const TOKEN = String.raw`(?:\w+\??\.)*(?:\w*[Ss]core\w*|previous\w*|current\w*|baseline\w*)(?:\??\.\w+)*`
+    const SUBTRACTION = new RegExp(`${TOKEN}\\s*-\\s*${TOKEN}`)
+
+    /*
+     * NON-VACUITY FOR THE GUARD ITSELF. A rule this specific can be weakened
+     * into something that matches nothing, and a passing test would then mean
+     * only that the regex is broken. Gate 3.6's claims guard caught 1 of 9
+     * interpolated claims for exactly this reason.
+     */
+    expect(SUBTRACTION.test("const d = current.score - previous.score")).toBe(true)
+    expect(SUBTRACTION.test("const d = b.score - a.score")).toBe(true)
+    expect(SUBTRACTION.test("const d = currentScore - previousScore")).toBe(true)
+    expect(SUBTRACTION.test('failed: "score-missing",')).toBe(false)
+    expect(SUBTRACTION.test("for (let i = n - 1; i >= 0; i--)")).toBe(false)
+
+    const offenders: string[] = []
+    for (const file of files) {
+      const code = readFileSync(file, "utf8")
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/\/\/.*$/gm, "")
+      for (const [i, line] of code.split("\n").entries()) {
+        if (SUBTRACTION.test(line)) offenders.push(`${file}:${i + 1} ${line.trim()}`)
+      }
+    }
+
+    expect(
+      offenders,
+      "a delta computed outside lib/fss/system/compare-systems.ts, where canCompare cannot gate it",
+    ).toEqual([])
   })
 })

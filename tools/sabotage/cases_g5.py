@@ -25,6 +25,7 @@ VALIDATE = "lib/fss/system/validate.ts"
 REPO = "lib/fss/persistence/repository.ts"
 ASSESS_TSX = "components/fss/candidate-assessment.tsx"
 COMPARE = "lib/fss/engine/compare.ts"
+COMPARE_SYS = "lib/fss/system/compare-systems.ts"
 SCHEMA = "lib/fss/questions/domain-schema.ts"
 QTYPES = "lib/fss/questions/types.ts"
 
@@ -213,5 +214,66 @@ CASES = [
     (1326, "the stored score stops recording which domains composed it", ESTABLISH,
      "    domainSchemaVersion: DOMAIN_SCHEMA_VERSION,",
      "    ...(false ? { domainSchemaVersion: DOMAIN_SCHEMA_VERSION } : {}),",
+     SYSTEM),
+
+    # ── STEP 2B · can these two Food Systems be compared, and in what ways? ──
+    #
+    # A comparison is a relationship between two immutable Food Systems, not
+    # between two loose scores. These attack the resolution of the pair, the
+    # two verdicts gating it, and the states that exist because the verdicts
+    # can disagree.
+
+    # THE ONE THAT NEEDED A SPECIFIC TEST TO BE CATCHABLE. "Latest two by date"
+    # agrees with the chain whenever you are viewing the newest system, so the
+    # guard views B while C exists and is newer.
+    (1327, "the pair is chosen by date instead of by the chain", COMPARE_SYS,
+     "  const previous = await repo.loadSystem(current.previousSystemId)",
+     "  const all = await Promise.all(\n    [current.previousSystemId, await repo.loadCurrentSystemId()].map((i) =>\n      i ? repo.loadSystem(i) : null,\n    ),\n  )\n  const previous = all\n    .filter((s): s is NonNullable<typeof s> => s !== null && s.id !== current.id)\n    .sort((x, y) => y.establishedAt.localeCompare(x.establishedAt))[0]",
+     SYSTEM),
+
+    (1328, "a moved domain schema still produces per-domain deltas", COMPARE_SYS,
+     '  if (!domainVerdict.comparable) {\n    return { state: "score-only-comparable", ...common, scoreVerdict, domainVerdict, score }\n  }',
+     "",
+     SYSTEM),
+
+    (1329, "a refused score comparison returns a delta anyway", COMPARE_SYS,
+     '  if (!scoreVerdict.comparable) {\n    return { state: "refused", ...common, scoreVerdict, domainVerdict }\n  }',
+     "",
+     SYSTEM),
+
+    # Availability collapsed into comparability: an absent number invented as a
+    # zero, which manufactures a score of 0 and a delta out of nothing.
+    (1330, "a withheld score is treated as zero rather than as no number", COMPARE_SYS,
+     "  if (typeof a !== \"number\" || typeof b !== \"number\") return null",
+     "  if (typeof a !== \"number\" || typeof b !== \"number\") {\n    return { previous: a ?? 0, current: b ?? 0, delta: (b ?? 0) - (a ?? 0), direction: direction((b ?? 0) - (a ?? 0)) }\n  }",
+     SYSTEM),
+
+    # A record problem dressed up as a methodological statement.
+    (1331, "a missing predecessor record is reported as a refusal", COMPARE_SYS,
+     '      failed: "previous-system-record-missing",',
+     '      failed: "score-record-missing",',
+     SYSTEM),
+
+    (1332, "disagreeing domain sets under one schema version are tolerated", COMPARE_SYS,
+     '  if (before.size !== after.size) return "disagree"\n  for (const name of after.keys()) if (!before.has(name)) return "disagree"',
+     "",
+     SYSTEM),
+
+    (1333, "a legacy score is upgraded because its neighbour is current", COMPARE_SYS,
+     "  const scoreVerdict = canCompare(previousScore.provenance, currentScore.provenance)",
+     "  const scoreVerdict = canCompare(currentScore.provenance, currentScore.provenance)",
+     SYSTEM),
+
+    # Invariant 3: no subtraction outside the comparison module. Mutates a REAL
+    # candidate component, which is where this would actually appear.
+    (1334, "a component computes its own score delta", "components/fss/system/progress.tsx",
+     "  const { progress, review } = slice",
+     "  const { progress, review } = slice\n  const previousScore = 0\n  const currentScore = 0\n  const drift = currentScore - previousScore\n  void drift",
+     SYSTEM),
+
+    # The key-set pin: prose arriving in a module that is specified to hold none.
+    (1335, "the comparison gains a prose field", COMPARE_SYS,
+     '  return { state: "fully-comparable", ...common, scoreVerdict, domainVerdict, score, domains }',
+     '  return { state: "fully-comparable", ...common, scoreVerdict, domainVerdict, score, domains, headline: "Your score moved" }',
      SYSTEM),
 ]
