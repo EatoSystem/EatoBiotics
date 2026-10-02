@@ -194,3 +194,91 @@ surfaces, permitted on others, required on canonical surfaces only after the
 contract phase. The full matrix is `FSS_V1_DESIGN_SPEC.md` §11. The guard must
 become lifecycle-aware — a policy lookup of (term, surface class, phase)
 replacing a blanket regex.
+
+## 8. The Intelligence boundary
+
+Frozen at Gate 6.0, before any model was introduced. Gate 6.0 built the
+containment vessel and made **no model call at all** — which is the only point
+at which these rules could be written down honestly, because nothing yet
+depended on relaxing them.
+
+### 8.1 The five rules
+
+> **Structured truth is authoritative.**
+> **AI receives only the context required by its declared intent.**
+> **Context is capability.**
+> **Validate claim bindings deterministically; guard language separately.**
+> **AI may explain or operationalise a decision. It may not silently make a
+> new one.**
+
+Each is paired below with the instrument that enforces it. That pairing is the
+section's real content: this programme's recurring finding is not that a rule
+was unwritten, it is that a written rule had no named instrument and drifted
+until a sabotage case or a live read found it.
+
+| Rule | Enforced by |
+|---|---|
+| Structured truth is authoritative | The no-methodology-import guard, pinned **by filename** over `lib/fss/system/ai-context.ts` and `lib/fss/system/ai-claims.ts`. The layer receives verdicts and decisions, never the functions that reach them. Pinned by filename rather than by directory glob: a glob silently covers a new file, and silently covers nothing once the directory is renamed. |
+| AI receives only the context its intent requires | `INTENT_FIELDS` is one declaration read three ways — the TypeScript projection via `Pick`, the runtime object, and the test. Each intent's key set is pinned **by value**, and asserted as **equality in both directions**: a missing required field fails as surely as an undeclared extra one, because subset-only validation silently drops grounding and a model missing its grounding substitutes something. |
+| Context is capability | `INTENT_DENIED` is asserted against the **built object** — `not in`, never "is undefined", since a field present and undefined has still been handed over. The ceiling is a **type with no runtime value**, so there is nothing to spread and nothing to spread-then-delete; the builder constructs positively by iterating the declared keys. `AiIntent` is closed at three, pinned by value, with no `"raw"`, no `"all"` and no `undefined`. |
+| Validate bindings deterministically; guard language separately | `validateClaimBinding` reads ids and domains and has **no sentence parameter to read**. Its six refusals each name a different appeal. A source test refuses `sentence`, `prose`, `text:`, `toMatch` and `RegExp` in `ai-claims.ts`, so the withdrawn free-text design cannot return quietly. The language guards — `assertClean` / `GENERATED_CLAIM_RULES` and `PERSONAL_BIOTIC_STATE` — stay where they are, **separate from and subordinate to** the binding check. |
+| Explain or operationalise, never silently decide | `ClaimBasis` has no `alternatives`, no `consideredDomains`, no `suggestedPriority` and no `confidence`, pinned by key set — an appeal is not a thing the type can hold. **Rank is part of the binding**: `StoredPriorityDecision.selected` holds up to three, so binding to the rank-2 entry while calling it "your current focus" would reorder a persisted decision with entirely correct ids. Membership is not enough. |
+
+### 8.2 Why the binding is structural and not a language check
+
+The first design of the claim validator read arbitrary prose and decided
+whether it contradicted the persisted plan. It was withdrawn in review for two
+reasons, and the second is the load-bearing one:
+
+- it would have been a second miniature NLP engine, in a gate that exists to
+  have **one** decision engine;
+- and worse, it would have been a **decision engine deciding whether a claim is
+  acceptable**. A regex asked *"does this prose secretly disagree with the
+  plan?"* is wrong in both directions and unfixable in either.
+
+So the direction is inverted. The explanation is **structured first**, and prose
+is generated from the structure. The model is not given free rein and then
+policed; it is given only the basis it is permitted to explain. That is the same
+move as the context contract, one level down: **constrain the input rather than
+audit the output.**
+
+### 8.3 Two permanent guards
+
+Both were added at Gate 6.0d because the sabotage list contained cases nothing
+was aimed at. Both are permanent.
+
+**Comparative prose is blocked at the AI-layer import boundary.** A behavioural
+test already catches prose that reaches the built context object; this catches it
+one step earlier, because a sentence in the module is one edit from being in the
+context. The route it closes is specific and was nearly missed:
+`COMPARATIVE_COPY_REVIEW.state` is `"pending"` (§6.1), and the `CANDIDATE_ROOTS`
+fence permits `lib/fss` — which is where this layer lives. So pending copy could
+have become newly generated customer copy through a door that fence does not
+watch.
+
+**Methodology values are blocked from the ceiling, as firmly as methodology
+functions.** The import guard stops a scoring or selection function arriving.
+This stops the numbers arriving without it — weights, band thresholds, a ranking
+rule — which would let a model recompute a score or a band and reach a figure no
+deterministic component produced. A model should not receive weights simply
+because nobody imported the scoring engine.
+
+### 8.4 What clearing this boundary does **not** approve
+
+Gate 6.0 settles how an AI may be given material and what it may be asked to
+explain. It settles nothing about whether the material is scientifically right.
+
+Still open, and must stay visibly open:
+
+- the five candidate domains;
+- the seven draft questions, and q6's wording;
+- the domain weights;
+- the canonical score bands, and `interpretation-v1.0`, still unregistered on
+  purpose;
+- the candidate recommendation catalogue;
+- the fifteen comparative sentences — `COMPARATIVE_COPY_REVIEW.state` is
+  `"pending"` and `reviewedBy` is null (§6.1).
+
+The candidate product stays inside its preview fence until FSS-v1 itself is
+scientifically reviewed. **A narrower box around the model is not a warrant for
+what the box contains.**

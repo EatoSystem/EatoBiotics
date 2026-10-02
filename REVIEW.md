@@ -6,6 +6,142 @@ git history. This file starts it. Entries are newest first.
 
 ---
 
+## 2026-10-02 — Gate 6.0 close · EatoBiotics Intelligence boundary
+
+Branch `claude/eatobiotics-intelligence`, head **`331fc80`**, tree clean.
+`origin/main` untouched at `a2ad034` throughout. No Supabase read, write,
+migration drafted or applied, or column named.
+
+Gate 6.0 builds the containment vessel for the first AI consumer of the
+deterministic product and **makes no model call at all**. The chain it proves,
+and stops at:
+
+```
+trusted deterministic system → declared intent → exact minimum context
+  → structured claim basis → deterministic binding validation
+```
+
+No prompt, no provider SDK, no chat surface, no `/account` mount.
+
+### The five permanent rules
+
+Frozen in `docs/fss/FSS_V1_CLAIMS_BOUNDARY.md` §8, with the instrument that
+enforces each named beside it — a rule with no named instrument is what this
+programme repeatedly finds broken.
+
+> Structured truth is authoritative.
+> AI receives only the context required by its declared intent.
+> Context is capability.
+> Validate claim bindings deterministically; guard language separately.
+> AI may explain or operationalise a decision. It may not silently make a new one.
+
+### Commits
+
+| | |
+|---|---|
+| `1e46947` | 6.0a — `ClaimClass` four → six, moving the four pins that existed to make exactly this change visible |
+| `037f01d` | 6.0b — `AiIntent`, the type-only ceiling, `INTENT_FIELDS`, `toAiContext` |
+| `0c80704` | 6.0c — `ClaimBasis` and deterministic binding validation |
+| `f4285e9` | 6.0d — two missing guards, sabotage 1400–1417 |
+| `331fc80` | the harness repair below |
+
+### Evidence
+
+`tsc` clean · `eslint` 0 errors · **6327** unit tests passing across 224 files ·
+three guard scripts pass · `next build` succeeds · Playwright **181/181** ·
+anchor audit **441 anchors, 0 ambiguous, 0 duplicate numbers, 33 unresolvable**.
+
+Every sabotage suite at full count: base 26/26 · `v1` 10/10 · `s3` 12/12 ·
+`s4` 8/8 · `s5` 10/10 · `s6` 14/14 · `s7` 30/30 · `s7b` 171/171 ·
+`g4` **44/44** · `g5` 65/65 · `g6` **18/18**.
+
+**`run_s3a` is the one exception and cannot be green.** 2/35 caught, 33 broken,
+every one targeting files that live on unmerged PR #274. That is the documented
+set, and it is the same 33 the anchor audit reaches independently. Recorded as
+an exception rather than folded into "all suites green", because that phrasing
+would be false.
+
+### A harness defect the gate itself found
+
+`run_s3a` reported **nothing at all** before this gate. `run.py` called
+`read_bytes` before the `ANCHOR MISSING` report, so the first absent target
+raised and took the whole suite down with a traceback — hiding the other 25
+cases' results. A suite that crashes reports nothing, and nothing reads as
+nothing wrong.
+
+That is precisely the failure mode the harness exists to detect, occurring
+inside the harness, and it is the same argument `collectable()` already makes in
+its own comment about a case that reports caught for every mutation and for no
+mutation. Fixed with a pre-check returning `"anchor"`: no mutation happened, so
+nothing was proved, and a missing file can never make a case appear caught.
+
+### Two guards added because the sabotage list had nothing aimed at them
+
+Both are permanent.
+
+**Comparative prose blocked at the AI-layer import boundary.** The behavioural
+test catches prose that reaches the built context object; this catches it one
+step earlier. The route it closes is specific: `COMPARATIVE_COPY_REVIEW.state`
+is still `"pending"`, and the `CANDIDATE_ROOTS` fence permits `lib/fss` — where
+this layer lives — so pending copy could have become generated customer copy
+through a door that fence does not watch.
+
+**Methodology values blocked from the ceiling.** The import guard stops a
+scoring or selection *function* arriving. This stops the *numbers* arriving
+without it — weights, band thresholds, a ranking rule — which would let a model
+recompute a score or a band and reach a figure no deterministic component
+produced. Verified to fire on its own reason rather than riding on the
+ungranted-field bridge.
+
+### Two Gate 4 anchors repointed, not deleted
+
+**1237** — `FoodSystemAiContext` became the type-level ceiling, so the old
+section-comment anchor no longer exists. Same mutation, aimed at the new
+declaration, now firing the widened guard.
+
+**1238 is the only case in this programme whose premise was retired on purpose
+rather than drifting.** It asserted that `toAiContext` still throws; Gate 6.0
+gave it a body, which the module's own Gate 4 header anticipated in writing —
+*"Gate 6 is where something uses it."* Deleting the case would have lost a slot
+still needed, because the same file has a new thing to protect in the same
+spirit: the closed intent union. The plan prohibited an escape hatch by name
+and nothing else in the harness tried one, so 1238 now opens it (`"raw"` added
+to `AI_INTENTS`).
+
+### Process rule adopted after this gate
+
+> **mutation harness finished → clean tree verified → commit.**
+
+One commit in this gate was made while the sabotage harness was actively
+mutating source. A pre-commit check that none of the four staged files was a
+mutation target is why that commit's evidence survived — and it is not a
+pattern to repeat. A tree mid-mutation is a tree that cannot be described in one
+sentence, and being describable in one sentence is the whole value of the
+evidence chain.
+
+### Two things reported rather than fixed
+
+**The anchor audit is not in the repository.** It lives in the session
+scratchpad and has already been reconstructed once after a session ended. It is
+the obvious candidate for the next housekeeping pass.
+
+**`CLAUDE.md` cites sections of this file that do not exist.** It refers to an
+"Implementation Status log" and to a "Second Pass → Additions #5" when
+explaining the Migration 36 and Migration 41 drift. Neither section is in this
+file. That is the same documentation-versus-reality drift `CLAUDE.md` warns
+about, in the document doing the warning — which is exactly why it warns. Not
+changed here, because this programme has amended `CLAUDE.md` only when asked.
+
+### What Gate 6.0 does not settle
+
+Clearing the Intelligence boundary approves none of the FSS-v1 science. The
+five candidate domains, the seven draft questions, the domain weights, the
+canonical score bands and the fifteen comparative sentences
+(`COMPARATIVE_COPY_REVIEW.state` still `"pending"`, `reviewedBy` still null)
+remain open, and the candidate product stays inside its preview fence.
+
+---
+
 ## 2026-07-29 — Phase 0 correctness pass (branch `claude/eatobiotics-review-fpqu6q`)
 
 Triggered by an external review of the whole product. Its findings were checked
