@@ -57,6 +57,7 @@ import { isMintedId, newId } from "@/lib/fss/system/identity"
 import {
   FOCUS_ATOM_SLOTS,
   FOCUS_RESPONSE_KEYS,
+  focusTodayModelResponseSchema,
   atomsComplete,
   focusGrounding,
   resolveAtoms,
@@ -926,7 +927,25 @@ describe("lib/fss/system imports nothing it has no business in", () => {
 })
 
 describe("the AI context package is an interface and nothing more", () => {
-  it("toAiContext has no caller", () => {
+  /*
+   * ── RE-POINTED IN GATE 6.1, DELIBERATELY AND NOT QUIETLY ────────────────
+   *
+   * Through Gate 6.0 this asserted `toAiContext` had NO caller, and the Gate
+   * 6.0 plan recorded in writing that 6.1 would be where it got one and that
+   * the guard would be "re-pointed deliberately when 6.1 introduces the first
+   * real caller — never quietly widened."
+   *
+   * This is that re-point, and the new form is STRONGER than the old one: "no
+   * callers" permitted any number of future additions to be noticed only by a
+   * reviewer, whereas a pinned list means a SECOND caller fails a test. The
+   * context boundary is load-bearing precisely because it has one entry point.
+   *
+   * `app/api/fss/focus-today/route.ts` is that entry point. Anything else
+   * wanting an AI context package needs its own intent, its own contract, its
+   * own deny-list and its own review — which is a diff a reviewer cannot miss
+   * rather than an import somebody added.
+   */
+  it("toAiContext has exactly one caller, pinned by path", () => {
     const callers = execSync(
       "git grep -l --untracked -E 'toAiContext\\(' -- 'lib/**' 'components/**' 'app/**' || true",
       { encoding: "utf-8" },
@@ -936,7 +955,10 @@ describe("the AI context package is an interface and nothing more", () => {
       .filter(Boolean)
       .filter((f) => f !== "lib/fss/system/ai-context.ts")
 
-    expect(callers, "Gate 6 is where this gets a caller, and it needs its own review").toEqual([])
+    expect(
+      callers,
+      "a second caller of toAiContext appeared — a new consumer needs its own intent and its own review",
+    ).toEqual(["app/api/fss/focus-today/route.ts"])
   })
 
   /*
@@ -3983,12 +4005,22 @@ describe("Focus Today gives the model authority over exactly one string", () => 
   /* ── The response schema is four fields, and that is the capability ───── */
 
   it("the response carries no canonical text and no selector over it", () => {
-    expect([...FOCUS_RESPONSE_KEYS].sort()).toEqual([
-      "actionIdEcho",
-      "focusDomainEcho",
-      "practicalFraming",
-      "priorityIdEcho",
-    ])
+    const EXPECTED = ["actionIdEcho", "focusDomainEcho", "practicalFraming", "priorityIdEcho"]
+
+    expect([...FOCUS_RESPONSE_KEYS].sort()).toEqual(EXPECTED)
+
+    /*
+     * ── DERIVED FROM THE SCHEMA, NOT ONLY FROM THE PINNED LIST ────────────
+     *
+     * The first version of this test checked only `FOCUS_RESPONSE_KEYS`, which
+     * is a hand-maintained constant BESIDE the schema — so adding a field to
+     * the schema itself moved nothing and the pin slept through it. Writing the
+     * sabotage case for exactly that found it.
+     *
+     * Both are asserted now: the schema is what the model is actually held to,
+     * and the constant is what a guard reads.
+     */
+    expect(Object.keys(focusTodayModelResponseSchema.shape).sort()).toEqual(EXPECTED)
 
     /*
      * The removed designs, refused by name. `atomRefs` was in a reviewed draft
@@ -4244,6 +4276,33 @@ describe("Focus Today gives the model authority over exactly one string", () => 
     expect(cap.focusDomain).toBe("fermentedFoods")
     expect(atomsComplete(cap.atoms)).toBe(true)
 
+    /*
+     * ── THE ATOMS' TEXT CAME FROM THE SYSTEM. THIS IS THE ARCHITECTURE ────
+     *
+     * The first version of this test checked the capability's KEYS and
+     * completeness and never that its wording matched the deterministic
+     * source — so a mutation making the model's framing overwrite a canonical
+     * atom would have passed. Writing that sabotage case found the gap.
+     */
+    if (system.priorities.state !== "resolved") throw new Error("fixture")
+    const priority = system.priorities.priorities[0]
+    const action = system.actions.find((a) => a.id === cap.actionId)
+    if (!action || action.content.state !== "resolved") throw new Error("fixture")
+    const entry = action.content.recommendation
+
+    expect(cap.atoms["priority.headline"].text).toBe(priority.headline)
+    expect(cap.atoms["priority.explanation"].text).toBe(priority.explanation)
+    expect(cap.atoms["action.title"].text).toBe(entry.title)
+    expect(cap.atoms["action.practicalAction"].text).toBe(entry.practicalAction)
+
+    // And none of them is the model's sentence.
+    for (const slot of FOCUS_ATOM_SLOTS) {
+      expect(
+        cap.atoms[slot].text,
+        `${slot} carries the model's prose — canonical wording became generated wording`,
+      ).not.toBe(cap.practicalFraming)
+    }
+
     // The model's string is present; nothing else about the answer is its work.
     expect(cap.practicalFraming).toBe(goodResponse(system).practicalFraming)
   })
@@ -4263,6 +4322,46 @@ describe("Focus Today gives the model authority over exactly one string", () => 
     if (result.state === "refused") {
       expect(result.because).toBe("binding-refused")
       expect(result.binding?.bound).toBe(false)
+
+      /*
+       * ── WHICH REFUSAL, NOT MERELY THAT ONE FIRED ──────────────────────────
+       *
+       * Sabotage 1420 and 1421 both slipped against the weaker assertion. They
+       * derive an echo from the system instead of reading it from the response,
+       * which makes the binding self-satisfying — and the response STILL
+       * refused, because the derived half then disagreed with the half still
+       * being read, producing `basis-internally-inconsistent` instead.
+       *
+       * So "it refused" was satisfied while the property under test — that the
+       * ECHOES are what bind — was broken. Pinning the exact refusal is what
+       * makes the difference visible.
+       */
+      if (result.binding && !result.binding.bound) {
+        expect(
+          result.binding.because,
+          "the refusal reason changed — an echo may no longer be read from the response",
+        ).toBe("not-a-selected-priority")
+      }
+    }
+  })
+
+  /*
+   * The complement, so BOTH echoes are pinned: a basis whose id and domain
+   * disagree must refuse as inconsistent. With either echo derived from the
+   * system this reason changes, so the two tests together catch 1420 and 1421
+   * from opposite sides.
+   */
+  it("a response whose id and domain disagree is refused as inconsistent", () => {
+    const system = sys()
+    const result = validateFocusToday({
+      system,
+      // The id says fermentedFoods (correct); the domain says mealRhythm.
+      raw: { ...goodResponse(system), focusDomainEcho: "mealRhythm" },
+      domainLabels: LABELS,
+    })
+    expect(result.state).toBe("refused")
+    if (result.state === "refused" && result.binding && !result.binding.bound) {
+      expect(result.binding.because).toBe("basis-internally-inconsistent")
     }
   })
 
@@ -4350,6 +4449,63 @@ describe("Focus Today gives the model authority over exactly one string", () => 
       "no-action-today",
       "response-malformed",
     ])
+  })
+
+  /* ══ THE ROUTE'S OWN INVARIANTS, READ AS SOURCE ═══════════════════════════
+   *
+   * The route is the only place a model is called, and it cannot be unit-tested
+   * without calling one. So the properties that matter about it are asserted
+   * against its source — the same compromise `toAiContext`'s caller guard makes,
+   * and for the same reason: a source check is weaker than a behavioural one as
+   * a rule, and here it is the only thing that can see the property at all.
+   * ═══════════════════════════════════════════════════════════════════════ */
+
+  const ROUTE_SRC = () => readFileSync("app/api/fss/focus-today/route.ts", "utf-8")
+
+  it("the route asks for exactly the help-today-action projection", () => {
+    const code = ROUTE_SRC().replace(/\/\*[\s\S]*?\*\//g, " ").replace(/\/\/.*$/gm, " ")
+
+    /*
+     * A widened intent would hand over a different context package while every
+     * other guard in this file still passed — the contract is per intent, so
+     * which intent is requested is part of the contract.
+     */
+    expect(code).toContain('toAiContext("help-today-action"')
+    for (const other of ["explain-current-priority", "explain-what-changed"]) {
+      expect(code, `the route also requests the ${other} projection`).not.toContain(
+        `toAiContext("${other}"`,
+      )
+    }
+    // Exactly one projection request.
+    expect(code.match(/toAiContext\(/g)?.length).toBe(1)
+  })
+
+  it("the route calls the model once and never retries a failed response", () => {
+    const code = ROUTE_SRC().replace(/\/\*[\s\S]*?\*\//g, " ").replace(/\/\/.*$/gm, " ")
+
+    // One provider call. Not a loop, not a fallback chain.
+    expect(code.match(/messages\.create\(/g)?.length).toBe(1)
+
+    /*
+     * No retry, by name. A model coached until it passes is a validator
+     * negotiating with its subject, and the second attempt is always the one
+     * that gets the nudge.
+     */
+    for (const forbidden of ["retry", "attempt", "for (", "while (", "do {"]) {
+      expect(code, `the route contains ${forbidden} around the model call`).not.toContain(forbidden)
+    }
+  })
+
+  it("the route validates before returning anything to a caller", () => {
+    const code = ROUTE_SRC()
+    const validateAt = code.indexOf("validateFocusToday(")
+    const finalReturn = code.lastIndexOf("NextResponse.json(result)")
+    expect(validateAt).toBeGreaterThan(-1)
+    expect(finalReturn).toBeGreaterThan(validateAt)
+
+    // The raw response is never returned, under any name.
+    expect(code).not.toMatch(/NextResponse\.json\(\s*raw\s*\)/)
+    expect(code).not.toMatch(/NextResponse\.json\(\s*\{\s*raw/)
   })
 
   /* ── And the module makes no model call ──────────────────────────────── */

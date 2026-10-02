@@ -4,6 +4,7 @@ import { execFileSync } from "node:child_process"
 import ts from "typescript"
 import { isFoodSystemV1PreviewEligible } from "@/lib/fss/preview/preview-policy"
 import { isCanonicalReportPreviewEligible } from "@/lib/report/presentation/preview-policy"
+import { isFocusTodayEligible } from "@/app/api/fss/focus-today/route"
 import { classifyPageRoute, FIXTURE_SELF_GATED_ROUTES, isServableInV1 } from "@/lib/v1-surface"
 import { STATIC_PATHS } from "@/app/sitemap"
 import { NAV_LINKS, NAV_GROUPS } from "@/lib/nav"
@@ -157,12 +158,17 @@ describe("4–7 · nothing from the REQUEST can override the refusal", () => {
   })
 })
 
-describe("the two preview gates are independent, and identical in behaviour", () => {
+describe("the three preview gates are independent, and identical in behaviour", () => {
   /*
    * Duplicated six lines rather than a shared helper, because these are gates
    * on independent unfinished features and a shared helper is a shared switch.
    * The duplication is only defensible if it stays faithful, so it is pinned
-   * across every environment either one will ever see.
+   * across every environment any of them will ever see.
+   *
+   * THREE as of Gate 6.1: the candidate assessment preview, the canonical
+   * Report preview, and the Focus Today capability. Each gates a different
+   * unfinished thing, and one edit making any of them reachable must not make
+   * the others reachable too.
    */
   const ENVS: NodeJS.ProcessEnv[] = [
     {}, { NODE_ENV: "development" }, { NODE_ENV: "test" }, { NODE_ENV: "production" },
@@ -171,7 +177,38 @@ describe("the two preview gates are independent, and identical in behaviour", ()
   ] as unknown as NodeJS.ProcessEnv[]
 
   it.each(ENVS.map((e) => [JSON.stringify(e), e] as const))("agree for %s", (_label, env) => {
-    expect(isFoodSystemV1PreviewEligible(env)).toBe(isCanonicalReportPreviewEligible(env))
+    const fss = isFoodSystemV1PreviewEligible(env)
+    expect(isCanonicalReportPreviewEligible(env)).toBe(fss)
+    expect(isFocusTodayEligible(env), "the Focus Today gate drifted from the other two").toBe(fss)
+  })
+
+  /*
+   * The one case worth asserting on its own rather than by equivalence: a model
+   * speaking about candidate methodology on a real domain is the outcome this
+   * gate exists to prevent, and "they all agree" would still pass if all three
+   * agreed on the wrong answer.
+   */
+  it("production is denied outright, whatever else is set", () => {
+    for (const env of [
+      { VERCEL_ENV: "production" },
+      { VERCEL_ENV: "production", NODE_ENV: "development" },
+      { VERCEL_ENV: "production", NODE_ENV: "test" },
+      { NODE_ENV: "production" },
+      {},
+    ] as unknown as NodeJS.ProcessEnv[]) {
+      expect(isFocusTodayEligible(env), `served for ${JSON.stringify(env)}`).toBe(false)
+    }
+  })
+
+  it("and it is permitted exactly where the other previews are", () => {
+    for (const env of [
+      { VERCEL_ENV: "preview" },
+      { VERCEL_ENV: "development" },
+      { NODE_ENV: "development" },
+      { NODE_ENV: "test" },
+    ] as unknown as NodeJS.ProcessEnv[]) {
+      expect(isFocusTodayEligible(env)).toBe(true)
+    }
   })
 })
 

@@ -44,6 +44,12 @@ export const AI_LIMITS = {
   create_plate:      { burstLimit: 4,  burstWindowMs: 60 * 60 * 1000, dailyLimit: 5 },
   story_update:      { burstLimit: 6,  burstWindowMs: 60 * 60 * 1000, dailyLimit: 10 },
   feedback:          { burstLimit: 6,  burstWindowMs: 60 * 60 * 1000, dailyLimit: 15 },
+  /*
+   * Gate 6.1. Tighter than the chat features on purpose: this is one question
+   * about one persisted plan, so a person needing it forty times a day is a
+   * signal about the answer rather than a usage pattern to accommodate.
+   */
+  focus_today:       { burstLimit: 6,  burstWindowMs: 60 * 60 * 1000, dailyLimit: 10 },
 } as const satisfies Record<string, AiLimit>
 
 export type AiFeature = keyof typeof AI_LIMITS
