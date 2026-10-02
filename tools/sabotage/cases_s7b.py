@@ -56,6 +56,38 @@ HELP = "app/help/page.tsx"
 BIOTICSPAGE = "app/biotics/page.tsx"
 PILLARS = "lib/pillars.ts"
 BPROMPT = "lib/biotics-prompt.ts"
+REPORTBUILD = "lib/report/build-food-system-report.ts"
+SWAPS = "lib/report/food-swaps.ts"
+SUBSCORES = "lib/report/subscores.ts"
+ASSESSREPORT = "lib/assessment-report.ts"
+SEQEMAIL = "lib/email/sequence-email.ts"
+RESULTSEMAIL = "lib/email/results-email.ts"
+CORPUSTEST = "tests/unit/biotic-claims.test.ts"
+FOODS = "lib/foods.ts"
+CONSTITUTION = "docs/EATOBIOTICS_PRODUCT_CONSTITUTION_v1.md"
+FSSSPEC = "docs/fss/FSS_V1_SPEC.md"
+CLAIMSB = "docs/fss/FSS_V1_CLAIMS_BOUNDARY.md"
+CONSTTEST = ["tests/unit/product-constitution.test.ts"]
+
+# ── Gate 2 ──────────────────────────────────────────────────────────────
+QV1 = "lib/fss/questions/v1.ts"
+QRESOLVE = "lib/fss/questions/resolve.ts"
+FWEIGHTS = "lib/fss/engine/weights.ts"
+FSCORE = "lib/fss/engine/score.ts"
+FCOMPARE = "lib/fss/engine/compare.ts"
+FBANDS = "lib/fss/interpretation/bands.ts"
+FPOLICY = "lib/fss/preview/preview-policy.ts"
+FPAGE = "app/preview/food-system-v1/page.tsx"
+FLOCAL = "lib/fss/persistence/local.ts"
+QSET = ["tests/unit/fss-question-set.test.ts"]
+FENGINE = ["tests/unit/fss-engine.test.ts"]
+FINTERP = ["tests/unit/fss-interpretation.test.ts"]
+FGATE = ["tests/unit/fss-preview-gate.test.ts", "tests/unit/v1-surface.test.ts"]
+FPERSIST = ["tests/unit/fss-persistence.test.ts"]
+MEALIMPACT = "lib/account/meal-impact.ts"
+SCOREPREVIEW = "components/home/score-preview.tsx"
+DEPFOODS = "components/depression/depression-foods.tsx"
+ASCORING = "lib/assessment-scoring.ts"
 CONSULT = "app/api/consult/route.ts"
 DEMOCONSULT = "app/api/demo/consult/route.ts"
 CHAT = "app/api/report-chat/route.ts"
@@ -71,6 +103,75 @@ HIER = ["tests/unit/score-hierarchy.test.ts"]
 BIOTIC = ["tests/unit/biotic-claims.test.ts"]
 RETIRED = ["tests/unit/retired-vocabulary.test.ts"]
 VOCAB = ["tests/unit/retired-vocabulary.test.ts"]
+
+# ── Gate 3 — the action model. Cases 1031+. ─────────────────────────────
+#
+# The invariants under test:
+#   an action category carries no number and no Biotic;
+#   no table maps a domain to an action category;
+#   a recommendation carries its claim boundary and both versions;
+#   Your Food Context shapes the plan and reaches the Score by no path;
+#   the most constrained person still gets a plan;
+#   Today is one action for the PLAN, not one per priority;
+#   a priority is selected by exact ties, with no tolerance;
+#   a stored action is refused rather than resolved against moved content;
+#   the candidate tree stays inside the guard corpus.
+ACATS = "lib/fss/action/categories.ts"
+ATYPES = "lib/fss/action/types.ts"
+APRIORITY = "lib/fss/action/priority.ts"
+ACONTEXT = "lib/fss/action/context.ts"
+ACATALOGUE = "lib/fss/action/catalogue.ts"
+APLAN = "lib/fss/action/plan.ts"
+ASTORED = "lib/fss/action/stored.ts"
+AHORIZONS = "lib/fss/action/horizons.ts"
+APRESENT = "lib/fss/presentation/plan.ts"
+FDOMAINS = "lib/fss/presentation/domains.ts"
+AMODEL = ["tests/unit/fss-action-model.test.ts"]
+APRIORT = ["tests/unit/fss-priority.test.ts"]
+APLANT = ["tests/unit/fss-plan.test.ts"]
+ACATT = ["tests/unit/fss-action-catalogue.test.ts"]
+ACLAIMS = ["tests/unit/fss-action-claims.test.ts"]
+AFENCE = ["tests/unit/fss-action-fence.test.ts"]
+
+# ── Gate 3.5 — live vocabulary clean ───────────────────────────────────
+RETEST = "components/account/retest-card.tsx"
+DETERM = "lib/agent-loop/providers/deterministic.ts"
+TWINBUILD = "lib/agent-loop/twin/twin-builder.ts"
+WEEKSTORY = "lib/account/week-story.ts"
+
+# ── Gate 3.6 — personal Biotic prose clean ───────────────────────
+#
+# Every mutation below restores a sentence or a number that was SHIPPING when
+# Gate 3.6 began, four of them on /account, which is V1_CORE.
+#
+# The test list that matters here is ALCLAIMS — tests/unit/agent-loop-claims.
+# test.ts, which CALLS the generators and reads their output. The claims corpus
+# in biotic-claims.test.ts is also listed where the mutation is a literal,
+# because for those two it is the corpus that catches it. Where it is an
+# interpolation, only the behavioural guard can.
+BEHAVIOUR = "lib/agent-loop/behaviour.ts"
+BASELINE = "lib/agent-loop/baseline.ts"
+ACCTWIN = "lib/agent-loop/account-twin.ts"
+PATTERNS = "lib/account/patterns.ts"
+BPANEL = "components/agent-loop/BioticsProgressPanel.tsx"
+SYSMAP = "lib/account/system-map.ts"
+SHARECARD = "lib/account/share-card.ts"
+SHARETWIN = "components/account/twin/share-twin.tsx"
+INSIDEYOU = "lib/account/inside-you.ts"
+MENUSCAN = "components/account/twin/menu-scan.tsx"
+MEALREVEAL = "components/account/twin/meal-reveal.tsx"
+BCLAIMSFILE = "tests/unit/biotic-claims.test.ts"
+
+# ── Gate 3.7 — the Gate 4 pre-flight ──────────────────────────────────────
+BIOTICSPAGE = "app/biotics/page.tsx"
+MENUSCAN_ROUTE = "app/api/menu-scan/route.ts"
+CLAUDEMD = "CLAUDE.md"
+CMDTEST = ["tests/unit/claude-md-accuracy.test.ts"]
+ALCLAIMS = ["tests/unit/agent-loop-claims.test.ts"]
+BCLAIMS = ["tests/unit/biotic-claims.test.ts"]
+EDUTAIN = ["tests/unit/twin-edutainment.test.ts"]
+TPATTERNS = ["tests/unit/twin-patterns.test.ts"]
+ALOOP = ["tests/unit/agent-loop.test.ts"]
 
 CASES = [
     (930, "/waitlist is served again", SURFACE,
@@ -89,8 +190,13 @@ CASES = [
      '        <a\n          href="#how-it-works"\n',
      HOLDING),
 
+    # DISAMBIGUATED in Gate 3.7: app/book/page.tsx carries two byte-identical
+    # substack link blocks (~129 and ~230). Anchored on the first through its
+    # wrapper's margin class, the only thing that differs between them.
     (933, "a book page links back into the refused route", BOOK,
+     '            <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">\n'
      '              <a\n                href="https://eatobiotics.substack.com/"\n',
+     '            <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">\n'
      '              <a href="/waitlist">See all three launches</a>\n'
      '              <a\n                href="https://eatobiotics.substack.com/"\n',
      HOLDING + SURFACET),
@@ -316,9 +422,14 @@ CASES = [
      '    line: "See your Food System Score instantly.",\n',
      RETIRED),
 
+    # DISAMBIGUATED in Gate 3.7: the 2-space tranche entry is a SUBSTRING of
+    # the same path indented 6 spaces in the value-pinned list, so the anchor
+    # matched twice and did not say which list it meant. Widened onto its
+    # neighbour, whose sort order differs between the two lists. The mutation
+    # and the invariant are unchanged.
     (968, "a surface is quietly dropped from the claims corpus", BIOTICTEST,
-     '  "components/home/feed-seed-heal.tsx",\n',
-     '',
+     '  "components/home/the-framework.tsx",\n  "components/home/feed-seed-heal.tsx",\n',
+     '  "components/home/the-framework.tsx",\n',
      BIOTIC),
 
     (969, "the fermented-food tip promises live probiotics again", DICT,
@@ -369,22 +480,37 @@ CASES = [
      '   /\\b(live|living) foods?\\b/i],\n',
      BIOTIC),
 
+    # DISAMBIGUATED in Gate 3.7: the 2-space tranche entry is a SUBSTRING of
+    # the same path indented 6 spaces in the value-pinned list, so the anchor
+    # matched twice and did not say which list it meant. Widened onto its
+    # neighbour, whose sort order differs between the two lists.
     (976, "a corrected reachable surface is dropped from the guarded set",
      BIOTICTEST,
-     '  "app/biotics/page.tsx",\n',
-     '',
+     '  "app/help/page.tsx",\n  "app/biotics/page.tsx",\n',
+     '  "app/help/page.tsx",\n',
      BIOTIC),
 
+    # RE-ANCHORED in Tranche 2C. This named lib/report/food-swaps.ts, which was
+    # corrected and removed from the ledger -- the anchor was legitimately
+    # invalidated rather than the case being wrong, so it moves to a file still
+    # in the ledger instead of being deleted.
+    # DISAMBIGUATED in Gate 3.7: the 2-space tranche entry is a SUBSTRING of
+    # the same path indented 6 spaces in the value-pinned list, so the anchor
+    # matched twice and did not say which list it meant. Widened onto its
+    # neighbour, whose sort order differs between the two lists.
     (977, "a ledger entry is deleted while the file still carries the claim",
      BIOTICTEST,
-     '  "lib/report/food-swaps.ts",\n',
-     '',
+     '  "lib/foods.ts",\n  "app/help/page.tsx",\n',
+     '  "app/help/page.tsx",\n',
      BIOTIC),
 
     (978, "the reachable closure is narrowed until it proves nothing",
      REACHTEST,
-     '    return route !== null && classifyPageRoute(route) !== "POST_V1"\n  })\n\n  const reachable = new Set<string>()',
-     '    return route !== null && classifyPageRoute(route) === "NOTHING_MATCHES_THIS"\n  })\n\n  const reachable = new Set<string>()',
+     # RE-ANCHORED for Gate 3 step 0, which extracted the seed filter into
+     # isSeed() so a second notion of "reachable" could exist. The mutation is
+     # unchanged in intent: narrow the closure until it proves nothing.
+     '  if (klass === "POST_V1") return false',
+     '  if (klass !== "NOTHING_MATCHES_THIS") return false',
      BIOTIC),
 
     (979, "the canonical nudge promises live probiotics again", PILLARS,
@@ -500,4 +626,607 @@ CASES = [
      '              alt="A crowd of people, each figure carrying their own lit food system"\n',
      '              alt="Individual food systems, each one a person"\n',
      HOLDING),
+
+    # ── Tranche 2C — the EUR49 Report path and lifecycle email ──────────────
+
+    (998, "the Report's probiotics definition reverts to the equivalence", REPORTBUILD,
+     '    "Probiotics are live microorganisms that, in adequate amounts, have a demonstrated benefit.',
+     '    "Probiotics are the live cultures in fermented foods.',
+     BIOTIC),
+
+    (999, "the Report reintroduces live foods as a category", REPORTBUILD,
+     '      "Your answers suggest fermented foods are rare at the moment.',
+     '      "Your answers suggest live foods are rare at the moment.',
+     BIOTIC),
+
+    (1000, "a swap reason asserts a live-culture count again", SWAPS,
+     'reason: "Vinegar pickles are not fermented at all',
+     'reason: "Vinegar pickles have no live cultures. Lacto-fermented versions provide hundreds of millions of bacteria per serving. Also not fermented at all',
+     BIOTIC),
+
+    (1001, "the pathway meaning reverts to live-culture exposure", SUBSCORES,
+     '  probiotics: "fermented foods in your week",',
+     '  probiotics: "live-culture exposure",',
+     BIOTIC),
+
+    (1002, "the assessment report re-asserts what a fermented food contains",
+     ASSESSREPORT,
+     '        why: "Naturally fermented cabbage. Whether it is still unpasteurised',
+     '        why: "Naturally fermented cabbage contains hundreds of millions of live bacteria per gram. Whether it is still unpasteurised',
+     BIOTIC),
+
+    (1003, "the nurture email states a personal Biotic score again", SEQEMAIL,
+     '  feed: "Your answers described how much fibre and plant variety reaches your gut.',
+     '  feed: "Your Prebiotics score reflects how much fibre and plant diversity you are giving your gut bacteria.',
+     BIOTIC),
+
+    # RE-AIMED in Tranche 2C. The first form fabricated a digit from
+    # String(key).length -- not a regression anyone would write, and the
+    # sub-score fields had already been removed from the template's contract,
+    # so it tested an impossibility rather than a risk. It now mutates the way
+    # this would actually come back: by reading a sub-score again.
+    (1004, "the email's pillar block reads a per-Biotic sub-score again",
+     SEQEMAIL,
+     '            const label = PILLAR_LABELS[key]\n',
+     '            const label = PILLAR_LABELS[key] + " " + (opts as unknown as { feedScore: number }).feedScore\n',
+     BIOTIC),
+
+    (1005, "the retired Fermented Foods label reverts in a live email",
+     RESULTSEMAIL,
+     '  adding: "Fermented Foods",',
+     '  adding: "Live Foods",',
+     BIOTIC),
+
+    (1006, "lifecycle email is dropped from the claims corpus", CORPUSTEST,
+     '  "lib/email/sequence-email.ts",\n  "lib/email/results-email.ts",\n',
+     '  "lib/email/results-email.ts",\n',
+     BIOTIC),
+
+    # ── Tranche 2D — account, twin, condition and demo surfaces ─────────────
+
+    (1007, "a meal insight asserts colonisation again", MEALIMPACT,
+     '    why: "Foods transformed by fermentation are the one pathway that brings microbial material in from outside',
+     '    why: "Fermented foods carry living microbes that join and diversify your inner community, bringing material in from outside',
+     BIOTIC),
+
+    (1008, "the dashboard says a food delivers live cultures", SCOREPREVIEW,
+     '      description: "Fermented foods",',
+     '      description: "Fermented & live foods",',
+     BIOTIC),
+
+    (1009, "a condition page re-asserts what a fermented food contains",
+     DEPFOODS,
+     '  { slug: "kimchi", benefit: "Vegetables transformed by lacto-fermentation" },',
+     '  { slug: "kimchi", benefit: "Fermented food rich in diverse live cultures" },',
+     BIOTIC),
+
+    (1010, "the food knowledge base asserts direct introduction again", FOODS,
+     '{ title: "Lacto-fermented", detail: "Fermented by Lactobacillus rather than preserved in vinegar',
+     '{ title: "Adds Live Cultures", detail: "Introduces Lactobacillus directly into your gut rather than preserved in vinegar',
+     BIOTIC),
+
+    (1011, "the scoring module reintroduces live foods as a category", ASCORING,
+     '"Foods transformed by fermentation are the one pathway that brings microbial material in from outside',
+     '"Fermented and live foods are the most direct way to introduce new microbes, bringing material in from outside',
+     BIOTIC),
+
+    (1012, "a corrected file is left behind in the ledger as a stale allowance",
+     CORPUSTEST,
+     '  "lib/assessment-data.ts",\n',
+     '  "lib/assessment-data.ts",\n  "lib/account/meal-impact.ts",\n',
+     BIOTIC),
+
+    # ── Work Package B — the constitution and the FSS-v1 documents ──────────
+
+    (1013, "the candidate label is dropped from the constitution", CONSTITUTION,
+     '> ### FSS-v1 Candidate Domains — Frozen for Scientific Review, Not Yet Scientifically Approved',
+     '> ### The Five FSS-v1 Domains',
+     CONSTTEST),
+
+    (1014, "the specification calls the candidate model validated", FSSSPEC,
+     '**Status: CANDIDATE. Specification only. Nothing here is implemented, and\nimplementing it would not validate it.**',
+     '**Status: the FSS-v1 methodology is scientifically validated and ready to ship.**',
+     CONSTTEST),
+
+    (1015, "the claims boundary stops refusing to relax the contract", CLAIMSB,
+     '> **If review concludes the rule must be relaxed to permit the name, that is\n> the signal the name is wrong — not the rule.**',
+     '> Where the rule blocks the name, the rule should be relaxed accordingly.',
+     CONSTTEST),
+
+    (1016, "the constitution drops the stored-key protection", CONSTITUTION,
+     '**Stored keys never move.**',
+     '**Stored keys may be renamed for clarity.**',
+     CONSTTEST),
+
+    # ── Gate 2 — the candidate model ────────────────────────────────────────
+
+    (1017, "a legacy question pin is silently updated to whatever it is now",
+     QV1,
+     '{ kind: "legacy-ref", id: "q6", pin: "223dab5d7ca24c1a55bc7d2b50e498454f3d05b6baeb6507368b3d920a64a6e2"',
+     '{ kind: "legacy-ref", id: "q6", pin: "0000000000000000000000000000000000000000000000000000000000000000"',
+     QSET),
+
+    (1018, "a scored item is quietly moved into an unscored layer", QV1,
+     'part: "what-you-eat", sectionTitle: "Diversity", contributes: "fss", domain: "diversity" },\n  { kind: "legacy-ref", id: "q2"',
+     'part: "what-you-eat", sectionTitle: "Diversity", contributes: "what-you-notice" },\n  { kind: "legacy-ref", id: "q2"',
+     QSET),
+
+    (1019, "Food Context is given a domain, so it can reach the Score", QV1,
+     "const YOUR_FOOD_CONTEXT: ManifestEntry[] = CANDIDATE_ITEMS.filter(\n  (i) => i.contributes === \"food-context\",\n)",
+     "const YOUR_FOOD_CONTEXT: ManifestEntry[] = CANDIDATE_ITEMS.filter(\n  (i) => i.contributes === \"food-context\",\n).map((i) => ({ ...i, contributes: \"fss\" as const, domain: \"mealRhythm\" as const }))",
+     QSET),
+
+    (1020, "the resolver stops checking pins", QRESOLVE,
+     '  if (actual !== entry.pin) {',
+     '  if (false) {',
+     QSET),
+
+    (1021, "an approved-weights export appears beside the fixture", FWEIGHTS,
+     'export const DEV_ONLY_FSS_V1_FIXTURE_WEIGHTS: DomainWeights = {',
+     'export const APPROVED_FSS_V1_WEIGHTS: DomainWeights = {\n  diversity: 0.2, plantsAndFibre: 0.2, fermentedFoods: 0.2, foodQuality: 0.2, mealRhythm: 0.2,\n}\nexport const DEV_ONLY_FSS_V1_FIXTURE_WEIGHTS: DomainWeights = {',
+     FENGINE),
+
+    (1022, "the fixture context becomes optional, so weights need no permission",
+     FWEIGHTS,
+     '  if (context?.__nonProductionFixture !== "DEV_ONLY — not approved methodology") {',
+     '  if (false) {',
+     FENGINE),
+
+    (1023, "the 20-point floor returns", FSCORE,
+     '  return { domain, state: "scored", score: Math.round((mean / 3) * 100), answered, total }',
+     '  return { domain, state: "scored", score: Math.max(Math.round((mean / 3) * 100), 20), answered, total }',
+     FENGINE),
+
+    (1024, "an insufficient domain is scored as zero instead of withholding",
+     FSCORE,
+     '  if (insufficient.length > 0) {',
+     '  if (false) {',
+     FENGINE),
+
+    (1025, "a legacy-unversioned score becomes comparable", FCOMPARE,
+     '  if (isLegacyUnversioned(a) || isLegacyUnversioned(b)) {',
+     '  if (false) {',
+     FENGINE),
+
+    (1026, "two band ladders are silently merged into one threshold set",
+     FBANDS,
+     '    { label: "Strong Foundation", color: "var(--icon-lime)", min: 65 },',
+     '    { label: "Strong Foundation", color: "var(--icon-lime)", min: 60 },',
+     FINTERP),
+
+    (1027, "getScoreBand gains a default version, so callers stop choosing",
+     FBANDS,
+     'export function getScoreBand(score: number, interpretationVersion: string): Band {',
+     'export function getScoreBand(score: number, interpretationVersion = "interpretation-legacy-account"): Band {',
+     FINTERP),
+
+    (1028, "the preview gate lets an environment variable turn it on", FPOLICY,
+     '  if (vercelEnv === "production") return false',
+     '  if (env.ENABLE_FSS_PREVIEW === "true") return true\n  if (vercelEnv === "production") return false',
+     FGATE),
+
+    (1029, "the preview page is baked at build time again", FPAGE,
+     'export const dynamic = "force-dynamic"',
+     'export const revalidate = 3600',
+     FGATE),
+
+    (1030, "the candidate runtime is pointed at Supabase", FLOCAL,
+     '  return new LocalStorageRepository()',
+     '  return process.env.VERCEL_ENV ? new SupabaseRepositoryDisabled() : new LocalStorageRepository()',
+     FPERSIST),
+    # ── Gate 3 — the action model ─────────────────────────────────────────
+
+    (1031, "an action category gains a numeric value", ACATS,
+     '    color: "var(--icon-green)",',
+     '    color: "var(--icon-green)",\n    weight: 0.4,',
+     AMODEL),
+
+    (1032, "a domain is mapped straight to an action category", ACATS,
+     'export function actionCategory(',
+     'export const DOMAIN_CATEGORY = { mealRhythm: "rejuvenate" } as const\n\nexport function actionCategory(',
+     AMODEL),
+
+    (1033, "a biological-inference claim class is added", ATYPES,
+     '  | "personalised-recommendation"\n\n/**',
+     '  | "personalised-recommendation"\n  | "biological-inference"\n\n/**',
+     AMODEL),
+
+    (1034, "the claim-class list drops a member, so the union and the data drift", ATYPES,
+     '  "general-education",\n  "personalised-recommendation",\n]',
+     '  "general-education",\n]',
+     AMODEL),
+
+    (1035, "the priority selector gains a tolerance", APRIORITY,
+     '  const chosen = scored.filter((d) => d.score === lowest).slice(0, PRIORITY_MAX)',
+     '  const chosen = scored.filter((d) => d.score <= lowest + 10).slice(0, PRIORITY_MAX)',
+     APRIORT),
+
+    (1036, "priorities stop excluding insufficient domains", APRIORITY,
+     '    (d): d is Extract<typeof d, { state: "scored" }> => d.state === "scored",',
+     '    (d): d is Extract<typeof d, { state: "scored" }> => true,',
+     APRIORT),
+
+    (1037, "a priority quotes an item from another domain as its evidence", APRIORITY,
+     '    .filter((q) => q.contributes === "fss" && q.domain === domain)',
+     '    .filter((q) => q.contributes === "fss")',
+     APRIORT),
+
+    (1038, "unscored items reach the evidence", APRIORITY,
+     '    .filter((q) => q.contributes === "fss" && q.domain === domain)',
+     '    .filter((q) => q.domain === domain || q.contributes === "food-context")',
+     APRIORT),
+
+    (1039, "the Gate 2 priority sentence is quietly reworded", FDOMAINS,
+     'which usually makes it the most direct place to start rather than the most important one.',
+     'which makes it the most important thing for you to fix.',
+     APRIORT),
+
+    (1040, "Your Food Context reaches the score path", ACONTEXT,
+     '    const usable = q !== undefined && q.contributes === "food-context"',
+     '    const usable = q !== undefined',
+     ACATT),
+
+    (1041, "an unanswered context item is read as limiting, starving the plan", ACONTEXT,
+     'const UNKNOWN_STATE: ConstraintState = "workable"',
+     'const UNKNOWN_STATE: ConstraintState = "limiting"',
+     ACATT),
+
+    (1042, "the context filter stops filtering", ACONTEXT,
+     '  return requires.every((c) => context.states[c] !== "limiting")',
+     '  return true',
+     APLANT),
+
+    (1043, "the unconditional options are removed, so a constrained person gets nothing",
+     ACATALOGUE,
+     '    claimClass: "observed-behaviour",\n    requires: [],\n  },\n  {\n    id: "diversity-week-rotate",',
+     '    claimClass: "observed-behaviour",\n    requires: ["time"],\n  },\n  {\n    id: "diversity-week-rotate",',
+     ACATT),
+
+    (1044, "a thirty-day entry is added, making the month a fourth list", ACATALOGUE,
+     '    timeHorizon: "this-week",\n    title: "Rotate instead of repeating",',
+     '    timeHorizon: "thirty-days",\n    title: "Rotate instead of repeating",',
+     ACATT),
+
+    (1045, "every domain is padded to all three categories", ACATALOGUE,
+     '    category: "rejuvenate",\n    timeHorizon: "today",\n    title: "Protect today\'s meal that usually slips",',
+     '    category: "seed",\n    timeHorizon: "today",\n    title: "Protect today\'s meal that usually slips",',
+     ACATT),
+    # ── RE-ANCHORED IN GATE 4 ────────────────────────────────────────────────
+    #
+    # `bind` was exported as `bindRecommendation` and `thirtyDayFocus` as
+    # `describeThirtyDayFocus`, so Gate 4's stored-decision reader could bind
+    # recorded catalogue ids through the SAME functions rather than a second
+    # copy of them. Both anchors below named the old symbols and became
+    # unresolvable — caught by the anchor audit, not by the suite, which
+    # reported 171/171 either way.
+    #
+    # The invariants under test are untouched: ONE action for the plan rather
+    # than one per priority, and ONE priority for the month. Only the symbol
+    # names moved.
+
+    (1046, "Today returns one action per priority instead of one for the plan", APLAN,
+     '      today = bindRecommendation(candidate, p, provenance)\n      break',
+     '      today = bindRecommendation(candidate, p, provenance)',
+     APLANT),
+
+    (1047, "the weekly set fills from the first priority only", APLAN,
+     '      const next = q.rest.shift()',
+     '      const next = queues[0].rest.shift()',
+     APLANT),
+
+    # RE-AIMED TWICE, and the second time found the real defect.
+    #
+    # v1 removed the outer `while` condition — not the binding cap, so a no-op.
+    # v2 removed the inner `break` — also a no-op, because PRIORITY_MAX is 3 and
+    # one pass of the loop can therefore add at most 3.
+    #
+    # v3 raises the cap itself, which is what somebody would actually do. That
+    # exposed the real weakness: the plan test asserted
+    # `length <= THIS_WEEK_MAX`, which is a tautology — raising the constant
+    # raises the bound being checked. The test now asserts the LITERAL 3.
+    (1048, "the weekly cap is raised, so the plan becomes a list", ATYPES,
+     'export const THIS_WEEK_MAX = 3',
+     'export const THIS_WEEK_MAX = 12',
+     APLANT + AMODEL),
+
+    (1049, "the thirty-day focus takes every priority rather than one", APLAN,
+     '    thirtyDays: describeThirtyDayFocus(priorities[0]),',
+     '    thirtyDays: describeThirtyDayFocus(priorities[priorities.length - 1]),',
+     APLANT),
+
+    (1050, "a recommendation loses its claim boundary", ACATALOGUE,
+     '    claimClass: "general-education",\n    requires: ["cost", "access"],',
+     '    claimClass: "observed-behaviour",\n    requires: ["cost", "access"],',
+     ACLAIMS),
+
+    (1051, "an outcome prediction is attached to a horizon", AHORIZONS,
+     '      "One behaviour, held for a month. What survives an ordinary week is the part that has actually changed.",',
+     '      "One behaviour, held for a month. You will feel the difference by then.",',
+     AMODEL),
+
+    (1052, "a recommendation promises to raise the score", ACATALOGUE,
+     '      "Across this week, swap in three plant foods you do not usually buy, rather than more of the ones you already do.",',
+     '      "Across this week, swap in three plant foods you do not usually buy. This will raise your score.",',
+     ACLAIMS),
+
+    (1053, "a rationale reads a deficiency into the answers", ACATALOGUE,
+     '      "Your answers described a steady amount coming from a narrow set of sources.",',
+     '      "Your answers described a likely fibre deficiency.",',
+     ACLAIMS),
+
+    (1054, "the plan imports the paid Report's deterministic core", APLAN,
+     'import { ACTION_CATALOGUE, REASSESSMENT, THIRTY_DAY_FOCUS } from "./catalogue"',
+     'import { choosePriority } from "@/lib/report/deterministic/priority"\nimport { ACTION_CATALOGUE, REASSESSMENT, THIRTY_DAY_FOCUS } from "./catalogue"',
+     AFENCE),
+
+    (1055, "the action layer reaches for the Biotic pillar vocabulary", ACATS,
+     'import { ACTIONS } from "@/lib/product-vocabulary"',
+     'import { PILLARS } from "@/lib/pillars"\nimport { ACTIONS } from "@/lib/product-vocabulary"',
+     AFENCE),
+
+    (1056, "the plan surface asks for a band with the unregistered version", APRESENT,
+     'export const PLAN_COPY = {',
+     'import { getScoreBand } from "@/lib/fss/interpretation/bands"\n\nexport const PLAN_COPY = {',
+     AFENCE),
+
+    (1057, "a stored action resolves against moved content instead of refusing", ASTORED,
+     '  if (stored.actionSetVersion !== ACTION_SET_VERSION) {\n    return unresolvable("content-version-moved")\n  }',
+     '',
+     FPERSIST),
+
+    (1058, "a withdrawn entry falls back to the first in the catalogue", ASTORED,
+     '  if (!entry) return unresolvable("entry-withdrawn")',
+     '  const resolved = entry ?? ACTION_CATALOGUE[0]\n  if (!resolved) return unresolvable("entry-withdrawn")',
+     FPERSIST),
+
+    (1059, "a stored action keeps the prose instead of the id", ASTORED,
+     '    recommendationId: r.id,',
+     '    recommendationId: r.practicalAction,',
+     FPERSIST),
+
+    (1060, "the candidate tree leaves the claims corpus", BIOTICTEST,
+     'const CANDIDATE_ROOTS = ["lib/fss", "components/fss", "app/preview/food-system-v1"]',
+     'const CANDIDATE_ROOTS = ["app/preview/food-system-v1"]',
+     BIOTIC),
+
+    (1061, "the derived corpus goes back to staged files only", BIOTICTEST,
+     'return execSync(`git ls-files --cached --others --exclude-standard ${CANDIDATE_ROOTS.join(" ")}`, {',
+     'return execSync(`git ls-files ${CANDIDATE_ROOTS.join(" ")}`, {',
+     BIOTIC),
+
+    (1062, "the withheld score name becomes reachable from a servable page",
+     "app/pricing/page.tsx",
+     'export default',
+     'const LEAK = "Your Food System Score"\n\nexport default',
+     RETIRED),
+    # ── Gate 3.5 — the withheld name, and the comparability claim ─────────
+
+    (1063, "the retest card claims a before/after improvement again", RETEST,
+     "  const shareText = `I'm tracking my Biotics Score\u2122 with EatoBiotics",
+     "  const shareText = `My Biotics Score went from ${state.baseline.score} to ${state.latest.score}` + `I'm tracking my Biotics Score\u2122 with EatoBiotics",
+     RETIRED),
+
+    # RE-AIMED. v1 removed only the FIRST of the sentence's two wrapped lines,
+    # leaving "describes what your answers said — not a measurement of your
+    # health." in place — which is the half the guard asserts, so the mutation
+    # did not do what its own description said. The whole paragraph goes now.
+    (1064, "the retest card drops the line saying what the two numbers are", RETEST,
+     "        Both numbers came from the same assessment, taken {state.days} days apart. The difference\n        describes what your answers said \u2014 not a measurement of your health.",
+     "        ",
+     RETIRED),
+
+    (1065, "a live surface takes the withheld score name back", TWINBUILD,
+     'export const SCORE_TREND_LABEL = "Biotics Score\u2122"',
+     'export const SCORE_TREND_LABEL = "Food System Score"',
+     RETIRED),
+
+    (1066, "the agent provider predicts a score movement again", DETERM,
+     "are usually the most direct place to start.`",
+     "tend to move your Food System Score most.`",
+     RETIRED),
+
+    # RE-ANCHORED in Gate 3.6. The sentence this case pins said "your answers";
+    # buildAccountTwin assembles the week story from MEALS, so Gate 3.6
+    # corrected the attribution and the old anchor no longer exists. The case's
+    # intent is untouched — the mutation still credits the meals for moving a
+    # number, which is the claim it was written to catch.
+    (1067, "the week story credits the meals for the change", WEEKSTORY,
+     '? "That is what your meals said this time. Let us see whether it holds."',
+     '? "Your meals are moving the number \u2014 I can feel the momentum."',
+     RETIRED),
+
+    (1068, "the cleared ledger is widened again instead of a surface being fixed",
+     "tests/unit/retired-vocabulary.test.ts",
+     '    "lib/assessment/registry.ts",\n    "lib/cms/taxonomy.ts",\n  ]',
+     '    "lib/assessment/registry.ts",\n    "lib/cms/taxonomy.ts",\n    "lib/account/share-card.ts",\n  ]',
+     RETIRED),
+    # ── Gate 3.6 — the provider's prose ──────────────────────────
+
+    (1069, "the provider's rationale names the Biotics again", DETERM,
+     "`${described} ${behaviourFor(strongest, src)} as one of your steadier patterns, `",
+     "`Your ${BIOTIC_LABELS[strongest]} look settled, while ${BIOTIC_LABELS[weakest]} appear lower. `",
+     ALCLAIMS),
+
+    (1070, "the improving line goes back to a superlative on a Biotic", DETERM,
+     "improving.push(`One of your stronger patterns: ${behaviourFor(strongest, src)}.`)",
+     "improving.push(`${BIOTIC_LABELS[strongest]} remains your strongest area.`)",
+     ALCLAIMS),
+
+    (1071, "the next-best-action's why names the Biotic it targets", DETERM,
+     "` Focusing on ${behaviourFor(target, baseline.bioticsSource)} is where there is the most room right now.`",
+     "` Focusing on ${BIOTIC_LABELS[target]} supports the area with the most room to grow.`",
+     ALCLAIMS),
+
+    # The attribution, not the vocabulary. On /account the numbers are averaged
+    # MEALS; "your answers described" is a false claim about where a finding
+    # came from, and it is the kind that reads as harmless.
+    (1072, "the provider claims the finding came from the assessment on every path", DETERM,
+     'const described = src === "meals" ? "Your recent meals describe" : "Your answers described"',
+     'const described = "Your answers described"',
+     ALCLAIMS),
+
+    (1073, "the two vocabularies collapse back into one", BEHAVIOUR,
+     "  const hint = BIOTIC_FOOD_HINTS[MEAL_TO_LOOP[key]]\n  if (!hint) return BEHAVIOUR_UNKNOWN\n  return hint.split(\" like \")[0]",
+     "  return loopBehaviour(MEAL_TO_LOOP[key])",
+     ALCLAIMS),
+
+    # The doubled-possessive repair. Only rendering the sentence shows it.
+    (1074, "loopBehaviour stops stripping the leading possessive", BEHAVIOUR,
+     '  return phrase.replace(/^your\\s+/i, "")',
+     "  return phrase",
+     ALCLAIMS),
+
+    (1075, "loopBehaviour returns the Biotic label instead of the behaviour", BEHAVIOUR,
+     "  const phrase = pillarBehaviour(BIOTIC_LABELS[key])",
+     "  const phrase: string | null = BIOTIC_LABELS[key]",
+     ALCLAIMS),
+
+    # ── the baseline and the /account feed ───────────────────────
+
+    (1076, "deriveGaps names a Biotic as lower than the others", BASELINE,
+     "gaps.push(`Room to grow in ${where}: ${behaviourFor(k, source)}`)",
+     "gaps.push(`${k[0].toUpperCase()}${k.slice(1)} appear lower than the others`)",
+     ALCLAIMS),
+
+    (1077, "the learning feed says a meal fed the member's Prebiotics", ACCTWIN,
+     "      detail: `This meal brought ${mealBehaviour(tb)} \u00b7 meal score ${m.score}`,",
+     "      detail: `This fed your ${tb[0].toUpperCase()}${tb.slice(1)}s \u00b7 meal score ${m.score}`,",
+     ALCLAIMS),
+
+    # The worst single claim found: personal, numeric, directional, longitudinal.
+    (1078, "the fortnight trend makes a Biotic its subject again", PATTERNS,
+     "        title: `Your meals climbed ${rounded} points on ${mealBehaviour(bestKey)} this week`,",
+     "        title: `Your ${bestKey[0].toUpperCase()}${bestKey.slice(1)}s climbed ${rounded} points this week`,",
+     ALCLAIMS),
+
+    (1079, "the best-meals hint claims the meals feed the producers", PATTERNS,
+     '  postbiotic: "polyphenol-rich foods are your superpower",',
+     '  postbiotic: "your meals feed the producers well",',
+     ALCLAIMS),
+
+    # ── the panels and surfaces that lost their data ────────────────
+
+    (1080, "the biotics panel takes a personal score prop back", BPANEL,
+     'export function BioticsProgressPanel({ className = "" }: { className?: string }) {',
+     'export function BioticsProgressPanel({ className = "", biotics }: { className?: string; biotics?: { prebiotics: { score: number } } }) {\n  void biotics?.prebiotics.score',
+     BCLAIMS),
+
+    (1081, "the biotics panel renders a per-Biotic number again", BPANEL,
+     "                <p className=\"text-sm font-medium text-foreground\">{pillar.label}</p>",
+     "                <p className=\"text-sm font-medium text-foreground\">{pillar.label} 67 / 100</p>",
+     BCLAIMS),
+
+    (1082, "the system map hands the stage a personal Biotic score again", SYSMAP,
+     "export function systemMapState(_twin: FoodSystemDigitalTwin): SystemHotspotState[] {\n  return SYSTEM_HOTSPOTS.map((h) => ({ ...h }))",
+     "export function systemMapState(_twin: FoodSystemDigitalTwin): SystemHotspotState[] {\n  return SYSTEM_HOTSPOTS.map((h) => ({ ...h, score: _twin.biotics[h.biotic].score }))",
+     ALCLAIMS + EDUTAIN),
+
+    (1083, "a hotspot action claims it feeds the producers", SYSMAP,
+     '    action: "Add resistant starch this week \u2014 cooked-and-cooled oats or potato, legumes, onions.",',
+     '    action: "Feed the producers: cooked-and-cooled oats, legumes and onions help your microbes make more.",',
+     ALCLAIMS),
+
+    # The most public form of the claim, and the one nobody can see once posted.
+    (1084, "the share card draws the member's three Biotic scores again", SHARETWIN,
+     "        momentumLabel: visual.momentumLabel,\n      })",
+     "        momentumLabel: visual.momentumLabel,\n        biotics: [{ label: \"Prebiotics\", value: twin.biotics.prebiotics.score, color: \"#A8E063\" }],\n      })",
+     BCLAIMS),
+
+    (1085, "the Inside You chapters carry a personal Biotic level again", INSIDEYOU,
+     '      value: null,\n      valueLabel: "",\n      takeaway:\n        "Plant variety is what moves this one',
+     '      value: twin.biotics.prebiotics.score,\n      valueLabel: "Your prebiotic level today",\n      takeaway:\n        "Plant variety is what moves this one',
+     ALCLAIMS + EDUTAIN),
+
+    (1086, "the Inside You narration says fermented foods add live microbes", INSIDEYOU,
+     '        "Foods transformed by fermentation \u2014 yoghurt, kefir, kimchi, sauerkraut, miso. Whether live microorganisms survive to be eaten depends on the food and how it is made.",',
+     '        "Fermented foods add live microbes that work alongside your own \u2014 a busier, more diverse inner community.",',
+     ALCLAIMS + BCLAIMS),
+
+    # RE-ANCHORED within Gate 3.6: the title was restructured after reading it
+    # rendered — the phrase as sentence subject gave a lowercase opening, and
+    # the sibling detail line gave "fermented foods IS where…".
+    (1087, "the week story says a Biotic led the week", WEEKSTORY,
+     "    title: `Your week leaned on ${weekBehaviour(strongest)}.`,",
+     "    title: `${strongest[0].toUpperCase()}${strongest.slice(1)} led your week.`,",
+     ALCLAIMS),
+
+    (1088, "the meal journey claims postbiotics were produced", MEALREVEAL,
+     '  "The give-back stage",',
+     '  "Postbiotics produced",',
+     ALCLAIMS + BCLAIMS),
+
+    (1089, "the menu scan tells the member it chose for their probiotics", MENUSCAN,
+     "Chosen for your {behaviourFor(result.weakest)}",
+     "Chosen for your {result.weakest}",
+     BCLAIMS),
+
+    # ── the guards themselves ───────────────────────────────
+
+    (1090, "the agent loop leaves the claims corpus again", BCLAIMSFILE,
+     "  ...AGENT_LOOP_SURFACES,\n]",
+     "]",
+     BCLAIMS),
+
+    (1091, "the possessive rule is dropped from PERSONAL_BIOTIC_STATE", BCLAIMSFILE,
+     '  ["a Biotic claimed as a person\'s own",\n   new RegExp(String.raw`\\b(?:[Yy]our|[Mm]y)\\s+${BIOTICS_ANY}\\b`)],',
+     "",
+     BCLAIMS),
+
+    (1092, "the state-verb rule readmits the copulas, breaking education", BCLAIMSFILE,
+     "   new RegExp(String.raw`\\b${BIOTICS}\\s+(?:remains?|appears?|looks?|seems?)\\b`)],",
+     "   new RegExp(String.raw`\\b${BIOTICS}\\s+(?:remains?|appears?|looks?|seems?|is|are)\\b`)],",
+     BCLAIMS),
+
+    # THE COUNTERFACTUAL FOR THE WHOLE GATE. A source scan of the 22 corpus
+    # files catches 1 of the 9 original claims, because the rest interpolate.
+    # If the behavioural guard stops CALLING the generators and inspects source
+    # text instead, it goes green while every claim is back. This case is the
+    # proof that calling them is what closed the defect.
+    (1093, "the behavioural guard stops calling the generators", "tests/unit/agent-loop-claims.test.ts",
+     "        assertClean(\"analysis.rationale\", [turn.analysis!.rationale])",
+     "        assertClean(\"analysis.rationale\", [])",
+     ALCLAIMS),
+    # ── Gate 3.7 — the pre-flight ───────────────────────────────
+
+    (1094, "the cycle diagram claims organisms join the colony again", BIOTICSPAGE,
+     'desc: "Live microorganisms may arrive, depending on the food"',
+     'desc: "New living bacteria join the colony"',
+     BCLAIMS),
+
+    # The counterfactual for the rule itself: "colony" must stay sayable, and a
+    # rule that refused the noun would make the page less accurate, not safer.
+    (1095, "the colony rule is widened to refuse the word itself", BCLAIMSFILE,
+     '   /\\b(join\\w*|enter\\w*|settl\\w+|establish\\w*|arriv\\w*|add\\w*|introduc\\w*)\\b[^.!?]{0,40}\\bcolon(y|ies)\\b/i],',
+     '   /\\bcolon(y|ies)\\b/i],',
+     BCLAIMS),
+
+    (1096, "the postbiotics card asserts health outcomes flat again", BIOTICSPAGE,
+     'They are associated with lower inflammation, a stronger gut lining, better-regulated immune response, and how you feel day to day.',
+     'They reduce inflammation, strengthen the gut lining, regulate immune response, and directly influence how you feel.',
+     BCLAIMS),
+
+    (1097, "the menu-scan prompt is told the member's weakest biotic again", MENUSCAN_ROUTE,
+     'content: `The food pattern to favour is: ${pattern}.',
+     'content: `The member\'s weakest biotic is ${weakest} \u2014 bias the picks toward it.',
+     BCLAIMS),
+
+    (1098, "the menu-scan prompt asks the model what a dish feeds", MENUSCAN_ROUTE,
+     '- "why" names the FOODS in the dish and why they suit the pattern. Do not describe what happens',
+     '- "why" should mention what the dish feeds inside your Prebiotics. Do not describe what happens',
+     BCLAIMS),
+
+    (1099, "the sixth prompt module leaves the claims corpus", BCLAIMSFILE,
+     '  "app/api/menu-scan/route.ts",\n]',
+     ']',
+     BCLAIMS),
+
+    (1100, "the permanent product rule is deleted from CLAUDE.md", CLAUDEMD,
+     '> **Measure the food system we can observe. Teach the biology accurately. Never\n> present the biology as personally measured when it isn\'t.**',
+     '',
+     CMDTEST),
+
+    (1101, "the rule stops requiring a new generator to join the behavioural guard", CLAUDEMD,
+     '**A new generator of customer-facing prose belongs in\n  that file, not only in a corpus list.**',
+     'It is thorough.',
+     CMDTEST),
 ]

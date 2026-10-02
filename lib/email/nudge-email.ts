@@ -43,7 +43,10 @@ export function buildNudgeEmail(opts: NudgeEmailOpts): { subject: string; html: 
   const { name, mealsLoggedThisWeek, bestScoreThisWeek, currentStreak, weeklyCheckinContent, membershipTier, baseUrl, weakestPillar, weakestPillarAction } = opts
 
   const PILLAR_DISPLAY_NAMES: Record<string, string> = {
-    adding: "Live Foods", diversity: "Plant Diversity", feeding: "Feeding",
+  // "Live Foods" until Phase 1. The KEY stays `adding` — it is written into
+  // leads.sub_scores and moving it would silently zero historical rows. Only
+  // the label changes, matching the correction made on /method in Tranche 2A.
+    adding: "Fermented Foods", diversity: "Plant Diversity", feeding: "Feeding",
     consistency: "Consistency", feeling: "Body Awareness",
   }
 

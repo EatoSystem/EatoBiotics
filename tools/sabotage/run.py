@@ -61,13 +61,33 @@ def run(case):
     before = sha(path)
 
     source = original.decode("utf8")
-    if find not in source:
+    matches = source.count(find)
+    if matches == 0:
         print(f"  {number}  ANCHOR MISSING in {rel}: {find[:70]!r}")
         return "anchor"
 
-    # count=1: a byte-identical anchor in two places would otherwise sabotage
-    # whichever one comes first, which is how case 287 passed while testing
-    # nothing.
+    # ── AN AMBIGUOUS ANCHOR IS A BROKEN CASE, NOT A WORKING ONE ──────────────
+    #
+    # The `count=1` below already stops a two-site anchor mutating both places,
+    # and its history is why: case 287 passed while testing nothing because the
+    # mutation landed on whichever site came first in the file.
+    #
+    # But capping the replacement only fixes the symptom. An anchor that matches
+    # twice does not SAY which site it means, so reordering the file silently
+    # repoints the case at a different one and nobody is told — a case that
+    # still reports "caught" while proving something other than its own
+    # description. Five cases were in that state when this was added (933, 968,
+    # 976, 977 and 708); all five reported caught, and all five have been made
+    # unique rather than left to drift.
+    #
+    # A missing anchor keeps its existing verdict deliberately: the 33
+    # unresolvable anchors in cases_s3a target files that live on unmerged
+    # PR #274, which is documented, and they must keep reading exactly as they
+    # do today rather than appearing newly broken.
+    if matches > 1:
+        print(f"  {number}  ANCHOR AMBIGUOUS in {rel} ({matches} matches): {find[:60]!r}")
+        return "ambiguous"
+
     path.write_text(source.replace(find, repl, 1), encoding="utf8")
     if sha(path) == before:
         path.write_bytes(original)

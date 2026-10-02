@@ -40,7 +40,7 @@ export const MOCK_QUICK_LOG_RESULT: QuickLogResult = {
   prebiotic_score: 68,
   probiotic_score: 74,
   postbiotic_score: 61,
-  insight: "Strong all-rounder — the kimchi brings live cultures while quinoa and vegetables feed your resident microbes.",
+  insight: "Strong all-rounder — the kimchi is fermented, while quinoa and vegetables feed the microbes already there.",
   tags: ["Fermented Foods", "Omega-3s", "Plant Diversity", "Protein Rich"],
   nutrition: { calories: 520, protein: 34, fibre: 9 },
 }

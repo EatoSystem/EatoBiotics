@@ -32,7 +32,7 @@ export const REVEAL_ROW_STEP_MS = 450
 
 /** Where each impact's pathway node sits on the figure (% of orb stage). */
 const PATHWAY_NODE: Record<string, { x: number; y: number }> = {
-  probiotic: { x: 57, y: 50 },  // the gut — home of the live cultures
+  probiotic: { x: 57, y: 50 },  // the gut
   fibre: { x: 48, y: 59 },      // lower gut — where fibre feeds the microbes
   plants: { x: 50, y: 22 },     // upper body ambience — whole-system lift
   fats: { x: 44, y: 34 },       // chest — the calm, steady side
@@ -68,7 +68,20 @@ const JOURNEY_REGION = [
   { x: 47, y: 61, r: 35 }, // ~12h — colon, microbes ferment the fibre
   { x: 50, y: 49, r: 66 }, // ~24h — the give-back radiates through the whole body
 ]
-const JOURNEY_BIOTIC = ["Digestion begins", "Prebiotic fibre travels on", "Prebiotics feed your microbes", "Postbiotics produced"]
+/*
+ * GATE 3.6: the last two of these read "Prebiotics feed your microbes" and
+ * "Postbiotics produced" — a feeding mechanism and a production claim, made
+ * per meal, about this person, on /account (reached from twin-stage.tsx:484).
+ * Nothing measures either. The journey still describes what is KNOWN to happen
+ * to food in a gut, in the general present, without claiming it happened to
+ * them because of this plate.
+ */
+const JOURNEY_BIOTIC = [
+  "Digestion begins",
+  "Fibre travels on",
+  "Fibre reaches the microbes",
+  "The give-back stage",
+]
 const JOURNEY_FEEL = [
   "full and satisfied as the meal is broken down",
   "steady energy as nutrients are absorbed",

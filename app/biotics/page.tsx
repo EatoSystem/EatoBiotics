@@ -62,19 +62,58 @@ const BIOTICS = [
     gradient: "linear-gradient(135deg, var(--icon-yellow), var(--icon-orange))",
     image: "/postbiotics-1.png",
     tagBg: "color-mix(in srgb, var(--icon-orange) 10%, var(--background))",
+    /* Gate 3.7: this card asserted four health outcomes flat — postbiotics
+       "reduce inflammation, strengthen the gut lining, regulate immune
+       response, and directly influence how you feel" — and the summary said
+       they are "the output that makes you feel better every day". The biology
+       is real and stays; the certainty was not ours to claim. Everywhere else
+       in the product describes the same mechanism as ASSOCIATED WITH an
+       outcome: lib/account/system-map.ts says "associated with a stronger gut
+       barrier and everyday resilience", and the hedged register is Tranche 2A's
+       throughout. So this is the existing standard applied to copy that
+       predates it, not a new one.
+
+       "well-populated" went with it — population-establishment language one
+       step from the colonisation claim removed from the cycle diagram below. */
     summary:
-      "The beneficial compounds your gut bacteria produce — short-chain fatty acids, vitamins, and neurotransmitters. The output that makes you feel better every day.",
-    body: "Postbiotics are the metabolic byproducts your gut bacteria produce as they ferment prebiotics. These include short-chain fatty acids like butyrate and propionate, vitamins B12 and K2, amino acids, and serotonin precursors. Postbiotics are not eaten — they are earned. They are the output of a system that is well-fed and well-populated. They reduce inflammation, strengthen the gut lining, regulate immune response, and directly influence how you feel.",
+      "The beneficial compounds your gut bacteria produce — short-chain fatty acids, vitamins, and neurotransmitters. The output of a system that is fed well.",
+    body: "Postbiotics are the metabolic byproducts your gut bacteria produce as they ferment prebiotics. These include short-chain fatty acids like butyrate and propionate, vitamins B12 and K2, amino acids, and serotonin precursors. Postbiotics are not eaten — they are earned. They are the output of a system that is well-fed and diverse. They are associated with lower inflammation, a stronger gut lining, better-regulated immune response, and how you feel day to day.",
     whyItMatters:
       "90–95% of your body's serotonin is produced in your gut. Postbiotics are the bridge between what you eat and how you feel — the compounds the biotic system produces when it is well fed.",
     foods: ["Butyrate", "Short-chain Fatty Acids", "Vitamin K2", "Vitamin B12", "Serotonin Precursors", "Acetate", "Propionate", "Lactate"],
   },
 ]
 
+/* ════════════════════════════════════════════════════════════════════════════
+   The five-step cycle — impersonal, and that is what makes it sayable.
+
+   Step 03 read `label: "Add Probiotics", desc: "New living bacteria join the
+   colony"`. That is colonisation: organisms arriving and establishing. The
+   Probiotics card above spent Phase 1 removing exactly that claim — "eating
+   them INTRODUCES NEW RESIDENTS to your gut" — and the cycle quietly kept it
+   four screens further down, because `FERMENTED_LIVE_CLAIMS` refuses
+   `colonis\w+` by name and "colony" is a different word.
+
+   The replacement reuses the wording already reviewed on that card and in
+   `PILLARS.probiotics.whatItDoes`, condensed to a diagram step, keeping its two
+   moves: fermentation is the category, and survival is CONDITIONAL.
+
+   The label becomes behaviour-level to match its neighbours — "Bacteria are
+   fed", "Diversity grows" are already actions and outcomes, not nouns. The
+   three Biotics are still named and taught in the cards above; this is a
+   process diagram, not the education.
+
+   Step 05 is left exactly as it is. "Postbiotics produced" describes a step in
+   a process in the impersonal present, which is true and is the thing this page
+   exists to teach. Gate 3.6 refused the byte-identical string in
+   `components/account/twin/meal-reveal.tsx`, where it narrated one member's
+   plate — and a general rule for it was written, run, and withdrawn precisely
+   because it flagged this line. The difference is not the words.
+   ════════════════════════════════════════════════════════════════════════════ */
 const CYCLE = [
   { step: "01", label: "Eat Prebiotics",       desc: "Plant fibres reach the colon intact",    color: "var(--icon-lime)" },
   { step: "02", label: "Bacteria are fed",      desc: "Beneficial bacteria multiply",           color: "var(--icon-green)" },
-  { step: "03", label: "Add Probiotics",        desc: "New living bacteria join the colony",    color: "var(--icon-teal)" },
+  { step: "03", label: "Add fermented foods",   desc: "Live microorganisms may arrive, depending on the food", color: "var(--icon-teal)" },
   { step: "04", label: "Diversity grows",       desc: "More species, more resilience",          color: "var(--icon-yellow)" },
   { step: "05", label: "Postbiotics produced",  desc: "Butyrate, vitamins, serotonin",          color: "var(--icon-orange)" },
 ]
@@ -301,10 +340,10 @@ export default function BioticsPage() {
               <p className="text-sm leading-relaxed text-white/70">
                 Then the cycle continues.{" "}
                 <span className="font-semibold text-white">
-                  Postbiotics strengthen the gut lining — making it more receptive to the
-                  next round of prebiotics and probiotics.
+                  Postbiotics are associated with a stronger gut lining — which is thought
+                  to make it more receptive to the next round of prebiotics and probiotics.
                 </span>{" "}
-                Every good meal makes the next one more effective.
+                The cycle compounds: each turn sets up the one after it.
               </p>
             </div>
           </ScrollReveal>

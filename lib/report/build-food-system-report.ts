@@ -134,7 +134,7 @@ const PATHWAY_PLAIN: Record<BioticScoreKey, string> = {
   prebiotics:
     "Prebiotics are the plant fibres your gut microbes feed on — vegetables, fruit, wholegrains, beans, nuts and seeds. They are the raw material the system runs on.",
   probiotics:
-    "Probiotics are the live cultures in fermented foods — yoghurt, kefir, kimchi, sauerkraut, miso. They add microbial exposure rather than only feeding what is already there.",
+    "Probiotics are live microorganisms that, in adequate amounts, have a demonstrated benefit. Foods transformed by fermentation — yoghurt, kefir, kimchi, sauerkraut, miso — are the everyday route to them, though whether live microorganisms survive to be eaten depends on the food and how it is made.",
   postbiotics:
     "Postbiotics are what the system produces once it is fed and supported: the compounds your microbes make from fibre, and the rhythm, rest and recovery that let them do it.",
 }
@@ -143,7 +143,7 @@ const PATHWAY_WHY: Record<BioticScoreKey, string> = {
   prebiotics:
     "Variety matters as much as volume here. A wider range of plants is associated with a wider range of microbes, and diversity is one of the more consistent markers in microbiome research.",
   probiotics:
-    "Live foods are one of the few ways to introduce new microbes rather than just feeding existing ones. Small, regular amounts are associated with more benefit than occasional large ones.",
+    "Fermented foods are the one pathway that brings microbial material in from outside rather than only feeding what is already there. Small, regular amounts are associated with more benefit than occasional large ones.",
   postbiotics:
     "Outputs depend on inputs plus conditions. Meal rhythm, eating pace, sleep and stress all shape what your system can do with the food you give it.",
 }
@@ -159,11 +159,11 @@ const BAND_SUGGESTS: Record<BioticScoreKey, Record<Band, string>> = {
   },
   probiotics: {
     strong:
-      "Your answers suggest live foods already appear regularly — a habit worth keeping steady rather than intensifying.",
+      "Your answers suggest fermented foods already appear regularly — a habit worth keeping steady rather than intensifying.",
     building:
-      "Your answers suggest live foods appear sometimes but not reliably. A predictable weekly rhythm may do more here than a larger portion.",
+      "Your answers suggest fermented foods appear sometimes but not reliably. A predictable weekly rhythm may do more here than a larger portion.",
     strained:
-      "Your answers suggest live foods are rare at the moment. This is often the easiest pathway to change, because a small daily serving is enough to shift it.",
+      "Your answers suggest fermented foods are rare at the moment. This is often the easiest pathway to change, because a small daily serving is enough to shift it.",
   },
   postbiotics: {
     strong:
@@ -319,11 +319,11 @@ export const TOOLS: Record<BioticScoreKey, ReportFoodTool[]> = {
       biotic: "probiotics",
       visualToken: { type: "food-group", accent: "teal", iconName: foodIcon("kefir") },
       mechanism:
-        "Carries live cultures, so it adds microbial exposure rather than only feeding the microbes already present.",
+        "Made by fermentation. Whether microorganisms are still present by the time you eat it depends on how it was processed, which is why the label matters.",
       whyForThisCustomer:
-        "The most repeatable live food for most households, and easy to attach to an existing breakfast.",
+        "The most repeatable fermented food for most households, and easy to attach to an existing breakfast.",
       howToUse: "A small serving daily. Check the label says live or active cultures.",
-      swap: "Unsweetened plant-based versions with live cultures if dairy does not suit you.",
+      swap: "Unsweetened plant-based versions labelled live or active if dairy does not suit you.",
       familyAdaptation: "Plain yoghurt with fruit avoids the sugar in flavoured pots.",
     },
     {
@@ -331,7 +331,7 @@ export const TOOLS: Record<BioticScoreKey, ReportFoodTool[]> = {
       biotic: "probiotics",
       visualToken: { type: "food-group", accent: "teal", iconName: foodIcon("kimchi") },
       mechanism:
-        "Fermented vegetables deliver live cultures alongside the fibre of the vegetable itself.",
+        "Vegetables transformed by fermentation, carrying the fibre of the vegetable itself. Whether live microorganisms reach you depends on how the jar was made and stored.",
       whyForThisCustomer:
         "A forkful beside a meal you already eat is enough — this does not need to become a dish.",
       howToUse:
@@ -413,7 +413,7 @@ function thirtyDayLoop(priority: BioticScoreKey): FoodSystemReport["thirtyDayLoo
     {
       week: 3,
       focus: "Combine feeding and seeding",
-      action: "Pair a fibre-rich food with a live food in the same meal — oats with yoghurt, or beans with kimchi.",
+      action: "Pair a fibre-rich food with a fermented food in the same meal — oats with yoghurt, or beans with kimchi.",
       why: "Feeding microbes and adding them work together; pairing them is a simple way to do both without a new meal.",
     },
     {
@@ -456,7 +456,7 @@ export function buildFoodSystemReport(input: BuildReportInput): FoodSystemReport
 
   const dominantPattern =
     strongCount === 3
-      ? "Your answers describe a food system that is well supported across all three pathways — varied plants, regular live foods, and a rhythm that holds. From here the work is protecting what already works rather than rebuilding."
+      ? "Your answers describe a food system that is well supported across all three pathways — varied plants, regular fermented foods, and a rhythm that holds. From here the work is protecting what already works rather than rebuilding."
       : strainedCount === 3
       ? "Your answers describe a food system that is early in its development across all three pathways. That is a useful starting point rather than a problem: one repeatable habit tends to move several scores at once."
       : strongCount >= 1 && strainedCount >= 1

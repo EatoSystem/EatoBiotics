@@ -115,6 +115,29 @@ export const ACCOUNT_SURFACES = [
   "components/account/monthly-progress-card.tsx",
   "components/account/seven-day-guide.tsx",
   "components/account/upgrade-gate.tsx",
+  /*
+   * ── GATE 3.6: THE PRODUCERS, NOT ONLY THE MOUNTER ─────────────────
+   *
+   * `live-dashboard.tsx` has been first in this list from the beginning. Every
+   * file BELOW was outside it — and those are the files that actually WRITE
+   * the sentences live-dashboard renders: the loop's rationale, the learning
+   * feed, the week story, the Inside You chapters, the body-map hotspots.
+   *
+   * So the guard read the importer and not the imported module, which is
+   * verbatim what this file's own docblock says went wrong with
+   * `biotics-prompt.ts` — the surface was listed, and the module that gave it
+   * its words was not. Gate 3.6 found five live personal-Biotic claims in
+   * here, including the member's three Biotic scores drawn onto a public PNG.
+   *
+   * A COPY SOURCE COUNTS AS A SURFACE, which this list already says of
+   * `dashboard-client-data.ts`. These are the same thing, generated at runtime.
+   */
+  "components/account/twin/twin-stage.tsx",
+  "components/account/twin/twin-sections.tsx",
+  "components/account/twin/share-twin.tsx",
+  "components/account/twin/meal-reveal.tsx",
+  "components/agent-loop/NextBestActionCard.tsx",
+  "components/agent-loop/BioticsProgressPanel.tsx",
 ]
 
 /**
@@ -132,6 +155,10 @@ export const EMAIL_SURFACES = [
   "lib/email/trial-winback-email.ts",
   "lib/email/paid-report-email.ts",
   "lib/email/meal-analysis-email.ts",
+  // In NO guard's corpus until Tranche 2C, while carrying the same "Live
+  // Foods" pillar label the other three did. A group is only as good as its
+  // membership.
+  "lib/email/nudge-email.ts",
   "app/api/email/nurture/route.ts",
 ]
 
@@ -217,6 +244,13 @@ export const AI_PROMPT_SURFACES = [
   // /api/analyse/stream, /api/analyse-plate, /api/create-plate and
   // /api/eatobiotic — the prompt that actually assigns a Meal Biotics Score.
   "lib/biotics-prompt.ts",
+  /*
+   * Gate 3.7. Behind /account/twin, which V1 refuses — listed anyway, because a
+   * prompt is where a removed claim waits patiently for the route to come back.
+   * Its system prompt told the model the member's "weakest biotic" and asked it
+   * for "what it feeds", months after every page had lost both.
+   */
+  "app/api/menu-scan/route.ts",
 ]
 
 /** Everything a customer can read, by group. */

@@ -57,7 +57,7 @@ export function NationalPulse() {
             <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <p className="font-serif text-4xl font-bold text-foreground">{pulse.average}</p>
               <p className="text-sm text-muted-foreground">
-                average Food System Score across{" "}
+                average Biotics Score™ across{" "}
                 <strong className="text-foreground">{nf.format(pulse.total)}</strong> anonymised
                 contributions
               </p>

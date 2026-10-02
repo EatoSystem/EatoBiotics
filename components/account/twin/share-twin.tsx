@@ -30,11 +30,6 @@ export function ShareTwin({ twin, visual }: { twin: FoodSystemDigitalTwin; visua
         score: visual.ringScore,
         delta: twin.progress.scoreDelta,
         momentumLabel: visual.momentumLabel,
-        biotics: [
-          { label: "Prebiotics", value: twin.biotics.prebiotics.score, color: "#A8E063" },
-          { label: "Probiotics", value: twin.biotics.probiotics.score, color: "#2DAA6E" },
-          { label: "Postbiotics", value: twin.biotics.postbiotics.score, color: "#F5C518" },
-        ],
       })
       const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/png"))
       if (!blob) return

@@ -51,7 +51,10 @@ const PILLAR_LABELS: Record<string, string> = {
   // Legacy pillars
   diversity: "Plant Diversity",
   feeding: "Feeding",
-  adding: "Live Foods",
+  // "Live Foods" until Phase 1. The KEY stays `adding` — it is written into
+  // leads.sub_scores and moving it would silently zero historical rows. Only
+  // the label changes, matching the correction made on /method in Tranche 2A.
+  adding: "Fermented Foods",
   consistency: "Consistency",
   feeling: "Feeling",
 }

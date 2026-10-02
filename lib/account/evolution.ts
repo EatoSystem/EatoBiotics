@@ -82,7 +82,7 @@ export const AFTER_MEAL_STEPS: AfterMealStep[] = [
   {
     at: "~12h",
     title: "Your microbes feast",
-    detail: "In the colon, trillions of microbes ferment the fibre — this is where prebiotics do their work.",
+    detail: "In the colon, trillions of microbes ferment what reaches them — this is where a prebiotic effect actually happens.",
     color: "#4CB648",
   },
   {

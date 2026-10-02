@@ -4,9 +4,10 @@
  * Pure, deterministic builder that turns the member's FoodSystemDigitalTwin into
  * the four chapters of the animated "How the Food System inside you works"
  * explainer (You eat → Prebiotics feed → Probiotics work → Postbiotics power you).
- * Each chapter carries the member's real biotic level so the Remotion composition
- * and the chapter pills are personalized. Free of React/Remotion so it is
- * unit-testable and identical on server and client.
+ * The three Biotic chapters are EDUCATION and carry no personal number — see
+ * `value` below. Only the opening chapter shows a figure, and that figure is
+ * the overall Biotics Score™. Free of React/Remotion so it is unit-testable
+ * and identical on server and client.
  */
 
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
@@ -25,9 +26,26 @@ export interface InsideYouChapter {
   title: string
   /** One-sentence narration under the headline. */
   narration: string
-  /** The member's live value for this chapter (0–100), null when unknown. */
+  /**
+   * The member's value for this chapter, or null when there is none.
+   *
+   * ── GATE 3.6: ONLY THE OVERALL SCORE EVER FILLS THIS ────────────────
+   *
+   * The three Biotic chapters used to carry `twin.biotics.<key>.score` with
+   * labels "Your prebiotic level today", "Your probiotic level today", "Your
+   * postbiotic level today", and takeaways reading "Your postbiotic level is
+   * running low". `inside-you-journey.tsx:199-202` rendered the number and the
+   * label together, on /account. That is three personal Biotic states with
+   * numbers and band words — the claim
+   * POSTBIOTICS_INFERENCE_BOUNDARY prohibits by name.
+   *
+   * They are now `null`, which the renderer already handles by showing
+   * nothing, because nothing a person tells us measures them. The `eat`
+   * chapter keeps its value: that is the overall Biotics Score™, a result the
+   * product computes and is entitled to show.
+   */
   value: number | null
-  /** What the value is, e.g. "Your prebiotic level today". */
+  /** What the value is — empty for a chapter that has none. */
   valueLabel: string
   /** One-line takeaway shown under the player for the active chapter. */
   takeaway: string
@@ -39,18 +57,7 @@ export interface InsideYouChapter {
 /** Total composition length (all four chapters). */
 export const INSIDE_YOU_DURATION_FRAMES = INSIDE_YOU_CHAPTER_FRAMES * 4
 
-/** Reads naturally after "Your … level is". */
-function level(v: number | null): string {
-  if (v == null) return "still learning"
-  if (v >= 70) return "strong"
-  if (v >= 45) return "building"
-  return "running low"
-}
-
 export function buildInsideYouChapters(twin: FoodSystemDigitalTwin): InsideYouChapter[] {
-  const pre = twin.biotics.prebiotics.score
-  const pro = twin.biotics.probiotics.score
-  const post = twin.biotics.postbiotics.score
   const score = Math.round(twin.currentScore.value)
 
   const defs: Omit<InsideYouChapter, "fromFrame" | "durationInFrames">[] = [
@@ -61,7 +68,7 @@ export function buildInsideYouChapters(twin: FoodSystemDigitalTwin): InsideYouCh
       narration:
         "Each plate you build sends instructions to the living Food System inside you — your Food System listens to every one.",
       value: score,
-      valueLabel: "Your Food System Score today",
+      valueLabel: "Your Biotics Score™ today",
       takeaway: `Your Food System has learned from ${twin.observations.length} signal${twin.observations.length === 1 ? "" : "s"} so far — every meal teaches it more.`,
     },
     {
@@ -70,19 +77,20 @@ export function buildInsideYouChapters(twin: FoodSystemDigitalTwin): InsideYouCh
       title: "Fibre feeds the living system inside you",
       narration:
         "Prebiotic fibres from plants travel down to feed the trillions of microbes that call you home.",
-      value: pre,
-      valueLabel: "Your prebiotic level today",
-      takeaway: `Your prebiotic level is ${level(pre)} — plant variety is what moves it.`,
+      value: null,
+      valueLabel: "",
+      takeaway:
+        "Plant variety is what moves this one — more different plants across the week, not more of the same one.",
     },
     {
       key: "probiotics",
       label: "Probiotics work",
-      title: "Live cultures join the community",
+      title: "A fermented food arrives",
       narration:
-        "Fermented foods add live microbes that work alongside your own — a busier, more diverse inner community.",
-      value: pro,
-      valueLabel: "Your probiotic level today",
-      takeaway: `Your probiotic level is ${level(pro)} — one fermented food a day supports it.`,
+        "Foods transformed by fermentation — yoghurt, kefir, kimchi, sauerkraut, miso. Whether live microorganisms survive to be eaten depends on the food and how it is made.",
+      value: null,
+      valueLabel: "",
+      takeaway: "One fermented food a day is the whole behaviour here.",
     },
     {
       key: "postbiotics",
@@ -90,9 +98,10 @@ export function buildInsideYouChapters(twin: FoodSystemDigitalTwin): InsideYouCh
       title: "Your microbes give back",
       narration:
         "Well-fed microbes produce postbiotic compounds associated with steady energy, comfort and resilience.",
-      value: post,
-      valueLabel: "Your postbiotic level today",
-      takeaway: `Your postbiotic level is ${level(post)} — it follows when the first two are fed well.`,
+      value: null,
+      valueLabel: "",
+      takeaway:
+        "This is the one you cannot eat and we do not score. It follows from the first two.",
     },
   ]
 

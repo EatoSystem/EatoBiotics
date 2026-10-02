@@ -42,7 +42,8 @@
  * that says where it stops.
  */
 import { describe, it, expect } from "vitest"
-import { readFileSync } from "node:fs"
+import { readFileSync, writeFileSync, existsSync, rmSync } from "node:fs"
+import { execSync } from "node:child_process"
 import { MARKETING_SURFACES, AI_PROMPT_SURFACES } from "./customer-surfaces"
 import { reachableSourceFiles, servablePageCount } from "./reachable-surfaces"
 
@@ -77,6 +78,13 @@ const LIVE_SURFACES = [
  * which the rule no longer treats as a claim.
  */
 const REACHABLE_SURFACES = [
+  // The classifier of record. It left the ledger in Tranche 2D: its last two
+  // matches were a LABEL-READING INSTRUCTION ("look for 'live cultures' on the
+  // label") and the category term "prebiotic-rich" applied to inulin — which
+  // genuinely IS a prebiotic under strict ISAPP. Both were reworded rather
+  // than exempted, so the rules keep their edge and this file is now guarded
+  // like any other rather than allowed wholesale.
+  "lib/foods.ts",
   "app/help/page.tsx",
   "app/biotics/page.tsx",
   "app/method/page.tsx",
@@ -112,10 +120,204 @@ const PROMPT_SURFACES = [
   "app/api/demo/consult/route.ts",
   "app/api/report-chat/route.ts",
   "app/api/food-intelligence/route.ts",
+  /*
+   * Gate 3.7 — the SIXTH prompt module, and it had never been in any corpus.
+   *
+   * Tranche 2B's own docblock above records finding a fifth
+   * (`lib/biotics-prompt.ts`) after an audit had named four. This is the same
+   * miss one layer out: `app/api/menu-scan/route.ts` builds a system prompt and
+   * a per-request user message, and no guard had ever opened it. Its prompt told
+   * the model "The member's weakest biotic is ${weakest}" and asked for "what it
+   * feeds" — the exact model Gate 3.6 removed from fifteen surfaces, waiting
+   * behind a refused route for someone to turn it on.
+   *
+   * Listed rather than derived, for the reason stated above: the ledger seeds
+   * from page routes, so its import closure never reaches an API route.
+   */
+  "app/api/menu-scan/route.ts",
+]
+
+/**
+ * Lifecycle email templates — Tranche 2C.
+ *
+ * ── The gap these close, which was the worst one yet ─────────────────────────
+ *
+ * These templates were inside `EMAIL_SURFACES` in customer-surfaces.ts, so the
+ * three VOCABULARY guards read them. No CLAIM rule ever did. The result:
+ * `sequence-email.ts` was still rendering a number and a filled bar for each
+ * Biotic — "Probiotics 54/100" — and still writing "Your Postbiotics score
+ * reflects…", months after Tranche 1 removed exactly that from the reveal and
+ * Tranche 2A removed it from /assessment/you, the share card and the generated
+ * OG image.
+ *
+ * Being in one guard's corpus is not being guarded. That is the same shape as
+ * the-framework.tsx, how-it-works.tsx and the three unlisted prompt modules,
+ * and it is the fourth time it has been found by looking rather than by CI.
+ *
+ * An email is also the least recoverable surface in the product: a page can be
+ * corrected and re-rendered, a share card regenerates per request, but a
+ * delivered email is final.
+ */
+const EMAIL_SURFACES = [
+  "lib/email/sequence-email.ts",
+  "lib/email/results-email.ts",
+  "lib/email/paid-report-email.ts",
+  "lib/email/nudge-email.ts",
+  "lib/email/trial-winback-email.ts",
+  "lib/email/meal-analysis-email.ts",
+]
+
+/**
+ * The FSS-v1 candidate — a fifth tranche, and the first one guarded BEFORE it
+ * can be reached rather than after.
+ *
+ * ── Why it is its own list ────────────────────────────────────────────────────
+ *
+ * The four lists above each carry a tranche meaning: live, customer-reachable,
+ * a prompt, an email. The candidate is none of those. It sits behind a
+ * fail-closed preview gate, nothing links to it, and production refuses it
+ * outright. Appending it to one of those lists would make that list's docblock
+ * false, so it joins as a fifth and says what it is.
+ *
+ * ── Why it needs guarding at all, given nobody can reach it ──────────────────
+ *
+ * Because "nobody can reach it" is a property of a gate, and a gate is one edit
+ * from being wrong — and because this is the layer that will carry the
+ * product's recommendations. Every earlier tranche was added AFTER a claim had
+ * already shipped: Tranche 1 after the reveal, 2A after the result page and the
+ * share image, 2C after `sequence-email.ts` had been rendering per-Biotic
+ * numbers for months. Each time the finding came from reading rather than from
+ * CI, and each time the file was simply in no corpus.
+ *
+ * ── What it was checked by until now, which was not nothing but was close ────
+ *
+ * The derived ledger at the bottom of this file, and only that. Because
+ * `/preview/food-system-v1` classifies FIXTURE_SELF_GATED rather than POST_V1,
+ * it seeds `reachableSourceFiles()`, so the candidate closure was inside the
+ * ledger corpus — which runs exactly two rule sets, the fermented-live and
+ * fibre-prebiotic ones. `PERSONAL_BIOTIC_STATE` and the per-file number rules
+ * never saw it. It passes all of them today; the point is that it was passing
+ * unobserved.
+ *
+ * ── DERIVED, not hand-kept, and that is the whole repair ─────────────────────
+ *
+ * Every other tranche here is a named list, which is defensible for finished
+ * surfaces and indefensible for one still being built: a list is guarded
+ * because somebody remembered, and Gate 3 adds a module a week. So these three
+ * roots are enumerated from the tree. A new candidate file is guarded the
+ * moment it exists, which is the property every previous tranche lacked, and
+ * the thing a developer would have to do to escape the rules is delete a
+ * directory from CANDIDATE_ROOTS — which a test below refuses.
+ *
+ * ── Why `--others`, which is not decoration ──────────────────────────────────
+ *
+ * `git ls-files` alone lists TRACKED files, so a module that exists on disk but
+ * has not been staged is invisible to it. That was true the first time this ran
+ * against Gate 3's own new files: three modules sat in `lib/fss/action/`, the
+ * corpus reported the same count as before, and every rule passed by not
+ * looking. In CI it would never show, because CI only ever sees committed work —
+ * which makes it precisely the kind of hole that is found late.
+ *
+ * `--others --exclude-standard` adds untracked-but-not-ignored files, so the
+ * guard reads what a developer has written rather than what they have staged.
+ * "Guarded the moment it exists" is otherwise just a comment.
+ */
+const CANDIDATE_ROOTS = ["lib/fss", "components/fss", "app/preview/food-system-v1"]
+
+/** Tracked AND untracked-not-ignored, so a file is guarded the moment it exists. */
+function candidateTree(): string[] {
+  return execSync(`git ls-files --cached --others --exclude-standard ${CANDIDATE_ROOTS.join(" ")}`, {
+    encoding: "utf-8",
+  })
+    .trim()
+    .split("\n")
+    .filter((f) => /\.(ts|tsx)$/.test(f))
+    .sort()
+}
+
+const CANDIDATE_SURFACES = candidateTree()
+
+/**
+ * Tranche 2E — the agent loop, and the account surfaces it writes prose for.
+ *
+ * ── Why it is a sixth list and not an append ──────────────────────────────
+ *
+ * It is none of the five above: not live marketing, not a customer-reachable
+ * page, not a prompt, not an email, not the FSS candidate. It is a
+ * DETERMINISTIC GENERATOR — rule-based, no AI — whose sentences are rendered
+ * on `/account`, which is V1_CORE. Appending it to a tranche whose docblock
+ * describes something else would make that docblock false, which is the same
+ * reason CANDIDATE_SURFACES got its own list.
+ *
+ * ── The gap, which was two gaps wearing one coat ──────────────────────────
+ *
+ * `reachableSourceFiles()` has ALWAYS included these files — `/account` is
+ * V1_CORE, so every agent-loop module is in its import closure, under both the
+ * servable and the production notion. But the ledger that reads that closure
+ * runs `[...FERMENTED_LIVE_CLAIMS, ...FIBRE_PREBIOTIC_CLAIMS]` and nothing
+ * else, so PERSONAL_BIOTIC_STATE never saw them. Meanwhile
+ * `customer-surfaces.ts` lists `live-dashboard.tsx` — the file that MOUNTS
+ * these sentences — while every file that WRITES them sat outside it. The
+ * guard read the importer and not the imported module, which is verbatim what
+ * that file's own docblock says went wrong with `biotics-prompt.ts`.
+ *
+ * ── AND WHY THIS LIST ALONE DOES NOT CLOSE IT ─────────────────────────────
+ *
+ * A source scan of all fourteen files catches exactly ONE of the nine known
+ * sites — `menu-scan.tsx`, the only one written as a literal. The other eight
+ * interpolate: `${BIOTIC_LABELS[k]}`, `${BIOTIC_NAME[tb]}`,
+ * `${BIOTIC_LABEL[bestKey]}`. No source-text rule can see them, which is the
+ * same limit recorded below for `three-biotics-result.tsx` and the hole
+ * sabotage cases 947/948 walked through.
+ *
+ * So this list is necessary and insufficient, and the thing that actually
+ * closes the defect is `tests/unit/agent-loop-claims.test.ts`, which CALLS
+ * `analyse`, `recommend`, `deriveGaps`, `buildAccountTwin` and
+ * `detectPatterns` and asserts on the strings they return. Membership here
+ * stops a future LITERAL; the behavioural guard stops a future interpolation.
+ * Both are needed and neither is decoration.
+ *
+ * `BioticsProgressPanel` and all three of its consumers are included even
+ * though two of them sit behind POST_V1 refusals, so a reinstated
+ * `/account/twin` cannot bring the per-Biotic number model back with it.
+ */
+const AGENT_LOOP_SURFACES = [
+  "lib/agent-loop/providers/deterministic.ts",
+  "lib/agent-loop/baseline.ts",
+  "lib/agent-loop/behaviour.ts",
+  "lib/agent-loop/biotics.ts",
+  "lib/agent-loop/account-twin.ts",
+  "lib/agent-loop/engine.ts",
+  "lib/agent-loop/stages.ts",
+  "lib/agent-loop/twin/twin-builder.ts",
+  "lib/account/patterns.ts",
+  // Added DURING Gate 3.6, not planned: the sweep of /account's import closure
+  // found four more live sites the audit had missed, including the person's
+  // three Biotic scores drawn onto a public share PNG.
+  "lib/account/inside-you.ts",
+  "lib/account/share-card.ts",
+  "lib/account/system-map.ts",
+  "lib/account/week-story.ts",
+  "components/account/twin/meal-reveal.tsx",
+  "components/account/twin/share-twin.tsx",
+  "components/account/twin/twin-stage.tsx",
+  "components/agent-loop/BioticsProgressPanel.tsx",
+  "components/agent-loop/NextBestActionCard.tsx",
+  "components/agent-loop/FoodSystemLoopCard.tsx",
+  "components/account/twin/twin-sections.tsx",
+  "components/account/twin/twin-dashboard.tsx",
+  "components/account/twin/menu-scan.tsx",
 ]
 
 /** Everything the claim rules are enforced against. */
-const GUARDED_SURFACES = [...LIVE_SURFACES, ...REACHABLE_SURFACES, ...PROMPT_SURFACES]
+const GUARDED_SURFACES = [
+  ...LIVE_SURFACES,
+  ...REACHABLE_SURFACES,
+  ...PROMPT_SURFACES,
+  ...EMAIL_SURFACES,
+  ...CANDIDATE_SURFACES,
+  ...AGENT_LOOP_SURFACES,
+]
 
 /** English dictionary copy is checked separately — same rules, one locale. */
 const EN_DICTIONARY = "lib/i18n/dictionaries.ts"
@@ -199,6 +401,30 @@ const FERMENTED_LIVE_CLAIMS: [string, RegExp][] = [
    /ferment\w*\s+(foods?\s+)?(are|is)\s+(a\s+)?probiotics?\b|\bfor live probiotics\b/i],
   ["colonisation or reseeding claimed",
    /\b(reseed|re-seed|reseeding|seed new life|repopulat\w+|colonis\w+|coloniz\w+)\b/i],
+  /*
+   * Added in Gate 3.7, and the gap it closes is embarrassing in a useful way.
+   *
+   * The rule above refuses `colonis\w+` by name. `app/biotics/page.tsx` — a
+   * live page, inside this very corpus since Tranche 2A — said "New living
+   * bacteria JOIN THE COLONY" in its cycle diagram, four screens below the
+   * Probiotics card whose Phase 1 comment records removing the identical claim
+   * ("eating them INTRODUCES NEW RESIDENTS to your gut"). It passed for one
+   * reason: "colony" is not "colonise".
+   *
+   * ── WHY THE NOUN ALONE IS NOT THE RULE ───────────────────────────────────
+   *
+   * "Colony" is ordinary, correct microbiology in impersonal description —
+   * colony-forming units, a bacterial colony — and a rule that refused the word
+   * would make the page less accurate, not more. What cannot be said is
+   * organisms ARRIVING AT or JOINING one, because that is establishment, which
+   * is what the evidence does not support for fermented food and what this
+   * product does not measure.
+   *
+   * So the rule needs the verb and the noun together, which is also why it is
+   * narrow enough to state in one line.
+   */
+  ["organisms joining or establishing in a colony",
+   /\b(join\w*|enter\w*|settl\w+|establish\w*|arriv\w*|add\w*|introduc\w*)\b[^.!?]{0,40}\bcolon(y|ies)\b/i],
   // Added in Tranche 2A. "Live and fermented foods" reads as one category with
   // two names, which is the equivalence in its quietest form — and it was the
   // most visible claim left on the corrected free result, sitting directly
@@ -238,12 +464,67 @@ describe("the corpus this guard reads cannot silently shrink", () => {
    * two are data modules. They are pinned by (1) instead, which is why (1)
    * exists rather than deferring wholesale to the shared corpus.
    */
-  it("GUARDED_SURFACES is exactly the set signed off, in both tranches", () => {
-    expect([...GUARDED_SURFACES].sort()).toEqual([
+  /*
+   * The named tranches are pinned by value; the candidate tranche is pinned by
+   * its RULE instead, below. Two different disciplines for two different kinds
+   * of list, and conflating them would break the one that matters: a finished
+   * surface should not leave the corpus silently, and an unfinished one should
+   * not have to be remembered into it.
+   */
+  /*
+   * ── ADDED AFTER SABOTAGE CASE 1090 SLIPPED ───────────────────────────────
+   *
+   * The value-pinned test below spreads the tranche lists DIRECTLY:
+   *
+   *   [...LIVE_SURFACES, ..., ...AGENT_LOOP_SURFACES].sort()
+   *
+   * So it never looks at `GUARDED_SURFACES`. Deleting `...AGENT_LOOP_SURFACES`
+   * from the composition left every assertion green while fifteen files
+   * silently stopped being scanned — the suite simply read fewer files, which
+   * is the exact failure sabotage case 950 found in a sibling guard and the
+   * reason the pinning test exists at all. The repair there was "assert the
+   * membership, not just the rules"; it had been applied to the lists and not
+   * to the thing composed FROM the lists.
+   *
+   * Asserted for all six tranches rather than just the new one, because the
+   * hole was never specific to tranche 2E.
+   */
+  it("every tranche actually reaches GUARDED_SURFACES", () => {
+    const tranches: [string, readonly string[]][] = [
+      ["LIVE_SURFACES", LIVE_SURFACES],
+      ["REACHABLE_SURFACES", REACHABLE_SURFACES],
+      ["PROMPT_SURFACES", PROMPT_SURFACES],
+      ["EMAIL_SURFACES", EMAIL_SURFACES],
+      ["CANDIDATE_SURFACES", CANDIDATE_SURFACES],
+      ["AGENT_LOOP_SURFACES", AGENT_LOOP_SURFACES],
+    ]
+    for (const [name, list] of tranches) {
+      expect(list.length, `${name} is empty`).toBeGreaterThan(0)
+      for (const file of list) {
+        expect(
+          GUARDED_SURFACES,
+          `${file} is in ${name} but GUARDED_SURFACES does not include it`,
+        ).toContain(file)
+      }
+    }
+    // And nothing else is in there, so a file cannot be guarded by accident.
+    const union = new Set(tranches.flatMap(([, l]) => l))
+    for (const file of GUARDED_SURFACES) {
+      expect(union, `${file} is guarded but belongs to no tranche`).toContain(file)
+    }
+  })
+
+  it("the named tranches are exactly the set signed off", () => {
+    expect([
+      ...LIVE_SURFACES, ...REACHABLE_SURFACES, ...PROMPT_SURFACES, ...EMAIL_SURFACES,
+      ...AGENT_LOOP_SURFACES,
+    ].sort()).toEqual([
       "app/about/page.tsx",
       "app/api/consult/route.ts",
       "app/api/demo/consult/route.ts",
       "app/api/food-intelligence/route.ts",
+      // Gate 3.7 — the sixth prompt module, found by looking rather than by CI.
+      "app/api/menu-scan/route.ts",
       "app/api/report-chat/route.ts",
       "app/api/score-card/route.tsx",
       "app/biotics/page.tsx",
@@ -252,17 +533,115 @@ describe("the corpus this guard reads cannot silently shrink", () => {
       "app/food/page.tsx",
       "app/help/page.tsx",
       "app/method/page.tsx",
+      // Tranche 2E — the agent loop and the account surfaces it writes for.
+      // `/account` is V1_CORE, so these sentences are the ones a paying member
+      // actually reads. Membership here stops a future literal; the
+      // behavioural guard in agent-loop-claims.test.ts stops an interpolation.
+      "components/account/twin/meal-reveal.tsx",
+      "components/account/twin/menu-scan.tsx",
+      "components/account/twin/share-twin.tsx",
+      "components/account/twin/twin-dashboard.tsx",
+      "components/account/twin/twin-sections.tsx",
+      "components/account/twin/twin-stage.tsx",
+      "components/agent-loop/BioticsProgressPanel.tsx",
+      "components/agent-loop/FoodSystemLoopCard.tsx",
+      "components/agent-loop/NextBestActionCard.tsx",
       "components/assessment/assessment-intro.tsx",
       "components/assessment/result/three-biotics-result.tsx",
       "components/assessment/score-card.tsx",
       "components/home/feed-seed-heal.tsx",
       "components/home/the-framework.tsx",
       "components/waitlist/food-system-experience.tsx",
+      "lib/account/inside-you.ts",
+      "lib/account/patterns.ts",
+      "lib/account/share-card.ts",
+      "lib/account/system-map.ts",
+      "lib/account/week-story.ts",
+      "lib/agent-loop/account-twin.ts",
+      "lib/agent-loop/baseline.ts",
+      "lib/agent-loop/behaviour.ts",
+      "lib/agent-loop/biotics.ts",
+      "lib/agent-loop/engine.ts",
+      "lib/agent-loop/providers/deterministic.ts",
+      "lib/agent-loop/stages.ts",
+      "lib/agent-loop/twin/twin-builder.ts",
       "lib/assessment/biotics.ts",
       "lib/biotics-prompt.ts",
+      // Tranche 2C — lifecycle email. Added deliberately, and the reason is
+      // worth keeping: these were read by the vocabulary guards and by no
+      // claim rule, which is how a per-Biotic number and bar survived in
+      // sequence-email.ts long after every page had lost it.
+      "lib/email/meal-analysis-email.ts",
+      "lib/email/nudge-email.ts",
+      "lib/email/paid-report-email.ts",
+      "lib/email/results-email.ts",
+      "lib/email/sequence-email.ts",
+      "lib/email/trial-winback-email.ts",
+      "lib/foods.ts",
       "lib/pillars.ts",
       "lib/quick-assessment.ts",
     ])
+  })
+
+  /*
+   * The candidate tranche's invariant is coverage, not membership. These three
+   * assertions are what stop the derivation becoming decorative:
+   *
+   *   1. it found something — an empty glob would pass every rule vacuously,
+   *      which is how a derived corpus fails silently;
+   *   2. all three roots are represented — so deleting one from CANDIDATE_ROOTS
+   *      to make a file pass is a visible failure rather than a quiet one;
+   *   3. every tracked .ts/.tsx under those roots is in GUARDED_SURFACES — the
+   *      actual property, asserted directly.
+   */
+  it("every candidate file is guarded, and the derivation is not empty", () => {
+    expect(CANDIDATE_SURFACES.length).toBeGreaterThanOrEqual(16)
+
+    for (const root of CANDIDATE_ROOTS) {
+      expect(
+        CANDIDATE_SURFACES.some((f) => f.startsWith(`${root}/`)),
+        `no file was collected from ${root} — has the root been removed or renamed?`,
+      ).toBe(true)
+    }
+
+    for (const file of candidateTree()) {
+      expect(GUARDED_SURFACES, `${file} is in the candidate tree but not guarded`).toContain(file)
+    }
+  })
+
+  /*
+   * ── "GUARDED THE MOMENT IT EXISTS", PROVEN RATHER THAN CLAIMED ────────────
+   *
+   * The docblock above says a new candidate file is guarded as soon as it is
+   * written, not as soon as it is staged. That claim rests entirely on
+   * `--others`, and nothing could see the difference: by the time the suite
+   * runs in CI everything is committed, so `git ls-files` alone would give the
+   * same answer. Sabotage case 1061 — dropping `--others` — slipped for
+   * exactly that reason.
+   *
+   * So the test creates the case. An untracked file under a candidate root
+   * must appear in the corpus; with `--others` gone it would not.
+   *
+   * Removed in `finally`, including if an assertion throws, because a stray
+   * file left in `lib/fss` would be picked up by every other derived corpus in
+   * the repository and the failure would look like something else entirely.
+   */
+  it("sees a candidate file that exists but has not been staged", () => {
+    const probe = "lib/fss/__corpus_probe__.ts"
+    expect(existsSync(probe), "the probe path must be free before the test").toBe(false)
+
+    try {
+      writeFileSync(probe, "export const PROBE = true\n", "utf-8")
+      expect(
+        candidateTree(),
+        "an unstaged candidate file is invisible to the corpus — has --others been dropped?",
+      ).toContain(probe)
+    } finally {
+      if (existsSync(probe)) rmSync(probe)
+    }
+
+    expect(existsSync(probe), "the probe must not survive the test").toBe(false)
+    expect(candidateTree()).not.toContain(probe)
   })
 
   it("the rendered marketing surfaces are in the shared vocabulary corpus too", () => {
@@ -311,10 +690,44 @@ describe("fermented food is never equated with live organisms or probiotics", ()
       "Live foods (Probiotics)",
       "Probiotics add living cultures to diversify them.",
       "Prebiotic-rich foods that support the gut-sleep axis",
+      // Gate 3.7 — live on app/biotics/page.tsx's cycle diagram, inside this
+      // corpus since Tranche 2A, and caught by nothing because "colony" is not
+      // "colonise".
+      "New living bacteria join the colony",
     ]
     for (const line of asItWas) {
       const caught = [...FERMENTED_LIVE_CLAIMS, ...FIBRE_PREBIOTIC_CLAIMS].some(([, p]) => p.test(line))
       expect(caught, `not caught: ${line}`).toBe(true)
+    }
+  })
+
+  it("the colony rule refuses establishment, not the word", () => {
+    /*
+     * The risk in this rule is over-reach, not under-reach: "colony" is
+     * ordinary microbiology, and a page that could not say it would be less
+     * accurate rather than more careful. So both directions are pinned.
+     */
+    const caught = [
+      "New living bacteria join the colony",
+      "Fermented foods introduce new bacteria to the colony",
+      "live cultures that settle into the existing colonies",
+    ]
+    for (const line of caught) {
+      expect(
+        FERMENTED_LIVE_CLAIMS.some(([, p]) => p.test(line)),
+        `establishment not caught: ${line}`,
+      ).toBe(true)
+    }
+
+    const allowed = [
+      "A bacterial colony is a visible cluster grown from a single cell.",
+      "Diversity is measured in colony-forming units per gram.",
+      "The colonies in your gut outnumber your own cells.",
+      "Beneficial bacteria multiply",
+    ]
+    for (const line of allowed) {
+      const hits = FERMENTED_LIVE_CLAIMS.filter(([, p]) => p.test(line))
+      expect(hits.map((h) => h[0]), `false positive: ${line}`).toEqual([])
     }
   })
 
@@ -417,6 +830,129 @@ describe("fibre is never classified as prebiotic", () => {
  * guard asserting the presence of selected symbols rather than the property it
  * documents, which is the recurring defect in this codebase.
  */
+/**
+ * The personal per-Biotic state, written as a SENTENCE rather than rendered as
+ * a number.
+ *
+ * NO_PERSONAL_BIOTIC_NUMBER below is structural and per-file: it refuses the
+ * expressions that would put a value on screen. It cannot see prose, and prose
+ * is where the claim actually survived longest — `sequence-email.ts` was still
+ * saying "Your Postbiotics score reflects your meal rhythm" after every bar
+ * and digit had been removed from every page.
+ *
+ * A sentence asserting a personal Biotic score is the same claim as the digit.
+ * POSTBIOTICS_INFERENCE_BOUNDARY prohibits "personal Postbiotics state" and
+ * "low Postbiotics" as SUBJECTS, not as number formats.
+ *
+ * The overall Biotics Score™ is deliberately untouched by these rules — it is
+ * the product's score, it is computed by the same arithmetic as ever, and
+ * "Your Biotics Score is 74/100" is a true statement about a thing we measure.
+ */
+const BIOTICS = "(?:Prebiotics|Probiotics|Postbiotics)"
+
+/**
+ * The same three, plus the lowercase and singular forms.
+ *
+ * `BIOTICS` alone misses "your probiotic side" (menu-scan.tsx) and "your
+ * prebiotic intake" — a Biotic attributed to a person reads the same whether
+ * the word is capitalised or singular, and the adjectival form is the one a
+ * writer reaches for when describing somebody.
+ */
+const BIOTICS_ANY = "(?:Prebiotics|Probiotics|Postbiotics|prebiotics?|probiotics?|postbiotics?)"
+
+/* ════════════════════════════════════════════════════════════════════════════
+   GATE 3.6 — the grammar these rules were missing.
+
+   ── What the first three rules could and could not see ────────────────────
+
+   They knew exactly three shapes: "your X score", "X … N/100", and "low X".
+   The agent loop speaks none of them. It writes:
+
+     "Prebiotics remains your strongest area."
+     "Your Prebiotics look settled, while Postbiotics appear lower."
+     "Postbiotics appear lower than the others"
+     "This fed your Prebiotics · meal score 72"
+     "Your Postbiotics slipped 8 points this week"
+
+   Every one of those PASSED all three rules when run against the rendered
+   sentence, not merely against the source. Rule 1 wants the literal word
+   `score` immediately after the Biotic, so "· meal score 72" misses by two
+   words. Rule 2 wants a denominator, so "slipped 8 points" misses. Rule 3
+   wants the adjective BEFORE the Biotic and in the positive degree, so
+   "remains your strongest area" misses twice over.
+
+   So this was never only a corpus gap. The defect speaks in POSSESSIVES and
+   SUPERLATIVES, and the rule set knew neither.
+
+   ── Why `is` and `are` are deliberately NOT state verbs here ──────────────
+
+   The obvious fourth rule is "a Biotic as the subject of a copula" —
+   `${BIOTICS}\s+(?:is|are|remains|appears|looks)`. It is wrong, and the
+   existing false-positive cases below say why: "Prebiotics, Probiotics and
+   Postbiotics are the foundation the score is built on" and "Postbiotics are
+   what your gut bacteria produce when they ferment fibre" are both EDUCATION,
+   both correct, and both match it. A rule that deleted those would be the
+   identity risk this whole sweep is run to avoid.
+
+   `remains / appears / looks / seems` are HEDGED state verbs. Education does
+   not hedge about what a Biotic is; a personal verdict does. That is the
+   discriminator, and it is why the copulas are absent.
+
+   ── And why the possessive rule is scoped to the Biotic itself ────────────
+
+   "your Prebiotics" is prohibited. "Postbiotics are what your gut bacteria
+   produce" is not — the possessive there belongs to the bacteria. So the rule
+   requires `your` IMMEDIATELY before the Biotic rather than anywhere near it.
+   All fifteen educational and science-contract phrasings below pass.
+   ════════════════════════════════════════════════════════════════════════════ */
+const PERSONAL_BIOTIC_STATE: [string, RegExp][] = [
+  ["a personal score attributed to a Biotic",
+   new RegExp(String.raw`\b(?:Your|My|your|my)\s+${BIOTICS}\s+score\b`)],
+  ["a Biotic given a numeric value", new RegExp(String.raw`\b${BIOTICS}\b[^.!?\n]{0,30}\b\d{1,3}\s*(?:\/\s*100|out of 100)\b`)],
+  ["a Biotic described as high or low for a person",
+   new RegExp(String.raw`\b(?:low|high|weak|strong)\s+${BIOTICS}\b`)],
+
+  // Gate 3.6. Each one is proven against a real shipped sentence below.
+  ["a Biotic claimed as a person's own",
+   new RegExp(String.raw`\b(?:[Yy]our|[Mm]y)\s+${BIOTICS_ANY}\b`)],
+  ["a Biotic given a comparative or directional verdict",
+   new RegExp(String.raw`\b${BIOTICS}\b[^.!?\n]{0,40}\b(?:strongest|weakest|most room to grow|climbed|slipped|trending|settled|appears? lower|appears? higher)\b`)],
+  ["a comparative verdict placed before a Biotic",
+   new RegExp(String.raw`\b(?:strongest|weakest)\s+${BIOTICS}\b`)],
+  ["a Biotic as the subject of a personal state verb",
+   new RegExp(String.raw`\b${BIOTICS}\s+(?:remains?|appears?|looks?|seems?)\b`)],
+  ["a Biotic fed, boosted or improved for a person",
+   new RegExp(String.raw`\b(?:fed|feeds|feeding|boost\w*|improv\w*|replenish\w*|rais\w*)\b[^.!?\n]{0,25}\b(?:your|my)\s+${BIOTICS_ANY}\b`)],
+  ["a person's own meals characterised as a Biotic",
+   new RegExp(String.raw`\b(?:[Yy]our|[Mm]y)\s+(?:\w+\s+){0,2}(?:meals?|plate|diet|food)\b[^.!?\n]{0,30}\b${BIOTICS}\b`)],
+
+  /*
+   * ── A RULE CONSIDERED AND REJECTED, WHICH IS WORTH THE LINES ─────────────
+   *
+   * Case 1088 slipped: `meal-reveal.tsx`'s journey caption read "Postbiotics
+   * produced", asserting that this person's meal made postbiotics, and it
+   * matched nothing here — no state verb, no number, no possessive, no
+   * comparative.
+   *
+   * The obvious fix was a general rule, `${BIOTICS}\s+produced`. It was
+   * written, run, and withdrawn, because it flagged
+   * `app/biotics/page.tsx:79`:
+   *
+   *   { step: "05", label: "Postbiotics produced", desc: "Butyrate, vitamins" }
+   *
+   * That is step five of an impersonal five-step diagram of how the biology
+   * works, on the page whose whole job is teaching it. The two strings are
+   * BYTE-IDENTICAL; what differs is whether the surface is describing a
+   * process or describing this reader. No regex can tell those apart, and a
+   * rule that deleted the second would be the identity risk this sweep exists
+   * to avoid — the same trap as the "living food system" brand lens in
+   * Tranche 2A, caught that time before it shipped.
+   *
+   * So the claim is pinned PER FILE below instead, which is the instrument for
+   * an invariant about one surface's wiring rather than about English.
+   */
+]
+
 const NO_PERSONAL_BIOTIC_NUMBER: [string, string, RegExp[]][] = [
   [
     "components/waitlist/food-system-experience.tsx",
@@ -432,6 +968,109 @@ const NO_PERSONAL_BIOTIC_NUMBER: [string, string, RegExp[]][] = [
     "components/assessment/score-card.tsx",
     "the share card must not take the three sub-scores at all — the props are gone, and the share text was where the claim actually travelled",
     [/\b(feed|seed|heal)\b/],
+  ],
+  [
+    "lib/email/sequence-email.ts",
+    "the nurture email must not take the three sub-scores at all — the fields are gone from its contract, because a field it still accepted would be an invitation to render it again",
+    [/\b(feedScore|seedScore|healScore)\b/],
+  ],
+  /*
+   * ── FOUR PINS ADDED AFTER SABOTAGE SLIPPED ───────────────────────────────
+   *
+   * Cases 1080, 1081, 1084 and 1089 all walked through the prose rules for one
+   * reason: the Biotic name is never in the source. It is a prop name, a
+   * numeric literal beside an interpolated label, an object key, or
+   * `{result.weakest}`. A rule that reads sentences cannot see any of them.
+   *
+   * Per-file pins are the right instrument for exactly this — the same reason
+   * this table already exists for the reveal, the free result and the OG
+   * route — because the invariant is about a FILE's wiring, not about English.
+   */
+  [
+    "components/agent-loop/BioticsProgressPanel.tsx",
+    "the biotics panel is educational: it takes no personal state, renders no number, no bar and no band word",
+    [
+      /*
+       * The PROP, not the word. `/\bbiotics\b/` was the first attempt and it
+       * flagged the panel's own `<h3>The three biotics</h3>` — the educational
+       * heading the redesign exists to keep. The signature is what must stay
+       * clean (case 1080).
+       */
+      /function BioticsProgressPanel\([^)]*biotics/,
+      /biotics\s*\?\s*:/,
+      // Nor render a figure, a percentage or a bar (case 1081).
+      /\d{1,3}\s*\/\s*100/,
+      /\bwidth:/,
+      /\$\{[^}]*score[^}]*\}/,
+      // Nor the per-Biotic band ladder's words.
+      /\b(?:Thriving|Emerging|strongest|most room to grow)\b/,
+    ],
+  ],
+  [
+    "components/account/twin/share-twin.tsx",
+    "the share PNG must not take the three sub-scores at all — a shared image is the one surface we cannot correct after the fact",
+    [/\bbiotics\b/],
+  ],
+  [
+    "lib/account/share-card.ts",
+    "the card's data contract must not carry per-Biotic rows, so no caller can supply them",
+    [/\bbiotics\b/],
+  ],
+  /*
+   * ── TWO MORE PINS, ADDED AFTER CASES 1096 AND 1097 SLIPPED ───────────────
+   *
+   * 1096 reverted `/biotics`'s postbiotics card to "They reduce inflammation,
+   * strengthen the gut lining, regulate immune response, and directly influence
+   * how you feel" and NOTHING caught it. The hedged register — "associated
+   * with", "may" — is used consistently across the product and enforced
+   * nowhere, so it was a convention, not a rule.
+   *
+   * A general rule was considered and rejected. Whether an outcome claim needs
+   * hedging depends on the claim: "Prebiotic fibre is what keeps that inner
+   * ecosystem thriving" is fine, "postbiotics reduce inflammation" is not, and
+   * the difference is epistemic rather than lexical. A regex that caught the
+   * second would catch the first, and the cost of over-reach here is deleting
+   * true education — the trap Tranche 2A hit with the brand lens and Gate 3.6
+   * hit with "Postbiotics produced". So the four verbs are pinned to the one
+   * file whose card made them, which is what this table is for.
+   *
+   * 1097 reverted the menu-scan prompt to "The member's weakest biotic is
+   * ${weakest}". Also uncaught, for two compounding reasons: "biotic" singular
+   * and lowercase is not in BIOTICS_ANY, and `${weakest}` is an interpolation,
+   * so the Biotic name is nowhere in the source. A prompt is the worst place
+   * for an invisible claim, because the model turns one sentence into many.
+   */
+  [
+    "app/biotics/page.tsx",
+    "the education page states mechanisms, not guaranteed outcomes — the register used everywhere else in the product (case 1096)",
+    [
+      /\bThey reduce inflammation\b/,
+      /\bstrengthen the gut lining\b/,
+      /\bregulate immune response\b/,
+      /\bdirectly influence how you feel\b/,
+      /\bwell-populated\b/,
+      /\bmakes you feel better every day\b/,
+    ],
+  ],
+  [
+    "app/api/menu-scan/route.ts",
+    "the prompt is given a food pattern, never the member's Biotic — neither the words nor the interpolated key (case 1097)",
+    [
+      /weakest biotic/i,
+      /biotic they most need/i,
+      /what it feeds/i,
+      /\$\{weakest\}/,
+    ],
+  ],
+  [
+    "components/account/twin/meal-reveal.tsx",
+    "the per-meal journey must not say a Biotic was produced — identical wording is correct on /biotics, which teaches the process, and wrong here, which narrates this plate (case 1088)",
+    [/Postbiotics produced/, /Prebiotics feed your/],
+  ],
+  [
+    "components/account/twin/menu-scan.tsx",
+    "the menu pill must name the food pattern, never the raw Biotic key it was chosen from",
+    [/\{\s*result\.weakest\s*\}/, /\{\s*p\.biotic\s*\}/],
   ],
   [
     "app/api/score-card/route.tsx",
@@ -456,6 +1095,115 @@ describe("no Biotic carries a personal number", () => {
     const src = renderedSource(file)
     for (const pattern of patterns) {
       expect(src, `${file} — ${why}`).not.toMatch(pattern)
+    }
+  })
+
+  it.each(GUARDED_SURFACES)("%s asserts no personal Biotic state in prose", (file) => {
+    const src = renderedSource(file)
+    for (const [why, pattern] of PERSONAL_BIOTIC_STATE) {
+      const hit = src.match(pattern)
+      expect(hit?.[0] ?? null, `${file} — ${why}: "${hit?.[0]}"`).toBeNull()
+    }
+  })
+
+  /*
+   * ── GATE 3.6: THESE ARE NOT HYPOTHETICALS ────────────────────────────
+   *
+   * Every string below is a sentence the product was RENDERING when this was
+   * written, reproduced as a customer received it. Seven came out of
+   * `lib/agent-loop`, and four of those reached `/account`, which is V1_CORE.
+   *
+   * They are asserted as LITERALS rather than read back from the modules, and
+   * that is the point: once the modules are corrected these sentences exist
+   * nowhere else, so a case that read its subject from the fixed code would
+   * prove only that the code is fixed — not that the rule catches the
+   * regression. These strings ARE the regression.
+   */
+  it("NON-VACUITY: every sentence the agent loop was shipping is caught", () => {
+    for (const line of [
+      // lib/agent-loop/providers/deterministic.ts — rationale + why, live on /account
+      "Prebiotics remains your strongest area.",
+      "Postbiotics appears lower — a gentle place to focus next.",
+      "Your Prebiotics look settled, while Postbiotics appear lower.",
+      " Focusing on Postbiotics supports the area with the most room to grow.",
+      // lib/agent-loop/baseline.ts — deriveGaps
+      "Postbiotics appear lower than the others",
+      // lib/agent-loop/account-twin.ts — the learning feed, live on /account
+      "This fed your Prebiotics · meal score 72",
+      // lib/account/patterns.ts — live on /account, numeric and longitudinal
+      "Your Postbiotics slipped 8 points this week",
+      "Your Prebiotics climbed 8 points this week",
+      "Your best meals lean on Prebiotics",
+      // components/account/twin/menu-scan.tsx
+      "The miso brings live cultures — exactly what your probiotic side needs.",
+      // lib/email/meal-analysis-email.ts — exposed by widening these rules
+      "produces your Biotics Score™ — your Prebiotics, Probiotics and Postbiotics",
+    ]) {
+      expect(
+        PERSONAL_BIOTIC_STATE.some(([, r]) => r.test(line)),
+        `not caught: ${line}`,
+      ).toBe(true)
+    }
+  })
+
+  it("NON-VACUITY: the sentences that were shipping would each be caught", () => {
+    for (const line of [
+      "Your Prebiotics score reflects how much fibre you eat.",
+      "My Postbiotics score went up this month.",
+      "Postbiotics: 64 out of 100",
+      "Probiotics 54/100",
+      "a low Postbiotics result",
+    ]) {
+      expect(
+        PERSONAL_BIOTIC_STATE.some(([, r]) => r.test(line)),
+        `not caught: ${line}`,
+      ).toBe(true)
+    }
+  })
+
+  /*
+   * ── THE HALF THAT STOPS THIS BEING A DELETION ────────────────────────
+   *
+   * The possessive rule is the aggressive one, and an over-broad version of it
+   * would delete the Three Biotics from the product while reporting success.
+   * The two science-contract lines are here for the same reason
+   * `lib/consultation/science-contract.ts` is a named permanent exception
+   * elsewhere in this file: the module that PROHIBITS a claim has to be
+   * allowed to state the claim it prohibits.
+   *
+   * Note what this list proves about the rule design. `is` and `are` are
+   * absent from the state-verb rule precisely so the educational lines pass;
+   * adding them back is the obvious "improvement" that would break education.
+   */
+  it("NON-VACUITY: educational and science-contract phrasing is NOT caught", () => {
+    for (const line of [
+      "Prebiotics are the fibres your gut bacteria use.",
+      "Postbiotics — Rejuvenate",
+      "Three simple actions inspired by the science of Prebiotics, Probiotics, and Postbiotics",
+      "Postbiotics — what your food system gives back. We teach it; we don't score it.",
+      "no personal Postbiotics state may be inferred from self-report",
+      "Probiotics are live microorganisms that, when administered in adequate amounts, confer a health benefit.",
+      "Feed · Seed · Rejuvenate are actions, never score names.",
+      "Foods transformed by fermentation are not automatically Probiotics.",
+      "An Assessment that produces your Biotics Score™ — built on Prebiotics, Probiotics and Postbiotics.",
+    ]) {
+      expect(
+        PERSONAL_BIOTIC_STATE.some(([, r]) => r.test(line)),
+        `false positive: ${line}`,
+      ).toBe(false)
+    }
+  })
+
+  it("NON-VACUITY: the overall score and the unscored Biotics are NOT caught", () => {
+    for (const line of [
+      "Your Biotics Score™ is 74/100.",
+      "Prebiotics, Probiotics and Postbiotics are the foundation the score is built on.",
+      "Postbiotics are what your gut bacteria produce when they ferment fibre.",
+    ]) {
+      expect(
+        PERSONAL_BIOTIC_STATE.some(([, r]) => r.test(line)),
+        `false positive: ${line}`,
+      ).toBe(false)
     }
   })
 
@@ -555,31 +1303,32 @@ describe("the pre-launch surface does not promise the canonical score", () => {
  * so that nobody has to trust a comment to know why it is absent.
  */
 const KNOWN_UNCORRECTED = [
-  // 2C — the €49 Report path
-  "lib/report/build-food-system-report.ts",
-  "lib/report/food-swaps.ts",
-  "lib/report/subscores.ts",
-  "lib/assessment-report.ts",
-  // 2C — the canonical assessment's own data and scoring
-  "lib/assessment-data.ts", // q6 is inside the methodology freeze
-  "lib/assessment-scoring.ts",
-  "lib/foods.ts",
-  "lib/food-goals.ts",
-  "lib/conditions.ts",
-  "lib/chapters.ts",
-  // 2D — account, twin and condition surfaces behind refused routes today
-  "components/account/live-dashboard.tsx",
-  "components/account/twin/meal-reveal.tsx",
-  "components/account/twin/quick-log.tsx",
-  "components/assessment/report-premium-addons.tsx",
-  "components/bipolar/bipolar-foods.tsx",
-  "components/depression/depression-foods.tsx",
-  "components/home/score-preview.tsx",
-  "lib/account/evolution.ts",
-  "lib/account/inside-you.ts",
-  "lib/account/meal-impact.ts",
-  "lib/account/ritual.ts",
-  // Not debt — the module that prohibits the claim the rule matches.
+  /*
+   * ══ WHAT IS LEFT, AND WHY EACH ONE IS LEFT ═════════════════════════════════
+   *
+   * Tranche 2C cleared the €49 Report path and lifecycle email; Tranche 2D
+   * cleared the account, twin, condition and demo surfaces. Twenty-two entries
+   * became three, and none of the three is unfinished work — each is blocked
+   * on a decision that is not a claims decision.
+   */
+
+  /*
+   * q6 — "Do you regularly eat prebiotic-rich foods…" — is INSIDE the
+   * methodology-freeze hash. Its wording is a scoring input: changing the
+   * examples changes what people answer, and score provenance does not exist
+   * yet, so old and new results would be silently incomparable. Deferred to
+   * FSS Phase 3, gated on scientific sign-off. Correcting it to make a ledger
+   * green would be the exact trade this phase refuses.
+   */
+  "lib/assessment-data.ts",
+
+
+  /*
+   * Not debt. This is the module that PROHIBITS the claim the rule matches —
+   * it lists "reseeding" among the inferences the contract forbids. A guard
+   * that flagged its own contract would be asking us to delete the
+   * prohibition. Permanent, justified exception.
+   */
   "lib/consultation/science-contract.ts",
 ]
 

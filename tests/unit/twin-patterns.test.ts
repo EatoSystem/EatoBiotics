@@ -38,7 +38,15 @@ describe("detectPatterns", () => {
     expect(close.find((p) => p.id.startsWith("weekend"))).toBeUndefined()
   })
 
-  it("names the dominant biotic of the best meals", () => {
+  /*
+   * ── REPOINTED IN GATE 3.6 ──────────────────────────────────
+   *
+   * Was `expect(p!.title).toContain("Probiotics")`. The title no longer names
+   * a Biotic — it names the food category the meal was scored on — so the
+   * anchor moved for a real reason and is repointed to the new invariant plus
+   * the refusal, which the old assertion could not express.
+   */
+  it("names the dominant food category of the best meals, and no Biotic", () => {
     const meals = [
       meal(1, 85, { probiotic: 90, prebiotic: 40, postbiotic: 30 }),
       meal(2, 80, { probiotic: 85, prebiotic: 45, postbiotic: 35 }),
@@ -47,8 +55,10 @@ describe("detectPatterns", () => {
     ]
     const p = detectPatterns(meals, NOW).find((x) => x.id === "best-lean-probiotic")
     expect(p).toBeTruthy()
-    expect(p!.title).toContain("Probiotics")
+    expect(p!.title).toContain("fermented foods")
+    expect(p!.title, p!.title).not.toMatch(/\b(Prebiotics|Probiotics|Postbiotics)\b/)
     expect(p!.detail.toLowerCase()).toContain("fermented")
+    expect(p!.detail, p!.detail).not.toMatch(/\b(Prebiotics|Probiotics|Postbiotics)\b/)
   })
 
   it("finds a repeat winner (same meal ≥2× averaging ≥70)", () => {
@@ -64,12 +74,45 @@ describe("detectPatterns", () => {
     expect(p!.detail).toMatch(/2 times/)
   })
 
-  it("spots a fortnight biotic trend (last 7d vs prior 7d, ≥6 points)", () => {
+  /*
+   * ── REPOINTED IN GATE 3.6 ──────────────────────────────────
+   *
+   * Was `/Prebiotics climbed \d+ points/` — a personal Biotic state with a
+   * number and a direction, which is the single worst claim this gate found
+   * and which this test was requiring. The DELTA is kept, because it is a real
+   * change between two averages of measured meal sub-scores; what is refused
+   * is the Biotic as its subject.
+   */
+  /*
+   * ── THIS TEST'S ANCHOR WAS INVALIDATED BY STEP 2C, AND IS INVERTED ──────
+   *
+   * It required the fortnight trend to be PRODUCED. Step 2c routed that
+   * comparison through `canCompare`, and the verdict is a permanent refusal:
+   * no rubric version is recorded on an `analyses` row and the scoring model
+   * is an environment variable, so which instrument produced a stored meal
+   * score cannot be established — `legacy-unversioned` by definition.
+   *
+   * The data that used to produce a trend now produces none, and that is the
+   * specified outcome rather than a regression: "prevented from making
+   * longitudinal claims until equivalent provenance exists". Inverted rather
+   * than deleted, so re-enabling the claim fails a test instead of passing
+   * quietly. `tests/unit/agent-loop-claims.test.ts` holds the two companion
+   * guards: that the suppression is caused by the verdict, and that the gated
+   * sentences are still claim-clean.
+   */
+  it("no longer asserts a fortnight trend, because the meal rubric is unversioned", () => {
     const recent = [1, 2, 3].map((d) => meal(d, 70, { prebiotic: 80 }))
     const prior = [8, 9, 10].map((d) => meal(d, 70, { prebiotic: 60 }))
-    const p = detectPatterns([...recent, ...prior], NOW).find((x) => x.id === "trend-up-prebiotic")
-    expect(p).toBeTruthy()
-    expect(p!.title).toMatch(/Prebiotics climbed \d+ points/)
+    const all = detectPatterns([...recent, ...prior], NOW)
+
+    expect(all.find((x) => x.id.startsWith("trend-"))).toBeUndefined()
+
+    /*
+     * NON-VACUITY: the fixture still reaches the module and still produces
+     * other patterns, so this is not passing because `detectPatterns` is
+     * broken or because the fixture stopped qualifying.
+     */
+    expect(all.length).toBeGreaterThan(0)
   })
 
   it("recognises a weekly rhythm (≥4 distinct days in 7)", () => {

@@ -9,6 +9,18 @@ behind the FSS-v1 work and the input to the canonical specification set.
 | `FSS_ARCHITECTURE_REVIEW.md` | The architecture review that produced the three-layer model — Science (the Three Biotics) / Understanding (the Score and its domains) / Action (Feed · Seed · Rejuvenate) — with the founder correction that withdrew the earlier overcorrection | **Superseded in part** by the design spec, retained because it carries the reasoning |
 | `FSS_V1_DESIGN_SPEC.md` | The v1.0 design specification: locked decisions register, the five candidate domains, items, `fss-v1.0` methodology, presentation contract, provenance, the additive `science-contract-v1.1`, the transitional vocabulary policy | **FINAL for scientific review. Design only — nothing implemented** |
 
+## The canonical set
+
+| File | What a reviewer signs |
+|---|---|
+| `FSS_V1_SPEC.md` | the five domains, fourteen fields each, the arithmetic, the weights and their rationale, the band consolidation |
+| `FSS_V1_EVIDENCE_MATRIX.md` | what we observe, what it supports, what it does NOT support, and the evidence class of each proposed use |
+| `FSS_V1_CLAIMS_BOUNDARY.md` | the definition the name has to earn, the must-not list, and how it answers `cannotProduceValidatedSystemModel` **without weakening it** |
+| `FSS_V1_VERSIONING.md` | the five version fields, the comparability rule, and the persistence architecture |
+
+**No row of the evidence matrix and no domain in the spec has been signed off
+by a named reviewer.** The sign-off boxes are empty on purpose.
+
 ## The label that governs everything downstream
 
 > ### FSS-v1 Candidate Domains — Frozen for Scientific Review, Not Yet Scientifically Approved

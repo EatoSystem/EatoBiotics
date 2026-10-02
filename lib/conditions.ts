@@ -194,7 +194,7 @@ export const CONDITIONS: Record<ConditionKey, ConditionDef> = {
         { slug: "wild-salmon", benefit: "The richest whole-food source of EPA and DHA omega-3s" },
         { slug: "oats", benefit: "Slow-release carbs that support steady glucose and sustained focus" },
         { slug: "blueberries", benefit: "Polyphenols that support brain circulation and cognitive health" },
-        { slug: "kefir", benefit: "Live cultures that diversify the gut microbiome" },
+        { slug: "kefir", benefit: "Fermented with a wider mix of microorganisms than most yoghurt" },
         { slug: "kimchi", benefit: "Fermented food linked to microbial diversity and gut resilience" },
         { slug: "yogurt", benefit: "Probiotic bacteria that may support dopamine precursor pathways" },
       ],

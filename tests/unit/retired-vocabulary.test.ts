@@ -25,6 +25,7 @@
  */
 import { describe, it, expect } from "vitest"
 import { readFileSync, existsSync, readdirSync, statSync } from "node:fs"
+import { execSync } from "node:child_process"
 import { join } from "node:path"
 import { copyOf } from "./helpers/marketing-language"
 import {
@@ -32,6 +33,12 @@ import {
   AI_PROMPT_SURFACES,
   manifestProblems,
 } from "./customer-surfaces"
+import {
+  productionReachableSourceFiles,
+  productionPageCount,
+  reachableSourceFiles,
+  servablePageCount,
+} from "./reachable-surfaces"
 
 /**
  * The customer-facing journey. Demo and preview routes are excluded on purpose:
@@ -575,5 +582,346 @@ describe("the live journey uses only current vocabulary", () => {
         expect(copy, `${name} fired on internal value: ${internal}`).not.toMatch(rule)
       }
     }
+  })
+})
+
+/* ════════════════════════════════════════════════════════════════════════════
+   The one surface allowed to say "Food System Score" — and what makes it so.
+
+   ── The finding this block exists to record ─────────────────────────────────
+
+   `components/fss/candidate-result.tsx` renders, at the time of writing:
+
+       Your Food System Score™
+       Your Food System Score is {score.score} out of 100.
+
+   RETIRED bans that by name — "a competing branded score", /\bfood system
+   score\b/i — and this file's own non-vacuity probe uses "Your Food System
+   Score is 72" as its example of the violation. So the candidate renders,
+   almost character for character, the exact string the guard holds up as what
+   must never ship.
+
+   It was green for one reason: `journeySurfaces()` skips any directory named
+   `preview` and never walks `lib/fss` or `components/fss`. A rule and the code
+   that breaks it coexisted because the corpus did not reach it.
+
+   ── Why the right answer is an exemption and not a repair ───────────────────
+
+   Because the name is SUPPOSED to be there. The whole purpose of
+   /preview/food-system-v1 is that the candidate methodology can be walked and
+   judged before it ships, and a reviewer cannot judge a name they are not
+   shown. The architecture review's conclusion is that the name ships LAST,
+   gated on scientific sign-off — not that it may never be written down.
+
+   The ban's real subject is therefore CUSTOMERS, and the exemption's real
+   condition is the gate on the route. So this block states both, and makes the
+   condition the thing that is tested:
+
+     · the withheld name appears in NO production-reachable file;
+     · the candidate files are outside the production closure — so the day one
+       is imported from a servable page, the exemption lapses by itself;
+     · every OTHER retired rule still applies to the candidate in full.
+
+   That last clause is why this is a strengthening rather than a hole. Before,
+   no retired rule reached the candidate at all. Now exactly one is lifted, for
+   a stated reason, on a tested condition.
+   ════════════════════════════════════════════════════════════════════════════ */
+describe("the withheld score name is confined to the gated candidate preview", () => {
+  const WITHHELD = "a competing branded score"
+
+  /** Derived, so a new Gate 3 file is covered the moment it exists. */
+  const candidateFiles = () =>
+    execSync("git ls-files --cached --others --exclude-standard lib/fss components/fss app/preview/food-system-v1", {
+      encoding: "utf-8",
+    })
+      .trim()
+      .split("\n")
+      .filter((f) => /\.(ts|tsx)$/.test(f))
+      .sort()
+
+  it("the rule and the exemption both still refer to something real", () => {
+    expect(RETIRED.find(([n]) => n === WITHHELD), `the "${WITHHELD}" rule must exist`).toBeDefined()
+    expect(candidateFiles().length).toBeGreaterThanOrEqual(16)
+
+    // The exemption is pointless if nothing in the candidate actually uses the
+    // name — and an exemption nobody needs is an exemption nobody notices has
+    // stopped being justified.
+    const rule = RETIRED.find(([n]) => n === WITHHELD)![1]
+    const users = candidateFiles().filter((f) => rule.test(copyOf(readFileSync(f, "utf8"))))
+    expect(users, "no candidate file uses the withheld name — is this exemption still needed?").not
+      .toEqual([])
+  })
+
+  /*
+   * ── THE LEDGER, CLEARED IN GATE 3.5 ──────────────────────────────────────
+   *
+   * This block found THIRTEEN customer-reachable files carrying the withheld
+   * name — the surfaces the Food System Score architecture review named in its
+   * opening finding: *"the retired name is shipping right now, in about thirty
+   * places."* Eleven are now corrected: the live product's person-level score
+   * is the Biotics Score™, and that is what they say.
+   *
+   * Two remain, each for a reason that is not "we did not get to it".
+   *
+   * ── Why an exception is not the same as a backlog entry ──────────────────
+   *
+   * `lib/cms/taxonomy.ts` holds a STORED tag value. CMS rows are tagged with
+   * the literal string, so renaming it orphans every row already carrying it —
+   * which makes this a data question, not a copy question. The file's own
+   * neighbours already carry the deprecated "Heal" for exactly this reason,
+   * and this file's header warns against demanding a data migration to satisfy
+   * a naming rule.
+   *
+   * `lib/assessment/registry.ts` keeps "Family Food System Score" — only that
+   * one label; the You/foundation label was corrected. Family product naming
+   * is explicitly deferred out of Phase 1, the whole Family funnel
+   * (`components/start-family/*`, eight files) is POST_V1-refused and so is
+   * not in this closure at all, and inventing a "Family Biotics Score" HERE
+   * would be taking a product-naming decision inside a vocabulary pass. The
+   * refused funnel and this label should be renamed together, by someone
+   * naming the Family product deliberately.
+   *
+   * Pinned in BOTH directions, as before: a third file turns this red, and a
+   * file that gets fixed must leave the list rather than sit here looking like
+   * coverage.
+   */
+  const WITHHELD_NAME_UNCORRECTED = [
+    "lib/assessment/registry.ts",
+    "lib/cms/taxonomy.ts",
+  ]
+
+  const withheldOffenders = () => {
+    const rule = RETIRED.find(([n]) => n === WITHHELD)![1]
+    return productionReachableSourceFiles().filter((f) =>
+      rule.test(copyOf(readFileSync(f, "utf8"))),
+    )
+  }
+
+  it("the production closure is real, so this is not passing vacuously", () => {
+    // An empty or tiny closure would satisfy every assertion below by finding
+    // nothing, which is how a derived corpus fails without saying so.
+    expect(productionReachableSourceFiles().length).toBeGreaterThan(50)
+    expect(productionPageCount()).toBeGreaterThan(10)
+  })
+
+  it("no customer-reachable file carries the withheld name except the counted ledger", () => {
+    expect(
+      withheldOffenders().filter((f) => !WITHHELD_NAME_UNCORRECTED.includes(f)),
+      "a NEW customer-reachable surface carries the withheld score name",
+    ).toEqual([])
+  })
+
+  it("the ledger has no entry that is already clean", () => {
+    const hits = new Set(withheldOffenders())
+    expect(
+      WITHHELD_NAME_UNCORRECTED.filter((f) => !hits.has(f)),
+      "ledger entries that no longer match — remove them so the count stays honest",
+    ).toEqual([])
+  })
+
+  it("and the candidate is not in that ledger — its use of the name is gated, not debt", () => {
+    for (const f of candidateFiles()) {
+      expect(
+        WITHHELD_NAME_UNCORRECTED,
+        `${f} is a gated candidate surface and must not be counted as uncorrected debt`,
+      ).not.toContain(f)
+    }
+  })
+
+  /*
+   * ── THE CONDITION, MADE PRECISE IN GATE 5 STEP 2C ───────────────────────
+   *
+   * This asserted that NO candidate file is production-reachable. That was a
+   * PROXY for the property the exemption actually rests on:
+   *
+   *     no production-reachable file renders the withheld name.
+   *
+   * The proxy was exact while nothing crossed. Step 2c made something cross,
+   * for a reason the gate required: `lib/account/patterns.ts` must ask the
+   * SAME comparability authority the candidate product asks, because "there
+   * should not be canonical comparison logic and separately agent-loop
+   * comparison logic." That pulls `lib/fss/engine/compare.ts` and its one
+   * import, `provenance.ts`, into the production closure.
+   *
+   * Neither carries the withheld name, or any product naming at all — they are
+   * version primitives. So the property held and only the proxy broke.
+   *
+   * ── WHY THIS IS NOT A WEAKENING ─────────────────────────────────────────
+   *
+   * The blanket rule never had to check the NAME on a reachable candidate
+   * file, because no such file existed. This checks it. A candidate file that
+   * crosses into production AND renders the name now fails on the real ground
+   * rather than on a proxy, and the crossing set itself is pinned BY VALUE —
+   * so a third file crossing is a visible decision, not a quiet one.
+   *
+   * What is no longer refused is a clean primitive being shared. That was
+   * never the thing the exemption protected.
+   */
+  const CANDIDATE_FILES_IN_PRODUCTION_CLOSURE = [
+    "lib/fss/engine/compare.ts",
+    "lib/fss/engine/provenance.ts",
+  ]
+
+  it("no production-reachable candidate file renders the withheld name", () => {
+    const rule = RETIRED.find(([n]) => n === WITHHELD)![1]
+    const reachable = new Set(productionReachableSourceFiles())
+    const crossing = candidateFiles().filter((f) => reachable.has(f))
+
+    expect(
+      crossing.filter((f) => rule.test(copyOf(readFileSync(f, "utf8")))),
+      "a candidate file reachable from a servable page renders the withheld score name",
+    ).toEqual([])
+  })
+
+  it("and the set of candidate files crossing into production is pinned", () => {
+    const reachable = new Set(productionReachableSourceFiles())
+    expect(
+      candidateFiles().filter((f) => reachable.has(f)).sort(),
+      "a candidate file started or stopped being reachable from a servable page",
+    ).toEqual(CANDIDATE_FILES_IN_PRODUCTION_CLOSURE)
+  })
+
+  it("NON-VACUITY: the crossing files really are in the closure, and really are clean", () => {
+    // Both halves matter. An empty crossing set would satisfy the name check
+    // above by finding nothing, and a pin listing files that are NOT reachable
+    // would look like coverage while asserting nothing.
+    const reachable = new Set(productionReachableSourceFiles())
+    for (const f of CANDIDATE_FILES_IN_PRODUCTION_CLOSURE) {
+      expect(reachable.has(f), `${f} is pinned as crossing but is not reachable`).toBe(true)
+    }
+    const rule = RETIRED.find(([n]) => n === WITHHELD)![1]
+    expect(rule.test(copyOf("Your Food System Score is 72"))).toBe(true)
+  })
+
+  it("every OTHER retired rule still applies to the candidate in full", () => {
+    const offenders: string[] = []
+    for (const file of candidateFiles()) {
+      const copy = copyOf(readFileSync(file, "utf8"))
+      for (const [name, rule] of RETIRED) {
+        if (name === WITHHELD) continue
+        const hit = copy.match(rule)
+        if (hit) offenders.push(`${file} → ${name}: "${hit[0]}"`)
+      }
+    }
+    expect(offenders, "retired vocabulary in the FSS-v1 candidate").toEqual([])
+  })
+
+  it("NON-VACUITY: the production closure is strictly smaller, and the rule bites", () => {
+    // If the two closures were equal the exemption would be meaningless, and
+    // the "candidate is unreachable" assertion above would be trivially true.
+    expect(productionPageCount()).toBeLessThan(servablePageCount())
+    expect(productionReachableSourceFiles().length).toBeLessThan(reachableSourceFiles().length)
+
+    const rule = RETIRED.find(([n]) => n === WITHHELD)![1]
+    expect(copyOf('<h1>Your Food System Score™</h1>')).toMatch(rule)
+    expect(copyOf('<h1>Your Biotics Score™</h1>')).not.toMatch(rule)
+  })
+})
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Longitudinal claims on scores that carry no provenance — Gate 3.5.
+
+   ── What this guards, and why the vocabulary rules above cannot ─────────────
+
+   The rules above police the NAME. They say nothing about what a surface
+   claims the difference between two scores MEANS, and that is the other half
+   of the problem the ledger exposed.
+
+   `lib/account/retest.ts` stores `ScorePoint` as `{ score, at }`. There is no
+   method version on it, and `leads.score_history` holds bare numbers. In
+   practice both points come from the same instrument — one route writes the
+   column, keyed on (email, assessment_type), and the fifteen questions sit
+   inside the methodology freeze — but that is a property of what happened to
+   be true, not something recorded. The day the instrument changes, every
+   historical pair becomes a comparison between two different things and
+   nothing would notice.
+
+   So the two numbers may be shown: each is true, and each is what the person
+   was told at the time. What may not be shown is the ACHIEVEMENT framing — the
+   difference presented as a result the person earned, or as something their
+   meals caused.
+
+   Gate 3.5 corrected exactly that on two surfaces, and sabotage cases
+   1063, 1064 and 1067 then walked straight through, because the corrections
+   were copy and nothing asserted copy. These are the assertions that were
+   missing.
+   ════════════════════════════════════════════════════════════════════════════ */
+describe("no surface claims an improvement from scores that cannot be compared", () => {
+  const LONGITUDINAL_SURFACES = [
+    "components/account/retest-card.tsx",
+    "lib/account/week-story.ts",
+  ]
+
+  const CLAIMS: [string, RegExp][] = [
+    [
+      "a before/after score claim",
+      /went from \S+ to \S+|from \$\{[^}]*baseline[^}]*\} to \$\{[^}]*latest[^}]*\}/i,
+    ],
+    [
+      "the difference credited to the person's food",
+      /\b(your )?meals are moving\b|\bmeals actually changed\b|\byour food moved\b/i,
+    ],
+    [
+      "the difference framed as progress earned",
+      /\bshare my progress\b|\byour progress so far\b|\byou improved\b|\bimprovement of \d/i,
+    ],
+    [
+      "a biological improvement claim",
+      /\byour (gut|microbiome|biology|health) (has )?improved\b/i,
+    ],
+  ]
+
+  it.each(LONGITUDINAL_SURFACES)("%s makes no improvement claim", (file) => {
+    const copy = copyOf(readFileSync(file, "utf8"))
+    for (const [why, rule] of CLAIMS) {
+      const hit = copy.match(rule)
+      expect(hit?.[0] ?? null, `${file} — ${why}: "${hit?.[0]}"`).toBeNull()
+    }
+  })
+
+  it("NON-VACUITY: each rule catches the sentence it exists for", () => {
+    const probes: [string, string][] = [
+      ["a before/after score claim", "My Biotics Score went from 61 to 72 in 90 days."],
+      ["the difference credited to the person's food", "Your meals are moving the number."],
+      ["the difference framed as progress earned", "Share my progress"],
+      ["a biological improvement claim", "Your gut has improved."],
+    ]
+    for (const [name, probe] of probes) {
+      const rule = CLAIMS.find(([n]) => n === name)
+      expect(rule, `no rule named "${name}"`).toBeDefined()
+      expect(probe, `"${probe}" must be refused by ${name}`).toMatch(rule![1])
+    }
+  })
+
+  it("NON-VACUITY: the shipped copy is not caught", () => {
+    // The rules must leave the honest version alone, or the next person to
+    // find them inconvenient will weaken them rather than the copy.
+    for (const honest of [
+      "I'm tracking my Biotics Score with EatoBiotics — currently 72/100.",
+      "Both numbers came from the same assessment, taken 90 days apart.",
+      "That is what your answers said this time.",
+      "Share my score",
+    ]) {
+      for (const [why, rule] of CLAIMS) {
+        expect(honest, `${why} fired on honest copy: "${honest}"`).not.toMatch(rule)
+      }
+    }
+  })
+
+  /*
+   * The positive half. Showing two numbers and a delta without saying what
+   * they are leaves the reader to supply the meaning, and the meaning they
+   * will supply is "I got better" — which is the claim being avoided.
+   */
+  it("the retest card says what the two numbers are", () => {
+    const copy = copyOf(readFileSync("components/account/retest-card.tsx", "utf8"))
+    expect(
+      copy,
+      "the card shows a delta; it must also say the difference describes the answers",
+    ).toMatch(/describes what your answers said/i)
+    expect(
+      copy,
+      "and must say plainly that it is not a health measurement",
+    ).toMatch(/not a measurement of your health/i)
   })
 })

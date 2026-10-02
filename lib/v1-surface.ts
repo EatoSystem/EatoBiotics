@@ -260,7 +260,16 @@ export const LEGACY_REDIRECT_ROUTES = ["/reports", "/trilogy"] as const
  * including in development. None of them is needed by any suite, and
  * robots.txt was never a control.
  */
-export const FIXTURE_SELF_GATED_ROUTES = ["/demo/food-system-report"] as const
+export const FIXTURE_SELF_GATED_ROUTES = [
+  "/demo/food-system-report",
+  // The FSS-v1 candidate, walkable end to end — Gate 2. Everything it renders
+  // is unapproved: candidate domains with no named reviewer, DEV_ONLY fixture
+  // weights, draft questions. `/preview` rather than `/demo` deliberately — the
+  // other `/demo/*` routes are marketing demonstrations with mock data and are
+  // POST_V1-refused, whereas this is an unfinished thing being reviewed, and
+  // the segment should say which it is.
+  "/preview/food-system-v1",
+] as const
 
 /* ── Out of the V1 launch product ───────────────────────────────────────── */
 

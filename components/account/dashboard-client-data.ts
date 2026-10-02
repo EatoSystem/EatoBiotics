@@ -67,17 +67,58 @@ export interface AnalysisPatterns {
 
 /* ── Profile lookup ─────────────────────────────────────────────────── */
 
+/* ════════════════════════════════════════════════════════════════════════════
+   GATE 5 — three personal-biology taglines, corrected.
+
+   ── Why a demo-only file was corrected at all ─────────────────────────────
+
+   The rule this gate adopted:
+
+     Known customer-facing or customer-like claims of this exact class do not
+     get knowingly carried into the next gate merely because one is demo-only.
+
+   `dashboard-client.tsx` is mock-data only — `/account-you` and
+   `/demo/account/[tier]`, never the real `/account`. A person still reads
+   these sentences, and "we knew and left it" is not a position this programme
+   can hold after four tranches of the same claim class.
+
+   ── What changed, and what the three had in common ────────────────────────
+
+     "Your inner food system is working hard in your favour."
+     "Your food system health is performing at its peak."
+     "Your gut is ready for more — more variety, more plants, more life."
+
+   Each asserts a BIOLOGICAL STATE: something the body is doing, inferred from
+   a questionnaire. The instrument sees answers about food. It does not see an
+   inner food system working, a system performing, or a gut being ready.
+
+   The replacements describe what the answers showed and stop — the same move
+   `DOMAIN_PRESENTATION.whereYouAre` makes, and the same register.
+
+   ── What was NOT changed, named rather than passed over ───────────────────
+
+   "targeted effort will accelerate it" and "Consistency is your next big
+   unlock" are PREDICTED OUTCOMES rather than biology claims — a different
+   class, reported to the founder and deliberately left, because this step was
+   scoped to one class in two files and widening it quietly is how scope stops
+   meaning anything.
+
+   The identical sentence to the first one also sits in
+   `components/mind-assessment/mind-assessment-intro.tsx`. That is NOT live:
+   `/mind` and `/start-mind` are both in `POST_V1_ROUTES`, which V1 refuses.
+   Reported, dormant, untouched.
+   ════════════════════════════════════════════════════════════════════════════ */
 export const PROFILE_INFO: Record<string, { color: string; tagline: string }> = {
   // New Feed/Seed/Heal profiles
-  "Thriving Food System": { color: "var(--icon-green)",  tagline: "Your inner food system is working hard in your favour." },
+  "Thriving Food System": { color: "var(--icon-green)",  tagline: "Your answers described a wide range of foods, arriving consistently." },
   "Strong Foundation":    { color: "var(--icon-teal)",   tagline: "You've built something real — now it's time to sharpen it." },
   "Emerging Balance":     { color: "var(--icon-lime)",   tagline: "The building blocks are there. Consistency is the next step." },
   "Developing System":    { color: "var(--icon-yellow)", tagline: "Progress is underway — targeted effort will accelerate it." },
   "Early Builder":        { color: "var(--icon-orange)", tagline: "You're at the beginning of something important." },
   // Legacy profiles
-  "Thriving System":     { color: "var(--icon-green)",  tagline: "Your food system health is performing at its peak." },
+  "Thriving System":     { color: "var(--icon-green)",  tagline: "Your answers described strong, steady food patterns across the week." },
   "Inconsistent System": { color: "var(--icon-yellow)", tagline: "Consistency is your next big unlock — small habits compound." },
-  "Underfed System":     { color: "var(--icon-orange)", tagline: "Your gut is ready for more — more variety, more plants, more life." },
+  "Underfed System":     { color: "var(--icon-orange)", tagline: "Your answers described room for more — more variety, more plants, more fibre." },
 }
 export const DEFAULT_PROFILE_INFO = { color: "var(--icon-green)", tagline: "The food system inside you." }
 

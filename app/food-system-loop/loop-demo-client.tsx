@@ -48,6 +48,7 @@ export function LoopDemoClient() {
         score: 58,
         scoreLabel: "Building Momentum",
         biotics: { prebiotics: 42, probiotics: 71, postbiotics: 55 },
+        bioticsSource: "assessment",
         strengths: ["Fermented foods are a real strength"],
         priorities: ["Add more plant diversity"],
       }),

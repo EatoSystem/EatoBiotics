@@ -24,7 +24,7 @@ easier is worse than no case.
 ## Running it
 
 ```
-export PATH=/opt/node20/bin:$PATH
+export PATH=/path/to/node24/bin:$PATH   # the repo pins Node 24 — see .nvmrc
 python3 tools/sabotage/run_s7b.py      # one suite
 python3 tools/sabotage/run.py 930 995  # a numbered range from cases.py
 ```

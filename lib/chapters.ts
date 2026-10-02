@@ -104,7 +104,7 @@ export const chapters: Chapter[] = [
     part: "II",
     partTitle: "The EatoBiotics Foods",
     title: "Probiotic Foods",
-    description: "Fermented foods, live cultures, what to buy, what matters on labels, how to use them every day.",
+    description: "Fermented foods — what to buy, what matters on labels, how to use them every day.",
     status: "published",
     publishedAt: "2026-02-24",
     readingTime: 40,

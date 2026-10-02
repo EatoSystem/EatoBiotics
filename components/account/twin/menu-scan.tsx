@@ -4,18 +4,55 @@
  * MenuScan — "Eating out? Score the menu."
  *
  * Paste a restaurant menu and the Twin picks the three best dishes for the
- * member's weakest biotic (POST /api/menu-scan — AI-guarded server-side).
- * `mock` mode (demos + tests) resolves canned picks without the API. The
- * real-world decision moment: the Twin helping at the point of ordering.
+ * food pattern the member's answers described least of (POST /api/menu-scan —
+ * AI-guarded server-side). `mock` mode (demos + tests) resolves canned picks
+ * without the API. The real-world decision moment: the Twin helping at the
+ * point of ordering.
+ *
+ * ── GATE 3.6: THE COPY NAMES A FOOD PATTERN, NEVER A PERSONAL BIOTIC ────
+ *
+ * This pill used to read "Chosen for your probiotics" and the picks claimed
+ * "live cultures", "feeds your microbes" and "the postbiotic follow-through" —
+ * a personal Biotic state, a live-organism claim and a postbiotic-production
+ * claim, in one card. `biotic` survives as a DATA KEY for the colour; it is
+ * never printed.
+ *
+ * REPORTED, NOT CHANGED HERE: `app/api/menu-scan/route.ts`'s system prompt
+ * still tells the model "The member's weakest biotic is ${weakest} — bias the
+ * picks toward it" and asks it for `"why":"<… what it feeds>"`. So the model is
+ * instructed to generate exactly the claims this file just stopped hardcoding,
+ * straight into `p.why`. That is a PROMPT change (Tranche 2B territory) and it
+ * moves the route's response contract, so it is a finding rather than part of a
+ * copy gate. The route is behind `/account/twin`, which V1 refuses, so nothing
+ * reaches a customer today.
  */
 
 import { useState } from "react"
 import { UtensilsCrossed, Leaf, Sparkles } from "lucide-react"
+import { BEHAVIOUR_UNKNOWN, mealBehaviour } from "@/lib/agent-loop/behaviour"
 
 interface MenuPick {
   name: string
   why: string
   biotic: "prebiotics" | "probiotics" | "postbiotics"
+}
+
+/**
+ * The food pattern a key names, for display.
+ *
+ * `weakest` arrives from the API as a plain string, so this narrows before
+ * translating rather than asserting a type the wire does not guarantee — an
+ * unknown key reads as the honest fallback, never as an empty string.
+ */
+function behaviourFor(key: string): string {
+  switch (key) {
+    // Dishes, so the MEAL vocabulary — a menu pick is scored on food
+    // categories, not on the rhythm of somebody's week.
+    case "prebiotics": return mealBehaviour("prebiotic")
+    case "probiotics": return mealBehaviour("probiotic")
+    case "postbiotics": return mealBehaviour("postbiotic")
+    default: return BEHAVIOUR_UNKNOWN
+  }
 }
 
 const BIOTIC_COLOR: Record<MenuPick["biotic"], string> = {
@@ -27,9 +64,9 @@ const BIOTIC_COLOR: Record<MenuPick["biotic"], string> = {
 const MOCK_PICKS: { weakest: string; picks: MenuPick[] } = {
   weakest: "probiotics",
   picks: [
-    { name: "Miso-glazed salmon bowl", why: "The miso brings live cultures — exactly what your probiotic side needs — with omega-rich salmon alongside.", biotic: "probiotics" },
-    { name: "Roast vegetable & lentil salad", why: "Six different plants in one dish feeds your microbes broadly.", biotic: "prebiotics" },
-    { name: "Sourdough with olive tapenade", why: "Fermented bread and olives support the postbiotic follow-through.", biotic: "postbiotics" },
+    { name: "Miso-glazed salmon bowl", why: "Miso is a fermented food, which your answers described less of — with omega-rich salmon alongside.", biotic: "probiotics" },
+    { name: "Roast vegetable & lentil salad", why: "Six different plants in one dish — good for plant variety and fibre.", biotic: "prebiotics" },
+    { name: "Sourdough with olive tapenade", why: "Sourdough and olives bring fermented foods into a meal you were having anyway.", biotic: "postbiotics" },
   ],
 }
 
@@ -100,7 +137,7 @@ export function MenuScan({ mock = false }: { mock?: boolean }) {
         ) : (
           <>
             <p className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest" style={{ background: "color-mix(in srgb, var(--icon-green) 10%, white)", border: "1px solid var(--border)", color: "var(--icon-green)" }}>
-              <Sparkles size={10} /> Chosen for your {result.weakest}
+              <Sparkles size={10} /> Chosen for your {behaviourFor(result.weakest)}
             </p>
             <div className="mt-3 space-y-2.5">
               {result.picks.map((p, i) => (
@@ -111,7 +148,7 @@ export function MenuScan({ mock = false }: { mock?: boolean }) {
                     <p className="mt-0.5 text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{p.why}</p>
                   </div>
                   <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: "white", border: "1px solid var(--border)", color: BIOTIC_COLOR[p.biotic] }}>
-                    <Leaf size={9} /> {p.biotic}
+                    <Leaf size={9} /> {behaviourFor(p.biotic)}
                   </span>
                 </div>
               ))}

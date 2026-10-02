@@ -13,8 +13,9 @@ import { getScoreBand } from "@/lib/scoring"
 import { getSummary } from "@/lib/assessment/registry"
 import type { FoundationKey } from "@/lib/assessment/registry"
 import type { SubScores } from "@/lib/assessment-scoring"
-import { toBioticsScore, type BioticsInput, BIOTIC_LABELS } from "./biotics"
-import type { BioticsScore, FoodSystemBaseline, FoodSystemScore } from "./types"
+import { toBioticsScore, type BioticsInput } from "./biotics"
+import { behaviourFor } from "./behaviour"
+import type { BioticsScore, BioticsSource, FoodSystemBaseline, FoodSystemScore } from "./types"
 
 export interface BaselineInput {
   foundationKey: FoundationKey
@@ -23,16 +24,28 @@ export interface BaselineInput {
   /** Band label, e.g. "Strong Foundation". */
   scoreLabel: string
   biotics: BioticsInput
+  /** Required, not defaulted: a wrong answer here becomes a false sentence. */
+  bioticsSource: BioticsSource
   strengths: string[]
   priorities: string[]
   createdAt?: number
 }
 
-/** Gaps = biotics that are notably low — derived, food-first, non-diagnostic. */
-function deriveGaps(biotics: BioticsScore): string[] {
+/**
+ * Gaps = the food patterns with room in the answers — food-first, non-diagnostic.
+ *
+ * ── GATE 3.6 ────────────────────────────────────────────────────
+ *
+ * This read "Postbiotics appear lower than the others" — a personal Biotic
+ * state, threshold-gated. The 50 is UNCHANGED and is not touched by the
+ * claims repair: it selects which pattern to mention, it does not score
+ * anything and it is not customer-visible.
+ */
+function deriveGaps(biotics: BioticsScore, source: BioticsSource): string[] {
   const gaps: string[] = []
+  const where = source === "meals" ? "your recent meals" : "your answers"
   for (const k of ["prebiotics", "probiotics", "postbiotics"] as const) {
-    if (biotics[k].score < 50) gaps.push(`${BIOTIC_LABELS[k]} appear lower than the others`)
+    if (biotics[k].score < 50) gaps.push(`Room to grow in ${where}: ${behaviourFor(k, source)}`)
   }
   return gaps
 }
@@ -48,8 +61,9 @@ export function buildBaseline(input: BaselineInput): FoodSystemBaseline {
     foundationKey: input.foundationKey,
     foodSystemScore: score,
     biotics,
+    bioticsSource: input.bioticsSource,
     strengths: input.strengths,
-    gaps: deriveGaps(biotics),
+    gaps: deriveGaps(biotics, input.bioticsSource),
     priorities: input.priorities,
     createdAt: input.createdAt ?? Date.now(),
   }
@@ -94,6 +108,8 @@ export function readFoundationBaseline(foundationKey: FoundationKey): FoodSystem
     score: summary.score,
     scoreLabel: summary.bandLabel,
     biotics,
+    // The ASSESSMENT's three sub-scores, read from the stored record.
+    bioticsSource: "assessment",
     strengths: summary.strengths,
     priorities: summary.priorities,
   })

@@ -24,6 +24,15 @@ function collectRecommendations(session: AgentLoopSession): AgentLoopRecommendat
     .filter((r): r is AgentLoopRecommendation => Boolean(r))
 }
 
+/**
+ * The label on the score trend.
+ *
+ * Exported because it was written twice below and asserted once in
+ * `tests/unit/agent-loop-twin.test.ts` — three copies of one string, which is
+ * how the Gate 3.5 rename left a guard pointing at a name that had moved.
+ */
+export const SCORE_TREND_LABEL = "Biotics Score™"
+
 function deriveTrends(session: AgentLoopSession): FoodSystemTrend[] {
   const progress = calculateLoopProgress(session)
   const observations = collectObservations(session)
@@ -32,13 +41,13 @@ function deriveTrends(session: AgentLoopSession): FoodSystemTrend[] {
   // Score trend vs the immutable baseline.
   if (progress.scoreDelta !== 0) {
     trends.push({
-      label: "Food System Score",
+      label: SCORE_TREND_LABEL,
       direction: progress.scoreDelta > 0 ? "up" : "down",
       detail: `${progress.scoreDelta > 0 ? "+" : ""}${progress.scoreDelta} since your baseline`,
     })
   } else {
     trends.push({
-      label: "Food System Score",
+      label: SCORE_TREND_LABEL,
       direction: "steady",
       detail: "Holding at your baseline",
     })

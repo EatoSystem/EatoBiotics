@@ -23,21 +23,39 @@ function sampleInput(over: Partial<AccountTwinInput> = {}): AccountTwinInput {
 }
 
 describe("buildInsideYouChapters", () => {
-  it("builds the four personalized chapters with the member's live values", async () => {
+  /*
+   * ══ REPOINTED IN GATE 3.6 ════════════════════════════════════
+   *
+   * This asserted, by value, that chapters 2–4 each carry
+   * `twin.biotics.<key>.score` — so it REQUIRED three personal Biotic numbers,
+   * which `inside-you-journey.tsx:199-202` then rendered beside the labels
+   * "Your prebiotic level today" / "Your postbiotic level today" on /account.
+   * A third guard enforcing the defect it should have refused.
+   *
+   * The overall-score assertion is kept: that figure is the Biotics Score™, a
+   * result the product computes and may show. The other three become the
+   * refusal, plus a check that only ONE chapter has a value at all — so a
+   * future author cannot reintroduce two of them and stay green.
+   */
+  it("gives only the overall-score chapter a number", async () => {
     const { twin } = await buildAccountTwin(sampleInput())
     const chapters = buildInsideYouChapters(twin)
     expect(chapters.map((c) => c.key)).toEqual(["eat", "prebiotics", "probiotics", "postbiotics"])
-    // Chapter 1 carries the Food System Score; the rest carry their biotic level.
     expect(chapters[0].value).toBe(74)
-    expect(chapters[1].value).toBe(twin.biotics.prebiotics.score)
-    expect(chapters[2].value).toBe(twin.biotics.probiotics.score)
-    expect(chapters[3].value).toBe(twin.biotics.postbiotics.score)
+    for (const c of chapters.slice(1)) {
+      expect(c.value, `${c.key} still carries a personal Biotic number`).toBeNull()
+      expect(c.valueLabel, `${c.key} still labels a personal Biotic value`).toBe("")
+    }
+    expect(chapters.filter((c) => c.value != null).map((c) => c.key)).toEqual(["eat"])
     // Frame layout tiles the composition exactly.
     expect(chapters[0].fromFrame).toBe(0)
     expect(chapters[3].fromFrame).toBe(3 * INSIDE_YOU_CHAPTER_FRAMES)
     expect(chapters.reduce((s, c) => s + c.durationInFrames, 0)).toBe(INSIDE_YOU_DURATION_FRAMES)
     // Copy is personalized, non-medical, and garden-free (brand decision).
-    expect(chapters[1].takeaway.toLowerCase()).toContain("prebiotic")
+    // Was `toContain("prebiotic")`. The takeaway now names the behaviour that
+    // moves this chapter rather than a personal level of the Biotic.
+    expect(chapters[1].takeaway.toLowerCase()).toContain("plant variety")
+    expect(chapters[1].takeaway).not.toMatch(/\b(Prebiotics|Probiotics|Postbiotics)\b/)
     for (const c of chapters) {
       expect(c.narration).not.toMatch(/cure|treat|diagnos/i)
       expect(`${c.title} ${c.narration} ${c.takeaway}`).not.toMatch(/garden/i)
@@ -56,26 +74,66 @@ describe("buildInsideYouChapters", () => {
 })
 
 describe("systemMapState", () => {
-  it("attaches the member's live biotic level to each hotspot", async () => {
+  /*
+   * ══ INVERTED IN GATE 3.6, AND THAT IS THE POINT ══════════════════════
+   *
+   * This test was called "attaches the member's live biotic level to each
+   * hotspot" and asserted, by value:
+   *
+   *   expect(byKey.mind.score).toBe(twin.biotics.probiotics.score)
+   *
+   * So it REQUIRED the hotspot to carry the person's Postbiotics and
+   * Probiotics scores, which `TwinStage` then rendered on /account as
+   * "Building · 45", a filled bar, and "Fed by Postbiotics". The guard was
+   * enforcing the defect — which is why a green suite never mentioned it.
+   *
+   * Repointed to the opposite invariant, with the educational and action copy
+   * checks kept intact so this is a removal of a claim and not of a feature.
+   */
+  it("carries no personal Biotic number, label or band — only what it teaches", async () => {
     const { twin } = await buildAccountTwin(sampleInput())
     const state = systemMapState(twin)
     expect(state.length).toBe(SYSTEM_HOTSPOTS.length)
+
     const byKey = Object.fromEntries(state.map((h) => [h.key, h]))
+    // The key survives: it is how a hotspot picks its food action.
     expect(byKey.digestion.biotic).toBe("prebiotics")
-    expect(byKey.digestion.score).toBe(twin.biotics.prebiotics.score)
-    expect(byKey.mind.score).toBe(twin.biotics.probiotics.score)
-    expect(byKey.defence.score).toBe(twin.biotics.postbiotics.score)
+
     for (const h of state) {
+      /*
+       * The fields are ABSENT, not falsy. `toBeUndefined` on a key the type no
+       * longer declares is what makes "removed" checkable at runtime as well
+       * as at compile time — a plain truthiness check would also pass for a
+       * field that was merely blanked, and a blanked field is one line away
+       * from being filled in again.
+       */
+      for (const banned of ["score", "level", "bioticLabel"]) {
+        expect(
+          (h as unknown as Record<string, unknown>)[banned],
+          `a hotspot still carries ${banned}`,
+        ).toBeUndefined()
+      }
+
+      // No value on the object may be a number that could read as a score.
+      for (const [k, v] of Object.entries(h)) {
+        if (k === "x" || k === "y") continue
+        expect(typeof v, `${h.key}.${k} is numeric`).not.toBe("number")
+      }
+
       // Positions stay on the figure stage and copy stays non-diagnostic.
       expect(h.x).toBeGreaterThan(0)
       expect(h.x).toBeLessThan(100)
       expect(h.y).toBeGreaterThan(0)
       expect(h.y).toBeLessThan(100)
-      expect(h.level).toBeTruthy()
-      expect(h.bioticLabel[0]).toBe(h.bioticLabel[0].toUpperCase())
       expect(h.what).not.toMatch(/cure|treat|diagnos/i)
       expect(`${h.what} ${h.action}`).not.toMatch(/garden/i)
       expect(h.action.length).toBeGreaterThan(10)
     }
+  })
+
+  it("NON-VACUITY: the removed fields would be caught if they came back", () => {
+    const revived = { key: "mind", x: 50, y: 40, what: "x", action: "a food action here", biotic: "probiotics", score: 45 }
+    expect((revived as Record<string, unknown>).score).not.toBeUndefined()
+    expect(typeof (revived as Record<string, unknown>).score).toBe("number")
   })
 })
