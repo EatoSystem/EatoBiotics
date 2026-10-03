@@ -133,6 +133,28 @@ So a deterministic render performs **no Supabase read, no Supabase write, no
 Stripe call and no network request at all**, and needs no cosmetic change to
 `LiveDashboard`.
 
+> ### CORRECTION — 2026-10-03, after the fixture rendered
+>
+> **The last sentence above is wrong in two places, and the text is left
+> standing so the correction is legible rather than silent.**
+>
+> 1. *"every `fetch` in the file is user-action triggered"* — `:860` calls
+>    `pushTwinState` from a **mount effect**, which PUTs to `/api/twin-state`.
+>    The fixture disarms it with `email: null` + `twin: null`; the component
+>    does have the effect.
+> 2. *"no network request at all"* — **false.** Every capture recorded one
+>    console error: a 401 from `GET /api/assessment/journey`, issued by
+>    `AssessmentJourneyCard` (`components/account/dashboard-parts.tsx:33`) from
+>    a mount effect that reads no prop and therefore cannot be disarmed.
+>
+> What is true: the fixture **writes nothing and reads no customer data**. The
+> accurate statement, the two mount effects, and the rendered pin that now holds
+> the footprint are in `EATOBIOTICS_SCIENTIFIC_UI_DEBT.md` → `NOTE-FIXTURE-01`.
+>
+> Recorded here as the audit's own worked example of its standard: *source
+> inspection can establish possibility; rendered evidence establishes
+> reachability.*
+
 ---
 
 ## 7 · Documentation status, pending classification

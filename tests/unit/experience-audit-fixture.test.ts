@@ -3,10 +3,13 @@ import { readFileSync } from "node:fs"
 
 import { isExperienceAuditFixtureEligible } from "@/lib/experience-audit/fixture-policy"
 import {
+  AUDIT_CLOCK,
+  AUDIT_DATE,
   AUDIT_FIXTURES,
   AUDIT_FIXTURE_PURPOSE,
   AUDIT_FIXTURE_STATES,
   AUDIT_FIXTURE_TABS,
+  AUDIT_STATE_FINDINGS,
 } from "@/lib/experience-audit/fixtures"
 import { FIXTURE_SELF_GATED_ROUTES, classifyPageRoute, isServableInV1 } from "@/lib/v1-surface"
 import { STATIC_PATHS } from "@/app/sitemap"
@@ -20,15 +23,35 @@ import { NAV_LINKS, NAV_GROUPS } from "@/lib/nav"
    check alone:
 
      it is unreachable in every production configuration;
-     it touches nothing — no Supabase, no Stripe, no auth, no persistence, and
-     no network request at all.
+     it writes nothing and reads no customer data — no Supabase, no Stripe, no
+     auth, no persistence.
 
-   The second is the harder one, and the reason is a defect found while
-   building this: `live-dashboard.tsx:860` calls `pushTwinState` from a MOUNT
-   EFFECT, and that does `fetch("/api/twin-state", { method: "PUT" })`. It fires
-   when `propEmail` is truthy AND `twin` carries unseen milestones. So "the
-   fixture makes no network calls" is a property of the FIXTURE DATA, not of
-   the component, and it is engineered below rather than hoped for.
+   ══ A CLAIM THIS FILE USED TO MAKE, AND RENDERED EVIDENCE DISPROVED ═════════
+
+   It said the fixture makes "no network request at all". That was FALSE, and
+   the capture harness caught it: every page load recorded one console error,
+   a 401 from `GET /api/assessment/journey`. `AssessmentJourneyCard`
+   (`components/account/dashboard-parts.tsx:33`) calls `ensureHydrated()` from
+   a mount effect, and it takes NO prop — so no fixture data can disarm it.
+   Unauthenticated the route refuses, so nothing is read and nothing written,
+   but the request happens.
+
+   Source inspection can establish possibility. Rendered evidence establishes
+   reachability — including the reachability of a side effect the fixture's
+   author had asserted away.
+
+   So there are TWO mount-time effects, and only one of them is engineered:
+
+     PUT /api/twin-state           `live-dashboard.tsx:860` → `pushTwinState`,
+                                   fires only when `propEmail` is truthy AND
+                                   `twin` carries unseen milestones. DISARMED
+                                   by fixture data, and asserted below.
+     GET /api/assessment/journey   unconditional, prop-independent, refused 401.
+                                   NOT disarmable. Declared, not prevented.
+
+   The exact footprint is pinned by RENDER in `tests/e2e/audit-capture.spec.ts`
+   (`EXPECTED_API_CALLS`), which is the only place that can see a third one
+   appear. This file pins the half that fixture data controls.
    ════════════════════════════════════════════════════════════════════════════ */
 
 const ROUTE = "/audit/account-dashboard"
@@ -152,7 +175,7 @@ describe("the audit fixture touches nothing", () => {
   })
 
   /*
-   * ── THE CONSTRAINT THAT CARRIES THE NO-NETWORK PROPERTY ──────────────────
+   * ── THE CONSTRAINT THAT CARRIES THE NO-WRITE PROPERTY ────────────────────
    *
    * `pushTwinState` fires from a mount effect when `propEmail` is truthy and
    * `twin` has unseen milestones. Either being absent is enough to stop it;
@@ -160,6 +183,9 @@ describe("the audit fixture touches nothing", () => {
    * plausible email would otherwise silently make the audit page PUT to a real
    * API — from the one page in the repository whose purpose is to touch
    * nothing.
+   *
+   * This is the write, and it is the one the fixture genuinely prevents. The
+   * unconditional journey GET is a different matter: see the header.
    */
   it("no fixture state can trigger the twin-state push", () => {
     for (const state of AUDIT_FIXTURE_STATES) {
@@ -182,11 +208,76 @@ describe("the audit fixture touches nothing", () => {
 })
 
 describe("the audit fixture states are deliberate, not one everything-on screenshot", () => {
-  it("the three states are pinned, and each says what it is for", () => {
-    expect([...AUDIT_FIXTURE_STATES]).toEqual(["representative", "dense", "sparse"])
+  it("the five states are pinned, and each says what it is for", () => {
+    expect([...AUDIT_FIXTURE_STATES]).toEqual([
+      "representative",
+      "dense",
+      "sparse",
+      "first-use-member",
+      "returning-no-meals-today",
+    ])
     for (const state of AUDIT_FIXTURE_STATES) {
       expect(AUDIT_FIXTURE_PURPOSE[state]?.length ?? 0).toBeGreaterThan(20)
+      // Every state declares which findings it is evidence for, even if none.
+      expect(Array.isArray(AUDIT_STATE_FINDINGS[state])).toBe(true)
     }
+  })
+
+  /* ══ THE FROZEN CLOCK, AND WHAT EACH STATE PROVES ABOUT IT ════════════════
+   *
+   * The clock is installed by the capture harness, never by the component. The
+   * two defect-exposing states are deliberately clock-INDEPENDENT in their
+   * reachability — zero analyses is clock-independent, and past-dated analyses
+   * are past under any clock — so the defects appear whether or not the freeze
+   * works. The freeze exists for reproducibility of the week strip and other
+   * wall-clock regions.
+   * ═══════════════════════════════════════════════════════════════════════ */
+
+  it("the audit clock is a fixed instant and its date agrees with it", () => {
+    expect(AUDIT_CLOCK).toBe("2026-10-03T09:00:00.000Z")
+    expect(AUDIT_DATE).toBe("2026-10-03")
+    // The date must be the clock's own date, or `todayStr` comparisons lie.
+    expect(AUDIT_CLOCK.startsWith(AUDIT_DATE)).toBe(true)
+  })
+
+  it("representative has a meal ON the audit date, so it shows the NORMAL case", () => {
+    /*
+     * Without this the state meant to show ordinary hierarchy would itself
+     * trigger P0-TRUST-01, and the defect would appear in two states while
+     * `returning-no-meals-today` claimed to isolate it.
+     */
+    const analyses = (AUDIT_FIXTURES.representative as Record<string, unknown>)
+      .recentAnalyses as { created_at: string }[]
+    expect(
+      analyses.some((a) => a.created_at.startsWith(AUDIT_DATE)),
+      "representative has no meal today — it would show the fabricated-meal path",
+    ).toBe(true)
+  })
+
+  it("returning-no-meals-today has analyses but NONE on the audit date", () => {
+    const props = AUDIT_FIXTURES["returning-no-meals-today"] as Record<string, unknown>
+    const analyses = props.recentAnalyses as { created_at: string }[]
+
+    // Both halves matter: the enclosing block needs analyses to exist (:1332),
+    // and `todayMeals` must be empty for the fallback to fire (:864, :1653).
+    expect(analyses.length, "no analyses — the enclosing block would not render").toBeGreaterThan(0)
+    expect(
+      analyses.some((a) => a.created_at.startsWith(AUDIT_DATE)),
+      "a meal is dated today — the fabricated-meal path would not fire",
+    ).toBe(false)
+
+    expect(AUDIT_STATE_FINDINGS["returning-no-meals-today"]).toContain("P0-TRUST-01")
+  })
+
+  it("first-use-member is member-tier with nothing logged", () => {
+    const props = AUDIT_FIXTURES["first-use-member"] as Record<string, unknown>
+    expect(props.membershipTier).toBe("member")
+    expect(props.membershipStatus).toBe("active")
+    expect((props.recentAnalyses as unknown[]).length).toBe(0)
+
+    // The free-tier sparse state cannot stand in for this one.
+    expect((AUDIT_FIXTURES.sparse as Record<string, unknown>).membershipTier).toBe("free")
+    expect(AUDIT_STATE_FINDINGS["first-use-member"]).toContain("P0-SCIENCE-01")
   })
 
   it("the tabs are the dashboard's own information architecture", () => {
@@ -243,11 +334,25 @@ describe("the audit fixture states are deliberate, not one everything-on screens
    * would quietly destroy the corpus's value as evidence.
    */
   it("every fixture date is fixed, so captures are comparable over time", () => {
-    const src = readFileSync(FIXTURES_SRC, "utf8")
+    /*
+     * Scanned over CODE. The AUDIT_CLOCK header explains that
+     * `live-dashboard.tsx:863` derives `todayStr` from `new Date()`, so an
+     * unstripped scan fires on the comment describing the very thing the
+     * fixtures avoid.
+     *
+     * FIFTH time this session, and the first that was avoidable: `caused` in a
+     * disclaimer, `proven` in `provenance`, `"raw"` in a note recording its
+     * absence, `app/demo` in a header explaining why it is unused — and now
+     * this. Having hit it four times, this guard should have been written
+     * comment-stripped to begin with.
+     */
+    const raw = readFileSync(FIXTURES_SRC, "utf8")
+    const code = raw.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/\/\/.*$/gm, " ")
+
     for (const forbidden of ["Date.now", "new Date(", "toISOString"]) {
-      expect(src, `fixtures use ${forbidden} — captures would drift`).not.toContain(forbidden)
+      expect(code, `fixtures use ${forbidden} — captures would drift`).not.toContain(forbidden)
     }
-    // NON-VACUITY: there really are dates in there.
-    expect(src).toMatch(/2026-\d\d-\d\dT/)
+    // NON-VACUITY: the stripped code still holds real fixed dates.
+    expect(code).toMatch(/2026-\d\d-\d\dT/)
   })
 })

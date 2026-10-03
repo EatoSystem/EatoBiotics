@@ -35,8 +35,53 @@ import type {
    silently wrote to production would invalidate the audit.
    ════════════════════════════════════════════════════════════════════════ */
 
-/** Every fixture state, by name. Pinned so a fifth is a visible diff. */
-export const AUDIT_FIXTURE_STATES = ["representative", "dense", "sparse"] as const
+/**
+ * THE FROZEN AUDIT INSTANT.
+ *
+ * One constant, used three ways: fixture dates are authored relative to it, the
+ * capture harness installs it in the browser with `page.clock`, and the
+ * screenshot manifest records it beside every image. Same fixture data + same
+ * clock + same viewport = reproducible image.
+ *
+ * ── WHY IT IS LOAD-BEARING, AND WHY NOT FOR THE REASON IT LOOKS LIKE ──────
+ *
+ * The two states that expose `P0-TRUST-01` and the first-use copy do NOT need
+ * it: zero analyses is clock-independent, and past-dated analyses are past
+ * under any clock. Their REACHABILITY does not depend on this value.
+ *
+ * It is needed for REPRODUCIBILITY, because other regions of the dashboard read
+ * the wall clock directly. `live-dashboard.tsx:863` derives `todayStr` from
+ * `new Date()`, and the week strip at `:2125-2140` computes Monday-of-week,
+ * `isToday` and `isFuture` the same way. Without a frozen clock the same
+ * fixture renders a different week every day and the corpus stops being
+ * comparable between captures.
+ *
+ * Two different claims, both true, and worth keeping apart.
+ *
+ * ── FROZEN AT THE CAPTURE LAYER, NEVER IN THE COMPONENT ───────────────────
+ *
+ * `LiveDashboard` is not modified and must not be. The clock is installed by
+ * the Playwright harness before navigation. Known consequence: the component is
+ * `"use client"` inside a `force-dynamic` page, so Next server-renders it on the
+ * real date while the browser runs this one — the week strip disagrees between
+ * the two renders and React logs a hydration mismatch. Captures taken after
+ * hydration settles are correct; the harness waits for it, asserts the frozen
+ * date reached the DOM, and records console errors in the manifest rather than
+ * suppressing them.
+ */
+export const AUDIT_CLOCK = "2026-10-03T09:00:00.000Z"
+
+/** The frozen instant's date component, which is what `todayStr` compares to. */
+export const AUDIT_DATE = "2026-10-03"
+
+/** Every fixture state, by name. Pinned so a sixth is a visible diff. */
+export const AUDIT_FIXTURE_STATES = [
+  "representative",
+  "dense",
+  "sparse",
+  "first-use-member",
+  "returning-no-meals-today",
+] as const
 
 export type AuditFixtureState = (typeof AUDIT_FIXTURE_STATES)[number]
 
@@ -105,6 +150,17 @@ function report(i: number, overrides: Partial<LivePaidReport> = {}): LivePaidRep
  * visible: a score with a previous score, a handful of analyses, one purchased
  * report, a modest streak. This is the state the audit reasons about when
  * asking "where does the eye land first".
+ *
+ * ── ONE ANALYSIS IS DATED ON THE AUDIT INSTANT, DELIBERATELY ──────────────
+ *
+ * Without it this state has no meals "today" and therefore triggers
+ * `P0-TRUST-01` itself — so the state meant to show NORMAL behaviour would have
+ * been showing the defect, and the defect would have appeared in two states
+ * while `returning-no-meals-today` claimed to isolate it.
+ *
+ * With it, the two states have two distinct jobs and no overlap:
+ * representative shows the product working, `returning-no-meals-today` shows it
+ * fabricating.
  */
 const representative: LiveDashboardProps = {
   name: "Fixture Member",
@@ -116,7 +172,13 @@ const representative: LiveDashboardProps = {
   score: 67,
   previousScore: 61,
   profileType: "Fixture Profile",
-  recentAnalyses: [analysis(1), analysis(2), analysis(3)],
+  recentAnalyses: [
+    // Dated ON the frozen instant, so `todayMeals` is non-empty and the real
+    // branch renders. This is what makes this state "representative".
+    analysis(1, { created_at: `${AUDIT_DATE}T08:15:00.000Z` }),
+    analysis(2),
+    analysis(3),
+  ],
   scoreHistory: [
     { score: 58, date: "2026-07-01" },
     { score: 61, date: "2026-08-01" },
@@ -195,15 +257,92 @@ const sparse: LiveDashboardProps = {
   retest: null,
 }
 
+/**
+ * D · FIRST USE AS A PAYING MEMBER.
+ *
+ * `sparse` above is free-tier, so it could not capture what a SUBSCRIBER sees
+ * on their first visit — and that is the audience the first-use copy is
+ * written for. Member tier, active status, and nothing logged.
+ *
+ * This is the state that captures `P0-SCIENCE-01`: the welcome block, gated on
+ * `recentAnalyses.length === 0`, promises "an instant breakdown of its
+ * Prebiotic, Probiotic, and Postbiotic value" and calls the meal-level
+ * construct "your Biotics score".
+ */
+const firstUseMember: LiveDashboardProps = {
+  name: "Fixture Member",
+  email: null,
+  ageBracket: "35-44",
+  membershipTier: "member",
+  membershipStatus: "active",
+  streak: 0,
+  score: null,
+  previousScore: null,
+  profileType: null,
+  recentAnalyses: [],
+  scoreHistory: [],
+  paidReports: [],
+  memberStartedAt: `${AUDIT_DATE}T00:00:00.000Z`,
+  nextBillingDate: "2026-11-03T00:00:00.000Z",
+  referralCode: "FIXTURE",
+  twin: null,
+  retest: null,
+}
+
+/**
+ * E · RETURNING, WITH NOTHING LOGGED TODAY — the state that proves
+ * `P0-TRUST-01`.
+ *
+ * Analyses exist, so the enclosing block at `live-dashboard.tsx:1332`
+ * (`recentAnalyses.length > 0`) renders. None of them is dated on the frozen
+ * audit instant, so `todayMeals` (`:864`) is empty, so `:1653` falls through to
+ * `MOCK_MEALS[0].meals`.
+ *
+ * The rendered result is a fabricated meal with a fabricated score under
+ * "Today's Meals", directly above "No meals logged today".
+ *
+ * Every date here is deliberately BEFORE `AUDIT_DATE`, which makes the state
+ * clock-independent in its reachability: past is past under any clock. The
+ * frozen instant matters for the week strip's reproducibility, not for whether
+ * this defect appears.
+ */
+const returningNoMealsToday: LiveDashboardProps = {
+  ...representative,
+  streak: 11,
+  recentAnalyses: [
+    analysis(4, { created_at: "2026-10-01T19:25:00.000Z" }),
+    analysis(5, { created_at: "2026-09-30T12:40:00.000Z" }),
+    analysis(6, { created_at: "2026-09-28T08:05:00.000Z" }),
+  ],
+}
+
 export const AUDIT_FIXTURES: Record<AuditFixtureState, LiveDashboardProps> = {
   representative,
   dense,
   sparse,
+  "first-use-member": firstUseMember,
+  "returning-no-meals-today": returningNoMealsToday,
 }
 
 /** What each state is for, rendered in the audit banner beside the capture. */
 export const AUDIT_FIXTURE_PURPOSE: Record<AuditFixtureState, string> = {
   representative: "Ordinary hierarchy — where does the eye land first?",
   dense: "Legitimate content maximised — what competes with the next action?",
-  sparse: "First use — what does the product do when it has nothing?",
+  sparse: "First use, free tier — what does the product do when it has nothing?",
+  "first-use-member":
+    "First use as a PAYING member — the first-use Biotics copy a subscriber sees (P0-SCIENCE-01)",
+  "returning-no-meals-today":
+    "Analyses exist, none today — the fabricated-meal path (P0-TRUST-01)",
+}
+
+/**
+ * Which recorded finding each state is evidence for, so the screenshot manifest
+ * can cite it without a human re-deriving the link.
+ */
+export const AUDIT_STATE_FINDINGS: Record<AuditFixtureState, readonly string[]> = {
+  representative: [],
+  dense: [],
+  sparse: ["P0-SCIENCE-01"],
+  "first-use-member": ["P0-SCIENCE-01"],
+  "returning-no-meals-today": ["P0-TRUST-01", "P0-SCIENCE-01"],
 }
