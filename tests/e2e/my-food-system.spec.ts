@@ -1,5 +1,14 @@
 import { test, expect, type Page } from "@playwright/test"
 
+import {
+  answerAll,
+  completeAssessment,
+  openSection,
+  storage,
+  FSS_PREFIX as PREFIX,
+  FSS_ROUTE as ROUTE,
+} from "./fss-walk"
+
 /**
  * GATE 4 — the walk.
  *
@@ -26,53 +35,6 @@ import { test, expect, type Page } from "@playwright/test"
  * `VERCEL_ENV=preview`, which is what lets the route render at all; in
  * production it is fail-closed, and that is the point.
  */
-
-const ROUTE = "/preview/food-system-v1"
-const PREFIX = "eatobiotics.fss.v1."
-
-/** The all-2s sheet: every question answered with the third option. */
-async function completeAssessment(page: Page) {
-  await page.goto(ROUTE)
-  /*
-   * GATE 5: the walk opens on a start screen, because an assessment is now an
-   * ATTEMPT that has to be begun — a draft — rather than something the route
-   * falls into. A reassessment enters the same component the same way.
-   *
-   * WAITED FOR, not probed. The first version called `count()` immediately
-   * after `goto` and raced hydration: the component renders null until BOTH
-   * pointers have been read, so the button was not there yet, the click was
-   * skipped, and all eleven tests then waited for a radiogroup that was never
-   * going to appear.
-   */
-  const start = page.getByRole("button", { name: "Start the assessment" })
-  await expect(start).toBeVisible()
-  await start.click()
-  await expect(page.getByRole("radiogroup")).toBeVisible()
-
-  // The walk advances on answer, so this loops until the radiogroup is gone.
-  for (let i = 0; i < 60; i += 1) {
-    const group = page.getByRole("radiogroup")
-    if ((await group.count()) === 0) break
-    const options = group.first().getByRole("radio")
-    await options.nth(2).click()
-    await page.waitForTimeout(40)
-  }
-}
-
-async function storage(page: Page): Promise<Record<string, string>> {
-  return page.evaluate((prefix) => {
-    const out: Record<string, string> = {}
-    for (let i = 0; i < localStorage.length; i += 1) {
-      const key = localStorage.key(i)
-      if (key?.startsWith(prefix)) out[key.slice(prefix.length)] = localStorage.getItem(key) ?? ""
-    }
-    return out
-  }, PREFIX)
-}
-
-async function openSection(page: Page, label: string) {
-  await page.getByRole("navigation", { name: "My Food System" }).getByText(label, { exact: true }).click()
-}
 
 test.describe("Gate 4 · My Food System is walkable", () => {
   test("assessment → 67 → result → Today → mark → reload → still there", async ({ page }) => {
@@ -349,15 +311,6 @@ test.describe("Gate 5 · a reassessment creates history and never rewrites it", 
     return storage(page)
   }
 
-  async function answerAll(page: Page, option: number) {
-    for (let i = 0; i < 60; i += 1) {
-      const group = page.getByRole("radiogroup")
-      if ((await group.count()) === 0) break
-      await group.first().getByRole("radio").nth(option).click()
-      await page.waitForTimeout(40)
-    }
-  }
-
   test("THE INVARIANT — the baseline survives a reassessment byte-identically", async ({ page }) => {
     await completeAssessment(page)
     await page.getByRole("button", { name: "Go to My Food System" }).click()
@@ -469,15 +422,6 @@ test.describe("Gate 5 · a reassessment creates history and never rewrites it", 
    ════════════════════════════════════════════════════════════════════════════ */
 
 test.describe("Gate 5 · what changed, as a person reads it", () => {
-  async function answerAll(page: Page, option: number) {
-    for (let i = 0; i < 60; i += 1) {
-      const group = page.getByRole("radiogroup")
-      if ((await group.count()) === 0) break
-      await group.first().getByRole("radio").nth(option).click()
-      await page.waitForTimeout(40)
-    }
-  }
-
   /** Establish a successor from whatever is current, with a given sheet. */
   async function reassess(page: Page, option: number) {
     /*

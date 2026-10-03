@@ -41,6 +41,8 @@ import {
    machine that captured them, which is the opposite of what a manifest is for.
    ════════════════════════════════════════════════════════════════════════════ */
 
+import { SECTION_ORDER } from "@/lib/fss/presentation/system"
+
 const MANIFEST = "docs/experience/audit/manifest.json"
 const WIDTHS = ["390", "834", "1280"] as const
 
@@ -79,6 +81,34 @@ function expectedAccountFiles(): Set<string> {
   return out
 }
 
+/* ── My Food System ───────────────────────────────────────────────────────── */
+
+/** The seven locked areas, as the capture harness names them in filenames. */
+const FSS_SECTIONS = ["today", "score", "my-food", "biotics", "my-plan", "progress", "learn"] as const
+
+/** Three system variants, each capturing all seven areas. */
+const FSS_SYSTEM_STATES = ["established", "reassessed", "varied"] as const
+
+/** The route states, each a single capture. */
+const FSS_ROUTE_CAPTURES = [
+  ["assessment-start", "entry"],
+  ["assessment-in-progress", "question"],
+  ["result", "score-reveal"],
+  ["unavailable", "refusal"],
+  ["comparison-refused", "progress"],
+] as const
+
+function expectedFssFiles(): Set<string> {
+  const out = new Set<string>()
+  for (const state of FSS_SYSTEM_STATES) {
+    for (const w of WIDTHS) for (const sec of FSS_SECTIONS) out.add(`my-food-system-${state}-${sec}-${w}.png`)
+  }
+  for (const [state, sec] of FSS_ROUTE_CAPTURES) {
+    for (const w of WIDTHS) out.add(`my-food-system-${state}-${sec}-${w}.png`)
+  }
+  return out
+}
+
 describe("the audit manifest proves its own completeness", () => {
   it("exists — the corpus is out of Git, so the manifest is not optional", () => {
     expect(
@@ -96,6 +126,27 @@ describe("the audit manifest proves its own completeness", () => {
 
     expect(missing, `the manifest is missing ${missing.length} expected capture(s)`).toEqual([])
     expect(extra, `the manifest carries ${extra.length} row(s) the matrices do not expect`).toEqual([])
+  })
+
+  it("expected captures = actual rows, for My Food System", () => {
+    const expected = expectedFssFiles()
+    const actual = new Set(rows().filter((r) => r.surface === "my-food-system").map((r) => r.file))
+
+    const missing = [...expected].filter((f) => !actual.has(f)).sort()
+    const extra = [...actual].filter((f) => !expected.has(f)).sort()
+
+    expect(missing, `the manifest is missing ${missing.length} expected capture(s)`).toEqual([])
+    expect(extra, `the manifest carries ${extra.length} row(s) the matrices do not expect`).toEqual([])
+  })
+
+  /*
+   * The seven areas are LOCKED. The filenames above are a second copy of that
+   * list, and a second copy is a drift risk — so it is bridged to the real
+   * `SECTION_ORDER` rather than trusted. An area added, removed or renamed in
+   * the product fails here instead of silently leaving a gap in the corpus.
+   */
+  it("the captured areas are exactly the product's SECTION_ORDER", () => {
+    expect([...FSS_SECTIONS].sort()).toEqual([...SECTION_ORDER].sort())
   })
 
   it("actual rows = hashed entries — every row carries a real SHA-256", () => {
@@ -147,6 +198,18 @@ describe("the audit manifest proves its own completeness", () => {
       if (actual !== r.sha256) wrong.push(`${path} — hash ${actual.slice(0, 12)}… ≠ recorded ${r.sha256.slice(0, 12)}…`)
     }
     expect(wrong, "a committed citation no longer matches the manifest row that cites it").toEqual([])
+  })
+
+  /*
+   * Account renders a fixture; My Food System is driven through the real flow
+   * against real storage. A console error there is the PRODUCT erroring, not a
+   * harness artefact, so it is held at zero rather than merely recorded.
+   */
+  it("My Food System captured with no console errors", () => {
+    const noisy = rows()
+      .filter((r) => r.surface === "my-food-system" && r.consoleErrors > 0)
+      .map((r) => `${r.file}: ${r.consoleErrorTexts.join(" | ")}`)
+    expect(noisy, "the real preview flow logged console errors during capture").toEqual([])
   })
 
   it("every finding a row cites is one the fixture declares for that state", () => {

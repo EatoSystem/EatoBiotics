@@ -314,30 +314,77 @@ So they separate cleanly, and they do **not** share a fix:
 |---|---|---|
 | `:1843` pull-quote | **fallback only** — a real report displaces it | fabricated content **attributed to the member's own report**. A trust defect: the frame is honest, the substitute is not |
 | `:1896` this month's focus | **always** — unaffected by the report | hardcoded personal per-Biotic states, a **mechanism** ("pulling down"), and a 30-day outcome promise |
-| `:1757` your focus today | **always** | see below — worse than unpermitted |
+| `:1757` your focus today | **always** | **extracted to `P0-TRUST-03`** — not merely unpermitted but false |
 
-### `:1757` IS NOT DERIVED, AND THE COMMENT SAYS IT IS
+### `:1757` has been EXTRACTED — see `P0-TRUST-03`
 
-The block is introduced by `{/* Your Focus Today — lowest pillar driven */}`
-(`:1742`). It is not. **`displayBiotics` is referenced zero times anywhere in
-that block**, and the sentence is a literal:
+It was recorded here and does not belong here. The other two sites make claims
+the product has not earned the right to make; `:1757` makes a claim that **can
+be false about the actual member**, which is a different category and needs its
+own remediation proof.
 
-> *"Your probiotic score is your lowest pillar."*
-
-Probiotic is named unconditionally. For any member whose lowest value is
-Prebiotic or Postbiotic, the product states something **factually false about
-them** — not merely a claim it is not permitted to make.
-
-It rendered true in both fixtures only by coincidence: the hardcoded fallback
-is 71/23/48 and the genuine state is 58/44/63, and Probiotic happens to be
-lowest in both. A state where it is not would expose the sentence as wrong.
+Cross-referenced rather than duplicated, so neither entry can be closed by
+fixing the other.
 
 ### Classification
 
 | | |
 |---|---|
 | Kind | product/science contradiction + outcome claim + **a false personal statement** |
-| Disposition | **RETIRE / REMEDIATE**, as three separate repairs, not one |
+| Disposition | **RETIRE / REMEDIATE**, as two separate repairs; `:1757` is `P0-TRUST-03` and is proved closed on its own |
+
+---
+
+## `P0-TRUST-03` · Fabricated personal conclusion — **dual classification: P0-TRUST / P0-SCIENCE**
+
+**Surface** `/account` (`V1_CORE`, served) · **Component**
+`components/account/live-dashboard.tsx:1757`, block opened at `:1742` ·
+**Generation** 1 · **Verified** by render and by source, 2026-10-03
+
+### What exists
+
+```tsx
+{/* Your Focus Today — lowest pillar driven */}
+…
+  Your probiotic score is your lowest pillar. One serving of kimchi, kefir,
+  yoghurt, or kombucha today would make a measurable difference.
+```
+
+The comment asserts a derivation. There is none: **`displayBiotics` is
+referenced zero times anywhere in that block**, and the sentence is a literal
+naming Probiotic unconditionally.
+
+### Why it is dual-classified, and why that is not pedantry
+
+| | |
+|---|---|
+| **as P0-SCIENCE** | it asserts a personal per-Biotic state and ranks it lowest of three — the construct the permanent product rule forbids outright |
+| **as P0-TRUST** | it is **untrue** for any member whose lowest value is not Probiotic. Not unsupported. Wrong |
+
+Every other entry in this register describes the product saying something it has
+not earned the right to say. This one describes the product telling a member
+something **false about their own data**, under a heading that says it was
+derived from it.
+
+### How it escaped notice
+
+It rendered true in both captured fixtures by coincidence — Probiotic is lowest
+in the hardcoded fallback `71/23/48` **and** in the genuine `58/44/63`. A
+fixture whose lowest value were Prebiotic would have exposed it immediately.
+That is a lesson about fixture design, not about this sentence: **a state chosen
+to look ordinary can hide a defect by agreeing with it.**
+
+### Classification
+
+| | |
+|---|---|
+| Kind | product trust **and** scientific claim |
+| Reachability | **always** — the block renders whenever the overview does |
+| Disposition | **RETIRE** the sentence |
+| Remediation proof | **its own.** Removing per-Biotic scoring does NOT satisfy it: a product that stopped showing the numbers and kept this sentence would still be telling members something false |
+
+> Do not merge this into `P0-SCIENCE-02`. The two are satisfied by different
+> repairs and must be proved closed separately.
 
 ---
 
@@ -538,6 +585,34 @@ end state, which is the state a reader is meant to see.
 
 **No component was modified to achieve any of this.**
 
+### CLOSED — every residual difference measured, and none is material
+
+A bounded check over the whole corpus, re-captured and compared pixel by pixel:
+
+| | |
+|---|---|
+| unstable images | **14 of 105**, every one at **390** |
+| largest difference | **0.2196%** of bytes |
+| typical difference | under 0.01% |
+| identical image dimensions | **all 14** |
+
+Cropping the largest located it: the **horizontally-scrolling tab strip**
+(`Overview · My Meals · My Reports · …`), whose scroll offset settles a few
+pixels differently between runs. The one apparently large bounding box
+(94×1779) is **sparse, not contiguous** — two small regions far apart, which is
+what a bounding box cannot express on its own.
+
+So no capture differs in **visual content**; they differ in the resting scroll
+position of one nav element. **The subject is closed** and no further audit time
+is spent on it.
+
+### And the diagnosis produced a finding of its own
+
+The tab strip **overflows horizontally at 390** and has to be scrolled to reach
+the later tabs. That is why only mobile captures were affected. Recorded as a
+responsive observation for `/account` (`RESP-ACCOUNT-01`), to be dispositioned
+with the rest of the responsive findings rather than here.
+
 ---
 
 ## Register status
@@ -548,7 +623,8 @@ end state, which is the state a reader is meant to see.
 | `P0-TRUST-02` | P0 | `/account` | render | RETIRE with `P0-SCIENCE-02` |
 | `P0-SCIENCE-01` | P0 | `/account` | render | RETIRE / REMEDIATE |
 | `P0-SCIENCE-02` | P0 | `/account` | render | RETIRE |
-| `P0-SCIENCE-03` | P0 | `/account` | render | RETIRE / REMEDIATE — **three separate repairs** |
+| `P0-SCIENCE-03` | P0 | `/account` | render | RETIRE / REMEDIATE — **two repairs**; `:1757` extracted |
+| `P0-TRUST-03` | **P0-TRUST / P0-SCIENCE** | `/account` | render + source | RETIRE — **its own remediation proof** |
 | `P0-GUARD-01` | P0 | test corpus | source | REPAIR FIRST, in remediation |
 | `DEBT-CODE-01` | DEBT-CODE | `/account` | render (disproved as P0) | RETIRE with generation |
 | `NOTE-FIXTURE-01` | — | audit tooling | render (disproved my own claim) | documentation only |
