@@ -276,11 +276,32 @@ describe("demo and fixture routes cannot be entered", () => {
       const src = readFileSync(file, "utf8")
       const sf = ts.createSourceFile("page.tsx", src, ts.ScriptTarget.ESNext, true)
 
-      // The policy is imported…
+      /*
+       * The policy is imported…
+       *
+       * The pattern ENUMERATES the recognised fail-closed policy modules, and
+       * extending it is maintenance rather than erosion — the same shape as the
+       * pinned AI-module list in `my-food-system.test.ts`. Each name here is a
+       * module whose single job is to deny by default:
+       *
+       *   preview-policy     the FSS-v1 candidate and the canonical Report
+       *   activation-policy  the persisted consultation Report
+       *   fixture-policy     the Experience 0 audit fixture
+       *
+       * `fixture-policy` is deliberately NOT named `preview-policy`: the audit
+       * fixture is an instrument pointed at the product, not a preview of it,
+       * and naming it after a preview would blur exactly the distinction its
+       * own header exists to draw. The guard's real property is "this page
+       * consults a fail-closed policy and calls notFound()", which the
+       * assertions below check by walking the call tree — the regex only has to
+       * recognise the module.
+       */
       const imported = sf.statements.some(
         (st) =>
           ts.isImportDeclaration(st) &&
-          /preview-policy|activation-policy/.test((st.moduleSpecifier as ts.StringLiteral).text),
+          /preview-policy|activation-policy|fixture-policy/.test(
+            (st.moduleSpecifier as ts.StringLiteral).text,
+          ),
       )
       expect(imported, `${route} imports no fail-closed policy`).toBe(true)
 

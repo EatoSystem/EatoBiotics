@@ -5,6 +5,7 @@ import ts from "typescript"
 import { isFoodSystemV1PreviewEligible } from "@/lib/fss/preview/preview-policy"
 import { isCanonicalReportPreviewEligible } from "@/lib/report/presentation/preview-policy"
 import { isFocusTodayEligible } from "@/app/api/fss/focus-today/route"
+import { isExperienceAuditFixtureEligible } from "@/lib/experience-audit/fixture-policy"
 import { classifyPageRoute, FIXTURE_SELF_GATED_ROUTES, isServableInV1 } from "@/lib/v1-surface"
 import { STATIC_PATHS } from "@/app/sitemap"
 import { NAV_LINKS, NAV_GROUPS } from "@/lib/nav"
@@ -158,7 +159,7 @@ describe("4–7 · nothing from the REQUEST can override the refusal", () => {
   })
 })
 
-describe("the three preview gates are independent, and identical in behaviour", () => {
+describe("the four fail-closed gates are independent, and identical in behaviour", () => {
   /*
    * Duplicated six lines rather than a shared helper, because these are gates
    * on independent unfinished features and a shared helper is a shared switch.
@@ -179,7 +180,11 @@ describe("the three preview gates are independent, and identical in behaviour", 
   it.each(ENVS.map((e) => [JSON.stringify(e), e] as const))("agree for %s", (_label, env) => {
     const fss = isFoodSystemV1PreviewEligible(env)
     expect(isCanonicalReportPreviewEligible(env)).toBe(fss)
-    expect(isFocusTodayEligible(env), "the Focus Today gate drifted from the other two").toBe(fss)
+    expect(isFocusTodayEligible(env), "the Focus Today gate drifted from the other three").toBe(fss)
+    expect(
+      isExperienceAuditFixtureEligible(env),
+      "the Experience Audit Fixture gate drifted from the other three",
+    ).toBe(fss)
   })
 
   /*

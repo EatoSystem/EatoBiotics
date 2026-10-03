@@ -269,6 +269,27 @@ export const FIXTURE_SELF_GATED_ROUTES = [
   // POST_V1-refused, whereas this is an unfinished thing being reviewed, and
   // the segment should say which it is.
   "/preview/food-system-v1",
+  /*
+   * The Experience Audit Fixture — Experience 0. AUDIT TOOLING, not a product
+   * surface: it renders the real `live-dashboard.tsx` from invented props so
+   * the UX audit can photograph the product's current home at three widths.
+   *
+   * `/audit` rather than `/preview` or `/demo` deliberately, and the segment is
+   * carrying real meaning here. `/demo/*` routes are marketing demonstrations.
+   * `/preview/food-system-v1` is an unfinished PRODUCT being reviewed. This is
+   * an INSTRUMENT POINTED AT the product, and filing it beside a product
+   * preview would invite somebody to read audit scaffolding as a product
+   * direction.
+   *
+   * It is self-gated by `isExperienceAuditFixtureEligible`
+   * (`lib/experience-audit/fixture-policy.ts`), the fourth independent copy of
+   * that predicate, pinned against the other three in
+   * `tests/unit/fss-preview-gate.test.ts`.
+   *
+   * DISPOSABLE. It should be deleted when Experience 0 closes, and this entry
+   * with it.
+   */
+  "/audit/account-dashboard",
 ] as const
 
 /* ── Out of the V1 launch product ───────────────────────────────────────── */
