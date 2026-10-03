@@ -1,0 +1,2075 @@
+{
+  "generatedBy": "tests/e2e/audit-capture*.spec.ts",
+  "rows": [
+    {
+      "file": "account-dense-account-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "dense",
+      "section": "account",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "86471be53b5f546d0a6c93b9eadecc0fa0d36f89f82da8e6ec69079e8c57f97f",
+      "storage": "committed"
+    },
+    {
+      "file": "account-dense-account-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "dense",
+      "section": "account",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "70579b272d25f5bf5f3a0293506a3d47fd6270154764cdff2614ab464a5de10a",
+      "storage": "committed"
+    },
+    {
+      "file": "account-dense-account-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "dense",
+      "section": "account",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "d59baeb9272d1e37f04e7140f479f727f83edb466d911c7bdafa042c8d44cc88",
+      "storage": "committed"
+    },
+    {
+      "file": "account-dense-consultations-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "dense",
+      "section": "consultations",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "0992f77a5ff95a86467e8aa874622525347f2961a7d580d2a65dad2289b124e2",
+      "storage": "committed"
+    },
+    {
+      "file": "account-dense-consultations-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "dense",
+      "section": "consultations",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "151832a87683bcc45d2ff7d6650831c0d21a1b917053204b5e9bc6c130d5722f",
+      "storage": "committed"
+    },
+    {
+      "file": "account-dense-consultations-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "dense",
+      "section": "consultations",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "90b01feaf084b9eca3457443eac3ab5027ea87c3210ef054cbeaaae4643ac482",
+      "storage": "committed"
+    },
+    {
+      "file": "account-dense-meals-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "dense",
+      "section": "meals",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "0eb488d50ed5f51f59d52fc93f85a3a3ecfa1593d9aa4a1418c90af3e3ca020b",
+      "storage": "committed"
+    },
+    {
+      "file": "account-dense-meals-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "dense",
+      "section": "meals",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "93b693dc6000ae8e0e1eea2b072ac818ef878e2742b0878142c9b5888e030e86",
+      "storage": "committed"
+    },
+    {
+      "file": "account-dense-meals-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "dense",
+      "section": "meals",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "a826e54f6bc4ada315866a7813ccabd7794f8f715ce58cbf662437cad5d18472",
+      "storage": "committed"
+    },
+    {
+      "file": "account-dense-overview-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "dense",
+      "section": "overview",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "bf0254704ac2b930938398d105c1ef03826a532e1610498e7a4f7fe2eb0248bc",
+      "storage": "committed"
+    },
+    {
+      "file": "account-dense-overview-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "dense",
+      "section": "overview",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "9d249176668ee1cd6686795eeabeb68aa0b1ea060f3a08757079436b9a4bfda9",
+      "storage": "committed"
+    },
+    {
+      "file": "account-dense-overview-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "dense",
+      "section": "overview",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "833ffe06ea5cade9c1452c8b81eadde30188d12180b597b917b0419e49dba104",
+      "storage": "committed"
+    },
+    {
+      "file": "account-dense-reports-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "dense",
+      "section": "reports",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "54216b8922c4649cfb9f4887056be573ac40839e259dad474df56cae7b2e7635",
+      "storage": "committed"
+    },
+    {
+      "file": "account-dense-reports-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "dense",
+      "section": "reports",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "6c211b61096f00babae4a7b7ab86a60d5c341f83be44339ce92283b4088f1928",
+      "storage": "committed"
+    },
+    {
+      "file": "account-dense-reports-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "dense",
+      "section": "reports",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "6e587ad8dfc864ae66eae4a6764351bc115ebbb8bebf68691ba316c649bde8fd",
+      "storage": "committed"
+    },
+    {
+      "file": "account-first-use-member-account-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "first-use-member",
+      "section": "account",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "02ece5d0e9541f5075baa4c0f3280e529a744ae04e0788ec9211e4984b077a23",
+      "storage": "committed"
+    },
+    {
+      "file": "account-first-use-member-account-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "first-use-member",
+      "section": "account",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "598a8d7e985735678153552245cb7e7c16f77f57574de32493b248aed62bb337",
+      "storage": "committed"
+    },
+    {
+      "file": "account-first-use-member-account-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "first-use-member",
+      "section": "account",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "4b35608746fc59b396f54f40434f6f86460e9887180952642be1aa91c61b6fe6",
+      "storage": "committed"
+    },
+    {
+      "file": "account-first-use-member-consultations-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "first-use-member",
+      "section": "consultations",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "b29cdcd61b2f02956ef6bc66e13c13966662a88dfb017afc3ec2c69fad7197b5",
+      "storage": "committed"
+    },
+    {
+      "file": "account-first-use-member-consultations-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "first-use-member",
+      "section": "consultations",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "5de3e7759ca4b2ec1ad33c8187bdb8d7480b08619764fc81e37d56307f3313b9",
+      "storage": "committed"
+    },
+    {
+      "file": "account-first-use-member-consultations-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "first-use-member",
+      "section": "consultations",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "0e626772c845006d208135ce89b3fc52cdf4a4f5077efc645c1d2266a075a3d3",
+      "storage": "committed"
+    },
+    {
+      "file": "account-first-use-member-meals-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "first-use-member",
+      "section": "meals",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "ee4144a155c6b73d196e7b91d150679a38399936737be52b21ad3d5d6343123e",
+      "storage": "committed"
+    },
+    {
+      "file": "account-first-use-member-meals-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "first-use-member",
+      "section": "meals",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "92dfc142a7573d02180e147550cc3ef3408713a3024d78a1bbde25fb05360b14",
+      "storage": "committed"
+    },
+    {
+      "file": "account-first-use-member-meals-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "first-use-member",
+      "section": "meals",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "f1967d037578af1623626567a1f57b6f9ab80378fced16b719c0cbbe0421c8b4",
+      "storage": "committed"
+    },
+    {
+      "file": "account-first-use-member-overview-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "first-use-member",
+      "section": "overview",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "5c08260a21fc25a249d54df760dd37870f23d649d0bf98e76500b4006ccf75b4",
+      "storage": "committed"
+    },
+    {
+      "file": "account-first-use-member-overview-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "first-use-member",
+      "section": "overview",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "dce267840f71fa6aaacc2b1cba05626d335ce39fb6559bfd03db70cc79810085",
+      "storage": "committed"
+    },
+    {
+      "file": "account-first-use-member-overview-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "first-use-member",
+      "section": "overview",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "06944d24ea2bc96e6e2da0d3881ca8205f1c7f60fd3d34f1cb00e72749b25161",
+      "storage": "committed"
+    },
+    {
+      "file": "account-first-use-member-reports-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "first-use-member",
+      "section": "reports",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "95f6f7e205febb66d1dc0145dc2c8716d187c5512b9a2bfb6a509b797ce588c5",
+      "storage": "committed"
+    },
+    {
+      "file": "account-first-use-member-reports-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "first-use-member",
+      "section": "reports",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "a6553174ede1aaa0ec2064cbc92819017d76c263cd6ae7a6807872e791013883",
+      "storage": "committed"
+    },
+    {
+      "file": "account-first-use-member-reports-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "first-use-member",
+      "section": "reports",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "65f4395588f688e5543ec7f6da6ff8490e23ce405c21193b2042402df630624c",
+      "storage": "committed"
+    },
+    {
+      "file": "account-member-with-biotics-account-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "member-with-biotics",
+      "section": "account",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-02",
+        "P0-TRUST-02"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "e69808a0b1bba8e8f30d6d540ae04885f1e6566c78f451a174590386663d76b9",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-member-with-biotics-account-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "member-with-biotics",
+      "section": "account",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-02",
+        "P0-TRUST-02"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "0c5b7e1e72f94ead62236b74311cedc49bda408feabd59cff6b840226e2d18c6",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-member-with-biotics-account-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "member-with-biotics",
+      "section": "account",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-02",
+        "P0-TRUST-02"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "1252cfc4c6fd1303779041fae2058bc8bc48a874f26f15ec3f65353f0911f013",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-member-with-biotics-consultations-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "member-with-biotics",
+      "section": "consultations",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-02",
+        "P0-TRUST-02"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "6c55fd4f7b7855e36f121768600789285ab36bdb2110d0715b934139a5a5d3ad",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-member-with-biotics-consultations-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "member-with-biotics",
+      "section": "consultations",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-02",
+        "P0-TRUST-02"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "37a74535545aa48814e45d394263b51223247528a96383f379f083badbeb8919",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-member-with-biotics-consultations-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "member-with-biotics",
+      "section": "consultations",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-02",
+        "P0-TRUST-02"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "98b42218f194bc98d014066604440b732a311f56148ce3d8b5c35cdfabde028f",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-member-with-biotics-meals-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "member-with-biotics",
+      "section": "meals",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-02",
+        "P0-TRUST-02"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "15c6ae626b3bdd44791386530f8d3f4510511ba7cef9c7ed2926573fcdfe26ea",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-member-with-biotics-meals-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "member-with-biotics",
+      "section": "meals",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-02",
+        "P0-TRUST-02"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "b6c9b4b1884a26de2c5f40c29465cc899f80d4517719fe3e8449a620c9845895",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-member-with-biotics-meals-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "member-with-biotics",
+      "section": "meals",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-02",
+        "P0-TRUST-02"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "86b28e6ff2fa18d036b55ee0e85b3df0dd21d976d63f078f002321afd41c95b7",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-member-with-biotics-overview-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "member-with-biotics",
+      "section": "overview",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-02",
+        "P0-TRUST-02"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "f6a1b916f0a7c580dbc4512c7d14bb9f5518e445f09e18d808d8476061e0e856",
+      "storage": "committed"
+    },
+    {
+      "file": "account-member-with-biotics-overview-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "member-with-biotics",
+      "section": "overview",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-02",
+        "P0-TRUST-02"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "22f2e3e2efd9d2bfb81edbe7b37537a8a73ccc939847859d5737eab98f3cb3e4",
+      "storage": "committed"
+    },
+    {
+      "file": "account-member-with-biotics-overview-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "member-with-biotics",
+      "section": "overview",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-02",
+        "P0-TRUST-02"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "26e9c17f76fa607182d77c555d129de563057dcee63587112c4d9ea87f406008",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-member-with-biotics-reports-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "member-with-biotics",
+      "section": "reports",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-02",
+        "P0-TRUST-02"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "39d502f501f69fd3276f471b321241bb7f53e1ee6cc1212ee77b394b64beab9c",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-member-with-biotics-reports-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "member-with-biotics",
+      "section": "reports",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-02",
+        "P0-TRUST-02"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "bbd735caf319aaf748fa0315117dbab21167ec9fd543ba1f9429e34beb694cf4",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-member-with-biotics-reports-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "member-with-biotics",
+      "section": "reports",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-02",
+        "P0-TRUST-02"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "29c39c7e0548b63816655865472e28c6cf3186c465d65209e23410b915d57a41",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-representative-account-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "representative",
+      "section": "account",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "e29cabb9e95f034e7fa1f1d69248397e2e682cea405364e7d9af1e452c4de1e7",
+      "storage": "committed"
+    },
+    {
+      "file": "account-representative-account-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "representative",
+      "section": "account",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "becb55d8bfe6b568a277d03e0058a682ba01bb3870042c12eb721a1894d62746",
+      "storage": "committed"
+    },
+    {
+      "file": "account-representative-account-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "representative",
+      "section": "account",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "1505a22302c93e67375ba3dab0af686ccef3c45aa74bcb94ccf317a1154a9b5c",
+      "storage": "committed"
+    },
+    {
+      "file": "account-representative-consultations-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "representative",
+      "section": "consultations",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "0e41658f5591dbe8cad90ebaa124c5dfccfc6b02099b41e74df07bbdb8781b17",
+      "storage": "committed"
+    },
+    {
+      "file": "account-representative-consultations-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "representative",
+      "section": "consultations",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "76dd34411119f2c8da94bbe77fd53e20633fadbaa027e824db4642111cd75566",
+      "storage": "committed"
+    },
+    {
+      "file": "account-representative-consultations-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "representative",
+      "section": "consultations",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "6b65ec57545a454b96f8a7371b2cc1114b1be9bf7246502e96e84955b578ea15",
+      "storage": "committed"
+    },
+    {
+      "file": "account-representative-meals-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "representative",
+      "section": "meals",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "f89d05c3e5f03b841962d443d838b2c91c1210c41a52afa3e3c3327eb4f14251",
+      "storage": "committed"
+    },
+    {
+      "file": "account-representative-meals-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "representative",
+      "section": "meals",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "91f66cff51c2ad6d03d069f91821102754aee1592280145b426dd5c5a06b6353",
+      "storage": "committed"
+    },
+    {
+      "file": "account-representative-meals-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "representative",
+      "section": "meals",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "03119aa7eeabe62477f53d01ad3565111af30454c90d653b8aab2e78f530d68f",
+      "storage": "committed"
+    },
+    {
+      "file": "account-representative-overview-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "representative",
+      "section": "overview",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "3214827cb8f23aaeb5157c7cbcfaf2ff7783bd301821c368c6b90b0b2037fca2",
+      "storage": "committed"
+    },
+    {
+      "file": "account-representative-overview-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "representative",
+      "section": "overview",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "4a155607f3b94777a54a37ecbbf8f5c9dcf408c7a1c19ca8d18b6748c5f5047b",
+      "storage": "committed"
+    },
+    {
+      "file": "account-representative-overview-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "representative",
+      "section": "overview",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "a3443189d039b8dc5f4225a943ce7c53472d834b65ab7cf293e496c41b7f08a8",
+      "storage": "committed"
+    },
+    {
+      "file": "account-representative-reports-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "representative",
+      "section": "reports",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "25db573f1fd3dd0e2ed6a9fb3041c98ddc2be3cef0cf57eb4718d52e804d50fa",
+      "storage": "committed"
+    },
+    {
+      "file": "account-representative-reports-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "representative",
+      "section": "reports",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "ac0ee118a0927c96120a845de026e5a315c3e009390bd865d6b52f209395f2c3",
+      "storage": "committed"
+    },
+    {
+      "file": "account-representative-reports-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "representative",
+      "section": "reports",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "9ed96576873f40822adb9079db2457caa8a28ea18d1da0621926c63c92067f54",
+      "storage": "committed"
+    },
+    {
+      "file": "account-returning-no-meals-today-account-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "returning-no-meals-today",
+      "section": "account",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-TRUST-01",
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "7bc27d99ab84f0067f997e56eb3838feea1019d727394eb978e57844797403a3",
+      "storage": "committed"
+    },
+    {
+      "file": "account-returning-no-meals-today-account-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "returning-no-meals-today",
+      "section": "account",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-TRUST-01",
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "020dd3d1d2ffcbbd2c2737c6be829a0d6375c03dce98b97ef2234186544fee22",
+      "storage": "committed"
+    },
+    {
+      "file": "account-returning-no-meals-today-account-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "returning-no-meals-today",
+      "section": "account",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-TRUST-01",
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "30ec0115441424108272242659a4d3f8e85b292858c92ddf1c2d365fe4ab67b8",
+      "storage": "committed"
+    },
+    {
+      "file": "account-returning-no-meals-today-consultations-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "returning-no-meals-today",
+      "section": "consultations",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-TRUST-01",
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "ece026ccde2922ce055386b83eac83e6a5c6ceb0cd590a90e8f840b0130a5886",
+      "storage": "committed"
+    },
+    {
+      "file": "account-returning-no-meals-today-consultations-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "returning-no-meals-today",
+      "section": "consultations",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-TRUST-01",
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "27cec656486073c0affee1532b97eec3a7cf9f0f5478bf7d9a59990f82a634a5",
+      "storage": "committed"
+    },
+    {
+      "file": "account-returning-no-meals-today-consultations-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "returning-no-meals-today",
+      "section": "consultations",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-TRUST-01",
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "9a77d52a4a8f53e47a49d5c9a11159f497433b951e7f932a02915995346141fd",
+      "storage": "committed"
+    },
+    {
+      "file": "account-returning-no-meals-today-meals-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "returning-no-meals-today",
+      "section": "meals",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-TRUST-01",
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "d1139490b6831f2e76b86161a0182c913654b63bb6f3618d274e39bd84a3fc58",
+      "storage": "committed"
+    },
+    {
+      "file": "account-returning-no-meals-today-meals-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "returning-no-meals-today",
+      "section": "meals",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-TRUST-01",
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "af93b78980f2f75f0fe96be88c0dd685a9c7d5c0d81cdd40d18f04f7bd59ef98",
+      "storage": "committed"
+    },
+    {
+      "file": "account-returning-no-meals-today-meals-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "returning-no-meals-today",
+      "section": "meals",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-TRUST-01",
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "5abaa3440f79d648532d748f58a624b19ec8ea41760073bd1ab4dd37fdb37e14",
+      "storage": "committed"
+    },
+    {
+      "file": "account-returning-no-meals-today-overview-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "returning-no-meals-today",
+      "section": "overview",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-TRUST-01",
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "5849353f6325df3d977481ae7c1976841969cbddbbc700a417bfb161c139ef28",
+      "storage": "committed"
+    },
+    {
+      "file": "account-returning-no-meals-today-overview-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "returning-no-meals-today",
+      "section": "overview",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-TRUST-01",
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "cd94e5d01e968e14beba0b4a227b5ede4e12cae5ce49f8216b061648e7245f3a",
+      "storage": "committed"
+    },
+    {
+      "file": "account-returning-no-meals-today-overview-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "returning-no-meals-today",
+      "section": "overview",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-TRUST-01",
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "20fa28d9dcc6944c099fb18c0b08eeb2ec0f35eed5347fcc26c7f9a1df30f37e",
+      "storage": "committed"
+    },
+    {
+      "file": "account-returning-no-meals-today-reports-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "returning-no-meals-today",
+      "section": "reports",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-TRUST-01",
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "4edbf6a3a6de287d14dce7782d6daae165a1b761c63b82103fb8bb7181c3de5f",
+      "storage": "committed"
+    },
+    {
+      "file": "account-returning-no-meals-today-reports-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "returning-no-meals-today",
+      "section": "reports",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-TRUST-01",
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "297ac507cedfef71e67317248a58bb758c1089a4490b28342a1f60a8d53c4625",
+      "storage": "committed"
+    },
+    {
+      "file": "account-returning-no-meals-today-reports-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "returning-no-meals-today",
+      "section": "reports",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-TRUST-01",
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "32259e377b1a3e36cdfa5ba6d6d834b8ac41b96e528cf542ea6bbd9effd41640",
+      "storage": "committed"
+    },
+    {
+      "file": "account-sparse-account-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "sparse",
+      "section": "account",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "f7cd0098bd1d670e4ee43cb83540d939f726da7c9bff45e70389b8580b1919a3",
+      "storage": "committed"
+    },
+    {
+      "file": "account-sparse-account-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "sparse",
+      "section": "account",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "85192eb8949f78ec6167fb237ea85385a609487d9e48a7d86719cbd159698602",
+      "storage": "committed"
+    },
+    {
+      "file": "account-sparse-account-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "sparse",
+      "section": "account",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "0a0467439453fece57535dcde67bc483639f13984b4c91ae4d6af35416ab152a",
+      "storage": "committed"
+    },
+    {
+      "file": "account-sparse-consultations-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "sparse",
+      "section": "consultations",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "ea19e23545375a8d44f24066a82083afbcab379e171c777965f9817b8951d452",
+      "storage": "committed"
+    },
+    {
+      "file": "account-sparse-consultations-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "sparse",
+      "section": "consultations",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "566ecd114e7bda537de918db5d48b219833afe2e8e2fdcad05b0644c5dd60307",
+      "storage": "committed"
+    },
+    {
+      "file": "account-sparse-consultations-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "sparse",
+      "section": "consultations",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "39a2493dec33c59b2bc77077d78c5fcf2fb43b25b8d6350d8c64594947be0358",
+      "storage": "committed"
+    },
+    {
+      "file": "account-sparse-meals-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "sparse",
+      "section": "meals",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "1fc2333071e7ded560cd481cd40742084448225f247dabb9425ee5960f751e3f",
+      "storage": "committed"
+    },
+    {
+      "file": "account-sparse-meals-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "sparse",
+      "section": "meals",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "11b85e254ea3ba17468d2cb69a4c9176ddfed80158e2fa51204b2355a43b0aa1",
+      "storage": "committed"
+    },
+    {
+      "file": "account-sparse-meals-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "sparse",
+      "section": "meals",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "fa3e821a147b7faf8339d7059f04f44260a6b7bfb4a1924ecf8e93e19c76f684",
+      "storage": "committed"
+    },
+    {
+      "file": "account-sparse-overview-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "sparse",
+      "section": "overview",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "820b664410d9caf1c101ad0821d45939aa0f73a3c1d40676be3d64fe4cd04823",
+      "storage": "committed"
+    },
+    {
+      "file": "account-sparse-overview-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "sparse",
+      "section": "overview",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "32d17894401601bf2675b018384fd8dc0f399fbcc45319809be80748d0f6af60",
+      "storage": "committed"
+    },
+    {
+      "file": "account-sparse-overview-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "sparse",
+      "section": "overview",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "9d813752d4a426a4f3c0077792c74ed7b8f866f2612bb9508bd8f9be057feafc",
+      "storage": "committed"
+    },
+    {
+      "file": "account-sparse-reports-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "sparse",
+      "section": "reports",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "ca03ab5cc59728a0b3c2d52504e6ad46a4a319e3dc63a1fd8dc22d53cd32c5e5",
+      "storage": "committed"
+    },
+    {
+      "file": "account-sparse-reports-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "sparse",
+      "section": "reports",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "56ef68abecde464efb7fcfa00aca20968a8f2d036b28dc43fa192984822f46b5",
+      "storage": "committed"
+    },
+    {
+      "file": "account-sparse-reports-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "sparse",
+      "section": "reports",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-01"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "ca3ef70216e01b2b661ef12f48e852273f802086e3585ff1c1beccdb52ad884e",
+      "storage": "committed"
+    },
+    {
+      "file": "account-weekly-report-present-account-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "weekly-report-present",
+      "section": "account",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-03"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "a70f7cd754e32d950625b5e77d235a8c6a02cf691e8566b533517da2dea06662",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-weekly-report-present-account-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "weekly-report-present",
+      "section": "account",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-03"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "b1f30c4e2d0110b6548db2499f02cdbd32c597cf406b245fa2adcd33849e770d",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-weekly-report-present-account-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "weekly-report-present",
+      "section": "account",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-03"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "9b86706458aa1dbc28191c58d96c68ee92f902c577b8685e61a107ff8d3673ce",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-weekly-report-present-consultations-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "weekly-report-present",
+      "section": "consultations",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-03"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "b5fa8ae3ec30908ba7b1c8366ea7dc8ba06604d0b9cc5a6490bd06f93ecf00b3",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-weekly-report-present-consultations-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "weekly-report-present",
+      "section": "consultations",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-03"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "3a952c0adb77ec93ca7cd75a67f460f66a650e145177a097598c5c32c069422d",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-weekly-report-present-consultations-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "weekly-report-present",
+      "section": "consultations",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-03"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "80d2e349ea9aed168345801b96e21f886dee5bd85bf4339aa82100e829adc81e",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-weekly-report-present-meals-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "weekly-report-present",
+      "section": "meals",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-03"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "c0bf07b6d5b45923eb0fe2b5d3e99da24b1047dc8d95b5312865739dcc70a4f2",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-weekly-report-present-meals-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "weekly-report-present",
+      "section": "meals",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-03"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "3899844f549ea03809ca7b5cdaaee9f29eeecf3933074d3231ff63e90651b9bb",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-weekly-report-present-meals-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "weekly-report-present",
+      "section": "meals",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-03"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "d1eb66424b277feb918109f42874c98be80038cc97801653d2b66363af207788",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-weekly-report-present-overview-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "weekly-report-present",
+      "section": "overview",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-03"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "6810c09ecf9357f78cf9dd2a85827bb48016d6db6eb4d92158dbc5e15b7cb56e",
+      "storage": "committed"
+    },
+    {
+      "file": "account-weekly-report-present-overview-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "weekly-report-present",
+      "section": "overview",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-03"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "feb6af5c1056d3772e5d6d2d286f5a4afad579370419d066414fc69c084ebcb5",
+      "storage": "committed"
+    },
+    {
+      "file": "account-weekly-report-present-overview-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "weekly-report-present",
+      "section": "overview",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-03"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "60c438db48eba880675230728cadc20fc1467339207b0e33204608e477fe304e",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-weekly-report-present-reports-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "weekly-report-present",
+      "section": "reports",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-03"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "95cda1f4edda3d4afdbf6f6002ff929f757fbc0bac32f36a8df032250454dabc",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-weekly-report-present-reports-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "weekly-report-present",
+      "section": "reports",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-03"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "96df08af4ab8f0d435777fd558816d20c6f16a234de7b24b8d8e6f9586e53ce9",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-weekly-report-present-reports-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "weekly-report-present",
+      "section": "reports",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [
+        "P0-SCIENCE-03"
+      ],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "50be8b3a3c26f8a50551afd34e9ac010d837424df6d6dc64252f0710876c1ff2",
+      "storage": "archive-only"
+    }
+  ]
+}

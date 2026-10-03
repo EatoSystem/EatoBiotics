@@ -81,6 +81,8 @@ export const AUDIT_FIXTURE_STATES = [
   "sparse",
   "first-use-member",
   "returning-no-meals-today",
+  "member-with-biotics",
+  "weekly-report-present",
 ] as const
 
 export type AuditFixtureState = (typeof AUDIT_FIXTURE_STATES)[number]
@@ -316,12 +318,76 @@ const returningNoMealsToday: LiveDashboardProps = {
   ],
 }
 
+/**
+ * F · MEMBER WITH BIOTICS — the same rings, with GENUINE data.
+ *
+ * Every other state passes no `biotics`, so `live-dashboard.tsx:817` falls back
+ * to the hardcoded `{ prebiotic: 71, probiotic: 23, postbiotic: 48 }` and the
+ * "Your Biotics Profile" rings were only ever observed in their FABRICATED
+ * form. That left the register unable to say whether the construct is wrong
+ * only when invented, or wrong always.
+ *
+ * This state answers it: real per-Biotic values, so the rings, the numbers and
+ * the band words render from data a member actually produced. If they still
+ * violate the permanent product rule — and they do, because the rule forbids
+ * the FORM, not the provenance — then `P0-SCIENCE-02` is independent of
+ * `P0-TRUST-02` and the two need separate remediation.
+ */
+const memberWithBiotics: LiveDashboardProps = {
+  ...representative,
+  biotics: { prebiotic: 58, probiotic: 44, postbiotic: 63 },
+}
+
+/**
+ * G · WEEKLY REPORT PRESENT — the attributed quotation, with a real source.
+ *
+ * `:1843` renders a pull-quote under "From your Week N report". With no
+ * `weeklyReport` it substitutes a hardcoded prediction — "shift your overall
+ * Biotics number by 8-12 points within three weeks" — and attributes that
+ * invention to the member's own report.
+ *
+ * This state supplies a genuine report with a genuine `pullQuote`, so the audit
+ * can separate two different defects that currently look like one:
+ *
+ *   the FALLBACK is fabricated and misattributed  → a trust defect
+ *   the FRAME quotes a per-Biotic claim as the member's own → a science defect
+ *
+ * The `pullQuote` here is deliberately ORDINARY and non-predictive, so anything
+ * claims-bearing that still renders comes from the component, not the fixture.
+ */
+const weeklyReportPresent: LiveDashboardProps = {
+  ...representative,
+  weeklyReport: {
+    id: "audit-weekly-1",
+    week_starting: "2026-09-28",
+    content: "Fixture weekly report body. This text exists to occupy the space real copy would.",
+    report_json: {
+      weekStarting: "2026-09-28",
+      weekNumber: 14,
+      mealCount: 9,
+      averageScore: 68,
+      previousWeekAverage: 64,
+      pillars: { prebiotic: 58, probiotic: 44, postbiotic: 63 },
+      pullQuote: "You logged nine meals this week, three more than the week before.",
+      narrative: "Fixture narrative. This sentence exists to occupy the space real copy would.",
+      focusAction: "Fixture focus action.",
+      weekSummaryTitle: "Fixture week summary",
+      mealsThisWeek: [
+        { id: "audit-analysis-1", name: "Fixture meal 1", type: "Breakfast", score: 47, date: "2026-09-29" },
+        { id: "audit-analysis-2", name: "Fixture meal 2", type: "Lunch", score: 54, date: "2026-09-30" },
+      ],
+    },
+  },
+}
+
 export const AUDIT_FIXTURES: Record<AuditFixtureState, LiveDashboardProps> = {
   representative,
   dense,
   sparse,
   "first-use-member": firstUseMember,
   "returning-no-meals-today": returningNoMealsToday,
+  "member-with-biotics": memberWithBiotics,
+  "weekly-report-present": weeklyReportPresent,
 }
 
 /** What each state is for, rendered in the audit banner beside the capture. */
@@ -333,6 +399,10 @@ export const AUDIT_FIXTURE_PURPOSE: Record<AuditFixtureState, string> = {
     "First use as a PAYING member — the first-use Biotics copy a subscriber sees (P0-SCIENCE-01)",
   "returning-no-meals-today":
     "Analyses exist, none today — the fabricated-meal path (P0-TRUST-01)",
+  "member-with-biotics":
+    "Real per-Biotic data — are the rings wrong only when invented, or always? (P0-SCIENCE-02)",
+  "weekly-report-present":
+    "A genuine weekly report — is the prediction the fallback, or the frame? (P0-SCIENCE-03)",
 }
 
 /**
@@ -345,4 +415,6 @@ export const AUDIT_STATE_FINDINGS: Record<AuditFixtureState, readonly string[]> 
   sparse: ["P0-SCIENCE-01"],
   "first-use-member": ["P0-SCIENCE-01"],
   "returning-no-meals-today": ["P0-TRUST-01", "P0-SCIENCE-01"],
+  "member-with-biotics": ["P0-SCIENCE-02", "P0-TRUST-02"],
+  "weekly-report-present": ["P0-SCIENCE-03"],
 }

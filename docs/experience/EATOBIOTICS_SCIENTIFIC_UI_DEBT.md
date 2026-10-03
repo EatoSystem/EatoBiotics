@@ -435,6 +435,61 @@ a console. A unit test could not have caught this and did not.
 
 ---
 
+## `NOTE-CAPTURE-01` · The corpus is archived, not regenerated — measured, not assumed
+
+Not a product defect. Recorded because the artifact protocol rests on it and a
+later reader would otherwise assume the wrong guarantee.
+
+### What was measured
+
+The full corpus is gitignored and archived, which is only safe if it can either
+be **restored** or **rebuilt**. So the harness was run twice, unchanged, and the
+two manifests compared by SHA-256:
+
+| capture conditions | identical | differing |
+|---|---|---|
+| as first written | 23 / 105 | **82** |
+| `animations: "disabled"` | 84 / 105 | 21 |
+| …plus scroll-reveal settling | 85 / 105 | 20 |
+| …plus waiting for image decode | **92 / 105** | 13 |
+
+Each fix came from evidence, not guesswork. The first: no `overview` capture was
+ever stable and every stable one was a view with no content to animate, which
+pointed at CSS transitions on the score and Biotics rings — and
+`page.clock.install` does not stop those, because a transition runs on the
+compositor while the clock fakes timers and rAF. The last: decoding two captures
+of one view to raw pixels put the difference in a **34×34 box at (34, 2011)** —
+the meal thumbnail — at 0.038% of bytes, with identical image dimensions.
+
+### What remains, and why it is not chased further
+
+Thirteen of 105 still differ, each a comparably tiny region in an image or
+animated element. **Byte-identical re-capture is not achievable here, and it is
+not what the manifest promises.**
+
+The SHA-256 verifies **the archived artifact** — "is this image the one the audit
+recorded?" — which is exactly what a reader needs and is unaffected. What
+byte-determinism would have additionally bought is the ability to *rebuild* an
+archive that was lost.
+
+### The consequence, stated plainly
+
+- the archive is the **artifact of record**; the manifest hashes describe it;
+- a regenerated corpus is **equivalent, not identical**: same states, same
+  dimensions, same content, with sub-0.05% pixel variation confined to images
+  and animated elements;
+- so if the capture environment is lost before Experience 0 close, the corpus is
+  **re-captured and re-hashed**, and roughly one image in eight will carry a new
+  hash. That is a recorded fact about the evidence, not a failure of it.
+
+The three settling measures stay regardless: they removed 69 of the 82 unstable
+images and cost nothing, and `animations: "disabled"` also holds rings at their
+end state, which is the state a reader is meant to see.
+
+**No component was modified to achieve any of this.**
+
+---
+
 ## Register status
 
 | id | severity | surface | verified | disposition |
@@ -447,6 +502,7 @@ a console. A unit test could not have caught this and did not.
 | `P0-GUARD-01` | P0 | test corpus | source | REPAIR FIRST, in remediation |
 | `DEBT-CODE-01` | DEBT-CODE | `/account` | render (disproved as P0) | RETIRE with generation |
 | `NOTE-FIXTURE-01` | — | audit tooling | render (disproved my own claim) | documentation only |
+| `NOTE-CAPTURE-01` | — | audit tooling | measured over two runs | documentation only |
 
 Open as Experience 0 continues. Entries are added as surfaces are captured;
 **nothing here is repaired during the audit.**

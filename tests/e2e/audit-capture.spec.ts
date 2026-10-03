@@ -1,6 +1,16 @@
 import { test, expect, type Page } from "@playwright/test"
-import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
+import { copyFileSync, mkdirSync, writeFileSync } from "node:fs"
 
+import {
+  AUDIT_ROOT,
+  COMMITTED_ROOT,
+  CORPUS_ROOT,
+  mergeIntoManifest,
+  readShards,
+  sha256Of,
+  writeShard,
+  type ManifestRow,
+} from "./audit-manifest"
 import {
   AUDIT_CLOCK,
   AUDIT_DATE,
@@ -40,22 +50,47 @@ import {
    disruptive rather than merely noisy, that is a finding to report, not a
    reason to touch the component.
 
-   ══ WHY ROWS GO TO DISK ONE AT A TIME ══════════════════════════════════════
+   ══ STORAGE, AND WHY THIS SURFACE IS THE EXCEPTION ═════════════════════════
 
-   `fullyParallel: true`, so the tests in this file are distributed across
-   workers and EACH WORKER LOADS ITS OWN COPY OF THIS MODULE. A module-level
-   array therefore collects one worker's rows, and a per-worker `afterAll` that
-   wrote the index overwrote it with that subset — which is how the first run
-   produced a 45-row index beside 75 images and still read as complete.
+   The protocol in `audit-manifest.ts` puts each surface's FULL corpus in the
+   gitignored `corpus/`, and commits only a representative set. This surface
+   predates that: 75 images were committed at `496fa76` under the old
+   convention, and they stay — rewriting history mid-audit would cost more than
+   the bytes are worth.
 
-   So every capture writes its own shard, and the merge reads whatever is on
-   disk and STATES its own completeness. A partial index now says it is partial
-   instead of looking finished.
+   So account writes BOTH: the full corpus to `corpus/account/` like every other
+   surface, and the images that were already committed stay where they are. The
+   two states added afterwards contribute representatives only.
    ════════════════════════════════════════════════════════════════════════════ */
 
+const SURFACE = "account"
 const ROUTE = "/audit/account-dashboard"
-const OUT = "docs/experience/audit/screenshots/account"
-const SHARDS = "docs/experience/audit/.manifest-shards"
+const CORPUS = `${CORPUS_ROOT}/${SURFACE}`
+const COMMITTED = `${COMMITTED_ROOT}/${SURFACE}`
+
+/**
+ * The states committed at `496fa76`, before the artifact protocol existed.
+ * Their images are already in the repository and are left there.
+ */
+const PRE_PROTOCOL_STATES = new Set([
+  "representative",
+  "dense",
+  "sparse",
+  "first-use-member",
+  "returning-no-meals-today",
+])
+
+/**
+ * The citation set for the two states added after the protocol: one image per
+ * finding they evidence, at the width that shows it most clearly. Not a sample
+ * — the specific pictures the register points at.
+ */
+const REPRESENTATIVE = new Set([
+  "account-member-with-biotics-overview-390.png",
+  "account-member-with-biotics-overview-1280.png",
+  "account-weekly-report-present-overview-390.png",
+  "account-weekly-report-present-overview-1280.png",
+])
 const WIDTHS = [
   ["390", 390, 844],
   ["834", 834, 1112],
@@ -64,68 +99,6 @@ const WIDTHS = [
 
 /** What a complete corpus is, declared rather than inferred from the output. */
 const EXPECTED_ROWS = AUDIT_FIXTURE_STATES.length * WIDTHS.length * AUDIT_FIXTURE_TABS.length
-
-interface ManifestRow {
-  file: string
-  route: string
-  state: string
-  tab: string
-  viewport: string
-  frozenClock: string
-  evidenceKind: string
-  component: string
-  findings: readonly string[]
-  consoleErrors: number
-  /**
-   * The actual messages, truncated. A COUNT alone cannot answer the question
-   * the plan asked — whether the frozen-clock hydration mismatch is merely
-   * noisy or visually disruptive — so the text is recorded and listed below
-   * the table rather than reduced to a number nobody can interpret.
-   */
-  consoleErrorTexts: readonly string[]
-}
-
-function writeShard(row: ManifestRow): void {
-  mkdirSync(SHARDS, { recursive: true })
-  writeFileSync(`${SHARDS}/${row.file}.json`, JSON.stringify(row), "utf8")
-}
-
-/**
- * Every row this corpus is supposed to contain, as a filename set. The merge
- * keeps only these, so a shard from a run with a different state list cannot
- * leak in and nothing has to be deleted while other workers are still writing.
- */
-function expectedShardNames(): ReadonlySet<string> {
-  const names = new Set<string>()
-  for (const state of AUDIT_FIXTURE_STATES) {
-    for (const [label] of WIDTHS) {
-      for (const tab of AUDIT_FIXTURE_TABS) {
-        names.add(`account-${state}-${tab}-${label}.png.json`)
-      }
-    }
-  }
-  return names
-}
-
-function readShards(): ManifestRow[] {
-  const wanted = expectedShardNames()
-  let names: string[]
-  try {
-    names = readdirSync(SHARDS).filter((n) => wanted.has(n))
-  } catch {
-    return []
-  }
-  return names
-    .map((n) => JSON.parse(readFileSync(`${SHARDS}/${n}`, "utf8")) as ManifestRow)
-    .sort(
-      (a, b) =>
-        AUDIT_FIXTURE_STATES.indexOf(a.state as (typeof AUDIT_FIXTURE_STATES)[number]) -
-          AUDIT_FIXTURE_STATES.indexOf(b.state as (typeof AUDIT_FIXTURE_STATES)[number]) ||
-        a.viewport.localeCompare(b.viewport) ||
-        AUDIT_FIXTURE_TABS.indexOf(a.tab as (typeof AUDIT_FIXTURE_TABS)[number]) -
-          AUDIT_FIXTURE_TABS.indexOf(b.tab as (typeof AUDIT_FIXTURE_TABS)[number]),
-    )
-}
 
 /**
  * Every same-origin API request the fixture page is KNOWN to make on mount,
@@ -201,8 +174,79 @@ async function openFixture(page: Page, state: string, apiCalls?: Set<string>): P
   return errors
 }
 
+
+/**
+ * Settle every scroll-triggered reveal, then return to the top.
+ *
+ * ── WHY THIS EXISTS, AND HOW IT WAS FOUND ──────────────────────────────────
+ *
+ * With `animations: "disabled"` the corpus went from 82 unstable images out of
+ * 105 to 21 — and ALL TWENTY-ONE WERE AT 390. That is not a coincidence: the
+ * mobile page is far taller, so a `fullPage` capture races the
+ * `IntersectionObserver` in `components/scroll-reveal.tsx`, which flips
+ * `data-revealed` as sections enter the viewport. Whether a given section had
+ * flipped by capture time varied run to run.
+ *
+ * Disabling animations cannot fix that, because the reveal is a JS state change
+ * rather than a transition. Scrolling the whole page first does: every observer
+ * fires, every section reaches its revealed state, and the capture is of a
+ * settled page.
+ *
+ * It changes no component. It reproduces what a person who scrolled the page
+ * would see, which is the honest subject of the screenshot anyway.
+ *
+ * ── AND THEN THE IMAGES, WHICH WAS THE REAL REMAINDER ──────────────────────
+ *
+ * Scroll-settling alone left 20 of 105 images unstable. Decoding two captures
+ * of the same view to raw pixels located the difference exactly: a 34x34 box at
+ * (34, 2011) — the meal thumbnail beside "Fixture meal 1". Same dimensions,
+ * 0.038% of bytes, one element.
+ *
+ * It is not randomness. `live-dashboard.tsx:1661` resolves a null `image_url`
+ * to a FIXED `/food-1.webp`. It is a decode race: scrolling the image into view
+ * starts the fetch, and the screenshot could be taken before the bitmap was
+ * painted. So every image is waited for, which is also what a reader of the
+ * screenshot assumes happened.
+ */
+async function settleReveals(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    const step = Math.max(320, Math.floor(window.innerHeight * 0.8))
+    for (let y = 0; y < document.body.scrollHeight; y += step) {
+      window.scrollTo(0, y)
+      await new Promise((r) => requestAnimationFrame(() => r(null)))
+    }
+    window.scrollTo(0, document.body.scrollHeight)
+    await new Promise((r) => setTimeout(r, 120))
+    window.scrollTo(0, 0)
+    await new Promise((r) => setTimeout(r, 120))
+  })
+
+  // Nothing left mid-reveal.
+  await page
+    .waitForFunction(() => document.querySelectorAll('[data-revealed="false"]').length === 0, undefined, {
+      timeout: 4000,
+    })
+    .catch(() => {
+      /* a surface with no ScrollReveal never had any; not a failure */
+    })
+
+  // And nothing left mid-decode. `complete` alone is not enough: a failed image
+  // is also "complete", so naturalWidth is what distinguishes painted from gone.
+  await page
+    .waitForFunction(
+      () =>
+        Array.from(document.images).every((i) => i.complete && (i.naturalWidth > 0 || i.currentSrc === "")),
+      undefined,
+      { timeout: 6000 },
+    )
+    .catch(() => {
+      /* an image that never resolves is a finding for the audit, not a crash */
+    })
+}
+
 test.describe("Account corpus — the real LiveDashboard, fixture-rendered", () => {
-  mkdirSync(OUT, { recursive: true })
+  mkdirSync(CORPUS, { recursive: true })
+  mkdirSync(COMMITTED, { recursive: true })
 
   for (const state of AUDIT_FIXTURE_STATES) {
     for (const [label, width, height] of WIDTHS) {
@@ -216,14 +260,48 @@ test.describe("Account corpus — the real LiveDashboard, fixture-rendered", () 
           await button.click()
           await page.waitForTimeout(350)
 
+          await settleReveals(page)
+
           const file = `account-${state}-${tab}-${label}.png`
-          await page.screenshot({ path: `${OUT}/${file}`, fullPage: true })
+
+          /*
+           * The full corpus always goes to `corpus/`. A file is additionally
+           * COPIED into the committed tree when it was already committed under
+           * the pre-protocol convention, or when it is one of the citations the
+           * register points at — and the hash is taken from the corpus copy, so
+           * both copies are provably the same bytes.
+           */
+          await page.screenshot({
+            path: `${CORPUS}/${file}`,
+            fullPage: true,
+            /*
+             * ── WHY ANIMATIONS ARE DISABLED, AND HOW WE KNOW TO ──────────────
+             *
+             * Two identical runs of this harness produced 82 of 105 images with
+             * DIFFERENT SHA-256. The 23 that matched were every one a view with
+             * no content to animate — `sparse` and `first-use-member` on the
+             * empty tabs — and not a single `overview` matched.
+             *
+             * The cause is CSS transitions on the score ring and the Biotics
+             * rings. `page.clock.install` does not stop them: it fakes timers
+             * and rAF, while a CSS transition runs on the compositor.
+             *
+             * `animations: "disabled"` finishes them and holds them at their end
+             * state, which is both deterministic AND the state a reader is meant
+             * to see. The component is not touched.
+             */
+            animations: "disabled",
+          })
+
+          const committed = PRE_PROTOCOL_STATES.has(state) || REPRESENTATIVE.has(file)
+          if (committed) copyFileSync(`${CORPUS}/${file}`, `${COMMITTED}/${file}`)
 
           writeShard({
             file,
+            surface: SURFACE,
             route: ROUTE,
             state,
-            tab,
+            section: tab,
             viewport: `${width}x${height}`,
             frozenClock: AUDIT_CLOCK,
             evidenceKind: "fixture-rendered real component",
@@ -231,6 +309,8 @@ test.describe("Account corpus — the real LiveDashboard, fixture-rendered", () 
             findings: AUDIT_STATE_FINDINGS[state],
             consoleErrors: errors.length,
             consoleErrorTexts: errors.map((e) => e.replace(/\s+/g, " ").slice(0, 160)),
+            sha256: sha256Of(`${CORPUS}/${file}`),
+            storage: committed ? "committed" : "archive-only",
           })
         }
       })
@@ -330,9 +410,13 @@ test.afterAll(() => {
    * worker to finish writes the complete index — and any earlier, partial write
    * says so in its own completeness line rather than looking finished.
    */
-  const manifest = readShards()
+  const manifest = readShards([SURFACE])
   if (manifest.length === 0) return
-  mkdirSync("docs/experience/audit", { recursive: true })
+  mkdirSync(AUDIT_ROOT, { recursive: true })
+
+  // The machine-readable artifact. `tests/unit/audit-manifest.test.ts` is what
+  // holds it to `expected = actual = hashed`.
+  mergeIntoManifest([SURFACE], manifest)
 
   const complete = manifest.length === EXPECTED_ROWS
   const completeness = complete
@@ -343,7 +427,7 @@ test.afterAll(() => {
   // captures saw each. This is the evidence for the hydration question, and it
   // is reported rather than suppressed.
   const errorCounts = new Map<string, number>()
-  for (const r of manifest) {
+  for (const r of manifest as ManifestRow[]) {
     for (const text of r.consoleErrorTexts ?? []) {
       errorCounts.set(text, (errorCounts.get(text) ?? 0) + 1)
     }
@@ -359,7 +443,7 @@ test.afterAll(() => {
   const rows = manifest
     .map(
       (r) =>
-        `| \`${r.file}\` | \`${r.route}\` | ${r.state} | ${r.tab} | ${r.viewport} | ${r.frozenClock} | ${r.evidenceKind} | \`${r.component}\` | ${r.findings.join(", ") || "—"} | ${r.consoleErrors} |`,
+        `| \`${r.file}\` | \`${r.route}\` | ${r.state} | ${r.section} | ${r.viewport} | ${r.frozenClock} | ${r.evidenceKind} | \`${r.component}\` | ${r.findings.join(", ") || "—"} | ${r.consoleErrors} | ${r.storage} | \`${r.sha256.slice(0, 12)}…\` |`,
     )
     .join("\n")
 
@@ -379,8 +463,8 @@ ${completeness}
 
 > The fixture proves what exists. It does not legitimise it.
 
-| file | route | state | tab | viewport | frozen clock | evidence kind | component | findings | console errors |
-|---|---|---|---|---|---|---|---|---|---|
+| file | route | state | tab | viewport | frozen clock | evidence kind | component | findings | console errors | storage | sha256 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
 ${rows}
 
 ## Console errors observed during capture

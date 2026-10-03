@@ -208,13 +208,18 @@ describe("the audit fixture touches nothing", () => {
 })
 
 describe("the audit fixture states are deliberate, not one everything-on screenshot", () => {
-  it("the five states are pinned, and each says what it is for", () => {
+  it("the seven states are pinned, and each says what it is for", () => {
     expect([...AUDIT_FIXTURE_STATES]).toEqual([
       "representative",
       "dense",
       "sparse",
       "first-use-member",
       "returning-no-meals-today",
+      // Added after the account corpus rendered: every state until now passed
+      // no `biotics` and no `weeklyReport`, so P0-SCIENCE-02 and -03 had only
+      // ever been seen in their FALLBACK form.
+      "member-with-biotics",
+      "weekly-report-present",
     ])
     for (const state of AUDIT_FIXTURE_STATES) {
       expect(AUDIT_FIXTURE_PURPOSE[state]?.length ?? 0).toBeGreaterThan(20)
