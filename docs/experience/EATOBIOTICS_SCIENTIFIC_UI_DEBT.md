@@ -177,12 +177,30 @@ and a per-Biotic ranking. Gate 5's standing exclusion — *meal-level per-Biotic
 bars, still off every surface* — is the narrower case; this is the person's own
 profile, not one meal's.
 
+### SETTLED: the construct is wrong always, not only when fabricated
+
+The `member-with-biotics` fixture state passes **genuine** per-Biotic values
+(58 / 44 / 63) instead of letting `:817` fall back. Rendered at 390:
+
+> **YOUR BIOTICS PROFILE**
+> Prebiotic **58** · *Building* — Probiotic **44** · *Building* — Postbiotic **63** · *Strong*
+> *Week 18 of 30 · Building your food system*
+
+**Identical construct.** Same rings, same numbers, same band words, same
+possessive heading. Real data makes the claim more convincing, not less
+prohibited.
+
+So `P0-SCIENCE-02` is **independent of `P0-TRUST-02`** and needs its own
+remediation: removing the fabricated fallback would leave this defect
+untouched, and fixing the data source is not a fix.
+
 ### Classification
 
 | | |
 |---|---|
 | Kind | product/science contradiction |
 | Disposition | **RETIRE.** Not to be redesigned, rebanded or recoloured |
+| Reachability | **always**, whenever the overview renders — fabricated or genuine |
 | Redesign input | whatever replaces it must describe the observed food system, not the biology |
 
 ---
@@ -282,12 +300,44 @@ fabricates a meal, this fabricates a measurement of the person.
 the member's own report**, so a fabricated prediction is attributed to
 EatoBiotics' own analysis of them.
 
+### SETTLED: the three sites have three different reachabilities
+
+The `weekly-report-present` fixture supplies a genuine report with a
+deliberately non-predictive quote. Rendered, it shows:
+
+> **FROM YOUR WEEK 14 REPORT**
+> *"You logged nine meals this week, three more than the week before."*
+
+So they separate cleanly, and they do **not** share a fix:
+
+| site | reachability | what it is |
+|---|---|---|
+| `:1843` pull-quote | **fallback only** — a real report displaces it | fabricated content **attributed to the member's own report**. A trust defect: the frame is honest, the substitute is not |
+| `:1896` this month's focus | **always** — unaffected by the report | hardcoded personal per-Biotic states, a **mechanism** ("pulling down"), and a 30-day outcome promise |
+| `:1757` your focus today | **always** | see below — worse than unpermitted |
+
+### `:1757` IS NOT DERIVED, AND THE COMMENT SAYS IT IS
+
+The block is introduced by `{/* Your Focus Today — lowest pillar driven */}`
+(`:1742`). It is not. **`displayBiotics` is referenced zero times anywhere in
+that block**, and the sentence is a literal:
+
+> *"Your probiotic score is your lowest pillar."*
+
+Probiotic is named unconditionally. For any member whose lowest value is
+Prebiotic or Postbiotic, the product states something **factually false about
+them** — not merely a claim it is not permitted to make.
+
+It rendered true in both fixtures only by coincidence: the hardcoded fallback
+is 71/23/48 and the genuine state is 58/44/63, and Probiotic happens to be
+lowest in both. A state where it is not would expose the sentence as wrong.
+
 ### Classification
 
 | | |
 |---|---|
-| Kind | product/science contradiction + outcome claim |
-| Disposition | **RETIRE / REMEDIATE.** `:1843`'s fallback must not predict a number at all |
+| Kind | product/science contradiction + outcome claim + **a false personal statement** |
+| Disposition | **RETIRE / REMEDIATE**, as three separate repairs, not one |
 
 ---
 
@@ -498,7 +548,7 @@ end state, which is the state a reader is meant to see.
 | `P0-TRUST-02` | P0 | `/account` | render | RETIRE with `P0-SCIENCE-02` |
 | `P0-SCIENCE-01` | P0 | `/account` | render | RETIRE / REMEDIATE |
 | `P0-SCIENCE-02` | P0 | `/account` | render | RETIRE |
-| `P0-SCIENCE-03` | P0 | `/account` | render | RETIRE / REMEDIATE |
+| `P0-SCIENCE-03` | P0 | `/account` | render | RETIRE / REMEDIATE — **three separate repairs** |
 | `P0-GUARD-01` | P0 | test corpus | source | REPAIR FIRST, in remediation |
 | `DEBT-CODE-01` | DEBT-CODE | `/account` | render (disproved as P0) | RETIRE with generation |
 | `NOTE-FIXTURE-01` | — | audit tooling | render (disproved my own claim) | documentation only |
@@ -518,3 +568,21 @@ back to invented constants when the data to support it is absent.
 this was never pointed at the file. That ordering matters for the remediation
 sequence — **repair the corpus first**, let it go red, and let the red list
 define the UI work rather than the other way round.
+
+### What the two added fixture states settled
+
+Both were added because every earlier state passed no `biotics` and no
+`weeklyReport`, so two findings had only ever been seen in their fallback form.
+
+1. **The Biotics Profile is wrong with real data too.** Genuine values render
+   the identical construct, so `P0-SCIENCE-02` does not go away when
+   `P0-TRUST-02` is fixed.
+2. **The prediction is fallback-only, but the other two claims are not.** A real
+   report displaces `:1843`; `:1896` and `:1757` render regardless.
+3. **`:1757` can be false, not just unpermitted.** It names Probiotic
+   unconditionally while its own comment claims it is "lowest pillar driven",
+   and the block never reads `displayBiotics`.
+
+Point 3 is the one that changes a severity rather than a detail: a product
+telling a member something untrue about themselves is a different category from
+a product telling them something it has not earned the right to say.
