@@ -1,3 +1,4 @@
+import type { AccountTwinInput } from "@/lib/agent-loop/account-twin"
 import type {
   LiveDashboardProps,
   LivePaidReport,
@@ -83,6 +84,7 @@ export const AUDIT_FIXTURE_STATES = [
   "returning-no-meals-today",
   "member-with-biotics",
   "weekly-report-present",
+  "twin-present",
 ] as const
 
 export type AuditFixtureState = (typeof AUDIT_FIXTURE_STATES)[number]
@@ -380,6 +382,62 @@ const weeklyReportPresent: LiveDashboardProps = {
   },
 }
 
+/**
+ * Deterministic input for the REAL twin builder.
+ *
+ * ── WHY A BUILDER INPUT AND NOT A TWIN ────────────────────────────────────
+ *
+ * `FoodSystemDigitalTwin` is a large composed type. Hand-writing one would
+ * produce a shape I invented, and the audit would then be reading my fiction
+ * rather than what `/account` actually renders. So the fixture supplies the
+ * INPUT and `app/audit/account-dashboard/page.tsx` calls `buildAccountTwin` —
+ * the same function `app/account/page.tsx:279` calls.
+ *
+ * Every value is fixed. The meal dates are absolute and sit before
+ * `AUDIT_DATE`, so the twin's content does not shift with the clock.
+ */
+export const TWIN_FIXTURE_INPUT: AccountTwinInput = {
+  score: 67,
+  previousScore: 61,
+  profileType: "Fixture Profile",
+  biotics: { prebiotic: 58, probiotic: 44, postbiotic: 63 },
+  streak: 4,
+  meals: [
+    { name: "Fixture meal 1", score: 71, prebiotic: 60, probiotic: 48, postbiotic: 65, createdAt: `${AUDIT_DATE}T08:15:00.000Z` },
+    { name: "Fixture meal 2", score: 54, prebiotic: 50, probiotic: 30, postbiotic: 58, createdAt: "2026-10-01T19:25:00.000Z" },
+    { name: "Fixture meal 3", score: 62, prebiotic: 55, probiotic: 41, postbiotic: 60, createdAt: "2026-09-30T12:40:00.000Z" },
+  ],
+}
+
+/**
+ * H · TWIN PRESENT — the nine LIVE Twin components, rendered at last.
+ *
+ * `live-dashboard.tsx` imports nine components from `components/account/twin/`
+ * — `TwinStage`, `TodayStrip`, `TwinSections`, `QuickLog`, `InsideYouTeaser`,
+ * `DailyRitual`, `AskTwin`, `MeetTwinChecklist`, `MeetBodyHero`. They are LIVE
+ * on `/account`, which is `V1_CORE`.
+ *
+ * Every other state passes `twin: null`, so this audit had photographed none of
+ * them. Their claims were live and unexamined by render — the precise situation
+ * that produced five P0s on the rest of the dashboard.
+ *
+ * ── THE SAFETY BOUNDARY IS UNCHANGED, NOT RELAXED ─────────────────────────
+ *
+ * `email` stays NULL here as everywhere else. `live-dashboard.tsx:857` reads
+ * `if (propEmail) pushTwinState(store)`, so the twin-state PUT cannot fire
+ * without an email — and that is asserted BY RENDER in the capture harness's
+ * network-footprint test, not inferred from this comment.
+ *
+ * `NOTE-FIXTURE-01` has been wrong about this effect twice. It is not trusted a
+ * third time.
+ */
+const twinPresent: LiveDashboardProps = {
+  ...representative,
+  biotics: { prebiotic: 58, probiotic: 44, postbiotic: 63 },
+  // twin + twinFeed are supplied by the page, which builds them with the real
+  // builder — see TWIN_FIXTURE_INPUT above.
+}
+
 export const AUDIT_FIXTURES: Record<AuditFixtureState, LiveDashboardProps> = {
   representative,
   dense,
@@ -388,6 +446,7 @@ export const AUDIT_FIXTURES: Record<AuditFixtureState, LiveDashboardProps> = {
   "returning-no-meals-today": returningNoMealsToday,
   "member-with-biotics": memberWithBiotics,
   "weekly-report-present": weeklyReportPresent,
+  "twin-present": twinPresent,
 }
 
 /** What each state is for, rendered in the audit banner beside the capture. */
@@ -403,6 +462,8 @@ export const AUDIT_FIXTURE_PURPOSE: Record<AuditFixtureState, string> = {
     "Real per-Biotic data — are the rings wrong only when invented, or always? (P0-SCIENCE-02)",
   "weekly-report-present":
     "A genuine weekly report — is the prediction the fallback, or the frame? (P0-SCIENCE-03)",
+  "twin-present":
+    "The nine LIVE Twin components, rendered — what does the Digital Twin actually claim?",
 }
 
 /**
@@ -417,4 +478,5 @@ export const AUDIT_STATE_FINDINGS: Record<AuditFixtureState, readonly string[]> 
   "returning-no-meals-today": ["P0-TRUST-01", "P0-SCIENCE-01"],
   "member-with-biotics": ["P0-SCIENCE-02", "P0-TRUST-02"],
   "weekly-report-present": ["P0-SCIENCE-03"],
+  "twin-present": [],
 }

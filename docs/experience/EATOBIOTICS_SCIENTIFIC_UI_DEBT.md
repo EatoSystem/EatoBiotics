@@ -768,6 +768,255 @@ the later tabs. That is why only mobile captures were affected. Recorded as a
 responsive observation for `/account` (`RESP-ACCOUNT-01`), to be dispositioned
 with the rest of the responsive findings rather than here.
 
+## `P0-SCIENCE-04` · The Twin encodes a personal Biotic verdict as a colour
+
+**Surface** `/account` (Overview, whenever a Twin exists) · **Component**
+`components/account/twin/twin-stage.tsx:284` reading
+`lib/account/twin-visual.ts` · **Verified** by render, 2026-10-04
+
+```ts
+// twin-stage.tsx:280-284
+const aura = reveal ? revealAura(reveal)
+  : active ? auraGradientForBiotic(active.biotic, visual.confidence)
+           : auraGradientForBiotic(twin.biotics.weakest, visual.confidence)
+```
+
+`twin.biotics.weakest` is `argmax`/`argmin` over the member's three per-Biotic
+scores (`lib/agent-loop/biotics.ts:44-55`). The returned gradient is applied at
+`:330-331` as the breathing aura **over the member's body figure**, and its
+opacity carries `visual.confidence`.
+
+So the colour of the glow around a picture of the member's body **is** a
+personal per-Biotic comparative verdict. `PERSONAL_BIOTIC_STATE` forbids *"a
+Biotic given a comparative or directional verdict"*, and the permanent product
+rule forbids any surface that may *"state, imply or **render**"* a member's own
+Biotic state.
+
+### Why every existing guard missed it
+
+There is **no string**. `${BIOTIC_LABELS[k]}` at least puts a word in a file;
+this puts a hex triple in a CSS gradient. A source scan, a corpus list and the
+behavioural generator guard are all text instruments, and this claim has no
+text. It survived Gate 3.6 — which removed the chip, the bar and the band word
+from the hotspots **in this same component** — because the repair was scoped to
+the forms it found.
+
+> This is the form the boundary returns in. Recorded in the Experience
+> Constitution as a principle, not only here as a finding.
+
+### A second, unconsumed mapping in the same module
+
+`twinVisualState()` computes `auraGradient: auraGradientForBiotic(twin.biotics.strongest, …)`.
+**Nothing reads `.auraGradient`** (verified: zero consumers outside
+`twin-visual.ts`). So the module ships two Biotic→colour mappings, one live on
+`weakest` and one dead on `strongest`. The dead one is `DEBT-CODE`; it is
+recorded here because removing the live one must not leave the dead one as a
+ready-made replacement.
+
+### Classification
+
+| | |
+|---|---|
+| Kind | **scientific debt** — personal Biotic state, rendered |
+| Reachability | **live** on `/account` for any member with a Twin (see `P0-ARCH-01`) |
+| Disposition | **RETIRE the mapping.** The aura may carry time-of-day mood or data density; it may not carry which Biotic is weakest |
+| Remediation proof | the guard that catches it cannot be a string guard — it must assert that no Biotic key reaches a visual-parameter function |
+
+---
+
+## `P0-TRUST-05` · The product auto-sends a prohibited Biotic claim to the AI consultant
+
+**Surface** `/account` (Overview) · **Component**
+`components/account/twin/ask-twin.tsx:20` → `app/account/consult/consult-client.tsx:219-225`
+· **Verified** by render, 2026-10-04
+
+Rendered on the live dashboard, under the heading *"It knows your Food System.
+Ask it anything."*:
+
+> **"Why is my probiotic level my weakest, and what foods would help this
+> week?"**
+
+It is **not** the member's question. It is product-authored copy built from
+`twin.biotics.weakest`, and it asserts, in the member's voice, that they have a
+probiotic *level* and that it is their weakest.
+
+### The part that makes it a trust defect rather than a copy defect
+
+The chip is a link to `/account/consult?q=<the sentence>`, and the consult client
+does this on mount:
+
+```ts
+// consult-client.tsx:219-225 — comment verbatim
+// Auto-send ?q= pre-filled question on mount
+const q = searchParams.get("q")
+if (q && !autoSentRef.current) { autoSentRef.current = true; void sendMessage(decodeURIComponent(q)) }
+```
+
+**Auto-send.** The member never sees the sentence in an input box and never gets
+to edit it. One tap sends the prohibited premise to Claude as their own first
+message, and the model answers *on that premise* — generating further
+customer-facing prose grounded in a claim the product is not entitled to make.
+
+This is claim-laundering through a query parameter: a prohibited assertion
+becomes AI input, and the AI's output becomes new product language. It is
+precisely the failure mode the Gate 6 Intelligence boundary exists to prevent,
+occurring **outside** that boundary, on a live surface, via `/api/consult`
+rather than `/api/fss/focus-today`.
+
+### Classification
+
+| | |
+|---|---|
+| Kind | **trust + scientific debt**, and an **AI-governance** defect |
+| Reachability | **live** on `/account` for any member with a Twin |
+| Disposition | **RETIRE the prompt.** The two other chips (the next action, the last meal) are clean and may stay |
+| Close criterion | not merely the sentence removed — the `?q=` auto-send path must not be able to carry a claim no deterministic component made |
+
+---
+
+## `P0-SCIENCE-05` · The daily ritual asserts a bodily reaction to a checkbox
+
+**Surface** `/account` (Overview) · **Component**
+`components/account/twin/daily-ritual.tsx:111` + `lib/account/ritual.ts:36-49`
+· **Verified** by render, 2026-10-04
+
+The section heading, rendered:
+
+> **"Tap what's true today. Your body reacts to each one."**
+
+and on completion, *"A full day — your Food System felt all of it."*
+
+Behind it, each of the five checks carries an asserted mechanism **and a pair of
+anatomical coordinates**:
+
+```ts
+{ key: "fermented", effect: "A fermented food lights up your probiotic network", node: { x: 54, y: 56 } }
+{ key: "plants",    effect: "Plant variety expands your fibre pathways",         node: { x: 47, y: 62 } }
+{ key: "moved",     effect: "Movement helps energy flow and recovery brighten",  node: { x: 48, y: 46 } }
+{ key: "slept",     effect: "Deep rest is when your system recovers and rebuilds", node: { x: 48, y: 30 } }
+{ key: "feeling",   effect: "How you feel is your system talking back to you",   node: { x: 50, y: 20 } }
+```
+
+`ritualSignals()` feeds those nodes to `TwinStage` as `signals`, which lights
+them on the figure.
+
+### The tapped state, proved by render
+
+The five checks render unexpanded on page load, so the first capture showed only
+the buttons. Tapping one is a pure `localStorage` toggle, so it was rendered —
+with the write-watcher attached, which recorded **no write of any kind**. What
+appears is the complete chain, not half of it:
+
+> *[a miniature body figure, with a dot pinging at `x:54 y:56` — the gut]*
+> **YOUR BODY JUST FELT THAT**
+> **"A fermented food lights up your probiotic network"**
+> *"Lovely — something fermented on its way to me."*
+
+One tap on a checkbox produces: an anatomical light, an overline asserting the
+member's body *felt* it, a sentence asserting a personal probiotic network was
+activated, and the Twin claiming to have received the food.
+
+**The complete chain is: a self-report checkbox → a light at a named position on
+a picture of the member's body → a sentence asserting what that did to their
+biology.** Nothing in the chain is measured. "Lights up your probiotic network"
+is a personal probiotic state *and* a mechanism; "your body reacts to each one"
+is a causal claim about a tap.
+
+This is structurally identical to `forecast.tsx`'s `FORECAST_NODE` — which
+CLAUDE.md already records as a reactivation hazard — except that `forecast.tsx`
+is behind a refused route and **this is live**.
+
+### Classification
+
+| | |
+|---|---|
+| Kind | **scientific debt** — personal Biotic state, mechanism, causal attribution, anatomical localisation |
+| Reachability | **live** on `/account` for any member with a Twin |
+| Disposition | **REMEDIATE.** The ritual itself is good product — one-tap self-report with a visible streak. What goes is the asserted effect and the body-position mapping, not the checks |
+| Note | **I first recorded that the `effect` strings were not rendered. That was wrong, and the render disproved it.** `daily-ritual.tsx:49-53` renders them |
+
+---
+
+## `P0-ARCH-01` · The audited `/account` is the minority `/account`
+
+**Surface** `/account` · **Evidence** `app/account/page.tsx:278` · **Verified**
+by source + render, 2026-10-04
+
+```ts
+if (twinScore != null || recentAnalyses.length > 0) { accountTwin = await buildAccountTwin({…}) }
+```
+
+`twinScore` is the member's free-assessment score. So **the Twin is built for any
+member who has completed the assessment or logged one meal** — and the free
+assessment is the only door into the product.
+
+`live-dashboard.tsx:1094` gates the whole Twin experience on `twin && twinVisual`,
+and inside that gate sit `TodayStrip`, `TwinStage`, `DailyRitual`, the learning
+feed, `InsideYouTeaser`, `AskTwin`, `RetestCard` and `SystemsExplorer`.
+
+**Every fixture state before `twin-present` passed `twin: null`.** The 75-image
+account corpus committed at `496fa76` therefore records the dashboard as seen by
+a member who has *never assessed and never logged* — a state almost no real
+member occupies — and the five P0s found there sit **below** a Twin layer the
+audit had not rendered.
+
+### What this does and does not change
+
+It does **not** withdraw any earlier finding: `P0-TRUST-01`, `P0-TRUST-02`,
+`P0-SCIENCE-01/02/03` and `P0-TRUST-03` all reproduce in `twin-present` too —
+they are below the Twin on the same page, and the `twin-present` capture shows
+them there.
+
+It changes the **weighting**: the Twin is the first screen of the real member
+dashboard, so its three P0s above are not peripheral to the Account findings,
+they are in front of them.
+
+### Classification
+
+| | |
+|---|---|
+| Kind | **product architecture / audit coverage** |
+| Disposition | **RECORD.** No repair — the gate is correct behaviour. What was wrong was the audit's model of the default state |
+| Consequence | `twin-present` is the representative member state for `/account`, and the remediation spec must sequence the Twin P0s with the Account P0s, not after them |
+
+---
+
+## `P1-FUNNEL-02` · The Twin-gated dashboard offers five dead destinations
+
+**Surface** `/account` (Overview, Twin present) · **Verified** by live HTTP,
+2026-10-04
+
+Inside the `twin && twinVisual` block:
+
+| rendered as | destination | status |
+|---|---|---|
+| *"Watch how the Food System inside you works"* · **Play →** (`InsideYouTeaser`) | `/account/twin` | **404** |
+| *"Open Stability ↗"* (`SystemsExplorer`) | `/stability` | **404** |
+| *"Open Glucose ↗"* | `/glucose` | **404** |
+| *"Open Mind ↗"* | `/mind` | **404** |
+| *"Open Performance ↗"* | `/performance` | **404** |
+
+All five verified by request against the preview server, not read from
+`POST_V1_ROUTES`. The same grid correctly renders *"Coming soon"* — with no link
+— for Recovery, Longevity, Pregnancy, Birth and Baby, which is the behaviour the
+other five should have.
+
+Separately, `live-dashboard.tsx:1899` renders **"Read your full plan →"** with
+`href="#"`.
+
+**The same shape as `P1-FUNNEL-01`, on a different surface, and the reason is
+the one CLAUDE.md already records:** `v1-launch-surface.spec.ts`'s crawler does
+not cover `/account`. It is also why this was invisible until now — the crawler
+could not have reached the Twin block anyway, because no fixture supplied a Twin.
+
+### Classification
+
+| | |
+|---|---|
+| Kind | **experience / navigation promise** |
+| Disposition | **REMEDIATE**, with `P1-FUNNEL-01`, under the same principle: *a correctly refused destination must not be presented as an available action* |
+| Guard | the crawler must cover `/account` **in a Twin-present state** — covering the route alone would still miss all five |
+
 ---
 
 ## Register status
@@ -782,6 +1031,11 @@ with the rest of the responsive findings rather than here.
 | `P0-TRUST-03` | **P0-TRUST / P0-SCIENCE** | `/account` | render + source | RETIRE — **its own remediation proof** |
 | `P0-TRUST-04` | P0 | `/assessment/you` → Results | render + source | REMEDIATE — mirror the existing guard |
 | `P1-FUNNEL-01` | P1 | `/assessment/you` → Results | live HTTP | REMEDIATE — four dead CTAs |
+| `P0-SCIENCE-04` | P0 | `/account` Twin | render | RETIRE — **a Biotic verdict rendered as colour**; no string guard can see it |
+| `P0-TRUST-05` | **P0-TRUST / AI-governance** | `/account` Twin → `/api/consult` | render + source | RETIRE — auto-sent prohibited premise |
+| `P0-SCIENCE-05` | P0 | `/account` Twin | render | REMEDIATE — keep the ritual, drop the asserted biology |
+| `P0-ARCH-01` | P0 (coverage) | `/account` | source + render | RECORD — the audited state was the minority state |
+| `P1-FUNNEL-02` | P1 | `/account` Twin | live HTTP | REMEDIATE with `P1-FUNNEL-01` |
 | `P0-GUARD-01` | P0 | test corpus | source | REPAIR FIRST, in remediation |
 | `P2-FSS-ARCH-01` | P2 | My Food System → Biotics | source closure | RECORD + PROVE, no refactor |
 | `DEBT-CODE-01` | DEBT-CODE | `/account` | render (disproved as P0) | RETIRE with generation |
@@ -820,3 +1074,70 @@ Both were added because every earlier state passed no `biotics` and no
 Point 3 is the one that changes a severity rather than a detail: a product
 telling a member something untrue about themselves is a different category from
 a product telling them something it has not earned the right to say.
+
+---
+
+## Canonical programme decisions
+
+Rulings taken by the founder during Experience 0. **Recorded here, implemented
+in Experience 0R — not in the audit.**
+
+### D1 · The Biotics claims conflict — the permanent rule wins
+
+`Appears strongest` / `Most worth exploring` on `/assessment/results` are **not**
+an exception to `PERSONAL_BIOTIC_STATE`. A personalised comparative Biotic
+verdict is a personal Biotic state whether or not a number is shown.
+
+The 0R sequence, in order:
+
+1. widen the Biotic claims corpus to include `ASSESSMENT_SURFACES`;
+2. **deliberately observe the resulting red tests**;
+3. remove or remediate the conflicting personal Biotic ranking;
+4. revise `assessment-result-narrative.test.ts:287` — **not** the permanent rule;
+5. return both claims and narrative suites to green;
+6. add sabotage proving Assessment cannot silently fall out of the corpus again.
+
+> **Do not weaken `PERSONAL_BIOTIC_STATE` to make the two tests coexist.**
+
+`P0-SCIENCE-04` extends the same ruling to a non-textual rendering: widening the
+corpus will not catch a gradient, so step 1 does not discharge it.
+
+### D2 · `P0-TRUST-04` keeps both layers
+
+| | |
+|---|---|
+| implementation defect | `strongest.strength ?? strongest.opportunity` can contradict its own heading |
+| **product defect** | the personalised strongest/exploring construct itself conflicts with the locked architecture |
+
+0R must not repair the conditional and preserve the prohibited construct.
+
+### D3 · `P1-FUNNEL-01` gains two requirements and a permanent principle
+
+**Product fix** — unavailable `POST_V1` add-ons must not be offered as
+actionable next steps. **Guard fix** — the link crawler must cover the
+**Results** surface, not merely the assessment entry route; `P1-FUNNEL-02` adds
+`/account` in a Twin-present state.
+
+> **A correctly refused destination must not be presented by the product as an
+> available action.** The classifier protects the destination; something must
+> protect the promise.
+
+### D4 · The handoff is an instrument change before it is an interface change
+
+Future journey, recorded **as hypothesis**:
+
+```
+Assessment → concise reveal → collect/complete establishment inputs
+           → establish My Food System → Today
+```
+
+**Do not manufacture What You Notice or Food Context, and do not infer them from
+scored answers.**
+
+> **Do not make the interface promise a personal conclusion that the instrument
+> did not collect enough information to derive.**
+
+Principles accepted as durable are carried into
+[`EXPERIENCE_CONSTITUTION.md`](./EXPERIENCE_CONSTITUTION.md); the evidence stays
+here.
+

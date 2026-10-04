@@ -190,9 +190,42 @@ describe("the audit fixture touches nothing", () => {
   it("no fixture state can trigger the twin-state push", () => {
     for (const state of AUDIT_FIXTURE_STATES) {
       const props = AUDIT_FIXTURES[state] as Record<string, unknown>
+
+      /*
+       * `email: null` is the load-bearing one and it holds for EVERY state,
+       * including `twin-present`. `live-dashboard.tsx:857` is
+       * `if (propEmail) pushTwinState(store)` — the guard is the email alone.
+       */
       expect(props.email, `state "${state}" carries an email — the twin push can fire`).toBeNull()
-      expect(props.twin, `state "${state}" carries a twin — the twin push can fire`).toBeNull()
+
+      /*
+       * The twin assertion is KEPT UNIVERSAL, including for `twin-present`.
+       *
+       * That state does not hard-code a twin either: the page composes one with
+       * the real `buildAccountTwin` and passes it AFTER the prop spread, so the
+       * fixture data stays null everywhere and the twin exists only where it is
+       * built. Weakening this assertion for one state would have removed the
+       * guard from the seven it still protects, to no purpose.
+       */
+      expect(props.twin, `state "${state}" hard-codes a twin — the page builds it instead`).toBeNull()
     }
+  })
+
+  /*
+   * The twin fixture INPUT is deterministic. A relative date here would make
+   * the Twin corpus drift between runs, which is the defect the frozen clock
+   * exists to prevent — and it would do so inside the data rather than the
+   * render, where the clock cannot reach it.
+   */
+  it("the twin builder input is fully deterministic", async () => {
+    const { TWIN_FIXTURE_INPUT } = await import("@/lib/experience-audit/fixtures")
+    for (const meal of TWIN_FIXTURE_INPUT.meals) {
+      expect(meal.createdAt, `twin meal "${meal.name}" has a non-absolute date`).toMatch(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
+      )
+    }
+    expect(TWIN_FIXTURE_INPUT.score).toBe(67)
+    expect(TWIN_FIXTURE_INPUT.biotics).toEqual({ prebiotic: 58, probiotic: 44, postbiotic: 63 })
   })
 
   it("carries no real-looking personal data", () => {
@@ -208,7 +241,7 @@ describe("the audit fixture touches nothing", () => {
 })
 
 describe("the audit fixture states are deliberate, not one everything-on screenshot", () => {
-  it("the seven states are pinned, and each says what it is for", () => {
+  it("the eight states are pinned, and each says what it is for", () => {
     expect([...AUDIT_FIXTURE_STATES]).toEqual([
       "representative",
       "dense",
@@ -220,6 +253,8 @@ describe("the audit fixture states are deliberate, not one everything-on screens
       // ever been seen in their FALLBACK form.
       "member-with-biotics",
       "weekly-report-present",
+      // The nine LIVE Twin components, which no capture had ever rendered.
+      "twin-present",
     ])
     for (const state of AUDIT_FIXTURE_STATES) {
       expect(AUDIT_FIXTURE_PURPOSE[state]?.length ?? 0).toBeGreaterThan(20)

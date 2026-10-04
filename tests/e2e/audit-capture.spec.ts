@@ -90,6 +90,8 @@ const REPRESENTATIVE = new Set([
   "account-member-with-biotics-overview-1280.png",
   "account-weekly-report-present-overview-390.png",
   "account-weekly-report-present-overview-1280.png",
+  "account-twin-present-overview-390.png",
+  "account-twin-present-overview-1280.png",
 ])
 const WIDTHS = [
   ["390", 390, 844],
@@ -348,6 +350,50 @@ test.describe("the fixture's network footprint", () => {
       expect(call, `the audit page issued a write: ${call}`).toMatch(/^GET /)
     }
     expect([...apiCalls].join(" ")).not.toContain("/api/twin-state")
+  })
+
+  /*
+   * ── THE TWIN-PRESENT STATE, PROVED BY RENDER ────────────────────────────
+   *
+   * `twin-present` is the one state that supplies a real twin, so it is the one
+   * state where the twin-state PUT could conceivably fire. Source says it
+   * cannot — `live-dashboard.tsx:857` is `if (propEmail) pushTwinState(store)`
+   * and every state has `email: null`.
+   *
+   * That is NOT good enough here. `NOTE-FIXTURE-01` has been wrong about this
+   * exact effect twice: once asserting the dashboard had no mount side effects
+   * at all, and once describing the push guard as a conjunction of email AND
+   * unseen milestones when it is the email alone. A third source reading is not
+   * evidence.
+   *
+   * So the footprint is measured with a twin actually on screen.
+   */
+  test("twin-present issues no write, measured with a twin on screen", async ({ page }) => {
+    const apiCalls = new Set<string>()
+    const writes: string[] = []
+    page.on("request", (r) => {
+      const { pathname } = new URL(r.url())
+      if (!pathname.startsWith("/api/")) return
+      apiCalls.add(`${r.method()} ${pathname}`)
+      if (r.method() !== "GET") writes.push(`${r.method()} ${pathname}`)
+    })
+
+    await openFixture(page, "twin-present")
+    for (const tab of AUDIT_FIXTURE_TABS) {
+      const button = page.getByRole("button", { name: new RegExp(tab, "i") }).first()
+      if ((await button.count()) === 0) continue
+      await button.click()
+      await page.waitForTimeout(250)
+    }
+    // The push is fire-and-forget with `keepalive`, so give it room to appear.
+    await page.waitForTimeout(1500)
+
+    expect(writes, "the audit page performed a WRITE while rendering a twin").toEqual([])
+    expect(
+      [...apiCalls].join(" "),
+      "PUT /api/twin-state fired — the fixture is no longer read-only",
+    ).not.toContain("/api/twin-state")
+    expect([...apiCalls].sort()).toEqual([...EXPECTED_API_CALLS].sort())
   })
 })
 

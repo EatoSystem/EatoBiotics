@@ -107,6 +107,20 @@ all. No refusal is removed and no screenshot is manufactured.
 | `/reports` | **source only** | `LEGACY_REDIRECT_ROUTES` → `/pricing` |
 | `/digital-twin` | **source only** | `POST_V1_ROUTES` |
 
+> **Correction, 2026-10-04 (step 6) — the original text above stands, and it is
+> incomplete.** `/digital-twin`, `/account/twin`, `/account/today` and
+> `/account/this-week` are all refused (**404**, re-verified), so "generation 3
+> is source-only" is true *of the routes*. It is false *of the layer*: fifteen
+> twin components render inside `/account`, gated at
+> `live-dashboard.tsx:1094` on `twin && twinVisual`, which
+> `app/account/page.tsx:278` satisfies for any member who has completed the
+> free assessment or logged one meal.
+>
+> So the account corpus captured for this baseline — every state with
+> `twin: null` — records the dashboard **without** the layer most members see
+> first. Recorded as `P0-ARCH-01`. The original wording is left standing rather
+> than edited, per this document's own rule about dated corrections.
+
 Screenshots for source-only surfaces are recorded as
 **UNAVAILABLE — route intentionally refuses**, with the classification cited.
 

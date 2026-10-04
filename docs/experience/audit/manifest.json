@@ -16,7 +16,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "86471be53b5f546d0a6c93b9eadecc0fa0d36f89f82da8e6ec69079e8c57f97f",
+      "sha256": "2e1ab256de0184f017f1418d9da3745fa13965d9fbd530f18c08f3bed66821c5",
       "storage": "committed"
     },
     {
@@ -34,7 +34,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "70579b272d25f5bf5f3a0293506a3d47fd6270154764cdff2614ab464a5de10a",
+      "sha256": "259fa1cf8f55b926d30ec7d72612f1b68e9798320f1465b4c0cd5bc88af58b3b",
       "storage": "committed"
     },
     {
@@ -52,7 +52,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "d59baeb9272d1e37f04e7140f479f727f83edb466d911c7bdafa042c8d44cc88",
+      "sha256": "fa621af4a01c8ad6fd2731ddd8752e07564d7c27724b6a9829d47b3265d0e018",
       "storage": "committed"
     },
     {
@@ -70,7 +70,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "0992f77a5ff95a86467e8aa874622525347f2961a7d580d2a65dad2289b124e2",
+      "sha256": "366177c4eae942cd5b4ed20f060726ef8d5efe7f241f3e72f0ae996aef82d7be",
       "storage": "committed"
     },
     {
@@ -88,7 +88,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "702e031786bfb958e72bb4b9511bf5a318c8be51cbedac1d350390960bbb1f9a",
+      "sha256": "34163c6ad73c0302277109e2b6c7bfc5d9fda03461020f7a974428e33df028da",
       "storage": "committed"
     },
     {
@@ -106,7 +106,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "90b01feaf084b9eca3457443eac3ab5027ea87c3210ef054cbeaaae4643ac482",
+      "sha256": "7a6a6f78b739c40344861132c0d4ccff3fdfa7b9eb3dd90f31184c66cc4abee2",
       "storage": "committed"
     },
     {
@@ -124,7 +124,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "0eb488d50ed5f51f59d52fc93f85a3a3ecfa1593d9aa4a1418c90af3e3ca020b",
+      "sha256": "a360ac9dc73a07c72f096da52eb9a6e38e9377e7b74f48243f49ea2bbeb2bce3",
       "storage": "committed"
     },
     {
@@ -142,7 +142,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "93b693dc6000ae8e0e1eea2b072ac818ef878e2742b0878142c9b5888e030e86",
+      "sha256": "36ccfd03e391d14c98787f63fa0451ec55c14ffdbf0e0772af16a8890f2c41fe",
       "storage": "committed"
     },
     {
@@ -160,7 +160,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "a826e54f6bc4ada315866a7813ccabd7794f8f715ce58cbf662437cad5d18472",
+      "sha256": "abe368831dbad44c868b38194a242ca982ac91ffe8db1a2e4ba06d115269968e",
       "storage": "committed"
     },
     {
@@ -178,7 +178,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "bf0254704ac2b930938398d105c1ef03826a532e1610498e7a4f7fe2eb0248bc",
+      "sha256": "b79a391e05f20944a05f7f61db29c49cc7ed12cf0a2e1536cdbecd3fc0963bee",
       "storage": "committed"
     },
     {
@@ -196,7 +196,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "9d249176668ee1cd6686795eeabeb68aa0b1ea060f3a08757079436b9a4bfda9",
+      "sha256": "0912f229539993e9f71e6fdfa4bd75edc4bcac2506e42ab015afdd1857245214",
       "storage": "committed"
     },
     {
@@ -214,7 +214,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "833ffe06ea5cade9c1452c8b81eadde30188d12180b597b917b0419e49dba104",
+      "sha256": "0d50328b46f1c05139e743bec2c66437e9c3ea9b5c00740d71da03efe548026f",
       "storage": "committed"
     },
     {
@@ -232,7 +232,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "54216b8922c4649cfb9f4887056be573ac40839e259dad474df56cae7b2e7635",
+      "sha256": "767e3d9ba9f1e3542b6f9686bf7de6bbd035670d50ecb0bf135b4806f9ff905a",
       "storage": "committed"
     },
     {
@@ -250,7 +250,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "b107df64b600b356d8d2b3ece48f51e1a552d595fe0f24e8639ad2f9ea8cd277",
+      "sha256": "37cc8e492d89dd15e970d6e11539d974ab486446b73ac1d17f92b50b8f8ceb25",
       "storage": "committed"
     },
     {
@@ -268,7 +268,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "6e587ad8dfc864ae66eae4a6764351bc115ebbb8bebf68691ba316c649bde8fd",
+      "sha256": "5a8b36b519bba3eadcf1c3a98427f791ba22c588e6b2697716873818ae4d887e",
       "storage": "committed"
     },
     {
@@ -288,7 +288,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "02ece5d0e9541f5075baa4c0f3280e529a744ae04e0788ec9211e4984b077a23",
+      "sha256": "3a02916bab8a2af181a5490e340654cc9878e00538e20070c3c26417bdd07acc",
       "storage": "committed"
     },
     {
@@ -308,7 +308,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "598a8d7e985735678153552245cb7e7c16f77f57574de32493b248aed62bb337",
+      "sha256": "02bfd32f4c6543c9a1a9a3d18e570f56b950aebb4fb0726dad2ae1d9f68396dc",
       "storage": "committed"
     },
     {
@@ -328,7 +328,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "4b35608746fc59b396f54f40434f6f86460e9887180952642be1aa91c61b6fe6",
+      "sha256": "26ef787e41426b7d8494ae7132070d2c1cb035c182c5414ef341071964e47bab",
       "storage": "committed"
     },
     {
@@ -348,7 +348,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "b29cdcd61b2f02956ef6bc66e13c13966662a88dfb017afc3ec2c69fad7197b5",
+      "sha256": "cb1e989b77ff118177adc5abc8e665c423631e868a31db388dc984af61722ac4",
       "storage": "committed"
     },
     {
@@ -368,7 +368,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "8ab3ad3caffdec4731bf90dff30a9ca26cb824a2cf9d5398e75471e1848aa655",
+      "sha256": "dbb3b27fc8cd8576bb0f21217753cf4f92617f5befb2d6958450dc4639b2d331",
       "storage": "committed"
     },
     {
@@ -388,7 +388,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "0e626772c845006d208135ce89b3fc52cdf4a4f5077efc645c1d2266a075a3d3",
+      "sha256": "d5c5aeb3da565a8a1616fd19e3a7e6a9ed00e4c05630751b3f486822c690aa37",
       "storage": "committed"
     },
     {
@@ -408,7 +408,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "ee4144a155c6b73d196e7b91d150679a38399936737be52b21ad3d5d6343123e",
+      "sha256": "12593954b1f85bdd61db9cbd9b0e61257d2b035f65b0c6ede486c85924d70422",
       "storage": "committed"
     },
     {
@@ -428,7 +428,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "92dfc142a7573d02180e147550cc3ef3408713a3024d78a1bbde25fb05360b14",
+      "sha256": "325fa2a8d07004a6b989e3d630d17beb1f413713ee303b2e23872ebdbbb44fd9",
       "storage": "committed"
     },
     {
@@ -448,7 +448,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "f1967d037578af1623626567a1f57b6f9ab80378fced16b719c0cbbe0421c8b4",
+      "sha256": "f20f7338945e367fda556c375e86d33af763dc4421b286641ebd57257ba4abf4",
       "storage": "committed"
     },
     {
@@ -468,7 +468,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "63b47944412fb34f48b9e38652dee02722cbeee8b0a36547eb8b92120a9dd797",
+      "sha256": "3cdb5ca2987ed0db90acaa2eb5292bd1eb0cbb77e51f5be7c4d03a352cea966c",
       "storage": "committed"
     },
     {
@@ -488,7 +488,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "dce267840f71fa6aaacc2b1cba05626d335ce39fb6559bfd03db70cc79810085",
+      "sha256": "e2af13f914f6793f008029a3e4181294f526d84ee0f3a4acbd85b45bc4906c86",
       "storage": "committed"
     },
     {
@@ -508,7 +508,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "06944d24ea2bc96e6e2da0d3881ca8205f1c7f60fd3d34f1cb00e72749b25161",
+      "sha256": "86941f6fab5f87d7aac2722106bb2630e365f649b0efbfcddb395f7f61afc6c3",
       "storage": "committed"
     },
     {
@@ -528,7 +528,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "95f6f7e205febb66d1dc0145dc2c8716d187c5512b9a2bfb6a509b797ce588c5",
+      "sha256": "36edf22e103f07ead8af54ea995d71237c511138f90dee61dd87b6a036db2b87",
       "storage": "committed"
     },
     {
@@ -548,7 +548,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "a6553174ede1aaa0ec2064cbc92819017d76c263cd6ae7a6807872e791013883",
+      "sha256": "af357221ae54109e8d9fffab0749c5a8d1587340cef8d5f77572b2cd887103fb",
       "storage": "committed"
     },
     {
@@ -568,7 +568,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "65f4395588f688e5543ec7f6da6ff8490e23ce405c21193b2042402df630624c",
+      "sha256": "ab8570e72d31c34117596da2b4e862176ab9c4e2b2b02ec0b6726c898fd10242",
       "storage": "committed"
     },
     {
@@ -589,7 +589,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "e69808a0b1bba8e8f30d6d540ae04885f1e6566c78f451a174590386663d76b9",
+      "sha256": "c0baf0e63d355feccb5bc8286725111349b98b076a63d636d57b92ce9586ca7c",
       "storage": "archive-only"
     },
     {
@@ -610,7 +610,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "0c5b7e1e72f94ead62236b74311cedc49bda408feabd59cff6b840226e2d18c6",
+      "sha256": "4f2cfd4bc8e577d1dd111b414fdb9370506deb4a09e58fd83f2410c5fa0c61fa",
       "storage": "archive-only"
     },
     {
@@ -627,11 +627,12 @@
         "P0-SCIENCE-02",
         "P0-TRUST-02"
       ],
-      "consoleErrors": 1,
+      "consoleErrors": 2,
       "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "1252cfc4c6fd1303779041fae2058bc8bc48a874f26f15ec3f65353f0911f013",
+      "sha256": "ab99e500aacf31154400425c42c2d1cdf328a2cfbb1b3aea205e6f5d89eb1edd",
       "storage": "archive-only"
     },
     {
@@ -652,7 +653,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "6c55fd4f7b7855e36f121768600789285ab36bdb2110d0715b934139a5a5d3ad",
+      "sha256": "c91c17b8c26291d3cbd7a8b4de5af1879cff0d8b963886edaab6928b1909f378",
       "storage": "archive-only"
     },
     {
@@ -673,7 +674,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "0a98939ef1a702c23e056a0ee5ee1ec2cb4695e7a5d6bf0c568a19af17b628db",
+      "sha256": "f82a9a6d40c26b3fb7013729badd1ced86d62035572bf731a5d1c899bc5c8547",
       "storage": "archive-only"
     },
     {
@@ -690,11 +691,12 @@
         "P0-SCIENCE-02",
         "P0-TRUST-02"
       ],
-      "consoleErrors": 1,
+      "consoleErrors": 2,
       "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "98b42218f194bc98d014066604440b732a311f56148ce3d8b5c35cdfabde028f",
+      "sha256": "9d552edcdd2b3f7331b892eeb8ddfafc33ff0b81e95f20c75825f821ac267063",
       "storage": "archive-only"
     },
     {
@@ -715,7 +717,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "15c6ae626b3bdd44791386530f8d3f4510511ba7cef9c7ed2926573fcdfe26ea",
+      "sha256": "82b2686af042cb0f26c5809ff1af1525faa3bb1065448d1e75209dd901186138",
       "storage": "archive-only"
     },
     {
@@ -736,7 +738,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "b6c9b4b1884a26de2c5f40c29465cc899f80d4517719fe3e8449a620c9845895",
+      "sha256": "206315529eeddce8ad7c2735772b51c6c03b8f2b2d6753704758705a9a8fc8a6",
       "storage": "archive-only"
     },
     {
@@ -753,11 +755,12 @@
         "P0-SCIENCE-02",
         "P0-TRUST-02"
       ],
-      "consoleErrors": 1,
+      "consoleErrors": 2,
       "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "86b28e6ff2fa18d036b55ee0e85b3df0dd21d976d63f078f002321afd41c95b7",
+      "sha256": "38b4012c372a56aa63f1b7bdcbae28ec8061e060162ab594d094cef8642cac5d",
       "storage": "archive-only"
     },
     {
@@ -778,7 +781,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "f6a1b916f0a7c580dbc4512c7d14bb9f5518e445f09e18d808d8476061e0e856",
+      "sha256": "6ba569f3ea62c37a5d8bbcc632873f783a82f076f4c6f620b045c8bcaa6243f7",
       "storage": "committed"
     },
     {
@@ -799,7 +802,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "4444acd729a2c903243e26590544ebc3a6c4d6db14e6ab4e077c7a2e782a87b6",
+      "sha256": "3044d6806facb9bfc9ff36006470d3851b8bee4160a31302fb7daa6fb4ab6cbd",
       "storage": "committed"
     },
     {
@@ -816,11 +819,12 @@
         "P0-SCIENCE-02",
         "P0-TRUST-02"
       ],
-      "consoleErrors": 1,
+      "consoleErrors": 2,
       "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "26e9c17f76fa607182d77c555d129de563057dcee63587112c4d9ea87f406008",
+      "sha256": "fae8e96e00fa0d8369b44e86f47687ccc0676405fa97aeac52b504a0efea34d3",
       "storage": "archive-only"
     },
     {
@@ -841,7 +845,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "39d502f501f69fd3276f471b321241bb7f53e1ee6cc1212ee77b394b64beab9c",
+      "sha256": "a6179405d247de949392f0c49876a3c71874ca1dbc15b586fad798fe87a0b7c1",
       "storage": "archive-only"
     },
     {
@@ -862,7 +866,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "daca8dcfb37c73e07d766b76ac596aca4e105aa5e63e9fa22146157717fdef4b",
+      "sha256": "319c8a610d129d0b1cb854eea61630d9395deec0539c624ada91546e0bf4c747",
       "storage": "archive-only"
     },
     {
@@ -879,11 +883,12 @@
         "P0-SCIENCE-02",
         "P0-TRUST-02"
       ],
-      "consoleErrors": 1,
+      "consoleErrors": 2,
       "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "29c39c7e0548b63816655865472e28c6cf3186c465d65209e23410b915d57a41",
+      "sha256": "360a330ea387014b9e028bd7eaf293de605d8b3ff02e365fe3945fe7406c8bdd",
       "storage": "archive-only"
     },
     {
@@ -901,7 +906,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "e29cabb9e95f034e7fa1f1d69248397e2e682cea405364e7d9af1e452c4de1e7",
+      "sha256": "425202dd6f587a969f9c6333e85db689a2afa06f5d492b0cd9787f91293cfaba",
       "storage": "committed"
     },
     {
@@ -919,7 +924,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "becb55d8bfe6b568a277d03e0058a682ba01bb3870042c12eb721a1894d62746",
+      "sha256": "48c15c89a3063a5b965fe1935f581ff9f26a38b9242a34e1b0d96508c34381c1",
       "storage": "committed"
     },
     {
@@ -937,7 +942,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "1505a22302c93e67375ba3dab0af686ccef3c45aa74bcb94ccf317a1154a9b5c",
+      "sha256": "ca2cdf182b19b31caf741375c10ac0fd61a88389b8680fb64a05fc1866b4633c",
       "storage": "committed"
     },
     {
@@ -955,7 +960,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "0e41658f5591dbe8cad90ebaa124c5dfccfc6b02099b41e74df07bbdb8781b17",
+      "sha256": "45798d06425e38f56618d06856df04fc76695da3c15bdecb6d2eb68d6c81b674",
       "storage": "committed"
     },
     {
@@ -973,7 +978,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "d2606e40a8c8cb2a8e0c340005063b06bf110942f8a806bd1cd27cfdc4ecaef5",
+      "sha256": "87a8bd4eefea6c614d1f704b8e11e9c92e587ef50e2c280ba98eb6b6d0925820",
       "storage": "committed"
     },
     {
@@ -991,7 +996,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "6b65ec57545a454b96f8a7371b2cc1114b1be9bf7246502e96e84955b578ea15",
+      "sha256": "a3fe1e14b3f0e6e11f6fbba561c5af301e0c8d78c7608b5ebde4986a675a5802",
       "storage": "committed"
     },
     {
@@ -1009,7 +1014,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "f89d05c3e5f03b841962d443d838b2c91c1210c41a52afa3e3c3327eb4f14251",
+      "sha256": "9afb740ae973fc1db88651e3b8c683cb8896546cf1441034ba9d4788f942e99a",
       "storage": "committed"
     },
     {
@@ -1027,7 +1032,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "91f66cff51c2ad6d03d069f91821102754aee1592280145b426dd5c5a06b6353",
+      "sha256": "84499939477a15d151f90b154e757ee95d4f4e30753bf5b6f9fcc27cac999ddc",
       "storage": "committed"
     },
     {
@@ -1045,7 +1050,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "03119aa7eeabe62477f53d01ad3565111af30454c90d653b8aab2e78f530d68f",
+      "sha256": "2351bb40a1d6b2d5e0c6c6fff70357c5598124e373961c096b3c437c8d2a9523",
       "storage": "committed"
     },
     {
@@ -1063,7 +1068,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "3214827cb8f23aaeb5157c7cbcfaf2ff7783bd301821c368c6b90b0b2037fca2",
+      "sha256": "d6f767185b7655144f00194cbb623ae08de4f7ff049928da350abcb2ff6b2ecf",
       "storage": "committed"
     },
     {
@@ -1081,7 +1086,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "5814d58108834ffd05087885fac45fe995f31cb0e7bdd4e8573537e633e39bee",
+      "sha256": "c4234efcbe78080eb5705fc5e17956888eb0447ba4c732bd1ca36484e79f6d41",
       "storage": "committed"
     },
     {
@@ -1099,7 +1104,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "a3443189d039b8dc5f4225a943ce7c53472d834b65ab7cf293e496c41b7f08a8",
+      "sha256": "755ea2185f2adddadeb74d3287f775056300d7fa174e22a8cf4b1739f6505bc6",
       "storage": "committed"
     },
     {
@@ -1117,7 +1122,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "25db573f1fd3dd0e2ed6a9fb3041c98ddc2be3cef0cf57eb4718d52e804d50fa",
+      "sha256": "d797a5dc3d2feb82f9eab87f2b4584e6e5072e2cdccd47127ef62b05b975b0d4",
       "storage": "committed"
     },
     {
@@ -1135,7 +1140,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "23406ddd390bf6292c56747b14688c10284fd669d205381c39acadd52b4c7aaa",
+      "sha256": "944d03203dca3d4a06ab38e8449c2092f5f1d83271c2a261f4acb18ce23bb0f2",
       "storage": "committed"
     },
     {
@@ -1153,7 +1158,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "9ed96576873f40822adb9079db2457caa8a28ea18d1da0621926c63c92067f54",
+      "sha256": "638c31dc4d7b4978c5208eed129ca192554405414d36e0f4eb0eddd9cbcb7987",
       "storage": "committed"
     },
     {
@@ -1174,7 +1179,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "7bc27d99ab84f0067f997e56eb3838feea1019d727394eb978e57844797403a3",
+      "sha256": "da7be5dcb242a7f13f085a5b463c0dcce7da28a10a53d8a88de90cf8e2d5ea13",
       "storage": "committed"
     },
     {
@@ -1195,7 +1200,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "020dd3d1d2ffcbbd2c2737c6be829a0d6375c03dce98b97ef2234186544fee22",
+      "sha256": "b91de57895338e8d127a8423544726ce899973009b1478fb54967d7f4e03e6fc",
       "storage": "committed"
     },
     {
@@ -1216,7 +1221,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "30ec0115441424108272242659a4d3f8e85b292858c92ddf1c2d365fe4ab67b8",
+      "sha256": "c55ec0ac909f1a2ff584c04f3a8ac776ddd7d29ad3a95bca3109874941a09a00",
       "storage": "committed"
     },
     {
@@ -1237,7 +1242,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "ece026ccde2922ce055386b83eac83e6a5c6ceb0cd590a90e8f840b0130a5886",
+      "sha256": "70e9c8eb795a0e6f7453432e594d27cafb2d87e15da7bf19287ab818983b0e78",
       "storage": "committed"
     },
     {
@@ -1258,7 +1263,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "1433fee917b0569fabbc9384780fe76ea89fef3fc823dfb366e2dea950be38a0",
+      "sha256": "77d4ca9a5948a5b51bec544e5909b127393c9db66f176a544d46ea7f964e28a0",
       "storage": "committed"
     },
     {
@@ -1279,7 +1284,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "9a77d52a4a8f53e47a49d5c9a11159f497433b951e7f932a02915995346141fd",
+      "sha256": "94c2fa7320a74e254df5100227a8ac6820853e26aa6a3025d08fc162d6129cbe",
       "storage": "committed"
     },
     {
@@ -1300,7 +1305,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "d1139490b6831f2e76b86161a0182c913654b63bb6f3618d274e39bd84a3fc58",
+      "sha256": "fa1ff51488ba2c2b497a8b189f386f40fad79220bbf20134e15cf734625497f2",
       "storage": "committed"
     },
     {
@@ -1321,7 +1326,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "af93b78980f2f75f0fe96be88c0dd685a9c7d5c0d81cdd40d18f04f7bd59ef98",
+      "sha256": "a957d9a54de6092e38f3f69901a0a5f15dcfccddad3cfa114d830b152b5a27d9",
       "storage": "committed"
     },
     {
@@ -1342,7 +1347,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "5abaa3440f79d648532d748f58a624b19ec8ea41760073bd1ab4dd37fdb37e14",
+      "sha256": "b4a08477425c45d8a3835768ce93d4ff69e774dadbbe1a5b5ed5a52142879c28",
       "storage": "committed"
     },
     {
@@ -1363,7 +1368,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "5849353f6325df3d977481ae7c1976841969cbddbbc700a417bfb161c139ef28",
+      "sha256": "8660ebe2f697950322a170128e1c429b0e9ea8f5eb0099049a2478cb44686433",
       "storage": "committed"
     },
     {
@@ -1384,7 +1389,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "241b01e2a5e1e56241614bdfb1da7a2dd8a75247cba250e314353804d91a77a4",
+      "sha256": "db415f7ca70e13c7a2b7f8f6b2fb09dbffd204808c6b74442d8c80e042fefe6b",
       "storage": "committed"
     },
     {
@@ -1405,7 +1410,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "20fa28d9dcc6944c099fb18c0b08eeb2ec0f35eed5347fcc26c7f9a1df30f37e",
+      "sha256": "eb09a36345e2433d63b60f2f07152b1e7ce8056917ed4694718059fa204e9ecb",
       "storage": "committed"
     },
     {
@@ -1426,7 +1431,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "4edbf6a3a6de287d14dce7782d6daae165a1b761c63b82103fb8bb7181c3de5f",
+      "sha256": "9701ccd2349c730ea2d66c2c22a1eb19491cc3be6e9570f8cf844e925b8fcf9e",
       "storage": "committed"
     },
     {
@@ -1447,7 +1452,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "42af689dfcbfaf1b55c835c4f49f55a5015466c762a52024827d743ffd73b471",
+      "sha256": "a9120592ab61b054cd3983e8f1b2be177f84ac92a39d73aa7995ba61795bfa3b",
       "storage": "committed"
     },
     {
@@ -1468,7 +1473,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "32259e377b1a3e36cdfa5ba6d6d834b8ac41b96e528cf542ea6bbd9effd41640",
+      "sha256": "e29e1786f38e603685c1e8c77cac96513d13579b419c8b76d30c0c4e4ad22702",
       "storage": "committed"
     },
     {
@@ -1488,7 +1493,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "f7cd0098bd1d670e4ee43cb83540d939f726da7c9bff45e70389b8580b1919a3",
+      "sha256": "a27cffedb6a6e9e8b27778c21e5cf261073d945337d8b88c87228ccea10bda79",
       "storage": "committed"
     },
     {
@@ -1508,7 +1513,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "85192eb8949f78ec6167fb237ea85385a609487d9e48a7d86719cbd159698602",
+      "sha256": "5f9d1679e940be24f36428b152d68bb7202ca4c909be7129a4db71b273d784fc",
       "storage": "committed"
     },
     {
@@ -1528,7 +1533,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "0a0467439453fece57535dcde67bc483639f13984b4c91ae4d6af35416ab152a",
+      "sha256": "c8f3bc82c9d87df6e2b59bd6917afb34e4e4d8cb2376ddbe20eeb453a34b8d90",
       "storage": "committed"
     },
     {
@@ -1548,7 +1553,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "ea19e23545375a8d44f24066a82083afbcab379e171c777965f9817b8951d452",
+      "sha256": "a1a60872a59f8113b3963201ea45985bca8e0c742364a91d7edef768e53daf73",
       "storage": "committed"
     },
     {
@@ -1568,7 +1573,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "53915158104dab3efe01f9d62ed8bc666287512701abf769fb9bdcc6cefc7000",
+      "sha256": "7b31f240788c043749c827166167c29a8a554d02ea7d12122d278ee783924256",
       "storage": "committed"
     },
     {
@@ -1588,7 +1593,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "39a2493dec33c59b2bc77077d78c5fcf2fb43b25b8d6350d8c64594947be0358",
+      "sha256": "494e2a3e60e14122030add06251983287c83bc699c3d53435ef8f89d6654766f",
       "storage": "committed"
     },
     {
@@ -1608,7 +1613,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "1fc2333071e7ded560cd481cd40742084448225f247dabb9425ee5960f751e3f",
+      "sha256": "1aa74afa0e1199d0a8da598f72a9fa8f535d13e02c4ae8b4b82a78c3805e91a5",
       "storage": "committed"
     },
     {
@@ -1628,7 +1633,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "11b85e254ea3ba17468d2cb69a4c9176ddfed80158e2fa51204b2355a43b0aa1",
+      "sha256": "e15b4de226bc1eef0b3aa3bd2667aa218eb94cf44af39a635ebe4f7b939921cd",
       "storage": "committed"
     },
     {
@@ -1648,7 +1653,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "fa3e821a147b7faf8339d7059f04f44260a6b7bfb4a1924ecf8e93e19c76f684",
+      "sha256": "999b221eecba8906523e9d426623d69277d183b3caa985c250f362a6ccd7ffbc",
       "storage": "committed"
     },
     {
@@ -1668,7 +1673,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "820b664410d9caf1c101ad0821d45939aa0f73a3c1d40676be3d64fe4cd04823",
+      "sha256": "c9a7e313691d1bd8e9ed2407a543f363c24df18820b4750dbb7e65eabe981015",
       "storage": "committed"
     },
     {
@@ -1688,7 +1693,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "32d17894401601bf2675b018384fd8dc0f399fbcc45319809be80748d0f6af60",
+      "sha256": "0f332c79927fc8fca001dea75efd12bd482e34078c7f3b6aead83104de41bc2b",
       "storage": "committed"
     },
     {
@@ -1708,7 +1713,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "9d813752d4a426a4f3c0077792c74ed7b8f866f2612bb9508bd8f9be057feafc",
+      "sha256": "67e2afb13307d95fabb70e5535e347be2dcefcf3d2457fe484d6b28881642a8b",
       "storage": "committed"
     },
     {
@@ -1728,7 +1733,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "ca03ab5cc59728a0b3c2d52504e6ad46a4a319e3dc63a1fd8dc22d53cd32c5e5",
+      "sha256": "9d5228b550139e2d8e21c4c9f4be355a85a08ae99eabb3f87e5612141b8d68a7",
       "storage": "committed"
     },
     {
@@ -1748,7 +1753,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "56ef68abecde464efb7fcfa00aca20968a8f2d036b28dc43fa192984822f46b5",
+      "sha256": "0d1159fd0a59d5d440ffbd2365d7b1bf539ac4a6cba54d8ab5e4561591ea6119",
       "storage": "committed"
     },
     {
@@ -1768,8 +1773,398 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "ca3ef70216e01b2b661ef12f48e852273f802086e3585ff1c1beccdb52ad884e",
+      "sha256": "915d51fdcc004e714a1758d2ea37c0f835856b6f3fd64e06b10e8a2dee3ae876",
       "storage": "committed"
+    },
+    {
+      "file": "account-twin-present-account-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "twin-present",
+      "section": "account",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 8,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "sha256": "2b6468d045049eb99b90b4baec45ddd879f1191f406b2d117dc4ad08c7e521f2",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-twin-present-account-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "twin-present",
+      "section": "account",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 12,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "sha256": "bcf49b6e51d18e6e4eb0b05909531c2e49f32452f20a369b3646e21316e44098",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-twin-present-account-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "twin-present",
+      "section": "account",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 7,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "sha256": "f8041745cabb96e5e319f731ecceb8e8b4115842d20d9e6e7f3c94ef9689b8b5",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-twin-present-consultations-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "twin-present",
+      "section": "consultations",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 8,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "sha256": "3c95a7800754a38f38e4f07678013ab1e9646ac2510dba8a499fcc88df5f0647",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-twin-present-consultations-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "twin-present",
+      "section": "consultations",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 12,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "sha256": "e9e98bce679941abc72a4f6e6e47fff9bccf6ac28451b5b7d0b1cb25f51ddac4",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-twin-present-consultations-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "twin-present",
+      "section": "consultations",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 7,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "sha256": "dd10707f0360893671e7a0f8747884484f3a01c66d2bdf55beaa6176ca82dc17",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-twin-present-meals-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "twin-present",
+      "section": "meals",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 8,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "sha256": "521ce30d20aa0ab281df71bfc882f0ec98b2c23a9f59d41948e1aa99b5019721",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-twin-present-meals-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "twin-present",
+      "section": "meals",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 12,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "sha256": "5f8deec11368cf58845bf830d233ed1fe31eb53d5a747ed4daba1ec34c0f5867",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-twin-present-meals-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "twin-present",
+      "section": "meals",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 7,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "sha256": "a2926ad007a1115425982ef42250ee5e18808ad5ac768b4e2005a99fbe188fcb",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-twin-present-overview-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "twin-present",
+      "section": "overview",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 8,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "sha256": "2413d9ca531a34b9d04379ca12e9b767e7ff1a164df49b7a11625e66bc13b51a",
+      "storage": "committed"
+    },
+    {
+      "file": "account-twin-present-overview-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "twin-present",
+      "section": "overview",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 12,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "sha256": "9dca0830b6939bfa61427708f3368c789e262a57d579eaebfd083ff6b0318875",
+      "storage": "committed"
+    },
+    {
+      "file": "account-twin-present-overview-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "twin-present",
+      "section": "overview",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 7,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "sha256": "5d2ed77a6c750475951bdfbe1126d589c140893585fe14386ad09f7c37da50fd",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-twin-present-reports-1280.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "twin-present",
+      "section": "reports",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 8,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "sha256": "ff3a5d4013d5413e7589ad2b90667c426e2a9f0012d20804c3ffe020b9566dbd",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-twin-present-reports-390.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "twin-present",
+      "section": "reports",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 12,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "sha256": "9f67b65e8eeb866c9fcfebf7ad3ce6a259bf2f7e19e7244b4e791f969bcc8f22",
+      "storage": "archive-only"
+    },
+    {
+      "file": "account-twin-present-reports-834.png",
+      "surface": "account",
+      "route": "/audit/account-dashboard",
+      "state": "twin-present",
+      "section": "reports",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "fixture-rendered real component",
+      "component": "components/account/live-dashboard.tsx",
+      "findings": [],
+      "consoleErrors": 7,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "sha256": "623a54a9586ae9dee7b55d6a379651fa705a4555c35c8d237edef18d24016e8d",
+      "storage": "archive-only"
     },
     {
       "file": "account-weekly-report-present-account-1280.png",
@@ -1788,7 +2183,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "a70f7cd754e32d950625b5e77d235a8c6a02cf691e8566b533517da2dea06662",
+      "sha256": "28c64474b2feb609aa81579577ed2704fce601bd0fb1721c7a064be955dc88f2",
       "storage": "archive-only"
     },
     {
@@ -1808,7 +2203,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "b1f30c4e2d0110b6548db2499f02cdbd32c597cf406b245fa2adcd33849e770d",
+      "sha256": "bf78d3790a994da774710ed41a876f986f4b368b71c6e9be8e02273a478b6c5b",
       "storage": "archive-only"
     },
     {
@@ -1828,7 +2223,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "9b86706458aa1dbc28191c58d96c68ee92f902c577b8685e61a107ff8d3673ce",
+      "sha256": "fea8b39d37ee96d7a15599679510bcb8766859e5dd10835b97787cee994418d8",
       "storage": "archive-only"
     },
     {
@@ -1848,7 +2243,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "b5fa8ae3ec30908ba7b1c8366ea7dc8ba06604d0b9cc5a6490bd06f93ecf00b3",
+      "sha256": "57967c1f0e45b623e161fe5707139256e6184358154a3625c65eee6437099edc",
       "storage": "archive-only"
     },
     {
@@ -1868,7 +2263,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "f1570259d8616e27e05c789a97054d3405c02ed51bfc31c3cc0d866acc8b189a",
+      "sha256": "2ea93d6f58c9f5ae70ac364a347ed034157cdf31695bb0c722a8004b6e9d175f",
       "storage": "archive-only"
     },
     {
@@ -1888,7 +2283,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "80d2e349ea9aed168345801b96e21f886dee5bd85bf4339aa82100e829adc81e",
+      "sha256": "0381f357d4189b4ff1e872649cca9efed671f7d909288cb5029c4aacec3915f3",
       "storage": "archive-only"
     },
     {
@@ -1908,7 +2303,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "c0bf07b6d5b45923eb0fe2b5d3e99da24b1047dc8d95b5312865739dcc70a4f2",
+      "sha256": "4f42731902353003b300505679f2cf2e94410993cb661006ce172a7c649d8712",
       "storage": "archive-only"
     },
     {
@@ -1928,7 +2323,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "3899844f549ea03809ca7b5cdaaee9f29eeecf3933074d3231ff63e90651b9bb",
+      "sha256": "ca790595969571114eeae1695a74e63d11a2d1f8d73611163d2c409b26f62c9e",
       "storage": "archive-only"
     },
     {
@@ -1948,7 +2343,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "d1eb66424b277feb918109f42874c98be80038cc97801653d2b66363af207788",
+      "sha256": "88a142b558e74d5d91689bd9ec114b78d0c087948d8311a41df45d923283fa78",
       "storage": "archive-only"
     },
     {
@@ -1968,7 +2363,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "34b6e5e7b34965b536f2adbfebb938bf0c4b73987af2a9002dcf8d83b26a01db",
+      "sha256": "016c801403d6c62e7a7daa99b49c88dd458cf3619b8f5faf8ee0c5f41ad6735a",
       "storage": "committed"
     },
     {
@@ -1988,7 +2383,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "feb6af5c1056d3772e5d6d2d286f5a4afad579370419d066414fc69c084ebcb5",
+      "sha256": "69f751ae9d4f87b9d95f4b8b3fa0f1553f6a936a7c9345dc841ec2010fb25634",
       "storage": "committed"
     },
     {
@@ -2008,7 +2403,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "60c438db48eba880675230728cadc20fc1467339207b0e33204608e477fe304e",
+      "sha256": "39396bf1581af7db4c7aae984f0bdd6e14207de56505baa473065885e32ac051",
       "storage": "archive-only"
     },
     {
@@ -2028,7 +2423,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "95cda1f4edda3d4afdbf6f6002ff929f757fbc0bac32f36a8df032250454dabc",
+      "sha256": "7006d35c5110167bb0e94de2bf91f23ed86212688a07e49b7159c609593ce017",
       "storage": "archive-only"
     },
     {
@@ -2048,7 +2443,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "a5d5846cca06f638ee16222f621441b067c9de3580c1a4e7652d6b7033829b68",
+      "sha256": "37d7b5606f8069e04f152e4780514e30d58ac2452d25ead32274f25426723f3a",
       "storage": "archive-only"
     },
     {
@@ -2068,7 +2463,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "50be8b3a3c26f8a50551afd34e9ac010d837424df6d6dc64252f0710876c1ff2",
+      "sha256": "4f63b0b0e7b06c413eefee77b42f45ab2ddfe323bca247c44ea9425715e89693",
       "storage": "archive-only"
     },
     {
@@ -2104,7 +2499,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "471eccf9b4a88f4b65a017e1730b113d5fc4cb41a630942f80c2be3ee49de77c",
+      "sha256": "f129ec3f1fd1705ca061e39c39d17cf3a4f8cf70818701a16b9bb49d7f77a7fe",
       "storage": "archive-only"
     },
     {
@@ -2140,7 +2535,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "1741aba9ba94faa29dd7aeca439e2b95261aa89defc3f1504d8023dae3f7c9cf",
+      "sha256": "e62b23e56fe75b994b4929a4aa2f92fa2d014b95b9be8a5a3dccd71a0a14704b",
       "storage": "committed"
     },
     {
@@ -2176,7 +2571,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "e72c2d0e4bcf55433cc4d51b8acd5e2d1274b2bc4bafeb1fb3bcc4168abf338b",
+      "sha256": "6818a5bcb9b6d372ac4f8a065949ff4ca0d1c9a23c99298a1213a892567f7c53",
       "storage": "archive-only"
     },
     {
@@ -2214,7 +2609,7 @@
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
         "Failed to load resource: net::ERR_FAILED"
       ],
-      "sha256": "57f9c1b8497e6822e63a1051f7120be002634b350ec3be29193f5f9bb633d38c",
+      "sha256": "26091908cadf46a95d59fe625d1e8c1470658b4977217a7764c176d097838ad0",
       "storage": "committed"
     },
     {
@@ -2323,7 +2718,7 @@
         "Failed to load resource: the server responded with a status of 404 (Not Found)",
         "Failed to load resource: the server responded with a status of 404 (Not Found)"
       ],
-      "sha256": "a42370727919d4b1b87b66153d08cd68e16488ebf3460c90002b5d15f36e7e69",
+      "sha256": "1b1d7c82b4b9f8573e6d6ed88645534b99eea70f7294917f09163cddfb62827d",
       "storage": "archive-only"
     },
     {
@@ -2353,7 +2748,7 @@
         "Failed to load resource: the server responded with a status of 404 (Not Found)",
         "Failed to load resource: the server responded with a status of 404 (Not Found)"
       ],
-      "sha256": "3f0c7a2288b775359ed661ca1a2f968ac67dfe450cf95eb160e018d5b1a6d1f4",
+      "sha256": "68bfe494b8028e59bfd038b3adb2651c80d7d226bddaeceb0ec5e6b04961dd4f",
       "storage": "archive-only"
     },
     {
@@ -2386,7 +2781,7 @@
         "Failed to load resource: the server responded with a status of 404 (Not Found)",
         "Failed to load resource: the server responded with a status of 404 (Not Found)"
       ],
-      "sha256": "9a63e882e2cfb966281fe284702c7c33460f687eb02ac47f0b9b3ab54f56b85c",
+      "sha256": "fee7a72d639da10270d01099d57eb2eec121252098b1134313b184857e792fd1",
       "storage": "archive-only"
     },
     {
@@ -2411,7 +2806,7 @@
         "Failed to load resource: the server responded with a status of 404 (Not Found)",
         "Failed to load resource: the server responded with a status of 404 (Not Found)"
       ],
-      "sha256": "8bc80420fcb83be67d7b1246011c4eedcf8d9cc6ced15901685f2e3ac950349d",
+      "sha256": "bfb5a1cf201c1fa64ebafab02f0fa2f13b2bb892490c273ae8b26dc57208128d",
       "storage": "archive-only"
     },
     {
@@ -2433,7 +2828,7 @@
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
         "Failed to load resource: the server responded with a status of 404 (Not Found)"
       ],
-      "sha256": "eae98e5d61036e6c18fbfb7c7eec649644c7a252a0c32b6bf771ebd59350cd17",
+      "sha256": "67f73cc4fc55c4089090ee7a1824395e165c1b2824e9a197d81c97968b50cf21",
       "storage": "archive-only"
     },
     {
@@ -2458,7 +2853,7 @@
         "Failed to load resource: the server responded with a status of 404 (Not Found)",
         "Failed to load resource: the server responded with a status of 404 (Not Found)"
       ],
-      "sha256": "e578d9a012e14bd966010a59a353e90a308e11817eb67e4949241e4a8e446788",
+      "sha256": "9a238ed73f26f1306bcebfe2405527ee79618ca5205882e5c8c0333e92a6a933",
       "storage": "archive-only"
     },
     {
@@ -2484,7 +2879,7 @@
         "Failed to load resource: the server responded with a status of 404 (Not Found)",
         "Failed to load resource: the server responded with a status of 404 (Not Found)"
       ],
-      "sha256": "59ecf22e7cc95b868ba00110d2809eff64bdc9d63c1fe18f16cb1c27028486e4",
+      "sha256": "4a6d8a78009ac686c53c53168b5d2ebc1f73bfe45190dc9a4f4c65c04faa93b6",
       "storage": "committed"
     },
     {
@@ -2894,7 +3289,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "5f10f7269934b9a3812530ed5854dc89d82ebaa6e6d6c3ae823e59a679361d6b",
+      "sha256": "9fa7a6cdb92204dc033d867ace970943b0cc6f0aeb4c94307d059e3b84c4ba6d",
       "storage": "archive-only"
     },
     {
@@ -2910,7 +3305,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "9f455ec785b90aef297004881fc61c5886e58b3e187cb02887fb6aabbc37c818",
+      "sha256": "b0fc2b4b62eb502ed0e25c890e7533629769ba03c84746f5b0abcf1cfc3d8b0f",
       "storage": "archive-only"
     },
     {
@@ -2926,7 +3321,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "d13bb11f6392b0e7e32545a3ea5290ea55cc1ad6218f8faaa1e92741a7fc14f7",
+      "sha256": "189a98228f4a50200acf8c9436b129dcef039f9e8bc90470f39d784ee90e46fe",
       "storage": "archive-only"
     },
     {
@@ -3230,7 +3625,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "d5552276c7605e745e047c7e4fc7e9dc8761346f393a7f1469dd1175d574307a",
+      "sha256": "a9543351672f742a4bf656de426debbc408be08e1419cf407b499b4caf875ce8",
       "storage": "archive-only"
     },
     {
@@ -3246,7 +3641,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "c99bedb370616d9f3e6caca7b75adabf56bb9ff17cec8066648ca034dac29c52",
+      "sha256": "b0fc2b4b62eb502ed0e25c890e7533629769ba03c84746f5b0abcf1cfc3d8b0f",
       "storage": "archive-only"
     },
     {
@@ -3262,7 +3657,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "8f6f3b81fb76e437d96934b2e13fda1d5ac0c122c75aa1bc088b9e2df07b5dfe",
+      "sha256": "d13bb11f6392b0e7e32545a3ea5290ea55cc1ad6218f8faaa1e92741a7fc14f7",
       "storage": "archive-only"
     },
     {
@@ -3422,7 +3817,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "71e9a0aa2ddb5ab936029c8d785eef3c1993a64bca6e5e9c09285501648cfaa6",
+      "sha256": "bf58510fccec0d10209ff536a41cc664bb437eb3ba8ee865a18f743c4dc1c11f",
       "storage": "archive-only"
     },
     {
@@ -3438,7 +3833,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "1e45255240bf7196e9f7738486cf86e9d727511c629832b676b6bc07db5ab5fe",
+      "sha256": "59a4143573ff9c555ccbb49ba4342bb88ecfa8edfba458be5ece24b3dbcb9ef9",
       "storage": "archive-only"
     },
     {
@@ -3454,7 +3849,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "654d4964124f1bfb63db6c692c91f865711fa427070290133d1c6d4662ba27f8",
+      "sha256": "815d934f0edc5b629e3ef611e86f80d89ba03d3b59d311761bb2a8f98d1050ff",
       "storage": "archive-only"
     },
     {
@@ -3470,7 +3865,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "ad67b50ae96ffa391f5b3cf1df184cb30eb4bb242e0f3006ff08f46ece82ae31",
+      "sha256": "c704697c75d23227feca89e720d64e97786b1f004860ea871f16e91319af73ad",
       "storage": "committed"
     },
     {
@@ -3486,7 +3881,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "094c66de6e1c65fb4c9db48564aa8a019366007ecd198ed751537a3c85673cb9",
+      "sha256": "6a982c7a8e5abe7af2c4e7b9af90b26de69a6230705f88c710e92e9996056043",
       "storage": "archive-only"
     },
     {
@@ -3502,7 +3897,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "b41162dd9d71c84d69c1e605571d6be8e595cc8a6016311689f8b36899fbca56",
+      "sha256": "713d2d1f57f7e28aec39c0c2fd9a16e1ebaa007ffeb25c6ba1014011c0cbc443",
       "storage": "archive-only"
     },
     {
@@ -3678,7 +4073,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "9389c55fa1c5653a606fb749825b779ebe083e155ffa246ed02f252155e8e2e0",
+      "sha256": "4ef8a7c204aeb1fb2871d55daf67db7740b7577d642d9754c5790ac33137de10",
       "storage": "archive-only"
     },
     {
@@ -3694,7 +4089,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "824cbc364a3d650e6d096d284aa3d09e82386c5c188514a81768b813af812d20",
+      "sha256": "d9800586320ae6a35c70108eb722481732324b29b633e66b2fe6c568fb3c18a8",
       "storage": "archive-only"
     },
     {

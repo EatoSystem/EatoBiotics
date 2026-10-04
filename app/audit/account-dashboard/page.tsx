@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
+import { buildAccountTwin } from "@/lib/agent-loop/account-twin"
+import { twinVisualState } from "@/lib/account/twin-visual"
 import { LiveDashboard } from "@/components/account/live-dashboard"
 import {
   AUDIT_FIXTURES,
@@ -9,6 +11,7 @@ import {
   type AuditFixtureState,
 } from "@/lib/experience-audit/fixtures"
 import { isExperienceAuditFixtureEligible } from "@/lib/experience-audit/fixture-policy"
+import { AUDIT_CLOCK, TWIN_FIXTURE_INPUT } from "@/lib/experience-audit/fixtures"
 
 /**
  * THE EXPERIENCE AUDIT FIXTURE — Experience 0.
@@ -81,6 +84,42 @@ export default async function ExperienceAuditFixturePage({
   const state = resolveState(params.state)
   const props = AUDIT_FIXTURES[state]
 
+  /*
+   * ── THE TWIN, BUILT BY THE REAL BUILDER ───────────────────────────────────
+   *
+   * Nine Twin components are imported directly by `live-dashboard.tsx` and are
+   * therefore LIVE on `/account`. Every other fixture state passes
+   * `twin: null`, so until now this audit had never rendered a single one of
+   * them — their claims were live and unexamined.
+   *
+   * The twin is composed by `buildAccountTwin`, the SAME function
+   * `app/account/page.tsx:279` calls, from fixed inputs. Hand-writing a
+   * `FoodSystemDigitalTwin` would have produced a shape I invented rather than
+   * one the product produces, and the audit would then be reading my fiction.
+   *
+   * `updatedAt` is overridden because `lib/agent-loop/engine.ts` stamps it with
+   * `Date.now()`, which would make the corpus drift between runs. It is the one
+   * value replaced, and only for determinism.
+   *
+   * SAFETY IS UNCHANGED: `email` stays null in this state as in every other, so
+   * the mount effect at `live-dashboard.tsx:857` (`if (propEmail)
+   * pushTwinState(store)`) cannot fire. That is asserted BY RENDER in
+   * `tests/e2e/audit-capture.spec.ts`, not inferred from this comment.
+   */
+  const built = state === "twin-present" ? await buildAccountTwin(TWIN_FIXTURE_INPUT) : null
+  const twin = built ? { ...built.twin, updatedAt: Date.parse(AUDIT_CLOCK) } : null
+
+  /*
+   * `twinVisual` is REQUIRED, not optional: `live-dashboard.tsx:1095` gates the
+   * whole Twin block on `twin && twinVisual`. Supplying the twin alone rendered
+   * nothing, which is how this was found — the first twin-present capture
+   * looked identical to `representative`.
+   *
+   * Derived with `twinVisualState`, the same call `app/account/page.tsx:294`
+   * makes, so the visual state is the product's rather than mine.
+   */
+  const twinVisual = twin ? twinVisualState(twin) : null
+
   return (
     <div className="min-h-screen bg-background">
       {/*
@@ -126,7 +165,7 @@ export default async function ExperienceAuditFixturePage({
         can never inherit mounted state from `dense`. A fixture that carried
         state between captures would produce screenshots nobody could trust.
       */}
-      <LiveDashboard key={state} {...props} />
+      <LiveDashboard key={state} {...props} twin={twin} twinVisual={twinVisual} twinFeed={built?.feed ?? null} />
     </div>
   )
 }
