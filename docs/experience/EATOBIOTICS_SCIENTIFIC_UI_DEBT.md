@@ -1137,6 +1137,53 @@ scored answers.**
 > **Do not make the interface promise a personal conclusion that the instrument
 > did not collect enough information to derive.**
 
+### D5 · Generation 3 does not justify a parallel product architecture
+
+Accepted on the step-6 evidence:
+
+> **Generation 3 contains useful interaction ideas, but it does not justify a
+> parallel persistent product architecture beside My Food System.** Its most
+> valuable surviving job is the daily habit loop, and even that does not require
+> a Digital Twin.
+
+The dispositions are agreed as recorded in
+[`EATOBIOTICS_DIGITAL_TWIN_AUDIT.md`](./EATOBIOTICS_DIGITAL_TWIN_AUDIT.md) §4 —
+daily ritual → Today · evolution and history → Progress · learning feed →
+Progress / Learn · after-meal education → Learn · the body figure as **claimed
+personal state** → Retire · the body figure as **non-personal illustration** →
+potentially Evolve.
+
+> That is what Keep / Move / Retire is for: preserve the value without
+> preserving the architecture that happened to contain it.
+
+**The moves are not implemented during Experience 0.**
+
+### D6 · Two further principles accepted as permanent
+
+Both recorded in the Experience Constitution, §2 and §3; the evidence stays in
+`P0-SCIENCE-04`, `P0-SCIENCE-05` and `P0-TRUST-05` above.
+
+> A claim is still a claim when it is encoded through colour, motion, anatomy,
+> position, scale or another visual state rather than words.
+
+> The product must never place a product-authored personal conclusion into the
+> user's mouth.
+
+The second carries a four-part 0R remediation, both sides of the boundary:
+
+1. remove prohibited product-authored premises;
+2. prevent query parameters and suggested prompts from silently becoming
+   authenticated user assertions;
+3. ensure consultation / AI context can distinguish **user-authored** text from
+   **product-suggested** text where that distinction matters;
+4. add a guard and a sabotage case around this exact path.
+
+The first carries a consequence for how claims audits are built: a string
+scanner can never catch every product claim while the interface communicates
+status visually.
+
+---
+
 Principles accepted as durable are carried into
 [`EXPERIENCE_CONSTITUTION.md`](./EXPERIENCE_CONSTITUTION.md); the evidence stays
 here.

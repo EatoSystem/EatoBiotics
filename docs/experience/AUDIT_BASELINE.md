@@ -1,7 +1,17 @@
 # Experience 0 — Audit Baseline and Observation Log
 
 **Branch** `claude/eatobiotics-experience-audit`, created from the frozen Gate
-6.1 head **`71aa9fd`**.
+6.1 head **`71aa9fd`**. This is the authorised chain and it does not move.
+
+> **Tooling metadata, 2026-10-04.** A session harness from step 6 onward
+> generates its own per-session branch name — `claude/eatobiotics-review-fpqu6q`
+> in that session — and names it as the designated branch. The audit stays on
+> `claude/eatobiotics-experience-audit`, where the chain is established and
+> reviewed across `496fa76 · 12b0ed8 · 81bf323 · 38ab8af · cd4722c`. Changing
+> branches because a harness produced a different name would weaken provenance,
+> not improve it. Recorded here as session metadata, not as a repository
+> decision; if an actual repository guard ever prevents the push, that is a new
+> fact and gets its own entry.
 
 This file is the audit's evidence log: what was measured, when, and on what
 head. It is not a findings document — findings live in

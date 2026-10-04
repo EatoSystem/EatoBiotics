@@ -46,18 +46,46 @@ Two corollaries the programme has paid for:
 
 ## 2 · Personalisation boundaries
 
-A boundary is about **what is rendered**, not about which words are used.
+**A claim is still a claim when it is encoded through colour, motion, anatomy,
+position, scale or another visual state rather than words.**
 
-If a member's own state may not be stated, it may not be shown either — not as
-a number, not as a bar, not as a band word, not as a superlative, not as a
-possessive, not as a mechanism, **and not as a colour, a position on a body, a
-light, or a motion.** A visual encoding of a prohibited claim is the prohibited
-claim.
+A boundary is therefore about **what is rendered**, not about which words are
+used. If a member's own state may not be stated, it may not be shown either —
+not as a number, not as a bar, not as a band word, not as a superlative, not as
+a possessive, not as a mechanism, and not as a colour, a light, a position on a
+body or a movement.
 
 This is the form the boundary keeps returning in: each repair closes the form it
 found, and the next implementation reaches for a form nobody enumerated.
 
-## 3 · Complexity
+It also sets a requirement on how claims are guarded. **A string scanner cannot
+see a claim that has no string**, so a corpus of text rules is necessary and not
+sufficient; where a prohibited conclusion can reach a visual parameter, the
+guard belongs at that parameter.
+
+*Evidence: `P0-SCIENCE-04` and `P0-SCIENCE-05` in
+[`EATOBIOTICS_SCIENTIFIC_UI_DEBT.md`](./EATOBIOTICS_SCIENTIFIC_UI_DEBT.md).*
+
+## 3 · Voice and authorship
+
+**The product must never place a product-authored personal conclusion into the
+user's mouth.**
+
+Where the product suggests a question, a message or a phrasing on the person's
+behalf, two things must hold. It must remain visibly product-authored rather
+than appearing to be something the person said. And it must carry no personal
+premise that deterministic product state cannot support — a suggestion is not a
+weaker place to make a claim, it is a place where the claim arrives unattributed.
+
+The danger is specific and compounding: a product-authored premise that becomes
+an input to a model returns as generated prose that reads as a response to the
+person. The claim is then laundered through their own voice, and nothing
+downstream can tell that the product, not the person, asserted it.
+
+*Evidence: `P0-TRUST-05` in
+[`EATOBIOTICS_SCIENTIFIC_UI_DEBT.md`](./EATOBIOTICS_SCIENTIFIC_UI_DEBT.md).*
+
+## 4 · Complexity
 
 **Complexity should be absorbed by architecture before it is displayed by the
 interface.**
@@ -66,7 +94,7 @@ The goal is not sparseness. It is richness without speculation: a surface may be
 dense with things the product genuinely knows, and must not be dense with things
 it is guessing.
 
-## 4 · Refusal
+## 5 · Refusal
 
 **Refusal is a designed outcome, not an error state.** A product that declines
 to compare, declines to rank or declines to interpret is working, and the
@@ -77,7 +105,7 @@ action.** The classifier protects the destination; something must protect the
 promise. An honest refusal behind a link the product still offers is a worse
 experience than either an honest refusal or no link.
 
-## 5 · Persistence
+## 6 · Persistence
 
 The product a person returns to is the thing the journey should establish. A
 journey that terminates in a page the person reads once has not established
@@ -87,7 +115,7 @@ Where an experience cannot establish persistence because the instrument does not
 gather what persistence is made of, that is an **instrument** finding, and
 naming it as an interface finding hides it.
 
-## 6 · Evidence
+## 7 · Evidence
 
 **Source inspection establishes possibility. Rendered evidence establishes
 reachability.**
@@ -97,7 +125,7 @@ settled by rendering it and looking. This standard applies to the product's
 claims about itself — docblocks, comments and design documents describing a past
 fix are not evidence of a present state.
 
-## 7 · Architecture and interface
+## 8 · Architecture and interface
 
 **Bring Generation 1's visual ambition to Generation 4's truthfulness.** Do not
 bring Generation 1's product model with it, and do not flatten Generation 4 into
