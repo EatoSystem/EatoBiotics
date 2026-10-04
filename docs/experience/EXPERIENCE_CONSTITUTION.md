@@ -85,7 +85,25 @@ downstream can tell that the product, not the person, asserted it.
 *Evidence: `P0-TRUST-05` in
 [`EATOBIOTICS_SCIENTIFIC_UI_DEBT.md`](./EATOBIOTICS_SCIENTIFIC_UI_DEBT.md).*
 
-## 4 · Complexity
+## 4 · The money path
+
+**A paid surface must meet at least the same truth and claims standard as the
+free product around it. Payment must never relax the evidence boundary.**
+
+Compactly: **the money path gets stricter, not looser.**
+
+The pressure runs the other way by default. A paid document is expected to feel
+worth paying for, and the cheapest way to make it feel that way is to say more
+than the instrument supports — so the surface under the most commercial pressure
+to overclaim is also the one where overclaiming does the most damage.
+
+A free surface that overclaims is a product defect. A paid surface that
+overclaims is a product defect the person was charged for.
+
+*Evidence: `P0-SCIENCE-06` in
+[`EATOBIOTICS_SCIENTIFIC_UI_DEBT.md`](./EATOBIOTICS_SCIENTIFIC_UI_DEBT.md).*
+
+## 5 · Complexity
 
 **Complexity should be absorbed by architecture before it is displayed by the
 interface.**
@@ -94,7 +112,7 @@ The goal is not sparseness. It is richness without speculation: a surface may be
 dense with things the product genuinely knows, and must not be dense with things
 it is guessing.
 
-## 5 · Refusal
+## 6 · Refusal
 
 **Refusal is a designed outcome, not an error state.** A product that declines
 to compare, declines to rank or declines to interpret is working, and the
@@ -105,7 +123,7 @@ action.** The classifier protects the destination; something must protect the
 promise. An honest refusal behind a link the product still offers is a worse
 experience than either an honest refusal or no link.
 
-## 6 · Persistence
+## 7 · Persistence
 
 The product a person returns to is the thing the journey should establish. A
 journey that terminates in a page the person reads once has not established
@@ -115,7 +133,7 @@ Where an experience cannot establish persistence because the instrument does not
 gather what persistence is made of, that is an **instrument** finding, and
 naming it as an interface finding hides it.
 
-## 7 · Evidence
+## 8 · Evidence
 
 **Source inspection establishes possibility. Rendered evidence establishes
 reachability.**
@@ -125,7 +143,7 @@ settled by rendering it and looking. This standard applies to the product's
 claims about itself — docblocks, comments and design documents describing a past
 fix are not evidence of a present state.
 
-## 8 · Architecture and interface
+## 9 · Architecture and interface
 
 **Bring Generation 1's visual ambition to Generation 4's truthfulness.** Do not
 bring Generation 1's product model with it, and do not flatten Generation 4 into

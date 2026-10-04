@@ -1061,6 +1061,7 @@ alone will not reach this file.** See `P0-GUARD-02`.
 ---
 
 ## `P0-SCIENCE-07` · The dev-flow Report renders three per-Biotic scores out of 100
+### **P0 — LATENT PRODUCTION HAZARD · NOT currently customer-reachable**
 
 **Surface** `/assessment/report` under the unverified dev flow ·
 **Component** `components/assessment/full-report-client.tsx` · **Verified** by
@@ -1094,6 +1095,21 @@ It sits on the €49 route, one environment variable from being served — the
 rendered rather than read because this is the component the audit's harness can
 actually reach, and because the register has twice been wrong about a claim it
 only read.
+
+### Held distinct from `P0-SCIENCE-06`, deliberately
+
+| | finding | evidence status |
+|---|---|---|
+| | **`P0-SCIENCE-06`** | **live · paid · customer-reachable** — demonstrably being sold |
+| | **`P0-SCIENCE-07`** | **latent · dev fallback · near-production hazard** — no customer can reach it today |
+
+Both require 0R treatment. Collapsing them into one severity would be easier to
+write and would destroy the distinction the whole audit has been built on:
+
+> **Reachability changes what we can claim about current customer harm.**
+
+The severity stays P0 because the hazard is real and adjacent to money. The
+*claim about customers* stays accurate because the reachability is stated.
 
 | | |
 |---|---|
@@ -1223,8 +1239,8 @@ register records them together rather than in separate entries.
 | `P0-SCIENCE-05` | P0 | `/account` Twin | render | REMEDIATE — keep the ritual, drop the asserted biology |
 | `P0-ARCH-01` | P0 (coverage) | `/account` | source + render | RECORD — the audited state was the minority state |
 | `P1-FUNNEL-02` | P1 | `/account` Twin | live HTTP | REMEDIATE with `P1-FUNNEL-01` |
-| `P0-SCIENCE-06` | P0 | `/assessment/report` **€49** | source chain | RETIRE — **live on the money path**, with D1 |
-| `P0-SCIENCE-07` | P0 | `/assessment/report` dev flow | render | RETIRE — **not production-reachable**; reactivation hazard |
+| `P0-SCIENCE-06` | **P0 live** | `/assessment/report` **€49** | source chain | RETIRE — **live · paid · customer-reachable**, with D1 |
+| `P0-SCIENCE-07` | **P0 latent** | `/assessment/report` dev flow | render | RETIRE — **latent production hazard, NOT customer-reachable** |
 | `P0-SCIENCE-08` | P0 | report food copy | render | EVOLVE — pending scientific review |
 | `P1-VOCAB-01` | P1 | report food tags | render | REMEDIATE — "Heal" is not customer-facing |
 | `P0-GUARD-02` | P0 | test corpus | source | **WIDEN WITH D1** — or `P0-SCIENCE-06` survives the repair |
@@ -1385,6 +1401,44 @@ The second carries a four-part 0R remediation, both sides of the boundary:
 The first carries a consequence for how claims audits are built: a string
 scanner can never catch every product claim while the interface communicates
 status visually.
+
+### D7 · 0R must seek canonical guard coverage, not another array
+
+The same enforcement failure has now appeared **three times**:
+
+| | surface | found in |
+|---|---|---|
+| 1 | **Account** existed outside the scan | `P0-GUARD-01`, step 2 |
+| 2 | **Assessment** existed outside the scan | step 5 |
+| 3 | **Report** existed outside the scan | `P0-GUARD-02`, step 7 |
+
+Each was repaired by adding a surface to a list. **0R must not continue patching
+them one at a time**, because the next surface will be found the same way.
+
+The question 0R is required to ask:
+
+> **What is the canonical set of all customer-facing surfaces capable of making
+> Biotics claims?**
+
+and derive guard coverage from that authority wherever possible. The eventual
+invariant:
+
+> **A customer-facing claims surface exists → it is inside the claims corpus by
+> construction** — not because somebody remembered to add its path to one of six
+> manually maintained arrays that can drift apart.
+
+Two constraints on that work, from evidence already in this register:
+
+- **`CANDIDATE_SURFACES` already does this**, via `candidateTree()` — a derived
+  corpus rather than a typed list. It is the existing proof that the shape is
+  achievable, and the place to start.
+- **Derivation alone is insufficient.** `P0-SCIENCE-04` is a Biotic verdict
+  encoded as a **colour**, with no string for any corpus to scan. A canonical
+  surface set closes the *coverage* gap; it does not close the *form* gap, and
+  0R must treat them as two requirements.
+
+**Recorded as an architectural requirement. The implementation is not designed
+here.**
 
 ---
 

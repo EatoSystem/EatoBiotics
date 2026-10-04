@@ -113,7 +113,8 @@ money path.
 *Source-mode, deliberately: rendering it needs a `DeepReport` from Supabase.
 Pinned at source by `audit-capture-reports.spec.ts` so the claim cannot rot.*
 
-### `P0-SCIENCE-07` · The dev-flow Report renders three per-Biotic scores out of 100 — **NOT production-reachable**
+### `P0-SCIENCE-07` · The dev-flow Report renders three per-Biotic scores out of 100
+#### **P0 — latent production hazard · NOT currently customer-reachable**
 
 Rendered, at 1280, under **"PILLAR BREAKDOWN · Your Pillar Deep-Dives"**:
 
