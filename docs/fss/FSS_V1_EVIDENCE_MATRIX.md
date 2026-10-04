@@ -57,3 +57,40 @@ what fermentation *does*, what a label *tells you*, and what the person
 Postbiotics is the only row we can be completely confident about, precisely
 because it claims nothing. It is the part of the model to be most confident in,
 because it stops pretending to measure and starts explaining.
+
+---
+
+## Pending for the reviewer — one wording question raised by Experience 0
+
+Found by rendering the My Food System Biotics area (step 4 of the Experience 0
+audit). **Not ruled on internally, and not rewritten.**
+
+`lib/pillars.ts` → `PILLARS.postbiotics.whatItDoes`, rendered on the Biotics
+area via `BioticsProgressPanel`:
+
+> *"The beneficial compounds your gut bacteria produce when they ferment
+> prebiotic fibre — **they calm inflammation and strengthen the gut lining**."*
+
+### What is NOT in question
+
+It is **impersonal education**, not a personal claim. No member's postbiotic
+state is asserted, no number is shown, and the surrounding panel states
+explicitly that there is no personal score for any of the three. The Class D
+row above is unaffected.
+
+### The question for the reviewer, as the founder framed it
+
+**Not** merely whether supporting literature exists. The sharper question:
+
+> **Is the wording too outcome-like or causal even as general education?**
+
+*"Calm inflammation"* and *"strengthen the gut lining"* are outcome verbs. A
+statement can be impersonal, literature-backed and still read to a customer as a
+promise about what will happen to them — which is a wording decision, not an
+evidence lookup.
+
+Disposition options the reviewer may choose between: **approved as stated** ·
+**approved with amended wording** (mechanism without outcome verbs) ·
+**rejected** · **insufficient evidence, withdraw the claim**.
+
+Recorded here so it is ratified deliberately rather than inherited by silence.

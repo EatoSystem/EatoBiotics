@@ -132,8 +132,27 @@ all. Same product concept, opposite engineering:
 
 ### Biotics: the opposite test, also passed
 
-`BioticsSection` takes **no props** and `BIOTICS.select` returns `null`, so
-personalisation is structurally unavailable rather than merely avoided. The
+`BioticsSection` takes **no props** and `BIOTICS.select` returns `null`. The
+
+> **CORRECTION — this sentence originally read "so personalisation is
+> structurally unavailable rather than merely avoided". That overstated the
+> evidence and the original wording is left above so the correction is legible.**
+>
+> Taking no props closes **one** ingress. A child can still reach personal state
+> through context, hooks, a store, browser storage, URL state, module globals or
+> a network call — so "no props" is a fact about the **call site**, not a
+> property of the subtree.
+>
+> The property the audit needs is now **proved** rather than asserted, over the
+> panel's transitive import closure, by `tests/unit/biotics-panel-ingress.test.ts`
+> (`P2-FSS-ARCH-01`). The closure is `BioticsProgressPanel` → `lib/pillars` →
+> nothing, and **no module in it opens any of the eleven checked ingresses**. The
+> guard was confirmed non-vacuous by firing on `dashboard-parts.tsx` (state,
+> effect) and `lib/assessment/sync.ts` (storage, network).
+>
+> So the conclusion survives — but it is now evidence rather than inference.
+
+The
 rendered panel uses **dots, not bars** — a bar's length is a quantity — carries
 no numbers, and closes with:
 

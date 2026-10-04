@@ -109,6 +109,28 @@ function expectedFssFiles(): Set<string> {
   return out
 }
 
+/* ── Assessment (Generation 2) ────────────────────────────────────────────── */
+
+/** One capture per journey stage; Results captured at three answer sheets. */
+const ASSESSMENT_CAPTURES = [
+  ["chooser", "foundation"],
+  ["intro", "entry"],
+  ["questions", "first"],
+  ["questions", "mid"],
+  ["results", "varied"],
+  ["results", "low"],
+  ["results", "high"],
+  ["resume", "interrupted"],
+] as const
+
+function expectedAssessmentFiles(): Set<string> {
+  const out = new Set<string>()
+  for (const [state, sec] of ASSESSMENT_CAPTURES) {
+    for (const w of WIDTHS) out.add(`assessment-${state}-${sec}-${w}.png`)
+  }
+  return out
+}
+
 describe("the audit manifest proves its own completeness", () => {
   it("exists — the corpus is out of Git, so the manifest is not optional", () => {
     expect(
@@ -147,6 +169,17 @@ describe("the audit manifest proves its own completeness", () => {
    */
   it("the captured areas are exactly the product's SECTION_ORDER", () => {
     expect([...FSS_SECTIONS].sort()).toEqual([...SECTION_ORDER].sort())
+  })
+
+  it("expected captures = actual rows, for the Assessment journey", () => {
+    const expected = expectedAssessmentFiles()
+    const actual = new Set(rows().filter((r) => r.surface === "assessment").map((r) => r.file))
+
+    const missing = [...expected].filter((f) => !actual.has(f)).sort()
+    const extra = [...actual].filter((f) => !expected.has(f)).sort()
+
+    expect(missing, `the manifest is missing ${missing.length} expected capture(s)`).toEqual([])
+    expect(extra, `the manifest carries ${extra.length} row(s) the matrices do not expect`).toEqual([])
   })
 
   it("actual rows = hashed entries — every row carries a real SHA-256", () => {

@@ -449,6 +449,161 @@ already recorded twice.
 
 ---
 
+## `P0-TRUST-04` · "Appears strongest" over copy calling that Biotic the thinner part
+
+**Surface** `/assessment/you` → Results (`V1_CORE`, the free product) ·
+**Component** `components/assessment/result/food-system-pattern.tsx:89` ·
+**Generation** 2 · **Verified** by render and by source, 2026-10-04
+
+### What exists
+
+```tsx
+<p ...>Appears strongest</p>
+<p ...>{strongest.label}</p>
+<p ...>{strongest.strength ?? strongest.opportunity}</p>
+```
+
+Rendered, with a varied answer sheet:
+
+> **APPEARS STRONGEST**
+> **Postbiotics**
+> *"Your answers suggest rhythm and colourful, polyphenol-rich foods are **the
+> thinner part here**."*
+
+### Why the `??` is the defect
+
+`insights` arrives sorted weakest-first, so `strongest` is simply the last
+element — **not necessarily a Biotic with any strength copy**. `getInsights()`
+sets `strength` only above its own threshold, independently per pillar. So the
+highest of three low scores has `strength === undefined`, and the fallback
+prints its *opportunity* text under a heading calling it strongest.
+
+### The component already knows this is a defect — in the other branch
+
+Its own docblock records the equal-scores version being found and fixed:
+
+> *"visual validation of an all-zero sheet showed a card headed 'Appears
+> strongest' whose own text called that Biotic the thinner part"*
+
+and guards the mirror case for the sibling card, naming it explicitly:
+
+> `showExploring = !sameOne && !!focus.opportunity` — *"otherwise it would show
+> strength copy under a heading calling it something to explore, **the same
+> class of contradiction** the equal-scores case above was fixed for."*
+
+**The exploring card got a guard. The strongest card got a `??`.** One
+suppresses the contradiction; the other produces it.
+
+### Classification
+
+| | |
+|---|---|
+| Kind | product contradiction — the screen contradicts itself |
+| Reachability | **any result where the highest Biotic is still below its strength threshold** — i.e. commonly, for lower scorers |
+| Disposition | **REMEDIATE** — mirror the existing guard: render the card only when `strongest.strength` exists |
+| Enforced by | `tests/e2e/audit-capture-assessment.spec.ts` → `P0-TRUST-04`, written to FAIL when repaired |
+
+> Classified P0 on the `P0-TRUST-01` precedent — "the screen contradicts
+> itself". It fabricates no data, so a P1 classification is defensible; the
+> founder's call.
+
+---
+
+## `P1-FUNNEL-01` · Every add-on CTA on the free Results page is a 404
+
+**Surface** `/assessment/you` → Results (`V1_CORE`) · **Verified** by live HTTP,
+2026-10-04
+
+### What exists
+
+Results closes with **"Explore another focus"** offering four links. All four
+are `POST_V1_ROUTES` and all four return **404**:
+
+| link | status |
+|---|---|
+| `/assessment/add/stability` | **404** |
+| `/assessment/add/glucose` | **404** |
+| `/assessment/add/mind` | **404** |
+| `/assessment/add/performance` | **404** |
+
+These are the **only** in-content next steps Results offers besides the €49
+consultation. A person finishing the free assessment is given four onward paths
+and every one is a dead end.
+
+### Why it was not caught
+
+`tests/e2e/v1-launch-surface.spec.ts:181` has a working crawler — *"every
+in-site link on X resolves"* — over:
+
+```
+["/", "/assessment", "/pricing", "/about", "/help", "/food", "/book", "/adhd", "/enter"]
+```
+
+`/assessment` is the **foundation chooser**. Neither `/assessment/you` nor
+`/assessment/results` is in the list, so the crawler has never visited the page
+that carries the dead links.
+
+**The same shape as `P0-GUARD-01`**: the guard exists, works, and is pointed
+somewhere else.
+
+### Classification
+
+| | |
+|---|---|
+| Kind | commercial funnel + navigation |
+| Disposition | **REMEDIATE** — either serve the add-on routes or remove the CTAs; and add the Results route to `CRAWLED` |
+
+---
+
+## `P2-FSS-ARCH-01` · Generation-crossing Biotics dependency
+
+**Surface** My Food System → Biotics · **Components**
+`components/fss/system/biotics.tsx` (Gen 4) → `components/agent-loop/BioticsProgressPanel.tsx`
+(Gen 1) · **Verified** by source closure, 2026-10-04
+
+### What exists
+
+Generation 4's Biotics area renders a **Generation 1 component**. That is the
+only cross-generation dependency in `components/fss/`.
+
+### Why it is recorded even though it currently passes cleanly
+
+The step-4 audit concluded that because `BioticsSection` takes no props,
+personalisation was *structurally unavailable*. **That overstated the
+evidence.** Taking no props closes one ingress; a child can still read context,
+hooks, a store, `localStorage`/`sessionStorage`, URL state, module globals or a
+network endpoint. "No props" describes the **call site**, not the subtree.
+
+Measured over the transitive import closure:
+
+| | |
+|---|---|
+| closure | `BioticsProgressPanel` → `lib/pillars` → **nothing** |
+| ingresses checked | 11 (context, state, effects, storage, IndexedDB, cookies, routing, network, globals, Supabase, providers) |
+| breaches found | **0** |
+| panel props | exactly one, `className` |
+| guard proved non-vacuous against | `dashboard-parts.tsx` (state, effect), `lib/assessment/sync.ts` (storage, network) |
+
+### The risk this records is forward-looking
+
+Not today's render, which is clean. The risk is that **Generation 4 inherits a
+Generation 1 capability accidentally, through reuse**, the next time somebody
+makes the panel "a bit more useful". The dependency is the thing that makes that
+possible, and it is invisible from inside `components/fss/`.
+
+### Classification
+
+| | |
+|---|---|
+| Kind | architectural debt — no current customer-facing effect |
+| Disposition | **RECORD and PROVE**, do not refactor during Experience 0 |
+| Enforced by | `tests/unit/biotics-panel-ingress.test.ts` |
+
+> A dependency that cannot currently reach the person, and now cannot quietly
+> learn how.
+
+---
+
 ## `DEBT-CODE-01` · Unreachable mock fallback
 
 **Component** `live-dashboard.tsx:1642` · **Not customer-facing**
@@ -625,7 +780,10 @@ with the rest of the responsive findings rather than here.
 | `P0-SCIENCE-02` | P0 | `/account` | render | RETIRE |
 | `P0-SCIENCE-03` | P0 | `/account` | render | RETIRE / REMEDIATE — **two repairs**; `:1757` extracted |
 | `P0-TRUST-03` | **P0-TRUST / P0-SCIENCE** | `/account` | render + source | RETIRE — **its own remediation proof** |
+| `P0-TRUST-04` | P0 | `/assessment/you` → Results | render + source | REMEDIATE — mirror the existing guard |
+| `P1-FUNNEL-01` | P1 | `/assessment/you` → Results | live HTTP | REMEDIATE — four dead CTAs |
 | `P0-GUARD-01` | P0 | test corpus | source | REPAIR FIRST, in remediation |
+| `P2-FSS-ARCH-01` | P2 | My Food System → Biotics | source closure | RECORD + PROVE, no refactor |
 | `DEBT-CODE-01` | DEBT-CODE | `/account` | render (disproved as P0) | RETIRE with generation |
 | `NOTE-FIXTURE-01` | — | audit tooling | render (disproved my own claim) | documentation only |
 | `NOTE-CAPTURE-01` | — | audit tooling | measured over two runs | documentation only |

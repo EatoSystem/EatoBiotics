@@ -88,7 +88,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "5b005179a31162024ecfeaf9ac27f288f97e396a03e1afb2e574c52feb7b0289",
+      "sha256": "702e031786bfb958e72bb4b9511bf5a318c8be51cbedac1d350390960bbb1f9a",
       "storage": "committed"
     },
     {
@@ -196,7 +196,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "b0861a83dabd3ad2d963afce9fa2a304262acd128c0f7e5757edab0f81c0cf96",
+      "sha256": "9d249176668ee1cd6686795eeabeb68aa0b1ea060f3a08757079436b9a4bfda9",
       "storage": "committed"
     },
     {
@@ -368,7 +368,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "5de3e7759ca4b2ec1ad33c8187bdb8d7480b08619764fc81e37d56307f3313b9",
+      "sha256": "8ab3ad3caffdec4731bf90dff30a9ca26cb824a2cf9d5398e75471e1848aa655",
       "storage": "committed"
     },
     {
@@ -468,7 +468,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "5c08260a21fc25a249d54df760dd37870f23d649d0bf98e76500b4006ccf75b4",
+      "sha256": "63b47944412fb34f48b9e38652dee02722cbeee8b0a36547eb8b92120a9dd797",
       "storage": "committed"
     },
     {
@@ -673,7 +673,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "baef63875ac02627cad75aa158a0d775b28df1373e5b4374060d98ed3145b19e",
+      "sha256": "0a98939ef1a702c23e056a0ee5ee1ec2cb4695e7a5d6bf0c568a19af17b628db",
       "storage": "archive-only"
     },
     {
@@ -862,7 +862,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "a5232aeb153f4ef06290cf0dec7de01d068273b18110b7b9a0b6f929723a1ed2",
+      "sha256": "daca8dcfb37c73e07d766b76ac596aca4e105aa5e63e9fa22146157717fdef4b",
       "storage": "archive-only"
     },
     {
@@ -973,7 +973,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "82d4cc7b1278cf71eb78e355e3e4f927d6fb55d2c35ca1ad43493383d10f2481",
+      "sha256": "d2606e40a8c8cb2a8e0c340005063b06bf110942f8a806bd1cd27cfdc4ecaef5",
       "storage": "committed"
     },
     {
@@ -1063,7 +1063,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "25ec492ad336468de82e957cd662c24d69f3fd3d96af9e2cbc005758d9089332",
+      "sha256": "3214827cb8f23aaeb5157c7cbcfaf2ff7783bd301821c368c6b90b0b2037fca2",
       "storage": "committed"
     },
     {
@@ -1081,7 +1081,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "4a155607f3b94777a54a37ecbbf8f5c9dcf408c7a1c19ca8d18b6748c5f5047b",
+      "sha256": "5814d58108834ffd05087885fac45fe995f31cb0e7bdd4e8573537e633e39bee",
       "storage": "committed"
     },
     {
@@ -1135,7 +1135,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "ac0ee118a0927c96120a845de026e5a315c3e009390bd865d6b52f209395f2c3",
+      "sha256": "23406ddd390bf6292c56747b14688c10284fd669d205381c39acadd52b4c7aaa",
       "storage": "committed"
     },
     {
@@ -1195,7 +1195,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "200c01bb24ca43452385704839fa8f693c5f8855c71b0ec62e8b73b6247aebb6",
+      "sha256": "020dd3d1d2ffcbbd2c2737c6be829a0d6375c03dce98b97ef2234186544fee22",
       "storage": "committed"
     },
     {
@@ -1258,7 +1258,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "27cec656486073c0affee1532b97eec3a7cf9f0f5478bf7d9a59990f82a634a5",
+      "sha256": "1433fee917b0569fabbc9384780fe76ea89fef3fc823dfb366e2dea950be38a0",
       "storage": "committed"
     },
     {
@@ -1363,7 +1363,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "fa03d3828446abbb8dfd9b031cf9f6cd1ce788e71c1b68537684e7b60ad4b392",
+      "sha256": "5849353f6325df3d977481ae7c1976841969cbddbbc700a417bfb161c139ef28",
       "storage": "committed"
     },
     {
@@ -1568,7 +1568,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "746b5e4d7d61046587b17d6591e85256cec302fbe72a5ec076c4306dfe059ee1",
+      "sha256": "53915158104dab3efe01f9d62ed8bc666287512701abf769fb9bdcc6cefc7000",
       "storage": "committed"
     },
     {
@@ -1628,7 +1628,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "c0ea34f8e64a078a6d2b6bc957e5359176de532b5fa46e354068455069b1ec77",
+      "sha256": "11b85e254ea3ba17468d2cb69a4c9176ddfed80158e2fa51204b2355a43b0aa1",
       "storage": "committed"
     },
     {
@@ -1708,7 +1708,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "c55ec94a240083bcecb26d422d575a60a688fe58310b44a878d35dfa12d36332",
+      "sha256": "9d813752d4a426a4f3c0077792c74ed7b8f866f2612bb9508bd8f9be057feafc",
       "storage": "committed"
     },
     {
@@ -1748,7 +1748,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "1c7496cf7e2fa1bf83da41705b71308037b8fc59681261d2d892d08e236ffe88",
+      "sha256": "56ef68abecde464efb7fcfa00aca20968a8f2d036b28dc43fa192984822f46b5",
       "storage": "committed"
     },
     {
@@ -1868,7 +1868,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "c6394bed00bd1a53df30ee68ff11f5bfa4ab65ae10fe5d0208cf0301bcfc37bf",
+      "sha256": "f1570259d8616e27e05c789a97054d3405c02ed51bfc31c3cc0d866acc8b189a",
       "storage": "archive-only"
     },
     {
@@ -1988,7 +1988,7 @@
       "consoleErrorTexts": [
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
-      "sha256": "9a52f8b5e2b67d1b92a2e61670d3af58eae1debc1d62a0fd1ac3d1d65519e333",
+      "sha256": "feb6af5c1056d3772e5d6d2d286f5a4afad579370419d066414fc69c084ebcb5",
       "storage": "committed"
     },
     {
@@ -2069,6 +2069,528 @@
         "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
       ],
       "sha256": "50be8b3a3c26f8a50551afd34e9ac010d837424df6d6dc64252f0710876c1ff2",
+      "storage": "archive-only"
+    },
+    {
+      "file": "assessment-chooser-foundation-1280.png",
+      "surface": "assessment",
+      "route": "/assessment",
+      "state": "chooser",
+      "section": "foundation",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "real live UI",
+      "component": "components/assessment/assessment-client.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "b905915a2986d7be760a55a0bc5eda5bc54a4bd241c85377ddf0c79d80c40ca0",
+      "storage": "archive-only"
+    },
+    {
+      "file": "assessment-chooser-foundation-390.png",
+      "surface": "assessment",
+      "route": "/assessment",
+      "state": "chooser",
+      "section": "foundation",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "real live UI",
+      "component": "components/assessment/assessment-client.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "471eccf9b4a88f4b65a017e1730b113d5fc4cb41a630942f80c2be3ee49de77c",
+      "storage": "archive-only"
+    },
+    {
+      "file": "assessment-chooser-foundation-834.png",
+      "surface": "assessment",
+      "route": "/assessment",
+      "state": "chooser",
+      "section": "foundation",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "real live UI",
+      "component": "components/assessment/assessment-client.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "8063a6e2bfbbd58e9497e0204298bf1ecfcba4df08812c66efa8af7e691bcf59",
+      "storage": "archive-only"
+    },
+    {
+      "file": "assessment-intro-entry-1280.png",
+      "surface": "assessment",
+      "route": "/assessment",
+      "state": "intro",
+      "section": "entry",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "real live UI",
+      "component": "components/assessment/assessment-client.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "1741aba9ba94faa29dd7aeca439e2b95261aa89defc3f1504d8023dae3f7c9cf",
+      "storage": "committed"
+    },
+    {
+      "file": "assessment-intro-entry-390.png",
+      "surface": "assessment",
+      "route": "/assessment",
+      "state": "intro",
+      "section": "entry",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "real live UI",
+      "component": "components/assessment/assessment-client.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "bbdcbad5391a35c2bb46e6922ee5fcc678e8d9b6f0acb913356353211004d95c",
+      "storage": "committed"
+    },
+    {
+      "file": "assessment-intro-entry-834.png",
+      "surface": "assessment",
+      "route": "/assessment",
+      "state": "intro",
+      "section": "entry",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "real live UI",
+      "component": "components/assessment/assessment-client.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "sha256": "e72c2d0e4bcf55433cc4d51b8acd5e2d1274b2bc4bafeb1fb3bcc4168abf338b",
+      "storage": "archive-only"
+    },
+    {
+      "file": "assessment-questions-first-1280.png",
+      "surface": "assessment",
+      "route": "/assessment",
+      "state": "questions",
+      "section": "first",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "real live UI",
+      "component": "components/assessment/assessment-client.tsx",
+      "findings": [],
+      "consoleErrors": 2,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "sha256": "aad012189b7eb958fc4cbe86ff805078105f9104fc48229f522be7b0d3d804e9",
+      "storage": "committed"
+    },
+    {
+      "file": "assessment-questions-first-390.png",
+      "surface": "assessment",
+      "route": "/assessment",
+      "state": "questions",
+      "section": "first",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "real live UI",
+      "component": "components/assessment/assessment-client.tsx",
+      "findings": [],
+      "consoleErrors": 2,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "sha256": "57f9c1b8497e6822e63a1051f7120be002634b350ec3be29193f5f9bb633d38c",
+      "storage": "committed"
+    },
+    {
+      "file": "assessment-questions-first-834.png",
+      "surface": "assessment",
+      "route": "/assessment",
+      "state": "questions",
+      "section": "first",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "real live UI",
+      "component": "components/assessment/assessment-client.tsx",
+      "findings": [],
+      "consoleErrors": 2,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "sha256": "529bff73db0aeb51a62498b157607479b4d7ddf8ea0884a16f797b93e292ccdd",
+      "storage": "archive-only"
+    },
+    {
+      "file": "assessment-questions-mid-1280.png",
+      "surface": "assessment",
+      "route": "/assessment",
+      "state": "questions",
+      "section": "mid",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "real live UI",
+      "component": "components/assessment/assessment-client.tsx",
+      "findings": [],
+      "consoleErrors": 2,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "sha256": "a3d788eb148605682e843fb109eea893089d57755628d0fa8fcf86124f8695da",
+      "storage": "archive-only"
+    },
+    {
+      "file": "assessment-questions-mid-390.png",
+      "surface": "assessment",
+      "route": "/assessment",
+      "state": "questions",
+      "section": "mid",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "real live UI",
+      "component": "components/assessment/assessment-client.tsx",
+      "findings": [],
+      "consoleErrors": 2,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "sha256": "13d9b5fa9cacb4c0bf525cc2170c44b7e0f34c77e917f5075cbc70059f89acd1",
+      "storage": "archive-only"
+    },
+    {
+      "file": "assessment-questions-mid-834.png",
+      "surface": "assessment",
+      "route": "/assessment",
+      "state": "questions",
+      "section": "mid",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "real live UI",
+      "component": "components/assessment/assessment-client.tsx",
+      "findings": [],
+      "consoleErrors": 2,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "sha256": "3dc8202a4d91ff938e23bed3045eb0e1bb5345901e47b85e3a282f13238cc02d",
+      "storage": "archive-only"
+    },
+    {
+      "file": "assessment-results-high-1280.png",
+      "surface": "assessment",
+      "route": "/assessment",
+      "state": "results",
+      "section": "high",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "real live UI",
+      "component": "components/assessment/assessment-client.tsx",
+      "findings": [],
+      "consoleErrors": 16,
+      "consoleErrorTexts": [
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "sha256": "a42370727919d4b1b87b66153d08cd68e16488ebf3460c90002b5d15f36e7e69",
+      "storage": "archive-only"
+    },
+    {
+      "file": "assessment-results-high-390.png",
+      "surface": "assessment",
+      "route": "/assessment",
+      "state": "results",
+      "section": "high",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "real live UI",
+      "component": "components/assessment/assessment-client.tsx",
+      "findings": [],
+      "consoleErrors": 13,
+      "consoleErrorTexts": [
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "sha256": "3f0c7a2288b775359ed661ca1a2f968ac67dfe450cf95eb160e018d5b1a6d1f4",
+      "storage": "archive-only"
+    },
+    {
+      "file": "assessment-results-high-834.png",
+      "surface": "assessment",
+      "route": "/assessment",
+      "state": "results",
+      "section": "high",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "real live UI",
+      "component": "components/assessment/assessment-client.tsx",
+      "findings": [],
+      "consoleErrors": 16,
+      "consoleErrorTexts": [
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "sha256": "9a63e882e2cfb966281fe284702c7c33460f687eb02ac47f0b9b3ab54f56b85c",
+      "storage": "archive-only"
+    },
+    {
+      "file": "assessment-results-low-1280.png",
+      "surface": "assessment",
+      "route": "/assessment",
+      "state": "results",
+      "section": "low",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "real live UI",
+      "component": "components/assessment/assessment-client.tsx",
+      "findings": [],
+      "consoleErrors": 8,
+      "consoleErrorTexts": [
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "sha256": "8bc80420fcb83be67d7b1246011c4eedcf8d9cc6ced15901685f2e3ac950349d",
+      "storage": "archive-only"
+    },
+    {
+      "file": "assessment-results-low-390.png",
+      "surface": "assessment",
+      "route": "/assessment",
+      "state": "results",
+      "section": "low",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "real live UI",
+      "component": "components/assessment/assessment-client.tsx",
+      "findings": [],
+      "consoleErrors": 5,
+      "consoleErrorTexts": [
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "sha256": "eae98e5d61036e6c18fbfb7c7eec649644c7a252a0c32b6bf771ebd59350cd17",
+      "storage": "archive-only"
+    },
+    {
+      "file": "assessment-results-low-834.png",
+      "surface": "assessment",
+      "route": "/assessment",
+      "state": "results",
+      "section": "low",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "real live UI",
+      "component": "components/assessment/assessment-client.tsx",
+      "findings": [],
+      "consoleErrors": 8,
+      "consoleErrorTexts": [
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "sha256": "e578d9a012e14bd966010a59a353e90a308e11817eb67e4949241e4a8e446788",
+      "storage": "archive-only"
+    },
+    {
+      "file": "assessment-results-varied-1280.png",
+      "surface": "assessment",
+      "route": "/assessment",
+      "state": "results",
+      "section": "varied",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "real live UI",
+      "component": "components/assessment/assessment-client.tsx",
+      "findings": [],
+      "consoleErrors": 9,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "sha256": "59ecf22e7cc95b868ba00110d2809eff64bdc9d63c1fe18f16cb1c27028486e4",
+      "storage": "committed"
+    },
+    {
+      "file": "assessment-results-varied-390.png",
+      "surface": "assessment",
+      "route": "/assessment",
+      "state": "results",
+      "section": "varied",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "real live UI",
+      "component": "components/assessment/assessment-client.tsx",
+      "findings": [],
+      "consoleErrors": 9,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "sha256": "d4d704b5e7ca41eea64172f24c71c6a8cc52340baecef57483d5d8b2a43ff806",
+      "storage": "committed"
+    },
+    {
+      "file": "assessment-results-varied-834.png",
+      "surface": "assessment",
+      "route": "/assessment",
+      "state": "results",
+      "section": "varied",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "real live UI",
+      "component": "components/assessment/assessment-client.tsx",
+      "findings": [],
+      "consoleErrors": 9,
+      "consoleErrorTexts": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "sha256": "961dbcec87ac4e0aea6e8873fa0e5d759fa9380198ef76582b14498464dde9e0",
+      "storage": "archive-only"
+    },
+    {
+      "file": "assessment-resume-interrupted-1280.png",
+      "surface": "assessment",
+      "route": "/assessment",
+      "state": "resume",
+      "section": "interrupted",
+      "viewport": "1280x900",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "real live UI",
+      "component": "components/assessment/assessment-client.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "sha256": "822b62d53d591fb636f31168298629d8ad649b150f8280ec0b69149f3025c9bc",
+      "storage": "committed"
+    },
+    {
+      "file": "assessment-resume-interrupted-390.png",
+      "surface": "assessment",
+      "route": "/assessment",
+      "state": "resume",
+      "section": "interrupted",
+      "viewport": "390x844",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "real live UI",
+      "component": "components/assessment/assessment-client.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "sha256": "95b22c972e8d0ef1b52ecac83c0b38df9fe2f4ecf002e6bb867051aacc8798ff",
+      "storage": "archive-only"
+    },
+    {
+      "file": "assessment-resume-interrupted-834.png",
+      "surface": "assessment",
+      "route": "/assessment",
+      "state": "resume",
+      "section": "interrupted",
+      "viewport": "834x1112",
+      "frozenClock": "2026-10-03T09:00:00.000Z",
+      "evidenceKind": "real live UI",
+      "component": "components/assessment/assessment-client.tsx",
+      "findings": [],
+      "consoleErrors": 1,
+      "consoleErrorTexts": [
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "sha256": "21edecfe8567d78ee92b2f70b33bd95c10e8a97300145277db14438b7f49a40d",
       "storage": "archive-only"
     },
     {
@@ -2404,7 +2926,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "189a98228f4a50200acf8c9436b129dcef039f9e8bc90470f39d784ee90e46fe",
+      "sha256": "d13bb11f6392b0e7e32545a3ea5290ea55cc1ad6218f8faaa1e92741a7fc14f7",
       "storage": "archive-only"
     },
     {
@@ -2708,7 +3230,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "a9543351672f742a4bf656de426debbc408be08e1419cf407b499b4caf875ce8",
+      "sha256": "d5552276c7605e745e047c7e4fc7e9dc8761346f393a7f1469dd1175d574307a",
       "storage": "archive-only"
     },
     {
@@ -2724,7 +3246,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "898551badbceccf1ecb894af524cdd6ab77c266f8e1eea48a6da49e65aa974d5",
+      "sha256": "c99bedb370616d9f3e6caca7b75adabf56bb9ff17cec8066648ca034dac29c52",
       "storage": "archive-only"
     },
     {
@@ -2740,7 +3262,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "189a98228f4a50200acf8c9436b129dcef039f9e8bc90470f39d784ee90e46fe",
+      "sha256": "8f6f3b81fb76e437d96934b2e13fda1d5ac0c122c75aa1bc088b9e2df07b5dfe",
       "storage": "archive-only"
     },
     {
@@ -2900,7 +3422,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "e202eac3d337c41d015cb026edca4721dc792e181e34ee03c50119c21330f678",
+      "sha256": "71e9a0aa2ddb5ab936029c8d785eef3c1993a64bca6e5e9c09285501648cfaa6",
       "storage": "archive-only"
     },
     {
@@ -2916,7 +3438,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "5d6c5999a3becb0c03dc0f8229fb201f8570975587d31fdfaf31bfcf916ff573",
+      "sha256": "1e45255240bf7196e9f7738486cf86e9d727511c629832b676b6bc07db5ab5fe",
       "storage": "archive-only"
     },
     {
@@ -2932,7 +3454,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "ab5cb103282298a6eda48b61636b91180ea42111095b0c080dd203b2214cf88a",
+      "sha256": "654d4964124f1bfb63db6c692c91f865711fa427070290133d1c6d4662ba27f8",
       "storage": "archive-only"
     },
     {
@@ -2948,7 +3470,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "067d231fed2fb131e1f9164df9cdbb546d762e61cab71fec91891d0c1cefaede",
+      "sha256": "ad67b50ae96ffa391f5b3cf1df184cb30eb4bb242e0f3006ff08f46ece82ae31",
       "storage": "committed"
     },
     {
@@ -2964,7 +3486,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "64f86d83ce2c7f6ad7a333e364f688136faa77afb53aefa1c0eb6f9aca4f6eb7",
+      "sha256": "094c66de6e1c65fb4c9db48564aa8a019366007ecd198ed751537a3c85673cb9",
       "storage": "archive-only"
     },
     {
@@ -2980,7 +3502,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "f6c0caf489246f61ed3b9cc9faca87798bf18a809fab5ed524be1c6d100a29da",
+      "sha256": "b41162dd9d71c84d69c1e605571d6be8e595cc8a6016311689f8b36899fbca56",
       "storage": "archive-only"
     },
     {
@@ -3156,7 +3678,7 @@
       "findings": [],
       "consoleErrors": 0,
       "consoleErrorTexts": [],
-      "sha256": "4ef8a7c204aeb1fb2871d55daf67db7740b7577d642d9754c5790ac33137de10",
+      "sha256": "9389c55fa1c5653a606fb749825b779ebe083e155ffa246ed02f252155e8e2e0",
       "storage": "archive-only"
     },
     {
