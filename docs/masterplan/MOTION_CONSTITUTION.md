@@ -74,3 +74,7 @@ Before shipping any animation, ask:
 3. Does it breathe or does it perform?
 
 Two noes or a "performs" — remove it.
+
+---
+
+*Product experience has its own constitution: [EXPERIENCE_CONSTITUTION.md](../experience/EXPERIENCE_CONSTITUTION.md).*

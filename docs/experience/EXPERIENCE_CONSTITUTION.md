@@ -157,4 +157,7 @@ currently declines to do.
 ---
 
 *Visual design has its own constitution:
-[DESIGN_CONSTITUTION.md](../masterplan/DESIGN_CONSTITUTION.md).*
+[DESIGN_CONSTITUTION.md](../masterplan/DESIGN_CONSTITUTION.md). Motion has its
+own: [MOTION_CONSTITUTION.md](../masterplan/MOTION_CONSTITUTION.md). Which
+document owns which topic:
+[DOCUMENTATION_MAP.md](./DOCUMENTATION_MAP.md).*

@@ -213,3 +213,101 @@ grep -c -- "^\s*--" app/globals.css              # 66
 grep -rno "#[0-9a-fA-F]\{6\}" components/ --include=*.tsx | wc -l   # 616
 grep -rc "style={{" components/ --include=*.tsx | awk -F: '{s+=$2} END {print s}'  # 2472
 ```
+
+---
+
+## 9 · The Experience roadmap, re-sequenced at the Experience 0 freeze
+
+Promised at step 3 and recorded here for the first time. **Re-derived from the
+audit, not preserved because it was written first.** The synthesis is
+[`EATOBIOTICS_EXPERIENCE_AUDIT_v1.md`](./EATOBIOTICS_EXPERIENCE_AUDIT_v1.md).
+
+```
+0  Observe        ── frozen
+0R Restore product integrity        ← mandatory, before any redesign
+1  Establish the instrument
+2  My Food System becomes the product
+3  The Report
+4  Account separation and legacy migration
+5  Cross-product visual system
+```
+
+### What changed from the pre-audit ordering, and why
+
+| | was | is | why |
+|---|---|---|---|
+| 1 | Assessment | **Establish the instrument** | the handoff is an instrument change before it is an interface change; redesigning Assessment screens first would decorate a gap |
+| 2 | Report | **My Food System becomes the product** | the Report cannot be defined until the persistent product owns what belongs to it, or it duplicates the seven areas |
+| 3 | My Food System | **The Report** | and it is blocked on three professional reviews, not on engineering |
+
+---
+
+### 0R · Restore product integrity
+
+| | |
+|---|---|
+| Purpose | repair every P0 and the three P1s; close the guard gaps by construction |
+| Surfaces | `/account`, `/assessment/results`, `/assessment/report`, the Twin layer, the claims corpora |
+| Depends on | nothing. **It is the dependency** |
+| Must already be reviewed | nothing — 0R removes claims rather than adding them. The one exception is `P0-SCIENCE-08`'s food copy, which goes to review and may be deferred without blocking the gate |
+| Visual work permitted | **none**, beyond what removing a prohibited element requires |
+| Stop condition | the seven close criteria in `EXPERIENCE_0R_REMEDIATION_SPEC.md` §6 |
+
+### 1 · Establish the instrument
+
+| | |
+|---|---|
+| Purpose | let the free assessment collect what a Food System is made of — What You Notice and Food Context — and establish a system rather than terminate in a page |
+| Surfaces | `/assessment`, `/assessment/you`, the reveal, establishment |
+| Depends on | 0R complete |
+| Must already be reviewed | **the new question set.** Any scored question moves `questionSetVersion` and refuses every existing comparison; unscored observation and context items do not. That distinction decides whether pre-review testers can become the canonical first cohort |
+| Visual work permitted | the reveal only — score, one line, one action |
+| Stop condition | a person completes the free assessment and lands on `today` with a system that validates |
+
+### 2 · My Food System becomes the product
+
+| | |
+|---|---|
+| Purpose | execute the master disposition map — the capabilities that move from Generations 1, 2 and 3 arrive in the seven areas |
+| Surfaces | the seven areas; the Twin layer retires as those capabilities land |
+| Depends on | Experience 1 — several moves need established systems to be meaningful |
+| Must already be reviewed | FSS-v1 scientific sign-off, for the preview fence to come down. Until then this ships behind the candidate gate |
+| Visual work permitted | **yes, within `DESIGN_CONSTITUTION.md`.** This is where Generation 1's visual ambition meets Generation 4's truthfulness |
+| Stop condition | every KEEP/MOVE/MERGE row has landed, every RETIRE row is gone, and `/account` holds infrastructure only |
+
+### 3 · The Report
+
+| | |
+|---|---|
+| Purpose | the canonical Report becomes the €49 product; the legacy chain retires |
+| Surfaces | `/assessment/report`, the canonical renderer, the PDF |
+| Depends on | Experience 2 — the Report reflects a product that must already own its own material |
+| Must already be reviewed | **the blocking dependency.** `specificFoods` (dietitian + EU allergen taxonomy), `bioticsLanguage` (Irish/EU health-claims law), `safetyNetting` (GP/dietetic sign-off), and the `constraints-known` acknowledgement. Content ships as reviewed capabilities, one gate at a time |
+| Visual work permitted | refinement only — the renderer already looks like a publication |
+| Stop condition | a paying customer receives a Report bound to an explicit system, assessment and content-pack version, with every sentence traceable |
+
+### 4 · Account separation and legacy migration
+
+| | |
+|---|---|
+| Purpose | `live-dashboard.tsx` retires; Account becomes infrastructure |
+| Surfaces | `/account` and its subroutes |
+| Depends on | Experience 2 and 3 — Account cannot shed a capability before its destination exists |
+| Must already be reviewed | nothing new |
+| Visual work permitted | yes — infrastructure deserves to be pleasant, and claims nothing |
+| Stop condition | nothing on `/account` makes a claim about the person |
+
+### 5 · Cross-product visual system
+
+| | |
+|---|---|
+| Purpose | one visual system across the assembled product |
+| Surfaces | all |
+| Depends on | everything above |
+| Must already be reviewed | nothing new |
+| Visual work permitted | **this gate is the visual work** |
+| Carries | the **66 / 616 / 2,472** open question, and its four-way diagnosis — insufficient, inconsistently applied, or simply bypassed |
+| Stop condition | a new surface is indistinguishable in quality from the best existing one, and the token system is diagnosed rather than measured |
+
+> **No redesign gate begins before 0R closes.** That is the whole reason 0R was
+> inserted.
