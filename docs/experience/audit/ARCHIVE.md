@@ -45,6 +45,12 @@ tar -czf eatobiotics-experience-audit-corpus-<head>.tar.gz \
 sha256sum eatobiotics-experience-audit-corpus-<head>.tar.gz
 ```
 
+> **The SHA-256 above is a record of what was produced, not a target a rebuild
+> can be expected to hit.** Capture nondeterminism was measured, not assumed —
+> see §3.2 — so a regenerated corpus is equivalent in content and different in
+> bytes. Use the checksum to verify *this* archive if you hold it; do not use it
+> as an acceptance test for a rebuild.
+
 **The tarball is pushed nowhere.** That was decided at step 4 and has not
 changed: record the name, size and checksum in the repository, and invent no
 destination.
@@ -67,12 +73,18 @@ Three things, in order of how much weight they carry:
 1. **The 101 committed citations are in Git.** Every finding in the register
    points at an image that is in the repository, at a path, with a SHA-256 in the
    manifest. The evidence a reader needs to check a finding is already durable.
-2. **The corpus is regenerable.** `NOTE-CAPTURE-01` measured this rather than
-   assuming it: frozen clock, seeded storage, fixed viewports, pinned Chromium.
-   Re-running the four capture specs at a known head reproduces it, with the
-   residual instability measured and closed — 13 of 105 images differing by a
-   34×34 pixel region, 0.038% of bytes, diagnosed as the 390 tab strip's resting
-   scroll position and **no difference in visual content**.
+2. **Equivalent visual evidence is regenerable. Identical bytes are not.**
+   `NOTE-CAPTURE-01` measured this rather than assuming it: frozen clock, seeded
+   storage, fixed viewports, pinned Chromium. Re-running the four capture specs
+   at a known head reproduces the corpus **in content** — with a measured
+   residual of 13 of 105 images differing by a 34×34 pixel region, 0.038% of
+   bytes, diagnosed as the 390 tab strip's resting scroll position, and **no
+   difference in visual content**.
+
+   > Because that residual exists, a rebuild **will not** reproduce the
+   > 115,812,264-byte archive or its SHA-256. If the ephemeral copy disappears,
+   > **that exact archive is not recoverable** — what is recoverable is evidence
+   > equivalent for every purpose the audit uses it for.
 3. **The manifest is the evidence, not the images.** Each row carries route,
    state, section, viewport, frozen clock, evidence kind, component, findings,
    console-error count and hash. A row whose image is gone still records what was

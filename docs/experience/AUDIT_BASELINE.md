@@ -311,3 +311,70 @@ audit, not preserved because it was written first.** The synthesis is
 
 > **No redesign gate begins before 0R closes.** That is the whole reason 0R was
 > inserted.
+
+---
+
+## 10 · Experience 0 close record
+
+The complete gate for the synthesis arrived **after** the commit it describes.
+Recorded here so the repository tells the same truth as the final report.
+
+```
+Executable/audit head tested: 5274e03
+Full gate completed after commit with tree restored clean.
+Twelve sabotage suites full-green; s3a 2/35 with the same 33 documented
+PR #274 FILE MISSING exceptions.
+```
+
+### The ledger
+
+| | |
+|---|---|
+| `tsc --noEmit` | clean |
+| `eslint` | **0 errors**, 97 pre-existing warnings |
+| unit suite | **227 files · 6414 passed · 2 skipped** |
+| `check-ai-guard` · `check-schema-drift` · `check-supabase-scoping` | all pass |
+| `next build` | succeeds |
+| Playwright | **255 / 255** |
+| harness | finished · mutations restored · **final tree clean** |
+
+### Sabotage, stated as twelve-plus-one rather than as "all green"
+
+| suite | | suite | |
+|---|---|---|---|
+| base | 26/26 | `s7` | 30/30 |
+| `v1` | 10/10 | `s7b` | 171/171 |
+| `s3` | 12/12 | `g4` | 44/44 |
+| `s4` | 8/8 | `g5` | 65/65 |
+| `s5` | 10/10 | `g6` | 18/18 |
+| `s6` | 14/14 | `g61` | 22/22 |
+
+**`s3a`: 2/35 caught, 33 broken.** Every one of the 33 reports `FILE MISSING`,
+targeting files that live on unmerged PR #274 — the documented exception, at the
+same count and for the same reason as at the Gate 6.0 close. Verified by
+re-running the suite rather than assumed from the prior record.
+
+> **The sabotage gate is not "all green", and is not described that way.**
+> Twelve suites are at full count; the thirteenth has a named, unchanged
+> exception. A suite that cannot run its cases reports nothing, and nothing reads
+> as nothing wrong — which is the failure mode the harness exists to detect.
+
+### The ordering, stated rather than glossed
+
+The gate ran **after** `5274e03` was committed, on the same tree, and the tree
+was verified clean once the mutation harness restored its edits. `5274e03` is a
+tested state; it is not a state whose test preceded it.
+
+The freeze commit was made by explicit path (`git add docs/`) while the harness
+held a mutation on `components/report/canonical/canonical-report.tsx` — a file
+that step **never** touched. Staging by path is why no mutation entered the
+commit; `git add -A` would have captured one.
+
+### What is frozen
+
+| | |
+|---|---|
+| audit chain | `496fa76 · 12b0ed8 · 81bf323 · 38ab8af · cd4722c · c995bca · ce828ca · e7f9600 · 5274e03` |
+| register | **24 entries**, plus `RESP-ACCOUNT-01` named and not entered |
+| evidence | 234 manifest rows · 101 committed citations |
+| next | **Experience 0R — specified, not begun** |

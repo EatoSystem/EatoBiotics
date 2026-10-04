@@ -2,17 +2,18 @@
 
 **Experience 0, step 8. The audit is frozen here.**
 
-Seven steps of evidence: five per-surface audits, a 23-entry debt register, and a
-234-row capture manifest across four surfaces. This document inspects nothing
-new. Its job is to turn that evidence into one product architecture, one
+Seven steps of evidence: five per-surface audits, a **24-entry** debt register,
+and a 234-row capture manifest across four surfaces. This document inspects
+nothing new. Its job is to turn that evidence into one product architecture, one
 remediation sequence and one roadmap.
 
 | | |
 |---|---|
 | branch | `claude/eatobiotics-experience-audit`, from the frozen Gate 6.1 head `71aa9fd` |
 | steps | `496fa76` · `12b0ed8` · `81bf323` · `38ab8af` · `cd4722c` · `c995bca` · `ce828ca` · `e7f9600` |
+| **tested audit head** | **`5274e03`** — the full gate is recorded in [`AUDIT_BASELINE.md` §10](./AUDIT_BASELINE.md) |
 | evidence | 234 manifest rows · 101 committed citations · 133 archive-only |
-| findings | **16 P0 · 3 P1 · 2 P2 · 3 notes** |
+| findings | **16 P0 · 3 P1 · 2 P2 · 3 notes = 24**, plus `RESP-ACCOUNT-01` (named inside `NOTE-CAPTURE-01`, deliberately not entered separately) |
 
 The audit's own standard, which decided several conclusions against my first
 reading of them:
@@ -34,8 +35,8 @@ that reading in both directions.
 |---|---|
 | product model | **show everything we know.** One 2,609-line component, five tabs, every fact the system holds rendered at once |
 | useful capabilities | meal history, reports list, consultations, subscription management, referral — all genuinely needed |
-| visual value | **the highest in the product.** The Twin stage, the score cockpit, the gradient system and the figure work are the most ambitious visual design EatoBiotics has produced |
-| claims debt | **ten of the sixteen P0s** — fabricated meals, fabricated attributed quotation, fabricated personal conclusion, personal Biotic numbers in three forms, a Biotic verdict as colour, anatomical claims from a checkbox, a prohibited premise auto-sent to the AI |
+| visual value | **high.** The score cockpit, the card and gradient system and the overall ambition of the surface. The single most ambitious piece on `/account` — the Twin stage and figure — is **Generation 3's**, rendered above it; see `P0-ARCH-01` |
+| claims debt | **six of the sixteen P0s** — `P0-TRUST-01` fabricated meals · `P0-TRUST-02` fabricated attributed quotation · `P0-TRUST-03` fabricated personal conclusion · `P0-SCIENCE-01/02/03` personal Biotic scoring in language, in rings and in prose with a mechanism |
 | destination | **Account keeps infrastructure. Everything else moves or retires.** |
 
 ### Generation 2 — Assessment / Results
@@ -96,6 +97,23 @@ essentially every member sees.
 **Two product concepts, one scroll, no boundary.** That is the architectural
 diagnosis the step-2 corpus could not see, because every fixture state before
 step 6 passed `twin: null`.
+
+### Where the sixteen P0s actually sit
+
+Counted once each, so no finding is attributed to two generations. The stacking
+above is exactly why that was easy to get wrong, and why this table exists.
+
+| | P0s | |
+|---|---|---|
+| **Gen 1 — Account** | **6** | `TRUST-01` · `TRUST-02` · `TRUST-03` · `SCIENCE-01` · `SCIENCE-02` · `SCIENCE-03` |
+| **Gen 2 — Results** | **1** | `TRUST-04` |
+| **Gen 3 — Twin** | **3** | `SCIENCE-04` · `SCIENCE-05` · `TRUST-05` |
+| **Reports** | **3** | `SCIENCE-06` · `SCIENCE-07` · `SCIENCE-08` |
+| **Test corpus** | **2** | `GUARD-01` · `GUARD-02` |
+| **Architecture / coverage** | **1** | `ARCH-01` — about the **stacking itself**, belonging to neither generation alone |
+| | **16** | |
+
+**Generation 4 carries none.**
 
 ---
 

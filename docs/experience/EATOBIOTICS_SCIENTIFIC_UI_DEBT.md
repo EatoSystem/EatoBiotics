@@ -768,6 +768,13 @@ the later tabs. That is why only mobile captures were affected. Recorded as a
 responsive observation for `/account` (`RESP-ACCOUNT-01`), to be dispositioned
 with the rest of the responsive findings rather than here.
 
+> **`RESP-ACCOUNT-01` has no entry of its own and no status row, deliberately.**
+> It is a responsive observation, not a claims or trust finding, and Experience 0
+> produced no responsive-findings section for it to live in. It is named here so
+> that a reader counting the register is not left wondering where it went: the
+> register holds **24 entries**, and this id is the one named id outside them.
+> Experience 5 is where it is dispositioned.
+
 ## `P0-SCIENCE-04` · The Twin encodes a personal Biotic verdict as a colour
 
 **Surface** `/account` (Overview, whenever a Twin exists) · **Component**
@@ -1223,6 +1230,9 @@ register records them together rather than in separate entries.
 ---
 
 ## Register status
+
+**24 entries — 16 P0 · 3 P1 · 2 P2 · 3 notes.** Plus `RESP-ACCOUNT-01`, named
+inside `NOTE-CAPTURE-01` and deliberately not entered separately.
 
 | id | severity | surface | verified | disposition |
 |---|---|---|---|---|
