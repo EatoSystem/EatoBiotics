@@ -34,6 +34,17 @@ import type { DeepReport } from "@/lib/claude-report"
  * bigger and more invasive fixture than this bug warrants, and a screenshot
  * snapshot would be expensive to maintain for a blurred gradient.
  *
+ * UPDATE, 2026-10-04 (Experience 0 step 7). The reachability premise above is
+ * now out of date: `playwright.config.ts` sets
+ * `EATOBIOTICS_ALLOW_UNVERIFIED_PAID_FLOW` for the audit capture, so
+ * /assessment/report DOES render in the Playwright environment — the real
+ * client, composing from the assessment in localStorage, no Stripe session
+ * required. The original reasoning is left standing rather than rewritten,
+ * because it explains why this test has the shape it has; what changed is the
+ * environment, not the invariant. If anyone later wants the real browser
+ * measurement back, it is now affordable, and `tests/e2e/audit-capture-reports.spec.ts`
+ * is where it would go.
+ *
  * So the invariant is encoded where it actually bites: an all-sides negative
  * inset on a decorative overlay. `-inset-x-*` and `-inset-y-*` stay allowed —
  * vertical bleed is free, and horizontal bleed is fine inside a clipped parent,

@@ -131,6 +131,30 @@ function expectedAssessmentFiles(): Set<string> {
   return out
 }
 
+/* ── Reports ──────────────────────────────────────────────────────────────── */
+
+/**
+ * The TWO report surfaces that are not refused.
+ *
+ * `/assessment/report` is `V1_CORE` and `/demo/food-system-report` is
+ * `FIXTURE_SELF_GATED`; the other eight report routes are POST_V1 and are
+ * re-verified 404 by the capture spec rather than photographed.
+ *
+ * The paid route is captured at three answer sheets because the document
+ * branches on the member's ranked pathways — one sheet would photograph one
+ * branch and imply it is the document.
+ */
+const REPORT_PAID_SHEETS = ["varied", "low", "high"] as const
+
+function expectedReportFiles(): Set<string> {
+  const out = new Set<string>()
+  for (const sheet of REPORT_PAID_SHEETS) {
+    for (const w of WIDTHS) out.add(`reports-paid-${sheet}-${w}.png`)
+  }
+  for (const w of WIDTHS) out.add(`reports-canonical-${w}.png`)
+  return out
+}
+
 describe("the audit manifest proves its own completeness", () => {
   it("exists — the corpus is out of Git, so the manifest is not optional", () => {
     expect(
@@ -180,6 +204,28 @@ describe("the audit manifest proves its own completeness", () => {
 
     expect(missing, `the manifest is missing ${missing.length} expected capture(s)`).toEqual([])
     expect(extra, `the manifest carries ${extra.length} row(s) the matrices do not expect`).toEqual([])
+  })
+
+  it("expected captures = actual rows, for the two non-refused Report surfaces", () => {
+    const expected = expectedReportFiles()
+    const actual = new Set(rows().filter((r) => r.surface === "reports").map((r) => r.file))
+
+    const missing = [...expected].filter((f) => !actual.has(f)).sort()
+    const extra = [...actual].filter((f) => !expected.has(f)).sort()
+
+    expect(missing, `the manifest is missing ${missing.length} expected capture(s)`).toEqual([])
+    expect(extra, `the manifest carries ${extra.length} row(s) the matrices do not expect`).toEqual([])
+  })
+
+  /*
+   * The paid Report was reached through a harness-only flag, and the two
+   * documents it is compared against were not. Recording the evidence kind per
+   * row is what keeps "rendered" from quietly meaning four different things —
+   * so the reports rows are asserted to say which of the two they are.
+   */
+  it("every Report row declares what kind of evidence it is", () => {
+    const kinds = new Set(rows().filter((r) => r.surface === "reports").map((r) => r.evidenceKind))
+    expect([...kinds].sort()).toEqual(["fixture-rendered real component", "real live UI"])
   })
 
   it("actual rows = hashed entries — every row carries a real SHA-256", () => {

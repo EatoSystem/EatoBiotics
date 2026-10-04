@@ -1017,6 +1017,193 @@ could not have reached the Twin block anyway, because no fixture supplied a Twin
 | Disposition | **REMEDIATE**, with `P1-FUNNEL-01`, under the same principle: *a correctly refused destination must not be presented as an available action* |
 | Guard | the crawler must cover `/account` **in a Twin-present state** — covering the route alone would still miss all five |
 
+## `P0-SCIENCE-06` · The production paid Report ranks the member's Biotic pathways
+
+**Surface** `/assessment/report` (`V1_CORE` — the €49 product) · **Verified** by
+source chain, 2026-10-04 · **Reachability: LIVE, for any paying customer**
+
+```
+lib/report/build-food-system-report.ts:457-469   composes `dominantPattern`
+  → systemSnapshot.dominantPattern               (:513)
+  → components/report/food-system-section.tsx:398  renders it
+  → PaidReportClient                             renders FoodSystemSection
+  → /assessment/report                           settled Stripe session
+```
+
+> *"Your answers describe an uneven system — **Prebiotics is well supported while
+> Probiotics is thinner**."*
+
+> *"Your answers suggest **Prebiotics is your strongest pathway**, and that
+> **Probiotics is where your answers point to the clearest first step**."*
+
+`PATHWAY_LABEL` (`lib/report/subscores.ts:52`) maps the keys directly to the
+customer-facing words, and `paid-report-client.tsx:681` passes
+`PATHWAY_LABEL[priorityPathway]` into the membership CTA as well.
+`lib/fallback-paid-report.ts` reads the same ranking and is, in its own words,
+*"what a paying customer actually receives"* when generation fails.
+
+### Why this is D1's third surface
+
+The construct is **identical** to the one D1 ruled must be retired from
+`/assessment/results` — a personalised comparative Biotic verdict, with no number
+shown. D1's step 1 widens the claims corpus to `ASSESSMENT_SURFACES`; **that
+alone will not reach this file.** See `P0-GUARD-02`.
+
+### Classification
+
+| | |
+|---|---|
+| Kind | **scientific debt** — personal Biotic state, comparative verdict |
+| Reachability | **live on the money path** |
+| Evidence | **source**, pinned by `tests/e2e/audit-capture-reports.spec.ts`. Rendering it needs a `DeepReport` from Supabase, which this audit will not read or fabricate |
+| Disposition | **RETIRE the ranking**, with D1, in the same repair |
+
+---
+
+## `P0-SCIENCE-07` · The dev-flow Report renders three per-Biotic scores out of 100
+
+**Surface** `/assessment/report` under the unverified dev flow ·
+**Component** `components/assessment/full-report-client.tsx` · **Verified** by
+render, 2026-10-04 · **Reachability: NOT production-reachable**
+
+Rendered, under **"PILLAR BREAKDOWN · Your Pillar Deep-Dives"**:
+
+> **Probiotics 33/100** · **Prebiotics 50/100** · **Postbiotics 61/100**
+>
+> *"**Your probiotics score** has clear room to grow — the food recommendations
+> below are your most direct lever."* — and the same sentence for the other two.
+
+Plus *"Starting with your areas of greatest opportunity"* and *"Simple
+substitutions targeted at **your weakest pillar**"*.
+
+A personal per-Biotic **number**, a **denominator**, and a **possessive**, three
+times. Three of the forms the permanent product rule names, in one block.
+
+### Reachability, stated precisely
+
+`FullReportClient` is rendered by `app/assessment/report/page.tsx:45` **only**
+when `isUnverifiedPaidFlowAllowed()`, and by `/assessment/demo`, which is
+`POST_V1` and 404s. **No customer can reach it today**, and the page's own
+comment at `:128` refuses to fall back to it for a buyer whose Supabase read
+fails.
+
+### Why it is still P0
+
+It sits on the €49 route, one environment variable from being served — the
+`menu-scan` / `forecast` reactivation-hazard class, on the money path. It was
+rendered rather than read because this is the component the audit's harness can
+actually reach, and because the register has twice been wrong about a claim it
+only read.
+
+| | |
+|---|---|
+| Disposition | **RETIRE the pillar breakdown.** The deep-dive guidance can survive without a score, as `BioticsProgressPanel` already does |
+
+---
+
+## `P0-SCIENCE-08` · Mechanistic microbiological claims in customer-facing food copy
+
+**Surface** the food list and swaps · **Verified** by render (dev flow), 2026-10-04
+· **Reachability: the food-tool data is shared with the production path**
+
+> *"Top fibre and resistant starch source — **maximises short-chain fatty acid
+> production**."* · *"**Hundreds of millions of live bacteria per gram; direct
+> seeding of the microbiome**."* · *"Inulin-rich prebiotic that **selectively
+> feeds the most beneficial gut bacteria**."* · *"**Flavanols feed Lactobacillus
+> and Bifidobacterium**."* · *"glutamate **supports gut barrier directly**."* ·
+> *"Within 30 minutes is close enough to **stabilise your gut rhythm**."*
+
+Named genera, quantified microbial loads, asserted metabolite production, and a
+bodily outcome from meal timing.
+
+**A different class from `P0-SCIENCE-06/07`:** these are general food claims, not
+claims about this person's state. But they are markedly stronger than the
+*"associated with" / "typically"* register the Twin's education uses and than
+`/biotics` was corrected to in Gate 3.7 — and the permanent product rule's second
+clause is *teach the biology accurately*, not *teach it confidently*.
+
+| | |
+|---|---|
+| Disposition | **EVOLVE, pending scientific review.** Not rewritten here — the audit does not approve wording |
+
+---
+
+## `P1-VOCAB-01` · "Heal" renders as a customer-facing pathway tag
+
+**Surface** the food list · **Verified** by render, 2026-10-04
+
+Every food carries two of **Feed · Seed · Heal**. CLAUDE.md: *"'Heal' is a stored
+key, never a customer-facing pathway name."* The customer-facing third action is
+**Rejuvenate**. `lib/report/addon-lens.ts:12` confirms the keys travel through
+the production lens chapter too.
+
+A rendering defect rather than a claims one, and the cheapest fix in this step.
+
+---
+
+## `P0-GUARD-02` · No report file is in the Biotic claims corpus
+
+**Surface** the test corpus · **Verified** by source, 2026-10-04
+
+`GUARDED_SURFACES` (`tests/unit/biotic-claims.test.ts:313`) is
+`LIVE + REACHABLE + PROMPT + EMAIL + CANDIDATE + AGENT_LOOP`. **No report
+component or generator appears in any of the six.**
+
+The same shape as `P0-GUARD-01` (Account) and the Assessment gap found in step 5
+— the guard exists, works, and points elsewhere. **Third instance, and the first
+on a product that is sold.**
+
+> D1's step 1 widens the corpus to `ASSESSMENT_SURFACES`. On its own that lands
+> the ruling on two of the three surfaces carrying the construct. **The widening
+> must include the report family**, or `P0-SCIENCE-06` survives the repair that
+> was meant to end it.
+
+---
+
+## `P2-REPORT-01` · The canonical Report currently says one sentence six times
+
+**Surface** `/demo/food-system-report` · **Verified** by render, 2026-10-04 ·
+**Reachability: preview only — nothing is wired to it**
+
+The whole document at 1280 is **2,465px and 18 distinct content lines**, of which
+one appears **six times**:
+
+> *"You told us energy is what you most want to work on."*
+
+Once under "What you told us", once under "WHERE TO START", and once in each of
+the four weeks of "Your next 30 days" — Try, Notice, Adjust, Repeat.
+
+**Structural, not a thin fixture.** `lib/report/deterministic/compose.ts:362-392`
+builds all four loop steps from the same `choice.questionId` and `choice.value`,
+varying only the beat, and resolves the reviewed sentence from the pack each
+time. With `bioticsLanguage` and `specificFoods` withheld, that sentence is
+nearly all the content available.
+
+### This is the architecture working, not failing
+
+Every sentence is reviewed, bound and provable. The pack holds one sentence per
+answer. The honest conclusion is that the candidate Report **can prove everything
+it says and is not yet worth €49** — and that the gap is a content pack, not an
+architecture.
+
+**The gates withholding the rest are professional reviews, not switches.**
+`lib/report/deterministic/capabilities.ts` reads them from `SPECIALIST_GATES` in
+the frozen Science Contract and names what each waits on — `specificFoods` a
+dietitian and an EU allergen taxonomy, **`bioticsLanguage` Irish/EU health-claims
+law**, `safetyNetting` GP/dietetic sign-off. All three are OPEN, and
+`reportCapabilityEnabled` takes no parameters *"by construction"*, so nothing in
+the codebase can open one.
+
+Set beside `P0-SCIENCE-06`: the legacy Report names the Biotics freely on the
+money path, while the canonical Report withholds the same vocabulary pending a
+health-claims review. **Those two facts are hard to hold at once**, and the
+register records them together rather than in separate entries.
+
+| | |
+|---|---|
+| Kind | **readiness**, not claims and not live |
+| Disposition | **RECORD.** It belongs beside the `constraints-known` pre-activation blocker in CLAUDE.md, which this audit neither discharges nor weakens |
+
 ---
 
 ## Register status
@@ -1036,6 +1223,12 @@ could not have reached the Twin block anyway, because no fixture supplied a Twin
 | `P0-SCIENCE-05` | P0 | `/account` Twin | render | REMEDIATE — keep the ritual, drop the asserted biology |
 | `P0-ARCH-01` | P0 (coverage) | `/account` | source + render | RECORD — the audited state was the minority state |
 | `P1-FUNNEL-02` | P1 | `/account` Twin | live HTTP | REMEDIATE with `P1-FUNNEL-01` |
+| `P0-SCIENCE-06` | P0 | `/assessment/report` **€49** | source chain | RETIRE — **live on the money path**, with D1 |
+| `P0-SCIENCE-07` | P0 | `/assessment/report` dev flow | render | RETIRE — **not production-reachable**; reactivation hazard |
+| `P0-SCIENCE-08` | P0 | report food copy | render | EVOLVE — pending scientific review |
+| `P1-VOCAB-01` | P1 | report food tags | render | REMEDIATE — "Heal" is not customer-facing |
+| `P0-GUARD-02` | P0 | test corpus | source | **WIDEN WITH D1** — or `P0-SCIENCE-06` survives the repair |
+| `P2-REPORT-01` | P2 | `/demo/food-system-report` | render | RECORD — readiness, preview only |
 | `P0-GUARD-01` | P0 | test corpus | source | REPAIR FIRST, in remediation |
 | `P2-FSS-ARCH-01` | P2 | My Food System → Biotics | source closure | RECORD + PROVE, no refactor |
 | `DEBT-CODE-01` | DEBT-CODE | `/account` | render (disproved as P0) | RETIRE with generation |
@@ -1101,6 +1294,17 @@ The 0R sequence, in order:
 
 `P0-SCIENCE-04` extends the same ruling to a non-textual rendering: widening the
 corpus will not catch a gradient, so step 1 does not discharge it.
+
+**Step 7 found the ruling's third surface, and it is the one that is sold.**
+`P0-SCIENCE-06` puts the identical construct on `/assessment/report`, the €49
+product. So step 1 reads:
+
+> widen the Biotic claims corpus to include `ASSESSMENT_SURFACES`
+> **and the report family** (`P0-GUARD-02`).
+
+Widening to Assessment alone would land the ruling on two of the three surfaces
+carrying the construct and leave it intact on the paid one — the repair would
+look complete and would not be.
 
 ### D2 · `P0-TRUST-04` keeps both layers
 
