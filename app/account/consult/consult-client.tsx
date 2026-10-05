@@ -41,11 +41,36 @@ const PILLARS = [
 
 /* ── Starter questions ───────────────────────────────────────────────── */
 
+/*
+ * ══ 0R-3 · P0-TRUST-05 — A SUGGESTION MAY NOT ASSERT SOMETHING FOR THE MEMBER
+ *
+ * Three of the four questions here asserted a personal premise on the member's
+ * behalf, and were removed rather than reworded:
+ *
+ *   "Why is my Adding score so low and what's the fastest way to improve it?"
+ *       — asserts a low score AND names an internal dimension, which this
+ *         route's own system prompt already forbids the model from quoting;
+ *   "I have IBS — how should I adapt the EatoBiotics framework for my situation?"
+ *       — the product proposing that the member assert a condition;
+ *   "My energy is low in the afternoons. What does my food system health have
+ *    to do with it?"
+ *       — asserts a symptom the product never observed.
+ *
+ * Making these prefill rather than auto-send (see the mount effect) materially
+ * reduces the defect: the member reads and edits a draft instead of silently
+ * sending it. It does NOT cure an asserting suggestion, because the product is
+ * still the author of the assertion it is proposing the member make. The
+ * permanent rule has no prefill exemption:
+ *
+ *     The product must never place a product-authored personal conclusion into
+ *     the member's mouth.
+ *
+ * So one question survives — the one that asks rather than concludes. One chip
+ * is a thin set, and that is recorded as an editorial gap for the Experience
+ * work rather than closed here with new copy: 0R does not redesign.
+ */
 const STARTER_QUESTIONS = [
-  "Why is my Adding score so low and what's the fastest way to improve it?",
   "What should I eat this week based on my current scores?",
-  "I have IBS — how should I adapt the EatoBiotics framework for my situation?",
-  "My energy is low in the afternoons. What does my food system health have to do with it?",
 ]
 
 /* ── Score strip component ───────────────────────────────────────────── */
@@ -195,33 +220,37 @@ export function ConsultClient({
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef  = useRef<HTMLTextAreaElement>(null)
   const searchParams = useSearchParams()
-  const autoSentRef  = useRef(false)
-
-  // Compute weakest pillar label for first-time intro
-  const weakestPillarLabel = (() => {
-    if (!subScores) return null
-    const labels: Record<string, string> = {
-      diversity: "Plant Diversity", feeding: "Feeding", adding: "Live Foods",
-      consistency: "Consistency", feeling: "Feeling",
-    }
-    let lowest = Infinity; let key = ""
-    for (const [k, v] of Object.entries(subScores)) {
-      if (labels[k] && v < lowest) { lowest = v; key = k }
-    }
-    return labels[key] ?? null
-  })()
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
-  // Auto-send ?q= pre-filled question on mount
+  /*
+   * ══ 0R-3 · P0-TRUST-05 — `?q=` PREFILLS THE DRAFT. IT DOES NOT SEND. ══════
+   *
+   * This effect used to call `sendMessage(decodeURIComponent(q))` on mount,
+   * behind an `autoSentRef` latch. One tap on a product-authored suggestion
+   * elsewhere in the product therefore became the member's own first message to
+   * a model — they never saw the sentence in an input box and never got to edit
+   * it. The model then answered ON that premise, and its prose inherited the
+   * apparent legitimacy of something the member had supposedly asked.
+   *
+   * The permanent rule this now follows:
+   *
+   *     Authorship is created by the member's explicit submit action, not
+   *     inherited from the source of the text in the input box.
+   *
+   * So a `q` value may at most initialise the draft. It must not invoke
+   * `sendMessage`, construct a user message, persist anything, trigger
+   * summarisation, or call the model. The member sees it, can edit it, and
+   * sends it — or does not.
+   *
+   * `setInput` is deliberately the ONLY thing reachable from a search param.
+   * See `tests/unit/ai-authorship.test.ts`.
+   */
   useEffect(() => {
     const q = searchParams.get("q")
-    if (q && !autoSentRef.current) {
-      autoSentRef.current = true
-      void sendMessage(decodeURIComponent(q))
-    }
+    if (q) setInput(decodeURIComponent(q))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -452,11 +481,21 @@ export function ConsultClient({
                   <p className="mb-2 text-sm font-semibold text-foreground">
                     Hi{memberName ? `, ${memberName.split(" ")[0]}` : ""} — I&apos;m EatoBiotic, your personal food system consultant.
                   </p>
+                  {/*
+                    * 0R-3. This read `Your ${weakestPillarLabel} score is your
+                    * biggest opportunity right now` — a personal weakest-score
+                    * verdict, rendered in the CONSULTANT'S voice before the
+                    * model had said anything, and labelling the `adding`
+                    * dimension "Live Foods", vocabulary retired in Tranche 2B.
+                    * It also contradicted this route's own system prompt, which
+                    * already tells the model never to quote an internal
+                    * dimension name back to a member.
+                    *
+                    * Removed, not reworded. No replacement copy is written in a
+                    * remediation pass.
+                    */}
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    I&apos;ve reviewed your scores and I already know where to start.
-                    {weakestPillarLabel
-                      ? ` Your ${weakestPillarLabel} score is your biggest opportunity right now. Where would you like to begin?`
-                      : " Where would you like to begin?"}
+                    Where would you like to begin?
                   </p>
                 </div>
               )}
@@ -469,7 +508,10 @@ export function ConsultClient({
                 {STARTER_QUESTIONS.map((q) => (
                   <button
                     key={q}
-                    onClick={() => sendMessage(q)}
+                    // 0R-3: drafts the suggestion for the member to read, edit
+                    // and send. It must never call `sendMessage` — that is what
+                    // made a product-authored sentence into member speech.
+                    onClick={() => { setInput(q); inputRef.current?.focus() }}
                     className="rounded-2xl border bg-background px-4 py-3 text-left text-sm text-foreground transition-colors hover:border-[color-mix(in_srgb,var(--icon-green)_40%,var(--border))] hover:bg-muted"
                   >
                     {q}

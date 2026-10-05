@@ -3,21 +3,44 @@
 /**
  * AskTwin — "Ask your Food System" entry into the AI consult.
  *
- * Three deterministic prompt chips built from the member's twin state (their
- * weakest biotic, the current next action, their latest meal) that deep-link
- * into the existing consult with the question prefilled (?q=…). No AI calls
- * here — this is the bridge, the consult route keeps its own caps.
+ * Deterministic prompt chips built from the member's twin state (the current
+ * next action, their latest meal) that deep-link into the existing consult with
+ * the question prefilled (?q=…). No AI calls here — this is the bridge, and the
+ * consult route keeps its own caps.
+ *
+ * ── 0R-3 · WHY THERE ARE TWO CHIPS AND NOT THREE ────────────────────────────
+ *
+ * A third chip read `twin.biotics.weakest` and offered, in the member's own
+ * voice, "Why is my <biotic> level my weakest, and what foods would help this
+ * week?" — a personal per-Biotic verdict the product is not entitled to make,
+ * on a live surface, phrased as something the member had already concluded.
+ * `P0-TRUST-05`.
+ *
+ * It is RETIRED rather than reworded, and no replacement question is written
+ * here: education has canonical homes, and whether this surface should carry an
+ * educational link is an Experience decision, not a remediation one. Two chips
+ * is the honest count — layout symmetry is not a reason to keep a prohibited
+ * construct.
+ *
+ * This component must not derive a suggested question from personal Biotic
+ * ranking state again. `tests/unit/agent-loop-claims.test.ts` CALLS
+ * `buildPrompts` over every `weakest` value and reads what comes back, because
+ * the claim was interpolated and so put no Biotic word in this file for a
+ * corpus scan to find.
  */
 
 import Link from "next/link"
 import { MessageCircle, ArrowRight } from "lucide-react"
 import type { FoodSystemDigitalTwin } from "@/lib/agent-loop/twin/twin-types"
 
-const BIOTIC_NAME = { prebiotics: "prebiotic", probiotics: "probiotic", postbiotics: "postbiotic" } as const
-
-function buildPrompts(twin: FoodSystemDigitalTwin): string[] {
+/**
+ * The suggested questions a member is offered, exported so the behavioural
+ * claims guard can CALL it rather than scan this file — see
+ * `tests/unit/agent-loop-claims.test.ts`. An interpolated claim puts no Biotic
+ * word in the source, so a corpus scan cannot see one.
+ */
+export function buildPrompts(twin: FoodSystemDigitalTwin): string[] {
   const prompts: string[] = []
-  prompts.push(`Why is my ${BIOTIC_NAME[twin.biotics.weakest]} level my weakest, and what foods would help this week?`)
   if (twin.nextBestAction) {
     prompts.push(`What's the easiest way to fit this in: "${twin.nextBestAction.action}"?`)
   }

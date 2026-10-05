@@ -421,6 +421,64 @@ test.describe("the recorded findings still reproduce", () => {
     expect(body).not.toContain(AUDIT_DATE)
   })
 
+  /*
+   * ── 0R-3 · P0-TRUST-05, ASSERTED AS REPAIRED ─────────────────────────────
+   *
+   * This is the one half of P0-TRUST-05 that was ever customer-reachable: the
+   * suggestion chip rendered on the LIVE `/account` dashboard, offering, in the
+   * member's own voice, "Why is my <biotic> level my weakest, and what foods
+   * would help this week?" — a personal per-Biotic verdict the product is not
+   * entitled to make.
+   *
+   * The auto-send that made it a model premise was never live: `/account/consult`
+   * is POST_V1-refused and 404s in every environment. That is verified
+   * separately, and the latent architecture is covered by unit guards rather
+   * than by manufacturing reachability for a refused route.
+   *
+   * Rendered rather than source-asserted because the claim is INTERPOLATED —
+   * no Biotic word exists in `ask-twin.tsx` for a scan to find.
+   */
+  test("P0-TRUST-05 · no suggestion offers a personal Biotic verdict", async ({ page }) => {
+    await openFixture(page, "twin-present")
+
+    const body = (await page.locator("body").innerText()).replace(/\s+/g, " ")
+
+    /*
+     * Non-vacuity: the section must actually be on screen, or this proves
+     * nothing. Matched case-insensitively because the overline is rendered
+     * through `text-transform: uppercase`, so `innerText` returns
+     * "ASK YOUR FOOD SYSTEM" rather than the source's mixed case — a detail
+     * only a render shows, and the reason this assertion failed once before
+     * it passed.
+     */
+    expect(
+      body.toLowerCase(),
+      "the Ask-your-Food-System section did not render — the assertion would be vacuous",
+    ).toContain("ask your food system")
+
+    // The retired premise, in every form it could take.
+    for (const b of ["prebiotic", "probiotic", "postbiotic"]) {
+      expect(
+        body.toLowerCase(),
+        `a suggestion names the member's ${b} — P0-TRUST-05 has regressed`,
+      ).not.toContain(`my ${b} level`)
+    }
+    expect(body.toLowerCase()).not.toContain("my weakest")
+
+    // The two clean chips survive, so this records a removal and not a deletion
+    // of the whole surface.
+    const chips = page.locator('a[href*="/account/consult?q="]')
+    expect(await chips.count(), "the clean suggestion chips are gone too").toBeGreaterThan(0)
+
+    // And no surviving chip carries a Biotic word in its query parameter.
+    for (const href of await chips.evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? ""))) {
+      expect(
+        decodeURIComponent(href).toLowerCase(),
+        `a suggestion URL still carries a Biotic premise: ${href}`,
+      ).not.toMatch(/prebiotic|probiotic|postbiotic|weakest|strongest/)
+    }
+  })
+
   test("P0-SCIENCE-01 · first-use copy promises a per-Biotic breakdown", async ({ page }) => {
     await openFixture(page, "first-use-member")
 
@@ -432,6 +490,34 @@ test.describe("the recorded findings still reproduce", () => {
     )
     // And the promise of the three values, which Gate 5 excludes from surfaces.
     expect(body).toMatch(/Prebiotic, Probiotic, and Postbiotic value/i)
+  })
+
+  /*
+   * ── 0R-3 · THE LATENT HALF, LABELLED AS LATENT ───────────────────────────
+   *
+   * `P0-TRUST-05`'s model premise was never customer-reachable, and this is
+   * what makes that a measured fact rather than a reading of the classifier.
+   *
+   * The consultation architecture — the `?q=` handling, the mount behaviour,
+   * the message construction, the model request — is remediated and guarded by
+   * `tests/unit/ai-authorship.test.ts` at source level, DELIBERATELY. No
+   * fixture route is created for these pages and no reachability is
+   * manufactured in order to exercise the old architecture: a test that had to
+   * bypass the POST_V1 refusal to run would be asserting something about a
+   * product state no customer can reach.
+   *
+   * If this test ever fails, the consultation surface has become reachable and
+   * `P0-TRUST-05`'s latent half becomes live — at which point the rendered
+   * proof it then deserves is owed before the route ships.
+   */
+  test("P0-TRUST-05 · the consultation surface is still refused — LATENT / POST_V1", async ({ request }) => {
+    for (const route of ["/account/consult", "/account/consult/deep-dive"]) {
+      const res = await request.get(route, { maxRedirects: 0 })
+      expect(
+        res.status(),
+        `${route} is no longer refused — P0-TRUST-05's latent half is now LIVE`,
+      ).toBe(404)
+    }
   })
 
   /*

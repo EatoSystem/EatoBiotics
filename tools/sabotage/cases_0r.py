@@ -45,11 +45,18 @@ CORPUS = "tests/unit/customer-surfaces.ts"
 VISUAL = "tests/unit/biotic-visual-encoding.test.ts"
 
 SUBSCORES = "lib/report/subscores.ts"
+ASK_TWIN = "components/account/twin/ask-twin.tsx"
+CONSULT = "app/account/consult/consult-client.tsx"
+TEXTCHAT = "components/eatobiotic/text-chat.tsx"
 SYSTEM_MAP = "lib/account/system-map.ts"
 STAGE_MOOD = "lib/account/stage-mood.ts"
 
 C = [CLAIMS]
 V = [VISUAL]
+# 0R-3. The behavioural guard lives where CLAUDE.md says a generator of
+# customer-facing prose belongs; the authorship boundary has its own file.
+LOOP = ["tests/unit/agent-loop-claims.test.ts"]
+AUTH = ["tests/unit/ai-authorship.test.ts"]
 
 CASES = [
     # ── 1 · A CORPUS LEAVES THE SCAN AGAIN ──────────────────────────────────
@@ -212,4 +219,70 @@ CASES = [
      "    auraMult: Number((fedMult * nightDamp).toFixed(2)),",
      "    node: { x: 50, y: 52 },\n    auraMult: Number((fedMult * nightDamp).toFixed(2)),",
      V),
+
+    # ── 8 · 0R-3 · AUTHORSHIP AND AI PREMISE INTEGRITY ──────────────────────
+    #
+    # P0-TRUST-05 was a chain: a product-authored personal premise became a
+    # query parameter, was auto-sent on mount as the member's own first message,
+    # and the model answered ON that premise. Nine layers carried one
+    # undifferentiated `Message[]`; two of them changed authorship and seven
+    # could not tell.
+    #
+    # The repair is structural — a suggestion can only reach `setInput`, and a
+    # sender can only be called with the member's draft — so these cases attack
+    # the construction path rather than a label.
+
+    # THE PREMISE ITSELF. The claim was INTERPOLATED, so it put no Biotic word
+    # in the file and no corpus scan could ever have seen it. Only a guard that
+    # CALLS the generator catches this, which is why the case targets production
+    # source and runs the behavioural suite.
+    (1467, "a suggested question is derived from the weakest Biotic again", ASK_TWIN,
+     "  const prompts: string[] = []",
+     "  const prompts: string[] = []\n"
+     "  prompts.push(`Why is my ${twin.biotics.weakest} level my weakest?`)",
+     LOOP),
+
+    # THE SILENT TRANSFORMATION. `?q=` may initialise a draft and nothing else.
+    (1468, "the q parameter auto-sends on mount again", CONSULT,
+     "    if (q) setInput(decodeURIComponent(q))",
+     "    if (q) void sendMessage(decodeURIComponent(q))",
+     AUTH),
+
+    # A SUGGESTION SPEAKING FOR THE MEMBER. One gesture, but the text is still
+    # product-authored and arrives stamped `role: "user"`.
+    (1469, "a starter chip sends instead of drafting", CONSULT,
+     "                    onClick={() => { setInput(q); inputRef.current?.focus() }}",
+     "                    onClick={() => sendMessage(q)}",
+     AUTH),
+
+    # THE SAME DEFECT IN THE SECOND CLIENT. `text-chat.tsx` was not in the
+    # register; it was found by tracing the class rather than the instance.
+    (1470, "the second chat client's chip sends instead of drafting", TEXTCHAT,
+     "              onClick={() => setInput(chip)}",
+     "              onClick={() => send(chip)}",
+     AUTH),
+
+    # THE HOLE THE NARROW RULE WOULD HAVE LEFT. The argument IS the draft, so
+    # the draft rule permits it; only "no effect may send" refuses it.
+    (1471, "a send is moved into an effect with non-empty deps", CONSULT,
+     "  useEffect(() => {\n    bottomRef.current?.scrollIntoView({ behavior: \"smooth\" })\n  }, [messages])",
+     "  useEffect(() => {\n    bottomRef.current?.scrollIntoView({ behavior: \"smooth\" })\n    if (input) void sendMessage(input)\n  }, [messages])",
+     AUTH),
+
+    # CHANNEL 3 FOLDED INTO CHANNEL 1. Deterministic product fact travels
+    # server-side as system context; concatenating it into the authored text
+    # makes the product the author of the member's words.
+    (1472, "product context is folded into the member's authored text", CONSULT,
+     "    const userMsg: Message = { role: \"user\", content: text.trim() }",
+     "    const memberProfile = `score ${overallScore}`\n"
+     "    const userMsg: Message = { role: \"user\", content: `${text.trim()} (${memberProfile})` }",
+     AUTH),
+
+    # THE GUARD'S OWN VACUITY CHECK. Renaming the sender must not silently
+    # empty the instrument — `senderName` reads the declaration rather than
+    # hardcoding, and refuses when it finds nothing.
+    (1473, "the sender is renamed so the guard can no longer find it", CONSULT,
+     "  async function sendMessage(text: string) {",
+     "  async function dispatchToModel(text: string) {",
+     AUTH),
 ]

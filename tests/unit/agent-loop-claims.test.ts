@@ -10,6 +10,7 @@ import {
 } from "@/lib/agent-loop"
 import { deterministicProvider } from "@/lib/agent-loop/providers/deterministic"
 import { buildAccountTwin, type AccountTwinInput } from "@/lib/agent-loop/account-twin"
+import { buildPrompts } from "@/components/account/twin/ask-twin"
 import { detectPatterns } from "@/lib/account/patterns"
 import { buildInsideYouChapters } from "@/lib/account/inside-you"
 import { buildWeekStory } from "@/lib/account/week-story"
@@ -342,6 +343,74 @@ describe("the /account learning feed is clean, as a member receives it", () => {
         for (const t of twin.trends) assertClean(`trend ${t.label}`, [t.label, t.detail])
       })
     }
+  }
+})
+
+/* ── 3b · AskTwin's suggested questions, 0R-3 ─────────────────────────────── */
+
+describe("the /account AI suggestions carry no personal Biotic state", () => {
+  /*
+   * ══ 0R-3 · P0-TRUST-05 — WHY THIS IS HERE AND NOT IN A CORPUS LIST ════════
+   *
+   * `components/account/twin/ask-twin.tsx` built its first suggested question
+   * as
+   *
+   *     `Why is my ${BIOTIC_NAME[twin.biotics.weakest]} level my weakest, …`
+   *
+   * which rendered on the LIVE `/account` dashboard as a personal per-Biotic
+   * verdict in the MEMBER'S OWN VOICE — and put no Biotic word anywhere in the
+   * file.
+   *
+   * Two documented failure modes at once, which is why nothing caught it:
+   *
+   *   • the file was in NO claims corpus, so 0R-1's 33-file widening missed it;
+   *   • the claim is INTERPOLATED, so a string scan would have missed it even
+   *     inside the corpus — the `${BIOTIC_LABELS[k]}` problem CLAUDE.md records
+   *     as "a source scan of the whole corpus catches 1 of 9 interpolated
+   *     claims".
+   *
+   * So this guard CALLS the generator over every `weakest` value and reads what
+   * a member would actually be offered. A corpus entry could not have caught
+   * this. This can, and it is what fails if a future edit reconnects
+   * `biotics.weakest` — or any personal Biotic ranking — to suggestion
+   * generation.
+   */
+  for (const weakest of ["prebiotic", "probiotic", "postbiotic"] as const) {
+    it(`buildPrompts is clean when ${weakest} is the lowest Biotic`, async () => {
+      const { twin } = await buildAccountTwin({
+        score: 62,
+        previousScore: 58,
+        profileType: "Emerging Balance",
+        meals: mealsFixture("prebiotic", true),
+        streak: 3,
+        biotics: { prebiotic: 60, probiotic: 60, postbiotic: 60, [weakest]: 10 },
+      })
+
+      /*
+       * NON-VACUITY, first direction: the fixture must actually move the
+       * weakest Biotic, or this loop would assert the same twin three times and
+       * two thirds of the coverage would be imaginary.
+       */
+      expect(
+        twin.biotics.weakest,
+        `the fixture did not make ${weakest} the weakest Biotic`,
+      ).toBe(`${weakest}s`)
+
+      const prompts = buildPrompts(twin)
+
+      /*
+       * NON-VACUITY, second direction: a generator returning nothing would pass
+       * every rule below. `assertClean` refuses an empty argument for the same
+       * reason; this says it at the call site too, because `buildPrompts`
+       * slices to three and a future edit could slice to zero.
+       */
+      expect(
+        prompts.length,
+        "buildPrompts returned no suggestions — the guard would assert nothing",
+      ).toBeGreaterThan(0)
+
+      assertClean(`AskTwin suggestions (${weakest} lowest)`, prompts)
+    })
   }
 })
 

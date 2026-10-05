@@ -132,6 +132,12 @@ export const ACCOUNT_SURFACES = [
    * A COPY SOURCE COUNTS AS A SURFACE, which this list already says of
    * `dashboard-client-data.ts`. These are the same thing, generated at runtime.
    */
+  // 0R-3. `ask-twin.tsx` was in NO corpus until P0-TRUST-05 was traced — the
+  // one live surface that offers the member a question to ask a model. Its
+  // claim was interpolated, so the behavioural guard in
+  // `agent-loop-claims.test.ts` is what actually reads it; this entry closes
+  // the coverage half.
+  "components/account/twin/ask-twin.tsx",
   "components/account/twin/twin-stage.tsx",
   "components/account/twin/twin-sections.tsx",
   "components/account/twin/share-twin.tsx",

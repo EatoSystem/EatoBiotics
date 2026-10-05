@@ -1038,9 +1038,20 @@ const EXPOSED_AT_0R1: readonly [file: string, rule: string, example: string][] =
     "a Biotic claimed as a person's own",
     "your probiotic",
   ],
-  // /account-you, public per proxy.ts, so customer-visible regardless of where
-  // its numbers come from: "Your Prebiotics have been one of your stronger
-  // pathways, but your Probiotics are pulling down your Biotics Score™."
+  /*
+   * "Your Prebiotics have been one of your stronger pathways, but your
+   * Probiotics are pulling down your Biotics Score™."
+   *
+   * REACHABILITY CORRECTED AT 0R-3. This comment said "/account-you, public per
+   * proxy.ts, so customer-visible". `proxy.ts:89` allowlists `/account-you`
+   * past the PASSWORD GATE; `isServableInV1` still refuses it
+   * (`v1-surface.ts:393`). Those are two different gates, and the proxy
+   * allowlist is not reachability — the page 404s.
+   *
+   * The ENTRY stays: the file carries the claim string, which is what this
+   * inventory records, and `dashboard-client.tsx` is also mounted by
+   * `/demo/account/[tier]`. Only the justification was wrong.
+   */
   [
     "components/account/dashboard-client.tsx",
     "a Biotic claimed as a person's own",

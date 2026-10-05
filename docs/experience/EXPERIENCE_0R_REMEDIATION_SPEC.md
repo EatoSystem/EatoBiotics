@@ -551,3 +551,98 @@ Gate 6 context ceiling or Gate 6.1 model authority was touched. No refusal was
 removed, no route reclassified, no copy rewritten, and no finding repaired.
 
 The debt is now **visible and un-growable**. Repair begins at 0R-3.
+
+---
+
+## 8 · DELIVERY RECORD — 0R-3 (`P0-TRUST-05`)
+
+The first tranche that changed **product behaviour** rather than enforcement.
+
+| | |
+|---|---|
+| production files changed | **4** — `ask-twin.tsx` · `consult-client.tsx` · `text-chat.tsx` · (`customer-surfaces.ts` is test corpus) |
+| the invariant established | **authorship is created by the member's explicit submit action, not inherited from the source of the text in the input box** |
+
+### The trace came first, and it overturned the register
+
+Nine layers, read rather than assumed. **Two** change authorship —
+`consult-client.tsx:218-225` (the mount auto-send) and `:263` (the
+`{ role: "user" }` construction) — and **seven** cannot tell, because one
+undifferentiated `Message[]` reaches the schema, the model, the summary call and
+the persisted row.
+
+**The register said the auto-send was live. It never was.** `/account/consult`
+and `/account/consult/deep-dive` are both POST_V1-refused and 404 in every
+environment, re-verified by live HTTP. So:
+
+| | |
+|---|---|
+| **LIVE** | the prohibited premise rendered on `/account`, in the member's voice |
+| **LATENT** | everything downstream of the link |
+
+Recorded, not quietly corrected: **reachability changes severity; it does not
+erase a latent architectural hazard.**
+
+**`?q=` was not the only producer.** Six sites in five files, including two the
+register never named: `consult-client.tsx:457-458`, which asserted a personal
+weakest score in the **consultant's** voice before the model had spoken, and
+`components/eatobiotic/text-chat.tsx:157`, the same authorship defect in a fifth
+file — found by tracing the class rather than the instance.
+
+### Why neither 0R-1 nor 0R-2 could have caught the live sentence
+
+Both documented failure modes, on one line.
+
+1. **Corpus gap** — `ask-twin.tsx` was in no corpus at all. 0R-1 widened by 33
+   files and missed it.
+2. **Interpolation gap** — `` `my ${BIOTIC_NAME[twin.biotics.weakest]} level` ``
+   puts no Biotic word in the file, so a scan would miss it even inside the
+   corpus.
+
+**No new mechanism was invented, and 0R-1/0R-2 were not broadened.** CLAUDE.md
+already designates the answer: a generator of customer-facing prose belongs in
+`agent-loop-claims.test.ts`, which CALLS generators and reads what they return.
+`buildPrompts` is now called there over all three `weakest` values. The red state
+was **3 failures quoting the real sentence per Biotic** — stronger than a
+screenshot, which shows one variant.
+
+### The repair is structural
+
+A suggestion can reach only `setInput`; a sender can be called only with the
+member's draft, or with nothing. Product fact stays on its existing separate
+`buildMemberProfile` channel. So the three categories are distinct **by
+construction** — Gate 6.1's rule: remove the prohibited job rather than permit
+it and validate a label afterwards.
+
+**No authorship field** was added to the message type, the zod schema, the API
+or the stored rows, and **no provenance was backfilled** onto historical
+`consultations.messages` — those rows are structurally ambiguous and that is
+recorded honestly rather than invented.
+
+### Three defects in the new guard, found by the guard
+
+| | |
+|---|---|
+| the draft rule refused `report-client.tsx` | its sender takes **no argument** and reads the draft from closure — a *stronger* form of the same property |
+| the param rule cried wolf | `q` *"flows into map"*, because `STARTER_QUESTIONS.map((q) => …)` names its callback `q`. A name collision, not a flow. Scoped to the effect |
+| the effect rule was too narrow | mount-only would have permitted `useEffect(() => sendMessage(input), [input])` — the argument IS the draft. Widened to **every** effect; **sabotage 1471 is that shape** |
+
+`report-client.tsx` had always called `setInput` from a suggestion. It stays in
+the guard's corpus as a surface that must remain correct, and doubles as the
+known-clean control proving the rules are satisfiable.
+
+### Evidence
+
+`run_0r` **1467-1473, 7/7 caught** · rendered proof on the `twin-present`
+fixture · both consult routes re-verified **404** and labelled
+`LATENT / POST_V1 REFUSED`, with **no reachability manufactured** to exercise
+the refused architecture.
+
+### Left for 0R-8, deliberately
+
+The three chips on live `/account` point at a refused route, on a surface the
+nine-route link crawler does not cover.
+
+> 0R-3 asks *"if this capability exists, is authorship and premise handling
+> safe?"* · 0R-8 asks *"should this destination be presented as available at
+> all?"*

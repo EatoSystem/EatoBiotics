@@ -831,11 +831,31 @@ ready-made replacement.
 
 ---
 
-## `P0-TRUST-05` · The product auto-sends a prohibited Biotic claim to the AI consultant
+## `P0-TRUST-05` · A product-authored Biotic premise, offered as the member's own question
+
+> **REMEDIATED at 0R-3.** Live half repaired and proved by render; latent half
+> repaired and proved at source. See *0R-3 outcome* at the end of this entry.
 
 **Surface** `/account` (Overview) · **Component**
 `components/account/twin/ask-twin.tsx:20` → `app/account/consult/consult-client.tsx:219-225`
 · **Verified** by render, 2026-10-04
+
+> **REACHABILITY CORRECTED at 0R-3, and it changes what this entry claims.**
+>
+> The text below says the auto-send is live. **It was never customer-reachable.**
+> `/account/consult` and `/account/consult/deep-dive` are both in
+> `POST_V1_ROUTES` (`lib/v1-surface.ts:350-351`) and return **404 in every
+> environment** — re-verified by live HTTP at 0R-3.
+>
+> | | |
+> |---|---|
+> | **LIVE / customer-reachable** | the prohibited premise **rendered** on `/account`, in the member's voice |
+> | **LATENT / POST_V1 refused** | the `?q=` handling · the mount-time auto-send · the product-suggested vs user-authored provenance · the model request built from that text · the persisted row |
+>
+> Recorded rather than quietly fixed, because the audit's own principle governs
+> here: **reachability changes severity; it does not erase a latent
+> architectural hazard.** Same distinction already drawn between
+> `P0-SCIENCE-06` (live/paid) and `P0-SCIENCE-07` (latent).
 
 Rendered on the live dashboard, under the heading *"It knows your Food System.
 Ask it anything."*:
@@ -878,6 +898,126 @@ rather than `/api/fss/focus-today`.
 | Reachability | **live** on `/account` for any member with a Twin |
 | Disposition | **RETIRE the prompt.** The two other chips (the next action, the last meal) are clean and may stay |
 | Close criterion | not merely the sentence removed — the `?q=` auto-send path must not be able to carry a claim no deterministic component made |
+
+### 0R-3 outcome
+
+**The chain, traced layer by layer before any code moved.** Nine layers carried
+one undifferentiated `Message[]`; **two** changed authorship and **seven** could
+not tell.
+
+| | layer | authorship |
+|---|---|---|
+| 1-2 | `ask-twin.tsx:20,47` — the premise, then the URL | creates it |
+| **3** | `consult-client.tsx:218-225` — `searchParams.get("q")` → `sendMessage(…)` on mount | **the silent transformation** |
+| **4** | `consult-client.tsx:263` — `{ role: "user", content }` | **stamps it as member speech** |
+| 5-7 | POST → zod schema → `anthropic.messages.stream` | no field to tell |
+| 8 | the summary call over `...body.messages` | summarised as the member's |
+| 9 | `consultations.messages` | **stored as the member's words** |
+
+**One thing the architecture already had right, and 0R-3 did not disturb it.**
+`buildMemberProfile` (`app/api/consult/route.ts:124-174`) passes deterministic
+product fact as **separate system context**, and that route's prompt already
+forbids the model from quoting an internal dimension name back to a member. The
+third channel existed and was correct; only channels 1 and 2 were conflated.
+
+**Six producer sites in five files — `?q=` was not the only one.**
+
+| producer | reachability | disposition |
+|---|---|---|
+| `ask-twin.tsx:20` the Biotic premise | **LIVE** | **RETIRED** — prompt, `BIOTIC_NAME` and the `twin.biotics.weakest` read all deleted; the two clean chips kept; no replacement copy |
+| `consult-client.tsx:218-225` the auto-send | LATENT | `?q=` now **prefills the draft only** |
+| `consult-client.tsx:472` a starter chip calling `sendMessage` | LATENT | **drafts** and focuses the input |
+| `consult-client.tsx:457-458` *"Your {weakestPillarLabel} score is your biggest opportunity right now"* | LATENT | **DELETED** — a personal weakest-score verdict in the **consultant's** voice, before the model had spoken, labelling `adding` as **"Live Foods"** (vocabulary retired in Tranche 2B), and contradicting this route's own system prompt. **A fourth inversion this entry never named.** |
+| `consult-client.tsx:44-48` three of four `STARTER_QUESTIONS` asserting a personal premise | LATENT | **DELETED** — see below |
+| `components/eatobiotic/text-chat.tsx:157` `onClick={() => send(chip)}` | LATENT (`/eatobiotic` is POST_V1) | **drafts** — *a fifth file, found by tracing the class rather than the instance* |
+
+`app/account/consult/deep-dive/page.tsx:41` is a sixth `?q=` producer and is now
+harmless by construction, since `?q=` can only draft. Its `&deepdive=<id>`
+parameter is **written and read nowhere** — a dead parameter, recorded not
+removed.
+
+**Why three starter questions were deleted rather than reworded.** Prefill-only
+semantics materially reduce the defect — the member reads and edits a draft
+instead of silently sending it — but they do **not** cure a suggestion that
+asserts something. *"I have IBS"*, *"Why is my Adding score so low"* and *"My
+energy is low in the afternoons"* each had the product authoring an assertion it
+was proposing the member make. The permanent rule has no prefill exemption. One
+non-asserting question survives; **one chip is a thin set, and that is recorded
+as an editorial gap for the Experience work rather than closed here with new
+copy.**
+
+**The repair is structural, not a field.** A suggestion can reach only
+`setInput`; a sender can be called only with the member's draft. So
+"product-authored text becomes a user message" is not a mistake a validator has
+to catch — there is no path by which it can arrive. **No authorship field was
+added** to the message type, the schema, the API or the stored rows.
+
+> **Historical provenance cannot be recovered, and was not invented.** Rows
+> already in `consultations.messages` are structurally ambiguous, because the
+> old schema never preserved which messages the member authored. 0R-3 does
+> **not** backfill a provenance field onto them. If a future consultation
+> redesign needs explicit provenance in storage, that is a separate capability
+> and schema decision.
+
+### Why nothing caught this — two documented guard gaps, co-occurring
+
+The one live sentence sat in the intersection of both failure modes this
+programme has recorded.
+
+1. **Corpus gap.** `components/account/twin/ask-twin.tsx` was in **no corpus at
+   all** — not `ACCOUNT_SURFACES`, not any tranche, not `EXPOSED_AT_0R1`, not
+   `KNOWN_UNCORRECTED`. 0R-1 widened coverage by 33 files and this was not one
+   of them. *Closed: the file is now in `ACCOUNT_SURFACES`.*
+2. **Interpolation gap.** Even inside the corpus a scan would have missed it:
+   `` `my ${BIOTIC_NAME[twin.biotics.weakest]} level my weakest` `` puts **no
+   Biotic word in the file**. Exactly what CLAUDE.md records — *"a source scan
+   of the whole corpus catches 1 of 9 interpolated claims"*. *Closed by the
+   behavioural guard: `tests/unit/agent-loop-claims.test.ts` now CALLS
+   `buildPrompts` over all three `weakest` values and reads what comes back.*
+
+**The red state, measured by calling the generator** — three failures, one per
+Biotic, each quoting the real sentence a member was offered. Stronger evidence
+than a screenshot, which shows one variant.
+
+### Guards and proof
+
+| | |
+|---|---|
+| behavioural | `agent-loop-claims.test.ts` — `buildPrompts` over all three `weakest` values, `assertClean`, non-vacuity both ways |
+| authorship | `tests/unit/ai-authorship.test.ts` — a sender may be called only with the draft (or no argument); **no effect** may send; a search param may reach only `setInput`; product context never folded into authored text |
+| coverage | `ask-twin.tsx` added to `ACCOUNT_SURFACES` — neutral, as expected |
+| sabotage | `cases_0r.py` **1467-1473**, 7/7 caught |
+| rendered | `audit-capture.spec.ts` — `twin-present` carries no personal-Biotic suggestion and no chip URL carries a Biotic word |
+| latent, labelled | both consult routes re-verified **404**; **no reachability was manufactured to exercise the refused architecture** |
+
+**Two defects in the new guard, found by the guard failing and recorded rather
+than smoothed over.** `report-client.tsx`'s sender takes **no argument** and
+reads the draft from closure — a stronger form of the same property, which the
+first rule wrongly refused. And the param rule, written over the whole file,
+reported that `q` *"flows into map"* because `STARTER_QUESTIONS.map((q) => …)`
+names its callback `q` too — a name collision, not a flow. Both fixed before the
+suite ran. A third hole the author could see was closed the same way: the
+effect rule was widened from mount-only to **every** effect, because
+`useEffect(() => sendMessage(input), [input])` passes the draft rule and would
+fire a request on every keystroke. **Sabotage 1471 is that exact shape.**
+
+> **`app/account/report/[id]/report-client.tsx` already did it right** — a
+> suggestion there has always called `setInput`. It is kept in the guard's
+> corpus as a surface that must stay correct, and doubles as the known-clean
+> control that proves the rules are not unsatisfiable.
+
+### Out of 0R-3's scope, recorded
+
+**The three chips on live `/account` link to a refused route.** That is a
+`P1-FUNNEL-01`-class defect — a correctly refused destination presented as an
+available action — on a surface the link crawler does not cover (`CRAWLED` in
+`tests/e2e/v1-launch-surface.spec.ts:181` is nine routes and `/account` is not
+among them). **Left to 0R-8**, which owns the crawler and the destination
+question, deliberately:
+
+> 0R-3 asks *"if this capability exists, is authorship and premise handling
+> safe?"* · 0R-8 asks *"should this destination be presented as available at
+> all?"* These are not the same question and are not conflated.
 
 ---
 
@@ -1316,7 +1456,7 @@ inside `NOTE-CAPTURE-01` and deliberately not entered separately.
 | `P0-TRUST-04` | P0 | `/assessment/you` → Results | render + source | REMEDIATE — mirror the existing guard |
 | `P1-FUNNEL-01` | P1 | `/assessment/you` → Results | live HTTP | REMEDIATE — four dead CTAs |
 | `P0-SCIENCE-04` | P0 | `/account` Twin | render | RETIRE — **a Biotic verdict rendered as colour**; no string guard can see it |
-| `P0-TRUST-05` | **P0-TRUST / AI-governance** | `/account` Twin → `/api/consult` | render + source | RETIRE — auto-sent prohibited premise |
+| `P0-TRUST-05` | **P0-TRUST / AI-governance** | **live premise** on `/account` Twin · **latent** architecture behind POST_V1-refused `/account/consult` | render (live) + source (latent) | **CLOSED at 0R-3** — premise retired, authorship made structural |
 | `P0-SCIENCE-05` | P0 | `/account` Twin | render | REMEDIATE — keep the ritual, drop the asserted biology |
 | `P0-ARCH-01` | P0 (coverage) | `/account` | source + render | RECORD — the audited state was the minority state |
 | `P1-FUNNEL-02` | P1 | `/account` Twin | live HTTP | REMEDIATE with `P1-FUNNEL-01` |
