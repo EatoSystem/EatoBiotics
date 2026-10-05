@@ -442,3 +442,64 @@ runs is itself consistent with it.
 Committing regenerated image blobs into a tranche that changed **no rendered
 surface** would add churn that evidences nothing, and would break the
 self-consistency of the committed citations against their manifest hashes.
+
+---
+
+## 12 · Experience 0R-3 (`P0-TRUST-05`) — the gate
+
+| | |
+|---|---|
+| branch | `claude/eatobiotics-experience-audit` |
+| commit | **`f22d1f3`** |
+| production files changed | **4** — the first 0R tranche to change product behaviour |
+
+### The ledger
+
+| | |
+|---|---|
+| `tsc --noEmit` | clean |
+| `eslint` | **0 errors**, 97 pre-existing warnings |
+| unit suite | **229 files · 6554 passed · 2 skipped** (0R tranche 1: 228 · 6532 · 2) |
+| three guard scripts | pass |
+| `next build` | succeeds |
+| Playwright | **257 / 257** — two more than tranche 1's 255, both new `P0-TRUST-05` assertions |
+| sabotage | **`run_0r` 24/24** (1467–1473 new, 7/7) · base 26/26 · `s7b` 171/171 · `g5` 65/65 · `g6` 18/18 · `g61` 22/22 |
+| harness | finished · mutations restored · **final tree clean** |
+
+Suites outside the blast radius (`v1`, `s3`, `s4`, `s5`, `s6`, `s7`, `g4`) were
+at full count on `3e437a1`/`59cc4ef` one tranche earlier and are unaffected by a
+change confined to two chat clients, one Twin component and the test corpus.
+`s3a`'s 33 PR #274 `FILE MISSING` anchors remain the standing exception.
+
+### Why the audit corpus was NOT re-committed, measured rather than assumed
+
+Re-running the capture harness after the repair produces two **different** kinds
+of change, and only one of them is the familiar residual:
+
+| | |
+|---|---|
+| `account-twin-present-overview-390.png` | **10359 → 10268 px tall** — 91px shorter, exactly the retired chip's row. A **material content change caused by the repair** |
+| `account-representative-overview-390.png` | **0.042% of bytes** on an untouched state — the `NOTE-CAPTURE-01` residual, measured at 0.038% at step 4 |
+
+**The frozen corpus is the BEFORE evidence**, and `P0-TRUST-05` cites it.
+Overwriting those images would leave the register pointing at screenshots of a
+repaired product — the defect would be undocumented at the exact moment it was
+fixed. So `docs/experience/audit/` stays at its Experience 0 state, and the
+after state is proved behaviourally by the permanent assertion in
+`audit-capture.spec.ts`, which re-proves itself on every run instead of being a
+byte somebody has to trust.
+
+### Three defects in the new guard, found by the guard
+
+| | |
+|---|---|
+| the draft rule refused `report-client.tsx` | its sender takes **no argument** and reads the draft from closure — a *stronger* form of the same property |
+| the param rule cried wolf | `q` *"flows into map"*, because `STARTER_QUESTIONS.map((q) => …)` names its callback `q`. A name collision, not a flow |
+| the effect rule was too narrow | mount-only would have permitted `useEffect(() => sendMessage(input), [input])`, which passes the draft rule and fires on every keystroke. Widened to **every** effect; **sabotage 1471 is that shape** |
+
+### The ordering, stated rather than glossed
+
+The commit was made on a verified-clean tree; Playwright and the sabotage suites
+then ran **after** it, on the same tree, and the capture residual was restored
+before the documentation follow-up. `f22d1f3` is a tested state; it is not a
+state whose test preceded it.

@@ -990,6 +990,25 @@ than a screenshot, which shows one variant.
 | rendered | `audit-capture.spec.ts` — `twin-present` carries no personal-Biotic suggestion and no chip URL carries a Biotic word |
 | latent, labelled | both consult routes re-verified **404**; **no reachability was manufactured to exercise the refused architecture** |
 
+### The audit corpus is deliberately NOT updated to the repaired state
+
+A judgement call, recorded because it looks like an omission and is not.
+
+Re-running the capture harness after the repair changes
+`account-twin-present-overview-390.png` **from 10359 to 10268 pixels tall** —
+91px shorter, which is exactly the retired chip's row. That is a material
+content change, unlike the `NOTE-CAPTURE-01` residual measured alongside it on
+an untouched state (`account-representative-overview-390.png`, **0.042% of
+bytes**, the 390 tab strip's resting scroll position).
+
+**The frozen corpus is the BEFORE evidence, and this entry cites it.**
+Overwriting those images would destroy the only pictures that show the defect,
+leaving a register that points at screenshots of a repaired product. So
+`docs/experience/audit/` stays at its Experience 0 state, and the **after**
+state is proved behaviourally instead — by the permanent assertion in
+`audit-capture.spec.ts`, which travels with the suite and re-proves itself on
+every run rather than being a byte somebody has to trust.
+
 **Two defects in the new guard, found by the guard failing and recorded rather
 than smoothed over.** `report-client.tsx`'s sender takes **no argument** and
 reads the draft from closure — a stronger form of the same property, which the
