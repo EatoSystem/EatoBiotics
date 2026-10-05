@@ -1027,7 +1027,7 @@ fire a request on every keystroke. **Sabotage 1471 is that exact shape.**
 
 ### Out of 0R-3's scope, recorded
 
-**The three chips on live `/account` link to a refused route.** That is a
+**The live `/account` suggestion chips link to a refused route.** That is a
 `P1-FUNNEL-01`-class defect — a correctly refused destination presented as an
 available action — on a surface the link crawler does not cover (`CRAWLED` in
 `tests/e2e/v1-launch-surface.spec.ts:181` is nine routes and `/account` is not
@@ -1037,6 +1037,32 @@ question, deliberately:
 > 0R-3 asks *"if this capability exists, is authorship and premise handling
 > safe?"* · 0R-8 asks *"should this destination be presented as available at
 > all?"* These are not the same question and are not conflated.
+
+**Derived at close, because the first draft of this line was wrong.** It said
+*"the three chips"*, which was the **pre-repair** count — the Biotic premise plus
+the two clean chips — carried into a post-repair sentence. There is no third
+chip. The real numbers, read from source and confirmed by render:
+
+| | |
+|---|---|
+| `buildPrompts` after 0R-3 | **1 or 2** suggestions, never 3. The next-action chip is conditional on `twin.nextBestAction`; the last-meal chip always fires, via its `else` fallback. `slice(0, 3)` is now a no-op |
+| rendered on the `twin-present` fixture | **2** chips — *"What's the easiest way to fit this in: …"* and *"How could I make … even better for my Food System?"* |
+| rendered on **every other** fixture state (`representative` · `sparse` · `first-use-member` · `returning-no-meals-today` · `dense`) | **0** — `AskTwin` sits behind `live-dashboard.tsx:1095`'s `twin && twinVisual` gate, so the section exists only for a member who has a Twin |
+| other `/account/consult` affordances on live `/account` | **0** — measured as zero bare `href="/account/consult"` links in every state |
+
+So the complete live inventory is **two affordances, both of them `AskTwin`
+chips, in one component** — `components/account/twin/ask-twin.tsx`, mounted once
+at `components/account/live-dashboard.tsx:1154`. Every other
+`/account/consult` reference in the repository is either a default parameter or
+sits on a POST_V1-refused surface (`/account-you`, `/demo/account/[tier]`,
+`/demo/account/consult`, `/account/consult/deep-dive` itself).
+
+**One live dead destination that is NOT an `/account` affordance, found during
+this reconciliation.** `lib/email/paid-onboarding-email.ts:96` renders
+*"Start a consultation →"* linking to `${SITE_URL}/account/consult` in a **live
+lifecycle email**. It is outside the `/account` surface and outside any link
+crawler, so nothing would ever have caught it. Recorded here and **added to
+0R-8's scope**, which owns dead destinations.
 
 ---
 

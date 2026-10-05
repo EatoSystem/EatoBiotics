@@ -82,8 +82,35 @@ an input to a model returns as generated prose that reads as a response to the
 person. The claim is then laundered through their own voice, and nothing
 downstream can tell that the product, not the person, asserted it.
 
+### Prefill is not authorship. Submission is authorship.
+
+Adopted at the 0R-3 close, and general well beyond the route that produced it.
+
+A suggestion the product writes into an input box is a **draft**. It becomes the
+person's own statement at one moment and one moment only: when they
+deliberately submit it. Authorship is created by that act — it is **not**
+inherited from the text already sitting in the field, however it got there.
+
+Three consequences, which are where this stops being a slogan:
+
+1. **A URL, a stored value or a suggestion may prefill. It may not send.**
+   Arriving on a page is not a person asking a question.
+2. **The distinction belongs in the construction path, not in a label.** Make a
+   product-authored string structurally unable to become a user message, rather
+   than tagging it and trusting every downstream reader to check the tag. The
+   same reasoning as the Gate 6 ceiling: the mistake should be unavailable, not
+   refused.
+3. **Prefill reduces the harm of an asserting suggestion; it does not cure it.**
+   A draft that reads *"I have IBS"* is still the product proposing that the
+   person assert it. There is no prefill exemption from the rule above.
+
+Deterministic product fact is a **third** thing again, and stays on its own
+channel: passed as context to support an answer, never concatenated into the
+person's authored text to get it there.
+
 *Evidence: `P0-TRUST-05` in
-[`EATOBIOTICS_SCIENTIFIC_UI_DEBT.md`](./EATOBIOTICS_SCIENTIFIC_UI_DEBT.md).*
+[`EATOBIOTICS_SCIENTIFIC_UI_DEBT.md`](./EATOBIOTICS_SCIENTIFIC_UI_DEBT.md);
+enforced by `tests/unit/ai-authorship.test.ts`.*
 
 ## 4 · The money path
 

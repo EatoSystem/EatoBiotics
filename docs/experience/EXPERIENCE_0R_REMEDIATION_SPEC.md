@@ -640,8 +640,16 @@ the refused architecture.
 
 ### Left for 0R-8, deliberately
 
-The three chips on live `/account` point at a refused route, on a surface the
-nine-route link crawler does not cover.
+**Two** affordances on live `/account` point at a refused route — both of them
+`AskTwin` chips, in one component, behind the `twin && twinVisual` gate, on a
+surface the nine-route link crawler does not cover. Derived at the 0R-3 close:
+an earlier draft said *three*, which was the pre-repair count including the
+retired Biotic premise. `buildPrompts` now returns **1 or 2**, never 3.
+
+Added to this stage's scope by the same reconciliation:
+`lib/email/paid-onboarding-email.ts:96` links *"Start a consultation →"* to the
+refused route from a **live lifecycle email** — outside `/account` and outside
+any crawler.
 
 > 0R-3 asks *"if this capability exists, is authorship and premise handling
 > safe?"* · 0R-8 asks *"should this destination be presented as available at
