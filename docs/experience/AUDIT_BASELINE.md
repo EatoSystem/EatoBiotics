@@ -378,3 +378,67 @@ commit; `git add -A` would have captured one.
 | register | **24 entries**, plus `RESP-ACCOUNT-01` named and not entered |
 | evidence | 234 manifest rows · 101 committed citations |
 | next | **Experience 0R — specified, not begun** |
+
+---
+
+## 11 · Experience 0R tranche 1 (0R-1 + 0R-2) — the gate
+
+Recorded here for the same reason §10 is: this document's job is what was
+measured, when, and on what head.
+
+| | |
+|---|---|
+| branch | `claude/eatobiotics-experience-audit` |
+| tranche commit | **`3e437a1`** — one commit above the frozen `35a68e3` |
+| verification commit | **`59cc4ef`** — the s7b 1012 anchor repoint, in its own commit |
+| production files modified | **zero** |
+
+### The ledger
+
+| | |
+|---|---|
+| `tsc --noEmit` | clean |
+| `eslint` | **0 errors**, 97 pre-existing warnings |
+| unit suite | **228 files · 6532 passed · 2 skipped** (at `35a68e3`: 227 · 6414 · 2) |
+| three guard scripts | pass |
+| `next build` | succeeds |
+| Playwright | **255 / 255** |
+| sabotage — **thirteen suites at full count** | base 26/26 · `v1` 10/10 · `s3` 12/12 · `s4` 8/8 · `s5` 10/10 · `s6` 14/14 · `s7` 30/30 · `s7b` **171/171** · `g4` 44/44 · `g5` 65/65 · `g6` 18/18 · `g61` 22/22 · **`run_0r` 17/17 (new)** |
+| sabotage — `s3a` | **2/35 caught, 33 broken** — every one `FILE MISSING`, targeting files on unmerged PR #274. The same count and the same reason as at the Gate 6.0 close and the Experience 0 close |
+| harness | finished · mutations restored · **final tree clean** |
+
+> **Not described as "all green".** Thirteen suites are at full count; the
+> fourteenth has a named, unchanged exception.
+
+### Two things the gate found, recorded rather than smoothed over
+
+**A Playwright flake, named as a flake only after it was retested.** The first
+full run returned **254 passed, 1 failed** —
+`audit-capture.spec.ts:255 representative @ 390`. Re-run in isolation it passed
+**29/29**, and the final full run passed **255/255**. It is recorded as a flake
+because it was measured twice, not because one green run was convenient.
+
+**`s7b` went 171 → 168 → 170 → 171, and the dip was real.** Cases **1007** and
+**1011** genuinely slipped against 0R-2's own work: `KNOWN_UNCORRECTED` was
+keyed on filename, so three files ledgered for a personal-Biotic claim acquired
+an allowance across all three rule families. Repaired by making the ledger
+`(file, rule)`. Cases **1090** and **1012** are a different thing and are not
+counted as the same: both are anchors the ledger conversion relocated, repointed
+with the reason recorded inline, following the Gate 4 precedent.
+
+Full account in
+[`EXPERIENCE_0R_REMEDIATION_SPEC.md` §7](./EXPERIENCE_0R_REMEDIATION_SPEC.md).
+
+### The audit corpus is NOT re-committed
+
+Running Playwright regenerates part of the capture corpus — **19 images in one
+run, 22 in another**, plus `manifest.json` and `SCREENSHOT_INDEX.md`. That is
+the `NOTE-CAPTURE-01` residual measured at step 4 (13 of 105 images, a 34×34
+region, 0.038% of bytes, the 390 tab strip's resting scroll position, **no
+difference in visual content**) — and the fact that the count varies between
+runs is itself consistent with it.
+
+`docs/experience/audit/` was restored to its `35a68e3` state before each commit.
+Committing regenerated image blobs into a tranche that changed **no rendered
+surface** would add churn that evidences nothing, and would break the
+self-consistency of the committed citations against their manifest hashes.
