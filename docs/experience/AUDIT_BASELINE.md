@@ -503,3 +503,105 @@ The commit was made on a verified-clean tree; Playwright and the sabotage suites
 then ran **after** it, on the same tree, and the capture residual was restored
 before the documentation follow-up. `f22d1f3` is a tested state; it is not a
 state whose test preceded it.
+
+---
+
+## 13 · Experience 0R-4 (`P0-TRUST-01/02/03`) — the gate
+
+### Three heads, and the split is deliberate
+
+| head | what it is |
+|---|---|
+| **`43a2b6d`** | the product / remediation state, and **the head the full gate below ran on** |
+| `f350c52` | documentation only — the Experience Constitution principle, staged by explicit path while the harness was mutating unrelated files |
+| *this commit* | documentation only — this ledger and the `REVIEW.md` engineering rule |
+
+**The product gate is not re-run for a documentation ledger.** It names
+`43a2b6d` as the tested remediation state, which is what makes that sound.
+
+### The ledger
+
+New sabotage cases are kept on their own line and **not** folded into the suite
+result.
+
+| | |
+|---|---|
+| `tsc --noEmit` | clean |
+| `npx eslint .` | **0 errors**, **96 warnings** |
+| unit suite | **230 files · 6577 passed · 2 skipped** (0R-3: 229 · 6554 · 2) |
+| three guard scripts | pass |
+| `next build` | succeeds |
+| Playwright, full suite | **260 / 260** — three more than 0R-3's 257, the three new `P0-TRUST` rendered proofs |
+| **new** cases `1474–1481` | **8 / 8 caught** |
+| `run_0r`, whole suite | **32 / 32** |
+| base · `v1` · `s3` · `s4` · `s5` · `s6` · `s7` | 26/26 · 10/10 · 12/12 · 8/8 · 10/10 · 14/14 · 30/30 |
+| `s7b` · `g4` · `g5` · `g6` · `g61` | 171/171 · 44/44 · 65/65 · 18/18 · 22/22 |
+| **`s3a`** | **2 / 35 caught, 33 broken** |
+| harness | finished · every mutation restored · **final tree clean** |
+
+**`s3a` returned the standing exception unchanged.** The 33 broken cases are
+`336–358`, `360`, `362–370` — the same count and the same ids carried since the
+Gate 6.0 close, every one a `FILE MISSING` anchor against unmerged PR #274.
+**Not an 0R-4 regression.**
+
+> **Thirteen suites at full count, one documented exception.** Not described as
+> "all green", because that would be false.
+
+### The eslint reconciliation — a measurement I misreported
+
+Recorded here because this document's job is *what was measured, when, and on
+what head*, and a number I got wrong belongs in it.
+
+| | |
+|---|---|
+| **97 → 1** | **a reporting error.** Same command (`npx eslint .`), same scope. The tail of the output was quoted instead of the summary: *"0 errors and 1 warning potentially fixable with the `--fix` option"* counts **auto-fixable** warnings, never the total |
+| **97 → 96** | **a real one-warning reduction, attributed** by building a worktree at the tranche-1 head `3e437a1`, running the canonical command there, and diffing by file and rule |
+
+```
+DISAPPEARED since 3e437a1:
+  -1  components/account/live-dashboard.tsx  [no-constant-binary-expression]
+APPEARED:  (none)
+```
+
+At `3e437a1`, line 1694: *"Unexpected constant truthiness on the left-hand side
+of a `&&` expression"*. Line 1694 was
+`{(todayMeals.length > 0 || true) && (` — **the tautological gate behind a live
+`P0-TRUST-01` manifestation**, the one the Experience 0 audit missed.
+
+**eslint had been naming the defect through every gate of this programme**,
+inside a count reported as inert. The engineering rule that follows from it is
+in `REVIEW.md`, not here and not in the Experience Constitution: it is a review
+discipline, not a design principle.
+
+> **No unrelated warnings were cleaned up during this close.** The 96 remain the
+> reported baseline.
+
+### The capture corpus is restored, not committed
+
+Playwright regenerates part of `docs/experience/audit/` — the measured
+`NOTE-CAPTURE-01` residual, and after 0R-4 also genuine content change on the
+account states whose fabrications were removed. It is restored to its
+Experience 0 state before every commit, for the reason §12 records: the frozen
+corpus is the **before** evidence that the register cites, and the **after**
+state is proved behaviourally by assertions that re-prove themselves on every
+run.
+
+### Three defects 0R-4 found in its own instruments
+
+| | |
+|---|---|
+| the `ScoreBar` rule | demanded removal of **three** per-Biotic triples that render **real** meal data and belong to 0R-5. The **rule** was narrowed to the fused construct, not the scope widened |
+| a `\s*` lookahead | backtracked to zero width, so `?? null` read as a content fallback. **Latent in a second rule** that passed only because its pattern was absent |
+| sabotage **1477** | declared a mock constant without consuming it and slipped **correctly** — the rule is about consumption. Fixing it exposed the rule's real boundary: it keys on the `MOCK_`/`DEMO_` naming convention, not inline literals. Recorded in the guard rather than implied |
+
+### Site-level close
+
+The full site-level accounting — entire findings closed, individual
+manifestations of multi-site findings closed, and manifestations explicitly
+remaining for 0R-5 — is in
+[`EATOBIOTICS_SCIENTIFIC_UI_DEBT.md`](./EATOBIOTICS_SCIENTIFIC_UI_DEBT.md)
+under *0R-4 · Site-level close record*. In summary: `P0-TRUST-01`, `-02` and
+`-03` closed entire; `P0-SCIENCE-02` closed entire as a fused unit;
+`P0-SCIENCE-03` closed at `:1757` and `:1885` only, with **`:1896` remaining
+0R-5's**; `P0-SCIENCE-01`, `-04`, `-05` untouched; `DEBT-CODE-01` remaining
+0R-9's.

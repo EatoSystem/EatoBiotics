@@ -6,6 +6,66 @@ git history. This file starts it. Entries are newest first.
 
 ---
 
+## 2026-10-05 — Engineering rule adopted: warning counts are not waivers
+
+Adopted at the Experience 0R-4 close, and general beyond it. This sits beside
+the process rule recorded in the Gate 6.0 close below — it is a **review
+discipline**, not a product-design principle, which is why it is here and not
+in `EXPERIENCE_CONSTITUTION.md`.
+
+> **Warning counts are not waivers.** A baseline may be tolerated, but its
+> warnings remain evidence.
+>
+> - **When the count changes, attribute the delta.** Do not report a new number
+>   as though it were the same baseline.
+> - **When a path you are about to change already carries a warning, read it.**
+>   Check whether it describes the defect you are changing.
+
+### What it cost to learn
+
+Every gate of this programme reported *"0 errors, 97 pre-existing warnings"* and
+moved on. One of those 97 was:
+
+```
+components/account/live-dashboard.tsx
+  1694:19  warning  Unexpected constant truthiness on the left-hand side of a
+                    `&&` expression          no-constant-binary-expression
+```
+
+Line 1694 was:
+
+```tsx
+{(todayMeals.length > 0 || true) && (
+```
+
+— the tautological gate on "Today's average", which made a fabricated score
+from `MOCK_MEALS` render for every member with no meal logged that day. A **live
+`P0-TRUST-01` manifestation**, and one the Experience 0 visual audit did not
+find. **eslint had been pointing at it the whole time, by name, inside a count
+nobody read.**
+
+It surfaced only because a one-warning change in the total (97 → 96) had to be
+explained, which forced a diff by file and rule against the earlier head. Had
+the count not moved, the warning would still be sitting there.
+
+### Two corollaries worth keeping
+
+- **A tolerated baseline must still be attributable.** "Pre-existing" is a
+  statement about *when* a warning appeared, not about whether it matters.
+- **Report the right line.** The same close contained a reporting error in the
+  other direction: `tail -2` of eslint's output captures *"0 errors and 1
+  warning potentially fixable with the `--fix` option"* — the **auto-fixable**
+  count — which was quoted as the total and produced a spurious 97 → 1 cliff.
+  The canonical summary is the `✖` line.
+
+Evidence: `AUDIT_BASELINE.md` §13; the defect itself is `P0-TRUST-01` in
+`docs/experience/EATOBIOTICS_SCIENTIFIC_UI_DEBT.md`.
+
+**No lint cleanup was performed at this close.** 96 warnings remain the reported
+baseline; this entry records what one of them was saying.
+
+---
+
 ## 2026-10-05 — TypeSafe evaluated and not adopted
 
 A third-party agent skill, `typesafe-ai/skills`, was proposed for installation
